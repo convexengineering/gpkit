@@ -1,3 +1,4 @@
 """
-GP Modeling Package
+Lightweight GP Modeling Package
 """
+
