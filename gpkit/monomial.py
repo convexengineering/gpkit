@@ -14,7 +14,6 @@ class Monomial(object):
         assert N == len(a), 'N=%s but len(a)=%s' % (N, len(a))
 
         self.c = float(c)
-        self.a = [float(exp) for exp in a]
         self.exps = dict(zip(_vars, a))
         self.vars = set(_vars) # to sort and remove duplicates
 
@@ -62,7 +61,10 @@ class Monomial(object):
             Monomial
         """
         # assume x is a number
-        a = [exp*x for exp in self.a]
+        a = []
+        for var in self.vars:
+            exp = self.exps[var]
+            a.append(exp*x)
         c = self.c**x
         return Monomial(self.vars, c, a)
 
