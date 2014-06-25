@@ -9,13 +9,13 @@ class Test_Monomial(unittest.TestCase):
 
     def test_init(self):
         m = Monomial(['x','y'], 5, [1, -1])
-        self.assertEqual(m.vars, ['x', 'y'])
+        self.assertEqual(m.vars, set(['x', 'y']))
         self.assertEqual(m.a, [1, -1])
         self.assertEqual(m.c, 5)
         
         # default c and a
         m = Monomial('x')
-        self.assertEqual(m.vars, ['x'])
+        self.assertEqual(m.vars, set(['x']))
         self.assertEqual(m.a, [1])
         self.assertEqual(m.c, 1)
 
@@ -58,8 +58,6 @@ class Test_Monomial(unittest.TestCase):
         self.assertTrue(m1 != m3)
         self.assertTrue(m1 != m4)
 
-        # todo decide on behavior for out-of-order vars
-
     def test_div(self):
         x = Monomial(['x', 'y'], 36, [1, -1])
         # divide by scalar
@@ -72,6 +70,32 @@ class Test_Monomial(unittest.TestCase):
         # mixed new and old vars
         z = x/Monomial(['x', 't'], .5, [-1, 2])
         self.assertEqual(z, Monomial(['x','y','t'], 72, [2,-1,-2]))
+
+    def test_mul(self):
+        x = Monomial(['x', 'y'], 4, [1, -1])
+        # divide by scalar
+        self.assertEqual(x*9, Monomial(['x', 'y'], 36, [1, -1]))
+        # divide by Monomial
+        y = x*Monomial('z')
+        self.assertEqual(y, Monomial(['x', 'y', 'z'], 4, [1, -1, 1]))
+        # make sure x unchanged
+        self.assertEqual(x, Monomial(['x', 'y'], 4, [1, -1]))
+        # mixed new and old vars
+        z = x*Monomial(['x', 't'], .5, [-1, 2])
+        self.assertEqual(z, Monomial(['x','y','t'], 2, [0,-1,2]))
+
+    def test_pow(self):
+        x = Monomial(['x', 'y'], 4, [1, -1])
+        # divide by scalar
+        self.assertEqual(x*9, Monomial(['x', 'y'], 36, [1, -1]))
+        # divide by Monomial
+        y = x*Monomial('z')
+        self.assertEqual(y, Monomial(['x', 'y', 'z'], 4, [1, -1, 1]))
+        # make sure x unchanged
+        self.assertEqual(x, Monomial(['x', 'y'], 4, [1, -1]))
+        # mixed new and old vars
+        z = x*Monomial(['x', 't'], .5, [-1, 2])
+        self.assertEqual(z, Monomial(['x','y','t'], 2, [0,-1,2]))
 
 
 class TestAnotherThing(unittest.TestCase):

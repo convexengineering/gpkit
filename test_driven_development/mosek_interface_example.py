@@ -49,7 +49,7 @@ def ex1():
                         xx,
                         y,
                         expopthnd)
-    print 'objectove value is %s' % objval
+    print 'objective value is %s' % objval
     print 'primal variables are %s' % xx
     print 'dual variables are %s' % y
 
