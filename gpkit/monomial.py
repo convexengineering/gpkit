@@ -2,9 +2,19 @@
 Monomial expression (term)
 """
 
-# TODO(ned): make interpreter for LATEX-like strings
+# NOTE: there's a circular import at the bottom of this file.
+#   since the monomial class only calls the Posynomial class
+#   when there's addition or subtraction, it might be alright?
+
+def monify(s):
+    """
+    Turns a whitespace separated string into singlet monomials.
+    """
+    return [Monomial(x) for x in s.split()]
+
 
 class Monomial(object):
+
     def __init__(self, _vars, c=1, a=None):
         self.c = float(c)
         self.vars = set(_vars)
@@ -39,6 +49,9 @@ class Monomial(object):
     def latex(self, bracket='$'):
         latexstr = self._str_tokens('') # could put a space in here?
         return bracket + latexstr + bracket
+
+    def __hash__(self):
+        return hash(str(self))
 
     def __eq__(self, m):
         """Equality test
@@ -87,10 +100,14 @@ class Monomial(object):
             # assume m is numeric scalar
             m = Monomial([], c=m)
         _vars = self.vars.union(m.vars)
-        c = self.c/float(m.c)
+        c = self.c/m.c
         a = [self.exps.get(var, 0) - m.exps.get(var, 0)
              for var in _vars]
         return Monomial(_vars, c, a)
+
+    def __rdiv__(self, m):
+        # m/self
+        return m * self**-1
 
     def __mul__(self, m):
         """Multiplication by another monomial
@@ -101,17 +118,23 @@ class Monomial(object):
         Returns:
             Monomial
         """
-        return self.__div__(m**-1)
+        return self/(m**-1)
+
+    def __rmul__(self, m):
+        return m*self
 
 
     def __sub__(self, m):
-        """Subtraction of another monomial from this one
-        
-        Args:
-            m (Monomial): monomial to subtract
+        return Posynomial([self, -1*m])
 
-        Returns:
-            Monomial
-        """
-        # TODO(ned): make this actually work
-        return Posynomial([self, m*-1])
+    def __rsub__(self, m):
+        return Posynomial([m, -1*self])
+
+    def __add__(self, m):
+        return Posynomial([self, m])
+
+    def __radd__(self, m):
+        return Posynomial([m, self])
+
+
+from posynomial import Posynomial
