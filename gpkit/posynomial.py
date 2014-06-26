@@ -81,4 +81,8 @@ class Posynomial(object):
     def __neg__(self):
         return Posynomial([-m_s for m_s in self.monomials])
 
+    def __le__(self, m):
+        # overloaded for returning constraints...
+        return self/m
+
 from monomial import Monomial
