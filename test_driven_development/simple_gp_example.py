@@ -68,16 +68,16 @@ for i, V in enumerate(V_range):
   for j, V_min in enumerate(V_min_range):
     ## solve inside the loop ##
     sol = gpkit.minimize(
-              0.5*rho*S*C_D*V**2, # [N] total drag force
+             0.5*rho*S*C_D*V**2, # [N] total drag force
             [ # subject to #
-              Re <= (rho/mu)*V*(S/A)**0.5, # should be driven to equality
-              C_f >= 0.074/Re**0.2, # fully turbulent boundary layer approx.
-              W <= 0.5*rho*S*C_L*V**2, # cruising lift
-              W <= 0.5*rho*S*C_Lmax*V_min**2, # takeoff lift
-              W >= W_0 + W_w, # should be driven to equality
-              W_w >= W_w_surf + W_w_strc, # see 'wing-weight modeling' above
-              C_D >= C_D_fuse + C_D_wpar + C_D_ind # see 'drag modeling' above
+             Re <= (rho/mu)*V*(S/A)**0.5, # should be driven to equality
+             C_f >= 0.074/Re**0.2, # fully turbulent boundary layer approx.
+             W <= 0.5*rho*S*C_L*V**2, # cruising lift
+             W <= 0.5*rho*S*C_Lmax*V_min**2, # takeoff lift
+             W >= W_0 + W_w, # should be driven to equality
+             W_w >= W_w_surf + W_w_strc, # see 'wing-weight modeling' above
+             C_D >= C_D_fuse + C_D_wpar + C_D_ind # see 'drag modeling' above
             ],
               'cvxopt', {'show_progress': False})
-    # save solution to array
+    # save solution to arrays
     for var in sol:  data[var][i,j] = sol[var]
