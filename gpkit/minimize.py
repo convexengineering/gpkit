@@ -25,3 +25,4 @@ def cvxopt(posynomials, options):
   F = matrix([[float(m.exps.get(v, 0)) for m in monomials] for v in freevars])
 
   return dict(zip(freevars, exp(solvers.gp(K, F, g)['x'])))
+  
