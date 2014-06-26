@@ -16,6 +16,7 @@ def monify(s):
 class Monomial(object):
 
     def __init__(self, _vars, c=1, a=None):
+        if isinstance(_vars, str):  _vars = [_vars]
         self.c = float(c)
         self.vars = set(_vars)
 
@@ -24,7 +25,6 @@ class Monomial(object):
             self.exps = _vars
         else:
             # ensure _vars is a list of variable names
-            if isinstance(_vars, str):  _vars = [_vars]
             N = len(_vars)
             # if we don't have an exponent list, use the default
             if a is None:  a = [1]*N
@@ -32,6 +32,8 @@ class Monomial(object):
             assert N == len(a), 'N=%s but len(a)=%s' % (N, len(a))
             # zip 'em up!
             self.exps = dict(zip(_vars, a))
+
+        self.monomials = set([self])
 
     def _str_tokens(self, joiner='*'):
         t = []
@@ -139,5 +141,9 @@ class Monomial(object):
     def __neg__(self):
         c = -self.c
         return Monomial(self.exps, c)
+
+    def __le__(self, m):
+        # overloaded for returning constraints...
+        return self/m
 
 from posynomial import Posynomial
