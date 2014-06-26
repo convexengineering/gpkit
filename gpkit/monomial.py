@@ -6,6 +6,7 @@ Monomial expression (term)
 #   since the monomial class only calls the Posynomial class
 #   when there's addition or subtraction, it might be alright?
 
+
 def monify(s):
     """
     Turns a whitespace separated string into singlet monomials.
@@ -16,7 +17,8 @@ def monify(s):
 class Monomial(object):
 
     def __init__(self, _vars, c=1, a=None):
-        if isinstance(_vars, str):  _vars = [_vars]
+        if isinstance(_vars, str):
+            _vars = [_vars]
         self.c = float(c)
         self.vars = set(_vars)
 
@@ -27,7 +29,8 @@ class Monomial(object):
             # ensure _vars is a list of variable names
             N = len(_vars)
             # if we don't have an exponent list, use the default
-            if a is None:  a = [1]*N
+            if a is None:
+                a = [1]*N
             # if we do have one, check that it's the right length
             assert N == len(a), 'N=%s but len(a)=%s' % (N, len(a))
             # zip 'em up!
@@ -47,9 +50,9 @@ class Monomial(object):
 
     def __repr__(self):
         return self._str_tokens()
-    
+
     def latex(self, bracket='$'):
-        latexstr = self._str_tokens('') # could put a space in here?
+        latexstr = self._str_tokens('')  # could put a space in here?
         return bracket + latexstr + bracket
 
     def __hash__(self):
@@ -58,12 +61,12 @@ class Monomial(object):
     def __eq__(self, m):
         """Equality test
 
-        Args: 
+        Args:
             m (Monomial): Monomial to compare with
 
         Returns:
             bool -- True if self == m
-        
+
         Notes:
             Currently returns True only if variables have same order
         """
@@ -74,7 +77,7 @@ class Monomial(object):
 
     def __pow__(self, x):
         """Put monomial to a numeric power
-        
+
         Args:
             x (float or int): exponent to put monomial to
 
@@ -91,7 +94,7 @@ class Monomial(object):
 
     def __div__(self, m):
         """Division by another monomial
-        
+
         Args:
             m (Monomial): monomial to divide by
 
@@ -113,18 +116,17 @@ class Monomial(object):
 
     def __mul__(self, m):
         """Multiplication by another monomial
-        
+
         Args:
             m (Monomial): monomial to multiply by
 
         Returns:
             Monomial
         """
-        return self/(m**-1)
+        return self / (m**-1)
 
     def __rmul__(self, m):
         return self*m
-
 
     def __sub__(self, m):
         return Posynomial([self, -1*m])
