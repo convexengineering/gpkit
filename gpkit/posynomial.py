@@ -2,6 +2,8 @@
 Posynomial expression (term)
 """
 
+# TODO(ned): check units? using that python package?
+
 # NOTE: there's a circular import at the bottom of this file.
 #   since the monomial class only calls the Posynomial class
 #   when there's addition or subtraction, it might be alright?

@@ -33,7 +33,7 @@ class Monomial(object):
             # zip 'em up!
             self.exps = dict(zip(_vars, a))
 
-        self.monomials = set(self)
+        self.monomials = set([self])
 
     def _str_tokens(self, joiner='*'):
         t = []

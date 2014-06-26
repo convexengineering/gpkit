@@ -24,4 +24,4 @@ def cvxopt(posynomials, options):
   # F: exponents of the various control variables for each of the needed monomials
   F = matrix([[float(m.exps.get(v, 0)) for m in monomials] for v in freevars])
 
-  return exp(solvers.gp(K, F, g)['x'])
+  return dict(zip(freevars, exp(solvers.gp(K, F, g)['x'])))
