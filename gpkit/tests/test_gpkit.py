@@ -9,9 +9,11 @@ class Test_Monomial(unittest.TestCase):
 
     def test_init(self):
         m = Monomial(['x','y'], 5, [1, -1])
+        m2 = Monomial({'x': 1, 'y': -1}, 5)
         self.assertEqual(m.vars, set(['x', 'y']))
         self.assertEqual(m.exps, {'x': 1, 'y': -1})
         self.assertEqual(m.c, 5)
+        self.assertEqual(m, m2)
         
         # default c and a
         m = Monomial('x')
