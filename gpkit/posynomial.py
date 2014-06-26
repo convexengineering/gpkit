@@ -78,5 +78,7 @@ class Posynomial(object):
     def __radd__(self, m):
         return Posynomial([m, self])
 
+    def __neg__(self):
+        return Posynomial([-m_s for m_s in self.monomials])
 
 from monomial import Monomial

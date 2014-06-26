@@ -121,7 +121,7 @@ class Monomial(object):
         return self/(m**-1)
 
     def __rmul__(self, m):
-        return m*self
+        return self*m
 
 
     def __sub__(self, m):
@@ -136,5 +136,8 @@ class Monomial(object):
     def __radd__(self, m):
         return Posynomial([m, self])
 
+    def __neg__(self):
+        c = -self.c
+        return Monomial(self.exps, c)
 
 from posynomial import Posynomial
