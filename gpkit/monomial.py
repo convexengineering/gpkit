@@ -6,16 +6,22 @@ Monomial expression (term)
 
 class Monomial(object):
     def __init__(self, _vars, c=1, a=None):
-        if isinstance(_vars, str):
-            _vars = [_vars]
-        N = len(_vars)
-        if a is None:
-            a = [1]*N
-        assert N == len(a), 'N=%s but len(a)=%s' % (N, len(a))
-
         self.c = float(c)
-        self.exps = dict(zip(_vars, a))
-        self.vars = set(_vars) # to sort and remove duplicates
+        self.vars = set(_vars)
+
+        if isinstance(_vars, dict):
+            # check if we already have it as a dictionary
+            self.exps = _vars
+        else:
+            # ensure _vars is a list of variable names
+            if isinstance(_vars, str):  _vars = [_vars]
+            N = len(_vars)
+            # if we don't have an exponent list, use the default
+            if a is None:  a = [1]*N
+            # if we do have one, check that it's the right length
+            assert N == len(a), 'N=%s but len(a)=%s' % (N, len(a))
+            # zip 'em up!
+            self.exps = dict(zip(_vars, a))
 
     def _str_tokens(self, joiner='*'):
         t = []
