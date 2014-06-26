@@ -108,4 +108,4 @@ class Monomial(object):
             Monomial
         """
         # TODO(ned): make this actually work
-        return Posynomial([self, -1*m])
+        return Posynomial([self, m*-1])
