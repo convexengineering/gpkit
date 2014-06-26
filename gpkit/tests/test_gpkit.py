@@ -1,5 +1,7 @@
 import unittest
 from gpkit.monomial import Monomial
+from gpkit.monomial import monify
+from gpkit.posynomial import Posynomial
 
 
 class Test_Monomial(unittest.TestCase):
@@ -9,9 +11,11 @@ class Test_Monomial(unittest.TestCase):
 
     def test_init(self):
         m = Monomial(['x','y'], 5, [1, -1])
+        m2 = Monomial({'x': 1, 'y': -1}, 5)
         self.assertEqual(m.vars, set(['x', 'y']))
         self.assertEqual(m.exps, {'x': 1, 'y': -1})
         self.assertEqual(m.c, 5)
+        self.assertEqual(m, m2)
         
         # default c and a
         m = Monomial('x')
@@ -86,27 +90,44 @@ class Test_Monomial(unittest.TestCase):
 
     def test_pow(self):
         x = Monomial(['x', 'y'], 4, [1, -1])
-        # divide by scalar
-        self.assertEqual(x*9, Monomial(['x', 'y'], 36, [1, -1]))
-        # divide by Monomial
-        y = x*Monomial('z')
-        self.assertEqual(y, Monomial(['x', 'y', 'z'], 4, [1, -1, 1]))
+        # identity
+        self.assertEqual(x/x, Monomial({}, 1))
+        # square
+        self.assertEqual(x*x, x**2)
+        # divide
+        y = Monomial(['x', 'y'], 5, [2, 3])
+        self.assertEqual(x/y, x * y**-1)
         # make sure x unchanged
         self.assertEqual(x, Monomial(['x', 'y'], 4, [1, -1]))
-        # mixed new and old vars
-        z = x*Monomial(['x', 't'], .5, [-1, 2])
-        self.assertEqual(z, Monomial(['x','y','t'], 2, [0,-1,2]))
 
 
-class TestAnotherThing(unittest.TestCase):
+class Test_Posynomial(unittest.TestCase):
 
-    def test_placeholder(self):
-        pass
+    def test_basic(self):
+        x, y = monify('x y')
+        ms = [ Monomial({'x': 1, 'y': 2}, 3.14),
+               Monomial('y', 0.5),
+               Monomial({'x': 3, 'y': 1}, -6),
+               Monomial({}, 2) ]
+        p = Posynomial(ms)
+        # check creation
+        self.assertEqual(p.monomials, set(ms))
+        # check arithmetic
+        p2 = 3.14*x*y**2 + y/2 - x**3*6*y + 2
+        self.assertEqual(p, p2)
+
+class Test_monify(unittest.TestCase):
+
+    def test_monify(self):
+        x, y = monify('x y')
+        self.assertEqual(x, Monomial('x'))
+        self.assertEqual(y, Monomial('y'))
+
 
 if __name__ == '__main__':
     suite = unittest.TestSuite()
     loader = unittest.TestLoader()
-    for t in [Test_Monomial, TestAnotherThing]:
+    for t in [Test_Monomial, Test_monify, Test_Posynomial]:
         suite.addTests(loader.loadTestsFromTestCase(t))
     unittest.TextTestRunner(verbosity=2).run(suite)
 
