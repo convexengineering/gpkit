@@ -1,5 +1,6 @@
 import unittest
 from gpkit import *
+from collections import defaultdict
 
 
 class Test_Monomial(unittest.TestCase):
@@ -8,10 +9,10 @@ class Test_Monomial(unittest.TestCase):
         pass
 
     def test_init(self):
-        m = Monomial(['x', 'y'], 5, [1, -1])
-        m2 = Monomial({'x': 1, 'y': -1}, 5)
+        m = Monomial({'x':2, 'y':-1}, 5)
+        m2 = Monomial({'x': 2, 'y': -1}, 5)
         self.assertEqual(m.vars, set(['x', 'y']))
-        self.assertEqual(m.exps, {'x': 1, 'y': -1})
+        self.assertEqual(m.exps, {'x': 2, 'y': -1})
         self.assertEqual(m.c, 5)
         self.assertEqual(m, m2)
 
@@ -22,12 +23,12 @@ class Test_Monomial(unittest.TestCase):
         self.assertEqual(m.c, 1)
 
     def test_repr(self):
-        m = Monomial(['x', 'y'], 5, [2, -1])
+        m = Monomial({'x':2, 'y':-1}, 5)
         self.assertEqual(type(m.__repr__()), str)
         self.assertEqual(Monomial('x').__repr__(), 'x')
 
     def test_latex(self):
-        m = Monomial(['x', 'y'], 5, [2, -1]).latex()
+        m = Monomial({'x':2, 'y':-1}, 5).latex()
         self.assertEqual(type(m), str)
         self.assertTrue('$' in m, '$ not in %s' % m)
         self.assertEqual(Monomial('x', 5).latex(), '$5x$')
@@ -47,56 +48,58 @@ class Test_Monomial(unittest.TestCase):
         self.assertFalse(x != x)
 
         # scalar fails on type comparison even though c matches
-        x = Monomial([], c=1)
+        x = Monomial({}, 1)
         y = 1
         self.assertFalse(x == y)
 
         # several vars
-        m1 = Monomial(['a', 'b', 'c'], c=5, a=[3, 2, 1])
-        m2 = Monomial(['a', 'b', 'c'], c=5., a=[3, 2, 1])
-        m3 = Monomial(['a', 'b', 'c'], c=6, a=[3, 2, 1])
-        m4 = Monomial(['a', 'b'], c=5, a=[3, 2])
+        m1 = Monomial({'a':3, 'b':2, 'c':1}, 5)
+        m2 = Monomial({'a':3, 'b':2, 'c':1}, 5)
+        m3 = Monomial({'a':3, 'b':2, 'c':1}, 6)
+        m4 = Monomial({'a':3, 'b':2}, 5)
         self.assertTrue(m1 == m2)
         self.assertTrue(m1 != m3)
         self.assertTrue(m1 != m4)
 
     def test_div(self):
-        x = Monomial(['x', 'y'], 36, [1, -1])
+        x, y, z, t = monify('x y z t')
+        a = 36*x/y
         # divide by scalar
-        self.assertEqual(x/9, Monomial(['x', 'y'], 4, [1, -1]))
+        self.assertEqual(a/9, 4*x/y)
         # divide by Monomial
-        y = x / Monomial('z')
-        self.assertEqual(y, Monomial(['x', 'y', 'z'], 36, [1, -1, -1]))
+        b = a / z
+        self.assertEqual(b, 36*x/y/z)
         # make sure x unchanged
-        self.assertEqual(x, Monomial(['x', 'y'], 36, [1, -1]))
+        self.assertEqual(a, Monomial({'x':1, 'y':-1}, 36))
         # mixed new and old vars
-        z = x / Monomial(['x', 't'], .5, [-1, 2])
-        self.assertEqual(z, Monomial(['x', 'y', 't'], 72, [2, -1, -2]))
+        c = a / (0.5*t**2/x)
+        self.assertEqual(c, Monomial({'x':2, 'y':-1, 't':-2}, 72))
 
     def test_mul(self):
-        x = Monomial(['x', 'y'], 4, [1, -1])
+        x = Monomial({'x':1, 'y':-1}, 4)
         # divide by scalar
-        self.assertEqual(x*9, Monomial(['x', 'y'], 36, [1, -1]))
+        self.assertEqual(x*9, Monomial({'x':1, 'y':-1}, 36))
         # divide by Monomial
         y = x * Monomial('z')
-        self.assertEqual(y, Monomial(['x', 'y', 'z'], 4, [1, -1, 1]))
+        self.assertEqual(y, Monomial({'x':1, 'y':-1, 'z':1}, 4))
         # make sure x unchanged
-        self.assertEqual(x, Monomial(['x', 'y'], 4, [1, -1]))
+        self.assertEqual(x, Monomial({'x':1, 'y':-1}, 4))
         # mixed new and old vars
-        z = x * Monomial(['x', 't'], .5, [-1, 2])
-        self.assertEqual(z, Monomial(['x', 'y', 't'], 2, [0, -1, 2]))
+        z = x * Monomial({'x':-1, 't':2}, .5)
+        self.assertEqual(z, Monomial({'x':0, 'y':-1, 't':2}, 2))
 
     def test_pow(self):
-        x = Monomial(['x', 'y'], 4, [1, -1])
+        
+        self.assertEqual(x, Monomial({'x':1, 'y':-1}, 4))
         # identity
         self.assertEqual(x/x, Monomial({}, 1))
         # square
         self.assertEqual(x*x, x**2)
         # divide
-        y = Monomial(['x', 'y'], 5, [2, 3])
+        y = Monomial({'x':2, 'y':3}, 5)
         self.assertEqual(x/y, x*y**-1)
         # make sure x unchanged
-        self.assertEqual(x, Monomial(['x', 'y'], 4, [1, -1]))
+        self.assertEqual(x, Monomial({'x':1, 'y':-1}, 4))
 
 
 class Test_Posynomial(unittest.TestCase):
