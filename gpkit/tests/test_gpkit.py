@@ -31,7 +31,7 @@ class Test_Monomial(unittest.TestCase):
     def test_latex(self):
         m = Monomial(['x', 'y'], 5, [2, -1]).latex()
         self.assertEqual(type(m), str)
-        self.assertTrue('$'in m, '$ not in %s' % m)
+        self.assertTrue('$' in m, '$ not in %s' % m)
         self.assertEqual(Monomial('x', 5).latex(), '$5x$')
 
     def test_eq_ne(self):
@@ -65,7 +65,7 @@ class Test_Monomial(unittest.TestCase):
     def test_div(self):
         x = Monomial(['x', 'y'], 36, [1, -1])
         # divide by scalar
-        self.assertEqual(x / 9, Monomial(['x', 'y'], 4, [1, -1]))
+        self.assertEqual(x/9, Monomial(['x', 'y'], 4, [1, -1]))
         # divide by Monomial
         y = x / Monomial('z')
         self.assertEqual(y, Monomial(['x', 'y', 'z'], 36, [1, -1, -1]))
@@ -78,7 +78,7 @@ class Test_Monomial(unittest.TestCase):
     def test_mul(self):
         x = Monomial(['x', 'y'], 4, [1, -1])
         # divide by scalar
-        self.assertEqual(x * 9, Monomial(['x', 'y'], 36, [1, -1]))
+        self.assertEqual(x*9, Monomial(['x', 'y'], 36, [1, -1]))
         # divide by Monomial
         y = x * Monomial('z')
         self.assertEqual(y, Monomial(['x', 'y', 'z'], 4, [1, -1, 1]))
@@ -91,12 +91,12 @@ class Test_Monomial(unittest.TestCase):
     def test_pow(self):
         x = Monomial(['x', 'y'], 4, [1, -1])
         # identity
-        self.assertEqual(x / x, Monomial({}, 1))
+        self.assertEqual(x/x, Monomial({}, 1))
         # square
-        self.assertEqual(x * x, x ** 2)
+        self.assertEqual(x*x, x**2)
         # divide
         y = Monomial(['x', 'y'], 5, [2, 3])
-        self.assertEqual(x / y, x * y ** -1)
+        self.assertEqual(x/y, x*y**-1)
         # make sure x unchanged
         self.assertEqual(x, Monomial(['x', 'y'], 4, [1, -1]))
 
@@ -113,7 +113,7 @@ class Test_Posynomial(unittest.TestCase):
         # check creation
         self.assertEqual(p.monomials, set(ms))
         # check arithmetic
-        p2 = 3.14 * x * y ** 2 + y / 2 - x ** 3 * 6 * y + 2
+        p2 = 3.14*x*y**2 + y/2 - x**3*6*y + 2
         self.assertEqual(p, p2)
 
 

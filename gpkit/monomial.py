@@ -30,7 +30,7 @@ class Monomial(object):
             N = len(_vars)
             # if we don't have an exponent list, use the default
             if a is None:
-                a = [1] * N
+                a = [1]*N
             # if we do have one, check that it's the right length
             assert N == len(a), 'N=%s but len(a)=%s' % (N, len(a))
             # zip 'em up!
@@ -88,8 +88,8 @@ class Monomial(object):
         a = []
         for var in self.vars:
             exp = self.exps[var]
-            a.append(exp * x)
-        c = self.c ** x
+            a.append(exp*x)
+        c = self.c**x
         return Monomial(self.vars, c, a)
 
     def __div__(self, m):
@@ -105,14 +105,14 @@ class Monomial(object):
             # assume m is numeric scalar
             m = Monomial([], c=m)
         _vars = self.vars.union(m.vars)
-        c = self.c / m.c
+        c = self.c/m.c
         a = [self.exps.get(var, 0) - m.exps.get(var, 0)
              for var in _vars]
         return Monomial(_vars, c, a)
 
     def __rdiv__(self, m):
         # m/self
-        return m * self ** -1
+        return m * self**-1
 
     def __mul__(self, m):
         """Multiplication by another monomial
@@ -123,16 +123,16 @@ class Monomial(object):
         Returns:
             Monomial
         """
-        return self / (m ** -1)
+        return self / (m**-1)
 
     def __rmul__(self, m):
-        return self * m
+        return self*m
 
     def __sub__(self, m):
-        return Posynomial([self, -1 * m])
+        return Posynomial([self, -1*m])
 
     def __rsub__(self, m):
-        return Posynomial([m, -1 * self])
+        return Posynomial([m, -1*self])
 
     def __add__(self, m):
         return Posynomial([self, m])
@@ -146,6 +146,6 @@ class Monomial(object):
 
     def __le__(self, m):
         # overloaded for returning constraints...
-        return self / m
+        return self/m
 
 from posynomial import Posynomial

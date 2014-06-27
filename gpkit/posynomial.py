@@ -53,25 +53,25 @@ class Posynomial(object):
         return not self.__eq__(x)
 
     def __pow__(self, x):
-        return Posynomial([m ** x for m in self.monomials])
+        return Posynomial([m**x for m in self.monomials])
 
     def __div__(self, m):
-        return Posynomial([m_s / m for m_s in self.monomials])
+        return Posynomial([m_s/m for m_s in self.monomials])
 
     def __rdiv__(self, m):
-        return Posynomial([m / m_s for m_s in self.monomials])
+        return Posynomial([m/m_s for m_s in self.monomials])
 
     def __mul__(self, m):
-        return Posynomial([m_s * m for m_s in self.monomials])
+        return Posynomial([m_s*m for m_s in self.monomials])
 
     def __rmul__(self, m):
-        return Posynomial([m * m_s for m_s in self.monomials])
+        return Posynomial([m*m_s for m_s in self.monomials])
 
     def __sub__(self, m):
-        return Posynomial([self, -1 * m])
+        return Posynomial([self, -1*m])
 
     def __rsub__(self, m):
-        return Posynomial([m, -1 * self])
+        return Posynomial([m, -1*self])
 
     def __add__(self, m):
         return Posynomial([self, m])
@@ -84,6 +84,6 @@ class Posynomial(object):
 
     def __le__(self, m):
         # overloaded for returning constraints...
-        return self / m
+        return self/m
 
 from monomial import Monomial
