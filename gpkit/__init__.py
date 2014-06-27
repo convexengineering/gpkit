@@ -2,7 +2,12 @@
 Lightweight GP Modeling Package
 """
 
-from monomial import monify
-from monomial import Monomial
-from posynomial import Posynomial
+# structures
+from matrix import matrix
+from nomials import Monomial
+from nomials import Posynomial
+
+# functions
+from utils import monify
+from utils import vectify	
 from minimize import chooser as minimize
