@@ -1,7 +1,5 @@
 import unittest
-from gpkit.monomial import Monomial
-from gpkit.monomial import monify
-from gpkit.posynomial import Posynomial
+from gpkit import *
 
 
 class Test_Monomial(unittest.TestCase):
@@ -116,18 +114,36 @@ class Test_Posynomial(unittest.TestCase):
         p2 = 3.14*x*y**2 + y/2 - x**3*6*y + 2
         self.assertEqual(p, p2)
 
+    def test_simplification(self):
+        x, y = monify('x y')
+        p1 = x+y+y+(x+y)+(y+x**2)-3*x
+        p2 = 4*y+x**2-x
+        self.assertEqual(p1, p2)
 
-class Test_monify(unittest.TestCase):
+    def test_posyposy_mult(self):
+        x, y = monify('x y')
+        p =  x**2 + 2*y*x + y**2
+        self.assertEqual((x+y)**2, p)
+        p2 =  2*x**2 + 2*y*x + y**2*x + y**3
+        self.assertEqual((x+y)*(2*x+y**2), p2)
+
+
+class Test_utils(unittest.TestCase):
 
     def test_monify(self):
         x, y = monify('x y')
         self.assertEqual(x, Monomial('x'))
         self.assertEqual(y, Monomial('y'))
 
+    def test_vectify(self):
+        x = vectify('x', 3)
+        x2 = matrix(monify('x0 x1 x2')).T
+        self.assertEqual(x, x2)
+
 
 if __name__ == '__main__':
     suite = unittest.TestSuite()
     loader = unittest.TestLoader()
-    for t in [Test_Monomial, Test_monify, Test_Posynomial]:
+    for t in [Test_utils, Test_Monomial, Test_Posynomial]:
         suite.addTests(loader.loadTestsFromTestCase(t))
     unittest.TextTestRunner(verbosity=2).run(suite)
