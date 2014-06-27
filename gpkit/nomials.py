@@ -67,7 +67,7 @@ class Monomial(nomial):
             self.exps = dict(zip(_vars, a))
 
         # self.eid: effectively a hash of the exponents
-        self.eid = hash(tuple(sorted(m.exps.items())))
+        self.eid = hash(tuple(sorted(self.exps.items())))
 
         # self.monomials: to make combined monomial / posynomial lists
         #                 easier to deal with
