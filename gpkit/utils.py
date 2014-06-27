@@ -1,3 +1,4 @@
+from monomial import Monomial
 from matrix import matrix
 
 def vectify(s,n):
