@@ -9,7 +9,9 @@ class nomial(object):
 
     # GP constraint-making
     __le__ = lambda self, m: self / m
+    __ge__ = lambda self, m: m / self
     __lt__ = lambda self, m: self <= m
+    __gt__ = lambda self, m: self >= m
 
     # operators
     #__mul__ is defined by each nomial a little differently
@@ -148,16 +150,13 @@ class Posynomial(nomial):
         return p
 
     def __div__(self, m):
-        nota_bene = "Posynomials are not closed under division" 
-        assert not isinstance(m, Posynomial), nota_bene
+        if isinstance(m, Posynomial):
+            raise TypeError("Posynomials are not closed under division")
         # assume monomial or number
         return Posynomial([s / m for s in self.monomials])
 
     def __rdiv__(self, m):
-        nota_bene = "Posynomials are not closed under division" 
-        assert not isinstance(m, Posynomial), nota_bene
-        # assume monomial or number
-        return Posynomial([m / s for s in self.monomials])
+        raise TypeError("Posynomials are not closed under division")
 
     def __mul__(self, m):
         if isinstance(m, Posynomial):
