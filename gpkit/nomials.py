@@ -1,29 +1,31 @@
 class nomial(object):
     ''' That which the nomials have in common '''
-    __hash__ = lambda self: hash(str(self))
+    def __hash__(self): return hash(str(self))
 
     # comparison
-    __eq__ = lambda self, m: (isinstance(m, self.__class__)
+    def __eq__(self, m): return (isinstance(m, self.__class__)
                               and str(self) == str(m))
-    __ne__ = lambda self, m: not self == m
+    def __ne__(self, m): return not self == m
 
     # GP constraint-making
-    __le__ = lambda self, m: self / m
-    __lt__ = lambda self, m: self <= m
+    def __le__(self, m): return self / m
+    def __ge__(self, m): return m / self
+    def __lt__(self, m): return self <= m
+    def __gt__(self, m): return self >= m
 
     # operators
-    #__mul__ is defined by each nomial a little differently
-    __rmul__ = lambda self, m: self * m
-    #__add__ is defined below
-    __radd__ = lambda self, m: self + m
-    __sub__  = lambda self, m: self + -m
-    __rsub__ = lambda self, m: m + -self
+    # __mul__ is defined by each nomial a little differently
+    def __rmul__(self, m): return self * m
 
     def __add__(self, m):
         if self.monomial_match(m):
             return Monomial(self.exps, self.c + m.c)
         else:
             return Posynomial([self, m])
+
+    def __radd__(self, m): return self + m
+    def __sub__ (self, m): return self + -m
+    def __rsub__(self, m): return m + -self
 
     def monomial_match(self, m):
         if isinstance(self, Monomial) and isinstance(m, Monomial):
@@ -35,16 +37,17 @@ class nomial(object):
 
 class Monomial(nomial):
     # hashing and representation
-    __repr__ = lambda self: self._str_tokens()
-    is_scalar = lambda self: all([e==0 for e in self.exps.values()])
+    def __repr__(self): return self._str_tokens()
+    def is_scalar(self):
+        return all([e==0 for e in self.exps.values()])
 
     # operators
-    #__pow__ is defined below
-    __neg__  = lambda self: Monomial(self.exps, -self.c)
-    #__div__ is defined below
-    __rdiv__ = lambda self, m: m * self ** -1
-    __mul__  = lambda self, m: self / (m ** -1)
-    #__sub__ is defined below
+    # __pow__ is defined below
+    def __neg__ (self): return Monomial(self.exps, -self.c)
+    # __div__ is defined below
+    def __rdiv__(self, m): return m * self ** -1
+    def __mul__ (self, m): return self / (m ** -1)
+    # __sub__ is defined below
 
 
     def __init__(self, _vars, c=1, a=None):
@@ -105,10 +108,10 @@ class Monomial(nomial):
 
 
 class Posynomial(nomial):
-    #__pow__ is defined below
-    #__neg__ is defined below
-    #__mul__ is defined below
-    #__div__ is defined below
+    # __pow__ is defined below
+    # __neg__ is defined below
+    # __mul__ is defined below
+    # __div__ is defined below
 
     def __init__(self, posynomials):
         monomials = []
@@ -148,16 +151,13 @@ class Posynomial(nomial):
         return p
 
     def __div__(self, m):
-        nota_bene = "Posynomials are not closed under division" 
-        assert not isinstance(m, Posynomial), nota_bene
+        if isinstance(m, Posynomial):
+            raise TypeError("Posynomials are not closed under division")
         # assume monomial or number
         return Posynomial([s / m for s in self.monomials])
 
     def __rdiv__(self, m):
-        nota_bene = "Posynomials are not closed under division" 
-        assert not isinstance(m, Posynomial), nota_bene
-        # assume monomial or number
-        return Posynomial([m / s for s in self.monomials])
+        raise TypeError("Posynomials are not closed under division")
 
     def __mul__(self, m):
         if isinstance(m, Posynomial):
