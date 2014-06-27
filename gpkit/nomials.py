@@ -30,7 +30,8 @@ class nomial(object):
     def monomial_match(self, m):
         if isinstance(self, Monomial) and isinstance(m, Monomial):
             both_scalar = self.is_scalar() and m.is_scalar()
-            return both_scalar or self.exps == m.exps
+            if both_scalar or self.exps == m.exps:
+                return True
         else: 
             return False
 
@@ -48,7 +49,7 @@ class Monomial(nomial):
     def __div__ (self, m): return self * m**-1
     def __rdiv__(self, m): return m * self**-1
 
-    def __eq__(self, m): return (isinstance(m, self.__class__)
+    def __eq__(self, m): return (isinstance(m, Monomial)
                               and self.eid == m.eid
                               and self.c == m.c)
 
@@ -104,7 +105,7 @@ class Posynomial(nomial):
     # __mul__ is defined below
     # __div__ is defined below
 
-    def __eq__(self, m): return (isinstance(m, self.__class__)
+    def __eq__(self, m): return (isinstance(m, Posynomial)
                               and self.monomials == m.monomials)
 
     def __init__(self, posynomials):
