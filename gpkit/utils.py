@@ -1,6 +1,7 @@
 from monomial import Monomial
-from matrix import matrix
+from array import array
 
 def vectify(s,n):
     assert len(s.split()) == 1, "Accepts only a single variable name."
-    return matrix([Monomial(s+str(i)) for i in xrange(n)]).T
+    return array([Monomial(s+str(i)) for i in xrange(n)])
+

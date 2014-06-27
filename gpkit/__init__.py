@@ -2,7 +2,7 @@
 Lightweight GP Modeling Package
 """
 
-from matrix import matrix
+from array import array
 from utils import vectify
 from monomial import monify
 from monomial import Monomial
