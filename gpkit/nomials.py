@@ -1,10 +1,8 @@
+from collections import defaultdict
+
 class nomial(object):
     ''' That which the nomials have in common '''
-    def __hash__(self): return hash(str(self))
-
     # comparison
-    def __eq__(self, m): return (isinstance(m, self.__class__)
-                              and str(self) == str(m))
     def __ne__(self, m): return not self == m
 
     # GP constraint-making
@@ -30,13 +28,15 @@ class nomial(object):
     def monomial_match(self, m):
         if isinstance(self, Monomial) and isinstance(m, Monomial):
             both_scalar = self.is_scalar() and m.is_scalar()
-            return both_scalar or self.exps == m.exps
+            if both_scalar or self.exps == m.exps:
+                return True
         else: 
             return False
 
 
 class Monomial(nomial):
     # hashing and representation
+    def __hash__(self): return hash((self.c, self.eid))
     def __repr__(self): return self._str_tokens()
     def is_scalar(self):
         return all([e==0 for e in self.exps.values()])
@@ -44,36 +44,32 @@ class Monomial(nomial):
     # operators
     # __pow__ is defined below
     def __neg__ (self): return Monomial(self.exps, -self.c)
-    # __div__ is defined below
-    def __rdiv__(self, m): return m * self ** -1
-    def __mul__ (self, m): return self / (m ** -1)
-    # __sub__ is defined below
+    # __mul__ is defined below
+    def __div__ (self, m): return self * m**-1
+    def __rdiv__(self, m): return m * self**-1
+
+    def __eq__(self, m): return (isinstance(m, Monomial)
+                              and self.eid == m.eid
+                              and self.c == m.c)
+
+    def __eq__(self, m): return (isinstance(m, self.__class__)
+                              and self.eid == m.eid
+                              and self.c == m.c)
 
 
-    def __init__(self, _vars, c=1, a=None):
-        if isinstance(_vars, str):
-            _vars = [_vars]
-        # self.c: the monomial coefficent
+    def __init__(self, exps, c=1):
+        if isinstance(exps, str):
+            exps = {exps: 1}
+        # self.c: the monomial coefficent. needs to be nonnegative,
+        #         but we'll wait to check that until we form a GP
         self.c = float(c)
-        # self.vars: the list of unique variables in a monomial
-        self.vars = frozenset(_vars)
-
         # self.exps: the exponents lookup table
-        if isinstance(_vars, dict):
-            self.exps = _vars
-        else:
-            N = len(_vars)
-            if a is None: 
-                a = [1] * N
-            else:
-                assert N == len(a), 'N=%s but len(a)=%s' % (N, len(a))
-            self.exps = dict(zip(_vars, a))
-
+        self.exps = defaultdict(int, [(k,v) for (k,v) in exps.iteritems() if v != 0 ])
+        # self.vars: the list of unique variables in a monomial
+        self.vars = frozenset(self.exps.keys())
         # self.eid: effectively a hash of the exponents
         self.eid = hash(tuple(sorted(self.exps.items())))
-
-        # self.monomials: to make combined monomial / posynomial lists
-        #                 easier to deal with
+        # self.monomials: makes combined mono- / posy-nomial lists nicer
         self.monomials = frozenset([self])
 
     def _str_tokens(self, joiner='*'):
@@ -91,19 +87,19 @@ class Monomial(nomial):
         return bracket + latexstr + bracket
 
     def __pow__(self, x):
-        a = [x * self.exps[var] for var in self.vars]
-        c = self.c ** x
-        return Monomial(self.vars, c, a)
+        exps = {var: x*self.exps[var] for var in self.vars}
+        c = self.c**x
+        return Monomial(exps, c)
 
-    def __div__(self, m):
+    def __mul__(self, m):
         if not isinstance(m, Monomial):
-            return Monomial(self.exps, self.c / m)
+            return Monomial(self.exps, self.c * m)
         else:
-            _vars = frozenset().union(self.vars, m.vars)
-            c = self.c / m.c
-            a = [self.exps.get(var, 0) - m.exps.get(var, 0)
-                 for var in _vars]
-            return Monomial(_vars, c, a)
+            allvars = frozenset().union(self.vars, m.vars)
+            c = self.c * m.c
+            exps = {var: self.exps[var] + m.exps[var]
+                    for var in allvars}
+            return Monomial(exps, c)
 
 
 
@@ -112,6 +108,10 @@ class Posynomial(nomial):
     # __neg__ is defined below
     # __mul__ is defined below
     # __div__ is defined below
+    def __hash__(self): return hash(self.monomials)
+
+    def __eq__(self, m): return (isinstance(m, self.__class__)
+                              and self.monomials == m.monomials)
 
     def __init__(self, posynomials):
         monomials = []
@@ -130,7 +130,7 @@ class Posynomial(nomial):
         assert len(self.monomials) >= 1, minlenstr
 
         # self.vars: the set of all variables in the posynomial
-        self.vars = frozenset([m.vars for m in self.monomials])
+        self.vars = frozenset().union(*[m.vars for m in self.monomials])
 
     def __repr__(self):
         strlist = [str(m) for m in self.monomials]
@@ -174,32 +174,27 @@ class Posynomial(nomial):
         return Posynomial([-m_s for m_s in self.monomials])
 
 
+from collections import defaultdict
+
 def simplify(monomials):
     """ Bundles matching monomials from a list. """
-    seen = []
-    dupe_idxs = []
-    dupes = {}
+    eidtable = defaultdict(list)
     for m_idx, m in enumerate(monomials):
-        if m.eid in seen:
-            if not dupes.get(m.eid):
-                first_idx  = seen.index(m.eid)
-                dupes[m.eid] = [first_idx]
-                dupe_idxs.append(first_idx)
-
-            dupes[m.eid].append(m_idx)
-            dupe_idxs.append(m_idx)
-
-        seen.append(m.eid)
+        eidtable[m.eid].append(m_idx)
+    dupes = [v for v in eidtable.itervalues() if len(v) != 1]
 
     if not dupes:
         return monomials
     else:
-        mout = [monomials[i] for i in xrange(len(monomials))
-                                   if not i in dupe_idxs]
-        for idxs in dupes.values():
+        dupe_idxs = []
+        mout = []
+        for idxs in dupes:
+            dupe_idxs += idxs
             pile = monomials[idxs[0]]
             for m_idx in idxs[1:]:
                 pile += monomials[m_idx]
             mout.append(pile)
+        mout += [monomials[i] for i in xrange(len(monomials))
+                              if not i in dupe_idxs]
         return mout
 
