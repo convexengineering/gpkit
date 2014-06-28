@@ -2,8 +2,6 @@ from collections import defaultdict
 
 class nomial(object):
     ''' That which the nomials have in common '''
-    def __hash__(self): return hash(str(self))
-
     # comparison
     def __ne__(self, m): return not self == m
 
@@ -38,6 +36,7 @@ class nomial(object):
 
 class Monomial(nomial):
     # hashing and representation
+    def __hash__(self): return hash((self.c, self.eid))
     def __repr__(self): return self._str_tokens()
     def is_scalar(self):
         return all([e==0 for e in self.exps.values()])
@@ -53,11 +52,16 @@ class Monomial(nomial):
                               and self.eid == m.eid
                               and self.c == m.c)
 
+    def __eq__(self, m): return (isinstance(m, self.__class__)
+                              and self.eid == m.eid
+                              and self.c == m.c)
+
 
     def __init__(self, exps, c=1):
         if isinstance(exps, str):
             exps = {exps: 1}
-        # self.c: the monomial coefficent
+        # self.c: the monomial coefficent. needs to be nonnegative,
+        #         but we'll wait to check that until we form a GP
         self.c = float(c)
         # self.exps: the exponents lookup table
         self.exps = defaultdict(int, [(k,v) for (k,v) in exps.iteritems() if v != 0 ])
@@ -104,8 +108,9 @@ class Posynomial(nomial):
     # __neg__ is defined below
     # __mul__ is defined below
     # __div__ is defined below
+    def __hash__(self): return hash(self.monomials)
 
-    def __eq__(self, m): return (isinstance(m, Posynomial)
+    def __eq__(self, m): return (isinstance(m, self.__class__)
                               and self.monomials == m.monomials)
 
     def __init__(self, posynomials):
@@ -125,7 +130,7 @@ class Posynomial(nomial):
         assert len(self.monomials) >= 1, minlenstr
 
         # self.vars: the set of all variables in the posynomial
-        self.vars = frozenset([m.vars for m in self.monomials])
+        self.vars = frozenset().union(*[m.vars for m in self.monomials])
 
     def __repr__(self):
         strlist = [str(m) for m in self.monomials]
@@ -168,6 +173,8 @@ class Posynomial(nomial):
     def __neg__(self):
         return Posynomial([-m_s for m_s in self.monomials])
 
+
+from collections import defaultdict
 
 def simplify(monomials):
     """ Bundles matching monomials from a list. """
