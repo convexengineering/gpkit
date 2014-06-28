@@ -89,7 +89,7 @@ class Test_Monomial(unittest.TestCase):
         self.assertEqual(z, Monomial({'x':0, 'y':-1, 't':2}, 2))
 
     def test_pow(self):
-        
+        x = Monomial({'x':1, 'y':-1}, 4)
         self.assertEqual(x, Monomial({'x':1, 'y':-1}, 4))
         # identity
         self.assertEqual(x/x, Monomial({}, 1))
