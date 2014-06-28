@@ -1,6 +1,7 @@
 import unittest
-from gpkit import *
-from collections import defaultdict
+from gpkit import Monomial, Posynomial
+from gpkit.array import array
+from gpkit.utils import monify, vectify
 
 
 class Test_Monomial(unittest.TestCase):
