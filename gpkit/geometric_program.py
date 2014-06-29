@@ -1,4 +1,3 @@
-from scipy import float32
 from itertools import chain
 from collections import namedtuple
 from collections import defaultdict
@@ -6,20 +5,19 @@ from collections import defaultdict
 coot_matrix = namedtuple('coot', ['row', 'col', 'data'])
 class coot_matrix(coot_matrix):
     shape = (None, None)
-    dt = float32
 
     def append(self, i, j, x):
         assert (i >= 0 and j >= 0), "Positive indices only in a coot matrix"
         self.row.append(i)
         self.col.append(j)
-        self.data.append(self.dt(x))
+        self.data.append(x)
 
     def update_shape(self):
         self.shape = (max(self.row)+1, max(self.col)+1)
 
     def todense(self):
         from scipy.sparse import coo_matrix
-        return coo_matrix((A.data, (A.row, A.col))).todense()
+        return coo_matrix((self.data, (self.row, self.col))).todense()
 
 
 class GP(object):
@@ -108,7 +106,8 @@ class GP(object):
         if not isinstance(posynomials, list):
             posynomials = [posynomials]
 
-        self.posynomials.remove(posynomial)
+        for p in posynomial:
+            self.posynomials.remove(p)
         self.posynomials_update()
 
 
