@@ -1,5 +1,9 @@
 """
 Lightweight GP Modeling Package
+
+Require numpy
+
+Optionally uses scipy, lineprofile
 """
 
 from array import array

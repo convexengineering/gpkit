@@ -1,6 +1,9 @@
 # iPython checkpoint folders
 .ipynb_checkpoints/
 
+# MOSEK CLI folder
+gpkit_tmp/
+
 # Byte-compiled / optimized / DLL files
 __pycache__/
 *.py[cod]
