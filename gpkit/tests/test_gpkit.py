@@ -135,22 +135,22 @@ class Test_Posynomial(unittest.TestCase):
 
     def test_simplification(self):
         x, y = monify('x y')
-        p1 = x + y + y + (x+y) + (y+x**2) +3*x
+        p1 = x + y + y + (x+y) + (y+x**2) + 3*x
         p2 = 4*y + x**2 + 5*x
         self.assertEqual(p1, p2)
 
     def test_posyposy_mult(self):
         x, y = monify('x y')
-        p =  x**2 + 2*y*x + y**2
+        p = x**2 + 2*y*x + y**2
         self.assertEqual((x+y)**2, p)
-        p2 =  2*x**2 + 2*y*x + y**2*x + y**3
+        p2 = 2*x**2 + 2*y*x + y**2*x + y**3
         self.assertEqual((x+y)*(2*x+y**2), p2)
 
     def test_constraint_gen(self):
         x, y = monify('x y')
         p = x**2 + 2*y*x + y**2
-        self.assertEqual(p<=1, p)
-        self.assertEqual(p<x, p/x)
+        self.assertEqual(p <= 1, p)
+        self.assertEqual(p < x, p/x)
 
 
 class Test_utils(unittest.TestCase):
@@ -170,17 +170,17 @@ class Test_matrices(unittest.TestCase):
 
     def test_array_mult(self):
         x = vectify('x', 3)
-        x0, x1, x2  = monify('x0 x1 x2')
+        x0, x1, x2 = monify('x0 x1 x2')
         p = x0**2 + x1**2 + x2**2
         self.assertEqual(x.dot(x), p)
         m = array([[x0**2, x0*x1, x0*x2],
-                    [x0*x1, x1**2, x1*x2],
-                    [x0*x2, x1*x2, x2**2]])
+                   [x0*x1, x1**2, x1*x2],
+                   [x0*x2, x1*x2, x2**2]])
         self.assertEqual(x.outer(x), m)
 
     def test_elementwise_mult(self):
         x = vectify('x', 3)
-        x0, x1, x2  = monify('x0 x1 x2')
+        x0, x1, x2 = monify('x0 x1 x2')
         # multiplication
         v = array([1, 2, 3]).T
         p = array([1*x0, 2*x1, 3*x2]).T
@@ -194,11 +194,11 @@ class Test_matrices(unittest.TestCase):
 
     def test_constraint_gen(self):
         x = vectify('x', 3)
-        x0, x1, x2  = monify('x0 x1 x2')
+        x0, x1, x2 = monify('x0 x1 x2')
         v = array([1, 2, 3]).T
         p = [x0, x1/2, x2/3]
-        self.assertEqual(x<=v, p)
-        self.assertEqual(x<v, p)
+        self.assertEqual(x <= v, p)
+        self.assertEqual(x < v, p)
 
 
 if __name__ == '__main__':

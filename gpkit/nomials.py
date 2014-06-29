@@ -1,5 +1,6 @@
 from collections import defaultdict
 
+
 class nomial(object):
     ''' That which the nomials have in common '''
     # comparison
@@ -22,14 +23,15 @@ class nomial(object):
             return Posynomial([self, m])
 
     def __radd__(self, m): return self + m
-    def __sub__ (self, m): return self + -m
+    def __sub__(self, m): return self + -m
     def __rsub__(self, m): return m + -self
 
     def monomial_match(self, m):
         if isinstance(self, Monomial) and isinstance(m, Monomial):
             both_scalar = self.is_scalar() and m.is_scalar()
-            return both_scalar or self.exps == m.exps
-        else: 
+            if both_scalar or self.exps == m.exps:
+                return True
+        else:
             return False
 
 
@@ -38,23 +40,18 @@ class Monomial(nomial):
     def __hash__(self): return hash((self.c, self.eid))
     def __repr__(self): return self._str_tokens()
     def is_scalar(self):
-        return all([e==0 for e in self.exps.values()])
+        return all([e == 0 for e in self.exps.values()])
 
     # operators
     # __pow__ is defined below
-    def __neg__ (self): return Monomial(self.exps, -self.c)
+    def __neg__(self): return Monomial(self.exps, -self.c)
     # __mul__ is defined below
-    def __div__ (self, m): return self * m**-1
+    def __div__(self, m): return self * m**-1
     def __rdiv__(self, m): return m * self**-1
 
-    def __eq__(self, m): return (isinstance(m, self.__class__)
-                              and self.eid == m.eid
-                              and self.c == m.c)
-
-    def __eq__(self, m): return (isinstance(m, self.__class__)
-                              and self.eid == m.eid
-                              and self.c == m.c)
-
+    def __eq__(self, m): return (isinstance(m, Monomial)
+                                 and self.eid == m.eid
+                                 and self.c == m.c)
 
     def __init__(self, exps, c=1):
         if isinstance(exps, str):
@@ -64,7 +61,9 @@ class Monomial(nomial):
         if not self.c > 0:
             raise ValueError('c must be positive')
         # self.exps: the exponents lookup table
-        self.exps = defaultdict(int, [(k,v) for (k,v) in exps.iteritems() if v != 0 ])
+        self.exps = defaultdict(int,
+                                [(k,v) for (k,v) in exps.iteritems()
+                                 if v != 0])
         # self.vars: the list of unique variables in a monomial
         self.vars = frozenset(self.exps.keys())
         # self.eid: effectively a hash of the exponents
@@ -102,7 +101,6 @@ class Monomial(nomial):
             return Monomial(exps, c)
 
 
-
 class Posynomial(nomial):
     # __pow__ is defined below
     # __neg__ is defined below
@@ -111,14 +109,14 @@ class Posynomial(nomial):
     def __hash__(self): return hash(self.monomials)
 
     def __eq__(self, m): return (isinstance(m, self.__class__)
-                              and self.monomials == m.monomials)
+                                 and self.monomials == m.monomials)
 
     def __init__(self, posynomials):
         monomials = []
         for p in posynomials:
-            monomials += list(p.monomials 
-                                if hasattr(p, 'monomials')
-                                else [Monomial({}, p)]) # assume it's a number
+            monomials += list(p.monomials
+                              if hasattr(p, 'monomials')
+                              else [Monomial({}, p)])  # assume it's a number
         monomials = simplify(monomials)
         # self.monomials: the set of all monomials in the posynomial
         self.monomials = frozenset(monomials)
@@ -142,7 +140,7 @@ class Posynomial(nomial):
 
     def __pow__(self, x):
         nota_bene = ("Posynomials are only closed when raised"
-                       "to positive integers, not to %s" % x)
+                     "to positive integers, not to %s" % x)
         assert isinstance(x, int) and x > 1, nota_bene
         p = 1
         while x > 0:
@@ -166,15 +164,13 @@ class Posynomial(nomial):
                 for m_ in m.monomials:
                     monoms.append(s*m_)
             return Posynomial(monoms)
-        else: 
+        else:
             # assume monomial or number
             return Posynomial([s * m for s in self.monomials])
 
     def __neg__(self):
         return Posynomial([-m_s for m_s in self.monomials])
 
-
-from collections import defaultdict
 
 def simplify(monomials):
     """ Bundles matching monomials from a list. """
@@ -195,6 +191,5 @@ def simplify(monomials):
                 pile += monomials[m_idx]
             mout.append(pile)
         mout += [monomials[i] for i in xrange(len(monomials))
-                              if not i in dupe_idxs]
+                 if not i in dupe_idxs]
         return mout
-
