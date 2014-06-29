@@ -13,6 +13,35 @@ The file 'Simple GP for Aircraft.ipynb' in this folder has the same
 from numpy import linspace, zeros, pi
 import gpkit
 
+from line_profiler import LineProfiler
+
+try:
+    from line_profiler import LineProfiler
+
+    def do_profile(follow=[]):
+        def inner(func):
+            def profiled_func(*args, **kwargs):
+                try:
+                    profiler = LineProfiler()
+                    profiler.add_function(func)
+                    for f in follow:
+                        profiler.add_function(f)
+                    profiler.enable_by_count()
+                    return func(*args, **kwargs)
+                finally:
+                    profiler.print_stats()
+            return profiled_func
+        return inner
+
+except ImportError:
+    def do_profile(follow=[]):
+        "Helpful if you accidentally leave in production!"
+        def inner(func):
+            def nothing(*args, **kwargs):
+                return func(*args, **kwargs)
+            return nothing
+        return inner
+
 
 ### INITALIZE ###
 ## constants ##
@@ -63,21 +92,42 @@ data = {}
 for var in varstr.split():
   data[var] = zeros(shape)
 
+from time import time
+start_time = time()
+
+from gpkit._mosek.expopt import imize as optimizer
+
 ## sweep through takeoff and cruising speeds ##
-for i, V in enumerate(V_range):
-  for j, V_min in enumerate(V_min_range):
-    ## solve inside the loop ##
-    sol = gpkit.minimize(
-             0.5*rho*S*C_D*V**2, # [N] total drag force
-            [ # subject to #
-             Re <= (rho/mu)*V*(S/A)**0.5, # should be driven to equality
-             C_f >= 0.074/Re**0.2, # fully turbulent boundary layer approx.
-             W <= 0.5*rho*S*C_L*V**2, # cruising lift
-             W <= 0.5*rho*S*C_Lmax*V_min**2, # takeoff lift
-             W >= W_0 + W_w, # should be driven to equality
-             W_w >= W_w_surf + W_w_strc, # see 'wing-weight modeling' above
-             C_D >= C_D_fuse + C_D_wpar + C_D_ind # see 'drag modeling' above
-            ],
-              'cvxopt', {'show_progress': False})
-    # save solution to arrays
-    for var in sol:  data[var][i,j] = sol[var]
+@do_profile(follow=[gpkit.minimize, optimizer])
+def go():
+  for i, V in enumerate(V_range):
+    for j, V_min in enumerate(V_min_range):
+      ## solve inside the loop ##
+      sol = gpkit.minimize(
+               0.5*rho*S*C_D*V**2, # [N] total drag force
+              [ # subject to #
+               Re <= (rho/mu)*V*(S/A)**0.5, # should be driven to equality
+               C_f >= 0.074/Re**0.2, # fully turbulent boundary layer approx.
+               W <= 0.5*rho*S*C_L*V**2, # cruising lift
+               W <= 0.5*rho*S*C_Lmax*V_min**2, # takeoff lift
+               W >= W_0 + W_w, # should be driven to equality
+               W_w >= W_w_surf + W_w_strc, # see 'wing-weight modeling' above
+               C_D >= C_D_fuse + C_D_wpar + C_D_ind # see 'drag modeling' above
+              ],
+                'attached', {'solver': optimizer})
+      # save solution to arrays
+      for var in sol:  data[var][i,j] = sol[var]
+
+  return data
+
+data = go()
+
+print "           | Averages"
+for key, table in data.iteritems():
+  val = table.mean().mean()
+  if val < 100 and val > 0.1:
+    valstr = ("%4.3f" % val)[:4]
+  else:
+    valstr = "%2.2e" % val
+  print "%10s" % key, ":", valstr
+print "           |"
