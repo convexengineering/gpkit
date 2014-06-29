@@ -106,7 +106,7 @@ class GP(object):
         if not isinstance(posynomials, list):
             posynomials = [posynomials]
 
-        for p in posynomial:
+        for p in posynomials:
             self.posynomials.remove(p)
         self.posynomials_update()
 
