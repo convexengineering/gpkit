@@ -2,9 +2,13 @@
 
 Python tools for defining and manipulating geometric programming models.
 
+Interfaces with either the [MOSEK](http://mosek.com) or [CVXopt](http://cvxopt.org/) solvers.
+
 ===========
 
-Excerpt from an aircraft design application:
+*What does gpkit look like?*
+
+Excerpt from an [aircraft design application](http://nbviewer.ipython.org/github/appliedopt/gpkit/blob/master/test_driven_development/Simple%20GP%20for%20Aircraft.ipynb):
 
 ```python
 # Note: in Python, '**' serves as the power ('^') operator
@@ -21,10 +25,6 @@ gpkit.GP( # minimize                            # What's the lowest
           W_w >= W_w_surf + W_w_strc,           # the above 'wing-weight model'?
          ], solver='mosek')
  ```
-
-These models can then be solved with either [MOSEK](http://mosek.com) or [CVXopt](http://cvxopt.org/).
-
-See [this iPython notebook](http://nbviewer.ipython.org/github/appliedopt/gpkit/blob/master/test_driven_development/Simple%20GP%20for%20Aircraft.ipynb) for an example airplane-design program.
 
 ===========
 
