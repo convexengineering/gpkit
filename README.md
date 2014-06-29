@@ -9,8 +9,8 @@ Excerpt from an aircraft design application:
 ```python
 # Note: in Python, '**' serves as the power ('^') operator
 
-gpkit.GP( # minimize                           # What's the lowest
-         0.5*rho*S*C_D*V**2,                   # [N] TOTAL DRAG FORCE
+gpkit.GP( # minimize                            # What's the lowest
+         0.5*rho*S*C_D*V**2,                    # [N] TOTAL DRAG FORCE
          [ # subject to                         # That we can get, with our
           Re <= (rho/mu)*V*(S/A)**0.5,          # flow characteristics,
           C_f >= 0.074/Re**0.2,                 # turbulent BL approximation,
