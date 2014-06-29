@@ -2,12 +2,10 @@
 Lightweight GP Modeling Package
 """
 
-# structures
+from array import array
 from nomials import Monomial
 from nomials import Posynomial
-from array import array
+from geometric_program import GP
 
-# functions
 from utils import *
-from minimize import chooser as minimize
 
