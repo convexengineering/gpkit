@@ -59,9 +59,10 @@ class Monomial(nomial):
     def __init__(self, exps, c=1):
         if isinstance(exps, str):
             exps = {exps: 1}
-        # self.c: the monomial coefficent. needs to be nonnegative,
-        #         but we'll wait to check that until we form a GP
+        # self.c: the monomial coefficent. needs to be positive.
         self.c = float(c)
+        if not self.c > 0:
+            raise ValueError('c must be positive')
         # self.exps: the exponents lookup table
         self.exps = defaultdict(int, [(k,v) for (k,v) in exps.iteritems() if v != 0 ])
         # self.vars: the list of unique variables in a monomial
