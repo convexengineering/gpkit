@@ -140,11 +140,11 @@ class GP(object):
 
 
 def cvxoptimize(c, A, k, options):
-    from cvxopt import sparse, matrix, log, exp
+    from cvxopt import solvers, sparse, matrix, log, exp
     solvers.options.update(options)
     k = k
     g = log(matrix(c))
-    F = sparse(A.data, A.row, A.column)
+    F = sparse(A.data, A.row, A.col)
     solution = solvers.gp(k, F, g)
     # TODO: catch errors, delays, etc.
     return exp(solution['x'])
