@@ -100,6 +100,19 @@ class Monomial(nomial):
                     for var in allvars}
             return Monomial(exps, c)
 
+    def sub(self, constants):
+        overlap = self.vars.intersection(constants)
+        if overlap:
+            c = self.c
+            exps = {var: exp
+                    for var, exp in self.exps.iteritems()
+                    if not var in overlap}
+            for var in overlap:
+                c *= constants[var]**self.exps[var]
+            return Monomial(exps, c)
+        else:
+            return self
+
 
 class Posynomial(nomial):
     # __pow__ is defined below
