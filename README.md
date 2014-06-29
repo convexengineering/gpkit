@@ -5,17 +5,17 @@ Python tools for defining and manipulating geometric programming models.
 ```python
 # Note: in Python '**' serves as the power ('^') operator
 
-gpkit.minimize(                           # What's the lowest
-    0.5*rho*S*C_D*V**2,                   # [N] TOTAL DRAG FORCE
-   [ # subject to                         # That we can get, with our
-    Re <= (rho/mu)*V*(S/A)**0.5,          # flow characteristics,
-    C_f >= 0.074/Re**0.2,                 # turbulent BL approximation,
-    C_D >= C_D_fuse + C_D_wpar + C_D_ind  # the above 'drag model',
-    W <= 0.5*rho*S*C_L*V**2,              # flight at cruising,
-    W <= 0.5*rho*S*C_Lmax*V_min**2,       # flight at takeoff,     
-    W >= W_0 + W_w,                       # the plane's weight, and
-    W_w >= W_w_surf + W_w_strc,           # the above 'wing-weight model'?
-   ], solver='mosek')
+gpkit.GP( # minimize                           # What's the lowest
+         0.5*rho*S*C_D*V**2,                   # [N] TOTAL DRAG FORCE
+        [ # subject to                         # That we can get, with our
+         Re <= (rho/mu)*V*(S/A)**0.5,          # flow characteristics,
+         C_f >= 0.074/Re**0.2,                 # turbulent BL approximation,
+         C_D >= C_D_fuse + C_D_wpar + C_D_ind  # the above 'drag model',
+         W <= 0.5*rho*S*C_L*V**2,              # flight at cruising,
+         W <= 0.5*rho*S*C_Lmax*V_min**2,       # flight at takeoff,     
+         W >= W_0 + W_w,                       # the plane's weight, and
+         W_w >= W_w_surf + W_w_strc,           # the above 'wing-weight model'?
+        ], solver='mosek')
  ```
 
 These models can then be solved with either [MOSEK](http://mosek.com) or [CVXopt](http://cvxopt.org/).
