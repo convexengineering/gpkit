@@ -3,7 +3,7 @@
 Python tools for defining and manipulating geometric programming models.
 
 ```python
-# Note: in python math '**' serves as the power ('^') operator
+# Note: in Python '**' serves as the power ('^') operator
 
 gpkit.minimize(                           # What's the lowest
     0.5*rho*S*C_D*V**2,                   # [N] TOTAL DRAG FORCE
@@ -36,10 +36,11 @@ It turns out that [they have some nice mathematical properties](http://www.stat.
   - it's easy to check if something is a posynomial
   - they're quick to solve, which is good for large problems and trade-off analysis
   - solving a GP gives you an auomatic sensitivity analysis (via its dual)
-  - and even infeasible GPs give you an idea of how infeasible they are, and which constraints are causing the most trouble
+  - infeasible GP can be examined to figure out how infeasible they are and which constraints are causing the most trouble
 
 Geometric programs might also have nice social properties:
-  - it's clear when you can't turn an equation into a posynomial:
+  - it's clear when you can't turn an equation into a posynomial;
     - this categorizes the design space into variables computers should definitely be choosing, and those that might be harder to solve for
   - many engineering equations are already posynomials
-  - posynomial models written by different people are easy to bring together, and adding a new model won't bring the whole optimization down
+  - posynomial models written by different people are easy to bring together;
+      - adding a new model won't bring the whole optimization down
