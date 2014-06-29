@@ -6,12 +6,10 @@ Require numpy
 Optionally uses scipy, lineprofile
 """
 
-# structures
 from array import array
 from nomials import Monomial
 from nomials import Posynomial
+from GeometricProgram import GP
 
-# functions
 from utils import *
-from minimize import chooser as minimize
 
