@@ -140,7 +140,7 @@ class GP(object):
 
 
 def cvxoptimize(c, A, k, options):
-    from cvxopt import sparse, matrix, log, exp
+    from cvxopt import solvers, sparse, matrix, log, exp
     solvers.options.update(options)
     k = k
     g = log(matrix(c))
