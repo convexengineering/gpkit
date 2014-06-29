@@ -23,6 +23,18 @@ class Test_Monomial(unittest.TestCase):
         self.assertEqual(m.exps, {'x': 1})
         self.assertEqual(m.c, 1)
 
+        # single (string) var with non-default c
+        m = Monomial('tau', .1)
+        self.assertEqual(m.vars, set(['tau']))
+        self.assertEqual(m.exps, {'tau': 1})
+        self.assertEqual(m.c, .1)
+
+        # non-positive c raises
+        self.assertRaises(ValueError, Monomial, 'x', -2)
+        self.assertRaises(ValueError, Monomial, {'x': 2}, -1.)
+        self.assertRaises(ValueError, Monomial, 'x', 0)
+        self.assertRaises(ValueError, Monomial, 'x', 0.0)
+
     def test_repr(self):
         m = Monomial({'x':2, 'y':-1}, 5)
         self.assertEqual(type(m.__repr__()), str)
@@ -52,6 +64,7 @@ class Test_Monomial(unittest.TestCase):
         x = Monomial({}, 1)
         y = 1
         self.assertFalse(x == y)
+        self.assertEqual(x, Monomial({}))
 
         # several vars
         m1 = Monomial({'a':3, 'b':2, 'c':1}, 5)
@@ -65,6 +78,8 @@ class Test_Monomial(unittest.TestCase):
     def test_div(self):
         x, y, z, t = monify('x y z t')
         a = 36*x/y
+        # sanity check
+        self.assertEqual(a, Monomial({'x':1, 'y':-1}, 36))
         # divide by scalar
         self.assertEqual(a/9, 4*x/y)
         # divide by Monomial
@@ -109,19 +124,19 @@ class Test_Posynomial(unittest.TestCase):
         x, y = monify('x y')
         ms = [Monomial({'x': 1, 'y': 2}, 3.14),
               Monomial('y', 0.5),
-              Monomial({'x': 3, 'y': 1}, -6),
+              Monomial({'x': 3, 'y': 1}, 6),
               Monomial({}, 2)]
         p = Posynomial(ms)
         # check creation
         self.assertEqual(p.monomials, set(ms))
         # check arithmetic
-        p2 = 3.14*x*y**2 + y/2 - x**3*6*y + 2
+        p2 = 3.14*x*y**2 + y/2 + x**3*6*y + 2
         self.assertEqual(p, p2)
 
     def test_simplification(self):
         x, y = monify('x y')
-        p1 = x+y+y+(x+y)+(y+x**2)-3*x
-        p2 = 4*y+x**2-x
+        p1 = x + y + y + (x+y) + (y+x**2) +3*x
+        p2 = 4*y + x**2 + 5*x
         self.assertEqual(p1, p2)
 
     def test_posyposy_mult(self):
