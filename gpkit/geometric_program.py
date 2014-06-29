@@ -3,6 +3,8 @@ from collections import namedtuple
 from collections import defaultdict
 
 coot_matrix = namedtuple('coot', ['row', 'col', 'data'])
+
+
 class coot_matrix(coot_matrix):
     shape = (None, None)
 
@@ -23,15 +25,14 @@ class coot_matrix(coot_matrix):
 class GP(object):
 
     def __repr__(self):
-        return "\n".join([
-               "gpkit.GeometricProgram:",
-               "  minimize",
-               "     %s" % self.cost,
-               "  subject to"] +
-              ["     %s <= 1" % p 
-               for p in self.constraints] +
-              ["  via the %s solver" % self.solver]
-                )
+        return "\n".join(["gpkit.GeometricProgram:",
+                          "  minimize",
+                          "     %s" % self.cost,
+                          "  subject to"] +
+                         ["     %s <= 1" % p
+                          for p in self.constraints] +
+                         ["  via the %s solver" % self.solver]
+                         )
 
     def __init__(self, cost, constraints,
                  constants={}, solver='mosek', options={}):
@@ -56,7 +57,7 @@ class GP(object):
         # p_idx: posynomial index (0 for cost function)
         #        mosek can't even keep straight what they call this,
         #        so I'm giving it this more descriptive name
-        i  = 0
+        i = 0
         self.p_idx = []
         for l in self.k:
             self.p_idx += [i]*l
@@ -94,7 +95,7 @@ class GP(object):
         self.new_constants = True
         self.constants = constants
         self.monomials_update()
-        
+
     def add_constraints(self, posynomials):
         if not isinstance(posynomials, list):
             posynomials = [posynomials]
@@ -109,7 +110,6 @@ class GP(object):
         for p in posynomials:
             self.posynomials.remove(p)
         self.posynomials_update()
-
 
     def solve(self):
         c, A, k, p_idx = self.c, self.A, self.k, self.p_idx
@@ -133,10 +133,8 @@ class GP(object):
         else:
             raise Exception("That solver is not implemented!")
 
-
         self.solution = dict(zip(self.freevars, solution))
         return self.solution
-
 
 
 def cvxoptimize(c, A, k, options):
