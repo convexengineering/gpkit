@@ -12,4 +12,3 @@ from nomials import Posynomial
 from geometric_program import GP
 
 from utils import *
-
