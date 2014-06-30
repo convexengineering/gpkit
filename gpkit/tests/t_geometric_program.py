@@ -1,19 +1,33 @@
 import math
 import unittest
 from gpkit import GP, monify
+from copy import deepcopy
+
+solvers = ['cvxopt', 'mosek', 'mosek_cli']
 
 
 class t_GP(unittest.TestCase):
+    name = "t_"
 
-    def test_simplest_gp_ever(self):
+    def test_trivial_gp(self):
+        print self.solver
         x, y = monify('x y')
-        for solver in ['cvxopt']:
-            prob = GP(cost=(x + 2*y), constraints=[x*y >= 1], solver=solver)
-            sol = prob.solve()
-            self.assertAlmostEqual(sol['x'], math.sqrt(2.))
-            self.assertAlmostEqual(sol['y'], 1/math.sqrt(2.))
+        prob = GP(cost=(x + 2*y),
+                  constraints=[x*y >= 1],
+                  solver=self.solver)
+        sol = prob.solve()
+        self.assertAlmostEqual(sol['x'], math.sqrt(2.))
+        self.assertAlmostEqual(sol['y'], 1/math.sqrt(2.))
 
-tests = [t_GP]
+testcases = [t_GP]
+
+tests = []
+for testcase in testcases:
+    for solver in solvers:
+        test = type(testcase.__name__+"_"+solver,
+                    (testcase,), {})
+        setattr(test, 'solver', solver)
+        tests.append(test)
 
 if __name__ == '__main__':
     suite = unittest.TestSuite()
