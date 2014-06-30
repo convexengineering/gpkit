@@ -134,7 +134,18 @@ class GP(object):
             raise Exception("That solver is not implemented!")
 
         self.solution = dict(zip(self.freevars, solution))
+        self.check_solution()
         return self.solution
+
+    def check_solution(self):
+        allconsts = dict(self.constants)
+        allconsts.update(self.solution)
+        if not set(allconsts.keys()) == self.variables:
+            raise RuntimeWarning("Did not solve for all variables!")
+        for p in self.constraints:
+            if not p.sub(allconsts).c <= 1:
+                raise RuntimeWarning("Constraint broken: "
+                                     "%s = %0.2e" % (p, p.sub(allconsts).c))
 
 
 def cvxoptimize(c, A, k, options):
