@@ -134,7 +134,19 @@ class GP(object):
             raise Exception("That solver is not implemented!")
 
         self.solution = dict(zip(self.freevars, solution))
+        self.check_feasibility()
         return self.solution
+
+    def check_feasibility(self):
+        allconsts = dict(self.constants)
+        allconsts.update(self.solution)
+        if not set(allconsts.keys()) == self.variables:
+            raise RuntimeWarning("Did not solve for all variables!")
+        for p in self.constraints:
+            val = sum([m.sub(allconsts).c for m in p.monomials])
+            if not val <= 1 + 1e-4:
+                raise RuntimeWarning("Constraint broken:"
+                                     " %s = 1 + %0.2e" % (p, val-1))
 
 
 def cvxoptimize(c, A, k, options):
