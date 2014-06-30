@@ -13,19 +13,21 @@ def monify(s):
     """
     return [Monomial(x) for x in s.split()]
 
+
 def dict_monify(s):
-	"""
+    """
     Turns a whitespace separated string into a dictionary of singlet monomials.
     Potentially useful to call as globals().update(dict_monify(s))
     """
-	if isinstance(s, str):
-		return {x: Monomial(x) for x in s.split()}
-	else:
-		return {x: Monomial(x) for x in s}
+    if isinstance(s, str):
+        return {x: Monomial(x) for x in s.split()}
+    else:
+        return {x: Monomial(x) for x in s}
+
 
 def monify_up(d, s):
-	"""
-	Updates a dictionary with a dict_monify call.
-	Potentially useful to call with globals() for d
-	"""
-	return d.update(dict_monify(s))
+    """
+    Updates a dictionary with a dict_monify call.
+    Potentially useful to call with globals() for d
+    """
+    return d.update(dict_monify(s))

@@ -1,10 +1,11 @@
 import numpy as np
 
+
 class array(np.ndarray):
     # change printing
     def __repr__(self): return str(self)
     def __eq__(self, m): return (isinstance(m, self.__class__)
-                                      and str(self) == str(m))
+                                 and str(self) == str(m))
     def __ne__(self, m): return not self == m
 
     # constraint generators
@@ -13,7 +14,7 @@ class array(np.ndarray):
     def __le__(self, x): return [e for e in self._leq(self, x)]
     _geq = np.vectorize(lambda a, b: a >= b)
     def __gt__(self, x): return self >= x
-    def __ge__(self, x): return [e for e in self._geq(self, x)]    
+    def __ge__(self, x): return [e for e in self._geq(self, x)]
 
     def outer(self, x): return array(np.outer(self, x))
 
