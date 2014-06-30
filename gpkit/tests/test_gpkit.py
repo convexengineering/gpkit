@@ -1,3 +1,4 @@
+import math
 import unittest
 from gpkit import Monomial, Posynomial
 from gpkit.array import array
@@ -116,6 +117,14 @@ class Test_Monomial(unittest.TestCase):
         self.assertEqual(x/y, x*y**-1)
         # make sure x unchanged
         self.assertEqual(x, Monomial({'x':1, 'y':-1}, 4))
+
+    def test_numerical_precision(self):
+        # not sure what to test here, placeholder for now
+        c1, c2 = 1/700., 123e8
+        m1 = Monomial({'x': 2, 'y': 1}, c1)
+        m2 = Monomial({'y': -1, 'z': 3/2.}, c2)
+        self.assertEqual(math.log((m1**4 * m2**3).c),
+                         4*math.log(c1) + 3*math.log(c2))
 
 
 class Test_Posynomial(unittest.TestCase):
