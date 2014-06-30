@@ -8,7 +8,7 @@ Interfaces with either the [MOSEK](http://mosek.com) or [CVXopt](http://cvxopt.o
 
 *What does gpkit look like?*
 
-Excerpt from an [aircraft design application](http://nbviewer.ipython.org/github/appliedopt/gpkit/blob/master/test_driven_development/Simple%20GP%20for%20Aircraft.ipynb):
+Excerpt from an [aircraft design application](http://nbviewer.ipython.org/github/appliedopt/gpkit/blob/master/examples/ipynb/simpleaircraft.ipynb):
 
 ```python
 # Note: in Python, '**' serves as the power ('^') operator
