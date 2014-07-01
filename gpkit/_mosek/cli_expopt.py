@@ -1,5 +1,4 @@
 import os
-import shutil
 from math import exp
 from subprocess import check_output
 
@@ -30,18 +29,42 @@ def imize(c, A, map_, filename):
     check_output("mskexpopt "+filename, shell=True)
 
     with open(filename+".sol") as f:
-        assert f.readline() == "PROBLEM STATUS      : PRIMAL_AND_DUAL_FEASIBLE\n"
-        assert f.readline() == "SOLUTION STATUS     : OPTIMAL\n"
-        f.readline()
-        f.readline()
-        f.readline()
-        f.readline()
-        vals = []
-        for line in f:
-            if line == "\n": break
-            else:
-                idx, val = line.split()
-                vals.append(exp(float(val)))
-        return vals
+        assert_line(f, "PROBLEM STATUS      : PRIMAL_AND_DUAL_FEASIBLE\n")
+        assert_line(f, "SOLUTION STATUS     : OPTIMAL\n")
+        # line looks like "OBJECTIVE           : 2.763550e+002"
+        objective_val = float(f.readline().split()[2])
+        assert_line(f, "\n")
+        assert_line(f, "PRIMAL VARIABLES\n")
+        assert_line(f, "INDEX   ACTIVITY\n")
+        primal_vals = map(exp, read_vals(f))
 
-    shutil.removetree("gpkit_tmp")
+        assert_line(f, "DUAL VARIABLES\n")
+        assert_line(f, "INDEX   ACTIVITY\n")
+        dual_vals = read_vals(f)
+
+    os.remove(filename)
+    os.remove(filename+".sol")
+    os.removedirs("gpkit_tmp")
+    return dict(success=True,
+                objective_sol=objective_val,
+                primal_sol=primal_vals,
+                dual_sol=dual_vals)
+
+
+def assert_line(f, expected):
+    received = f.readline()
+    if tuple(expected[:-1].split()) != tuple(received[:-1].split()):
+        errstr = repr(expected)+" is not the same as "+repr(received)
+        raise Exception(errstr)
+
+
+def read_vals(f):
+    vals = []
+    while True:
+        line = f.readline()
+        if line == "\n" or line == "":
+            break
+        else:
+            # lines look like "1       2.390776e+000   \n"
+            vals.append(float(line.split()[1]))
+    return vals

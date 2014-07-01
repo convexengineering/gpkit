@@ -4,7 +4,7 @@ from ctypes import pointer as ptr
 from ctypes import POINTER as ptr_factory
 from ctypes import c_double, c_int, c_void_p
 from os import sep as os_sep
-from os.path import dirname as os_path
+from os.path import dirname as os_path_dirname
 
 
 class module_shortener(object):
@@ -34,7 +34,8 @@ def c_array(py_array, c_type):
 # Attempt to load MOSEK libraries
 try:
     import lib.mosek_h as mosek_h
-    expopt_lib_path = os_sep.join([os_path(__file__), "lib", "expopt.so"])
+    expopt_lib_path = os_sep.join([os_path_dirname(__file__),
+                                  "lib", "expopt.so"])
     expopt_h = CDLL(expopt_lib_path)
     MSK = module_shortener("MSK", mosek_h)
     MSK_expopt = module_shortener("MSK_expopt", expopt_h)
@@ -68,7 +69,7 @@ def imize(c, A, map_):
     subk = c_array(A.col, c_int)
     subj = c_array(A.row, c_int)
     akj = c_array(A.data, c_double)
-    numanz = c_int(len(A.col))
+    numanz = c_int(len(A.data))
 
     objval = c_double()
     env = MSK.env_t()
@@ -134,4 +135,5 @@ def imize(c, A, map_):
     MSK._deletetask(ptr(expopttask))
     MSK._deleteenv(ptr(env))
 
-    return [exp(x) for x in xx]
+    return dict(success=True,
+                primal_sol=[exp(x) for x in xx])
