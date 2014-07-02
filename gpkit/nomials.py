@@ -1,5 +1,5 @@
 from collections import defaultdict
-
+from collections import Iterable
 
 class nomial(object):
     ''' That which the nomials have in common '''
@@ -100,7 +100,15 @@ class Monomial(nomial):
                     for var in allvars}
             return Monomial(exps, c)
 
-    def sub(self, constants):
+    def sub(self, constants_):
+        constants = dict(constants_)
+        # for vector-valued constants
+        for var, constant in constants_.iteritems():
+            if isinstance(constant, Iterable):
+                del constants[var]
+                for i, val in enumerate(constant):
+                    constants[var+str(i)] = val
+
         overlap = self.vars.intersection(constants)
         if overlap:
             c = self.c
@@ -138,8 +146,10 @@ class Posynomial(nomial):
         loststr = "Some monomials did not simplify properly!"
         assert len(monomials) == len(self.monomials), loststr
 
-        minlenstr = "Need more than one monomial to make a posynomial"
-        assert len(self.monomials) >= 1, minlenstr
+        minlenstr = "Need at least one monomial to make a posynomial"
+        assert len(self.monomials) > 0, minlenstr
+        # TODO: return a Monomial if there's only one monomial
+        # see the newnomials pull request for one attempt
 
         # self.vars: the set of all variables in the posynomial
         self.vars = frozenset().union(*[m.vars for m in self.monomials])
@@ -184,6 +194,9 @@ class Posynomial(nomial):
 
     def __neg__(self):
         return Posynomial([-m_s for m_s in self.monomials])
+
+    def sub(self, constants):
+        return Posynomial([m.sub(constants) for m in self.monomials])
 
 
 def simplify(monomials):
