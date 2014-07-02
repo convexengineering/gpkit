@@ -30,3 +30,16 @@ class array(np.ndarray):
     def __array_finalize__(self, obj):
         if obj is None: return
         self.info = getattr(obj, 'info', None)
+
+    def sub(self, constants):
+        if self.shape:
+            return array([e.sub(constants) for e in self])
+        else:
+            # 0D array
+            self = self.flatten()[0]
+            subbed = [m.sub(constants) for m in self.monomials]
+            if len(subbed) == 1:
+                return subbed[0]
+            else:
+                from gpkit import Posynomial
+                return Posynomial(subbed)

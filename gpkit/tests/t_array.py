@@ -38,6 +38,17 @@ class t_array(unittest.TestCase):
         self.assertEqual(x <= v, p)
         self.assertEqual(x < v, p)
 
+    def test_substition(self):
+        x = vectify('x', 3)
+        c = {'x': [1, 2, 3]}
+        self.assertEqual(x.sub(c), array([1, 2, 3]))
+        p = x**2
+        self.assertEqual(p.sub(c), array([1, 4, 9]))
+        d = p.sum()
+        # note the ugly Posy(Mono) down there...
+        # this should be fixed when Mono inherits from Poly!
+        self.assertEqual(d.sub(c), Posynomial([Monomial({},14)]))
+
 
 tests = [t_array]
 
