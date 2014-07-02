@@ -9,7 +9,6 @@ except ImportError:
     print "Could not import numpy: will not be able to sweep variables"
 
 try:
-    import scipy
     from scipy.sparse import coo_matrix
 except ImportError:
     print "Could not import scipy: will not be able to use splines"
@@ -165,9 +164,9 @@ class GP(object):
 
             result = self.__run_solver()
             self.check_result(result)
-            result_2d_array[i,:] = result['primal_sol']
+            result_2d_array[i, :] = result['primal_sol']
 
-        solution = {var: result_2d_array[:,j].reshape(sweep_shape)
+        solution = {var: result_2d_array[:, j].reshape(sweep_shape)
                     for (j, var) in enumerate(self.freevars)}
         solution.update(sweep_grids)
         return solution
@@ -219,7 +218,7 @@ def cvxoptimize(c, A, k, options):
     solvers.options.update(options)
     k = k
     g = log(matrix(c))
-    F = spmatrix(A.data, A.row, A.col)
+    F = spmatrix(A.data, A.row, A.col, tc='d').T
     solution = solvers.gp(k, F, g)
     # TODO: catch errors, delays, etc.
     return dict(success=True,

@@ -1,7 +1,6 @@
 import math
 import unittest
 from gpkit import GP, monify
-from copy import deepcopy
 
 solvers = ['cvxopt', 'mosek', 'mosek_cli']
 
@@ -15,8 +14,8 @@ class t_GP(unittest.TestCase):
                   constraints=[x*y >= 1],
                   solver=self.solver)
         sol = prob.solve()
-        self.assertAlmostEqual(sol['x'], math.sqrt(2.))
-        self.assertAlmostEqual(sol['y'], 1/math.sqrt(2.))
+        self.assertAlmostEqual(sol['x'], math.sqrt(2.), 5)
+        self.assertAlmostEqual(sol['y'], 1/math.sqrt(2.), 5)
 
 testcases = [t_GP]
 
