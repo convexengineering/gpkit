@@ -10,6 +10,8 @@ tests += t_nomials.tests
 import t_array
 tests += t_array.tests
 
+import t_geometric_program
+tests += t_geometric_program.tests
 
 if __name__ == '__main__':
     suite = unittest.TestSuite()

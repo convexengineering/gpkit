@@ -1,15 +1,28 @@
 from itertools import chain
 from collections import namedtuple
 from collections import defaultdict
+from collections import Iterable
+
+try:
+    import numpy as np
+except ImportError:
+    print "Could not import numpy: will not be able to sweep variables"
+
+try:
+    import scipy
+    from scipy.sparse import coo_matrix
+except ImportError:
+    print "Could not import scipy: will not be able to use splines"
 
 coot_matrix = namedtuple('coot', ['row', 'col', 'data'])
 
 
 class coot_matrix(coot_matrix):
+    "A very simple sparse matrix representation."
     shape = (None, None)
 
     def append(self, i, j, x):
-        assert (i >= 0 and j >= 0), "Positive indices only in a coot matrix"
+        assert (i >= 0 and j >= 0), "Only positive indices allowed"
         self.row.append(i)
         self.col.append(j)
         self.data.append(x)
@@ -17,9 +30,15 @@ class coot_matrix(coot_matrix):
     def update_shape(self):
         self.shape = (max(self.row)+1, max(self.col)+1)
 
-    def todense(self):
-        from scipy.sparse import coo_matrix
-        return coo_matrix((self.data, (self.row, self.col))).todense()
+    def tocoo(self):
+        "Converts to a Scipy sparse coo_matrix"
+        return coo_matrix((self.data, (self.row, self.col)))
+
+    def todense(self): return self.tocoo().todense()
+    def tocsr(self): return self.tocoo().tocsr()
+    def tocsc(self): return self.tocoo().tocsc()
+    def todok(self): return self.tocoo().todok()
+    def todia(self): return self.tocoo().todia()
 
 
 class GP(object):
@@ -35,14 +54,15 @@ class GP(object):
                          )
 
     def __init__(self, cost, constraints,
-                 constants={}, solver='mosek', options={}):
+                 constants={}, sweep={},
+                 solver='mosek', options={}):
         self.cost = cost
         self.constraints = constraints
-        self.constants = constants
-        self.new_constants = True
+        self.sweep = sweep
         self.solver = solver
         self.options = options
-
+        self.constants = {}
+        self.constants_update(constants)
         self.posynomials = [cost]+constraints
         self.posynomials_update()
 
@@ -91,10 +111,14 @@ class GP(object):
                     self.A.append(i, j, m.exps[v])
         self.A.update_shape()
 
-    def replace_constants(self, constants):
+    def constants_update(self, newconstants):
+        for var, constant in newconstants.iteritems():
+            if isinstance(constant, Iterable):
+                pass  # catch vector-valued constants
+        self.constants.update(newconstants)
         self.new_constants = True
-        self.constants = constants
-        self.monomials_update()
+        if hasattr(self, 'monomials'):
+            self.monomials_update()
 
     def add_constraints(self, posynomials):
         if not isinstance(posynomials, list):
@@ -112,35 +136,76 @@ class GP(object):
         self.posynomials_update()
 
     def solve(self):
-        c, A, k, p_idx = self.c, self.A, self.k, self.p_idx
-        solver = self.solver
-        options = self.options
-
-        if solver == 'cvxopt':
-            solution = cvxoptimize(c, A, k, options)
-
-        elif solver == "mosek_cli":
-            import _mosek.cli_expopt
-            filename = options.get('filename', 'gpkit_mosek')
-            solution = _mosek.cli_expopt.imize(c, A, p_idx, filename)
-
-        elif solver == "mosek":
-            import _mosek.expopt
-            solution = _mosek.expopt.imize(c, A, p_idx)
-
-        elif solver == "attached":
-            solution = options['solver'](c, A, p_idx)
+        self.solution = {}
+        if self.sweep:
+            solution = self._solve_sweep()
         else:
-            raise Exception("That solver is not implemented!")
-
-        self.solution = dict(zip(self.freevars, solution))
-        self.check_feasibility()
+            result = self.__run_solver()
+            self.check_result(result)
+            solution = dict(zip(self.freevars,
+                                result['primal_sol']))
+        self.solution = solution
         return self.solution
 
-    def check_feasibility(self):
+    def _solve_sweep(self):
+        self.constants_update({var: None for var in self.sweep})
+
+        sweep_grids = np.meshgrid(*self.sweep.values())
+        sweep_shape = sweep_grids[0].shape
+        N_passes = sweep_grids[0].size
+        sweep_grids = dict(zip(self.sweep, sweep_grids))
+        sweep_vects = {var: grid.reshape(N_passes)
+                       for (var, grid) in sweep_grids.iteritems()}
+        result_2d_array = np.empty((N_passes, len(self.freevars)))
+
+        for i in xrange(N_passes):
+            this_pass = {var: sweep_vect[i]
+                         for (var, sweep_vect) in sweep_vects.iteritems()}
+            self.constants_update(this_pass)
+
+            result = self.__run_solver()
+            self.check_result(result)
+            result_2d_array[i,:] = result['primal_sol']
+
+        solution = {var: result_2d_array[:,j].reshape(sweep_shape)
+                    for (j, var) in enumerate(self.freevars)}
+        solution.update(sweep_grids)
+        return solution
+
+    def __run_solver(self):
+        if self.solver == 'cvxopt':
+            return cvxoptimize(self.c,
+                               self.A,
+                               self.k,
+                               self.options)
+        elif self.solver == "mosek_cli":
+            import _mosek.cli_expopt
+            filename = self.options.get('filename', 'gpkit_mosek')
+            return _mosek.cli_expopt.imize(self.c,
+                                           self.A,
+                                           self.p_idx,
+                                           filename)
+        elif self.solver == "mosek":
+            import _mosek.expopt
+            return _mosek.expopt.imize(self.c,
+                                       self.A,
+                                       self.p_idx)
+        elif self.solver == "attached":
+            return self.options['solver'](self.c,
+                                          self.A,
+                                          self.p_idx)
+        else:
+            raise Exception("Solver %s is not implemented!"
+                            % self.solver)
+
+    def check_result(self, result):
+        assert result['success']
+        self.check_feasibility(result['primal_sol'])
+
+    def check_feasibility(self, primal_sol):
         allconsts = dict(self.constants)
-        allconsts.update(self.solution)
-        if not set(allconsts.keys()) == self.variables:
+        allconsts.update(dict(zip(self.freevars, primal_sol)))
+        if not set(allconsts) == self.variables:
             raise RuntimeWarning("Did not solve for all variables!")
         for p in self.constraints:
             val = sum([m.sub(allconsts).c for m in p.monomials])
@@ -157,4 +222,5 @@ def cvxoptimize(c, A, k, options):
     F = sparse(A.data, A.row, A.col)
     solution = solvers.gp(k, F, g)
     # TODO: catch errors, delays, etc.
-    return exp(solution['x'])
+    return dict(success=True,
+                primal_sol=exp(solution['x']))

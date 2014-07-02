@@ -4,35 +4,14 @@ SIMPLE GP FOR AIRCRAFT DESIGN
 The 'ipynb' folder has the same example as an iPython Notebook.
 """
 
-try:
-    from line_profiler import LineProfiler
+import cProfile
+import pstats
 
-    def do_profile(follow=[]):
-        def inner(func):
-            def profiled_func(*args, **kwargs):
-                try:
-                    profiler = LineProfiler()
-                    profiler.add_function(func)
-                    for f in follow:
-                        profiler.add_function(f)
-                    profiler.enable_by_count()
-                    return func(*args, **kwargs)
-                finally:
-                    profiler.print_stats()
-            return profiled_func
-        return inner
+# Profilin'
+profile = cProfile.Profile()
+profile.enable()
 
-except ImportError:
-    def do_profile(follow=[]):
-        "Returns the original function"
-        def inner(func):
-            def nothing(*args, **kwargs):
-                return func(*args, **kwargs)
-            return nothing
-        return inner
-
-
-from numpy import linspace, zeros, pi
+from numpy import linspace, pi
 
 import gpkit
 
@@ -59,10 +38,14 @@ free_variables = [
     'Re',     # [-] Reynold's number
     'W',      # [N] total aircraft weight
     'W_w',    # [N] wing weight
-    'V',      # [m/s] cruising speed, to be iterated over
-    'V_min',  # [m/s] takeoff speed, to be iterated over
 ]
 gpkit.monify_up(globals(), free_variables)
+
+sweep = {
+    'V': linspace(45, 55, 30),      # [m/s] cruising speed, to be iterated over
+    'V_min': linspace(20, 25, 30),  # [m/s] takeoff speed, to be iterated over
+}
+gpkit.monify_up(globals(), sweep)
 
 # drag modeling #
 C_D_fuse = CDA0/S             # fuselage viscous drag
@@ -73,8 +56,8 @@ C_D_ind = C_L**2/(pi*A*e)     # induced drag
 W_w_surf = 45.24*S                                    # surface weight
 W_w_strc = 8.71e-5*(N_ult*A**1.5*(W_0*W*S)**0.5)/tau  # structural weight
 
-gp = gpkit.GP(      # minimize
-                    0.5*rho*S*C_D*V**2,
+gp = gpkit.GP(  # minimize
+                0.5*rho*S*C_D*V**2,
                 [   # subject to
                     Re <= (rho/mu)*V*(S/A)**0.5,
                     C_f >= 0.074/Re**0.2,
@@ -83,26 +66,16 @@ gp = gpkit.GP(      # minimize
                     W >= W_0 + W_w,
                     W_w >= W_w_surf + W_w_strc,
                     C_D >= C_D_fuse + C_D_wpar + C_D_ind
-                ], solver="mosek_cli")
+                ], constants=constants, sweep=sweep)
 
-import gpkit._mosek.cli_expopt
-@do_profile(follow=[gpkit._mosek.cli_expopt.imize])
-def solve_all(gp, shape, Vs, V_mins):
-    data = {var: zeros(shape) for var in free_variables}
-    for i, V in enumerate(Vs):
-        constants.update({'V': V})
-        for j, V_min in enumerate(V_mins):
-            constants.update({'V_min': V_min})
-            gp.replace_constants(constants)
-            sol = gp.solve()
-            for var in sol: data[var][i,j] = sol[var]
-    return data
+data = gp.solve()
 
-from numpy import linspace, zeros
-shape = (30,30)
-Vs = linspace(45, 55, shape[0])
-V_mins = linspace(20, 25, shape[1])
-data = solve_all(gp, shape, Vs, V_mins)
+# Results
+profile.disable()
+ps = pstats.Stats(profile)
+ps.strip_dirs()
+ps.sort_stats('time')
+ps.print_stats(10)
 
 print "           | Averages"
 for key, table in data.iteritems():

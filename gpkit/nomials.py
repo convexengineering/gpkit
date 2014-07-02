@@ -108,7 +108,8 @@ class Monomial(nomial):
                     for var, exp in self.exps.iteritems()
                     if not var in overlap}
             for var in overlap:
-                c *= constants[var]**self.exps[var]
+                if isinstance(constants[var], (int,float)):
+                    c *= constants[var]**self.exps[var]
             return Monomial(exps, c)
         else:
             return self

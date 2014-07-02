@@ -10,7 +10,6 @@ class t_GP(unittest.TestCase):
     name = "t_"
 
     def test_trivial_gp(self):
-        print self.solver
         x, y = monify('x y')
         prob = GP(cost=(x + 2*y),
                   constraints=[x*y >= 1],
