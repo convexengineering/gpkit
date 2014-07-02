@@ -130,6 +130,14 @@ class Mosek(SolverBackend):
                     self.version = sorted(os.listdir(self.dir))[-1]
                 except WindowsError:
                     return None
+        elif sys.platform == "darwin":
+            try:
+                self.dir = "/usr/local/mosek"
+                self.platform = "osx64x86"
+                self.libname = "libmosek64.7.0.dylib"
+                self.version = sorted(os.listdir(self.dir))[-2]
+            except OSError:
+                return None
         else:
             print ("# Build script does not support"
                    " your platform (%s)" % sys.platform)
