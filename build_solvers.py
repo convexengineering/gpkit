@@ -121,13 +121,11 @@ class Mosek(SolverBackend):
                 self.dir = "C:\\Program Files\\Mosek"
                 self.platform = "win64x86"
                 self.libname = "mosek64_7_0.dll"
-                self.version = sorted(os.listdir(self.dir))[-1]
             except WindowsError:
                 try:
                     self.dir = "C:\\Program Files (x86)\\Mosek"
                     self.platform = "win32x86"
                     self.libname = "mosek7_0.dll"
-                    self.version = sorted(os.listdir(self.dir))[-1]
                 except WindowsError:
                     return None
         elif sys.platform == "darwin":
@@ -135,7 +133,6 @@ class Mosek(SolverBackend):
                 self.dir = "/usr/local/mosek"
                 self.platform = "osx64x86"
                 self.libname = "libmosek64.7.0.dylib"
-                self.version = sorted(os.listdir(self.dir))[-2]
             except OSError:
                 return None
         else:
@@ -143,6 +140,8 @@ class Mosek(SolverBackend):
                    " your platform (%s)" % sys.platform)
             return None
 
+        possible_versions = [f for f in os.listdir(self.dir) if len(f) == 1]
+        self.version = sorted(possible_versions)[-1]
         self.tools_dir = pathjoin(self.dir, self.version, "tools")
         self.lib_dir = pathjoin(self.tools_dir, "platform", self.platform)
         self.h_path = pathjoin(self.lib_dir, "h", "mosek.h")
