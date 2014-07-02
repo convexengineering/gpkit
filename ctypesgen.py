@@ -171,7 +171,9 @@ if __name__=="__main__":
     # Check output language
     printer = None
     if options.output_language == "python":
-        printer = ctypesgencore.printer_python.WrapperPrinter
+        printer = (ctypesgencore.printer_python.WrapperPrinter
+                   if hasattr(ctypesgencore, 'printer_python')
+                   else ctypesgencore.printer.WrapperPrinter)
     elif options.output_language == "json":
         printer = ctypesgencore.printer_json.WrapperPrinter
     else:
