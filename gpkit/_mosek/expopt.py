@@ -33,14 +33,10 @@ def c_array(py_array, c_type):
 
 # Attempt to load MOSEK libraries
 try:
-    import lib.mosek_h as mosek_h
-    expopt_lib_path = os_sep.join([os_path_dirname(__file__),
-                                  "lib", "expopt.so"])
-    expopt_h = CDLL(expopt_lib_path)
-    MSK = module_shortener("MSK", mosek_h)
-    MSK_expopt = module_shortener("MSK_expopt", expopt_h)
+    import lib.expopt_h as expopt_h
+    MSK = module_shortener("MSK", expopt_h)
 except Exception, e:
-    raise ImportError("Could not load MOSEK libraries: "+repr(e))
+    raise ImportError("Could not load MOSEK library: "+repr(e))
 
 
 # All streaming logs from MOSEK are passed to this function:
@@ -94,7 +90,7 @@ def imize(c, A, map_):
 
     if r == MSK._RES_OK:
         # Initialize expopttask with problem data
-        r = MSK_expopt.setup(expopttask,
+        r = MSK._expoptsetup(expopttask,
                              c_int(1),  # Solve the dual formulation
                              numcon,
                              numvar,
@@ -119,7 +115,7 @@ def imize(c, A, map_):
     # y holds solution to the dual problem if the dual formulation is used
 
     if r == MSK._RES_OK:
-        r = MSK_expopt.imize(expopttask,
+        r = MSK._expoptimize(expopttask,
                              ptr(prosta),
                              ptr(solsta),
                              ptr(objval),
@@ -129,7 +125,7 @@ def imize(c, A, map_):
 
     # Free data allocated by expoptsetup
     if ptr_expopthnd:
-        MSK_expopt.free(expopttask,
+        MSK._expoptfree(expopttask,
                         ptr_expopthnd)
 
     MSK._deletetask(ptr(expopttask))
