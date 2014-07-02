@@ -168,26 +168,11 @@ if __name__=="__main__":
     if len(options.libraries) == 0:
         msgs.warning_message('No libraries specified', cls='usage')
 
-    # Check output language
-    printer = None
-    if options.output_language == "python":
-        printer = (ctypesgencore.printer_python.WrapperPrinter
-                   if hasattr(ctypesgencore, 'printer_python')
-                   else ctypesgencore.printer.WrapperPrinter)
-    elif options.output_language == "json":
-        printer = ctypesgencore.printer_json.WrapperPrinter
-    else:
-        msgs.error_message("No such output language `" + options.output_language + "'", cls='usage')
-        sys.exit(1)
-
     # Step 1: Parse
     descriptions=ctypesgencore.parser.parse(options.headers,options)
 
     # Step 2: Process
     ctypesgencore.processor.process(descriptions,options)
-
-    # Step 3: Print
-    printer(options.output,options,descriptions)
 
     msgs.status_message("Wrapping complete.")
 
