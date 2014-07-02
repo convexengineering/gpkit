@@ -54,11 +54,15 @@ class GP(object):
 
     def __init__(self, cost, constraints,
                  constants={}, sweep={},
-                 solver='mosek', options={}):
+                 solver=None, options={}):
         self.cost = cost
         self.constraints = constraints
         self.sweep = sweep
-        self.solver = solver
+        if solver is not None:
+            self.solver = solver
+        else:
+            from gpkit import settings
+            self.solver = settings['defaultsolver']
         self.options = options
         self.constants = {}
         self.constants_update(constants)
