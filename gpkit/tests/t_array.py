@@ -46,8 +46,8 @@ class t_array(unittest.TestCase):
         self.assertEqual(p.sub(c), array([1, 4, 9]))
         d = p.sum()
         # note the ugly Posy(Mono) down there...
-        # this should be fixed when Mono inherits from Poly!
-        self.assertEqual(d.sub(c), Posynomial([Monomial({},14)]))
+        # this should be fixed when Mono inherits from Posy!
+        self.assertEqual(d.sub(c), Posynomial([Monomial({}, 14)]))
 
 
 tests = [t_array]
