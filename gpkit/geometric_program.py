@@ -219,7 +219,7 @@ def cvxoptimize(c, A, k, options):
     solvers.options.update(options)
     k = k
     g = log(matrix(c))
-    F = spmatrix(A.data, A.row, A.col, tc='d').T
+    F = spmatrix(A.data, A.col, A.row, tc='d')
     solution = solvers.gp(k, F, g)
     # TODO: catch errors, delays, etc.
     return dict(success=True,
