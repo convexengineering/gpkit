@@ -1,7 +1,6 @@
 from itertools import chain
 from collections import namedtuple
 from collections import defaultdict
-from collections import Iterable
 
 try:
     import numpy as np
@@ -115,9 +114,6 @@ class GP(object):
         self.A.update_shape()
 
     def constants_update(self, newconstants):
-        for var, constant in newconstants.iteritems():
-            if isinstance(constant, Iterable):
-                pass  # catch vector-valued constants
         self.constants.update(newconstants)
         self.new_constants = True
         if hasattr(self, 'monomials'):
