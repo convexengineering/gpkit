@@ -2,7 +2,8 @@ import math
 import unittest
 from gpkit import GP, monify
 
-solvers = ['cvxopt', 'mosek', 'mosek_cli']
+NDIGITS = {'cvxopt': 5, 'mosek': 7, 'mosek_cli': 7}
+SOLVERS = NDIGITS.keys()
 
 
 class t_GP(unittest.TestCase):
@@ -14,14 +15,16 @@ class t_GP(unittest.TestCase):
                   constraints=[x*y >= 1],
                   solver=self.solver)
         sol = prob.solve()
-        self.assertAlmostEqual(sol['x'], math.sqrt(2.), 5)
-        self.assertAlmostEqual(sol['y'], 1/math.sqrt(2.), 5)
+        ndig = NDIGITS[self.solver]
+        self.assertAlmostEqual(sol['x'], math.sqrt(2.), ndig)
+        self.assertAlmostEqual(sol['y'], 1/math.sqrt(2.), ndig)
+        self.assertAlmostEqual(sol['x'] + 2*sol['y'], 2*math.sqrt(2), ndig)
 
 testcases = [t_GP]
 
 tests = []
 for testcase in testcases:
-    for solver in solvers:
+    for solver in SOLVERS:
         test = type(testcase.__name__+"_"+solver,
                     (testcase,), {})
         setattr(test, 'solver', solver)
