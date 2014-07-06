@@ -55,7 +55,7 @@ def imize(c, A, map_):
     numvar, numter = map(int, A.shape)
 
     xx = c_array([0]*numvar, c_double)
-    y = c_array([0]*numter, c_double)
+    yy = c_array([0]*numter, c_double)
 
     numcon, numvar, numter = map(c_int, [numcon, numvar, numter])
 
@@ -120,7 +120,7 @@ def imize(c, A, map_):
                              ptr(solsta),
                              ptr(objval),
                              ptr(xx),
-                             ptr(y),
+                             ptr(yy),
                              ptr_expopthnd)
 
     # Free data allocated by expoptsetup
@@ -132,4 +132,5 @@ def imize(c, A, map_):
     MSK._deleteenv(ptr(env))
 
     return dict(success=True,
-                primal_sol=[exp(x) for x in xx])
+                primal_sol=[exp(x) for x in xx],
+                dual_sol=[y for y in yy])
