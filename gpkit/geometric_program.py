@@ -51,18 +51,17 @@ class GP(object):
                          ["  via the %s solver" % self.solver]
                          )
 
-    def __init__(self, cost, constraints,
-                 constants={}, sweep={},
+    def __init__(self, cost, constraints, constants={},
                  solver=None, options={}):
         self.cost = cost
         self.constraints = constraints
-        self.sweep = sweep
         if solver is not None:
             self.solver = solver
         else:
             from gpkit import settings
             self.solver = settings['defaultsolver']
         self.options = options
+        self.sweep = {}
         self.constants = {}
         self.constants_update(constants)
         self.posynomials = [cost]+constraints
@@ -114,8 +113,28 @@ class GP(object):
         self.A.update_shape()
 
     def constants_update(self, newconstants):
-        self.constants.update(newconstants)
         self.new_constants = True
+        for var, value in newconstants.iteritems():
+            try:
+                if value[0] == 'sweep':
+                    if hasattr(value[0], '__len__'):
+                        self.sweep.update({var: value[1]})
+                    else:
+                        raise Exception("Sweep variables must have length!")
+                elif value[0] == 'cases':
+                    if self.case_n != len(value[1]):
+                        if self.case_n is None:
+                            self.case_n = len(value[1])
+                        else:
+                            raise Exception("Inconsistent number of cases"
+                                            " in case variables!")
+                    self.case.update({var: value[1]})
+                else:
+                    # it's a vector constant!
+                    self.constants.update({var: value})
+            except (IndexError, TypeError):
+                # just a regular constant
+                self.constants.update({var: value})
         if hasattr(self, 'monomials'):
             self.monomials_update()
 
@@ -140,6 +159,7 @@ class GP(object):
             solution = self._solve_sweep()
         else:
             result = self.__run_solver()
+            self.result = result
             self.check_result(result)
             solution = dict(zip(self.freevars,
                                 result['primal_sol']))
