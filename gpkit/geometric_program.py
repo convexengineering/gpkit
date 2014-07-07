@@ -1,6 +1,7 @@
-from itertools import chain
-from collections import namedtuple
 from collections import defaultdict
+from collections import namedtuple
+from collections import Iterable
+from helpers import *
 
 try:
     import numpy as np
@@ -12,10 +13,12 @@ try:
 except ImportError:
     print "Could not import scipy: will not be able to use splines"
 
-coot_matrix = namedtuple('coot', ['row', 'col', 'data'])
+CootMatrix = namedtuple('CootMatrix', ['row', 'col', 'data'])
+PosyTuple = namedtuple('PosyTuple', ['exps', 'cs', 'var_locs', 'var_descrs',
+                                     'substitutions'])
 
 
-class coot_matrix(coot_matrix):
+class CootMatrix(CootMatrix):
     "A very simple sparse matrix representation."
     shape = (None, None)
 
@@ -44,190 +47,216 @@ class GP(object):
     def __repr__(self):
         return "\n".join(["gpkit.GeometricProgram:",
                           "  minimize",
-                          "     %s" % self.cost,
+                          "     %s" % self.cost._string(),
                           "  subject to"] +
-                         ["     %s <= 1" % p
+                         ["     %s <= 1" % p._string()
                           for p in self.constraints] +
                          ["  via the %s solver" % self.solver]
                          )
 
-    def __init__(self, cost, constraints, constants={},
+    def __init__(self, cost, constraints, substitutions={},
                  solver=None, options={}):
         self.cost = cost
-        self.constraints = constraints
+        self.constraints = tuple(constraints)
+
+        self.options = options
         if solver is not None:
             self.solver = solver
         else:
             from gpkit import settings
             self.solver = settings['defaultsolver']
-        self.options = options
+
+        self._gen_unsubbed_vars()
+
         self.sweep = {}
-        self.constants = {}
-        self.constants_update(constants)
-        self.posynomials = [cost]+constraints
-        self.posynomials_update()
+        if substitutions:
+            self.sub(substitutions, tobase='initialsub')
 
-    def posynomials_update(self):
-        posynomials = self.posynomials
-        self.variables = set().union(*[p.vars for p in posynomials])
-        self.monomials = list(chain(*[p.monomials for p in posynomials]))
+    def add_constraints(self, constraints):
+        if isinstance(constraints, Posynomial):
+            constraints = [constraints]
+        self.constaints += tuple(constraints)
+        self._gen_unsubbed_vars()
 
-        # k: number of monomials (columns of F) present in each constraint
-        self.k = [len(p.monomials) for p in posynomials]
+    def rm_constraints(self, constraints):
+        if isinstance(constraints, Posynomial):
+            constraints = [constraints]
+        for p in constraints:
+            self.constraints.remove(p)
+        self._gen_unsubbed_vars()
 
-        # p_idx: posynomial index (0 for cost function)
-        #        mosek can't even keep straight what they call this,
-        #        so I'm giving it this more descriptive name
-        i = 0
-        self.p_idx = []
-        for l in self.k:
-            self.p_idx += [i]*l
-            i += 1
+    def _gen_unsubbed_vars(self):
+        posynomials = (self.cost,)+self.constraints
 
-        self.var_locations = defaultdict(list)
-        for i, m in enumerate(self.monomials):
-            for var in m.vars:
-                self.var_locations[var].append(i)
+        var_descrs = defaultdict(str)
+        for p in posynomials:
+            var_descrs.update(p.var_descrs)
 
-        self.monomials_update()
+        exps = sumlist(posynomials, attr='exps')
+        cs = sumlist(posynomials, attr='cs')
+        var_locs = locate_vars(exps)
 
-    def monomials_update(self):
-        if self.new_constants:
-            self.subbed_monomials = [m.sub(self.constants)
-                                     for m in self.monomials]
-            self.freevars = self.variables.difference(self.constants)
-            self.new_constants = False
+        self.unsubbed = PosyTuple(exps, cs, var_locs, var_descrs, {})
+        self.load(self.unsubbed)
 
-        monomials = self.subbed_monomials
+        # k [j]: number of monomials (columns of F) present in each constraint
+        self.k = [len(p.cs) for p in posynomials]
 
-        # c: constant coefficients of the various monomials in F
-        self.c = [m.c for m in monomials]
+        # p_idxs [i]: posynomial index of each monomial
+        p_idx = 0
+        self.p_idxs = []
+        for p_len in self.k:
+            self.p_idxs += [p_idx]*p_len
+            p_idx += 1
+
+    def sub(self, substitutions, val=None, frombase='last', tobase='subbed'):
+        # look for sweep variables
+        sweepdescrs = {}
+        if isinstance(substitutions, dict):
+            subs = dict(substitutions)
+            for var, sub in substitutions.iteritems():
+                try:
+                    if sub[0] == 'sweep':
+                        del subs[var]
+                        if isinstance(sub[1], Iterable):
+                            self.sweep.update({var: sub[1]})
+                            if isinstance(sub[-1], str):
+                                sweepdescrs.update({var: sub[-1]})
+                    else:
+                        raise ValueError("sweep variables must be iterable.")
+                except: pass
+        else:
+            subs = substitutions
+
+        base = getattr(self, frombase)
+
+        # perform substitution
+        exps, cs, newdescrs, subs = substitution(base.var_locs,
+                                                 base.exps,
+                                                 base.cs,
+                                                 subs, val)
+        if not subs:
+            raise ValueError("could not find anything to substitute")
+
+        var_locs = locate_vars(exps)
+        var_descrs = base.var_descrs
+        var_descrs.update(newdescrs)
+        var_descrs.update(sweepdescrs)
+        substitutions = base.substitutions
+        substitutions.update(subs)
+
+        newbase = PosyTuple(exps, cs, var_locs, var_descrs, substitutions)
+        setattr(self, tobase, self.last)
+        self.load(newbase)
+
+    def load(self, posytuple):
+        self.last = posytuple
+        for attr in ['exps', 'cs', 'var_locs', 'var_descrs', 'substitutions']:
+            new = getattr(posytuple, attr)
+            setattr(self, attr, new)
 
         # A: exponents of the various free variables for each monomial
         #    rows of A are variables, columns are monomials
-        self.A = coot_matrix([], [], [])
-        for i, v in enumerate(self.freevars):
-            for j, m in enumerate(monomials):
-                if v in m.vars:
-                    self.A.append(i, j, m.exps[v])
+        self.A = CootMatrix([], [], [])
+        for j, var in enumerate(self.var_locs):
+            for i in self.var_locs[var]:
+                self.A.append(j, i, self.exps[i][var])
         self.A.update_shape()
 
-    def constants_update(self, newconstants):
-        self.new_constants = True
-        for var, value in newconstants.iteritems():
-            try:
-                if value[0] == 'sweep':
-                    if hasattr(value[0], '__len__'):
-                        self.sweep.update({var: value[1]})
-                    else:
-                        raise Exception("Sweep variables must have length!")
-                elif value[0] == 'cases':
-                    if self.case_n != len(value[1]):
-                        if self.case_n is None:
-                            self.case_n = len(value[1])
-                        else:
-                            raise Exception("Inconsistent number of cases"
-                                            " in case variables!")
-                    self.case.update({var: value[1]})
-                else:
-                    # it's a vector constant!
-                    self.constants.update({var: value})
-            except (IndexError, TypeError):
-                # just a regular constant
-                self.constants.update({var: value})
-        if hasattr(self, 'monomials'):
-            self.monomials_update()
-
-    def add_constraints(self, posynomials):
-        if not isinstance(posynomials, list):
-            posynomials = [posynomials]
-
-        self.posynomials += posynomials
-        self.posynomials_update()
-
-    def rm_constraints(self, posynomials):
-        if not isinstance(posynomials, list):
-            posynomials = [posynomials]
-
-        for p in posynomials:
-            self.posynomials.remove(p)
-        self.posynomials_update()
-
     def solve(self):
-        self.solution = {}
+        self.data = {}
         if self.sweep:
-            solution = self._solve_sweep()
+            self.solution = self._solve_sweep()
         else:
             result = self.__run_solver()
-            self.result = result
             self.check_result(result)
-            solution = dict(zip(self.freevars,
-                                result['primal_sol']))
-        self.solution = solution
-        return self.solution
+            self.solution = dict(zip(self.var_locs,
+                                     result['primal_sol']))
+            self.sensitivities = self._sensitivities(result)
+            self.solution.update(self.sensitivities)
+
+        self.data.update(self.substitutions)
+        self.data.update(self.solution)
+        return self.data
+
+    def _sensitivities(self, result):
+        dss = result['dual_sol']
+        sensitivities = {'S{%s}' % var: sum([self.unsubbed.exps[i][var]*dss[i]
+                                            for i in locs])
+                         for (var, locs) in self.unsubbed.var_locs.iteritems()}
+        return sensitivities
 
     def _solve_sweep(self):
-        self.constants_update({var: None for var in self.sweep})
+        self.presweep = self.last
+        self.sub({var: 1 for var in self.sweep}, tobase='swept')
 
-        sweep_grids = np.meshgrid(*self.sweep.values())
+        sweep_dims = len(self.sweep)
+        if sweep_dims == 1:
+            sweep_grids = self.sweep.values()
+        else:
+            sweep_grids = np.meshgrid(*self.sweep.values())
         sweep_shape = sweep_grids[0].shape
         N_passes = sweep_grids[0].size
         sweep_grids = dict(zip(self.sweep, sweep_grids))
         sweep_vects = {var: grid.reshape(N_passes)
                        for (var, grid) in sweep_grids.iteritems()}
-        result_2d_array = np.empty((N_passes, len(self.freevars)))
+        result_2d_array = np.empty((N_passes, len(self.var_locs)))
 
         for i in xrange(N_passes):
             this_pass = {var: sweep_vect[i]
                          for (var, sweep_vect) in sweep_vects.iteritems()}
-            self.constants_update(this_pass)
+            self.sub(this_pass, frombase='presweep', tobase='swept')
 
             result = self.__run_solver()
             self.check_result(result)
             result_2d_array[i, :] = result['primal_sol']
 
         solution = {var: result_2d_array[:, j].reshape(sweep_shape)
-                    for (j, var) in enumerate(self.freevars)}
+                    for (j, var) in enumerate(self.var_locs)}
         solution.update(sweep_grids)
+
+        self.load(self.presweep)
         return solution
 
     def __run_solver(self):
         if self.solver == 'cvxopt':
-            return cvxoptimize(self.c,
-                               self.A,
-                               self.k,
-                               self.options)
+            result = cvxoptimize(self.cs,
+                                 self.A,
+                                 self.k,
+                                 self.options)
         elif self.solver == "mosek_cli":
             import _mosek.cli_expopt
             filename = self.options.get('filename', 'gpkit_mosek')
-            return _mosek.cli_expopt.imize(self.c,
-                                           self.A,
-                                           self.p_idx,
-                                           filename)
+            result = _mosek.cli_expopt.imize(self.cs,
+                                             self.A,
+                                             self.p_idxs,
+                                             filename)
         elif self.solver == "mosek":
             import _mosek.expopt
-            return _mosek.expopt.imize(self.c,
-                                       self.A,
-                                       self.p_idx)
+            result = _mosek.expopt.imize(self.cs,
+                                         self.A,
+                                         self.p_idxs)
         elif self.solver == "attached":
-            return self.options['solver'](self.c,
-                                          self.A,
-                                          self.p_idx)
+            result = self.options['solver'](self.cs,
+                                            self.A,
+                                            self.p_idxs,
+                                            self.k)
         else:
-            raise Exception("Solver %s is not implemented!"
-                            % self.solver)
+            raise Exception("Solver %s is not implemented!" % self.solver)
+
+        self.result = result
+        return result
 
     def check_result(self, result):
         assert result['success']
+        # TODO: raise InfeasibilityWarning
         self.check_feasibility(result['primal_sol'])
 
     def check_feasibility(self, primal_sol):
-        allconsts = dict(self.constants)
-        allconsts.update(dict(zip(self.freevars, primal_sol)))
-        if not set(allconsts) == self.variables:
-            raise RuntimeWarning("Did not solve for all variables!")
+        allsubs = dict(self.substitutions)
+        allsubs.update(dict(zip(self.var_locs, primal_sol)))
         for p in self.constraints:
-            val = sum([m.sub(allconsts).c for m in p.monomials])
+            val = p.sub(allsubs).c
             if not val <= 1 + 1e-4:
                 raise RuntimeWarning("Constraint broken:"
                                      " %s = 1 + %0.2e" % (p, val-1))
@@ -243,4 +272,5 @@ def cvxoptimize(c, A, k, options):
     solution = solvers.gp(k, F, g)
     # TODO: catch errors, delays, etc.
     return dict(success=True,
-                primal_sol=exp(solution['x']))
+                primal_sol=exp(solution['x']),
+                dual_sol=solution['y'])
