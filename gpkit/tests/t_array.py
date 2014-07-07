@@ -41,13 +41,13 @@ class t_array(unittest.TestCase):
     def test_substition(self):
         x = vectify('x', 3)
         c = {'x': [1, 2, 3]}
-        self.assertEqual(x.sub(c), array([1, 2, 3]))
+        s = array([Monomial({}, e) for e in [1, 2, 3]])
+        self.assertEqual(x.sub(c), s)
         p = x**2
-        self.assertEqual(p.sub(c), array([1, 4, 9]))
+        s2 = array([Monomial({}, e) for e in [1, 4, 9]])
+        self.assertEqual(p.sub(c), s2)
         d = p.sum()
-        # note the ugly Posy(Mono) down there...
-        # this should be fixed when Mono inherits from Posy!
-        self.assertEqual(d.sub(c), Posynomial([Monomial({}, 14)]))
+        self.assertEqual(d.sub(c), array(Monomial({}, 14)))
 
 
 tests = [t_array]

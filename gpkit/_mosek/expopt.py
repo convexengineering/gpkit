@@ -25,7 +25,7 @@ class module_shortener(object):
 def c_array(py_array, c_type):
     "Makes a C array from a python list or array and a C datatype"
     if not isinstance(py_array, list):
-        pya = py_array.tolist()
+        pya = list(py_array)
     else:
         pya = py_array
     return (c_type * len(pya))(*pya)
