@@ -32,55 +32,65 @@ def substitution(var_locs, exps, cs, substitutions, val=None):
         if var in var_locs:
             try:
                 # described variable
-                assert len(sub) == 2 and isinstance(sub[1], str)
+                assert not isinstance(sub, str)
+                assert len(sub) > 1 and isinstance(sub[-1], str)
                 subs[var] = sub[0]
-                descrs[var] = sub[1]
+                descrs[var] = sub[-1]
             except:
                 # regular variable
                 subs[var] = sub
         else:
             try:
-                # vector variable
                 if all((isinstance(val, (int, float, Monomial))
                         for val in sub)):
                     # sub is a vector
-                    vsub = [(var+str(j), val)
+                    vsub = [(var + str(j), val)
                             for (j, val) in enumerate(sub)]
                 elif all((isinstance(val, (int, float, Monomial))
                           for val in sub[0])):
                     # sub's first element is a vector
-                    vsub = [(var+str(j), val)
+                    vsub = [(var + str(j), val)
                             for (j, val) in enumerate(sub[0])]
-                    assert isinstance(sub[1], str)
-                    descrs[var] = sub[1]
-
+                    # sub's last element is description
+                    assert isinstance(sub[-1], str)
+                    descrs[var] = sub[-1]
+                # got a vector variable
                 for var, val in vsub:
                     if var in var_locs:
                         subs[var] = val
             except: pass
     if not subs:
-        return exps, cs, descrs, subs
+        return var_locs, exps, cs, descrs, subs
     else:
         exps_ = [HashVector(exp) for exp in exps]
         cs_ = list(cs)
+        var_locs_ = defaultdict(list)
+        var_locs_.update({var: list(idxs)
+                          for (var, idxs) in var_locs.iteritems()})
         for var, sub in subs.iteritems():
             for i in var_locs[var]:
                 x = exps_[i][var]
                 del exps_[i][var]
+                var_locs_[var].remove(i)
+                if not var_locs_[var]:
+                    del var_locs_[var]
                 if isinstance(sub, (int, float)):
                     # scalar substitution
                     cs_[i] *= sub**x
                 elif isinstance(sub, str):
                     # variable name substitution
                     exps_[i] += HashVector({sub: x})
+                    var_locs_[sub].append(i)
                 elif isinstance(sub, Monomial):
                     # monomial substitution
                     exps_[i] += sub.exp*x
                     cs_[i] *= sub.c**x
-        return exps_, cs_, descrs, subs
+                    for subvar in sub.exp:
+                        var_locs_[subvar].append(i)
+        return var_locs_, exps_, cs_, descrs, subs
 
 
-def invalid_types(oper, a, b):
+def invalid_types_for_oper(oper, a, b):
     typea = a.__class__.__name__
     typeb = b.__class__.__name__
     raise TypeError("unsupported operand types"
@@ -92,7 +102,7 @@ class HashVector(dict):
 
     # unsettable and hashable
     def __hash__(self):
-        if not hasattr(self, '_hashvalue'):
+        if not hasattr(self, "_hashvalue"):
             self._hashvalue = hash(tuple(self.items()))
         return self._hashvalue
 
@@ -107,7 +117,7 @@ class HashVector(dict):
         if isinstance(other, (int, float)):
             return HashVector({key: val**x for (key, val) in self.iteritems()})
         else:
-            invalid_types('** or pow()', self, x)
+            invalid_types_for_oper("** or pow()", self, x)
 
     def __mul__(self, other):
         if isinstance(other, (int, float)):
@@ -119,7 +129,7 @@ class HashVector(dict):
                     for key in keys}
             return HashVector(sums)
         else:
-            invalid_types('*', self, other)
+            invalid_types_for_oper("*", self, other)
 
     def __add__(self, other):
         if isinstance(other, (int, float)):
@@ -131,7 +141,7 @@ class HashVector(dict):
                     for key in keys}
             return HashVector(sums)
         else:
-            invalid_types('+', self, other)
+            invalid_types_for_oper("+", self, other)
 
     def __sub__(self, other): return self + -other
     def __rsub__(self, other): return other + -self

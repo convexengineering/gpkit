@@ -26,8 +26,8 @@ constants = {
     'N_ult': (2.5, "[-] ultimate load factor"),
     'tau': (0.12, "[-] airfoil thickness to chord ratio"),
     'C_Lmax': (2.0, "[-] max CL, flaps down"),
-    'V': ('sweep', linspace(45, 55, 30), "[m/s] cruising speed"),
-    'V_min': ('sweep', linspace(20, 25, 30), "[m/s] takeoff speed"),
+    'V': ('sweep', linspace(45, 55, 10), "[m/s] cruising speed"),
+    'V_min': ('sweep', linspace(20, 25, 10), "[m/s] takeoff speed"),
 }
 gpkit.monify_up(globals(), constants)
 
@@ -62,7 +62,7 @@ gp = gpkit.GP(  # minimize
                     W >= W_0 + W_w,
                     W_w >= W_w_surf + W_w_strc,
                     C_D >= C_D_fuse + C_D_wpar + C_D_ind
-                ], substitutions=constants, solver='mosek')
+                ], constants=constants, solver='mosek')
 
 data = gp.solve()
 
