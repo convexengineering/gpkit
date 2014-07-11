@@ -54,7 +54,7 @@ class GP(object):
                          ["  via the %s solver" % self.solver]
                          )
 
-    def __init__(self, cost, constraints, substitutions={},
+    def __init__(self, cost, constraints, constants={},
                  solver=None, options={}):
         self.cost = cost
         self.constraints = tuple(constraints)
@@ -69,8 +69,8 @@ class GP(object):
         self._gen_unsubbed_vars()
 
         self.sweep = {}
-        if substitutions:
-            self.sub(substitutions, tobase='initialsub')
+        if constants:
+            self.sub(constants, tobase='initialsub')
 
     def add_constraints(self, constraints):
         if isinstance(constraints, Posynomial):
@@ -131,14 +131,13 @@ class GP(object):
         base = getattr(self, frombase)
 
         # perform substitution
-        exps, cs, newdescrs, subs = substitution(base.var_locs,
-                                                 base.exps,
-                                                 base.cs,
-                                                 subs, val)
+        var_locs, exps, cs, newdescrs, subs = substitution(base.var_locs,
+                                                           base.exps,
+                                                           base.cs,
+                                                           subs, val)
         if not subs:
             raise ValueError("could not find anything to substitute")
 
-        var_locs = locate_vars(exps)
         var_descrs = base.var_descrs
         var_descrs.update(newdescrs)
         var_descrs.update(sweepdescrs)
@@ -250,7 +249,7 @@ class GP(object):
     def check_result(self, result):
         assert result['success']
         # TODO: raise InfeasibilityWarning
-        self.check_feasibility(result['primal_sol'])
+        # self.check_feasibility(result['primal_sol'])
 
     def check_feasibility(self, primal_sol):
         allsubs = dict(self.substitutions)
