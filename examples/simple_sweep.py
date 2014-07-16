@@ -62,7 +62,7 @@ gp = gpkit.GP(  # minimize
                     W >= W_0 + W_w,
                     W_w >= W_w_surf + W_w_strc,
                     C_D >= C_D_fuse + C_D_wpar + C_D_ind
-                ], constants=constants, solver='mosek')
+                ], constants=constants, solver='mosek_cli')
 
 data = gp.solve()
 

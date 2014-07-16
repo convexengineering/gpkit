@@ -4,7 +4,7 @@ from gpkit import Monomial
 
 def vectify(s, n):
     "From a string ('x') and a number (3) returns an array ([x0 x1 x2])"
-    return array([Monomial(s+str(i)) for i in xrange(n)])
+    return array([Monomial("%s_%i" % (s, i)) for i in xrange(n)])
 
 
 def monify(s):
@@ -32,6 +32,6 @@ def dict_monify(s):
 def monify_up(d, s):
     """Updates the given dictionary with dict_monify(s).
 
-    Quite useful in an interactive environment with d=globals().
+    Quite useful in an interactive environment with globals() for d.
     """
     return d.update(dict_monify(s))

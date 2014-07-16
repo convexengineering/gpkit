@@ -162,6 +162,7 @@ class t_Posynomial(unittest.TestCase):
         self.assertEqual(p <= 1, p)
         self.assertEqual(p <= x, p/x)
 
+# test substitution
 
 tests = [t_Posynomial, t_Monomial]
 

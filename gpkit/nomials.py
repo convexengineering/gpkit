@@ -2,6 +2,14 @@ from collections import defaultdict
 from itertools import chain
 import numpy as np
 
+latex_symbol_dict = {
+    "omega": "\\omega",
+    "rho": "\\rho",
+    "mu": "\\mu",
+    "pi": "\\pi",
+    "tau": "\\tau",
+}
+
 
 def sort_and_simplify(exps, cs):
     "Reduces the number of monomials, and casts them to a sorted form."
@@ -130,6 +138,52 @@ class Posynomial(object):
 
     def latex(self, bracket="$"):
         return bracket + self._string(mult_symbol="") + bracket
+
+    def _latex(self, unused):
+        "For pretty printing with Sympy"
+        mstrs = []
+        for c, exp in zip(self.cs, self.exps):
+            pos_vars, neg_vars = [], []
+            for var, x in exp.iteritems():
+                if '_' in var:
+                    idx = var.index("_")
+                    varbase = var[:idx]
+                    if varbase in latex_symbol_dict:
+                        varbase = latex_symbol_dict[varbase]
+                    var = varbase+"_{"+var[idx+1:]+"}"
+                else:
+                    if var in latex_symbol_dict:
+                        var = latex_symbol_dict[var]
+                if x > 0:
+                    pos_vars.append((var, x))
+                elif x < 0:
+                    neg_vars.append((var, x))
+
+            pvarstrs = ['%s^{%.4g}' % (var, x) if x != 1 else var
+                        for (var, x) in pos_vars]
+            nvarstrs = ['%s^{%.4g}' % (var, -x) if -x != 1 else var
+                        for (var, x) in neg_vars]
+            pvarstr = ' '.join(pvarstrs)
+            nvarstr = ' '.join(nvarstrs)
+            if pos_vars and c == 1:
+                cstr = ""
+            else:
+                cstr = "%.4g" % c
+                if 'e' in cstr:
+                    idx = cstr.index('e')
+                    cstr = "%s\\times 10^{%i}" % (
+                           cstr[:idx], int(cstr[idx+1:]))
+
+            if not pos_vars and not neg_vars:
+                mstrs.append("%s" % cstr)
+            elif pos_vars and not neg_vars:
+                mstrs.append("%s%s" % (cstr, pvarstr))
+            elif neg_vars and not pos_vars:
+                mstrs.append("\\frac{%s}{%s}" % (cstr, nvarstr))
+            elif pos_vars and neg_vars:
+                mstrs.append("%s\\frac{%s}{%s}" % (cstr, pvarstr, nvarstr))
+
+        return " + ".join(mstrs)
 
     # posynomial arithmetic
     def __add__(self, other):

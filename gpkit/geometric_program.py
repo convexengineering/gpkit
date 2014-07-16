@@ -3,6 +3,8 @@ from collections import namedtuple
 from collections import Iterable
 from helpers import *
 
+from gpkit.nomials import Posynomial
+
 try:
     import numpy as np
 except ImportError:
@@ -16,6 +18,9 @@ except ImportError:
 CootMatrix = namedtuple('CootMatrix', ['row', 'col', 'data'])
 PosyTuple = namedtuple('PosyTuple', ['exps', 'cs', 'var_locs', 'var_descrs',
                                      'substitutions'])
+
+
+import time
 
 
 class CootMatrix(CootMatrix):
@@ -66,16 +71,21 @@ class GP(object):
             from gpkit import settings
             self.solver = settings['defaultsolver']
 
+        self.sweep = {}
         self._gen_unsubbed_vars()
 
-        self.sweep = {}
         if constants:
             self.sub(constants, tobase='initialsub')
+
+    def print_boundwarnings(self):
+        for var, bound in self.missingbounds.iteritems():
+            print "%s (%s) has no %s bound" % (
+                  var, self.var_descrs[var], bound)
 
     def add_constraints(self, constraints):
         if isinstance(constraints, Posynomial):
             constraints = [constraints]
-        self.constaints += tuple(constraints)
+        self.constraints += tuple(constraints)
         self._gen_unsubbed_vars()
 
     def rm_constraints(self, constraints):
@@ -147,6 +157,7 @@ class GP(object):
         newbase = PosyTuple(exps, cs, var_locs, var_descrs, substitutions)
         setattr(self, tobase, self.last)
         self.load(newbase)
+        self.print_boundwarnings()
 
     def load(self, posytuple):
         self.last = posytuple
@@ -156,16 +167,28 @@ class GP(object):
 
         # A: exponents of the various free variables for each monomial
         #    rows of A are variables, columns are monomials
+        self.missingbounds = {}
         self.A = CootMatrix([], [], [])
         for j, var in enumerate(self.var_locs):
+            varsign = None
             for i in self.var_locs[var]:
-                self.A.append(j, i, self.exps[i][var])
+                exp = self.exps[i][var]
+                self.A.append(j, i, exp)
+                if varsign is None: varsign = np.sign(exp)
+                elif varsign is "both": pass
+                elif np.sign(exp) != varsign: varsign = "both"
+            if varsign != "both" and var not in self.sweep:
+                if varsign == 1: bound = "lower"
+                elif varsign == -1: bound = "upper"
+                self.missingbounds[var] = bound
         self.A.update_shape()
 
-    def solve(self):
+    def solve(self, printing=True):
+        if printing: print "Using solver '%s'" % self.solver
+        self.starttime = time.time()
         self.data = {}
         if self.sweep:
-            self.solution = self._solve_sweep()
+            self.solution = self._solve_sweep(printing)
         else:
             result = self.__run_solver()
             self.check_result(result)
@@ -176,16 +199,20 @@ class GP(object):
 
         self.data.update(self.substitutions)
         self.data.update(self.solution)
+        self.endtime = time.time()
+        if printing: print "Solving took %.3g seconds   " % (self.endtime - self.starttime)
         return self.data
 
     def _sensitivities(self, result):
         dss = result['dual_sol']
-        sensitivities = {'S{%s}' % var: sum([self.unsubbed.exps[i][var]*dss[i]
-                                            for i in locs])
-                         for (var, locs) in self.unsubbed.var_locs.iteritems()}
-        return sensitivities
+        senstuple = [('S{%s}' % var, sum([self.unsubbed.exps[i][var]*dss[i]
+                                          for i in locs]))
+                     for (var, locs) in self.unsubbed.var_locs.iteritems()]
+        sensdict = {var: val for (var, val) in
+                    filter(lambda x: abs(x[1]) >= 0.01, senstuple)}
+        return sensdict
 
-    def _solve_sweep(self):
+    def _solve_sweep(self, printing):
         self.presweep = self.last
         self.sub({var: 1 for var in self.sweep}, tobase='swept')
 
@@ -196,6 +223,9 @@ class GP(object):
             sweep_grids = np.meshgrid(*self.sweep.values())
         sweep_shape = sweep_grids[0].shape
         N_passes = sweep_grids[0].size
+        if printing:
+            print "Sweeping %i variables over %i passes" % (
+                  sweep_dims, N_passes)
         sweep_grids = dict(zip(self.sweep, sweep_grids))
         sweep_vects = {var: grid.reshape(N_passes)
                        for (var, grid) in sweep_grids.iteritems()}
