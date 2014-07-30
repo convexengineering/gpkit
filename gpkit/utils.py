@@ -18,11 +18,14 @@ def dict_monify(s):
     for var, val in s.iteritems():
         m = Monomial(var)
         if isinstance(val, str):
-            m.var_descrs = {var: val}
+            m.var_descrs = {var: [None, val]}
         else:
             try:
                 if isinstance(val[-1], str):
-                    m.var_descrs = {var: val[-1]}
+                    if isinstance(val[-2], str):
+                        m.var_descrs = {var: val[-2:]}
+                    else:
+                        m.var_descrs = {var: [None, val[-1]]}
             except (TypeError, IndexError):
                 pass
         monomial_dict.update({var: m})

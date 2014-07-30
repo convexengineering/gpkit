@@ -131,7 +131,10 @@ class GP(object):
                         if isinstance(sub[1], Iterable):
                             self.sweep.update({var: sub[1]})
                             if isinstance(sub[-1], str):
-                                sweepdescrs.update({var: sub[-1]})
+                                if isinstance(sub[-2], str):
+                                    sweepdescrs.update({var: sub[-2:]})
+                                else:
+                                    sweepdescrs.update({var: [None, sub[-1]]})
                     else:
                         raise ValueError("sweep variables must be iterable.")
                 except: pass

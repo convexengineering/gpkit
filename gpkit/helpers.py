@@ -33,9 +33,13 @@ def substitution(var_locs, exps, cs, substitutions, val=None):
             try:
                 # described variable
                 assert not isinstance(sub, str)
-                assert len(sub) > 1 and isinstance(sub[-1], str)
-                subs[var] = sub[0]
-                descrs[var] = sub[-1]
+                if len(sub) > 1 and isinstance(sub[-1], str):
+                    if len(sub) > 2 and isinstance(sub[-2], str):
+                        subs[var] = sub[0]
+                        descrs[var] = sub[-2:]
+                    else:
+                        subs[var] = sub[0]
+                        descrs[var] = [None, sub[-1]]
             except:
                 # regular variable
                 subs[var] = sub
@@ -44,12 +48,12 @@ def substitution(var_locs, exps, cs, substitutions, val=None):
                 if all((isinstance(val, (int, float, Monomial))
                         for val in sub)):
                     # sub is a vector
-                    vsub = [(var + str(j), val)
+                    vsub = [("%s_%i" % (var, j), val)
                             for (j, val) in enumerate(sub)]
                 elif all((isinstance(val, (int, float, Monomial))
                           for val in sub[0])):
                     # sub's first element is a vector
-                    vsub = [(var + str(j), val)
+                    vsub = [("%s_%i" % (var, j), val)
                             for (j, val) in enumerate(sub[0])]
                     # sub's last element is description
                     assert isinstance(sub[-1], str)

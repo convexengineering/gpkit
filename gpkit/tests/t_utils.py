@@ -16,7 +16,7 @@ class t_vectify(unittest.TestCase):
 
     def test_vectify(self):
         x = vectify('x', 3)
-        x2 = array(monify('x0 x1 x2'))
+        x2 = array(monify('x_0 x_1 x_2'))
         self.assertEqual(x, x2)
 
 
