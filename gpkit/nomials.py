@@ -8,6 +8,7 @@ latex_symbol_dict = {
     "mu": "\\mu",
     "pi": "\\pi",
     "tau": "\\tau",
+    "th": "\\theta",
 }
 
 
@@ -79,7 +80,7 @@ class Posynomial(object):
                     assert isinstance(var_descrs[0], str)
                     assert len(self.var_locs) == 1
                     # if we only have one variable, a string can describe it
-                    var_descr = {self.var_locs.keys()[0]: var_descrs[0]}
+                    var_descr = {self.var_locs.keys()[0]: [None, var_descrs[0]]}
                     self.var_descrs.update(var_descr)
                 except:
                     for var_descr in var_descrs:

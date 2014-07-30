@@ -16,36 +16,36 @@ from numpy import linspace, pi
 import gpkit
 
 constants = {
-    'CDA0': (0.031, "[m^2] fuselage drag area"),
-    'rho': (1.23, "[kg/m^3] density of air"),
-    'mu': (1.78e-5, "[kg/(m*s)] viscosity of air"),
-    'S_wet_ratio': (2.05, "[-] wetted area ratio"),
-    'k': (1.2, "[-] form factor"),
-    'e': (0.95, "[-] Oswald efficiency factor"),
-    'W_0': (4940, "[N] aircraft weight excluding wing"),
-    'N_ult': (3.8, "[-] ultimate load factor"),
-    'tau': (0.12, "[-] airfoil thickness to chord ratio"),
-    'C_Lmax': (1.5, "[-] max CL, flaps down"),
-    'V_min': (22, "[m/s] takeoff speed"),
+    'CDA0': (0.031, "m^2", "fuselage drag area"),
+    'rho': (1.23, "kg m^3", "density of air"),
+    'mu': (1.78e-5, "kg/m*s", "viscosity of air"),
+    'S_wetratio': (2.05, "wetted area ratio"),
+    'k': (1.2, "form factor"),
+    'e': (0.95, "Oswald efficiency factor"),
+    'W_0': (4940,"N", "aircraft weight excluding wing"),
+    'N_ult': (3.8, "ultimate load factor"),
+    'tau': (0.12, "airfoil thickness to chord ratio"),
+    'C_Lmax': (1.5, "max CL with flaps down"),
+    'V_min': (22, "m/s", "takeoff speed"),
 }
 gpkit.monify_up(globals(), constants)
 
 free_variables = {
-    'A': "[-] aspect ratio",
-    'S': "[m^2] total wing area",
-    'C_D': "[-] Drag coefficient of wing",
-    'C_L': "[-] Lift coefficent of wing",
-    'C_f': "[-] skin friction coefficient",
-    'Re': "[-] Reynold's number",
-    'W': "[N] total aircraft weight",
-    'W_w': "[N] wing weight",
-    'V': "[m/s] cruising speed",
+    'A': "aspect ratio",
+    'S': ["m^2", "total wing area"],
+    'C_D': "Drag coefficient of wing",
+    'C_L': "Lift coefficent of wing",
+    'C_f': "skin friction coefficient",
+    'Re': "Reynold's number",
+    'W': ["N", "total aircraft weight"],
+    'W_w': ["N", "wing weight"],
+    'V': ["m/s", "cruising speed"],
 }
 gpkit.monify_up(globals(), free_variables)
 
 # drag modeling #
 C_D_fuse = CDA0/S             # fuselage viscous drag
-C_D_wpar = k*C_f*S_wet_ratio  # wing parasitic drag
+C_D_wpar = k*C_f*S_wetratio  # wing parasitic drag
 C_D_ind = C_L**2/(pi*A*e)     # induced drag
 
 # wing-weight modeling #
@@ -62,7 +62,7 @@ gp = gpkit.GP(  # minimize
                     W >= W_0 + W_w,
                     W_w >= W_w_surf + W_w_strc,
                     C_D >= C_D_fuse + C_D_wpar + C_D_ind
-                ], constants=constants, solver='mosek')
+                ], constants=constants)
 
 data = gp.solve()
 
@@ -79,6 +79,11 @@ for key, table in data.iteritems():
         val = table.mean()
     except AttributeError:
         val = table
-    if abs(val) > 1e-9:
-        print "%16s" % key, ": % 4.1e" % val, gp.var_descrs[key]
+    descr = gp.var_descrs[key]
+    if descr:
+        if descr[0] is None:
+            descr = "[-] %s" % descr[1]
+        else:
+            descr = "[%s] %s" % (descr[0], descr[1])
+    print "%16s" % key, ": %-8.3g" % val, descr
 print "                 |"
