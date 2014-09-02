@@ -1,32 +1,4 @@
-# from https://github.com/kanzure/ctypesgen
-#
-# Copyright (c) 2007-2008, Ctypesgen Developers
-# All rights reserved.
-#
-# Redistribution and use in source and binary forms, with or without
-# modification, are permitted provided that the following conditions are met:
-#
-# 1. Redistributions of source code must retain the above copyright notice,
-#    this list of conditions and the following disclaimer.
-# 2. Redistributions in binary form must reproduce the above copyright
-#    notice, this list of conditions and the following disclaimer in the
-#    documentation and/or other materials provided with the distribution.
-# 3. Neither the name of the <ORGANIZATION> nor the names of its
-#    contributors may be used to endorse or promote products derived from
-#    this software without specific prior written permission.
-#
-# THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
-# AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
-# IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
-# ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT OWNER OR CONTRIBUTORS BE
-# LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR
-# CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF
-# SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
-# INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN
-# CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
-# ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
-# POSSIBILITY OF SUCH DAMAGE.
-#
+#!/usr/bin/env python
 # -*- coding: us-ascii -*-
 # vim:ts=4:sw=4:softtabstop=4:smarttab:expandtab
 
@@ -168,11 +140,24 @@ if __name__=="__main__":
     if len(options.libraries) == 0:
         msgs.warning_message('No libraries specified', cls='usage')
 
+    # Check output language
+    printer = None
+    if options.output_language == "python":
+        printer = ctypesgencore.printer.WrapperPrinter
+    elif options.output_language == "json":
+        printer = ctypesgencore.printer_json.WrapperPrinter
+    else:
+        msgs.error_message("No such output language `" + options.output_language + "'", cls='usage')
+        sys.exit(1)
+
     # Step 1: Parse
     descriptions=ctypesgencore.parser.parse(options.headers,options)
 
     # Step 2: Process
     ctypesgencore.processor.process(descriptions,options)
+
+    # Step 3: Print
+    printer(options.output,options,descriptions)
 
     msgs.status_message("Wrapping complete.")
 

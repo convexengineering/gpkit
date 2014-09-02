@@ -130,7 +130,7 @@ class Mosek(SolverBackend):
                     return None
         elif sys.platform == "darwin":
             try:
-                self.dir = "/usr/local/mosek"
+                self.dir = "/Users/whoburg/mosek"
                 self.platform = "osx64x86"
                 self.libname = "libmosek64.7.0.dylib"
             except OSError:
@@ -145,6 +145,7 @@ class Mosek(SolverBackend):
         self.tools_dir = pathjoin(self.dir, self.version, "tools")
         self.lib_dir = pathjoin(self.tools_dir, "platform", self.platform)
         self.h_path = pathjoin(self.lib_dir, "h", "mosek.h")
+        self.bin_dir = pathjoin(self.lib_dir, "bin")
         self.lib_path = pathjoin(self.lib_dir, "bin", self.libname)
         if not isfile(self.h_path): return None
         if not isfile(self.lib_path): return None
@@ -157,6 +158,11 @@ class Mosek(SolverBackend):
         self.expopt_files += [self.h_path]
         for expopt_file in self.expopt_files:
             if not isfile(expopt_file): return None
+
+        if sys.platform == "darwin":
+            call('echo "\n# Added by gpkit buildscript for mosek support" >> $HOME/.bash_profile')
+            call('echo "export PATH=\$PATH:%s" >> $HOME/.bash_profile' % self.bin_dir)
+            call('echo "export DYLD_LIBRARY_PATH=\$DYLD_LIBRARY_PATH:%s" >> $HOME/.bash_profile' % self.bin_dir)
 
         return "version %s, installed to %s" % (self.version, self.dir)
 
@@ -199,7 +205,7 @@ class Mosek(SolverBackend):
 
         return True
 
-solvers = [CVXopt(), Mosek_CLI(), Mosek()]
+solvers = [CVXopt(), Mosek(), Mosek_CLI()]
 installed_solvers = [solver.name
                      for solver in solvers
                      if solver.installed]
