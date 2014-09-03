@@ -1,3 +1,4 @@
+clc
 clear p;
 load NACA24xx_fits;
 tic;
