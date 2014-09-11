@@ -2,10 +2,9 @@ import numpy as np
 
 
 class array(np.ndarray):
-    # change printing
-    def __repr__(self): return str(self)
-    def __eq__(self, m): return (isinstance(m, self.__class__)
-                                 and str(self) == str(m))
+    _eq = np.vectorize(lambda a, b: a == b)
+    def __eq__(self, other):
+        return isinstance(other, self.__class__) and self._eq(self, other).all()
     def __ne__(self, m): return not self == m
 
     # constraint generators
@@ -31,15 +30,10 @@ class array(np.ndarray):
         if obj is None: return
         self.info = getattr(obj, 'info', None)
 
-    def sub(self, constants):
+    def sub(self, subs, val=None):
         if self.shape:
-            return array([e.sub(constants) for e in self])
+            return array([p.sub(subs, val) for p in self])
         else:
             # 0D array
             self = self.flatten()[0]
-            subbed = [m.sub(constants) for m in self.monomials]
-            if len(subbed) == 1:
-                return subbed[0]
-            else:
-                from gpkit import Posynomial
-                return Posynomial(subbed)
+            return array(self.sub(subs, val))

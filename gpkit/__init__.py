@@ -13,6 +13,7 @@ from nomials import Posynomial
 from geometric_program import GP
 
 from utils import *
+from printing import init_printing
 
 from os import sep as os_sep
 from os.path import dirname as os_path_dirname

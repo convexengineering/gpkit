@@ -26,7 +26,7 @@ def imize(c, A, map_, filename):
         f.writelines(["%d %d %.20e\n" % tuple(x)
                       for x in t_j_Atj])
 
-    check_output("mskexpopt "+filename, shell=True)
+    check_output(["mskexpopt", filename])
 
     with open(filename+".sol") as f:
         assert_line(f, "PROBLEM STATUS      : PRIMAL_AND_DUAL_FEASIBLE\n")

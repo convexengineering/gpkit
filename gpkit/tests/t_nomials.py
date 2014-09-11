@@ -1,7 +1,7 @@
 import math
 import unittest
 from gpkit import Monomial, Posynomial
-from gpkit.utils import monify
+from gpkit import monify
 
 
 class t_Monomial(unittest.TestCase):
@@ -12,21 +12,21 @@ class t_Monomial(unittest.TestCase):
     def test_init(self):
         m = Monomial({'x':2, 'y':-1}, 5)
         m2 = Monomial({'x': 2, 'y': -1}, 5)
-        self.assertEqual(m.vars, set(['x', 'y']))
-        self.assertEqual(m.exps, {'x': 2, 'y': -1})
+        self.assertEqual(m.var_locs, {'x':[0], 'y':[0]})
+        self.assertEqual(m.exp, {'x': 2, 'y': -1})
         self.assertEqual(m.c, 5)
         self.assertEqual(m, m2)
 
         # default c and a
         m = Monomial('x')
-        self.assertEqual(m.vars, set(['x']))
-        self.assertEqual(m.exps, {'x': 1})
+        self.assertEqual(m.var_locs, {'x': [0]})
+        self.assertEqual(m.exp, {'x': 1})
         self.assertEqual(m.c, 1)
 
         # single (string) var with non-default c
         m = Monomial('tau', .1)
-        self.assertEqual(m.vars, set(['tau']))
-        self.assertEqual(m.exps, {'tau': 1})
+        self.assertEqual(m.var_locs, {'tau': [0]})
+        self.assertEqual(m.exp, {'tau': 1})
         self.assertEqual(m.c, .1)
 
         # non-positive c raises
@@ -38,7 +38,7 @@ class t_Monomial(unittest.TestCase):
     def test_repr(self):
         m = Monomial({'x':2, 'y':-1}, 5)
         self.assertEqual(type(m.__repr__()), str)
-        self.assertEqual(Monomial('x').__repr__(), 'x')
+        self.assertEqual(Monomial('x').__repr__(), 'Monomial(x)')
 
     def test_latex(self):
         m = Monomial({'x':2, 'y':-1}, 5).latex()
@@ -134,9 +134,11 @@ class t_Posynomial(unittest.TestCase):
               Monomial('y', 0.5),
               Monomial({'x': 3, 'y': 1}, 6),
               Monomial({}, 2)]
-        p = Posynomial(ms)
-        # check creation
-        self.assertEqual(p.monomials, set(ms))
+        exps, cs = [], []
+        for m in ms:
+            cs += m.cs
+            exps += m.exps
+        p = Posynomial(exps, cs)
         # check arithmetic
         p2 = 3.14*x*y**2 + y/2 + x**3*6*y + 2
         self.assertEqual(p, p2)
@@ -158,8 +160,9 @@ class t_Posynomial(unittest.TestCase):
         x, y = monify('x y')
         p = x**2 + 2*y*x + y**2
         self.assertEqual(p <= 1, p)
-        self.assertEqual(p < x, p/x)
+        self.assertEqual(p <= x, p/x)
 
+# test substitution
 
 tests = [t_Posynomial, t_Monomial]
 
