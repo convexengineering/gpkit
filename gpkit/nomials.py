@@ -306,4 +306,4 @@ class Constraint(Posynomial):
         # evaluates as "False"
         return self.c == 1 and self.exp == {}
 
-from helpers import *
+from internal_utils import *
