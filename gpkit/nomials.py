@@ -104,19 +104,31 @@ class Posynomial(object):
 
     def __eq__(self, other):
         if isinstance(other, Posynomial):
-            return (self.exps == other.exps and self.cs == other.cs)
+            if (self.exps == other.exps and self.cs == other.cs):
+                return 1
+            elif isinstance(self, Monomial):
+                return other <= self
+            elif isinstance(other, Monomial):
+                return self <= other
         else:
             return False
 
     def __ne__(self, other):
-        return not self == other
+        if isinstance(other, Posynomial):
+            return not (self.exps == other.exps and self.cs == other.cs)
+        else:
+            return False
 
     # inequality constraint generation
+    # TODO: pass the original formulation of the inequality
+    #       to the Constraint call
     def __le__(self, other):
-        return self / other
+        p = self / other
+        return Constraint(p, p.latex(), p._string())
 
     def __ge__(self, other):
-        return other / self
+        p = other / self
+        return Constraint(p, p.latex(), p._string())
 
     def __lt__(self, other):
         invalid_types_for_oper("<", self, other)
@@ -262,5 +274,36 @@ class Monomial(Posynomial):
                             self.var_descrs)
         else:
             invalid_types_for_oper("** or pow()", self, x)
+
+
+class Constraint(Posynomial):
+
+    def _string(self):
+        return self.eqn["str"]
+
+    def latex(self):
+        return self.eqn["latex"]
+
+    def _latex(self, unused):
+        return self.eqn["latex"]
+
+    def __init__(self, p, eqnlatex, eqnstr):
+        if isinstance(p, Posynomial):
+            self.eqn = dict(latex=eqnlatex,
+                            str=eqnstr)
+            self.cs = p.cs
+            self.var_descrs = p.var_descrs
+            self.exps = p.exps
+            self.var_locs = p.var_locs
+            if len(self.exps) == 1:
+                self.exp = self.exps[0]
+                self.c = self.cs[0]
+        else:
+            raise TypeError("GP constraints must be consist of a posynomial.")
+
+    def __nonzero__(self):
+        # a constraint not guaranteed to be satisfied
+        # evaluates as "False"
+        return self.c == 1 and self.exp == {}
 
 from helpers import *
