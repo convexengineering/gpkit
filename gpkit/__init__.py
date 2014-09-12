@@ -13,6 +13,8 @@ from nomials import Posynomial
 from geometric_program import GP
 
 from utils import *
+
+# Implements pretty latex printing in iPython Notebook via sympy
 from printing import init_printing
 
 from os import sep as os_sep
