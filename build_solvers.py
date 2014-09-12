@@ -130,7 +130,7 @@ class Mosek(SolverBackend):
                     return None
         elif sys.platform == "darwin":
             try:
-                self.dir = pathjoin(expanduser("~"), "mosek")
+                self.dir = pathjoin(os.path.expanduser("~"), "mosek")
                 self.platform = "osx64x86"
                 self.libname = "libmosek64.7.0.dylib"
             except OSError:
