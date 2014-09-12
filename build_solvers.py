@@ -77,7 +77,7 @@ class Mosek_CLI(SolverBackend):
     def look(self):
         try:
             print "#   Trying to run mskexpopt..."
-            if call("mskexpopt") == 1052:
+            if call("mskexpopt") in (1052, 28): # 28 for MacOSX
                 return "in system path"
         except Exception: pass
         return None
