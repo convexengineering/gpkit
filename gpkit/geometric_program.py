@@ -151,7 +151,6 @@ def cvxoptimize(c, A, k, options):
     from cvxopt import solvers, spmatrix, matrix, log, exp
     solvers.options.update({'show_progress': False})
     solvers.options.update(options)
-    k = k
     g = log(matrix(c))
     F = spmatrix(A.data, A.col, A.row, tc='d')
     solution = solvers.gp(k, F, g)
