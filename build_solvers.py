@@ -130,7 +130,7 @@ class Mosek(SolverBackend):
                     return None
         elif sys.platform == "darwin":
             try:
-                self.dir = "/Users/whoburg/mosek"
+                self.dir = pathjoin(expanduser("~"), "mosek")
                 self.platform = "osx64x86"
                 self.libname = "libmosek64.7.0.dylib"
             except OSError:
@@ -162,6 +162,7 @@ class Mosek(SolverBackend):
         if sys.platform == "darwin":
             call('echo "\n# Added by gpkit buildscript for mosek support" >> $HOME/.bash_profile')
             call('echo "export PATH=\$PATH:%s" >> $HOME/.bash_profile' % self.bin_dir)
+            call('export PATH=$PATH:%s' % self.bin_dir)
             call('echo "export DYLD_LIBRARY_PATH=\$DYLD_LIBRARY_PATH:%s" >> $HOME/.bash_profile' % self.bin_dir)
 
         return "version %s, installed to %s" % (self.version, self.dir)
