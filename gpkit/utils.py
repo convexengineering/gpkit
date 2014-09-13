@@ -1,10 +1,10 @@
-from gpkit import array
+from gpkit import PosyArray
 from gpkit import Monomial
 
 
 def vectify(s, n):
     "From a string ('x') and a number (3) returns an array ([x0 x1 x2])"
-    return array([Monomial("%s_%i" % (s, i)) for i in xrange(n)])
+    return PosyArray([Monomial("%s_%i" % (s, i)) for i in xrange(n)])
 
 
 def monify(s):

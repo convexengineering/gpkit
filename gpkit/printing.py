@@ -165,8 +165,8 @@ ipython/IPython/hooks.py:155
 
     import IPython
     if IPython.__version__ >= '0.11':
-        from gpkit import Posynomial, array
-        printable_types = [Posynomial, array, float, tuple, list, set,
+        from gpkit import Posynomial, PosyArray
+        printable_types = [Posynomial, PosyArray, float, tuple, list, set,
                 frozenset, dict] + list(integer_types)
 
         plaintext_formatter = ip.display_formatter.formatters['text/plain']

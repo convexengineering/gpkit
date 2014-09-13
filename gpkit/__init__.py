@@ -7,7 +7,7 @@ Uses numpy for ndarrays
      scipy for splines, sparse matrix operations
 """
 
-from array import array
+from posyarray import PosyArray
 from nomials import Monomial
 from nomials import Posynomial
 from geometric_program import GP

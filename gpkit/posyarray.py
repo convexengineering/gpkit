@@ -1,7 +1,8 @@
 import numpy as np
 
 
-class array(np.ndarray):
+class PosyArray(np.ndarray):
+    "Numpy array subclass with elementwise inequalities and substitutions"
     _eq = np.vectorize(lambda a, b: a == b)
     def __eq__(self, other):
         return isinstance(other, self.__class__) and self._eq(self, other).all()
@@ -15,7 +16,7 @@ class array(np.ndarray):
     def __gt__(self, x): return self >= x
     def __ge__(self, x): return [e for e in self._geq(self, x)]
 
-    def outer(self, x): return array(np.outer(self, x))
+    def outer(self, x): return PosyArray(np.outer(self, x))
 
     def __new__(cls, input_array, info=None):
         # Input array is an already formed ndarray instance
@@ -32,8 +33,8 @@ class array(np.ndarray):
 
     def sub(self, subs, val=None):
         if self.shape:
-            return array([p.sub(subs, val) for p in self])
+            return PosyArray([p.sub(subs, val) for p in self])
         else:
             # 0D array
             self = self.flatten()[0]
-            return array(self.sub(subs, val))
+            return PosyArray(self.sub(subs, val))
