@@ -53,10 +53,6 @@ class Model(object):
                           for p in self.posynomials]
                          )
 
-    def __init__(self, name, variables):
-        self.name = name
-        self.variables = 1  # process variables
-
     def add_eqns(self):
         self.posynomials = posynomials
 

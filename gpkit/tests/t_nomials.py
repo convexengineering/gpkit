@@ -41,10 +41,9 @@ class t_Monomial(unittest.TestCase):
         self.assertEqual(Monomial('x').__repr__(), 'Monomial(x)')
 
     def test_latex(self):
-        m = Monomial({'x':2, 'y':-1}, 5).latex()
+        m = Monomial({'x':2, 'y':-1}, 5)._latex()
         self.assertEqual(type(m), str)
-        self.assertTrue('$' in m, '$ not in %s' % m)
-        self.assertEqual(Monomial('x', 5).latex(), '$5x$')
+        self.assertEqual(Monomial('x', 5)._latex(), '5x')
 
     def test_eq_ne(self):
         # simple one

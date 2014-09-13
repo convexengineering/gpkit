@@ -37,6 +37,9 @@ class Posynomial(object):
     '''
 
     def __init__(self, exps, cs=1, var_descrs=[], var_locs=None):
+        if isinstance(exps, (int, float)):
+            cs = exps
+            exps = {}
         if isinstance(cs, (int, float)) and isinstance(exps, (dict, str)):
             # building a Monomial
             if isinstance(exps, str):
@@ -96,22 +99,11 @@ class Posynomial(object):
                                                            substitutions, val)
         return Posynomial(exps, cs, [self.var_descrs, newdescrs], var_locs)
 
-    # hashing, immutability, Posynomial equality
+    # hashing, immutability, Posynomial inequality
     def __hash__(self):
         if not hasattr(self, "_hashvalue"):
             self._hashvalue = hash(tuple(self.exps, tuple(self.cs)))
         return self._hashvalue
-
-    def __eq__(self, other):
-        if isinstance(other, Posynomial):
-            if (self.exps == other.exps and self.cs == other.cs):
-                return 1
-            elif isinstance(self, Monomial):
-                return other <= self
-            elif isinstance(other, Monomial):
-                return self <= other
-        else:
-            return False
 
     def __ne__(self, other):
         if isinstance(other, Posynomial):
@@ -119,16 +111,26 @@ class Posynomial(object):
         else:
             return False
 
-    # inequality constraint generation
-    # TODO: pass the original formulation of the inequality
-    #       to the Constraint call
+    # constraint generation
+    def __eq__(self, other):
+        if not isinstance(other, Posynomial):
+            return False
+        else:
+            if (self.exps == other.exps and self.cs == other.cs):
+                return True
+            else:
+                if isinstance(other, Monomial):
+                    return EQ_Constraint(self, other)
+                elif isinstance(self, Monomial):
+                    return EQ_Constraint(other, self)
+                else:
+                    invalid_types_for_oper("==", self, other)
+
     def __le__(self, other):
-        p = self / other
-        return Constraint(p, p.latex(), p._string())
+        return Constraint(self, other)
 
     def __ge__(self, other):
-        p = other / self
-        return Constraint(p, p.latex(), p._string())
+        return Constraint(other, self)
 
     def __lt__(self, other):
         invalid_types_for_oper("<", self, other)
@@ -140,8 +142,9 @@ class Posynomial(object):
     def _string(self, mult_symbol='*'):
         mstrs = []
         for c, exp in zip(self.cs, self.exps):
-            varstrs = ['%s^%.2g' % (var, x) if x != 1 else var
-                       for (var, x) in exp.iteritems() if x != 0]
+            expsorted = sorted(exp.iteritems(), key=lambda x: x[1])
+            varstrs = ['%s**%.2g' % (var, x) if x != 1 else var
+                       for (var, x) in expsorted if x != 0]
             cstr = ["%.2g" % c] if c != 1 or not varstrs else []
             mstrs.append(mult_symbol.join(cstr + varstrs))
         return " + ".join(mstrs)
@@ -149,10 +152,7 @@ class Posynomial(object):
     def __repr__(self):
         return self.__class__.__name__+"("+self._string()+")"
 
-    def latex(self, bracket="$"):
-        return bracket + self._latex(None) + bracket
-
-    def _latex(self, unused):
+    def _latex(self, unused=None):
         "For pretty printing with Sympy"
         mstrs = []
         for c, exp in zip(self.cs, self.exps):
@@ -278,32 +278,53 @@ class Monomial(Posynomial):
 
 class Constraint(Posynomial):
 
-    def _string(self):
-        return self.eqn["str"]
-
-    def latex(self):
-        return self.eqn["latex"]
-
-    def _latex(self, unused):
-        return self.eqn["latex"]
-
-    def __init__(self, p, eqnlatex, eqnstr):
-        if isinstance(p, Posynomial):
-            self.eqn = dict(latex=eqnlatex,
-                            str=eqnstr)
-            self.cs = p.cs
-            self.var_descrs = p.var_descrs
-            self.exps = p.exps
-            self.var_locs = p.var_locs
-            if len(self.exps) == 1:
-                self.exp = self.exps[0]
-                self.c = self.cs[0]
+    def _set_operator(self, p1, p2):
+        if self.left is p1:
+            self.oper_s = " <= "
+            self.oper_l = " \leq "
         else:
-            raise TypeError("GP constraints must be consist of a posynomial.")
+            self.oper_s = " >= "
+            self.oper_l = " \geq "
+
+    def _string(self):
+        return self.left._string() + self.oper_s + self.right._string()
+
+    def _latex(self, unused=None):
+        return self.left._latex() + self.oper_l + self.right._latex()
+
+    def __init__(self, p1, p2):
+        p1 = Posynomial(p1)
+        p2 = Posynomial(p2)
+        p = p1 / p2
+
+        self.cs = p.cs
+        self.var_descrs = p.var_descrs
+        self.exps = p.exps
+        self.var_locs = p.var_locs
+        if len(self.exps) == 1:
+            self.exp = self.exps[0]
+            self.c = self.cs[0]
+
+        if len(p1._string()) <= len(p2._string()):
+            self.left, self.right = p1, p2
+        else:
+            self.left, self.right = p2, p1
+
+        self._set_operator(p1, p2)
 
     def __nonzero__(self):
         # a constraint not guaranteed to be satisfied
         # evaluates as "False"
         return self.c == 1 and self.exp == {}
+
+
+class EQ_Constraint(Constraint):
+    def _set_operator(self, p1, p2):
+        self.oper_s = " == "
+        self.oper_l = " = "
+
+
+class Monomial_EQ_Constraint(EQ_Constraint):
+    pass
 
 from internal_utils import *

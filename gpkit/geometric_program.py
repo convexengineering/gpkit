@@ -6,21 +6,41 @@ except ImportError:
     print "Could not import numpy: will not be able to sweep variables"
 
 import time
+import pprint
+
+import gpkit.plotting
 
 
 class GP(Model):
 
+    def __eq__(self, other):
+        return str(self) == str(other)
+
+    def __ne__(self, other):
+        return not self == other
+
     def __repr__(self):
-        return "\n".join(["gpkit.GeometricProgram:",
-                          "  minimize",
-                          "     %s" % self.cost._string(),
-                          "  subject to"] +
-                         ["     %s <= 1" % p._string()
+        return "\n".join(["gpkit.GP( # minimize",
+                          "          %s," % self.cost._string(),
+                          "          [   # subject to"] +
+                         ["              %s," % p._string()
                           for p in self.constraints] +
-                         ["  via the %s solver" % self.solver]
+                         ['          ],',
+                          "          substitutions={ %s }," %
+                          pprint.pformat(self.substitutions, indent=26)[26:-1],
+                          '          solver="%s")' % self.solver]
                          )
 
-    def __init__(self, cost, constraints, constants={},
+    def _latex(self, unused=None):
+        return "\n".join(["\\begin{array}[ll]",
+                          "\\text{}"
+                          "\\text{minimize}",
+                          "    & %s \\\\" % self.cost._latex(),
+                          "\\text{subject to}"] +
+                         ["    & %s \\\\" % c._latex() for c in self.constraints] +
+                         ["\\end{array}"])
+
+    def __init__(self, cost, constraints, substitutions={},
                  solver=None, options={}):
         self.cost = cost
         self.constraints = tuple(constraints)
@@ -36,8 +56,8 @@ class GP(Model):
         self.sweep = {}
         self._gen_unsubbed_vars()
 
-        if constants:
-            self.sub(constants, tobase='initialsub')
+        if substitutions:
+            self.sub(substitutions, tobase='initialsub')
 
     def solve(self, printing=True):
         if printing: print "Using solver '%s'" % self.solver
@@ -145,6 +165,16 @@ class GP(Model):
             if not val <= 1 + 1e-4:
                 raise RuntimeWarning("Constraint broken:"
                                      " %s = 1 + %0.2e" % (p, val-1))
+
+    def plot_frontiers(self, Zs, x, y, figsize):
+        if len(self.sweep) == 2:
+            gpkit.plotting.contour_array(self.data,
+                                         self.var_descrs,
+                                         self.sweep.keys()[0],
+                                         self.sweep.keys()[1],
+                                         Zs, x, y, figsize,
+                                         xticks=self.sweep.values()[0],
+                                         yticks=self.sweep.values()[1])
 
 
 def cvxoptimize(c, A, k, options):
