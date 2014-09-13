@@ -42,6 +42,8 @@ class CootMatrix(CootMatrix):
     def tocsc(self): return self.tocoo().tocsc()
     def todok(self): return self.tocoo().todok()
     def todia(self): return self.tocoo().todia()
+
+
 class Model(object):
 
     def __repr__(self):
@@ -89,8 +91,8 @@ class Model(object):
         for p in posynomials:
             var_descrs.update(p.var_descrs)
 
-        exps = sumlist(posynomials, attr='exps')
-        cs = sumlist(posynomials, attr='cs')
+        exps = reduce(lambda x,y: x+y, map(lambda x: x.exps, posynomials))
+        cs = reduce(lambda x,y: x+y, map(lambda x: x.cs, posynomials))
         var_locs = locate_vars(exps)
 
         self.unsubbed = PosyTuple(exps, cs, var_locs, var_descrs, {})

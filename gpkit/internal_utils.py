@@ -2,18 +2,6 @@ from collections import defaultdict
 from nomials import Monomial
 
 
-def sumlist(l, attr=None):
-    if not attr:
-        pile = l[0]
-        for el in l[1:]:
-            pile += el
-    else:
-        pile = getattr(l[0], attr)
-        for el in l[1:]:
-            pile += getattr(el, attr)
-    return pile
-
-
 def locate_vars(exps):
     var_locs = defaultdict(list)
     for i, exp in enumerate(exps):

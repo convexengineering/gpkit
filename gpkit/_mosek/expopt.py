@@ -133,4 +133,4 @@ def imize(c, A, map_):
 
     return dict(success=True,
                 primal_sol=[exp(x) for x in xx],
-                dual_sol=[y for y in yy])
+                dual_sol=list(yy))
