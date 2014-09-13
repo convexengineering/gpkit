@@ -150,7 +150,7 @@ class Posynomial(object):
         return self.__class__.__name__+"("+self._string()+")"
 
     def latex(self, bracket="$"):
-        return bracket + self._string(mult_symbol="") + bracket
+        return bracket + self._latex(None) + bracket
 
     def _latex(self, unused):
         "For pretty printing with Sympy"
