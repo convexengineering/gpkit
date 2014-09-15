@@ -76,17 +76,16 @@ class GP(Model):
         self.data.update(self.substitutions)
         self.data.update(self.solution)
         self.endtime = time.time()
-        if printing: print "Solving took %.3g seconds   " % (self.endtime - self.starttime)
+        if printing:
+            print ("Solving took %.3g seconds   "
+                   % (self.endtime - self.starttime))
         return self.data
 
     def _sensitivities(self, result):
         dss = result['dual_sol']
-        senstuple = [('S{%s}' % var, sum([self.unsubbed.exps[i][var]*dss[i]
-                                          for i in locs]))
-                     for (var, locs) in self.unsubbed.var_locs.iteritems()]
-        sensdict = {var: val for (var, val) in
-                    filter(lambda x: abs(x[1]) >= 0.01, senstuple)}
-        return sensdict
+        return {'S{%s}' % var: (sum([self.unsubbed.exps[i][var]*dss[i]
+                                    for i in locs]))
+                for (var, locs) in self.unsubbed.var_locs.iteritems()}
 
     def _solve_sweep(self, printing):
         self.presweep = self.last
@@ -106,6 +105,7 @@ class GP(Model):
         sweep_vects = {var: grid.reshape(N_passes)
                        for (var, grid) in sweep_grids.iteritems()}
         result_2d_array = np.empty((N_passes, len(self.var_locs)))
+        sensitivity_2d_array = np.empty((N_passes, len(self.unsubbed.var_locs)))
 
         for i in xrange(N_passes):
             this_pass = {var: sweep_vect[i]
@@ -115,9 +115,13 @@ class GP(Model):
             result = self.__run_solver()
             self.check_result(result)
             result_2d_array[i, :] = result['primal_sol']
+            sensitivity_2d_array[i,:] = self._sensitivities(result).values()
 
         solution = {var: result_2d_array[:, j].reshape(sweep_shape)
                     for (j, var) in enumerate(self.var_locs)}
+        sensitivities = {var: sensitivity_2d_array[:, j].reshape(sweep_shape)
+                         for (j, var) in enumerate(self._sensitivities(result).keys())}
+        solution.update(sensitivities)
         solution.update(sweep_grids)
 
         self.load(self.presweep)
