@@ -102,7 +102,7 @@ class Posynomial(object):
     # hashing, immutability, Posynomial inequality
     def __hash__(self):
         if not hasattr(self, "_hashvalue"):
-            self._hashvalue = hash(tuple(self.exps, tuple(self.cs)))
+            self._hashvalue = hash(tuple(zip(self.exps, tuple(self.cs))))
         return self._hashvalue
 
     def __ne__(self, other):
