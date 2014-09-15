@@ -1,6 +1,7 @@
 from collections import defaultdict
 from collections import namedtuple
 from collections import Iterable
+from copy import deepcopy
 from internal_utils import *
 
 from gpkit.nomials import Posynomial
@@ -92,7 +93,7 @@ class Model(object):
         var_locs = locate_vars(exps)
 
         self.unsubbed = PosyTuple(exps, cs, var_locs, var_descrs, {})
-        self.load(self.unsubbed)
+        self.load(self.unsubbed, print_boundwarnings=False)
 
         # k [j]: number of monomials (columns of F) present in each constraint
         self.k = [len(p.cs) for p in posynomials]
@@ -107,6 +108,7 @@ class Model(object):
     def sub(self, substitutions, val=None, frombase='last', tobase='subbed'):
         # look for sweep variables
         sweepdescrs = {}
+        found_sweep = False
         if isinstance(substitutions, dict):
             subs = dict(substitutions)
             for var, sub in substitutions.iteritems():
@@ -120,20 +122,21 @@ class Model(object):
                                     sweepdescrs.update({var: sub[-2:]})
                                 else:
                                     sweepdescrs.update({var: [None, sub[-1]]})
-                    else:
-                        raise ValueError("sweep variables must be iterable.")
+                            found_sweep = True
+                        else:
+                            raise ValueError("sweep vars must be iterable.")
                 except: pass
         else:
             subs = substitutions
 
-        base = getattr(self, frombase)
+        base = deepcopy(getattr(self, frombase))
 
         # perform substitution
         var_locs, exps, cs, newdescrs, subs = substitution(base.var_locs,
                                                            base.exps,
                                                            base.cs,
                                                            subs, val)
-        if not subs:
+        if not (subs or found_sweep):
             raise ValueError("could not find anything to substitute")
 
         var_descrs = base.var_descrs
@@ -145,12 +148,11 @@ class Model(object):
         newbase = PosyTuple(exps, cs, var_locs, var_descrs, substitutions)
         setattr(self, tobase, self.last)
         self.load(newbase)
-        self.print_boundwarnings()
 
-    def load(self, posytuple):
+    def load(self, posytuple, print_boundwarnings=True):
         self.last = posytuple
         for attr in ['exps', 'cs', 'var_locs', 'var_descrs', 'substitutions']:
-            new = getattr(posytuple, attr)
+            new = deepcopy(getattr(posytuple, attr))
             setattr(self, attr, new)
 
         # A: exponents of the various free variables for each monomial
@@ -170,3 +172,5 @@ class Model(object):
                 elif varsign == -1: bound = "upper"
                 self.missingbounds[var] = bound
         self.A.update_shape()
+
+        if print_boundwarnings: self.print_boundwarnings()
