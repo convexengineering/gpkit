@@ -98,8 +98,8 @@ class HashVector(dict):
             self._hashvalue = hash(tuple(self.items()))
         return self._hashvalue
 
-    def __setitem__(self, key, value):
-        raise TypeError("HashVectors are immutable.")
+    # def __setitem__(self, key, value):
+    #     raise TypeError("HashVectors are immutable.")
 
     # standard element-wise arithmetic
     def __neg__(self):
