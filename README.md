@@ -8,7 +8,7 @@ Installation instructions are below.
 
 ## Introduction ##
 
-*What does gpkit look like?*
+### What does gpkit look like?
 
 Excerpt from an [aircraft design application](http://nbviewer.ipython.org/github/appliedopt/gpkit/blob/master/examples/ipynb/simpleaircraft.ipynb):
 
@@ -28,15 +28,11 @@ gpkit.GP( # minimize                            # What's the lowest
          ], solver='mosek')
  ```
 
-===========
-
-*What can a geometric program do?*
+### What can a geometric program do?
 
 A geometric program (GP) can solve any optimization problem where [posynomials](http://en.wikipedia.org/wiki/Posynomial) form both the cost function (what you're trying to minimize or maximize, e.g. airplane fuel consumption) and the constraints (equations that have to be true, e.g. that the plane can take off). 
 
-===========
-
-*Why are geometric programs useful?*
+### Why are geometric programs useful?
 
 It turns out that [they have some nice mathematical properties](http://stanford.edu/~boyd/papers/pdf/gp_tutorial.pdf):
   - it's easy to check if something is a posynomial
@@ -53,7 +49,7 @@ Geometric programs might also have nice social properties:
 
 ## Installation ##
 
-*Mac*
+### Mac
 
 1. Install [Anaconda](continuum.io/downloads) for your platform
    - (Mac) Install developer tools first
