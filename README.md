@@ -4,7 +4,9 @@ Python tools for defining and manipulating geometric programming models.
 
 Interfaces with either the [MOSEK](http://mosek.com) or [CVXopt](http://cvxopt.org/) solvers.
 
-===========
+Installation instructions are below.
+
+## Introduction ##
 
 *What does gpkit look like?*
 
@@ -48,3 +50,22 @@ Geometric programs might also have nice social properties:
   - many engineering equations are already posynomials
   - posynomial models written by different people are easy to bring together;
       - adding a new model won't bring the whole optimization down
+
+## Installation ##
+
+*Mac*
+
+1. Install [Anaconda](continuum.io/downloads) for your platform
+   - (Mac) Install developer tools first
+   - If you don't want to install Anaconda, the packages useful for running gpkit are numpy, scipy, sympy, and ipython notebook
+2. Install ctypesgen by entering `pip install ctypesgen` at a terminal
+3. Install [cvxopt](http://cvxopt.org/download/index.html) 
+  - (Mac) Just run `python setup.py install` in the downloaded cvxopt folder
+4. Install [Mosek](mosek.com/resources/downloads)
+  -  (Mac/Linux) Move the downloaded mosek folder to your home directory
+5. Get a Mosek [academic license file](license.mosek.com/academic)
+  -  (Mac/Linux) Put the license file in ~/mosek/
+  - (Windows) Put the license file in the folder Users/(your username)/mosek, creating that folder if necessary
+6. Download gpkit
+7. Run `python build.py` in the gpkit folder
+8. Test your install by running `ipython -c "%run gpkit/tests/run_tests.py"`
