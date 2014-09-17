@@ -7,6 +7,7 @@ latex_symbol_dict = {
     "rho": "\\rho",
     "mu": "\\mu",
     "pi": "\\pi",
+    "nu": "\\nu",
     "tau": "\\tau",
     "th": "\\theta",
 }
