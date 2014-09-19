@@ -16,18 +16,25 @@ class t_array(unittest.TestCase):
         self.assertEqual(x.outer(x), m)
 
     def test_elementwise_mult(self):
+        m = monify('m')[0]
         x = vectify('x', 3)
         x_0, x_1, x_2 = monify('x_0 x_1 x_2')
-        # multiplication
+        # multiplication with numbers
         v = PosyArray([1, 2, 3]).T
         p = PosyArray([1*x_0, 2*x_1, 3*x_2]).T
         self.assertEqual(x*v, p)
-        # division
+        # division with numbers
         p2 = PosyArray([x_0, x_1/2, x_2/3]).T
         self.assertEqual(x/v, p2)
         # power
         p3 = PosyArray([x_0**2, x_1**2, x_2**2]).T
         self.assertEqual(x**2, p3)
+        # multiplication with monomials
+        p = PosyArray([m*x_0, m*x_1, m*x_2]).T
+        self.assertEqual(x*m, p)
+        # division with monomials
+        p2 = PosyArray([x_0/m, x_1/m, x_2/m]).T
+        self.assertEqual(x/m, p2)
 
     def test_constraint_gen(self):
         x = vectify('x', 3)
@@ -35,7 +42,6 @@ class t_array(unittest.TestCase):
         v = PosyArray([1, 2, 3]).T
         p = [x_0, x_1/2, x_2/3]
         self.assertEqual(x <= v, p)
-        self.assertEqual(x < v, p)
 
     def test_substition(self):
         x = vectify('x', 3)

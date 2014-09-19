@@ -16,20 +16,33 @@ def dict_monify(s):
     "From a dictionary of name:description, returns one of monomials."
     monomial_dict = {}
     for var, val in s.iteritems():
-        m = Monomial(var)
-        if isinstance(val, str):
-            m.var_descrs = {var: [None, val]}
-        else:
-            try:
-                if isinstance(val[-1], str):
-                    if isinstance(val[-2], str):
-                        m.var_descrs = {var: val[-2:]}
-                    else:
-                        m.var_descrs = {var: [None, val[-1]]}
-            except (TypeError, IndexError):
-                pass
+        try:
+            if val[0] == "vector":
+                m = vectify(var, val[1])
+                for el in m:
+                    descr_var(el, val[2:])
+            else:
+                assert False
+        except:
+            m = Monomial(var)
+            descr_var(m, val)
         monomial_dict.update({var: m})
     return monomial_dict
+
+
+def descr_var(m, descr):
+    var = m.exp.keys()[0]
+    if isinstance(descr, str):
+        m.var_descrs = {var: [None, descr]}
+    else:
+        try:
+            if isinstance(descr[-1], str):
+                if isinstance(descr[-2], str):
+                    m.var_descrs = {var: descr[-2:]}
+                else:
+                    m.var_descrs = {var: [None, descr[-1]]}
+        except (TypeError, IndexError):
+            pass
 
 
 def monify_up(d, s):

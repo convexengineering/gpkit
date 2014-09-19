@@ -1,6 +1,7 @@
 from collections import defaultdict
 from itertools import chain
 import numpy as np
+from posyarray import PosyArray
 
 latex_symbol_dict = {
     "omega": "\\omega",
@@ -8,6 +9,7 @@ latex_symbol_dict = {
     "mu": "\\mu",
     "pi": "\\pi",
     "nu": "\\nu",
+    "eta": "\\eta",
     "tau": "\\tau",
     "th": "\\theta",
 }
@@ -102,6 +104,10 @@ class Posynomial(object):
 
     # hashing, immutability, Posynomial inequality
     def __hash__(self):
+        if not hasattr(self, "exps"):
+            print "hihihi"
+            print type(self)
+            print dir(self)
         if not hasattr(self, "_hashvalue"):
             self._hashvalue = hash(tuple(zip(self.exps, tuple(self.cs))))
         return self._hashvalue
@@ -120,12 +126,10 @@ class Posynomial(object):
             if (self.exps == other.exps and self.cs == other.cs):
                 return True
             else:
-                if isinstance(other, Monomial):
-                    return EQ_Constraint(self, other)
-                elif isinstance(self, Monomial):
-                    return EQ_Constraint(other, self)
+                if (isinstance(other, Monomial) and isinstance(self, Monomial)):
+                    return MonoEQConstraint(self, other)
                 else:
-                    invalid_types_for_oper("==", self, other)
+                    return False
 
     def __le__(self, other):
         return Constraint(self, other)
@@ -207,6 +211,8 @@ class Posynomial(object):
         elif isinstance(other, Posynomial):
             return Posynomial(self.exps + other.exps, self.cs + other.cs,
                               [self.var_descrs, other.var_descrs])
+        elif isinstance(other, PosyArray):
+            return np.array(self)+other
         else:
             invalid_types_for_oper("+", self, other)
 
@@ -225,6 +231,8 @@ class Posynomial(object):
                     Exps[i,j] = exp_s + exp_o
             return Posynomial(Exps.flatten(), C.flatten(),
                               [self.var_descrs, other.var_descrs])
+        elif isinstance(other, PosyArray):
+            return np.array(self)*other
         else:
             invalid_types_for_oper("*", self, other)
 
@@ -243,6 +251,8 @@ class Posynomial(object):
             exps = [exp - other.exp for exp in self.exps]
             return Posynomial(exps, np.array(self.cs)/other.c,
                               [self.var_descrs, other.var_descrs])
+        elif isinstance(other, PosyArray):
+            return np.array(self)/other
         else:
             invalid_types_for_oper("/", self, other)
 
@@ -306,7 +316,12 @@ class Constraint(Posynomial):
             self.exp = self.exps[0]
             self.c = self.cs[0]
 
-        if len(p1._string()) <= len(p2._string()):
+        if len(p1._string()) == len(p2._string()):
+            if p1._string() <= p2._string():
+                self.left, self.right = p1, p2
+            else:
+                self.left, self.right = p2, p1
+        elif len(p1._string()) < len(p2._string()):
             self.left, self.right = p1, p2
         else:
             self.left, self.right = p2, p1
@@ -316,16 +331,14 @@ class Constraint(Posynomial):
     def __nonzero__(self):
         # a constraint not guaranteed to be satisfied
         # evaluates as "False"
-        return self.c == 1 and self.exp == {}
+        return bool(self.c == 1 and self.exp == {})
 
 
-class EQ_Constraint(Constraint):
+class MonoEQConstraint(Constraint):
     def _set_operator(self, p1, p2):
-        self.oper_s = " == "
         self.oper_l = " = "
-
-
-class Monomial_EQ_Constraint(EQ_Constraint):
-    pass
+        self.oper_s = " = "
+        self.leq = Constraint(p2, p1)
+        self.geq = Constraint(p1, p2)
 
 from internal_utils import *

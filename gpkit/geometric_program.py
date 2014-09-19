@@ -1,4 +1,5 @@
 from models import Model
+from nomials import Constraint, MonoEQConstraint
 
 try:
     import numpy as np
@@ -9,6 +10,17 @@ import time
 import pprint
 
 import gpkit.plotting
+
+
+def flatten_constr(l):
+    out = []
+    for el in l:
+        if isinstance(el, Constraint):
+            out.append(el)
+        else:
+            for elel in flatten_constr(el):
+                out.append(elel)
+    return out
 
 
 class GP(Model):
@@ -43,8 +55,14 @@ class GP(Model):
     def __init__(self, cost, constraints, substitutions={},
                  solver=None, options={}):
         self.cost = cost
-        self.constraints = tuple(constraints)
-        self.posynomials = (self.cost,)+self.constraints
+        self.constraints = tuple(flatten_constr(constraints))
+        posynomials = [self.cost]
+        for constraint in self.constraints:
+            if isinstance(constraint, MonoEQConstraint):
+                posynomials += [constraint.leq, constraint.geq]
+            elif isinstance(constraint, Constraint):
+                posynomials.append(constraint)
+        self.posynomials = tuple(posynomials)
 
         self.options = options
         if solver is not None:

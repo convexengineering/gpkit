@@ -3,17 +3,23 @@ import numpy as np
 
 class PosyArray(np.ndarray):
     "Numpy array subclass with elementwise inequalities and substitutions"
-    _eq = np.vectorize(lambda a, b: a == b)
-    def __eq__(self, other):
-        return isinstance(other, self.__class__) and self._eq(self, other).all()
-    def __ne__(self, m): return not self == m
+    def __ne__(self, m):
+        return not isinstance(other, self.__class__) and self._eq(self, other).all()
+
+    def _latex(self, unused=None):
+        return "["+", ".join(el._latex() for el in self)+"]"
 
     # constraint generators
+    _eq = np.vectorize(lambda a, b: a == b)
+    def __eq__(self, x):
+        if self.shape:
+            return [e for e in self._eq(self, x)]
+        else:
+            self = self.flatten()
+            return self._eq(self, x)
     _leq = np.vectorize(lambda a, b: a <= b)
-    def __lt__(self, x): return self <= x
     def __le__(self, x): return [e for e in self._leq(self, x)]
     _geq = np.vectorize(lambda a, b: a >= b)
-    def __gt__(self, x): return self >= x
     def __ge__(self, x): return [e for e in self._geq(self, x)]
 
     def outer(self, x): return PosyArray(np.outer(self, x))
@@ -38,3 +44,6 @@ class PosyArray(np.ndarray):
             # 0D array
             self = self.flatten()[0]
             return PosyArray(self.sub(subs, val))
+
+    def __nonzero__(self):
+        return self.all().__nonzero__()
