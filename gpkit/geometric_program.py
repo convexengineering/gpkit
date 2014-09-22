@@ -14,12 +14,15 @@ import gpkit.plotting
 
 def flatten_constr(l):
     out = []
-    for el in l:
-        if isinstance(el, Constraint):
-            out.append(el)
-        else:
-            for elel in flatten_constr(el):
-                out.append(elel)
+    try:
+        for el in l:
+            if isinstance(el, Constraint):
+                out.append(el)
+            else:
+                for elel in flatten_constr(el):
+                    out.append(elel)
+    except TypeError:
+        raise TypeError("%s is not a valid constraint." % l)
     return out
 
 
@@ -60,7 +63,7 @@ class GP(Model):
         for constraint in self.constraints:
             if isinstance(constraint, MonoEQConstraint):
                 posynomials += [constraint.leq, constraint.geq]
-            elif isinstance(constraint, Constraint):
+            else:
                 posynomials.append(constraint)
         self.posynomials = tuple(posynomials)
 
