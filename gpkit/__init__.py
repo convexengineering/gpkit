@@ -15,7 +15,7 @@ from geometric_program import GP
 from utils import *
 
 # Implements pretty latex printing in iPython Notebook via sympy
-from printing import init_printing
+from printing import init_printing as init_ipynb_printing
 
 from os import sep as os_sep
 from os.path import dirname as os_path_dirname
