@@ -1,5 +1,6 @@
 from models import Model
 from nomials import Constraint, MonoEQConstraint
+from collections import Iterable
 
 try:
     import numpy as np
@@ -14,15 +15,15 @@ import gpkit.plotting
 
 def flatten_constr(l):
     out = []
-    try:
-        for el in l:
-            if isinstance(el, Constraint):
-                out.append(el)
-            else:
-                for elel in flatten_constr(el):
-                    out.append(elel)
-    except TypeError:
-        raise TypeError("%s is not a valid constraint." % l)
+    for el in l:
+        if isinstance(el, Constraint):
+            out.append(el)
+        elif isinstance(el, Iterable):
+            for elel in flatten_constr(el):
+                out.append(elel)
+        else:
+            raise TypeError("The constraint list"
+                            " %s contains invalid constraint '%s'." % (l, el))
     return out
 
 

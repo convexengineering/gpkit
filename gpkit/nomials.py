@@ -123,7 +123,7 @@ class Posynomial(object):
         if not isinstance(other, Posynomial):
             return False
         else:
-            if (self.exps == other.exps and self.cs == other.cs):
+            if (self.exps == other.exps and self.cs <= other.cs):
                 return True
             else:
                 if (isinstance(other, Monomial) and isinstance(self, Monomial)):
