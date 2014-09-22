@@ -92,6 +92,8 @@ class t_Monomial(unittest.TestCase):
 
     def test_mul(self):
         x = Monomial({'x':1, 'y':-1}, 4)
+        # test integer division
+        self.assertEqual(x/5, Monomial({'x':1, 'y':-1}, 0.8))
         # divide by scalar
         self.assertEqual(x*9, Monomial({'x':1, 'y':-1}, 36))
         # divide by Monomial
