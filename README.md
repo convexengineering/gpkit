@@ -49,7 +49,7 @@ Geometric programs might also have nice social properties:
 
 ## Installation ##
 
-1. Install [Anaconda](continuum.io/downloads) for your platform
+1. Install [Anaconda](http://continuum.io/downloads) for your platform
    - (Mac) Install the Apple Developer Tools first
    - If you don't want to install Anaconda, the packages useful for running gpkit are numpy, scipy, sympy, and ipython notebook
 2. Install ctypesgen by entering `pip install ctypesgen` at a terminal
@@ -59,7 +59,7 @@ Geometric programs might also have nice social properties:
   - (Windows) Follow the steps [here](http://cvxopt.org/install/index.html#building-cvxopt-for-windows)
 4. Install [Mosek](mosek.com/resources/downloads)
   -  (Mac/Linux) Move the downloaded mosek folder to your home directory
-5. Get a Mosek [academic license file](license.mosek.com/academic)
+5. Get a Mosek [academic license file](http://license.mosek.com/academic)
   - (Mac/Linux) Put the license file in ~/mosek/
   - (Windows) Put the license file in the folder Users/(your username)/mosek, creating that folder if necessary
 6. Download gpkit
