@@ -54,15 +54,15 @@ Geometric programs might also have nice social properties:
    - If you don't want to install Anaconda, the packages useful for running gpkit are numpy, scipy, sympy, and ipython notebook
 2. Install ctypesgen by entering `pip install ctypesgen` at a terminal
   - (Windows) use an "Anaconda Command Prompt" instead
-3. Install a solver (currently supported are CVXopt and MOSEK):
-  - [cvxopt](http://cvxopt.org/download/index.html) 
-    - (Mac/Linux) Just run `python setup.py install` in the downloaded cvxopt folder, as noted [here](http://cvxopt.org/install/index.html#standard-installation)
+3. Install a solve: gpkit currently supports both CVXOPT and MOSEK:
+  - [CVXOPT](http://cvxopt.org/download/index.html) 
+    - (Mac/Linux) Run `python setup.py install` in the `cvxopt` folder, as noted [here](http://cvxopt.org/install/index.html#standard-installation)
     - (Windows) Follow the steps [here](http://cvxopt.org/install/index.html#building-cvxopt-for-windows)
-  -  [Mosek](mosek.com/resources/downloads)
-    -  (Mac/Linux) Move the downloaded mosek folder to your home directory
-5. Get a Mosek [academic license file](http://license.mosek.com/academic)
+  -  [MOSEK](http://mosek.com/resources/downloads)
+    -  (Mac/Linux) Move the `mosek` folder to your home directory
+5. Get a MOSEK [academic license file](http://license.mosek.com/academic)
   - (Mac/Linux) Put the license file in ~/mosek/
-  - (Windows) Put the license file in the folder Users/(your username)/mosek, creating that folder if necessary
+  - (Windows) Put the license file in `Users/$USERNAME/mosek`, creating that folder if necessary
 6. Download gpkit
 7. Run `python build.py` in the gpkit folder
 8. Test your install by running `ipython -c "%run gpkit/tests/run_tests.py"`
