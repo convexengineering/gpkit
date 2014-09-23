@@ -1,8 +1,8 @@
 # gpkit #
 
-Python tools for defining and manipulating geometric programming models.
+Python package for defining and manipulating geometric programming models.
 
-Interfaces with either the [MOSEK](http://mosek.com) or [CVXopt](http://cvxopt.org/) solvers.
+Interfaces with multiple solvers -- currently [MOSEK](http://mosek.com) and [CVXopt](http://cvxopt.org/) are supported.
 
 Installation instructions are below.
 
@@ -30,15 +30,15 @@ gpkit.GP( # minimize                            # What's the lowest
 
 ### What can a geometric program do?
 
-A geometric program (GP) can solve any optimization problem where [posynomials](http://en.wikipedia.org/wiki/Posynomial) form both the cost function (what you're trying to minimize or maximize, e.g. airplane fuel consumption) and the constraints (equations that have to be true, e.g. that the plane can take off). 
+A geometric program (GP) can solve any optimization problem where [posynomials](http://en.wikipedia.org/wiki/Posynomial) form both the cost function (what you're trying to minimize or maximize, e.g. airplane fuel consumption) and the constraints (relationships that have to be true, e.g. that the plane can take off). 
 
 ### Why are geometric programs useful?
 
 It turns out that [they have some nice mathematical properties](http://stanford.edu/~boyd/papers/pdf/gp_tutorial.pdf):
   - it's easy to check if something is a posynomial
   - they're quick to solve, which is good for large problems and trade-off analysis
-  - solving a GP gives you an auomatic sensitivity analysis (via its dual)
-  - infeasible GP can be examined to figure out how infeasible they are and which constraints are causing the most trouble
+  - solving a GP gives you an automatic sensitivity analysis (via its dual)
+  - an infeasible GP can be examined to figure out how infeasible it is and which constraints are causing the most trouble
 
 Geometric programs might also have nice social properties:
   - it's clear when you can't turn an equation into a posynomial;
@@ -54,7 +54,7 @@ Geometric programs might also have nice social properties:
    - If you don't want to install Anaconda, the packages useful for running gpkit are numpy, scipy, sympy, and ipython notebook
 2. Install ctypesgen by entering `pip install ctypesgen` at a terminal
   - (Windows) use an "Anaconda Command Prompt" instead
-3. Install a solve: gpkit currently supports both CVXOPT and MOSEK:
+3. Install a solver: gpkit currently supports both CVXOPT and MOSEK. Note: if you wish to run the unit test suite, both solvers must be installed.
   - [CVXOPT](http://cvxopt.org/download/index.html) 
     - (Mac/Linux) Run `python setup.py install` in the `cvxopt` folder, as noted [here](http://cvxopt.org/install/index.html#standard-installation)
     - (Windows) Follow the steps [here](http://cvxopt.org/install/index.html#building-cvxopt-for-windows)
@@ -63,6 +63,6 @@ Geometric programs might also have nice social properties:
 5. Get a MOSEK [academic license file](http://license.mosek.com/academic)
   - (Mac/Linux) Put the license file in ~/mosek/
   - (Windows) Put the license file in `Users/$USERNAME/mosek`, creating that folder if necessary
-6. Download gpkit
+6. Clone gpkit
 7. Run `python build.py` in the gpkit folder
 8. Test your install by running `ipython -c "%run gpkit/tests/run_tests.py"`
