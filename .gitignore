@@ -60,3 +60,6 @@ docs/_build/
 
 # MATLAB autosave
 *.asv
+
+# vim
+*.swp
