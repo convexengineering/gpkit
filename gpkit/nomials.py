@@ -62,8 +62,6 @@ class Posynomial(object):
         exps, cs = sort_and_simplify(exps, cs)
         if any((c <= 0 for c in cs)):
             raise ValueError("each c must be positive.")
-        elif any((any((len(var.split()) > 1 for var in exp)) for exp in exps)):
-            raise ValueError("variable names may not contain spaces.")
 
         self.exps = exps
         self.cs = cs
