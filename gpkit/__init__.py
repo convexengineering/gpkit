@@ -11,8 +11,8 @@ from posyarray import PosyArray
 from nomials import Monomial
 from nomials import Posynomial
 from geometric_program import GP
-
-from utils import *
+from variables import Variable
+from variables import VectorVariable
 
 # Implements pretty latex printing in iPython Notebook via sympy
 from printing import init_printing as init_ipynb_printing

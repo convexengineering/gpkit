@@ -1,8 +1,8 @@
 import unittest
 tests = []
 
-import t_utils
-tests += t_utils.tests
+import t_vars
+tests += t_vars.tests
 
 import t_nomials
 tests += t_nomials.tests

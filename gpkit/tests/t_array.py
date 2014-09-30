@@ -1,24 +1,28 @@
 import unittest
 from gpkit import Monomial, Posynomial, PosyArray
-from gpkit.utils import monify, vectify
+from gpkit.variables import VectorVariable
 
 
 class t_array(unittest.TestCase):
 
     def test_array_mult(self):
-        x = vectify('x', 3)
-        x_0, x_1, x_2 = monify('x_0 x_1 x_2')
+        x = VectorVariable(3, 'x', 'dummy variable')
+        x_0 = Monomial('x_0')
+        x_1 = Monomial('x_1')
+        x_2 = Monomial('x_2')
         p = x_0**2 + x_1**2 + x_2**2
         self.assertEqual(x.dot(x), p)
         m = PosyArray([[x_0**2, x_0*x_1, x_0*x_2],
-                   [x_0*x_1, x_1**2, x_1*x_2],
-                   [x_0*x_2, x_1*x_2, x_2**2]])
+                       [x_0*x_1, x_1**2, x_1*x_2],
+                       [x_0*x_2, x_1*x_2, x_2**2]])
         self.assertEqual(x.outer(x), m)
 
     def test_elementwise_mult(self):
-        m = monify('m')[0]
-        x = vectify('x', 3)
-        x_0, x_1, x_2 = monify('x_0 x_1 x_2')
+        m = Monomial('m')
+        x = VectorVariable(3, 'x', 'dummy variable')
+        x_0 = Monomial('x_0')
+        x_1 = Monomial('x_1')
+        x_2 = Monomial('x_2')
         # multiplication with numbers
         v = PosyArray([1, 2, 3]).T
         p = PosyArray([1*x_0, 2*x_1, 3*x_2]).T
@@ -37,14 +41,16 @@ class t_array(unittest.TestCase):
         self.assertEqual(x/m, p2)
 
     def test_constraint_gen(self):
-        x = vectify('x', 3)
-        x_0, x_1, x_2 = monify('x_0 x_1 x_2')
+        x = VectorVariable(3, 'x', 'dummy variable')
+        x_0 = Monomial('x_0')
+        x_1 = Monomial('x_1')
+        x_2 = Monomial('x_2')
         v = PosyArray([1, 2, 3]).T
         p = [x_0, x_1/2, x_2/3]
         self.assertEqual(x <= v, p)
 
     def test_substition(self):
-        x = vectify('x', 3)
+        x = VectorVariable(3, 'x', 'dummy variable')
         c = {'x': [1, 2, 3]}
         s = PosyArray([Monomial({}, e) for e in [1, 2, 3]])
         self.assertEqual(x.sub(c), s)

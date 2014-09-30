@@ -1,7 +1,6 @@
 import math
 import unittest
 from gpkit import Monomial, Posynomial
-from gpkit import monify
 
 
 class t_Monomial(unittest.TestCase):
@@ -29,10 +28,10 @@ class t_Monomial(unittest.TestCase):
         self.assertEqual(m.exp, {'tau': 1})
         self.assertEqual(m.c, .1)
 
-        # variable names not compatible with python namespaces
-        crazy_varstr = 'what the !!!/$\**?'
-        m = Monomial({'x': 1, crazy_varstr: .5}, 25)
-        self.assertTrue(crazy_varstr in m.exp)
+#        # variable names not compatible with python namespaces
+#        crazy_varstr = 'what the !!!/$\**?'
+#        m = Monomial({'x': 1, crazy_varstr: .5}, 25)
+#        self.assertTrue(crazy_varstr in m.exp)
 
         # non-positive c raises
         self.assertRaises(ValueError, Monomial, 'x', -2)
@@ -80,7 +79,10 @@ class t_Monomial(unittest.TestCase):
         self.assertTrue(m1 != m4)
 
     def test_div(self):
-        x, y, z, t = monify('x y z t')
+        x = Monomial('x')
+        y = Monomial('y')
+        z = Monomial('z')
+        t = Monomial('t')
         a = 36*x/y
         # sanity check
         self.assertEqual(a, Monomial({'x':1, 'y':-1}, 36))
@@ -135,7 +137,8 @@ class t_Monomial(unittest.TestCase):
 class t_Posynomial(unittest.TestCase):
 
     def test_basic(self):
-        x, y = monify('x y')
+        x = Monomial('x')
+        y = Monomial('y')
         ms = [Monomial({'x': 1, 'y': 2}, 3.14),
               Monomial('y', 0.5),
               Monomial({'x': 3, 'y': 1}, 6),
@@ -150,20 +153,23 @@ class t_Posynomial(unittest.TestCase):
         self.assertEqual(p, p2)
 
     def test_simplification(self):
-        x, y = monify('x y')
+        x = Monomial('x')
+        y = Monomial('y')
         p1 = x + y + y + (x+y) + (y+x**2) + 3*x
         p2 = 4*y + x**2 + 5*x
         self.assertEqual(p1, p2)
 
     def test_posyposy_mult(self):
-        x, y = monify('x y')
+        x = Monomial('x')
+        y = Monomial('y')
         p = x**2 + 2*y*x + y**2
         self.assertEqual((x+y)**2, p)
         p2 = 2*x**2 + 2*y*x + y**2*x + y**3
         self.assertEqual((x+y)*(2*x+y**2), p2)
 
     def test_constraint_gen(self):
-        x, y = monify('x y')
+        x = Monomial('x')
+        y = Monomial('y')
         p = x**2 + 2*y*x + y**2
         self.assertEqual(p <= 1, p)
         self.assertEqual(p <= x, p/x)
