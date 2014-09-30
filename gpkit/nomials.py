@@ -3,17 +3,6 @@ from itertools import chain
 import numpy as np
 from posyarray import PosyArray
 
-latex_symbol_dict = {
-    "omega": "\\omega",
-    "rho": "\\rho",
-    "mu": "\\mu",
-    "pi": "\\pi",
-    "nu": "\\nu",
-    "eta": "\\eta",
-    "tau": "\\tau",
-    "th": "\\theta",
-}
-
 
 def sort_and_simplify(exps, cs):
     "Reduces the number of monomials, and casts them to a sorted form."
@@ -80,19 +69,12 @@ class Posynomial(object):
             if isinstance(var_descrs, dict):
                     self.var_descrs.update(var_descrs)
             else:
-                try:
-                    assert isinstance(var_descrs[0], str)
-                    assert len(self.var_locs) == 1
-                    # if we only have one variable, a string can describe it
-                    var_descr = {self.var_locs.keys()[0]: [None, var_descrs[0]]}
-                    self.var_descrs.update(var_descr)
-                except:
-                    for var_descr in var_descrs:
-                        if isinstance(var_descr, dict):
-                            self.var_descrs.update(var_descr)
-                        else:
-                            raise ValueError("invalid variable descriptions: "
-                                             + str(var_descr))
+                for var_descr in var_descrs:
+                    if isinstance(var_descr, dict):
+                        self.var_descrs.update(var_descr)
+                    else:
+                        raise ValueError("invalid variable descriptions: "
+                                         + str(var_descr))
 
     def sub(self, substitutions, val=None):
         var_locs, exps, cs, newdescrs, subs = substitution(self.var_locs,
@@ -153,6 +135,11 @@ class Posynomial(object):
         return " + ".join(mstrs)
 
     def __repr__(self):
+        # try:
+        #     from IPython.display import Math
+        #     Math(self._latex())
+        # except:
+        #     pass
         return self.__class__.__name__+"("+self._string()+")"
 
     def _latex(self, unused=None):
@@ -161,15 +148,6 @@ class Posynomial(object):
         for c, exp in zip(self.cs, self.exps):
             pos_vars, neg_vars = [], []
             for var, x in exp.iteritems():
-                if '_' in var:
-                    idx = var.index("_")
-                    varbase = var[:idx]
-                    if varbase in latex_symbol_dict:
-                        varbase = latex_symbol_dict[varbase]
-                    var = varbase+"_{"+var[idx+1:]+"}"
-                else:
-                    if var in latex_symbol_dict:
-                        var = latex_symbol_dict[var]
                 if x > 0:
                     pos_vars.append((var, x))
                 elif x < 0:
