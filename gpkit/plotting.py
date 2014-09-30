@@ -18,7 +18,7 @@ def contour_plot(ax, X, Y, Z, title, colors):
     ax.set_title(title, color=dark, fontsize=14)
     ax.tick_params(colors=neutral_dark)
     ax.set_frame_on(False)
-    ax.grid(color=neutral_light)
+    ax.grid(which='both', color=neutral_light)
 
 
 def contour_array(data, vardescrs, X, Y, Zs,
@@ -29,6 +29,8 @@ def contour_array(data, vardescrs, X, Y, Zs,
         if isinstance(obj, dict):
             return obj.keys()[0], obj.values()[0]
         elif isinstance(obj, str):
+            if not vardescrs[obj]:
+                return "%s" % obj, data[obj]
             units, descr = vardescrs[obj]
             if units is None:
                 return "%s %s" % (descr, obj), data[obj]
@@ -60,12 +62,22 @@ def contour_array(data, vardescrs, X, Y, Zs,
         ax.set_xlabel(xlabel, color=neutral_dark)
         ax.set_xlim((Xgrid.min(), Xgrid.max()))
         if xticks is not None:
-            ax.set_xticks(xticks)
+            ax.set_xticks(xticks, minor=True)
+            m = len(xticks)
+            major_xticks = [xticks[i] for i in (0, 1*m/4, 2*m/4, 3*m/4, m-1)]
+            major_ticklabels = ["%.2g" % x for x in major_xticks]
+            ax.set_xticks(major_xticks)
+            ax.set_xticklabels(major_ticklabels)
     for ax in ylabeledaxes:
         ax.set_ylabel(ylabel, color=neutral_dark)
         ax.set_ylim((Ygrid.min(), Ygrid.max()))
         if yticks is not None:
-            ax.set_yticks(yticks)
+            ax.set_yticks(yticks, minor=True)
+            m = len(yticks)
+            major_yticks = [yticks[i] for i in (0, 1*m/4, 2*m/4, 3*m/4, m-1)]
+            major_ticklabels = ["%.2g" % y for y in major_yticks]
+            ax.set_yticks(major_yticks)
+            ax.set_yticklabels(major_ticklabels)
     fig.tight_layout(h_pad=3)
 
     for i, Z_lg in enumerate(Z_lgs):
