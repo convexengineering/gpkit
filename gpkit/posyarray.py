@@ -4,10 +4,13 @@ import numpy as np
 class PosyArray(np.ndarray):
     "Numpy array subclass with elementwise inequalities and substitutions"
     def __ne__(self, m):
-        return not isinstance(other, self.__class__) and self._eq(self, other).all()
+        return (not isinstance(other, self.__class__)
+                and self._eq(self, other).all())
 
     def _latex(self, unused=None):
-        return "["+", ".join(el._latex() for el in self)+"]"
+        return ("\\begin{bmatrix}" +
+                ", ".join(el._latex() for el in self) +
+                "\\end{bmatrix}")
 
     # constraint generators
     _eq = np.vectorize(lambda a, b: a == b)
