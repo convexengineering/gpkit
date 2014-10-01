@@ -59,7 +59,9 @@ Geometric programs might also have nice social properties:
     - (Mac/Linux) Run `python setup.py install` in the `cvxopt` folder, as noted [here](http://cvxopt.org/install/index.html#standard-installation)
     - (Windows) Follow the steps [here](http://cvxopt.org/install/index.html#building-cvxopt-for-windows)
   -  [MOSEK](http://mosek.com/resources/downloads)
-    -  (Mac/Linux) Move the `mosek` folder to your home directory
+    -  (Mac OS X) Move the `mosek` folder to your home directory and follow the steps [here](http://docs.mosek.com/7.0/toolsinstall/Mac_OS_X_installation.html)
+    -  (Linux/Unix) Move the `mosek` folder to your home directory and follow the steps [here](http://docs.mosek.com/7.0/toolsinstall/Linux_UNIX_installation_instructions.html)
+    -  (Windows) Follow the steps [here](http://docs.mosek.com/7.0/toolsinstall/Windows_installation.html)
 5. Get a MOSEK [academic license file](http://license.mosek.com/academic)
   - (Mac/Linux) Put the license file in ~/mosek/
   - (Windows) Put the license file in `Users/$USERNAME/mosek`, creating that folder if necessary
