@@ -100,6 +100,7 @@ class Posynomial(object):
 
     # constraint generation
     def __eq__(self, other):
+        # if at least one is a monomial, return a constraint
         mons = (int, float, Monomial)
         if (isinstance(other, mons) and isinstance(self, mons)):
             return MonoEQConstraint(self, other)
@@ -107,6 +108,9 @@ class Posynomial(object):
             return EQConstraint(self, other)
         elif (isinstance(other, Posynomial) and isinstance(self, mons)):
             return EQConstraint(other, self)
+        # else do standard truth checking
+        # (note: if eq constraints are unwanted, just check that
+        #        both self and other are posys before this step)
         elif (self.exps == other.exps and self.cs <= other.cs):
             return True
         else:
