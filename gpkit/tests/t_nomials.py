@@ -53,20 +53,21 @@ class t_Monomial(unittest.TestCase):
         # simple one
         x = Monomial('x')
         y = Monomial('y')
-        self.assertFalse(x == y)
-        self.assertTrue(x != y)
+        self.assertNotEqual(x, y)
+        self.assertNotEqual(x, y)
 
         xx = Monomial('x')
-        self.assertTrue(x == xx)
+        self.assertEqual(x, xx)
         self.assertFalse(x != xx)
 
-        self.assertTrue(x == x)
+        self.assertEqual(x, x)
         self.assertFalse(x != x)
 
         # scalar fails on type comparison even though c matches
+        # NOTE(bqpd): not anymore!
         x = Monomial({}, 1)
         y = 1
-        self.assertFalse(x == y)
+        self.assertEqual(x, y)
         self.assertEqual(x, Monomial({}))
 
         # several vars
@@ -74,9 +75,9 @@ class t_Monomial(unittest.TestCase):
         m2 = Monomial({'a':3, 'b':2, 'c':1}, 5)
         m3 = Monomial({'a':3, 'b':2, 'c':1}, 6)
         m4 = Monomial({'a':3, 'b':2}, 5)
-        self.assertTrue(m1 == m2)
-        self.assertTrue(m1 != m3)
-        self.assertTrue(m1 != m4)
+        self.assertEqual(m1, m2)
+        self.assertNotEqual(m1, m3)
+        self.assertNotEqual(m1, m4)
 
     def test_div(self):
         x = Monomial('x')

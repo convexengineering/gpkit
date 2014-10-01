@@ -100,16 +100,17 @@ class Posynomial(object):
 
     # constraint generation
     def __eq__(self, other):
-        if not isinstance(other, Posynomial):
-            return False
+        mons = (int, float, Monomial)
+        if (isinstance(other, mons) and isinstance(self, mons)):
+            return MonoEQConstraint(self, other)
+        elif (isinstance(other, mons) and isinstance(self, Posynomial)):
+            return EQConstraint(self, other)
+        elif (isinstance(other, Posynomial) and isinstance(self, mons)):
+            return EQConstraint(other, self)
+        elif (self.exps == other.exps and self.cs <= other.cs):
+            return True
         else:
-            if (self.exps == other.exps and self.cs <= other.cs):
-                return True
-            else:
-                if (isinstance(other, Monomial) and isinstance(self, Monomial)):
-                    return MonoEQConstraint(self, other)
-                else:
-                    return False
+            return False
 
     def __le__(self, other):
         return Constraint(self, other)
@@ -310,7 +311,15 @@ class Constraint(Posynomial):
         return bool(self.c == 1 and self.exp == {})
 
 
-class MonoEQConstraint(Constraint):
+class EQConstraint(Constraint):
+    def _set_operator(self, p1, p2):
+        self.oper_l = " == "
+        self.oper_s = " == "
+        self.leq = Constraint(p2, p1)
+        self.geq = Constraint(p1, p2)
+
+
+class MonoEQConstraint(EQConstraint):
     def _set_operator(self, p1, p2):
         self.oper_l = " = "
         self.oper_s = " = "
