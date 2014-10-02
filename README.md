@@ -18,13 +18,13 @@ Excerpt from an [aircraft design application](http://nbviewer.ipython.org/github
 gpkit.GP( # minimize                            # What's the lowest
          0.5*rho*S*C_D*V**2,                    # [N] TOTAL DRAG FORCE
          [ # subject to                         # That we can get, with our
-          Re <= (rho/mu)*V*(S/A)**0.5,          # flow characteristics,
-          C_f >= 0.074/Re**0.2,                 # turbulent BL approximation,
-          C_D >= C_D_fuse + C_D_wpar + C_D_ind  # the above 'drag model',
+          Re == (rho/mu)*V*(S/A)**0.5,          # flow characteristics,
+          C_f == 0.074/Re**0.2,                 # turbulent BL approximation,
+          C_D == C_D_fuse + C_D_wpar + C_D_ind  # the above 'drag model',
           W <= 0.5*rho*S*C_L*V**2,              # flight at cruising,
           W <= 0.5*rho*S*C_Lmax*V_min**2,       # flight at takeoff,     
-          W >= W_0 + W_w,                       # the plane's weight, and
-          W_w >= W_w_surf + W_w_strc,           # the above 'wing-weight model'?
+          W == W_0 + W_w,                       # the plane's weight, and
+          W_w == W_w_surf + W_w_strc,           # the above 'wing-weight model'?
          ], solver='mosek')
  ```
 
@@ -49,20 +49,23 @@ Geometric programs might also have nice social properties:
 
 ## Installation ##
 
-1. Install [Anaconda](http://continuum.io/downloads) for your platform
-   - (Mac) Install the Apple Developer Tools first
-   - If you don't want to install Anaconda, the packages useful for running gpkit are pip, numpy, scipy, sympy, and ipython notebook
-2. Install a solver: gpkit currently supports both CVXOPT and MOSEK. Note: if you wish to run the unit test suite, both solvers must be installed.
-  - [CVXOPT](http://cvxopt.org/download/index.html) 
-    - (Mac/Linux) Run `python setup.py install` in the `cvxopt` folder, as noted [here](http://cvxopt.org/install/index.html#standard-installation)
-    - (Windows) Follow the steps [here](http://cvxopt.org/install/index.html#building-cvxopt-for-windows)
-  -  [MOSEK](http://mosek.com/resources/downloads)
-    -  (Mac OS X) Move the `mosek` folder to your home directory and follow the steps [here](http://docs.mosek.com/7.0/toolsinstall/Mac_OS_X_installation.html)
-    -  (Linux/Unix) Move the `mosek` folder to your home directory and follow the steps [here](http://docs.mosek.com/7.0/toolsinstall/Linux_UNIX_installation_instructions.html)
-    -  (Windows) Follow the steps [here](http://docs.mosek.com/7.0/toolsinstall/Windows_installation.html)
-    - Get a MOSEK [academic license file](http://license.mosek.com/academic)
-      - (Mac/Linux) Put the license file in ~/mosek/
-      - (Windows) Put the license file in `Users/$USERNAME/mosek`, creating that folder if necessary
-3. Run `pip install git+git://github.com/appliedopt/gpkit.git#egg=gpkit` at a terminal (or in Windows an "Anaconda Command Prompt")
-4. Test your install by running `python -c "import gpkit.tests; gpkit.tests.run()"`
-  - If you haven't installed both MOSEK and CVXOPT, you may get some errors; but as long as you get 4 or fewer, you're all set!
+1. Install [Anaconda](http://continuum.io/downloads):
+   - (Mac) You'll need to install the [Apple Command Line Tools](https://developer.apple.com/downloads/index.action?=command%20line%20tools) first.
+   - If you don't want to install Anaconda, you'll need the python packages numpy and ctypesgen, and might find pip, sympy, and iPython Notebook to be useful as well.
+2. Install a solver: (gpkit currently supports both CVXOPT and MOSEK)
+  - Download [CVXOPT](http://cvxopt.org/download/index.html):
+    - (Mac/Linux) Run `python setup.py install` in the `cvxopt` folder, as noted [here](http://cvxopt.org/install/index.html#standard-installation).
+    - (Windows) Follow the steps [here](http://cvxopt.org/install/index.html#building-cvxopt-for-windows).
+  - Download [MOSEK](http://mosek.com/resources/downloads):
+    -  (Mac OS X) Move the `mosek` folder to your home directory and follow the steps [here](http://docs.mosek.com/7.0/toolsinstall/Mac_OS_X_installation.html).
+    -  (Linux) Move the `mosek` folder to your home directory and follow the steps [here](http://docs.mosek.com/7.0/toolsinstall/Linux_UNIX_installation_instructions.html).
+    -  (Windows) Follow the steps [here](http://docs.mosek.com/7.0/toolsinstall/Windows_installation.html).
+    - Get a MOSEK [academic license file](http://license.mosek.com/academic):
+      - (Mac/Linux) Put the license file in `~/mosek/`.
+      - (Windows) Put it in `Users/$USERNAME/mosek`, creating that folder if necessary.
+3. Run `pip install https://github.com/appliedopt/gpkit/zipball/master` at a terminal.
+  - (Windows) at an "Anaconda Command Prompt".
+4. Test your install by running `python -c "import gpkit.tests; gpkit.tests.run()"`.
+  - If you haven't installed both MOSEK and CVXOPT, expect a few errors.
+
+If you encounter any bugs during installation, email [eburn@mit.edu](mailto:eburn@mit.edu).
