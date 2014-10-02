@@ -128,7 +128,7 @@ class GP(Model):
         var_sens = {'%s' % var: (sum([self.unsubbed.exps[i][var]*dss[i]
                                      for i in locs]))
                     for (var, locs) in self.unsubbed.var_locs.iteritems()}
-        mon_sens = {i: dss[i+1] for i in xrange(len(self.cs)-1)}
+        mon_sens = {i: dss[i] for i in xrange(len(self.cs))}
         var_sens.update(mon_sens)
         return var_sens
 
@@ -150,7 +150,7 @@ class GP(Model):
         sweep_vects = {var: grid.reshape(N_passes)
                        for (var, grid) in sweep_grids.iteritems()}
         result_2d_array = np.empty((N_passes, len(self.var_locs)))
-        sensitivity_2d_array = np.empty((N_passes, len(self.cs)-1 +
+        sensitivity_2d_array = np.empty((N_passes, len(self.cs) +
                                         len(self.unsubbed.var_locs)))
 
         for i in xrange(N_passes):
