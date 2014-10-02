@@ -22,7 +22,6 @@ from os.path import dirname as os_path_dirname
 
 try:
     import lib.expopt_h as expopt_h
-    MSK = module_shortener("MSK", expopt_h)
 except Exception, e:
     raise ImportError("Could not load MOSEK library: "+repr(e))
 
@@ -58,6 +57,9 @@ class module_shortener(object):
         attribute from self.module
         """
         return getattr(self.module, self.stub+attribute)
+
+
+MSK = module_shortener("MSK", expopt_h)
 
 
 def c_array(py_array, c_type):
@@ -228,6 +230,6 @@ def imize(c, A, p_idxs):
     MSK._deleteenv(ptr(env))
 
     return dict(success=True,
-                objective_sol=float(objval),
+                objective_sol=float(objval.value),
                 primal_sol=[exp(x) for x in xx],
                 dual_sol=list(yy))
