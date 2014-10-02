@@ -171,6 +171,9 @@ class Model(object):
                 if varsign == 1: bound = "lower"
                 elif varsign == -1: bound = "upper"
                 self.missingbounds[var] = bound
+        # add subbed-out monomials at the end
+        if not self.exps[-1]:
+            self.A.append(0, len(self.exps)-1, 0)
         self.A.update_shape()
 
         if print_boundwarnings: self.print_boundwarnings()
