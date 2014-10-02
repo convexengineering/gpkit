@@ -1,19 +1,42 @@
-from models import Model
-from nomials import Constraint, MonoEQConstraint
+# -*- coding: utf-8 -*-
+"""Module for creating instance of Geometric Programs
+
+    Example
+    -------
+    ``gp = gpkit.GP(cost, constraints, substitutions)``
+
+"""
+
+import numpy as np
+
+from time import time
+from pprint import pformat
 from collections import Iterable
 
-try:
-    import numpy as np
-except ImportError:
-    print "Could not import numpy: will not be able to sweep variables"
-
-import time
-import pprint
+from models import Model
+from nomials import Constraint, MonoEQConstraint
 
 import gpkit.plotting
 
 
 def flatten_constr(l):
+    """Flattens an iterable that contains only constraints and other iterables
+
+    Args
+    ----
+    l : Iterable
+        Top-level constraints container
+
+    Returns
+    -------
+    out : list
+        List of all constraints found in the nested iterables
+
+    Raises
+    ------
+    TypeError
+        If an object is found that is neither Constraint nor Iterable
+    """
     out = []
     for el in l:
         if isinstance(el, Constraint):
@@ -43,7 +66,7 @@ class GP(Model):
                           for p in self.constraints] +
                          ['          ],',
                           "          substitutions={ %s }," %
-                          pprint.pformat(self.substitutions, indent=26)[26:-1],
+                          pformat(self.substitutions, indent=26)[26:-1],
                           '          solver="%s")' % self.solver]
                          )
 
@@ -83,7 +106,7 @@ class GP(Model):
 
     def solve(self, printing=True):
         if printing: print "Using solver '%s'" % self.solver
-        self.starttime = time.time()
+        self.starttime = time()
         self.data = {}
         if self.sweep:
             self.solution = self._solve_sweep(printing)
@@ -93,11 +116,11 @@ class GP(Model):
             self.solution = dict(zip(self.var_locs,
                                      result['primal_sol']))
             self.sensitivities = self._sensitivities(result)
-            self.solution.update(self.sensitivities)
 
+        self.data.update(self.sensitivities)
         self.data.update(self.substitutions)
         self.data.update(self.solution)
-        self.endtime = time.time()
+        self.endtime = time()
         if printing:
             print ("Solving took %.3g seconds   "
                    % (self.endtime - self.starttime))
@@ -141,9 +164,9 @@ class GP(Model):
 
         solution = {var: result_2d_array[:, j].reshape(sweep_shape)
                     for (j, var) in enumerate(self.var_locs)}
-        sensitivities = {var: sensitivity_2d_array[:, j].reshape(sweep_shape)
-                         for (j, var) in enumerate(self._sensitivities(result).keys())}
-        solution.update(sensitivities)
+        self.sensitivities = {var: sensitivity_2d_array[:, j].reshape(sweep_shape)
+                              for (j, var) in enumerate(self._sensitivities(result).keys())}
+
         solution.update(sweep_grids)
 
         self.load(self.presweep)
@@ -212,5 +235,6 @@ def cvxoptimize(c, A, k, options):
     solution = solvers.gp(k, F, g)
     # TODO: catch errors, delays, etc.
     return dict(success=True,
+                # TODO: return objective value!
                 primal_sol=exp(solution['x']),
                 dual_sol=solution['y'])

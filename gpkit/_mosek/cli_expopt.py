@@ -1,15 +1,62 @@
+# -*- coding: utf-8 -*-
+"""Module for using the MOSEK EXPOPT command line interface
+
+    Example
+    -------
+    ``result = _mosek.cli_expopt.imize(cs, A, p_idxs, "gpkit_mosek")``
+
+"""
+
 import os
 from math import exp
 from subprocess import check_output
 
 
-def imize(c, A, map_, filename):
+def imize(c, A, p_idxs, filename):
+    """Interface to the MOSEK "mskexpopt" command line solver
+
+    Definitions
+    -----------
+    "[a,b] array of floats" indicates array-like data with shape [a,b]
+    n is the number of monomials in the gp
+    m is the number of variables in the gp
+    p is the number of posynomials in the gp
+
+    Parameters
+    ----------
+    c : floats array of shape n
+        Coefficients of each monomial
+    A: floats array of shape (m,n)
+        Exponents of the various free variables for each monomial.
+    p_idxs: ints array of shape n
+        Posynomial index of each monomial
+    filename: str
+        Filename prefix for temporary files
+
+    Returns
+    -------
+    dict
+        Contains the following keys
+            "success": bool
+            "objective_sol" float
+                Optimal value of the objective
+            "primal_sol": floats array of size m
+                Optimal value of the free variables. Note: not in logspace.
+            "dual_sol": floats array of size p
+                Optimal value of the dual variables, in logspace.
+
+    Raises
+    ------
+    Exception
+        If the format of mskexpopt's output file does not match expectations.
+
+    """
     if not os.path.exists("gpkit_tmp"):
         os.makedirs("gpkit_tmp")
 
     filename = "gpkit_tmp" + os.sep + filename
-    with open(filename, 'w') as f:
-        numcon = 1+map_[-1]
+    with open(filename, "w") as f:
+        numcon = 1+p_idxs[-1]
         numter, numvar = map(int, A.shape)
         for n in [numcon, numter, numvar]:
             f.write("%d\n" % n)
@@ -17,8 +64,8 @@ def imize(c, A, map_, filename):
         f.write("\n*c\n")
         f.writelines(["%.20e\n" % x for x in c])
 
-        f.write("\n*map_\n")
-        f.writelines(["%d\n" % x for x in map_])
+        f.write("\n*p_idxs\n")
+        f.writelines(["%d\n" % x for x in p_idxs])
 
         t_j_Atj = zip(A.col, A.row, A.data)
 

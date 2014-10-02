@@ -1,10 +1,18 @@
-"""
-Lightweight GP Modeling Package
+# -*- coding: utf-8 -*-
+"""Lightweight GP Modeling Package
 
-Needs mosek or cvxopt to be able to solve GPs
+    For examples please see ``../examples``
 
-Uses numpy for ndarrays
-     scipy for splines, sparse matrix operations
+    Requirements
+    ------------
+    numpy
+    MOSEK or CVXOPT
+    sympy(optional): for latex printing in iPython Notebook
+
+    Attributes
+    ----------
+    settings : dict
+        Contains settings loaded from ``./env/settings``
 """
 
 from posyarray import PosyArray
@@ -14,9 +22,13 @@ from geometric_program import GP
 from variables import Variable
 from variables import VectorVariable
 
-# Implements pretty latex printing in iPython Notebook via sympy
-from printing import init_printing as init_ipynb_printing
+try:
+    # requires sympy
+    from printing import init_printing as init_ipynb_printing
+except ImportError:
+    pass
 
+# Load settings
 from os import sep as os_sep
 from os.path import dirname as os_path_dirname
 settings_path = os_sep.join([os_path_dirname(__file__),
