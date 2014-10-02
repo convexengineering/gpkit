@@ -25,11 +25,18 @@ class t_GP(unittest.TestCase):
         import simpleflight_gps
         gp = simpleflight_gps.single()
         gp.solver = self.solver
-        data = gp.solve()
-        datacheck = pickle.load(file("single.p"))
-        for key in datacheck:
-            if datacheck[key] > 1e-3:
-                self.assertTrue(abs(1-data[key]/datacheck[key]) < 1e-2)
+        sol = gp.solve()
+        solcheck = dict(A=8.46,
+                        C_D=0.0206,
+                        C_f=0.0036,
+                        C_L=0.499,
+                        Re=3.68e+06,
+                        S=16.4,
+                        W=7.34e+03,
+                        V=38.2,
+                        W_w=2.40e+03)
+        for key in solcheck:
+            self.assertTrue(abs(1-sol[key]/solcheck[key]) < 1e-2)
 
 testcases = [t_GP]
 
