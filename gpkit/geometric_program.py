@@ -22,8 +22,8 @@ import gpkit.plotting
 def flatten_constr(l):
     """Flattens an iterable that contains only constraints and other iterables
 
-    Args
-    ----
+    Parameters
+    ----------
     l : Iterable
         Top-level constraints container
 

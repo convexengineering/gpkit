@@ -65,8 +65,8 @@ MSK = module_shortener("MSK", expopt_h)
 def c_array(py_array, c_type):
     """Makes a C array from a python list or array and a C datatype
 
-    Args
-    ----
+    Parameters
+    ----------
       py_array: array-like data to convert
       c_type: C datatype to which elements of py_array will be converted
 
@@ -89,8 +89,8 @@ def printcb(void, msg):
         `print msg[:-1]`
     before the return statement.
 
-    Args
-    ----
+    Parameters
+    ----------
     void : None
       Placeholder to emulate C function
     msg : C string
