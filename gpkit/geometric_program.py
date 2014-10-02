@@ -107,7 +107,7 @@ class GP(Model):
     def solve(self, printing=True):
         if printing: print "Using solver '%s'" % self.solver
         self.starttime = time()
-        self.data = {}
+
         if self.sweep:
             self.solution = self._solve_sweep(printing)
         else:
@@ -117,20 +117,20 @@ class GP(Model):
                                      result['primal_sol']))
             self.sensitivities = self._sensitivities(result)
 
-        self.data.update(self.sensitivities)
-        self.data.update(self.substitutions)
-        self.data.update(self.solution)
         self.endtime = time()
         if printing:
             print ("Solving took %.3g seconds   "
                    % (self.endtime - self.starttime))
-        return self.data
+        return self.solution
 
     def _sensitivities(self, result):
         dss = result['dual_sol']
-        return {'S{%s}' % var: (sum([self.unsubbed.exps[i][var]*dss[i]
-                                    for i in locs]))
-                for (var, locs) in self.unsubbed.var_locs.iteritems()}
+        var_sens = {'%s' % var: (sum([self.unsubbed.exps[i][var]*dss[i]
+                                     for i in locs]))
+                    for (var, locs) in self.unsubbed.var_locs.iteritems()}
+        mon_sens = {i: dss[i+1] for i in xrange(len(self.cs)-1)}
+        var_sens.update(mon_sens)
+        return var_sens
 
     def _solve_sweep(self, printing):
         self.presweep = self.last
@@ -150,7 +150,8 @@ class GP(Model):
         sweep_vects = {var: grid.reshape(N_passes)
                        for (var, grid) in sweep_grids.iteritems()}
         result_2d_array = np.empty((N_passes, len(self.var_locs)))
-        sensitivity_2d_array = np.empty((N_passes, len(self.unsubbed.var_locs)))
+        sensitivity_2d_array = np.empty((N_passes, len(self.cs)-1 +
+                                        len(self.unsubbed.var_locs)))
 
         for i in xrange(N_passes):
             this_pass = {var: sweep_vect[i]
@@ -217,7 +218,7 @@ class GP(Model):
 
     def plot_frontiers(self, Zs, x, y, figsize):
         if len(self.sweep) == 2:
-            gpkit.plotting.contour_array(self.data,
+            gpkit.plotting.contour_array(self.solution,
                                          self.var_descrs,
                                          self.sweep.keys()[0],
                                          self.sweep.keys()[1],

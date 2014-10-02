@@ -74,7 +74,7 @@ gp = gpkit.GP(  # minimize
                     C_D >= C_D_fuse + C_D_wpar + C_D_ind
                 ], substitutions)
 
-data = gp.solve()
+gp.solve()
 
 # Results
 profile.disable()
@@ -83,17 +83,24 @@ ps.strip_dirs()
 ps.sort_stats('time')
 ps.print_stats(10)
 
-print "                 | Averages"
-for key, table in data.iteritems():
-    try:
-        val = table.mean()
-    except AttributeError:
-        val = table
-    descr = gp.var_descrs[key]
-    if descr:
-        if descr[0] is None:
-            descr = "[-] %s" % descr[1]
-        else:
-            descr = "[%s] %s" % (descr[0], descr[1])
-    print "%16s" % key, ": %-8.3g" % val, descr
-print "                 |"
+
+def print_results_table(data, title, minval=None):
+    print "                    | " + title
+    for key, table in data.iteritems():
+        try:
+            val = table.mean()
+        except AttributeError:
+            val = table
+        descr = gp.var_descrs[key]
+        if descr:
+            if descr[0] is None:
+                descr = "[-] %s" % descr[1]
+            else:
+                descr = "[%s] %s" % (descr[0], descr[1])
+        if minval is None or abs(val) > minval:
+            print "%19s" % key, ": %-8.3g" % val, descr
+    print "                    |"
+
+print_results_table(gp.substitutions, "Substitutions")
+print_results_table(gp.solution, "Solution")
+print_results_table(gp.sensitivities, "Sensitivities", minval=1e-2)
