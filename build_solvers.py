@@ -169,6 +169,7 @@ class Mosek(SolverBackend):
 
     def build(self):
         lib_dir = replacedir(pathjoin("gpkit", "_mosek", "lib"))
+        solib_dir = replacedir(pathjoin(os.path.expanduser("~"), ".gpkit"))
         f = open(pathjoin(lib_dir, "__init__.py"), 'w')
         f.close()
 
@@ -190,15 +191,15 @@ class Mosek(SolverBackend):
         built_expopt_lib = call("gcc -fpic -shared" +
                                 "    " + " ".join(expopt_build_files) +
                                 '   "' + self.lib_path + '"' +
-                                " -o " + pathjoin(lib_dir, "expopt.so"))
+                                " -o " + pathjoin(solib_dir, "expopt.so"))
         if built_expopt_lib != 0: return False
 
         print "#\n#   Building Python bindings for expopt and Mosek..."
-        mosek_h_path = pathjoin(lib_dir, "mosek_h.py")
+        # mosek_h_path = pathjoin(lib_dir, "mosek_h.py")
         built_expopt_h = call("python ctypesgen.py -a" +
-                              " -l "+pathjoin(lib_dir, "expopt.so") +
+                              " -l "+pathjoin(solib_dir, "expopt.so").replace("\\", "/") +
                               ' -l "' + self.lib_path.replace("\\", "/") + '"' +
-                              ' -o "' + mosek_h_path.replace("\\", "/") + '"' +
+                              # ' -o "' + mosek_h_path.replace("\\", "/") + '"'+
                               " -o "+pathjoin(lib_dir, "expopt_h.py") +
                               "    "+pathjoin(build_dir, "expopt.h"))
 

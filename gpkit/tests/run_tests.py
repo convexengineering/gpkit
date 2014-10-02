@@ -13,7 +13,8 @@ tests += t_array.tests
 import t_geometric_program
 tests += t_geometric_program.tests
 
-if __name__ == '__main__':
+
+def run():
     suite = unittest.TestSuite()
     loader = unittest.TestLoader()
 
@@ -21,3 +22,6 @@ if __name__ == '__main__':
         suite.addTests(loader.loadTestsFromTestCase(t))
 
     unittest.TextTestRunner(verbosity=2).run(suite)
+
+if __name__ == '__main__':
+    run()
