@@ -10,7 +10,7 @@ Installation instructions are below.
 
 ### What does gpkit look like?
 
-Excerpt from an [aircraft design application](http://nbviewer.ipython.org/github/appliedopt/gpkit/blob/master/examples/ipynb/simpleaircraft.ipynb):
+Excerpt from an [aircraft design application](http://nbviewer.ipython.org/github/appliedopt/gpkit/blob/master/gpkit/examples/simpleaircraft.ipynb):
 
 ```python
 # Note: in Python, '**' serves as the power ('^') operator
