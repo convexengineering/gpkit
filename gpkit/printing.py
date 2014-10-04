@@ -93,9 +93,6 @@ def _init_ipython_printing(ip, stringify_func, use_latex, euler, forecolor,
 If o is a container type, this is True if and only if every element of
 o can be printed with LaTeX.
 """
-        from sympy import Basic
-        from sympy.matrices import MatrixBase
-        from sympy.physics.vector import Vector, Dyadic
         if isinstance(o, (list, tuple, set, frozenset)):
             return all(_can_print_latex(i) for i in o)
         elif isinstance(o, dict):
@@ -209,7 +206,7 @@ ipython/IPython/hooks.py:155
 
 
 def init_printing(pretty_print=True, order=None, use_unicode=None,
-                  use_latex=None, wrap_line=None, num_columns=None,
+                  use_latex='mathjax', wrap_line=None, num_columns=None,
                   no_global=False, ip=None, euler=False, forecolor='Black',
                   backcolor='Transparent', fontsize='10pt',
                   latex_mode='equation*', print_builtin=True,

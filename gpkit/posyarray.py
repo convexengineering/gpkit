@@ -9,7 +9,7 @@ class PosyArray(np.ndarray):
 
     def _latex(self, unused=None):
         return ("\\begin{bmatrix}" +
-                ", ".join(el._latex() for el in self) +
+                ", & ".join(el._latex() for el in self) +
                 "\\end{bmatrix}")
 
     # constraint generators

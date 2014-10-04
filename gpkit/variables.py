@@ -9,7 +9,7 @@ def Variable(name, *descr):
 
 def VectorVariable(length, name, *descr):
     descr = _format_description(descr)
-    m = PosyArray([Monomial("%s_%i" % (name, i)) for i in xrange(length)])
+    m = PosyArray([Monomial("%s_{%i}" % (name, i)) for i in xrange(length)])
     for el in m:
         el.var_descrs[el.exp.keys()[0]] = descr
     return m
