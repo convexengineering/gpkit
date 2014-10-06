@@ -36,12 +36,12 @@ def substitution(var_locs, exps, cs, substitutions, val=None):
                 if all((isinstance(val, (int, float, Monomial))
                         for val in sub)):
                     # sub is a vector
-                    vsub = [("%s_%i" % (var, j), val)
+                    vsub = [("%s_{%i}" % (var, j), val)
                             for (j, val) in enumerate(sub)]
                 elif all((isinstance(val, (int, float, Monomial))
                           for val in sub[0])):
                     # sub's first element is a vector
-                    vsub = [("%s_%i" % (var, j), val)
+                    vsub = [("%s_{%i}" % (var, j), val)
                             for (j, val) in enumerate(sub[0])]
                     # sub's last element is description
                     assert isinstance(sub[-1], str)
