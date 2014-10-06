@@ -33,12 +33,12 @@ class module_shortener(object):
         regular python:  MSK.MSK_makeemptytask
     w/module_shortener:  MSK._makeemptytask
 
-    Attributes
+    Parameters
     ----------
     stub : str
       String to append to all getattrs (the string "MSK_" above)
     module : str
-      Module to be shortened (the "MSK" object above)
+      Module to be shortened (the first "MSK" object above)
     """
     def __init__(self, stub, module):
         self.module = module
@@ -126,8 +126,6 @@ def imize(c, A, p_idxs):
         Exponents of the various free variables for each monomial.
     p_idxs: ints array of shape n
         Posynomial index of each monomial
-    filename: str
-        Filename prefix for temporary files
 
     Returns
     -------

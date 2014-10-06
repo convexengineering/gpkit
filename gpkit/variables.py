@@ -1,13 +1,51 @@
+# -*- coding: utf-8 -*-
+"""Module for creating singlet Monomials and vectors of singlet Monomials.
+
+    Examples
+    --------
+    >>> pi = gpkit.Variable("\\pi", "half of the circle constant")
+
+"""
+
 from gpkit import PosyArray
 from gpkit import Monomial
 
 
 def Variable(name, *descr):
+    """A described singlet Monomial.
+
+    Parameters
+    ----------
+    name : str
+        The variable's name; can be any string.
+    descr : list
+        May be either [units, label] or [label]
+
+    Returns
+    -------
+    Monomial of named variable
+    """
     descr = _format_description(descr)
     return Monomial(name, var_descrs={name: descr})
 
 
 def VectorVariable(length, name, *descr):
+    """A described vector of singlet Monomials.
+
+    Parameters
+    ----------
+    length : int
+        Length of vector.
+    name : str
+        The variable's name; can be any string.
+    descr : list
+        May be either [units, label] or [label]
+
+    Returns
+    -------
+    PosyArray of Monomials, each containing a variable with the name '$V_{i}',
+    where V is the vector's name and i is the variable's index.
+    """
     descr = _format_description(descr)
     m = PosyArray([Monomial("%s_{%i}" % (name, i)) for i in xrange(length)])
     for el in m:
@@ -16,6 +54,18 @@ def VectorVariable(length, name, *descr):
 
 
 def _format_description(descr):
+    """Parses description lists
+
+    Parameters
+    ----------
+    descr : list
+        May be either [units, label] or [label]
+
+    Returns
+    -------
+    units : str
+    label : str
+    """
     label = None
     if len(descr) == 1:
             if isinstance(descr[0], str):

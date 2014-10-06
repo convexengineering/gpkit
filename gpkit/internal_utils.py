@@ -1,8 +1,13 @@
+# -*- coding: utf-8 -*-
+"Module containing miscellanous useful functions"
+
 from collections import defaultdict
 from nomials import Monomial
 
 
 def locate_vars(exps):
+    """From posynomial exponents, forms a dictionary
+       of what monomials each variable is in."""
     var_locs = defaultdict(list)
     for i, exp in enumerate(exps):
         for var in exp:
@@ -11,6 +16,34 @@ def locate_vars(exps):
 
 
 def substitution(var_locs, exps, cs, substitutions, val=None):
+    """Runs a GP through a sweep, solving at each grid point
+
+        Parameters
+        ----------
+        var_locs : dict
+            Dictionary of monomial indexes for each variable.
+        exps : dict
+            Dictionary of variable exponents for each monomial.
+        cs : list
+            Coefficients each monomial.
+        substitutions : dict
+            Substitutions to apply to the above.
+        val : number (optional)
+            Used to substitute singlet variables.
+
+        Returns
+        -------
+        var_locs_ : dict
+            Dictionary of monomial indexes for each variable.
+        exps_ : dict
+            Dictionary of variable exponents for each monomial.
+        cs_ : list
+            Coefficients each monomial.
+        descrs : dict
+            Descriptions of substituted variables.
+        subs_ : dict
+            Substitutions to apply to the above.
+    """
     if val is not None and isinstance(substitutions, str):
         # singlet variable
         substitutions = {substitutions: val}
@@ -83,6 +116,7 @@ def substitution(var_locs, exps, cs, substitutions, val=None):
 
 
 def invalid_types_for_oper(oper, a, b):
+    "Raises TypeError for unsupported operations."
     typea = a.__class__.__name__
     typeb = b.__class__.__name__
     raise TypeError("unsupported operand types"
@@ -90,7 +124,12 @@ def invalid_types_for_oper(oper, a, b):
 
 
 class HashVector(dict):
-    "A simple, sparse, string-indexed immutable vector."
+    """A simple, sparse, string-indexed immutable vector that inherits from dict.
+
+    The HashVector class supports element-wise arithmetic.
+
+    Any undeclared variables are assumed to have a value of zero.
+    """
 
     # unsettable and hashable
     def __hash__(self):
@@ -98,10 +137,10 @@ class HashVector(dict):
             self._hashvalue = hash(tuple(self.items()))
         return self._hashvalue
 
+    # TODO: implement this without breaking copy.deepcopy
     # def __setitem__(self, key, value):
     #     raise TypeError("HashVectors are immutable.")
 
-    # standard element-wise arithmetic
     def __neg__(self):
         return HashVector({key: -val for (key, val) in self.iteritems()})
 

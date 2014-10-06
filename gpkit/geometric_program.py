@@ -1,9 +1,9 @@
 # -*- coding: utf-8 -*-
-"""Module for creating instance of Geometric Programs
+"""Module for creating GP instances.
 
     Example
     -------
-    ``gp = gpkit.GP(cost, constraints, substitutions)``
+    >>> gp = gpkit.GP(cost, constraints, substitutions)
 
 """
 
@@ -51,33 +51,38 @@ def flatten_constr(l):
 
 
 class GP(Model):
+    """Holds a model and cost function for passing to solvers.
 
-    def __eq__(self, other):
-        return str(self) == str(other)
+    Parameters
+    ----------
+    cost : Constraint
+        Posynomial to minimize when solving
+    constraints : list of (lists of) Constraints
+        Constraints to maintain when solving (MonoEQConstraints will
+        be turned into <= and >= constraints)
+    substitutions : dict {varname: float or int} (optional)
+        Substitutions to be applied before solving (including sweeps)
+    solver : str (optional)
+        Name of solver to use
+    options : dict (optional)
+        Options to pass to solver
 
-    def __ne__(self, other):
-        return not self == other
+    Examples
+    --------
+    >>> gp = gpkit.GP(  # minimize
+                        0.5*rho*S*C_D*V**2,
+                        [   # subject to
+                            Re <= (rho/mu)*V*(S/A)**0.5,
+                            C_f >= 0.074/Re**0.2,
+                            W <= 0.5*rho*S*C_L*V**2,
+                            W <= 0.5*rho*S*C_Lmax*V_min**2,
+                            W >= W_0 + W_w,
+                            W_w >= W_w_surf + W_w_strc,
+                            C_D >= C_D_fuse + C_D_wpar + C_D_ind
+                        ], substitutions)
+        gp.solve()
 
-    def __repr__(self):
-        return "\n".join(["gpkit.GP( # minimize",
-                          "          %s," % self.cost._string(),
-                          "          [   # subject to"] +
-                         ["              %s," % p._string()
-                          for p in self.constraints] +
-                         ['          ],',
-                          "          substitutions={ %s }," %
-                          pformat(self.substitutions, indent=26)[26:-1],
-                          '          solver="%s")' % self.solver]
-                         )
-
-    def _latex(self, unused=None):
-        return "\n".join(["\\begin{array}[ll]",
-                          "\\text{}"
-                          "\\text{minimize}",
-                          "    & %s \\\\" % self.cost._latex(),
-                          "\\text{subject to}"] +
-                         ["    & %s \\\\" % c._latex() for c in self.constraints] +
-                         ["\\end{array}"])
+    """
 
     def __init__(self, cost, constraints, substitutions={},
                  solver=None, options={}):
@@ -104,7 +109,50 @@ class GP(Model):
         if substitutions:
             self.sub(substitutions, tobase='initialsub')
 
+    def __eq__(self, other):
+        "GP equality is determined by their string representations."
+        return str(self) == str(other)
+
+    def __ne__(self, other):
+        "GP inequality is determined by their string representations."
+        return not self == other
+
+    def __repr__(self):
+        "The string representation of a GP contains all of its parameters."
+        return "\n".join(["gpkit.GP( # minimize",
+                          "          %s," % self.cost._string(),
+                          "          [   # subject to"] +
+                         ["              %s," % p._string()
+                          for p in self.constraints] +
+                         ['          ],',
+                          "          substitutions={ %s }," %
+                          pformat(self.substitutions, indent=26)[26:-1],
+                          '          solver="%s")' % self.solver]
+                         )
+
+    def _latex(self, unused=None):
+        "The LaTeX of a GP contains its cost and constraint posynomials"
+        return "\n".join(["\\begin{array}[ll]",
+                          "\\text{minimize}",
+                          "    & %s \\\\" % self.cost._latex(),
+                          "\\text{subject to}"] +
+                         ["    & %s \\\\" % c._latex()
+                          for c in self.constraints] +
+                         ["\\end{array}"])
+
     def solve(self, printing=True):
+        """Solves a GP and returns the solution.
+
+        Parameters
+        ----------
+        printing : bool (optional)
+            If True (default), then prints out solver used and time to solve.
+
+        Returns
+        -------
+        solution : dict
+            A dictionary containing the optimal values for each free variable.
+        """
         if printing: print "Using solver '%s'" % self.solver
         self.starttime = time()
 
@@ -124,6 +172,19 @@ class GP(Model):
         return self.solution
 
     def _sensitivities(self, result):
+        """Determines GP constant sensitivities.
+
+        Parameters
+        ----------
+        result : dict
+            Result returned by solver.
+
+        Returns
+        -------
+        var_sens : dict
+            A dictionary containing the log sensitivities of each monomial
+            (by index) and each constant (by name)
+        """
         dss = result['dual_sol']
         var_sens = {'%s' % var: (sum([self.unsubbed.exps[i][var]*dss[i]
                                      for i in locs]))
@@ -133,6 +194,19 @@ class GP(Model):
         return var_sens
 
     def _solve_sweep(self, printing):
+        """Runs a GP through a sweep, solving at each grid point
+
+        Parameters
+        ----------
+        printing : bool (optional)
+            If True, then prints out sweep and GP size.
+
+        Returns
+        -------
+        solution : dict
+            A dictionary containing the array of optimal values
+            for each free variable.
+        """
         self.presweep = self.last
         self.sub({var: 1 for var in self.sweep}, tobase='swept')
 
@@ -174,6 +248,8 @@ class GP(Model):
         return solution
 
     def __run_solver(self):
+        "Switches between solver options"
+
         if self.solver == 'cvxopt':
             result = cvxoptimize(self.cs,
                                  self.A,
@@ -203,20 +279,24 @@ class GP(Model):
         return result
 
     def check_result(self, result):
-        assert result['success']
-        # TODO: raise InfeasibilityWarning
-        # self.check_feasibility(result['primal_sol'])
-
-    def check_feasibility(self, primal_sol):
+        "Checks result's status, primal and dual solutions"
+        if not result['success']:
+            # TODO: more helpful warning
+            raise RuntimeWarning("solver failed, perhaps because"
+                                 "the problem was infeasible.")
+        self.check_feasibility(result['primal_sol'])
+        # Check primal solution
         allsubs = dict(self.substitutions)
         allsubs.update(dict(zip(self.var_locs, primal_sol)))
         for p in self.constraints:
             val = p.sub(allsubs).c
-            if not val <= 1 + 1e-4:
+            if not val <= 1 + 1e-4:  # arbitrary epsilon of 1e-4
                 raise RuntimeWarning("Constraint broken:"
                                      " %s = 1 + %0.2e" % (p, val-1))
+        # TODO: Check dual solution
 
     def plot_frontiers(self, Zs, x, y, figsize):
+        "Helper function to plot 2d contour plots. TODO: remove."
         if len(self.sweep) == 2:
             gpkit.plotting.contour_array(self.solution,
                                          self.var_descrs,
@@ -228,6 +308,36 @@ class GP(Model):
 
 
 def cvxoptimize(c, A, k, options):
+    """Interface to the CVXOPT solver
+
+        Definitions
+        -----------
+        "[a,b] array of floats" indicates array-like data with shape [a,b]
+        n is the number of monomials in the gp
+        m is the number of variables in the gp
+        p is the number of posynomials in the gp
+
+        Parameters
+        ----------
+        c : floats array of shape n
+            Coefficients of each monomial
+        A: floats array of shape (m,n)
+            Exponents of the various free variables for each monomial.
+        p_idxs: ints array of shape n
+            Posynomial index of each monomial
+
+        Returns
+        -------
+        dict
+            Contains the following keys
+                "success": bool
+                "objective_sol" float
+                    Optimal value of the objective
+                "primal_sol": floats array of size m
+                    Optimal value of the free variables. Note: not in logspace.
+                "dual_sol": floats array of size p
+                    Optimal value of the dual variables, in logspace.
+    """
     from cvxopt import solvers, spmatrix, matrix, log, exp
     solvers.options.update({'show_progress': False})
     solvers.options.update(options)
@@ -235,7 +345,7 @@ def cvxoptimize(c, A, k, options):
     F = spmatrix(A.data, A.col, A.row, tc='d')
     solution = solvers.gp(k, F, g)
     # TODO: catch errors, delays, etc.
-    return dict(success=True,
+    return dict(success=True,  # TODO: get real status
                 # TODO: return objective value!
                 primal_sol=exp(solution['x']),
                 dual_sol=solution['y'])
