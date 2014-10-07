@@ -133,6 +133,7 @@ class GP(Model):
     def _latex(self, unused=None):
         "The LaTeX of a GP contains its cost and constraint posynomials"
         return "\n".join(["\\begin{array}[ll]",
+                          "\\text{}",
                           "\\text{minimize}",
                           "    & %s \\\\" % self.cost._latex(),
                           "\\text{subject to}"] +
@@ -284,10 +285,9 @@ class GP(Model):
             # TODO: more helpful warning
             raise RuntimeWarning("solver failed, perhaps because"
                                  "the problem was infeasible.")
-        self.check_feasibility(result['primal_sol'])
         # Check primal solution
         allsubs = dict(self.substitutions)
-        allsubs.update(dict(zip(self.var_locs, primal_sol)))
+        allsubs.update(dict(zip(self.var_locs, result['primal_sol'])))
         for p in self.constraints:
             val = p.sub(allsubs).c
             if not val <= 1 + 1e-4:  # arbitrary epsilon of 1e-4
@@ -297,8 +297,14 @@ class GP(Model):
 
     def plot_frontiers(self, Zs, x, y, figsize):
         "Helper function to plot 2d contour plots. TODO: remove."
+        data = {}
+        data.update(self.substitutions)
+        data.update(self.solution)
+        data.update({"S{%s}" % k: v
+                    for (k, v) in self.sensitivities.iteritems()})
+        data.keys()
         if len(self.sweep) == 2:
-            gpkit.plotting.contour_array(self.solution,
+            gpkit.plotting.contour_array(data,
                                          self.var_descrs,
                                          self.sweep.keys()[0],
                                          self.sweep.keys()[1],

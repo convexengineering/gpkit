@@ -4,7 +4,8 @@ from gpkit import Monomial
 
 def vectify(s, n):
     "From a string ('x') and a number (3) returns an array ([x0 x1 x2])"
-    return PosyArray([Monomial("%s_{%i}" % (s, i)) for i in xrange(n)])
+    return PosyArray([Monomial("{%s}_{%i}" % (name, i))
+                      for i in xrange(length)])
 
 
 def monify(s):
