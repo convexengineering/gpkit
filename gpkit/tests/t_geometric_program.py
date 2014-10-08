@@ -1,7 +1,6 @@
 import math
 import unittest
 from gpkit import GP, Monomial
-import cPickle as pickle
 
 SOLVERS = {'cvxopt': 5, 'mosek': 7, 'mosek_cli': 7}
 # name: decimal places of accuracy
@@ -42,7 +41,7 @@ testcases = [t_GP]
 
 tests = []
 for testcase in testcases:
-    for solver, ndig in SOLVERS.iteritems():
+    for solver, ndig in SOLVERS.items():
         test = type(testcase.__name__+"_"+solver,
                     (testcase,), {})
         setattr(test, 'solver', solver)

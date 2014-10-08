@@ -1,3 +1,5 @@
+from __future__ import print_function
+
 import os
 import sys
 import shutil
@@ -10,15 +12,15 @@ def pathjoin(*args):
 
 def isfile(path):
     if os.path.isfile(path):
-        print "#     Found %s" % path
+        print("#     Found %s" % path)
         return True
     else:
-        print "#     Could not find %s" % path
+        print("#     Could not find %s" % path)
         return False
 
 
 def replacedir(path):
-    print "#     Replacing directory", path
+    print("#     Replacing directory", path)
     if os.path.isdir(path):
         shutil.rmtree(path)
     os.makedirs(path)
@@ -26,12 +28,12 @@ def replacedir(path):
 
 
 def call(cmd):
-    print "#     Calling '%s'" % cmd
-    print "##"
-    print "### CALL BEGINS"
+    print("#     Calling '%s'" % cmd)
+    print("##")
+    print("### CALL BEGINS")
     retcode = subprocess.call(cmd, shell=True)
-    print "### CALL ENDS"
-    print "##"
+    print("### CALL ENDS")
+    print("##")
     return retcode
 
 
@@ -41,10 +43,10 @@ def diff(filename, diff_dict):
             for line_number, line in enumerate(a):
                 if line[:-1] in diff_dict:
                     newline = diff_dict[line[:-1]]+"\n"
-                    print ("#\n#     Change in"
-                           " %s on line %i" % (filename, line_number + 1))
-                    print "#     --", line[:-1][:70]
-                    print "#     ++", newline[:70]
+                    print("#\n#     Change in"
+                          " %s on line %i" % (filename, line_number + 1))
+                    print("#     --", line[:-1][:70])
+                    print("#     ++", newline[:70])
                     b.write(newline)
                 else:
                     b.write(line)
@@ -55,19 +57,19 @@ class SolverBackend(object):
     installed = False
 
     def __init__(self):
-        print "# Looking for", self.name
+        print("# Looking for", self.name)
         location = self.look()
         if location is not None:
-            print "# Found %s %s" % (self.name, location)
+            print("# Found %s %s" % (self.name, location))
             if not hasattr(self, 'build'):
                 self.installed = True
             else:
-                print "#\n# Building %s..." % self.name
+                print("#\n# Building %s..." % self.name)
                 self.installed = self.build()
                 status = "Done" if self.installed else "Failed"
-                print "# %s building %s" % (status, self.name)
+                print("# %s building %s" % (status, self.name))
         else:
-            print "# Did not find", self.name
+            print("# Did not find", self.name)
         print
 
 
@@ -76,8 +78,8 @@ class Mosek_CLI(SolverBackend):
 
     def look(self):
         try:
-            print "#   Trying to run mskexpopt..."
-            if call("mskexpopt") in (1052, 28): # 28 for MacOSX
+            print("#   Trying to run mskexpopt...")
+            if call("mskexpopt") in (1052, 28):  # 28 for MacOSX
                 return "in system path"
         except Exception: pass
         return None
@@ -88,7 +90,7 @@ class CVXopt(SolverBackend):
 
     def look(self):
         try:
-            print "#   Trying to import cvxopt..."
+            print("#   Trying to import cvxopt...")
             import cvxopt
             return "in Python path"
         except ImportError:
@@ -98,7 +100,7 @@ class CVXopt(SolverBackend):
 class Mosek(SolverBackend):
     name = "mosek"
 
-    # Some of the expopt code leaks print statements onto stdout,
+    # Some of the expopt code leaks print(statements onto stdout,)
     # instead of handing them to the task's stream message system.
     # If you add a new leak, make sure to escape any backslashes!
     #   (that is, replace '\' with '\\')
@@ -136,8 +138,8 @@ class Mosek(SolverBackend):
             except OSError:
                 return None
         else:
-            print ("# Build script does not support"
-                   " your platform (%s)" % sys.platform)
+            print("# Build script does not support"
+                  " your platform (%s)" % sys.platform)
             return None
 
         possible_versions = [f for f in os.listdir(self.dir) if len(f) == 1]
@@ -174,27 +176,27 @@ class Mosek(SolverBackend):
         f.close()
 
         build_dir = replacedir(pathjoin("gpkit", "_mosek", "build"))
-        print "#\n#   Copying expopt library files to", build_dir
+        print("#\n#   Copying expopt library files to", build_dir)
         expopt_build_files = []
         for old_location in self.expopt_files:
             new_location = pathjoin(build_dir, os.path.basename(old_location))
-            print "#     Copying %s" % old_location
+            print("#     Copying %s" % old_location)
             shutil.copyfile(old_location, new_location)
             if new_location[-2:] == ".c":
                 expopt_build_files.append(new_location)
 
-        print "#\n#   Applying expopt patches..."
-        for filename, patch in self.patches.iteritems():
+        print("#\n#   Applying expopt patches...")
+        for filename, patch in self.patches.items():
             diff(pathjoin(build_dir, filename), patch)
 
-        print "#\n#   Building expopt library..."
+        print("#\n#   Building expopt library...")
         built_expopt_lib = call("gcc -fpic -shared" +
                                 "    " + " ".join(expopt_build_files) +
                                 '   "' + self.lib_path + '"' +
                                 " -o " + pathjoin(solib_dir, "expopt.so"))
         if built_expopt_lib != 0: return False
 
-        print "#\n#   Building Python bindings for expopt and Mosek..."
+        print("#\n#   Building Python bindings for expopt and Mosek...")
         # mosek_h_path = pathjoin(lib_dir, "mosek_h.py")
         built_expopt_h = call("python ctypesgen.py -a" +
                               " -l "+pathjoin(solib_dir, "expopt.so").replace("\\", "/") +

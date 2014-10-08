@@ -21,8 +21,8 @@ from os import sep as os_sep
 from os.path import dirname as os_path_dirname
 
 try:
-    import lib.expopt_h as expopt_h
-except Exception, e:
+    from lib import expopt_h
+except Exception as e:
     raise ImportError("Could not load MOSEK library: "+repr(e))
 
 

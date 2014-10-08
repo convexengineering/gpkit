@@ -7,9 +7,9 @@ class t_array(unittest.TestCase):
 
     def test_array_mult(self):
         x = VectorVariable(3, 'x', 'dummy variable')
-        x_0 = Monomial('x_{0}')
-        x_1 = Monomial('x_{1}')
-        x_2 = Monomial('x_{2}')
+        x_0 = Monomial('{x}_{0}')
+        x_1 = Monomial('{x}_{1}')
+        x_2 = Monomial('{x}_{2}')
         p = x_0**2 + x_1**2 + x_2**2
         self.assertEqual(x.dot(x), p)
         m = PosyArray([[x_0**2, x_0*x_1, x_0*x_2],
@@ -20,9 +20,9 @@ class t_array(unittest.TestCase):
     def test_elementwise_mult(self):
         m = Monomial('m')
         x = VectorVariable(3, 'x', 'dummy variable')
-        x_0 = Monomial('x_{0}')
-        x_1 = Monomial('x_{1}')
-        x_2 = Monomial('x_{2}')
+        x_0 = Monomial('{x}_{0}')
+        x_1 = Monomial('{x}_{1}')
+        x_2 = Monomial('{x}_{2}')
         # multiplication with numbers
         v = PosyArray([1, 2, 3]).T
         p = PosyArray([1*x_0, 2*x_1, 3*x_2]).T
@@ -42,9 +42,9 @@ class t_array(unittest.TestCase):
 
     def test_constraint_gen(self):
         x = VectorVariable(3, 'x', 'dummy variable')
-        x_0 = Monomial('x_{0}')
-        x_1 = Monomial('x_{1}')
-        x_2 = Monomial('x_{2}')
+        x_0 = Monomial('{x}_{0}')
+        x_1 = Monomial('{x}_{1}')
+        x_2 = Monomial('{x}_{2}')
         v = PosyArray([1, 2, 3]).T
         p = [x_0, x_1/2, x_2/3]
         self.assertEqual(x <= v, p)

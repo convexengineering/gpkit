@@ -4,6 +4,8 @@ SIMPLE GP FOR AIRCRAFT DESIGN
 The 'ipynb' folder has the same example as an iPython Notebook.
 """
 
+from __future__ import print_function
+
 import cProfile
 import pstats
 
@@ -85,8 +87,8 @@ ps.print_stats(10)
 
 
 def print_results_table(data, title, minval=None):
-    print "                    | " + title
-    for key, table in data.iteritems():
+    print("                    | " + title)
+    for key, table in data.items():
         try:
             val = table.mean()
         except AttributeError:
@@ -98,8 +100,8 @@ def print_results_table(data, title, minval=None):
             else:
                 descr = "[%s] %s" % (descr[0], descr[1])
         if minval is None or abs(val) > minval:
-            print "%19s" % key, ": %-8.3g" % val, descr
-    print "                    |"
+            print("%19s" % key, ": %-8.3g" % val, descr)
+    print("                    |")
 
 print_results_table(gp.substitutions, "Substitutions")
 print_results_table(gp.solution, "Solution")

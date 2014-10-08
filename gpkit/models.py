@@ -2,19 +2,20 @@ from collections import defaultdict
 from collections import namedtuple
 from collections import Iterable
 from copy import deepcopy
-from internal_utils import *
+from functools import reduce
 
-from gpkit.nomials import Posynomial
+from .internal_utils import *
+from .nomials import Posynomial
 
 try:
     import numpy as np
 except ImportError:
-    print "Could not import numpy: will not be able to sweep variables"
+    print("Could not import numpy: will not be able to sweep variables")
 
 try:
     from scipy.sparse import coo_matrix
 except ImportError:
-    print "Could not import scipy: will not be able to use splines"
+    print("Could not import scipy: will not be able to use splines")
 
 CootMatrix = namedtuple('CootMatrix', ['row', 'col', 'data'])
 PosyTuple = namedtuple('PosyTuple', ['exps', 'cs', 'var_locs', 'var_descrs',
@@ -64,9 +65,9 @@ class Model(object):
             self.sub(constants, tobase='initialsub')
 
     def print_boundwarnings(self):
-        for var, bound in self.missingbounds.iteritems():
-            print "%s (%s) has no %s bound" % (
-                  var, self.var_descrs[var], bound)
+        for var, bound in self.missingbounds.items():
+            print("%s (%s) has no %s bound" % (
+                  var, self.var_descrs[var], bound))
 
     def add_constraints(self, constraints):
         if isinstance(constraints, Posynomial):
@@ -111,7 +112,7 @@ class Model(object):
         found_sweep = False
         if isinstance(substitutions, dict):
             subs = dict(substitutions)
-            for var, sub in substitutions.iteritems():
+            for var, sub in substitutions.items():
                 try:
                     if sub[0] == 'sweep':
                         del subs[var]

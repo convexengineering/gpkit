@@ -83,7 +83,7 @@ def imize(c, A, p_idxs, filename):
         assert_line(f, "\n")
         assert_line(f, "PRIMAL VARIABLES\n")
         assert_line(f, "INDEX   ACTIVITY\n")
-        primal_vals = map(exp, read_vals(f))
+        primal_vals = list(map(exp, read_vals(f)))
 
         assert_line(f, "DUAL VARIABLES\n")
         assert_line(f, "INDEX   ACTIVITY\n")

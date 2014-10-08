@@ -2,7 +2,8 @@
 "Module containing miscellanous useful functions"
 
 from collections import defaultdict
-from nomials import Monomial
+
+from .nomials import Monomial
 
 
 def locate_vars(exps):
@@ -49,7 +50,7 @@ def substitution(var_locs, exps, cs, substitutions, val=None):
         substitutions = {substitutions: val}
 
     subs, descrs = {}, {}
-    for var, sub in substitutions.iteritems():
+    for var, sub in substitutions.items():
         if var in var_locs:
             try:
                 # described variable
@@ -69,12 +70,12 @@ def substitution(var_locs, exps, cs, substitutions, val=None):
                 if all((isinstance(val, (int, float, Monomial))
                         for val in sub)):
                     # sub is a vector
-                    vsub = [("%s_{%i}" % (var, j), val)
+                    vsub = [("{%s}_{%i}" % (var, j), val)
                             for (j, val) in enumerate(sub)]
                 elif all((isinstance(val, (int, float, Monomial))
                           for val in sub[0])):
                     # sub's first element is a vector
-                    vsub = [("%s_{%i}" % (var, j), val)
+                    vsub = [("{%s}_{%i}" % (var, j), val)
                             for (j, val) in enumerate(sub[0])]
                     # sub's last element is description
                     assert isinstance(sub[-1], str)
@@ -91,8 +92,8 @@ def substitution(var_locs, exps, cs, substitutions, val=None):
         cs_ = list(cs)
         var_locs_ = defaultdict(list)
         var_locs_.update({var: list(idxs)
-                          for (var, idxs) in var_locs.iteritems()})
-        for var, sub in subs.iteritems():
+                          for (var, idxs) in var_locs.items()})
+        for var, sub in subs.items():
             for i in var_locs[var]:
                 x = exps_[i][var]
                 del exps_[i][var]
@@ -142,18 +143,18 @@ class HashVector(dict):
     #     raise TypeError("HashVectors are immutable.")
 
     def __neg__(self):
-        return HashVector({key: -val for (key, val) in self.iteritems()})
+        return HashVector({key: -val for (key, val) in self.items()})
 
     def __pow__(self, x):
         if isinstance(other, (int, float)):
-            return HashVector({key: val**x for (key, val) in self.iteritems()})
+            return HashVector({key: val**x for (key, val) in self.items()})
         else:
             invalid_types_for_oper("** or pow()", self, x)
 
     def __mul__(self, other):
         if isinstance(other, (int, float)):
             return HashVector({key: val*other
-                               for (key, val) in self.iteritems()})
+                               for (key, val) in self.items()})
         elif isinstance(other, dict):
             keys = set(self.keys()).union(other.keys())
             sums = {key: self.get(key, 0) * other.get(key, 0)
@@ -165,7 +166,7 @@ class HashVector(dict):
     def __add__(self, other):
         if isinstance(other, (int, float)):
             return HashVector({key: val+other
-                               for (key, val) in self.iteritems()})
+                               for (key, val) in self.items()})
         elif isinstance(other, dict):
             keys = set(self.keys()).union(other.keys())
             sums = {key: self.get(key, 0) + other.get(key, 0)

@@ -15,16 +15,16 @@
         Contains settings loaded from ``./env/settings``
 """
 
-from posyarray import PosyArray
-from nomials import Monomial
-from nomials import Posynomial
-from geometric_program import GP
-from variables import Variable
-from variables import VectorVariable
+from .posyarray import PosyArray
+from .nomials import Monomial
+from .nomials import Posynomial
+from .geometric_program import GP
+from .variables import Variable
+from .variables import VectorVariable
 
 try:
     # requires sympy
-    from printing import init_printing as init_ipynb_printing
+    from .printing import init_printing as init_ipynb_printing
 except ImportError:
     pass
 

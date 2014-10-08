@@ -5,7 +5,7 @@ from gpkit import Monomial
 def vectify(s, n):
     "From a string ('x') and a number (3) returns an array ([x0 x1 x2])"
     return PosyArray([Monomial("{%s}_{%i}" % (name, i))
-                      for i in xrange(length)])
+                      for i in range(length)])
 
 
 def monify(s):
@@ -16,7 +16,7 @@ def monify(s):
 def dict_monify(s):
     "From a dictionary of name:description, returns one of monomials."
     monomial_dict = {}
-    for var, val in s.iteritems():
+    for var, val in s.items():
         try:
             if val[0] == "vector":
                 m = vectify(var, val[1])

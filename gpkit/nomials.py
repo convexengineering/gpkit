@@ -1,14 +1,15 @@
 from collections import defaultdict
 from itertools import chain
 import numpy as np
-from posyarray import PosyArray
+
+from .posyarray import PosyArray
 
 
 def sort_and_simplify(exps, cs):
     "Reduces the number of monomials, and casts them to a sorted form."
     matches = defaultdict(float)
     for i, exp in enumerate(exps):
-        exp = HashVector({var: x for (var, x) in exp.iteritems() if x != 0})
+        exp = HashVector({var: x for (var, x) in exp.items() if x != 0})
         matches[exp] += cs[i]
     return tuple(matches.keys()), tuple(matches.values())
 
@@ -84,10 +85,6 @@ class Posynomial(object):
 
     # hashing, immutability, Posynomial inequality
     def __hash__(self):
-        if not hasattr(self, "exps"):
-            print "hihihi"
-            print type(self)
-            print dir(self)
         if not hasattr(self, "_hashvalue"):
             self._hashvalue = hash(tuple(zip(self.exps, tuple(self.cs))))
         return self._hashvalue
@@ -132,7 +129,7 @@ class Posynomial(object):
     def _string(self, mult_symbol='*'):
         mstrs = []
         for c, exp in zip(self.cs, self.exps):
-            expsorted = sorted(exp.iteritems(), key=lambda x: x[1])
+            expsorted = sorted(exp.items(), key=lambda x: x[1])
             varstrs = ['%s**%.2g' % (var, x) if x != 1 else var
                        for (var, x) in expsorted if x != 0]
             cstr = ["%.2g" % c] if c != 1 or not varstrs else []
@@ -152,7 +149,7 @@ class Posynomial(object):
         mstrs = []
         for c, exp in zip(self.cs, self.exps):
             pos_vars, neg_vars = [], []
-            for var, x in exp.iteritems():
+            for var, x in exp.items():
                 if x > 0:
                     pos_vars.append((var, x))
                 elif x < 0:
@@ -330,4 +327,4 @@ class MonoEQConstraint(Constraint):
         self.leq = Constraint(p2, p1)
         self.geq = Constraint(p1, p2)
 
-from internal_utils import *
+from .internal_utils import *

@@ -13,8 +13,8 @@ from time import time
 from pprint import pformat
 from collections import Iterable
 
-from models import Model
-from nomials import Constraint, MonoEQConstraint
+from .models import Model
+from .nomials import Constraint, MonoEQConstraint
 
 import gpkit.plotting
 
@@ -154,7 +154,7 @@ class GP(Model):
         solution : dict
             A dictionary containing the optimal values for each free variable.
         """
-        if printing: print "Using solver '%s'" % self.solver
+        if printing: print("Using solver '%s'" % self.solver)
         self.starttime = time()
 
         if self.sweep:
@@ -168,8 +168,8 @@ class GP(Model):
 
         self.endtime = time()
         if printing:
-            print ("Solving took %.3g seconds   "
-                   % (self.endtime - self.starttime))
+            print("Solving took %.3g seconds   "
+                  % (self.endtime - self.starttime))
         return self.solution
 
     def _sensitivities(self, result):
@@ -189,8 +189,8 @@ class GP(Model):
         dss = result['dual_sol']
         var_sens = {'%s' % var: (sum([self.unsubbed.exps[i][var]*dss[i]
                                      for i in locs]))
-                    for (var, locs) in self.unsubbed.var_locs.iteritems()}
-        mon_sens = {i: dss[i] for i in xrange(len(self.cs))}
+                    for (var, locs) in self.unsubbed.var_locs.items()}
+        mon_sens = {i: dss[i] for i in range(len(self.cs))}
         var_sens.update(mon_sens)
         return var_sens
 
@@ -219,18 +219,18 @@ class GP(Model):
         sweep_shape = sweep_grids[0].shape
         N_passes = sweep_grids[0].size
         if printing:
-            print "Sweeping %i variables over %i passes" % (
-                  sweep_dims, N_passes)
+            print("Sweeping %i variables over %i passes" % (
+                  sweep_dims, N_passes))
         sweep_grids = dict(zip(self.sweep, sweep_grids))
         sweep_vects = {var: grid.reshape(N_passes)
-                       for (var, grid) in sweep_grids.iteritems()}
+                       for (var, grid) in sweep_grids.items()}
         result_2d_array = np.empty((N_passes, len(self.var_locs)))
         sensitivity_2d_array = np.empty((N_passes, len(self.cs) +
                                         len(self.unsubbed.var_locs)))
 
-        for i in xrange(N_passes):
+        for i in range(N_passes):
             this_pass = {var: sweep_vect[i]
-                         for (var, sweep_vect) in sweep_vects.iteritems()}
+                         for (var, sweep_vect) in sweep_vects.items()}
             self.sub(this_pass, frombase='presweep', tobase='swept')
 
             result = self.__run_solver()
@@ -257,17 +257,17 @@ class GP(Model):
                                  self.k,
                                  self.options)
         elif self.solver == "mosek_cli":
-            import _mosek.cli_expopt
+            from ._mosek import cli_expopt
             filename = self.options.get('filename', 'gpkit_mosek')
-            result = _mosek.cli_expopt.imize(self.cs,
-                                             self.A,
-                                             self.p_idxs,
-                                             filename)
+            result = cli_expopt.imize(self.cs,
+                                      self.A,
+                                      self.p_idxs,
+                                      filename)
         elif self.solver == "mosek":
-            import _mosek.expopt
-            result = _mosek.expopt.imize(self.cs,
-                                         self.A,
-                                         self.p_idxs)
+            from ._mosek import expopt
+            result = expopt.imize(self.cs,
+                                  self.A,
+                                  self.p_idxs)
         elif self.solver == "attached":
             result = self.options['solver'](self.cs,
                                             self.A,
@@ -301,7 +301,7 @@ class GP(Model):
         data.update(self.substitutions)
         data.update(self.solution)
         data.update({"S{%s}" % k: v
-                    for (k, v) in self.sensitivities.iteritems()})
+                    for (k, v) in self.sensitivities.items()})
         data.keys()
         if len(self.sweep) == 2:
             gpkit.plotting.contour_array(data,
