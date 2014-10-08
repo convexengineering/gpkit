@@ -49,7 +49,7 @@ Geometric programs might also have nice social properties:
 
 ## Installation ##
 
-1. Install [Anaconda](http://continuum.io/downloads):
+1. Install the Python 2.7 version of [Anaconda](http://continuum.io/downloads):
    - (Mac) You'll need to install the [Apple Command Line Tools](https://developer.apple.com/downloads/index.action?=command%20line%20tools) first.
    - If you don't want to install Anaconda, you'll need the python packages numpy and ctypesgen, and might find pip, sympy, and iPython Notebook to be useful as well.
 2. Install a solver: (gpkit currently supports both CVXOPT and MOSEK)
@@ -63,7 +63,7 @@ Geometric programs might also have nice social properties:
     - Get a MOSEK [academic license file](http://license.mosek.com/academic):
       - (Mac/Linux) Put the license file in `~/mosek/`.
       - (Windows) Put it in `Users/$USERNAME/mosek`, creating that folder if necessary.
-3. Run `pip install https://github.com/appliedopt/gpkit/zipball/master` at a terminal.
+3. Run `pip install ctypesgen` and then `pip install https://github.com/appliedopt/gpkit/zipball/master` at a terminal.
   - (Windows) at an "Anaconda Command Prompt".
 4. Test your install by running `python -c "import gpkit.tests; gpkit.tests.run()"`.
   - If you haven't installed both MOSEK and CVXOPT, expect a few errors.
