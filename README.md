@@ -49,10 +49,11 @@ Geometric programs might also have nice social properties:
 
 ## Installation ##
 
-1. Install the Python 2.7 version of [Anaconda](http://continuum.io/downloads):
-   - (Mac) If `which gcc` does not return anything, install the [Apple Command Line Tools](https://developer.apple.com/downloads/index.action?=command%20line%20tools).
+1. Install Python and build dependencies:
+   - Install the Python 2.7 version of [Anaconda](http://continuum.io/downloads) and then run `pip install ctypesgen`:
    - If you don't want to install Anaconda, you'll need the python packages numpy and ctypesgen, and might find pip, sympy, and iPython Notebook to be useful as well.
-2. Install a solver: (gpkit currently supports both CVXOPT and MOSEK)
+   - (Mac) If `which gcc` does not return anything, install the [Apple Command Line Tools](https://developer.apple.com/downloads/index.action?=command%20line%20tools).
+2. Install either the MOSEK or CVXOPT GP solvers:
   - Download [CVXOPT](http://cvxopt.org/download/index.html):
     - (Mac/Linux) Run `python setup.py install` in the `cvxopt` folder, as noted [here](http://cvxopt.org/install/index.html#standard-installation).
     - (Windows) Follow the steps [here](http://cvxopt.org/install/index.html#building-cvxopt-for-windows).
@@ -63,8 +64,7 @@ Geometric programs might also have nice social properties:
     - Get a MOSEK [academic license file](http://license.mosek.com/academic):
       - (Mac/Linux) Put the license file in `~/mosek/`.
       - (Windows) Put it in `Users/$USERNAME/mosek`, creating that folder if necessary.
-3. Run `pip install ctypesgen` and then `pip install https://github.com/appliedopt/gpkit/zipball/master` at a terminal.
+3. Run `pip install https://github.com/appliedopt/gpkit/zipball/master` at a terminal.
   - (Windows) at an "Anaconda Command Prompt".
-4. The install will automatically be tested during the build process. If you haven't installed both MOSEK and CVXOPT, expect a 2 to 4 errors: if you another number, your installation is broken.
 
 If you encounter any bugs during installation, email [eburn@mit.edu](mailto:eburn@mit.edu).

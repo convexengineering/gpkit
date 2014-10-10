@@ -1,8 +1,8 @@
 import math
 import unittest
-from gpkit import GP, Monomial
+from gpkit import GP, Monomial, settings
 
-SOLVERS = {'cvxopt': 5, 'mosek': 7, 'mosek_cli': 7}
+NDIGS = {'cvxopt': 5, 'mosek': 7, 'mosek_cli': 7}
 # name: decimal places of accuracy
 
 
@@ -41,11 +41,11 @@ testcases = [t_GP]
 
 tests = []
 for testcase in testcases:
-    for solver, ndig in SOLVERS.items():
+    for solver in settings["installed_solvers"]:
         test = type(testcase.__name__+"_"+solver,
                     (testcase,), {})
         setattr(test, 'solver', solver)
-        setattr(test, 'ndig', ndig)
+        setattr(test, 'ndig', NDIGS[solver])
         tests.append(test)
 
 if __name__ == '__main__':
