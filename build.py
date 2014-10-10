@@ -242,3 +242,7 @@ with open(settingspath, "w") as f:
     for setting, value in settings.items():
         f.write("%s %s\n" % (setting, value))
     f.write("\n")
+
+print("\ngpkit has been built! Now running tests:\n")
+import gpkit.tests
+gpkit.tests.run()

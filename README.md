@@ -65,7 +65,6 @@ Geometric programs might also have nice social properties:
       - (Windows) Put it in `Users/$USERNAME/mosek`, creating that folder if necessary.
 3. Run `pip install ctypesgen` and then `pip install https://github.com/appliedopt/gpkit/zipball/master` at a terminal.
   - (Windows) at an "Anaconda Command Prompt".
-4. Test your install by running `python -c "import gpkit.tests; gpkit.tests.run()"`.
-  - If you haven't installed both MOSEK and CVXOPT, expect a few errors.
+4. The install will automatically be tested during the build process. If you haven't installed both MOSEK and CVXOPT, expect a 2 to 4 errors: if you another number, your installation is broken.
 
 If you encounter any bugs during installation, email [eburn@mit.edu](mailto:eburn@mit.edu).
