@@ -166,6 +166,8 @@ class Mosek(SolverBackend):
             call('echo "export PATH=\$PATH:%s" >> $HOME/.bash_profile' % self.bin_dir)
             call('export PATH=$PATH:%s' % self.bin_dir)
             call('echo "export DYLD_LIBRARY_PATH=\$DYLD_LIBRARY_PATH:%s" >> $HOME/.bash_profile' % self.bin_dir)
+            os.environ['PATH'] = os.environ['PATH']+':%s' % self.bin_dir
+            os.environ['DYLD_LIBRARY_PATH'] = os.environ['DYLD_LIBRARY_PATH']+':%s' % self.bin_dir
 
         return "version %s, installed to %s" % (self.version, self.dir)
 
