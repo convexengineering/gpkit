@@ -50,7 +50,7 @@ Geometric programs might also have nice social properties:
 ## Installation ##
 
 1. Install the Python 2.7 version of [Anaconda](http://continuum.io/downloads):
-   - (Mac) You'll need to install the [Apple Command Line Tools](https://developer.apple.com/downloads/index.action?=command%20line%20tools) first.
+   - (Mac) If `which gcc` does not return anything, install the [Apple Command Line Tools](https://developer.apple.com/downloads/index.action?=command%20line%20tools).
    - If you don't want to install Anaconda, you'll need the python packages numpy and ctypesgen, and might find pip, sympy, and iPython Notebook to be useful as well.
 2. Install a solver: (gpkit currently supports both CVXOPT and MOSEK)
   - Download [CVXOPT](http://cvxopt.org/download/index.html):
