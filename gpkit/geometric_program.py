@@ -101,7 +101,7 @@ class GP(Model):
             self.solver = solver
         else:
             from gpkit import settings
-            self.solver = settings['defaultsolver']
+            self.solver = settings['installed_solvers'][0]
 
         self.sweep = {}
         self._gen_unsubbed_vars()

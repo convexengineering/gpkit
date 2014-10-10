@@ -212,7 +212,7 @@ class Mosek(SolverBackend):
         return True
 
 
-print("Building gpkit...\n")
+print("Started building gpkit...\n")
 settings = {}
 envpath = pathjoin("gpkit", "env")
 if os.path.isdir(envpath): shutil.rmtree(envpath)
@@ -227,22 +227,20 @@ installed_solvers = [solver.name
 if not installed_solvers:
     sys.stderr.write("Can't find any solvers!\n")
     sys.exit(70)
+print("...finished building gpkit.")
 
 # Choose default solver #
 solver_priorities = ["mosek", "mosek_cli", "cvxopt"]
-for solver in solver_priorities:
-    if solver in installed_solvers:
-        settings["defaultsolver"] = solver
-        break
-print("Choosing %s as the default solver" % settings["defaultsolver"])
+settings["installed_solvers"] = ", ".join(installed_solvers)
+print("\nFound the following solvers: " + settings["installed_solvers"])
 
 # Write settings #
 settingspath = envpath + os.sep + "settings"
 with open(settingspath, "w") as f:
     for setting, value in settings.items():
-        f.write("%s %s\n" % (setting, value))
+        f.write("%s : %s\n" % (setting, value))
     f.write("\n")
 
-print("\ngpkit has been built! Now running tests:\n")
+print("\nRunning tests:\n")
 import gpkit.tests
 gpkit.tests.run()
