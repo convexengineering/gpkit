@@ -220,7 +220,7 @@ os.makedirs(envpath)
 print("Replaced the directory gpkit/env\n")
 
 print("Attempting to find and build solvers:\n")
-solvers = [CVXopt(), Mosek(), Mosek_CLI()]
+solvers = [Mosek(), Mosek_CLI(), CVXopt()]
 installed_solvers = [solver.name
                      for solver in solvers
                      if solver.installed]
@@ -230,7 +230,6 @@ if not installed_solvers:
 print("...finished building gpkit.")
 
 # Choose default solver #
-solver_priorities = ["mosek", "mosek_cli", "cvxopt"]
 settings["installed_solvers"] = ", ".join(installed_solvers)
 print("\nFound the following solvers: " + settings["installed_solvers"])
 
