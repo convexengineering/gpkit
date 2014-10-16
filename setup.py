@@ -10,7 +10,7 @@ setup(
     name='gpkit',
     version='0.1dev',
     install_requires=['numpy', 'ctypesgen'],
-    packages=['gpkit', 'gpkit._mosek', 'gpkit.tests'],
+    packages=['gpkit', 'gpkit._mosek', 'gpkit.tests', 'gpkit.interactive'],
     package_data={'gpkit': ['env/*', 'examples/*'],
                   'gpkit._mosek': ['lib/*']},
     license=open('LICENSE').read(),
