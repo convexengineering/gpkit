@@ -50,7 +50,7 @@ Geometric programs might also have nice social properties:
 ## Installation ##
 
 1. Install Python and build dependencies:
-   - Install the Python 2.7 version of [Anaconda](http://continuum.io/downloads) and then run `pip install ctypesgen`:
+   - Install the Python 2.7 version of [Anaconda](http://continuum.io/downloads) and then run `pip install ctypesgen`.
    - If you don't want to install Anaconda, you'll need the python packages numpy and ctypesgen, and might find pip, sympy, and iPython Notebook to be useful as well.
    - (Mac) If `which gcc` does not return anything, install the [Apple Command Line Tools](https://developer.apple.com/downloads/index.action?=command%20line%20tools).
 2. Install either the MOSEK or CVXOPT GP solvers:
