@@ -213,7 +213,7 @@ class GP(Model):
 
         sweep_dims = len(self.sweep)
         if sweep_dims == 1:
-            sweep_grids = self.sweep.values()
+            sweep_grids = np.array(self.sweep.values())
         else:
             sweep_grids = np.meshgrid(*self.sweep.values())
         sweep_shape = sweep_grids[0].shape

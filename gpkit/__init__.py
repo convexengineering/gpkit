@@ -22,12 +22,6 @@ from .geometric_program import GP
 from .variables import Variable
 from .variables import VectorVariable
 
-try:
-    # requires sympy
-    from .printing import init_printing as init_ipynb_printing
-except ImportError:
-    pass
-
 # Load settings
 from os import sep as os_sep
 from os.path import dirname as os_path_dirname
