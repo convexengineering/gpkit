@@ -190,8 +190,18 @@ class GP(Model):
         var_sens = {'%s' % var: (sum([self.unsubbed.exps[i][var]*dss[i]
                                      for i in locs]))
                     for (var, locs) in self.unsubbed.var_locs.items()}
+
+        from .nomials import Monomial
+        self.monomialmodel = self.cost.sub({self.var_locs.keys()[i]: val
+                                            for (i, val) in enumerate(result['primal_sol'])})
+        for (var, S) in var_sens.items():
+            if abs(S) >= 0.1:
+                self.monomialmodel *= Monomial({var: S},
+                                               self.substitutions[var]**-S)
+
         mon_sens = {i: dss[i] for i in range(len(self.cs))}
         var_sens.update(mon_sens)
+
         return var_sens
 
     def _solve_sweep(self, printing):
