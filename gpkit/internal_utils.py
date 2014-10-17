@@ -17,7 +17,7 @@ def locate_vars(exps):
 
 
 def substitution(var_locs, exps, cs, substitutions, val=None):
-    """Runs a GP through a sweep, solving at each grid point
+    """Does efficient substituton into a list of monomials.
 
         Parameters
         ----------
