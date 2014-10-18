@@ -163,7 +163,7 @@ class Model(object):
             varsign = None
             for i in self.var_locs[var]:
                 exp = self.exps[i][var]
-                self.A.append(j, i, exp)
+                self.A.append(i, j, exp)
                 if varsign is None: varsign = np.sign(exp)
                 elif varsign is "both": pass
                 elif np.sign(exp) != varsign: varsign = "both"

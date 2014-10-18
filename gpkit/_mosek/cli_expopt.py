@@ -57,7 +57,7 @@ def imize(c, A, p_idxs, filename):
     filename = "gpkit_tmp" + os.sep + filename
     with open(filename, "w") as f:
         numcon = 1+p_idxs[-1]
-        numter, numvar = map(int, A.shape)
+        numvar, numter = map(int, A.shape)
         for n in [numcon, numter, numvar]:
             f.write("%d\n" % n)
 
@@ -67,7 +67,7 @@ def imize(c, A, p_idxs, filename):
         f.write("\n*p_idxs\n")
         f.writelines(["%d\n" % x for x in p_idxs])
 
-        t_j_Atj = zip(A.col, A.row, A.data)
+        t_j_Atj = zip(A.row, A.col, A.data)
 
         f.write("\n*t j A_tj\n")
         f.writelines(["%d %d %.20e\n" % tuple(x)

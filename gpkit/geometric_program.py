@@ -358,7 +358,7 @@ def cvxoptimize(c, A, k, options):
     solvers.options.update({'show_progress': False})
     solvers.options.update(options)
     g = log(matrix(c))
-    F = spmatrix(A.data, A.col, A.row, tc='d')
+    F = spmatrix(A.data, A.row, A.col, tc='d')
     solution = solvers.gp(k, F, g)
     # TODO: catch errors, delays, etc.
     return dict(success=True,  # TODO: get real status

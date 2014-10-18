@@ -148,7 +148,7 @@ def imize(c, A, p_idxs):
     r = MSK._RES_OK
 
     numcon = 1+p_idxs[-1]
-    numvar, numter = map(int, A.shape)
+    numter, numvar = map(int, A.shape)
 
     xx = c_array([0]*numvar, c_double)
     yy = c_array([0]*numter, c_double)
@@ -158,8 +158,8 @@ def imize(c, A, p_idxs):
     c = c_array(c, c_double)
     subi = c_array(p_idxs, c_int)
 
-    subk = c_array(A.col, c_int)
-    subj = c_array(A.row, c_int)
+    subk = c_array(A.row, c_int)
+    subj = c_array(A.col, c_int)
     akj = c_array(A.data, c_double)
     numanz = c_int(len(A.data))
 
