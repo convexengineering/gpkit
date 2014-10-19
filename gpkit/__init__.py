@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 """Lightweight GP Modeling Package
 
-    For examples please see ``../examples``
+    For examples please see the examples folder.
 
     Requirements
     ------------
@@ -25,8 +25,7 @@ from .variables import VectorVariable
 # Load settings
 from os import sep as os_sep
 from os.path import dirname as os_path_dirname
-settings_path = os_sep.join([os_path_dirname(__file__),
-                             "env", "settings"])
+settings_path = os_sep.join([os_path_dirname(__file__), "env", "settings"])
 with open(settings_path) as settingsfile:
     lines = [line[:-1].split(" : ") for line in settingsfile
              if len(line.split(" : ")) == 2]

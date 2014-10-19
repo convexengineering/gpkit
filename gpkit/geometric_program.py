@@ -12,9 +12,12 @@ import numpy as np
 from time import time
 from pprint import pformat
 from collections import Iterable
+from functools import reduce
+import operator
 
 from .models import Model
 from .nomials import Constraint, MonoEQConstraint
+from .nomials import Monomial
 
 import gpkit.plotting
 
@@ -160,49 +163,13 @@ class GP(Model):
         if self.sweep:
             self.solution = self._solve_sweep(printing)
         else:
-            result = self.__run_solver()
-            self.check_result(result)
-            self.solution = dict(zip(self.var_locs,
-                                     result['primal_sol']))
-            self.sensitivities = self._sensitivities(result)
+            self.solution = self.__run_solver()
 
         self.endtime = time()
         if printing:
             print("Solving took %.3g seconds   "
                   % (self.endtime - self.starttime))
         return self.solution
-
-    def _sensitivities(self, result):
-        """Determines GP constant sensitivities.
-
-        Parameters
-        ----------
-        result : dict
-            Result returned by solver.
-
-        Returns
-        -------
-        var_sens : dict
-            A dictionary containing the log sensitivities of each monomial
-            (by index) and each constant (by name)
-        """
-        dss = result['dual_sol']
-        var_sens = {'%s' % var: (sum([self.unsubbed.exps[i][var]*dss[i]
-                                     for i in locs]))
-                    for (var, locs) in self.unsubbed.var_locs.items()}
-
-        from .nomials import Monomial
-        self.monomialmodel = self.cost.sub({self.var_locs.keys()[i]: val
-                                            for (i, val) in enumerate(result['primal_sol'])})
-        for (var, S) in var_sens.items():
-            if abs(S) >= 0.1:
-                self.monomialmodel *= Monomial({var: S},
-                                               self.substitutions[var]**-S)
-
-        mon_sens = {i: dss[i] for i in range(len(self.cs))}
-        var_sens.update(mon_sens)
-
-        return var_sens
 
     def _solve_sweep(self, printing):
         """Runs a GP through a sweep, solving at each grid point
@@ -235,23 +202,21 @@ class GP(Model):
         sweep_vects = {var: grid.reshape(N_passes)
                        for (var, grid) in sweep_grids.items()}
         result_2d_array = np.empty((N_passes, len(self.var_locs)))
-        sensitivity_2d_array = np.empty((N_passes, len(self.cs) +
-                                        len(self.unsubbed.var_locs)))
+        sensitivity_2d_array = np.empty((N_passes, len(self.unsubbed.var_locs)))
 
         for i in range(N_passes):
             this_pass = {var: sweep_vect[i]
                          for (var, sweep_vect) in sweep_vects.items()}
             self.sub(this_pass, frombase='presweep', tobase='swept')
 
-            result = self.__run_solver()
-            self.check_result(result)
-            result_2d_array[i, :] = result['primal_sol']
-            sensitivity_2d_array[i,:] = self._sensitivities(result).values()
+            sol = self.__run_solver()
+            result_2d_array[i, :] = sol['free_variables'].values()
+            sensitivity_2d_array[i,:] = sol['sensitivities']['variables'].values()
 
         solution = {var: result_2d_array[:, j].reshape(sweep_shape)
                     for (j, var) in enumerate(self.var_locs)}
         self.sensitivities = {var: sensitivity_2d_array[:, j].reshape(sweep_shape)
-                              for (j, var) in enumerate(self._sensitivities(result).keys())}
+                              for (j, var) in enumerate(sol['sensitivities']['variables'])}
 
         solution.update(sweep_grids)
 
@@ -286,41 +251,70 @@ class GP(Model):
         else:
             raise Exception("Solver %s is not implemented!" % self.solver)
 
-        self.result = result
-        return result
+        return self.__parse_result(result)
 
-    def check_result(self, result):
-        "Checks result's status, primal and dual solutions"
-        if not result['success']:
-            # TODO: more helpful warning
-            raise RuntimeWarning("solver failed, perhaps because"
-                                 "the problem was infeasible.")
-        # Check primal solution
+    def __parse_result(self, result):
+        """Checks and formats a solver's raw output.
+
+        """
+        # check solver status
+        if result['status'] is not 'optimal':
+            raise RuntimeWarning("final status of solver '%s' was '%s' not"
+                                 "'optimal'." % (self.solver, result['status']))
+
+        free_variables = dict(zip(self.var_locs, np.exp(result['primal'])))
         allsubs = dict(self.substitutions)
-        allsubs.update(dict(zip(self.var_locs, result['primal_sol'])))
+        allsubs.update(free_variables)
+
+        # constraints must be within arbitrary epsilon 1e-4 of 1
         for p in self.constraints:
             val = p.sub(allsubs).c
-            if not val <= 1 + 1e-4:  # arbitrary epsilon of 1e-4
-                raise RuntimeWarning("Constraint broken:"
+            if not val <= 1 + 1e-4:
+                raise RuntimeWarning("constraint exceeded:"
                                      " %s = 1 + %0.2e" % (p, val-1))
-        # TODO: Check dual solution
 
-    def plot_frontiers(self, Zs, x, y, figsize):
-        "Helper function to plot 2d contour plots. TODO: remove."
-        data = {}
-        data.update(self.substitutions)
-        data.update(self.solution)
-        data.update({"S{%s}" % k: v
-                    for (k, v) in self.sensitivities.items()})
-        data.keys()
-        if len(self.sweep) == 2:
-            gpkit.plotting.contour_array(data,
-                                         self.var_descrs,
-                                         self.sweep.keys()[0],
-                                         self.sweep.keys()[1],
-                                         Zs, x, y, figsize,
-                                         xticks=self.sweep.values()[0],
-                                         yticks=self.sweep.values()[1])
+        if "objective" in result:
+            cost = float(result["objective"])
+        else:
+            costm = self.cost.sub(allsubs)
+            assert costm.exp == {}
+            cost = costm.c
+
+        sensitivities = {}
+        if "nu" not in result and "lambda" not in result:
+            raise Exception("The dual solution was not returned!")
+        if "nu" in result:
+            sensitivities["monomials"] = np.array(result["nu"])
+        else:
+            pass  # generate nu from lambda
+        if "la" in result:
+            sensitivities["posynomials"] = np.array(result["la"])
+        else:
+            la = [sum(sensitivities["monomials"][np.array(self.p_idxs) == i])
+                  for i in range(len(self.posynomials))]
+            sensitivities["posynomials"] = np.array(la)
+
+        sens_vars = {'%s' % var: (sum([self.unsubbed.exps[i][var]
+                                       * sensitivities["monomials"][i]
+                                      for i in locs]))
+                     for (var, locs) in self.unsubbed.var_locs.items()}
+        sensitivities["variables"] = sens_vars
+
+        # free-variable sensitivities must be < arbitrary epsilon 1e-4
+        for var, S in sensitivities["variables"].items():
+            if var not in self.substitutions and abs(S) > 1e-4:
+                raise RuntimeWarning("free variable too sensitive:"
+                                     " S_{%s} = %0.2e" % (var, S))
+
+        local_exp = {var: S for (var, S) in sens_vars.items() if abs(S) >= 0.1}
+        local_cs = (allsubs[var]**-S for (var, S) in local_exp.items())
+        local_c = reduce(operator.mul, local_cs, cost)
+        local_model = Monomial(local_exp, local_c)
+
+        return dict(cost=cost,
+                    free_variables=free_variables,
+                    sensitivities=sensitivities,
+                    local_model=local_model)
 
 
 def cvxoptimize(c, A, k, options):
@@ -360,8 +354,6 @@ def cvxoptimize(c, A, k, options):
     g = log(matrix(c))
     F = spmatrix(A.data, A.row, A.col, tc='d')
     solution = solvers.gp(k, F, g)
-    # TODO: catch errors, delays, etc.
-    return dict(success=True,  # TODO: get real status
-                # TODO: return objective value!
-                primal_sol=exp(solution['x']),
-                dual_sol=solution['y'])
+    return dict(status=solution['status'],
+                primal=solution['x'],
+                la=solution['y'])

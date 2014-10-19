@@ -227,7 +227,10 @@ def imize(c, A, p_idxs):
     MSK._deletetask(ptr(expopttask))
     MSK._deleteenv(ptr(env))
 
-    return dict(success=True,
-                objective_sol=float(objval.value),
-                primal_sol=[exp(x) for x in xx],
-                dual_sol=list(yy))
+    status = solsta.value
+    if status == 1:
+        status = 'optimal'
+    return dict(status=status,
+                objective=objval.value,
+                primal=list(xx),
+                nu=list(yy))

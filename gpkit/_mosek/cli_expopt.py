@@ -83,7 +83,7 @@ def imize(c, A, p_idxs, filename):
         assert_line(f, "\n")
         assert_line(f, "PRIMAL VARIABLES\n")
         assert_line(f, "INDEX   ACTIVITY\n")
-        primal_vals = list(map(exp, read_vals(f)))
+        primal_vals = list(read_vals(f))
 
         assert_line(f, "DUAL VARIABLES\n")
         assert_line(f, "INDEX   ACTIVITY\n")
@@ -92,10 +92,10 @@ def imize(c, A, p_idxs, filename):
     os.remove(filename)
     os.remove(filename+".sol")
     os.removedirs("gpkit_tmp")
-    return dict(success=True,
-                objective_sol=objective_val,
-                primal_sol=primal_vals,
-                dual_sol=dual_vals)
+    return dict(status="optimal",
+                objective=objective_val,
+                primal=primal_vals,
+                nu=dual_vals)
 
 
 def assert_line(f, expected):

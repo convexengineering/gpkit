@@ -312,14 +312,6 @@ class Constraint(Posynomial):
         return bool(self.c == 1 and self.exp == {})
 
 
-# class EQConstraint(Constraint):
-#    def _set_operator(self, p1, p2):
-#         self.oper_l = " == "
-#         self.oper_s = " == "
-#         self.leq = Constraint(p2, p1)
-#         self.geq = Constraint(p1, p2)
-
-
 class MonoEQConstraint(Constraint):
     def _set_operator(self, p1, p2):
         self.oper_l = " = "

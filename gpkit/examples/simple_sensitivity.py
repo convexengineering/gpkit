@@ -76,7 +76,7 @@ gp = gpkit.GP(  # minimize
                     C_D >= C_D_fuse + C_D_wpar + C_D_ind
                 ], substitutions)
 
-gp.solve()
+sol = gp.solve()
 
 # Results
 profile.disable()
@@ -104,5 +104,5 @@ def print_results_table(data, title, minval=None):
     print("                    |")
 
 print_results_table(gp.substitutions, "Substitutions")
-print_results_table(gp.solution, "Solution")
-print_results_table(gp.sensitivities, "Sensitivities", minval=1e-2)
+print_results_table(sol["free_variables"], "Solution")
+print_results_table(sol["sensitivities"]["variables"], "Sensitivities", minval=1e-2)

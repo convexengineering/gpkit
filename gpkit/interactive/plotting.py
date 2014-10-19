@@ -95,3 +95,21 @@ def contour_array(data, vardescrs, X, Y, Zs,
 def frontier_surface_plot(data, xvar, yvar, zvars,
                           colors=None, maxfigsize=(5,5), axsize=(5,5)):
     pass
+
+
+def plot_frontiers(gp, Zs, x, y, figsize):
+        "Helper function to plot 2d contour plots."
+        data = {}
+        data.update(gp.substitutions)
+        data.update(gp.solution)
+        data.update({"S{%s}" % k: v
+                    for (k, v) in gp.sensitivities.items()})
+        data.keys()
+        if len(gp.sweep) == 2:
+            contour_array(data,
+                          gp.var_descrs,
+                          gp.sweep.keys()[0],
+                          gp.sweep.keys()[1],
+                          Zs, x, y, figsize,
+                          xticks=gp.sweep.values()[0],
+                          yticks=gp.sweep.values()[1])
