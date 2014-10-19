@@ -15,21 +15,27 @@ def sort_and_simplify(exps, cs):
 
 
 class Posynomial(object):
-    '''A representation of a posynomial.
-
-    exps: a tuple of exp vectors, each of which corresponds to a monomial
-    cs: a tuple of coefficient values, each of which corresponds to a monomial
-
-    exp: a HashVector of each variable's power in a monomial
-    c: the scalar multiplier of a monomial (positive)
-
-    var_locs: a dict containing for each variable in the posynomial a list
-        of each monomial index that variable is in
-
-    var_descrs: a dict containing strings describing variables
-    '''
+    """A representation of a posynomial."""
 
     def __init__(self, exps, cs=1, var_descrs=[], var_locs=None):
+        """
+        Parameters
+        ----------
+        exps: tuple of dicts
+            Exponent dicts for each monomial term
+        cs: tuple
+            Coefficient values for each monomial term
+        var_locs: dict
+            mapping from variable name to list of indices of monomial terms
+            that variable appears in
+        var_descrs: dict
+            mapping from variable name to string description
+
+        Returns
+        -------
+        Posynomial (if the input has multiple terms)
+        Monomial   (if the input has one term)
+        """
         if isinstance(exps, (int, float)):
             cs = exps
             exps = {}
@@ -45,8 +51,9 @@ class Posynomial(object):
             exps = exps.exps
         else:
             # test for presence of length and identical lengths
-            try: assert len(cs) == len(exps)
-            except:
+            try:
+                assert len(cs) == len(exps)
+            except:  # TODO catch specific Exception(s)
                 raise TypeError("cs and exps must have the same length.")
 
         exps, cs = sort_and_simplify(exps, cs)
@@ -206,7 +213,7 @@ class Posynomial(object):
             Exps = np.empty((len(self.exps), len(other.exps)), dtype="object")
             for i, exp_s in enumerate(self.exps):
                 for j, exp_o in enumerate(other.exps):
-                    Exps[i,j] = exp_s + exp_o
+                    Exps[i, j] = exp_s + exp_o
             return Posynomial(Exps.flatten(), C.flatten(),
                               [self.var_descrs, other.var_descrs])
         elif isinstance(other, PosyArray):
@@ -214,7 +221,8 @@ class Posynomial(object):
         else:
             invalid_types_for_oper("*", self, other)
 
-    def __rmul__(self, other): return self * other
+    def __rmul__(self, other):
+        return self * other
 
     def __div__(self, other):
         if isinstance(other, Posynomial):
@@ -258,7 +266,7 @@ class Monomial(Posynomial):
             invalid_types_for_oper("/", other, self)
 
     def __pow__(self, other):
-        if isinstance(other, (int,float)):
+        if isinstance(other, (int, float)):
             return Monomial(self.exp*other, self.c**other,
                             self.var_descrs)
         else:

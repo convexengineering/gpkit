@@ -137,7 +137,7 @@ class t_Monomial(unittest.TestCase):
 
 class t_Posynomial(unittest.TestCase):
 
-    def test_basic(self):
+    def test_init(self):
         x = Monomial('x')
         y = Monomial('y')
         ms = [Monomial({'x': 1, 'y': 2}, 3.14),
@@ -152,6 +152,17 @@ class t_Posynomial(unittest.TestCase):
         # check arithmetic
         p2 = 3.14*x*y**2 + y/2 + x**3*6*y + 2
         self.assertEqual(p, p2)
+
+        p = Posynomial(({'m': 1, 'v': 2},
+                        {'m': 1, 'g': 1, 'h': 1}),
+                       (0.5, 1))
+        self.assertTrue(all(isinstance(x, float) for x in p.cs))
+        self.assertEqual(len(p.exps), 2)
+        self.assertEqual(set(p.var_locs), set(('m', 'g', 'h', 'v')))
+        self.assertEqual(p.var_locs['g'], p.var_locs['h'])
+        self.assertNotEqual(p.var_locs['g'], p.var_locs['v'])
+        self.assertEqual(len(p.var_locs['m']), 2)
+        self.assertTrue(all(len(p.var_locs[key]) == 1 for key in ('ghv')))
 
     def test_simplification(self):
         x = Monomial('x')
