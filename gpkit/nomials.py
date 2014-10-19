@@ -311,6 +311,9 @@ class Constraint(Posynomial):
         # evaluates as "False"
         return bool(self.c == 1 and self.exp == {})
 
+    def label(self, descr):
+        self.descr = descr
+
 
 class MonoEQConstraint(Constraint):
     def _set_operator(self, p1, p2):
