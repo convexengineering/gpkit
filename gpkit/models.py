@@ -116,10 +116,8 @@ class Model(object):
                 try:
                     if sub[0] == 'sweep':
                         del subs[var]
-                        if isinstance(var, Monomial):
-                            if (var.c == 1 and len(var.exp) == 1
-                               and list(var.exp.values())[0] == 1):
-                                var = list(var.exp.keys())[0]
+                        if hasattr(var, 'varname'):
+                            var = var.varname
                         if isinstance(sub[1], Iterable):
                             self.sweep.update({var: sub[1]})
                             found_sweep = True

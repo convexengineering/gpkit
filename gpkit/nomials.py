@@ -63,7 +63,8 @@ class Posynomial(object):
         self.exps = exps
         self.cs = cs
         if len(exps) == 1:
-            self.__class__ = Monomial
+            if self.__class__ is Posynomial:
+                self.__class__ = Monomial
             self.exp = exps[0]
             self.c = cs[0]
 
@@ -126,7 +127,6 @@ class Posynomial(object):
     def __gt__(self, other):
         invalid_types_for_oper(">", self, other)
 
-    # string translations
     def _string(self, mult_symbol='*'):
         mstrs = []
         for c, exp in zip(self.cs, self.exps):
@@ -137,12 +137,7 @@ class Posynomial(object):
         return " + ".join(sorted(mstrs))
 
     def __repr__(self):
-        # try:
-        #     from IPython.display import Math
-        #     Math(self._latex())
-        # except:
-        #     pass
-        return self.__class__.__name__+"("+self._string()+")"
+        return "gpkit.%s(%s)" % (self.__class__.__name__, self._string())
 
     def _latex(self, unused=None):
         "For pretty printing with Sympy"

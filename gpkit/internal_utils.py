@@ -45,22 +45,19 @@ def substitution(var_locs, exps, cs, substitutions, val=None):
         subs_ : dict
             Substitutions to apply to the above.
     """
-    if val is not None and isinstance(substitutions, (str, Monomial)):
-        # singlet variable
+    if val is not None:
         var = substitutions
-        if isinstance(var, Monomial):
-            if (var.c == 1 and len(var.exp) == 1
-               and list(var.exp.values())[0] == 1):
-                var = list(var.exp.keys())[0]
+        if hasattr(var, 'varname'):
+            var = var.varname
+        elif not isinstance(var, str):
+            raise TypeError("singlet substitution requires a str or variable")
         substitutions = {var: val}
 
     subs, descrs = {}, {}
     for var, sub in substitutions.items():
-        # substitute from singlet variable
-        if isinstance(var, Monomial):
-            if (var.c == 1 and len(var.exp) == 1
-               and list(var.exp.values())[0] == 1):
-                var = list(var.exp.keys())[0]
+        if hasattr(var, 'varname'):
+            # HACK: to determine if Variable, here and in models.py
+            var = var.varname
         if var in var_locs:
             try:
                 # described variable

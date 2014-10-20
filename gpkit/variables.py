@@ -7,8 +7,8 @@
 
 """
 
-from gpkit import PosyArray
-from gpkit import Monomial
+from .posyarray import PosyArray
+from .nomials import Monomial
 
 
 def Variable(name, *descr):
@@ -26,7 +26,9 @@ def Variable(name, *descr):
     Monomial of named variable
     """
     descr = _format_description(descr)
-    return Monomial(name, var_descrs={name: descr})
+    m = Monomial(name, var_descrs={name: descr})
+    m.varname = name
+    return m
 
 
 def VectorVariable(length, name, *descr):
@@ -47,7 +49,9 @@ def VectorVariable(length, name, *descr):
     where V is the vector's name and i is the variable's index.
     """
     descr = _format_description(descr)
-    m = PosyArray([Monomial("{%s}_{%i}" % (name, i)) for i in range(length)])
+    m = PosyArray([Monomial("{%s}_{%i}" % (name, i))
+                  for i in range(length)])
+    m.varname = name
     for el in m:
         el.var_descrs[list(el.exp.keys())[0]] = descr
     return m
