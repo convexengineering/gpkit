@@ -1,4 +1,6 @@
 import numpy as np
+import operator
+from functools import reduce
 
 
 class PosyArray(np.ndarray):
@@ -26,6 +28,8 @@ class PosyArray(np.ndarray):
     def __ge__(self, x): return [e for e in self._geq(self, x)]
 
     def outer(self, x): return PosyArray(np.outer(self, x))
+    def sum(self): return reduce(operator.add, self[1:], self[0])
+    def prod(self): return reduce(operator.mul, self, 1)
 
     def __new__(cls, input_array, info=None):
         # Input array is an already formed ndarray instance

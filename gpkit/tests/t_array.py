@@ -58,7 +58,7 @@ class t_array(unittest.TestCase):
         s2 = PosyArray([Monomial({}, e) for e in [1, 4, 9]])
         self.assertEqual(p.sub(c), s2)
         d = p.sum()
-        self.assertEqual(d.sub(c), PosyArray(Monomial({}, 14)))
+        self.assertEqual(d.sub(c), Monomial({}, 14))
 
 
 tests = [t_array]
