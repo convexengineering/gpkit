@@ -203,7 +203,7 @@ class GP(Model):
         sweep_vects = {var: grid.reshape(N_passes)
                        for (var, grid) in sweep_grids.items()}
 
-        sol_list = GPSolutionList()
+        sol_list = DictOfLists()
 
         for i in range(N_passes):
             this_pass = {var: sweep_vect[i]
@@ -366,10 +366,7 @@ def cvxoptimize(c, A, k, options):
                 la=solution['znl'])
 
 
-class GPSolutionList(dict):
-    # sol_array = GPSolutionArray(N_passes)
-    # sol_array[i] = sol
-    # sol_array.reshape(sweep_shape)
+class DictOfLists(dict):
 
     def append(self, sol):
         if not hasattr(self, 'initialized'):

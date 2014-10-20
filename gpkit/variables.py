@@ -49,7 +49,7 @@ def VectorVariable(length, name, *descr):
     where V is the vector's name and i is the variable's index.
     """
     descr = _format_description(descr)
-    m = PosyArray([Monomial("{%s}_{%i}" % (name, i+1))
+    m = PosyArray([Monomial("{%s}_{%i}" % (name, i))
                   for i in range(length)])
     m.varname = name
     for i, el in enumerate(m):
