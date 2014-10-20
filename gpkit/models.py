@@ -3,6 +3,7 @@ from collections import namedtuple
 from collections import Iterable
 from copy import deepcopy
 from functools import reduce
+import re
 
 from .internal_utils import *
 from .nomials import Posynomial
@@ -88,6 +89,21 @@ class Model(object):
         var_descrs = defaultdict(str)
         for p in posynomials:
             var_descrs.update(p.var_descrs)
+
+        isvector = re.compile(r".*\((\d*) of (\d*)\)")
+        for var, descr in var_descrs.items():
+            label = descr[1]
+            if isvector.search(label):
+                try:
+                    idx = int(isvector.sub(r"\1", label))
+                    length = int(isvector.sub(r"\2", label))
+                    vectorvar = re.sub(r"\{(.*)\}_\{%s\}" % idx, r"\1", var)
+                    if not self.vectorvars.get(vectorvar, length) == length:
+                        self.vectorvars[vectorvar] = None
+                    else:
+                        self.vectorvars[vectorvar] = length
+                except:
+                    pass
 
         exps = reduce(lambda x,y: x+y, map(lambda x: x.exps, posynomials))
         cs = reduce(lambda x,y: x+y, map(lambda x: x.cs, posynomials))

@@ -106,6 +106,7 @@ class GP(Model):
             from gpkit import settings
             self.solver = settings['installed_solvers'][0]
 
+        self.vectorvars = {}
         self.sweep = {}
         self._gen_unsubbed_vars()
 
@@ -262,13 +263,17 @@ class GP(Model):
             raise RuntimeWarning("final status of solver '%s' was '%s' not"
                                  "'optimal'." % (self.solver, result['status']))
 
-        free_variables = dict(zip(self.var_locs, np.exp(result['primal'])))
-        allsubs = dict(self.substitutions)
-        allsubs.update(free_variables)
+        variables = dict(zip(self.var_locs, np.exp(result['primal'])))
+        variables.update(self.substitutions)
+        for vectorvar, length in self.vectorvars.items():
+            if length and vectorvar not in variables:
+                vectorval = [variables['{%s}_{%s}' % (vectorvar, i+1)]
+                             for i in range(length)]
+                variables[vectorvar] = np.array(vectorval)
 
         # constraints must be within arbitrary epsilon 1e-4 of 1
         for p in self.constraints:
-            val = p.sub(allsubs).c
+            val = p.sub(variables).c
             if not val <= 1 + 1e-4:
                 raise RuntimeWarning("constraint exceeded:"
                                      " %s = 1 + %0.2e" % (p, val-1))
@@ -276,7 +281,7 @@ class GP(Model):
         if "objective" in result:
             cost = float(result["objective"])
         else:
-            costm = self.cost.sub(allsubs)
+            costm = self.cost.sub(variables)
             assert costm.exp == {}
             cost = costm.c
 
@@ -307,12 +312,12 @@ class GP(Model):
                                      " S_{%s} = %0.2e" % (var, S))
 
         local_exp = {var: S for (var, S) in sens_vars.items() if abs(S) >= 0.1}
-        local_cs = (allsubs[var]**-S for (var, S) in local_exp.items())
+        local_cs = (variables[var]**-S for (var, S) in local_exp.items())
         local_c = reduce(operator.mul, local_cs, cost)
         local_model = Monomial(local_exp, local_c)
 
         return dict(cost=cost,
-                    free_variables=free_variables,
+                    variables=variables,
                     sensitivities=sensitivities,
                     local_model=local_model)
 

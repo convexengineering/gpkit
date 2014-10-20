@@ -56,7 +56,8 @@ def substitution(var_locs, exps, cs, substitutions, val=None):
     subs, descrs = {}, {}
     for var, sub in substitutions.items():
         if hasattr(var, 'varname'):
-            # HACK: to determine if Variable, here and in models.py
+            # HACK: to determine if `var` is a Variable.
+            #       (used here and in models.py)
             var = var.varname
         if var in var_locs:
             try:
@@ -77,12 +78,12 @@ def substitution(var_locs, exps, cs, substitutions, val=None):
                 if all((isinstance(val, (int, float, Monomial))
                         for val in sub)):
                     # sub is a vector
-                    vsub = [("{%s}_{%i}" % (var, j), val)
+                    vsub = [("{%s}_{%i}" % (var, j+1), val)
                             for (j, val) in enumerate(sub)]
                 elif all((isinstance(val, (int, float, Monomial))
                           for val in sub[0])):
                     # sub's first element is a vector
-                    vsub = [("{%s}_{%i}" % (var, j), val)
+                    vsub = [("{%s}_{%i}" % (var, j+1), val)
                             for (j, val) in enumerate(sub[0])]
                     # sub's last element is description
                     assert isinstance(sub[-1], str)

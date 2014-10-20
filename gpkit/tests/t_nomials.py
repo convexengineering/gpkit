@@ -28,10 +28,10 @@ class t_Monomial(unittest.TestCase):
         self.assertEqual(m.exp, {'tau': 1})
         self.assertEqual(m.c, .1)
 
-#        # variable names not compatible with python namespaces
-#        crazy_varstr = 'what the !!!/$\**?'
-#        m = Monomial({'x': 1, crazy_varstr: .5}, 25)
-#        self.assertTrue(crazy_varstr in m.exp)
+        # variable names not compatible with python namespaces
+        crazy_varstr = 'what the !!!/$\**?'
+        m = Monomial({'x': 1, crazy_varstr: .5}, 25)
+        self.assertTrue(crazy_varstr in m.exp)
 
         # non-positive c raises
         self.assertRaises(ValueError, Monomial, 'x', -2)
@@ -42,7 +42,7 @@ class t_Monomial(unittest.TestCase):
     def test_repr(self):
         m = Monomial({'x':2, 'y':-1}, 5)
         self.assertEqual(type(m.__repr__()), str)
-        self.assertEqual(Monomial('x').__repr__(), 'Monomial(x)')
+        self.assertEqual(Monomial('x').__repr__(), 'gpkit.Monomial(x)')
 
     def test_latex(self):
         m = Monomial({'x':2, 'y':-1}, 5)._latex()

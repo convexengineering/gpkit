@@ -49,11 +49,13 @@ def VectorVariable(length, name, *descr):
     where V is the vector's name and i is the variable's index.
     """
     descr = _format_description(descr)
-    m = PosyArray([Monomial("{%s}_{%i}" % (name, i))
+    m = PosyArray([Monomial("{%s}_{%i}" % (name, i+1))
                   for i in range(length)])
     m.varname = name
-    for el in m:
-        el.var_descrs[list(el.exp.keys())[0]] = descr
+    for i, el in enumerate(m):
+        idescr = list(descr)
+        idescr[1] += " (%s of %s)" % (i+1, length)
+        el.var_descrs[list(el.exp.keys())[0]] = idescr
     return m
 
 
@@ -77,7 +79,8 @@ def _format_description(descr):
                 label = descr[0]
     elif len(descr) == 2:
         units = descr[0]
-        if units in ("[-]", "", "-", "[]"):
+        # should square brackets be stripped here?
+        if units in ("", "-"):
             units = None
         label = descr[1]
     else:

@@ -179,8 +179,12 @@ class Posynomial(object):
     # posynomial arithmetic
     def __add__(self, other):
         if isinstance(other, (int, float)):
-            return Posynomial(self.exps + ({},), self.cs + (other,),
-                              self.var_descrs, self.var_locs)
+            if other == 0:
+                return Posynomial(self.exps, self.cs, self.var_descrs,
+                                  self.var_locs)
+            else:
+                return Posynomial(self.exps + ({},), self.cs + (other,),
+                                  self.var_descrs, self.var_locs)
         elif isinstance(other, Posynomial):
             return Posynomial(self.exps + other.exps, self.cs + other.cs,
                               [self.var_descrs, other.var_descrs])
