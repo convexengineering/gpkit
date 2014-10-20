@@ -108,15 +108,9 @@ class Posynomial(object):
         mons = (int, float, Monomial)
         if (isinstance(other, mons) and isinstance(self, mons)):
             return MonoEQConstraint(self, other)
-        # elif (isinstance(other, mons) and isinstance(self, Posynomial)):
-        #     return EQConstraint(self, other)
-        # elif (isinstance(other, Posynomial) and isinstance(self, mons)):
-        #     return EQConstraint(other, self)
-        # else do standard truth checking
-        # (note: if eq constraints are unwanted, just check that
-        #        both self and other are posys before this step)
-        elif (self.exps == other.exps and self.cs <= other.cs):
-            return True
+        elif (isinstance(other, Posynomial) and isinstance(self, Posynomial)):
+            if (self.exps == other.exps and self.cs <= other.cs):
+                return True
         else:
             return False
 
@@ -136,12 +130,11 @@ class Posynomial(object):
     def _string(self, mult_symbol='*'):
         mstrs = []
         for c, exp in zip(self.cs, self.exps):
-            expsorted = sorted(exp.items(), key=lambda x: x[1])
             varstrs = ['%s**%.2g' % (var, x) if x != 1 else var
-                       for (var, x) in expsorted if x != 0]
+                       for (var, x) in sorted(exp.items()) if x != 0]
             cstr = ["%.2g" % c] if c != 1 or not varstrs else []
             mstrs.append(mult_symbol.join(cstr + varstrs))
-        return " + ".join(mstrs)
+        return " + ".join(sorted(mstrs))
 
     def __repr__(self):
         # try:
@@ -156,7 +149,7 @@ class Posynomial(object):
         mstrs = []
         for c, exp in zip(self.cs, self.exps):
             pos_vars, neg_vars = [], []
-            for var, x in exp.items():
+            for var, x in sorted(exp.items()):
                 if x > 0:
                     pos_vars.append((var, x))
                 elif x < 0:
@@ -186,7 +179,7 @@ class Posynomial(object):
             elif pos_vars and neg_vars:
                 mstrs.append("%s\\frac{%s}{%s}" % (cstr, pvarstr, nvarstr))
 
-        return " + ".join(mstrs)
+        return " + ".join(sorted(mstrs))
 
     # posynomial arithmetic
     def __add__(self, other):
@@ -274,6 +267,7 @@ class Monomial(Posynomial):
 
 
 class Constraint(Posynomial):
+    descr = None
 
     def _set_operator(self, p1, p2):
         if self.left is p1:
