@@ -77,7 +77,7 @@ gp = gpkit.GP(  # minimize
                     C_D >= C_D_fuse + C_D_wpar + C_D_ind
                 ], substitutions)
 
-gp.solve()
+sol = gp.solve()
 
 # Results
 profile.disable()
@@ -104,6 +104,5 @@ def print_results_table(data, title, minval=None):
             print("%19s" % key, ": %-8.3g" % val, descr)
     print("                    |")
 
-print_results_table(gp.substitutions, "Substitution Averages")
-print_results_table(gp.solution, "Solution Averages")
-print_results_table(gp.sensitivities, "Sensitivity Averages", minval=1e-2)
+print_results_table(sol["variables"], "Variable Averages")
+print_results_table(sol["sensitivities"]["variables"], "Sensitivity Averages", minval=1e-2)

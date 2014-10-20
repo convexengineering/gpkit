@@ -103,6 +103,5 @@ def print_results_table(data, title, minval=None):
             print("%19s" % key, ": %-8.3g" % val, descr)
     print("                    |")
 
-print_results_table(gp.substitutions, "Substitutions")
-print_results_table(sol["free_variables"], "Solution")
+print_results_table(sol["variables"], "Solution")
 print_results_table(sol["sensitivities"]["variables"], "Sensitivities", minval=1e-2)

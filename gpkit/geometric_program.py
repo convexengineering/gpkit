@@ -202,27 +202,21 @@ class GP(Model):
         sweep_grids = dict(zip(self.sweep, sweep_grids))
         sweep_vects = {var: grid.reshape(N_passes)
                        for (var, grid) in sweep_grids.items()}
-        result_2d_array = np.empty((N_passes, len(self.var_locs)))
-        sensitivity_2d_array = np.empty((N_passes, len(self.unsubbed.var_locs)))
+
+        sol_list = GPSolutionList()
 
         for i in range(N_passes):
             this_pass = {var: sweep_vect[i]
                          for (var, sweep_vect) in sweep_vects.items()}
             self.sub(this_pass, frombase='presweep', tobase='swept')
-
             sol = self.__run_solver()
-            result_2d_array[i, :] = sol['free_variables'].values()
-            sensitivity_2d_array[i,:] = sol['sensitivities']['variables'].values()
+            sol_list.append(sol)
 
-        solution = {var: result_2d_array[:, j].reshape(sweep_shape)
-                    for (j, var) in enumerate(self.var_locs)}
-        self.sensitivities = {var: sensitivity_2d_array[:, j].reshape(sweep_shape)
-                              for (j, var) in enumerate(sol['sensitivities']['variables'])}
-
-        solution.update(sweep_grids)
+        sol_list.toarray()
 
         self.load(self.presweep)
-        return solution
+
+        return sol_list
 
     def __run_solver(self):
         "Switches between solver options"
@@ -265,11 +259,6 @@ class GP(Model):
 
         variables = dict(zip(self.var_locs, np.exp(result['primal'])))
         variables.update(self.substitutions)
-        for vectorvar, length in self.vectorvars.items():
-            if length and vectorvar not in variables:
-                vectorval = [variables['{%s}_{%s}' % (vectorvar, i+1)]
-                             for i in range(length)]
-                variables[vectorvar] = np.array(vectorval)
 
         # constraints must be within arbitrary epsilon 1e-4 of 1
         for p in self.constraints:
@@ -316,6 +305,19 @@ class GP(Model):
         local_c = reduce(operator.mul, local_cs, cost)
         local_model = Monomial(local_exp, local_c)
 
+        # vectorvar substitution
+        for vectorvar, length in self.vectorvars.items():
+            if vectorvar not in variables and length:
+                vectorval, vectorS = [], []
+                for i in range(length):
+                    var = '{%s}_{%s}' % (vectorvar, i+1)
+                    val = variables.pop(var)
+                    S = sensitivities["variables"].pop(var)
+                    vectorval.append(val)
+                    vectorS.append(S)
+                variables[vectorvar] = np.array(vectorval)
+                sensitivities["variables"][vectorvar] = np.array(vectorS)
+
         return dict(cost=cost,
                     variables=variables,
                     sensitivities=sensitivities,
@@ -361,4 +363,64 @@ def cvxoptimize(c, A, k, options):
     solution = solvers.gp(k, F, g)
     return dict(status=solution['status'],
                 primal=solution['x'],
-                la=solution['y'])
+                la=solution['znl'])
+
+
+class GPSolutionList(dict):
+    # sol_array = GPSolutionArray(N_passes)
+    # sol_array[i] = sol
+    # sol_array.reshape(sweep_shape)
+
+    def append(self, sol):
+        if not hasattr(self, 'initialized'):
+            enlist_dict(sol, self)
+            self.initialized = True
+        else:
+            append_dict(sol, self)
+
+    def get(self, i):
+        return index_dict(i, self, {})
+
+    def toarray(self, shape=None):
+        if shape is None:
+            enray_dict(self, self)
+
+
+def enlist_dict(i, o):
+    for k, v in i.items():
+        if isinstance(v, dict):
+            o[k] = enlist_dict(v, {})
+        else:
+            o[k] = [v]
+    assert set(i.keys()) == set(o.keys())
+    return o
+
+
+def append_dict(i, o):
+    for k, v in i.items():
+        if isinstance(v, dict):
+            o[k] = append_dict(v, o[k])
+        else:
+            o[k].append(v)
+    assert set(i.keys()) == set(o.keys())
+    return o
+
+
+def index_dict(idx, i, o):
+    for k, v in i.items():
+        if isinstance(v, dict):
+            o[k] = index_dict(idx, v, {})
+        else:
+            o[k] = v[idx]
+    assert set(i.keys()) == set(o.keys())
+    return o
+
+
+def enray_dict(i, o):
+    for k, v in i.items():
+        if isinstance(v, dict):
+            o[k] = enray_dict(v, {})
+        else:
+            o[k] = np.array(v)
+    assert set(i.keys()) == set(o.keys())
+    return o
