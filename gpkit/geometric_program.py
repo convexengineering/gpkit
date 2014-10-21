@@ -275,12 +275,12 @@ class GP(Model):
             cost = costm.c
 
         sensitivities = {}
-        if "nu" not in result and "lambda" not in result:
+        if "nu" not in result and "la" not in result:
             raise Exception("The dual solution was not returned!")
         if "nu" in result:
             sensitivities["monomials"] = np.array(result["nu"])
         else:
-            pass  # generate nu from lambda
+            raise NotImplementedError('TODO: generate nu from lambda')
         if "la" in result:
             sensitivities["posynomials"] = np.array(result["la"])
         else:
@@ -362,8 +362,23 @@ def cvxoptimize(c, A, k, options):
     F = spmatrix(A.data, A.row, A.col, tc='d')
     solution = solvers.gp(k, F, g)
     return dict(status=solution['status'],
-                primal=solution['x'],
-                la=solution['znl'])
+                primal=flat_array(solution['x']),
+                la=flat_array(solution['znl']))
+
+
+def flat_array(x):
+    """Turn x into a flat np array
+
+    Parameters
+    ----------
+    x: iterable
+        iterable thing to flatten
+
+    Returns
+    -------
+    np.array with shape (number_of_elements_in_x,)
+    """
+    return np.array(x).flatten()
 
 
 class DictOfLists(dict):
