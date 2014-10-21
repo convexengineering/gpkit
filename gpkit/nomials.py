@@ -15,27 +15,27 @@ def sort_and_simplify(exps, cs):
 
 
 class Posynomial(object):
-    """A representation of a posynomial."""
+    """A representation of a posynomial.
+
+    Parameters
+    ----------
+    exps: tuple of dicts
+        Exponent dicts for each monomial term
+    cs: tuple
+        Coefficient values for each monomial term
+    var_locs: dict
+        mapping from variable name to list of indices of monomial terms
+        that variable appears in
+    var_descrs: dict
+        mapping from variable name to string description
+
+    Returns
+    -------
+    Posynomial (if the input has multiple terms)
+    Monomial   (if the input has one term)
+    """
 
     def __init__(self, exps, cs=1, var_descrs=[], var_locs=None):
-        """
-        Parameters
-        ----------
-        exps: tuple of dicts
-            Exponent dicts for each monomial term
-        cs: tuple
-            Coefficient values for each monomial term
-        var_locs: dict
-            mapping from variable name to list of indices of monomial terms
-            that variable appears in
-        var_descrs: dict
-            mapping from variable name to string description
-
-        Returns
-        -------
-        Posynomial (if the input has multiple terms)
-        Monomial   (if the input has one term)
-        """
         if isinstance(exps, (int, float)):
             cs = exps
             exps = {}
