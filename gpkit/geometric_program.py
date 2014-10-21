@@ -156,7 +156,8 @@ class GP(Model):
         solution : dict
             A dictionary containing the optimal values for each free variable.
         """
-        if printing: print("Using solver '%s'" % self.solver)
+        if printing:
+            print("Using solver '%s'" % self.solver)
         self.starttime = time()
 
         if self.sweep:
@@ -251,9 +252,10 @@ class GP(Model):
 
         """
         # check solver status
-        if result['status'] is not 'optimal':
+        if result['status'] != 'optimal':
             raise RuntimeWarning("final status of solver '%s' was '%s' not"
-                                 "'optimal'." % (self.solver, result['status']))
+                                 "'optimal'."
+                                 % (self.solver, result['status']))
 
         variables = dict(zip(self.var_locs, np.exp(result['primal'])))
         variables.update(self.substitutions)
