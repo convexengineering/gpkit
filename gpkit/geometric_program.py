@@ -19,8 +19,6 @@ from .models import Model
 from .nomials import Constraint, MonoEQConstraint
 from .nomials import Monomial
 
-import gpkit.plotting
-
 
 def flatten_constr(l):
     """Flattens an iterable that contains only constraints and other iterables
