@@ -21,8 +21,6 @@ from .nomials import Monomial
 from .nomials import latex_num
 from .nomials import VarKey
 
-import gpkit.plotting
-
 
 def flatten_constr(l):
     """Flattens an iterable that contains only constraints and other iterables
@@ -166,7 +164,8 @@ class GP(Model):
         solution : dict
             A dictionary containing the optimal values for each free variable.
         """
-        if printing: print("Using solver '%s'" % self.solver)
+        if printing:
+            print("Using solver '%s'" % self.solver)
         self.starttime = time()
 
         if self.sweep:
@@ -268,7 +267,8 @@ class GP(Model):
             raise RuntimeWarning("final status of solver '%s' was '%s' not "
                                  "'optimal'." % (self.solver, result['status']))
 
-        variables = dict(zip(self.var_locs, np.exp(result['primal'])))
+        variables = dict(zip(self.var_locs,
+                             np.exp(result['primal']).flatten()))
         variables.update(self.substitutions)
 
         # constraints must be within arbitrary epsilon 1e-4 of 1
@@ -286,14 +286,14 @@ class GP(Model):
             cost = costm.c
 
         sensitivities = {}
-        if "nu" not in result and "lambda" not in result:
+        if "nu" not in result and "la" not in result:
             raise Exception("The dual solution was not returned!")
         if "nu" in result:
-            sensitivities["monomials"] = np.array(result["nu"])
+            sensitivities["monomials"] = np.array(result["nu"]).flatten()
         else:
-            pass  # generate nu from lambda
+            raise NotImplementedError('TODO: generate nu from lambda')
         if "la" in result:
-            sensitivities["posynomials"] = np.array(result["la"])
+            sensitivities["posynomials"] = np.array(result["la"]).flatten()
         else:
             la = [sum(sensitivities["monomials"][np.array(self.p_idxs) == i])
                   for i in range(len(self.posynomials))]
