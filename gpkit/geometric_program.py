@@ -376,23 +376,28 @@ def cvxoptimize(c, A, k, options):
 
 
 class DictOfLists(dict):
+    "A hierarchy of dicionaries, with lists as the bottom."
 
     def append(self, sol):
+        "Appends a dict (of dicts) of lists to all held lists."
         if not hasattr(self, 'initialized'):
             enlist_dict(sol, self)
             self.initialized = True
         else:
             append_dict(sol, self)
 
-    def get(self, i):
+    def atindex(self, i):
+        "Indexes into each list independently."
         return index_dict(i, self, {})
 
     def toarray(self, shape=None):
+        "Converts all lists into arrays."
         if shape is None:
             enray_dict(self, self)
 
 
 def enlist_dict(i, o):
+    "Recursviely copies dict i into o, placing non-dict items into lists."
     for k, v in i.items():
         if isinstance(v, dict):
             o[k] = enlist_dict(v, {})
@@ -403,6 +408,7 @@ def enlist_dict(i, o):
 
 
 def append_dict(i, o):
+    "Recursviely travels dict o and appends items found in i."
     for k, v in i.items():
         if isinstance(v, dict):
             o[k] = append_dict(v, o[k])
@@ -413,6 +419,7 @@ def append_dict(i, o):
 
 
 def index_dict(idx, i, o):
+    "Recursviely travels dict i, placing items at idx into dict o."
     for k, v in i.items():
         if isinstance(v, dict):
             o[k] = index_dict(idx, v, {})
@@ -423,6 +430,7 @@ def index_dict(idx, i, o):
 
 
 def enray_dict(i, o):
+    "Recursively turns lists into numpy arrays."
     for k, v in i.items():
         if isinstance(v, dict):
             o[k] = enray_dict(v, {})
@@ -433,14 +441,19 @@ def enray_dict(i, o):
 
 
 class GPSolutionArray(DictOfLists):
-    # print out a table of results
+    "DictofLists extended with posynomial substitution."
 
     def subinto(self, p):
-        return np.array([p.sub(self.get(i)["variables"])
+        "Returns numpy array of each solution substituted into p."
+        return np.array([p.sub(self.atindex(i)["variables"])
                          for i in range(len(self["cost"]))])
 
     def senssubinto(self, p):
-        senssubbeds = [p.sub(self.get(i)["sensitivities"]["variables"],
+        """Returns numpy array of each solution's sensitivity substituted into p.
+
+        Each element must be scalar, so as to avoid any negative posynomials.
+        """
+        senssubbeds = [p.sub(self.atindex(i)["sensitivities"]["variables"],
                              allow_negative=True)
                        for i in range(len(self["cost"]))]
         if not all([isinstance(subbed, Monomial) for subbed in senssubbeds]):
