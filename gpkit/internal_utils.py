@@ -19,12 +19,14 @@ def locate_vars(exps):
     return var_locs
 
 
-def is_sweepvar(val):
-    try: return val[0] == "sweep"
+def is_sweepvar(sub):
+    "Determines if a given substitution indicates a sweep."
+    try: return sub[0] == "sweep"
     except: return False
 
 
 def vectorsub(subs, var, subiter, var_locs):
+    "Vectorized substitution via monovectors and VarKeys."
     if isinstance(var, VarKey):
         var = monovector(**var.descr)
     if len(var) == len(subiter):
@@ -38,7 +40,7 @@ def vectorsub(subs, var, subiter, var_locs):
 
 
 def substitution(var_locs, exps, cs, substitutions, val=None):
-    """Does efficient substituton into a list of monomials.
+    """Efficient substituton into a list of monomials.
 
         Parameters
         ----------
