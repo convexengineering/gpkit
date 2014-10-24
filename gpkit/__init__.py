@@ -15,12 +15,11 @@
         Contains settings loaded from ``./env/settings``
 """
 
-from .posyarray import PosyArray
 from .nomials import Monomial
 from .nomials import Posynomial
+from .nomials import monovector
+from .posyarray import PosyArray
 from .geometric_program import GP
-from .variables import Variable
-from .variables import VectorVariable
 
 # Load settings
 from os import sep as os_sep

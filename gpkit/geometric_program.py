@@ -18,6 +18,8 @@ import operator
 from .models import Model
 from .nomials import Constraint, MonoEQConstraint
 from .nomials import Monomial
+from .nomials import latex_num
+from .nomials import VarKey
 
 import gpkit.plotting
 
@@ -83,13 +85,16 @@ class GP(Model):
                             W_w >= W_w_surf + W_w_strc,
                             C_D >= C_D_fuse + C_D_wpar + C_D_ind
                         ], substitutions)
-        gp.solve()
+    >>> gp.solve()
 
     """
 
     def __init__(self, cost, constraints, substitutions={},
                  solver=None, options={}):
         self.cost = cost
+        # TODO: parse constraints during flattening, calling Posyarray on
+        #       anything that holds only posys and then saving that list.
+        #       This will allow prettier constraint printing.
         self.constraints = tuple(flatten_constr(constraints))
         posynomials = [self.cost]
         for constraint in self.constraints:
@@ -124,10 +129,10 @@ class GP(Model):
     def __repr__(self):
         "The string representation of a GP contains all of its parameters."
         return "\n".join(["gpkit.GP( # minimize",
-                          "          %s," % self.cost._string(),
+                          "          %s," % self.cost,
                           "          [   # subject to"] +
-                         ["              %s," % p._string()
-                          for p in self.constraints] +
+                         ["              %s," % constr
+                          for constr in self.constraints] +
                          ['          ],',
                           "          substitutions={ %s }," %
                           pformat(self.substitutions, indent=26)[26:-1],
@@ -135,14 +140,17 @@ class GP(Model):
                          )
 
     def _latex(self, unused=None):
-        "The LaTeX of a GP contains its cost and constraint posynomials"
+        "The LaTeX representation of a GP contains all of its parameters."
         return "\n".join(["\\begin{array}[ll]",
                           "\\text{}",
                           "\\text{minimize}",
                           "    & %s \\\\" % self.cost._latex(),
                           "\\text{subject to}"] +
-                         ["    & %s \\\\" % c._latex()
-                          for c in self.constraints] +
+                         ["    & %s \\\\" % constr._latex()
+                          for constr in self.constraints] +
+                         ["\\text{substituting}"] +
+                         sorted(["    & %s = %s \\\\" % (var._latex(), latex_num(val))
+                                 for var, val in self.substitutions.items()]) +
                          ["\\end{array}"])
 
     def solve(self, printing=True):
@@ -162,15 +170,18 @@ class GP(Model):
         self.starttime = time()
 
         if self.sweep:
-            self.solution = self._solve_sweep(printing)
+            solution = self._solve_sweep(printing)
         else:
-            self.solution = self.__run_solver()
+            solution = GPSolutionArray()
+            solution.append(self.__run_solver())
+            solution.toarray()
 
         self.endtime = time()
         if printing:
             print("Solving took %.3g seconds   "
                   % (self.endtime - self.starttime))
-        return self.solution
+        self.solution = GPSolutionArray(solution)
+        return solution
 
     def _solve_sweep(self, printing):
         """Runs a GP through a sweep, solving at each grid point
@@ -186,6 +197,8 @@ class GP(Model):
             A dictionary containing the array of optimal values
             for each free variable.
         """
+        sol_list = GPSolutionArray()
+
         self.presweep = self.last
         self.sub({var: 1 for var in self.sweep}, tobase='swept')
 
@@ -202,8 +215,6 @@ class GP(Model):
         sweep_grids = dict(zip(self.sweep, sweep_grids))
         sweep_vects = {var: grid.reshape(N_passes)
                        for (var, grid) in sweep_grids.items()}
-
-        sol_list = DictOfLists()
 
         for i in range(N_passes):
             this_pass = {var: sweep_vect[i]
@@ -254,7 +265,7 @@ class GP(Model):
         """
         # check solver status
         if result['status'] is not 'optimal':
-            raise RuntimeWarning("final status of solver '%s' was '%s' not"
+            raise RuntimeWarning("final status of solver '%s' was '%s' not "
                                  "'optimal'." % (self.solver, result['status']))
 
         variables = dict(zip(self.var_locs, np.exp(result['primal'])))
@@ -288,9 +299,9 @@ class GP(Model):
                   for i in range(len(self.posynomials))]
             sensitivities["posynomials"] = np.array(la)
 
-        sens_vars = {'%s' % var: (sum([self.unsubbed.exps[i][var]
-                                       * sensitivities["monomials"][i]
-                                      for i in locs]))
+        sens_vars = {var: (sum([self.unsubbed.exps[i][var]
+                                * sensitivities["monomials"][i]
+                                for i in locs]))
                      for (var, locs) in self.unsubbed.var_locs.items()}
         sensitivities["variables"] = sens_vars
 
@@ -306,17 +317,15 @@ class GP(Model):
         local_model = Monomial(local_exp, local_c)
 
         # vectorvar substitution
-        for vectorvar, length in self.vectorvars.items():
-            if vectorvar not in variables and length:
-                vectorval, vectorS = [], []
-                for i in range(length):
-                    var = '{%s}_{%s}' % (vectorvar, i+1)
-                    val = variables.pop(var)
-                    S = sensitivities["variables"].pop(var)
-                    vectorval.append(val)
-                    vectorS.append(S)
-                variables[vectorvar] = np.array(vectorval)
-                sensitivities["variables"][vectorvar] = np.array(vectorS)
+        for var in self.unsubbed.var_locs:
+            if "idx" in var.descr and "length" in var.descr:
+                vectorkey = VarKey(var.name, **var.descr)
+                del vectorkey.descr["idx"]
+                if vectorkey not in variables:
+                    variables[vectorkey] = np.zeros(var.descr["length"]) + np.nan
+                    sensitivities["variables"][vectorkey] = np.zeros(var.descr["length"]) + np.nan
+                variables[vectorkey][var.descr["idx"]] = variables.pop(var)
+                sensitivities["variables"][vectorkey][var.descr["idx"]] = sensitivities["variables"].pop(var)
 
         return dict(cost=cost,
                     variables=variables,
@@ -421,3 +430,21 @@ def enray_dict(i, o):
             o[k] = np.array(v)
     assert set(i.keys()) == set(o.keys())
     return o
+
+
+class GPSolutionArray(DictOfLists):
+    # print out a table of results
+
+    def subinto(self, p):
+        return np.array([p.sub(self.get(i)["variables"])
+                         for i in range(len(self["cost"]))])
+
+    def senssubinto(self, p):
+        senssubbeds = [p.sub(self.get(i)["sensitivities"]["variables"],
+                             allow_negative=True)
+                       for i in range(len(self["cost"]))]
+        if not all([isinstance(subbed, Monomial) for subbed in senssubbeds]):
+            raise ValueError("senssub can only return scalars")
+        if any([subbed.exp for subbed in senssubbeds]):
+            raise ValueError("senssub can only return scalars")
+        return np.array([subbed.c for subbed in senssubbeds], np.dtype('float'))

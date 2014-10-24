@@ -17,44 +17,44 @@ import numpy as np
 
 import gpkit
 
-pi = gpkit.Variable("\\pi", "half of the circle constant")
-CDA0 = gpkit.Variable("(CDA0)", "m^2", "fuselage drag area")
-rho = gpkit.Variable("\\rho", "kg/m^3", "density of air")
-mu = gpkit.Variable("\\mu", "kg*s/m", "viscosity of air")
-S_wetratio = gpkit.Variable("(\\frac{S}{S_{wet}})", "wetted area ratio")
-k = gpkit.Variable("k", "form factor")
-e = gpkit.Variable("e", "Oswald efficiency factor")
-W_0 = gpkit.Variable("W_0", "N", "aircraft weight excluding wing")
-N_ult = gpkit.Variable("N_{ult}", "ultimate load factor")
-tau = gpkit.Variable("\\tau", "airfoil thickness to chord ratio")
-C_Lmax = gpkit.Variable("C_{L,max}", "max CL with flaps down")
-V_min = gpkit.Variable("V_{min}", "m/s", "takeoff speed")
+pi = gpkit.Monomial("\\pi", label="half of the circle constant")
+CDA0 = gpkit.Monomial("(CDA0)", units="m^2", label="fuselage drag area")
+rho = gpkit.Monomial("\\rho", units="kg/m^3", label="density of air")
+mu = gpkit.Monomial("\\mu", units="kg*s/m", label="viscosity of air")
+S_wetratio = gpkit.Monomial("(\\frac{S}{S_{wet}})", label="wetted area ratio")
+k = gpkit.Monomial("k", label="form factor")
+e = gpkit.Monomial("e", label="Oswald efficiency factor")
+W_0 = gpkit.Monomial("W_0", units="N", label="aircraft weight excluding wing")
+N_ult = gpkit.Monomial("N_{ult}", label="ultimate load factor")
+tau = gpkit.Monomial("\\tau", label="airfoil thickness to chord ratio")
+C_Lmax = gpkit.Monomial("C_{L,max}", label="max CL with flaps down")
+V_min = gpkit.Monomial("V_{min}", units="m/s", label="takeoff speed")
+
+A = gpkit.Monomial("A", label="aspect ratio")
+S = gpkit.Monomial("S", units="m^2", label="total wing area")
+C_D = gpkit.Monomial("C_D", label="Drag coefficient of wing")
+C_L = gpkit.Monomial("C_L", label="Lift coefficent of wing")
+C_f = gpkit.Monomial("C_f", label="skin friction coefficient")
+Re = gpkit.Monomial("Re", label="Reynold's number")
+W = gpkit.Monomial("W", units="N", label="total aircraft weight")
+W_w = gpkit.Monomial("W_w", units="N", label="wing weight")
+V = gpkit.Monomial("V", units="m/s", label="cruising speed")
 
 substitutions = {
-    "\\pi": np.pi,
-    "(CDA0)": 0.031,
-    "\\rho": 1.23,
-    "\\mu": 1.78e-5,
-    "(\\frac{S}{S_{wet}})": 2.05,
-    "k": 1.2,
-    "e": 0.95,
-    "W_0": 4940,
-    "N_{ult}": 3.8,
-    "\\tau": 0.12,
-    "C_{L,max}": 1.5,
-    "V_{min}": ("sweep", np.linspace(20, 25, 10)),
-    "V": ("sweep", np.linspace(45, 55, 10)),
+    pi: np.pi,
+    CDA0: 0.031,
+    rho: 1.23,
+    mu: 1.78e-5,
+    S_wetratio: 2.05,
+    k: 1.2,
+    e: 0.95,
+    W_0: 4940,
+    N_ult: 3.8,
+    tau: 0.12,
+    C_Lmax: 1.5,
+    V_min: ("sweep", np.linspace(20, 25, 10)),
+    V: ("sweep", np.linspace(45, 55, 10)),
 }
-
-A = gpkit.Variable("A", "aspect ratio")
-S = gpkit.Variable("S", "m^2", "total wing area")
-C_D = gpkit.Variable("C_D", "Drag coefficient of wing")
-C_L = gpkit.Variable("C_L", "Lift coefficent of wing")
-C_f = gpkit.Variable("C_f", "skin friction coefficient")
-Re = gpkit.Variable("Re", "Reynold's number")
-W = gpkit.Variable("W", "N", "total aircraft weight")
-W_w = gpkit.Variable("W_w", "N", "wing weight")
-V = gpkit.Variable("V", "m/s", "cruising speed")
 
 # drag modeling #
 C_D_fuse = CDA0/S             # fuselage viscous drag
@@ -87,22 +87,23 @@ ps.sort_stats("time")
 ps.print_stats(10)
 
 
-def print_results_table(data, title, minval=None):
+def print_results_table(data, title, senss=False):
     print("                    | " + title)
-    for key, table in data.items():
+    for var, table in data.items():
         try:
             val = table.mean()
         except AttributeError:
             val = table
-        descr = gp.var_descrs[key]
-        if descr:
-            if descr[0] is None:
-                descr = "[-] %s" % descr[1]
-            else:
-                descr = "[%s] %s" % (descr[0], descr[1])
+        if senss:
+            units = "-"
+            minval = 1e-2
+        else:
+            units = var.descr.get('units', '-')
+            minval = None
+        label = var.descr.get('label', '')
         if minval is None or abs(val) > minval:
-            print("%19s" % key, ": %-8.3g" % val, descr)
+            print("%19s" % var, ": %-8.3g" % val, "[%s] %s" % (units, label))
     print("                    |")
 
 print_results_table(sol["variables"], "Variable Averages")
-print_results_table(sol["sensitivities"]["variables"], "Sensitivity Averages", minval=1e-2)
+print_results_table(sol["sensitivities"]["variables"], "Sensitivity Averages", senss=True)

@@ -1,6 +1,7 @@
 from collections import defaultdict
-from itertools import chain
+import itertools
 import numpy as np
+from types import NoneType
 
 from .posyarray import PosyArray
 
@@ -14,11 +15,17 @@ def sort_and_simplify(exps, cs):
     return tuple(matches.keys()), tuple(matches.values())
 
 
-class Posynomial(object):
-    """A representation of a posynomial."""
+def latex_num(c):
+    cstr = "%.4g" % c
+    if 'e' in cstr:
+        idx = cstr.index('e')
+        cstr = "%s\\times 10^{%i}" % (cstr[:idx], int(cstr[idx+1:]))
+    return cstr
 
-    def __init__(self, exps, cs=1, var_descrs=[], var_locs=None):
-        """
+
+class Posynomial(object):
+    """A representation of a posynomial.
+
         Parameters
         ----------
         exps: tuple of dicts
@@ -28,36 +35,55 @@ class Posynomial(object):
         var_locs: dict
             mapping from variable name to list of indices of monomial terms
             that variable appears in
-        var_descrs: dict
-            mapping from variable name to string description
 
         Returns
         -------
         Posynomial (if the input has multiple terms)
         Monomial   (if the input has one term)
-        """
+    """
+    def __init__(self, exps=None, cs=1, var_locs=None,
+                 allow_negative=False, **descr):
         if isinstance(exps, (int, float)):
             cs = exps
             exps = {}
-        if isinstance(cs, (int, float)) and isinstance(exps, (dict, str)):
+        if (isinstance(cs, (int, float))
+           and isinstance(exps, (VarKey, NoneType, str, dict))):
             # building a Monomial
-            if isinstance(exps, str):
-                exps = {exps: 1}
+            if isinstance(exps, VarKey):
+                exp = {exps: 1}
+            elif exps is None:
+                exp = {VarKey(None): 1}
+            elif isinstance(exps, str):
+                exp = {VarKey(exps, **descr): 1}
+            elif isinstance(exps, dict):
+                exp = dict(exps)
+                for key in exps:
+                    if isinstance(key, str):
+                        exp[VarKey(key)] = exp.pop(key)
+            else:
+                raise TypeError("could not make Monomial with %s" % type(exps))
             cs = [cs]
-            exps = [exps]
+            exps = [exp]
         elif isinstance(exps, Posynomial):
             cs = exps.cs
-            var_descrs = exps.var_descrs
+            var_locs = exps.var_locs
             exps = exps.exps
         else:
             # test for presence of length and identical lengths
             try:
                 assert len(cs) == len(exps)
-            except:  # TODO catch specific Exception(s)
+                exps_ = range(len(exps))
+                for i in range(len(exps)):
+                    exps_[i] = dict(exps[i])
+                    for key in exps_[i]:
+                        if isinstance(key, (str, Monomial)):
+                            exps_[i][VarKey(key)] = exps_[i].pop(key)
+                exps = exps_
+            except AssertionError:
                 raise TypeError("cs and exps must have the same length.")
 
         exps, cs = sort_and_simplify(exps, cs)
-        if any((c <= 0 for c in cs)):
+        if any((c <= 0 for c in cs)) and not allow_negative:
             raise ValueError("each c must be positive.")
 
         self.exps = exps
@@ -73,23 +99,11 @@ class Posynomial(object):
         else:
             self.var_locs = var_locs
 
-        self.var_descrs = defaultdict(str)
-        if var_descrs:
-            if isinstance(var_descrs, dict):
-                    self.var_descrs.update(var_descrs)
-            else:
-                for var_descr in var_descrs:
-                    if isinstance(var_descr, dict):
-                        self.var_descrs.update(var_descr)
-                    else:
-                        raise ValueError("invalid variable descriptions: "
-                                         + str(var_descr))
-
-    def sub(self, substitutions, val=None):
-        var_locs, exps, cs, newdescrs, subs = substitution(self.var_locs,
-                                                           self.exps, self.cs,
-                                                           substitutions, val)
-        return Posynomial(exps, cs, [self.var_descrs, newdescrs], var_locs)
+    def sub(self, substitutions, val=None, allow_negative=False):
+        var_locs, exps, cs, subs = substitution(self.var_locs,
+                                                self.exps, self.cs,
+                                                substitutions, val)
+        return Posynomial(exps, cs, var_locs, allow_negative)
 
     # hashing, immutability, Posynomial inequality
     def __hash__(self):
@@ -127,17 +141,21 @@ class Posynomial(object):
     def __gt__(self, other):
         invalid_types_for_oper(">", self, other)
 
-    def _string(self, mult_symbol='*'):
+    def __str__(self, mult_symbol='*'):
         mstrs = []
         for c, exp in zip(self.cs, self.exps):
-            varstrs = ['%s**%.2g' % (var, x) if x != 1 else var
+            varstrs = ['%s**%.2g' % (var, x) if x != 1 else "%s" % var
                        for (var, x) in sorted(exp.items()) if x != 0]
             cstr = ["%.2g" % c] if c != 1 or not varstrs else []
             mstrs.append(mult_symbol.join(cstr + varstrs))
         return " + ".join(sorted(mstrs))
 
+    def descr(self, descr):
+        self.descr = descr
+        return self
+
     def __repr__(self):
-        return "gpkit.%s(%s)" % (self.__class__.__name__, self._string())
+        return "gpkit.%s(%s)" % (self.__class__.__name__, str(self))
 
     def _latex(self, unused=None):
         "For pretty printing with Sympy"
@@ -146,24 +164,20 @@ class Posynomial(object):
             pos_vars, neg_vars = [], []
             for var, x in sorted(exp.items()):
                 if x > 0:
-                    pos_vars.append((var, x))
+                    pos_vars.append((var._latex(), x))
                 elif x < 0:
-                    neg_vars.append((var, x))
+                    neg_vars.append((var._latex(), x))
 
-            pvarstrs = ['%s^{%.4g}' % (var, x) if x != 1 else var
-                        for (var, x) in pos_vars]
-            nvarstrs = ['%s^{%.4g}' % (var, -x) if -x != 1 else var
-                        for (var, x) in neg_vars]
+            pvarstrs = ['%s^{%.2g}' % (varl, x) if "%.2g" % x != "1" else varl
+                        for (varl, x) in pos_vars]
+            nvarstrs = ['%s^{%.2g}' % (varl, -x) if "%.2g" % -x != "1" else varl
+                        for (varl, x) in neg_vars]
             pvarstr = ' '.join(pvarstrs)
             nvarstr = ' '.join(nvarstrs)
             if pos_vars and c == 1:
                 cstr = ""
             else:
-                cstr = "%.4g" % c
-                if 'e' in cstr:
-                    idx = cstr.index('e')
-                    cstr = "%s\\times 10^{%i}" % (
-                           cstr[:idx], int(cstr[idx+1:]))
+                cstr = latex_num(c)
 
             if not pos_vars and not neg_vars:
                 mstrs.append("%s" % cstr)
@@ -180,14 +194,13 @@ class Posynomial(object):
     def __add__(self, other):
         if isinstance(other, (int, float)):
             if other == 0:
-                return Posynomial(self.exps, self.cs, self.var_descrs,
-                                  self.var_locs)
+                return Posynomial(self.exps, self.cs, self.var_locs)
             else:
                 return Posynomial(self.exps + ({},), self.cs + (other,),
-                                  self.var_descrs, self.var_locs)
+                                  self.var_locs)
         elif isinstance(other, Posynomial):
-            return Posynomial(self.exps + other.exps, self.cs + other.cs,
-                              [self.var_descrs, other.var_descrs])
+            return Posynomial(self.exps + other.exps, self.cs + other.cs)
+            # TODO: automatically parse var_locs here
         elif isinstance(other, PosyArray):
             return np.array(self)+other
         else:
@@ -198,16 +211,14 @@ class Posynomial(object):
 
     def __mul__(self, other):
         if isinstance(other, (int, float)):
-            return Posynomial(self.exps, other*np.array(self.cs),
-                              self.var_descrs, self.var_locs)
+            return Posynomial(self.exps, other*np.array(self.cs), self.var_locs)
         elif isinstance(other, Posynomial):
             C = np.outer(self.cs, other.cs)
             Exps = np.empty((len(self.exps), len(other.exps)), dtype="object")
             for i, exp_s in enumerate(self.exps):
                 for j, exp_o in enumerate(other.exps):
                     Exps[i, j] = exp_s + exp_o
-            return Posynomial(Exps.flatten(), C.flatten(),
-                              [self.var_descrs, other.var_descrs])
+            return Posynomial(Exps.flatten(), C.flatten())
         elif isinstance(other, PosyArray):
             return np.array(self)*other
         else:
@@ -223,12 +234,10 @@ class Posynomial(object):
                 if all(div_cs == div_cs[0]):
                     return Monomial({}, div_cs[0])
         if isinstance(other, (int, float)):
-            return Posynomial(self.exps, np.array(self.cs)/other,
-                              self.var_descrs, self.var_locs)
+            return Posynomial(self.exps, np.array(self.cs)/other, self.var_locs)
         elif isinstance(other, Monomial):
             exps = [exp - other.exp for exp in self.exps]
-            return Posynomial(exps, np.array(self.cs)/other.c,
-                              [self.var_descrs, other.var_descrs])
+            return Posynomial(exps, np.array(self.cs)/other.c)
         elif isinstance(other, PosyArray):
             return np.array(self)/other
         else:
@@ -259,14 +268,97 @@ class Monomial(Posynomial):
 
     def __pow__(self, other):
         if isinstance(other, (int, float)):
-            return Monomial(self.exp*other, self.c**other,
-                            self.var_descrs)
+            return Monomial(self.exp*other, self.c**other)
         else:
             invalid_types_for_oper("** or pow()", self, x)
 
 
-class Constraint(Posynomial):
-    descr = None
+class VarKey(object):
+    """A described singlet Monomial.
+
+    Parameters
+    ----------
+    name : str
+        The variable's name; can be any string.
+    **kwargs
+        Any additional variable attributes.
+
+    Returns
+    -------
+    VarKey with the given name and description
+    """
+    new_unnamed_id = itertools.count().next
+
+    def __init__(self, arg, **descr):
+        if isinstance(arg, VarKey):
+            self.name = arg.name
+            self.descr = arg.descr
+        elif isinstance(arg, Monomial):
+            if arg.c == 1 and len(arg.exp) == 1:
+                self.name = arg.exp.keys()[0].name
+                self.descr = arg.exp.keys()[0].descr
+            else:
+                raise TypeError("variables can only be formed from monomials"
+                                "with a c of 1 and a single variable")
+        else:
+            if arg is None:
+                arg = "\\fbox{%s}" % VarKey.new_unnamed_id()
+            self.name = str(arg)
+            self.descr = dict(descr)
+            self.descr["name"] = self.name
+
+    def __repr__(self):
+        s = self.name
+        for subscript in ["idx", "model"]:
+            if subscript in self.descr:
+                s = "%s_%s" % (s, self.descr[subscript])
+        return s
+
+    def _latex(self):
+        s = self.name
+        for subscript in ["idx", "model"]:
+            if subscript in self.descr:
+                s = "{%s}_{%s}" % (s, self.descr[subscript])
+        return s
+
+    def __hash__(self):
+        return hash(str(self))
+
+    def __eq__(self, other):
+        if isinstance(other, VarKey):
+            return self.descr == other.descr
+        elif isinstance(other, str):
+            return str(self) == other
+        else:
+            return False
+
+
+def monovector(length, name=None, **descr):
+    """A described vector of singlet Monomials.
+
+    Parameters
+    ----------
+    length : int
+        Length of vector.
+    name : str (default None)
+        The variable's name; can be any string.
+    **descr
+
+    Returns
+    -------
+    PosyArray of Monomials, each containing a variable with the name '$V_{i}',
+    where V is the vector's name and i is the variable's index.
+    """
+    if "idx" in descr:
+        raise KeyError("the description field 'idx' is reserved")
+    mv = PosyArray([Monomial(name, idx=i, length=length, **descr)
+                   for i in range(length)])
+    mv.descr = dict(mv[0].exp.keys()[0].descr)
+    if "idx" in mv.descr: del mv.descr["idx"]
+    return mv
+
+
+class Constraint(Monomial):
 
     def _set_operator(self, p1, p2):
         if self.left is p1:
@@ -276,8 +368,8 @@ class Constraint(Posynomial):
             self.oper_s = " >= "
             self.oper_l = " \geq "
 
-    def _string(self):
-        return self.left._string() + self.oper_s + self.right._string()
+    def __str__(self):
+        return str(self.left) + self.oper_s + str(self.right)
 
     def _latex(self, unused=None):
         return self.left._latex() + self.oper_l + self.right._latex()
@@ -288,19 +380,18 @@ class Constraint(Posynomial):
         p = p1 / p2
 
         self.cs = p.cs
-        self.var_descrs = p.var_descrs
         self.exps = p.exps
         self.var_locs = p.var_locs
         if len(self.exps) == 1:
             self.exp = self.exps[0]
             self.c = self.cs[0]
 
-        if len(p1._string()) == len(p2._string()):
-            if p1._string() <= p2._string():
+        if len(str(p1)) == len(str(p2)):
+            if str(p1) <= str(p2):
                 self.left, self.right = p1, p2
             else:
                 self.left, self.right = p2, p1
-        elif len(p1._string()) < len(p2._string()):
+        elif len(str(p1)) < len(str(p2)):
             self.left, self.right = p1, p2
         else:
             self.left, self.right = p2, p1
@@ -311,9 +402,6 @@ class Constraint(Posynomial):
         # a constraint not guaranteed to be satisfied
         # evaluates as "False"
         return bool(self.c == 1 and self.exp == {})
-
-    def label(self, descr):
-        self.descr = descr
 
 
 class MonoEQConstraint(Constraint):

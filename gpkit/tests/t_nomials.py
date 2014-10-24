@@ -39,6 +39,14 @@ class t_Monomial(unittest.TestCase):
         self.assertRaises(ValueError, Monomial, 'x', 0)
         self.assertRaises(ValueError, Monomial, 'x', 0.0)
 
+        # can create nameless Monomials
+        x1 = Monomial()
+        x2 = Monomial()
+        V = Monomial('V')
+        vel = Monomial('V')
+        self.assertNotEqual(x1, x2)
+        self.assertEqual(V, vel)
+
     def test_repr(self):
         m = Monomial({'x':2, 'y':-1}, 5)
         self.assertEqual(type(m.__repr__()), str)

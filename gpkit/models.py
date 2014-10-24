@@ -7,6 +7,7 @@ import re
 
 from .internal_utils import *
 from .nomials import Posynomial
+from .nomials import VarKey
 
 try:
     import numpy as np
@@ -19,8 +20,7 @@ except ImportError:
     print("Could not import scipy: will not be able to use splines")
 
 CootMatrix = namedtuple('CootMatrix', ['row', 'col', 'data'])
-PosyTuple = namedtuple('PosyTuple', ['exps', 'cs', 'var_locs', 'var_descrs',
-                                     'substitutions'])
+PosyTuple = namedtuple('PosyTuple', ['exps', 'cs', 'var_locs', 'substitutions'])
 
 
 class CootMatrix(CootMatrix):
@@ -67,8 +67,8 @@ class Model(object):
 
     def print_boundwarnings(self):
         for var, bound in self.missingbounds.items():
-            print("%s (%s) has no %s bound" % (
-                  var, self.var_descrs[var], bound))
+            print("%s has no %s bound" % (
+                  var, bound))
 
     def add_constraints(self, constraints):
         if isinstance(constraints, Posynomial):
@@ -86,30 +86,11 @@ class Model(object):
     def _gen_unsubbed_vars(self):
         posynomials = self.posynomials
 
-        var_descrs = defaultdict(str)
-        for p in posynomials:
-            var_descrs.update(p.var_descrs)
-
-        isvector = re.compile(r".*\((\d*) of (\d*)\)")
-        for var, descr in var_descrs.items():
-            label = descr[1]
-            if isvector.search(label):
-                try:
-                    idx = int(isvector.sub(r"\1", label))
-                    length = int(isvector.sub(r"\2", label))
-                    vectorvar = re.sub(r"\{(.*)\}_\{%s\}" % idx, r"\1", var)
-                    if not self.vectorvars.get(vectorvar, length) == length:
-                        self.vectorvars[vectorvar] = None
-                    else:
-                        self.vectorvars[vectorvar] = length
-                except:
-                    pass
-
         exps = reduce(lambda x,y: x+y, map(lambda x: x.exps, posynomials))
         cs = reduce(lambda x,y: x+y, map(lambda x: x.cs, posynomials))
         var_locs = locate_vars(exps)
 
-        self.unsubbed = PosyTuple(exps, cs, var_locs, var_descrs, {})
+        self.unsubbed = PosyTuple(exps, cs, var_locs, {})
         self.load(self.unsubbed, print_boundwarnings=False)
 
         # k [j]: number of monomials (columns of F) present in each constraint
@@ -124,7 +105,6 @@ class Model(object):
 
     def sub(self, substitutions, val=None, frombase='last', tobase='subbed'):
         # look for sweep variables
-        sweepdescrs = {}
         found_sweep = False
         if isinstance(substitutions, dict):
             subs = dict(substitutions)
@@ -132,8 +112,8 @@ class Model(object):
                 try:
                     if sub[0] == 'sweep':
                         del subs[var]
-                        if hasattr(var, 'varname'):
-                            var = var.varname
+                        if isinstance(var, (str, Monomial)):
+                            var = VarKey(var)
                         if isinstance(sub[1], Iterable):
                             self.sweep.update({var: sub[1]})
                             found_sweep = True
@@ -146,26 +126,23 @@ class Model(object):
         base = deepcopy(getattr(self, frombase))
 
         # perform substitution
-        var_locs, exps, cs, newdescrs, subs = substitution(base.var_locs,
-                                                           base.exps,
-                                                           base.cs,
-                                                           subs, val)
+        var_locs, exps, cs, subs = substitution(base.var_locs,
+                                                base.exps,
+                                                base.cs,
+                                                subs, val)
         if not (subs or found_sweep):
             raise ValueError("could not find anything to substitute")
 
-        var_descrs = base.var_descrs
-        var_descrs.update(newdescrs)
-        var_descrs.update(sweepdescrs)
         substitutions = base.substitutions
         substitutions.update(subs)
 
-        newbase = PosyTuple(exps, cs, var_locs, var_descrs, substitutions)
+        newbase = PosyTuple(exps, cs, var_locs, substitutions)
         setattr(self, tobase, self.last)
         self.load(newbase)
 
     def load(self, posytuple, print_boundwarnings=True):
         self.last = posytuple
-        for attr in ['exps', 'cs', 'var_locs', 'var_descrs', 'substitutions']:
+        for attr in ['exps', 'cs', 'var_locs', 'substitutions']:
             new = deepcopy(getattr(posytuple, attr))
             setattr(self, attr, new)
 
