@@ -2,32 +2,18 @@ import numpy as np
 
 import gpkit
 
-pi = gpkit.Monomial("\\pi")
-CDA0 = gpkit.Monomial("(CDA0)")
-rho = gpkit.Monomial("\\rho")
-mu = gpkit.Monomial("\\mu")
-S_wetratio = gpkit.Monomial("(\\frac{S}{S_{wet}})")
-k = gpkit.Monomial("k")
-e = gpkit.Monomial("e")
-W_0 = gpkit.Monomial("W_0")
-N_ult = gpkit.Monomial("N_{ult}")
-tau = gpkit.Monomial("\\tau")
-C_Lmax = gpkit.Monomial("C_{L,max}")
+pi = gpkit.Monomial("\\pi", value=np.pi)
+CDA0 = gpkit.Monomial("(CDA0)", value=0.031)
+rho = gpkit.Monomial("\\rho", value=1.23)
+mu = gpkit.Monomial("\\mu", value=1.78e-5)
+S_wetratio = gpkit.Monomial("(\\frac{S}{S_{wet}})", value=2.05)
+k = gpkit.Monomial("k", value=1.2)
+e = gpkit.Monomial("e", value=0.95)
+W_0 = gpkit.Monomial("W_0", value=4940)
+N_ult = gpkit.Monomial("N_{ult}", value=3.8)
+tau = gpkit.Monomial("\\tau", value=0.12)
+C_Lmax = gpkit.Monomial("C_{L,max}", value=1.5)
 V_min = gpkit.Monomial("V_{min}")
-
-substitutions = {
-    pi: np.pi,
-    CDA0: 0.031,
-    rho: 1.23,
-    mu: 1.78e-5,
-    S_wetratio: 2.05,
-    k: 1.2,
-    e: 0.95,
-    W_0: 4940,
-    N_ult: 3.8,
-    tau: 0.12,
-    C_Lmax: 1.5,
-}
 
 D = gpkit.Monomial("D")
 A = gpkit.Monomial("A")
@@ -40,6 +26,7 @@ W = gpkit.Monomial("W")
 W_w = gpkit.Monomial("W_w")
 V = gpkit.Monomial("V")
 
+substitutions = {}
 equations = []
 
 C_D_fuse = CDA0/S

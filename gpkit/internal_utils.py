@@ -5,7 +5,7 @@ from collections import defaultdict
 from collections import Iterable
 
 from .nomials import Monomial
-from .nomials import VarKey
+from .nomials import Variable
 from .nomials import monovector
 
 
@@ -26,12 +26,12 @@ def is_sweepvar(sub):
 
 
 def vectorsub(subs, var, subiter, var_locs):
-    "Vectorized substitution via monovectors and VarKeys."
-    if isinstance(var, VarKey):
+    "Vectorized substitution via monovectors and Variables."
+    if isinstance(var, Variable):
         var = monovector(**var.descr)
     if len(var) == len(subiter):
         for i in range(len(var)):
-            v = VarKey(var[i])
+            v = Variable(var[i])
             if v in var_locs:
                 subs[v] = subiter[i]
     else:
@@ -79,8 +79,8 @@ def substitution(var_locs, exps, cs, substitutions, val=None):
             pass
         elif isinstance(sub, Iterable):
             vectorsub(subs, var, sub, var_locs)
-        elif VarKey(var) in var_locs:
-            subs[VarKey(var)] = sub
+        elif Variable(var) in var_locs:
+            subs[Variable(var)] = sub
 
     if not subs:
         raise KeyError("could not find anything to substitute.")
@@ -131,7 +131,7 @@ class HashVector(dict):
 
     Example
     -------
-    >>> x = gpkit.nomials.VarKey('x')
+    >>> x = gpkit.nomials.Variable('x')
     >>> exp = gpkit.internal_utils.HashVector({x: 2})
     """
 

@@ -47,19 +47,19 @@ class Posynomial(object):
             cs = exps
             exps = {}
         if (isinstance(cs, (int, float))
-           and isinstance(exps, (VarKey, NoneType, str, dict))):
+           and isinstance(exps, (Variable, NoneType, str, dict))):
             # building a Monomial
-            if isinstance(exps, VarKey):
+            if isinstance(exps, Variable):
                 exp = {exps: 1}
             elif exps is None:
-                exp = {VarKey(None): 1}
+                exp = {Variable(None): 1}
             elif isinstance(exps, str):
-                exp = {VarKey(exps, **descr): 1}
+                exp = {Variable(exps, **descr): 1}
             elif isinstance(exps, dict):
                 exp = dict(exps)
                 for key in exps:
                     if isinstance(key, str):
-                        exp[VarKey(key)] = exp.pop(key)
+                        exp[Variable(key)] = exp.pop(key)
             else:
                 raise TypeError("could not make Monomial with %s" % type(exps))
             cs = [cs]
@@ -77,7 +77,7 @@ class Posynomial(object):
                     exps_[i] = dict(exps[i])
                     for key in exps_[i]:
                         if isinstance(key, (str, Monomial)):
-                            exps_[i][VarKey(key)] = exps_[i].pop(key)
+                            exps_[i][Variable(key)] = exps_[i].pop(key)
                 exps = exps_
             except AssertionError:
                 raise TypeError("cs and exps must have the same length.")
@@ -273,7 +273,7 @@ class Monomial(Posynomial):
             invalid_types_for_oper("** or pow()", self, x)
 
 
-class VarKey(object):
+class Variable(object):
     """A described singlet Monomial.
 
     Parameters
@@ -285,12 +285,12 @@ class VarKey(object):
 
     Returns
     -------
-    VarKey with the given name and description
+    Variable with the given name and description
     """
     new_unnamed_id = itertools.count().next
 
     def __init__(self, arg, **descr):
-        if isinstance(arg, VarKey):
+        if isinstance(arg, Variable):
             self.name = arg.name
             self.descr = arg.descr
         elif isinstance(arg, Monomial):
@@ -302,7 +302,7 @@ class VarKey(object):
                                 "with a c of 1 and a single variable")
         else:
             if arg is None:
-                arg = "\\fbox{%s}" % VarKey.new_unnamed_id()
+                arg = "\\fbox{%s}" % Variable.new_unnamed_id()
             self.name = str(arg)
             self.descr = dict(descr)
             self.descr["name"] = self.name
@@ -325,7 +325,7 @@ class VarKey(object):
         return hash(str(self))
 
     def __eq__(self, other):
-        if isinstance(other, VarKey):
+        if isinstance(other, Variable):
             return self.descr == other.descr
         elif isinstance(other, str):
             return str(self) == other

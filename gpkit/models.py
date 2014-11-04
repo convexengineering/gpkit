@@ -7,7 +7,7 @@ import re
 
 from .internal_utils import *
 from .nomials import Posynomial
-from .nomials import VarKey
+from .nomials import Variable
 
 try:
     import numpy as np
@@ -56,19 +56,9 @@ class Model(object):
                           for p in self.posynomials]
                          )
 
-    def add_eqns(self):
-        self.posynomials = posynomials
-
-        self.sweep = {}
-        self._gen_unsubbed_vars()
-
-        if constants:
-            self.sub(constants, tobase='initialsub')
-
     def print_boundwarnings(self):
         for var, bound in self.missingbounds.items():
-            print("%s has no %s bound" % (
-                  var, bound))
+            print("%s has no %s bound" % (var, bound))
 
     def add_constraints(self, constraints):
         if isinstance(constraints, Posynomial):
@@ -113,7 +103,7 @@ class Model(object):
                     if sub[0] == 'sweep':
                         del subs[var]
                         if isinstance(var, (str, Monomial)):
-                            var = VarKey(var)
+                            var = Variable(var)
                         if isinstance(sub[1], Iterable):
                             self.sweep.update({var: sub[1]})
                             found_sweep = True

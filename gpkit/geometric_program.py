@@ -19,7 +19,7 @@ from .models import Model
 from .nomials import Constraint, MonoEQConstraint
 from .nomials import Monomial
 from .nomials import latex_num
-from .nomials import VarKey
+from .nomials import Variable
 
 
 def flatten_constr(l):
@@ -112,6 +112,11 @@ class GP(Model):
         self.vectorvars = {}
         self.sweep = {}
         self._gen_unsubbed_vars()
+
+        constants = {var: var.descr["value"] for var in self.var_locs
+                     if "value" in var.descr}
+
+        substitutions.update(constants)
 
         if substitutions:
             self.sub(substitutions, tobase='initialsub')
@@ -319,7 +324,7 @@ class GP(Model):
         # vectorvar substitution
         for var in self.unsubbed.var_locs:
             if "idx" in var.descr and "length" in var.descr:
-                vectorkey = VarKey(var.name, **var.descr)
+                vectorkey = Variable(var.name, **var.descr)
                 del vectorkey.descr["idx"]
                 if vectorkey not in variables:
                     variables[vectorkey] = np.zeros(var.descr["length"]) + np.nan
