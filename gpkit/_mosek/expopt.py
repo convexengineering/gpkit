@@ -61,6 +61,22 @@ class module_shortener(object):
 
 MSK = module_shortener("MSK", expopt_h)
 
+MSK._SOL_STA_LOOKUPTABLE = ["UNKNOWN",
+                            "OPTIMAL",
+                            "DUAL_FEAS",  # switched with below for GP
+                            "PRIM_FEAS",
+                            "PRIM_AND_DUAL_FEAS",
+                            "PRIM_INFEAS_CER",
+                            "DUAL_INFEAS_CER",  # switched with below
+                            "NEAR_OPTIMAL",
+                            "NEAR_DUAL_FEAS",  # switched with below
+                            "NEAR_PRIM_FEAS",
+                            "NEAR_PRIM_AND_DUAL_FEAS",
+                            "NEAR_PRIM_INFEAS_CER",
+                            "NEAR_DUAL_INFEAS_CER",  # switched with below
+                            "INTEGER_OPTIMAL",
+                            "NEAR_INTEGER_OPTIMAL"]
+
 
 def c_array(py_array, c_type):
     """Makes a C array from a python list or array and a C datatype
@@ -227,9 +243,7 @@ def imize(c, A, p_idxs):
     MSK._deletetask(ptr(expopttask))
     MSK._deleteenv(ptr(env))
 
-    status = solsta.value
-    if status == 1:
-        status = 'optimal'
+    status = MSK._SOL_STA_LOOKUPTABLE[solsta.value]
     return dict(status=status,
                 objective=objval.value,
                 primal=list(xx),

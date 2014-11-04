@@ -268,7 +268,7 @@ class GP(Model):
 
         """
         # check solver status
-        if result['status'] is not 'optimal':
+        if result['status'] not in ["optimal", "OPTIMAL"]:
             raise RuntimeWarning("final status of solver '%s' was '%s' not "
                                  "'optimal'." % (self.solver, result['status']))
 
@@ -466,3 +466,41 @@ class GPSolutionArray(DictOfLists):
         if any([subbed.exp for subbed in senssubbeds]):
             raise ValueError("senssub can only return scalars")
         return np.array([subbed.c for subbed in senssubbeds], np.dtype('float'))
+
+    def __str__(self):
+        self.print_free_variables()
+        self.print_constants()
+        self.print_constraint_sensitivities()
+        self.print_variable_sensitivities()
+
+    def print_free_variables(self):
+        print_results_table(self["variables"], "Variable Value (average)")
+
+    def print_constants(self):
+        pass
+
+    def print_constraint_sensitivities(self):
+        pass
+
+    def print_variable_sensitivities(self):
+        print_results_table(self["sensitivities"]["variables"],
+                            "Variable Sensitivity (average)")
+
+
+def print_results_table(data, title, senss=False):
+    print("                    | " + title)
+    for var, table in data.items():
+        try:
+            val = table.mean()
+        except AttributeError:
+            val = table
+        if senss:
+            units = "-"
+            minval = 1e-2
+        else:
+            units = var.descr.get('units', '-')
+            minval = None
+        label = var.descr.get('label', '')
+        if minval is None or abs(val) > minval:
+            print("%19s" % var, ": %-8.3g" % val, "[%s] %s" % (units, label))
+    print("                    |")
