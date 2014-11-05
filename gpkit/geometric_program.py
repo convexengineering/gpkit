@@ -468,25 +468,12 @@ class GPSolutionArray(DictOfLists):
         return np.array([subbed.c for subbed in senssubbeds], np.dtype('float'))
 
     def __str__(self):
-        self.print_free_variables()
-        self.print_constants()
-        self.print_constraint_sensitivities()
-        self.print_variable_sensitivities()
-
-    def print_free_variables(self):
         print_results_table(self["variables"], "Variable Value (average)")
-
-    def print_constants(self):
-        pass
-
-    def print_constraint_sensitivities(self):
-        pass
-
-    def print_variable_sensitivities(self):
         print_results_table(self["sensitivities"]["variables"],
                             "Variable Sensitivity (average)")
 
 
+# there should be an interactive gpkit library
 def print_results_table(data, title, senss=False):
     print("                    | " + title)
     for var, table in data.items():

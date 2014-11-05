@@ -1,3 +1,4 @@
+from ..nomials import Variable
 import matplotlib.pyplot as plt
 import numpy as np
 
@@ -21,23 +22,18 @@ def contour_plot(ax, X, Y, Z, title, colors):
     ax.grid(which='both', color=neutral_light)
 
 
-def contour_array(data, vardescrs, X, Y, Zs,
+def contour_array(data, X, Y, Zs,
                   nrows, ncols, figsize,
                   xticks=None, yticks=None, colors=None):
 
-    def get_label(obj):
-        if isinstance(obj, dict):
-            return obj.keys()[0], obj.values()[0]
-        elif isinstance(obj, str):
-            if not vardescrs[obj]:
-                return "%s" % obj, data[obj]
-            units, descr = vardescrs[obj]
-            if units is None:
-                return "%s %s" % (descr, obj), data[obj]
-            else:
-                return "%s %s [%s]" % (descr, obj, units), data[obj]
-        else:
-            raise TypeError(obj.__class__.__name__)
+    def get_label(var):
+        var = Variable(var)
+        label = var.name
+        if "units" in var.descr:
+            label += " [%s]" % var.descr["units"]
+        if "label" in var.descr:
+            label += " %s" % var.descr["label"]
+        return label, data[var]
 
     xlabel, Xgrid = get_label(X)
     ylabel, Ygrid = get_label(Y)
@@ -86,8 +82,12 @@ def contour_array(data, vardescrs, X, Y, Zs,
         else: row_vector = axes
         if ncols > 1: ax = row_vector[i % ncols]
         else: ax = row_vector[0]
-        contour_plot(ax,
-                     Xgrid, Ygrid, Zgrid, zlabel, colors)
+        # hack begins
+        Xgrid = Xgrid.reshape(len(xticks), len(yticks))
+        Ygrid = Ygrid.reshape(len(xticks), len(yticks))
+        Zgrid = Zgrid.reshape(len(xticks), len(yticks))
+        # hack ends
+        contour_plot(ax, Xgrid, Ygrid, Zgrid, zlabel, colors)
 
     return fig, axes
 
@@ -99,15 +99,13 @@ def frontier_surface_plot(data, xvar, yvar, zvars,
 
 def plot_frontiers(gp, Zs, x, y, figsize):
         "Helper function to plot 2d contour plots."
-        data = {}
-        data.update(gp.substitutions)
-        data.update(gp.solution)
+        sol = gp.solution
+        data = dict(sol["variables"])
         data.update({"S{%s}" % k: v
-                    for (k, v) in gp.sensitivities.items()})
+                    for (k, v) in sol["sensitivities"]["variables"].items()})
         data.keys()
         if len(gp.sweep) == 2:
             contour_array(data,
-                          gp.var_descrs,
                           gp.sweep.keys()[0],
                           gp.sweep.keys()[1],
                           Zs, x, y, figsize,

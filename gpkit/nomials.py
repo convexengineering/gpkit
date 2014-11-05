@@ -47,18 +47,18 @@ class Posynomial(object):
             cs = exps
             exps = {}
         if (isinstance(cs, (int, float))
-           and isinstance(exps, (Variable, NoneType, str, dict))):
+           and isinstance(exps, (Variable, NoneType, str, unicode, dict))):
             # building a Monomial
             if isinstance(exps, Variable):
                 exp = {exps: 1}
             elif exps is None:
                 exp = {Variable(None): 1}
-            elif isinstance(exps, str):
+            elif isinstance(exps, (str, unicode)):
                 exp = {Variable(exps, **descr): 1}
             elif isinstance(exps, dict):
                 exp = dict(exps)
                 for key in exps:
-                    if isinstance(key, str):
+                    if isinstance(key, (str, unicode)):
                         exp[Variable(key)] = exp.pop(key)
             else:
                 raise TypeError("could not make Monomial with %s" % type(exps))
@@ -76,7 +76,7 @@ class Posynomial(object):
                 for i in range(len(exps)):
                     exps_[i] = dict(exps[i])
                     for key in exps_[i]:
-                        if isinstance(key, (str, Monomial)):
+                        if isinstance(key, (str, unicode, Monomial)):
                             exps_[i][Variable(key)] = exps_[i].pop(key)
                 exps = exps_
             except AssertionError:
@@ -327,7 +327,7 @@ class Variable(object):
     def __eq__(self, other):
         if isinstance(other, Variable):
             return self.descr == other.descr
-        elif isinstance(other, str):
+        elif isinstance(other, (str, unicode)):
             return str(self) == other
         else:
             return False

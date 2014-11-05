@@ -79,6 +79,8 @@ def substitution(var_locs, exps, cs, substitutions, val=None):
             pass
         elif isinstance(sub, Iterable):
             vectorsub(subs, var, sub, var_locs)
+        elif var in var_locs:
+            subs[var] = sub
         elif Variable(var) in var_locs:
             subs[Variable(var)] = sub
 
@@ -98,7 +100,7 @@ def substitution(var_locs, exps, cs, substitutions, val=None):
             if isinstance(sub, (int, float)):
                 # scalar substitution
                 cs_[i] *= sub**x
-            elif isinstance(sub, str):
+            elif isinstance(sub, (str, unicode)):
                 # variable name substitution
                 exps_[i] += HashVector({sub: x})
                 var_locs_[sub].append(i)
