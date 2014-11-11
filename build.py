@@ -137,6 +137,13 @@ class Mosek(SolverBackend):
                 self.libname = "libmosek64.7.0.dylib"
             except OSError:
                 return None
+        elif sys.platform == "linux2":
+            try:
+                self.dir = pathjoin(os.path.expanduser("~"), "mosek")
+                self.platform = "linux64x86"
+                self.libname = "libmosek64.so"
+            except OSError:
+                return None
         else:
             print("# Build script does not support"
                   " your platform (%s)" % sys.platform)
@@ -168,6 +175,13 @@ class Mosek(SolverBackend):
             call('echo "export DYLD_LIBRARY_PATH=\$DYLD_LIBRARY_PATH:%s" >> $HOME/.bash_profile' % self.bin_dir)
             os.environ['PATH'] = os.environ['PATH']+':%s' % self.bin_dir
             os.environ['DYLD_LIBRARY_PATH'] = os.environ['DYLD_LIBRARY_PATH']+':%s' % self.bin_dir
+        elif sys.platform == "linux2":
+            call('echo "\n# Added by gpkit buildscript for mosek support" >> $HOME/.bashrc')
+            call('echo "export PATH=\$PATH:%s" >> $HOME/.bashrc' % self.bin_dir)
+            call('export PATH=$PATH:%s' % self.bin_dir)
+            print("#   To link the mosek libraries we'll create a system-wide conf file")
+            call('''sudo bash -c 'echo "%s" > /etc/ld.so.conf.d/mosek.conf' ''' % self.bin_dir)
+            call('sudo ldconfig')
 
         return "version %s, installed to %s" % (self.version, self.dir)
 
