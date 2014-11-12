@@ -2,14 +2,15 @@ import unittest
 from gpkit import Monomial, Posynomial, monovector, PosyArray
 
 
-class t_variable(unittest.TestCase):
+class t_Variable(unittest.TestCase):
+    pass
+
+
+class t_utils(unittest.TestCase):
 
     def test_monify(self):
         x = Monomial('x', label='dummy variable')
         self.assertEqual(x.exp.keys()[0].descr["label"], 'dummy variable')
-
-
-class t_vectorvariable(unittest.TestCase):
 
     def test_vectify(self):
         x = monovector(3, 'x', label='dummy variable')
@@ -20,7 +21,7 @@ class t_vectorvariable(unittest.TestCase):
         self.assertEqual(x, x2)
 
 
-tests = [t_variable, t_vectorvariable]
+tests = [t_utils, t_Variable]
 
 if __name__ == '__main__':
     suite = unittest.TestSuite()
