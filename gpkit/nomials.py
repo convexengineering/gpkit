@@ -289,7 +289,7 @@ class Variable(object):
     """
     new_unnamed_id = itertools.count().next
 
-    def __init__(self, arg, **descr):
+    def __init__(self, arg=None, **descr):
         if isinstance(arg, Variable):
             self.name = arg.name
             self.descr = arg.descr

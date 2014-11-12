@@ -1,9 +1,16 @@
 import unittest
-from gpkit import Monomial, Posynomial, monovector, PosyArray
+from gpkit import Monomial, Posynomial, monovector, PosyArray, Variable
 
 
 class t_Variable(unittest.TestCase):
-    pass
+
+    def test_init(self):
+        # test type
+        x = Variable('x')
+        self.assertTrue(isinstance(x, Variable))
+        # test no args
+        x = Variable()
+        self.assertTrue(isinstance(x, Variable))
 
 
 class t_utils(unittest.TestCase):
