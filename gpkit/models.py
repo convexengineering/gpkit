@@ -92,6 +92,7 @@ class Model(object):
         for p_len in self.k:
             self.p_idxs += [p_idx]*p_len
             p_idx += 1
+        self.p_idxs = np.array(self.p_idxs)
 
     def sub(self, substitutions, val=None, frombase='last', tobase='subbed'):
         # look for sweep variables

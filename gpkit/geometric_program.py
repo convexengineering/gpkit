@@ -270,10 +270,10 @@ class GP(Model):
         # check solver status
         if result['status'] not in ["optimal", "OPTIMAL"]:
             raise RuntimeWarning("final status of solver '%s' was '%s' not "
-                                 "'optimal'." % (self.solver, result['status']))
+                                 "'optimal'" % (self.solver, result['status']))
 
         variables = dict(zip(self.var_locs,
-                             np.exp(result['primal']).flatten()))
+                             np.exp(result['primal']).ravel()))
         variables.update(self.substitutions)
 
         # constraints must be within arbitrary epsilon 1e-4 of 1
@@ -291,18 +291,24 @@ class GP(Model):
             cost = costm.c
 
         sensitivities = {}
-        if "nu" not in result and "la" not in result:
-            raise Exception("The dual solution was not returned!")
         if "nu" in result:
-            sensitivities["monomials"] = np.array(result["nu"]).flatten()
+            nu = np.array(result["nu"]).ravel()
+            la = np.array([sum(nu[self.p_idxs == i])
+                           for i in range(len(self.posynomials))])
+        elif "la" in result:
+            la = np.array(result["la"]).ravel()
+            if len(la) == len(self.posynomials) - 1 and la[0] != 1.0:
+                la = np.hstack(([1.0], la))
+            Ax = np.array(np.dot(self.A.todense(), result['primal'])).ravel()
+            z = Ax + np.log(self.cs)
+            mon_iss = [self.p_idxs == i for i in range(len(la))]
+            nu = np.hstack([la[pos_i]*np.exp(z[mon_is])/sum(np.exp(z[mon_is]))
+                            for pos_i, mon_is in enumerate(mon_iss)])
         else:
-            raise NotImplementedError('TODO: generate nu from lambda')
-        if "la" in result:
-            sensitivities["posynomials"] = np.array(result["la"]).flatten()
-        else:
-            la = [sum(sensitivities["monomials"][np.array(self.p_idxs) == i])
-                  for i in range(len(self.posynomials))]
-            sensitivities["posynomials"] = np.array(la)
+            raise Exception("The dual solution was not returned!")
+
+        sensitivities["monomials"] = nu
+        sensitivities["posynomials"] = la
 
         sens_vars = {var: (sum([self.unsubbed.exps[i][var]
                                 * sensitivities["monomials"][i]
@@ -322,15 +328,15 @@ class GP(Model):
         local_model = Monomial(local_exp, local_c)
 
         # vectorvar substitution
+        vardicts = [variables, sensitivities["variables"]]
         for var in self.unsubbed.var_locs:
             if "idx" in var.descr and "length" in var.descr:
-                vectorkey = Variable(var.name, **var.descr)
-                del vectorkey.descr["idx"]
-                if vectorkey not in variables:
-                    variables[vectorkey] = np.zeros(var.descr["length"]) + np.nan
-                    sensitivities["variables"][vectorkey] = np.zeros(var.descr["length"]) + np.nan
-                variables[vectorkey][var.descr["idx"]] = variables.pop(var)
-                sensitivities["variables"][vectorkey][var.descr["idx"]] = sensitivities["variables"].pop(var)
+                veckey = Variable(var.name, **var.descr)
+                del veckey.descr["idx"]
+                for vardict in vardicts:
+                    if veckey not in vardict:
+                        vardict[veckey] = np.empy(var.descr["length"]) + np.nan
+                    vardict[veckey][var.descr["idx"]] = vardict.pop(var)
 
         return dict(cost=cost,
                     variables=variables,
