@@ -170,7 +170,8 @@ class Posynomial(object):
 
             pvarstrs = ['%s^{%.2g}' % (varl, x) if "%.2g" % x != "1" else varl
                         for (varl, x) in pos_vars]
-            nvarstrs = ['%s^{%.2g}' % (varl, -x) if "%.2g" % -x != "1" else varl
+            nvarstrs = ['%s^{%.2g}' % (varl, -x)
+                        if "%.2g" % -x != "1" else varl
                         for (varl, x) in neg_vars]
             pvarstr = ' '.join(pvarstrs)
             nvarstr = ' '.join(nvarstrs)
@@ -211,7 +212,9 @@ class Posynomial(object):
 
     def __mul__(self, other):
         if isinstance(other, (int, float)):
-            return Posynomial(self.exps, other*np.array(self.cs), self.var_locs)
+            return Posynomial(self.exps,
+                              other*np.array(self.cs),
+                              self.var_locs)
         elif isinstance(other, Posynomial):
             C = np.outer(self.cs, other.cs)
             Exps = np.empty((len(self.exps), len(other.exps)), dtype="object")
@@ -234,7 +237,9 @@ class Posynomial(object):
                 if all(div_cs == div_cs[0]):
                     return Monomial({}, div_cs[0])
         if isinstance(other, (int, float)):
-            return Posynomial(self.exps, np.array(self.cs)/other, self.var_locs)
+            return Posynomial(self.exps,
+                              np.array(self.cs)/other,
+                              self.var_locs)
         elif isinstance(other, Monomial):
             exps = [exp - other.exp for exp in self.exps]
             return Posynomial(exps, np.array(self.cs)/other.c)
@@ -354,7 +359,8 @@ def monovector(length, name=None, **descr):
     mv = PosyArray([Monomial(name, idx=i, length=length, **descr)
                    for i in range(length)])
     mv.descr = dict(mv[0].exp.keys()[0].descr)
-    if "idx" in mv.descr: del mv.descr["idx"]
+    if "idx" in mv.descr:
+        del mv.descr["idx"]
     return mv
 
 
