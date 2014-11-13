@@ -207,21 +207,18 @@ class GP(Model):
         solution = GPSolutionArray()
 
         self.presweep = self.last
-        self.sub({var: 1 for var in self.sweep}, tobase='swept')
+        self.sub({var: 1.0 for var in self.sweep}, tobase='swept')
 
-        sweep_dims = len(self.sweep)
-        if sweep_dims == 1:
+        if len(self.sweep) == 1:
             sweep_grids = np.array(self.sweep.values())
         else:
             sweep_grids = np.meshgrid(*self.sweep.values())
-        sweep_shape = sweep_grids[0].shape
         N_passes = sweep_grids[0].size
+        sweep_vects = {var: grid.reshape(N_passes)
+                       for (var, grid) in zip(self.sweep, sweep_grids)}
         if printing:
             print("Sweeping %i variables over %i passes" % (
-                  sweep_dims, N_passes))
-        sweep_grids = dict(zip(self.sweep, sweep_grids))
-        sweep_vects = {var: grid.reshape(N_passes)
-                       for (var, grid) in sweep_grids.items()}
+                  len(self.sweep), N_passes))
 
         for i in range(N_passes):
             this_pass = {var: sweep_vect[i]
@@ -240,27 +237,17 @@ class GP(Model):
         "Switches between solver options"
 
         if self.solver == 'cvxopt':
-            result = cvxoptimize(self.cs,
-                                 self.A,
-                                 self.k,
-                                 self.options)
+            result = cvxoptimize(self.cs, self.A, self.k, self.options)
         elif self.solver == "mosek_cli":
             from ._mosek import cli_expopt
             filename = self.options.get('filename', 'gpkit_mosek')
-            result = cli_expopt.imize(self.cs,
-                                      self.A,
-                                      self.p_idxs,
-                                      filename)
+            result = cli_expopt.imize(self.cs, self.A, self.p_idxs, filename)
         elif self.solver == "mosek":
             from ._mosek import expopt
-            result = expopt.imize(self.cs,
-                                  self.A,
-                                  self.p_idxs)
+            result = expopt.imize(self.cs, self.A, self.p_idxs)
         elif self.solver == "attached":
-            result = self.options['solver'](self.cs,
-                                            self.A,
-                                            self.p_idxs,
-                                            self.k)
+            solver = self.options['solver']
+            result = solver(self.cs, self.A, self.p_idxs, self.k)
         else:
             raise Exception("Solver %s is not implemented!" % self.solver)
 
