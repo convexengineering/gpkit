@@ -1,50 +1,18 @@
-from collections import defaultdict
-from collections import namedtuple
-from collections import Iterable
+import numpy as np
+
 from copy import deepcopy
 from functools import reduce
-import re
+from operator import add
 
-from .internal_utils import *
+from .small_classes import Strings
+from .small_classes import PosyTuple
+from .small_classes import CootMatrix
 from .nomials import Posynomial
 from .nomials import Variable
 
-try:
-    import numpy as np
-except ImportError:
-    print("Could not import numpy: will not be able to sweep variables")
-
-try:
-    from scipy.sparse import coo_matrix
-except ImportError:
-    print("Could not import scipy: will not be able to use splines")
-
-CootMatrix = namedtuple('CootMatrix', ['row', 'col', 'data'])
-PosyTuple = namedtuple('PosyTuple', ['exps', 'cs', 'var_locs', 'substitutions'])
-
-
-class CootMatrix(CootMatrix):
-    "A very simple sparse matrix representation."
-    shape = (None, None)
-
-    def append(self, i, j, x):
-        assert (i >= 0 and j >= 0), "Only positive indices allowed"
-        self.row.append(i)
-        self.col.append(j)
-        self.data.append(x)
-
-    def update_shape(self):
-        self.shape = (max(self.row)+1, max(self.col)+1)
-
-    def tocoo(self):
-        "Converts to a Scipy sparse coo_matrix"
-        return coo_matrix((self.data, (self.row, self.col)))
-
-    def todense(self): return self.tocoo().todense()
-    def tocsr(self): return self.tocoo().tocsr()
-    def tocsc(self): return self.tocoo().tocsc()
-    def todok(self): return self.tocoo().todok()
-    def todia(self): return self.tocoo().todia()
+from .substitution import substitution
+from .small_scripts import locate_vars
+from .small_scripts import is_sweepvar
 
 
 class Model(object):
@@ -55,10 +23,6 @@ class Model(object):
                          ["     %s <= 1" % p._string()
                           for p in self.posynomials]
                          )
-
-    def print_boundwarnings(self):
-        for var, bound in self.missingbounds.items():
-            print("%s has no %s bound" % (var, bound))
 
     def add_constraints(self, constraints):
         if isinstance(constraints, Posynomial):
@@ -76,12 +40,12 @@ class Model(object):
     def _gen_unsubbed_vars(self):
         posynomials = self.posynomials
 
-        exps = reduce(lambda x,y: x+y, map(lambda x: x.exps, posynomials))
-        cs = reduce(lambda x,y: x+y, map(lambda x: x.cs, posynomials))
+        exps = reduce(add, map(lambda x: x.exps, posynomials))
+        cs = reduce(add, map(lambda x: x.cs, posynomials))
         var_locs = locate_vars(exps)
 
         self.unsubbed = PosyTuple(exps, cs, var_locs, {})
-        self.load(self.unsubbed, print_boundwarnings=False)
+        self.load(self.unsubbed, printing=False)
 
         # k [j]: number of monomials (columns of F) present in each constraint
         self.k = [len(p.cs) for p in posynomials]
@@ -100,17 +64,11 @@ class Model(object):
         if isinstance(substitutions, dict):
             subs = dict(substitutions)
             for var, sub in substitutions.items():
-                try:
-                    if sub[0] == 'sweep':
-                        del subs[var]
-                        if isinstance(var, (str, Monomial)):
-                            var = Variable(var)
-                        if isinstance(sub[1], Iterable):
-                            self.sweep.update({var: sub[1]})
-                            found_sweep = True
-                        else:
-                            raise ValueError("sweep vars must be iterable.")
-                except: pass
+                if is_sweepvar(sub):
+                    found_sweep = True
+                    del subs[var]
+                    var = Variable(var)
+                    self.sweep.update({var: sub[1]})
         else:
             subs = substitutions
 
@@ -122,16 +80,15 @@ class Model(object):
                                                 base.cs,
                                                 subs, val)
         if not (subs or found_sweep):
-            raise ValueError("could not find anything to substitute")
+            raise KeyError("could not find anything to substitute")
 
         substitutions = base.substitutions
         substitutions.update(subs)
 
-        newbase = PosyTuple(exps, cs, var_locs, substitutions)
+        self.load(PosyTuple(exps, cs, var_locs, substitutions))
         setattr(self, tobase, self.last)
-        self.load(newbase)
 
-    def load(self, posytuple, print_boundwarnings=True):
+    def load(self, posytuple, printing=True):
         self.last = posytuple
         for attr in ['exps', 'cs', 'var_locs', 'substitutions']:
             new = deepcopy(getattr(posytuple, attr))
@@ -139,23 +96,27 @@ class Model(object):
 
         # A: exponents of the various free variables for each monomial
         #    rows of A are variables, columns are monomials
-        self.missingbounds = {}
+        missingbounds = {}
         self.A = CootMatrix([], [], [])
         for j, var in enumerate(self.var_locs):
             varsign = None
             for i in self.var_locs[var]:
                 exp = self.exps[i][var]
                 self.A.append(i, j, exp)
-                if varsign is None: varsign = np.sign(exp)
-                elif varsign is "both": pass
+                if varsign is "both": pass
                 elif np.sign(exp) != varsign: varsign = "both"
+                elif varsign is None: varsign = np.sign(exp)
+
             if varsign != "both" and var not in self.sweep:
                 if varsign == 1: bound = "lower"
                 elif varsign == -1: bound = "upper"
-                self.missingbounds[var] = bound
+                missingbounds[var] = bound
+
         # add subbed-out monomials at the end
         if not self.exps[-1]:
             self.A.append(0, len(self.exps)-1, 0)
         self.A.update_shape()
 
-        if print_boundwarnings: self.print_boundwarnings()
+        if printing:
+            for var, bound in missingbounds.items():
+                print("%s has no %s bound" % (var, bound))
