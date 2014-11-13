@@ -337,6 +337,9 @@ class Variable(object):
         else:
             return False
 
+    def __ne__(self, other):
+        return not self.__eq__(other)
+
 
 def monovector(length, name=None, **descr):
     """A described vector of singlet Monomials.

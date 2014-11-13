@@ -12,6 +12,17 @@ class t_Variable(unittest.TestCase):
         x = Variable()
         self.assertTrue(isinstance(x, Variable))
 
+    def test_eq_neq(self):
+        # no args
+        x1 = Variable()
+        x2 = Variable()
+        self.assertTrue(x1 != x2)
+        self.assertFalse(x1 == x2)
+        V = Variable('V')
+        vel = Variable('V')
+        self.assertTrue(V == vel)
+        self.assertFalse(V != vel)
+
 
 class t_utils(unittest.TestCase):
 
