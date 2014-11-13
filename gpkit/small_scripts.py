@@ -48,7 +48,7 @@ def sort_and_simplify(exps, cs):
 
 def print_results_table(data, title, senss=False):
     print("                    | " + title)
-    for var, table in data.items():
+    for var, table in sorted(data.items(), key=lambda x: str(x[0])):
         try:
             val = table.mean()
         except AttributeError:
@@ -57,12 +57,11 @@ def print_results_table(data, title, senss=False):
         if senss:
             units = "-"
             minval = 1e-2
-            var = "S_{%s}" % var
         else:
             units = var.descr.get('units', '-')
             minval = 0
         if abs(val) >= minval:
-            print("%19s" % var, ": %-8.3g" % val, "[%s] %s" % (units, label))
+            print "%19s" % var, ": %-8.3g" % val, "[%s] %s" % (units, label)
     print("                    |")
 
 

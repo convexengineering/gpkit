@@ -1,3 +1,11 @@
+# -*- coding: utf-8 -*-
+"""Module for creating models.
+
+    Currently these are only used for GP instances, but they may be further
+    abstractable.
+
+"""
+
 import numpy as np
 
 from copy import deepcopy
@@ -16,6 +24,7 @@ from .small_scripts import is_sweepvar
 
 
 class Model(object):
+    "Abstract class with substituion, loading / saving, and p_idx/A generation"
 
     def __repr__(self):
         return "\n".join(["gpkit.Model with",

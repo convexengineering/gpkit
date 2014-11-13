@@ -48,18 +48,18 @@ class GPSolutionArray(DictOfLists):
         return np.array([subbed.c for subbed in subbeds], np.dtype('float'))
 
     def print_table(self, tables=["cost", "free_variables",
-                                  "constants", "sensitvities"]):
+                                  "constants", "sensitivities"]):
         if isinstance(tables, Strings):
             tables = [tables]
         if "cost" in tables:
-            print("           %-8.3g | Cost (average)" % self["cost"].mean())
+            print("         %10.5g : Cost (mean)" % self["cost"].mean())
         if "free_variables" in tables:
-            print_results_table(self["free_variables"], "Solution (average)")
+            print_results_table(self["free_variables"], "Solution (mean)")
         if "constants" in tables:
-            print_results_table(self["constants"], "Constants (average)")
-        if "sensitivites" in tables:
+            print_results_table(self["constants"], "Constants (mean)")
+        if "sensitivities" in tables:
             print_results_table(self["sensitivities"]["variables"],
-                                "Constants Sensitivity (average)", senss=True)
+                                "Constants Sensitivities (mean)", senss=True)
 
 
 class GP(Model):
