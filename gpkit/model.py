@@ -8,7 +8,6 @@
 
 import numpy as np
 
-from copy import deepcopy
 from functools import reduce
 from operator import add
 
@@ -67,7 +66,7 @@ class Model(object):
             p_idx += 1
         self.p_idxs = np.array(self.p_idxs)
 
-    def sub(self, substitutions, val=None, frombase='last', tobase='subbed'):
+    def sub(self, substitutions, val=None, frombase='last'):
         # look for sweep variables
         found_sweep = False
         if isinstance(substitutions, dict):
@@ -81,7 +80,7 @@ class Model(object):
         else:
             subs = substitutions
 
-        base = deepcopy(getattr(self, frombase))
+        base = getattr(self, frombase)
 
         # perform substitution
         var_locs, exps, cs, subs = substitution(base.var_locs,
@@ -91,17 +90,15 @@ class Model(object):
         if not (subs or found_sweep):
             raise KeyError("could not find anything to substitute")
 
-        substitutions = base.substitutions
+        substitutions = dict(base.substitutions)
         substitutions.update(subs)
 
         self.load(PosyTuple(exps, cs, var_locs, substitutions))
-        setattr(self, tobase, self.last)
 
     def load(self, posytuple, printing=True):
         self.last = posytuple
         for attr in ['exps', 'cs', 'var_locs', 'substitutions']:
-            new = deepcopy(getattr(posytuple, attr))
-            setattr(self, attr, new)
+            setattr(self, attr, getattr(posytuple, attr))
 
         # A: exponents of the various free variables for each monomial
         #    rows of A are variables, columns are monomials

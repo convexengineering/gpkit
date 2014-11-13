@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-"Module containing miscellanous useful functions"
+"Module containing the substitution function"
 
 from collections import defaultdict
 from collections import Iterable
@@ -15,18 +15,36 @@ from .small_scripts import locate_vars
 from .small_scripts import is_sweepvar
 
 
-def vectorsub(subs, var, subiter, var_locs):
+def vectorsub(subs, var, sub, varset):
     "Vectorized substitution via monovectors and Variables."
-    if isinstance(var, Variable):
-        var = monovector(**var.descr)
-    if len(var) == len(subiter):
-        for i in range(len(var)):
-            v = Variable(var[i])
-            if v in var_locs:
-                subs[v] = subiter[i]
-    else:
-        raise ValueError("tried substituting %s for %s, but their"
-                         "lengths were unequal." % (sub, var))
+    try:
+        isvector = "length" in var.descr
+    except:
+        try:
+            assert len(var)
+            isvector = True
+        except:
+            isvector = False
+
+    if var in varset:
+        try:
+            assert len(sub) == 1
+            sub = sub[0]
+        except:
+            pass
+        subs[var] = sub
+    elif isvector:
+        if not is_sweepvar(sub):
+            if isinstance(var, Variable):
+                var = monovector(**var.descr)
+            if len(var) == len(sub):
+                for i in range(len(var)):
+                    v = Variable(var[i])
+                    if v in varset:
+                        subs[v] = sub[i]
+            else:
+                raise ValueError("tried substituting %s for %s, but their"
+                                 "lengths were unequal." % (sub, var))
 
 
 def substitution(var_locs, exps, cs, substitutions, val=None):
@@ -61,17 +79,14 @@ def substitution(var_locs, exps, cs, substitutions, val=None):
         substitutions = {substitutions: val}
 
     subs = {}
+    varset = frozenset(var_locs.keys())
     for var, sub in substitutions.items():
-        if isinstance(sub, Iterable):
-            if len(sub) == 1:
-                sub = sub[0]
-        if not is_sweepvar(sub):
-            if isinstance(sub, Iterable):
-                vectorsub(subs, var, sub, var_locs)
-            elif var in var_locs:
-                subs[var] = sub
-            elif Variable(var) in var_locs:
-                subs[Variable(var)] = sub
+        if isinstance(var, Strings+(Monomial,)):
+            var_ = Variable(var)
+            if var_ in varset:
+                subs[var_] = sub
+        else:
+            vectorsub(subs, var, sub, varset)
 
     if not subs:
         raise KeyError("could not find anything to substitute.")

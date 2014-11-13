@@ -116,7 +116,8 @@ class GP(Model):
         substitutions.update({var: var.descr["value"] for var in self.var_locs
                              if "value" in var.descr})
         if substitutions:
-            self.sub(substitutions, tobase='initialsub')
+            self.sub(substitutions)
+            self.initalsub = self.last
 
         if solver is None:
             from gpkit import settings
@@ -159,7 +160,7 @@ class GP(Model):
                                  for var, val in self.substitutions.items()]) +
                          ["\\end{array}"])
 
-    def solve(self, printing=True):
+    def solve(self, printing=True, solver=None):
         """Solves a GP and returns the solution.
 
         Parameters
@@ -172,6 +173,24 @@ class GP(Model):
         solution : dict
             A dictionary containing the optimal values for each free variable.
         """
+        if solver is None:
+            solver = self.solver
+        if solver == 'cvxopt':
+            solverfn = cvxoptimize_fn(self.k, self.options)
+        elif solver == "mosek_cli":
+            from ._mosek import cli_expopt
+            filename = self.options.get('filename', 'gpkit_mosek')
+            solverfn = cli_expopt.imize_fn(filename)
+        elif solver == "mosek":
+            from ._mosek import expopt
+            solverfn = expopt.imize
+        elif hasattr(solver, "__call__"):
+            solverfn = solver
+            solver = solver.__name__
+        else:
+            raise Exception("Solver %s is not implemented!" % solver)
+        self.solverfn = solverfn
+
         if printing:
             print("Using solver '%s'" % self.solver)
         self.starttime = time()
@@ -207,7 +226,7 @@ class GP(Model):
         solution = GPSolutionArray()
 
         self.presweep = self.last
-        self.sub({var: 1.0 for var in self.sweep}, tobase='swept')
+        self.sub({var: 1.0 for var in self.sweep})
 
         if len(self.sweep) == 1:
             sweep_grids = np.array(self.sweep.values())
@@ -223,7 +242,7 @@ class GP(Model):
         for i in range(N_passes):
             this_pass = {var: sweep_vect[i]
                          for (var, sweep_vect) in sweep_vects.items()}
-            self.sub(this_pass, frombase='presweep', tobase='swept')
+            self.sub(this_pass, frombase='presweep')
             sol = self.__run_solver()
             solution.append(sol)
 
@@ -234,28 +253,9 @@ class GP(Model):
         return solution
 
     def __run_solver(self):
-        "Switches between solver options"
+        "Gets a solver's raw output, then checks and standardizes it."
 
-        if self.solver == 'cvxopt':
-            result = cvxoptimize(self.cs, self.A, self.k, self.options)
-        elif self.solver == "mosek_cli":
-            from ._mosek import cli_expopt
-            filename = self.options.get('filename', 'gpkit_mosek')
-            result = cli_expopt.imize(self.cs, self.A, self.p_idxs, filename)
-        elif self.solver == "mosek":
-            from ._mosek import expopt
-            result = expopt.imize(self.cs, self.A, self.p_idxs)
-        elif self.solver == "attached":
-            solver = self.options['solver']
-            result = solver(self.cs, self.A, self.p_idxs, self.k)
-        else:
-            raise Exception("Solver %s is not implemented!" % self.solver)
-
-        return self.__parse_result(result)
-
-    def __parse_result(self, result):
-        "Checks and formats a solver's raw output."
-
+        result = self.solverfn(self.cs, self.A, self.p_idxs)
         if result['status'] not in ["optimal", "OPTIMAL"]:
             raise RuntimeWarning("final status of solver '%s' was '%s' not "
                                  "'optimal'" % (self.solver, result['status']))
@@ -338,43 +338,48 @@ class GP(Model):
                     local_model=local_model)
 
 
-def cvxoptimize(c, A, k, options):
-    """Interface to the CVXOPT solver
-
-        Definitions
-        -----------
-        "[a,b] array of floats" indicates array-like data with shape [a,b]
-        n is the number of monomials in the gp
-        m is the number of variables in the gp
-        p is the number of posynomials in the gp
-
-        Parameters
-        ----------
-        c : floats array of shape n
-            Coefficients of each monomial
-        A: floats array of shape (m,n)
-            Exponents of the various free variables for each monomial.
-        p_idxs: ints array of shape n
-            Posynomial index of each monomial
-
-        Returns
-        -------
-        dict
-            Contains the following keys
-                "success": bool
-                "objective_sol" float
-                    Optimal value of the objective
-                "primal_sol": floats array of size m
-                    Optimal value of the free variables. Note: not in logspace.
-                "dual_sol": floats array of size p
-                    Optimal value of the dual variables, in logspace.
-    """
+def cvxoptimize_fn(k, options):
     from cvxopt import solvers, spmatrix, matrix, log, exp
     solvers.options.update({'show_progress': False})
     solvers.options.update(options)
-    g = log(matrix(c))
-    F = spmatrix(A.data, A.row, A.col, tc='d')
-    solution = solvers.gp(k, F, g)
-    return dict(status=solution['status'],
-                primal=solution['x'],
-                la=solution['znl'])
+    gpsolver = solvers.gp
+
+    def cvxoptimize(c, A, p_idxs):
+        """Interface to the CVXOPT solver
+
+            Definitions
+            -----------
+            "[a,b] array of floats" indicates array-like data with shape [a,b]
+            n is the number of monomials in the gp
+            m is the number of variables in the gp
+            p is the number of posynomials in the gp
+
+            Parameters
+            ----------
+            c : floats array of shape n
+                Coefficients of each monomial
+            A: floats array of shape (m,n)
+                Exponents of the various free variables for each monomial.
+            p_idxs: ints array of shape n
+                Posynomial index of each monomial
+
+            Returns
+            -------
+            dict
+                Contains the following keys
+                    "success": bool
+                    "objective_sol" float
+                        Optimal value of the objective
+                    "primal_sol": floats array of size m
+                        Optimal value of free variables. Note: not in logspace.
+                    "dual_sol": floats array of size p
+                        Optimal value of the dual variables, in logspace.
+        """
+        g = log(matrix(c))
+        F = spmatrix(A.data, A.row, A.col, tc='d')
+        solution = gpsolver(k, F, g)
+        return dict(status=solution['status'],
+                    primal=solution['x'],
+                    la=solution['znl'])
+
+    return cvxoptimize

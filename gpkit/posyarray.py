@@ -93,5 +93,4 @@ class PosyArray(np.ndarray):
 
     def sub(self, subs, val=None, allow_negative=False):
         "Substitutes into the array"
-        return PosyArray([p.sub(subs, val, allow_negative=allow_negative)
-                         for p in self])
+        return PosyArray([p.sub(subs, val, allow_negative) for p in self])

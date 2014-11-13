@@ -121,6 +121,9 @@ class HashVector(dict):
             self._hashvalue = hash(tuple(self.items()))
         return self._hashvalue
 
+    def __setitem__(self, key, value):
+        raise TypeError("HashVectors are immutable.")
+
     def __neg__(self):
         "Return Hashvector with each value negated."
         return HashVector({key: -val for (key, val) in self.items()})

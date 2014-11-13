@@ -88,6 +88,8 @@ class Posynomial(object):
         else:
             self.var_locs = var_locs
 
+        self._hashvalue = hash(tuple(zip(self.exps, tuple(self.cs))))
+
     def sub(self, substitutions, val=None, allow_negative=False):
         var_locs, exps, cs, subs = substitution(self.var_locs,
                                                 self.exps, self.cs,
@@ -96,8 +98,6 @@ class Posynomial(object):
 
     # hashing, immutability, Posynomial inequality
     def __hash__(self):
-        if not hasattr(self, "_hashvalue"):
-            self._hashvalue = hash(tuple(zip(self.exps, tuple(self.cs))))
         return self._hashvalue
 
     def __ne__(self, other):
@@ -301,6 +301,7 @@ class Variable(object):
             self.name = str(k)
             self.descr = dict(kwargs)
             self.descr["name"] = self.name
+        self._hashvalue = hash(str(self))
 
     def __repr__(self):
         s = self.name
@@ -317,7 +318,7 @@ class Variable(object):
         return s
 
     def __hash__(self):
-        return hash(str(self))
+        return self._hashvalue
 
     def __eq__(self, other):
         if isinstance(other, Variable):
