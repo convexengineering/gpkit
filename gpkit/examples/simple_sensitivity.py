@@ -85,24 +85,4 @@ ps.strip_dirs()
 ps.sort_stats('time')
 ps.print_stats(10)
 
-
-def print_results_table(data, title, senss=False):
-    print("                    | " + title)
-    for var, table in data.items():
-        try:
-            val = table.mean()
-        except AttributeError:
-            val = table
-        if senss:
-            units = "-"
-            minval = 1e-2
-        else:
-            units = var.descr.get('units', '-')
-            minval = None
-        label = var.descr.get('label', '')
-        if minval is None or abs(val) > minval:
-            print("%19s" % var, ": %-8.3g" % val, "[%s] %s" % (units, label))
-    print("                    |")
-
-print_results_table(sol["variables"], "Solution")
-print_results_table(sol["sensitivities"]["variables"], "Sensitivities", senss=True)
+sol.print_table()

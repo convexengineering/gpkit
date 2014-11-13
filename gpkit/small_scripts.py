@@ -9,7 +9,9 @@ def is_sweepvar(sub):
     try:
         assert sub[0] == "sweep"
         assert isinstance(sub[1], Iterable)
-    except: return False
+        return True
+    except:
+        return False
 
 
 def invalid_types_for_oper(oper, a, b):

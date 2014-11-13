@@ -54,12 +54,12 @@ class GPSolutionArray(DictOfLists):
         if "cost" in tables:
             print("         %10.5g : Cost (mean)" % self["cost"].mean())
         if "free_variables" in tables:
-            print_results_table(self["free_variables"], "Solution (mean)")
+            print_results_table(self["free_variables"], "Free variables (mean)")
         if "constants" in tables:
             print_results_table(self["constants"], "Constants (mean)")
         if "sensitivities" in tables:
             print_results_table(self["sensitivities"]["variables"],
-                                "Constants Sensitivities (mean)", senss=True)
+                                "Constant sensitivities (mean)", senss=True)
 
 
 class GP(Model):
@@ -234,7 +234,7 @@ class GP(Model):
 
         self.load(self.presweep)
 
-        return sol_list
+        return solution
 
     def __run_solver(self):
         "Switches between solver options"
