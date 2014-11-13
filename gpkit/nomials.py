@@ -279,37 +279,38 @@ class Monomial(Posynomial):
 
 
 class Variable(object):
-    """A described singlet Monomial.
+    """A key that Monomial and Posynomial exp dicts can be indexed by.
 
     Parameters
     ----------
-    name : str
-        The variable's name; can be any string.
+    k : object (usually str)
+        The variable's name attribute is derived from str(k).
     **kwargs
-        Any additional variable attributes.
+        Any additional attributes, which become the descr attribute (a dict).
 
     Returns
     -------
-    Variable with the given name and description
+    Variable with the given name and descr.
     """
     new_unnamed_id = itertools.count().next
 
-    def __init__(self, arg=None, **descr):
-        if isinstance(arg, Variable):
-            self.name = arg.name
-            self.descr = arg.descr
-        elif isinstance(arg, Monomial):
-            if arg.c == 1 and len(arg.exp) == 1:
-                self.name = arg.exp.keys()[0].name
-                self.descr = arg.exp.keys()[0].descr
+    def __init__(self, k=None, **kwargs):
+        if isinstance(k, Variable):
+            self.name = k.name
+            self.descr = k.descr
+        elif isinstance(k, Monomial):
+            if k.c == 1 and len(k.exp) == 1:
+                var = k.exp.keys()[0]
+                self.name = var.name
+                self.descr = var.descr
             else:
                 raise TypeError("variables can only be formed from monomials"
-                                "with a c of 1 and a single variable")
+                                " with a c of 1 and a single variable")
         else:
-            if arg is None:
-                arg = "\\fbox{%s}" % Variable.new_unnamed_id()
-            self.name = str(arg)
-            self.descr = dict(descr)
+            if k is None:
+                k = "\\fbox{%s}" % Variable.new_unnamed_id()
+            self.name = str(k)
+            self.descr = dict(kwargs)
             self.descr["name"] = self.name
 
     def __repr__(self):
