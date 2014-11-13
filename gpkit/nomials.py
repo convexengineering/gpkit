@@ -159,7 +159,8 @@ class Posynomial(object):
 
             pvarstrs = ['%s^{%.2g}' % (varl, x) if "%.2g" % x != "1" else varl
                         for (varl, x) in pos_vars]
-            nvarstrs = ['%s^{%.2g}' % (varl, -x) if "%.2g" % -x != "1" else varl
+            nvarstrs = ['%s^{%.2g}' % (varl, -x)
+                        if "%.2g" % -x != "1" else varl
                         for (varl, x) in neg_vars]
             pvarstr = ' '.join(pvarstrs)
             nvarstr = ' '.join(nvarstrs)
@@ -200,7 +201,9 @@ class Posynomial(object):
 
     def __mul__(self, other):
         if isinstance(other, Numbers):
-            return Posynomial(self.exps, other*np.array(self.cs), self.var_locs)
+            return Posynomial(self.exps,
+                              other*np.array(self.cs),
+                              self.var_locs)
         elif isinstance(other, Posynomial):
             C = np.outer(self.cs, other.cs)
             Exps = np.empty((len(self.exps), len(other.exps)), dtype="object")
@@ -223,7 +226,9 @@ class Posynomial(object):
                 if all(div_cs == div_cs[0]):
                     return Monomial({}, div_cs[0])
         if isinstance(other, Numbers):
-            return Posynomial(self.exps, np.array(self.cs)/other, self.var_locs)
+            return Posynomial(self.exps,
+                              np.array(self.cs)/other,
+                              self.var_locs)
         elif isinstance(other, Monomial):
             exps = [exp - other.exp for exp in self.exps]
             return Posynomial(exps, np.array(self.cs)/other.c)
@@ -278,7 +283,7 @@ class Variable(object):
     """
     new_unnamed_id = itertools.count().next
 
-    def __init__(self, arg, **descr):
+    def __init__(self, arg=None, **descr):
         if isinstance(arg, Variable):
             self.name = arg.name
             self.descr = arg.descr
@@ -320,6 +325,9 @@ class Variable(object):
             return str(self) == other
         else:
             return False
+
+    def __ne__(self, other):
+        return not self.__eq__(other)
 
 
 def monovector(length, name=None, **descr):

@@ -15,9 +15,7 @@
         Contains settings loaded from ``./env/settings``
 """
 
-from .nomials import Monomial
-from .nomials import Posynomial
-from .nomials import monovector
+from .nomials import Monomial, Posynomial, Variable, monovector
 from .posyarray import PosyArray
 from .geometric_program import GP
 
