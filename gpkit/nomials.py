@@ -3,24 +3,13 @@ import itertools
 import numpy as np
 from types import NoneType
 
+from .small_classes import Strings, Numbers
 from .posyarray import PosyArray
 
-
-def sort_and_simplify(exps, cs):
-    "Reduces the number of monomials, and casts them to a sorted form."
-    matches = defaultdict(float)
-    for i, exp in enumerate(exps):
-        exp = HashVector({var: x for (var, x) in exp.items() if x != 0})
-        matches[exp] += cs[i]
-    return tuple(matches.keys()), tuple(matches.values())
-
-
-def latex_num(c):
-    cstr = "%.4g" % c
-    if 'e' in cstr:
-        idx = cstr.index('e')
-        cstr = "%s\\times 10^{%i}" % (cstr[:idx], int(cstr[idx+1:]))
-    return cstr
+from .small_scripts import latex_num
+from .small_scripts import sort_and_simplify
+from .small_scripts import locate_vars
+from .small_scripts import invalid_types_for_oper
 
 
 class Posynomial(object):
@@ -43,22 +32,22 @@ class Posynomial(object):
     """
     def __init__(self, exps=None, cs=1, var_locs=None,
                  allow_negative=False, **descr):
-        if isinstance(exps, (int, float)):
+        if isinstance(exps, Numbers):
             cs = exps
             exps = {}
-        if (isinstance(cs, (int, float))
-           and isinstance(exps, (Variable, NoneType, str, unicode, dict))):
+        if (isinstance(cs, Numbers)
+           and isinstance(exps, Strings + (Variable, NoneType, dict))):
             # building a Monomial
             if isinstance(exps, Variable):
                 exp = {exps: 1}
             elif exps is None:
                 exp = {Variable(None): 1}
-            elif isinstance(exps, (str, unicode)):
+            elif isinstance(exps, Strings):
                 exp = {Variable(exps, **descr): 1}
             elif isinstance(exps, dict):
                 exp = dict(exps)
                 for key in exps:
-                    if isinstance(key, (str, unicode)):
+                    if isinstance(key, Strings):
                         exp[Variable(key)] = exp.pop(key)
             else:
                 raise TypeError("could not make Monomial with %s" % type(exps))
@@ -76,7 +65,7 @@ class Posynomial(object):
                 for i in range(len(exps)):
                     exps_[i] = dict(exps[i])
                     for key in exps_[i]:
-                        if isinstance(key, (str, unicode, Monomial)):
+                        if isinstance(key, Strings+(Monomial,)):
                             exps_[i][Variable(key)] = exps_[i].pop(key)
                 exps = exps_
             except AssertionError:
@@ -120,10 +109,10 @@ class Posynomial(object):
     # constraint generation
     def __eq__(self, other):
         # if at least one is a monomial, return a constraint
-        mons = (int, float, Monomial)
-        if (isinstance(other, mons) and isinstance(self, mons)):
+        mons = Numbers+(Monomial,)
+        if isinstance(other, mons) and isinstance(self, mons):
             return MonoEQConstraint(self, other)
-        elif (isinstance(other, Posynomial) and isinstance(self, Posynomial)):
+        elif isinstance(other, Posynomial) and isinstance(self, Posynomial):
             if (self.exps == other.exps and self.cs <= other.cs):
                 return True
         else:
@@ -193,7 +182,7 @@ class Posynomial(object):
 
     # posynomial arithmetic
     def __add__(self, other):
-        if isinstance(other, (int, float)):
+        if isinstance(other, Numbers):
             if other == 0:
                 return Posynomial(self.exps, self.cs, self.var_locs)
             else:
@@ -211,7 +200,7 @@ class Posynomial(object):
         return self + other
 
     def __mul__(self, other):
-        if isinstance(other, (int, float)):
+        if isinstance(other, Numbers):
             return Posynomial(self.exps,
                               other*np.array(self.cs),
                               self.var_locs)
@@ -236,7 +225,7 @@ class Posynomial(object):
                 div_cs = np.array(self.cs)/np.array(other.cs)
                 if all(div_cs == div_cs[0]):
                     return Monomial({}, div_cs[0])
-        if isinstance(other, (int, float)):
+        if isinstance(other, Numbers):
             return Posynomial(self.exps,
                               np.array(self.cs)/other,
                               self.var_locs)
@@ -266,13 +255,13 @@ class Posynomial(object):
 class Monomial(Posynomial):
 
     def __rdiv__(self, other):
-        if isinstance(other, (int, float, Posynomial)):
+        if isinstance(other, Numbers+(Posynomial,)):
             return other * self**-1
         else:
             invalid_types_for_oper("/", other, self)
 
     def __pow__(self, other):
-        if isinstance(other, (int, float)):
+        if isinstance(other, Numbers):
             return Monomial(self.exp*other, self.c**other)
         else:
             invalid_types_for_oper("** or pow()", self, x)
@@ -333,7 +322,7 @@ class Variable(object):
     def __eq__(self, other):
         if isinstance(other, Variable):
             return self.descr == other.descr
-        elif isinstance(other, (str, unicode)):
+        elif isinstance(other, Strings):
             return str(self) == other
         else:
             return False
@@ -373,10 +362,10 @@ class Constraint(Monomial):
     def _set_operator(self, p1, p2):
         if self.left is p1:
             self.oper_s = " <= "
-            self.oper_l = " \leq "
+            self.oper_l = " \\leq "
         else:
             self.oper_s = " >= "
-            self.oper_l = " \geq "
+            self.oper_l = " \\geq "
 
     def __str__(self):
         return str(self.left) + self.oper_s + str(self.right)
@@ -421,4 +410,4 @@ class MonoEQConstraint(Constraint):
         self.leq = Constraint(p2, p1)
         self.geq = Constraint(p1, p2)
 
-from .internal_utils import *
+from .substitution import substitution

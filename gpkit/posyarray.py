@@ -9,7 +9,7 @@
 """
 
 import numpy as np
-import operator
+from operator import add, mul
 from functools import reduce
 
 
@@ -85,11 +85,11 @@ class PosyArray(np.ndarray):
 
     def sum(self):
         "Returns the sum of the array."
-        return reduce(operator.add, self[1:], self[0])
+        return reduce(add, self[1:], self[0])
 
     def prod(self):
         "Returns the product of the array."
-        return reduce(operator.mul, self[1:], self[0])
+        return reduce(mul, self[1:], self[0])
 
     def sub(self, subs, val=None, allow_negative=False):
         "Substitutes into the array"

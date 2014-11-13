@@ -107,11 +107,9 @@ def assert_line(f, expected):
 
 def read_vals(f):
     vals = []
-    while True:
+    line = f.readline()
+    while line not in ["", "\n"]:
+        # lines look like "1       2.390776e+000   \n"
+        vals.append(float(line.split()[1]))
         line = f.readline()
-        if line == "\n" or line == "":
-            break
-        else:
-            # lines look like "1       2.390776e+000   \n"
-            vals.append(float(line.split()[1]))
     return vals

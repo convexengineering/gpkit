@@ -13,44 +13,53 @@ from time import time
 from pprint import pformat
 from collections import Iterable
 from functools import reduce
-import operator
+from operator import mul
 
-from .models import Model
+from .small_classes import Strings
+from .small_classes import DictOfLists
+from .model import Model
 from .nomials import Constraint, MonoEQConstraint
 from .nomials import Monomial
-from .nomials import latex_num
 from .nomials import Variable
 
+from .small_scripts import latex_num
+from .small_scripts import flatten
+from .small_scripts import locate_vars
+from .small_scripts import print_results_table
 
-def flatten_constr(l):
-    """Flattens an iterable that contains only constraints and other iterables
 
-    Parameters
-    ----------
-    l : Iterable
-        Top-level constraints container
+class GPSolutionArray(DictOfLists):
+    "DictofLists extended with posynomial substitution."
 
-    Returns
-    -------
-    out : list
-        List of all constraints found in the nested iterables
+    def subinto(self, p):
+        "Returns numpy array of each solution substituted into p."
+        return np.array([p.sub(self.atindex(i)["variables"])
+                         for i in range(len(self["cost"]))])
 
-    Raises
-    ------
-    TypeError
-        If an object is found that is neither Constraint nor Iterable
-    """
-    out = []
-    for el in l:
-        if isinstance(el, Constraint):
-            out.append(el)
-        elif isinstance(el, Iterable):
-            for elel in flatten_constr(el):
-                out.append(elel)
-        else:
-            raise TypeError("The constraint list"
-                            " %s contains invalid constraint '%s'." % (l, el))
-    return out
+    def senssubinto(self, p):
+        """Returns array of each solution's sensitivity substituted into p
+
+        Returns only scalar values.
+        """
+        subbeds = [p.sub(self.atindex(i)["sensitivities"]["variables"],
+                         allow_negative=True) for i in range(len(self))]
+        assert all([isinstance(subbed, Monomial) for subbed in subbeds])
+        assert not any([subbed.exp for subbed in subbeds])
+        return np.array([subbed.c for subbed in subbeds], np.dtype('float'))
+
+    def print_table(self, tables=["cost", "free_variables",
+                                  "constants", "sensitivities"]):
+        if isinstance(tables, Strings):
+            tables = [tables]
+        if "cost" in tables:
+            print("         %10.5g : Cost (mean)" % self["cost"].mean())
+        if "free_variables" in tables:
+            print_results_table(self["free_variables"], "Solution (mean)")
+        if "constants" in tables:
+            print_results_table(self["constants"], "Constants (mean)")
+        if "sensitivities" in tables:
+            print_results_table(self["sensitivities"]["variables"],
+                                "Constants Sensitivities (mean)", senss=True)
 
 
 class GP(Model):
@@ -93,7 +102,7 @@ class GP(Model):
         # TODO: parse constraints during flattening, calling Posyarray on
         #       anything that holds only posys and then saving that list.
         #       This will allow prettier constraint printing.
-        self.constraints = tuple(flatten_constr(constraints))
+        self.constraints = tuple(flatten(constraints, Constraint))
         posynomials = [self.cost]
         for constraint in self.constraints:
             if isinstance(constraint, MonoEQConstraint):
@@ -102,24 +111,18 @@ class GP(Model):
                 posynomials.append(constraint)
         self.posynomials = tuple(posynomials)
 
-        self.options = options
-        if solver is not None:
-            self.solver = solver
-        else:
-            from gpkit import settings
-            self.solver = settings['installed_solvers'][0]
-
-        self.vectorvars = {}
         self.sweep = {}
         self._gen_unsubbed_vars()
-
-        constants = {var: var.descr["value"] for var in self.var_locs
-                     if "value" in var.descr}
-
-        substitutions.update(constants)
-
+        substitutions.update({var: var.descr["value"] for var in self.var_locs
+                             if "value" in var.descr})
         if substitutions:
             self.sub(substitutions, tobase='initialsub')
+
+        if solver is None:
+            from gpkit import settings
+            solver = settings['installed_solvers'][0]
+        self.solver = solver
+        self.options = options
 
     def __eq__(self, other):
         "GP equality is determined by their string representations."
@@ -182,9 +185,9 @@ class GP(Model):
 
         self.endtime = time()
         if printing:
-            print("Solving took %.3g seconds   "
+            print("Solving took %.3g seconds"
                   % (self.endtime - self.starttime))
-        self.solution = GPSolutionArray(solution)
+        self.solution = solution
         return solution
 
     def _solve_sweep(self, printing):
@@ -201,7 +204,7 @@ class GP(Model):
             A dictionary containing the array of optimal values
             for each free variable.
         """
-        sol_list = GPSolutionArray()
+        solution = GPSolutionArray()
 
         self.presweep = self.last
         self.sub({var: 1 for var in self.sweep}, tobase='swept')
@@ -225,9 +228,9 @@ class GP(Model):
                          for (var, sweep_vect) in sweep_vects.items()}
             self.sub(this_pass, frombase='presweep', tobase='swept')
             sol = self.__run_solver()
-            sol_list.append(sol)
+            solution.append(sol)
 
-        sol_list.toarray()
+        solution.toarray()
 
         self.load(self.presweep)
 
@@ -264,16 +267,13 @@ class GP(Model):
         return self.__parse_result(result)
 
     def __parse_result(self, result):
-        """Checks and formats a solver's raw output.
+        "Checks and formats a solver's raw output."
 
-        """
-        # check solver status
         if result['status'] not in ["optimal", "OPTIMAL"]:
             raise RuntimeWarning("final status of solver '%s' was '%s' not "
                                  "'optimal'" % (self.solver, result['status']))
 
-        variables = dict(zip(self.var_locs,
-                             np.exp(result['primal']).ravel()))
+        variables = dict(zip(self.var_locs, np.exp(result['primal']).ravel()))
         variables.update(self.substitutions)
 
         # constraints must be within arbitrary epsilon 1e-4 of 1
@@ -297,21 +297,21 @@ class GP(Model):
                            for i in range(len(self.posynomials))])
         elif "la" in result:
             la = np.array(result["la"]).ravel()
+            # check if cost's sensitivity has been dropped
             if len(la) == len(self.posynomials) - 1 and la[0] != 1.0:
                 la = np.hstack(([1.0], la))
             Ax = np.array(np.dot(self.A.todense(), result['primal'])).ravel()
             z = Ax + np.log(self.cs)
-            mon_iss = [self.p_idxs == i for i in range(len(la))]
-            nu = np.hstack([la[pos_i]*np.exp(z[mon_is])/sum(np.exp(z[mon_is]))
-                            for pos_i, mon_is in enumerate(mon_iss)])
+            m_iss = [self.p_idxs == i for i in range(len(la))]
+            nu = np.hstack([la[p_i]*np.exp(z[m_is])/sum(np.exp(z[m_is]))
+                            for p_i, m_is in enumerate(m_iss)])
         else:
             raise Exception("The dual solution was not returned!")
 
         sensitivities["monomials"] = nu
         sensitivities["posynomials"] = la
 
-        sens_vars = {var: (sum([self.unsubbed.exps[i][var]
-                                * sensitivities["monomials"][i]
+        sens_vars = {var: (sum([self.unsubbed.exps[i][var]*nu[i]
                                 for i in locs]))
                      for (var, locs) in self.unsubbed.var_locs.items()}
         sensitivities["variables"] = sens_vars
@@ -324,7 +324,7 @@ class GP(Model):
 
         local_exp = {var: S for (var, S) in sens_vars.items() if abs(S) >= 0.1}
         local_cs = (variables[var]**-S for (var, S) in local_exp.items())
-        local_c = reduce(operator.mul, local_cs, cost)
+        local_c = reduce(mul, local_cs, cost)
         local_model = Monomial(local_exp, local_c)
 
         # vectorvar substitution
@@ -338,8 +338,15 @@ class GP(Model):
                         vardict[veckey] = np.empy(var.descr["length"]) + np.nan
                     vardict[veckey][var.descr["idx"]] = vardict.pop(var)
 
+        constants = {var: val for var, val in variables.items()
+                     if var in self.substitutions}
+        free_variables = {var: val for var, val in variables.items()
+                          if var not in self.substitutions}
+
         return dict(cost=cost,
                     variables=variables,
+                    free_variables=free_variables,
+                    constants=constants,
                     sensitivities=sensitivities,
                     local_model=local_model)
 
@@ -384,116 +391,3 @@ def cvxoptimize(c, A, k, options):
     return dict(status=solution['status'],
                 primal=solution['x'],
                 la=solution['znl'])
-
-
-class DictOfLists(dict):
-    "A hierarchy of dicionaries, with lists as the bottom."
-
-    def append(self, sol):
-        "Appends a dict (of dicts) of lists to all held lists."
-        if not hasattr(self, 'initialized'):
-            enlist_dict(sol, self)
-            self.initialized = True
-        else:
-            append_dict(sol, self)
-
-    def atindex(self, i):
-        "Indexes into each list independently."
-        return index_dict(i, self, {})
-
-    def toarray(self, shape=None):
-        "Converts all lists into arrays."
-        if shape is None:
-            enray_dict(self, self)
-
-
-def enlist_dict(i, o):
-    "Recursviely copies dict i into o, placing non-dict items into lists."
-    for k, v in i.items():
-        if isinstance(v, dict):
-            o[k] = enlist_dict(v, {})
-        else:
-            o[k] = [v]
-    assert set(i.keys()) == set(o.keys())
-    return o
-
-
-def append_dict(i, o):
-    "Recursviely travels dict o and appends items found in i."
-    for k, v in i.items():
-        if isinstance(v, dict):
-            o[k] = append_dict(v, o[k])
-        else:
-            o[k].append(v)
-    assert set(i.keys()) == set(o.keys())
-    return o
-
-
-def index_dict(idx, i, o):
-    "Recursviely travels dict i, placing items at idx into dict o."
-    for k, v in i.items():
-        if isinstance(v, dict):
-            o[k] = index_dict(idx, v, {})
-        else:
-            o[k] = v[idx]
-    assert set(i.keys()) == set(o.keys())
-    return o
-
-
-def enray_dict(i, o):
-    "Recursively turns lists into numpy arrays."
-    for k, v in i.items():
-        if isinstance(v, dict):
-            o[k] = enray_dict(v, {})
-        else:
-            o[k] = np.array(v)
-    assert set(i.keys()) == set(o.keys())
-    return o
-
-
-class GPSolutionArray(DictOfLists):
-    "DictofLists extended with posynomial substitution."
-
-    def subinto(self, p):
-        "Returns numpy array of each solution substituted into p."
-        return np.array([p.sub(self.atindex(i)["variables"])
-                         for i in range(len(self["cost"]))])
-
-    def senssubinto(self, p):
-        """Returns numpy array of each solution's sensitivity substituted into p.
-
-        Each element must be scalar, so as to avoid any negative posynomials.
-        """
-        senssubbeds = [p.sub(self.atindex(i)["sensitivities"]["variables"],
-                             allow_negative=True)
-                       for i in range(len(self["cost"]))]
-        if not all([isinstance(subbed, Monomial) for subbed in senssubbeds]):
-            raise ValueError("senssub can only return scalars")
-        if any([subbed.exp for subbed in senssubbeds]):
-            raise ValueError("senssub can only return scalars")
-        return np.array([subbed.c for subbed in senssubbeds], np.dtype('float'))
-
-    def __str__(self):
-        print_results_table(self["variables"], "Variable Value (average)")
-        print_results_table(self["sensitivities"]["variables"],
-                            "Variable Sensitivity (average)")
-
-
-# there should be an interactive gpkit library
-def print_results_table(data, title, senss=False):
-    print("                    | " + title)
-    for var, table in data.items():
-        try:
-            val = table.mean()
-        except AttributeError:
-            val = table
-        if senss:
-            units = "-"
-            minval = 1e-2
-        else:
-            units = var.descr.get('units', '-')
-            minval = None
-        label = var.descr.get('label', '')
-        if minval is None or abs(val) > minval:
-            print("%19s" % var, ": %-8.3g" % val, "[%s] %s" % (units, label))
-    print("                    |")
