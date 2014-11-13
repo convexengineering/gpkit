@@ -7,6 +7,7 @@
     ------------
     numpy
     MOSEK or CVXOPT
+    scipy(optional): for full sparse matrix support
     sympy(optional): for latex printing in iPython Notebook
 
     Attributes

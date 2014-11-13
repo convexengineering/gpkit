@@ -1,6 +1,5 @@
 import numpy as np
 
-from scipy.sparse import coo_matrix
 from collections import namedtuple as nt
 
 Strings = (str, unicode)
@@ -25,6 +24,7 @@ class CootMatrix(CootMatrix):
 
     def tocoo(self):
         "Converts to a Scipy sparse coo_matrix"
+        from scipy.sparse import coo_matrix
         return coo_matrix((self.data, (self.row, self.col)))
 
     def todense(self): return self.tocoo().todense()
