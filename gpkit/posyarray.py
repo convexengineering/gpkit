@@ -40,11 +40,18 @@ class PosyArray(np.ndarray):
         if obj is None: return
         self.info = getattr(obj, 'info', None)
 
-    def _latex(self, unused=None):
+    def _latex(self, unused=None, matwrap=True):
         "Returns 1D latex list of contents."
-        return ("\\begin{bmatrix}" +
-                ", & ".join(el._latex() for el in self) +
-                "\\end{bmatrix}")
+        if len(self.shape) == 1:
+            return (("\\begin{bmatrix}" if matwrap else "") +
+                    " & ".join(el._latex() for el in self) +
+                    ("\\end{bmatrix}" if matwrap else ""))
+        elif len(self.shape) == 2:
+            return ("\\begin{bmatrix}" +
+                    " \\\\\n".join(el._latex(matwrap=False) for el in self) +
+                    "\\end{bmatrix}")
+        else:
+            return None
 
     def __str__(self):
         "Returns list-like string, but with str(el) instead of repr(el)."

@@ -21,6 +21,7 @@ from .model import Model
 from .nomials import Constraint, MonoEQConstraint
 from .nomials import Monomial
 from .nomials import Variable
+from .posyarray import PosyArray
 
 from .small_scripts import latex_num
 from .small_scripts import flatten
@@ -31,10 +32,13 @@ from .small_scripts import print_results_table
 class GPSolutionArray(DictOfLists):
     "DictofLists extended with posynomial substitution."
 
+    def __len__(self):
+        return len(self["cost"])
+
     def subinto(self, p):
         "Returns numpy array of each solution substituted into p."
-        return np.array([p.sub(self.atindex(i)["variables"])
-                         for i in range(len(self["cost"]))])
+        return PosyArray([p.sub(self.atindex(i)["variables"])
+                          for i in range(len(self["cost"]))])
 
     def senssubinto(self, p):
         """Returns array of each solution's sensitivity substituted into p
@@ -315,15 +319,21 @@ class GP(Model):
         local_model = Monomial(local_exp, local_c)
 
         # vectorvar substitution
-        vardicts = [variables, sensitivities["variables"]]
         for var in self.unsubbed.var_locs:
             if "idx" in var.descr and "length" in var.descr:
-                veckey = Variable(var.name, **var.descr)
-                del veckey.descr["idx"]
-                for vardict in vardicts:
-                    if veckey not in vardict:
-                        vardict[veckey] = np.empy(var.descr["length"]) + np.nan
-                    vardict[veckey][var.descr["idx"]] = vardict.pop(var)
+                descr = dict(var.descr)
+                del descr["idx"]
+                veckey = Variable(var.name, **descr)
+
+                if veckey not in variables:
+                    variables[veckey] = np.empty(var.descr["length"]) + np.nan
+                variables[veckey][var.descr["idx"]] = variables.pop(var)
+
+                if veckey not in sensitivities["variables"]:
+                    sensitivities["variables"][veckey] = \
+                        np.empty(var.descr["length"]) + np.nan
+                sensitivities["variables"][veckey][var.descr["idx"]] = \
+                    sensitivities["variables"].pop(var)
 
         constants = {var: val for var, val in variables.items()
                      if var in self.substitutions}

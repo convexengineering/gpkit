@@ -296,7 +296,9 @@ class Variable(object):
                 raise TypeError("variables can only be formed from monomials"
                                 " with a c of 1 and a single variable")
         else:
-            if k is None:
+            if "name" in kwargs:
+                k = kwargs["name"]
+            elif k is None:
                 k = "\\fbox{%s}" % Variable.new_unnamed_id()
             self.name = str(k)
             self.descr = dict(kwargs)

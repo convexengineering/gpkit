@@ -7,9 +7,9 @@ from .small_classes import HashVector
 def is_sweepvar(sub):
     "Determines if a given substitution indicates a sweep."
     try:
-        assert sub[0] == "sweep"
-        assert isinstance(sub[1], Iterable)
-        return True
+        if sub[0] == "sweep":
+            if isinstance(sub[1], Iterable):
+                return True
     except:
         return False
 
@@ -90,7 +90,7 @@ def flatten(ible, classes):
         if isinstance(el, classes):
             out.append(el)
         elif isinstance(el, Iterable):
-            for elel in flatten_constr(el):
+            for elel in flatten(el, classes):
                 out.append(elel)
         else:
             raise TypeError("Iterable %s contains element '%s'"
