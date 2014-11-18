@@ -5,17 +5,22 @@ import gpkit
 mon = gpkit.mon
 
 pi = mon("\\pi", np.pi, "-", "half of the circle constant")
-CDA0 = mon("(CDA0)", 310.0, "cm^2", "fuselage drag area")
 rho = mon("\\rho", 1.23, "kg/m^3", "density of air")
 mu = mon("\\mu", 1.78e-5, "kg/m/s", "viscosity of air")
 S_wetratio = mon("(\\frac{S}{S_{wet}})", 2.05, "-", "wetted area ratio")
 k = mon("k", 1.2, "-", "form factor")
 e = mon("e", 0.95, "-", "Oswald efficiency factor")
-W_0 = mon("W_0", 4.94, "kN", "aircraft weight excluding wing")
 N_ult = mon("N_{ult}", 3.8, "-", "ultimate load factor")
 tau = mon("\\tau", 0.12, "-", "airfoil thickness to chord ratio")
 C_Lmax = mon("C_{L,max}", 1.5, "-", "max CL with flaps down")
 V_min = mon("V_{min}", 22, "m/s", "takeoff speed")
+
+if gpkit.units:
+    CDA0 = mon("(CDA0)", 310.0, "cm^2", "fuselage drag area")
+    W_0 = mon("W_0", 4.94, "kN", "aircraft weight excluding wing")
+else:
+    CDA0 = mon("(CDA0)", 0.031, "m^2", "fuselage drag area")
+    W_0 = mon("W_0", 4940.0, "N", "aircraft weight excluding wing")
 
 D = mon("D", "N", "total drag force")
 A = mon("A", "-", "aspect ratio")
@@ -35,9 +40,12 @@ C_D_wpar = k*C_f*S_wetratio
 C_D_ind = C_L**2/(pi*A*e)
 equations += [C_D >= C_D_fuse + C_D_wpar + C_D_ind]
 
-
-W_w_strc = 8.71e-5*(N_ult*A**1.5*(W_0*W*S)**0.5)/tau / gpkit.units.m
-W_w_surf = (45.24*gpkit.units.Pa) * S
+if gpkit.units:
+    W_w_strc = 8.71e-5*(N_ult*A**1.5*(W_0*W*S)**0.5)/tau / gpkit.units.m
+    W_w_surf = (45.24*gpkit.units.Pa) * S
+else:
+    W_w_strc = 8.71e-5*(N_ult*A**1.5*(W_0*W*S)**0.5)/tau
+    W_w_surf = 45.24 * S
 equations += [W_w >= W_w_surf + W_w_strc]
 
 equations += [D >= 0.5*rho*S*C_D*V**2,
