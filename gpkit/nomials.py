@@ -12,6 +12,7 @@ from .small_scripts import locate_vars
 from .small_scripts import invalid_types_for_oper
 from .small_scripts import mag, unitstr
 
+from pint import DimensionalityError
 from . import units as ureg
 Quantity = ureg.Quantity
 Numbers += (Quantity,)
@@ -420,7 +421,11 @@ class Constraint(Posynomial):
         p2 = Posynomial(p2)
         p = p1 / p2
         if isinstance(p.cs, Quantity):
-            p = p.to('dimensionless')
+            try:
+                p = p.to('dimensionless')
+            except DimensionalityError:
+                raise ValueError("constraints must have the same units"
+                                 " on both sides.")
         p1.units = None
         p2.units = None
 
