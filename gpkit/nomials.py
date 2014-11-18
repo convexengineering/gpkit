@@ -164,7 +164,7 @@ class Posynomial(object):
                                          " dimensionless monomials together.")
                 else:
                     units = cs[0]/cs[0].magnitude
-                    if units == ureg.dimensionless:
+                    if units.dimensionless:
                         cs = [c * ureg.dimensionless for c in cs]
                     cs = [c.to(units).magnitude for c in cs] * units
                     if not all([c.dimensionality == units.dimensionality
@@ -445,11 +445,6 @@ class Constraint(Posynomial):
 
         self._set_operator(p1, p2)
 
-    def __nonzero__(self):
-        # a constraint not guaranteed to be satisfied
-        # evaluates as "False"
-        return bool(self.c == 1 and self.exp == {})
-
 
 class MonoEQConstraint(Constraint):
     def _set_operator(self, p1, p2):
@@ -457,5 +452,10 @@ class MonoEQConstraint(Constraint):
         self.oper_s = " = "
         self.leq = Constraint(p2, p1)
         self.geq = Constraint(p1, p2)
+
+    def __nonzero__(self):
+        # a constraint not guaranteed to be satisfied
+        # evaluates as "False"
+        return bool(self.cs[0] == 1 and self.exps[0] == {})
 
 from .substitution import substitution

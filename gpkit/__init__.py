@@ -19,6 +19,7 @@
 try:
     from pint import UnitRegistry
     units = UnitRegistry()
+
 except ImportError:
     print "Unable to load pint; unit support disabled."
 
@@ -39,6 +40,34 @@ from .nomials import Monomial, Posynomial, Variable
 from .nomial_interfaces import mon, vecmon
 from .posyarray import PosyArray
 from .geometric_program import GP
+
+if units:
+    # regain control of Quantities' interactions with Posynomials
+    Posynomial = Posynomial
+    import operator
+
+    def Qmul(self, other):
+        if isinstance(other, Posynomial):
+            return NotImplemented
+        else:
+            return self._mul_div(other, operator.mul)
+
+    def Qtruediv(self, other):
+        if isinstance(other, Posynomial):
+            return NotImplemented
+        else:
+            return self._mul_div(other, operator.truediv)
+
+    def Qfloordiv(self, other):
+        if isinstance(other, Posynomial):
+            return NotImplemented
+        else:
+            return self._mul_div(other, operator.floordiv, units_op=operator.truediv)
+
+    units.Quantity.__mul__ = Qmul
+    units.Quantity.__div__ = Qtruediv
+    units.Quantity.__truediv__ = Qtruediv
+    units.Quantity.__floordiv__ = Qfloordiv
 
 # Load settings
 from os import sep as os_sep

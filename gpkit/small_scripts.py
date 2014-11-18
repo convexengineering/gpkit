@@ -10,7 +10,7 @@ Quantity = ureg.Quantity
 
 
 def mag(c):
-    "Return magnitude of a Number"
+    "Return magnitude of a Number or Quantity"
     if isinstance(c, Quantity):
         return c.magnitude
     else:
