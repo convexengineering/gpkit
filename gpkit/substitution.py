@@ -8,7 +8,7 @@ from .small_classes import Numbers, Strings
 from .small_classes import HashVector
 from .nomials import Monomial
 from .nomials import Variable
-from .nomials import monovector
+from .nomial_interfaces import vecmon
 
 from .small_scripts import invalid_types_for_oper
 from .small_scripts import locate_vars
@@ -16,7 +16,7 @@ from .small_scripts import is_sweepvar
 
 
 def vectorsub(subs, var, sub, varset):
-    "Vectorized substitution via monovectors and Variables."
+    "Vectorized substitution via vecmons and Variables."
     try:
         isvector = "length" in var.descr and "idx" not in var.descr
     except:
@@ -35,7 +35,7 @@ def vectorsub(subs, var, sub, varset):
         subs[var] = sub
     elif isvector:
         if isinstance(var, Variable):
-            var = monovector(**var.descr)
+            var = vecmon(**var.descr)
         if len(var) == len(sub):
             for i in range(len(var)):
                 v = Variable(var[i])
@@ -103,13 +103,14 @@ def substitution(var_locs, exps, cs, substitutions, val=None):
                 del var_locs_[var]
             if isinstance(sub, Numbers):
                 cs_[i] *= sub**x
-            elif isinstance(sub, Strings+(Variable,)):
-                sub = Variable(sub)
-                exps_[i] += HashVector({sub: x})
-                var_locs_[sub].append(i)
-            elif isinstance(sub, Monomial):
-                exps_[i] += x*sub.exp
-                cs_[i] *= sub.c**x
-                for subvar in sub.exp:
-                    var_locs_[subvar].append(i)
+            # BELOW DOES NOT SUPPORT UNIT CONVERSION YET
+            #elif isinstance(sub, Strings+(Variable,)):
+            #    sub = Variable(sub)
+            #    exps_[i] += HashVector({sub: x})
+            #    var_locs_[sub].append(i)
+            #elif isinstance(sub, Monomial):
+            #    exps_[i] += x*sub.exp
+            #    cs_[i] *= sub.c**x
+            #    for subvar in sub.exp:
+            #        var_locs_[subvar].append(i)
     return var_locs_, exps_, cs_, subs

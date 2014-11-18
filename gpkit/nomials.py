@@ -10,6 +10,11 @@ from .small_scripts import latex_num
 from .small_scripts import sort_and_simplify
 from .small_scripts import locate_vars
 from .small_scripts import invalid_types_for_oper
+from .small_scripts import mag, unitstr
+
+from . import units as ureg
+Quantity = ureg.Quantity
+Numbers += (Quantity,)
 
 
 class Posynomial(object):
@@ -32,6 +37,7 @@ class Posynomial(object):
     """
     def __init__(self, exps=None, cs=1, var_locs=None,
                  allow_negative=False, **descr):
+        units = None
         if isinstance(exps, Numbers):
             cs = exps
             exps = {}
@@ -40,10 +46,11 @@ class Posynomial(object):
             # building a Monomial
             if isinstance(exps, Variable):
                 exp = {exps: 1}
-            elif exps is None:
-                exp = {Variable(None): 1}
-            elif isinstance(exps, Strings):
+                units = exps.descr["units"] if "units" in exps.descr else None
+            elif exps is None or isinstance(exps, Strings):
                 exp = {Variable(exps, **descr): 1}
+                descr = exp.keys()[0].descr
+                units = descr["units"] if "units" in descr else None
             elif isinstance(exps, dict):
                 exp = dict(exps)
                 for key in exps:
@@ -51,6 +58,8 @@ class Posynomial(object):
                         exp[Variable(key)] = exp.pop(key)
             else:
                 raise TypeError("could not make Monomial with %s" % type(exps))
+            if isinstance(units, Quantity):
+                cs = cs * units
             cs = [cs]
             exps = [exp]
         elif isinstance(exps, Posynomial):
@@ -62,6 +71,21 @@ class Posynomial(object):
             try:
                 assert len(cs) == len(exps)
                 exps_ = range(len(exps))
+                if not isinstance(cs[0], Quantity):
+                    try:
+                        cs = np.array(cs, dtype='float')
+                    except ValueError:
+                        raise ValueError("cannot add dimensioned and"
+                                         " dimensionless monomials together.")
+                else:
+                    units = cs[0]/cs[0].magnitude
+                    if units == ureg.dimensionless:
+                        cs = [c * ureg.dimensionless for c in cs]
+                    cs = [c.to(units).magnitude for c in cs] * units
+                    if not all([c.dimensionality == units.dimensionality
+                                for c in cs]):
+                        raise ValueError("cannot add monomials of"
+                                         " different units together")
                 for i in range(len(exps)):
                     exps_[i] = dict(exps[i])
                     for key in exps_[i]:
@@ -72,11 +96,17 @@ class Posynomial(object):
                 raise TypeError("cs and exps must have the same length.")
 
         exps, cs = sort_and_simplify(exps, cs)
-        if any((c <= 0 for c in cs)) and not allow_negative:
-            raise ValueError("each c must be positive.")
+        if not allow_negative:
+            if isinstance(cs, Quantity):
+                any_negative = any((c.magnitude <= 0 for c in cs))
+            else:
+                any_negative = any((c <= 0 for c in cs))
+            if any_negative:
+                raise ValueError("each c must be positive.")
 
-        self.exps = exps
         self.cs = cs
+        self.exps = exps
+        self.units = cs[0]/cs[0].magnitude if isinstance(cs[0], Quantity) else None
         if len(exps) == 1:
             if self.__class__ is Posynomial:
                 self.__class__ = Monomial
@@ -89,6 +119,9 @@ class Posynomial(object):
             self.var_locs = var_locs
 
         self._hashvalue = hash(tuple(zip(self.exps, tuple(self.cs))))
+
+    def to(self, arg):
+        return Posynomial(self.exps, self.cs.to(arg).tolist())
 
     def sub(self, substitutions, val=None, allow_negative=False):
         var_locs, exps, cs, subs = substitution(self.var_locs,
@@ -113,8 +146,13 @@ class Posynomial(object):
         if isinstance(other, mons) and isinstance(self, mons):
             return MonoEQConstraint(self, other)
         elif isinstance(other, Posynomial) and isinstance(self, Posynomial):
-            if (self.exps == other.exps and self.cs <= other.cs):
-                return True
+            if self.exps == other.exps:
+                if isinstance(self.cs, Quantity):
+                    return all(self.cs.magnitude <= other.cs)
+                else:
+                    return all(self.cs <= other.cs)
+            else:
+                return False
         else:
             return False
 
@@ -135,9 +173,10 @@ class Posynomial(object):
         for c, exp in zip(self.cs, self.exps):
             varstrs = ['%s**%.2g' % (var, x) if x != 1 else "%s" % var
                        for (var, x) in sorted(exp.items()) if x != 0]
+            c = mag(c)
             cstr = ["%.2g" % c] if c != 1 or not varstrs else []
             mstrs.append(mult_symbol.join(cstr + varstrs))
-        return " + ".join(sorted(mstrs))
+        return " + ".join(sorted(mstrs)) + unitstr(self.units, ", units='%s'")
 
     def descr(self, descr):
         self.descr = descr
@@ -164,6 +203,7 @@ class Posynomial(object):
                         for (varl, x) in neg_vars]
             pvarstr = ' '.join(pvarstrs)
             nvarstr = ' '.join(nvarstrs)
+            c = mag(c)
             if pos_vars and c == 1:
                 cstr = ""
             else:
@@ -178,7 +218,9 @@ class Posynomial(object):
             elif pos_vars and neg_vars:
                 mstrs.append("%s\\frac{%s}{%s}" % (cstr, pvarstr, nvarstr))
 
-        return " + ".join(sorted(mstrs))
+        units = unitstr(self.units, "\mathrm{\\left[ %s \\right]}", "L~")
+        units_smallfrac = units.replace("frac", "tfrac")
+        return " + ".join(sorted(mstrs)) + units_smallfrac
 
     # posynomial arithmetic
     def __add__(self, other):
@@ -186,10 +228,10 @@ class Posynomial(object):
             if other == 0:
                 return Posynomial(self.exps, self.cs, self.var_locs)
             else:
-                return Posynomial(self.exps + ({},), self.cs + (other,),
+                return Posynomial(self.exps + ({},), self.cs.tolist() + [other],
                                   self.var_locs)
         elif isinstance(other, Posynomial):
-            return Posynomial(self.exps + other.exps, self.cs + other.cs)
+            return Posynomial(self.exps + other.exps, self.cs.tolist() + other.cs.tolist())
             # TODO: automatically parse var_locs here
         elif isinstance(other, PosyArray):
             return np.array(self)+other
@@ -202,10 +244,21 @@ class Posynomial(object):
     def __mul__(self, other):
         if isinstance(other, Numbers):
             return Posynomial(self.exps,
-                              other*np.array(self.cs),
+                              other*self.cs,
                               self.var_locs)
         elif isinstance(other, Posynomial):
             C = np.outer(self.cs, other.cs)
+            if isinstance(self.cs, Quantity) or isinstance(other.cs, Quantity):
+                if not isinstance(self.cs, Quantity):
+                    sunits = ureg.dimensionless
+                else:
+                    sunits = self.cs[0]/self.cs[0].magnitude
+                if not isinstance(other.cs, Quantity):
+                    ounits = ureg.dimensionless
+                else:
+                    ounits = other.cs[0]/other.cs[0].magnitude
+                # hack fix for pint not working with np.outer
+                C = C * sunits * ounits
             Exps = np.empty((len(self.exps), len(other.exps)), dtype="object")
             for i, exp_s in enumerate(self.exps):
                 for j, exp_o in enumerate(other.exps):
@@ -220,18 +273,13 @@ class Posynomial(object):
         return self * other
 
     def __div__(self, other):
-        if isinstance(other, Posynomial):
-            if self.exps == other.exps:
-                div_cs = np.array(self.cs)/np.array(other.cs)
-                if all(div_cs == div_cs[0]):
-                    return Monomial({}, div_cs[0])
         if isinstance(other, Numbers):
             return Posynomial(self.exps,
-                              np.array(self.cs)/other,
+                              self.cs/other,
                               self.var_locs)
         elif isinstance(other, Monomial):
             exps = [exp - other.exp for exp in self.exps]
-            return Posynomial(exps, np.array(self.cs)/other.c)
+            return Posynomial(exps, self.cs/other.c)
         elif isinstance(other, PosyArray):
             return np.array(self)/other
         else:
@@ -288,7 +336,7 @@ class Variable(object):
             self.name = k.name
             self.descr = k.descr
         elif isinstance(k, Monomial):
-            if k.c == 1 and len(k.exp) == 1:
+            if mag(k.c) == 1 and len(k.exp) == 1:
                 var = k.exp.keys()[0]
                 self.name = var.name
                 self.descr = var.descr
@@ -303,6 +351,23 @@ class Variable(object):
             self.name = str(k)
             self.descr = dict(kwargs)
             self.descr["name"] = self.name
+
+        if "value" in self.descr:
+            value = self.descr["value"]
+            if isinstance(value, Quantity):
+                self.descr["value"] = value.magnitude
+                self.descr["units"] = value/value.magnitude
+        if ureg and "units" in self.descr:
+            units = self.descr["units"]
+            if isinstance(units, Strings):
+                units = units.replace("-", "dimensionless")
+                self.descr["units"] = ureg.parse_expression(units)
+            elif isinstance(units, Quantity):
+                self.descr["units"] = units/units.magnitude
+            else:
+                raise ValueError("units must be either a string"
+                                 " or a Quantity from gpkit.units.")
+        self.units = self.descr.get("units", None)
         self._hashvalue = hash(str(self))
 
     def __repr__(self):
@@ -334,33 +399,7 @@ class Variable(object):
         return not self.__eq__(other)
 
 
-def monovector(length, name=None, **descr):
-    """A described vector of singlet Monomials.
-
-    Parameters
-    ----------
-    length : int
-        Length of vector.
-    name : str (default None)
-        The variable's name; can be any string.
-    **descr
-
-    Returns
-    -------
-    PosyArray of Monomials, each containing a variable with the name '$V_{i}',
-    where V is the vector's name and i is the variable's index.
-    """
-    if "idx" in descr:
-        raise KeyError("the description field 'idx' is reserved")
-    mv = PosyArray([Monomial(name, idx=i, length=length, **descr)
-                   for i in range(length)])
-    mv.descr = dict(mv[0].exp.keys()[0].descr)
-    if "idx" in mv.descr:
-        del mv.descr["idx"]
-    return mv
-
-
-class Constraint(Monomial):
+class Constraint(Posynomial):
 
     def _set_operator(self, p1, p2):
         if self.left is p1:
@@ -380,6 +419,10 @@ class Constraint(Monomial):
         p1 = Posynomial(p1)
         p2 = Posynomial(p2)
         p = p1 / p2
+        if isinstance(p.cs, Quantity):
+            p = p.to('dimensionless')
+        p1.units = None
+        p2.units = None
 
         self.cs = p.cs
         self.exps = p.exps

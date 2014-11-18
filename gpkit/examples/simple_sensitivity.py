@@ -85,4 +85,4 @@ ps.strip_dirs()
 ps.sort_stats('time')
 ps.print_stats(10)
 
-sol.print_table()
+print(sol.table())

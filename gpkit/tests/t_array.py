@@ -1,11 +1,11 @@
 import unittest
-from gpkit import Monomial, Posynomial, monovector, PosyArray
+from gpkit import Monomial, Posynomial, vecmon, PosyArray
 
 
 class t_array(unittest.TestCase):
 
     def test_array_mult(self):
-        x = monovector(3, 'x', label='dummy variable')
+        x = vecmon(3, 'x', label='dummy variable')
         x_0 = Monomial('x', idx=0, length=3, label='dummy variable')
         x_1 = Monomial('x', idx=1, length=3, label='dummy variable')
         x_2 = Monomial('x', idx=2, length=3, label='dummy variable')
@@ -18,7 +18,7 @@ class t_array(unittest.TestCase):
 
     def test_elementwise_mult(self):
         m = Monomial('m')
-        x = monovector(3, 'x', label='dummy variable')
+        x = vecmon(3, 'x', label='dummy variable')
         x_0 = Monomial('x', idx=0, length=3, label='dummy variable')
         x_1 = Monomial('x', idx=1, length=3, label='dummy variable')
         x_2 = Monomial('x', idx=2, length=3, label='dummy variable')
@@ -40,7 +40,7 @@ class t_array(unittest.TestCase):
         self.assertEqual(x/m, p2)
 
     def test_constraint_gen(self):
-        x = monovector(3, 'x', label='dummy variable')
+        x = vecmon(3, 'x', label='dummy variable')
         x_0 = Monomial('x', idx=0, length=3, label='dummy variable')
         x_1 = Monomial('x', idx=1, length=3, label='dummy variable')
         x_2 = Monomial('x', idx=2, length=3, label='dummy variable')
@@ -49,7 +49,7 @@ class t_array(unittest.TestCase):
         self.assertEqual(x <= v, p)
 
     def test_substition(self):
-        x = monovector(3, 'x', label='dummy variable')
+        x = vecmon(3, 'x', label='dummy variable')
         c = {x: [1, 2, 3]}
         s = PosyArray([Monomial({}, e) for e in [1, 2, 3]])
         self.assertEqual(x.sub(c), s)

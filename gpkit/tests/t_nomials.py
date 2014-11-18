@@ -154,7 +154,7 @@ class t_Posynomial(unittest.TestCase):
               Monomial({}, 2)]
         exps, cs = [], []
         for m in ms:
-            cs += m.cs
+            cs += m.cs.tolist()
             exps += m.exps
         p = Posynomial(exps, cs)
         # check arithmetic

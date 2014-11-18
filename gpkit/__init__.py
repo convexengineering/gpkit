@@ -16,7 +16,27 @@
         Contains settings loaded from ``./env/settings``
 """
 
-from .nomials import Monomial, Posynomial, Variable, monovector
+try:
+    from pint import UnitRegistry
+    units = UnitRegistry()
+except ImportError:
+    print "Unable to load pint; unit support disabled."
+
+    class Quantity(object):
+        "Dummy class for missing pint"
+        pass
+
+    class Units(object):
+        "Dummy class to replace missing pint"
+        Quantity = Quantity
+
+        def __nonzero__(self):
+            return 0
+
+    units = Units()
+
+from .nomials import Monomial, Posynomial, Variable
+from .nomial_interfaces import mon, vecmon
 from .posyarray import PosyArray
 from .geometric_program import GP
 

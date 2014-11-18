@@ -20,6 +20,7 @@ from .nomials import Variable
 from .substitution import substitution
 from .small_scripts import locate_vars
 from .small_scripts import is_sweepvar
+from .small_scripts import mag
 
 
 class Model(object):
@@ -49,7 +50,7 @@ class Model(object):
         posynomials = self.posynomials
 
         exps = reduce(add, map(lambda x: x.exps, posynomials))
-        cs = reduce(add, map(lambda x: x.cs, posynomials))
+        cs = np.hstack(map(lambda p: mag(p.cs), posynomials))
         var_locs = locate_vars(exps)
 
         self.unsubbed = PosyTuple(exps, cs, var_locs, {})

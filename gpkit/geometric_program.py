@@ -26,7 +26,8 @@ from .posyarray import PosyArray
 from .small_scripts import latex_num
 from .small_scripts import flatten
 from .small_scripts import locate_vars
-from .small_scripts import print_results_table
+from .small_scripts import results_table
+from .small_scripts import mag
 
 
 class GPSolutionArray(DictOfLists):
@@ -49,21 +50,23 @@ class GPSolutionArray(DictOfLists):
                          allow_negative=True) for i in range(len(self))]
         assert all([isinstance(subbed, Monomial) for subbed in subbeds])
         assert not any([subbed.exp for subbed in subbeds])
-        return np.array([subbed.c for subbed in subbeds], np.dtype('float'))
+        return np.array([mag(subbed.c) for subbed in subbeds], np.dtype('float'))
 
-    def print_table(self, tables=["cost", "free_variables",
-                                  "constants", "sensitivities"]):
+    def table(self, tables=["cost", "free_variables",
+                            "constants", "sensitivities"]):
         if isinstance(tables, Strings):
             tables = [tables]
+        strs = []
         if "cost" in tables:
-            print("         %10.5g : Cost (mean)" % self["cost"].mean())
+            strs += ["         %10.5g : Cost (mean)" % self["cost"].mean()]
         if "free_variables" in tables:
-            print_results_table(self["free_variables"], "Free variables (mean)")
+            strs += [results_table(self["free_variables"], "Free variables (mean)")]
         if "constants" in tables:
-            print_results_table(self["constants"], "Constants (mean)")
+            strs += [results_table(self["constants"], "Constants (mean)")]
         if "sensitivities" in tables:
-            print_results_table(self["sensitivities"]["variables"],
-                                "Constant sensitivities (mean)", senss=True)
+            strs += [results_table(self["sensitivities"]["variables"],
+                                   "Constant sensitivities (mean)", senss=True)]
+        return "\n".join(strs)
 
 
 class GP(Model):
@@ -117,14 +120,15 @@ class GP(Model):
 
         self.sweep = {}
         self._gen_unsubbed_vars()
-        substitutions.update({var: var.descr["value"] for var in self.var_locs
-                             if "value" in var.descr})
-        if substitutions:
-            self.sub(substitutions)
+        values = {var: var.descr["value"]
+                  for var in self.var_locs if "value" in var.descr}
+        values.update(substitutions)
+        if values:
+            self.sub(values)
             self.initalsub = self.last
 
         if solver is None:
-            from gpkit import settings
+            from . import settings
             solver = settings['installed_solvers'][0]
         self.solver = solver
         self.options = options
@@ -269,7 +273,7 @@ class GP(Model):
 
         # constraints must be within arbitrary epsilon 1e-4 of 1
         for p in self.constraints:
-            val = p.sub(variables).c
+            val = mag(p.sub(variables).c)
             if not val <= 1 + 1e-4:
                 raise RuntimeWarning("constraint exceeded:"
                                      " %s = 1 + %0.2e" % (p, val-1))
@@ -279,7 +283,7 @@ class GP(Model):
         else:
             costm = self.cost.sub(variables)
             assert costm.exp == {}
-            cost = costm.c
+            cost = mag(costm.c)
 
         sensitivities = {}
         if "nu" in result:

@@ -17,25 +17,25 @@ import numpy as np
 
 import gpkit
 
-pi = gpkit.Monomial("\\pi", label="half of the circle constant")
+pi = gpkit.Monomial("\\pi", units="", label="half of the circle constant")
 CDA0 = gpkit.Monomial("(CDA0)", units="m^2", label="fuselage drag area")
 rho = gpkit.Monomial("\\rho", units="kg/m^3", label="density of air")
-mu = gpkit.Monomial("\\mu", units="kg*s/m", label="viscosity of air")
-S_wetratio = gpkit.Monomial("(\\frac{S}{S_{wet}})", label="wetted area ratio")
-k = gpkit.Monomial("k", label="form factor")
-e = gpkit.Monomial("e", label="Oswald efficiency factor")
+mu = gpkit.Monomial("\\mu", units="kg/m/s", label="viscosity of air")
+S_wetratio = gpkit.Monomial("(\\frac{S}{S_{wet}})", units="", label="wetted area ratio")
+k = gpkit.Monomial("k", units="", label="form factor")
+e = gpkit.Monomial("e", units="", label="Oswald efficiency factor")
 W_0 = gpkit.Monomial("W_0", units="N", label="aircraft weight excluding wing")
-N_ult = gpkit.Monomial("N_{ult}", label="ultimate load factor")
-tau = gpkit.Monomial("\\tau", label="airfoil thickness to chord ratio")
-C_Lmax = gpkit.Monomial("C_{L,max}", label="max CL with flaps down")
+N_ult = gpkit.Monomial("N_{ult}", units="", label="ultimate load factor")
+tau = gpkit.Monomial("\\tau", units="", label="airfoil thickness to chord ratio")
+C_Lmax = gpkit.Monomial("C_{L,max}", units="", label="max CL with flaps down")
 V_min = gpkit.Monomial("V_{min}", units="m/s", label="takeoff speed")
 
-A = gpkit.Monomial("A", label="aspect ratio")
+A = gpkit.Monomial("A", units="", label="aspect ratio")
 S = gpkit.Monomial("S", units="m^2", label="total wing area")
-C_D = gpkit.Monomial("C_D", label="Drag coefficient of wing")
-C_L = gpkit.Monomial("C_L", label="Lift coefficent of wing")
-C_f = gpkit.Monomial("C_f", label="skin friction coefficient")
-Re = gpkit.Monomial("Re", label="Reynold's number")
+C_D = gpkit.Monomial("C_D", units="", label="Drag coefficient of wing")
+C_L = gpkit.Monomial("C_L", units="", label="Lift coefficent of wing")
+C_f = gpkit.Monomial("C_f", units="", label="skin friction coefficient")
+Re = gpkit.Monomial("Re", units="", label="Reynold's number")
 W = gpkit.Monomial("W", units="N", label="total aircraft weight")
 W_w = gpkit.Monomial("W_w", units="N", label="wing weight")
 V = gpkit.Monomial("V", units="m/s", label="cruising speed")
@@ -52,8 +52,8 @@ substitutions = {
     N_ult: 3.8,
     tau: 0.12,
     C_Lmax: 1.5,
-    V_min: ("sweep", np.linspace(20, 25, 10)),
-    V: ("sweep", np.linspace(45, 55, 10)),
+    V_min: ("sweep", np.linspace(20, 25, 3)),
+    V: ("sweep", np.linspace(45, 55, 3)),
 }
 
 # drag modeling #
@@ -62,8 +62,8 @@ C_D_wpar = k*C_f*S_wetratio  # wing parasitic drag
 C_D_ind = C_L**2/(pi*A*e)     # induced drag
 
 # wing-weight modeling #
-W_w_surf = 45.24*S                                    # surface weight
-W_w_strc = 8.71e-5*(N_ult*A**1.5*(W_0*W*S)**0.5)/tau  # structural weight
+W_w_surf = 45.24*S*gpkit.units.parse_expression('N/m^2')  # surface weight
+W_w_strc = 8.71e-5*(N_ult*A**1.5*(W_0*W*S)**0.5)/tau / gpkit.units.m  # structural weight
 
 gp = gpkit.GP(  # minimize
                 0.5*rho*S*C_D*V**2,
@@ -86,4 +86,4 @@ ps.strip_dirs()
 ps.sort_stats("time")
 ps.print_stats(10)
 
-sol.print_table()
+print(sol.table())

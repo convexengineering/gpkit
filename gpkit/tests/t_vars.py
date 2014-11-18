@@ -1,5 +1,5 @@
 import unittest
-from gpkit import Monomial, Posynomial, monovector, PosyArray, Variable
+from gpkit import Monomial, Posynomial, vecmon, PosyArray, Variable
 
 
 class t_Variable(unittest.TestCase):
@@ -54,7 +54,7 @@ class t_utils(unittest.TestCase):
         self.assertEqual(x.exp.keys()[0].descr["label"], 'dummy variable')
 
     def test_vectify(self):
-        x = monovector(3, 'x', label='dummy variable')
+        x = vecmon(3, 'x', label='dummy variable')
         x_0 = Monomial('x', idx=0, length=3, label='dummy variable')
         x_1 = Monomial('x', idx=1, length=3, label='dummy variable')
         x_2 = Monomial('x', idx=2, length=3, label='dummy variable')

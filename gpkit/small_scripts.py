@@ -1,7 +1,36 @@
+import numpy as np
+
 from collections import defaultdict
 from collections import Iterable
 
 from .small_classes import HashVector
+
+from . import units as ureg
+Quantity = ureg.Quantity
+
+
+def mag(c):
+    "Return magnitude of a Number"
+    if isinstance(c, Quantity):
+        return c.magnitude
+    else:
+        return c
+
+
+def unitstr(v, into="%s", options="~"):
+    units = None
+    if isinstance(v, Quantity):
+        units = v
+    elif hasattr(v, "descr"):
+        if isinstance(v.descr, dict):
+            units = v.descr.get("units", "-")
+    if isinstance(units, Quantity):
+        rawstr = ("{:%s}" % options).format(units)
+        units = "".join(rawstr.replace("dimensionless", "-").split()[1:])
+    if units:
+        return into % units
+    else:
+        return ""
 
 
 def is_sweepvar(sub):
@@ -26,7 +55,7 @@ def latex_num(c):
     cstr = "%.4g" % c
     if 'e' in cstr:
         idx = cstr.index('e')
-        cstr = "%s\\times 10^{%i}" % (cstr[:idx], int(cstr[idx+1:]))
+        cstr = "%s \\times 10^{%i}" % (cstr[:idx], int(cstr[idx+1:]))
     return cstr
 
 
@@ -45,11 +74,17 @@ def sort_and_simplify(exps, cs):
     for i, exp in enumerate(exps):
         exp = HashVector({var: x for (var, x) in exp.items() if x != 0})
         matches[exp] += cs[i]
-    return tuple(matches.keys()), tuple(matches.values())
+    cs_ = matches.values()
+    if isinstance(cs_[0], Quantity):
+        units = cs_[0]/cs_[0].magnitude
+        cs_ = [c.to(units).magnitude for c in cs_] * units
+    else:
+        cs_ = np.array(cs_, dtype='float')
+    return tuple(matches.keys()), cs_
 
 
-def print_results_table(data, title, senss=False):
-    print("                    | " + title)
+def results_table(data, title, senss=False):
+    strs = ["                    | " + title]
     for var, table in sorted(data.items(), key=lambda x: str(x[0])):
         try:
             val = table.mean()
@@ -60,11 +95,12 @@ def print_results_table(data, title, senss=False):
             units = "-"
             minval = 1e-2
         else:
-            units = var.descr.get('units', '-')
+            units = unitstr(var)
             minval = 0
         if abs(val) >= minval:
-            print "%19s" % var, ": %-8.3g" % val, "[%s] %s" % (units, label)
-    print("                    |")
+            strs += ["%19s" % var + " : %-8.3g " % val + "[%s] %s" % (units, label)]
+    strs += ["                    |"]
+    return "\n".join(strs)
 
 
 def flatten(ible, classes):
