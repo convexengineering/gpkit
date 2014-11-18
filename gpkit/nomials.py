@@ -199,9 +199,8 @@ class Posynomial(object):
             self.c = cs[0]
 
         if var_locs is None:
-            self.var_locs = locate_vars(exps)
-        else:
-            self.var_locs = var_locs
+            var_locs = locate_vars(exps)
+        self.var_locs = var_locs
 
         self._hashvalue = hash(tuple(zip(self.exps, tuple(self.cs))))
 
@@ -213,6 +212,14 @@ class Posynomial(object):
                                                 self.exps, self.cs,
                                                 substitutions, val)
         return Posynomial(exps, cs, var_locs, allow_negative)
+
+    def subcmag(self, substitutions, val=None):
+        var_locs, exps, cs, subs = substitution(self.var_locs,
+                                                self.exps, mag(self.cs),
+                                                substitutions, val)
+        if any(exps):
+            raise ValueError("could not substitute for all variables.")
+        return mag(cs).sum()
 
     # hashing, immutability, Posynomial inequality
     def __hash__(self):

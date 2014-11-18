@@ -71,9 +71,9 @@ class PosyArray(np.ndarray):
         return PosyArray([e for e in self._eq(self, other)])
 
     def __ne__(self, m):
-        "Does type checking, then apples 'not ==' in a vectorized fashion."
+        "Does type checking, then applies 'not ==' in a vectorized fashion."
         return (not isinstance(other, self.__class__)
-                and all(self._eq(self, other)))
+                or not all(self._eq(self, other)))
 
     # inequality constraints
     _leq = np.vectorize(lambda a, b: a <= b)

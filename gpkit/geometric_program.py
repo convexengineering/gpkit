@@ -184,6 +184,7 @@ class GP(Model):
         if solver is None:
             solver = self.solver
         if solver == 'cvxopt':
+            from ._cvxopt import cvxoptimize_fn
             solverfn = cvxoptimize_fn(self.k, self.options)
         elif solver == "mosek_cli":
             from ._mosek import cli_expopt
@@ -272,18 +273,17 @@ class GP(Model):
         variables.update(self.substitutions)
 
         # constraints must be within arbitrary epsilon 1e-4 of 1
-        for p in self.constraints:
-            val = mag(p.sub(variables).c)
-            if not val <= 1 + 1e-4:
-                raise RuntimeWarning("constraint exceeded:"
-                                     " %s = 1 + %0.2e" % (p, val-1))
+        # takes a while to evaluate!
+        #for p in self.constraints:
+        #    val = p.subcmag(variables)
+        #    if abs(val-1) > 1e-4:
+        #        raise RuntimeWarning("constraint exceeded:"
+        #                             " %s = 1 + %0.2e" % (p, val-1))
 
         if "objective" in result:
             cost = float(result["objective"])
         else:
-            costm = self.cost.sub(variables)
-            assert costm.exp == {}
-            cost = mag(costm.c)
+            cost = self.cost.subcmag(variables)
 
         sensitivities = {}
         if "nu" in result:
@@ -292,7 +292,7 @@ class GP(Model):
                            for i in range(len(self.posynomials))])
         elif "la" in result:
             la = np.array(result["la"]).ravel()
-            # check if cost's sensitivity has been dropped
+            # check if the cost's sensitivity has been dropped
             if len(la) == len(self.posynomials) - 1 and la[0] != 1.0:
                 la = np.hstack(([1.0], la))
             Ax = np.array(np.dot(self.A.todense(), result['primal'])).ravel()
@@ -301,7 +301,7 @@ class GP(Model):
             nu = np.hstack([la[p_i]*np.exp(z[m_is])/sum(np.exp(z[m_is]))
                             for p_i, m_is in enumerate(m_iss)])
         else:
-            raise Exception("The dual solution was not returned!")
+            raise RuntimeWarning("the dual solution was not returned!")
 
         sensitivities["monomials"] = nu
         sensitivities["posynomials"] = la
@@ -350,50 +350,3 @@ class GP(Model):
                     constants=constants,
                     sensitivities=sensitivities,
                     local_model=local_model)
-
-
-def cvxoptimize_fn(k, options):
-    from cvxopt import solvers, spmatrix, matrix, log, exp
-    solvers.options.update({'show_progress': False})
-    solvers.options.update(options)
-    gpsolver = solvers.gp
-
-    def cvxoptimize(c, A, p_idxs):
-        """Interface to the CVXOPT solver
-
-            Definitions
-            -----------
-            "[a,b] array of floats" indicates array-like data with shape [a,b]
-            n is the number of monomials in the gp
-            m is the number of variables in the gp
-            p is the number of posynomials in the gp
-
-            Parameters
-            ----------
-            c : floats array of shape n
-                Coefficients of each monomial
-            A: floats array of shape (m,n)
-                Exponents of the various free variables for each monomial.
-            p_idxs: ints array of shape n
-                Posynomial index of each monomial
-
-            Returns
-            -------
-            dict
-                Contains the following keys
-                    "success": bool
-                    "objective_sol" float
-                        Optimal value of the objective
-                    "primal_sol": floats array of size m
-                        Optimal value of free variables. Note: not in logspace.
-                    "dual_sol": floats array of size p
-                        Optimal value of the dual variables, in logspace.
-        """
-        g = log(matrix(c))
-        F = spmatrix(A.data, A.row, A.col, tc='d')
-        solution = gpsolver(k, F, g)
-        return dict(status=solution['status'],
-                    primal=solution['x'],
-                    la=solution['znl'])
-
-    return cvxoptimize

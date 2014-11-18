@@ -8,7 +8,7 @@ from distutils.core import setup
 
 setup(
     name='gpkit',
-    version='0.1dev',
+    version='0.6dev',
     install_requires=['numpy', 'ctypesgen'],
     packages=['gpkit', 'gpkit._mosek', 'gpkit.tests', 'gpkit.interactive'],
     package_data={'gpkit': ['env/*', 'examples/*'],

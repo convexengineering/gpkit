@@ -35,7 +35,7 @@ class CootMatrix(CootMatrix):
 
 
 class DictOfLists(dict):
-    "A hierarchy of dicionaries, with lists as the bottom."
+    "A hierarchy of dicionaries, with lists at the bottom."
 
     def append(self, sol):
         "Appends a dict (of dicts) of lists to all held lists."
@@ -111,7 +111,7 @@ class HashVector(dict):
 
     Example
     -------
-    >>> x = gpkit.nomials.Variable('x')
+    >>> x = gpkit.nomials.Monomial('x')
     >>> exp = gpkit.small_classes.HashVector({x: 2})
     """
 

@@ -1,6 +1,8 @@
 # -*- coding: utf-8 -*-
 "Module containing the substitution function"
 
+import numpy as np
+
 from collections import defaultdict
 from collections import Iterable
 
@@ -27,11 +29,6 @@ def vectorsub(subs, var, sub, varset):
             isvector = False
 
     if var in varset:
-        try:
-            assert len(sub) == 1
-            sub = sub[0]
-        except:
-            pass
         subs[var] = sub
     elif isvector:
         if isinstance(var, Variable):
@@ -92,7 +89,7 @@ def substitution(var_locs, exps, cs, substitutions, val=None):
         raise KeyError("could not find anything to substitute.")
 
     exps_ = [HashVector(exp) for exp in exps]
-    cs_ = list(cs)
+    cs_ = np.array(cs)
     var_locs_ = defaultdict(list)
     var_locs_.update({var: list(idxs) for (var, idxs) in var_locs.items()})
     for var, sub in subs.items():

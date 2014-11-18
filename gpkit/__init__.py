@@ -25,13 +25,8 @@ except ImportError:
 
     class Units(object):
         "Dummy class to replace missing pint"
-
-        class Quantity(object):
-            "Dummy class for missing pint"
-            pass
-
-        def __nonzero__(self):
-            return 0
+        class Quantity(object): pass
+        def __nonzero__(self): return 0
 
     units = Units()
     DimensionalityError = ValueError
