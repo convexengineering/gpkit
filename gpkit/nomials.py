@@ -18,6 +18,90 @@ Quantity = ureg.Quantity
 Numbers += (Quantity,)
 
 
+class Variable(object):
+    """A key that Monomial and Posynomial exp dicts can be indexed by.
+
+    Parameters
+    ----------
+    k : object (usually str)
+        The variable's name attribute is derived from str(k).
+    **kwargs
+        Any additional attributes, which become the descr attribute (a dict).
+
+    Returns
+    -------
+    Variable with the given name and descr.
+    """
+    new_unnamed_id = itertools.count().next
+
+    def __init__(self, k=None, **kwargs):
+        if isinstance(k, Variable):
+            self.name = k.name
+            self.descr = k.descr
+        elif isinstance(k, Monomial):
+            if mag(k.c) == 1 and len(k.exp) == 1:
+                var = k.exp.keys()[0]
+                self.name = var.name
+                self.descr = var.descr
+            else:
+                raise TypeError("variables can only be formed from monomials"
+                                " with a c of 1 and a single variable")
+        else:
+            if "name" in kwargs:
+                k = kwargs["name"]
+            elif k is None:
+                k = "\\fbox{%s}" % Variable.new_unnamed_id()
+            self.name = str(k)
+            self.descr = dict(kwargs)
+            self.descr["name"] = self.name
+
+        if "value" in self.descr:
+            value = self.descr["value"]
+            if isinstance(value, Quantity):
+                self.descr["value"] = value.magnitude
+                self.descr["units"] = value/value.magnitude
+        if ureg and "units" in self.descr:
+            units = self.descr["units"]
+            if isinstance(units, Strings):
+                units = units.replace("-", "dimensionless")
+                self.descr["units"] = ureg.parse_expression(units)
+            elif isinstance(units, Quantity):
+                self.descr["units"] = units/units.magnitude
+            else:
+                raise ValueError("units must be either a string"
+                                 " or a Quantity from gpkit.units.")
+        self.units = self.descr.get("units", None)
+        self._hashvalue = hash(str(self))
+
+    def __repr__(self):
+        s = self.name
+        for subscript in ["idx", "model"]:
+            if subscript in self.descr:
+                s = "%s_%s" % (s, self.descr[subscript])
+        return s
+
+    def _latex(self):
+        s = self.name
+        for subscript in ["idx", "model"]:
+            if subscript in self.descr:
+                s = "{%s}_{%s}" % (s, self.descr[subscript])
+        return s
+
+    def __hash__(self):
+        return self._hashvalue
+
+    def __eq__(self, other):
+        if isinstance(other, Variable):
+            return self.descr == other.descr
+        elif isinstance(other, Strings):
+            return str(self) == other
+        else:
+            return False
+
+    def __ne__(self, other):
+        return not self.__eq__(other)
+
+
 class Posynomial(object):
     """A representation of a posynomial.
 
@@ -316,90 +400,6 @@ class Monomial(Posynomial):
             invalid_types_for_oper("** or pow()", self, x)
 
 
-class Variable(object):
-    """A key that Monomial and Posynomial exp dicts can be indexed by.
-
-    Parameters
-    ----------
-    k : object (usually str)
-        The variable's name attribute is derived from str(k).
-    **kwargs
-        Any additional attributes, which become the descr attribute (a dict).
-
-    Returns
-    -------
-    Variable with the given name and descr.
-    """
-    new_unnamed_id = itertools.count().next
-
-    def __init__(self, k=None, **kwargs):
-        if isinstance(k, Variable):
-            self.name = k.name
-            self.descr = k.descr
-        elif isinstance(k, Monomial):
-            if mag(k.c) == 1 and len(k.exp) == 1:
-                var = k.exp.keys()[0]
-                self.name = var.name
-                self.descr = var.descr
-            else:
-                raise TypeError("variables can only be formed from monomials"
-                                " with a c of 1 and a single variable")
-        else:
-            if "name" in kwargs:
-                k = kwargs["name"]
-            elif k is None:
-                k = "\\fbox{%s}" % Variable.new_unnamed_id()
-            self.name = str(k)
-            self.descr = dict(kwargs)
-            self.descr["name"] = self.name
-
-        if "value" in self.descr:
-            value = self.descr["value"]
-            if isinstance(value, Quantity):
-                self.descr["value"] = value.magnitude
-                self.descr["units"] = value/value.magnitude
-        if ureg and "units" in self.descr:
-            units = self.descr["units"]
-            if isinstance(units, Strings):
-                units = units.replace("-", "dimensionless")
-                self.descr["units"] = ureg.parse_expression(units)
-            elif isinstance(units, Quantity):
-                self.descr["units"] = units/units.magnitude
-            else:
-                raise ValueError("units must be either a string"
-                                 " or a Quantity from gpkit.units.")
-        self.units = self.descr.get("units", None)
-        self._hashvalue = hash(str(self))
-
-    def __repr__(self):
-        s = self.name
-        for subscript in ["idx", "model"]:
-            if subscript in self.descr:
-                s = "%s_%s" % (s, self.descr[subscript])
-        return s
-
-    def _latex(self):
-        s = self.name
-        for subscript in ["idx", "model"]:
-            if subscript in self.descr:
-                s = "{%s}_{%s}" % (s, self.descr[subscript])
-        return s
-
-    def __hash__(self):
-        return self._hashvalue
-
-    def __eq__(self, other):
-        if isinstance(other, Variable):
-            return self.descr == other.descr
-        elif isinstance(other, Strings):
-            return str(self) == other
-        else:
-            return False
-
-    def __ne__(self, other):
-        return not self.__eq__(other)
-
-
 class Constraint(Posynomial):
 
     def _set_operator(self, p1, p2):
@@ -432,9 +432,6 @@ class Constraint(Posynomial):
         self.cs = p.cs
         self.exps = p.exps
         self.var_locs = p.var_locs
-        if len(self.exps) == 1:
-            self.exp = self.exps[0]
-            self.c = self.cs[0]
 
         if len(str(p1)) == len(str(p2)):
             if str(p1) <= str(p2):
