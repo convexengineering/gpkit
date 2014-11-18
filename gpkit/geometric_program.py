@@ -292,8 +292,8 @@ class GP(Model):
                            for i in range(len(self.posynomials))])
         elif "la" in result:
             la = np.array(result["la"]).ravel()
-            # check if the cost's sensitivity has been dropped
-            if len(la) == len(self.posynomials) - 1 and la[0] != 1.0:
+            if len(la) == len(self.posynomials) - 1:
+                # assume the cost's sensitivity has been dropped
                 la = np.hstack(([1.0], la))
             Ax = np.array(np.dot(self.A.todense(), result['primal'])).ravel()
             z = Ax + np.log(self.cs)
