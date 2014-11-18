@@ -81,8 +81,8 @@ class Mosek_CLI(SolverBackend):
             print("#   Trying to run mskexpopt...")
             if call("mskexpopt") in (1052, 28):  # 28 for MacOSX
                 return "in system path"
-        except Exception: pass
-        return None
+        except Exception:
+            return None
 
 
 class CVXopt(SolverBackend):
@@ -102,8 +102,6 @@ class Mosek(SolverBackend):
 
     # Some of the expopt code leaks print(statements onto stdout,)
     # instead of handing them to the task's stream message system.
-    # If you add a new leak, make sure to escape any backslashes!
-    #   (that is, replace '\' with '\\')
     patches = {
         'dgopt.c': {
             # line 683:
@@ -210,7 +208,8 @@ class Mosek(SolverBackend):
                                 "    " + " ".join(expopt_build_files) +
                                 '   "' + self.lib_path + '"' +
                                 " -o " + pathjoin(solib_dir, "expopt.so"))
-        if built_expopt_lib != 0: return False
+        if built_expopt_lib != 0:
+            return False
 
         print("#\n#   Building Python bindings for expopt and Mosek...")
         # mosek_h_path = pathjoin(lib_dir, "mosek_h.py")
@@ -221,7 +220,8 @@ class Mosek(SolverBackend):
                               " -o "+pathjoin(lib_dir, "expopt_h.py") +
                               "    "+pathjoin(build_dir, "expopt.h"))
 
-        if built_expopt_h != 0: return False
+        if built_expopt_h != 0:
+            return False
 
         return True
 
@@ -229,12 +229,11 @@ class Mosek(SolverBackend):
 print("Started building gpkit...\n")
 settings = {}
 envpath = pathjoin("gpkit", "env")
-if os.path.isdir(envpath): shutil.rmtree(envpath)
-os.makedirs(envpath)
+replacedir(envpath)
 print("Replaced the directory gpkit/env\n")
 
 print("Attempting to find and build solvers:\n")
-solvers = [Mosek(), Mosek_CLI(), CVXopt()]
+solvers = [CVXopt(), Mosek(), Mosek_CLI()]
 installed_solvers = [solver.name
                      for solver in solvers
                      if solver.installed]
@@ -243,11 +242,11 @@ if not installed_solvers:
     sys.exit(70)
 print("...finished building gpkit.")
 
-# Choose default solver #
+# Choose default solver
 settings["installed_solvers"] = ", ".join(installed_solvers)
 print("\nFound the following solvers: " + settings["installed_solvers"])
 
-# Write settings #
+# Write settings
 settingspath = envpath + os.sep + "settings"
 with open(settingspath, "w") as f:
     for setting, value in settings.items():
