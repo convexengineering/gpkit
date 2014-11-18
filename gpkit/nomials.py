@@ -12,8 +12,8 @@ from .small_scripts import locate_vars
 from .small_scripts import invalid_types_for_oper
 from .small_scripts import mag, unitstr
 
-from pint import DimensionalityError
 from . import units as ureg
+from . import DimensionalityError
 Quantity = ureg.Quantity
 Numbers += (Quantity,)
 

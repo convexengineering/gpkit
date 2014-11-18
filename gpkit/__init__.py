@@ -17,24 +17,24 @@
 """
 
 try:
-    from pint import UnitRegistry
-    units = UnitRegistry()
-
+    import pint
+    units = pint.UnitRegistry()
+    DimensionalityError = pint.DimensionalityError
 except ImportError:
     print "Unable to load pint; unit support disabled."
 
-    class Quantity(object):
-        "Dummy class for missing pint"
-        pass
-
     class Units(object):
         "Dummy class to replace missing pint"
-        Quantity = Quantity
+
+        class Quantity(object):
+            "Dummy class for missing pint"
+            pass
 
         def __nonzero__(self):
             return 0
 
     units = Units()
+    DimensionalityError = ValueError
 
 from .nomials import Monomial, Posynomial, Variable
 from .nomial_interfaces import mon, vecmon
