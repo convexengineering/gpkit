@@ -18,13 +18,13 @@ import numpy as np
 import gpkit
 
 pi = gpkit.Monomial("\\pi", units="", label="half of the circle constant")
-CDA0 = gpkit.Monomial("(CDA0)", units="m^2", label="fuselage drag area")
+CDA0 = gpkit.Monomial("(CDA0)", units="cm^2", label="fuselage drag area")
 rho = gpkit.Monomial("\\rho", units="kg/m^3", label="density of air")
 mu = gpkit.Monomial("\\mu", units="kg/m/s", label="viscosity of air")
 S_wetratio = gpkit.Monomial("(\\frac{S}{S_{wet}})", units="", label="wetted area ratio")
 k = gpkit.Monomial("k", units="", label="form factor")
 e = gpkit.Monomial("e", units="", label="Oswald efficiency factor")
-W_0 = gpkit.Monomial("W_0", units="N", label="aircraft weight excluding wing")
+W_0 = gpkit.Monomial("W_0", units="kN", label="aircraft weight excluding wing")
 N_ult = gpkit.Monomial("N_{ult}", units="", label="ultimate load factor")
 tau = gpkit.Monomial("\\tau", units="", label="airfoil thickness to chord ratio")
 C_Lmax = gpkit.Monomial("C_{L,max}", units="", label="max CL with flaps down")
@@ -42,13 +42,13 @@ V = gpkit.Monomial("V", units="m/s", label="cruising speed")
 
 substitutions = {
     pi: np.pi,
-    CDA0: 0.031,
+    CDA0: 310.0,
     rho: 1.23,
     mu: 1.78e-5,
     S_wetratio: 2.05,
     k: 1.2,
     e: 0.95,
-    W_0: 4940,
+    W_0: 4.94,
     N_ult: 3.8,
     tau: 0.12,
     C_Lmax: 1.5,
