@@ -35,6 +35,7 @@ class Variable(object):
     new_unnamed_id = itertools.count().next
 
     def __init__(self, k=None, **kwargs):
+        self.descr = kwargs
         if 'name' in kwargs:
             if k is None:
                 k = kwargs["name"]
@@ -42,12 +43,12 @@ class Variable(object):
                 raise ValueError('name= not allowed when k argument specified')
         if isinstance(k, Variable):
             self.name = k.name
-            self.descr = k.descr
+            self.descr.update(k.descr)
         elif isinstance(k, Monomial):
             if mag(k.c) == 1 and len(k.exp) == 1:
                 var = k.exp.keys()[0]
                 self.name = var.name
-                self.descr = var.descr
+                self.descr.update(var.descr)
             else:
                 raise TypeError("variables can only be formed from monomials"
                                 " with a c of 1 and a single variable")
@@ -55,7 +56,6 @@ class Variable(object):
             if k is None:
                 k = "\\fbox{%s}" % Variable.new_unnamed_id()
             self.name = str(k)
-            self.descr = dict(kwargs)
             self.descr["name"] = self.name
 
         if "value" in self.descr:
