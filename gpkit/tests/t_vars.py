@@ -7,12 +7,19 @@ class t_Variable(unittest.TestCase):
     def test_init(self):
         # test type
         x = Variable('x')
-        self.assertTrue(isinstance(x, Variable))
+        self.assertEqual(type(x), Variable)
         # test no args
         x = Variable()
-        self.assertTrue(isinstance(x, Variable))
+        self.assertEqual(type(x), Variable)
         y = Variable(x)
         self.assertEqual(x, y)
+        # test special 'name' keyword overwriting behavior
+        x = Variable('x', flavour='vanilla')
+        self.assertEqual(x.name, 'x')
+        x = Variable(name='x')
+        self.assertEqual(x.name, 'x')
+        self.assertRaises(ValueError, lambda: Variable('x', name='y'))
+        self.assertRaises(ValueError, lambda: Variable(x, name='y'))
 
     def test_eq_neq(self):
         # no args
