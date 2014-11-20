@@ -100,14 +100,14 @@ def substitution(var_locs, exps, cs, substitutions, val=None):
                 del var_locs_[var]
             if isinstance(sub, Numbers):
                 cs_[i] *= sub**x
-            # BELOW DOES NOT SUPPORT UNIT CONVERSION YET
-            #elif isinstance(sub, Strings+(Variable,)):
-            #    sub = Variable(sub)
-            #    exps_[i] += HashVector({sub: x})
-            #    var_locs_[sub].append(i)
-            #elif isinstance(sub, Monomial):
-            #    exps_[i] += x*sub.exp
-            #    cs_[i] *= sub.c**x
-            #    for subvar in sub.exp:
-            #        var_locs_[subvar].append(i)
+            #  BELOW DOES NOT SUPPORT UNIT CONVERSION YET
+            # elif isinstance(sub, Strings+(Variable,)):
+            #     sub = Variable(sub)
+            #     exps_[i] += HashVector({sub: x})
+            #     var_locs_[sub].append(i)
+            # elif isinstance(sub, Monomial):
+            #     exps_[i] += x*sub.exp
+            #     cs_[i] *= sub.c**x
+            #     for subvar in sub.exp:
+            #         var_locs_[subvar].append(i)
     return var_locs_, exps_, cs_, subs

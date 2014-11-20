@@ -191,7 +191,8 @@ class Posynomial(object):
 
         self.cs = cs
         self.exps = exps
-        self.units = cs[0]/cs[0].magnitude if isinstance(cs[0], Quantity) else None
+        self.units = (cs[0]/cs[0].magnitude if isinstance(cs[0], Quantity)
+                      else None)
         if len(exps) == 1:
             if self.__class__ is Posynomial:
                 self.__class__ = Monomial
@@ -320,10 +321,12 @@ class Posynomial(object):
             if other == 0:
                 return Posynomial(self.exps, self.cs, self.var_locs)
             else:
-                return Posynomial(self.exps + ({},), self.cs.tolist() + [other],
+                return Posynomial(self.exps + ({},),
+                                  self.cs.tolist() + [other],
                                   self.var_locs)
         elif isinstance(other, Posynomial):
-            return Posynomial(self.exps + other.exps, self.cs.tolist() + other.cs.tolist())
+            return Posynomial(self.exps + other.exps,
+                              self.cs.tolist() + other.cs.tolist())
             # TODO: automatically parse var_locs here
         elif isinstance(other, PosyArray):
             return np.array(self)+other

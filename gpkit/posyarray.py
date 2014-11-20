@@ -37,7 +37,8 @@ class PosyArray(np.ndarray):
 
     def __array_finalize__(self, obj):
         "Finalizer. Required for objects inheriting from np.ndarray."
-        if obj is None: return
+        if obj is None:
+            return
         self.info = getattr(obj, 'info', None)
 
     def _latex(self, unused=None, matwrap=True):
@@ -66,6 +67,7 @@ class PosyArray(np.ndarray):
         return all(p.__nonzero__() for p in self)
 
     _eq = np.vectorize(lambda a, b: a == b)
+
     def __eq__(self, other):
         "Applies == in a vectorized fashion."
         return PosyArray([e for e in self._eq(self, other)])
@@ -77,11 +79,13 @@ class PosyArray(np.ndarray):
 
     # inequality constraints
     _leq = np.vectorize(lambda a, b: a <= b)
+
     def __le__(self, other):
         "Applies '<=' in a vectorized fashion."
         return PosyArray([e for e in self._leq(self, other)])
 
     _geq = np.vectorize(lambda a, b: a >= b)
+
     def __ge__(self, other):
         "Applies '>=' in a vectorized fashion."
         return PosyArray([e for e in self._geq(self, other)])

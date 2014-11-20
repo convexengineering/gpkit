@@ -50,7 +50,8 @@ class GPSolutionArray(DictOfLists):
                          allow_negative=True) for i in range(len(self))]
         assert all([isinstance(subbed, Monomial) for subbed in subbeds])
         assert not any([subbed.exp for subbed in subbeds])
-        return np.array([mag(subbed.c) for subbed in subbeds], np.dtype('float'))
+        return np.array([mag(subbed.c) for subbed in subbeds],
+                        np.dtype('float'))
 
     def table(self, tables=["cost", "free_variables",
                             "constants", "sensitivities"]):
@@ -60,12 +61,14 @@ class GPSolutionArray(DictOfLists):
         if "cost" in tables:
             strs += ["         %10.5g : Cost (mean)" % self["cost"].mean()]
         if "free_variables" in tables:
-            strs += [results_table(self["free_variables"], "Free variables (mean)")]
+            strs += [results_table(self["free_variables"],
+                                   "Free variables (mean)")]
         if "constants" in tables:
             strs += [results_table(self["constants"], "Constants (mean)")]
         if "sensitivities" in tables:
             strs += [results_table(self["sensitivities"]["variables"],
-                                   "Constant sensitivities (mean)", senss=True)]
+                                   "Constant sensitivities (mean)",
+                                   senss=True)]
         return "\n".join(strs)
 
 
@@ -164,7 +167,8 @@ class GP(Model):
                          ["    & %s \\\\" % constr._latex()
                           for constr in self.constraints] +
                          ["\\text{substituting}"] +
-                         sorted(["    & %s = %s \\\\" % (var._latex(), latex_num(val))
+                         sorted(["    & %s = %s \\\\" % (var._latex(),
+                                                         latex_num(val))
                                  for var, val in self.substitutions.items()]) +
                          ["\\end{array}"])
 
@@ -274,7 +278,7 @@ class GP(Model):
 
         # constraints must be within arbitrary epsilon 1e-4 of 1
         # takes a while to evaluate!
-        #for p in self.constraints:
+        # for p in self.constraints:
         #    val = p.subcmag(variables)
         #    if abs(val-1) > 1e-4:
         #        raise RuntimeWarning("constraint exceeded:"

@@ -67,7 +67,7 @@ def vecmon(length, *args, **descr):
 
     Returns
     -------
-    PosyArray of Monomials, each containing a variable with the name '$name_{i}',
+    PosyArray of Monomials, each containing a variable with name '$name_{i}',
     where $name is the vector's name and i is the variable's index.
     """
     if "idx" in descr:

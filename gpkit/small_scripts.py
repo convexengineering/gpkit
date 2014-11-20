@@ -98,7 +98,9 @@ def results_table(data, title, senss=False):
             units = unitstr(var)
             minval = 0
         if abs(val) >= minval:
-            strs += ["%19s" % var + " : %-8.3g " % val + "[%s] %s" % (units, label)]
+            strs += ["%19s" % var +
+                     " : %-8.3g " % val +
+                     "[%s] %s" % (units, label)]
     strs += ["                    |"]
     return "\n".join(strs)
 
