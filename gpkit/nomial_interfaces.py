@@ -16,6 +16,8 @@ Quantity = ureg.Quantity
 
 from .nomials import *
 
+from small_scripts import is_sweepvar
+
 
 def mon(*args, **descr):
     """A described singlet Monomial.
