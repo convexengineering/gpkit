@@ -23,7 +23,7 @@ gpkit.GP( # minimize                            # What's the lowest
           W_w == W_w_surf + W_w_strc, ])        # a wing weight model?
  ```
 
-For details of that and other gpkit programs, visit our [examples folder.](http://nbviewer.ipython.org/github/appliedopt/gpkit/blob/master/gpkit/examples/simpleaircraft.ipynb)
+For details of that and other gpkit programs, visit our [examples folder.](http://nbviewer.ipython.org/github/appliedopt/gpkit/blob/master/gpkit/examples/)
 
 ### What can a geometric program do?
 
