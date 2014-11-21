@@ -41,6 +41,11 @@ if units:
     Posynomial = Posynomial
     import operator
 
+    def Qadd(self, other):
+        if isinstance(other, Posynomial):
+            return NotImplemented
+        return self._add_sub(other, operator.add)
+
     def Qmul(self, other):
         if isinstance(other, Posynomial):
             return NotImplemented
@@ -59,6 +64,7 @@ if units:
         else:
             return self._mul_div(other, operator.floordiv, units_op=operator.truediv)
 
+    units.Quantity.__add__ = Qadd
     units.Quantity.__mul__ = Qmul
     units.Quantity.__div__ = Qtruediv
     units.Quantity.__truediv__ = Qtruediv

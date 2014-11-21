@@ -122,13 +122,15 @@ class GP(Model):
         self.posynomials = tuple(posynomials)
 
         self.sweep = {}
-        self._gen_unsubbed_vars()
+        self._gen_unsubbed_vars(printing=False)
         values = {var: var.descr["value"]
                   for var in self.var_locs if "value" in var.descr}
         values.update(substitutions)
         if values:
-            self.sub(values)
+            self.sub(values, printing=True)
             self.initalsub = self.last
+        else:
+            self._gen_unsubbed_vars(printing=True)
 
         if solver is None:
             from . import settings
@@ -331,7 +333,7 @@ class GP(Model):
             if "idx" in var.descr and "length" in var.descr:
                 descr = dict(var.descr)
                 del descr["idx"]
-                veckey = Variable(var.name, **descr)
+                veckey = Variable(**descr)
 
                 if veckey not in variables:
                     variables[veckey] = np.empty(var.descr["length"]) + np.nan

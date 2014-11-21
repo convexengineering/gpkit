@@ -42,7 +42,10 @@ def mon(*args, **descr):
             descr["value"] = arg
         elif (isinstance(arg, Iterable) and not isinstance(arg, Strings)
               and "value" not in descr):
-            descr["value"] = ("sweep", arg)
+            if is_sweepvar(arg):
+                descr["value"] = arg
+            else:
+                descr["value"] = ("sweep", arg)
         elif isinstance(arg, Strings + (Quantity,)) and "units" not in descr:
             descr["units"] = arg
         elif isinstance(arg, Strings) and "label" not in descr:
