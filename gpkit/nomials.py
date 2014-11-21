@@ -412,6 +412,12 @@ class Monomial(Posynomial):
         else:
             invalid_types_for_oper("** or pow()", self, x)
 
+    def __float__(self):
+        if not self.exp:
+            return mag(self.c)
+        else:
+            raise AttributeError("float() can only be called on  monomials with no variable terms")
+
 
 class Constraint(Posynomial):
 
@@ -439,8 +445,8 @@ class Constraint(Posynomial):
             except DimensionalityError:
                 raise ValueError("constraints must have the same units"
                                  " on both sides.")
-        p1.units = None
-        p2.units = None
+        p1.units = None if all(p1.exps) else p1.units
+        p2.units = None if all(p2.exps) else p2.units
 
         self.cs = p.cs
         self.exps = p.exps

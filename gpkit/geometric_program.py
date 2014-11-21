@@ -36,6 +36,9 @@ class GPSolutionArray(DictOfLists):
     def __len__(self):
         return len(self["cost"])
 
+    def __call__(self, p):
+        return self.subinto(p).c()
+
     def subinto(self, p):
         "Returns numpy array of each solution substituted into p."
         return PosyArray([p.sub(self.atindex(i)["variables"])
@@ -174,7 +177,7 @@ class GP(Model):
                                  for var, val in self.substitutions.items()]) +
                          ["\\end{array}"])
 
-    def solve(self, printing=True, solver=None):
+    def solve(self, solver=None, printing=True):
         """Solves a GP and returns the solution.
 
         Parameters
@@ -207,7 +210,7 @@ class GP(Model):
         self.solverfn = solverfn
 
         if printing:
-            print("Using solver '%s'" % self.solver)
+            print("Using solver '%s'" % solver)
         self.starttime = time()
 
         if self.sweep:

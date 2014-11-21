@@ -66,6 +66,12 @@ class PosyArray(np.ndarray):
         "Allows the use of PosyArrays as truth elements."
         return all(p.__nonzero__() for p in self)
 
+    def c(self):
+        try:
+            return np.array(self, dtype='float')
+        except TypeError:
+            raise ValueError("only a posyarray of numbers can be cast to float")
+
     _eq = np.vectorize(lambda a, b: a == b)
 
     def __eq__(self, other):
