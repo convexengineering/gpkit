@@ -56,11 +56,31 @@ equations += [D >= 0.5*rho*S*C_D*V**2,
               W >= W_0 + W_w]
 
 
-def single():
+def gp():
     return gpkit.GP(D, equations)
 
 
-def sweep():
-    substitutions = {V_min: ("sweep", np.linspace(20, 25, 10)),
-                     V: ("sweep", np.linspace(45, 55, 10)), }
+def sweep(n):
+    substitutions = {V_min: ("sweep", np.linspace(20, 25, n)),
+                     V: ("sweep", np.linspace(45, 55, n)), }
     return gpkit.GP(D, equations, substitutions)
+
+
+if __name__ == "__main__":
+    import cProfile
+    import pstats
+
+    # Profilin"
+    profile = cProfile.Profile()
+    profile.enable()
+
+    sol = sweep(3).solve()
+
+    # Results
+    profile.disable()
+    ps = pstats.Stats(profile)
+    ps.strip_dirs()
+    ps.sort_stats("time")
+    ps.print_stats(10)
+
+    print(sol.table())

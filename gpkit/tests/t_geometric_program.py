@@ -21,8 +21,8 @@ class t_GP(unittest.TestCase):
         self.assertAlmostEqual(sol["x"] + 2*sol["y"], 2*math.sqrt(2), self.ndig)
 
     def test_simpleflight(self):
-        import simpleflight_gps
-        gp = simpleflight_gps.single()
+        import simpleflight
+        gp = simpleflight.gp()
         gp.solver = self.solver
         sol = gp.solve()
         freevarcheck = dict(A=8.46,
