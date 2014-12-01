@@ -64,26 +64,18 @@ if units:
         else:
             return self._mul_div(other, operator.floordiv, units_op=operator.truediv)
 
-    def Qeq(self, other):
-        # We compare to the base class of Quantity because
-        # each Quantity class is unique.
-        if isinstance(other, (PosyArray, Posynomial)):
-            return NotImplemented
-        else:
-            if not isinstance(other, _Quantity):
-                return (self.dimensionless and
-                        _eq(self._convert_magnitude(UnitsContainer()), other, False))
+    for oper in ["eq"]:
+        #TODO: this should all be abtractable like this, but fails on lambdas?
+        fname = "__"+oper+"__"
+        oldf = getattr(units.Quantity, fname)
 
-            if _eq(self._magnitude, 0, True) and _eq(other._magnitude, 0, True):
-                return self.dimensionality == other.dimensionality
+        def newf(self, other):
+            if isinstance(other, (PosyArray, Posynomial)):
+                return NotImplemented
+            else:
+                oldf(self, other)
 
-            if self._units == other._units:
-                return _eq(self._magnitude, other._magnitude, False)
-
-            try:
-                return _eq(self.to(other).magnitude, other._magnitude, False)
-            except DimensionalityError:
-                return False
+        setattr(units.Quantity, fname, newf)
 
     def Qle(self, other):
         if isinstance(other, (PosyArray, Posynomial)):
@@ -102,7 +94,6 @@ if units:
     units.Quantity.__div__ = Qtruediv
     units.Quantity.__truediv__ = Qtruediv
     units.Quantity.__floordiv__ = Qfloordiv
-    units.Quantity.__eq__ = Qeq
     units.Quantity.__le__ = Qle
     units.Quantity.__ge__ = Qge
 
