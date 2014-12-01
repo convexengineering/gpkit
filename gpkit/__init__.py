@@ -42,33 +42,69 @@ if units:
     import operator
 
     def Qadd(self, other):
-        if isinstance(other, Posynomial):
+        if isinstance(other, (PosyArray, Posynomial)):
             return NotImplemented
         return self._add_sub(other, operator.add)
 
     def Qmul(self, other):
-        if isinstance(other, Posynomial):
+        if isinstance(other, (PosyArray, Posynomial)):
             return NotImplemented
         else:
             return self._mul_div(other, operator.mul)
 
     def Qtruediv(self, other):
-        if isinstance(other, Posynomial):
+        if isinstance(other, (PosyArray, Posynomial)):
             return NotImplemented
         else:
             return self._mul_div(other, operator.truediv)
 
     def Qfloordiv(self, other):
-        if isinstance(other, Posynomial):
+        if isinstance(other, (PosyArray, Posynomial)):
             return NotImplemented
         else:
             return self._mul_div(other, operator.floordiv, units_op=operator.truediv)
+
+    def Qeq(self, other):
+        # We compare to the base class of Quantity because
+        # each Quantity class is unique.
+        if isinstance(other, (PosyArray, Posynomial)):
+            return NotImplemented
+        else:
+            if not isinstance(other, _Quantity):
+                return (self.dimensionless and
+                        _eq(self._convert_magnitude(UnitsContainer()), other, False))
+
+            if _eq(self._magnitude, 0, True) and _eq(other._magnitude, 0, True):
+                return self.dimensionality == other.dimensionality
+
+            if self._units == other._units:
+                return _eq(self._magnitude, other._magnitude, False)
+
+            try:
+                return _eq(self.to(other).magnitude, other._magnitude, False)
+            except DimensionalityError:
+                return False
+
+    def Qle(self, other):
+        if isinstance(other, (PosyArray, Posynomial)):
+            return NotImplemented
+        else:
+            return self.compare(other, op=operator.le)
+
+    def Qge(self, other):
+        if isinstance(other, (PosyArray, Posynomial)):
+            return NotImplemented
+        else:
+            return self.compare(other, op=operator.ge)
 
     units.Quantity.__add__ = Qadd
     units.Quantity.__mul__ = Qmul
     units.Quantity.__div__ = Qtruediv
     units.Quantity.__truediv__ = Qtruediv
     units.Quantity.__floordiv__ = Qfloordiv
+    units.Quantity.__eq__ = Qeq
+    units.Quantity.__le__ = Qle
+    units.Quantity.__ge__ = Qge
 
 # Load settings
 from os import sep as os_sep

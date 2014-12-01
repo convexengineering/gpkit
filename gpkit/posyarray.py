@@ -12,6 +12,9 @@ import numpy as np
 from operator import add, mul
 from functools import reduce
 
+from . import units as ureg
+Quantity = ureg.Quantity
+
 
 class PosyArray(np.ndarray):
     """A Numpy array with elementwise inequalities and substitutions.
@@ -76,6 +79,14 @@ class PosyArray(np.ndarray):
 
     def __eq__(self, other):
         "Applies == in a vectorized fashion."
+        if isinstance(other, Quantity):
+            if isinstance(other.magnitude, np.ndarray):
+                l = []
+                for i, e in enumerate(self):
+                    l.append(e == other[i])
+                return PosyArray(l)
+            else:
+                return PosyArray([e == other for e in self])
         return PosyArray([e for e in self._eq(self, other)])
 
     def __ne__(self, m):
@@ -88,12 +99,28 @@ class PosyArray(np.ndarray):
 
     def __le__(self, other):
         "Applies '<=' in a vectorized fashion."
+        if isinstance(other, Quantity):
+            if isinstance(other.magnitude, np.ndarray):
+                l = []
+                for i, e in enumerate(self):
+                    l.append(e <= other[i])
+                return PosyArray(l)
+            else:
+                return PosyArray([e <= other for e in self])
         return PosyArray([e for e in self._leq(self, other)])
 
     _geq = np.vectorize(lambda a, b: a >= b)
 
     def __ge__(self, other):
         "Applies '>=' in a vectorized fashion."
+        if isinstance(other, Quantity):
+            if isinstance(other.magnitude, np.ndarray):
+                l = []
+                for i, e in enumerate(self):
+                    l.append(e >= other[i])
+                return PosyArray(l)
+            else:
+                return PosyArray([e >= other for e in self])
         return PosyArray([e for e in self._geq(self, other)])
 
     def outer(self, other):
