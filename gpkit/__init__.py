@@ -16,13 +16,8 @@
         Contains settings loaded from ``./env/settings``
 """
 
-try:
-    import pint
-    units = pint.UnitRegistry()
-    DimensionalityError = pint.DimensionalityError
-except ImportError:
-    print "Unable to load pint; unit support disabled."
 
+def disableUnits():
     class Units(object):
         "Dummy class to replace missing pint"
         class Quantity(object): pass
@@ -30,6 +25,14 @@ except ImportError:
 
     units = Units()
     DimensionalityError = ValueError
+
+try:
+    import pint
+    units = pint.UnitRegistry()
+    DimensionalityError = pint.DimensionalityError
+except ImportError:
+    print "Unable to load pint; unit support disabled."
+    disableUnits()
 
 from .nomials import Monomial, Posynomial, Variable
 from .nomial_interfaces import mon, vecmon, var
