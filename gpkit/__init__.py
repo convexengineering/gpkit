@@ -32,7 +32,7 @@ except ImportError:
     DimensionalityError = ValueError
 
 from .nomials import Monomial, Posynomial, Variable
-from .nomial_interfaces import mon, vecmon
+from .nomial_interfaces import mon, vecmon, var
 from .posyarray import PosyArray
 from .geometric_program import GP
 

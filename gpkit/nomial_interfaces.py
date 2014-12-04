@@ -19,6 +19,21 @@ from .nomials import *
 from small_scripts import is_sweepvar
 
 
+def var(*args, **descr):
+    length = None
+    if args:
+        if isinstance(args[0], int):
+            length = args[0]
+            args = args[1:]
+    elif "length" in descr:
+        length = descr.pop("length")
+
+    if length is None:
+        return mon(*args, **descr)
+    else:
+        return vecmon(length, *args, **descr)
+
+
 def mon(*args, **descr):
     """A described singlet Monomial.
 
