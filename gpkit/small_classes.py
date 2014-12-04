@@ -94,7 +94,10 @@ def enray_dict(i, o):
         if isinstance(v, dict):
             o[k] = enray_dict(v, {})
         else:
-            o[k] = np.array(v)
+            if len(v) == 1:
+                o[k] = np.array(v[0])
+            else:
+                o[k] = np.array(v)
     assert set(i.keys()) == set(o.keys())
     return o
 
