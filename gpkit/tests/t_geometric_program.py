@@ -18,7 +18,9 @@ class t_GP(unittest.TestCase):
         sol = prob.solve()["variables"]
         self.assertAlmostEqual(sol["x"], math.sqrt(2.), self.ndig)
         self.assertAlmostEqual(sol["y"], 1/math.sqrt(2.), self.ndig)
-        self.assertAlmostEqual(sol["x"] + 2*sol["y"], 2*math.sqrt(2), self.ndig)
+        self.assertAlmostEqual(sol["x"] + 2*sol["y"],
+                               2*math.sqrt(2),
+                               self.ndig)
 
     def test_simpleflight(self):
         import simpleflight
@@ -48,9 +50,11 @@ class t_GP(unittest.TestCase):
                         "W_0": 1.0107,
                         "\\rho": -0.2275}
         for key in freevarcheck:
-            self.assertTrue(abs(1-sol["variables"][key]/freevarcheck[key]) < 1e-2)
+            sol_rat = sol["variables"][key]/freevarcheck[key]
+            self.assertTrue(abs(1-sol_rat) < 1e-2)
         for key in consenscheck:
-            self.assertTrue(abs(1-sol["sensitivities"]["variables"][key]/consenscheck[key]) < 1e-2)
+            sol_rat = sol["sensitivities"]["variables"][key]/consenscheck[key]
+            self.assertTrue(abs(1-sol_rat) < 1e-2)
 
     def test_simpleflight_nounits(self):
         import simpleflight_nounits
@@ -80,9 +84,11 @@ class t_GP(unittest.TestCase):
                         "W_0": 1.0107,
                         "\\rho": -0.2275}
         for key in freevarcheck:
-            self.assertTrue(abs(1-sol["variables"][key]/freevarcheck[key]) < 1e-2)
+            sol_rat = sol["variables"][key]/freevarcheck[key]
+            self.assertTrue(abs(1-sol_rat) < 1e-2)
         for key in consenscheck:
-            self.assertTrue(abs(1-sol["sensitivities"]["variables"][key]/consenscheck[key]) < 1e-2)
+            sol_rat = sol["sensitivities"]["variables"][key]/consenscheck[key]
+            self.assertTrue(abs(1-sol_rat) < 1e-2)
 
 testcases = [t_GP]
 
