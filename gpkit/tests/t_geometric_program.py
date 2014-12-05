@@ -1,6 +1,6 @@
 import math
 import unittest
-from gpkit import GP, Monomial, settings
+from gpkit import GP, Monomial, settings, vecmon
 
 NDIGS = {"cvxopt": 5, "mosek": 7, "mosek_cli": 7}
 # name: decimal places of accuracy
@@ -21,6 +21,20 @@ class t_GP(unittest.TestCase):
         self.assertAlmostEqual(sol["x"] + 2*sol["y"],
                                2*math.sqrt(2),
                                self.ndig)
+
+    def test_trivial_vector_gp(self):
+        x = vecmon(2, 'x')
+        y = vecmon(2, 'y')
+        prob = GP(cost=(sum(x) + 2*sum(y)),
+                  constraints=[x*y >= 1],
+                  solver=self.solver)
+        sol = prob.solve()
+        sol = prob.solve()['variables']
+        self.assertEqual(sol['x'].shape, (2,))
+        self.assertEqual(sol['y'].shape, (2,))
+        for x, y in zip(sol['x'], sol['y']):
+            self.assertAlmostEqual(x, math.sqrt(2.), self.ndig)
+            self.assertAlmostEqual(y, 1/math.sqrt(2.), self.ndig)
 
     def test_simpleflight(self):
         import simpleflight
