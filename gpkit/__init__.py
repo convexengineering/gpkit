@@ -34,16 +34,15 @@ def disableUnits():
 
 def enableUnits():
     global units, DimensionalityError
+    try:
+        import pint
+        units = pint.UnitRegistry()
+        DimensionalityError = pint.DimensionalityError
+    except ImportError:
+        print "Unable to load pint; unit support disabled."
+        disableUnits()
 
-    import pint
-    units = pint.UnitRegistry()
-    DimensionalityError = pint.DimensionalityError
-
-try:
-    enableUnits()
-except ImportError:
-    print "Unable to load pint; unit support disabled."
-    disableUnits()
+enableUnits()
 
 from .nomials import Monomial, Posynomial, Variable
 from .nomial_interfaces import mon, vecmon, var
