@@ -58,6 +58,8 @@ class Variable(object):
             self.name = str(k)
             self.descr["name"] = self.name
 
+        from . import units as ureg # update in case user has disabled units
+
         if "value" in self.descr:
             value = self.descr["value"]
             if isinstance(value, Quantity):
