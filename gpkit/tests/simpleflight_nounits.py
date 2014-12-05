@@ -57,6 +57,9 @@ equations += [D >= 0.5*rho*S*C_D*V**2,
               W >= W_0 + W_w]
 
 
+gpkit.enableUnits()
+
+
 def gp():
     return gpkit.GP(D, equations)
 

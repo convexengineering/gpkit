@@ -20,7 +20,7 @@
 def disableUnits():
     global units, DimensionalityError
 
-    class Units(object):
+    class DummyUnits(object):
         "Dummy class to replace missing pint"
         class Quantity(object):
             pass
@@ -28,13 +28,19 @@ def disableUnits():
         def __nonzero__(self):
             return 0
 
-    units = Units()
+    units = DummyUnits()
     DimensionalityError = ValueError
 
-try:
+
+def enableUnits():
+    global units, DimensionalityError
+
     import pint
     units = pint.UnitRegistry()
     DimensionalityError = pint.DimensionalityError
+
+try:
+    enableUnits()
 except ImportError:
     print "Unable to load pint; unit support disabled."
     disableUnits()

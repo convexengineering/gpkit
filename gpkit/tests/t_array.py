@@ -1,5 +1,6 @@
 import unittest
-from gpkit import Monomial, Posynomial, vecmon, PosyArray, units
+from gpkit import Monomial, Posynomial, vecmon, PosyArray
+import gpkit
 
 
 class t_array(unittest.TestCase):
@@ -62,8 +63,8 @@ class t_array(unittest.TestCase):
     def test_units(self):
         # inspired by gpkit issue #106
         c = vecmon(5, "c", "m", "Local Chord")
-        if units:
-            constraints = (c == 1*units.m)
+        if gpkit.units:
+            constraints = (c == 1*gpkit.units.m)
         else:
             constraints = (c == 1)
         self.assertEqual(len(constraints), 5)

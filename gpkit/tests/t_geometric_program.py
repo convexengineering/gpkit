@@ -15,7 +15,7 @@ class t_GP(unittest.TestCase):
         prob = GP(cost=(x + 2*y),
                   constraints=[x*y >= 1],
                   solver=self.solver)
-        sol = prob.solve()["variables"]
+        sol = prob.solve(printing=False)["variables"]
         self.assertAlmostEqual(sol["x"], math.sqrt(2.), self.ndig)
         self.assertAlmostEqual(sol["y"], 1/math.sqrt(2.), self.ndig)
         self.assertAlmostEqual(sol["x"] + 2*sol["y"],
@@ -28,8 +28,7 @@ class t_GP(unittest.TestCase):
         prob = GP(cost=(sum(x) + 2*sum(y)),
                   constraints=[x*y >= 1],
                   solver=self.solver)
-        sol = prob.solve()
-        sol = prob.solve()['variables']
+        sol = prob.solve(printing=False)['variables']
         self.assertEqual(sol['x'].shape, (2,))
         self.assertEqual(sol['y'].shape, (2,))
         for x, y in zip(sol['x'], sol['y']):
@@ -40,7 +39,7 @@ class t_GP(unittest.TestCase):
         import simpleflight
         gp = simpleflight.gp()
         gp.solver = self.solver
-        sol = gp.solve()
+        sol = gp.solve(printing=False)
         freevarcheck = dict(A=8.46,
                             C_D=0.0206,
                             C_f=0.0036,
@@ -71,10 +70,10 @@ class t_GP(unittest.TestCase):
             self.assertTrue(abs(1-sol_rat) < 1e-2)
 
     def test_simpleflight_nounits(self):
-        import simpleflight_nounits
-        gp = simpleflight_nounits.gp()
+        import simpleflight_nounits as simpleflight
+        gp = simpleflight.gp()
         gp.solver = self.solver
-        sol = gp.solve()
+        sol = gp.solve(printing=False)
         freevarcheck = dict(A=8.46,
                             C_D=0.0206,
                             C_f=0.0036,
