@@ -78,15 +78,16 @@ if units:
             return self._mul_div(other, operator.floordiv, units_op=operator.truediv)
 
     for oper in ["eq"]:
-        #TODO: this should all be abtractable like this, but fails on lambdas?
+        #TODO: this should all be abstractable like this, but fails on lambdas?
         fname = "__"+oper+"__"
         oldf = getattr(units.Quantity, fname)
+        setattr(units.Quantity, "__"+fname, oldf)
 
         def newf(self, other):
             if isinstance(other, (PosyArray, Posynomial)):
                 return NotImplemented
             else:
-                oldf(self, other)
+                getattr(units.Quantity, "__"+fname)(self, other)
 
         setattr(units.Quantity, fname, newf)
 

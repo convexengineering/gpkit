@@ -58,7 +58,7 @@ class Variable(object):
             self.name = str(k)
             self.descr["name"] = self.name
 
-        from . import units as ureg # update in case user has disabled units
+        from . import units as ureg  # update in case user has disabled units
 
         if "value" in self.descr:
             value = self.descr["value"]
@@ -97,7 +97,16 @@ class Variable(object):
 
     def __eq__(self, other):
         if isinstance(other, Variable):
-            return self.descr == other.descr
+            if self.descr.keys() != other.descr.keys():
+                return False
+            for key in self.descr:
+                if key == "units":
+                    try: self.descr["units"] == other.descr["units"]
+                    except: return False
+                else:
+                    if self.descr[key] != other.descr[key]:
+                        return False
+            return True
         elif isinstance(other, Strings):
             return str(self) == other
         else:

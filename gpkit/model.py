@@ -70,16 +70,15 @@ class Model(object):
     def sub(self, substitutions, val=None, frombase='last', printing=False):
         # look for sweep variables
         found_sweep = False
-        if isinstance(substitutions, dict):
-            subs = dict(substitutions)
-            for var, sub in substitutions.items():
-                if is_sweepvar(sub):
-                    found_sweep = True
-                    del subs[var]
-                    var = Variable(var)
-                    self.sweep.update({var: sub[1]})
-        else:
-            subs = substitutions
+        if val is not None:
+            substitutions = {substitutions: val}
+        subs = dict(substitutions)
+        for var, sub in substitutions.items():
+            if is_sweepvar(sub):
+                found_sweep = True
+                del subs[var]
+                var = Variable(var)
+                self.sweep.update({var: sub[1]})
 
         base = getattr(self, frombase)
 

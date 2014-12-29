@@ -1,4 +1,5 @@
 from ..nomials import Variable
+from ..small_scripts import unitstr
 import matplotlib.pyplot as plt
 import numpy as np
 
@@ -30,7 +31,7 @@ def contour_array(data, X, Y, Zs,
         var = Variable(var)
         label = var.name
         if "units" in var.descr:
-            label += " [%s]" % var.descr["units"]
+            label += unitstr(var.descr["units"], " [%s] ")
         if "label" in var.descr:
             label += " %s" % var.descr["label"]
         return label, data[var]
@@ -45,8 +46,8 @@ def contour_array(data, X, Y, Zs,
     fig, axes = plt.subplots(nrows, ncols, figsize=figsize,
                              sharex=True, sharey=True)
     if nrows > 1 and ncols > 1:
-        xlabeledaxes = axes[-1,:]
-        ylabeledaxes = axes[:,0]
+        xlabeledaxes = axes[-1, :]
+        ylabeledaxes = axes[:, 0]
     elif ncols > 1:
         xlabeledaxes = axes
         ylabeledaxes = [axes[0]]
@@ -97,13 +98,12 @@ def frontier_surface_plot(data, xvar, yvar, zvars,
     pass
 
 
-def plot_frontiers(gp, Zs, x, y, figsize):
+def plot_frontiers(gp, Zs, x=1, y=3, figsize=(15,5)):
         "Helper function to plot 2d contour plots."
         sol = gp.solution
         data = dict(sol["variables"])
         data.update({"S{%s}" % k: v
                     for (k, v) in sol["sensitivities"]["variables"].items()})
-        data.keys()
         if len(gp.sweep) == 2:
             contour_array(data,
                           gp.sweep.keys()[0],
