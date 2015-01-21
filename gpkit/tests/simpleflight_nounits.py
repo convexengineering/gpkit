@@ -18,7 +18,7 @@ C_Lmax = mon("C_{L,max}", 1.5, "-", "max CL with flaps down")
 V_min = mon("V_{min}", 22, "m/s", "takeoff speed")
 
 if gpkit.units:
-    raise Exception
+    raise RuntimeWarning
 else:
     CDA0 = mon("(CDA0)", 0.031, "m^2", "fuselage drag area")
     W_0 = mon("W_0", 4940.0, "N", "aircraft weight excluding wing")
@@ -42,7 +42,7 @@ C_D_ind = C_L**2/(pi*A*e)
 equations += [C_D >= C_D_fuse + C_D_wpar + C_D_ind]
 
 if gpkit.units:
-    raise Exception
+    raise RuntimeWarning
 else:
     W_w_strc = 8.71e-5*(N_ult*A**1.5*(W_0*W*S)**0.5)/tau
     W_w_surf = 45.24 * S

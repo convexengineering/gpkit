@@ -215,7 +215,7 @@ class GP(Model):
             solverfn = solver
             solver = solver.__name__
         else:
-            raise Exception("Solver %s is not implemented!" % solver)
+            raise ValueError("Solver %s is not implemented!" % solver)
         self.solverfn = solverfn
 
         if printing:
