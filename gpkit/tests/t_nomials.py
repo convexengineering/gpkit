@@ -198,8 +198,6 @@ class t_Posynomial(unittest.TestCase):
         x = Monomial('x')
         y = Monomial('y')
         p = 4*x + y
-        print p.cs
-        print p.var_locs
         self.assertEqual(p/3, p/3.)
         self.assertTrue(((p/3).cs == [4./3., 1./3.]).all())
 
