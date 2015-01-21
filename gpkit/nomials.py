@@ -584,7 +584,7 @@ class VectorVariable(PosyArray):
             descr.update({"idx": i})
             if values:
                 descr.update({"value": values[i]})
-            vl.append(Monomial(**descr))
+            vl.append(Variable(**descr))
 
         obj = np.asarray(vl).view(cls)
         obj.descr = dict(vl[0].exp.keys()[0].descr)
