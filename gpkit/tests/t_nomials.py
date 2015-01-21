@@ -194,6 +194,13 @@ class t_Posynomial(unittest.TestCase):
         self.assertEqual(p <= 1, p)
         self.assertEqual(p <= x, p/x)
 
+    def test_integer_division(self):
+        x = Monomial('x')
+        y = Monomial('y')
+        p = 4*x + y
+        self.assertEqual(p/3, p/3.)
+        self.assertTrue(((p/3).cs == [4./3., 1./3.]).all())
+
 # test substitution
 
 tests = [t_Posynomial, t_Monomial]
