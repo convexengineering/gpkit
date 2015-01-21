@@ -63,14 +63,6 @@ class PosyArray(np.ndarray):
         else:
             return None
 
-    def __str__(self):
-        "Returns list-like string, but with str(el) instead of repr(el)."
-        return "["+", ".join([str(p) for p in self])+"]"
-
-    def __repr__(self):
-        "Returns str(self) tagged with gpkit information."
-        return "gpkit.%s(%s)" % (self.__class__.__name__, str(self))
-
     def __nonzero__(self):
         "Allows the use of PosyArrays as truth elements."
         return all(p.__nonzero__() for p in self)

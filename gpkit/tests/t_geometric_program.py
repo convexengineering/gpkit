@@ -1,6 +1,6 @@
 import math
 import unittest
-from gpkit import GP, Monomial, settings, vecmon
+from gpkit import GP, Monomial, settings, VectorVariable
 
 NDIGS = {"cvxopt": 5, "mosek": 7, "mosek_cli": 7}
 # name: decimal places of accuracy
@@ -23,8 +23,8 @@ class t_GP(unittest.TestCase):
                                self.ndig)
 
     def test_trivial_vector_gp(self):
-        x = vecmon(2, 'x')
-        y = vecmon(2, 'y')
+        x = VectorVariable(2, 'x')
+        y = VectorVariable(2, 'y')
         prob = GP(cost=(sum(x) + 2*sum(y)),
                   constraints=[x*y >= 1],
                   solver=self.solver)

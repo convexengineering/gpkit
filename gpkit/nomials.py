@@ -2,6 +2,7 @@ from collections import defaultdict
 import itertools
 import numpy as np
 from types import NoneType
+from collections import Iterable
 
 from .small_classes import Strings, Numbers
 from .posyarray import PosyArray
@@ -11,6 +12,7 @@ from .small_scripts import sort_and_simplify
 from .small_scripts import locate_vars
 from .small_scripts import invalid_types_for_oper
 from .small_scripts import mag, unitstr
+from .small_scripts import is_sweepvar
 
 from . import units as ureg
 from . import DimensionalityError
@@ -18,7 +20,7 @@ Quantity = ureg.Quantity
 Numbers += (Quantity,)
 
 
-class Variable(object):
+class VarKey(object):
     """A key that Monomial and Posynomial exp dicts can be indexed by.
 
     Parameters
@@ -30,7 +32,7 @@ class Variable(object):
 
     Returns
     -------
-    Variable with the given name and descr.
+    VarKey with the given name and descr.
     """
     new_unnamed_id = itertools.count().next
 
@@ -41,7 +43,7 @@ class Variable(object):
                 k = kwargs["name"]
             else:
                 raise ValueError('name= not allowed when k argument specified')
-        if isinstance(k, Variable):
+        if isinstance(k, VarKey):
             self.name = k.name
             self.descr.update(k.descr)
         elif isinstance(k, Monomial):
@@ -54,7 +56,7 @@ class Variable(object):
                                 " with a c of 1 and a single variable")
         else:
             if k is None:
-                k = "\\fbox{%s}" % Variable.new_unnamed_id()
+                k = "\\fbox{%s}" % VarKey.new_unnamed_id()
             self.name = str(k)
             self.descr["name"] = self.name
 
@@ -96,7 +98,7 @@ class Variable(object):
         return self._hashvalue
 
     def __eq__(self, other):
-        if isinstance(other, Variable):
+        if isinstance(other, VarKey):
             if self.descr.keys() != other.descr.keys():
                 return False
             for key in self.descr:
@@ -112,7 +114,7 @@ class Variable(object):
             return str(self) == other
         elif isinstance(other, PosyArray):
             for i, p in enumerate(other):
-                v = Variable(p.exp.keys()[0])
+                v = VarKey(p.exp.keys()[0])
                 if v.descr.pop("idx", None) != i:
                     return False
                 if v != self:
@@ -150,20 +152,20 @@ class Posynomial(object):
             cs = exps
             exps = {}
         if (isinstance(cs, Numbers)
-           and isinstance(exps, Strings + (Variable, NoneType, dict))):
+           and isinstance(exps, Strings + (VarKey, NoneType, dict))):
             # building a Monomial
-            if isinstance(exps, Variable):
+            if isinstance(exps, VarKey):
                 exp = {exps: 1}
                 units = exps.descr["units"] if "units" in exps.descr else None
             elif exps is None or isinstance(exps, Strings):
-                exp = {Variable(exps, **descr): 1}
+                exp = {VarKey(exps, **descr): 1}
                 descr = exp.keys()[0].descr
                 units = descr["units"] if "units" in descr else None
             elif isinstance(exps, dict):
                 exp = dict(exps)
                 for key in exps:
                     if isinstance(key, Strings):
-                        exp[Variable(key)] = exp.pop(key)
+                        exp[VarKey(key)] = exp.pop(key)
             else:
                 raise TypeError("could not make Monomial with %s" % type(exps))
             if isinstance(units, Quantity):
@@ -198,7 +200,7 @@ class Posynomial(object):
                     exps_[i] = dict(exps[i])
                     for key in exps_[i]:
                         if isinstance(key, Strings+(Monomial,)):
-                            exps_[i][Variable(key)] = exps_[i].pop(key)
+                            exps_[i][VarKey(key)] = exps_[i].pop(key)
                 exps = exps_
             except AssertionError:
                 raise TypeError("cs and exps must have the same length.")
@@ -292,7 +294,7 @@ class Posynomial(object):
             c = mag(c)
             cstr = ["%.2g" % c] if c != 1 or not varstrs else []
             mstrs.append(mult_symbol.join(cstr + varstrs))
-        return " + ".join(sorted(mstrs)) + unitstr(self.units, "[%s]")
+        return " + ".join(sorted(mstrs)) + unitstr(self.units, ", units='%s'")
 
     def descr(self, descr):
         self.descr = descr
@@ -439,6 +441,44 @@ class Monomial(Posynomial):
             raise AttributeError("float() can only be called on  monomials with no variable terms")
 
 
+class Variable(Monomial):
+    def __init__(self, *args, **descr):
+        """A described singlet Monomial.
+
+        Parameters
+        ----------
+        *args : list
+            may contain "name" (Strings)
+                        "value" (Numbers + Quantity) or (Iterable) for a sweep
+                        "units" (Strings + Quantity)
+                 and/or "label" (Strings)
+        **descr : dict
+            VarKey description
+
+        Returns
+        -------
+        Monomials containing a VarKey with the name '$name',
+        where $name is the vector's name and i is the VarKey's index.
+        """
+        for arg in args:
+            if isinstance(arg, Strings) and "name" not in descr:
+                descr["name"] = arg
+            elif isinstance(arg, Numbers + (Quantity,)) and "value" not in descr:
+                descr["value"] = arg
+            elif (isinstance(arg, Iterable) and not isinstance(arg, Strings)
+                  and "value" not in descr):
+                if is_sweepvar(arg):
+                    descr["value"] = arg
+                else:
+                    descr["value"] = ("sweep", arg)
+            elif isinstance(arg, Strings + (Quantity,)) and "units" not in descr:
+                descr["units"] = arg
+            elif isinstance(arg, Strings) and "label" not in descr:
+                descr["label"] = arg
+
+        Monomial.__init__(self, **descr)
+
+
 class Constraint(Posynomial):
 
     def _set_operator(self, p1, p2):
@@ -496,5 +536,61 @@ class MonoEQConstraint(Constraint):
         # a constraint not guaranteed to be satisfied
         # evaluates as "False"
         return bool(self.cs[0] == 1 and self.exps[0] == {})
+
+
+class VectorVariable(PosyArray):
+    def __new__(cls, length, *args, **descr):
+        """A described vector of singlet Monomials.
+
+        Parameters
+        ----------
+        length : int
+            Length of vector.
+        *args : list
+            may contain "name" (Strings)
+                        "value" (Iterable)
+                        "units" (Strings + Quantity)
+                 and/or "label" (Strings)
+        **descr : dict
+            VarKey description
+
+        Returns
+        -------
+        PosyArray of Monomials, each containing a VarKey with name '$name_{i}',
+        where $name is the vector's name and i is the VarKey's index.
+        """
+        if "idx" in descr:
+            raise KeyError("the description field 'idx' is reserved")
+
+        descr["length"] = length
+
+        for arg in args:
+            if isinstance(arg, Strings) and "name" not in descr:
+                descr["name"] = arg
+            elif (isinstance(arg, Iterable) and not isinstance(arg, Strings)
+                  and "value" not in descr):
+                descr["value"] = arg
+            elif isinstance(arg, Strings + (Quantity,)) and "units" not in descr:
+                descr["units"] = arg
+            elif isinstance(arg, Strings) and "label" not in descr:
+                descr["label"] = arg
+
+        values = descr.pop("value", [])
+        if values and len(values) != length:
+            raise ValueError("vector length and values length must be the same.")
+
+        vl = []
+        for i in range(length):
+            descr.update({"idx": i})
+            if values:
+                descr.update({"value": values[i]})
+            vl.append(Monomial(**descr))
+
+        obj = np.asarray(vl).view(cls)
+        obj.descr = dict(vl[0].exp.keys()[0].descr)
+        obj.descr.pop("idx", None)
+        obj._hashvalue = hash(VarKey(**obj.descr))
+        
+        return obj
 
 from .substitution import substitution

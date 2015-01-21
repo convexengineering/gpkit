@@ -20,7 +20,7 @@ from .small_classes import DictOfLists
 from .model import Model
 from .nomials import Constraint, MonoEQConstraint
 from .nomials import Monomial
-from .nomials import Variable
+from .nomials import VarKey
 from .posyarray import PosyArray
 
 from .small_scripts import latex_num
@@ -37,10 +37,10 @@ class GPSolutionArray(DictOfLists):
         try:
             return len(self["cost"])
         except TypeError:
-            return 1
+            return 0
 
     def __call__(self, p):
-        if len(self) > 1:
+        if len(self):
             return self.subinto(p).c()
         else:
             return self.subinto(p).c
@@ -345,7 +345,7 @@ class GP(Model):
             if "idx" in var.descr and "length" in var.descr:
                 descr = dict(var.descr)
                 del descr["idx"]
-                veckey = Variable(**descr)
+                veckey = VarKey(**descr)
 
                 if veckey not in variables:
                     variables[veckey] = np.empty(var.descr["length"]) + np.nan

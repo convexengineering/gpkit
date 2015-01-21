@@ -44,8 +44,7 @@ def enableUnits():
 
 enableUnits()
 
-from .nomials import Monomial, Posynomial, Variable
-from .nomial_interfaces import mon, vecmon, var
+from .nomials import Monomial, Posynomial, Variable, VectorVariable, VarKey
 from .posyarray import PosyArray
 from .geometric_program import GP
 

@@ -6,10 +6,10 @@ Strings = (str, unicode)
 Numbers = (int, float)
 
 PosyTuple = nt('PosyTuple', ['exps', 'cs', 'var_locs', 'substitutions'])
-CootMatrix = nt('CootMatrix', ['row', 'col', 'data'])
+CootMatrixTuple = nt('CootMatrix', ['row', 'col', 'data'])
 
 
-class CootMatrix(CootMatrix):
+class CootMatrix(CootMatrixTuple):
     "A very simple sparse matrix representation."
     shape = (None, None)
 

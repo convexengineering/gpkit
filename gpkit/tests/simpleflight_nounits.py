@@ -2,7 +2,7 @@ import numpy as np
 
 import gpkit
 
-mon = gpkit.mon
+mon = gpkit.Variable
 
 gpkit.disableUnits()
 

@@ -9,7 +9,7 @@ from collections import Iterable
 from .small_classes import Numbers, Strings
 from .small_classes import HashVector
 from .nomials import Monomial
-from .nomials import Variable
+from .nomials import VarKey
 from .nomial_interfaces import vecmon
 
 from .small_scripts import invalid_types_for_oper
@@ -31,11 +31,11 @@ def vectorsub(subs, var, sub, varset):
     if var in varset:
         subs[var] = sub
     elif isvector:
-        if isinstance(var, Variable):
+        if isinstance(var, VarKey):
             var = vecmon(**var.descr)
         if len(var) == len(sub):
             for i in range(len(var)):
-                v = Variable(var[i])
+                v = VarKey(var[i])
                 if v in varset:
                     subs[v] = sub[i]
         else:
@@ -79,7 +79,7 @@ def substitution(var_locs, exps, cs, substitutions, val=None):
     for var, sub in substitutions.items():
         if not is_sweepvar(sub):
             if isinstance(var, Strings+(Monomial,)):
-                var_ = Variable(var)
+                var_ = VarKey(var)
                 if var_ in varset:
                     subs[var_] = sub
             else:
@@ -104,8 +104,8 @@ def substitution(var_locs, exps, cs, substitutions, val=None):
                 if not sub.shape:
                     cs_[i] *= sub.flatten()[0]**x
             #  BELOW DOES NOT SUPPORT UNIT CONVERSION YET
-            # elif isinstance(sub, Strings+(Variable,)):
-            #     sub = Variable(sub)
+            # elif isinstance(sub, Strings+(VarKey,)):
+            #     sub = VarKey(sub)
             #     exps_[i] += HashVector({sub: x})
             #     var_locs_[sub].append(i)
             # elif isinstance(sub, Monomial):
