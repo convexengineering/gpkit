@@ -28,6 +28,12 @@ class PosyArray(np.ndarray):
     >>> px = gpkit.PosyArray([1, x, x**2])
     """
 
+    def __hash__(self):
+        if hasattr(self, "_hashvalue"):
+            return self._hashvalue
+        else:
+            return np.ndarray.__hash__(self)
+
     def __new__(cls, input_array, info=None):
         "Constructor. Required for objects inheriting from np.ndarray."
         # Input array is an already formed ndarray instance

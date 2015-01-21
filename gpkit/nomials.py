@@ -102,13 +102,22 @@ class Variable(object):
             for key in self.descr:
                 if key == "units":
                     try: self.descr["units"] == other.descr["units"]
-                    except: return False
+                    except:
+                        return False
                 else:
                     if self.descr[key] != other.descr[key]:
                         return False
             return True
         elif isinstance(other, Strings):
             return str(self) == other
+        elif isinstance(other, PosyArray):
+            for i, p in enumerate(other):
+                v = Variable(p.exp.keys()[0])
+                if v.descr.pop("idx", None) != i:
+                    return False
+                if v != self:
+                    return False
+            return True
         else:
             return False
 
@@ -283,7 +292,7 @@ class Posynomial(object):
             c = mag(c)
             cstr = ["%.2g" % c] if c != 1 or not varstrs else []
             mstrs.append(mult_symbol.join(cstr + varstrs))
-        return " + ".join(sorted(mstrs)) + unitstr(self.units, ", units='%s'")
+        return " + ".join(sorted(mstrs)) + unitstr(self.units, "[%s]")
 
     def descr(self, descr):
         self.descr = descr

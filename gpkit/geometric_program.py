@@ -34,15 +34,24 @@ class GPSolutionArray(DictOfLists):
     "DictofLists extended with posynomial substitution."
 
     def __len__(self):
-        return len(self["cost"])
+        try:
+            return len(self["cost"])
+        except TypeError:
+            return 0
 
     def __call__(self, p):
-        return self.subinto(p).c()
+        if len(self):
+            return self.subinto(p).c()
+        else:
+            return self.subinto(p).c
 
     def subinto(self, p):
         "Returns numpy array of each solution substituted into p."
-        return PosyArray([p.sub(self.atindex(i)["variables"])
-                          for i in range(len(self["cost"]))])
+        if self["cost"].shape:
+            return PosyArray([p.sub(self.atindex(i)["variables"])
+                              for i in range(len(self["cost"]))])
+        else:
+            return p.sub(self["variables"])
 
     def senssubinto(self, p):
         """Returns array of each solution's sensitivity substituted into p

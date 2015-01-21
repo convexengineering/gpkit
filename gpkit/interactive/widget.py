@@ -4,6 +4,7 @@ from IPython.display import Math, display
 
 
 def widget(gp, outputfn, ranges):
+    gp.sweep = {}
     gp.prewidget = gp.last
 
     def display(**kwargs):
@@ -31,8 +32,16 @@ def table(gp, sweep, tablevars):
                        cstr[:idx], int(cstr[idx+1:]))
             return cstr
 
+        def nastr(num_array):
+            if len(num_array.shape):
+                return ("\\begin{bmatrix}" +
+                        " & ".join(nstr(num) for num in num_array) +
+                        "\\end{bmatrix}")
+            else:
+                return nstr(num_array)
+
         sols = sorted([(var,
-                        nstr(val),
+                        nastr(val),
                         unitstr(var, "\mathrm{\\left[ %s \\right]}", "L~"),
                         var.descr["label"])
                        for (var, val) in gp.solution["variables"].items()

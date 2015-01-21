@@ -40,7 +40,7 @@ def vectorsub(subs, var, sub, varset):
                     subs[v] = sub[i]
         else:
             raise ValueError("tried substituting %s for %s, but their"
-                             "lengths were unequal." % (sub, var))
+                             " lengths were unequal." % (sub, var))
 
 
 def substitution(var_locs, exps, cs, substitutions, val=None):
@@ -100,6 +100,9 @@ def substitution(var_locs, exps, cs, substitutions, val=None):
                 del var_locs_[var]
             if isinstance(sub, Numbers):
                 cs_[i] *= sub**x
+            elif isinstance(sub, np.ndarray):
+                if not sub.shape:
+                    cs_[i] *= sub.flatten()[0]**x
             #  BELOW DOES NOT SUPPORT UNIT CONVERSION YET
             # elif isinstance(sub, Strings+(Variable,)):
             #     sub = Variable(sub)

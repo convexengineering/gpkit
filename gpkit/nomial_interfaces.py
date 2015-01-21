@@ -119,4 +119,5 @@ def vecmon(length, *args, **descr):
     vm = PosyArray(vl)
     vm.descr = dict(vm[0].exp.keys()[0].descr)
     vm.descr.pop("idx", None)
+    vm._hashvalue = hash(Variable(**vm.descr))
     return vm

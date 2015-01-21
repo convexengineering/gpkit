@@ -30,11 +30,18 @@ def contour_array(data, X, Y, Zs,
     def get_label(var):
         var = Variable(var)
         label = var.name
+        if "idx" in var.descr:
+            idx = var.descr.pop("idx", None)
+            var = Variable(**var.descr)
+            label += "_%s" % idx
+            vals = data[var][:, idx]
+        else:
+            vals = data[var]
         if "units" in var.descr:
             label += unitstr(var.descr["units"], " [%s] ")
         if "label" in var.descr:
             label += " %s" % var.descr["label"]
-        return label, data[var]
+        return label, vals
 
     xlabel, Xgrid = get_label(X)
     ylabel, Ygrid = get_label(Y)
