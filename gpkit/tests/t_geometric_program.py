@@ -1,6 +1,6 @@
 import math
 import unittest
-from gpkit import GP, Monomial, settings, VectorVariable
+from gpkit import GP, Monomial, settings, VectorVariable, Variable
 
 NDIGS = {"cvxopt": 5, "mosek": 7, "mosek_cli": 7}
 # name: decimal places of accuracy
@@ -102,6 +102,32 @@ class t_GP(unittest.TestCase):
         for key in consenscheck:
             sol_rat = sol["sensitivities"]["variables"][key]/consenscheck[key]
             self.assertTrue(abs(1-sol_rat) < 1e-2)
+
+    # def test_Mddtest(self):
+    #     Mdd = Variable("Mdd", "-", "Drag Divergence Mach Number")
+    #     gp1 = GP(1/Mdd, [1 >= 5*Mdd + 0.5, Mdd >= 0.00001])
+    #     gp2 = GP(1/Mdd, [1 >= 5*Mdd + 0.5])
+    #     sol1 = gp1.solve(printing=False)
+    #     sol2 = gp2.solve(printing=False)
+    #     self.assertTrue(sol1(Mdd)==sol2(Mdd))
+   
+    def test_Mddtest(self):
+        Mdd1 = Variable("Mdd1", "-", "Drag Divergence Mach Number")
+        Mdd2 = Variable("Mdd2", "-", "Drag Divergence Mach Number")
+        gp1 = GP(1/Mdd1, [1 >= 5*Mdd1 + 0.5, Mdd1 >= 0.00001])
+        gp2 = GP(1/Mdd2, [1 >= 5*Mdd2 + 0.5])
+        sol1 = gp1.solve(printing=False)
+        sol2 = gp2.solve(printing=False)
+        self.assertAlmostEqual(sol1(Mdd1), sol2(Mdd2))
+
+    def test_Mddsubtest(self):
+        Cl = Variable("Cl", 0.5, "-", "Lift Coefficient")
+        Mdd = Variable("Mdd", "-", "Drag Divergence Mach Number")
+        gp1 = GP(1/Mdd, [1 >= 5*Mdd + Cl, Mdd >= 0.00001])
+        gp2 = GP(1/Mdd, [1 >= 5*Mdd + 0.5])
+        sol1 = gp1.solve(printing=False)
+        sol2 = gp2.solve(printing=False)
+        self.assertAlmostEqual(sol1(Mdd), sol2(Mdd))
 
 testcases = [t_GP]
 

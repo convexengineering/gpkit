@@ -508,6 +508,16 @@ class Constraint(Posynomial):
         p1.units = None if all(p1.exps) else p1.units
         p2.units = None if all(p2.exps) else p2.units
 
+        for i, exp in enumerate(p.exps):
+            if not exp:
+                if p.cs[i] < 1:
+                    coeff = float(1 - p.cs[i])
+                    p.cs = np.hstack((p.cs[:i], p.cs[i+1:]))
+                    p.exps = p.exps[:i] + p.exps[i+1:]
+                    p = p/coeff
+                elif p.cs[i] > 1:
+                    raise ValueError("infeasible constraint: constant term too large.")
+
         self.cs = p.cs
         self.exps = p.exps
         self.var_locs = p.var_locs
