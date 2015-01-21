@@ -120,6 +120,19 @@ class t_GP(unittest.TestCase):
         sol2 = gp2.solve(printing=False)
         self.assertAlmostEqual(sol1(Mdd), sol2(Mdd))
 
+    def test_additive_constants(self):
+        x = Variable('x')
+        gp = GP(1/x, [1 >= 5*x + 0.5, 1 >= 10*x])
+        self.assertEqual(gp.cs[1], gp.cs[2])
+        self.assertEqual(gp.A.todense()[1], gp.A.todense()[2])
+
+    def test_additive_too_large(self):
+        x = Variable('x')
+        def constr():
+            return (1 >= 5*x + 1.1)
+        self.assertRaises(ValueError, constr)    
+
+
 testcases = [t_GP]
 
 tests = []
