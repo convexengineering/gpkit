@@ -62,7 +62,7 @@ class t_Monomial(unittest.TestCase):
         x = Monomial('x')
         y = Monomial('y')
         self.assertNotEqual(x, y)
-        self.assertNotEqual(x, y)
+        self.assertFalse(x == y)
 
         xx = Monomial('x')
         self.assertEqual(x, xx)
