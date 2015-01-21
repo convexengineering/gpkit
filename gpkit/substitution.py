@@ -10,7 +10,7 @@ from .small_classes import Numbers, Strings
 from .small_classes import HashVector
 from .nomials import Monomial
 from .nomials import VarKey
-from .nomial_interfaces import vecmon
+from .nomials import VectorVariable
 
 from .small_scripts import invalid_types_for_oper
 from .small_scripts import locate_vars
@@ -32,7 +32,7 @@ def vectorsub(subs, var, sub, varset):
         subs[var] = sub
     elif isvector:
         if isinstance(var, VarKey):
-            var = vecmon(**var.descr)
+            var = VectorVariable(**var.descr)
         if len(var) == len(sub):
             for i in range(len(var)):
                 v = VarKey(var[i])
