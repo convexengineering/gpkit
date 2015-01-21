@@ -37,10 +37,10 @@ class GPSolutionArray(DictOfLists):
         try:
             return len(self["cost"])
         except TypeError:
-            return 0
+            return 1
 
     def __call__(self, p):
-        if len(self):
+        if len(self) > 1:
             return self.subinto(p).c()
         else:
             return self.subinto(p).c
