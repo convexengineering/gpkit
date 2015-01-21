@@ -15,7 +15,7 @@ from .small_classes import Strings
 from .small_classes import PosyTuple
 from .small_classes import CootMatrix
 from .nomials import Posynomial
-from .nomials import Variable
+from .nomials import VarKey
 
 from .substitution import substitution
 from .small_scripts import locate_vars
@@ -77,7 +77,7 @@ class Model(object):
             if is_sweepvar(sub):
                 found_sweep = True
                 del subs[var]
-                var = Variable(var)
+                var = VarKey(var)
                 self.sweep.update({var: sub[1]})
 
         base = getattr(self, frombase)
