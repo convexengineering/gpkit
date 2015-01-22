@@ -41,7 +41,7 @@ def enableUnits():
         units = pint.UnitRegistry()
         DimensionalityError = pint.DimensionalityError
     except ImportError:
-        print "Unable to load pint; unit support disabled."
+        print "Optional Python units library (Pint) not installed; unit support disabled."
         disableUnits()
 
 enableUnits()
