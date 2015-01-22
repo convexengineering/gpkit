@@ -52,6 +52,7 @@ def invalid_types_for_oper(oper, a, b):
 
 
 def latex_num(c):
+    "Converts a number in scientific notation to a more latex-friendly string"
     cstr = "%.4g" % c
     if 'e' in cstr:
         idx = cstr.index('e')
