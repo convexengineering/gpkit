@@ -18,6 +18,28 @@ def mag(c):
 
 
 def unitstr(v, into="%s", options="~"):
+    '''
+    Creates string of appropriate units
+
+    Parameters
+    ----------
+    v :         Variable Name
+                e.g.: C_D
+                Type: VarKey
+
+    into :      Output format (Default value: "%s")
+                e.g.: "%s"
+                Type: string
+
+    options :   Options (Default value: "~")
+                Type: string 
+
+    Returns
+    -------
+    <string> :  String of unit name OR empty string
+                e.g.: 'kg/m^3' 
+
+    '''
     units = None
     if isinstance(v, Quantity):
         units = v
@@ -90,18 +112,18 @@ def results_table(data, title, senss=False):
 
     Parameters
     ----------
-    data :  dictionary containing variable-value pairs
+    data :      dictionary containing variable-value pairs
             
-    title : Title of results table (e.g 'Free variables (mean)')
+    title :     Title of results table (e.g 'Free variables (mean)')
 
-    senss : Senstitivity table flag
-            Should values be treated as sensitivities in this table
-            If below 1e-2, don't print sensitivities
-            Sensitivities have no units
+    senss :     Senstitivity table flag
+                Should values be treated as sensitivities in this table
+                If below 1e-2, don't print sensitivities
+                Sensitivities have no units
 
     Returns
     -------
-    string : Results Table
+    <string> :  Results Table
                 
     """
     strs = ["                    | " + title]
@@ -130,15 +152,15 @@ def flatten(ible, classes):
 
     Parameters
     ----------
-    ible :   Iterable
-            Top-level container
+    ible :      Iterable
+                Top-level container
 
-    classes : classes that are allowed
+    classes :   classes that are allowed
 
     Returns
     -------
-    out :   list
-            List of all objects found in the nested iterables
+    out :       list
+                List of all objects found in the nested iterables
 
     Raises
     ------
