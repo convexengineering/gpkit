@@ -84,6 +84,25 @@ def sort_and_simplify(exps, cs):
 
 
 def results_table(data, title, senss=False):
+    """
+    Creates results table
+
+    Parameters
+    ----------
+    data :  dictionary containing variable-value pairs
+            
+    title : Title of results table (e.g 'Free variables (mean)')
+
+    senss : Senstitivity table flag
+            Should values be treated as sensitivities in this table
+            If below 1e-2, don't print sensitivities
+            Sensitivities have no units
+
+    Returns
+    -------
+    string : Results Table
+                
+    """
     strs = ["                    | " + title]
     for var, table in sorted(data.items(), key=lambda x: str(x[0])):
         try:
@@ -110,13 +129,15 @@ def flatten(ible, classes):
 
     Parameters
     ----------
-    l : Iterable
-        Top-level container
+    ible :   Iterable
+            Top-level container
+
+    classes : classes that are allowed
 
     Returns
     -------
-    out : list
-        List of all objects found in the nested iterables
+    out :   list
+            List of all objects found in the nested iterables
 
     Raises
     ------
