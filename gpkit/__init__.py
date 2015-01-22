@@ -10,6 +10,8 @@
     scipy(optional): for full sparse matrix support
     sympy(optional): for latex printing in iPython Notebook
 
+    TODO: is this a current and complete list of requirements
+
     Attributes
     ----------
     settings : dict

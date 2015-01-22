@@ -22,12 +22,15 @@ Numbers += (Quantity,)
 
 class VarKey(object):
     """A key that Monomial and Posynomial exp dicts can be indexed by.
+    TODO: exp dicts seems ambiguous/unclear
+    TODO: Surely should mention at top level that a VarKey correspdonds to what a user considers to be the 'variable name'
 
     Parameters
     ----------
     k : object (usually str)
         The variable's name attribute is derived from str(k).
-    **kwargs
+    
+    **kwargs :
         Any additional attributes, which become the descr attribute (a dict).
 
     Returns
@@ -421,7 +424,9 @@ class Posynomial(object):
 
 
 class Monomial(Posynomial):
-
+    '''
+    TODO: Add docstring
+    '''
     def __rdiv__(self, other):
         if isinstance(other, Numbers+(Posynomial,)):
             return other * self**-1
@@ -480,7 +485,9 @@ class Variable(Monomial):
 
 
 class Constraint(Posynomial):
-
+    '''
+    TODO: Add docstring
+    '''
     def _set_operator(self, p1, p2):
         if self.left is p1:
             self.oper_s = " <= "
@@ -536,6 +543,9 @@ class Constraint(Posynomial):
 
 
 class MonoEQConstraint(Constraint):
+    '''
+    TODO: Add docstring
+    '''
     def _set_operator(self, p1, p2):
         self.oper_l = " = "
         self.oper_s = " = "
@@ -568,6 +578,8 @@ class VectorVariable(PosyArray):
         -------
         PosyArray of Monomials, each containing a VarKey with name '$name_{i}',
         where $name is the vector's name and i is the VarKey's index.
+        
+        TODO: For consistency, is this the correct place for the docstring?
         """
         if "idx" in descr:
             raise KeyError("the description field 'idx' is reserved")
