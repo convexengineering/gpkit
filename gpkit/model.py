@@ -67,31 +67,54 @@ class Model(object):
             p_idx += 1
         self.p_idxs = np.array(self.p_idxs)
 
-    def sub(self, substitutions, val=None, frombase='last', printing=False):
+    def sub(self, substitutions, val=None, frombase='last', printing=False, replace=False):
         # look for sweep variables
-        found_sweep = False
+        found_sweep = []
         if val is not None:
             substitutions = {substitutions: val}
         subs = dict(substitutions)
         for var, sub in substitutions.items():
             if is_sweepvar(sub):
-                found_sweep = True
                 del subs[var]
                 var = VarKey(var)
+                found_sweep.append(var)
                 self.sweep.update({var: sub[1]})
 
-        base = getattr(self, frombase)
-
-        # perform substitution
-        var_locs, exps, cs, subs = substitution(base.var_locs,
-                                                base.exps,
-                                                base.cs,
-                                                subs, val)
         if not (subs or found_sweep):
             raise KeyError("could not find anything to substitute")
 
+        base = getattr(self, frombase)
         substitutions = dict(base.substitutions)
-        substitutions.update(subs)
+
+        if replace:
+            var_locs, exps, cs = self.unsubbed.var_locs, self.unsubbed.exps, self.unsubbed.cs
+            for sweepvar in found_sweep:
+                if sweepvar in substitutions:
+                    del substitutions[sweepvar]
+            if subs:
+                # resubstitute from the beginning, in reverse order
+                var_locs, exps, cs, subs = substitution(var_locs,
+                                                        exps,
+                                                        cs,
+                                                        subs)
+                substitutions.update(subs)
+            try:
+                var_locs, exps, cs, subs = substitution(var_locs,
+                                                        exps,
+                                                        cs,
+                                                        substitutions)
+            except KeyError:
+                # our new sub replaced the only previous sub
+                pass
+        else:
+            var_locs, exps, cs = base.var_locs, base.exps, base.cs
+            # substitute normally
+            if subs:
+                var_locs, exps, cs, subs = substitution(var_locs,
+                                                        exps,
+                                                        cs,
+                                                        subs)
+            substitutions.update(subs)
 
         self.load(PosyTuple(exps, cs, var_locs, substitutions), printing)
 

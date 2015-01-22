@@ -29,7 +29,7 @@ class VarKey(object):
     ----------
     k : object (usually str)
         The variable's name attribute is derived from str(k).
-    
+
     **kwargs :
         Any additional attributes, which become the descr attribute (a dict).
 
@@ -529,12 +529,12 @@ class Constraint(Posynomial):
         self.exps = p.exps
         self.var_locs = p.var_locs
 
-        if len(str(p1)) == len(str(p2)):
-            if str(p1) <= str(p2):
+        if len(p1.exps) == len(p2.exps):
+            if len(p1.exps[0]) <= len(p2.exps[0]):
                 self.left, self.right = p1, p2
             else:
                 self.left, self.right = p2, p1
-        elif len(str(p1)) < len(str(p2)):
+        elif len(p1.exps) < len(p2.exps):
             self.left, self.right = p1, p2
         else:
             self.left, self.right = p2, p1
@@ -578,7 +578,7 @@ class VectorVariable(PosyArray):
         -------
         PosyArray of Monomials, each containing a VarKey with name '$name_{i}',
         where $name is the vector's name and i is the VarKey's index.
-        
+
         TODO: For consistency, is this the correct place for the docstring?
         """
         if "idx" in descr:
@@ -612,7 +612,7 @@ class VectorVariable(PosyArray):
         obj.descr = dict(vl[0].exp.keys()[0].descr)
         obj.descr.pop("idx", None)
         obj._hashvalue = hash(VarKey(**obj.descr))
-        
+
         return obj
 
 from .substitution import substitution

@@ -18,28 +18,6 @@ def mag(c):
 
 
 def unitstr(v, into="%s", options="~"):
-    '''
-    Creates string of appropriate units
-
-    Parameters
-    ----------
-    v :         Variable Name
-                e.g.: C_D
-                Type: VarKey
-
-    into :      Output format (Default value: "%s")
-                e.g.: "%s"
-                Type: string
-
-    options :   Options (Default value: "~")
-                Type: string 
-
-    Returns
-    -------
-    <string> :  String of unit name OR empty string
-                e.g.: 'kg/m^3' 
-
-    '''
     units = None
     if isinstance(v, Quantity):
         units = v
@@ -74,7 +52,6 @@ def invalid_types_for_oper(oper, a, b):
 
 
 def latex_num(c):
-    "Converts a number in scientific notation to a more latex-friendly string"
     cstr = "%.4g" % c
     if 'e' in cstr:
         idx = cstr.index('e')
@@ -107,26 +84,7 @@ def sort_and_simplify(exps, cs):
 
 
 def results_table(data, title, senss=False):
-    """
-    Creates results table
-
-    Parameters
-    ----------
-    data :      dictionary containing variable-value pairs
-            
-    title :     Title of results table (e.g 'Free variables (mean)')
-
-    senss :     Senstitivity table flag
-                Should values be treated as sensitivities in this table
-                If below 1e-2, don't print sensitivities
-                Sensitivities have no units
-
-    Returns
-    -------
-    <string> :  Results Table
-                
-    """
-    strs = ["                    | " + title]
+    strs = ["           | " + title]
     for var, table in sorted(data.items(), key=lambda x: str(x[0])):
         try:
             val = table.mean()
@@ -140,10 +98,10 @@ def results_table(data, title, senss=False):
             units = unitstr(var)
             minval = 0
         if abs(val) >= minval:
-            strs += ["%19s" % var +
+            strs += ["%10s" % var +
                      " : %-8.3g " % val +
                      "[%s] %s" % (units, label)]
-    strs += ["                    |"]
+    strs += ["           |"]
     return "\n".join(strs)
 
 
@@ -152,15 +110,13 @@ def flatten(ible, classes):
 
     Parameters
     ----------
-    ible :      Iterable
-                Top-level container
-
-    classes :   classes that are allowed
+    l : Iterable
+        Top-level container
 
     Returns
     -------
-    out :       list
-                List of all objects found in the nested iterables
+    out : list
+        List of all objects found in the nested iterables
 
     Raises
     ------

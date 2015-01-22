@@ -37,17 +37,17 @@ class GPSolutionArray(DictOfLists):
         try:
             return len(self["cost"])
         except TypeError:
-            return 0
+            return 1
 
     def __call__(self, p):
-        if len(self):
+        if len(self) > 1:
             return self.subinto(p).c()
         else:
             return self.subinto(p).c
 
     def subinto(self, p):
         "Returns numpy array of each solution substituted into p."
-        if self["cost"].shape:
+        if len(self) > 1:
             return PosyArray([p.sub(self.atindex(i)["variables"])
                               for i in range(len(self["cost"]))])
         else:
@@ -58,12 +58,18 @@ class GPSolutionArray(DictOfLists):
 
         Returns only scalar values.
         """
-        subbeds = [p.sub(self.atindex(i)["sensitivities"]["variables"],
-                         allow_negative=True) for i in range(len(self))]
-        assert all([isinstance(subbed, Monomial) for subbed in subbeds])
-        assert not any([subbed.exp for subbed in subbeds])
-        return np.array([mag(subbed.c) for subbed in subbeds],
-                        np.dtype('float'))
+        if len(self) > 1:
+            subbeds = [p.sub(self.atindex(i)["sensitivities"]["variables"],
+                             allow_negative=True) for i in range(len(self))]
+            assert all([isinstance(subbed, Monomial) for subbed in subbeds])
+            assert not any([subbed.exp for subbed in subbeds])
+            return np.array([mag(subbed.c) for subbed in subbeds],
+                            np.dtype('float'))
+        else:
+            subbed = p.sub(self["sensitivities"]["variables"], allow_negative=True)
+            assert isinstance(subbed, Monomial)
+            assert not subbed.exp
+            return subbed.c
 
     def table(self, tables=["cost", "free_variables",
                             "constants", "sensitivities"]):
@@ -71,15 +77,18 @@ class GPSolutionArray(DictOfLists):
             tables = [tables]
         strs = []
         if "cost" in tables:
-            strs += ["         %10.5g : Cost (mean)" % self["cost"].mean()]
+            if len(self) > 1:
+                strs += ["%10.5g : Cost (average of %i values)" % (self["cost"].mean(), len(self))]
+            else:
+                strs += ["%10.5g : Cost" % self["cost"].mean()]
         if "free_variables" in tables:
             strs += [results_table(self["free_variables"],
-                                   "Free variables (mean)")]
+                                   "Free variables" + ("" if len(self) == 1 else " (average)"))]
         if "constants" in tables:
-            strs += [results_table(self["constants"], "Constants (mean)")]
+            strs += [results_table(self["constants"], "Constants" + ("" if len(self) == 1 else " (average)"))]
         if "sensitivities" in tables:
             strs += [results_table(self["sensitivities"]["variables"],
-                                   "Constant sensitivities (mean)",
+                                   "Constant sensitivities" + ("" if len(self) == 1 else " (average)"),
                                    senss=True)]
         return "\n".join(strs)
 
