@@ -20,4 +20,3 @@ Table of contents
        whatisagp
        examples
        glossary
-       autodoc/gpkit
