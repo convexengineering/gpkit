@@ -147,6 +147,8 @@ class Mosek(SolverBackend):
                   " your platform (%s)" % sys.platform)
             return None
 
+        if not os.path.isdir(self.dir): return None
+
         possible_versions = [f for f in os.listdir(self.dir) if len(f) == 1]
         self.version = sorted(possible_versions)[-1]
         self.tools_dir = pathjoin(self.dir, self.version, "tools")
