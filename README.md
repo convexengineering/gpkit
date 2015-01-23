@@ -23,7 +23,7 @@ gpkit.GP( # minimize                            # What's the lowest
           W_w == W_w_surf + W_w_strc, ])        # a wing weight model?
  ```
 
-For details of that and other gpkit programs, visit our [examples folder.](http://nbviewer.ipython.org/github/appliedopt/gpkit/blob/master/gpkit/examples/)
+For details of that and other gpkit programs, visit our [examples folder.](http://nbviewer.ipython.org/github/convexopt/gpkit/blob/master/gpkit/examples/)
 
 ### What can a geometric program do?
 
@@ -61,7 +61,7 @@ Geometric programs might also have nice social properties:
     - Get a MOSEK [academic license file](http://license.mosek.com/academic):
       - (Mac/Linux) Put the license file in `~/mosek/`.
       - (Windows) Put it in `Users/$USERNAME/mosek`, creating that folder if necessary.
-3. Run `pip install https://github.com/appliedopt/gpkit/zipball/master` at a terminal.
+3. Run `pip install https://github.com/convexopt/gpkit/zipball/master` at a terminal.
   - (Windows) at an "Anaconda Command Prompt".
 
 If you encounter any bugs during installation, email [eburn@mit.edu](mailto:eburn@mit.edu).
