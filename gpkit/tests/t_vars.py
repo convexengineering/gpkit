@@ -1,5 +1,6 @@
 import unittest
-from gpkit import Monomial, Posynomial, PosyArray, Variable, VarKey, VectorVariable
+from gpkit import (Monomial, Posynomial, PosyArray, Variable, VarKey,
+                   VectorVariable)
 
 
 class t_VarKey(unittest.TestCase):
@@ -68,9 +69,10 @@ class t_utils(unittest.TestCase):
         x2 = PosyArray([x_0, x_1, x_2])
         self.assertEqual(x, x2)
 
+
 class t_Variable(unittest.TestCase):
 
-    def test_varmon(self):
+    def test_init(self):
         v = Variable('v')
         self.assertTrue(isinstance(v, Variable))
         self.assertTrue(isinstance(v, Monomial))
@@ -78,18 +80,22 @@ class t_Variable(unittest.TestCase):
         self.assertTrue(isinstance(3*v, Monomial))
         self.assertFalse(isinstance(3*v, Variable))
 
-    def test_vecvarmon(self):
-        v=VectorVariable(3, 'v', label='dummy variable')
-        v_mult=VectorVariable(3, 'v', label='dummy variable')
+
+class t_VectorVariable(unittest.TestCase):
+
+    def test_init(self):
+        n = 3
+        v=VectorVariable(n, 'v', label='dummy variable')
         v_mult=3*v
-        for i in range(1, 3):
+        self.assertEqual(type(v), VectorVariable)
+        for i in range(n):
             self.assertTrue(isinstance(v[i], Variable))
             self.assertTrue(isinstance(v[i], Monomial))
             # test that operations on Variable cast to Monomial
             self.assertTrue(isinstance(v_mult[i], Monomial))
             self.assertFalse(isinstance(v_mult[i], Variable))
 
-tests = [t_utils, t_VarKey, t_Variable]
+tests = [t_utils, t_VarKey, t_Variable, t_VectorVariable]
 
 if __name__ == '__main__':
     suite = unittest.TestSuite()
