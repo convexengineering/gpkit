@@ -119,4 +119,4 @@ settings_path = os_sep.join([os_path_dirname(__file__), "env", "settings"])
 with open(settings_path) as settingsfile:
     lines = [line[:-1].split(" : ") for line in settingsfile
              if len(line.split(" : ")) == 2]
-    settings = {name: value.split(", ") for (name, value) in lines}
+    settings = {name: value.split(", ") for (name, value) in lines if value}
