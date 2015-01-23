@@ -130,7 +130,7 @@ class t_GP(unittest.TestCase):
         x = Variable('x')
         def constr():
             return (1 >= 5*x + 1.1)
-        self.assertRaises(ValueError, constr)    
+        self.assertRaises(ValueError, constr)
 
 
 testcases = [t_GP]
@@ -138,11 +138,12 @@ testcases = [t_GP]
 tests = []
 for testcase in testcases:
     for solver in settings["installed_solvers"]:
-        test = type(testcase.__name__+"_"+solver,
-                    (testcase,), {})
-        setattr(test, "solver", solver)
-        setattr(test, "ndig", NDIGS[solver])
-        tests.append(test)
+        if solver:
+            test = type(testcase.__name__+"_"+solver,
+                        (testcase,), {})
+            setattr(test, "solver", solver)
+            setattr(test, "ndig", NDIGS[solver])
+            tests.append(test)
 
 if __name__ == "__main__":
     suite = unittest.TestSuite()
