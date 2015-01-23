@@ -239,9 +239,10 @@ solvers = [CVXopt(), Mosek(), Mosek_CLI()]
 installed_solvers = [solver.name
                      for solver in solvers
                      if solver.installed]
-if not installed_solvers:
-    sys.stderr.write("Can't find any solvers!\n")
-    sys.exit(70)
+#if not installed_solvers:
+#    sys.stderr.write("Can't find any solvers!\n")
+#    sys.exit(70)
+print("Can't find any solvers!\n")
 print("...finished building gpkit.")
 
 # Choose default solver
