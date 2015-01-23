@@ -69,7 +69,7 @@ def jswidget(gp, ractorfn, after, ranges):
         data_init += "%s: %i, " % (varname, (len(array)-1)/2)
         i += 1
 
-    evalarray = ["console.log('unfilled')"]*(np.prod(lengths))
+    evalarray = [""]*(np.prod(lengths))
 
     gp.sweep = {}
     gp.prewidget = gp.last
@@ -100,13 +100,12 @@ def jswidget(gp, ractorfn, after, ranges):
                   document.getElementById("$w-"+varname).innerText = Math.round(100*$w.ranges[varname][idx])/100
                   idxsum += idx*$w.bases[i]
               }
-              if ($w.storage[idxsum] === "console.log('unfilled')") {
+              if ($w.storage[idxsum] === "") {
                 r.infeasibilitywarning = "Infeasible problem"
               } else {
                 r.infeasibilitywarning = ""
                 eval($w.storage[idxsum] + $w.after)
               }
-              console.log(idxsum)
             }
         });
 

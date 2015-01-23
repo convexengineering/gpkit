@@ -555,8 +555,8 @@ notebook hosted by `nbviewer <http://nbviewer.ipython.org/>`__.
                 }
             });
     
-            MathJax.Hub.Typeset()
-            jswidget_0.ractive.onchange()
+        MathJax.Hub.Queue(["Typeset",MathJax.Hub,"jswiget_0_container"]);    
+	jswidget_0.ractive.onchange()
     })</script>
 
 

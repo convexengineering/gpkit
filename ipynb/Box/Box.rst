@@ -1,3 +1,5 @@
+.. figure::  boxlogo.svg
+   :align:   left
 
 BOX
 ===
@@ -355,6 +357,7 @@ points you see.
     </svg>
     <div style="text-align: right; font-weight: 700; font-size: 2em;">{{infeasibilitywarning}}</div>
         </script>
+	<script src="https://ajax.googleapis.com/ajax/libs/jquery/2.1.3/jquery.min.js"></script>
         <script>
         var r = {
     infeasibilitywarning: "",
@@ -552,8 +555,8 @@ notebook hosted by `nbviewer <http://nbviewer.ipython.org/>`__.
                 }
             });
     
-            MathJax.Hub.Typeset()
-            jswidget_0.ractive.onchange()
+        MathJax.Hub.Queue(["Typeset",MathJax.Hub,"jswiget_0_container"]);    
+	jswidget_0.ractive.onchange()
     })</script>
 
 
