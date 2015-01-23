@@ -1,8 +1,9 @@
 Examples
 ********
 
-Interactive iPython examples
-============================
+iPython examples
+================
+
     .. toctree::
        :maxdepth: 2
 
@@ -11,15 +12,15 @@ Interactive iPython examples
 
 Easy Introduction
 =================
-.. literalinclude:: code/A_greaterthan_1.py
+.. literalinclude:: examples/A_greaterthan_1.py
 
 Water Tank
 ==========
-.. literalinclude:: code/water_tank.py
+.. literalinclude:: examples/water_tank.py
 
 Maximizing the Volume of a Box
 ==============================
-.. literalinclude:: code/simple_box.py
+.. literalinclude:: examples/simple_box.py
 
 .. Comments:
 
