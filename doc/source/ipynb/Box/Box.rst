@@ -1,6 +1,3 @@
-.. figure::  boxlogo.svg
-   :align:   left
-
 
 BOX
 ===

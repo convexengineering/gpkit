@@ -3,7 +3,10 @@ Examples
 
 Interactive iPython examples
 ============================
+    .. toctree::
+       :maxdepth: 2
 
+       ipynb/Box/Box.rst
 
 
 Easy Introduction

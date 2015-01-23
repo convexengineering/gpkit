@@ -6,22 +6,20 @@ Welcome!
 GPkit is a Python package for defining and manipulating
 geometric programming models,
 abstracting away the backend solver.
-Currently `MOSEK <http://mosek.com>`_
-and `CVXOPT <http://cvxopt.org>`_
-are supported.
+Currently the supported backends are
+`MOSEK <http://mosek.com>`_
+and `CVXOPT <http://cvxopt.org>`_.
 
-See the `Box <http://nbviewer.ipython.org/github/convexopt/gpkit/blob/master/gpkit/examples/Box/Box.ipynb>`_ example for a quick overview of the syntax, speed, and interactive capabilities of GPkit.
+See the
 
-*Table of contents*
+Table of contents
 ====================
     .. toctree::
        :maxdepth: 2
 
-       whatisagp
-       installation
        gettingstarted
-       basiccommands
-       glossary
+       installation
+       whatisagp
        examples
+       glossary
        autodoc/gpkit
-       Box
