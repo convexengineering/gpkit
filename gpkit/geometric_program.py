@@ -195,7 +195,7 @@ class GP(Model):
                                  for var, val in self.substitutions.items()]) +
                          ["\\end{array}"])
 
-    def solve(self, solver=None, printing=True):
+    def solve(self, solver=None, printing=True, skipfailures=False):
         """Solves a GP and returns the solution.
 
         Parameters
@@ -232,7 +232,7 @@ class GP(Model):
         self.starttime = time()
 
         if self.sweep:
-            solution = self._solve_sweep(printing)
+            solution = self._solve_sweep(printing, skipfailures)
         else:
             solution = GPSolutionArray()
             solution.append(self.__run_solver())
@@ -245,7 +245,7 @@ class GP(Model):
         self.solution = solution
         return solution
 
-    def _solve_sweep(self, printing):
+    def _solve_sweep(self, printing, skipfailures):
         """Runs a GP through a sweep, solving at each grid point
 
         Parameters
@@ -279,8 +279,15 @@ class GP(Model):
             this_pass = {var: sweep_vect[i]
                          for (var, sweep_vect) in sweep_vects.items()}
             self.sub(this_pass, frombase='presweep')
-            sol = self.__run_solver()
-            solution.append(sol)
+            if skipfailures:
+                try:
+                    sol = self.__run_solver()
+                    solution.append(sol)
+                except RuntimeWarning:
+                    pass
+            else:
+                sol = self.__run_solver()
+                solution.append(sol)
 
         solution.toarray()
 
