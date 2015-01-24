@@ -8,7 +8,7 @@ try:
     from sympy import latex as default_latex
     from sympy import preview
     from sympy.core.compatibility import integer_types
-    from sympy.utilities.misc import debugasd
+    from sympy.utilities.misc import debug
 except ImportError:
     print("Sympy could not be found, so LaTeX printing cannot be enabled.")
 

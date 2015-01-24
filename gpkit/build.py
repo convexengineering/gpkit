@@ -215,7 +215,7 @@ class Mosek(SolverBackend):
 
         print("#\n#   Building Python bindings for expopt and Mosek...")
         # mosek_h_path = pathjoin(lib_dir, "mosek_h.py")
-        built_expopt_h = call("python ctypesgen.py -a" +
+        built_expopt_h = call("python gpkit/ctypesgen.py -a" +
                               " -l "+pathjoin(solib_dir, "expopt.so").replace("\\", "/") +
                               ' -l "' + self.lib_path.replace("\\", "/") + '"' +
                               # ' -o "' + mosek_h_path.replace("\\", "/") + '"'+
@@ -239,10 +239,11 @@ solvers = [CVXopt(), Mosek(), Mosek_CLI()]
 installed_solvers = [solver.name
                      for solver in solvers
                      if solver.installed]
-#if not installed_solvers:
+if not installed_solvers:
+    print("Can't find any solvers!\n")
 #    sys.stderr.write("Can't find any solvers!\n")
 #    sys.exit(70)
-print("Can't find any solvers!\n")
+
 print("...finished building gpkit.")
 
 # Choose default solver
