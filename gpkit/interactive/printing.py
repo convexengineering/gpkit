@@ -4,10 +4,13 @@ from __future__ import print_function, division
 
 from io import BytesIO
 
-from sympy import latex as default_latex
-from sympy import preview
-from sympy.core.compatibility import integer_types
-from sympy.utilities.misc import debug
+try:
+    from sympy import latex as default_latex
+    from sympy import preview
+    from sympy.core.compatibility import integer_types
+    from sympy.utilities.misc import debug
+except ImportError:
+    print "Sympy could not be found, so LaTeX printing cannot be enabled."
 
 
 def _init_python_printing(stringify_func):
