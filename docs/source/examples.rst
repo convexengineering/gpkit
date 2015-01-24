@@ -24,7 +24,7 @@ Water Tank
 iPython Notebook examples
 =========================
 
-Also available on `nbviewer <http://nbviewer.ipython.org/github/convexopt/gpkit/tree/master/ipynb/>`_.
+Also available on `nbviewer <http://nbviewer.ipython.org/github/convexopt/gpkit/tree/master/docs/source/ipynb/>`_.
 
     .. toctree::
        :maxdepth: 1
