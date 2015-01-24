@@ -55,21 +55,6 @@ class t_VarKey(unittest.TestCase):
         self.assertEqual(len(d), 2)
 
 
-class t_utils(unittest.TestCase):
-
-    def test_monify(self):
-        x = Monomial('x', label='dummy variable')
-        self.assertEqual(x.exp.keys()[0].descr["label"], 'dummy variable')
-
-    def test_vectify(self):
-        x = VectorVariable(3, 'x', label='dummy variable')
-        x_0 = Monomial('x', idx=0, length=3, label='dummy variable')
-        x_1 = Monomial('x', idx=1, length=3, label='dummy variable')
-        x_2 = Monomial('x', idx=2, length=3, label='dummy variable')
-        x2 = PosyArray([x_0, x_1, x_2])
-        self.assertEqual(x, x2)
-
-
 class t_Variable(unittest.TestCase):
 
     def test_init(self):
@@ -84,9 +69,10 @@ class t_Variable(unittest.TestCase):
 class t_VectorVariable(unittest.TestCase):
 
     def test_init(self):
+        # test 1
         n = 3
-        v=VectorVariable(n, 'v', label='dummy variable')
-        v_mult=3*v
+        v = VectorVariable(n, 'v', label='dummy variable')
+        v_mult = 3*v
         self.assertEqual(type(v), VectorVariable)
         for i in range(n):
             self.assertTrue(isinstance(v[i], Variable))
@@ -95,7 +81,16 @@ class t_VectorVariable(unittest.TestCase):
             self.assertTrue(isinstance(v_mult[i], Monomial))
             self.assertFalse(isinstance(v_mult[i], Variable))
 
-tests = [t_utils, t_VarKey, t_Variable, t_VectorVariable]
+        # test 2
+        x = VectorVariable(3, 'x', label='dummy variable')
+        x_0 = Monomial('x', idx=0, length=3, label='dummy variable')
+        x_1 = Monomial('x', idx=1, length=3, label='dummy variable')
+        x_2 = Monomial('x', idx=2, length=3, label='dummy variable')
+        x2 = PosyArray([x_0, x_1, x_2])
+        self.assertEqual(x, x2)
+
+
+tests = [t_VarKey, t_Variable, t_VectorVariable]
 
 if __name__ == '__main__':
     suite = unittest.TestSuite()
