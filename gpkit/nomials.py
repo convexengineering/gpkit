@@ -21,9 +21,7 @@ Numbers += (Quantity,)
 
 
 class VarKey(object):
-    """A key that Monomial and Posynomial exp dicts can be indexed by.
-    TODO: exp dicts seems ambiguous/unclear
-    TODO: Surely should mention at top level that a VarKey correspdonds to what a user considers to be the 'variable name'
+    """Used in the declaration of Posynomials to correspond to each 'variable name'.
 
     Parameters
     ----------
@@ -559,28 +557,27 @@ class MonoEQConstraint(Constraint):
 
 
 class VectorVariable(PosyArray):
+    """A described vector of singlet Monomials.
+
+    Parameters
+    ----------
+    length : int
+        Length of vector.
+    *args : list
+        may contain "name" (Strings)
+                    "value" (Iterable)
+                    "units" (Strings + Quantity)
+             and/or "label" (Strings)
+    **descr : dict
+        VarKey description
+
+    Returns
+    -------
+    PosyArray of Monomials, each containing a VarKey with name '$name_{i}',
+    where $name is the vector's name and i is the VarKey's index.
+    """
+    
     def __new__(cls, length, *args, **descr):
-        """A described vector of singlet Monomials.
-
-        Parameters
-        ----------
-        length : int
-            Length of vector.
-        *args : list
-            may contain "name" (Strings)
-                        "value" (Iterable)
-                        "units" (Strings + Quantity)
-                 and/or "label" (Strings)
-        **descr : dict
-            VarKey description
-
-        Returns
-        -------
-        PosyArray of Monomials, each containing a VarKey with name '$name_{i}',
-        where $name is the vector's name and i is the VarKey's index.
-
-        TODO: For consistency, is this the correct place for the docstring?
-        """
         if "idx" in descr:
             raise KeyError("the description field 'idx' is reserved")
 
