@@ -1,4 +1,4 @@
-<div id='ractivecontainer' style="float:right; height: 0;"></div>
+<div id='ractivecontainer'></div>
 <script id='ractivetemplate' type='text/ractive'>
 <svg width="400" height="400" version="1.1">
 	<g transform="scale(0.67)">
@@ -13,6 +13,7 @@
 </svg>
 <div style="text-align: right; font-weight: 700; font-size: 2em;">{{infeasibilitywarning}}</div>
     </script>
+    <!-- <script src="https://ajax.googleapis.com/ajax/libs/jquery/2.1.3/jquery.min.js"></script> -->
     <script>
     var r = {
 infeasibilitywarning: "",
@@ -22,13 +23,11 @@ plan: {scalex: 1, scaley: 1, scale: 1, x:0, y:0},
 right: {scalex: 1, scaley: 1, scale: 1, x:0, y:0},
 top: {scalex: 1, scaley: 1, scale: 1, x:0, y:0},
       }
-
-$.getScript('http://cdn.ractivejs.org/latest/ractive.min.js', function() {
-	var ractive = new Ractive({
-		el: 'ractivecontainer',
-		template: '#ractivetemplate',
-		magic: true,
-		data: r
-	})
-})
+$.getScript('http://cdn.ractivejs.org/latest/ractive.min.js', function () {
+var ractive = new Ractive({
+          el: 'ractivecontainer',
+          template: '#ractivetemplate',
+          magic: true,
+          data: r
+        }) })
 </script>

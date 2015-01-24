@@ -7,9 +7,10 @@ iPython Notebook examples
 Also available on `nbviewer <http://nbviewer.ipython.org/github/convexopt/gpkit/tree/master/ipynb/>`_.
 
     .. toctree::
-       :maxdepth: 2
+       :maxdepth: 1
 
        ipynb/Box/Box.rst
+       ipynb/Fuel/Fuel.rst
 
 
 Easy Introduction

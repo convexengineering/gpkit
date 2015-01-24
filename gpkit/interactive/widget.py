@@ -1,6 +1,6 @@
 from IPython.html.widgets import interactive
-from gpkit.small_scripts import unitstr
-from gpkit.geometric_program import GPSolutionArray
+from ..small_scripts import unitstr
+from ..geometric_program import GPSolutionArray
 from IPython.display import Math, display, HTML
 from string import Template
 import itertools

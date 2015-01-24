@@ -1,4 +1,4 @@
-from ..nomials import Variable
+from ..nomials import VarKey
 from ..small_scripts import unitstr
 import matplotlib.pyplot as plt
 import numpy as np
@@ -28,11 +28,11 @@ def contour_array(data, X, Y, Zs,
                   xticks=None, yticks=None, colors=None):
 
     def get_label(var):
-        var = Variable(var)
+        var = VarKey(var)
         label = var.name
         if "idx" in var.descr:
             idx = var.descr.pop("idx", None)
-            var = Variable(**var.descr)
+            var = VarKey(**var.descr)
             label += "_%s" % idx
             vals = data[var][:, idx]
         else:
