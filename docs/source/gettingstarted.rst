@@ -8,10 +8,10 @@ GPkit is also a command line tool. This means that you need to be in the termina
 The first thing to do is `install GPkit <installation.html>`_ . Once you have done this, you can start using GPkit in 3 easy steps:
 
 1. Open your command line interface (terminal/Command Prompt)
-2. Open a Python interpreter. This can be done by typing either ``python`` (or ``ipython`` if you have Anaconda and like colorful error messages).
+2. Open a Python interpreter. This can be done by typing ``python`` (or ``ipython`` if you have Anaconda and like colorful error messages).
 3. Type ``import gpkit``
 
-In your command line, this will look something like this::
+After doing this, your command line will look something like one of the following::
 
     $ python
     >>> import gpkit
