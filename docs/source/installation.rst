@@ -8,9 +8,8 @@ Mac OS X
 
 1. Install Python and build dependencies
 ++++++++++++++++++++++++++++++++++++++++
-  - Install the Python 2.7 version of `Anaconda <http://continuum.io/downloads>`_ and then run ``pip install ctypesgen`` in the Terminal application.
-  - If you don't want to install Anaconda, you'll need the python packages numpy and ctypesgen, and may find sympy, scipy, and iPython Notebook useful.
-  - If you want units support, install pint with ``pip install pint``.
+  - Install the Python 2.7 version of `Anaconda <http://continuum.io/downloads>`_.
+  - If you don't want to install Anaconda, you'll need gcc and pip, and may find sympy, scipy, and iPython Notebook useful.
   - If ``which gcc`` does not return anything, install the `Apple Command Line Tools <https://developer.apple.com/downloads/index.action?=command%20line%20tools>`_.
 
 
@@ -30,19 +29,15 @@ Mac OS X
 
 3. Install GPkit
 ++++++++++++++++
-  - Run ``pip install https://github.com/convexopt/gpkit/zipball/master`` in the Terminal.
+  - Run ``pip install gpkit`` at the command line.
+  - If you want units support, install pint with ``pip install pint``.
 
 
 
 Linux
 =====
 
-1. Install Python dependencies
-++++++++++++++++++++++++++++++
-  - You'll need the python packages numpy and ctypesgen, and may find sympy, scipy, iPython Notebook, and pints to be useful.
-
-
-2. Install either the MOSEK or CVXOPT GP solvers
+1. Install either the MOSEK or CVXOPT GP solvers
 ++++++++++++++++++++++++++++++++++++++++++++++++
 
   - Download `CVXOPT <http://cvxopt.org/download/index.html>`_, then:
@@ -56,9 +51,10 @@ Linux
       - Request an `academic license file <http://license.mosek.com/academic>`_ and put it in ``~/mosek/``
 
 
-3. Install GPkit
+2. Install GPkit
 ++++++++++++++++
-  - Run ``pip install https://github.com/convexopt/gpkit/zipball/master`` at the command line.
+  - Run ``pip install gpkit`` at the command line.
+  - You may find sympy, scipy, iPython Notebook, and pints to be useful additional packages.
 
 
 
@@ -68,9 +64,8 @@ Windows
 
 1. Install Python dependencies
 ++++++++++++++++++++++++++++++
-  - Install the Python 2.7 version of `Anaconda <http://continuum.io/downloads>`_ and then run ``pip install ctypesgen`` at an Anaconda Command Prompt.
-  - If you don't want to install Anaconda, you'll need gcc and the python packages numpy and ctypesgen, and may find sympy, scipy, and iPython Notebook useful.
-  - If you want units support, install pint with ``pip install pint`` at an Anaconda Command Prompt.
+  - Install the Python 2.7 version of `Anaconda <http://continuum.io/downloads>`_.
+  - If you don't want to install Anaconda, you'll need gcc and pip, and may find sympy, scipy, and iPython Notebook useful.
 
 
 2. Install either the MOSEK or CVXOPT GP solvers
@@ -85,4 +80,5 @@ Windows
 
 3. Install GPkit
 ++++++++++++++++
-  - Run ``pip install https://github.com/convexopt/gpkit/zipball/master`` in the Terminal.
+  - Run ``pip install gpkit`` at an Anaconda Command Prompt.
+  - If you want units support, install pint with ``pip install pint``.
