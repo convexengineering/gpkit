@@ -4,7 +4,7 @@ GPkit Documentation
 Welcome!
 
 GPkit is a Python package for defining and manipulating
-geometric programming models,
+GP (geometric programming) models,
 abstracting away the backend solver.
 Supported solvers are
 `MOSEK <http://mosek.com>`_
@@ -15,8 +15,8 @@ Table of contents
     .. toctree::
        :maxdepth: 2
 
-       gettingstarted
-       installation
        whatisagp
+       installation
+       gettingstarted
        examples
        glossary

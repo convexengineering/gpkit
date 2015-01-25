@@ -1,5 +1,5 @@
-Getting Started
-***************
+Getting Started with GPkit
+**************************
 
 GPkit is a Python package. We assume basic familiarity with Python. If you are new to Python take a look at `Learn Python <http://www.learnpython.org>`_.
 

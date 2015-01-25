@@ -4,6 +4,10 @@ import os
 import sys
 import shutil
 
+# custom build script
+if sys.argv[1] in ["build", "install"]:
+    import gpkit.build
+
 from distutils.core import setup
 
 long_description = """
@@ -55,14 +59,11 @@ setup(
     author='Convex Optimization Group at MIT ACDL',
     author_email='convex@mit.edu',
     url='https://www.github.com/convexopt/gpkit',
-    version='pre',
+    install_requires=['numpy', 'ctypesgen>=0.r125'],
+    version='0.0.1',
     packages=['gpkit', 'gpkit._mosek', 'gpkit.tests', 'gpkit.interactive'],
     package_data={'gpkit': ['env/*'],
                   'gpkit._mosek': ['lib/*']},
     license=license,
     long_description=long_description,
 )
-
-# custom build script
-if sys.argv[1] in ["build", "install"]:
-    import gpkit.build

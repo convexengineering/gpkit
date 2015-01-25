@@ -4,9 +4,6 @@
 # MOSEK CLI folder
 gpkit_tmp/
 
-# pypi manifest
-MANIFEST
-
 # Byte-compiled / optimized / DLL files
 __pycache__/
 *.py[cod]
