@@ -2,7 +2,7 @@ import numpy as np
 
 import gpkit
 
-mon = gpkit.mon
+mon = gpkit.Variable
 
 pi = mon("\\pi", np.pi, "-", "half of the circle constant")
 rho = mon("\\rho", 1.23, "kg/m^3", "density of air")

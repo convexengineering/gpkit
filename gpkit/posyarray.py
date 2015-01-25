@@ -67,6 +67,7 @@ class PosyArray(np.ndarray):
         "Allows the use of PosyArrays as truth elements."
         return all(p.__nonzero__() for p in self)
 
+    @property
     def c(self):
         try:
             return np.array(self, dtype='float')

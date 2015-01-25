@@ -40,10 +40,7 @@ class GPSolutionArray(DictOfLists):
             return 1
 
     def __call__(self, p):
-        if len(self) > 1:
-            return self.subinto(p).c()
-        else:
-            return self.subinto(p).c
+        return self.subinto(p).c
 
     def subinto(self, p):
         "Returns numpy array of each solution substituted into p."
