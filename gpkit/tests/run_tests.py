@@ -13,6 +13,9 @@ tests += t_array.tests
 import t_geometric_program
 tests += t_geometric_program.tests
 
+import t_gp_solution_array
+tests += t_gp_solution_array.tests
+
 
 def run():
     suite = unittest.TestSuite()
