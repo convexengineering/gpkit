@@ -35,9 +35,7 @@ class t_GP(unittest.TestCase):
             self.assertAlmostEqual(x, math.sqrt(2.), self.ndig)
             self.assertAlmostEqual(y, 1/math.sqrt(2.), self.ndig)
 
-    def test_simpleflight(self):
-        import simpleflight
-        gp = simpleflight.gp()
+    def simpleflight_test_core(self, gp):
         gp.solver = self.solver
         sol = gp.solve(printing=False)
         freevarcheck = dict(A=8.46,
@@ -49,7 +47,7 @@ class t_GP(unittest.TestCase):
                             W=7.34e+03,
                             V=38.2,
                             W_w=2.40e+03)
-        # sensitivity values from p. 34 of Woody"s thesis
+        # sensitivity values from p. 34 of W. Hoburg's thesis
         consenscheck = {"(\\frac{S}{S_{wet}})": 0.4300,
                         "e": -0.4785,
                         "\\pi": -0.4785,
@@ -68,69 +66,33 @@ class t_GP(unittest.TestCase):
         for key in consenscheck:
             sol_rat = sol["sensitivities"]["variables"][key]/consenscheck[key]
             self.assertTrue(abs(1-sol_rat) < 1e-2)
+
+    def test_simpleflight(self):
+        import simpleflight
+        self.simpleflight_test_core(simpleflight.gp())
 
     def test_simpleflight_nounits(self):
         import simpleflight_nounits as simpleflight
-        gp = simpleflight.gp()
-        gp.solver = self.solver
-        sol = gp.solve(printing=False)
-        freevarcheck = dict(A=8.46,
-                            C_D=0.0206,
-                            C_f=0.0036,
-                            C_L=0.499,
-                            Re=3.68e+06,
-                            S=16.4,
-                            W=7.34e+03,
-                            V=38.2,
-                            W_w=2.40e+03)
-        # sensitivity values from p. 34 of Woody"s thesis
-        consenscheck = {"(\\frac{S}{S_{wet}})": 0.4300,
-                        "e": -0.4785,
-                        "\\pi": -0.4785,
-                        "V_{min}": -0.3691,
-                        "k": 0.4300,
-                        "\mu": 0.0860,
-                        "(CDA0)": 0.0915,
-                        "C_{L,max}": -0.1845,
-                        "\\tau": -0.2903,
-                        "N_{ult}": 0.2903,
-                        "W_0": 1.0107,
-                        "\\rho": -0.2275}
-        for key in freevarcheck:
-            sol_rat = sol["variables"][key]/freevarcheck[key]
-            self.assertTrue(abs(1-sol_rat) < 1e-2)
-        for key in consenscheck:
-            sol_rat = sol["sensitivities"]["variables"][key]/consenscheck[key]
-            self.assertTrue(abs(1-sol_rat) < 1e-2)
+        self.simpleflight_test_core(simpleflight.gp())
 
     def test_Mddtest(self):
+        Cl = Variable("Cl", 0.5, "-", "Lift Coefficient")
         Mdd = Variable("Mdd", "-", "Drag Divergence Mach Number")
         gp1 = GP(1/Mdd, [1 >= 5*Mdd + 0.5, Mdd >= 0.00001])
         gp2 = GP(1/Mdd, [1 >= 5*Mdd + 0.5])
+        gp3 = GP(1/Mdd, [1 >= 5*Mdd + Cl, Mdd >= 0.00001])
         sol1 = gp1.solve(printing=False)
         sol2 = gp2.solve(printing=False)
+        sol3 = gp3.solve(printing=False)
         self.assertAlmostEqual(sol1(Mdd), sol2(Mdd))
-
-    def test_Mddsubtest(self):
-        Cl = Variable("Cl", 0.5, "-", "Lift Coefficient")
-        Mdd = Variable("Mdd", "-", "Drag Divergence Mach Number")
-        gp1 = GP(1/Mdd, [1 >= 5*Mdd + Cl, Mdd >= 0.00001])
-        gp2 = GP(1/Mdd, [1 >= 5*Mdd + 0.5])
-        sol1 = gp1.solve(printing=False)
-        sol2 = gp2.solve(printing=False)
-        self.assertAlmostEqual(sol1(Mdd), sol2(Mdd))
+        self.assertAlmostEqual(sol1(Mdd), sol3(Mdd))
+        self.assertAlmostEqual(sol2(Mdd), sol3(Mdd))
 
     def test_additive_constants(self):
         x = Variable('x')
         gp = GP(1/x, [1 >= 5*x + 0.5, 1 >= 10*x])
         self.assertEqual(gp.cs[1], gp.cs[2])
         self.assertEqual(gp.A.data[1], gp.A.data[2])
-
-    def test_additive_too_large(self):
-        x = Variable('x')
-        def constr():
-            return (1 >= 5*x + 1.1)
-        self.assertRaises(ValueError, constr)
 
 
 testcases = [t_GP]

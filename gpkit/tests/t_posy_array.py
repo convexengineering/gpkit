@@ -3,7 +3,7 @@ from gpkit import Monomial, Posynomial, PosyArray, VectorVariable
 import gpkit
 
 
-class t_array(unittest.TestCase):
+class t_PosyArray(unittest.TestCase):
 
     def test_array_mult(self):
         x = VectorVariable(3, 'x', label='dummy variable')
@@ -70,7 +70,7 @@ class t_array(unittest.TestCase):
         self.assertEqual(len(constraints), 5)
 
 
-tests = [t_array]
+tests = [t_PosyArray]
 
 if __name__ == '__main__':
     suite = unittest.TestSuite()
