@@ -18,6 +18,7 @@
 
 
 def disableUnits():
+    "Disables units support in GPkit. Run before creating any variables!"
     global units, DimensionalityError
 
     class DummyUnits(object):
@@ -33,6 +34,7 @@ def disableUnits():
 
 
 def enableUnits():
+    "Enables units support in GPkit. Run before creating any variables!"
     global units, DimensionalityError
     try:
         import pint
