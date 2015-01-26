@@ -3,137 +3,126 @@ Basic Commands
 
 Importing Modules
 =================
-The first thing to do when using GPkit is to import the classes and modules you will need.
+The first thing to do when using GPkit is to import the classes and modules you will need. For example,
 
 .. code-block:: python
 
-    from gpkit import Variable, Vector Variable, GP
+    from gpkit import Variable, VectorVariable, GP
 
 
 Declaring Variables
 ===================
-The Variable class requires you to define a print string for the variable. It also gives you the option of defining units, a description, and a value (for constant parameters).
+Instances of the ``Variable`` class represent scalar decision variables. They store a key (i.e. name) used to look up the Variable in dictionaries, and optionally units, a description, and a value (if the Variable is to be held constant).
+
 
 Decision Variables
 ------------------
 .. code-block:: python
 
-    # Declares a variable, x
+    # Declare a variable, x
     x = Variable('x')
 
-    # Declares a variable, y with units of meters
+    # Declare a variable, y, with units of meters
     y = Variable('y','m')
 
-    # Declares a variable, z with units of meters, and a description
+    # Declare a variable, z, with units of meters, and a description
     z = Variable('z', 'm', 'A variable called z with units of meters')
 
-Hint: make sure you have imported the class ``Variable`` beforehand.
+Note: make sure you have imported the class ``Variable`` beforehand.
 
-Parameters/Constants
---------------------
-To declare a variable that has a constant value, simply create a variable using the Variable class, as above, but this time add the value of the parameter as an additional argument after the print string.
+Fixed Variables
+---------------
+To declare a variable with a constant value, use the ``Variable`` class, as above, but specify the ``value=`` input argument:
 
 .. code-block:: python
 
-    # Declares a constant
-    # Print String: '\\rho'
-    # Value: 1.225
-    # Units: kg/m^3
-    # Description: Density of air at sea level
+    # Declare '\\rho' equal to 1.225 kg/m^3
     rho = Variable('\\rho', 1.225, 'kg/m^3', 'Density of air at sea level')
 
-The unit and description arguments are optional.
+In the example above, the key name ``'\\rho'`` is for LaTeX printing (described later). The unit and description arguments are optional.
 
 .. code-block:: python
 
-    #Declares pi
+    #Declare pi equal to 3.14
     pi = Variable('\\pi', 3.14)
     
 
 
 Vector Variables
 ----------------
-GPkit allows you to define vectors of variables. The first argument is the number
+Vector variables are represented by the ``VectorVariable`` class.
+The first argument is the length of the vector.
+All other inputs follow those of the ``Variable`` class.
 
 .. code-block:: python
 
-    # Declares a vector variable
-    # Number of elements: 3
-    # Print string: "d"
-    # Units: m
-    # Description: "Dimension Vector"
-    d   = VectorVariable(3, "d", "m", "Dimension Vector")
+    # Declare a 3-element vector variable 'x' with units of 'm'
+    x = VectorVariable(3, "x", "m", "3-D Position")
 
+
+Creating Monomials and Posynomials
+==================================
+
+Monomial and posynomial expressions can be created using mathematical operations on variables.
+This is implemented under-the-hood using operator overloading in Python.
+
+.. code-block:: python
+
+    # create a Monomial term xy^2/z
+    x = Variable('x')
+    y = Variable('y')
+    z = Variable('z')
+    m = x * y**2 / z
+    type(m)  # gpkit.nomials.Monomial
+
+.. code-block:: python
+
+    # create a Posynomial expression x + xy^2
+    x = Variable('x')
+    y = Variable('y')
+    p = x + x * y**2
+    type(p)  # gpkit.nomials.Posynomial
 
 Declaring Constraints
 =====================
-Constraints are declared in a list format. This means they should be separated by comments and enclosed in square brackets ``[ ]``.
+
+``Constraint`` objects represent constraints of the form ``Monomial >= Posynomial``  or ``Monomial == Monomial`` (which are the forms required for GP-compatibility).
+
+Note that constraints must be formed using ``<=``, ``>=``, or ``==`` operators, not ``<`` or ``>``.
 
 .. code-block:: python
 
-    constraints = [ Re == (rho/mu)*V*(S/A)**0.5,
-                    C_f == 0.074/Re**0.2,
-                    W <= 0.5*rho*S*C_L*V**2,
-                    W <= 0.5*rho*S*C_Lmax*V_min**2,
-                    W >= W_0 + W_w,
-                    W_w >= W_w_surf + W_w_strc
-                  ]
-
-You can add to your list of constraints using standard python list syntax:
-
-.. code-block:: python
-
-    constraints += [C_D >= C_D_fuse + C_D_wpar + C_D_ind]
-
-Inequality constraints
-----------------------
-
-Standard python syntax is used for inequality symbols.
-
-
-Equality constraints
---------------------
-
-When declaring constraints it doesn't matter if they are in GP standard form or not. That is to say you could define the following constraint in either explicit or implicit form.
-
-.. math::
-    W = mg
-
-.. code-block:: python
-
-    W == m * g
-
-.. math::
-    \frac{W}{mg} = 1
-
-.. code-block:: python
-
-    W/(m * g) == 1
+    # consider a block with dimensions x, y, z less than 1
+    # constrain surface area less than 1.0 m^2
+    x = Variable('x', 'm')
+    y = Variable('y', 'm')
+    z = Variable('z', 'm')
+    S = Variable('S', 1.0, 'm^2')
+    c = (2*x*y + 2*x*z + 2*y*z <= S)
+    type(c)  # gpkit.nomials.Constraint
 
 
 Declaring Objective Functions
 =============================
-Simple assign the objective function to a variable name, such as ``objective``.
+To declare an objective function, assign a Posynomial (or Monomial) to a variable name, such as ``objective``.
 
 .. code-block:: python
 
-    objective = x
+    objective = 1/(x*y*z)
 
-As is convention for optimization, the objective must be defined as the function that you want to *minimize*. So, if you want to *maximize* a function, you need to transform this into a minimization. With most optimization, this usually means throwing a minus sign in front of your objective function, but that isn't GP compatible. To transform things in a GP compatible way, take the reciprocal of the function you want to maximize. For example,
-
-.. math::
-    \text{maximize } x
-
-is equivalent to
-
-.. math::
-    \text{minimize } \frac{1}{x}
+By convention, the objective is the function to be *minimized*. If you wish to *maximize* a function, take its reciprocal. For example, the code above creates an objective which, when minimized, will maximize ``x*y*z``.
 
 
-Formulating the GP
-==================
+Formulating a GP
+================
+
+The ``GP`` class represents a geometric programming problem. To create one, pass an objective and list of Constraints:
+
 .. code-block:: python
 
+    objective = 1/(x*y*z)
+    constraints = [2*x*y + 2*x*z + 2*y*z <= S,
+                   x >= 2*y]
     gp = GP(objective, constraints)
 
 
@@ -142,7 +131,7 @@ Solving the GP
 
 .. code-block:: python
 
-    sol = gp.sol()
+    sol = gp.solve()
 
 
 Printing Results
@@ -154,4 +143,4 @@ Printing Results
 
 .. code-block:: python
 
-    print sol(x)
+    print "The x dimension is %s." % (sol(x))

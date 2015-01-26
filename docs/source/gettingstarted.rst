@@ -7,25 +7,24 @@ GPkit is also a command line tool. This means that you need to be in the termina
 
 The first thing to do is `install GPkit <installation.html>`_ . Once you have done this, you can start using GPkit in 3 easy steps:
 
-1. Open your command line interface (terminal/Command Prompt)
-2. Open a Python interpreter. This can be done by typing ``python`` (or ``ipython`` if you have Anaconda and like colorful error messages).
-3. Type ``import gpkit``
+1. Open your command line interface (terminal/Command Prompt).
+2. Open a Python interpreter. This can be done by typing ``python`` (or ``ipython`` if installed).
+3. Type ``import gpkit``.
 
-After doing this, your command line will look something like one of the following::
+After doing this, your command line will look something like the following::
 
     $ python
     >>> import gpkit
+    >>>
 
-    $ ipython
-    In [1]: import gpkit
-
-From here, you can use GPkit commands to formulate and solve geometric programs. To learn how to do this take a look at the `Basic Commands <basiccommands.html>`_.
+From here, you can use GPkit commands to formulate and solve geometric programs. To learn how, see `Basic Commands <basiccommands.html>`_.
 
 
 Writing GPkit Scripts
 =====================
-Another way to write and solve GPs is to write a scipt and save it as a .py file. To run this file (e.g. ``myscript.py``), type the following in your command line::
+Another way to use GPkit is to write a script and save it as a .py file. To run this file (e.g. ``myscript.py``), type the following in your command line::
 
     $ python myscript.py
 
 Again, ``ipython`` will also work here.
+
