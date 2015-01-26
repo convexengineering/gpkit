@@ -51,7 +51,7 @@ Decision Variables
 ^^^^^^^^^^^^^^^^^^
 .. code-block:: python
 
-	# Declares a variable called x with units of meters
+    # Declares a variable called x with units of meters
     x = Variable('x', 'm', 'A variable called x with units of meters')
 
 Hint: make sure you have imported the class ``Variable`` beforehand.
@@ -82,7 +82,15 @@ Declaring Constraints
 ---------------------
 Constraints are declared in a list. This means they should be enclosed in square brackets ``[ ]``.
 
+.. code-block:: python
 
+    constraints = [ Re == (rho/mu)*V*(S/A)**0.5,
+                    C_f == 0.074/Re**0.2,
+                    W <= 0.5*rho*S*C_L*V**2,
+                    W <= 0.5*rho*S*C_Lmax*V_min**2,
+                    W >= W_0 + W_w,
+                    W_w >= W_w_surf + W_w_strc,
+                    C_D >= C_D_fuse + C_D_wpar + C_D_ind]
 
 Inequality constraints
 ^^^^^^^^^^^^^^^^^^^^^^
