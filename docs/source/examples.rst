@@ -21,7 +21,7 @@ Water Tank
         :emphasize-lines: 2-4, 6
         :lines: 1-7
 
-iPython Notebook examples
+iPython Notebook Examples
 =========================
 
 Also available on `nbviewer <http://nbviewer.ipython.org/github/convexopt/gpkit/tree/master/docs/source/ipynb/>`_.

@@ -11,6 +11,7 @@ Mac OS X
   - Install the Python 2.7 version of `Anaconda <http://continuum.io/downloads>`_.
   - If you don't want to install Anaconda, you'll need gcc and pip, and may find sympy, scipy, and iPython Notebook useful.
   - If ``which gcc`` does not return anything, install the `Apple Command Line Tools <https://developer.apple.com/downloads/index.action?=command%20line%20tools>`_.
+  - Optional: create a new conda virtual environment (``conda create -n gpkit anaconda``) and activate it (``source activate gpkit``).
   - Run ``pip install ctypesgen`` in the Terminal.
 
 

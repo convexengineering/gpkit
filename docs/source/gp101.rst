@@ -4,7 +4,7 @@ Geometric Programming 101
 What is a GP?
 =============
 
-A Geometric Program (GP) is a powerful type of constrained non-linear optimization problem.
+A Geometric Program (GP) is a special type of constrained non-linear optimization problem.
 
 A GP is made up of special types of functions called *monomials* and *posynomials*. In the context of a GP, a monomial is defined as:
 
@@ -21,7 +21,7 @@ Building on this, a posynomial is defined as a sum of monomials:
    g(x) = \sum_{k=1}^K c_k x_1^{a_1k} x_2^{a_2k} ... x_n^{a_nk}
 
 
-Using these definitions, we can now write a GP in Standard Form:
+Using these definitions, a GP in Standard Form is written as:
 
 .. math:: \begin{array}[lll]\text{}
     \text{minimize} & f_0(x) & \\
@@ -33,18 +33,20 @@ Using these definitions, we can now write a GP in Standard Form:
 Why are GPs special?
 ====================
 
-Geometric programs have several really nice properties:
+Geometric programs have several powerful properties:
 
-    #. Unlike most non-linear optimization problems, large GPs can be **solved extremely quickly**
-    #. If there exists an optimal solution to a GP, it is guaranteed to be **globally optimal**
-    #. Many **practical problems** can be written as GPs, either in exact form or to a close approximation
+    #. Unlike most non-linear optimization problems, large GPs can be **solved extremely quickly**.
+    #. If there exists an optimal solution to a GP, it is guaranteed to be **globally optimal**.
+    #. Modern GP solvers require **no initial guesses** or tuning of solver parameters.
 
-These properties arise because a GP can easily be transformed into a *convex optimization problem* using a log transformation. 
+These properties arise because GPs become *convex optimization problems* via a logarithmic transformation. In addition to their mathematical benefits, recent research has shown that many **practical problems** can be formulated as GPs or closely approximated as GPs.
+
 
 Where can I learn more?
 =======================
 
-To learn more about GPs, take a look at the following resources:
+To learn more about GPs, refer to the following resources:
 
-    * `A Tutorial on Geometric Programming <http://stanford.edu/~boyd/papers/pdf/gp_tutorial.pdf>`_,  Boyd et al.
-    * `Geometric Programming for Aircraft Design Optimization <http://www.cs.berkeley.edu/~pabbeel/papers/2012_gp_design.pdf>`_, Hoburg, Abbeel 2012
+    * `A tutorial on geometric programming <http://stanford.edu/~boyd/papers/pdf/gp_tutorial.pdf>`_, by S. Boyd, S.J. Kim, L. Vandenberghe, and A. Hassibi.
+    * `Convex optimization <http://stanford.edu/~boyd/cvxbook/>`_, by S. Boyd and L. Vandenberghe.
+.. * `Geometric Programming for Aircraft Design Optimization <http://web.mit.edu/~whoburg/www/papers/hoburgabbeel2014.pdf>`_, Hoburg, Abbeel 2014

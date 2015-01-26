@@ -22,7 +22,7 @@ After doing this, your command line will look something like one of the followin
 From here, you can use GPkit commands to formulate and solve geometric programs. To learn how to do this take a look at the `Basic Commands <basiccommands.html>`_.
 
 
-Writing GPkit scripts
+Writing GPkit Scripts
 =====================
 Another way to write and solve GPs is to write a scipt and save it as a .py file. To run this file (e.g. ``myscript.py``), type the following in your command line::
 

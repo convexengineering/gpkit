@@ -1,7 +1,7 @@
 Basic Commands
 **************
 
-Importing modules
+Importing Modules
 =================
 The first thing to do when using GPkit is to import the classes and modules you will need.
 
