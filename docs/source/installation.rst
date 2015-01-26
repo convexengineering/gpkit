@@ -1,7 +1,7 @@
 Installation Instructions
 *************************
 
-If you encounter any bugs during installation, email gpkit@mit.edu.
+If you encounter any bugs during installation, please email gpkit@mit.edu.
 
 Mac OS X
 ========

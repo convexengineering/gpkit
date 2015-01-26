@@ -15,8 +15,9 @@ Table of contents
     .. toctree::
        :maxdepth: 2
 
-       whatisagp
+       gp101
        installation
        gettingstarted
+       basiccommands
        examples
        glossary

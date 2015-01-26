@@ -34,7 +34,3 @@ Also available on `nbviewer <http://nbviewer.ipython.org/github/convexopt/gpkit/
 
 
 .. http://sphinx-doc.org/markup/code.html
-
-.. * As many examples as we feel are useful to demonstrate the different capabilities of gpkit
-.. * This could include ipython notebooks
-.. * Make sure to cite Boyd tutorial
