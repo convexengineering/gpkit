@@ -34,8 +34,123 @@ Again, ``ipython`` will also work here.
 Basic Commands
 ==============
 
-.. A list of the most basic commands needed to solve a simple example, like the box example
-.. This section should be subdivided, if possible, into the commands for "declaring variables", "constructing constraints", "solving" etc...
-.. Simple Example 1
-.. The box example using the basic commands listed above. No fewer, no more.
-.. Well documented at each step
+Importing modules
+-----------------
+The first thing to do when using GPkit is to import the classes and modules you will need.
+
+.. code-block:: python
+
+    from gpkit import Variable, Vector Variable, GP
+
+
+Declaring Variables
+-------------------
+
+
+Decision Variables
+^^^^^^^^^^^^^^^^^^
+.. code-block:: python
+
+	# Declares a variable called x with units of meters
+    x = Variable('x', 'm', 'A variable called x with units of meters')
+
+Hint: make sure you have imported the class ``Variable`` beforehand.
+
+
+Parameters/Constants
+^^^^^^^^^^^^^^^^^^^^
+
+.. code-block:: python
+
+	# Declares a constant
+	# Constant Name: '\\phi'
+	# Value: 42
+	# Units: None
+	# Description: The meaning of life
+    phi = Variable('\\phi', 42, '_', 'The meaning of life')
+
+
+Vector Variables
+^^^^^^^^^^^^^^^^
+
+.. code-block:: python
+
+	# Declares a 3-element vector called d, with units of meters
+    d   = VectorVariable(3, "d", "m", "Dimension Vector")
+
+Declaring Constraints
+---------------------
+Constraints are declared in a list. This means they should be enclosed in square brackets ``[ ]``.
+
+
+
+Inequality constraints
+^^^^^^^^^^^^^^^^^^^^^^
+
+Standard python syntax is used for inequality symbols.
+
+
+Equality constraints
+^^^^^^^^^^^^^^^^^^^^
+
+When declaring constraints it doesn't matter if they are in GP standard form or not. That is to say you could define the following constraint in either explicit or implicit form.
+
+.. math::
+    W = mg
+
+.. code-block:: python
+
+    W == m * g
+
+.. math::
+    \frac{W}{mg} = 1
+
+.. code-block:: python
+
+    W/(m * g) == 1
+
+
+Declaring Objective Functions
+-----------------------------
+Simple assign the objective function to a variable name, such as ``objective``.
+
+.. code-block:: python
+
+    objective = x
+
+As is convention for optimization, the objective must be defined as the function that you want to *minimize*. So, if you want to *maximize* a function, you need to transform this into a minimization. With most optimization, this usually means throwing a minus sign in front of your objective function, but that isn't GP compatible. To transform things in a GP compatible way, take the reciprocal of the function you want to maximize. For example,
+
+.. math::
+    \text{maximize } x
+
+is equivalent to
+
+.. math::
+    \text{minimize } \frac{1}{x}
+
+
+Formulating the GP
+------------------
+.. code-block:: python
+
+    gp = GP(objective, constraints)
+
+
+Solving the GP
+--------------
+
+.. code-block:: python
+
+    sol = gp.sol()
+
+
+Printing Results
+----------------
+
+.. code-block:: python
+
+    print sol.table()
+
+.. code-block:: python
+
+    print sol(x)
