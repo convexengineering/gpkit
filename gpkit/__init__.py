@@ -18,7 +18,10 @@
 
 
 def disableUnits():
-    "Disables units support in GPkit. Run before creating any variables!"
+    """Disables units support in a particular instance of GPkit.
+
+    Posynomials created after this is run are incompatible with those created before.
+    If gpkit is imported multiple times, this needs to be run each time."""
     global units, DimensionalityError
 
     class DummyUnits(object):
@@ -34,7 +37,10 @@ def disableUnits():
 
 
 def enableUnits():
-    "Enables units support in GPkit. Run before creating any variables!"
+    """Enables units support in a particular instance of GPkit.
+
+    Posynomials created after this is run are incompatible with those created before.
+    If gpkit is imported multiple times, this needs to be run each time."""
     global units, DimensionalityError
     try:
         import pint
