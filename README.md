@@ -9,3 +9,5 @@ abstracting away the backend solver.
 Supported solvers are
 [MOSEK](http://mosek.com)
 and [CVXopt](http://cvxopt.org/).
+
+Citing GPkit: http://gpkit.readthedocs.org/en/latest/citinggpkit.html
