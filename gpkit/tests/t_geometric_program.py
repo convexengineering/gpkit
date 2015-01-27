@@ -68,12 +68,14 @@ class t_GP(unittest.TestCase):
             self.assertTrue(abs(1-sol_rat) < 1e-2)
 
     def test_simpleflight(self):
-        import simpleflight
-        self.simpleflight_test_core(simpleflight.gp())
+        from simpleflight import simpleflight_generator
+        sf = simpleflight_generator()
+        self.simpleflight_test_core(sf.gp())
 
     def test_simpleflight_nounits(self):
-        import simpleflight_nounits as simpleflight
-        self.simpleflight_test_core(simpleflight.gp())
+        from simpleflight import simpleflight_generator
+        sf = simpleflight_generator(disableUnits=True)
+        self.simpleflight_test_core(sf.gp())
 
     def test_Mddtest(self):
         Cl = Variable("Cl", 0.5, "-", "Lift Coefficient")
