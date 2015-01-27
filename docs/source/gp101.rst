@@ -30,7 +30,7 @@ so for example, the following expressions:
 
    x^2 + 2xy + 1  \qquad  7xy + 0.4(yz)^{-1/3}  \qquad  0.56 + \frac{x^{0.7}}{yz}
 
-are all posynomials.  Using these definitions, a GP in Standard Form is written as:
+are all posynomials.  Alternatively, monomials can be defined as the subset of posynomials with only one term.  Using these definitions, a GP in Standard Form is written as:
 
 .. math:: \begin{array}[lll]\text{}
     \text{minimize} & g_0(x) & \\
