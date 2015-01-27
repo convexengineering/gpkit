@@ -11,9 +11,6 @@ if sys.argv[1] in ["build", "install"]:
 from distutils.core import setup
 
 long_description = """
-GPkit
-*****
-
 GPkit is a Python package for defining and manipulating
 geometric programming models,
 abstracting away the backend solver.
@@ -21,15 +18,9 @@ Supported solvers are
 `MOSEK <http://mosek.com>`_
 and `CVXopt <http://cvxopt.org/>`_.
 
-`Documentation <http://gpkit.readthedocs.org/>`_
+`Documentation <http://gpkit.rtfd.org/>`_
 
-`Install instructions <http://gpkit.readthedocs.org/en/latest/installation.html>`_
-
-`Examples <http://gpkit.readthedocs.org/en/latest/examples.html>`_
-
-`Glossary <http://gpkit.readthedocs.org/en/latest/glossary.html>`_
-
-`Citing GPkit <http://gpkit.readthedocs.org/en/latest/citinggpkit.html>`_
+`Citing GPkit <http://gpkit.rtfd.org/en/latest/citinggpkit.html>`_
 """
 
 license = """The MIT License (MIT)
