@@ -1,11 +1,9 @@
-GPkit Documentation
-*******************
-
-Welcome!
+.. figure::  gplogo.svg
+   :width: 250 px
 
 GPkit is a Python package for defining and manipulating
 geometric programming (GP) models,
-abstracting away the backend solver. 
+abstracting away the backend solver.
 Supported solvers are
 `MOSEK <http://mosek.com>`_
 and `CVXOPT <http://cvxopt.org>`_.

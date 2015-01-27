@@ -29,17 +29,7 @@ and `CVXopt <http://cvxopt.org/>`_.
 
 `Glossary <http://gpkit.readthedocs.org/en/latest/glossary.html>`_
 
-If you use GPkit, please cite it with the following bibtex::
-```
-@Misc{gpkit,
-    author = {MIT Convex Optimization Group},
-    title = {GPkit},
-    howpublished = {\url{http://github.com/convexopt/gpkit}},
-    year = {2015},
-    note = {Version 0.1}
-    }
-```
-
+`Citing GPkit <http://gpkit.readthedocs.org/en/latest/citinggpkit.html>`_
 """
 
 license = """The MIT License (MIT)
