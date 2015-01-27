@@ -1,7 +1,7 @@
 Citing GPkit
 ************
 
-If you use GPkit, please cite it using the following bibtex::
+If you use GPkit, please cite it with the following bibtex::
 
     @Misc{gpkit,
     author = {MIT Convex Optimization Group},
