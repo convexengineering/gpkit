@@ -576,7 +576,7 @@ class VectorVariable(PosyArray):
     PosyArray of Monomials, each containing a VarKey with name '$name_{i}',
     where $name is the vector's name and i is the VarKey's index.
     """
-    
+
     def __new__(cls, length, *args, **descr):
         if "idx" in descr:
             raise KeyError("the description field 'idx' is reserved")
@@ -595,13 +595,13 @@ class VectorVariable(PosyArray):
                 descr["label"] = arg
 
         values = descr.pop("value", [])
-        if values and len(values) != length:
+        if len(values) and len(values) != length:
             raise ValueError("vector length and values length must be the same.")
 
         vl = []
         for i in range(length):
             descr.update({"idx": i})
-            if values:
+            if len(values):
                 descr.update({"value": values[i]})
             vl.append(Variable(**descr))
 
