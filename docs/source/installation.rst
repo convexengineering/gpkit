@@ -11,7 +11,7 @@ Mac OS X
   - Install the Python 2.7 version of `Anaconda <http://continuum.io/downloads>`_.
   - If you don't want to install Anaconda, you'll need gcc and pip, and may find sympy, scipy, and iPython Notebook useful.
   - If ``which gcc`` does not return anything, install the `Apple Command Line Tools <https://developer.apple.com/downloads/index.action?=command%20line%20tools>`_.
-  - Optional: create a new conda virtual environment (``conda create -n gpkit anaconda``) and activate it (``source activate gpkit``).
+  - _Optional:_ to install gpkit into an isolated python environment you can create a new conda virtual environment with ``conda create -n gpkit anaconda`` and activate it with ``source activate gpkit``.
   - Run ``pip install ctypesgen`` in the Terminal.
 
 
@@ -56,6 +56,7 @@ Linux
 
 2. Install GPkit
 ++++++++++++++++
+  - _Optional:_ to install gpkit into an isolated python environment, install virtualenv, run ``virtualenv $DESTINATION_DIR`` then activate it with ``source activate $DESTINATION_DIR/bin``.
   - Run ``pip install ctypesgen`` at the command line.
   - Run ``pip install gpkit`` at the command line.
   - Run ``python -c "import gpkit.tests; gpkit.tests.run()"``
@@ -72,6 +73,7 @@ Windows
 ++++++++++++++++++++++++++++++
   - Install the Python 2.7 version of `Anaconda <http://continuum.io/downloads>`_.
   - If you don't want to install Anaconda, you'll need gcc and pip, and may find sympy, scipy, and iPython Notebook useful.
+  - _Optional:_ to install gpkit into an isolated python environment you can create a new conda virtual environment with ``conda create -n gpkit anaconda`` and activate it with ``source activate gpkit``.
   - Run ``pip install ctypesgen`` at an Anaconda Command Prompt.
 
 
