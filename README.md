@@ -10,7 +10,7 @@ Supported solvers are
 [MOSEK](http://mosek.com)
 and [CVXopt](http://cvxopt.org/).
 
-If you use GPkit, please cite it using the following bibtex::
+If you use GPkit, please cite it using the following bibtex:
 ```
 @Misc{gpkit,
     author = {MIT Convex Optimization Group},
