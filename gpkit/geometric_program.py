@@ -223,6 +223,7 @@ class GP(Model):
         else:
             raise ValueError("Solver %s is not implemented!" % solver)
         self.solverfn = solverfn
+        self.solver = solver
 
         if printing:
             print("Using solver '%s'" % solver)

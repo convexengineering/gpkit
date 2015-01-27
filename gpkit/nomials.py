@@ -276,10 +276,16 @@ class Posynomial(object):
             return False
 
     def __le__(self, other):
-        return Constraint(self, other)
+        if isinstance(other, PosyArray):
+            return NotImplemented
+        else:
+            return Constraint(self, other)
 
     def __ge__(self, other):
-        return Constraint(other, self)
+        if isinstance(other, PosyArray):
+            return NotImplemented
+        else:
+            return Constraint(other, self)
 
     def __lt__(self, other):
         invalid_types_for_oper("<", self, other)
@@ -357,7 +363,7 @@ class Posynomial(object):
         elif isinstance(other, PosyArray):
             return np.array(self)+other
         else:
-            invalid_types_for_oper("+", self, other)
+            return NotImplemented
 
     def __radd__(self, other):
         return self + other
@@ -388,7 +394,8 @@ class Posynomial(object):
         elif isinstance(other, PosyArray):
             return np.array(self)*other
         else:
-            invalid_types_for_oper("*", self, other)
+            return NotImplemented
+
 
     def __rmul__(self, other):
         return self * other
@@ -404,7 +411,7 @@ class Posynomial(object):
         elif isinstance(other, PosyArray):
             return np.array(self)/other
         else:
-            invalid_types_for_oper("/", self, other)
+            return NotImplemented
 
     def __pow__(self, x):
         if isinstance(x, int):
@@ -418,7 +425,7 @@ class Posynomial(object):
                 raise ValueError("Posynomials are only closed under"
                                  " nonnegative integer exponents.")
         else:
-            invalid_types_for_oper("** or pow()", self, x)
+            return NotImplemented
 
 
 class Monomial(Posynomial):
@@ -429,13 +436,13 @@ class Monomial(Posynomial):
         if isinstance(other, Numbers+(Posynomial,)):
             return other * self**-1
         else:
-            invalid_types_for_oper("/", other, self)
+            return NotImplemented
 
     def __pow__(self, other):
         if isinstance(other, Numbers):
             return Monomial(self.exp*other, self.c**other)
         else:
-            invalid_types_for_oper("** or pow()", self, x)
+            return NotImplemented
 
     def __float__(self):
         if not self.exp:
@@ -597,6 +604,9 @@ class VectorVariable(PosyArray):
         values = descr.pop("value", [])
         if len(values) and len(values) != length:
             raise ValueError("vector length and values length must be the same.")
+
+        if "name" not in descr:
+            descr["name"] = "\\fbox{%s}" % VarKey.new_unnamed_id()
 
         vl = []
         for i in range(length):

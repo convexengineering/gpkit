@@ -12,7 +12,7 @@ from .nomials import Monomial
 from .nomials import VarKey
 from .nomials import VectorVariable
 
-from .small_scripts import invalid_types_for_oper
+
 from .small_scripts import locate_vars
 from .small_scripts import is_sweepvar
 

@@ -136,7 +136,7 @@ class HashVector(dict):
         if isinstance(other, Numbers):
             return HashVector({key: val**x for (key, val) in self.items()})
         else:
-            invalid_types_for_oper("** or pow()", self, x)
+            return NotImplemented
 
     def __mul__(self, other):
         """Accepts scalars and dicts. Returns with each value multiplied.
@@ -150,7 +150,7 @@ class HashVector(dict):
             sums = {key: self[key] * other[key] for key in keys}
             return HashVector(sums)
         else:
-            invalid_types_for_oper("*", self, other)
+            return NotImplemented
 
     def __add__(self, other):
         """Accepts scalars and dicts. Returns with each value added.
@@ -165,7 +165,7 @@ class HashVector(dict):
             sums = {key: self.get(key, 0) + other.get(key, 0) for key in keys}
             return HashVector(sums)
         else:
-            invalid_types_for_oper("+", self, other)
+            return NotImplemented
 
     def __sub__(self, other): return self + -other
     def __rsub__(self, other): return other + -self
