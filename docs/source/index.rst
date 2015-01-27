@@ -21,3 +21,4 @@ Table of contents
        basiccommands
        examples
        glossary
+       citinggpkit
