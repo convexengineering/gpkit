@@ -1,4 +1,4 @@
-<img src="gplogo.svg" width=100 alt="GPkit"/>
+<img src="http://gpkit.readthedocs.org/en/latest/_images/gplogo.svg" width=100 alt="GPkit"/>
 
 **[Documentation](http://gpkit.readthedocs.org/)** | [Install instructions](http://gpkit.readthedocs.org/en/latest/installation.html) | [Examples](http://gpkit.readthedocs.org/en/latest/examples.html) | [Glossary](http://gpkit.readthedocs.org/en/latest/glossary.html) | [Citing GPkit](http://gpkit.readthedocs.org/en/latest/citinggpkit.html)
 
