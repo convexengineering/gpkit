@@ -29,6 +29,17 @@ and `CVXopt <http://cvxopt.org/>`_.
 
 `Glossary <http://gpkit.readthedocs.org/en/latest/glossary.html>`_
 
+If you use GPkit, please cite it using the following bibtex::
+```
+@Misc{gpkit,
+    author = {MIT Convex Optimization Group},
+    title = {GPkit},
+    howpublished = {\url{https://github.com/convexopt/gpkit}},
+    year = {2015},
+    note = {Release 0.1}
+    }
+```
+
 """
 
 license = """The MIT License (MIT)
@@ -60,7 +71,7 @@ setup(
     author_email='convex@mit.edu',
     url='https://www.github.com/convexopt/gpkit',
     install_requires=['numpy', 'ctypesgen>=0.r125'],
-    version='0.0.4',
+    version='0.1.0',
     packages=['gpkit', 'gpkit._mosek', 'gpkit.tests', 'gpkit.interactive'],
     package_data={'gpkit': ['env/*'],
                   'gpkit._mosek': ['lib/*']},
