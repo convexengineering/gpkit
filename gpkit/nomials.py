@@ -516,7 +516,9 @@ class Constraint(Posynomial):
                 p = p.to('dimensionless')
             except DimensionalityError:
                 raise ValueError("constraints must have the same units"
-                                 " on both sides.")
+                                 " on both sides: '%s' and '%s' can not"
+                                 " be converted into each other."
+                                 "" % (p1.units.units, p2.units.units))
         p1.units = None if all(p1.exps) else p1.units
         p2.units = None if all(p2.exps) else p2.units
 
