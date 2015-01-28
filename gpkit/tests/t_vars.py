@@ -1,4 +1,5 @@
 import unittest
+import numpy as np
 from gpkit import (Monomial, Posynomial, PosyArray, Variable, VarKey,
                    VectorVariable)
 
@@ -88,6 +89,11 @@ class t_VectorVariable(unittest.TestCase):
         x_2 = Monomial('x', idx=2, length=3, label='dummy variable')
         x2 = PosyArray([x_0, x_1, x_2])
         self.assertEqual(x, x2)
+
+        # test inspired by issue 137
+        N = 20
+        x_arr = np.arange(0, 5., 5./N) + 1e-6
+        x = VectorVariable(N, 'x', x_arr, 'm', "Beam Location")
 
 
 tests = [t_VarKey, t_Variable, t_VectorVariable]
