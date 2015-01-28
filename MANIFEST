@@ -20,7 +20,6 @@ gpkit/interactive/widget.py
 gpkit/tests/__init__.py
 gpkit/tests/run_tests.py
 gpkit/tests/simpleflight.py
-gpkit/tests/simpleflight_nounits.py
 gpkit/tests/t_posy_array.py
 gpkit/tests/t_geometric_program.py
 gpkit/tests/t_gp_solution_array.py
