@@ -52,8 +52,12 @@ class GPSolutionArray(DictOfLists):
     def __call__(self, p):
         return self.subinto(p).c
 
-    def getvar(self, key):
-        return self["variables"][key]
+    def getvars(self, *args):
+        out = [self["variables"][arg] for arg in args]
+        if len(out) == 1:
+            return out[0]
+        else:
+            return out
 
     def subinto(self, p):
         "Returns numpy array of each solution substituted into p."
