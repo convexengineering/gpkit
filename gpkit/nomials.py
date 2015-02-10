@@ -601,6 +601,8 @@ class VectorVariable(PosyArray):
     """
 
     def __new__(cls, length, *args, **descr):
+        cls = PosyArray
+        
         if "idx" in descr:
             raise KeyError("the description field 'idx' is reserved")
 
