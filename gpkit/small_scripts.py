@@ -84,7 +84,7 @@ def sort_and_simplify(exps, cs):
 
 
 def results_table(data, title, senss=False):
-    strs = ["           | " + title]
+    strs = ["              | " + title]
     for var, table in sorted(data.items(), key=lambda x: str(x[0])):
         try:
             val = table.mean()
@@ -98,10 +98,10 @@ def results_table(data, title, senss=False):
             units = unitstr(var)
             minval = 0
         if abs(val) >= minval:
-            strs += ["%10s" % var +
+            strs += ["%13s" % var +
                      " : %-8.3g " % val +
                      "[%s] %s" % (units, label)]
-    strs += ["           |"]
+    strs += ["              |"]
     return "\n".join(strs)
 
 

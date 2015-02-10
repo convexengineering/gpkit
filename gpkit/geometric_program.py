@@ -52,6 +52,9 @@ class GPSolutionArray(DictOfLists):
     def __call__(self, p):
         return self.subinto(p).c
 
+    def getvar(self, key):
+        return self["variables"][key]
+
     def subinto(self, p):
         "Returns numpy array of each solution substituted into p."
         if len(self) > 1:
@@ -85,9 +88,9 @@ class GPSolutionArray(DictOfLists):
         strs = []
         if "cost" in tables:
             if len(self) > 1:
-                strs += ["%10.5g : Cost (average of %i values)" % (self["cost"].mean(), len(self))]
+                strs += ["%13.5g : Cost (average of %i values)" % (self["cost"].mean(), len(self))]
             else:
-                strs += ["%10.5g : Cost" % self["cost"].mean()]
+                strs += ["%13.5g : Cost" % self["cost"].mean()]
         if "free_variables" in tables:
             strs += [results_table(self["free_variables"],
                                    "Free variables" + ("" if len(self) == 1 else " (average)"))]
@@ -209,8 +212,8 @@ class GP(Model):
         else:
             return NotImplemented
 
-    def __call__(self, p):
-        return self.solution.subinto(p).c
+    def __call__(self, key):
+        return self[key]
 
     def vars(self, *args):
         out = [self[arg] for arg in args]
@@ -383,7 +386,7 @@ class GP(Model):
                 try:
                     return self.__run_solver()
                 except RuntimeWarning:
-                    pass
+                    return None
             else:
                 return self.__run_solver()
 
@@ -393,7 +396,8 @@ class GP(Model):
             mapfn = map
 
         for sol in mapfn(run_solver_i,  range(N_passes)):
-            solution.append(sol)
+            if sol is not None:
+                solution.append(sol)
 
         solution.toarray()
 
@@ -466,8 +470,10 @@ class GP(Model):
         for var in self.unsubbed.var_locs:
             if "idx" in var.descr and "length" in var.descr:
                 descr = dict(var.descr)
-                del descr["idx"]
+                descr.pop("idx")
+                units = descr.pop("units")
                 veckey = VarKey(**descr)
+                veckey.descr["units"] = units
 
                 if veckey not in variables:
                     variables[veckey] = np.empty(var.descr["length"]) + np.nan

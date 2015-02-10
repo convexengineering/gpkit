@@ -2,7 +2,7 @@
 <html>
 <head>
   <meta charset='utf-8'>
-  <title> flightconditions | Ractive test</title>
+  <title> fuel | CADtoon</title>
   <link href='http://fonts.googleapis.com/css?family=Roboto:400,100,100italic,300,300italic,400italic,500,500italic,700,700italic,900,900italic' rel='stylesheet' type='text/css'>
   <style>
     body {
@@ -61,9 +61,9 @@
   <div id='ractivecontainer'></div>
 <script id='ractivetemplate' type='text/ractive'>
   <div class="left">
-  <h1>  flightconditions </h1><br><br><br>
-<svg width="400" height="400" version="1.1">
-	<g transform="scale(4.00)">
+  <h1>  fuel </h1><br><br><br>
+<svg width="300" height="300" version="1.1">
+	<g transform="scale(3.00)">
 		<g transform="translate(0,-952.36218)">
 			<g transform="matrix(0.35423407,0,0,0.42994087,-35.858031,688.41834)">
 				<g class="plane" transform="matrix({{plane.scalex * plane.scale}}, 0, 0, {{plane.scaley * plane.scale}}, {{plane.x + 126.01282195 * (1-plane.scalex * plane.scale)}}, {{plane.y + 662.03094 * (1-plane.scaley * plane.scale)}})">
@@ -175,13 +175,13 @@
     </td></tr>
 </table>
 <h2> constraints </h2>
-<div class="note">access variables by <tt>r.id.attribute</tt>, e.g.:<br>    <tt>r.wingrect.scaley = 1 - r. wingtaper.scaley</tt></div>
+<div class="note">access variables by <tt>fuel.id.attribute</tt>, e.g.:<br>    <tt>fuel.wingrect.scaley = 1 - fuel.wingtaper.scaley</tt></div>
 <textarea id="constraints" onchange="updateCbox();"></textarea>
 </div>
   </script>
   <script src='http://cdn.ractivejs.org/latest/ractive.min.js'></script>
   <script>
-var r = {
+var fuel = {
 airfoil: {scalex: 1, scaley: 1, scale: 1, x:0, y:0},
 engine1: {scalex: 1, scaley: 1, scale: 1, x:0, y:0},
 engine2: {scalex: 1, scaley: 1, scale: 1, x:0, y:0},
@@ -213,7 +213,7 @@ var updateCbox = function () {
           el: 'ractivecontainer',
           template: '#ractivetemplate',
           magic: true,
-          data: r,
+          data: fuel,
         onchange: updateCbox
         });
 

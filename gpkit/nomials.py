@@ -116,8 +116,7 @@ class VarKey(object):
                     except:
                         return False
                 else:
-                    if self.descr[key] != other.descr[key]:
-                        return False
+                    return self.descr[key] == other.descr[key]
             return True
         elif isinstance(other, Strings):
             return self._cmpstr == other
@@ -602,7 +601,7 @@ class VectorVariable(PosyArray):
 
     def __new__(cls, length, *args, **descr):
         cls = PosyArray
-        
+
         if "idx" in descr:
             raise KeyError("the description field 'idx' is reserved")
 

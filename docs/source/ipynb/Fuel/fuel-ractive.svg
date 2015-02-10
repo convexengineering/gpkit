@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
-<svg width="400" height="400" version="1.1">
-	<g transform="scale(4.00)">
+<svg width="300" height="300" version="1.1">
+	<g transform="scale(3.00)">
 		<g transform="translate(0,-952.36218)">
 			<g transform="matrix(0.35423407,0,0,0.42994087,-35.858031,688.41834)">
 				<g class="plane" transform="matrix({{plane.scalex * plane.scale}}, 0, 0, {{plane.scaley * plane.scale}}, {{plane.x + 126.01282195 * (1-plane.scalex * plane.scale)}}, {{plane.y + 662.03094 * (1-plane.scaley * plane.scale)}})">
