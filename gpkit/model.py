@@ -69,7 +69,7 @@ class Model(object):
             p_idx += 1
         self.p_idxs = np.array(self.p_idxs)
 
-    def sub(self, substitutions, val=None, frombase='last', printing=False, replace=False):
+    def sub(self, substitutions, val=None, frombase='last', printing=False, replace=True):
         # look for sweep variables
         found_sweep = []
         if val is not None:
