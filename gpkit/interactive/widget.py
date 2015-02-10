@@ -1,5 +1,9 @@
-from IPython.html.widgets import interactive
-from IPython.display import Math, display
+try:
+    from IPython.html.widgets import interactive
+    from IPython.display import Math, display
+except ImportError:
+    pass
+
 from ..small_scripts import unitstr
 
 

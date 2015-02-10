@@ -1,8 +1,12 @@
 import numpy as np
 from ..geometric_program import GPSolutionArray
-from IPython.display import display, HTML
 from string import Template
 import itertools
+
+try:
+    from IPython.display import Math, display
+except ImportError:
+    pass
 
 from widget import widget
 

@@ -29,3 +29,11 @@ gpkit.interactive.widget module
     :members:
     :undoc-members:
     :show-inheritance:
+
+gpkit.interactive.ractor module
+-------------------------------
+
+.. automodule:: gpkit.interactive.ractor
+    :members:
+    :undoc-members:
+    :show-inheritance:
