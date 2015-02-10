@@ -30,6 +30,15 @@ from .small_scripts import locate_vars
 from .small_scripts import results_table
 from .small_scripts import mag
 
+try:
+    from IPython.parallel import Client
+    assert len(Client()) > 0
+    pool = Client()[:]
+    pool.use_dill()
+    print "Using parallel execution of sweeps on %s clients" % len(Client())
+except:
+    pool = None
+
 
 class GPSolutionArray(DictOfLists):
     "DictofLists extended with posynomial substitution."
@@ -366,19 +375,25 @@ class GP(Model):
             print("Sweeping %i variables over %i passes" % (
                   len(self.sweep), N_passes))
 
-        for i in range(N_passes):
+        def run_solver_i(i):
             this_pass = {var: sweep_vect[i]
                          for (var, sweep_vect) in sweep_vects.items()}
             self.sub(this_pass, frombase='presweep')
             if skipfailures:
                 try:
-                    sol = self.__run_solver()
-                    solution.append(sol)
+                    return self.__run_solver()
                 except RuntimeWarning:
                     pass
             else:
-                sol = self.__run_solver()
-                solution.append(sol)
+                return self.__run_solver()
+
+        if pool:
+            mapfn = pool.map_sync
+        else:
+            mapfn = map
+
+        for sol in mapfn(run_solver_i,  range(N_passes)):
+            solution.append(sol)
 
         solution.toarray()
 
