@@ -79,20 +79,28 @@ class VarKey(object):
                 raise ValueError("units must be either a string"
                                  " or a Quantity from gpkit.units.")
         self.units = self.descr.get("units", None)
-        self._hashvalue = hash(str(self))
+        self._hashvalue = hash(self._cmpstr)
 
     def __repr__(self):
         s = self.name
-        for subscript in ["idx", "model"]:
+        for subscript in ["model", "idx"]:
             if subscript in self.descr:
                 s = "%s_%s" % (s, self.descr[subscript])
         return s
 
     def _latex(self):
         s = self.name
-        for subscript in ["idx", "model"]:
+        for subscript in ["idx"]: # +"model"?
             if subscript in self.descr:
                 s = "{%s}_{%s}" % (s, self.descr[subscript])
+        return s
+
+    @property
+    def _cmpstr(self):
+        s = self.name
+        for subscript in ["idx"]:
+            if subscript in self.descr:
+                s = "%s_%s" % (s, self.descr[subscript])
         return s
 
     def __hash__(self):
@@ -112,7 +120,7 @@ class VarKey(object):
                         return False
             return True
         elif isinstance(other, Strings):
-            return str(self) == other
+            return self._cmpstr == other
         elif isinstance(other, PosyArray):
             for i, p in enumerate(other):
                 v = VarKey(p.exp.keys()[0])
@@ -247,6 +255,12 @@ class Posynomial(object):
         if any(exps):
             raise ValueError("could not substitute for all variables.")
         return mag(cs).sum()
+
+    def prod(self):
+        return self
+
+    def sum(self):
+        return self
 
     # hashing, immutability, Posynomial inequality
     def __hash__(self):
@@ -502,7 +516,7 @@ class Constraint(Posynomial):
             self.oper_l = " \\geq "
 
     def __str__(self):
-        return str(self.left) + self.oper_s + str(self.right)
+        return repr(self.left) + self.oper_s + repr(self.right)
 
     def _latex(self, unused=None):
         return self.left._latex() + self.oper_l + self.right._latex()
@@ -555,7 +569,7 @@ class MonoEQConstraint(Constraint):
     '''
     def _set_operator(self, p1, p2):
         self.oper_l = " = "
-        self.oper_s = " = "
+        self.oper_s = " == "
         self.leq = Constraint(p2, p1)
         self.geq = Constraint(p1, p2)
 

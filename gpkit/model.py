@@ -14,7 +14,7 @@ from operator import add
 from .small_classes import Strings
 from .small_classes import PosyTuple
 from .small_classes import CootMatrix
-from .nomials import Posynomial
+from .nomials import Posynomial, Constraint, Monomial
 from .nomials import VarKey
 
 from .substitution import substitution
@@ -34,13 +34,13 @@ class Model(object):
                          )
 
     def add_constraints(self, constraints):
-        if isinstance(constraints, Posynomial):
+        if isinstance(constraints, Constraint):
             constraints = [constraints]
         self.constraints += tuple(constraints)
         self._gen_unsubbed_vars()
 
     def rm_constraints(self, constraints):
-        if isinstance(constraints, Posynomial):
+        if isinstance(constraints, Constraint):
             constraints = [constraints]
         for p in constraints:
             self.constraints.remove(p)
@@ -54,6 +54,8 @@ class Model(object):
         var_locs = locate_vars(exps)
 
         self.unsubbed = PosyTuple(exps, cs, var_locs, {})
+        self.variables = {k: Monomial(k) for k in var_locs}
+        self.varkeys = {k._cmpstr: k for k in var_locs}
         self.load(self.unsubbed, printing)
 
         # k [j]: number of monomials (columns of F) present in each constraint
@@ -146,6 +148,10 @@ class Model(object):
             self.A.append(0, len(self.exps)-1, 0)
         self.A.update_shape()
 
+        self.missingbounds = missingbounds
         if printing:
-            for var, bound in missingbounds.items():
-                print("%s has no %s bound" % (var, bound))
+            self.checkbounds()
+
+    def checkbounds(self):
+        for var, bound in self.missingbounds.items():
+            print("%s has no %s bound" % (var, bound))

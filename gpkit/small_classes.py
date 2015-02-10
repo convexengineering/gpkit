@@ -103,7 +103,7 @@ def enray_dict(i, o):
 
 
 class HashVector(dict):
-    """A simple, sparse, string-indexed immutable vector. Inherits from dict.
+    """A simple, sparse, string-indexed vector. Inherits from dict.
 
     The HashVector class supports element-wise arithmetic:
     any undeclared variables are assumed to have a value of zero.
@@ -124,8 +124,9 @@ class HashVector(dict):
             self._hashvalue = hash(tuple(self.items()))
         return self._hashvalue
 
-    def __setitem__(self, key, value):
-        raise TypeError("HashVectors are immutable.")
+    # temporarily disabling immutability
+    #def __setitem__(self, key, value):
+    #    raise TypeError("HashVectors are immutable.")
 
     def __neg__(self):
         "Return Hashvector with each value negated."

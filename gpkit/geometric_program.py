@@ -8,10 +8,11 @@
 """
 
 import numpy as np
+import itertools
 
 from time import time
 from pprint import pformat
-from collections import Iterable
+from collections import Iterable, defaultdict
 from functools import reduce
 from operator import mul
 
@@ -124,13 +125,27 @@ class GP(Model):
 
     """
 
-    def __init__(self, cost, constraints, substitutions={},
-                 solver=None, options={}):
-        self.cost = cost
+    model_nums = defaultdict(int)
+
+    def __init__(self, *args, **kwargs):
+        args = list(args)
+        self.result = {}
+        if hasattr(self, "setup"):
+            # setup cost/constraints replace init ones
+            self.cost, constraints = self.setup(*args, **kwargs)
+        else:
+            if "cost" in kwargs:
+                self.cost = kwargs["cost"]
+            else:
+                self.cost = args.pop(0)
+            if "constraints" in kwargs:
+                constraints = kwargs["constraints"]
+            else:
+                constraints = args.pop(0)
+        self.constraints = tuple(flatten(constraints, Constraint))
         # TODO: parse constraints during flattening, calling Posyarray on
         #       anything that holds only posys and then saving that list.
         #       This will allow prettier constraint printing.
-        self.constraints = tuple(flatten(constraints, Constraint))
         posynomials = [self.cost]
         for constraint in self.constraints:
             if isinstance(constraint, MonoEQConstraint):
@@ -138,23 +153,88 @@ class GP(Model):
             else:
                 posynomials.append(constraint)
         self.posynomials = tuple(posynomials)
+        if hasattr(self, "setup"):
+            modelname = self.__class__.__name__
+            if modelname in GP.model_nums:
+                modelname += str(GP.model_nums[modelname])
+            GP.model_nums[modelname] += 1
+            for p in self.posynomials:
+                for k in p.var_locs:
+                    if not "model" in k.descr:
+                        newk = VarKey(k, model=modelname)
+                        p.var_locs[newk] = p.var_locs.pop(k)
+                for exp in p.exps:
+                    for k in exp:
+                        if not "model" in k.descr:
+                            newk = VarKey(k, model=modelname)
+                            exp[newk] = exp.pop(k)
 
         self.sweep = {}
         self._gen_unsubbed_vars(printing=False)
         values = {var: var.descr["value"]
                   for var in self.var_locs if "value" in var.descr}
-        values.update(substitutions)
+        if "substitutions" in kwargs:
+            values.update(kwargs["substitutions"])
+        elif len(args) > 0 and not hasattr(self, "setup"):
+            values.update(args.pop(0))
         if values:
-            self.sub(values, printing=True)
+            self.sub(values)
             self.initalsub = self.last
         else:
             self._gen_unsubbed_vars(printing=True)
 
-        if solver is None:
+        if "solver" in kwargs:
+            self.solver = kwargs["solver"]
+        else:
             from . import settings
-            solver = settings['installed_solvers'][0]
-        self.solver = solver
-        self.options = options
+            self.solver = settings['installed_solvers'][0]
+        if "options" in kwargs:
+            self.options = kwargs["options"]
+        else:
+            self.options = {}
+
+    def __add__(self, other):
+        if isinstance(other, GP):
+            # don't add costs b/c that breaks when costs have units
+            return GP(Monomial(1), self.constraints + other.constraints)
+        else:
+            return NotImplemented
+
+    def __call__(self, p):
+        return self.solution.subinto(p).c
+
+    def vars(self, *args):
+        out = [self[arg] for arg in args]
+        if len(out) == 1:
+            return out[0]
+        else:
+            return out
+
+    def __getitem__(self, key):
+        for attr in ["result", "solution", "solv", "variables"]:
+            if hasattr(self, attr) or (attr == "solv" and hasattr(self, "solution")):
+                if attr == "solv":
+                    d = self.solution["variables"]
+                else:
+                    d = getattr(self, attr)
+                if key in d:
+                    return d[key]
+                elif key+"_0" in d:
+                    maybevec = self.varkeys[key+"_0"].descr
+                    if "length" in maybevec:
+                        # then it is a vector!
+                        length = maybevec["length"]
+                        l = [d[key+"_%s" % i] for i in range(length)]
+                        if attr == "variables":
+                            return PosyArray(l)
+                        else:
+                            return np.array(l)
+
+
+        raise KeyError("'%s' was not found as a result solution or variable."  % key)
+
+    def __setitem__(self, key, value):
+        self.results[key] = value
 
     def __eq__(self, other):
         "GP equality is determined by their string representations."
@@ -191,6 +271,15 @@ class GP(Model):
                                                          latex_num(val))
                                  for var, val in self.substitutions.items()]) +
                          ["\\end{array}"])
+
+    def test(self, solver=None, printing=False, skipfailures=False):
+        try:
+            self.solve(solver, printing, skipfailures)
+            print self.__class__.__name__, "solved successfully with default settings."
+        except Exception, e:
+            print self.__class__.__name__, "failed to solve with default settings."
+            self.checkbounds()
+            raise(e)
 
     def solve(self, solver=None, printing=True, skipfailures=False):
         """Solves a GP and returns the solution.
@@ -241,7 +330,11 @@ class GP(Model):
             print("Solving took %.3g seconds"
                   % (self.endtime - self.starttime))
         self.solution = solution
-        return solution
+        if hasattr(self, "calc"):
+            self.result = self.calc(solution)
+        # would love to return solution.update(result), but can't guarantee
+        # that the result will be VarKey-based!
+        return self.solution
 
     def _solve_sweep(self, printing, skipfailures):
         """Runs a GP through a sweep, solving at each grid point
