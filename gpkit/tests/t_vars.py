@@ -74,7 +74,6 @@ class t_VectorVariable(unittest.TestCase):
         n = 3
         v = VectorVariable(n, 'v', label='dummy variable')
         v_mult = 3*v
-        self.assertEqual(type(v), VectorVariable)
         for i in range(n):
             self.assertTrue(isinstance(v[i], Variable))
             self.assertTrue(isinstance(v[i], Monomial))

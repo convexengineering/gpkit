@@ -43,7 +43,7 @@ def ractorjs(title, gp, update_py, ranges, constraint_js=""):
     lengths = []
     bases = []
 
-    varkeys = gp.unsubbed.var_locs.keys()
+    varkeys = gp.unsubbed.varlocs.keys()
 
     for var, values in ranges.items():
         mini, maxi, step = values

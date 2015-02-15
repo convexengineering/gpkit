@@ -12,15 +12,21 @@ from .nomials import Monomial
 from .nomials import VarKey
 from .nomials import VectorVariable
 
-
 from .small_scripts import locate_vars
 from .small_scripts import is_sweepvar
+from .small_scripts import mag
+
+from . import units as ureg
+from . import DimensionalityError
+Quantity = ureg.Quantity
+Numbers += (Quantity,)
 
 
 def vectorsub(subs, var, sub, varset):
     "Vectorized substitution via vecmons and Variables."
     try:
         isvector = "length" in var.descr and "idx" not in var.descr
+        var = VectorVariable(**var.descr)
     except:
         try:
             assert len(var)
@@ -28,11 +34,9 @@ def vectorsub(subs, var, sub, varset):
         except:
             isvector = False
 
-    if var in varset:
-        subs[var] = sub
-    elif isvector:
-        if isinstance(var, VarKey):
-            var = VectorVariable(**var.descr)
+    if isvector:
+        if isinstance(sub, VarKey):
+            sub = VectorVariable(**sub.descr)
         if len(var) == len(sub):
             for i in range(len(var)):
                 v = VarKey(var[i])
@@ -41,14 +45,16 @@ def vectorsub(subs, var, sub, varset):
         else:
             raise ValueError("tried substituting %s for %s, but their"
                              " lengths were unequal." % (sub, var))
+    elif var in varset:
+        subs[var] = sub
 
 
-def substitution(var_locs, exps, cs, substitutions, val=None):
+def substitution(varlocs, varkeys, exps, cs, substitutions, val=None):
     """Efficient substituton into a list of monomials.
 
         Parameters
         ----------
-        var_locs : dict
+        varlocs : dict
             Dictionary of monomial indexes for each variable.
         exps : dict
             Dictionary of variable exponents for each monomial.
@@ -61,7 +67,7 @@ def substitution(var_locs, exps, cs, substitutions, val=None):
 
         Returns
         -------
-        var_locs_ : dict
+        varlocs_ : dict
             Dictionary of monomial indexes for each variable.
         exps_ : dict
             Dictionary of variable exponents for each monomial.
@@ -75,13 +81,17 @@ def substitution(var_locs, exps, cs, substitutions, val=None):
         substitutions = {substitutions: val}
 
     subs = {}
-    varset = frozenset(var_locs.keys())
+    varset = frozenset(varlocs.keys())
     for var, sub in substitutions.items():
         if not is_sweepvar(sub):
-            if isinstance(var, Strings+(Monomial,)):
+            if isinstance(var, Monomial):
                 var_ = VarKey(var)
                 if var_ in varset:
                     subs[var_] = sub
+            elif isinstance(var, Strings):
+                    if var in varkeys:
+                        var_ = varkeys[var]
+                        vectorsub(subs, var_, sub, varset)
             else:
                 vectorsub(subs, var, sub, varset)
 
@@ -90,27 +100,46 @@ def substitution(var_locs, exps, cs, substitutions, val=None):
 
     exps_ = [HashVector(exp) for exp in exps]
     cs_ = np.array(cs)
-    var_locs_ = defaultdict(list)
-    var_locs_.update({var: list(idxs) for (var, idxs) in var_locs.items()})
+    varlocs_ = defaultdict(list)
+    varlocs_.update({var: list(idxs) for (var, idxs) in varlocs.items()})
     for var, sub in subs.items():
-        for i in var_locs[var]:
+        for i in varlocs[var]:
             x = exps_[i].pop(var)
-            var_locs_[var].remove(i)
-            if len(var_locs_[var]) == 0:
-                del var_locs_[var]
+            varlocs_[var].remove(i)
+            if len(varlocs_[var]) == 0:
+                del varlocs_[var]
             if isinstance(sub, Numbers):
                 cs_[i] *= sub**x
             elif isinstance(sub, np.ndarray):
                 if not sub.shape:
                     cs_[i] *= sub.flatten()[0]**x
-            #  BELOW DOES NOT SUPPORT UNIT CONVERSION YET
-            # elif isinstance(sub, Strings+(VarKey,)):
-            #     sub = VarKey(sub)
-            #     exps_[i] += HashVector({sub: x})
-            #     var_locs_[sub].append(i)
-            # elif isinstance(sub, Monomial):
-            #     exps_[i] += x*sub.exp
-            #     cs_[i] *= sub.c**x
-            #     for subvar in sub.exp:
-            #         var_locs_[subvar].append(i)
-    return var_locs_, exps_, cs_, subs
+            elif isinstance(sub, Strings):
+                descr = dict(var.descr)
+                del descr["name"]
+                sub = VarKey(name=sub, **descr)
+                exps_[i] += HashVector({sub: x})
+                varlocs_[sub].append(i)
+            elif isinstance(sub, VarKey):
+                sub = VarKey(sub)
+                if isinstance(var.descr["units"], Quantity):
+                    try:
+                        cs_[i] *= (var.descr["units"]/sub.descr["units"]).to('dimensionless')
+                    except DimensionalityError:
+                        raise ValueError("substituted variables must have the same units"
+                                         " as the variables they replace.")
+                exps_[i] += HashVector({sub: x})
+                varlocs_[sub].append(i)
+            elif isinstance(sub, Monomial):
+                if isinstance(var.descr["units"], Quantity):
+                    try:
+                        cs_[i] *= (var.descr["units"]/sub.units).to('dimensionless')
+                    except DimensionalityError:
+                        raise ValueError("substituted monomials must have the same units"
+                                         " as the variables they replace.")
+                exps_[i] += x*sub.exp
+                cs_[i] *= mag(sub.c)**x
+                for subvar in sub.exp:
+                    varlocs_[subvar].append(i)
+            else:
+                raise TypeError("could not substitue with value of type '%s'" % type(sub))
+    return varlocs_, exps_, cs_, subs

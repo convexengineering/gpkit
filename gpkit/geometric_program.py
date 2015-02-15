@@ -50,7 +50,7 @@ class GPSolutionArray(DictOfLists):
             return 1
 
     def __call__(self, p):
-        return self.subinto(p).c
+        return mag(self.subinto(p).c)
 
     def getvars(self, *args):
         out = [self["variables"][arg] for arg in args]
@@ -147,8 +147,16 @@ class GP(Model):
         args = list(args)
         self.result = {}
         if hasattr(self, "setup"):
-            # setup cost/constraints replace init ones
-            self.cost, constraints = self.setup(*args, **kwargs)
+            # setup cost/constraints replace init ones except for "model"
+            if "name" in kwargs:
+                name = kwargs.pop("name")
+            else:
+                name = self.__class__.__name__
+            ans = self.setup(*args, **kwargs)
+            try:
+                self.cost, constraints = ans
+            except TypeError:
+                raise TypeError("the setup function must return 'cost, constraints'.")
         else:
             if "cost" in kwargs:
                 self.cost = kwargs["cost"]
@@ -170,34 +178,33 @@ class GP(Model):
                 posynomials.append(constraint)
         self.posynomials = tuple(posynomials)
         if hasattr(self, "setup"):
-            modelname = self.__class__.__name__
-            if modelname in GP.model_nums:
-                modelname += str(GP.model_nums[modelname])
-            GP.model_nums[modelname] += 1
+            if name in GP.model_nums:
+                name += str(GP.model_nums[name])
+            GP.model_nums[name] += 1
             for p in self.posynomials:
-                for k in p.var_locs:
+                for k in p.varlocs:
                     if not "model" in k.descr:
-                        newk = VarKey(k, model=modelname)
-                        p.var_locs[newk] = p.var_locs.pop(k)
+                        newk = VarKey(k, model=name)
+                        p.varlocs[newk] = p.varlocs.pop(k)
                 for exp in p.exps:
                     for k in exp:
                         if not "model" in k.descr:
-                            newk = VarKey(k, model=modelname)
+                            newk = VarKey(k, model=name)
                             exp[newk] = exp.pop(k)
 
         self.sweep = {}
-        self._gen_unsubbed_vars(printing=False)
+        self._gen_unsubbed_vars()
         values = {var: var.descr["value"]
-                  for var in self.var_locs if "value" in var.descr}
+                  for var in self.varlocs if "value" in var.descr}
         if "substitutions" in kwargs:
             values.update(kwargs["substitutions"])
         elif len(args) > 0 and not hasattr(self, "setup"):
             values.update(args.pop(0))
-        if values:
+        if values and not hasattr(self, "setup"):
             self.sub(values)
             self.initalsub = self.last
         else:
-            self._gen_unsubbed_vars(printing=True)
+            self._gen_unsubbed_vars()
 
         if "solver" in kwargs:
             self.solver = kwargs["solver"]
@@ -212,12 +219,19 @@ class GP(Model):
     def __add__(self, other):
         if isinstance(other, GP):
             # don't add costs b/c that breaks when costs have units
-            return GP(Monomial(1), self.constraints + other.constraints)
+            newgp = GP(self.cost * other.cost, self.constraints + other.constraints)
+            subs = newgp.substitutions
+            newgp._gen_unsubbed_vars([self.exps[0] + other.exps[0]] + self.exps[1:]+other.exps[1:], np.hstack([self.cs[0] * other.cs[0], self.cs[1:], other.cs[1:]]))
+            values = {var: var.descr["value"]
+                      for var in newgp.varlocs if "value" in var.descr}
+            if values:
+                newgp.sub(values)
+                newgp.initalsub = newgp.last
+                subs.update(values)
+                newgp.substitutions = subs
+            return newgp
         else:
             return NotImplemented
-
-    def __call__(self, key):
-        return self[key]
 
     def vars(self, *args):
         out = [self[arg] for arg in args]
@@ -347,7 +361,7 @@ class GP(Model):
                   % (self.endtime - self.starttime))
         self.solution = solution
         if hasattr(self, "calc"):
-            self.result = self.calc(solution)
+            self.result.update(self.calc(solution))
         # would love to return solution.update(result), but can't guarantee
         # that the result will be VarKey-based!
         return self.solution
@@ -412,12 +426,13 @@ class GP(Model):
     def __run_solver(self):
         "Gets a solver's raw output, then checks and standardizes it."
 
+        self.genA()
         result = self.solverfn(self.cs, self.A, self.p_idxs)
         if result['status'] not in ["optimal", "OPTIMAL"]:
             raise RuntimeWarning("final status of solver '%s' was '%s' not "
                                  "'optimal'" % (self.solver, result['status']))
 
-        variables = dict(zip(self.var_locs, np.exp(result['primal']).ravel()))
+        variables = dict(zip(self.varlocs, np.exp(result['primal']).ravel()))
         variables.update(self.substitutions)
 
         # constraints must be within arbitrary epsilon 1e-4 of 1
@@ -456,7 +471,7 @@ class GP(Model):
 
         sens_vars = {var: (sum([self.unsubbed.exps[i][var]*nu[i]
                                 for i in locs]))
-                     for (var, locs) in self.unsubbed.var_locs.items()}
+                     for (var, locs) in self.unsubbed.varlocs.items()}
         sensitivities["variables"] = sens_vars
 
         # free-variable sensitivities must be < arbitrary epsilon 1e-4
@@ -471,13 +486,16 @@ class GP(Model):
         local_model = Monomial(local_exp, local_c)
 
         # vectorvar substitution
-        for var in self.unsubbed.var_locs:
+        for var in self.unsubbed.varlocs:
             if "idx" in var.descr and "length" in var.descr:
                 descr = dict(var.descr)
                 descr.pop("idx")
-                units = descr.pop("units")
-                veckey = VarKey(**descr)
-                veckey.descr["units"] = units
+                if "units" in descr:
+                    units = descr.pop("units")
+                    veckey = VarKey(**descr)
+                    veckey.descr["units"] = units
+                else:
+                    veckey = VarKey(**descr)
 
                 if veckey not in variables:
                     variables[veckey] = np.empty(var.descr["length"]) + np.nan

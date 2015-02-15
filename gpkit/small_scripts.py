@@ -8,6 +8,41 @@ from .small_classes import HashVector
 from . import units as ureg
 Quantity = ureg.Quantity
 
+def link(gps, varids):
+    if not isinstance(gps, Iterable):
+        gps = [gps]
+    if not isinstance(varids, Iterable):
+        varids = [varids]
+
+    def getvarkey(var):
+        if isinstance(var, str):
+            return gps[0].varkeys[var]
+        else:
+            # assume is VarKey or Monomial
+            return var
+
+    def getvarstr(var):
+        if isinstance(var, str):
+            return var
+        else:
+            # assume is VarKey or Monomial
+            if hasattr(var, "_cmpstr"):
+                return var._cmpstr
+            else:
+                return var.exp.keys()[0]._cmpstr
+
+    if isinstance(varids, dict):
+        subs = {getvarstr(k): getvarkey(v) for k, v in varids.items()}
+    else:
+        subs = {getvarstr(v): getvarkey(v) for v in varids}
+
+    for gp in gps:
+        gp.sub(subs)
+
+    gppile = gps[0]
+    for gp in gps[1:]:
+        gppile += gp
+    return gppile
 
 def mag(c):
     "Return magnitude of a Number or Quantity"
@@ -50,7 +85,6 @@ def invalid_types_for_oper(oper, a, b):
     raise TypeError("unsupported operand types"
                     " for %s: '%s' and '%s'" % (oper, typea, typeb))
 
-
 def latex_num(c):
     cstr = "%.4g" % c
     if 'e' in cstr:
@@ -58,14 +92,35 @@ def latex_num(c):
         cstr = "%s \\times 10^{%i}" % (cstr[:idx], int(cstr[idx+1:]))
     return cstr
 
-
 def locate_vars(exps):
     "From exponents form a dictionary of which monomials each variable is in."
-    var_locs = defaultdict(list)
+    varlocs = defaultdict(list)
+    varkeys = defaultdict(list)
     for i, exp in enumerate(exps):
         for var in exp:
-            var_locs[var].append(i)
-    return var_locs
+            varlocs[var].append(i)
+            if var not in varkeys[var.name]:
+                varkeys[var.name].append(var)
+
+    for name, varl in varkeys.items():
+        if "length" in varl[0].descr:
+            # vector var
+            newlist = [None]*varl[0].descr["length"]
+            for var in varl:
+                newlist[var.descr["idx"]] = var
+            varkeys[name] = newlist
+        else:
+            if len(varl) == 1:
+                varkeys[name] = varl[0]
+            else:
+                del varkeys[name]
+                for var in varl:
+                    if "model" in var.descr:
+                        varkeys[name+"_%s"%var.descr["model"]] = var
+                    else:
+                        varkeys[name].append(var)
+
+    return dict(varlocs), dict(varkeys)
 
 
 def sort_and_simplify(exps, cs):

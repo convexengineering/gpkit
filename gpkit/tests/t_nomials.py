@@ -11,20 +11,20 @@ class t_Monomial(unittest.TestCase):
     def test_init(self):
         m = Monomial({'x': 2, 'y': -1}, 5)
         m2 = Monomial({'x': 2, 'y': -1}, 5)
-        self.assertEqual(m.var_locs, {'x': [0], 'y': [0]})
+        self.assertEqual(m.varlocs, {'x': [0], 'y': [0]})
         self.assertEqual(m.exp, {'x': 2, 'y': -1})
         self.assertEqual(m.c, 5)
         self.assertEqual(m, m2)
 
         # default c and a
         m = Monomial('x')
-        self.assertEqual(m.var_locs, {'x': [0]})
+        self.assertEqual(m.varlocs, {'x': [0]})
         self.assertEqual(m.exp, {'x': 1})
         self.assertEqual(m.c, 1)
 
         # single (string) var with non-default c
         m = Monomial('tau', .1)
-        self.assertEqual(m.var_locs, {'tau': [0]})
+        self.assertEqual(m.varlocs, {'tau': [0]})
         self.assertEqual(m.exp, {'tau': 1})
         self.assertEqual(m.c, .1)
 
@@ -170,11 +170,11 @@ class t_Posynomial(unittest.TestCase):
                        (0.5, 1))
         self.assertTrue(all(isinstance(x, float) for x in p.cs))
         self.assertEqual(len(p.exps), 2)
-        self.assertEqual(set(p.var_locs), set(('m', 'g', 'h', 'v')))
-        self.assertEqual(p.var_locs['g'], p.var_locs['h'])
-        self.assertNotEqual(p.var_locs['g'], p.var_locs['v'])
-        self.assertEqual(len(p.var_locs['m']), 2)
-        self.assertTrue(all(len(p.var_locs[key]) == 1 for key in ('ghv')))
+        self.assertEqual(set(p.varlocs), set(('m', 'g', 'h', 'v')))
+        self.assertEqual(p.varlocs['g'], p.varlocs['h'])
+        self.assertNotEqual(p.varlocs['g'], p.varlocs['v'])
+        self.assertEqual(len(p.varlocs['m']), 2)
+        self.assertTrue(all(len(p.varlocs[key]) == 1 for key in ('ghv')))
 
     def test_simplification(self):
         x = Monomial('x')

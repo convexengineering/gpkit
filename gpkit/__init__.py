@@ -55,6 +55,7 @@ enableUnits()
 from .nomials import Monomial, Posynomial, Variable, VectorVariable, VarKey
 from .posyarray import PosyArray
 from .geometric_program import GP
+from small_scripts import link
 
 if units:
     # regain control of Quantities' interactions with Posynomials
@@ -127,6 +128,7 @@ try:
         lines = [line[:-1].split(" : ") for line in settingsfile
                  if len(line.split(" : ")) == 2]
         settings = {name: value.split(", ") for (name, value) in lines}
+    del line, lines
 except IOError:
     print "Could not load settings file."
     settings = {"installed_solvers": [""]}

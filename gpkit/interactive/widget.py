@@ -13,7 +13,7 @@ def widget(gp, outputfn, ranges):
 
     def display(**kwargs):
         subs = {}
-        varkeys = gp.unsubbed.var_locs.keys()
+        varkeys = gp.unsubbed.varlocs.keys()
         for key, value in kwargs.items():
             if key in varkeys:
                 subs[varkeys[varkeys.index(key)]] = value

@@ -72,7 +72,7 @@ class VarKey(object):
             units = self.descr["units"]
             if isinstance(units, Strings):
                 units = units.replace("-", "dimensionless")
-                self.descr["units"] = ureg.parse_expression(units)
+                self.descr["units"] = 1.0*ureg.parse_expression(units)
             elif isinstance(units, Quantity):
                 self.descr["units"] = units/units.magnitude
             else:
@@ -115,8 +115,8 @@ class VarKey(object):
                     try: self.descr["units"] == other.descr["units"]
                     except:
                         return False
-                else:
-                    return self.descr[key] == other.descr[key]
+                elif self.descr[key] != other.descr[key]:
+                        return False
             return True
         elif isinstance(other, Strings):
             return self._cmpstr == other
@@ -144,7 +144,7 @@ class Posynomial(object):
             Exponent dicts for each monomial term
         cs: tuple
             Coefficient values for each monomial term
-        var_locs: dict
+        varlocs: dict
             mapping from variable name to list of indices of monomial terms
             that variable appears in
 
@@ -153,7 +153,7 @@ class Posynomial(object):
         Posynomial (if the input has multiple terms)
         Monomial   (if the input has one term)
     """
-    def __init__(self, exps=None, cs=1, var_locs=None,
+    def __init__(self, exps=None, cs=1, varlocsandkeys=None,
                  allow_negative=False, **descr):
         units = None
         if isinstance(exps, Numbers):
@@ -182,7 +182,7 @@ class Posynomial(object):
             exps = [exp]
         elif isinstance(exps, Posynomial):
             cs = exps.cs
-            var_locs = exps.var_locs
+            varlocs = exps.varlocs
             exps = exps.exps
         else:
             # test for presence of length and identical lengths
@@ -222,19 +222,27 @@ class Posynomial(object):
             if any_negative:
                 raise ValueError("each c must be positive.")
 
+        if isinstance(cs[0], Quantity):
+            units = cs[0]/cs[0].magnitude
+        elif "units" in descr:
+            units = descr["units"]
+            if isinstance(units, Quantity):
+                cs = cs*units
+        else:
+            units = None
         self.cs = cs
         self.exps = exps
-        self.units = (cs[0]/cs[0].magnitude if isinstance(cs[0], Quantity)
-                      else None)
+        self.units = units
+
         if len(exps) == 1:
             if self.__class__ is Posynomial:
                 self.__class__ = Monomial
             self.exp = exps[0]
             self.c = cs[0]
 
-        if var_locs is None:
-            var_locs = locate_vars(exps)
-        self.var_locs = var_locs
+        if varlocsandkeys is None:
+            varlocsandkeys = locate_vars(exps)
+        self.varlocs, self.varkeys = varlocsandkeys
 
         self._hashvalue = hash(tuple(zip(self.exps, tuple(self.cs))))
 
@@ -242,13 +250,13 @@ class Posynomial(object):
         return Posynomial(self.exps, self.cs.to(arg).tolist())
 
     def sub(self, substitutions, val=None, allow_negative=False):
-        var_locs, exps, cs, subs = substitution(self.var_locs,
+        varlocs, exps, cs, subs = substitution(self.varlocs, self.varkeys,
                                                 self.exps, self.cs,
                                                 substitutions, val)
-        return Posynomial(exps, cs, var_locs, allow_negative)
+        return Posynomial(exps, cs, (varlocs, self.varkeys), allow_negative, units=self.units)
 
     def subcmag(self, substitutions, val=None):
-        var_locs, exps, cs, subs = substitution(self.var_locs,
+        varlocs, exps, cs, subs = substitution(self.varlocs, self.varkeys,
                                                 self.exps, mag(self.cs),
                                                 substitutions, val)
         if any(exps):
@@ -364,15 +372,15 @@ class Posynomial(object):
     def __add__(self, other):
         if isinstance(other, Numbers):
             if other == 0:
-                return Posynomial(self.exps, self.cs, self.var_locs)
+                return Posynomial(self.exps, self.cs, (self.varlocs, self.varkeys))
             else:
                 return Posynomial(self.exps + ({},),
                                   self.cs.tolist() + [other],
-                                  self.var_locs)
+                                  (self.varlocs, self.varkeys))
         elif isinstance(other, Posynomial):
             return Posynomial(self.exps + other.exps,
                               self.cs.tolist() + other.cs.tolist())
-            # TODO: automatically parse var_locs here
+            # TODO: automatically parse varlocs here
         elif isinstance(other, PosyArray):
             return np.array(self)+other
         else:
@@ -385,7 +393,7 @@ class Posynomial(object):
         if isinstance(other, Numbers):
             return Posynomial(self.exps,
                               other*self.cs,
-                              self.var_locs)
+                              (self.varlocs, self.varkeys))
         elif isinstance(other, Posynomial):
             C = np.outer(self.cs, other.cs)
             if isinstance(self.cs, Quantity) or isinstance(other.cs, Quantity):
@@ -417,7 +425,7 @@ class Posynomial(object):
         if isinstance(other, Numbers):
             return Posynomial(self.exps,
                               self.cs/other,
-                              self.var_locs)
+                              (self.varlocs, self.varkeys))
         elif isinstance(other, Monomial):
             exps = [exp - other.exp for exp in self.exps]
             return Posynomial(exps, self.cs/other.c)
@@ -515,6 +523,9 @@ class Constraint(Posynomial):
             self.oper_l = " \\geq "
 
     def __str__(self):
+        return str(self.left) + self.oper_s + str(self.right)
+
+    def __repr__(self):
         return repr(self.left) + self.oper_s + repr(self.right)
 
     def _latex(self, unused=None):
@@ -547,7 +558,7 @@ class Constraint(Posynomial):
 
         self.cs = p.cs
         self.exps = p.exps
-        self.var_locs = p.var_locs
+        self.varlocs = p.varlocs
 
         if len(p1.exps) == len(p2.exps):
             if len(p1.exps[0]) <= len(p2.exps[0]):
@@ -575,7 +586,7 @@ class MonoEQConstraint(Constraint):
     def __nonzero__(self):
         # a constraint not guaranteed to be satisfied
         # evaluates as "False"
-        return bool(self.cs[0] == 1 and self.exps[0] == {})
+        return bool(mag(self.cs[0]) == 1.0 and self.exps[0] == {})
 
 
 class VectorVariable(PosyArray):

@@ -72,11 +72,6 @@ class t_GP(unittest.TestCase):
         sf = simpleflight_generator()
         self.simpleflight_test_core(sf.gp())
 
-    def test_simpleflight_nounits(self):
-        from simpleflight import simpleflight_generator
-        sf = simpleflight_generator(disableUnits=True)
-        self.simpleflight_test_core(sf.gp())
-
     def test_Mddtest(self):
         Cl = Variable("Cl", 0.5, "-", "Lift Coefficient")
         Mdd = Variable("Mdd", "-", "Drag Divergence Mach Number")
@@ -93,6 +88,7 @@ class t_GP(unittest.TestCase):
     def test_additive_constants(self):
         x = Variable('x')
         gp = GP(1/x, [1 >= 5*x + 0.5, 1 >= 10*x])
+        gp.genA()
         self.assertEqual(gp.cs[1], gp.cs[2])
         self.assertEqual(gp.A.data[1], gp.A.data[2])
 

@@ -5,7 +5,7 @@ from collections import namedtuple as nt
 Strings = (str, unicode)
 Numbers = (int, float)
 
-PosyTuple = nt('PosyTuple', ['exps', 'cs', 'var_locs', 'substitutions'])
+PosyTuple = nt('PosyTuple', ['exps', 'cs', 'varlocs', 'substitutions'])
 CootMatrixTuple = nt('CootMatrix', ['row', 'col', 'data'])
 
 
