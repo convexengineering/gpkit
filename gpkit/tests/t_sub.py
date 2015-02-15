@@ -46,9 +46,9 @@ class t_GPSubs(unittest.TestCase):
         x = Variable("x")
         y = VectorVariable(2, "y")
         gp = GP(x, [x >= y.prod()])
-        gp.sub(y, ('sweep', [[2, 3], [5, 7]]))
+        gp.sub(y, ('sweep', [[2, 3], [5, 7, 11]]))
         a = gp.solve()["cost"]
-        b = [10, 14, 15, 21]
+        b = [10, 14, 22, 15, 21, 33]
         self.assertTrue(all(abs(a-b)/(a+b) < 1e-7))
 
     def test_simpleaircraft(self):

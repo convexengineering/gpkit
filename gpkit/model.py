@@ -85,9 +85,17 @@ class Model(object):
                     var = VarKey(var)
                 if isinstance(var, Iterable):
                     suba = np.array(sub[1])
-                    for i, v in enumerate(var):
-                        found_sweep.append(v)
-                        self.sweep.update({v: suba[i]})
+                    try:
+                        if len(var) == suba.shape[0]:
+                            for i, v in enumerate(var):
+                                found_sweep.append(v)
+                                self.sweep.update({v: suba[i]})
+                        elif len(var) == suba.shape[1]:
+                            raise ValueError("whole-vector substitution not yet supported")
+                        else:
+                            raise ValueError("vector substitutions must share a dimension with the variable vector")
+                    except:
+                        raise ValueError("vector substitutions must be iterable.")
                 else:
                     found_sweep.append(var)
                     self.sweep.update({var: sub[1]})
