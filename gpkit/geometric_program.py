@@ -351,6 +351,8 @@ class GP(Model):
         if self.sweep:
             solution = self._solve_sweep(printing, skipfailures)
         else:
+            if printing:
+                print("Solving for %i variables."% len(self.varlocs))
             solution = GPSolutionArray()
             solution.append(self.__run_solver())
             solution.toarray()
@@ -383,7 +385,6 @@ class GP(Model):
         solution = GPSolutionArray()
 
         self.presweep = self.last
-        self.sub({var: 1.0 for var in self.sweep})
 
         if len(self.sweep) == 1:
             sweep_grids = np.array(self.sweep.values())
@@ -393,8 +394,8 @@ class GP(Model):
         sweep_vects = {var: grid.reshape(N_passes)
                        for (var, grid) in zip(self.sweep, sweep_grids)}
         if printing:
-            print("Sweeping %i variables over %i passes" % (
-                  len(self.sweep), N_passes))
+            print("Solving for %i variables over %i passes." % (
+                  len(self.varlocs), N_passes))
 
         def run_solver_i(i):
             this_pass = {var: sweep_vect[i]

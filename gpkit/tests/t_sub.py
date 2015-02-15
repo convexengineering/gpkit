@@ -42,6 +42,15 @@ class t_NomialSubs(unittest.TestCase):
             self.assertAlmostEqual(mag(xs.sub(x_, [1, 2, 3]).c), 3.0)
 
 class t_GPSubs(unittest.TestCase):
+    def test_VectorSweep(self):
+        x = Variable("x")
+        y = VectorVariable(2, "y")
+        gp = GP(x, [x >= y.prod()])
+        gp.sub(y, ('sweep', [[2, 3], [5, 7]]))
+        a = gp.solve()["cost"]
+        b = [10, 14, 15, 21]
+        self.assertTrue(all(abs(a-b)/(a+b) < 1e-7))
+
     def test_simpleaircraft(self):
         mon = Variable
         vec = VectorVariable
@@ -87,7 +96,6 @@ class t_GPSubs(unittest.TestCase):
 
                 return Monomial(1), [W >= W_0 + W_w, W_w >= W_w_surf + W_w_strc]
 
-
         rho = mon("\\rho", 1.23, "kg/m^3", "density of air")
         mu = mon("\\mu", 1.78e-5, "kg/m/s", "viscosity of air")
         C_Lmax = mon("C_{L,max}", 1.5, "-", "max CL with flaps down")
@@ -112,7 +120,7 @@ class t_GPSubs(unittest.TestCase):
         gpl = link([gp, StructModel(name="struct"), DragModel(name="drag")],
                    {rho: rho, "C_L": C_L, "C_D": C_D, "A": A, "S": S, "Re": Re, "W": lol})
         self.assertEqual(gpl.varkeys["W"].descr["label"], "lol")
-        
+
         from simpleflight import simpleflight_generator
         sf = simpleflight_generator(disableUnits=(type(W.varkeys["W"].descr["units"])==str)).gp()
         def sorted_solve_array(gp):
@@ -121,10 +129,7 @@ class t_GPSubs(unittest.TestCase):
                                    key=lambda x: x[0].name)))
         a = sorted_solve_array(sf)
         b = sorted_solve_array(gpl)
-        self.assertTrue(all((a-b)/(a+b) < 1e-7))
-
-    def test_simpleaircraft(self):
-        pass
+        self.assertTrue(all(abs(a-b)/(a+b) < 1e-7))
 
 tests = [t_NomialSubs, t_GPSubs]
 

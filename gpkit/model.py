@@ -10,6 +10,7 @@ import numpy as np
 
 from functools import reduce
 from operator import add
+from collections import Iterable
 
 from .small_classes import Strings
 from .small_classes import PosyTuple
@@ -78,12 +79,21 @@ class Model(object):
         for var, sub in substitutions.items():
             if is_sweepvar(sub):
                 del subs[var]
-                var = VarKey(var)
-                found_sweep.append(var)
-                self.sweep.update({var: sub[1]})
+                if isinstance(var, Strings):
+                    var = self.varkeys[var]
+                elif isinstance(var, Monomial):
+                    var = VarKey(var)
+                if isinstance(var, Iterable):
+                    suba = np.array(sub[1])
+                    for i, v in enumerate(var):
+                        found_sweep.append(v)
+                        self.sweep.update({v: suba[i]})
+                else:
+                    found_sweep.append(var)
+                    self.sweep.update({var: sub[1]})
 
         if not (subs or found_sweep):
-            raise KeyError("could not find anything to substitute")
+            raise KeyError("could not find anything to substitute in %s" % substitutions)
 
         base = getattr(self, frombase)
         substitutions = dict(base.substitutions)
