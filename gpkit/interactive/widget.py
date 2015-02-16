@@ -8,15 +8,21 @@ from ..small_scripts import unitstr
 
 
 def widget(gp, outputfn=None, ranges=None):
+    gp = gp.copy()
+    
+    if not ranges:
+        ranges = {k._cmpstr: (min(vs), max(vs), (max(vs)-min(vs))/100.0)
+                  for k, vs in gp.sweep.items()}
+        ranges.update({k._cmpstr: (v/10.0, 10*v ,v/10.0)
+                       for k, v in gp.substitutions.items()})
+    if not outputfn:
+        def outputfn(gp):
+            print gp.solution.table(["cost", "free_variables"])
+
     gp.sweep = {}
     gp.prewidget = gp.last
 
-    def display(**kwargs):
-        subs = {}
-        varkeys = gp.unsubbed.varlocs.keys()
-        for key, value in kwargs.items():
-            if key in varkeys:
-                subs[varkeys[varkeys.index(key)]] = value
+    def display(**subs):
         gp.sub(subs, replace=True)
         gp.solve(printing=False)
         outputfn(gp)
@@ -25,7 +31,7 @@ def widget(gp, outputfn=None, ranges=None):
     return interactive(display, **ranges)
 
 
-def table(gp, sweep, tablevars):
+def table(gp, tablevars, ranges=None):
 
     def outputfn(gp):
         def nstr(num):
@@ -54,4 +60,4 @@ def table(gp, sweep, tablevars):
                      + [r"%s & %s & %s & \text{%s}\\" % sol for sol in sols]
                      + [r"\end{array}"])))
 
-    return widget(gp, outputfn, sweep)
+    return widget(gp, outputfn, ranges)
