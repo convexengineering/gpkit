@@ -4,9 +4,20 @@ from collections import defaultdict
 from collections import Iterable
 
 from .small_classes import HashVector
+from .small_classes import Strings, Numbers
 
 from . import units as ureg
 Quantity = ureg.Quantity
+
+def isequal(a, b):
+    if isinstance(a, Iterable) and not isinstance(a, Strings+(list, dict)):
+        for i, a_i in enumerate(a):
+            if isinstance(a_i, Iterable) and not isinstance(a_i, Strings+(list, dict)):
+                if not isequal(a_i, b[i]):
+                    return False
+    elif a != b:
+        return False
+    return True
 
 def link(gps, varids):
     if not isinstance(gps, Iterable):
@@ -52,15 +63,16 @@ def mag(c):
         return c
 
 
-def unitstr(v, into="%s", options="~"):
-    units = None
-    if isinstance(v, Quantity):
-        units = v
-    elif hasattr(v, "descr"):
-        if isinstance(v.descr, dict):
-            units = v.descr.get("units", "-")
-    if isinstance(units, Quantity):
-        rawstr = ("{:%s}" % options).format(units)
+def unitstr(units, into="%s", options="~"):
+    if hasattr(units, "descr"):
+        if isinstance(units.descr, dict):
+            units = units.descr.get("units", "-")
+    if units and not isinstance(units, Strings):
+        try:
+            rawstr = ("{:%s}" % options).format(units)
+        except:
+            print type(units)
+            rawstr = "1.0 " + str(units.units)
         units = "".join(rawstr.replace("dimensionless", "-").split()[1:])
     if units:
         return into % units

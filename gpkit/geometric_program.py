@@ -92,9 +92,13 @@ class GPSolutionArray(DictOfLists):
         strs = []
         if "cost" in tables:
             if len(self) > 1:
-                strs += ["%13.5g : Cost (average of %i values)" % (self["cost"].mean(), len(self))]
+                strs += ["              | Cost (average of %i values)" % len(self)]
+                strs += ["              : %-8.3g" % self["cost"].mean()]
+                strs += ["              | "]
             else:
-                strs += ["%13.5g : Cost" % self["cost"].mean()]
+                strs += ["              | Cost"]
+                strs += ["              : %-8.3g" % self["cost"]]
+                strs += ["              | "]
         if "free_variables" in tables:
             strs += [results_table(self["free_variables"],
                                    "Free variables" + ("" if len(self) == 1 else " (average)"))]

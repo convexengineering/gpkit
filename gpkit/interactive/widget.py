@@ -7,7 +7,7 @@ except ImportError:
 from ..small_scripts import unitstr
 
 
-def widget(gp, outputfn, ranges):
+def widget(gp, outputfn=None, ranges=None):
     gp.sweep = {}
     gp.prewidget = gp.last
 
@@ -20,7 +20,7 @@ def widget(gp, outputfn, ranges):
         gp.sub(subs, replace=True)
         gp.solve(printing=False)
         outputfn(gp)
-        gp.load(gp.prewidget, printing=False)
+        gp.load(gp.prewidget)
 
     return interactive(display, **ranges)
 

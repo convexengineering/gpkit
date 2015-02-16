@@ -7,6 +7,7 @@ from collections import Iterable
 from .small_classes import Strings, Numbers
 from .posyarray import PosyArray
 
+from .small_scripts import isequal
 from .small_scripts import latex_num
 from .small_scripts import sort_and_simplify
 from .small_scripts import locate_vars
@@ -115,7 +116,8 @@ class VarKey(object):
                     try: self.descr["units"] == other.descr["units"]
                     except:
                         return False
-                elif self.descr[key] != other.descr[key]:
+                else:
+                    if not isequal(self.descr[key], other.descr[key]):
                         return False
             return True
         elif isinstance(other, Strings):

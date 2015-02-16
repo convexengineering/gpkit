@@ -4,7 +4,7 @@ from string import Template
 import itertools
 
 try:
-    from IPython.display import Math, display
+    from IPython.display import Math, display, HTML
 except ImportError:
     pass
 
@@ -29,7 +29,7 @@ new_jswidget_id = itertools.count().next
 def ractorjs(title, gp, update_py, ranges, constraint_js=""):
     widget_id = "jswidget_"+str(new_jswidget_id())
     display(HTML("<script id='%s-after' type='text/throwaway'>%s</script>" % (widget_id, constraint_js)))
-    display(HTML("<script>var %s = {storage: [], n:%i, ranges: {}, after: document.getElementById('%s-after').innerText, bases: [1] }</script>" % (widget_id, len(ranges), widget_id)))
+    display(HTML("<script>var %s = {storage: [], n:%i, ranges: {}, after: document.getElementById('%s-after').innerHTML, bases: [1] }</script>" % (widget_id, len(ranges), widget_id)))
 
     container_id = widget_id + "_container"
     display(HTML("<div id='%s'></div><style>#%s td {text-align: right; border: none !important;}\n#%s tr {border: none !important;}\n#%s table {border: none !important;}\n</style>" % (container_id, container_id, container_id, container_id)))
@@ -82,7 +82,7 @@ def ractorjs(title, gp, update_py, ranges, constraint_js=""):
         k = sum(np.array(idxs) * np.array([1]+bases[:-1]))
         evalarray[k] = update_py(GPSolutionArray(solj))
     display(HTML("<script> %s.storage = %s </script>" % (widget_id, evalarray)))
-    gp.load(gp.prewidget, printing=False)
+    gp.load(gp.prewidget)
 
     display(HTML(template + "</table></script>"))
 
@@ -97,6 +97,7 @@ def ractorjs(title, gp, update_py, ranges, constraint_js=""):
               for (var i=0; i<$w.n; i++) {
                   varname = 'var'+i
                   idx = $w.ractive.data[varname]
+                  console.log("$w-"+varname);
                   document.getElementById("$w-"+varname).innerText = Math.round(100*$w.ranges[varname][idx])/100
                   idxsum += idx*$w.bases[i]
               }
