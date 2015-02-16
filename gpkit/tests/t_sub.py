@@ -66,6 +66,7 @@ class t_GPSubs(unittest.TestCase):
                 C_L = mon("C_L", "-", "Lift coefficent of wing")
                 A = mon("A", "-", "aspect ratio")
                 S = mon("S", "m^2", "total wing area")
+                dum = mon("dum", "-", "dummy variable")
 
                 if type(W.varkeys["W"].descr["units"]) != str:
                     CDA0 = mon("(CDA0)", 310.0, "cm^2", "fuselage drag area")
@@ -76,7 +77,7 @@ class t_GPSubs(unittest.TestCase):
                 C_D_wpar = k*C_f*S_wetratio
                 C_D_ind = C_L**2/(pi*A*e)
 
-                return Monomial(1), [C_f >= 0.074/Re**0.2, C_D >= C_D_fuse + C_D_wpar + C_D_ind]
+                return Monomial(1), [dum <= 2, dum >= 1, C_f >= 0.074/Re**0.2, C_D >= C_D_fuse + C_D_wpar + C_D_ind]
 
         class StructModel(GP):
             def setup(self):
@@ -108,11 +109,14 @@ class t_GPSubs(unittest.TestCase):
         Re = mon("Re", "-", "Reynold's number")
         W = mon("W", "N", "total aircraft weight")
         V = mon("V", "m/s", "cruising speed")
+        dum = mon("dum", "-", "dummy variable")
 
         equations  = [D >= 0.5*rho*S*C_D*V**2,
                       Re <= (rho/mu)*V*(S/A)**0.5,
                       W <= 0.5*rho*S*C_L*V**2,
-                      W <= 0.5*rho*S*C_Lmax*V_min**2,]
+                      W <= 0.5*rho*S*C_Lmax*V_min**2,
+                      dum >= 1,
+                      dum <= 2, ]
 
         lol = mon("W", "N", "lol")
 
@@ -120,15 +124,23 @@ class t_GPSubs(unittest.TestCase):
         gpl = link([gp, StructModel(name="struct"), DragModel(name="drag")],
                    {rho: rho, "C_L": C_L, "C_D": C_D, "A": A, "S": S, "Re": Re, "W": lol})
         self.assertEqual(gpl.varkeys["W"].descr["label"], "lol")
+        self.assertIn("struct", gpl.varkeys["W_w"].descr["model"])
+        self.assertIn("dum", gpl.varkeys)
+        if type(W.varkeys["W"].descr["units"]) != str:
+            self.assertIn("dum_drag", gpl.varkeys)
+        else:
+            self.assertIn("dum_drag1", gpl.varkeys)
 
         from simpleflight import simpleflight_generator
         sf = simpleflight_generator(disableUnits=(type(W.varkeys["W"].descr["units"])==str)).gp()
-        def sorted_solve_array(gp):
+        def sorted_solve_array(sol):
             return np.array(map(lambda x: x[1],
-                            sorted(gp.solve(printing=False)["variables"].items(),
+                            sorted(sol["variables"].items(),
                                    key=lambda x: x[0].name)))
-        a = sorted_solve_array(sf)
-        b = sorted_solve_array(gpl)
+        a = sorted_solve_array(sf.solve(printing=False))
+        sol = gpl.solve(printing=False)
+        del sol["variables"]["dum"], sol["variables"]["dum"]
+        b = sorted_solve_array(sol)
         self.assertTrue(all(abs(a-b)/(a+b) < 1e-7))
 
 tests = [t_NomialSubs, t_GPSubs]

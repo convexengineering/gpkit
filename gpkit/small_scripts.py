@@ -125,12 +125,16 @@ def locate_vars(exps):
             if len(varl) == 1:
                 varkeys[name] = varl[0]
             else:
-                del varkeys[name]
+                varkeys[name] = []
                 for var in varl:
                     if "model" in var.descr:
                         varkeys[name+"_%s"%var.descr["model"]] = var
                     else:
                         varkeys[name].append(var)
+                if len(varkeys[name]) == 1:
+                    varkeys[name] = varkeys[name][0]
+                elif len(varkeys[name]) == 0:
+                    del varkeys[name]
 
     return dict(varlocs), dict(varkeys)
 
