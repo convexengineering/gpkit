@@ -115,7 +115,8 @@ class VarKey(object):
                 if key == "units":
                     try:
                         if not self.descr["units"] == other.descr["units"]:
-                            if str((self.descr["units"]/other.descr["units"]).units) != "dimensionless":
+                            d = self.descr["units"]/other.descr["units"]
+                            if str(d.units) != "dimensionless" and not abs(mag(d)-1.0) <= 1e-7:
                                 return False
                     except:
                         return False
