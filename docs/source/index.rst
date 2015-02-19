@@ -17,6 +17,7 @@ Table of contents
        installation
        gettingstarted
        basiccommands
+       advancedcommands
        examples
        glossary
        citinggpkit
