@@ -498,7 +498,9 @@ class GP(Model):
         for var in self.unsubbed.varlocs:
             if "idx" in var.descr and "length" in var.descr:
                 descr = dict(var.descr)
-                descr.pop("idx")
+                idx = descr.pop("idx")
+                if "value" in descr:
+                    descr.pop("value")
                 if "units" in descr:
                     units = descr.pop("units")
                     veckey = VarKey(**descr)
@@ -508,7 +510,7 @@ class GP(Model):
 
                 if veckey not in variables:
                     variables[veckey] = np.empty(var.descr["length"]) + np.nan
-                variables[veckey][var.descr["idx"]] = variables.pop(var)
+                variables[veckey][idx] = variables.pop(var)
 
                 if veckey not in sensitivities["variables"]:
                     sensitivities["variables"][veckey] = \
