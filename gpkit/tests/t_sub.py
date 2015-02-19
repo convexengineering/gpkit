@@ -41,6 +41,7 @@ class t_NomialSubs(unittest.TestCase):
         for x_ in ["x", x]:
             self.assertAlmostEqual(mag(xs.sub(x_, [1, 2, 3]).c), 3.0)
 
+
 class t_GPSubs(unittest.TestCase):
     def test_VectorSweep(self):
         x = Variable("x")
@@ -50,6 +51,12 @@ class t_GPSubs(unittest.TestCase):
         a = gp.solve(printing=False)["cost"]
         b = [10, 14, 22, 15, 21, 33]
         self.assertTrue(all(abs(a-b)/(a+b) < 1e-7))
+
+        gp = GP(x, [x >= y.prod()])
+
+        def bad_sub(gp):
+            gp.sub(y, ('sweep', [[2, 3], [5, 7], [9, 11], [13, 15]]))
+        self.assertRaises(ValueError, bad_sub, gp)
 
     def test_VectorInit(self):
         N = 6
