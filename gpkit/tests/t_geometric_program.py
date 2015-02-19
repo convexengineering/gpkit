@@ -1,6 +1,7 @@
 import math
 import unittest
 from gpkit import GP, Monomial, settings, VectorVariable, Variable
+from gpkit.small_classes import CootMatrix
 
 NDIGS = {"cvxopt": 5, "mosek": 7, "mosek_cli": 7}
 # name: decimal places of accuracy
@@ -81,6 +82,9 @@ class t_GP(unittest.TestCase):
         sol1 = gp1.solve(printing=False)
         sol2 = gp2.solve(printing=False)
         sol3 = gp3.solve(printing=False)
+        self.assertEqual(gp1.A, CootMatrix(row=[0, 1, 2], col=[0, 0, 0], data=[-1, 1, -1]))
+        self.assertEqual(gp2.A, CootMatrix(row=[0, 1], col=[0, 0], data=[-1, 1]))
+        self.assertEqual(gp3.A, CootMatrix(row=[0, 2, 3], col=[0, 0, 0], data=[-1, 1, -1]))
         self.assertAlmostEqual(sol1(Mdd), sol2(Mdd))
         self.assertAlmostEqual(sol1(Mdd), sol3(Mdd))
         self.assertAlmostEqual(sol2(Mdd), sol3(Mdd))
