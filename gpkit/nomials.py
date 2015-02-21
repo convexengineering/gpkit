@@ -371,7 +371,7 @@ class Posynomial(object):
                 mstrs.append("%s\\frac{%s}{%s}" % (cstr, pvarstr, nvarstr))
 
         units = unitstr(self.units, "\mathrm{\\left[ %s \\right]}", "L~")
-        units_smallfrac = units.replace("frac", "tfrac")
+        units_smallfrac = units.replace("frac", "tfrac").replace("\\cdot", "\\cdot ")
         return " + ".join(sorted(mstrs)) + units_smallfrac
 
     # posynomial arithmetic
