@@ -183,9 +183,9 @@ class GP(Model):
                 posynomials.append(constraint)
         self.posynomials = tuple(posynomials)
         if hasattr(self, "setup"):
-            if name in GP.model_nums:
-                name += str(GP.model_nums[name])
-            GP.model_nums[name] += 1
+            k = GP.model_nums[name]
+            GP.model_nums[name] = k+1
+            name += str(k) if k else ""
             for p in self.posynomials:
                 for k in p.varlocs:
                     if not "model" in k.descr:

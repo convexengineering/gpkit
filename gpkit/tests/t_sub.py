@@ -146,10 +146,12 @@ class t_GPSubs(unittest.TestCase):
         self.assertEqual(gpl.varkeys["W"].descr["label"], "lol")
         self.assertIn("struct", gpl.varkeys["W_w"].descr["model"])
         self.assertIn("dum", gpl.varkeys)
-        if type(W.varkeys["W"].descr["units"]) != str:
-            self.assertIn("dum_drag", gpl.varkeys)
-        else:
-            self.assertIn("dum_drag1", gpl.varkeys)
+
+        k = GP.model_nums["drag"] - 1
+        self.assertIn("dum_drag"+(str(k) if k else ""), gpl.varkeys)
+        gpl2 = link([GP(D, equations), StructModel(name="struct"), DragModel(name="drag")],
+                    {rho: rho, "C_L": C_L, "C_D": C_D, "A": A, "S": S, "Re": Re, "W": lol})
+        self.assertIn("dum_drag"+str(k+1), gpl2.varkeys)
 
         from simpleflight import simpleflight_generator
         sf = simpleflight_generator(disableUnits=(type(W.varkeys["W"].descr["units"])==str)).gp()
