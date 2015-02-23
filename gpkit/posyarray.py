@@ -1,4 +1,4 @@
-# -*- coding: utf-8 -*-
+# -*coding: utf-8 -*-
 """Module for creating PosyArray instances.
 
     Example
@@ -27,6 +27,14 @@ class PosyArray(np.ndarray):
     -------
     >>> px = gpkit.PosyArray([1, x, x**2])
     """
+
+    def __str__(self):
+        "Returns list-like string, but with str(el) instead of repr(el)."
+        return "["+", ".join([str(p) for p in self])+"]"
+
+    def __repr__(self):
+        "Returns str(self) tagged with gpkit information."
+        return "gpkit.%s(%s)" % (self.__class__.__name__, str(self))
 
     def __hash__(self):
         if hasattr(self, "_hashvalue"):

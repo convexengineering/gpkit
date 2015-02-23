@@ -7,6 +7,13 @@ from gpkit.small_scripts import mag
 
 class t_NomialSubs(unittest.TestCase):
 
+    def test_Basic(self):
+        x = Variable("x")
+        p = x**2
+        self.assertEqual(p.sub(x, 3), 9)
+        self.assertEqual(p.sub(x.varkeys["x"], 3), 9)
+        self.assertEqual(p.sub("x", 3), 9)
+
     def test_StringMutation(self):
         x = Variable("x", "m")
         descr_before = x.exp.keys()[0].descr
@@ -21,7 +28,7 @@ class t_NomialSubs(unittest.TestCase):
             self.assertAlmostEqual(x_changed_descr["units"]/y_descr["units"], 1.0)
         self.assertEqual(x.sub("x", x), x)
 
-    def test_Scalar(self):
+    def test_ScalarUnits(self):
         x = Variable("x", "m")
         xvk = x.varkeys.values()[0]
         descr_before = x.exp.keys()[0].descr
@@ -34,8 +41,18 @@ class t_NomialSubs(unittest.TestCase):
                 else:
                     expected = 1.0
                 self.assertAlmostEqual(expected, mag(x.sub(x_, y_).c))
+        if type(xvk.descr["units"]) != str:
+            z = Variable("z", "s")
+            self.assertRaises(ValueError, y.sub, y, z)
 
     def test_Vector(self):
+        x = Variable("x")
+        y = Variable("y")
+        z = VectorVariable(2, "z")
+        p = x*y*z
+        self.assertTrue(all(p.sub({x: 1, "y": 2}) == 2*z))
+        self.assertTrue(all(p.sub({x: 1, y: 2, "z": [1, 2]}) == z.sub(z, [2, 4])))
+
         x = VectorVariable(3, "x", "m")
         xs = x[:2].sum()
         for x_ in ["x", x]:
