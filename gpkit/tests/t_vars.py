@@ -66,6 +66,16 @@ class t_Variable(unittest.TestCase):
         self.assertTrue(isinstance(3*v, Monomial))
         self.assertFalse(isinstance(3*v, Variable))
 
+    def test_value(self):
+        a = Variable('a')
+        b = Variable('b', value=4)
+        c = a**2 + b
+        self.assertEqual(b.value, 4)
+        self.assertEqual(float(b.value), 4.0)
+        self.assertEqual(c.value, a**2 + 4)
+        # next test should work, but currently fails
+        # self.assertEqual(a.value, a)
+
 
 class t_VectorVariable(unittest.TestCase):
 
