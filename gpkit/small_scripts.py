@@ -71,7 +71,6 @@ def unitstr(units, into="%s", options="~"):
         try:
             rawstr = ("{:%s}" % options).format(units)
         except:
-            print type(units)
             rawstr = "1.0 " + str(units.units)
         units = "".join(rawstr.replace("dimensionless", "-").split()[1:])
     if units:

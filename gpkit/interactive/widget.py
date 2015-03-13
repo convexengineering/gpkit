@@ -1,5 +1,5 @@
 try:
-    from IPython.html.widgets import interactive
+    from IPython.html.widgets import interactive, FloatSliderWidget
     from IPython.display import Math, display
 except ImportError:
     pass
@@ -9,11 +9,11 @@ from ..small_scripts import unitstr
 
 def widget(gp, outputfn=None, ranges=None):
     gp = gp.copy()
-    
+
     if not ranges:
         ranges = {k._cmpstr: (min(vs), max(vs), (max(vs)-min(vs))/100.0)
                   for k, vs in gp.sweep.items()}
-        ranges.update({k._cmpstr: (v/10.0, 10*v ,v/10.0)
+        ranges.update({k._cmpstr: FloatSliderWidget(min=v/10.0, max=10*v , step=v/10.0, value=v)
                        for k, v in gp.substitutions.items()})
     if not outputfn:
         def outputfn(gp):
