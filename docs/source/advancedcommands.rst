@@ -4,9 +4,9 @@ Advanced Commands
 Substitutions
 =============
 
-Substitutions are a very general-purpose way to change every instance of one variable into either a number or another variable.
+Substitutions are a general-purpose way to change every instance of one variable into either a number or another variable.
 
-Substituting into a Posynomials, PosyArrays, and GPs
+Substituting into Posynomials, PosyArrays, and GPs
 -----------------------------------------------------
 
 The examples below all use Posynomials and PosyArrays, but the syntax is identical for GPs (except when it comes to sweep variables).
@@ -20,7 +20,7 @@ The examples below all use Posynomials and PosyArrays, but the syntax is identic
     assert p.sub(x.varkeys["x"], 3) == 9
     assert p.sub("x", 3) == 9
 
-Here the variable `x` is being replaced with `3` in three ways: first by substituting for ``x`` directly, then by substituting for for the ``VarKey("x")``, then by substituting the string "x". In all cases the substitution is understood as being with the VarKey: when a variable is passed in the VarKey is pulled out of it, and when a string is passed in it is used as an argument to the posynomials ``varkeys`` dictionary.
+Here the variable `x` is being replaced with `3` in three ways: first by substituting for ``x`` directly, then by substituting for the ``VarKey("x")``, then by substituting the string "x". In all cases the substitution is understood as being with the VarKey: when a variable is passed in the VarKey is pulled out of it, and when a string is passed in it is used as an argument to the Posynomial's ``varkeys`` dictionary.
 
 Substituting multiple values
 ----------------------------
@@ -40,7 +40,7 @@ To substitute in multiple variables, pass them in as a dictionary where the keys
 Substituting with nonnumeric values
 -----------------------------------
 
-You can also substitute in with sweep variables (for which see last week's FotW), strings, and monomials:
+You can also substitute in sweep variables (see Sweeps_), strings, and monomials:
 
 .. code-block:: python
 
@@ -73,7 +73,7 @@ Any of the substitutions above can be run with ``p.sub(*args, replace=True)`` to
 Fixed Variables
 ---------------
 
-When a GP is created, any fixed Variables are use to form a dictionary: ``{var: var.descr["value"] for var in self.varlocs if "value" in var.descr}``. This dictionary in then substituted into the GP's cost and constraints before the ``substitutions`` argument.
+When a GP is created, any fixed Variables are used to form a dictionary: ``{var: var.descr["value"] for var in self.varlocs if "value" in var.descr}``. This dictionary in then substituted into the GP's cost and constraints before the ``substitutions`` argument.
 
 Substituting from a GP solution array
 -------------------------------------
@@ -82,6 +82,7 @@ Substituting from a GP solution array
 
 You can also substitute by just calling the solution, i.e. ``gp.solution(p)``. This returns a numpy array of just the coefficients (``c``) of the posynomial after substitution, and will raise a` `ValueError`` if some of the variables in ``p`` were not found in ``gp.solution``.
 
+.. _Sweeps:
 
 Sweeps
 ======

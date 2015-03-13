@@ -50,7 +50,7 @@ class t_NomialSubs(unittest.TestCase):
         y = Variable("y")
         z = VectorVariable(2, "z")
         p = x*y*z
-        self.assertTrue(all(p.sub({x: 1, "y": 2}) == 2*z))
+        self.assertTrue(all(p.sub({x: 1, "y": 2}) == 2*z)) # todo: this tests boolean value of a MonoEQConstraint. Need to change to test whether monomials are same.
         self.assertTrue(all(p.sub({x: 1, y: 2, "z": [1, 2]}) == z.sub(z, [2, 4])))
 
         x = VectorVariable(3, "x", "m")
