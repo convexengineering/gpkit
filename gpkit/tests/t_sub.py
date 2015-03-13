@@ -25,7 +25,8 @@ class t_NomialSubs(unittest.TestCase):
         y_descr = y.exp.keys()[0].descr
         self.assertEqual(x_changed_descr["name"], y_descr["name"])
         if type(descr_before["units"]) != str:
-            self.assertAlmostEqual(x_changed_descr["units"]/y_descr["units"], 1.0)
+            self.assertAlmostEqual(x_changed_descr["units"]/y_descr["units"],
+                                   1.0)
         self.assertEqual(x.sub("x", x), x)
 
     def test_ScalarUnits(self):
@@ -50,8 +51,9 @@ class t_NomialSubs(unittest.TestCase):
         y = Variable("y")
         z = VectorVariable(2, "z")
         p = x*y*z
-        self.assertTrue(all(p.sub({x: 1, "y": 2}) == 2*z)) # todo: this tests boolean value of a MonoEQConstraint. Need to change to test whether monomials are same.
-        self.assertTrue(all(p.sub({x: 1, y: 2, "z": [1, 2]}) == z.sub(z, [2, 4])))
+        self.assertTrue(all(p.sub({x: 1, "y": 2}) == 2*z))
+        self.assertTrue(all(p.sub({x: 1, y: 2, "z": [1, 2]}) ==
+                            z.sub(z, [2, 4])))
 
         x = VectorVariable(3, "x", "m")
         xs = x[:2].sum()
@@ -79,12 +81,12 @@ class t_GPSubs(unittest.TestCase):
         N = 6
         Weight = 50000
         xi_dist = 6*Weight/float(N)*((np.array(range(1, N+1))
-                                        -.5/float(N))/float(N)
-                                        - (np.array(range(1, N+1))
-                                        -.5/float(N))**2/float(N)**2)
+                                     - .5/float(N))/float(N)
+                                     - (np.array(range(1, N+1))
+                                     - .5/float(N))**2/float(N)**2)
 
-        xi  = VectorVariable(N, "xi", xi_dist, "N", "Constant Thrust per Bin")
-        P     = Variable("P", "N", "Total Power")
+        xi = VectorVariable(N, "xi", xi_dist, "N", "Constant Thrust per Bin")
+        P = Variable("P", "N", "Total Power")
         phys_constraints = [P >= xi.sum()]
         objective = P
         eqns = phys_constraints
@@ -103,7 +105,8 @@ class t_GPSubs(unittest.TestCase):
             def setup(self):
                 pi = mon("\\pi", np.pi, "-", "half of the circle constant")
                 e = mon("e", 0.95, "-", "Oswald efficiency factor")
-                S_wetratio = mon("(\\frac{S}{S_{wet}})", 2.05, "-", "wetted area ratio")
+                S_wetratio = mon("(\\frac{S}{S_{wet}})", 2.05, "-",
+                                 "wetted area ratio")
                 k = mon("k", 1.2, "-", "form factor")
                 C_f = mon("C_f", "-", "skin friction coefficient")
                 C_D = mon("C_D", "-", "Drag coefficient of wing")
@@ -121,25 +124,31 @@ class t_GPSubs(unittest.TestCase):
                 C_D_wpar = k*C_f*S_wetratio
                 C_D_ind = C_L**2/(pi*A*e)
 
-                return Monomial(1), [dum <= 2, dum >= 1, C_f >= 0.074/Re**0.2, C_D >= C_D_fuse + C_D_wpar + C_D_ind]
+                return (Monomial(1),
+                        [dum <= 2, dum >= 1, C_f >= 0.074/Re**0.2,
+                         C_D >= C_D_fuse + C_D_wpar + C_D_ind])
 
         class StructModel(GP):
             def setup(self):
                 N_ult = mon("N_{ult}", 3.8, "-", "ultimate load factor")
-                tau = mon("\\tau", 0.12, "-", "airfoil thickness to chord ratio")
+                tau = mon("\\tau", 0.12, "-",
+                          "airfoil thickness to chord ratio")
                 W_w = mon("W_w", "N", "wing weight")
                 W = mon("W", "N", "total aircraft weight")
 
                 if type(W.varkeys["W"].descr["units"]) != str:
-                    W_0 = mon("W_0", 4.94, "kN", "aircraft weight excluding wing")
-                    W_w_strc = 8.71e-5*(N_ult*A**1.5*(W_0*W*S)**0.5)/tau / units.m
+                    W_0 = mon("W_0", 4.94, "kN",
+                              "aircraft weight excluding wing")
+                    W_w_strc = 8.71e-5*N_ult*A**1.5*(W_0*W*S)**0.5/tau/units.m
                     W_w_surf = (45.24*units.Pa) * S
                 else:
-                    W_0 = mon("W_0", 4940, "N", "aircraft weight excluding wing")
+                    W_0 = mon("W_0", 4940, "N",
+                              "aircraft weight excluding wing")
                     W_w_strc = 8.71e-5*(N_ult*A**1.5*(W_0*W*S)**0.5)/tau
                     W_w_surf = 45.24 * S
 
-                return Monomial(1), [W >= W_0 + W_w, W_w >= W_w_surf + W_w_strc]
+                return (Monomial(1),
+                        [W >= W_0 + W_w, W_w >= W_w_surf + W_w_strc])
 
         rho = mon("\\rho", 1.23, "kg/m^3", "density of air")
         mu = mon("\\mu", 1.78e-5, "kg/m/s", "viscosity of air")
@@ -155,30 +164,35 @@ class t_GPSubs(unittest.TestCase):
         V = mon("V", "m/s", "cruising speed")
         dum = mon("dum", "-", "dummy variable")
 
-        equations  = [D >= 0.5*rho*S*C_D*V**2,
-                      Re <= (rho/mu)*V*(S/A)**0.5,
-                      W <= 0.5*rho*S*C_L*V**2,
-                      W <= 0.5*rho*S*C_Lmax*V_min**2,
-                      dum >= 1,
-                      dum <= 2, ]
+        equations = [D >= 0.5*rho*S*C_D*V**2,
+                     Re <= (rho/mu)*V*(S/A)**0.5,
+                     W <= 0.5*rho*S*C_L*V**2,
+                     W <= 0.5*rho*S*C_Lmax*V_min**2,
+                     dum >= 1,
+                     dum <= 2, ]
 
         lol = mon("W", "N", "lol")
 
         gp = GP(D, equations)
         gpl = link([gp, StructModel(name="struct"), DragModel(name="drag")],
-                   {rho: rho, "C_L": C_L, "C_D": C_D, "A": A, "S": S, "Re": Re, "W": lol})
+                   {rho: rho, "C_L": C_L, "C_D": C_D, "A": A, "S": S,
+                    "Re": Re, "W": lol})
         self.assertEqual(gpl.varkeys["W"].descr["label"], "lol")
         self.assertIn("struct", gpl.varkeys["W_w"].descr["model"])
         self.assertIn("dum", gpl.varkeys)
 
         k = GP.model_nums["drag"] - 1
         self.assertIn("dum_drag"+(str(k) if k else ""), gpl.varkeys)
-        gpl2 = link([GP(D, equations), StructModel(name="struct"), DragModel(name="drag")],
-                    {rho: rho, "C_L": C_L, "C_D": C_D, "A": A, "S": S, "Re": Re, "W": lol})
+        gpl2 = link([GP(D, equations), StructModel(name="struct"),
+                     DragModel(name="drag")],
+                    {rho: rho, "C_L": C_L, "C_D": C_D, "A": A, "S": S,
+                     "Re": Re, "W": lol})
         self.assertIn("dum_drag"+str(k+1), gpl2.varkeys)
 
         from simpleflight import simpleflight_generator
-        sf = simpleflight_generator(disableUnits=(type(W.varkeys["W"].descr["units"])==str)).gp()
+        sf = simpleflight_generator(
+            disableUnits=(type(W.varkeys["W"].descr["units"]) == str)).gp()
+
         def sorted_solve_array(sol):
             return np.array(map(lambda x: x[1],
                             sorted(sol["variables"].items(),
