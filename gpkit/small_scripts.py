@@ -155,11 +155,11 @@ def sort_and_simplify(exps, cs):
 
 def results_table(data, title, senss=False):
     strs = ["              | " + title]
-    for var, table in sorted(data.items(), key=lambda x: str(x[0])):
-        try:
-            val = table.mean()
-        except AttributeError:
-            val = table
+    for var, val in sorted(data.items(), key=lambda x: str(x[0])):
+        vector = True
+        if not isinstance(val, Iterable):
+            val = [val]
+            vector = False
         label = var.descr.get('label', '')
         if senss:
             units = "-"
@@ -167,10 +167,11 @@ def results_table(data, title, senss=False):
         else:
             units = unitstr(var)
             minval = 0
-        if abs(val) >= minval:
-            strs += ["%13s" % var +
-                     " : %-8.3g " % val +
-                     "[%s] %s" % (units, label)]
+        if abs(max(val)) >= minval:
+            for i, v in enumerate(val):
+                strs += ["%13s" % (str(var) + str(i) if vector else "") +
+                         " : %-8.3g " % v +
+                         "[%s] %s" % (units, label)]
     strs += ["              |"]
     return "\n".join(strs)
 
