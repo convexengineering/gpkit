@@ -33,10 +33,11 @@ from .small_scripts import mag
 
 try:
     from IPython.parallel import Client
-    assert len(Client()) > 0
-    pool = Client()[:]
+    c = Client(timeout=0.01)
+    assert len(c) > 0
+    pool = c[:]
     pool.use_dill()
-    print "Using parallel execution of sweeps on %s clients" % len(Client())
+    print "Using parallel execution of sweeps on %s clients" % len(c)
 except:
     pool = None
 
