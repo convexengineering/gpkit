@@ -254,10 +254,15 @@ class Posynomial(object):
 
     @property
     def value(self):
-        return self.sub({vk: vk.descr["value"]
-                         for vk in self.varkeys.values()
-                         if "value" in vk.descr})
-
+        values = {vk: vk.descr["value"] for vk in self.varkeys.values()
+                  if "value" in vk.descr}
+        if not values:
+            return self
+        p = self.sub(values)
+        if isinstance(p, Monomial):
+            if not p.exp:
+                return p.c
+        return p
 
     def to(self, arg):
         return Posynomial(self.exps, self.cs.to(arg).tolist())
