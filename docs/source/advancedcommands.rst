@@ -100,6 +100,13 @@ Sweeping Vector Variables
 
 Vector variables may also be substituted for: ``y = VectorVariable(3, "y", value=('sweep' ,[[1, 2], [1, 2], [1, 2]])`` will sweep :math:`y\ \forall~y_i\in\left\{1,2\right\}`.
 
+Parallel Sweeps
+-----------------------
+
+During a normal sweep, each result is independent, so they can be run in parallel. To use this feature, run ``$ ipcluster start`` at a terminal: it will automatically start a number of iPython parallel computing engines equal to the number of cores on your machine, and when you next import iPython you should see a note like of ``Using parallel execution of sweeps on 4 clients``. If you do, then all sweeps performed with that import of gpkit will be parellelized.
+
+This parallelization sets the stage for gpkit solves to be outsourced to a server, which may be valuable for faster results, or allow the use of gpkit without having to install a solver.
+
 Example Usage
 -------------
 
