@@ -160,6 +160,9 @@ def results_table(data, title, senss=False):
         if not isinstance(val, Iterable):
             val = [val]
             vector = False
+        elif not val.shape:
+                val = val.flatten()
+                vector = False
         label = var.descr.get('label', '')
         if senss:
             units = "-"
@@ -169,7 +172,7 @@ def results_table(data, title, senss=False):
             minval = 0
         if abs(max(val)) >= minval:
             for i, v in enumerate(val):
-                strs += ["%13s" % (str(var) + str(i) if vector else "") +
+                strs += ["%13s" % (str(var) + (str(i) if vector else "")) +
                          " : %-8.3g " % v +
                          "[%s] %s" % (units, label)]
     strs += ["              |"]
