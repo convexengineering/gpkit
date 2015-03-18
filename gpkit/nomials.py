@@ -162,7 +162,7 @@ class Posynomial(object):
 
     def mono_approximation(self, x0):
         if isinstance(self, Monomial):
-            raise TypeError("making a Monomial apporximation of a Monomial is unnecessary.")
+            raise TypeError("making a Monomial approximation of a Monomial is unnecessary.")
         else:
             c, exp = mono_approx(self, getsubs(self.varkeys, self.varlocs, x0))
             return Monomial(exp, c)
@@ -242,10 +242,10 @@ class Posynomial(object):
                        for (var, x) in sorted(exp.items()) if x != 0]
             c = mag(c)
             cstr = "%.2g" % c
-            cstr = [cstr] if cstr != "1" or not varstrs else []
-            if isinstance(self, Signomial) and cstr[0] == "-1":
+            if cstr == "-1":
                 mstrs.append("-" + mult_symbol.join(varstrs))
             else:
+                cstr = [cstr] if cstr != "1" or not varstrs else []
                 mstrs.append(mult_symbol.join(cstr + varstrs))
         return " + ".join(sorted(mstrs)) + unitstr(self.units, ", units='%s'")
 
@@ -379,7 +379,6 @@ class Posynomial(object):
             return NotImplemented
         else:
             return -1*self
-
 
     def __sub__(self, other):
         from . import enable_signomials
