@@ -9,6 +9,37 @@ from .small_classes import Strings, Numbers
 from . import units as ureg
 Quantity = ureg.Quantity
 
+
+def diff(p, vk):
+    exps, cs = [], []
+    for i, exp in enumerate(p.exps):
+        exp = HashVector(exp)
+        if vk in exp:
+            e = exp[vk]
+            if e == 1:
+                del exp[vk]
+            else:
+                exp[vk] -= 1
+            exps.append(exp)
+            cs.append(e*p.cs[i])
+    return exps, cs
+
+
+def mono_approx(p, x0):
+    exp = HashVector()
+    p0 = mag(p.sub(x0).c)
+    m0 = 1
+    for vk in p.varlocs:
+        dp_dvk = p.diff(vk)
+        if dp_dvk.varlocs:
+            e = x0[vk] * mag(dp_dvk.sub(x0).c) / p0
+        else:
+            e = e = x0[vk] * mag(dp_dvk.c) / p0
+        exp[vk] = e
+        m0 *= x0[vk]**e
+    return p0/m0, exp  # return (prod x_i^(x_i * d p(x)/dx_i at x_k))^(1/1+p(x_k))
+
+
 def isequal(a, b):
     if isinstance(a, Iterable) and not isinstance(a, Strings+(list, dict)):
         for i, a_i in enumerate(a):
@@ -144,6 +175,8 @@ def sort_and_simplify(exps, cs):
     for i, exp in enumerate(exps):
         exp = HashVector({var: x for (var, x) in exp.items() if x != 0})
         matches[exp] += cs[i]
+    if matches[HashVector({})] == 0 and len(matches) > 1:
+        del matches[HashVector({})]
     cs_ = matches.values()
     if isinstance(cs_[0], Quantity):
         units = cs_[0]/cs_[0].magnitude

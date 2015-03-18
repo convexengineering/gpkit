@@ -22,7 +22,7 @@ from .small_classes import DictOfLists
 from .model import Model
 from .nomials import Constraint, MonoEQConstraint
 from .nomials import Monomial
-from .nomials import VarKey
+from .varkey import VarKey
 from .posyarray import PosyArray
 
 from .small_scripts import latex_num

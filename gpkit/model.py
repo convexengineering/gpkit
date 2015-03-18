@@ -16,7 +16,7 @@ from .small_classes import Strings
 from .small_classes import PosyTuple
 from .small_classes import CootMatrix
 from .nomials import Posynomial, Constraint, Monomial
-from .nomials import VarKey
+from .varkey import VarKey
 
 from .substitution import substitution
 from .small_scripts import locate_vars

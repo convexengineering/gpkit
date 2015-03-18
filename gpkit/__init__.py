@@ -52,7 +52,11 @@ def enableUnits():
 
 enableUnits()
 
-from .nomials import Monomial, Posynomial, Variable, VectorVariable, VarKey
+enable_signomials = False
+
+from .nomials import Monomial, Posynomial, Signomial
+from .variables import Variable, VectorVariable
+from .varkey import VarKey
 from .posyarray import PosyArray
 from .geometric_program import GP
 from small_scripts import link

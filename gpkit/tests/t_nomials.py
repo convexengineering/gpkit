@@ -1,6 +1,7 @@
 import math
 import unittest
-from gpkit import Monomial, Posynomial
+from gpkit import Monomial, Posynomial, Signomial
+import gpkit
 
 
 class t_Monomial(unittest.TestCase):
@@ -147,6 +148,18 @@ class t_Monomial(unittest.TestCase):
                          4*math.log(c1) + 3*math.log(c2))
 
 
+class t_Signomial(unittest.TestCase):
+
+    def test_init(self):
+        x = Monomial('x')
+        y = Monomial('y')
+        gpkit.enable_signomials = True
+        self.assertEqual(str(1 - x - y**2 - 1), "-x + -y**2")
+        self.assertEqual((1 - x/y**2)._latex(), "-\\frac{x}{y^{2}} + 1")
+        gpkit.enable_signomials = False
+        self.assertRaises(TypeError, lambda: x-y)
+
+
 class t_Posynomial(unittest.TestCase):
 
     def test_init(self):
@@ -205,9 +218,24 @@ class t_Posynomial(unittest.TestCase):
         self.assertEqual(p/3, p/3.)
         self.assertTrue(((p/3).cs == [4./3., 1./3.]).all())
 
+    def test_diff(self):
+        x = Monomial('x')
+        y = Monomial('y')
+        self.assertEqual((y**2).diff(y), 2*y)
+        self.assertEqual((x + y**2).diff(y), 2*y)
+        self.assertEqual((x + x*y**2).diff(y), 2*x*y)
+
+    def test_monoapprox(self):
+        x = Monomial('x')
+        y = Monomial('y')
+        p = y**2 + 1
+        self.assertRaises(TypeError, lambda: y.mono_approximation({y: 1}))
+        self.assertEqual(p.mono_approximation({y: 1}), 2*y)
+        self.assertEqual(p.mono_approximation({y: 0}), y/y)
+
 # test substitution
 
-tests = [t_Posynomial, t_Monomial]
+tests = [t_Posynomial, t_Monomial, t_Signomial]
 
 if __name__ == '__main__':
     suite = unittest.TestSuite()

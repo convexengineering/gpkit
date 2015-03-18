@@ -9,8 +9,8 @@ from collections import Iterable
 from .small_classes import Numbers, Strings
 from .small_classes import HashVector
 from .nomials import Monomial
-from .nomials import VarKey
-from .nomials import VectorVariable
+from .varkey import VarKey
+from .variables import VectorVariable
 
 from .small_scripts import locate_vars
 from .small_scripts import is_sweepvar
@@ -20,6 +20,24 @@ from . import units as ureg
 from . import DimensionalityError
 Quantity = ureg.Quantity
 Numbers += (Quantity,)
+
+
+def getsubs(varkeys, varlocs, substitutions):
+    subs = {}
+    varset = frozenset(varlocs.keys())
+    for var, sub in substitutions.items():
+        if not is_sweepvar(sub):
+            if isinstance(var, Monomial):
+                var_ = VarKey(var)
+                if var_ in varset:
+                    subs[var_] = sub
+            elif isinstance(var, Strings):
+                    if var in varkeys:
+                        var_ = varkeys[var]
+                        vectorsub(subs, var_, sub, varset)
+            else:
+                vectorsub(subs, var, sub, varset)
+    return subs
 
 
 def vectorsub(subs, var, sub, varset):
@@ -80,20 +98,7 @@ def substitution(varlocs, varkeys, exps, cs, substitutions, val=None):
     if val is not None:
         substitutions = {substitutions: val}
 
-    subs = {}
-    varset = frozenset(varlocs.keys())
-    for var, sub in substitutions.items():
-        if not is_sweepvar(sub):
-            if isinstance(var, Monomial):
-                var_ = VarKey(var)
-                if var_ in varset:
-                    subs[var_] = sub
-            elif isinstance(var, Strings):
-                    if var in varkeys:
-                        var_ = varkeys[var]
-                        vectorsub(subs, var_, sub, varset)
-            else:
-                vectorsub(subs, var, sub, varset)
+    subs = getsubs(varkeys, varlocs, substitutions)
 
     if not subs:
         raise KeyError("could not find anything to substitute in %s" % substitutions)
