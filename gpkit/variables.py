@@ -5,6 +5,7 @@ from .varkey import VarKey
 from .nomials import Monomial
 from .posyarray import PosyArray
 from .small_classes import Strings, Numbers
+from .small_scripts import is_sweepvar
 
 from . import units as ureg
 from . import DimensionalityError
@@ -46,6 +47,7 @@ class Variable(Monomial):
                 descr["label"] = arg
 
         Monomial.__init__(self, **descr)
+        self.__class__ = Variable
 
 
 class VectorVariable(PosyArray):

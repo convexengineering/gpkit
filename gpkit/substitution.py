@@ -101,7 +101,8 @@ def substitution(varlocs, varkeys, exps, cs, substitutions, val=None):
     subs = getsubs(varkeys, varlocs, substitutions)
 
     if not subs:
-        raise KeyError("could not find anything to substitute in %s" % substitutions)
+        return varlocs, exps, cs, subs
+        # raise KeyError("could not find anything to substitute in %s" % substitutions)
 
     exps_ = [HashVector(exp) for exp in exps]
     cs_ = np.array(cs)

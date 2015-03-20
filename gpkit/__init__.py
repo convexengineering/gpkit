@@ -67,24 +67,24 @@ if units:
     import operator
 
     def Qadd(self, other):
-        if isinstance(other, (PosyArray, Posynomial)):
+        if isinstance(other, (PosyArray, Signomial)):
             return NotImplemented
         return self._add_sub(other, operator.add)
 
     def Qmul(self, other):
-        if isinstance(other, (PosyArray, Posynomial)):
+        if isinstance(other, (PosyArray, Signomial)):
             return NotImplemented
         else:
             return self._mul_div(other, operator.mul)
 
     def Qtruediv(self, other):
-        if isinstance(other, (PosyArray, Posynomial)):
+        if isinstance(other, (PosyArray, Signomial)):
             return NotImplemented
         else:
             return self._mul_div(other, operator.truediv)
 
     def Qfloordiv(self, other):
-        if isinstance(other, (PosyArray, Posynomial)):
+        if isinstance(other, (PosyArray, Signomial)):
             return NotImplemented
         else:
             return self._mul_div(other, operator.floordiv, units_op=operator.truediv)
@@ -96,7 +96,7 @@ if units:
         setattr(units.Quantity, "__"+fname, oldf)
 
         def newf(self, other):
-            if isinstance(other, (PosyArray, Posynomial)):
+            if isinstance(other, (PosyArray, Signomial)):
                 return NotImplemented
             else:
                 getattr(units.Quantity, "__"+fname)(self, other)
@@ -104,13 +104,13 @@ if units:
         setattr(units.Quantity, fname, newf)
 
     def Qle(self, other):
-        if isinstance(other, (PosyArray, Posynomial)):
+        if isinstance(other, (PosyArray, Signomial)):
             return NotImplemented
         else:
             return self.compare(other, op=operator.le)
 
     def Qge(self, other):
-        if isinstance(other, (PosyArray, Posynomial)):
+        if isinstance(other, (PosyArray, Signomial)):
             return NotImplemented
         else:
             return self.compare(other, op=operator.ge)

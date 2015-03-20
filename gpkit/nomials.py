@@ -12,7 +12,6 @@ from .small_scripts import sort_and_simplify
 from .small_scripts import locate_vars
 from .small_scripts import invalid_types_for_oper
 from .small_scripts import mag, unitstr
-from .small_scripts import is_sweepvar
 
 from . import units as ureg
 from . import DimensionalityError
@@ -20,8 +19,8 @@ Quantity = ureg.Quantity
 Numbers += (Quantity,)
 
 
-class Posynomial(object):
-    """A representation of a posynomial.
+class Signomial(object):
+    """A representation of a signomial.
 
         Parameters
         ----------
@@ -35,11 +34,12 @@ class Posynomial(object):
 
         Returns
         -------
-        Posynomial (if the input has multiple terms)
-        Monomial   (if the input has one term)
+        Signomial
+        Posynomial (if the input has only positive cs)
+        Monomial   (if the input has one term and only positive cs)
     """
 
-    def __init__(self, exps=None, cs=1, varlocsandkeys=None, **descr):
+    def __init__(self, exps=None, cs=1, varlocsandkeys=None, allow_negative=False, **descr):
         units = None
         if isinstance(exps, Numbers):
             cs = exps
@@ -65,7 +65,7 @@ class Posynomial(object):
                 cs = cs * units
             cs = [cs]
             exps = [exp]
-        elif isinstance(exps, Posynomial):
+        elif isinstance(exps, Signomial):
             cs = exps.cs
             varlocs = exps.varlocs
             exps = exps.exps
@@ -103,12 +103,12 @@ class Posynomial(object):
             any_negative = any((c.magnitude <= 0 for c in cs))
         else:
             any_negative = any((c <= 0 for c in cs))
-        if any_negative and not isinstance(self, Signomial):
+        if any_negative:
             from . import enable_signomials
-            if not enable_signomials:
+            if not enable_signomials and not allow_negative:
                 raise ValueError("each c must be positive.")
-            else:
-                self.__class__ = Signomial
+        else:
+            self.__class__ = Posynomial
 
         if isinstance(cs[0], Quantity):
             units = cs[0]/cs[0].magnitude
@@ -147,7 +147,7 @@ class Posynomial(object):
         return p
 
     def to(self, arg):
-        return Posynomial(self.exps, self.cs.to(arg).tolist())
+        return Signomial(self.exps, self.cs.to(arg).tolist())
 
     def diff(self, var):
         if var in self.varkeys:
@@ -157,8 +157,7 @@ class Posynomial(object):
             if len(vks) == 1:
                 var = vks[0]
         exps, cs = diff(self, var)
-        units = self.units/var.descr["units"] if "units" in var.descr else self.units
-        return Signomial(exps, cs, units=units)
+        return Signomial(exps, cs, allow_negative=True)
 
     def mono_approximation(self, x0):
         if isinstance(self, Monomial):
@@ -171,10 +170,8 @@ class Posynomial(object):
         varlocs, exps, cs, subs = substitution(self.varlocs, self.varkeys,
                                                 self.exps, self.cs,
                                                 substitutions, val)
-        if allow_negative or isinstance(self, Signomial):
-            return Signomial(exps, cs, (varlocs, self.varkeys), units=self.units)
-        else:
-            return Posynomial(exps, cs, (varlocs, self.varkeys), units=self.units)
+        return Signomial(exps, cs, (varlocs, self.varkeys), units=self.units,
+                         allow_negative=allow_negative)
 
     def subcmag(self, substitutions, val=None):
         varlocs, exps, cs, subs = substitution(self.varlocs, self.varkeys,
@@ -190,12 +187,12 @@ class Posynomial(object):
     def sum(self):
         return self
 
-    # hashing, immutability, Posynomial inequality
+    # hashing, immutability, Signomial inequality
     def __hash__(self):
         return self._hashvalue
 
     def __ne__(self, other):
-        if isinstance(other, Posynomial):
+        if isinstance(other, Signomial):
             return not (self.exps == other.exps and self.cs == other.cs)
         else:
             return False
@@ -206,7 +203,7 @@ class Posynomial(object):
         mons = Numbers+(Monomial,)
         if isinstance(other, mons) and isinstance(self, mons):
             return MonoEQConstraint(self, other)
-        elif isinstance(other, Posynomial) and isinstance(self, Posynomial):
+        elif isinstance(other, Signomial) and isinstance(self, Signomial):
             if self.exps == other.exps:
                 if isinstance(self.cs, Quantity):
                     return all(self.cs.magnitude <= other.cs)
@@ -298,12 +295,12 @@ class Posynomial(object):
     def __add__(self, other):
         if isinstance(other, Numbers):
             if other == 0:
-                return Posynomial(self.exps, self.cs, (self.varlocs, self.varkeys))
+                return Signomial(self.exps, self.cs, (self.varlocs, self.varkeys))
             else:
-                return Posynomial(self.exps + ({},),
+                return Signomial(self.exps + ({},),
                                   self.cs.tolist() + [other])
-        elif isinstance(other, Posynomial):
-            return Posynomial(self.exps + other.exps,
+        elif isinstance(other, Signomial):
+            return Signomial(self.exps + other.exps,
                               self.cs.tolist() + other.cs.tolist())
         elif isinstance(other, PosyArray):
             return np.array(self)+other
@@ -315,10 +312,10 @@ class Posynomial(object):
 
     def __mul__(self, other):
         if isinstance(other, Numbers):
-            return Posynomial(self.exps,
+            return Signomial(self.exps,
                               other*self.cs,
                               (self.varlocs, self.varkeys))
-        elif isinstance(other, Posynomial):
+        elif isinstance(other, Signomial):
             C = np.outer(self.cs, other.cs)
             if isinstance(self.cs, Quantity) or isinstance(other.cs, Quantity):
                 if not isinstance(self.cs, Quantity):
@@ -335,7 +332,7 @@ class Posynomial(object):
             for i, exp_s in enumerate(self.exps):
                 for j, exp_o in enumerate(other.exps):
                     Exps[i, j] = exp_s + exp_o
-            return Posynomial(Exps.flatten(), C.flatten())
+            return Signomial(Exps.flatten(), C.flatten())
         elif isinstance(other, PosyArray):
             return np.array(self)*other
         else:
@@ -347,12 +344,12 @@ class Posynomial(object):
 
     def __div__(self, other):
         if isinstance(other, Numbers):
-            return Posynomial(self.exps,
+            return Signomial(self.exps,
                               self.cs/other,
                               (self.varlocs, self.varkeys))
         elif isinstance(other, Monomial):
             exps = [exp - other.exp for exp in self.exps]
-            return Posynomial(exps, self.cs/other.c)
+            return Signomial(exps, self.cs/other.c)
         elif isinstance(other, PosyArray):
             return np.array(self)/other
         else:
@@ -367,7 +364,7 @@ class Posynomial(object):
                     x -= 1
                 return p
             else:
-                raise ValueError("Posynomials are only closed under"
+                raise ValueError("Signomial are only closed under"
                                  " nonnegative integer exponents.")
         else:
             return NotImplemented
@@ -397,7 +394,7 @@ class Posynomial(object):
             return other + -self
 
 
-class Signomial(Posynomial):
+class Posynomial(Signomial):
     pass
 
 
@@ -446,9 +443,14 @@ class Constraint(Posynomial):
         return self.left._latex() + self.oper_l + self.right._latex()
 
     def __init__(self, p1, p2):
-        p1 = Posynomial(p1)
-        p2 = Posynomial(p2)
-        p = p1 / p2
+        p1 = Signomial(p1)
+        p2 = Signomial(p2)
+        from . import enable_signomials
+
+        if enable_signomials and not isinstance(p2, Monomial):
+            p = p1 - p2 + 1
+        else:
+            p = p1 / p2
         if isinstance(p.cs, Quantity):
             try:
                 p = p.to('dimensionless')
@@ -461,7 +463,7 @@ class Constraint(Posynomial):
         p2.units = None if all(p2.exps) else p2.units
 
         for i, exp in enumerate(p.exps):
-            if not exp:
+            if not exp and not enable_signomials:
                 if p.cs[i] < 1:
                     coeff = float(1 - p.cs[i])
                     p.cs = np.hstack((p.cs[:i], p.cs[i+1:]))

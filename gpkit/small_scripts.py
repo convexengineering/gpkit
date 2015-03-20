@@ -12,6 +12,7 @@ Quantity = ureg.Quantity
 
 def diff(p, vk):
     exps, cs = [], []
+    units = vk.descr["units"] if "units" in vk.descr else 1
     for i, exp in enumerate(p.exps):
         exp = HashVector(exp)
         if vk in exp:
@@ -21,23 +22,20 @@ def diff(p, vk):
             else:
                 exp[vk] -= 1
             exps.append(exp)
-            cs.append(e*p.cs[i])
+            cs.append(e*p.cs[i]/units)
     return exps, cs
 
 
 def mono_approx(p, x0):
     exp = HashVector()
-    p0 = mag(p.sub(x0).c)
+    p0 = p.sub(x0).c
     m0 = 1
     for vk in p.varlocs:
-        dp_dvk = p.diff(vk)
-        if dp_dvk.varlocs:
-            e = x0[vk] * mag(dp_dvk.sub(x0).c) / p0
-        else:
-            e = e = x0[vk] * mag(dp_dvk.c) / p0
+        units = vk.descr["units"] if "units" in vk.descr else 1
+        e = mag(x0[vk]*units * p.diff(vk).sub(x0, allow_negative=True).c / p0)
         exp[vk] = e
-        m0 *= x0[vk]**e
-    return p0/m0, exp  # return (prod x_i^(x_i * d p(x)/dx_i at x_k))^(1/1+p(x_k))
+        m0 *= (x0[vk]*units)**e
+    return p0/m0, exp
 
 
 def isequal(a, b):
@@ -175,8 +173,13 @@ def sort_and_simplify(exps, cs):
     for i, exp in enumerate(exps):
         exp = HashVector({var: x for (var, x) in exp.items() if x != 0})
         matches[exp] += cs[i]
+
     if matches[HashVector({})] == 0 and len(matches) > 1:
         del matches[HashVector({})]
+    for exp, c in matches.items():
+        if c == 0 and len(matches) > 1:
+            del matches[exp]
+
     cs_ = matches.values()
     if isinstance(cs_[0], Quantity):
         units = cs_[0]/cs_[0].magnitude
