@@ -10,10 +10,10 @@ except ImportError:
 
 from widget import widget
 
-def showcadtoon(title, css=None):
+def showcadtoon(title, css=""):
     with open("%s.gpkit" % title, 'r') as file:
-        display(HTML(file.read()))
-        if css: display(HTML("<style> #ractivecontainer { %s } </style>" % css))
+        css = "<style> #ractivecontainer { %s } </style>" % css
+        display(HTML(file.read() + css))
 
 def ractorpy(gp, update_py, ranges, constraint_js="", showtables=["cost", "sensitivities"]):
     def ractivefn(gp):

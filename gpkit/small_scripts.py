@@ -41,12 +41,14 @@ def mono_approx(p, x0):
 def isequal(a, b):
     if isinstance(a, Iterable) and not isinstance(a, Strings+(list, dict)):
         for i, a_i in enumerate(a):
-            if isinstance(a_i, Iterable) and not isinstance(a_i, Strings+(list, dict)):
-                if not isequal(a_i, b[i]):
-                    return False
+            if not isinstance(a_i, Strings+(list, dict)):
+                if isinstance(a_i, Iterable):
+                    if not isequal(a_i, b[i]):
+                        return False
     elif a != b:
         return False
     return True
+
 
 def link(gps, varids):
     if not isinstance(gps, Iterable):
@@ -83,6 +85,7 @@ def link(gps, varids):
     for gp in gps[1:]:
         gppile += gp
     return gppile
+
 
 def mag(c):
     "Return magnitude of a Number or Quantity"
@@ -125,12 +128,14 @@ def invalid_types_for_oper(oper, a, b):
     raise TypeError("unsupported operand types"
                     " for %s: '%s' and '%s'" % (oper, typea, typeb))
 
+
 def latex_num(c):
     cstr = "%.4g" % c
     if 'e' in cstr:
         idx = cstr.index('e')
         cstr = "%s \\times 10^{%i}" % (cstr[:idx], int(cstr[idx+1:]))
     return cstr
+
 
 def locate_vars(exps):
     "From exponents form a dictionary of which monomials each variable is in."
@@ -156,7 +161,7 @@ def locate_vars(exps):
                 varkeys[name] = []
                 for var in varl:
                     if "model" in var.descr:
-                        varkeys[name+"_%s"%var.descr["model"]] = var
+                        varkeys[name+"_%s" % var.descr["model"]] = var
                     else:
                         varkeys[name].append(var)
                 if len(varkeys[name]) == 1:

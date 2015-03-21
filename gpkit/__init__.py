@@ -20,7 +20,9 @@
 def disableUnits():
     """Disables units support in a particular instance of GPkit.
 
-    Posynomials created after this is run are incompatible with those created before.
+    Posynomials created after calling this are incompatible with those created
+    before.
+
     If gpkit is imported multiple times, this needs to be run each time."""
     global units, DimensionalityError
 
@@ -39,7 +41,9 @@ def disableUnits():
 def enableUnits():
     """Enables units support in a particular instance of GPkit.
 
-    Posynomials created after this is run are incompatible with those created before.
+    Posynomials created after calling this are incompatible with those created
+    before.
+
     If gpkit is imported multiple times, this needs to be run each time."""
     global units, DimensionalityError
     try:
@@ -47,7 +51,8 @@ def enableUnits():
         units = pint.UnitRegistry()
         DimensionalityError = pint.DimensionalityError
     except ImportError:
-        print "Optional Python units library (Pint) not installed; unit support disabled."
+        print("Optional Python units library (Pint) not installed;"
+              "unit support disabled.")
         disableUnits()
 
 enableUnits()
@@ -87,7 +92,8 @@ if units:
         if isinstance(other, (PosyArray, Signomial)):
             return NotImplemented
         else:
-            return self._mul_div(other, operator.floordiv, units_op=operator.truediv)
+            return self._mul_div(other, operator.floordiv,
+                                 units_op=operator.truediv)
 
     for oper in ["eq"]:
         #TODO: this should all be abstractable like this, but fails on lambdas?

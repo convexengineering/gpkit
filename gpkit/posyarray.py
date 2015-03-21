@@ -80,7 +80,7 @@ class PosyArray(np.ndarray):
         try:
             return np.array(self, dtype='float')
         except TypeError:
-            raise ValueError("only a posyarray of numbers can be cast to float")
+            raise ValueError("only a posyarray of numbers has a 'c'")
 
     _eq = np.vectorize(lambda a, b: a == b)
 

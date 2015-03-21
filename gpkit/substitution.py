@@ -102,7 +102,8 @@ def substitution(varlocs, varkeys, exps, cs, substitutions, val=None):
 
     if not subs:
         return varlocs, exps, cs, subs
-        # raise KeyError("could not find anything to substitute in %s" % substitutions)
+        # raise KeyError("could not find anything to substitute"
+        #                "in %s" % substitutions)
 
     exps_ = [HashVector(exp) for exp in exps]
     cs_ = np.array(cs)
@@ -129,23 +130,26 @@ def substitution(varlocs, varkeys, exps, cs, substitutions, val=None):
                 sub = VarKey(sub)
                 if isinstance(var.descr["units"], Quantity):
                     try:
-                        cs_[i] *= (var.descr["units"]/sub.descr["units"]).to('dimensionless')
+                        new_units = var.descr["units"]/sub.descr["units"]
+                        cs_[i] *= new_units.to('dimensionless')
                     except DimensionalityError:
-                        raise ValueError("substituted variables must have the same units"
-                                         " as the variables they replace.")
+                        raise ValueError("substituted variables need the same"
+                                         " units as variables they replace.")
                 exps_[i] += HashVector({sub: x})
                 varlocs_[sub].append(i)
             elif isinstance(sub, Monomial):
                 if isinstance(var.descr["units"], Quantity):
                     try:
-                        cs_[i] *= (var.descr["units"]/sub.units).to('dimensionless')
+                        new_units = var.descr["units"]/sub.units
+                        cs_[i] *= new_units.to('dimensionless')
                     except DimensionalityError:
-                        raise ValueError("substituted monomials must have the same units"
-                                         " as the variables they replace.")
+                        raise ValueError("substituted monomials need the same"
+                                         " units as monomials they replace.")
                 exps_[i] += x*sub.exp
                 cs_[i] *= mag(sub.c)**x
                 for subvar in sub.exp:
                     varlocs_[subvar].append(i)
             else:
-                raise TypeError("could not substitue with value of type '%s'" % type(sub))
+                raise TypeError("could not substitue with value"
+                                "of type '%s'" % type(sub))
     return varlocs_, exps_, cs_, subs

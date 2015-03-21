@@ -82,7 +82,8 @@ class GPSolutionArray(DictOfLists):
             return np.array([mag(subbed.c) for subbed in subbeds],
                             np.dtype('float'))
         else:
-            subbed = p.sub(self["sensitivities"]["variables"], allow_negative=True)
+            subbed = p.sub(self["sensitivities"]["variables"],
+                           allow_negative=True)
             assert isinstance(subbed, Monomial)
             assert not subbed.exp
             return subbed.c
@@ -92,9 +93,10 @@ class GPSolutionArray(DictOfLists):
         if isinstance(tables, Strings):
             tables = [tables]
         strs = []
+        n = len(self)
         if "cost" in tables:
             if len(self) > 1:
-                strs += ["              | Cost (average of %i values)" % len(self)]
+                strs += ["              | Cost (average of %i values)" % n]
                 strs += ["              : %-8.3g" % self["cost"].mean()]
                 strs += ["              | "]
             else:
@@ -103,12 +105,15 @@ class GPSolutionArray(DictOfLists):
                 strs += ["              | "]
         if "free_variables" in tables:
             strs += [results_table(self["free_variables"],
-                                   "Free variables" + ("" if len(self) == 1 else " (average)"))]
+                                   "Free variables" +
+                                   ("" if n == 1 else " (average)"))]
         if "constants" in tables:
-            strs += [results_table(self["constants"], "Constants" + ("" if len(self) == 1 else " (average)"))]
+            strs += [results_table(self["constants"], "Constants" +
+                     ("" if n == 1 else " (average)"))]
         if "sensitivities" in tables:
             strs += [results_table(self["sensitivities"]["variables"],
-                                   "Constant sensitivities" + ("" if len(self) == 1 else " (average)"),
+                                   "Constant sensitivities" +
+                                   ("" if n == 1 else " (average)"),
                                    senss=True)]
         return "\n".join(strs)
 
@@ -162,7 +167,7 @@ class GP(Model):
             try:
                 self.cost, constraints = ans
             except TypeError:
-                raise TypeError("the setup function must return 'cost, constraints'.")
+                raise TypeError("GP setup must return 'cost, constraints'.")
         else:
             if "cost" in kwargs:
                 self.cost = kwargs["cost"]
@@ -225,9 +230,13 @@ class GP(Model):
     def __add__(self, other):
         if isinstance(other, GP):
             # don't add costs b/c that breaks when costs have units
-            newgp = GP(self.cost * other.cost, self.constraints + other.constraints)
+            newgp = GP(self.cost * other.cost,
+                       self.constraints + other.constraints)
             subs = newgp.substitutions
-            newgp._gen_unsubbed_vars([self.exps[0] + other.exps[0]] + self.exps[1:]+other.exps[1:], np.hstack([self.cs[0] * other.cs[0], self.cs[1:], other.cs[1:]]))
+            newgp._gen_unsubbed_vars([self.exps[0] + other.exps[0]]
+                                     + self.exps[1:]+other.exps[1:],
+                                     np.hstack([self.cs[0] * other.cs[0],
+                                               self.cs[1:], other.cs[1:]]))
             values = {var: var.descr["value"]
                       for var in newgp.varlocs if "value" in var.descr}
             if values:
@@ -251,7 +260,8 @@ class GP(Model):
 
     def __getitem__(self, key):
         for attr in ["result", "solution", "solv", "variables"]:
-            if hasattr(self, attr) or (attr == "solv" and hasattr(self, "solution")):
+            solution_variables = (attr == "solv" and hasattr(self, "solution"))
+            if hasattr(self, attr) or solution_variables:
                 if attr == "solv":
                     d = self.solution["variables"]
                 else:
@@ -269,8 +279,8 @@ class GP(Model):
                         else:
                             return np.array(l)
 
-
-        raise KeyError("'%s' was not found as a result solution or variable."  % key)
+        raise KeyError("'%s' was not found as a result solution or variable."
+                       % key)
 
     def __setitem__(self, key, value):
         self.results[key] = value
@@ -312,11 +322,12 @@ class GP(Model):
                          ["\\end{array}"])
 
     def test(self, solver=None, printing=False, skipfailures=False):
+        end = " with default settings."
         try:
             self.solve(solver, printing, skipfailures)
-            print self.__class__.__name__, "solved successfully with default settings."
+            print self.__class__.__name__, "solved successfully" + end
         except Exception, e:
-            print self.__class__.__name__, "failed to solve with default settings."
+            print self.__class__.__name__, "failed to solve" + end
             self.checkbounds()
             raise(e)
 
@@ -361,7 +372,7 @@ class GP(Model):
             solution = self._solve_sweep(printing, skipfailures)
         else:
             if printing:
-                print("Solving for %i variables."% len(self.varlocs))
+                print("Solving for %i variables." % len(self.varlocs))
             solution = GPSolutionArray()
             solution.append(self.__run_solver())
             solution.toarray()

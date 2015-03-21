@@ -90,38 +90,43 @@ class Model(object):
                             found_sweep.append(v)
                             self.sweep.update({v: suba[i]})
                     elif len(var) == suba.shape[1]:
-                        raise ValueError("whole-vector substitution not yet supported")
+                        raise ValueError("whole-vector substitution"
+                                         "is not yet supported")
                     else:
-                        raise ValueError("vector substitutions must share a dimension with the variable vector")
+                        raise ValueError("vector substitutions must share a"
+                                         "dimension with the variable vector")
                 else:
                     found_sweep.append(var)
                     self.sweep.update({var: sub[1]})
 
         if not (subs or found_sweep):
-            raise KeyError("could not find anything to substitute in %s" % substitutions)
+            raise KeyError("could not find anything"
+                           "to substitute in %s" % substitutions)
 
         base = getattr(self, frombase)
         substitutions = dict(base.substitutions)
 
         if replace:
-            varlocs, exps, cs = self.unsubbed.varlocs, self.unsubbed.exps, self.unsubbed.cs
+            (varlocs,
+             exps,
+             cs) = self.unsubbed.varlocs, self.unsubbed.exps, self.unsubbed.cs
             for sweepvar in found_sweep:
                 if sweepvar in substitutions:
                     del substitutions[sweepvar]
             if subs:
                 # resubstitute from the beginning, in reverse order
                 varlocs, exps, cs, subs = substitution(varlocs,
-                                                        self.varkeys,
-                                                        exps,
-                                                        cs,
-                                                        subs)
+                                                       self.varkeys,
+                                                       exps,
+                                                       cs,
+                                                       subs)
                 substitutions.update(subs)
             try:
                 varlocs, exps, cs, subs = substitution(varlocs,
-                                                        self.varkeys,
-                                                        exps,
-                                                        cs,
-                                                        substitutions)
+                                                       self.varkeys,
+                                                       exps,
+                                                       cs,
+                                                       substitutions)
             except KeyError:
                 # our new sub replaced the only previous sub
                 pass
@@ -130,9 +135,9 @@ class Model(object):
             # substitute normally
             if subs:
                 varlocs, exps, cs, subs = substitution(varlocs,
-                                                        exps,
-                                                        cs,
-                                                        subs)
+                                                       exps,
+                                                       cs,
+                                                       subs)
             substitutions.update(subs)
 
         self.load(PosyTuple(exps, cs, varlocs, substitutions))
@@ -152,13 +157,18 @@ class Model(object):
             for i in self.varlocs[var]:
                 exp = self.exps[i][var]
                 self.A.append(i, j, exp)
-                if varsign is "both": pass
-                elif varsign is None: varsign = np.sign(exp)
-                elif np.sign(exp) != varsign: varsign = "both"
+                if varsign is "both":
+                    pass
+                elif varsign is None:
+                    varsign = np.sign(exp)
+                elif np.sign(exp) != varsign:
+                    varsign = "both"
 
             if varsign != "both" and var not in self.sweep:
-                if varsign == 1: bound = "lower"
-                elif varsign == -1: bound = "upper"
+                if varsign == 1:
+                    bound = "lower"
+                elif varsign == -1:
+                    bound = "upper"
                 missingbounds[var] = bound
 
         # add subbed-out monomials at the end

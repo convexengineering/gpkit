@@ -10,6 +10,8 @@ from .small_scripts import is_sweepvar
 from . import units as ureg
 from . import DimensionalityError
 Quantity = ureg.Quantity
+Numbers += (Quantity,)
+
 
 class Variable(Monomial):
     def __init__(self, *args, **descr):
@@ -33,7 +35,7 @@ class Variable(Monomial):
         for arg in args:
             if isinstance(arg, Strings) and "name" not in descr:
                 descr["name"] = arg
-            elif isinstance(arg, Numbers + (Quantity,)) and "value" not in descr:
+            elif isinstance(arg, Numbers) and "value" not in descr:
                 descr["value"] = arg
             elif (isinstance(arg, Iterable) and not isinstance(arg, Strings)
                   and "value" not in descr):
@@ -41,7 +43,7 @@ class Variable(Monomial):
                     descr["value"] = arg
                 else:
                     descr["value"] = ("sweep", arg)
-            elif isinstance(arg, Strings + (Quantity,)) and "units" not in descr:
+            elif isinstance(arg, Strings+(Quantity,)) and "units" not in descr:
                 descr["units"] = arg
             elif isinstance(arg, Strings) and "label" not in descr:
                 descr["label"] = arg
@@ -85,14 +87,14 @@ class VectorVariable(PosyArray):
             elif (isinstance(arg, Iterable) and not isinstance(arg, Strings)
                   and "value" not in descr):
                 descr["value"] = arg
-            elif isinstance(arg, Strings + (Quantity,)) and "units" not in descr:
+            elif isinstance(arg, Strings+(Quantity,)) and "units" not in descr:
                 descr["units"] = arg
             elif isinstance(arg, Strings) and "label" not in descr:
                 descr["label"] = arg
 
         values = descr.pop("value", [])
         if len(values) and len(values) != length:
-            raise ValueError("vector length and values length must be the same.")
+            raise ValueError("values length must be the same as the vector's.")
 
         if "name" not in descr:
             descr["name"] = "\\fbox{%s}" % VarKey.new_unnamed_id()

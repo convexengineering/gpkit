@@ -39,7 +39,8 @@ class Signomial(object):
         Monomial   (if the input has one term and only positive cs)
     """
 
-    def __init__(self, exps=None, cs=1, varlocsandkeys=None, allow_negative=False, **descr):
+    def __init__(self, exps=None, cs=1, varlocsandkeys=None,
+                 allow_negative=False, **descr):
         units = None
         if isinstance(exps, Numbers):
             cs = exps
@@ -161,22 +162,23 @@ class Signomial(object):
 
     def mono_approximation(self, x0):
         if isinstance(self, Monomial):
-            raise TypeError("making a Monomial approximation of a Monomial is unnecessary.")
+            raise TypeError("making a Monomial approximation of a Monomial"
+                            "is unnecessary.")
         else:
             c, exp = mono_approx(self, getsubs(self.varkeys, self.varlocs, x0))
             return Monomial(exp, c)
 
     def sub(self, substitutions, val=None, allow_negative=False):
         varlocs, exps, cs, subs = substitution(self.varlocs, self.varkeys,
-                                                self.exps, self.cs,
-                                                substitutions, val)
+                                               self.exps, self.cs,
+                                               substitutions, val)
         return Signomial(exps, cs, (varlocs, self.varkeys), units=self.units,
                          allow_negative=allow_negative)
 
     def subcmag(self, substitutions, val=None):
         varlocs, exps, cs, subs = substitution(self.varlocs, self.varkeys,
-                                                self.exps, mag(self.cs),
-                                                substitutions, val)
+                                               self.exps, mag(self.cs),
+                                               substitutions, val)
         if any(exps):
             raise ValueError("could not substitute for all variables.")
         return mag(cs).sum()
@@ -288,20 +290,21 @@ class Signomial(object):
                 mstrs.append("%s\\frac{%s}{%s}" % (cstr, pvarstr, nvarstr))
 
         units = unitstr(self.units, "\mathrm{\\left[ %s \\right]}", "L~")
-        units_smallfrac = units.replace("frac", "tfrac").replace("\\cdot", "\\cdot ")
-        return " + ".join(sorted(mstrs)) + units_smallfrac
+        units_tf = units.replace("frac", "tfrac").replace("\\cdot", "\\cdot ")
+        return " + ".join(sorted(mstrs)) + units_tf
 
     # posynomial arithmetic
     def __add__(self, other):
         if isinstance(other, Numbers):
             if other == 0:
-                return Signomial(self.exps, self.cs, (self.varlocs, self.varkeys))
+                return Signomial(self.exps, self.cs,
+                                 (self.varlocs, self.varkeys))
             else:
                 return Signomial(self.exps + ({},),
-                                  self.cs.tolist() + [other])
+                                 self.cs.tolist() + [other])
         elif isinstance(other, Signomial):
             return Signomial(self.exps + other.exps,
-                              self.cs.tolist() + other.cs.tolist())
+                             self.cs.tolist() + other.cs.tolist())
         elif isinstance(other, PosyArray):
             return np.array(self)+other
         else:
@@ -312,9 +315,8 @@ class Signomial(object):
 
     def __mul__(self, other):
         if isinstance(other, Numbers):
-            return Signomial(self.exps,
-                              other*self.cs,
-                              (self.varlocs, self.varkeys))
+            return Signomial(self.exps, other*self.cs,
+                             (self.varlocs, self.varkeys))
         elif isinstance(other, Signomial):
             C = np.outer(self.cs, other.cs)
             if isinstance(self.cs, Quantity) or isinstance(other.cs, Quantity):
@@ -338,15 +340,13 @@ class Signomial(object):
         else:
             return NotImplemented
 
-
     def __rmul__(self, other):
         return self * other
 
     def __div__(self, other):
         if isinstance(other, Numbers):
-            return Signomial(self.exps,
-                              self.cs/other,
-                              (self.varlocs, self.varkeys))
+            return Signomial(self.exps, self.cs/other,
+                             (self.varlocs, self.varkeys))
         elif isinstance(other, Monomial):
             exps = [exp - other.exp for exp in self.exps]
             return Signomial(exps, self.cs/other.c)
@@ -418,7 +418,8 @@ class Monomial(Posynomial):
         if not self.exp:
             return mag(self.c)
         else:
-            raise AttributeError("float() can only be called on  monomials with no variable terms")
+            raise AttributeError("float() can only be called"
+                                 " on monomials with no variable terms")
 
 
 class Constraint(Posynomial):
@@ -470,7 +471,8 @@ class Constraint(Posynomial):
                     p.exps = p.exps[:i] + p.exps[i+1:]
                     p = p/coeff
                 elif p.cs[i] > 1:
-                    raise ValueError("infeasible constraint: constant term too large.")
+                    raise ValueError("infeasible constraint:"
+                                     "constant term too large.")
 
         self.cs = p.cs
         self.exps = p.exps

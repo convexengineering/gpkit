@@ -7,10 +7,12 @@ import subprocess
 
 logstr = ""
 
+
 def log(*args):
     global logstr
     print(*args)
     logstr += " ".join(args) + "\n"
+
 
 def pathjoin(*args):
     return os.sep.join(args)
@@ -49,8 +51,8 @@ def diff(filename, diff_dict):
             for line_number, line in enumerate(a):
                 if line[:-1] in diff_dict:
                     newline = diff_dict[line[:-1]]+"\n"
-                    log("#\n#     Change in"
-                          " %s on line %i" % (filename, line_number + 1))
+                    log("#\n#     Change in %s"
+                        "on line %i" % (filename, line_number + 1))
                     log("#     --", line[:-1][:70])
                     log("#     ++", newline[:70])
                     b.write(newline)
@@ -125,7 +127,7 @@ class Mosek(SolverBackend):
         try:
             import ctypesgencore
         except ImportError:
-            log("## SKIPPING MOSEK INSTALL BECAUSE CTYPESGENCORE WAS NOT FOUND")
+            log("## SKIPPING MOSEK INSTALL: CTYPESGENCORE WAS NOT FOUND")
             return None
 
         if sys.platform == "win32":
@@ -156,10 +158,11 @@ class Mosek(SolverBackend):
                 return None
         else:
             log("# Build script does not support"
-                  " your platform (%s)" % sys.platform)
+                " your platform (%s)" % sys.platform)
             return None
 
-        if not os.path.isdir(self.dir): return None
+        if not os.path.isdir(self.dir):
+            return None
 
         possible_versions = [f for f in os.listdir(self.dir) if len(f) == 1]
         self.version = sorted(possible_versions)[-1]
@@ -168,8 +171,11 @@ class Mosek(SolverBackend):
         self.h_path = pathjoin(self.lib_dir, "h", "mosek.h")
         self.bin_dir = pathjoin(self.lib_dir, "bin")
         self.lib_path = pathjoin(self.lib_dir, "bin", self.libname)
-        if not isfile(self.h_path): return None
-        if not isfile(self.lib_path): return None
+
+        if not isfile(self.h_path):
+            return None
+        if not isfile(self.lib_path):
+            return None
 
         self.expopt_dir = pathjoin(self.tools_dir, "examples", "c")
         expopt_filenames = ["scopt-ext.c", "expopt.c", "dgopt.c",
@@ -178,7 +184,8 @@ class Mosek(SolverBackend):
                              for fname in expopt_filenames]
         self.expopt_files += [self.h_path]
         for expopt_file in self.expopt_files:
-            if not isfile(expopt_file): return None
+            if not isfile(expopt_file):
+                return None
 
         if sys.platform == "darwin":
             call('echo "\n# Added by gpkit buildscript for mosek support" >> $HOME/.bash_profile')

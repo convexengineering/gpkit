@@ -9,8 +9,9 @@ from . import DimensionalityError
 Quantity = ureg.Quantity
 Numbers += (Quantity,)
 
+
 class VarKey(object):
-    """Used in the declaration of Posynomials to correspond to each 'variable name'.
+    """An object to correspond to each 'variable name'.
 
     Parameters
     ----------
@@ -79,7 +80,7 @@ class VarKey(object):
 
     def _latex(self):
         s = self.name
-        for subscript in ["idx"]: # +"model"?
+        for subscript in ["idx"]:  # +"model"?
             if subscript in self.descr:
                 s = "{%s}_{%s}" % (s, self.descr[subscript])
         return s
@@ -104,8 +105,9 @@ class VarKey(object):
                     try:
                         if not self.descr["units"] == other.descr["units"]:
                             d = self.descr["units"]/other.descr["units"]
-                            if str(d.units) != "dimensionless" and not abs(mag(d)-1.0) <= 1e-7:
-                                return False
+                            if str(d.units) != "dimensionless":
+                                if not abs(mag(d)-1.0) <= 1e-7:
+                                    return False
                     except:
                         return False
                 else:
