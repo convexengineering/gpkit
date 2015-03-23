@@ -15,7 +15,7 @@ from subprocess import check_output
 def imize_fn(filename):
     filename = "gpkit_tmp" + os.sep + filename
 
-    def imize(c, A, p_idxs):
+    def imize(c, A, p_idxs, k):
         """Interface to the MOSEK "mskexpopt" command line solver
 
         Definitions

@@ -27,6 +27,10 @@ def diff(p, vk):
 
 
 def mono_approx(p, x0):
+    if not x0:
+        for i, exp in enumerate(p.exps):
+            if exp == {}:
+                return p.cs[i], {}
     exp = HashVector()
     p0 = p.sub(x0).c
     m0 = 1

@@ -331,7 +331,10 @@ class GP(Model):
             self.checkbounds()
             raise(e)
 
-    def solve(self, solver=None, printing=True, skipfailures=False):
+    def solve(self, *args, **kwargs):
+        return self._solve(*args, **kwargs)
+
+    def _solve(self, solver=None, printing=True, skipfailures=False):
         """Solves a GP and returns the solution.
 
         Parameters
@@ -348,7 +351,7 @@ class GP(Model):
             solver = self.solver
         if solver == 'cvxopt':
             from ._cvxopt import cvxoptimize_fn
-            solverfn = cvxoptimize_fn(self.k, self.options)
+            solverfn = cvxoptimize_fn(self.options)
         elif solver == "mosek_cli":
             from ._mosek import cli_expopt
             filename = self.options.get('filename', 'gpkit_mosek')
@@ -374,12 +377,12 @@ class GP(Model):
             if printing:
                 print("Solving for %i variables." % len(self.varlocs))
             solution = GPSolutionArray()
-            solution.append(self.__run_solver())
+            solution.append(self._run_solver())
             solution.toarray()
 
         self.endtime = time()
         if printing:
-            print("Solving took %.3g seconds"
+            print("Solving took %.3g seconds."
                   % (self.endtime - self.starttime))
         self.solution = solution
         if hasattr(self, "calc"):
@@ -427,7 +430,7 @@ class GP(Model):
                 except RuntimeWarning:
                     return None
             else:
-                return self.__run_solver()
+                return self._run_solver()
 
         if pool:
             mapfn = pool.map_sync
@@ -444,11 +447,14 @@ class GP(Model):
 
         return solution
 
-    def __run_solver(self):
+    def _run_solver(self):
         "Gets a solver's raw output, then checks and standardizes it."
 
         self.genA()
-        result = self.solverfn(self.cs, self.A, self.p_idxs)
+        result = self.solverfn(c=self.cs, A=self.A, p_idxs=self.p_idxs, k=self.k)
+        return self._parse_result(result)
+
+    def _parse_result(self, result, senss=True):
         if result['status'] not in ["optimal", "OPTIMAL"]:
             raise RuntimeWarning("final status of solver '%s' was '%s' not "
                                  "'optimal'" % (self.solver, result['status']))
@@ -490,21 +496,22 @@ class GP(Model):
         sensitivities["monomials"] = nu
         sensitivities["posynomials"] = la
 
-        sens_vars = {var: (sum([self.unsubbed.exps[i][var]*nu[i]
-                                for i in locs]))
-                     for (var, locs) in self.unsubbed.varlocs.items()}
-        sensitivities["variables"] = sens_vars
+        if senss:
+            sens_vars = {var: (sum([self.unsubbed.exps[i][var]*nu[i]
+                                    for i in locs]))
+                         for (var, locs) in self.unsubbed.varlocs.items()}
+            sensitivities["variables"] = sens_vars
 
-        # free-variable sensitivities must be < arbitrary epsilon 1e-4
-        for var, S in sensitivities["variables"].items():
-            if var not in self.substitutions and abs(S) > 1e-4:
-                raise RuntimeWarning("free variable too sensitive:"
-                                     " S_{%s} = %0.2e" % (var, S))
+            # free-variable sensitivities must be < arbitrary epsilon 1e-4
+            for var, S in sensitivities["variables"].items():
+                if var not in self.substitutions and abs(S) > 1e-4:
+                    raise RuntimeWarning("free variable too sensitive:"
+                                         " S_{%s} = %0.2e" % (var, S))
 
-        local_exp = {var: S for (var, S) in sens_vars.items() if abs(S) >= 0.1}
-        local_cs = (variables[var]**-S for (var, S) in local_exp.items())
-        local_c = reduce(mul, local_cs, cost)
-        local_model = Monomial(local_exp, local_c)
+            local_exp = {var: S for (var, S) in sens_vars.items() if abs(S) >= 0.1}
+            local_cs = (variables[var]**-S for (var, S) in local_exp.items())
+            local_c = reduce(mul, local_cs, cost)
+            local_model = Monomial(local_exp, local_c)
 
         # vectorvar substitution
         for var in self.unsubbed.varlocs:
@@ -524,20 +531,27 @@ class GP(Model):
                     variables[veckey] = np.empty(var.descr["length"]) + np.nan
                 variables[veckey][idx] = variables.pop(var)
 
-                if veckey not in sensitivities["variables"]:
-                    sensitivities["variables"][veckey] = \
-                        np.empty(var.descr["length"]) + np.nan
-                sensitivities["variables"][veckey][var.descr["idx"]] = \
+                if senss:
+                    if veckey not in sensitivities["variables"]:
+                        sensitivities["variables"][veckey] = \
+                            np.empty(var.descr["length"]) + np.nan
+                    sensitivities["variables"][veckey][var.descr["idx"]] = \
                     sensitivities["variables"].pop(var)
 
         constants = {var: val for var, val in variables.items()
                      if var in self.substitutions}
         free_variables = {var: val for var, val in variables.items()
                           if var not in self.substitutions}
-
-        return dict(cost=cost,
-                    variables=variables,
-                    free_variables=free_variables,
-                    constants=constants,
-                    sensitivities=sensitivities,
-                    local_model=local_model)
+        if senss:
+            return dict(cost=cost,
+                        variables=variables,
+                        free_variables=free_variables,
+                        constants=constants,
+                        sensitivities=sensitivities,
+                        local_model=local_model)
+        else:
+            return dict(cost=cost,
+                        variables=variables,
+                        free_variables=free_variables,
+                        constants=constants,
+                        sensitivities=sensitivities)

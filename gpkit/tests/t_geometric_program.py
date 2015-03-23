@@ -2,13 +2,14 @@ import math
 import unittest
 from gpkit import GP, Monomial, settings, VectorVariable, Variable
 from gpkit.small_classes import CootMatrix
+import gpkit
 
 NDIGS = {"cvxopt": 5, "mosek": 7, "mosek_cli": 7}
 # name: decimal places of accuracy
 
 
 class t_GP(unittest.TestCase):
-    name = "t_"
+    name = "t_GP_"
 
     def test_trivial_gp(self):
         x = Monomial('x')
@@ -97,7 +98,20 @@ class t_GP(unittest.TestCase):
         self.assertEqual(gp.A.data[1], gp.A.data[2])
 
 
-testcases = [t_GP]
+class t_SP(unittest.TestCase):
+    name = "t_SP_"
+
+    def test_trivial_sp(self):
+        x = Variable('x')
+        y = Variable('y')
+        gpkit.enable_signomials = True
+        sp = gpkit.SP(x, [x >= 1 - y, y <= 0.1])
+        sol = sp.localsolve(printing=False, solver=self.solver)
+        self.assertAlmostEqual(sol["variables"]["x"], 0.9, self.ndig)
+        gpkit.enable_signomials = False
+
+
+testcases = [t_GP, t_SP]
 
 tests = []
 for testcase in testcases:

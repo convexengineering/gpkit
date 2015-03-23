@@ -1,10 +1,10 @@
-def cvxoptimize_fn(k, options):
+def cvxoptimize_fn(options):
     from cvxopt import solvers, spmatrix, matrix, log, exp
     solvers.options.update({'show_progress': False})
     solvers.options.update(options)
     gpsolver = solvers.gp
 
-    def cvxoptimize(c, A, p_idxs):
+    def cvxoptimize(c, A, p_idxs, k):
         """Interface to the CVXOPT solver
 
             Definitions

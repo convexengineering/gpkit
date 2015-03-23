@@ -64,6 +64,7 @@ from .variables import Variable, VectorVariable
 from .varkey import VarKey
 from .posyarray import PosyArray
 from .geometric_program import GP
+from .signomial_program import SP
 from small_scripts import link
 
 if units:
