@@ -105,7 +105,10 @@ class t_SP(unittest.TestCase):
         x = Variable('x')
         y = Variable('y')
         gpkit.enable_signomials = True
-        sp = gpkit.SP(x, [x >= 1 - y, y <= 0.1])
+        sp = gpkit.SP(x, [x >= 1-y, y <= 0.1])
+        sol = sp.localsolve(printing=False, solver=self.solver)
+        self.assertAlmostEqual(sol["variables"]["x"], 0.9, self.ndig)
+        sp = gpkit.SP(x, [x >= 0.1, x+y >= 1, y <= 0.1])
         sol = sp.localsolve(printing=False, solver=self.solver)
         self.assertAlmostEqual(sol["variables"]["x"], 0.9, self.ndig)
         gpkit.enable_signomials = False

@@ -72,6 +72,11 @@ class SP(GP):
             if p_idx in approxs:
                 cs[i] /= approxs[p_idx].c
                 exps[i] -= approxs[p_idx].exp
+                if cs[i] > 1 and not exps[i]:
+                    # HACK: remove guaranteed-infeasible constraints
+                    cs.pop(i)
+                    exps.pop(i)
+                    p_idxs.pop(i)
                 #print "hi", i, Monomial(exps[i], cs[i])
 
         k = []
