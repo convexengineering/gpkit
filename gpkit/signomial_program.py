@@ -12,10 +12,6 @@ class SP(GP):
 
     def _run_solver(self):
         "Gets a solver's raw output, then checks and standardizes it."
-
-        self.presolve = self.last
-        self.xk = {}
-
         lastobj = 1
         obj = 1
         init = 2
@@ -45,11 +41,16 @@ class SP(GP):
         printing = printing and bool(self.xk)
 
         cs, exps, p_idxs = [], [], []
+        varkeys = []
         approxs = {}
         for i in range(len(self.cs)):
             if self.cs[i] < 0:
                 c = -self.cs[i]
                 exp = self.exps[i]
+                if self.xk:
+                    for vk in exp:
+                        if vk not in varkeys:
+                            varkeys.append(vk)
                 p_idx = self.p_idxs[i]
                 m = Monomial(exp, c)
                 #print "mmm", m
@@ -61,6 +62,13 @@ class SP(GP):
                 cs.append(self.cs[i])
                 exps.append(self.exps[i])
                 p_idxs.append(self.p_idxs[i])
+
+        if self.xk:
+            missing_vks = [vk for vk in varkeys if vk not in self.xk]
+            if missing_vks:
+                raise RuntimeWarning("starting point for solution needs to"
+                                     "contain the following variables: "
+                                     + str(missing_vks))
 
         for p_idx, p in approxs.items():
             #print "ppp", p
@@ -126,9 +134,13 @@ class SP(GP):
 
         return cs, exps, self.A, p_idxs, k
 
-    def localsolve(self, printing=True, *args, **kwargs):
+    def localsolve(self, printing=True, xk={}, *args, **kwargs):
         if printing:
             print "Beginning signomial local-solve:"
+
+        self.xk = xk
+        self.presolve = self.last
+
         return self._solve(printing=printing, *args, **kwargs)
 
     def solve(self, *args, **kwargs):

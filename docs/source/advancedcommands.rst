@@ -20,7 +20,7 @@ The examples below all use Posynomials and PosyArrays, but the syntax is identic
     assert p.sub(x.varkeys["x"], 3) == 9
     assert p.sub("x", 3) == 9
 
-Here the variable `x` is being replaced with `3` in three ways: first by substituting for ``x`` directly, then by substituting for the ``VarKey("x")``, then by substituting the string "x". In all cases the substitution is understood as being with the VarKey: when a variable is passed in the VarKey is pulled out of it, and when a string is passed in it is used as an argument to the Posynomial's ``varkeys`` dictionary.
+Here the variable ``x`` is being replaced with ``3`` in three ways: first by substituting for ``x`` directly, then by substituting for the ``VarKey("x")``, then by substituting the string "x". In all cases the substitution is understood as being with the VarKey: when a variable is passed in the VarKey is pulled out of it, and when a string is passed in it is used as an argument to the Posynomial's ``varkeys`` dictionary.
 
 Substituting multiple values
 ----------------------------
@@ -122,3 +122,52 @@ Example Usage
     a = gp.solve(printing=False)["cost"]
     b = [10, 14, 22, 15, 21, 33]
     assert all(abs(a-b)/(a+b) < 1e-7)
+
+
+Signomial Programming
+==================
+
+Signomial programming finds the local solution to a problem of the form:
+
+
+.. math:: \begin{array}[lll]\text{}
+    \text{minimize} & g_0(x) & \\
+    \text{subject to} & f_i(x) = 1, & i = 1,....,m \\
+                      & g_i(x) - h_i(x) \leq 1, & i = 1,....,n
+                      \end{array}
+
+where each :math:`f` is monomial while each :math:`g` and :math:`h` is a posynomial.
+
+This requires multiple solutions of geometric programs, and so will take longer to solve than an equivalent geometric programming formulation.
+
+The specification of the signomial problem affects its solve time in a nuanced way: ``gpkit.SP(x, [x >= 1-y, y <= 0.1]).localsolve()`` takes a third to a fifth as long to solve as ``gpkit.SP(x, [x >= 0.1, x+y >= 1, y <= 0.1]).localsolve()``, despite the two formulations being equivalent.
+
+In general, when given the choice of which variables to include in the positive-posynomial / :math:`g` side of the constraint, the modeler should:
+
+    #. maximize the number of variables in :math:`g`,
+    #. prioritize variables that are in the objective,
+    #. then prioritize variables that are present in other constraints.
+
+The syntax ``SP.localsolve`` is chosen to emphasize that signomial programming returns a local optimum. For the same reason, calling ``SP.solve`` will raise an error.
+
+By default signomial programs are first solved conservatively (by assuming each :math:`h` is equal only to its constant portion) and then become less conservative on each iteration.
+
+If you wish to start the local optimization at a particular point :math:`x_k`, however, you may do so by putting that position (a dictionary formatted as you would a substitution) as the ``xk`` argument to ``SP.localsolve(xk={...})``
+
+Example Usage
+-----------------------
+
+.. code-block:: python
+
+    # code from t_SP in tests/t_geometric_program.py
+    import gpkit
+    x = gpkit.Variable('x')
+    y = gpkit.Variable('y')
+    gpkit.enable_signomials = True
+    sp = gpkit.SP(x, [x >= 1-y, y <= 0.1])
+    sol = sp.localsolve(printing=False, solver=self.solver)
+    self.assertAlmostEqual(sol["variables"]["x"], 0.9, self.ndig)
+    sp = gpkit.SP(x, [x >= 0.1, x+y >= 1, y <= 0.1])
+    sol = sp.localsolve(printing=False, solver=self.solver)
+    self.assertAlmostEqual(sol["variables"]["x"], 0.9, self.ndig)
+    gpkit.enable_signomials = False
