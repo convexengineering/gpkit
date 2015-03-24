@@ -17,6 +17,7 @@ class SP(GP):
         obj = 1
         init = 2
         while abs(lastobj-obj)/(lastobj + obj) > 1e-4 or init:
+            self.sp_iters += 1
             if init:
                 init -= 1
             lastobj = obj
@@ -40,7 +41,6 @@ class SP(GP):
 
         printing = printing and bool(self.xk)
 
-
         cs, exps, p_idxs = [], [], []
         varkeys = []
         approxs = {}
@@ -58,7 +58,7 @@ class SP(GP):
                     approxs[p_idx] = m
                 else:
                     approxs[p_idx] += m
-            else:
+            elif self.cs[i] > 0:
                 cs.append(self.cs[i])
                 exps.append(self.exps[i])
                 p_idxs.append(self.p_idxs[i])
@@ -76,6 +76,7 @@ class SP(GP):
         for i, p_idx in enumerate(p_idxs):
             if p_idx in approxs:
                 cs[i] /= approxs[p_idx].c
+                cs[i] = mag(cs[i])
                 exps[i] -= approxs[p_idx].exp
                 if mag(cs[i]) > 1 and not exps[i]:
                     # HACK: remove guaranteed-infeasible constraints
@@ -132,12 +133,16 @@ class SP(GP):
 
     def localsolve(self, printing=True, xk={}, *args, **kwargs):
         if printing:
-            print "Beginning signomial local-solve:"
+            print "Beginning signomial solve:"
 
         self.xk = xk
+        self.sp_iters = 0
         self.presolve = self.last
 
-        return self._solve(printing=printing, *args, **kwargs)
+        sol = self._solve(printing=printing, *args, **kwargs)
+        if printing:
+            print "Signomial solve took %i GP solves." % self.sp_iters
+        return sol
 
     def solve(self, *args, **kwargs):
         raise KeyError("Signomial programs have only local solutions, and"

@@ -445,10 +445,11 @@ class GP(Model):
     def _run_solver(self):
         "Gets a solver's raw output, then checks and standardizes it."
 
-        self.genA()
-        result = self.solverfn(c=self.cs, A=self.A,
-                               p_idxs=self.p_idxs, k=self.k)
-        return self._parse_result(result)
+        allpos = not any(self.cs <= 0)
+        cs, exps, A, p_idxs, k = self.genA(allpos=allpos)
+        result = self.solverfn(c=cs, A=A, p_idxs=p_idxs, k=k)
+        cs, p_idxs = map(np.array, [cs, p_idxs])
+        return self._parse_result(result, senss=allpos, cs=cs, p_idxs=p_idxs)
 
     def _parse_result(self, result, senss=True, cs=None, p_idxs=None):
         if cs is None:

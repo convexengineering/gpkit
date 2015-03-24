@@ -34,6 +34,9 @@ def disableUnits():
         def __nonzero__(self):
             return 0
 
+        def __getattr__(self, attr):
+            return 1
+
     units = DummyUnits()
     DimensionalityError = ValueError
 
