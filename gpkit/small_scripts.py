@@ -201,25 +201,35 @@ def sort_and_simplify(exps, cs):
 def results_table(data, title, senss=False):
     strs = ["              | " + title]
     for var, val in sorted(data.items(), key=lambda x: str(x[0])):
-        vector = True
-        if not isinstance(val, Iterable):
-            val = [val]
+        if isinstance(val, Iterable):
+            vector = bool(val.shape)
+            if vector:
+                if all(val == val[0]):
+                    vector = False
+                    val = val[0]
+        else:
             vector = False
-        elif not val.shape:
-                val = val.flatten()
-                vector = False
         label = var.descr.get('label', '')
         if senss:
-            units = "-"
+            units = None
             minval = 1e-2
         else:
             units = unitstr(var)
+            if units == "-":
+                units = None
             minval = 0
-        if abs(max(val)) >= minval:
-            for i, v in enumerate(val):
-                strs += ["%13s" % (str(var) + (str(i) if vector else "")) +
-                         " : %-8.3g " % v +
-                         "[%s] %s" % (units, label)]
+        if not vector:
+            if abs(val) >= minval:
+                strs += ["%13s" % (str(var)) +
+                         " : %-8.3g " % val +
+                         (" [%s] " % units if units else " ") + "%s" % label]
+        else:
+            if abs(max(val)) >= minval:
+                vals = ["%-7.2g" % val[i] for i in range(min(len(val), 3))]
+                strs += ["%13s" % (str(var)) + " : "
+                         + "[ %s ... ]" % "  ".join(vals)
+                         + ("  [%s] " % units if units else "  ")
+                         + "%s" % label]
     strs += ["              |"]
     return "\n".join(strs)
 
