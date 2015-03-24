@@ -12,7 +12,8 @@ Quantity = ureg.Quantity
 
 def diff(p, vk):
     exps, cs = [], []
-    units = vk.descr["units"] if "units" in vk.descr else 1
+    from . import units as ureg
+    units = vk.descr.get("units", 1) if ureg else 1
     for i, exp in enumerate(p.exps):
         exp = HashVector(exp)
         if vk in exp:
@@ -34,8 +35,9 @@ def mono_approx(p, x0):
     exp = HashVector()
     p0 = p.sub(x0).c
     m0 = 1
+    from . import units as ureg
     for vk in p.varlocs:
-        units = vk.descr["units"] if "units" in vk.descr else 1
+        units = vk.descr.get("units", 1) if ureg else 1
         e = mag(x0[vk]*units * p.diff(vk).sub(x0, allow_negative=True).c / p0)
         exp[vk] = e
         m0 *= (x0[vk]*units)**e

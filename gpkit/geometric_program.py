@@ -446,10 +446,15 @@ class GP(Model):
         "Gets a solver's raw output, then checks and standardizes it."
 
         self.genA()
-        result = self.solverfn(c=self.cs, A=self.A, p_idxs=self.p_idxs, k=self.k)
+        result = self.solverfn(c=self.cs, A=self.A,
+                               p_idxs=self.p_idxs, k=self.k)
         return self._parse_result(result)
 
-    def _parse_result(self, result, senss=True):
+    def _parse_result(self, result, senss=True, cs=None, p_idxs=None):
+        if cs is None:
+            cs = self.cs
+        if p_idxs is None:
+            p_idxs = self.p_idxs
         if result['status'] not in ["optimal", "OPTIMAL"]:
             raise RuntimeWarning("final status of solver '%s' was '%s' not "
                                  "'optimal'" % (self.solver, result['status']))
@@ -473,7 +478,7 @@ class GP(Model):
         sensitivities = {}
         if "nu" in result:
             nu = np.array(result["nu"]).ravel()
-            la = np.array([sum(nu[self.p_idxs == i])
+            la = np.array([sum(nu[p_idxs == i])
                            for i in range(len(self.posynomials))])
         elif "la" in result:
             la = np.array(result["la"]).ravel()
@@ -481,8 +486,8 @@ class GP(Model):
                 # assume the cost's sensitivity has been dropped
                 la = np.hstack(([1.0], la))
             Ax = np.array(np.dot(self.A.todense(), result['primal'])).ravel()
-            z = Ax + np.log(self.cs)
-            m_iss = [self.p_idxs == i for i in range(len(la))]
+            z = Ax + np.log(cs)
+            m_iss = [p_idxs == i for i in range(len(la))]
             nu = np.hstack([la[p_i]*np.exp(z[m_is])/sum(np.exp(z[m_is]))
                             for p_i, m_is in enumerate(m_iss)])
         else:

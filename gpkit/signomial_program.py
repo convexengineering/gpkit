@@ -5,6 +5,7 @@ from .geometric_program import GP
 from .small_scripts import locate_vars
 from .nomials import Constraint, MonoEQConstraint
 from .small_classes import CootMatrix
+from .small_scripts import mag
 from collections import defaultdict
 
 
@@ -30,15 +31,15 @@ class SP(GP):
             else:
                 obj = self.cost.subcmag(self.xk)
 
-        self.cs, self.p_idxs = np.array(cs), np.array(p_idxs)
-        self.exps, self.k = exps, k
-        return self._parse_result(result, senss=False)
+        cs, p_idxs = map(np.array, [cs, p_idxs])
+        return self._parse_result(result, senss=False, cs=cs, p_idxs=p_idxs)
 
     def genA(self, printing=True):
         # A: exponents of the various free variables for each monomial
         #    rows of A are variables, columns are monomials
 
         printing = printing and bool(self.xk)
+
 
         cs, exps, p_idxs = [], [], []
         varkeys = []
@@ -53,7 +54,6 @@ class SP(GP):
                             varkeys.append(vk)
                 p_idx = self.p_idxs[i]
                 m = Monomial(exp, c)
-                #print "mmm", m
                 if p_idx not in approxs:
                     approxs[p_idx] = m
                 else:
@@ -71,21 +71,17 @@ class SP(GP):
                                      + str(missing_vks))
 
         for p_idx, p in approxs.items():
-            #print "ppp", p
             approxs[p_idx] = (1+p).mono_approximation(self.xk)
-            #print "pos", self.xk
-            #print "mapprox", approxs[p_idx]
 
         for i, p_idx in enumerate(p_idxs):
             if p_idx in approxs:
                 cs[i] /= approxs[p_idx].c
                 exps[i] -= approxs[p_idx].exp
-                if cs[i] > 1 and not exps[i]:
+                if mag(cs[i]) > 1 and not exps[i]:
                     # HACK: remove guaranteed-infeasible constraints
                     cs.pop(i)
                     exps.pop(i)
                     p_idxs.pop(i)
-                #print "hi", i, Monomial(exps[i], cs[i])
 
         k = []
         count = 1
