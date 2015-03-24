@@ -147,15 +147,43 @@ class Model(object):
         for attr in ['exps', 'cs', 'varlocs', 'substitutions']:
             setattr(self, attr, getattr(posytuple, attr))
 
-    def genA(self, printing=True):
+    def genA(self, allpos=True, printing=True):
         # A: exponents of the various free variables for each monomial
         #    rows of A are variables, columns are monomials
+
+        if not allpos:
+            cs, exps, p_idxs = [], [], []
+            for i in range(len(self.cs)):
+                if self.cs[i] < 0:
+                    print i, self.cs[i], self.exps[i]
+                    raise RuntimeWarning("GPs cannot have negative coefficients")
+                elif self.cs[i] > 0:
+                    cs.append(self.cs[i])
+                    exps.append(self.exps[i])
+                    p_idxs.append(self.p_idxs[i])
+
+            k = []
+            count = 1
+            last = None
+            for p in p_idxs:
+                if last == p:
+                    count += 1
+                elif last is not None:
+                    k.append(count)
+                    count = 1
+                last = p
+            k.append(count)
+
+            varlocs, varkeys = locate_vars(exps)
+        else:
+            cs, exps, p_idxs, k, varlocs = self.cs, self.exps, self.p_idxs, self.k, self.varlocs
+
         missingbounds = {}
         self.A = CootMatrix([], [], [])
-        for j, var in enumerate(self.varlocs):
+        for j, var in enumerate(varlocs):
             varsign = "both" if "value" in var.descr else None
-            for i in self.varlocs[var]:
-                exp = self.exps[i][var]
+            for i in varlocs[var]:
+                exp = exps[i][var]
                 self.A.append(i, j, exp)
                 if varsign is "both":
                     pass
@@ -172,13 +200,15 @@ class Model(object):
                 missingbounds[var] = bound
 
         # add subbed-out monomials at the end
-        if not self.exps[-1]:
-            self.A.append(0, len(self.exps)-1, 0)
+        if not exps[-1]:
+            self.A.append(0, len(exps)-1, 0)
         self.A.update_shape()
 
         self.missingbounds = missingbounds
         if printing:
             self.checkbounds()
+
+        return cs, exps, self.A, p_idxs, k
 
     def checkbounds(self):
         for var, bound in self.missingbounds.items():
