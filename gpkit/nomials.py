@@ -393,6 +393,14 @@ class Signomial(object):
         else:
             return other + -self
 
+    def __float__(self):
+        if len(self.exps) == 1:
+            if not self.exps[0]:
+                return mag(self.c)
+
+        raise AttributeError("float() can only be called"
+                             " on monomials with no variable terms")
+
 
 class Posynomial(Signomial):
     pass
@@ -413,13 +421,6 @@ class Monomial(Posynomial):
             return Monomial(self.exp*other, self.c**other)
         else:
             return NotImplemented
-
-    def __float__(self):
-        if not self.exp:
-            return mag(self.c)
-        else:
-            raise AttributeError("float() can only be called"
-                                 " on monomials with no variable terms")
 
 
 class Constraint(Posynomial):

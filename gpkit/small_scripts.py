@@ -121,7 +121,7 @@ def is_sweepvar(sub):
     "Determines if a given substitution indicates a sweep."
     try:
         if sub[0] == "sweep":
-            if isinstance(sub[1], Iterable):
+            if isinstance(sub[1], Iterable) or hasattr(sub[1], "__call__"):
                 return True
     except:
         return False

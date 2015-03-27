@@ -95,6 +95,9 @@ class Model(object):
                     else:
                         raise ValueError("vector substitutions must share a"
                                          "dimension with the variable vector")
+                elif hasattr(sub[1], "__call__"):
+                    found_sweep.append(var)
+                    self.linkedsweep.update({var: sub[1]})
                 else:
                     found_sweep.append(var)
                     self.sweep.update({var: sub[1]})
@@ -151,6 +154,8 @@ class Model(object):
         # A: exponents of the various free variables for each monomial
         #    rows of A are variables, columns are monomials
 
+        removed_idxs = []
+
         if not allpos:
             cs, exps, p_idxs = [], [], []
             for i in range(len(self.cs)):
@@ -161,6 +166,8 @@ class Model(object):
                     cs.append(self.cs[i])
                     exps.append(self.exps[i])
                     p_idxs.append(self.p_idxs[i])
+                else:
+                    removed_idxs.append(i)
 
             k = []
             count = 1
@@ -208,7 +215,7 @@ class Model(object):
         if printing:
             self.checkbounds()
 
-        return cs, exps, self.A, p_idxs, k
+        return cs, exps, self.A, p_idxs, k, removed_idxs
 
     def checkbounds(self):
         for var, bound in self.missingbounds.items():

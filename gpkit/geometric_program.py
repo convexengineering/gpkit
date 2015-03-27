@@ -198,7 +198,7 @@ class GP(Model):
                             newk = VarKey(k, model=name)
                             exp[newk] = exp.pop(k)
 
-        self.sweep = {}
+        self.sweep, self.linkedsweep = {}, {}
         self._gen_unsubbed_vars()
         values = {var: var.descr["value"]
                   for var in self.varlocs if "value" in var.descr}
@@ -415,9 +415,15 @@ class GP(Model):
             print("Solving for %i variables over %i passes." % (
                   len(self.varlocs), N_passes))
 
+        linkedsweep = self.linkedsweep
+
         def run_solver_i(i):
             this_pass = {var: sweep_vect[i]
                          for (var, sweep_vect) in sweep_vects.items()}
+            linked = {var: fn(*[this_pass[VarKey(v)]
+                                for v in var.descr["args"]])
+                      for var, fn in linkedsweep.items()}
+            this_pass.update(linked)
             self.sub(this_pass, frombase='presweep')
             if skipfailures:
                 try:
@@ -446,16 +452,26 @@ class GP(Model):
         "Gets a solver's raw output, then checks and standardizes it."
 
         allpos = not any(self.cs <= 0)
-        cs, exps, A, p_idxs, k = self.genA(allpos=allpos)
+        cs, exps, A, p_idxs, k, removed_idxs = self.genA(allpos=allpos)
         result = self.solverfn(c=cs, A=A, p_idxs=p_idxs, k=k)
         cs, p_idxs = map(np.array, [cs, p_idxs])
-        return self._parse_result(result, senss=allpos, cs=cs, p_idxs=p_idxs)
 
-    def _parse_result(self, result, senss=True, cs=None, p_idxs=None):
+        if allpos:
+            unsubbedexps = self.unsubbed.exps
+            unsubbedvarlocs = self.unsubbed.varlocs
+        else:
+            unsubbedexps = [exp for i, exp in enumerate(self.unsubbed.exps)
+                            if i not in removed_idxs]
+            unsubbedvarlocs, __ = locate_vars(unsubbedexps)
+
+        return self._parse_result(result, unsubbedexps, unsubbedvarlocs, cs, p_idxs)
+
+    def _parse_result(self, result, unsubbedexps, unsubbedvarlocs, cs, p_idxs):
         if cs is None:
             cs = self.cs
         if p_idxs is None:
             p_idxs = self.p_idxs
+
         if result['status'] not in ["optimal", "OPTIMAL"]:
             raise RuntimeWarning("final status of solver '%s' was '%s' not "
                                  "'optimal'" % (self.solver, result['status']))
@@ -497,22 +513,23 @@ class GP(Model):
         sensitivities["monomials"] = nu
         sensitivities["posynomials"] = la
 
-        if senss:
-            sens_vars = {var: (sum([self.unsubbed.exps[i][var]*nu[i]
-                                    for i in locs]))
-                         for (var, locs) in self.unsubbed.varlocs.items()}
-            sensitivities["variables"] = sens_vars
+        sens_vars = {var: (sum([unsubbedexps[i][var]*nu[i]
+                                for i in locs]))
+                     for (var, locs) in unsubbedvarlocs.items()}
+        sens_vars.update({v: 0 for v in self.unsubbed.varlocs
+                          if v not in sens_vars})
+        sensitivities["variables"] = sens_vars
 
-            # free-variable sensitivities must be < arbitrary epsilon 1e-4
-            for var, S in sensitivities["variables"].items():
-                if var not in self.substitutions and abs(S) > 1e-4:
-                    raise RuntimeWarning("free variable too sensitive:"
-                                         " S_{%s} = %0.2e" % (var, S))
+        # free-variable sensitivities must be < arbitrary epsilon 1e-4
+        for var, S in sensitivities["variables"].items():
+            if var not in self.substitutions and abs(S) > 1e-4:
+                raise RuntimeWarning("free variable too sensitive:"
+                                     " S_{%s} = %0.2e" % (var, S))
 
-            local_exp = {var: S for (var, S) in sens_vars.items() if abs(S) >= 0.1}
-            local_cs = (variables[var]**-S for (var, S) in local_exp.items())
-            local_c = reduce(mul, local_cs, cost)
-            local_model = Monomial(local_exp, local_c)
+        local_exp = {var: S for (var, S) in sens_vars.items() if abs(S) >= 0.1}
+        local_cs = (variables[var]**-S for (var, S) in local_exp.items())
+        local_c = reduce(mul, local_cs, cost)
+        local_model = Monomial(local_exp, local_c)
 
         # vectorvar substitution
         for var in self.unsubbed.varlocs:
@@ -532,27 +549,17 @@ class GP(Model):
                     variables[veckey] = np.empty(var.descr["length"]) + np.nan
                 variables[veckey][idx] = variables.pop(var)
 
-                if senss:
-                    if veckey not in sensitivities["variables"]:
-                        sensitivities["variables"][veckey] = \
-                            np.empty(var.descr["length"]) + np.nan
-                    sensitivities["variables"][veckey][var.descr["idx"]] = \
-                    sensitivities["variables"].pop(var)
+                if veckey not in sensitivities["variables"]:
+                    sensitivities["variables"][veckey] = \
+                        np.empty(var.descr["length"]) + np.nan
+                sensitivities["variables"][veckey][var.descr["idx"]] = \
+                sensitivities["variables"].pop(var)
 
         constants = {var: val for var, val in variables.items()
                      if var in self.substitutions}
         free_variables = {var: val for var, val in variables.items()
                           if var not in self.substitutions}
-        if senss:
-            return dict(cost=cost,
-                        variables=variables,
-                        free_variables=free_variables,
-                        constants=constants,
-                        sensitivities=sensitivities,
-                        local_model=local_model)
-        else:
-            return dict(cost=cost,
-                        variables=variables,
-                        free_variables=free_variables,
-                        constants=constants,
-                        sensitivities=sensitivities)
+        return dict(cost=cost,
+                    variables=variables,
+                    sensitivities=sensitivities,
+                    local_model=local_model)

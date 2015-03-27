@@ -37,8 +37,8 @@ class Variable(Monomial):
                 descr["name"] = arg
             elif isinstance(arg, Numbers) and "value" not in descr:
                 descr["value"] = arg
-            elif (isinstance(arg, Iterable) and not isinstance(arg, Strings)
-                  and "value" not in descr):
+            elif (((isinstance(arg, Iterable) and not isinstance(arg, Strings))
+                  or hasattr(arg, "__call__")) and "value" not in descr):
                 if is_sweepvar(arg):
                     descr["value"] = arg
                 else:
@@ -50,6 +50,10 @@ class Variable(Monomial):
 
         Monomial.__init__(self, **descr)
         self.__class__ = Variable
+
+    @property
+    def descr(self):
+        return self.exp.keys()[0].descr
 
 
 class VectorVariable(PosyArray):

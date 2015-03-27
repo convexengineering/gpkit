@@ -151,5 +151,5 @@ def substitution(varlocs, varkeys, exps, cs, substitutions, val=None):
                     varlocs_[subvar].append(i)
             else:
                 raise TypeError("could not substitue with value"
-                                "of type '%s'" % type(sub))
+                                " of type '%s'" % type(sub))
     return varlocs_, exps_, cs_, subs

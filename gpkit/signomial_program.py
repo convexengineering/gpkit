@@ -21,7 +21,7 @@ class SP(GP):
             if init:
                 init -= 1
             lastobj = obj
-            cs, exps, A, p_idxs, k = self.genA()
+            cs, exps, A, p_idxs, k, unsubbedexps, unsubbedvarlocs = self.genA()
             result = self.solverfn(c=cs, A=A, p_idxs=p_idxs, k=k)
             if result['status'] not in ["optimal", "OPTIMAL"]:
                 raise RuntimeWarning("final status of solver '%s' was '%s' not "
@@ -33,7 +33,8 @@ class SP(GP):
                 obj = self.cost.subcmag(self.xk)
 
         cs, p_idxs = map(np.array, [cs, p_idxs])
-        return self._parse_result(result, senss=False, cs=cs, p_idxs=p_idxs)
+        return self._parse_result(result, unsubbedexps, unsubbedvarlocs,
+                                  cs, p_idxs)
 
     def genA(self, printing=True):
         # A: exponents of the various free variables for each monomial
@@ -41,6 +42,7 @@ class SP(GP):
 
         printing = printing and bool(self.xk)
 
+        unsubbedexps = []
         cs, exps, p_idxs = [], [], []
         varkeys = []
         approxs = {}
@@ -62,6 +64,7 @@ class SP(GP):
                 cs.append(self.cs[i])
                 exps.append(self.exps[i])
                 p_idxs.append(self.p_idxs[i])
+                unsubbedexps.append(self.unsubbed.exps[i])
 
         if self.xk:
             missing_vks = [vk for vk in varkeys if vk not in self.xk]
@@ -78,11 +81,13 @@ class SP(GP):
                 cs[i] /= approxs[p_idx].c
                 cs[i] = mag(cs[i])
                 exps[i] -= approxs[p_idx].exp
+                unsubbedexps[i] -= approxs[p_idx].exp
                 if mag(cs[i]) > 1 and not exps[i]:
                     # HACK: remove guaranteed-infeasible constraints
                     cs.pop(i)
                     exps.pop(i)
                     p_idxs.pop(i)
+                    unsubbedexps.pop(i)
 
         k = []
         count = 1
@@ -98,6 +103,7 @@ class SP(GP):
         k.append(count)
 
         varlocs, varkeys = locate_vars(exps)
+        unsubbedvarlocs, __ = locate_vars(unsubbedexps)
 
         missingbounds = {}
         self.A = CootMatrix([], [], [])
@@ -129,11 +135,11 @@ class SP(GP):
         if printing:
             self.checkbounds()
 
-        return cs, exps, self.A, p_idxs, k
+        return cs, exps, self.A, p_idxs, k, unsubbedexps, unsubbedvarlocs
 
     def localsolve(self, printing=True, xk={}, *args, **kwargs):
         if printing:
-            print "Beginning signomial solve:"
+            print "Beginning signomial solve."
 
         self.xk = xk
         self.sp_iters = 0
@@ -141,7 +147,7 @@ class SP(GP):
 
         sol = self._solve(printing=printing, *args, **kwargs)
         if printing:
-            print "Signomial solve took %i GP solves." % self.sp_iters
+            print "Solving took %i GP solves." % self.sp_iters
         return sol
 
     def solve(self, *args, **kwargs):
