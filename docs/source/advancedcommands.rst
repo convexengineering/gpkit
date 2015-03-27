@@ -107,6 +107,11 @@ During a normal sweep, each result is independent, so they can be run in paralle
 
 This parallelization sets the stage for gpkit solves to be outsourced to a server, which may be valuable for faster results; alternately, it could allow the use of gpkit without installing a solver.
 
+Linked Sweeps
+-------------
+
+Some constants may be "linked" to another sweep variable. This can be represented by a Variable whose value is ``('sweep', fn)``, where the arguments of the function `fn` are stored in the Varkeys's ``args`` attribute. For example. ``a_ = gpkit.Variable("a_", lambda a: 1-a, "-", args=[a])`` will create a constant whose value is always 1 minus the value of a (valid for values of a less than 1). Note that this declaration requires the variable ``a`` to already have been declared.
+
 Example Usage
 -------------
 
