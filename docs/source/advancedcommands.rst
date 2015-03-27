@@ -20,7 +20,7 @@ The examples below all use Posynomials and PosyArrays, but the syntax is identic
     assert p.sub(x.varkeys["x"], 3) == 9
     assert p.sub("x", 3) == 9
 
-Here the variable ``x`` is being replaced with ``3`` in three ways: first by substituting for ``x`` directly, then by substituting for the ``VarKey("x")``, then by substituting the string "x". In all cases the substitution is understood as being with the VarKey: when a variable is passed in the VarKey is pulled out of it, and when a string is passed in it is used as an argument to the Posynomial's ``varkeys`` dictionary.
+Here the variable ````x`` is being replaced with ````3`` in three ways: first by substituting for ````x`` directly, then by substituting for the ````VarKey("x")``, then by substituting the string "x". In all cases the substitution is understood as being with the VarKey: when a variable is passed in the VarKey is pulled out of it, and when a string is passed in it is used as an argument to the Posynomial's ````varkeys`` dictionary.
 
 Substituting multiple values
 ----------------------------
@@ -68,19 +68,19 @@ Note that units are preserved, and that the value can be either a string (in whi
 Substituting with replacement
 ------------------------------
 
-Any of the substitutions above can be run with ``p.sub(*args, replace=True)`` to clobber any previously-substitued values.
+Any of the substitutions above can be run with ````p.sub(*args, replace=True)`` to clobber any previously-substitued values.
 
 Fixed Variables
 ---------------
 
-When a GP is created, any fixed Variables are used to form a dictionary: ``{var: var.descr["value"] for var in self.varlocs if "value" in var.descr}``. This dictionary in then substituted into the GP's cost and constraints before the ``substitutions`` argument.
+When a GP is created, any fixed Variables are used to form a dictionary: ````{var: var.descr["value"] for var in self.varlocs if "value" in var.descr}``. This dictionary in then substituted into the GP's cost and constraints before the ````substitutions`` argument.
 
 Substituting from a GP solution array
 -------------------------------------
 
-``gp.solution.subinto(p)`` will substitute the solution(s) for variables into the posynomial ``p``, returning a PosyArray. For a non-swept solution, this is equivalent to ``p.sub(gp.solution["variables"])``.
+``gp.solution.subinto(p)`` will substitute the solution(s) for variables into the posynomial ````p``, returning a PosyArray. For a non-swept solution, this is equivalent to ````p.sub(gp.solution["variables"])``.
 
-You can also substitute by just calling the solution, i.e. ``gp.solution(p)``. This returns a numpy array of just the coefficients (``c``) of the posynomial after substitution, and will raise a` `ValueError`` if some of the variables in ``p`` were not found in ``gp.solution``.
+You can also substitute by just calling the solution, i.e. ````gp.solution(p)``. This returns a numpy array of just the coefficients (``c``) of the posynomial after substitution, and will raise a` ``ValueError``` if some of the variables in ````p`` were not found in ````gp.solution``.
 
 .. _Sweeps:
 
@@ -90,20 +90,20 @@ Sweeps
 Declaring Sweeps
 ----------------
 
-Sweeps are useful for analyzing tradeoff surfaces. A sweep “value” is an Iterable of numbers, e.g. ``[1, 2, 3]``. Variables are swept when their substitution value takes the form ``('sweep', Iterable), (e.g. 'sweep', np.linspace(1e6, 1e7, 100))``. This can be done either during variable declaration (``x = Variable("x", ('sweep', [1, 2, 3])``) or during later substitution (``gp.sub("x", ('sweep', [1, 2, 3]))``, or if the variable was already substituted for a constant, ``gp.sub("x", ('sweep', [1, 2, 3]), replace=True))``.
+Sweeps are useful for analyzing tradeoff surfaces. A sweep “value” is an Iterable of numbers, e.g. ````[1, 2, 3]``. Variables are swept when their substitution value takes the form ````('sweep', Iterable), (e.g. 'sweep', np.linspace(1e6, 1e7, 100))``. This can be done either during variable declaration (``x = Variable("x", ('sweep', [1, 2, 3])``) or during later substitution (``gp.sub("x", ('sweep', [1, 2, 3]))``, or if the variable was already substituted for a constant, ````gp.sub("x", ('sweep', [1, 2, 3]), replace=True))``.
 
 Solving Sweeps
 --------------
 
-A GP with sweeps will solve for all possible combinations: e.g., if there’s a variable ``x`` with value ``('sweep', [1, 3])`` and a variable ``y`` with value ``('sweep', [14, 17])`` then the gp will be solved four times, for :math:`(x,y)\in\left\{(1, 14),\ (1, 17),\ (3, 14),\ (3, 17)\right\}`. The returned solutions will be a one-dimensional array (or 2-D for vector variables), accessed in the usual way.
+A GP with sweeps will solve for all possible combinations: e.g., if there’s a variable ````x`` with value ````('sweep', [1, 3])`` and a variable ````y`` with value ````('sweep', [14, 17])`` then the gp will be solved four times, for :math:`(x,y)\in\left\{(1, 14),\ (1, 17),\ (3, 14),\ (3, 17)\right\}`. The returned solutions will be a one-dimensional array (or 2-D for vector variables), accessed in the usual way.
 Sweeping Vector Variables
 
-Vector variables may also be substituted for: ``y = VectorVariable(3, "y", value=('sweep' ,[[1, 2], [1, 2], [1, 2]])`` will sweep :math:`y\ \forall~y_i\in\left\{1,2\right\}`.
+Vector variables may also be substituted for: ````y = VectorVariable(3, "y", value=('sweep' ,[[1, 2], [1, 2], [1, 2]])`` will sweep :math:`y\ \forall~y_i\in\left\{1,2\right\}`.
 
 Parallel Sweeps
 -----------------------
 
-During a normal sweep, each result is independent, so they can be run in parallel. To use this feature, run ``$ ipcluster start`` at a terminal: it will automatically start a number of iPython parallel computing engines equal to the number of cores on your machine, and when you next import gpkit you should see a note like ``Using parallel execution of sweeps on 4 clients``. If you do, then all sweeps performed with that import of gpkit will be parellelized.
+During a normal sweep, each result is independent, so they can be run in parallel. To use this feature, run ````$ ipcluster start`` at a terminal: it will automatically start a number of iPython parallel computing engines equal to the number of cores on your machine, and when you next import gpkit you should see a note like ````Using parallel execution of sweeps on 4 clients``. If you do, then all sweeps performed with that import of gpkit will be parellelized.
 
 This parallelization sets the stage for gpkit solves to be outsourced to a server, which may be valuable for faster results; alternately, it could allow the use of gpkit without installing a solver.
 
@@ -124,6 +124,44 @@ Example Usage
     assert all(abs(a-b)/(a+b) < 1e-7)
 
 
+Composite Objectives
+=================
+
+Given :math:`n` posynomial objectives :math:`g_i`, you can sweep out the problem's Pareto frontier with the composite objective:
+
+:math:`g_0 w_0 \prod_{i\not=0}^{n-1} v_i + g_1 w_1 \prod_{i\not=1}^{n-1} v_i +  ... + g_n \prod_i^{n-1}v_i`
+
+where :math:`v_i = 1- w_i` and :math:`w_i \in [0, 1]`
+
+GPkit has the helper function ``composite_objective`` for constructing these.
+
+Usage
+---------
+
+.. code-block:: python
+
+    import numpy as np
+    import gpkit
+    gpkit.disableUnits()
+
+    L, W = gpkit.Variable("L"), gpkit.Variable("W")
+
+    eqns = [L >= 1, W >= 1, L*W == 10]
+
+    co_sweep = [0]+np.logspace(-6, 0, 10).tolist()
+
+    obj = gpkit.composite_objective(L+W, W**-1 * L**-3,
+                                    normsub={L:10, W: 10},
+                                    sweep=co_sweep)
+
+    gp = gpkit.GP(obj, eqns)
+    gp.solve()
+
+The ``normsub`` argument allows specifies an expected value for your solution to normalize the different :math:`g_i` (you can also do this by hand). The feasibility of the problem should not depend on the normalization, but the spacing of the sweep will.
+
+The ``sweep`` argument specifies what points between 0 and 1 you wish to sample the weights at. If you want different resolutions or spacings for different weights, the ``sweeps`` argument accepts a list of sweep arrays.
+
+
 Signomial Programming
 ==================
 
@@ -140,7 +178,7 @@ where each :math:`f` is monomial while each :math:`g` and :math:`h` is a posynom
 
 This requires multiple solutions of geometric programs, and so will take longer to solve than an equivalent geometric programming formulation.
 
-The specification of the signomial problem affects its solve time in a nuanced way: ``gpkit.SP(x, [x >= 1-y, y <= 0.1]).localsolve()`` takes a third to a fifth as long to solve as ``gpkit.SP(x, [x >= 0.1, x+y >= 1, y <= 0.1]).localsolve()``, despite the two formulations being equivalent.
+The specification of the signomial problem affects its solve time in a nuanced way: ````gpkit.SP(x, [x >= 1-y, y <= 0.1]).localsolve()`` takes a third to a fifth as long to solve as ````gpkit.SP(x, [x >= 0.1, x+y >= 1, y <= 0.1]).localsolve()``, despite the two formulations being equivalent.
 
 In general, when given the choice of which variables to include in the positive-posynomial / :math:`g` side of the constraint, the modeler should:
 
@@ -148,11 +186,11 @@ In general, when given the choice of which variables to include in the positive-
     #. prioritize variables that are in the objective,
     #. then prioritize variables that are present in other constraints.
 
-The syntax ``SP.localsolve`` is chosen to emphasize that signomial programming returns a local optimum. For the same reason, calling ``SP.solve`` will raise an error.
+The syntax ````SP.localsolve`` is chosen to emphasize that signomial programming returns a local optimum. For the same reason, calling ````SP.solve`` will raise an error.
 
 By default signomial programs are first solved conservatively (by assuming each :math:`h` is equal only to its constant portion) and then become less conservative on each iteration.
 
-If you wish to start the local optimization at a particular point :math:`x_k`, however, you may do so by putting that position (a dictionary formatted as you would a substitution) as the ``xk`` argument to ``SP.localsolve(xk={...})``
+If you wish to start the local optimization at a particular point :math:`x_k`, however, you may do so by putting that position (a dictionary formatted as you would a substitution) as the ````xk`` argument to ````SP.localsolve(xk={...})``
 
 Example Usage
 -----------------------

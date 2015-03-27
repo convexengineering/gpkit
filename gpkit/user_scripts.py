@@ -7,7 +7,7 @@ from .variables import Variable, VectorVariable
 from .posyarray import PosyArray
 
 
-def MOO(*objectives, **kwargs):
+def composite_objective(*objectives, **kwargs):
     objectives = list(objectives)
     n = len(objectives)
     if "k" in kwargs:
@@ -26,12 +26,12 @@ def MOO(*objectives, **kwargs):
         normalization = [1]*n
 
     sweeps = zip(["sweep"]*(n-1), sweeps)
-    ws = VectorVariable(n-1, "w_{MO}", sweeps, "-")
+    ws = VectorVariable(n-1, "w_{CO}", sweeps, "-")
     w_s = []
     for w in ws:
         descr = dict(w.descr)
         del descr["value"]
-        descr["name"] = "v_{MO}"
+        descr["name"] = "v_{CO}"
         w_s.append(Variable(value=('sweep', lambda x: 1-x), args=[w], **descr))
     w_s = normalization[-1]*PosyArray(w_s)*objectives[-1]
     objective = w_s.prod()

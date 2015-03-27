@@ -106,14 +106,14 @@ class t_GP(unittest.TestCase):
         self.assertAlmostEqual(sol(L), 10, self.ndig)
         gpkit.enable_signomials = False
 
-    def test_MOO(self):
+    def test_CO(self):
         L = Variable("L")
         W = Variable("W")
         eqns = [L >= 1, W >= 1,
                 L*W == 10]
-        obj = gpkit.MOO(L+W, W**-1 * L**-3, sub={L:1, W: 1})
+        obj = gpkit.composite_objective(L+W, W**-1 * L**-3, sub={L:1, W: 1})
         sol = GP(obj, eqns).solve(printing=False)
-        a = sol["sensitivities"]["variables"]["w_{MO}"].flatten()
+        a = sol["sensitivities"]["variables"]["w_{CO}"].flatten()
         b = np.array([0, 0.98809322, 0.99461408, 0.99688676, 0.99804287, 0.99874303, 0.99921254, 0.99954926, 0.99980255, 1])
         self.assertTrue((abs(a-b)/(a+b+1e-7) < 1e-7).all())
 
