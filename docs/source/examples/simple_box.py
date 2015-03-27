@@ -29,7 +29,7 @@ objective = 1/V #To maximize V, we minimize its reciprocal
 gp = GP(objective, constraints)
 
 # Solve the GP
-sol = gp.solve()
+sol = gp.solve(printing=False)
 
 # Print results table
 print sol.table()
