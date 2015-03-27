@@ -68,7 +68,7 @@ from .varkey import VarKey
 from .posyarray import PosyArray
 from .geometric_program import GP
 from .signomial_program import SP
-from small_scripts import link
+from user_scripts import MOO, link
 
 if units:
     # regain control of Quantities' interactions with Posynomials

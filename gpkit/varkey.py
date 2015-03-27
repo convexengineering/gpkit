@@ -98,7 +98,7 @@ class VarKey(object):
 
     def __eq__(self, other):
         if isinstance(other, VarKey):
-            if self.descr.keys() != other.descr.keys():
+            if set(self.descr.keys()) != set(other.descr.keys()):
                 return False
             for key in self.descr:
                 if key == "units":

@@ -88,7 +88,10 @@ class Model(object):
                     if len(var) == suba.shape[0]:
                         for i, v in enumerate(var):
                             found_sweep.append(v)
-                            self.sweep.update({v: suba[i]})
+                            if hasattr(suba[i], "__call__"):
+                                self.linkedsweep.update({v: suba[i]})
+                            else:
+                                self.sweep.update({v: suba[i]})
                     elif len(var) == suba.shape[1]:
                         raise ValueError("whole-vector substitution"
                                          "is not yet supported")

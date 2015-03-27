@@ -136,11 +136,17 @@ class PosyArray(np.ndarray):
 
     def sum(self):
         "Returns the sum of the array."
-        return reduce(add, self[1:], self[0])
+        if max(self.shape):
+            return reduce(add, self[1:], self[0])
+        else:
+            return 0
 
     def prod(self):
         "Returns the product of the array."
-        return reduce(mul, self[1:], self[0])
+        if max(self.shape):
+            return reduce(mul, self[1:], self[0])
+        else:
+            return 1
 
     def sub(self, subs, val=None, allow_negative=False):
         "Substitutes into the array"
