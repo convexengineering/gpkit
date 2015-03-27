@@ -16,7 +16,7 @@ class SP(GP):
         lastobj = 1
         obj = 1
         init = 2
-        while abs(lastobj-obj)/(lastobj + obj) > 1e-4 or init:
+        while abs(lastobj-obj)/(lastobj + obj) > self.reltol or init:
             self.sp_iters += 1
             if init:
                 init -= 1
@@ -137,7 +137,8 @@ class SP(GP):
 
         return cs, exps, self.A, p_idxs, k, unsubbedexps, unsubbedvarlocs
 
-    def localsolve(self, printing=True, xk={}, *args, **kwargs):
+    def localsolve(self, printing=True, xk={}, reltol=1e-4, *args, **kwargs):
+        self.reltol = 1e-4
         if printing:
             print "Beginning signomial solve."
 
