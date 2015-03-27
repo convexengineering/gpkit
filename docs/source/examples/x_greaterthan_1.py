@@ -13,7 +13,8 @@ objective = x
 gp = GP(objective, constraints)
 
 # Solve the GP
-sol = gp.solve()
+sol = gp.solve(printing=False)
 
-# Print results table
-print sol.table()
+# print selected results
+print "Optimal cost:  %s" % sol['cost']
+print "Optimal x val: %s" % sol(x)

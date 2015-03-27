@@ -12,6 +12,4 @@ constraints = (A >= 2*(d[0]*d[1] + d[0]*d[2] + d[1]*d[2]),
 
 gp = GP(A, constraints)
 sol = gp.solve(printing=False)
-print sol(A)
-print sol(V)
-print sol(d)
+print sol.table()

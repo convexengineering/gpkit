@@ -45,6 +45,7 @@ help:
 	@echo "  pseudoxml  to make pseudoxml-XML files for display purposes"
 	@echo "  linkcheck  to check all external links for integrity"
 	@echo "  doctest    to run all doctests embedded in the documentation (if enabled)"
+	@echo "  examples   to run Python scripts in source/examples/ and produce output txt files (requires GPkit installation)"
 
 clean:
 	rm -rf $(BUILDDIR)/*
@@ -175,3 +176,8 @@ pseudoxml:
 	$(SPHINXBUILD) -b pseudoxml $(ALLSPHINXOPTS) $(BUILDDIR)/pseudoxml
 	@echo
 	@echo "Build finished. The pseudo-XML files are in $(BUILDDIR)/pseudoxml."
+
+examples:
+	python source/examples/x_greaterthan_1.py > source/examples/x_greaterthan_1_output.txt
+	python source/examples/simple_box.py > source/examples/simple_box_output.txt
+	python source/examples/water_tank.py > source/examples/water_tank_output.txt
