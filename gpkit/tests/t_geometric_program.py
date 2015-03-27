@@ -114,7 +114,7 @@ class t_GP(unittest.TestCase):
         obj = gpkit.MOO(L+W, W**-1 * L**-3, sub={L:1, W: 1})
         sol = GP(obj, eqns).solve(printing=False)
         a = sol["sensitivities"]["variables"]["w_{MO}"].flatten()
-        b = np.array([0, 0.97747458, 0.9895055, 0.99386793, 0.99612341, 0.99750168, 0.99843124, 0.99910055, 0.99960549, 1])
+        b = np.array([0, 0.98809322, 0.99461408, 0.99688676, 0.99804287, 0.99874303, 0.99921254, 0.99954926, 0.99980255, 1])
         self.assertTrue((abs(a-b)/(a+b+1e-7) < 1e-7).all())
 
 
