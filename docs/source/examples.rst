@@ -1,6 +1,12 @@
 Examples
 ********
 
+iPython Notebook Examples
+=========================
+
+More examples, including some in-depth and experimental models, can be seen `on nbviewer <http://nbviewer.ipython.org/github/convexopt/gpkit/tree/master/docs/source/ipynb/>`_.
+
+
 A Trivial GP
 ============
 The most trivial GP we can think of:
@@ -26,7 +32,7 @@ Water Tank
 ==========
 .. literalinclude:: examples/water_tank.py
 
-The output is 
+The output is
 
 .. literalinclude:: examples/water_tank_output.txt
 
@@ -37,17 +43,3 @@ The output is
         :language: python
         :emphasize-lines: 2-4, 6
         :lines: 1-7
-
-iPython Notebook Examples
-=========================
-
-Also available on `nbviewer <http://nbviewer.ipython.org/github/convexopt/gpkit/tree/master/docs/source/ipynb/>`_.
-
-    .. toctree::
-       :maxdepth: 1
-
-       ipynb/Box/Box.rst
-       ipynb/Fuel/Fuel.rst
-
-
-.. http://sphinx-doc.org/markup/code.html
