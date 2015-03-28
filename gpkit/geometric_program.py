@@ -88,8 +88,7 @@ class GPSolutionArray(DictOfLists):
             assert not subbed.exp
             return subbed.c
 
-    def table(self, tables=["cost", "free_variables",
-                            "constants", "sensitivities"]):
+    def table(self, tables=["cost", "variables", "sensitivities"]):
         if isinstance(tables, Strings):
             tables = [tables]
         strs = []
@@ -102,11 +101,8 @@ class GPSolutionArray(DictOfLists):
             else:
                 strs += ["         Cost :  %-8.3g" % self["cost"]]
             strs += ["              | "]
-        if "free_variables" in tables:
-            strs += [results_table(self["free_variables"],
-                                   "Free variables")]
-        if "constants" in tables:
-            strs += [results_table(self["constants"], "Constants")]
+        if "variables" in tables:
+            strs += [results_table(self["variables"], "Variables")]
         if "sensitivities" in tables:
             strs += [results_table(self["sensitivities"]["variables"],
                                    "Constant sensitivities", senss=True)]

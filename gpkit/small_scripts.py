@@ -191,8 +191,9 @@ def results_table(data, title, senss=False):
         else:
             if abs(max(val)) >= minval:
                 vals = ["%-7.2g" % val[i] for i in range(min(len(val), 3))]
+                ellipsis = " ..." if len(val) > 3 else ""
                 strs += ["%13s" % (str(var)) + " : "
-                         + "[ %s ... ]" % "  ".join(vals)
+                         + "[ %s%s ]" % ("  ".join(vals), ellipsis)
                          + ("  [%s] " % units if units else "  ")
                          + "%s" % label]
     strs += ["              |"]
