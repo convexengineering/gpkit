@@ -424,7 +424,7 @@ class GP(Model):
             if skipfailures:
                 try:
                     return self._run_solver()
-                except RuntimeWarning:
+                except (RuntimeWarning, ValueError):
                     return None
             else:
                 return self._run_solver()
@@ -447,7 +447,7 @@ class GP(Model):
     def _run_solver(self):
         "Gets a solver's raw output, then checks and standardizes it."
 
-        allpos = not any(self.cs <= 0)
+        allpos = not any(mag(self.cs) <= 0)
         cs, exps, A, p_idxs, k, removed_idxs = self.genA(allpos=allpos)
         result = self.solverfn(c=cs, A=A, p_idxs=p_idxs, k=k)
         cs, p_idxs = map(np.array, [cs, p_idxs])
