@@ -423,7 +423,7 @@ class GP(Model):
             self.sub(this_pass, frombase='presweep')
             if skipfailures:
                 try:
-                    return self.__run_solver()
+                    return self._run_solver()
                 except RuntimeWarning:
                     return None
             else:

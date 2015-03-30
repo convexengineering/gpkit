@@ -137,10 +137,8 @@ class Signomial(object):
 
     @property
     def value(self):
-        values = {vk: vk.descr["value"] for vk in self.varkeys.values()
+        values = {vk: vk.descr["value"] for vk in self.varlocs.keys()
                   if "value" in vk.descr}
-        if not values:
-            return self
         p = self.sub(values)
         if isinstance(p, Monomial):
             if not p.exp:
@@ -345,8 +343,7 @@ class Signomial(object):
 
     def __div__(self, other):
         if isinstance(other, Numbers):
-            return Signomial(self.exps, self.cs/other,
-                             (self.varlocs, self.varkeys))
+            return Signomial(self.exps, self.cs/other)
         elif isinstance(other, Monomial):
             exps = [exp - other.exp for exp in self.exps]
             return Signomial(exps, self.cs/other.c)
