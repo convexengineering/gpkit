@@ -90,7 +90,7 @@ Sweeps
 Declaring Sweeps
 ----------------
 
-Sweeps are useful for analyzing tradeoff surfaces. A sweep “value” is an Iterable of numbers, e.g. ``[1, 2, 3]``. Variables are swept when their substitution value takes the form ``('sweep', Iterable), (e.g. 'sweep', np.linspace(1e6, 1e7, 100))``. This can be done either during variable declaration (``x = Variable("x", ('sweep', [1, 2, 3])``) or during later substitution (``gp.sub("x", ('sweep', [1, 2, 3]))``, or if the variable was already substituted for a constant, ``gp.sub("x", ('sweep', [1, 2, 3]), replace=True))``.
+Sweeps are useful for analyzing tradeoff surfaces. A sweep “value” is an Iterable of numbers, e.g. ``[1, 2, 3]``. Variables are swept when their substitution value takes the form ``('sweep', Iterable), (e.g. 'sweep', np.linspace(1e6, 1e7, 100))``. During variable declaration, giving an Iterable value for a Variable is assumed to be giving it a sweeep value: for example, ``x = Variable("x", [1, 2, 3]``. Sweeps can also be declared during later substitution (``gp.sub("x", ('sweep', [1, 2, 3]))``, or if the variable was already substituted for a constant, ``gp.sub("x", ('sweep', [1, 2, 3]), replace=True))``.
 
 Solving Sweeps
 --------------
@@ -110,7 +110,7 @@ This parallelization sets the stage for gpkit solves to be outsourced to a serve
 Linked Sweeps
 -------------
 
-Some constants may be "linked" to another sweep variable. This can be represented by a Variable whose value is ``('sweep', fn)``, where the arguments of the function `fn` are stored in the Varkeys's ``args`` attribute. For example. ``a_ = gpkit.Variable("a_", lambda a: 1-a, "-", args=[a])`` will create a constant whose value is always 1 minus the value of a (valid for values of a less than 1). Note that this declaration requires the variable ``a`` to already have been declared.
+Some constants may be "linked" to another sweep variable. This can be represented by a Variable whose value is ``('sweep', fn)``, where the arguments of the function ``fn`` are stored in the Varkeys's ``args`` attribute. If you declare a variables value to be a function, then it will assume you meant that as a sweep value: for example, ``a_ = gpkit.Variable("a_", lambda a: 1-a, "-", args=[a])`` will create a constant whose value is always 1 minus the value of a (valid for values of a less than 1). Note that this declaration requires the variable ``a`` to already have been declared.
 
 Example Usage
 -------------
@@ -161,7 +161,7 @@ Example Usage
     gp = gpkit.GP(obj, eqns)
     gp.solve()
 
-The ``normsub`` argument allows specifies an expected value for your solution to normalize the different :math:`g_i` (you can also do this by hand). The feasibility of the problem should not depend on the normalization, but the spacing of the sweep will.
+The ``normsub`` argument specifies an expected value for your solution to normalize the different :math:`g_i` (you can also do this by hand). The feasibility of the problem should not depend on the normalization, but the spacing of the sweep will.
 
 The ``sweep`` argument specifies what points between 0 and 1 you wish to sample the weights at. If you want different resolutions or spacings for different weights, the ``sweeps`` argument accepts a list of sweep arrays.
 
