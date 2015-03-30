@@ -134,9 +134,9 @@ Composite Objectives
 
 Given :math:`n` posynomial objectives :math:`g_i`, you can sweep out the problem's Pareto frontier with the composite objective:
 
-:math:`g_0 w_0 \prod_{i\not=0}^{n-1} v_i + g_1 w_1 \prod_{i\not=1}^{n-1} v_i +  ... + g_n \prod_i^{n-1}v_i`
+:math:`g_0 w_0 \prod_{i\not=0} v_i + g_1 w_1 \prod_{i\not=1} v_i +  ... + g_n \prod_i v_i`
 
-where :math:`v_i = 1- w_i` and :math:`w_i \in [0, 1]`
+where :math:`i \in 0 ... n-1` and :math:`v_i = 1- w_i` and :math:`w_i \in [0, 1]`
 
 GPkit has the helper function ``composite_objective`` for constructing these.
 
