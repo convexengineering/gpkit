@@ -30,6 +30,8 @@ The output is
 
 Water Tank
 ==========
+Say we had a fixed mass of water we wanted to contain within a tank, but also wanted to minimize the cost of the material we had to purchase (i.e. the surface area of the tank):
+
 .. literalinclude:: examples/water_tank.py
 
 The output is
