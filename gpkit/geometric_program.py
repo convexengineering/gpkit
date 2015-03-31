@@ -63,6 +63,8 @@ class GPSolutionArray(DictOfLists):
 
     def subinto(self, p):
         "Returns numpy array of each solution substituted into p."
+        if p in self["variables"]:
+            return PosyArray(self["variables"][p])
         if len(self) > 1:
             return PosyArray([p.sub(self.atindex(i)["variables"])
                               for i in range(len(self["cost"]))])

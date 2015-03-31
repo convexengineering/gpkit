@@ -1,5 +1,6 @@
 from itertools import count
 
+from .posyarray import PosyArray
 from .small_scripts import mag
 from .small_scripts import isequal
 from .small_classes import Strings, Numbers
