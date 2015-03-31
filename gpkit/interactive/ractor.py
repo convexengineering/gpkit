@@ -86,7 +86,7 @@ def ractorjs(title, gp, update_py, ranges, constraint_js=""):
 
     display(HTML(template + "</table></script>"))
 
-    loader = Template("""getScript('http://cdn.ractivejs.org/latest/ractive.min.js', function() {
+    loader = Template("""getScript('http://cdn.ractivejs.org/0.6.1/ractive.min.js', function() {
           $w.ractive = new Ractive({
           el: '$container_id',
           template: '#$template_id',
@@ -111,7 +111,10 @@ def ractorjs(title, gp, update_py, ranges, constraint_js=""):
         });
 
         $w.ractive.onchange()
-})</script>""")
+})
+
+MathJax.Hub.Queue(["Typeset", MathJax.Hub]);
+</script>""")
 
     display(HTML("<script>$."+loader.substitute(title=title,
                                                 w=widget_id,

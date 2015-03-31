@@ -44,7 +44,7 @@ wing: {scalex: 1, scaley: 1, scale: 1, x:0, y:0},
 wingrect: {scalex: 1, scaley: 1, scale: 1, x:0, y:0},
 wingtaper: {scalex: 1, scaley: 1, scale: 1, x:0, y:0},
       }
-$.getScript('http://cdn.ractivejs.org/latest/ractive.min.js', function () {
+$.getScript('http://cdn.ractivejs.org/0.6.1/ractive.min.js', function () {
 var ractive = new Ractive({
           el: 'ractivecontainer',
           template: '#ractivetemplate',
