@@ -26,14 +26,15 @@ class t_GPSolutionArray(unittest.TestCase):
 
     def test_call_time(self):
         N = 20
-        x = VectorVariable(N, 'x')
-        y = VectorVariable(N, 'y')
-        z1 = VectorVariable(N, 'z1')
-        z2 = VectorVariable(N, 'z2')
-        z3 = VectorVariable(N, 'z3')
-        z4 = VectorVariable(N, 'z4')
+        x = VectorVariable(N, 'x', 'm')
+        y = VectorVariable(N, 'y', 'm')
+        z1 = VectorVariable(N, 'z1', 'm')
+        z2 = VectorVariable(N, 'z2', 'm')
+        z3 = VectorVariable(N, 'z3', 'm')
+        z4 = VectorVariable(N, 'z4', 'm')
+        L = Variable('L', 5, 'm')
         prob = GP(sum(x),
-                  [x >= y, y >= z1, z1 >= z2, z2 >= z3, z3 >= z4, z4 >= 5])
+                  [x >= y, y >= z1, z1 >= z2, z2 >= z3, z3 >= z4, z4 >= L])
         sol = prob.solve(printing=False)
         t1 = time.time()
         foo = sol(z1)
