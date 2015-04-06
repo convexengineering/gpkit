@@ -168,7 +168,10 @@ class GP(Model):
             if "constraints" in kwargs:
                 constraints = kwargs["constraints"]
             else:
-                constraints = args.pop(0)
+                if args:
+                    constraints = args.pop(0)
+                else:
+                    constraints = []
         self.constraints = tuple(flatten(constraints, Constraint))
         # TODO: parse constraints during flattening, calling Posyarray on
         #       anything that holds only posys and then saving that list.
