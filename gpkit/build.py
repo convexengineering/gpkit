@@ -129,12 +129,6 @@ class Mosek(SolverBackend):
     }
 
     def look(self):
-        try:
-            import ctypesgencore
-        except ImportError:
-            log("## SKIPPING MOSEK INSTALL: CTYPESGENCORE WAS NOT FOUND")
-            return
-
         if sys.platform == "win32":
             self.dir = "C:\\Program Files\\Mosek"
             self.platform = "win64x86"
@@ -194,6 +188,12 @@ class Mosek(SolverBackend):
         return "version %s, installed to %s" % (self.version, self.dir)
 
     def build(self):
+        try:
+            import ctypesgencore
+        except ImportError:
+            log("## SKIPPING MOSEK INSTALL: CTYPESGENCORE WAS NOT FOUND")
+            return
+
         lib_dir = replacedir(pathjoin("gpkit", "_mosek", "lib"))
         solib_dir = replacedir(pathjoin(os.path.expanduser("~"), ".gpkit"))
         f = open(pathjoin(lib_dir, "__init__.py"), 'w')
