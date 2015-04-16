@@ -15,7 +15,8 @@ from .. import settings
 
 def imize_fn(filename):
     filename = "gpkit_tmp" + os.sep + filename
-    os.environ['PATH'] = os.environ['PATH']+':%s' % settings["mosek_bin_dir"][0]
+    os.environ['PATH'] = (os.environ['PATH'] + ':%s' %
+                          settings["mosek_bin_dir"][0])
 
     def imize(c, A, p_idxs, k):
         """Interface to the MOSEK "mskexpopt" command line solver
