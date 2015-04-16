@@ -358,6 +358,10 @@ class GP(Model):
             solverfn = solver
             solver = solver.__name__
         else:
+            if not solver:
+                raise ValueError("No solver was given; perhaps gpkit was not"
+                                 " properly installed, or found no solvers"
+                                 " during the install process.")
             raise ValueError("Solver %s is not implemented!" % solver)
         self.solverfn = solverfn
         self.solver = solver
