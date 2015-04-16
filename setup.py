@@ -51,7 +51,7 @@ setup(
     author='Convex Optimization Group at MIT ACDL',
     author_email='convex@mit.edu',
     url='https://www.github.com/convexopt/gpkit',
-    install_requires=['numpy', 'ctypesgen>=0.r125'],
+    install_requires=['numpy'],
     version='0.1.1',
     packages=['gpkit', 'gpkit._mosek', 'gpkit.tests', 'gpkit.interactive'],
     package_data={'gpkit': ['env/*'],
