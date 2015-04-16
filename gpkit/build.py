@@ -191,6 +191,7 @@ class Mosek(SolverBackend):
             call(('if ! grep "%s" $HOME/.bash_profile;'
                   ' then echo "%s" >> $HOME/.bash_profile;'
                   ' fi') % (prof_str, prof_str))
+            call("echo $HOME/.bash_profile")
 
         return "version %s, installed to %s" % (self.version, self.dir)
 
