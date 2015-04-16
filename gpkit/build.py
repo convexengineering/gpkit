@@ -184,6 +184,8 @@ class Mosek(SolverBackend):
         global settings
         settings["mosek_bin_dir"] = self.bin_dir
         os.environ['PATH'] = os.environ['PATH']+':%s' % self.bin_dir
+        if sys.platform == "darwin"
+            os.environ['DYLD_LIBRARY_PATH'] = os.environ.get('DYLD_LIBRARY_PATH', "")+':%s' % self.bin_dir
 
         return "version %s, installed to %s" % (self.version, self.dir)
 
@@ -215,7 +217,7 @@ class Mosek(SolverBackend):
 
         log("#\n#   Building expopt library...")
         built_expopt_lib = call("gcc -fpic -shared" +
-                                " %s %s" % (self.flags, self.bin_dir) +
+                                ' %s "%s"' % (self.flags, self.bin_dir) +
                                 "    " + " ".join(expopt_build_files) +
                                 '   "' + self.lib_path + '"' +
                                 " -o " + pathjoin(solib_dir, "expopt.so"))
