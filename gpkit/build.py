@@ -90,7 +90,7 @@ class Mosek_CLI(SolverBackend):
             if call("mskexpopt") in (1052, 28):  # 28 for MacOSX
                 return "in system path"
         except Exception:
-            return None
+            return
 
 
 class CVXopt(SolverBackend):
@@ -102,7 +102,7 @@ class CVXopt(SolverBackend):
             import cvxopt
             return "in Python path"
         except ImportError:
-            return None
+            return
 
 
 class Mosek(SolverBackend):
@@ -132,7 +132,7 @@ class Mosek(SolverBackend):
             import ctypesgencore
         except ImportError:
             log("## SKIPPING MOSEK INSTALL: CTYPESGENCORE WAS NOT FOUND")
-            return None
+            return
 
         if sys.platform == "win32":
             self.flags = "-Wl,--export-all-symbols,-R"
@@ -146,7 +146,7 @@ class Mosek(SolverBackend):
                     self.platform = "win32x86"
                     self.libname = "mosek7_0.dll"
                 except WindowsError:
-                    return None
+                    return
         elif sys.platform == "darwin":
             self.flags = "-Wl,-rpath"
             try:
@@ -154,7 +154,7 @@ class Mosek(SolverBackend):
                 self.platform = "osx64x86"
                 self.libname = "libmosek64.7.0.dylib"
             except OSError:
-                return None
+                return
         elif sys.platform == "linux2":
             self.flags = "-Wl,--export-dynamic,-R"
             try:
@@ -162,14 +162,14 @@ class Mosek(SolverBackend):
                 self.platform = "linux64x86"
                 self.libname = "libmosek64.so"
             except OSError:
-                return None
+                return
         else:
             log("# Build script does not support"
                 " your platform (%s)" % sys.platform)
-            return None
+            return
 
         if not os.path.isdir(self.dir):
-            return None
+            return
 
         possible_versions = [f for f in os.listdir(self.dir) if len(f) == 1]
         self.version = sorted(possible_versions)[-1]
@@ -180,9 +180,9 @@ class Mosek(SolverBackend):
         self.lib_path = pathjoin(self.lib_dir, "bin", self.libname)
 
         if not isfile(self.h_path):
-            return None
+            return
         if not isfile(self.lib_path):
-            return None
+            return
 
         self.expopt_dir = pathjoin(self.tools_dir, "examples", "c")
         expopt_filenames = ["scopt-ext.c", "expopt.c", "dgopt.c",
@@ -192,7 +192,7 @@ class Mosek(SolverBackend):
         self.expopt_files += [self.h_path]
         for expopt_file in self.expopt_files:
             if not isfile(expopt_file):
-                return None
+                return
 
         global settings
         settings["mosek_bin_dir"] = self.bin_dir
@@ -244,7 +244,7 @@ class Mosek(SolverBackend):
         return True
 
 if isfile("__init__.py"):
-    call("ls")
+    #call("ls")
     log("#     Don't want to be in a folder with __init__.py, going up!")
     os.chdir("..")
 
@@ -280,8 +280,8 @@ with open(settingspath, "w") as f:
 with open("gpkit/build.log", "w") as file:
     file.write(logstr)
 
-call("ls")
-call("echo \\# gpkit")
-call("ls gpkit")
-call("echo \\# gpkit/env")
-call("ls gpkit/env")
+#call("ls")
+#call("echo \\# gpkit")
+#call("ls gpkit")
+#call("echo \\# gpkit/env")
+#call("ls gpkit/env")
