@@ -178,7 +178,7 @@ def results_table(data, title, minval=0, printunits=True, fixedcols=True,
         skip values with all(abs(value)) < minval
     printunits: bool
     fixedcols: bool
-        print rhs (val, units, label) in fixed-width cols?
+        if True, print rhs (val, units, label) in fixed-width cols
     varfmt: string
         format for variable names
     valfmt: string
@@ -206,7 +206,7 @@ def results_table(data, title, minval=0, printunits=True, fixedcols=True,
     if not fixedcols:
         maxlens = [maxlens[0], 0, 0, 0]
     dirs = ['>', '<', '<', '<']
-    assert len(dirs) == len(maxlens)
+    assert len(dirs) == len(maxlens)  # always check lengths before using zip
     fmts = ['{0:%s%s}' % (direc, L) for direc, L in zip(dirs, maxlens)]
     lines = [[fmt.format(s) for fmt, s in zip(fmts, line)]
              for line in lines]
