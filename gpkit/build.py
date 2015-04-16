@@ -140,9 +140,10 @@ class Mosek(SolverBackend):
             self.platform = "win64x86"
             self.libpattern = "mosek64_?_?.dll"
             self.flags = "-Wl,--export-all-symbols,-R"
-                    #self.dir = "C:\\Program Files (x86)\\Mosek"
-                    #self.platform = "win32x86"
-                    #self.libpattern = "mosek?_?.dll"
+            ## below is for 32-bit windows ##
+            # self.dir = "C:\\Program Files (x86)\\Mosek"
+            # self.platform = "win32x86"
+            # self.libpattern = "mosek?_?.dll"
         elif sys.platform == "darwin":
             self.dir = pathjoin(os.path.expanduser("~"), "mosek")
             self.platform = "osx64x86"
