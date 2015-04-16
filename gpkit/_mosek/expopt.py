@@ -22,7 +22,7 @@ from os.path import dirname as os_path_dirname
 from .. import settings
 
 import sys
-import os.environ
+import os
 
 if sys.platform == "darwin":
     prev = os.environ.get('DYLD_LIBRARY_PATH', "")
