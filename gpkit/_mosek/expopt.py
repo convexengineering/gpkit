@@ -19,6 +19,15 @@ from ctypes import POINTER as ptr_factory
 from ctypes import c_double, c_int, c_void_p
 from os import sep as os_sep
 from os.path import dirname as os_path_dirname
+from .. import settings
+
+import sys
+import os
+
+if sys.platform == "darwin":
+    prev = os.environ.get('DYLD_LIBRARY_PATH', "")
+    new = settings["mosek_bin_dir"][0]
+    os.environ['DYLD_LIBRARY_PATH'] = prev + ':%s' % new
 
 try:
     from lib import expopt_h
