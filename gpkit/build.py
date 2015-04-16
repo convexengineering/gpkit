@@ -135,6 +135,7 @@ class Mosek(SolverBackend):
             return None
 
         if sys.platform == "win32":
+            self.flags = "-Wl,--export-all-symbols,-R"
             try:
                 self.dir = "C:\\Program Files\\Mosek"
                 self.platform = "win64x86"
@@ -147,6 +148,7 @@ class Mosek(SolverBackend):
                 except WindowsError:
                     return None
         elif sys.platform == "darwin":
+            self.flags = "-Wl,-rpath"
             try:
                 self.dir = pathjoin(os.path.expanduser("~"), "mosek")
                 self.platform = "osx64x86"
@@ -154,6 +156,7 @@ class Mosek(SolverBackend):
             except OSError:
                 return None
         elif sys.platform == "linux2":
+            self.flags = "-Wl,--export-dynamic,-R"
             try:
                 self.dir = pathjoin(os.path.expanduser("~"), "mosek")
                 self.platform = "linux64x86"
@@ -191,20 +194,9 @@ class Mosek(SolverBackend):
             if not isfile(expopt_file):
                 return None
 
-        if sys.platform == "darwin":
-            call('echo "\n# Added by gpkit buildscript for mosek support" >> $HOME/.bash_profile')
-            call('echo "export PATH=\$PATH:%s" >> $HOME/.bash_profile' % self.bin_dir)
-            call('export PATH=$PATH:%s' % self.bin_dir)
-            call('echo "export DYLD_LIBRARY_PATH=\$DYLD_LIBRARY_PATH:%s" >> $HOME/.bash_profile' % self.bin_dir)
-            os.environ['PATH'] = os.environ['PATH']+':%s' % self.bin_dir
-            os.environ['DYLD_LIBRARY_PATH'] = os.environ['DYLD_LIBRARY_PATH']+':%s' % self.bin_dir
-        elif sys.platform == "linux2":
-            call('echo "\n# Added by gpkit buildscript for mosek support" >> $HOME/.bashrc')
-            call('echo "export PATH=\$PATH:%s" >> $HOME/.bashrc' % self.bin_dir)
-            call('export PATH=$PATH:%s' % self.bin_dir)
-            log("#   To link the mosek libraries we'll create a system-wide conf file")
-            call('''sudo bash -c 'echo "%s" > /etc/ld.so.conf.d/mosek.conf' ''' % self.bin_dir)
-            call('sudo ldconfig')
+        global settings
+        settings["mosek_bin_dir"] = self.bin_dir
+        os.environ['PATH'] = os.environ['PATH']+':%s' % self.bin_dir
 
         return "version %s, installed to %s" % (self.version, self.dir)
 
@@ -230,6 +222,7 @@ class Mosek(SolverBackend):
 
         log("#\n#   Building expopt library...")
         built_expopt_lib = call("gcc -fpic -shared" +
+                                " %s %s" % (self.flags, self.bin_dir) +
                                 "    " + " ".join(expopt_build_files) +
                                 '   "' + self.lib_path + '"' +
                                 " -o " + pathjoin(solib_dir, "expopt.so"))
