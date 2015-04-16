@@ -4,6 +4,7 @@ import os
 import sys
 import shutil
 import subprocess
+import glob
 
 logstr = ""
 
@@ -135,34 +136,25 @@ class Mosek(SolverBackend):
             return
 
         if sys.platform == "win32":
+            self.dir = "C:\\Program Files\\Mosek"
+            self.platform = "win64x86"
+            self.libpattern = "mosek64_?_?.dll"
             self.flags = "-Wl,--export-all-symbols,-R"
-            try:
-                self.dir = "C:\\Program Files\\Mosek"
-                self.platform = "win64x86"
-                self.libname = "mosek64_7_0.dll"
-            except WindowsError:
-                try:
-                    self.dir = "C:\\Program Files (x86)\\Mosek"
-                    self.platform = "win32x86"
-                    self.libname = "mosek7_0.dll"
-                except WindowsError:
-                    return
+                    #self.dir = "C:\\Program Files (x86)\\Mosek"
+                    #self.platform = "win32x86"
+                    #self.libpattern = "mosek?_?.dll"
         elif sys.platform == "darwin":
+            self.dir = pathjoin(os.path.expanduser("~"), "mosek")
+            self.platform = "osx64x86"
+            self.libpattern = "libmosek64.?.?.dylib"
             self.flags = "-Wl,-rpath"
-            try:
-                self.dir = pathjoin(os.path.expanduser("~"), "mosek")
-                self.platform = "osx64x86"
-                self.libname = "libmosek64.7.0.dylib"
-            except OSError:
-                return
+
         elif sys.platform == "linux2":
+            self.dir = pathjoin(os.path.expanduser("~"), "mosek")
+            self.platform = "linux64x86"
+            self.libpattern = "libmosek64.so"
             self.flags = "-Wl,--export-dynamic,-R"
-            try:
-                self.dir = pathjoin(os.path.expanduser("~"), "mosek")
-                self.platform = "linux64x86"
-                self.libname = "libmosek64.so"
-            except OSError:
-                return
+
         else:
             log("# Build script does not support"
                 " your platform (%s)" % sys.platform)
@@ -177,7 +169,7 @@ class Mosek(SolverBackend):
         self.lib_dir = pathjoin(self.tools_dir, "platform", self.platform)
         self.h_path = pathjoin(self.lib_dir, "h", "mosek.h")
         self.bin_dir = pathjoin(self.lib_dir, "bin")
-        self.lib_path = pathjoin(self.lib_dir, "bin", self.libname)
+        self.lib_path = glob.glob(self.bin_dir+os.sep+self.libpattern)[0]
 
         if not isfile(self.h_path):
             return
