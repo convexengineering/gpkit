@@ -70,3 +70,6 @@ test_reports_nounits/
 
 # vim
 *.swp
+
+# OSX
+.DS_Store
