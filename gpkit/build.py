@@ -184,7 +184,7 @@ class Mosek(SolverBackend):
         global settings
         settings["mosek_bin_dir"] = self.bin_dir
         os.environ['PATH'] = os.environ['PATH']+':%s' % self.bin_dir
-        if sys.platform == "darwin"
+        if sys.platform == "darwin":
             os.environ['DYLD_LIBRARY_PATH'] = os.environ.get('DYLD_LIBRARY_PATH', "")+':%s' % self.bin_dir
 
         return "version %s, installed to %s" % (self.version, self.dir)
