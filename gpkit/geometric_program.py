@@ -189,12 +189,12 @@ class GP(Model):
             name += str(k) if k else ""
             for p in self.posynomials:
                 for k in p.varlocs:
-                    if not "model" in k.descr:
+                    if "model" not in k.descr:
                         newk = VarKey(k, model=name)
                         p.varlocs[newk] = p.varlocs.pop(k)
                 for exp in p.exps:
                     for k in exp:
-                        if not "model" in k.descr:
+                        if "model" not in k.descr:
                             newk = VarKey(k, model=name)
                             exp[newk] = exp.pop(k)
 
@@ -358,6 +358,10 @@ class GP(Model):
             solverfn = solver
             solver = solver.__name__
         else:
+            if not solver:
+                raise ValueError("No solver was given; perhaps gpkit was not"
+                                 " properly installed, or found no solvers"
+                                 " during the install process.")
             raise ValueError("Solver %s is not implemented!" % solver)
         self.solverfn = solverfn
         self.solver = solver
@@ -464,7 +468,8 @@ class GP(Model):
                             if i not in removed_idxs]
             unsubbedvarlocs, __ = locate_vars(unsubbedexps)
 
-        return self._parse_result(result, unsubbedexps, unsubbedvarlocs, cs, p_idxs)
+        return self._parse_result(result, unsubbedexps, unsubbedvarlocs,
+                                  cs, p_idxs)
 
     def _parse_result(self, result, unsubbedexps, unsubbedvarlocs, cs, p_idxs):
         if cs is None:
@@ -553,7 +558,7 @@ class GP(Model):
                     sensitivities["variables"][veckey] = \
                         np.empty(var.descr["length"]) + np.nan
                 sensitivities["variables"][veckey][var.descr["idx"]] = \
-                sensitivities["variables"].pop(var)
+                    sensitivities["variables"].pop(var)
 
         constants = {var: val for var, val in variables.items()
                      if var in self.substitutions}
