@@ -185,7 +185,12 @@ class Mosek(SolverBackend):
         settings["mosek_bin_dir"] = self.bin_dir
         os.environ['PATH'] = os.environ['PATH']+':%s' % self.bin_dir
         if sys.platform == "darwin":
-            os.environ['DYLD_LIBRARY_PATH'] = os.environ.get('DYLD_LIBRARY_PATH', "")+':%s' % self.bin_dir
+            prev = os.environ.get('DYLD_LIBRARY_PATH', "")
+            os.environ['DYLD_LIBRARY_PATH'] = prev +':%s' % self.bin_dir
+            prof_str = "export DYLD_LIBRARY_PATH=\$DYLD_LIBRARY_PATH:" + self.bin_dir
+            call(('if ! grep "%s" $HOME/.bash_profile;'
+                  ' then echo "%s" >> $HOME/.bash_profile;'
+                  ' fi') % (prof_str, prof_str))
 
         return "version %s, installed to %s" % (self.version, self.dir)
 
