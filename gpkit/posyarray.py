@@ -94,7 +94,7 @@ class PosyArray(np.ndarray):
                 return PosyArray(l)
             else:
                 return PosyArray([e == other for e in self])
-        return PosyArray([e for e in self._eq(self, other)])
+        return PosyArray(self._eq(self, other))
 
     def __ne__(self, m):
         "Does type checking, then applies 'not ==' in a vectorized fashion."
@@ -114,7 +114,7 @@ class PosyArray(np.ndarray):
                 return PosyArray(l)
             else:
                 return PosyArray([e <= other for e in self])
-        return PosyArray([e for e in self._leq(self, other)])
+        return PosyArray(self._leq(self, other))
 
     _geq = np.vectorize(lambda a, b: a >= b)
 
@@ -128,7 +128,7 @@ class PosyArray(np.ndarray):
                 return PosyArray(l)
             else:
                 return PosyArray([e >= other for e in self])
-        return PosyArray([e for e in self._geq(self, other)])
+        return PosyArray(self._geq(self, other))
 
     def outer(self, other):
         "Returns the array and argument's outer product."
