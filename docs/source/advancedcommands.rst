@@ -169,7 +169,7 @@ The ``sweep`` argument specifies what points between 0 and 1 you wish to sample 
 Signomial Programming
 ==================
 
-Signomial programming finds the local solution to a problem of the form:
+Signomial programming finds a local solution to a problem of the form:
 
 
 .. math:: \begin{array}[lll]\text{}
@@ -192,7 +192,7 @@ In general, when given the choice of which variables to include in the positive-
 
 The syntax ``SP.localsolve`` is chosen to emphasize that signomial programming returns a local optimum. For the same reason, calling ``SP.solve`` will raise an error.
 
-By default signomial programs are first solved conservatively (by assuming each :math:`h` is equal only to its constant portion) and then become less conservative on each iteration.
+By default, signomial programs are first solved conservatively (by assuming each :math:`h` is equal only to its constant portion) and then become less conservative on each iteration.
 
 Example Usage
 -----------------------
