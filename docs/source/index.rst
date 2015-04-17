@@ -21,4 +21,5 @@ Table of contents
        examples
        glossary
        citinggpkit
+       acknowledgements
        releasenotes
