@@ -61,7 +61,7 @@ class t_GPSolutionArray(unittest.TestCase):
         self.assertEqual(len(Psol), Nsweep)
         self.assertEqual(type(Psol), PosyArray)
         self.assertAlmostEqual(0, np.max(np.abs(Pvals - Psol.c)))
-        self.assertEqual(Psol, sol(P_max))
+        self.assertAlmostEqual(0, np.max(np.abs(Psol.c - sol(P_max))))
 
 tests = [t_GPSolutionArray]
 
