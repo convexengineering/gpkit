@@ -94,7 +94,7 @@ class PosyArray(np.ndarray):
                 return PosyArray(l)
             else:
                 return PosyArray([e == other for e in self])
-        return PosyArray([e for e in self._eq(self, other)])
+        return PosyArray(self._eq(self, other))
 
     def __ne__(self, m):
         "Does type checking, then applies 'not ==' in a vectorized fashion."
@@ -114,7 +114,7 @@ class PosyArray(np.ndarray):
                 return PosyArray(l)
             else:
                 return PosyArray([e <= other for e in self])
-        return PosyArray([e for e in self._leq(self, other)])
+        return PosyArray(self._leq(self, other))
 
     _geq = np.vectorize(lambda a, b: a >= b)
 
@@ -128,7 +128,7 @@ class PosyArray(np.ndarray):
                 return PosyArray(l)
             else:
                 return PosyArray([e >= other for e in self])
-        return PosyArray([e for e in self._geq(self, other)])
+        return PosyArray(self._geq(self, other))
 
     def outer(self, other):
         "Returns the array and argument's outer product."
@@ -151,3 +151,19 @@ class PosyArray(np.ndarray):
     def sub(self, subs, val=None, allow_negative=False):
         "Substitutes into the array"
         return PosyArray([p.sub(subs, val, allow_negative) for p in self])
+
+    @property
+    def right(self):
+        "Self, sampled one index up, with zeropad"
+        if self.ndim != 1:
+            raise NotImplementedError("not implemented for ndim = %s" %
+                                      self.ndim)
+        return PosyArray(np.hstack((self[1:], 0)))
+
+    @property
+    def left(self):
+        "Self, sampled one index down, with zeropad"
+        if self.ndim != 1:
+            raise NotImplementedError("not implemented for ndim = %s"
+                                      % self.ndim)
+        return PosyArray(np.hstack((0, self[:-1])))
