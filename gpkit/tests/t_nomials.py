@@ -50,7 +50,7 @@ class t_Monomial(unittest.TestCase):
 
         # test label kwarg
         x = Monomial('x', label='dummy variable')
-        self.assertEqual(x.exp.keys()[0].descr['label'], 'dummy variable')
+        self.assertEqual(list(x.exp)[0].descr['label'], 'dummy variable')
 
     def test_repr(self):
         m = Monomial({'x': 2, 'y': -1}, 5)
@@ -194,15 +194,26 @@ class t_Posynomial(unittest.TestCase):
         y = Monomial('y')
         p1 = x + y + y + (x+y) + (y+x**2) + 3*x
         p2 = 4*y + x**2 + 5*x
+        ps1 = [list(exp.keys())for exp in p1.exps]
+        ps2 = [list(exp.keys())for exp in p2.exps]
+        #print("%s, %s" % (ps1, ps2))
         self.assertEqual(p1, p2)
 
     def test_posyposy_mult(self):
         x = Monomial('x')
         y = Monomial('y')
-        p = x**2 + 2*y*x + y**2
-        self.assertEqual((x+y)**2, p)
+        p1 = x**2 + 2*y*x + y**2
+        p2 = (x+y)**2
+        ps1 = [list(exp.keys())for exp in p1.exps]
+        ps2 = [list(exp.keys())for exp in p2.exps]
+        #print("%s, %s" % (ps1, ps2))
+        self.assertEqual(p1, p2)
+        p1 = (x+y)*(2*x+y**2)
         p2 = 2*x**2 + 2*y*x + y**2*x + y**3
-        self.assertEqual((x+y)*(2*x+y**2), p2)
+        ps1 = [list(exp.keys())for exp in p1.exps]
+        ps2 = [list(exp.keys())for exp in p2.exps]
+        #print("%s, %s" % (ps1, ps2))
+        self.assertEqual(p1, p2)
 
     def test_constraint_gen(self):
         x = Monomial('x')
@@ -216,7 +227,9 @@ class t_Posynomial(unittest.TestCase):
         y = Monomial('y')
         p = 4*x + y
         self.assertEqual(p/3, p/3.)
-        self.assertTrue(((p/3).cs == [4./3., 1./3.]).all())
+        equiv1 = all((p/3).cs == [1./3., 4./3.])
+        equiv2= all((p/3).cs == [4./3., 1./3.])
+        self.assertTrue(equiv1 or equiv2)
 
     def test_diff(self):
         x = Monomial('x')

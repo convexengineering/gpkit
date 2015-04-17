@@ -1,26 +1,26 @@
 import unittest
 tests = []
 
-import t_sub
-tests += t_sub.tests
+from .t_sub import tests as t_sub
+tests += t_sub
 
-import t_vars
-tests += t_vars.tests
+from .t_vars import tests as t_vars
+tests += t_vars
 
-import t_nomials
-tests += t_nomials.tests
+from .t_nomials import tests as t_nomials
+tests += t_nomials
 
-import t_constraints
-tests += t_constraints.tests
+from .t_constraints import tests as t_constraints
+tests += t_constraints
 
-import t_posy_array
-tests += t_posy_array.tests
+from .t_posy_array import tests as t_posy_array
+tests += t_posy_array
 
-import t_geometric_program
-tests += t_geometric_program.tests
+from .t_geometric_program import tests as t_geometric_program
+tests += t_geometric_program
 
-import t_gp_solution_array
-tests += t_gp_solution_array.tests
+from .t_gp_solution_array import tests as t_gp_solution_array
+tests += t_gp_solution_array
 
 
 import gpkit
@@ -40,8 +40,8 @@ def run(xmloutput=False):
     else:
         unittest.TextTestRunner(verbosity=2).run(suite)
 
-    print "\n#################################################################"
-    print "Running with units disabled:"
+    print("\n######################################################################")
+    print("Running with units disabled:")
     gpkit.disableUnits()
 
     if xmloutput:

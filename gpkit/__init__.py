@@ -34,6 +34,9 @@ def disableUnits():
         def __nonzero__(self):
             return 0
 
+        def __bool__(self):
+            return False
+
         def __getattr__(self, attr):
             return 1
 
@@ -68,7 +71,7 @@ from .varkey import VarKey
 from .posyarray import PosyArray
 from .geometric_program import GP
 from .signomial_program import SP
-from user_scripts import composite_objective, link
+from .user_scripts import composite_objective, link
 
 if units:
     # regain control of Quantities' interactions with Posynomials
@@ -142,7 +145,18 @@ try:
         lines = [line[:-1].split(" : ") for line in settingsfile
                  if len(line.split(" : ")) == 2]
         settings = {name: value.split(", ") for (name, value) in lines}
-    del line, lines
+    try:
+        del lines
+        del line
+    except NameError:
+        pass
 except IOError:
-    print "Could not load settings file."
+    print("Could not load settings file.")
     settings = {"installed_solvers": [""]}
+
+try:
+    cfg = get_ipython().config
+    if cfg['IPKernelApp']['parent_appname'] == 'ipython-notebook':
+        import interactive
+except NameError:
+    pass

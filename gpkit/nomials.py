@@ -1,5 +1,4 @@
 import numpy as np
-from types import NoneType
 
 from .small_classes import Strings, Numbers
 from .posyarray import PosyArray
@@ -16,6 +15,9 @@ from . import units as ureg
 from . import DimensionalityError
 Quantity = ureg.Quantity
 Numbers += (Quantity,)
+
+def varkeysort(exp_item):
+    return list(exp_item[0].descr.items())
 
 
 class Signomial(object):
@@ -45,14 +47,14 @@ class Signomial(object):
             cs = exps
             exps = {}
         if (isinstance(cs, Numbers)
-           and isinstance(exps, Strings + (VarKey, NoneType, dict))):
+           and (exps is None or isinstance(exps, Strings + (VarKey, dict)))):
             # building a Monomial
             if isinstance(exps, VarKey):
                 exp = {exps: 1}
                 units = exps.descr["units"] if "units" in exps.descr else None
             elif exps is None or isinstance(exps, Strings):
                 exp = {VarKey(exps, **descr): 1}
-                descr = exp.keys()[0].descr
+                descr = list(exp)[0].descr
                 units = descr["units"] if "units" in descr else None
             elif isinstance(exps, dict):
                 exp = dict(exps)
@@ -73,7 +75,7 @@ class Signomial(object):
             # test for presence of length and identical lengths
             try:
                 assert len(cs) == len(exps)
-                exps_ = range(len(exps))
+                exps_ = list(range(len(exps)))
                 if not isinstance(cs[0], Quantity):
                     try:
                         cs = np.array(cs, dtype='float')
@@ -151,7 +153,7 @@ class Signomial(object):
         if var in self.varkeys:
             var = self.varkeys[var]
         elif isinstance(var, Monomial):
-            vks = var.exp.keys()
+            vks = list(var.exp)
             if len(vks) == 1:
                 var = vks[0]
         exps, cs = diff(self, var)
@@ -160,7 +162,7 @@ class Signomial(object):
     def mono_approximation(self, x0):
         if isinstance(self, Monomial):
             raise TypeError("making a Monomial approximation of a Monomial"
-                            "is unnecessary.")
+                            " is unnecessary.")
         else:
             c, exp = mono_approx(self, getsubs(self.varkeys, self.varlocs, x0))
             return Monomial(exp, c)
@@ -169,7 +171,7 @@ class Signomial(object):
         varlocs, exps, cs, subs = substitution(self.varlocs, self.varkeys,
                                                self.exps, self.cs,
                                                substitutions, val)
-        return Signomial(exps, cs, (varlocs, self.varkeys), units=self.units,
+        return Signomial(exps, cs, units=self.units,
                          allow_negative=allow_negative)
 
     def subcmag(self, substitutions, val=None):
@@ -235,7 +237,7 @@ class Signomial(object):
         mstrs = []
         for c, exp in zip(self.cs, self.exps):
             varstrs = ['%s**%.2g' % (var, x) if x != 1 else "%s" % var
-                       for (var, x) in sorted(exp.items()) if x != 0]
+                       for (var, x) in sorted(exp.items(), key=varkeysort) if x != 0]
             c = mag(c)
             cstr = "%.2g" % c
             if cstr == "-1":
@@ -257,7 +259,7 @@ class Signomial(object):
         mstrs = []
         for c, exp in zip(self.cs, self.exps):
             pos_vars, neg_vars = [], []
-            for var, x in sorted(exp.items()):
+            for var, x in sorted(exp.items(), key=varkeysort):
                 if x > 0:
                     pos_vars.append((var._latex(), x))
                 elif x < 0:
@@ -351,6 +353,9 @@ class Signomial(object):
         else:
             return NotImplemented
 
+    def __truediv__(self, other):
+        return self.__div__(other)
+
     def __pow__(self, x):
         if isinstance(x, int):
             if x >= 0:
@@ -411,6 +416,9 @@ class Monomial(Posynomial):
             return other * self**-1
         else:
             return NotImplemented
+
+    def __rtruediv__(self, other):
+        return self.__rdiv__(other)
 
     def __pow__(self, other):
         if isinstance(other, Numbers):
@@ -502,6 +510,9 @@ class MonoEQConstraint(Constraint):
         # a constraint not guaranteed to be satisfied
         # evaluates as "False"
         return bool(mag(self.cs[0]) == 1.0 and self.exps[0] == {})
+
+    def __bool__(self):
+        return self.__nonzero__()
 
 
 from .substitution import substitution, getsubs
