@@ -1,7 +1,7 @@
 import unittest
 import time
 import numpy as np
-from gpkit import Variable, VectorVariable, GP
+from gpkit import Variable, VectorVariable, GP, PosyArray
 from gpkit.geometric_program import GPSolutionArray
 
 
@@ -40,11 +40,12 @@ class t_GPSolutionArray(unittest.TestCase):
         foo = sol(z1)
         self.assertTrue(time.time() - t1 <= 0.05)
 
-    def test_senssubinto(self):
+    def test_subinto_senssubinto(self):
         Nsweep = 20
+        Pvals = np.linspace(13, 24, Nsweep)
         H_max = Variable("H_max", 10, "m", "Length")
         A_min = Variable("A_min", 10, "m^2", "Area")
-        P_max = Variable("P", np.linspace(13, 24, Nsweep), "m", "Perimeter")
+        P_max = Variable("P", Pvals, "m", "Perimeter")
         H = Variable("H", "m", "Length")
         W = Variable("W", "m", "Width")
         gp = GP(12/(W*H**3),
@@ -56,6 +57,11 @@ class t_GPSolutionArray(unittest.TestCase):
         self.assertEqual(len(Psens), Nsweep)
         self.assertEqual(type(Psens), np.ndarray)
         self.assertAlmostEqual(Psens[-1], -4.)
+        Psol = sol.subinto(P_max)
+        self.assertEqual(len(Psol), Nsweep)
+        self.assertEqual(type(Psol), PosyArray)
+        self.assertAlmostEqual(0, np.max(np.abs(Pvals - Psol.c)))
+        self.assertEqual(Psol, sol(P_max))
 
 tests = [t_GPSolutionArray]
 
