@@ -24,7 +24,10 @@ def widget(gp, outputfn=None, ranges=None):
 
     def display(**subs):
         gp.sub(subs, replace=True)
-        gp.solve(printing=False)
+        if hasattr(gp, "localsolve"):
+            gp.localsolve(printing=False)
+        else:
+            gp.solve(printing=False)
         outputfn(gp)
         gp.load(gp.prewidget)
 

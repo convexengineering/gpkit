@@ -53,7 +53,7 @@ class Variable(Monomial):
 
     @property
     def descr(self):
-        return self.exp.keys()[0].descr
+        return list(self.exp)[0].descr
 
 
 class VectorVariable(PosyArray):
@@ -111,7 +111,7 @@ class VectorVariable(PosyArray):
             vl.append(Variable(**descr))
 
         obj = np.asarray(vl).view(cls)
-        obj.descr = dict(vl[0].exp.keys()[0].descr)
+        obj.descr = dict(list(vl[0].exp)[0].descr)
         obj.descr.pop("idx", None)
         obj._hashvalue = hash(VarKey(**obj.descr))
 

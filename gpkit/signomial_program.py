@@ -30,7 +30,7 @@ class SP(GP):
             if "objective" in result:
                 obj = float(result["objective"])
             else:
-                obj = self.cost.subcmag(self.xk)
+                obj = self.subbedcost.subcmag(self.xk)
 
         cs, p_idxs = map(np.array, [cs, p_idxs])
         return self._parse_result(result, unsubbedexps, unsubbedvarlocs,
@@ -140,15 +140,15 @@ class SP(GP):
     def localsolve(self, printing=True, xk={}, reltol=1e-4, *args, **kwargs):
         self.reltol = 1e-4
         if printing:
-            print "Beginning signomial solve."
+            print("Beginning signomial solve.")
 
         self.xk = xk
         self.sp_iters = 0
         self.presolve = self.last
-
+        self.subbedcost = self.cost.sub(self.substitutions)
         sol = self._solve(printing=printing, *args, **kwargs)
         if printing:
-            print "Solving took %i GP solves." % self.sp_iters
+            print("Solving took %i GP solves." % self.sp_iters)
         return sol
 
     def solve(self, *args, **kwargs):

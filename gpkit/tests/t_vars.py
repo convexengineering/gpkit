@@ -72,7 +72,12 @@ class t_Variable(unittest.TestCase):
         c = a**2 + b
         self.assertEqual(b.value, 4)
         self.assertTrue(isinstance(b.value, float))
-        self.assertEqual(c.value, a**2 + 4)
+        p1 = c.value
+        p2 = a**2 + 4
+        ps1 = [list(exp.keys())for exp in p1.exps]
+        ps2 = [list(exp.keys())for exp in p2.exps]
+        #print("%s, %s" % (ps1, ps2))
+        self.assertEqual(p1, p2)
         self.assertEqual(a.value, a)
 
 

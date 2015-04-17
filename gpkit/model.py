@@ -163,7 +163,7 @@ class Model(object):
             cs, exps, p_idxs = [], [], []
             for i in range(len(self.cs)):
                 if self.cs[i] < 0:
-                    print i, self.cs[i], self.exps[i]
+                    print(i, self.cs[i], self.exps[i])
                     raise RuntimeWarning("GPs cannot have negative coefficients")
                 elif self.cs[i] > 0:
                     cs.append(self.cs[i])
