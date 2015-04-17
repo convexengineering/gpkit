@@ -71,8 +71,8 @@ class t_PosyArray(unittest.TestCase):
 
     def test_left_right(self):
         x = VectorVariable(10, 'x')
-        xL = x.left()
-        xR = x.right()
+        xL = x.left
+        xR = x.right
         self.assertEqual(xL[0], 0)
         self.assertEqual(xL[1], x[0])
         self.assertEqual(xR[-1], 0)
