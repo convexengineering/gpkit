@@ -64,16 +64,16 @@ def mag(c):
         return c
 
 
-def unitstr(units, into="%s", options="~"):
+def unitstr(units, into="%s", options="~", dimless='-'):
     if hasattr(units, "descr"):
         if isinstance(units.descr, dict):
-            units = units.descr.get("units", "-")
+            units = units.descr.get("units", dimless)
     if units and not isinstance(units, Strings):
         try:
             rawstr = ("{:%s}" % options).format(units)
         except:
             rawstr = "1.0 " + str(units.units)
-        units = "".join(rawstr.replace("dimensionless", "-").split()[1:])
+        units = "".join(rawstr.replace("dimensionless", dimless).split()[1:])
     if units:
         return into % units
     else:
@@ -163,41 +163,55 @@ def sort_and_simplify(exps, cs):
     return tuple(matches.keys()), cs_
 
 
-def results_table(data, title, senss=False):
-    strs = ["              | " + title]
-    for var, val in sorted(data.items(), key=lambda x: str(x[0])):
-        if isinstance(val, Iterable):
-            vector = bool(val.shape)
-            if vector:
-                if all(val == val[0]):
-                    vector = False
-                    val = val[0]
-        else:
-            vector = False
+def results_table(data, title, minval=0, printunits=True, fixedcols=True,
+                  varfmt="%4s : ", valfmt="%-8.3g", vecfmt="%-7.2g"):
+    """
+    Pretty string representation of a dict of VarKeys
+    Iterable values are handled specially (partial printing)
+
+    Parameters
+    ----------
+    data: dict whose keys are VarKey's
+        data to represent in table
+    title: string
+    minval: float
+        skip values with all(abs(value)) < minval
+    printunits: bool
+    fixedcols: bool
+        if True, print rhs (val, units, label) in fixed-width cols
+    varfmt: string
+        format for variable names
+    valfmt: string
+        format for scalar values
+    vecfmt: string
+        format for vector values
+    """
+    lines = []
+    decorated = [(bool(v.shape) if isinstance(v, Iterable) else False,
+                 ('%s : ' % k),
+                 i, k, v) for i, (k, v) in enumerate(data.items())
+                 if np.max(abs(v)) >= minval]
+    decorated.sort()
+    for isvector, varstr, _, var, val in decorated:
         label = var.descr.get('label', '')
-        if senss:
-            units = None
-            minval = 1e-2
+        units = unitstr(var, into=" [%s] ", dimless="") if printunits else ""
+        if isvector:
+            vals = [vecfmt % v for v in val[:3]]
+            ellipsis = " ..." if len(val) > 3 else ""
+            valstr = "[ %s%s ] " % ("  ".join(vals), ellipsis)
         else:
-            units = unitstr(var)
-            if units == "-":
-                units = None
-            minval = 0
-        if not vector:
-            if abs(val) >= minval:
-                strs += ["%13s" % (str(var)) +
-                         " : %-8.3g " % val +
-                         (" [%s] " % units if units else " ") + "%s" % label]
-        else:
-            if abs(max(val)) >= minval:
-                vals = ["%-7.2g" % val[i] for i in range(min(len(val), 3))]
-                ellipsis = " ..." if len(val) > 3 else ""
-                strs += ["%13s" % (str(var)) + " : "
-                         + "[ %s%s ]" % ("  ".join(vals), ellipsis)
-                         + ("  [%s] " % units if units else "  ")
-                         + "%s" % label]
-    strs += ["              |"]
-    return "\n".join(strs)
+            valstr = valfmt % val
+        lines.append([varstr, valstr, units, label])
+    maxlens = np.max([map(len, line) for line in lines], axis=0)
+    if not fixedcols:
+        maxlens = [maxlens[0], 0, 0, 0]
+    dirs = ['>', '<', '<', '<']
+    assert len(dirs) == len(maxlens)  # always check lengths before using zip
+    fmts = ['{0:%s%s}' % (direc, L) for direc, L in zip(dirs, maxlens)]
+    lines = [[fmt.format(s) for fmt, s in zip(fmts, line)]
+             for line in lines]
+    lines = [title] + [''.join(l) for l in lines] + [""]
+    return "\n".join(lines)
 
 
 def flatten(ible, classes):
