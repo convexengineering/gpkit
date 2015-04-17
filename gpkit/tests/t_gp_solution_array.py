@@ -40,6 +40,23 @@ class t_GPSolutionArray(unittest.TestCase):
         foo = sol(z1)
         self.assertTrue(time.time() - t1 <= 0.05)
 
+    def test_senssubinto(self):
+        Nsweep = 20
+        H_max = Variable("H_max", 10, "m", "Length")
+        A_min = Variable("A_min", 10, "m^2", "Area")
+        P_max = Variable("P", np.linspace(13, 24, Nsweep), "m", "Perimeter")
+        H = Variable("H", "m", "Length")
+        W = Variable("W", "m", "Width")
+        gp = GP(12/(W*H**3),
+                [H <= H_max,
+                 H*W >= A_min,
+                 P_max >= 2*H + 2*W])
+        sol = gp.solve()
+        Psens = sol.senssubinto(P_max)
+        self.assertEqual(len(Psens), Nsweep)
+        self.assertEqual(type(Psens), np.ndarray)
+        self.assertAlmostEqual(Psens[-1], -4.)
+
 tests = [t_GPSolutionArray]
 
 if __name__ == '__main__':

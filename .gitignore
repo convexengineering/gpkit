@@ -61,5 +61,15 @@ docs/_build/
 # MATLAB autosave
 *.asv
 
+# CI test xmloutput
+test_reports/
+test_reports_nounits/
+
+# MacOSX
+*.DS_Store
+
 # vim
 *.swp
+
+# OSX
+.DS_Store
