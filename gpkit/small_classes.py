@@ -2,11 +2,27 @@ import numpy as np
 
 from collections import namedtuple as nt
 
-Strings = (str, unicode)
-Numbers = (int, float)
+try:
+    isinstance("", basestring)
+    Strings = (str, unicode)
+except NameError:
+    Strings = (str,)
+
+
+Numbers = (int, float, np.number)
 
 PosyTuple = nt('PosyTuple', ['exps', 'cs', 'varlocs', 'substitutions'])
 CootMatrixTuple = nt('CootMatrix', ['row', 'col', 'data'])
+
+
+class count(object):
+
+    def __init__(self):
+        self.start = -1
+
+    def __call__(self):
+        self.start += 1
+        return self.start
 
 
 class CootMatrix(CootMatrixTuple):

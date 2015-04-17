@@ -75,6 +75,10 @@ class PosyArray(np.ndarray):
         "Allows the use of PosyArrays as truth elements."
         return all(p.__nonzero__() for p in self)
 
+    def __bool__(self):
+        "Allows the use of PosyArrays as truth elements in python3."
+        return all(p.__bool__() for p in self)
+
     @property
     def c(self):
         try:

@@ -37,7 +37,7 @@ try:
     assert len(c) > 0
     pool = c[:]
     pool.use_dill()
-    print "Using parallel execution of sweeps on %s clients" % len(c)
+    print("Using parallel execution of sweeps on %s clients" % len(c))
 except:
     pool = None
 
@@ -320,9 +320,9 @@ class GP(Model):
         end = " with default settings."
         try:
             self.solve(solver, printing, skipfailures)
-            print self.__class__.__name__, "solved successfully" + end
-        except Exception, e:
-            print self.__class__.__name__, "failed to solve" + end
+            print(self.__class__.__name__, "solved successfully" + end)
+        except Exception as e:
+            print(self.__class__.__name__, "failed to solve" + end)
             self.checkbounds()
             raise(e)
 
@@ -409,9 +409,10 @@ class GP(Model):
         self.presweep = self.last
 
         if len(self.sweep) == 1:
-            sweep_grids = np.array(self.sweep.values())
+            sweep_grids = np.array(list(self.sweep.values()))
         else:
-            sweep_grids = np.meshgrid(*self.sweep.values())
+            sweep_grids = np.meshgrid(*list(self.sweep.values()))
+
         N_passes = sweep_grids[0].size
         sweep_vects = {var: grid.reshape(N_passes)
                        for (var, grid) in zip(self.sweep, sweep_grids)}
