@@ -151,3 +151,15 @@ class PosyArray(np.ndarray):
     def sub(self, subs, val=None, allow_negative=False):
         "Substitutes into the array"
         return PosyArray([p.sub(subs, val, allow_negative) for p in self])
+
+    def right(self):
+        "Self, sampled one index up, with zeropad"
+        if self.ndim != 1:
+            raise NotImplementedError("not implemented for ndim=%s" % self.ndim)
+        return PosyArray(np.hstack((self[1:], 0)))
+
+    def left(self):
+        "Self, sampled one index down, with zeropad"
+        if self.ndim != 1:
+            raise NotImplementedError("not implemented for ndim=%s" % self.ndim)
+        return PosyArray(np.hstack((0, self[:-1])))
