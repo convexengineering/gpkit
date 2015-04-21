@@ -105,8 +105,19 @@ class GPSolutionArray(DictOfLists):
                 strs += ["Cost\n %-8.3g" % self["cost"]]
             strs += [""]
         if "variables" in tables:
-            strs += [results_table(self["variables"],
-                                   "Variables",
+            freevars = {}
+            constants = {}
+            vardict = self["variables"]
+            for vk in vardict:
+                if vk.isconst:
+                    constants[vk] = vardict[vk]
+                else:
+                    freevars[vk] = vardict[vk]
+            strs += [results_table(freevars,
+                                   "Free Variables",
+                                   fixedcols=fixedcols)]
+            strs += [results_table(constants,
+                                   "Constants",
                                    fixedcols=fixedcols)]
         if "sensitivities" in tables:
             strs += [results_table(self["sensitivities"]["variables"],
