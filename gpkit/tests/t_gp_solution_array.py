@@ -63,6 +63,14 @@ class t_GPSolutionArray(unittest.TestCase):
         self.assertAlmostEqual(0, np.max(np.abs(Pvals - Psol.c)))
         self.assertAlmostEqual(0, np.max(np.abs(Psol.c - sol(P_max))))
 
+    def test_table(self):
+        x = Variable('x')
+        y = Variable('y')
+        gp = GP(y*x, [y*x >= 12])
+        sol = gp.solve(solver='mosek')
+        tab = sol.table()
+        self.assertTrue(isinstance(tab, str))
+
 tests = [t_GPSolutionArray]
 
 if __name__ == '__main__':
