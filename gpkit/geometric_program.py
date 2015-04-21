@@ -306,7 +306,7 @@ class GP(Model):
                           '          solver="%s")' % self.solver]
                          )
 
-    def _latex(self):
+    def _latex(self, unused=None):
         "The LaTeX representation of a GP contains all of its parameters."
         return "\n".join(["\\begin{array}[ll]",
                           "\\text{}",
