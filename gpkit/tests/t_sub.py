@@ -1,7 +1,6 @@
 import unittest
 import numpy as np
-from gpkit import (Monomial, Posynomial, PosyArray, Variable, VarKey,
-                   VectorVariable, units, GP, link)
+from gpkit import Monomial, Variable, VectorVariable, units, GP, link
 from gpkit.small_scripts import mag
 
 
@@ -99,26 +98,28 @@ class t_GPSubs(unittest.TestCase):
 
     def test_simpleaircraft(self):
         mon = Variable
-        vec = VectorVariable
 
         class DragModel(GP):
             def setup(self):
-                pi = mon("\\pi", np.pi, "-", "half of the circle constant")
-                e = mon("e", 0.95, "-", "Oswald efficiency factor")
-                S_wetratio = mon("(\\frac{S}{S_{wet}})", 2.05, "-",
-                                 "wetted area ratio")
-                k = mon("k", 1.2, "-", "form factor")
-                C_f = mon("C_f", "-", "skin friction coefficient")
-                C_D = mon("C_D", "-", "Drag coefficient of wing")
-                C_L = mon("C_L", "-", "Lift coefficent of wing")
-                A = mon("A", "-", "aspect ratio")
-                S = mon("S", "m^2", "total wing area")
-                dum = mon("dum", "-", "dummy variable")
+                pi = Variable("\\pi", np.pi, "-",
+                              "half of the circle constant")
+                e = Variable("e", 0.95, "-", "Oswald efficiency factor")
+                S_wetratio = Variable("(\\frac{S}{S_{wet}})", 2.05, "-",
+                                      "wetted area ratio")
+                k = Variable("k", 1.2, "-", "form factor")
+                C_f = Variable("C_f", "-", "skin friction coefficient")
+                C_D = Variable("C_D", "-", "Drag coefficient of wing")
+                C_L = Variable("C_L", "-", "Lift coefficent of wing")
+                A = Variable("A", "-", "aspect ratio")
+                S = Variable("S", "m^2", "total wing area")
+                dum = Variable("dum", "-", "dummy variable")
 
                 if type(W.varkeys["W"].descr["units"]) != str:
-                    CDA0 = mon("(CDA0)", 310.0, "cm^2", "fuselage drag area")
+                    CDA0 = Variable("(CDA0)", 310.0, "cm^2",
+                                    "fuselage drag area")
                 else:
-                    CDA0 = mon("(CDA0)", 0.031, "m^2", "fuselage drag area")
+                    CDA0 = Variable("(CDA0)", 0.031, "m^2",
+                                    "fuselage drag area")
 
                 C_D_fuse = CDA0/S
                 C_D_wpar = k*C_f*S_wetratio

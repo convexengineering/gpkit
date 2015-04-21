@@ -1,4 +1,3 @@
-from collections import defaultdict
 import numpy as np
 from types import NoneType
 
