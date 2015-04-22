@@ -56,7 +56,7 @@ class t_GPSolutionArray(unittest.TestCase):
         Psens = sol.senssubinto(P_max)
         self.assertEqual(len(Psens), Nsweep)
         self.assertEqual(type(Psens), np.ndarray)
-        self.assertAlmostEqual(Psens[-1], -4.)
+        self.assertAlmostEqual(Psens[-1], -4., 6)
         Psol = sol.subinto(P_max)
         self.assertEqual(len(Psol), Nsweep)
         self.assertEqual(type(Psol), PosyArray)
