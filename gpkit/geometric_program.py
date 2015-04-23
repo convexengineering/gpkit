@@ -8,12 +8,11 @@
 """
 
 import numpy as np
-import itertools
 
 from time import time
 from pprint import pformat
-from collections import Iterable, defaultdict
-from functools import reduce
+from collections import defaultdict
+import functools
 from operator import mul
 from copy import deepcopy
 
@@ -95,7 +94,6 @@ class GPSolutionArray(DictOfLists):
         if isinstance(tables, Strings):
             tables = [tables]
         strs = []
-        n = len(self)
         if "cost" in tables:
             strs += [""]
             if len(self) > 1:
@@ -450,7 +448,7 @@ class GP(Model):
         else:
             mapfn = map
 
-        for sol in mapfn(run_solver_i,  range(N_passes)):
+        for sol in mapfn(run_solver_i, range(N_passes)):
             if sol is not None:
                 solution.append(sol)
 
@@ -542,7 +540,7 @@ class GP(Model):
 
         local_exp = {var: S for (var, S) in sens_vars.items() if abs(S) >= 0.1}
         local_cs = (variables[var]**-S for (var, S) in local_exp.items())
-        local_c = reduce(mul, local_cs, cost)
+        local_c = functools.reduce(mul, local_cs, cost)
         local_model = Monomial(local_exp, local_c)
 
         # vectorvar substitution

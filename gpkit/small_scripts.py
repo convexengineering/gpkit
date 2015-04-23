@@ -202,12 +202,13 @@ def results_table(data, title, minval=0, printunits=True, fixedcols=True,
         else:
             valstr = valfmt % val
         lines.append([varstr, valstr, units, label])
-    maxlens = np.max([map(len, line) for line in lines], axis=0)
-    if not fixedcols:
-        maxlens = [maxlens[0], 0, 0, 0]
-    dirs = ['>', '<', '<', '<']
-    assert len(dirs) == len(maxlens)  # always check lengths before using zip
-    fmts = ['{0:%s%s}' % (direc, L) for direc, L in zip(dirs, maxlens)]
+    if lines:
+        maxlens = np.max([map(len, line) for line in lines], axis=0)
+        if not fixedcols:
+            maxlens = [maxlens[0], 0, 0, 0]
+        dirs = ['>', '<', '<', '<']
+        assert len(dirs) == len(maxlens)  # check lengths before using zip
+        fmts = ['{0:%s%s}' % (direc, L) for direc, L in zip(dirs, maxlens)]
     lines = [[fmt.format(s) for fmt, s in zip(fmts, line)]
              for line in lines]
     lines = [title] + [''.join(l) for l in lines] + [""]

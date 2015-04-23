@@ -56,12 +56,20 @@ class t_GPSolutionArray(unittest.TestCase):
         Psens = sol.senssubinto(P_max)
         self.assertEqual(len(Psens), Nsweep)
         self.assertEqual(type(Psens), np.ndarray)
-        self.assertAlmostEqual(Psens[-1], -4.)
+        self.assertAlmostEqual(Psens[-1], -4., 6)
         Psol = sol.subinto(P_max)
         self.assertEqual(len(Psol), Nsweep)
         self.assertEqual(type(Psol), PosyArray)
         self.assertAlmostEqual(0, np.max(np.abs(Pvals - Psol.c)))
         self.assertAlmostEqual(0, np.max(np.abs(Psol.c - sol(P_max))))
+
+    def test_table(self):
+        x = Variable('x')
+        y = Variable('y')
+        gp = GP(y*x, [y*x >= 12])
+        sol = gp.solve(solver='mosek')
+        tab = sol.table()
+        self.assertTrue(isinstance(tab, str))
 
 tests = [t_GPSolutionArray]
 
