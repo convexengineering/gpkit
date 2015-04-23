@@ -21,12 +21,12 @@ class SP(GP):
             if init:
                 init -= 1
             lastobj = obj
-            cs, exps, A, p_idxs, k, unsubbedexps, unsubbedvarlocs = self.genA()
+            cs, exps, varlocs, A, p_idxs, k, unsubbedexps, unsubbedvarlocs = self.genA()
             result = self.solverfn(c=cs, A=A, p_idxs=p_idxs, k=k)
             if result['status'] not in ["optimal", "OPTIMAL"]:
                 raise RuntimeWarning("final status of solver '%s' was '%s' not "
                                      "'optimal'" % (self.solver, result['status']))
-            self.xk = dict(zip(self.varlocs, np.exp(result['primal']).ravel()))
+            self.xk = dict(zip(varlocs, np.exp(result['primal']).ravel()))
             if "objective" in result:
                 obj = float(result["objective"])
             else:
@@ -46,6 +46,7 @@ class SP(GP):
         cs, exps, p_idxs = [], [], []
         varkeys = []
         approxs = {}
+
         for i in range(len(self.cs)):
             if self.cs[i] < 0:
                 c = -self.cs[i]
@@ -135,7 +136,7 @@ class SP(GP):
         if printing:
             self.checkbounds()
 
-        return cs, exps, self.A, p_idxs, k, unsubbedexps, unsubbedvarlocs
+        return cs, exps, varlocs, self.A, p_idxs, k, unsubbedexps, unsubbedvarlocs
 
     def localsolve(self, printing=True, xk={}, reltol=1e-4, *args, **kwargs):
         self.reltol = 1e-4
