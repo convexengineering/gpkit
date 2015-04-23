@@ -11,7 +11,7 @@ from collections import defaultdict
 
 class SP(GP):
 
-    def _run_solver(self):
+    def _run_solver(self, allownonoptimal):
         "Gets a solver's raw output, then checks and standardizes it."
         lastobj = 1
         obj = 1
@@ -34,7 +34,7 @@ class SP(GP):
 
         cs, p_idxs = map(np.array, [cs, p_idxs])
         return self._parse_result(result, unsubbedexps, unsubbedvarlocs,
-                                  cs, p_idxs)
+                                  cs, p_idxs, allownonoptimal)
 
     def genA(self, printing=True):
         # A: exponents of the various free variables for each monomial

@@ -336,7 +336,8 @@ class GP(Model):
     def solve(self, *args, **kwargs):
         return self._solve(*args, **kwargs)
 
-    def _solve(self, solver=None, printing=True, skipfailures=False):
+    def _solve(self, solver=None, printing=True, skipfailures=False,
+               allownonoptimal=False):
         """Solves a GP and returns the solution.
 
         Parameters
@@ -378,12 +379,12 @@ class GP(Model):
         self.starttime = time()
 
         if self.sweep:
-            solution = self._solve_sweep(printing, skipfailures)
+            solution = self._solve_sweep(printing, skipfailures, allownonoptimal)
         else:
             if printing:
                 print("Solving for %i variables." % len(self.varlocs))
             solution = GPSolutionArray()
-            solution.append(self._run_solver())
+            solution.append(self._run_solver(allownonoptimal))
             solution.toarray()
 
         self.endtime = time()
@@ -397,7 +398,7 @@ class GP(Model):
         # that the result will be VarKey-based!
         return self.solution
 
-    def _solve_sweep(self, printing, skipfailures):
+    def _solve_sweep(self, printing, skipfailures, allownonoptimal):
         """Runs a GP through a sweep, solving at each grid point
 
         Parameters
@@ -438,11 +439,11 @@ class GP(Model):
             self.sub(this_pass, frombase='presweep')
             if skipfailures:
                 try:
-                    return self._run_solver()
+                    return self._run_solver(allownonoptimal)
                 except (RuntimeWarning, ValueError):
                     return None
             else:
-                return self._run_solver()
+                return self._run_solver(allownonoptimal)
 
         if pool:
             mapfn = pool.map_sync
@@ -459,7 +460,7 @@ class GP(Model):
 
         return solution
 
-    def _run_solver(self):
+    def _run_solver(self, allownonoptimal):
         "Gets a solver's raw output, then checks and standardizes it."
 
         allpos = not any(mag(self.cs) <= 0)
@@ -476,9 +477,10 @@ class GP(Model):
             unsubbedvarlocs, __ = locate_vars(unsubbedexps)
 
         return self._parse_result(result, unsubbedexps, unsubbedvarlocs,
-                                  cs, p_idxs)
+                                  cs, p_idxs, allownonoptimal)
 
-    def _parse_result(self, result, unsubbedexps, unsubbedvarlocs, cs, p_idxs):
+    def _parse_result(self, result, unsubbedexps, unsubbedvarlocs, cs, p_idxs,
+                      allownonoptimal):
         if cs is None:
             cs = self.cs
         if p_idxs is None:
