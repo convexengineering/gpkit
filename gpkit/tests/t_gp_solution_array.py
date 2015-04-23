@@ -52,7 +52,7 @@ class T_GPSolutionArray(unittest.TestCase):
                 [H <= H_max,
                  H*W >= A_min,
                  P_max >= 2*H + 2*W])
-        sol = gp.solve()
+        sol = gp.solve(printing=False)
         Psens = sol.senssubinto(P_max)
         self.assertEqual(len(Psens), Nsweep)
         self.assertEqual(type(Psens), np.ndarray)
@@ -67,7 +67,7 @@ class T_GPSolutionArray(unittest.TestCase):
         x = Variable('x')
         y = Variable('y')
         gp = GP(y*x, [y*x >= 12])
-        sol = gp.solve(solver='mosek')
+        sol = gp.solve(solver='mosek', printing=False)
         tab = sol.table()
         self.assertTrue(isinstance(tab, str))
 
