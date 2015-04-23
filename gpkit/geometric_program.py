@@ -486,8 +486,11 @@ class GP(Model):
             p_idxs = self.p_idxs
 
         if result['status'] not in ["optimal", "OPTIMAL"]:
-            raise RuntimeWarning("final status of solver '%s' was '%s' not "
-                                 "'optimal'" % (self.solver, result['status']))
+            if allownonoptimal:
+                print "It don't work! Letting it pass. This time."
+            else:
+                raise RuntimeWarning("final status of solver '%s' was '%s' not "
+                                     "'optimal'" % (self.solver, result['status']))
 
         variables = dict(zip(self.varlocs, np.exp(result['primal']).ravel()))
         variables.update(self.substitutions)
