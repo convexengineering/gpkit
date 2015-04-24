@@ -245,7 +245,8 @@ class T_Posynomial(unittest.TestCase):
         self.assertRaises(TypeError, lambda: y.mono_approximation({y: 1}))
         self.assertEqual(p.mono_approximation({y: 1}), 2*y)
         self.assertEqual(p.mono_approximation({y: 0}), y/y)
-        self.assertEqual((x*y**2 + 1).mono_approximation({y: 1, x: 1}), 2*y*x**0.5)
+        self.assertEqual((x*y**2 + 1).mono_approximation({y: 1, x: 1}),
+                         2*y*x**0.5)
 
 # test substitution
 

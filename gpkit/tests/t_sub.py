@@ -80,10 +80,10 @@ class T_GPSubs(unittest.TestCase):
     def tesT_VectorInit(self):
         N = 6
         Weight = 50000
-        xi_dist = 6*Weight/float(N)*((np.array(range(1, N+1))
-                                     - .5/float(N))/float(N)
-                                     - (np.array(range(1, N+1))
-                                     - .5/float(N))**2/float(N)**2)
+        xi_dist = 6*Weight/float(N)*(
+                    (np.array(range(1, N+1)) - .5/float(N))/float(N) -
+                    (np.array(range(1, N+1)) - .5/float(N))**2/float(N)**2
+                                    )
 
         xi = VectorVariable(N, "xi", xi_dist, "N", "Constant Thrust per Bin")
         P = Variable("P", "N", "Total Power")

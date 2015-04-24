@@ -1,8 +1,8 @@
 import numpy as np
 
 import gpkit
+from gpkit import Variable
 
-mon = gpkit.Variable
 
 class simpleflight_generator(object):
 
@@ -12,34 +12,36 @@ class simpleflight_generator(object):
             if gpkit.units:
                 raise RuntimeWarning
 
-        pi = mon("\\pi", np.pi, "-", "half of the circle constant")
-        rho = mon("\\rho", 1.23, "kg/m^3", "density of air")
-        mu = mon("\\mu", 1.78e-5, "kg/m/s", "viscosity of air")
-        S_wetratio = mon("(\\frac{S}{S_{wet}})", 2.05, "-", "wetted area ratio")
-        k = mon("k", 1.2, "-", "form factor")
-        e = mon("e", 0.95, "-", "Oswald efficiency factor")
-        N_ult = mon("N_{ult}", 3.8, "-", "ultimate load factor")
-        tau = mon("\\tau", 0.12, "-", "airfoil thickness to chord ratio")
-        C_Lmax = mon("C_{L,max}", 1.5, "-", "max CL with flaps down")
-        V_min = mon("V_{min}", 22, "m/s", "takeoff speed")
+        pi = Variable("\\pi", np.pi, "-", "half of the circle constant")
+        rho = Variable("\\rho", 1.23, "kg/m^3", "density of air")
+        mu = Variable("\\mu", 1.78e-5, "kg/m/s", "viscosity of air")
+        S_wetratio = Variable("(\\frac{S}{S_{wet}})", 2.05, "-",
+                              "wetted area ratio")
+        k = Variable("k", 1.2, "-", "form factor")
+        e = Variable("e", 0.95, "-", "Oswald efficiency factor")
+        N_ult = Variable("N_{ult}", 3.8, "-", "ultimate load factor")
+        tau = Variable("\\tau", 0.12, "-", "airfoil thickness to chord ratio")
+        C_Lmax = Variable("C_{L,max}", 1.5, "-", "max CL with flaps down")
+        V_min = Variable("V_{min}", 22, "m/s", "takeoff speed")
 
         if gpkit.units:
-            CDA0 = mon("(CDA0)", 310.0, "cm^2", "fuselage drag area")
-            W_0 = mon("W_0", 4.94, "kN", "aircraft weight excluding wing")
+            CDA0 = Variable("(CDA0)", 310.0, "cm^2", "fuselage drag area")
+            W_0 = Variable("W_0", 4.94, "kN", "aircraft weight excluding wing")
         else:
-            CDA0 = mon("(CDA0)", 0.031, "m^2", "fuselage drag area")
-            W_0 = mon("W_0", 4940.0, "N", "aircraft weight excluding wing")
+            CDA0 = Variable("(CDA0)", 0.031, "m^2", "fuselage drag area")
+            W_0 = Variable("W_0", 4940.0, "N",
+                           "aircraft weight excluding wing")
 
-        D = mon("D", "N", "total drag force")
-        A = mon("A", "-", "aspect ratio")
-        S = mon("S", "m^2", "total wing area")
-        C_D = mon("C_D", "-", "Drag coefficient of wing")
-        C_L = mon("C_L", "-", "Lift coefficent of wing")
-        C_f = mon("C_f", "-", "skin friction coefficient")
-        Re = mon("Re", "-", "Reynold's number")
-        W = mon("W", "N", "total aircraft weight")
-        W_w = mon("W_w", "N", "wing weight")
-        V = mon("V", "m/s", "cruising speed")
+        D = Variable("D", "N", "total drag force")
+        A = Variable("A", "-", "aspect ratio")
+        S = Variable("S", "m^2", "total wing area")
+        C_D = Variable("C_D", "-", "Drag coefficient of wing")
+        C_L = Variable("C_L", "-", "Lift coefficent of wing")
+        C_f = Variable("C_f", "-", "skin friction coefficient")
+        Re = Variable("Re", "-", "Reynold's number")
+        W = Variable("W", "N", "total aircraft weight")
+        W_w = Variable("W_w", "N", "wing weight")
+        V = Variable("V", "m/s", "cruising speed")
 
         equations = []
 
@@ -63,7 +65,6 @@ class simpleflight_generator(object):
 
     def gp(self):
         return gpkit.GP(self.D, self.equations)
-
 
     def sweep(self, n):
         substitutions = {self.V_min: ("sweep", np.linspace(20, 25, n)),
