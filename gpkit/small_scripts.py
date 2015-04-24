@@ -211,7 +211,7 @@ def results_table(data, title, minval=0, printunits=True, fixedcols=True,
         fmts = ['{0:%s%s}' % (direc, L) for direc, L in zip(dirs, maxlens)]
     lines = [[fmt.format(s) for fmt, s in zip(fmts, line)]
              for line in lines]
-    lines = [title] + [''.join(l) for l in lines] + [""]
+    lines = [title] + ["-"*len(title)] + [''.join(l) for l in lines] + [""]
     return "\n".join(lines)
 
 
