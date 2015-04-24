@@ -1,7 +1,7 @@
 import math
 import unittest
 import numpy as np
-from gpkit import GP, Monomial, settings, VectorVariable, Variable
+from gpkit import GP, SP, Monomial, settings, VectorVariable, Variable
 from gpkit.small_classes import CootMatrix
 import gpkit
 
@@ -155,6 +155,29 @@ class T_SP(unittest.TestCase):
             solv = sol["variables"]
             self.assertAlmostEqual(solv["L"][3], 3.276042, 5)
         gpkit.enable_signomials = False
+
+    def test_issue180(self):
+        gpkit.enable_signomials = True
+        L = Variable("L")
+        Lmax = gpkit.Variable("L_{max}", 10)
+        W = Variable("W")
+        Wmax = gpkit.Variable("W_{max}", 10)
+        A = Variable("A", 10)
+        Obj = Variable("Obj")
+        a_val = 0.01
+        a = Variable("a", a_val)
+        eqns = [L <= Lmax,
+                W <= Wmax,
+                L*W >= A,
+                Obj >= a*(2*L + 2*W) + (1-a)*(12 * W**-1 * L**-3)]
+        sp = SP(Obj, eqns)
+        spsol = sp.localsolve(printing=False)
+        gpkit.enable_signomials = False
+        # now solve as GP
+        eqns[-1] = (Obj >= a_val*(2*L + 2*W) + (1-a_val)*(12 * W**-1 * L**-3))
+        gp = GP(Obj, eqns)
+        gpsol = gp.solve(printing=False)
+        self.assertAlmostEqual(spsol['cost'], gpsol['cost'])
 
 
 testcases = [T_GP, T_SP]
