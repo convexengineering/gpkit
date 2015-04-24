@@ -1,3 +1,4 @@
+"""Tests for GP and SP classes"""
 import math
 import unittest
 import numpy as np
@@ -84,9 +85,15 @@ class t_GP(unittest.TestCase):
         sol1 = gp1.solve(printing=False)
         sol2 = gp2.solve(printing=False)
         sol3 = gp3.solve(printing=False)
-        self.assertEqual(gp1.A, CootMatrix(row=[0, 1, 2], col=[0, 0, 0], data=[-1, 1, -1]))
-        self.assertEqual(gp2.A, CootMatrix(row=[0, 1], col=[0, 0], data=[-1, 1]))
-        self.assertEqual(gp3.A, CootMatrix(row=[0, 2, 3], col=[0, 0, 0], data=[-1, 1, -1]))
+        self.assertEqual(gp1.A, CootMatrix(row=[0, 1, 2],
+                                           col=[0, 0, 0],
+                                           data=[-1, 1, -1]))
+        self.assertEqual(gp2.A, CootMatrix(row=[0, 1],
+                                           col=[0, 0],
+                                           data=[-1, 1]))
+        self.assertEqual(gp3.A, CootMatrix(row=[0, 2, 3],
+                                           col=[0, 0, 0],
+                                           data=[-1, 1, -1]))
         self.assertAlmostEqual(sol1(Mdd), sol2(Mdd))
         self.assertAlmostEqual(sol1(Mdd), sol3(Mdd))
         self.assertAlmostEqual(sol2(Mdd), sol3(Mdd))
@@ -111,10 +118,11 @@ class t_GP(unittest.TestCase):
         W = Variable("W")
         eqns = [L >= 1, W >= 1,
                 L*W == 10]
-        obj = gpkit.composite_objective(L+W, W**-1 * L**-3, sub={L:1, W: 1})
+        obj = gpkit.composite_objective(L+W, W**-1 * L**-3, sub={L: 1, W: 1})
         sol = GP(obj, eqns).solve(printing=False)
         a = sol["sensitivities"]["variables"]["w_{CO}"].flatten()
-        b = np.array([0, 0.98809322, 0.99461408, 0.99688676, 0.99804287, 0.99874303, 0.99921254, 0.99954926, 0.99980255, 1])
+        b = np.array([0, 0.98809322, 0.99461408, 0.99688676, 0.99804287,
+                      0.99874303, 0.99921254, 0.99954926, 0.99980255, 1])
         self.assertTrue((abs(a-b)/(a+b+1e-7) < 1e-7).all())
 
 
