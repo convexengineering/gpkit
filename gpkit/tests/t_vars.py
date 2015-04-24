@@ -55,6 +55,14 @@ class t_VarKey(unittest.TestCase):
         d = {VarKey(): None, VarKey(): 12}
         self.assertEqual(len(d), 2)
 
+    def test_isconst(self):
+        x = Variable('x')
+        c = Variable('c', value=4.)
+        xvk = x.varkeys['x']
+        cvk = c.varkeys['c']
+        self.assertEqual(xvk.isconst, False)
+        self.assertEqual(cvk.isconst, True)
+
 
 class t_Variable(unittest.TestCase):
 

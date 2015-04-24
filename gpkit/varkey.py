@@ -94,6 +94,12 @@ class VarKey(object):
                 s = "%s_%s" % (s, self.descr[subscript])
         return s
 
+    @property
+    def isconst(self):
+        """Returns True if this VarKey refers to a constant;
+        otherwise returns False."""
+        return "value" in self.descr
+
     def __hash__(self):
         return self._hashvalue
 
