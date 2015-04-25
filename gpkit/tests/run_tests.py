@@ -40,7 +40,7 @@ def run(xmloutput=False):
 
     print("\n######################################################################")
     print("Running with units disabled:")
-    gpkit.disableUnits()
+    gpkit.disable_units()
 
     _SUITE = unittest.TestSuite()
     _LOADER = unittest.TestLoader()
