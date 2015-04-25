@@ -17,7 +17,7 @@
 """
 
 
-def disableUnits():
+def disable_units():
     """Disables units support in a particular instance of GPkit.
 
     Posynomials created after calling this are incompatible with those created
@@ -41,7 +41,7 @@ def disableUnits():
     DimensionalityError = ValueError
 
 
-def enableUnits():
+def enable_units():
     """Enables units support in a particular instance of GPkit.
 
     Posynomials created after calling this are incompatible with those created
@@ -56,9 +56,9 @@ def enableUnits():
     except ImportError:
         print("Optional Python units library (Pint) not installed;"
               "unit support disabled.")
-        disableUnits()
+        disable_units()
 
-enableUnits()
+enable_units()
 
 _SIGNOMIALS_ENABLED = False
 

@@ -8,7 +8,7 @@ class simpleflight_generator(object):
 
     def __init__(self, disableUnits=False):
         if disableUnits:
-            gpkit.disableUnits()
+            gpkit.disable_units()
             if gpkit.units:
                 raise RuntimeWarning
 

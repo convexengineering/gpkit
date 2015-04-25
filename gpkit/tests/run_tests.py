@@ -42,7 +42,7 @@ def run(xmloutput=False):
 
     print "\n#################################################################"
     print "Running with units disabled:"
-    gpkit.disableUnits()
+    gpkit.disable_units()
 
     if xmloutput:
         xmlrunner.XMLTestRunner(output='test_reports_nounits').run(suite)
