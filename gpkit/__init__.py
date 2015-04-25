@@ -63,7 +63,20 @@ def enableUnits():
 
 enableUnits()
 
-enable_signomials = False
+_SIGNOMIALS_ENABLED = False
+
+
+def enable_signomials():
+    """Enables signomial support in a particular instance of GPkit."""
+    global _SIGNOMIALS_ENABLED
+    _SIGNOMIALS_ENABLED = True
+
+
+def disable_signomials():
+    """Disables signomial support in a particular instance of GPkit."""
+    global _SIGNOMIALS_ENABLED
+    _SIGNOMIALS_ENABLED = False
+
 
 from .nomials import Monomial, Posynomial, Signomial
 from .variables import Variable, VectorVariable

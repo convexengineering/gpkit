@@ -203,7 +203,7 @@ Example Usage
     import gpkit
     x = gpkit.Variable('x')
     y = gpkit.Variable('y')
-    gpkit.enable_signomials = True
+    gpkit.enable_signomials()
     sp = gpkit.SP(x, [x >= 1-y, y <= 0.1])
     sol = sp.localsolve(printing=False, solver=self.solver)
     self.assertAlmostEqual(sol["variables"]["x"], 0.9, self.ndig)
@@ -211,7 +211,7 @@ Example Usage
     sol = sp.localsolve(printing=False, solver=self.solver,
                         reltol=1e-4, xk={})
     self.assertAlmostEqual(sol["variables"]["x"], 0.9, self.ndig)
-    gpkit.enable_signomials = False
+    gpkit.disable_signomials()
 
 When using the ``localsolve`` method, the ``reltol`` argument specifies the relative tolerance of the solver: that is, by what percent does the solution have to improve between iterations? If any iteration improves less than that amount, the solver stops and returns its value.
 

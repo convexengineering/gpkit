@@ -106,8 +106,8 @@ class Signomial(object):
         else:
             any_negative = any((c <= 0 for c in cs))
         if any_negative:
-            from . import enable_signomials
-            if not enable_signomials and not allow_negative:
+            from . import _SIGNOMIALS_ENABLED
+            if not _SIGNOMIALS_ENABLED and not allow_negative:
                 raise ValueError("each c must be positive.")
         else:
             self.__class__ = Posynomial
@@ -371,25 +371,25 @@ class Signomial(object):
             return NotImplemented
 
     def __neg__(self):
-        from . import enable_signomials
+        from . import _SIGNOMIALS_ENABLED
 
-        if not enable_signomials:
+        if not _SIGNOMIALS_ENABLED:
             return NotImplemented
         else:
             return -1*self
 
     def __sub__(self, other):
-        from . import enable_signomials
+        from . import _SIGNOMIALS_ENABLED
 
-        if not enable_signomials:
+        if not _SIGNOMIALS_ENABLED:
             return NotImplemented
         else:
             return self + -other
 
     def __rsub__(self, other):
-        from . import enable_signomials
+        from . import _SIGNOMIALS_ENABLED
 
-        if not enable_signomials:
+        if not _SIGNOMIALS_ENABLED:
             return NotImplemented
         else:
             return other + -self
@@ -451,9 +451,9 @@ class Constraint(Posynomial):
     def __init__(self, p1, p2):
         p1 = Signomial(p1)
         p2 = Signomial(p2)
-        from . import enable_signomials
+        from . import _SIGNOMIALS_ENABLED
 
-        if enable_signomials and not isinstance(p2, Monomial):
+        if _SIGNOMIALS_ENABLED and not isinstance(p2, Monomial):
             p = p1 - p2 + 1
         else:
             p = p1 / p2
@@ -470,7 +470,7 @@ class Constraint(Posynomial):
 
         for i, exp in enumerate(p.exps):
             if not exp:
-                if not enable_signomials:
+                if not _SIGNOMIALS_ENABLED:
                     if p.cs[i] < 1:
                         coeff = float(1 - p.cs[i])
                         p.cs = np.hstack((p.cs[:i], p.cs[i+1:]))
