@@ -232,7 +232,7 @@ class Mosek(SolverBackend):
 
         log("#\n#   Building Python bindings for expopt and Mosek...")
         # mosek_h_path = pathjoin(lib_dir, "mosek_h.py")
-        built_expopt_h = call("python gpkit/ctypesgen.py -a" +
+        built_expopt_h = call("python gpkit/modified_ctypesgen.py -a" +
                               " -l "+pathjoin(solib_dir, "expopt.so").replace("\\", "/") +
                               ' -l "' + self.lib_path.replace("\\", "/") + '"' +
                               # ' -o "' + mosek_h_path.replace("\\", "/") + '"'+
