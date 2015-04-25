@@ -108,10 +108,10 @@ class t_GP(unittest.TestCase):
     def test_zeroing(self):
         L = Variable("L")
         k = gpkit.Variable("k", 0)
-        gpkit.enable_signomials = True
+        gpkit.enable_signomials()
         sol = GP(1/L, [L-5*k <= 10]).solve(printing=False, solver=self.solver)
         self.assertAlmostEqual(sol(L), 10, self.ndig)
-        gpkit.enable_signomials = False
+        gpkit.disable_signomials()
 
     def test_CO(self):
         L = Variable("L")
@@ -132,17 +132,17 @@ class t_SP(unittest.TestCase):
     def test_trivial_sp(self):
         x = Variable('x')
         y = Variable('y')
-        gpkit.enable_signomials = True
+        gpkit.enable_signomials()
         sp = gpkit.SP(x, [x >= 1-y, y <= 0.1])
         sol = sp.localsolve(printing=False, solver=self.solver)
         self.assertAlmostEqual(sol["variables"]["x"], 0.9, self.ndig)
         sp = gpkit.SP(x, [x >= 0.1, x+y >= 1, y <= 0.1])
         sol = sp.localsolve(printing=False, solver=self.solver)
         self.assertAlmostEqual(sol["variables"]["x"], 0.9, self.ndig)
-        gpkit.enable_signomials = False
+        gpkit.disable_signomials()
 
     def test_united_interp(self):
-        gpkit.enable_signomials = True
+        gpkit.enable_signomials()
         L = Variable("L", "m", "Length")
         W = Variable("W", "m", "Width")
         Obj = Variable("Obj", "1/m^4", "Objective")
@@ -159,10 +159,10 @@ class t_SP(unittest.TestCase):
             sol = sp.localsolve(printing=False, solver=self.solver)
             solv = sol["variables"]
             self.assertAlmostEqual(solv["L"][3], 3.276042, 5)
-        gpkit.enable_signomials = False
+        gpkit.disable_signomials()
 
     def test_issue180(self):
-        gpkit.enable_signomials = True
+        gpkit.enable_signomials()
         L = Variable("L")
         Lmax = gpkit.Variable("L_{max}", 10)
         W = Variable("W")
@@ -177,7 +177,7 @@ class t_SP(unittest.TestCase):
                 Obj >= a*(2*L + 2*W) + (1-a)*(12 * W**-1 * L**-3)]
         sp = SP(Obj, eqns)
         spsol = sp.localsolve(printing=False)
-        gpkit.enable_signomials = False
+        gpkit.disable_signomials()
         # now solve as GP
         eqns[-1] = (Obj >= a_val*(2*L + 2*W) + (1-a_val)*(12 * W**-1 * L**-3))
         gp = GP(Obj, eqns)
