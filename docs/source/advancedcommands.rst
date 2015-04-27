@@ -13,7 +13,8 @@ The examples below all use Posynomials and PosyArrays, but the syntax is identic
 
 .. code-block:: python
 
-    # from t_subs.py / t_NomialSubs / test_Basic
+    # adapted from t_sub.py / t_NomialSubs / test_Basic
+    from gpkit import Variable
     x = Variable("x")
     p = x**2
     assert p.sub(x, 3) == 9
@@ -27,7 +28,8 @@ Substituting multiple values
 
 .. code-block:: python
 
-    # from t_subs.py / t_NomialSubs / test_Vector
+    # adapted from t_sub.py / t_NomialSubs / test_Vector
+    from gpkit import Variable, VectorVariable
     x = Variable("x")
     y = Variable("y")
     z = VectorVariable(2, "z")
@@ -44,24 +46,26 @@ You can also substitute in sweep variables (see Sweeps_), strings, and monomials
 
 .. code-block:: python
 
-    # from t_subs.py / t_NomialSubs
+    # adapted from t_sub.py / t_NomialSubs
+    from gpkit import Variable
+    from gpkit.small_scripts import mag
 
-    def test_ScalarUnits(self):
-        x = Variable("x", "m")
-        xvk = x.varkeys.values()[0]
-        descr_before = x.exp.keys()[0].descr
-        y = Variable("y", "km")
-        yvk = y.varkeys.values()[0]
-        for x_ in ["x", xvk, x]:
-            for y_ in ["y", yvk, y]:
-                if not isinstance(y_, str) and type(xvk.descr["units"]) != str:
-                    expected = 0.001
-                else:
-                    expected = 1.0
-                self.assertAlmostEqual(expected, mag(x.sub(x_, y_).c))
-        if type(xvk.descr["units"]) != str:
-            z = Variable("z", "s")
-            self.assertRaises(ValueError, y.sub, y, z)
+    x = Variable("x", "m")
+    xvk = x.varkeys.values()[0]
+    descr_before = x.exp.keys()[0].descr
+    y = Variable("y", "km")
+    yvk = y.varkeys.values()[0]
+    for x_ in ["x", xvk, x]:
+        for y_ in ["y", yvk, y]:
+            if not isinstance(y_, str) and type(xvk.descr["units"]) != str:
+                expected = 0.001
+            else:
+                expected = 1.0
+            assert abs(expected - mag(x.sub(x_, y_).c)) < 1e-6
+    if type(xvk.descr["units"]) != str:
+        # this means units are enabled
+        z = Variable("z", "s")
+        # y.sub(y, z) will raise ValueError due to unit mismatch
 
 Note that units are preserved, and that the value can be either a string (in which case it just renames the variable), a varkey (in which case it changes its description, including the name) or a Monomial (in which case it substitutes for the variable with a new monomial).
 
@@ -118,7 +122,7 @@ Example Usage
 .. code-block:: python
 
     # code from t_GPSubs.test_VectorSweep in tests/t_sub.py
-    from gpkit import *
+    from gpkit import Variable, VectorVariable, GP
 
     x = Variable("x")
     y = VectorVariable(2, "y")
@@ -197,21 +201,7 @@ By default, signomial programs are first solved conservatively (by assuming each
 Example Usage
 -----------------------
 
-.. code-block:: python
-
-    # code from t_SP in tests/t_geometric_program.py
-    import gpkit
-    x = gpkit.Variable('x')
-    y = gpkit.Variable('y')
-    gpkit.enable_signomials()
-    sp = gpkit.SP(x, [x >= 1-y, y <= 0.1])
-    sol = sp.localsolve(printing=False, solver=self.solver)
-    self.assertAlmostEqual(sol["variables"]["x"], 0.9, self.ndig)
-    sp = gpkit.SP(x, [x >= 0.1, x+y >= 1, y <= 0.1])
-    sol = sp.localsolve(printing=False, solver=self.solver,
-                        reltol=1e-4, xk={})
-    self.assertAlmostEqual(sol["variables"]["x"], 0.9, self.ndig)
-    gpkit.disable_signomials()
+.. literalinclude:: examples/simple_sp.py
 
 When using the ``localsolve`` method, the ``reltol`` argument specifies the relative tolerance of the solver: that is, by what percent does the solution have to improve between iterations? If any iteration improves less than that amount, the solver stops and returns its value.
 
