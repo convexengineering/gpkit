@@ -3,6 +3,7 @@ Cost
  0.00367 
 
 Variables
+---------
 A_{floor} : 50       [m**2] upper limit, floor area        
  A_{wall} : 200      [m**2] upper limit, wall area         
     alpha : 2               lower limit, wall aspect ratio 
@@ -14,6 +15,7 @@ A_{floor} : 50       [m**2] upper limit, floor area
         w : 4.08     [m]    width                          
 
 Constant sensitivities
+----------------------
 A_{wall} : -1.5    upper limit, wall area        
    alpha : 0.5     lower limit, wall aspect ratio
 
