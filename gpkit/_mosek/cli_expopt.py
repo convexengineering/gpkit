@@ -8,6 +8,7 @@
 """
 
 import os
+import shutil
 from math import exp
 from subprocess import check_output
 from .. import settings
@@ -94,9 +95,7 @@ def imize_fn(filename):
             assert_line(f, "INDEX   ACTIVITY\n")
             dual_vals = read_vals(f)
 
-        os.remove(filename)
-        os.remove(filename+".sol")
-        os.removedirs("gpkit_tmp")
+        shutil.rmtree("gpkit_tmp")
         return dict(status="optimal",
                     objective=objective_val,
                     primal=primal_vals,
