@@ -196,7 +196,7 @@ class T_Posynomial(unittest.TestCase):
         p2 = 4*y + x**2 + 5*x
         ps1 = [list(exp.keys())for exp in p1.exps]
         ps2 = [list(exp.keys())for exp in p2.exps]
-        #print("%s, %s" % (ps1, ps2))
+        #print("%s, %s" % (ps1, ps2))  # python 3 dict reordering
         self.assertEqual(p1, p2)
 
     def test_posyposy_mult(self):
@@ -206,13 +206,13 @@ class T_Posynomial(unittest.TestCase):
         p2 = (x+y)**2
         ps1 = [list(exp.keys())for exp in p1.exps]
         ps2 = [list(exp.keys())for exp in p2.exps]
-        #print("%s, %s" % (ps1, ps2))
+        #print("%s, %s" % (ps1, ps2))  # python 3 dict reordering
         self.assertEqual(p1, p2)
         p1 = (x+y)*(2*x+y**2)
         p2 = 2*x**2 + 2*y*x + y**2*x + y**3
         ps1 = [list(exp.keys())for exp in p1.exps]
         ps2 = [list(exp.keys())for exp in p2.exps]
-        #print("%s, %s" % (ps1, ps2))
+        #print("%s, %s" % (ps1, ps2))  # python 3 dict reordering
         self.assertEqual(p1, p2)
 
     def test_constraint_gen(self):

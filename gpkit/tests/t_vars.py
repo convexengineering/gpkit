@@ -76,7 +76,7 @@ class T_Variable(unittest.TestCase):
         p2 = a**2 + 4
         ps1 = [list(exp.keys())for exp in p1.exps]
         ps2 = [list(exp.keys())for exp in p2.exps]
-        #print("%s, %s" % (ps1, ps2))
+        #print("%s, %s" % (ps1, ps2))  # python 3 dict reordering
         self.assertEqual(p1, p2)
         self.assertEqual(a.value, a)
 

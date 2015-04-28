@@ -85,11 +85,20 @@ class T_GP(unittest.TestCase):
         sol1 = gp1.solve(printing=False)
         sol2 = gp2.solve(printing=False)
         sol3 = gp3.solve(printing=False)
-        self.assertEqual(gp1.A, CootMatrix(row=[0, 1, 2], col=[0, 0, 0], data=[-1, 1, -1]))
-        self.assertEqual(gp2.A, CootMatrix(row=[0, 1], col=[0, 0], data=[-1, 1]))
-        # order of variables with a posynomial is not stable (though monomial order is)
-        equiv1 = gp3.A == CootMatrix(row=[0, 2, 3], col=[0, 0, 0], data=[-1, 1, -1])
-        equiv2 = gp3.A == CootMatrix(row=[0, 1, 3], col=[0, 0, 0], data=[-1, 1, -1])
+        self.assertEqual(gp1.A, CootMatrix(row=[0, 1, 2],
+                                           col=[0, 0, 0],
+                                           data=[-1, 1, -1]))
+        self.assertEqual(gp2.A, CootMatrix(row=[0, 1],
+                                           col=[0, 0],
+                                           data=[-1, 1]))
+        # order of variables with a posynomial is not stable
+        #   (though monomial order is)
+        equiv1 = gp3.A == CootMatrix(row=[0, 2, 3],
+                                     col=[0, 0, 0],
+                                     data=[-1, 1, -1])
+        equiv2 = gp3.A == CootMatrix(row=[0, 1, 3],
+                                     col=[0, 0, 0],
+                                     data=[-1, 1, -1])
         self.assertTrue(equiv1 or equiv2)
         self.assertAlmostEqual(sol1(Mdd), sol2(Mdd))
         self.assertAlmostEqual(sol1(Mdd), sol3(Mdd))
