@@ -96,6 +96,7 @@ def imize_fn(filename):
             dual_vals = read_vals(f)
 
         shutil.rmtree("gpkit_tmp")
+
         return dict(status="optimal",
                     objective=objective_val,
                     primal=primal_vals,
