@@ -195,9 +195,9 @@ class t_GPSubs(unittest.TestCase):
             disableUnits=(type(W.varkeys["W"].descr["units"]) == str)).gp()
 
         def sorted_solve_array(sol):
-            return np.array(map(lambda x: x[1],
-                            sorted(sol["variables"].items(),
-                                   key=lambda x: x[0].name)))
+            return np.array([x[1] for x in
+                             sorted(sol["variables"].items(),
+                                    key=lambda x: x[0].name)])
         a = sorted_solve_array(sf.solve(printing=False))
         sol = gpl.solve(printing=False)
         del sol["variables"]["dum"], sol["variables"]["dum"]
