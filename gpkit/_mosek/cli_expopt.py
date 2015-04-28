@@ -97,7 +97,7 @@ def imize_fn(filename):
 
         def errorRemoveReadonly(func, path, exc):
             excvalue = exc[1]
-            raise RuntimeWarning(excvalue)
+            raise RuntimeWarning(str(excvalue) + " ::: " + str(dir(excvalue)))
             if func in (os.rmdir, os.remove) and excvalue.errno == errno.EACCES:
                 # change the file to be readable,writable,executable: 0777
                 os.chmod(path, stat.S_IRWXU | stat.S_IRWXG | stat.S_IRWXO)
