@@ -16,6 +16,17 @@ from subprocess import check_output
 from .. import settings
 
 
+def errorRemoveReadonly(func, path, exc):
+    excvalue = exc[1]
+    if func in (os.rmdir, os.remove) and excvalue.errno == errno.EACCES:
+        # change the file to be readable,writable,executable: 0777
+        os.chmod(path, stat.S_IRWXU | stat.S_IRWXG | stat.S_IRWXO)
+        # retry
+        func(path)
+    else:
+        pass
+
+
 def imize_fn(filename):
     filename = "gpkit_tmp" + os.sep + filename
     os.environ['PATH'] = (os.environ['PATH'] + ':%s' %
@@ -96,16 +107,6 @@ def imize_fn(filename):
             assert_line(f, "DUAL VARIABLES\n")
             assert_line(f, "INDEX   ACTIVITY\n")
             dual_vals = read_vals(f)
-
-        def errorRemoveReadonly(func, path, exc):
-            excvalue = exc[1]
-            if func in (os.rmdir, os.remove) and excvalue.errno == errno.EACCES:
-                # change the file to be readable,writable,executable: 0777
-                os.chmod(path, stat.S_IRWXU | stat.S_IRWXG | stat.S_IRWXO)
-                # retry
-                func(path)
-            else:
-                pass
 
         shutil.rmtree("gpkit_tmp", ignore_errors=False,
                       onerror=errorRemoveReadonly)
