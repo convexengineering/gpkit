@@ -28,13 +28,8 @@ class t_MonoEQConstraint(unittest.TestCase):
         pass
 
 
-tests = [t_Constraint, t_MonoEQConstraint]
+TESTS = [t_Constraint, t_MonoEQConstraint]
 
 if __name__ == '__main__':
-    suite = unittest.TestSuite()
-    loader = unittest.TestLoader()
-
-    for t in tests:
-        suite.addTests(loader.loadTestsFromTestCase(t))
-
-    unittest.TextTestRunner(verbosity=2).run(suite)
+    from gpkit.tests.run_tests import run_tests
+    run_tests(TESTS)

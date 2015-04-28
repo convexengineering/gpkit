@@ -80,13 +80,8 @@ class t_PosyArray(unittest.TestCase):
         self.assertEqual((xL + xR)[1:-1], x[2:] + x[:-2])
 
 
-tests = [t_PosyArray]
+TESTS = [t_PosyArray]
 
 if __name__ == '__main__':
-    suite = unittest.TestSuite()
-    loader = unittest.TestLoader()
-
-    for t in tests:
-        suite.addTests(loader.loadTestsFromTestCase(t))
-
-    unittest.TextTestRunner(verbosity=2).run(suite)
+    from gpkit.tests.run_tests import run_tests
+    run_tests(TESTS)

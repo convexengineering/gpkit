@@ -104,13 +104,8 @@ class t_VectorVariable(unittest.TestCase):
         x = VectorVariable(N, 'x', x_arr, 'm', "Beam Location")
 
 
-tests = [t_VarKey, t_Variable, t_VectorVariable]
+TESTS = [t_VarKey, t_Variable, t_VectorVariable]
 
 if __name__ == '__main__':
-    suite = unittest.TestSuite()
-    loader = unittest.TestLoader()
-
-    for t in tests:
-        suite.addTests(loader.loadTestsFromTestCase(t))
-
-    unittest.TextTestRunner(verbosity=2).run(suite)
+    from gpkit.tests.run_tests import run_tests
+    run_tests(TESTS)

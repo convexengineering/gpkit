@@ -204,13 +204,8 @@ class t_GPSubs(unittest.TestCase):
         b = sorted_solve_array(sol)
         self.assertTrue(all(abs(a-b)/(a+b) < 1e-7))
 
-tests = [t_NomialSubs, t_GPSubs]
+TESTS = [t_NomialSubs, t_GPSubs]
 
 if __name__ == '__main__':
-    suite = unittest.TestSuite()
-    loader = unittest.TestLoader()
-
-    for t in tests:
-        suite.addTests(loader.loadTestsFromTestCase(t))
-
-    unittest.TextTestRunner(verbosity=2).run(suite)
+    from gpkit.tests.run_tests import run_tests
+    run_tests(TESTS)

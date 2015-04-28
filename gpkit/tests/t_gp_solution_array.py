@@ -71,13 +71,8 @@ class t_GPSolutionArray(unittest.TestCase):
         tab = sol.table()
         self.assertTrue(isinstance(tab, str))
 
-tests = [t_GPSolutionArray]
+TESTS = [t_GPSolutionArray]
 
 if __name__ == '__main__':
-    suite = unittest.TestSuite()
-    loader = unittest.TestLoader()
-
-    for t in tests:
-        suite.addTests(loader.loadTestsFromTestCase(t))
-
-    unittest.TextTestRunner(verbosity=2).run(suite)
+    from gpkit.tests.run_tests import run_tests
+    run_tests(TESTS)
