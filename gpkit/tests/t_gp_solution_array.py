@@ -3,6 +3,7 @@ import time
 import numpy as np
 from gpkit import Variable, VectorVariable, GP, PosyArray
 from gpkit.geometric_program import GPSolutionArray
+from gpkit import settings
 
 
 class T_GPSolutionArray(unittest.TestCase):
@@ -67,9 +68,10 @@ class T_GPSolutionArray(unittest.TestCase):
         x = Variable('x')
         y = Variable('y')
         gp = GP(y*x, [y*x >= 12])
-        sol = gp.solve(solver='mosek', printing=False)
-        tab = sol.table()
-        self.assertTrue(isinstance(tab, str))
+        if "mosek" in settings["installed_solvers"]:
+            sol = gp.solve(solver='mosek', printing=False)
+            tab = sol.table()
+            self.assertTrue(isinstance(tab, str))
 
 _TESTS = [T_GPSolutionArray]
 
