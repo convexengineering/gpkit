@@ -4,7 +4,7 @@ from gpkit import (Monomial, Posynomial, PosyArray, Variable, VarKey,
                    VectorVariable)
 
 
-class t_VarKey(unittest.TestCase):
+class T_VarKey(unittest.TestCase):
 
     def test_init(self):
         # test type
@@ -56,7 +56,7 @@ class t_VarKey(unittest.TestCase):
         self.assertEqual(len(d), 2)
 
 
-class t_Variable(unittest.TestCase):
+class T_Variable(unittest.TestCase):
 
     def test_init(self):
         v = Variable('v')
@@ -81,7 +81,7 @@ class t_Variable(unittest.TestCase):
         self.assertEqual(a.value, a)
 
 
-class t_VectorVariable(unittest.TestCase):
+class T_VectorVariable(unittest.TestCase):
 
     def test_init(self):
         # test 1
@@ -109,13 +109,13 @@ class t_VectorVariable(unittest.TestCase):
         x = VectorVariable(N, 'x', x_arr, 'm', "Beam Location")
 
 
-tests = [t_VarKey, t_Variable, t_VectorVariable]
+_TESTS = [T_VarKey, T_Variable, T_VectorVariable]
 
 if __name__ == '__main__':
-    suite = unittest.TestSuite()
-    loader = unittest.TestLoader()
+    _SUITE = unittest.TestSuite()
+    _LOADER = unittest.TestLoader()
 
-    for t in tests:
-        suite.addTests(loader.loadTestsFromTestCase(t))
+    for t in _TESTS:
+        _SUITE.addTests(_LOADER.loadTestsFromTestCase(t))
 
-    unittest.TextTestRunner(verbosity=2).run(suite)
+    unittest.TextTestRunner(verbosity=2).run(_SUITE)

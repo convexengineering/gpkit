@@ -4,16 +4,16 @@ from gpkit import Monomial, Variable, VectorVariable, units, GP, link
 from gpkit.small_scripts import mag
 
 
-class t_NomialSubs(unittest.TestCase):
+class T_NomialSubs(unittest.TestCase):
 
-    def test_Basic(self):
+    def tesT_Basic(self):
         x = Variable("x")
         p = x**2
         self.assertEqual(p.sub(x, 3), 9)
         self.assertEqual(p.sub(x.varkeys["x"], 3), 9)
         self.assertEqual(p.sub("x", 3), 9)
 
-    def test_StringMutation(self):
+    def tesT_StringMutation(self):
         x = Variable("x", "m")
         descr_before = list(x.exp)[0].descr
         y = x.sub("x", "y")
@@ -28,7 +28,7 @@ class t_NomialSubs(unittest.TestCase):
                                    1.0)
         self.assertEqual(x.sub("x", x), x)
 
-    def test_ScalarUnits(self):
+    def tesT_ScalarUnits(self):
         x = Variable("x", "m")
         xvk = list(x.varkeys.values())[0]
         descr_before = list(x.exp)[0].descr
@@ -45,7 +45,7 @@ class t_NomialSubs(unittest.TestCase):
             z = Variable("z", "s")
             self.assertRaises(ValueError, y.sub, y, z)
 
-    def test_Vector(self):
+    def tesT_Vector(self):
         x = Variable("x")
         y = Variable("y")
         z = VectorVariable(2, "z")
@@ -60,8 +60,8 @@ class t_NomialSubs(unittest.TestCase):
             self.assertAlmostEqual(mag(xs.sub(x_, [1, 2, 3]).c), 3.0)
 
 
-class t_GPSubs(unittest.TestCase):
-    def test_VectorSweep(self):
+class T_GPSubs(unittest.TestCase):
+    def tesT_VectorSweep(self):
         x = Variable("x")
         y = VectorVariable(2, "y")
         gp = GP(x, [x >= y.prod()])
@@ -77,7 +77,7 @@ class t_GPSubs(unittest.TestCase):
             gp.sub(y, ('sweep', [[2, 3], [5, 7], [9, 11], [13, 15]]))
         self.assertRaises(ValueError, bad_sub, gp)
 
-    def test_VectorInit(self):
+    def tesT_VectorInit(self):
         N = 6
         Weight = 50000
         xi_dist = 6*Weight/float(N)*((np.array(range(1, N+1))
@@ -205,13 +205,13 @@ class t_GPSubs(unittest.TestCase):
         b = sorted_solve_array(sol)
         self.assertTrue(all(abs(a-b)/(a+b) < 1e-7))
 
-tests = [t_NomialSubs, t_GPSubs]
+_TESTS = [T_NomialSubs, T_GPSubs]
 
 if __name__ == '__main__':
-    suite = unittest.TestSuite()
-    loader = unittest.TestLoader()
+    _SUITE = unittest.TestSuite()
+    _LOADER = unittest.TestLoader()
 
-    for t in tests:
-        suite.addTests(loader.loadTestsFromTestCase(t))
+    for t in _TESTS:
+        _SUITE.addTests(_LOADER.loadTestsFromTestCase(t))
 
-    unittest.TextTestRunner(verbosity=2).run(suite)
+    unittest.TextTestRunner(verbosity=2).run(_SUITE)

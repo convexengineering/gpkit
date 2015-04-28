@@ -1,53 +1,56 @@
 import unittest
-tests = []
+_TESTS = []
 
-from .t_sub import tests as t_sub
-tests += t_sub
+from .t_sub import _TESTS as t_sub
+_TESTS += t_sub
 
-from .t_vars import tests as t_vars
-tests += t_vars
+from .t_vars import _TESTS as t_vars
+_TESTS += t_vars
 
-from .t_nomials import tests as t_nomials
-tests += t_nomials
+from .t_nomials import _TESTS as t_nomials
+_TESTS += t_nomials
 
-from .t_constraints import tests as t_constraints
-tests += t_constraints
+from .t_constraints import _TESTS as t_constraints
+_TESTS += t_constraints
 
-from .t_posy_array import tests as t_posy_array
-tests += t_posy_array
+from .t_posy_array import _TESTS as t_posy_array
+_TESTS += t_posy_array
 
-from .t_geometric_program import tests as t_geometric_program
-tests += t_geometric_program
+from .t_geometric_program import _TESTS as t_geometric_program
+_TESTS += t_geometric_program
 
-from .t_gp_solution_array import tests as t_gp_solution_array
-tests += t_gp_solution_array
+from .t_gp_solution_array import _TESTS as t_gp_solution_array
+_TESTS += t_gp_solution_array
 
 
 import gpkit
 
 
 def run(xmloutput=False):
-
-    suite = unittest.TestSuite()
-    loader = unittest.TestLoader()
-
-    for t in tests:
-        suite.addTests(loader.loadTestsFromTestCase(t))
+    _SUITE = unittest.TestSuite()
+    _LOADER = unittest.TestLoader()
+    for t in _TESTS:
+        _SUITE.addTests(_LOADER.loadTestsFromTestCase(t))
 
     if xmloutput:
         import xmlrunner
-        xmlrunner.XMLTestRunner(output='test_reports').run(suite)
+        xmlrunner.XMLTestRunner(output='test_reports').run(_SUITE)
     else:
-        unittest.TextTestRunner(verbosity=2).run(suite)
+        unittest.TextTestRunner(verbosity=2).run(_SUITE)
 
     print("\n######################################################################")
     print("Running with units disabled:")
     gpkit.disableUnits()
 
+    _SUITE = unittest.TestSuite()
+    _LOADER = unittest.TestLoader()
+    for t in _TESTS:
+        _SUITE.addTests(_LOADER.loadTestsFromTestCase(t))
+
     if xmloutput:
-        xmlrunner.XMLTestRunner(output='test_reports_nounits').run(suite)
+        xmlrunner.XMLTestRunner(output='test_reports_nounits').run(_SUITE)
     else:
-        unittest.TextTestRunner(verbosity=1).run(suite)
+        unittest.TextTestRunner(verbosity=1).run(_SUITE)
 
 if __name__ == '__main__':
     run()

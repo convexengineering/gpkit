@@ -2,27 +2,11 @@ import numpy as np
 
 from collections import namedtuple as nt
 
-try:
-    isinstance("", basestring)
-    Strings = (str, unicode)
-except NameError:
-    Strings = (str,)
-
-
-Numbers = (int, float, np.number)
+Strings = (str, unicode)
+Numbers = (int, float)
 
 PosyTuple = nt('PosyTuple', ['exps', 'cs', 'varlocs', 'substitutions'])
 CootMatrixTuple = nt('CootMatrix', ['row', 'col', 'data'])
-
-
-class count(object):
-
-    def __init__(self):
-        self.start = -1
-
-    def __call__(self):
-        self.start += 1
-        return self.start
 
 
 class CootMatrix(CootMatrixTuple):
@@ -43,11 +27,30 @@ class CootMatrix(CootMatrixTuple):
         from scipy.sparse import coo_matrix
         return coo_matrix((self.data, (self.row, self.col)))
 
-    def todense(self): return self.tocoo().todense()
-    def tocsr(self):   return self.tocoo().tocsr()
-    def tocsc(self):   return self.tocoo().tocsc()
-    def todok(self):   return self.tocoo().todok()
-    def todia(self):   return self.tocoo().todia()
+    def todense(self):
+        return self.tocoo().todense()
+
+    def tocsr(self):
+        return self.tocoo().tocsr()
+
+    def tocsc(self):
+        return self.tocoo().tocsc()
+
+    def todok(self):
+        return self.tocoo().todok()
+
+    def todia(self):
+        return self.tocoo().todia()
+
+
+class count(object):
+
+    def __init__(self):
+        self.start = -1
+
+    def __call__(self):
+        self.start += 1
+        return self.start
 
 
 class DictOfLists(dict):

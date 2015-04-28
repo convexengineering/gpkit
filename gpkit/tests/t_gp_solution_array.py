@@ -5,7 +5,7 @@ from gpkit import Variable, VectorVariable, GP, PosyArray
 from gpkit.geometric_program import GPSolutionArray
 
 
-class t_GPSolutionArray(unittest.TestCase):
+class T_GPSolutionArray(unittest.TestCase):
 
     def test_call(self):
         A = Variable('A', '-', 'Test Variable')
@@ -63,13 +63,13 @@ class t_GPSolutionArray(unittest.TestCase):
         self.assertAlmostEqual(0, np.max(np.abs(Pvals - Psol.c)))
         self.assertAlmostEqual(0, np.max(np.abs(Psol.c - sol(P_max))))
 
-tests = [t_GPSolutionArray]
+_TESTS = [T_GPSolutionArray]
 
 if __name__ == '__main__':
-    suite = unittest.TestSuite()
-    loader = unittest.TestLoader()
+    _SUITE = unittest.TestSuite()
+    _LOADER = unittest.TestLoader()
 
-    for t in tests:
-        suite.addTests(loader.loadTestsFromTestCase(t))
+    for t in _TESTS:
+        _SUITE.addTests(_LOADER.loadTestsFromTestCase(t))
 
-    unittest.TextTestRunner(verbosity=2).run(suite)
+    unittest.TextTestRunner(verbosity=2).run(_SUITE)

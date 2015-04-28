@@ -4,7 +4,7 @@ from gpkit import Monomial, Posynomial, Signomial
 import gpkit
 
 
-class t_Monomial(unittest.TestCase):
+class T_Monomial(unittest.TestCase):
 
     def setUp(self):
         pass
@@ -148,7 +148,7 @@ class t_Monomial(unittest.TestCase):
                          4*math.log(c1) + 3*math.log(c2))
 
 
-class t_Signomial(unittest.TestCase):
+class T_Signomial(unittest.TestCase):
 
     def test_init(self):
         x = Monomial('x')
@@ -160,7 +160,7 @@ class t_Signomial(unittest.TestCase):
         self.assertRaises(TypeError, lambda: x-y)
 
 
-class t_Posynomial(unittest.TestCase):
+class T_Posynomial(unittest.TestCase):
 
     def test_init(self):
         x = Monomial('x')
@@ -249,13 +249,13 @@ class t_Posynomial(unittest.TestCase):
 
 # test substitution
 
-tests = [t_Posynomial, t_Monomial, t_Signomial]
+_TESTS = [T_Posynomial, T_Monomial, T_Signomial]
 
 if __name__ == '__main__':
-    suite = unittest.TestSuite()
-    loader = unittest.TestLoader()
+    _SUITE = unittest.TestSuite()
+    _LOADER = unittest.TestLoader()
 
-    for t in tests:
-        suite.addTests(loader.loadTestsFromTestCase(t))
+    for t in _TESTS:
+        _SUITE.addTests(_LOADER.loadTestsFromTestCase(t))
 
-    unittest.TextTestRunner(verbosity=2).run(suite)
+    unittest.TextTestRunner(verbosity=2).run(_SUITE)

@@ -9,8 +9,8 @@ NDIGS = {"cvxopt": 5, "mosek": 7, "mosek_cli": 5}
 # name: decimal places of accuracy
 
 
-class t_GP(unittest.TestCase):
-    name = "t_GP_"
+class T_GP(unittest.TestCase):
+    name = "T_GP_"
 
     def test_trivial_gp(self):
         x = Monomial('x')
@@ -75,7 +75,7 @@ class t_GP(unittest.TestCase):
         sf = simpleflight_generator()
         self.simpleflight_test_core(sf.gp())
 
-    def test_Mddtest(self):
+    def tesT_Mddtest(self):
         Cl = Variable("Cl", 0.5, "-", "Lift Coefficient")
         Mdd = Variable("Mdd", "-", "Drag Divergence Mach Number")
         gp1 = GP(1/Mdd, [1 >= 5*Mdd + 0.5, Mdd >= 0.00001])
@@ -109,7 +109,7 @@ class t_GP(unittest.TestCase):
         self.assertAlmostEqual(sol(L), 10, self.ndig)
         gpkit.enable_signomials = False
 
-    def test_CO(self):
+    def tesT_CO(self):
         L = Variable("L")
         W = Variable("W")
         eqns = [L >= 1, W >= 1,
@@ -121,8 +121,8 @@ class t_GP(unittest.TestCase):
         self.assertTrue((abs(a-b)/(a+b+1e-7) < 1e-7).all())
 
 
-class t_SP(unittest.TestCase):
-    name = "t_SP_"
+class T_SP(unittest.TestCase):
+    name = "T_SP_"
 
     def test_trivial_sp(self):
         x = Variable('x')
@@ -157,9 +157,9 @@ class t_SP(unittest.TestCase):
         gpkit.enable_signomials = False
 
 
-testcases = [t_GP, t_SP]
+testcases = [T_GP, T_SP]
 
-tests = []
+_TESTS = []
 for testcase in testcases:
     for solver in settings["installed_solvers"]:
         if solver:
@@ -167,13 +167,13 @@ for testcase in testcases:
                         (testcase,), {})
             setattr(test, "solver", solver)
             setattr(test, "ndig", NDIGS[solver])
-            tests.append(test)
+            _TESTS.append(test)
 
 if __name__ == "__main__":
-    suite = unittest.TestSuite()
-    loader = unittest.TestLoader()
+    _SUITE = unittest.TestSuite()
+    _LOADER = unittest.TestLoader()
 
-    for t in tests:
-        suite.addTests(loader.loadTestsFromTestCase(t))
+    for t in _TESTS:
+        _SUITE.addTests(_LOADER.loadTestsFromTestCase(t))
 
-    unittest.TextTestRunner(verbosity=2).run(suite)
+    unittest.TextTestRunner(verbosity=2).run(_SUITE)

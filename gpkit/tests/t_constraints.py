@@ -3,7 +3,7 @@ from gpkit import Variable
 from gpkit.nomials import Constraint
 
 
-class t_Constraint(unittest.TestCase):
+class T_Constraint(unittest.TestCase):
 
     def test_additive_scalar(self):
         x = Variable('x')
@@ -22,19 +22,19 @@ class t_Constraint(unittest.TestCase):
         self.assertRaises(ValueError, constr)
 
 
-class t_MonoEQConstraint(unittest.TestCase):
+class T_MonoEQConstraint(unittest.TestCase):
 
     def test_placeholder(self):
         pass
 
 
-tests = [t_Constraint, t_MonoEQConstraint]
+_TESTS = [T_Constraint, T_MonoEQConstraint]
 
 if __name__ == '__main__':
-    suite = unittest.TestSuite()
-    loader = unittest.TestLoader()
+    _SUITE = unittest.TestSuite()
+    _LOADER = unittest.TestLoader()
 
-    for t in tests:
-        suite.addTests(loader.loadTestsFromTestCase(t))
+    for t in _TESTS:
+        _SUITE.addTests(_LOADER.loadTestsFromTestCase(t))
 
-    unittest.TextTestRunner(verbosity=2).run(suite)
+    unittest.TextTestRunner(verbosity=2).run(_SUITE)
