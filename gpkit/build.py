@@ -133,7 +133,7 @@ class Mosek(SolverBackend):
             self.dir = "C:\\Program Files\\Mosek"
             self.platform = "win64x86"
             self.libpattern = "mosek64_?_?.dll"
-            self.flags = "-Wl,--export-all-symbols,-R"
+            self.flags = "" #-Wl,--export-all-symbols,-R"
             ## below is for 32-bit windows ##
             # self.dir = "C:\\Program Files (x86)\\Mosek"
             # self.platform = "win32x86"
