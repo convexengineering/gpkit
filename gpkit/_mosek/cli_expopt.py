@@ -103,7 +103,7 @@ def imize_fn(filename):
                 # retry
                 func(path)
             else:
-                raiseenter code here
+                pass
 
         shutil.rmtree("gpkit_tmp", ignore_errors=False,
                       onerror=errorRemoveReadonly)
