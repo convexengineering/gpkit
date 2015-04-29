@@ -270,9 +270,9 @@ class GP(Model):
                     return d[key]
                 elif key+"_0" in d:
                     maybevec = self.varkeys[key+"_0"].descr
-                    if "length" in maybevec:
+                    if "shape" in maybevec:
                         # then it is a vector!
-                        length = maybevec["length"]
+                        length = maybevec["shape"]
                         l = [d[key+"_%s" % i] for i in range(length)]
                         if attr == "variables":
                             return PosyArray(l)
@@ -548,7 +548,7 @@ class GP(Model):
 
         # vectorvar substitution
         for var in self.unsubbed.varlocs:
-            if "idx" in var.descr and "length" in var.descr:
+            if "idx" in var.descr and "shape" in var.descr:
                 descr = dict(var.descr)
                 idx = descr.pop("idx")
                 if "value" in descr:
@@ -561,12 +561,12 @@ class GP(Model):
                     veckey = VarKey(**descr)
 
                 if veckey not in variables:
-                    variables[veckey] = np.empty(var.descr["length"]) + np.nan
+                    variables[veckey] = np.empty(var.descr["shape"]) + np.nan
                 variables[veckey][idx] = variables.pop(var)
 
                 if veckey not in sensitivities["variables"]:
                     sensitivities["variables"][veckey] = \
-                        np.empty(var.descr["length"]) + np.nan
+                        np.empty(var.descr["shape"]) + np.nan
                 sensitivities["variables"][veckey][var.descr["idx"]] = \
                     sensitivities["variables"].pop(var)
 

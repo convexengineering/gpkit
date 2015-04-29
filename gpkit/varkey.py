@@ -1,3 +1,4 @@
+import numpy as np
 from itertools import count
 
 from .posyarray import PosyArray
@@ -118,7 +119,11 @@ class VarKey(object):
         elif isinstance(other, Strings):
             return self._cmpstr == other
         elif isinstance(other, PosyArray):
-            for i, p in enumerate(other):
+            it = np.nditer(other, flags=['multi_index', 'refs_ok'])
+            while not it.finished:
+                i = it.multi_index
+                it.iternext()
+                p = other[i]
                 v = VarKey(p.exp.keys()[0])
                 if v.descr.pop("idx", None) != i:
                     return False

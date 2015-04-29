@@ -43,7 +43,7 @@ def getsubs(varkeys, varlocs, substitutions):
 def vectorsub(subs, var, sub, varset):
     "Vectorized substitution via vecmons and Variables."
     try:
-        isvector = "length" in var.descr and "idx" not in var.descr
+        isvector = "shape" in var.descr and "idx" not in var.descr
         var = VectorVariable(**var.descr)
     except:
         try:

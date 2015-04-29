@@ -45,12 +45,11 @@ def mono_approx(p, x0):
 
 
 def isequal(a, b):
-    if isinstance(a, Iterable) and not isinstance(a, Strings+(list, dict)):
+    if (isinstance(a, Iterable)
+       and not isinstance(a, Strings+(tuple, list, dict))):
         for i, a_i in enumerate(a):
-            if not isinstance(a_i, Strings+(list, dict)):
-                if isinstance(a_i, Iterable):
-                    if not isequal(a_i, b[i]):
-                        return False
+            if not isequal(a_i, b[i]):
+                return False
     elif a != b:
         return False
     return True
@@ -117,9 +116,9 @@ def locate_vars(exps):
                 varkeys[var.name].append(var)
 
     for name, varl in varkeys.items():
-        if "length" in varl[0].descr:
+        if "shape" in varl[0].descr:
             # vector var
-            newlist = [None]*varl[0].descr["length"]
+            newlist = np.zeros(varl[0].descr["shape"], dtype="object")
             for var in varl:
                 newlist[var.descr["idx"]] = var
             varkeys[name] = newlist
