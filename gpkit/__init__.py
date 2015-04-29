@@ -23,7 +23,16 @@ def disable_units():
     Posynomials created after calling this are incompatible with those created
     before.
 
-    If gpkit is imported multiple times, this needs to be run each time."""
+    If gpkit is imported multiple times, this needs to be run each time.
+
+    The correct way to call this is:
+        import gpkit
+        gpkit.disable_units()
+
+    The following will *not* have the intended effect:
+        from gpkit import disable_units
+        disable_units()
+    """
     global units, DimensionalityError
 
     class DummyUnits(object):
