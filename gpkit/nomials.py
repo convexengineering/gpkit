@@ -456,7 +456,7 @@ class Constraint(Posynomial):
         from . import _SIGNOMIALS_ENABLED
 
         if _SIGNOMIALS_ENABLED and not isinstance(p2, Monomial):
-            p = p1 - p2 + 1
+            p = (p1 - p2)/p1.units + 1.0
         else:
             p = p1 / p2
         if isinstance(p.cs, Quantity):
@@ -467,6 +467,7 @@ class Constraint(Posynomial):
                                  " on both sides: '%s' and '%s' can not"
                                  " be converted into each other."
                                  "" % (p1.units.units, p2.units.units))
+
         p1.units = None if all(p1.exps) else p1.units
         p2.units = None if all(p2.exps) else p2.units
 
