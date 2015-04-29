@@ -12,6 +12,9 @@ NDIGS = {"cvxopt": 5, "mosek": 7, "mosek_cli": 5}
 
 class T_GP(unittest.TestCase):
     name = "T_GP_"
+    # solver and ndig get set in loop at bottom this file, a bit hacky
+    solver = None
+    ndig = None
 
     def test_trivial_gp(self):
         x = Monomial('x')
@@ -146,6 +149,8 @@ class T_GP(unittest.TestCase):
 
 class T_SP(unittest.TestCase):
     name = "T_SP_"
+    solver = None
+    ndig = None
 
     def test_trivial_sp(self):
         x = Variable('x')
