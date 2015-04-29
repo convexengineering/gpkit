@@ -7,9 +7,9 @@ class t_PosyArray(unittest.TestCase):
 
     def test_array_mult(self):
         x = VectorVariable(3, 'x', label='dummy variable')
-        x_0 = Monomial('x', idx=0, length=3, label='dummy variable')
-        x_1 = Monomial('x', idx=1, length=3, label='dummy variable')
-        x_2 = Monomial('x', idx=2, length=3, label='dummy variable')
+        x_0 = Monomial('x', idx=(0,), shape=(3,), label='dummy variable')
+        x_1 = Monomial('x', idx=(1,), shape=(3,), label='dummy variable')
+        x_2 = Monomial('x', idx=(2,), shape=(3,), label='dummy variable')
         p = x_0**2 + x_1**2 + x_2**2
         self.assertEqual(x.dot(x), p)
         m = PosyArray([[x_0**2, x_0*x_1, x_0*x_2],
@@ -20,9 +20,9 @@ class t_PosyArray(unittest.TestCase):
     def test_elementwise_mult(self):
         m = Monomial('m')
         x = VectorVariable(3, 'x', label='dummy variable')
-        x_0 = Monomial('x', idx=0, length=3, label='dummy variable')
-        x_1 = Monomial('x', idx=1, length=3, label='dummy variable')
-        x_2 = Monomial('x', idx=2, length=3, label='dummy variable')
+        x_0 = Monomial('x', idx=(0,), shape=(3,), label='dummy variable')
+        x_1 = Monomial('x', idx=(1,), shape=(3,), label='dummy variable')
+        x_2 = Monomial('x', idx=(2,), shape=(3,), label='dummy variable')
         # multiplication with numbers
         v = PosyArray([2, 2, 3]).T
         p = PosyArray([2*x_0, 2*x_1, 3*x_2]).T
@@ -42,9 +42,9 @@ class t_PosyArray(unittest.TestCase):
 
     def test_constraint_gen(self):
         x = VectorVariable(3, 'x', label='dummy variable')
-        x_0 = Monomial('x', idx=0, length=3, label='dummy variable')
-        x_1 = Monomial('x', idx=1, length=3, label='dummy variable')
-        x_2 = Monomial('x', idx=2, length=3, label='dummy variable')
+        x_0 = Monomial('x', idx=(0,), shape=(3,), label='dummy variable')
+        x_1 = Monomial('x', idx=(1,), shape=(3,), label='dummy variable')
+        x_2 = Monomial('x', idx=(2,), shape=(3,), label='dummy variable')
         v = PosyArray([1, 2, 3]).T
         p = [x_0, x_1/2, x_2/3]
         self.assertEqual(x <= v, p)
