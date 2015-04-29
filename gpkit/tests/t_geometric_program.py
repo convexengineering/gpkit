@@ -82,9 +82,9 @@ class T_GP(unittest.TestCase):
         gp1 = GP(1/Mdd, [1 >= 5*Mdd + 0.5, Mdd >= 0.00001])
         gp2 = GP(1/Mdd, [1 >= 5*Mdd + 0.5])
         gp3 = GP(1/Mdd, [1 >= 5*Mdd + Cl, Mdd >= 0.00001])
-        sol1 = gp1.solve(printing=False)
-        sol2 = gp2.solve(printing=False)
-        sol3 = gp3.solve(printing=False)
+        sol1 = gp1.solve(printing=False, solver=self.solver)
+        sol2 = gp2.solve(printing=False, solver=self.solver)
+        sol3 = gp3.solve(printing=False, solver=self.solver)
         self.assertEqual(gp1.A, CootMatrix(row=[0, 1, 2],
                                            col=[0, 0, 0],
                                            data=[-1, 1, -1]))
@@ -125,7 +125,7 @@ class T_GP(unittest.TestCase):
         eqns = [L >= 1, W >= 1,
                 L*W == 10]
         obj = gpkit.composite_objective(L+W, W**-1 * L**-3, sub={L: 1, W: 1})
-        sol = GP(obj, eqns).solve(printing=False)
+        sol = GP(obj, eqns).solve(printing=False, solver=self.solver)
         a = sol["sensitivities"]["variables"]["w_{CO}"].flatten()
         b = np.array([0, 0.98809322, 0.99461408, 0.99688676, 0.99804287,
                       0.99874303, 0.99921254, 0.99954926, 0.99980255, 1])
@@ -194,12 +194,12 @@ class T_SP(unittest.TestCase):
                 L*W >= A,
                 Obj >= a*(2*L + 2*W) + (1-a)*(12 * W**-1 * L**-3)]
         sp = SP(Obj, eqns)
-        spsol = sp.localsolve(printing=False)
+        spsol = sp.localsolve(printing=False, solver=self.solver)
         gpkit.disable_signomials()
         # now solve as GP
         eqns[-1] = (Obj >= a_val*(2*L + 2*W) + (1-a_val)*(12 * W**-1 * L**-3))
         gp = GP(Obj, eqns)
-        gpsol = gp.solve(printing=False)
+        gpsol = gp.solve(printing=False, solver=self.solver)
         self.assertAlmostEqual(spsol['cost'], gpsol['cost'])
 
 
