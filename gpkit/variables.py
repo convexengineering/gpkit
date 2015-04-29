@@ -116,7 +116,7 @@ class VectorVariable(PosyArray):
             descr["name"] = "\\fbox{%s}" % VarKey.new_unnamed_id()
 
         vl = []
-        it = np.nditer(np.zeros(shape), flags=['multi_index', 'refs_ok'])
+        it = np.nditer(np.empty(shape), flags=['multi_index', 'refs_ok'])
         while not it.finished:
             i = it.multi_index
             it.iternext()
