@@ -10,13 +10,24 @@ NDIGS = {"cvxopt": 5, "mosek": 7, "mosek_cli": 5}
 # name: decimal places of accuracy
 
 
-class T_GP(unittest.TestCase):
-    name = "T_GP_"
+class TestGP(unittest.TestCase):
+    """
+    Test the GP class.
+    This TestCase gets run once for each installed solver.
+    """
+    name = "TestGP_"
     # solver and ndig get set in loop at bottom this file, a bit hacky
     solver = None
     ndig = None
 
     def test_trivial_gp(self):
+        """
+        Create and solve a trivial GP:
+            minimize    x + 2y
+            subject to  xy >= 1
+
+        The global optimum is (x, y) = (sqrt(2), 1/sqrt(2)).
+        """
         x = Monomial('x')
         y = Monomial('y')
         prob = GP(cost=(x + 2*y),
@@ -30,6 +41,7 @@ class T_GP(unittest.TestCase):
                                self.ndig)
 
     def test_trivial_vector_gp(self):
+        """Create and solve a trivial GP with VectorVariables"""
         x = VectorVariable(2, 'x')
         y = VectorVariable(2, 'y')
         prob = GP(cost=(sum(x) + 2*sum(y)),
@@ -79,7 +91,7 @@ class T_GP(unittest.TestCase):
         sf = simpleflight_generator()
         self.simpleflight_test_core(sf.gp())
 
-    def test_Mddtest(self):
+    def test_mdd_example(self):
         Cl = Variable("Cl", 0.5, "-", "Lift Coefficient")
         Mdd = Variable("Mdd", "-", "Drag Divergence Mach Number")
         gp1 = GP(1/Mdd, [1 >= 5*Mdd + 0.5, Mdd >= 0.00001])
@@ -116,13 +128,13 @@ class T_GP(unittest.TestCase):
 
     def test_zeroing(self):
         L = Variable("L")
-        k = gpkit.Variable("k", 0)
+        k = Variable("k", 0)
         gpkit.enable_signomials()
         sol = GP(1/L, [L-5*k <= 10]).solve(printing=False, solver=self.solver)
         self.assertAlmostEqual(sol(L), 10, self.ndig)
         gpkit.disable_signomials()
 
-    def test_CO(self):
+    def test_composite_objective(self):
         L = Variable("L")
         W = Variable("W")
         eqns = [L >= 1, W >= 1,
@@ -147,8 +159,9 @@ class T_GP(unittest.TestCase):
         self.assertAlmostEqual(sol["cost"], 12)
 
 
-class T_SP(unittest.TestCase):
-    name = "T_SP_"
+class TestSP(unittest.TestCase):
+    """test case for SP class -- gets run for each installed solver"""
+    name = "TestSP_"
     solver = None
     ndig = None
 
@@ -156,10 +169,10 @@ class T_SP(unittest.TestCase):
         x = Variable('x')
         y = Variable('y')
         gpkit.enable_signomials()
-        sp = gpkit.SP(x, [x >= 1-y, y <= 0.1])
+        sp = SP(x, [x >= 1-y, y <= 0.1])
         sol = sp.localsolve(printing=False, solver=self.solver)
         self.assertAlmostEqual(sol["variables"]["x"], 0.9, self.ndig)
-        sp = gpkit.SP(x, [x >= 0.1, x+y >= 1, y <= 0.1])
+        sp = SP(x, [x >= 0.1, x+y >= 1, y <= 0.1])
         sol = sp.localsolve(printing=False, solver=self.solver)
         self.assertAlmostEqual(sol["variables"]["x"], 0.9, self.ndig)
         gpkit.disable_signomials()
@@ -176,7 +189,7 @@ class T_SP(unittest.TestCase):
                 L*W == 10*gpkit.units.m**2,
                 Obj >= a*(2*L+2*W)*gpkit.units.m**-5 + (1-a)*(12*W**-1*L**-3)]
 
-        sp = gpkit.SP(Obj, eqns)
+        sp = SP(Obj, eqns)
         if self.solver != "mosek_cli":
             # the mosek_cli solver takes 5s on this problem!
             sol = sp.localsolve(printing=False, solver=self.solver)
@@ -187,9 +200,9 @@ class T_SP(unittest.TestCase):
     def test_issue180(self):
         gpkit.enable_signomials()
         L = Variable("L")
-        Lmax = gpkit.Variable("L_{max}", 10)
+        Lmax = Variable("L_{max}", 10)
         W = Variable("W")
-        Wmax = gpkit.Variable("W_{max}", 10)
+        Wmax = Variable("W_{max}", 10)
         A = Variable("A", 10)
         Obj = Variable("Obj")
         a_val = 0.01
@@ -208,7 +221,7 @@ class T_SP(unittest.TestCase):
         self.assertAlmostEqual(spsol['cost'], gpsol['cost'])
 
 
-TEST_CASES = [T_GP, T_SP]
+TEST_CASES = [TestGP, TestSP]
 
 TESTS = []
 for testcase in TEST_CASES:

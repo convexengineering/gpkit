@@ -4,16 +4,16 @@ from gpkit import Monomial, Variable, VectorVariable, units, GP, link
 from gpkit.small_scripts import mag
 
 
-class T_NomialSubs(unittest.TestCase):
+class TestNomialSubs(unittest.TestCase):
 
-    def test_Basic(self):
+    def test_basic(self):
         x = Variable("x")
         p = x**2
         self.assertEqual(p.sub(x, 3), 9)
         self.assertEqual(p.sub(x.varkeys["x"], 3), 9)
         self.assertEqual(p.sub("x", 3), 9)
 
-    def test_StringMutation(self):
+    def test_string_mutation(self):
         x = Variable("x", "m")
         descr_before = list(x.exp)[0].descr
         y = x.sub("x", "y")
@@ -28,7 +28,7 @@ class T_NomialSubs(unittest.TestCase):
                                    1.0)
         self.assertEqual(x.sub("x", x), x)
 
-    def test_ScalarUnits(self):
+    def test_scalar_units(self):
         x = Variable("x", "m")
         xvk = list(x.varkeys.values())[0]
         descr_before = list(x.exp)[0].descr
@@ -45,7 +45,7 @@ class T_NomialSubs(unittest.TestCase):
             z = Variable("z", "s")
             self.assertRaises(ValueError, y.sub, y, z)
 
-    def test_Vector(self):
+    def test_vector(self):
         x = Variable("x")
         y = Variable("y")
         z = VectorVariable(2, "z")
@@ -60,8 +60,8 @@ class T_NomialSubs(unittest.TestCase):
             self.assertAlmostEqual(mag(xs.sub(x_, [1, 2, 3]).c), 3.0)
 
 
-class T_GPSubs(unittest.TestCase):
-    def test_VectorSweep(self):
+class TestGPSubs(unittest.TestCase):
+    def test_vector_sweep(self):
         x = Variable("x")
         y = VectorVariable(2, "y")
         gp = GP(x, [x >= y.prod()])
@@ -77,7 +77,7 @@ class T_GPSubs(unittest.TestCase):
             gp.sub(y, ('sweep', [[2, 3], [5, 7], [9, 11], [13, 15]]))
         self.assertRaises(ValueError, bad_sub, gp)
 
-    def test_VectorInit(self):
+    def test_vector_init(self):
         N = 6
         Weight = 50000
         xi_dist = 6*Weight/float(N)*(
@@ -98,7 +98,6 @@ class T_GPSubs(unittest.TestCase):
         self.assertTrue(all(abs(a-b)/(a+b) < 1e-7))
 
     def test_simpleaircraft(self):
-        mon = Variable
 
         class DragModel(GP):
             def setup(self):
@@ -132,19 +131,19 @@ class T_GPSubs(unittest.TestCase):
 
         class StructModel(GP):
             def setup(self):
-                N_ult = mon("N_{ult}", 3.8, "-", "ultimate load factor")
-                tau = mon("\\tau", 0.12, "-",
+                N_ult = Variable("N_{ult}", 3.8, "-", "ultimate load factor")
+                tau = Variable("\\tau", 0.12, "-",
                           "airfoil thickness to chord ratio")
-                W_w = mon("W_w", "N", "wing weight")
-                W = mon("W", "N", "total aircraft weight")
+                W_w = Variable("W_w", "N", "wing weight")
+                W = Variable("W", "N", "total aircraft weight")
 
                 if type(W.varkeys["W"].descr["units"]) != str:
-                    W_0 = mon("W_0", 4.94, "kN",
+                    W_0 = Variable("W_0", 4.94, "kN",
                               "aircraft weight excluding wing")
                     W_w_strc = 8.71e-5*N_ult*A**1.5*(W_0*W*S)**0.5/tau/units.m
                     W_w_surf = (45.24*units.Pa) * S
                 else:
-                    W_0 = mon("W_0", 4940, "N",
+                    W_0 = Variable("W_0", 4940, "N",
                               "aircraft weight excluding wing")
                     W_w_strc = 8.71e-5*(N_ult*A**1.5*(W_0*W*S)**0.5)/tau
                     W_w_surf = 45.24 * S
@@ -152,19 +151,19 @@ class T_GPSubs(unittest.TestCase):
                 return (Monomial(1),
                         [W >= W_0 + W_w, W_w >= W_w_surf + W_w_strc])
 
-        rho = mon("\\rho", 1.23, "kg/m^3", "density of air")
-        mu = mon("\\mu", 1.78e-5, "kg/m/s", "viscosity of air")
-        C_Lmax = mon("C_{L,max}", 1.5, "-", "max CL with flaps down")
-        V_min = mon("V_{min}", 22, "m/s", "takeoff speed")
-        D = mon("D", "N", "total drag force")
-        A = mon("A", "-", "aspect ratio")
-        S = mon("S", "m^2", "total wing area")
-        C_D = mon("C_D", "-", "Drag coefficient of wing")
-        C_L = mon("C_L", "-", "Lift coefficent of wing")
-        Re = mon("Re", "-", "Reynold's number")
-        W = mon("W", "N", "total aircraft weight")
-        V = mon("V", "m/s", "cruising speed")
-        dum = mon("dum", "-", "dummy variable")
+        rho = Variable("\\rho", 1.23, "kg/m^3", "density of air")
+        mu = Variable("\\mu", 1.78e-5, "kg/m/s", "viscosity of air")
+        C_Lmax = Variable("C_{L,max}", 1.5, "-", "max CL with flaps down")
+        V_min = Variable("V_{min}", 22, "m/s", "takeoff speed")
+        D = Variable("D", "N", "total drag force")
+        A = Variable("A", "-", "aspect ratio")
+        S = Variable("S", "m^2", "total wing area")
+        C_D = Variable("C_D", "-", "Drag coefficient of wing")
+        C_L = Variable("C_L", "-", "Lift coefficent of wing")
+        Re = Variable("Re", "-", "Reynold's number")
+        W = Variable("W", "N", "total aircraft weight")
+        V = Variable("V", "m/s", "cruising speed")
+        dum = Variable("dum", "-", "dummy variable")
 
         equations = [D >= 0.5*rho*S*C_D*V**2,
                      Re <= (rho/mu)*V*(S/A)**0.5,
@@ -173,7 +172,7 @@ class T_GPSubs(unittest.TestCase):
                      dum >= 1,
                      dum <= 2, ]
 
-        lol = mon("W", "N", "lol")
+        lol = Variable("W", "N", "lol")
 
         gp = GP(D, equations)
         gpl = link([gp, StructModel(name="struct"), DragModel(name="drag")],
@@ -205,7 +204,7 @@ class T_GPSubs(unittest.TestCase):
         b = sorted_solve_array(sol)
         self.assertTrue(all(abs(a-b)/(a+b) < 1e-7))
 
-TESTS = [T_NomialSubs, T_GPSubs]
+TESTS = [TestNomialSubs, TestGPSubs]
 
 if __name__ == '__main__':
     from gpkit.tests.run_tests import run_tests

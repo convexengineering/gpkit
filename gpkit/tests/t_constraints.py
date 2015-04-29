@@ -1,9 +1,11 @@
+"""Unit tests for classes Constraint and MonoEQConstraint"""
 import unittest
 from gpkit import Variable
 from gpkit.nomials import Constraint
 
 
-class T_Constraint(unittest.TestCase):
+class TestConstraint(unittest.TestCase):
+    """Tests for Constraint class"""
 
     def test_additive_scalar(self):
         x = Variable('x')
@@ -22,13 +24,14 @@ class T_Constraint(unittest.TestCase):
         self.assertRaises(ValueError, constr)
 
 
-class T_MonoEQConstraint(unittest.TestCase):
+class TestMonoEQConstraint(unittest.TestCase):
+    """Test monomial equality constraint class"""
 
     def test_placeholder(self):
         pass
 
 
-TESTS = [T_Constraint, T_MonoEQConstraint]
+TESTS = [TestConstraint, TestMonoEQConstraint]
 
 if __name__ == '__main__':
     from gpkit.tests.run_tests import run_tests

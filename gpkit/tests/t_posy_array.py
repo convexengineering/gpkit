@@ -1,9 +1,11 @@
+"""Tests for PosyArray class"""
 import unittest
 from gpkit import Monomial, Posynomial, PosyArray, VectorVariable
 import gpkit
 
 
-class T_PosyArray(unittest.TestCase):
+class TestPosyArray(unittest.TestCase):
+    """TestCase for the PosyArray class"""
 
     def test_array_mult(self):
         x = VectorVariable(3, 'x', label='dummy variable')
@@ -80,7 +82,7 @@ class T_PosyArray(unittest.TestCase):
         self.assertEqual((xL + xR)[1:-1], x[2:] + x[:-2])
 
 
-TESTS = [T_PosyArray]
+TESTS = [TestPosyArray]
 
 if __name__ == '__main__':
     from gpkit.tests.run_tests import run_tests

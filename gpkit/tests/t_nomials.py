@@ -1,10 +1,12 @@
+"""Tests for Monomial, Posynomial, and Signomial classes"""
 import math
 import unittest
 from gpkit import Monomial, Posynomial, Signomial
 from gpkit import enable_signomials, disable_signomials
 
 
-class T_Monomial(unittest.TestCase):
+class TestMonomial(unittest.TestCase):
+    """TestCase for the Monomial class"""
 
     def setUp(self):
         pass
@@ -146,7 +148,8 @@ class T_Monomial(unittest.TestCase):
                          4*math.log(c1) + 3*math.log(c2))
 
 
-class T_Signomial(unittest.TestCase):
+class TestSignomial(unittest.TestCase):
+    """TestCase for the Signomial class"""
 
     def test_init(self):
         x = Monomial('x')
@@ -158,7 +161,8 @@ class T_Signomial(unittest.TestCase):
         self.assertRaises(TypeError, lambda: x-y)
 
 
-class T_Posynomial(unittest.TestCase):
+class TestPosynomial(unittest.TestCase):
+    """TestCase for the Posynomial class"""
 
     def test_init(self):
         x = Monomial('x')
@@ -185,7 +189,7 @@ class T_Posynomial(unittest.TestCase):
         self.assertEqual(p.varlocs['g'], p.varlocs['h'])
         self.assertNotEqual(p.varlocs['g'], p.varlocs['v'])
         self.assertEqual(len(p.varlocs['m']), 2)
-        self.assertTrue(all(len(p.varlocs[key]) == 1 for key in ('ghv')))
+        self.assertTrue(all(len(p.varlocs[key]) == 1 for key in 'ghv'))
 
     def test_simplification(self):
         x = Monomial('x')
@@ -226,7 +230,7 @@ class T_Posynomial(unittest.TestCase):
         p = 4*x + y
         self.assertEqual(p/3, p/3.)
         equiv1 = all((p/3).cs == [1./3., 4./3.])
-        equiv2= all((p/3).cs == [4./3., 1./3.])
+        equiv2 = all((p/3).cs == [4./3., 1./3.])
         self.assertTrue(equiv1 or equiv2)
 
     def test_diff(self):
@@ -248,7 +252,7 @@ class T_Posynomial(unittest.TestCase):
 
 # test substitution
 
-TESTS = [T_Posynomial, T_Monomial, T_Signomial]
+TESTS = [TestPosynomial, TestMonomial, TestSignomial]
 
 if __name__ == '__main__':
     from gpkit.tests.run_tests import run_tests
