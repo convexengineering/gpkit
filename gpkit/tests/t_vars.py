@@ -113,7 +113,43 @@ class T_VectorVariable(unittest.TestCase):
         self.assertTrue(ArrayVariable is VectorVariable)
 
 
+class TestArrayVariable(unittest.TestCase):
+
+    def test_delete_me_when_below_tests_pass(self):
+        pass
+
+#   # TESTS BELOW CURRENTLY FAIL, SEE ISSUE 241
+#     def test_shape(self):
+#         x = ArrayVariable((2, 3), 'x')
+#         self.assertEqual(x.shape, (2, 3))
+#
+#     def test_ndim(self):
+#         x = ArrayVariable((3, 4), 'x')
+#         self.assertEqual(x.ndim, 2)
+#
+#     def test_left_right(self):
+#         x = ArrayVariable((2, 3), 'x')
+#         self.assertRaises(NotImplementedError, lambda: x.left)
+#         self.assertRaises(NotImplementedError, lambda: x.right)
+#
+#     def test_sum(self):
+#         x = ArrayVariable((2, 3), 'x')
+#         rowsums = x.sum(axis=1)
+#         self.assertTrue(isinstance(rowsums, PosyArray))
+#         self.assertEqual(len(rowsums), 2)
+#         colsums = x.sum(axis=0)
+#         self.assertTrue(isinstance(colsums, PosyArray))
+#         self.assertEqual(len(colsums), 3)
+#
+#     def test_str(self):
+#         x = ArrayVariable((2, 4), 'x')
+#         strx = str(x)
+#         self.assertEqual(strx.count("["), 3)
+#         self.assertEqual(strx.count("]"), 3)
+
+
 TESTS = [T_VarKey, T_Variable, T_VectorVariable]
+TESTS += [TestArrayVariable]    # avoiding merge conflict -- fix this
 
 if __name__ == '__main__':
     from gpkit.tests.run_tests import run_tests
