@@ -77,13 +77,16 @@ class VectorVariable(PosyArray):
     where $name is the vector's name and i is the VarKey's index.
     """
 
-    def __new__(cls, length, *args, **descr):
+    def __new__(cls, shape, *args, **descr):
         cls = PosyArray
 
         if "idx" in descr:
             raise KeyError("the description field 'idx' is reserved")
 
-        descr["length"] = length
+        if isinstance(shape, Numbers):
+            shape = (shape,)
+
+        descr["shape"] = shape
 
         for arg in args:
             if isinstance(arg, Strings) and "name" not in descr:
@@ -97,17 +100,31 @@ class VectorVariable(PosyArray):
                 descr["label"] = arg
 
         values = descr.pop("value", [])
-        if len(values) and len(values) != length:
-            raise ValueError("values length must be the same as the vector's.")
+        valuetype = ""
+        if len(values):
+            if hasattr(values, "shape"):
+                shape_match = values.shape == shape
+                valuetype = "array"
+            else:
+                shape_match = len(shape) == 1 and len(values) == shape[0]
+                valuetype = "list"
+            if not shape_match:
+                raise ValueError("the value's shape must be the same"
+                                 " as the vector's.")
 
         if "name" not in descr:
             descr["name"] = "\\fbox{%s}" % VarKey.new_unnamed_id()
 
         vl = []
-        for i in range(length):
+        it = np.nditer(np.empty(shape), flags=['multi_index', 'refs_ok'])
+        while not it.finished:
+            i = it.multi_index
+            it.iternext()
             descr.update({"idx": i})
-            if len(values):
+            if valuetype == "array":
                 descr.update({"value": values[i]})
+            elif valuetype == "list":
+                descr.update({"value": values[i[0]]})
             vl.append(Variable(**descr))
 
         obj = np.asarray(vl).view(cls)
@@ -116,3 +133,6 @@ class VectorVariable(PosyArray):
         obj._hashvalue = hash(VarKey(**obj.descr))
 
         return obj
+
+
+ArrayVariable = VectorVariable

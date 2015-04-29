@@ -8,9 +8,23 @@
 """
 
 import os
+import shutil
+import errno
+import stat
 from math import exp
 from subprocess import check_output
 from .. import settings
+
+
+def errorRemoveReadonly(func, path, exc):
+    excvalue = exc[1]
+    if func in (os.rmdir, os.remove) and excvalue.errno == errno.EACCES:
+        # change the file to be readable,writable,executable: 0777
+        os.chmod(path, stat.S_IRWXU | stat.S_IRWXG | stat.S_IRWXO)
+        # retry
+        func(path)
+    else:
+        pass
 
 
 def imize_fn(filename):
@@ -94,9 +108,9 @@ def imize_fn(filename):
             assert_line(f, "INDEX   ACTIVITY\n")
             dual_vals = read_vals(f)
 
-        os.remove(filename)
-        os.remove(filename+".sol")
-        os.removedirs("gpkit_tmp")
+        shutil.rmtree("gpkit_tmp", ignore_errors=False,
+                      onerror=errorRemoveReadonly)
+
         return dict(status="optimal",
                     objective=objective_val,
                     primal=primal_vals,

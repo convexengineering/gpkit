@@ -77,9 +77,8 @@ def disable_signomials():
     global _SIGNOMIALS_ENABLED
     _SIGNOMIALS_ENABLED = False
 
-
 from .nomials import Monomial, Posynomial, Signomial
-from .variables import Variable, VectorVariable
+from .variables import Variable, VectorVariable, ArrayVariable
 from .varkey import VarKey
 from .posyarray import PosyArray
 from .geometric_program import GP

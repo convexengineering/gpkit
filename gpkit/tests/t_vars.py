@@ -97,9 +97,9 @@ class T_VectorVariable(unittest.TestCase):
 
         # test 2
         x = VectorVariable(3, 'x', label='dummy variable')
-        x_0 = Monomial('x', idx=0, length=3, label='dummy variable')
-        x_1 = Monomial('x', idx=1, length=3, label='dummy variable')
-        x_2 = Monomial('x', idx=2, length=3, label='dummy variable')
+        x_0 = Monomial('x', idx=(0,), shape=(3,), label='dummy variable')
+        x_1 = Monomial('x', idx=(1,), shape=(3,), label='dummy variable')
+        x_2 = Monomial('x', idx=(2,), shape=(3,), label='dummy variable')
         x2 = PosyArray([x_0, x_1, x_2])
         self.assertEqual(x, x2)
 
