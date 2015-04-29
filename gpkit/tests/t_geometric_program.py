@@ -10,8 +10,8 @@ NDIGS = {"cvxopt": 5, "mosek": 7, "mosek_cli": 5}
 # name: decimal places of accuracy
 
 
-class t_GP(unittest.TestCase):
-    name = "t_GP_"
+class T_GP(unittest.TestCase):
+    name = "T_GP_"
 
     def test_trivial_gp(self):
         x = Monomial('x')
@@ -72,7 +72,7 @@ class t_GP(unittest.TestCase):
             self.assertTrue(abs(1-sol_rat) < 1e-2)
 
     def test_simpleflight(self):
-        from simpleflight import simpleflight_generator
+        from .simpleflight import simpleflight_generator
         sf = simpleflight_generator()
         self.simpleflight_test_core(sf.gp())
 
@@ -91,9 +91,15 @@ class t_GP(unittest.TestCase):
         self.assertEqual(gp2.A, CootMatrix(row=[0, 1],
                                            col=[0, 0],
                                            data=[-1, 1]))
-        self.assertEqual(gp3.A, CootMatrix(row=[0, 2, 3],
-                                           col=[0, 0, 0],
-                                           data=[-1, 1, -1]))
+        # order of variables with a posynomial is not stable
+        #   (though monomial order is)
+        equiv1 = gp3.A == CootMatrix(row=[0, 2, 3],
+                                     col=[0, 0, 0],
+                                     data=[-1, 1, -1])
+        equiv2 = gp3.A == CootMatrix(row=[0, 1, 3],
+                                     col=[0, 0, 0],
+                                     data=[-1, 1, -1])
+        self.assertTrue(equiv1 or equiv2)
         self.assertAlmostEqual(sol1(Mdd), sol2(Mdd))
         self.assertAlmostEqual(sol1(Mdd), sol3(Mdd))
         self.assertAlmostEqual(sol2(Mdd), sol3(Mdd))
@@ -126,8 +132,8 @@ class t_GP(unittest.TestCase):
         self.assertTrue((abs(a-b)/(a+b+1e-7) < 1e-7).all())
 
 
-class t_SP(unittest.TestCase):
-    name = "t_SP_"
+class T_SP(unittest.TestCase):
+    name = "T_SP_"
 
     def test_trivial_sp(self):
         x = Variable('x')
@@ -185,7 +191,7 @@ class t_SP(unittest.TestCase):
         self.assertAlmostEqual(spsol['cost'], gpsol['cost'])
 
 
-TEST_CASES = [t_GP, t_SP]
+TEST_CASES = [T_GP, T_SP]
 
 TESTS = []
 for testcase in TEST_CASES:

@@ -56,9 +56,14 @@ def run(xmloutput=False):
     else:
         unittest.TextTestRunner(verbosity=2).run(suite)
 
-    print "\n#################################################################"
-    print "Running with units disabled:"
+    print("\n######################################################################")
+    print("Running with units disabled:")
     gpkit.disable_units()
+
+    suite = unittest.TestSuite()
+    loader = unittest.TestLoader()
+    for t in TESTS:
+        suite.addTests(loader.loadTestsFromTestCase(t))
 
     if xmloutput:
         xmlrunner.XMLTestRunner(output='test_reports_nounits').run(suite)

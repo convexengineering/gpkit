@@ -36,7 +36,7 @@ try:
     assert len(c) > 0
     pool = c[:]
     pool.use_dill()
-    print "Using parallel execution of sweeps on %s clients" % len(c)
+    print("Using parallel execution of sweeps on %s clients" % len(c))
 except:
     pool = None
 
@@ -325,9 +325,9 @@ class GP(Model):
         end = " with default settings."
         try:
             self.solve(solver, printing, skipfailures)
-            print self.__class__.__name__, "solved successfully" + end
-        except Exception, e:
-            print self.__class__.__name__, "failed to solve" + end
+            print(self.__class__.__name__, "solved successfully" + end)
+        except Exception as e:
+            print(self.__class__.__name__, "failed to solve" + end)
             self.checkbounds()
             raise(e)
 
@@ -415,9 +415,10 @@ class GP(Model):
         self.presweep = self.last
 
         if len(self.sweep) == 1:
-            sweep_grids = np.array(self.sweep.values())
+            sweep_grids = np.array(list(self.sweep.values()))
         else:
-            sweep_grids = np.meshgrid(*self.sweep.values())
+            sweep_grids = np.meshgrid(*list(self.sweep.values()))
+
         N_passes = sweep_grids[0].size
         sweep_vects = {var: grid.reshape(N_passes)
                        for (var, grid) in zip(self.sweep, sweep_grids)}
@@ -486,7 +487,8 @@ class GP(Model):
 
         if result['status'] not in ["optimal", "OPTIMAL"]:
             if allownonoptimal:
-                print "It don't work! Letting it pass. This time."
+                print("Nonoptimal result returned because 'allownonoptimal'"
+                      " flag was set to True")
             else:
                 raise RuntimeWarning("final status of solver '%s' was '%s' not "
                                      "'optimal'" % (self.solver, result['status']))
@@ -560,15 +562,20 @@ class GP(Model):
                 else:
                     veckey = VarKey(**descr)
 
-                if veckey not in variables:
+                try:
+                    variables[veckey][idx] = variables[var]
+                    sensitivities["variables"][veckey][var.descr["idx"]] = \
+                        sensitivities["variables"][var]
+                except KeyError:
                     variables[veckey] = np.empty(var.descr["shape"]) + np.nan
-                variables[veckey][idx] = variables.pop(var)
+                    sensitivities["variables"][veckey] = np.empty(var.descr["shape"]) + np.nan
 
-                if veckey not in sensitivities["variables"]:
-                    sensitivities["variables"][veckey] = \
-                        np.empty(var.descr["shape"]) + np.nan
-                sensitivities["variables"][veckey][var.descr["idx"]] = \
-                    sensitivities["variables"].pop(var)
+                    variables[veckey][idx] = variables[var]
+                    sensitivities["variables"][veckey][var.descr["idx"]] = \
+                        sensitivities["variables"][var]
+
+                del variables[var]
+                del sensitivities["variables"][var]
 
         constants = {var: val for var, val in variables.items()
                      if var in self.substitutions}

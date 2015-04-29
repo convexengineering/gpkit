@@ -6,7 +6,7 @@ from gpkit.geometric_program import GPSolutionArray
 from gpkit import settings
 
 
-class t_GPSolutionArray(unittest.TestCase):
+class T_GPSolutionArray(unittest.TestCase):
 
     def test_call(self):
         A = Variable('A', '-', 'Test Variable')
@@ -73,7 +73,7 @@ class t_GPSolutionArray(unittest.TestCase):
             tab = sol.table()
             self.assertTrue(isinstance(tab, str))
 
-TESTS = [t_GPSolutionArray]
+TESTS = [T_GPSolutionArray]
 
 if __name__ == '__main__':
     from gpkit.tests.run_tests import run_tests

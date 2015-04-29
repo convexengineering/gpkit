@@ -1,10 +1,9 @@
 import numpy as np
-from itertools import count
-
 from .posyarray import PosyArray
 from .small_scripts import mag
 from .small_scripts import isequal
 from .small_classes import Strings, Numbers
+from .small_classes import count
 
 from . import units as ureg
 from . import DimensionalityError
@@ -27,7 +26,7 @@ class VarKey(object):
     -------
     VarKey with the given name and descr.
     """
-    new_unnamed_id = count().next
+    new_unnamed_id = count()
 
     def __init__(self, k=None, **kwargs):
         self.descr = kwargs
@@ -41,7 +40,7 @@ class VarKey(object):
             self.descr.update(k.descr)
         elif hasattr(k, "c") and hasattr(k, "exp"):
             if mag(k.c) == 1 and len(k.exp) == 1:
-                var = k.exp.keys()[0]
+                var = list(k.exp)[0]
                 self.name = var.name
                 self.descr.update(var.descr)
             else:
@@ -124,7 +123,7 @@ class VarKey(object):
                 i = it.multi_index
                 it.iternext()
                 p = other[i]
-                v = VarKey(p.exp.keys()[0])
+                v = VarKey(list(p.exp)[0])
                 if v.descr.pop("idx", None) != i:
                     return False
                 if v != self:

@@ -25,7 +25,7 @@ def composite_objective(*objectives, **kwargs):
     else:
         normalization = [1]*n
 
-    sweeps = zip(["sweep"]*(n-1), sweeps)
+    sweeps = list(zip(["sweep"]*(n-1), sweeps))
     ws = VectorVariable(n-1, "w_{CO}", sweeps, "-")
     w_s = []
     for w in ws:
@@ -74,4 +74,4 @@ def getvarstr(var):
         if hasattr(var, "_cmpstr"):
             return var._cmpstr
         else:
-            return var.exp.keys()[0]._cmpstr
+            return list(var.exp)[0]._cmpstr

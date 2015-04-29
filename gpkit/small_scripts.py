@@ -115,8 +115,9 @@ def locate_vars(exps):
             if var not in varkeys[var.name]:
                 varkeys[var.name].append(var)
 
-    for name, varl in varkeys.items():
-        if "shape" in varl[0].descr:
+    varkeys_ = dict(varkeys)
+    for name, varl in varkeys_.items():
+        if "length" in varl[0].descr:
             # vector var
             newlist = np.zeros(varl[0].descr["shape"], dtype="object")
             for var in varl:
@@ -153,7 +154,7 @@ def sort_and_simplify(exps, cs):
         if c == 0 and len(matches) > 1:
             del matches[exp]
 
-    cs_ = matches.values()
+    cs_ = list(matches.values())
     if isinstance(cs_[0], Quantity):
         units = cs_[0]/cs_[0].magnitude
         cs_ = [c.to(units).magnitude for c in cs_] * units

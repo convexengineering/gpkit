@@ -42,27 +42,40 @@ def getsubs(varkeys, varlocs, substitutions):
 
 def vectorsub(subs, var, sub, varset):
     "Vectorized substitution via vecmons and Variables."
-    try:
-        isvector = "shape" in var.descr and "idx" not in var.descr
-        var = VectorVariable(**var.descr)
-    except:
-        try:
-            assert len(var)
-            isvector = True
-        except:
-            isvector = False
+
+    if hasattr(var, "__len__"):
+        isvector = True
+    elif hasattr(var, "descr"):
+        isvector = "shape" in var.descr
+    else:
+        isvector = False
 
     if isvector:
         if isinstance(sub, VarKey):
             sub = VectorVariable(**sub.descr)
-        if len(var) == len(sub):
-            for i in range(len(var)):
-                v = VarKey(var[i])
-                if v in varset:
-                    subs[v] = sub[i]
+
+        if hasattr(sub, "__len__"):
+            if hasattr(sub, "shape"):
+                isvector = bool(sub.shape)
         else:
-            raise ValueError("tried substituting %s for %s, but their"
-                             " lengths were unequal." % (sub, var))
+            isvector = False
+
+    if isvector:
+        if not hasattr(var, "__len__"):
+            var = [var]
+        if isinstance(sub, np.ndarray):
+            subtype = "array"
+        else:
+            subtype = "list"
+        #print sub
+        for var_ in var:
+            v = VarKey(var_)
+            if subtype == "array":
+                i = v.descr["idx"]
+            else:
+                i = v.descr["idx"][0]
+            if v in varset:
+                subs[v] = sub[i]
     elif var in varset:
         subs[var] = sub
 
