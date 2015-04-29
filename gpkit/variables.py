@@ -115,8 +115,8 @@ class VectorVariable(PosyArray):
         if "name" not in descr:
             descr["name"] = "\\fbox{%s}" % VarKey.new_unnamed_id()
 
-        vl = []
-        it = np.nditer(np.empty(shape), flags=['multi_index', 'refs_ok'])
+        vl = np.empty(shape, dtype="object")
+        it = np.nditer(vl, flags=['multi_index', 'refs_ok'])
         while not it.finished:
             i = it.multi_index
             it.iternext()
@@ -125,10 +125,10 @@ class VectorVariable(PosyArray):
                 descr.update({"value": values[i]})
             elif valuetype == "list":
                 descr.update({"value": values[i[0]]})
-            vl.append(Variable(**descr))
+            vl[i] = Variable(**descr)
 
         obj = np.asarray(vl).view(cls)
-        obj.descr = dict(list(vl[0].exp)[0].descr)
+        obj.descr = descr
         obj.descr.pop("idx", None)
         obj._hashvalue = hash(VarKey(**obj.descr))
 
