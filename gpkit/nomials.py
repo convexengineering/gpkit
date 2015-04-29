@@ -456,7 +456,10 @@ class Constraint(Posynomial):
         from . import _SIGNOMIALS_ENABLED
 
         if _SIGNOMIALS_ENABLED and not isinstance(p2, Monomial):
-            p = (p1 - p2)/p1.units + 1.0
+            if p1.units:
+                p = (p1 - p2)/p1.units + 1.0
+            else:
+                p = (p1 - p2) + 1.0
         else:
             p = p1 / p2
         if isinstance(p.cs, Quantity):
