@@ -131,6 +131,14 @@ class T_GP(unittest.TestCase):
                       0.99874303, 0.99921254, 0.99954926, 0.99980255, 1])
         self.assertTrue((abs(a-b)/(a+b+1e-7) < 1e-7).all())
 
+    def test_singular(self):
+        x = Variable('x')
+        y = Variable('y')
+        gp = GP(y*x, [y*x >= 12])
+        if "mosek" in settings["installed_solvers"]:
+            sol = gp.solve(solver='mosek', printing=False)
+            self.assertAlmostEqual(sol["cost"], 12)
+
 
 class T_SP(unittest.TestCase):
     name = "T_SP_"

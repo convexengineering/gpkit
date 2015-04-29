@@ -67,11 +67,10 @@ class T_GPSolutionArray(unittest.TestCase):
     def test_table(self):
         x = Variable('x')
         y = Variable('y')
-        gp = GP(y*x, [y*x >= 12])
-        if "mosek" in settings["installed_solvers"]:
-            sol = gp.solve(solver='mosek', printing=False)
-            tab = sol.table()
-            self.assertTrue(isinstance(tab, str))
+        gp = GP(x, [x >= 12])
+        sol = gp.solve(solver='mosek', printing=False)
+        tab = sol.table()
+        self.assertTrue(isinstance(tab, str))
 
 TESTS = [T_GPSolutionArray]
 
