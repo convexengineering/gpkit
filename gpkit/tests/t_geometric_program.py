@@ -132,12 +132,16 @@ class T_GP(unittest.TestCase):
         self.assertTrue((abs(a-b)/(a+b+1e-7) < 1e-7).all())
 
     def test_singular(self):
+        """GP with a singular A matrix"""
+        if self.solver == 'cvxopt':
+            # cvxopt can't solve this problem
+            # (see https://github.com/cvxopt/cvxopt/issues/36)
+            return
         x = Variable('x')
         y = Variable('y')
         gp = GP(y*x, [y*x >= 12])
-        if "mosek" in settings["installed_solvers"]:
-            sol = gp.solve(solver='mosek', printing=False)
-            self.assertAlmostEqual(sol["cost"], 12)
+        sol = gp.solve(solver=self.solver, printing=False)
+        self.assertAlmostEqual(sol["cost"], 12)
 
 
 class T_SP(unittest.TestCase):
