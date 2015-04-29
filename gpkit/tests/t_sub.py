@@ -6,14 +6,14 @@ from gpkit.small_scripts import mag
 
 class T_NomialSubs(unittest.TestCase):
 
-    def tesT_Basic(self):
+    def test_Basic(self):
         x = Variable("x")
         p = x**2
         self.assertEqual(p.sub(x, 3), 9)
         self.assertEqual(p.sub(x.varkeys["x"], 3), 9)
         self.assertEqual(p.sub("x", 3), 9)
 
-    def tesT_StringMutation(self):
+    def test_StringMutation(self):
         x = Variable("x", "m")
         descr_before = list(x.exp)[0].descr
         y = x.sub("x", "y")
@@ -28,7 +28,7 @@ class T_NomialSubs(unittest.TestCase):
                                    1.0)
         self.assertEqual(x.sub("x", x), x)
 
-    def tesT_ScalarUnits(self):
+    def test_ScalarUnits(self):
         x = Variable("x", "m")
         xvk = list(x.varkeys.values())[0]
         descr_before = list(x.exp)[0].descr
@@ -45,7 +45,7 @@ class T_NomialSubs(unittest.TestCase):
             z = Variable("z", "s")
             self.assertRaises(ValueError, y.sub, y, z)
 
-    def tesT_Vector(self):
+    def test_Vector(self):
         x = Variable("x")
         y = Variable("y")
         z = VectorVariable(2, "z")
@@ -61,7 +61,7 @@ class T_NomialSubs(unittest.TestCase):
 
 
 class T_GPSubs(unittest.TestCase):
-    def tesT_VectorSweep(self):
+    def test_VectorSweep(self):
         x = Variable("x")
         y = VectorVariable(2, "y")
         gp = GP(x, [x >= y.prod()])
@@ -77,7 +77,7 @@ class T_GPSubs(unittest.TestCase):
             gp.sub(y, ('sweep', [[2, 3], [5, 7], [9, 11], [13, 15]]))
         self.assertRaises(ValueError, bad_sub, gp)
 
-    def tesT_VectorInit(self):
+    def test_VectorInit(self):
         N = 6
         Weight = 50000
         xi_dist = 6*Weight/float(N)*(

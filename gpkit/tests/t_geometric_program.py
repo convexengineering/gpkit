@@ -76,7 +76,7 @@ class T_GP(unittest.TestCase):
         sf = simpleflight_generator()
         self.simpleflight_test_core(sf.gp())
 
-    def tesT_Mddtest(self):
+    def test_Mddtest(self):
         Cl = Variable("Cl", 0.5, "-", "Lift Coefficient")
         Mdd = Variable("Mdd", "-", "Drag Divergence Mach Number")
         gp1 = GP(1/Mdd, [1 >= 5*Mdd + 0.5, Mdd >= 0.00001])
@@ -119,7 +119,7 @@ class T_GP(unittest.TestCase):
         self.assertAlmostEqual(sol(L), 10, self.ndig)
         gpkit.disable_signomials()
 
-    def tesT_CO(self):
+    def test_CO(self):
         L = Variable("L")
         W = Variable("W")
         eqns = [L >= 1, W >= 1,

@@ -16,7 +16,9 @@ from . import DimensionalityError
 Quantity = ureg.Quantity
 Numbers += (Quantity,)
 
-def varkeysort(exp_item):
+
+def vkSortBy(exp_item):
+    "Returns description from exps.items() elements, for sorting by exponent."
     return list(exp_item[0].descr.items())
 
 
@@ -237,7 +239,7 @@ class Signomial(object):
         mstrs = []
         for c, exp in zip(self.cs, self.exps):
             varstrs = ['%s**%.2g' % (var, x) if x != 1 else "%s" % var
-                       for (var, x) in sorted(exp.items(), key=varkeysort) if x != 0]
+                       for (var, x) in sorted(exp.items(), key=vkSortBy) if x != 0]
             c = mag(c)
             cstr = "%.2g" % c
             if cstr == "-1":
@@ -259,7 +261,7 @@ class Signomial(object):
         mstrs = []
         for c, exp in zip(self.cs, self.exps):
             pos_vars, neg_vars = [], []
-            for var, x in sorted(exp.items(), key=varkeysort):
+            for var, x in sorted(exp.items(), key=vkSortBy):
                 if x > 0:
                     pos_vars.append((var._latex(), x))
                 elif x < 0:

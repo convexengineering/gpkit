@@ -76,8 +76,6 @@ class T_Monomial(unittest.TestCase):
         self.assertEqual(x, x)
         self.assertFalse(x != x)
 
-        # scalar fails on type comparison even though c matches
-        # NOTE(bqpd): not anymore!
         x = Monomial({}, 1)
         y = 1
         self.assertEqual(x, y)
@@ -194,8 +192,8 @@ class T_Posynomial(unittest.TestCase):
         y = Monomial('y')
         p1 = x + y + y + (x+y) + (y+x**2) + 3*x
         p2 = 4*y + x**2 + 5*x
-        ps1 = [list(exp.keys())for exp in p1.exps]
-        ps2 = [list(exp.keys())for exp in p2.exps]
+        #ps1 = [list(exp.keys())for exp in p1.exps]
+        #ps2 = [list(exp.keys())for exp in p2.exps]
         #print("%s, %s" % (ps1, ps2))  # python 3 dict reordering
         self.assertEqual(p1, p2)
 
@@ -204,14 +202,14 @@ class T_Posynomial(unittest.TestCase):
         y = Monomial('y')
         p1 = x**2 + 2*y*x + y**2
         p2 = (x+y)**2
-        ps1 = [list(exp.keys())for exp in p1.exps]
-        ps2 = [list(exp.keys())for exp in p2.exps]
+        #ps1 = [list(exp.keys())for exp in p1.exps]
+        #ps2 = [list(exp.keys())for exp in p2.exps]
         #print("%s, %s" % (ps1, ps2))  # python 3 dict reordering
         self.assertEqual(p1, p2)
         p1 = (x+y)*(2*x+y**2)
         p2 = 2*x**2 + 2*y*x + y**2*x + y**3
-        ps1 = [list(exp.keys())for exp in p1.exps]
-        ps2 = [list(exp.keys())for exp in p2.exps]
+        #ps1 = [list(exp.keys())for exp in p1.exps]
+        #ps2 = [list(exp.keys())for exp in p2.exps]
         #print("%s, %s" % (ps1, ps2))  # python 3 dict reordering
         self.assertEqual(p1, p2)
 

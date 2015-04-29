@@ -487,7 +487,8 @@ class GP(Model):
 
         if result['status'] not in ["optimal", "OPTIMAL"]:
             if allownonoptimal:
-                print("It don't work! Letting it pass. This time.")
+                print("Nonoptimal result returned because 'allownonoptimal'"
+                      " flag was set to True")
             else:
                 raise RuntimeWarning("final status of solver '%s' was '%s' not "
                                      "'optimal'" % (self.solver, result['status']))
