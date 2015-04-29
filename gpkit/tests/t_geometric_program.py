@@ -185,23 +185,18 @@ class t_SP(unittest.TestCase):
         self.assertAlmostEqual(spsol['cost'], gpsol['cost'])
 
 
-testcases = [t_GP, t_SP]
+TEST_CASES = [t_GP, t_SP]
 
-tests = []
-for testcase in testcases:
+TESTS = []
+for testcase in TEST_CASES:
     for solver in settings["installed_solvers"]:
         if solver:
             test = type(testcase.__name__+"_"+solver,
                         (testcase,), {})
             setattr(test, "solver", solver)
             setattr(test, "ndig", NDIGS[solver])
-            tests.append(test)
+            TESTS.append(test)
 
 if __name__ == "__main__":
-    suite = unittest.TestSuite()
-    loader = unittest.TestLoader()
-
-    for t in tests:
-        suite.addTests(loader.loadTestsFromTestCase(t))
-
-    unittest.TextTestRunner(verbosity=2).run(suite)
+    from gpkit.tests.run_tests import run_tests
+    run_tests(TESTS)

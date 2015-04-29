@@ -1,37 +1,53 @@
+"""Scripts for running unit tests"""
 import unittest
-tests = []
+TESTS = []
 
-import t_sub
-tests += t_sub.tests
+from gpkit.tests import t_sub
+TESTS += t_sub.TESTS
 
-import t_vars
-tests += t_vars.tests
+from gpkit.tests import t_vars
+TESTS += t_vars.TESTS
 
-import t_nomials
-tests += t_nomials.tests
+from gpkit.tests import t_nomials
+TESTS += t_nomials.TESTS
 
-import t_constraints
-tests += t_constraints.tests
+from gpkit.tests import t_constraints
+TESTS += t_constraints.TESTS
 
-import t_posy_array
-tests += t_posy_array.tests
+from gpkit.tests import t_posy_array
+TESTS += t_posy_array.TESTS
 
-import t_geometric_program
-tests += t_geometric_program.tests
+from gpkit.tests import t_geometric_program
+TESTS += t_geometric_program.TESTS
 
-import t_gp_solution_array
-tests += t_gp_solution_array.tests
+from gpkit.tests import t_gp_solution_array
+TESTS += t_gp_solution_array.TESTS
 
 
 import gpkit
 
 
-def run(xmloutput=False):
+def run_tests(test_list):
+    """Default way to run tests, to be called in __main__ methods"""
+    suite = unittest.TestSuite()
+    loader = unittest.TestLoader()
+    for t in test_list:
+        suite.addTests(loader.loadTestsFromTestCase(t))
+    unittest.TextTestRunner(verbosity=2).run(suite)
 
+
+def run(xmloutput=False):
+    """Run all gpkit unit tests.
+
+    Arguments
+    ---------
+    xmloutput: bool
+        If true, generate xml output files (used for continuous integration)
+    """
     suite = unittest.TestSuite()
     loader = unittest.TestLoader()
 
-    for t in tests:
+    for t in TESTS:
         suite.addTests(loader.loadTestsFromTestCase(t))
 
     if xmloutput:

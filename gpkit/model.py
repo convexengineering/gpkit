@@ -8,14 +8,14 @@
 
 import numpy as np
 
-from functools import reduce
+from functools import reduce as functools_reduce
 from operator import add
 from collections import Iterable
 
 from .small_classes import Strings
 from .small_classes import PosyTuple
 from .small_classes import CootMatrix
-from .nomials import Posynomial, Constraint, Monomial
+from .nomials import Constraint, Monomial
 from .varkey import VarKey
 
 from .substitution import substitution
@@ -31,8 +31,7 @@ class Model(object):
         return "\n".join(["gpkit.Model with",
                           "  Equations"] +
                          ["     %s <= 1" % p._string()
-                          for p in self.posynomials]
-                         )
+                          for p in self.posynomials])
 
     def add_constraints(self, constraints):
         if isinstance(constraints, Constraint):
@@ -50,8 +49,8 @@ class Model(object):
     def _gen_unsubbed_vars(self, exps=None, cs=None):
         posynomials = self.posynomials
         if not exps and not cs:
-            exps = reduce(add, map(lambda x: x.exps, posynomials))
-            cs = np.hstack(map(lambda p: mag(p.cs), posynomials))
+            exps = functools_reduce(add, (x.exps for x in posynomials))
+            cs = np.hstack((mag(p.cs) for p in posynomials))
         varlocs, varkeys = locate_vars(exps)
 
         self.unsubbed = PosyTuple(exps, cs, varlocs, {})
@@ -164,7 +163,8 @@ class Model(object):
             for i in range(len(self.cs)):
                 if self.cs[i] < 0:
                     print i, self.cs[i], self.exps[i]
-                    raise RuntimeWarning("GPs cannot have negative coefficients")
+                    raise RuntimeWarning("GPs cannot have negative "
+                                         "coefficients")
                 elif self.cs[i] > 0:
                     cs.append(self.cs[i])
                     exps.append(self.exps[i])
@@ -184,9 +184,10 @@ class Model(object):
                 last = p
             k.append(count)
 
-            varlocs, varkeys = locate_vars(exps)
+            varlocs, _ = locate_vars(exps)
         else:
-            cs, exps, p_idxs, k, varlocs = self.cs, self.exps, self.p_idxs, self.k, self.varlocs
+            cs, exps, p_idxs, k, varlocs = (self.cs, self.exps, self.p_idxs,
+                                            self.k, self.varlocs)
 
         missingbounds = {}
         self.A = CootMatrix([], [], [])

@@ -4,18 +4,19 @@ from string import Template
 import itertools
 
 try:
-    from IPython.display import Math, display, HTML
+    from IPython.display import display, HTML
 except ImportError:
     pass
 
 from widget import widget
 
 def showcadtoon(title, css=""):
-    with open("%s.gpkit" % title, 'r') as file:
+    with open("%s.gpkit" % title, 'r') as f:
         css = "<style> #ractivecontainer { %s } </style>" % css
-        display(HTML(file.read() + css))
+        display(HTML(f.read() + css))
 
-def ractorpy(gp, update_py, ranges, constraint_js="", showtables=["cost", "sensitivities"]):
+def ractorpy(gp, update_py, ranges, constraint_js="",
+             showtables=["cost", "sensitivities"]):
     def ractivefn(gp):
         sol = gp.solution
         live = "<script>" + update_py(sol) + "\n" + constraint_js + "</script>"
@@ -28,7 +29,8 @@ new_jswidget_id = itertools.count().next
 
 def ractorjs(title, gp, update_py, ranges, constraint_js=""):
     widget_id = "jswidget_"+str(new_jswidget_id())
-    display(HTML("<script id='%s-after' type='text/throwaway'>%s</script>" % (widget_id, constraint_js)))
+    display(HTML("<script id='%s-after' type='text/throwaway'>%s</script>" %
+                 (widget_id, constraint_js)))
     display(HTML("<script>var %s = {storage: [], n:%i, ranges: {}, after: document.getElementById('%s-after').innerHTML, bases: [1] }</script>" % (widget_id, len(ranges), widget_id)))
 
     container_id = widget_id + "_container"
@@ -50,7 +52,7 @@ def ractorjs(title, gp, update_py, ranges, constraint_js=""):
         length = int((maxi-mini)/step) + 1
         lengths.append(length)
         bases.append(np.prod(lengths))
-        array = map(lambda x: mini + x*step, range(length))
+        array = [mini + x*step for x in range(length)]
         if var in varkeys:
             subs[varkeys[varkeys.index(var)]] = ("sweep", array)
 
@@ -61,7 +63,8 @@ def ractorjs(title, gp, update_py, ranges, constraint_js=""):
     for var, sweepval in subs.items():
         array = sweepval[1]
         varname = "var" + str(i)
-        display(HTML("<script>%s.ranges.%s = %s\n%s.bases.push(%i)</script>" % (widget_id, varname, array, widget_id, bases[i])))
+        display(HTML("<script>%s.ranges.%s = %s\n%s.bases.push(%i)</script>"
+                     % (widget_id, varname, array, widget_id, bases[i])))
         template += ctrl_template.substitute(w=widget_id,
                                              var=("$%s$" % var),
                                              varname=varname,

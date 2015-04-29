@@ -237,13 +237,8 @@ class t_Posynomial(unittest.TestCase):
 
 # test substitution
 
-tests = [t_Posynomial, t_Monomial, t_Signomial]
+TESTS = [t_Posynomial, t_Monomial, t_Signomial]
 
 if __name__ == '__main__':
-    suite = unittest.TestSuite()
-    loader = unittest.TestLoader()
-
-    for t in tests:
-        suite.addTests(loader.loadTestsFromTestCase(t))
-
-    unittest.TextTestRunner(verbosity=2).run(suite)
+    from gpkit.tests.run_tests import run_tests
+    run_tests(TESTS)

@@ -195,22 +195,17 @@ class t_GPSubs(unittest.TestCase):
             disableUnits=(type(W.varkeys["W"].descr["units"]) == str)).gp()
 
         def sorted_solve_array(sol):
-            return np.array(map(lambda x: x[1],
-                            sorted(sol["variables"].items(),
-                                   key=lambda x: x[0].name)))
+            return np.array([x[1] for x in
+                             sorted(sol["variables"].items(),
+                                    key=lambda x: x[0].name)])
         a = sorted_solve_array(sf.solve(printing=False))
         sol = gpl.solve(printing=False)
         del sol["variables"]["dum"], sol["variables"]["dum"]
         b = sorted_solve_array(sol)
         self.assertTrue(all(abs(a-b)/(a+b) < 1e-7))
 
-tests = [t_NomialSubs, t_GPSubs]
+TESTS = [t_NomialSubs, t_GPSubs]
 
 if __name__ == '__main__':
-    suite = unittest.TestSuite()
-    loader = unittest.TestLoader()
-
-    for t in tests:
-        suite.addTests(loader.loadTestsFromTestCase(t))
-
-    unittest.TextTestRunner(verbosity=2).run(suite)
+    from gpkit.tests.run_tests import run_tests
+    run_tests(TESTS)
