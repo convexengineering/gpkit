@@ -1,7 +1,7 @@
 import unittest
 import numpy as np
 from gpkit import (Monomial, Posynomial, PosyArray, Variable, VarKey,
-                   VectorVariable)
+                   VectorVariable, ArrayVariable)
 
 
 class t_VarKey(unittest.TestCase):
@@ -102,6 +102,10 @@ class t_VectorVariable(unittest.TestCase):
         N = 20
         x_arr = np.arange(0, 5., 5./N) + 1e-6
         x = VectorVariable(N, 'x', x_arr, 'm', "Beam Location")
+
+    def test_array_variable(self):
+        """I want to know if this changes"""
+        self.assertTrue(ArrayVariable is VectorVariable)
 
 
 tests = [t_VarKey, t_Variable, t_VectorVariable]

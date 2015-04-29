@@ -61,14 +61,14 @@ class VectorVariable(PosyArray):
 
     Parameters
     ----------
-    length : int
-        Length of vector.
-    *args : list
+    shape : int or tuple
+        length or shape of resulting array
+    *args :
         may contain "name" (Strings)
                     "value" (Iterable)
                     "units" (Strings + Quantity)
              and/or "label" (Strings)
-    **descr : dict
+    **descr :
         VarKey description
 
     Returns
