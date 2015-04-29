@@ -117,7 +117,7 @@ def locate_vars(exps):
 
     varkeys_ = dict(varkeys)
     for name, varl in varkeys_.items():
-        if "length" in varl[0].descr:
+        if "shape" in varl[0].descr:
             # vector var
             newlist = np.zeros(varl[0].descr["shape"], dtype="object")
             for var in varl:

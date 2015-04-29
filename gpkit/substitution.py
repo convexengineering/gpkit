@@ -67,15 +67,15 @@ def vectorsub(subs, var, sub, varset):
             subtype = "array"
         else:
             subtype = "list"
-        #print sub
+
         for var_ in var:
-            v = VarKey(var_)
-            if subtype == "array":
+            if var_:
+                v = VarKey(var_)
                 i = v.descr["idx"]
-            else:
-                i = v.descr["idx"][0]
-            if v in varset:
-                subs[v] = sub[i]
+                if subtype == "list":
+                    i = i[0]
+                if v in varset:
+                    subs[v] = sub[i]
     elif var in varset:
         subs[var] = sub
 
