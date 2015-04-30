@@ -255,5 +255,5 @@ class TestPosynomial(unittest.TestCase):
 TESTS = [TestPosynomial, TestMonomial, TestSignomial]
 
 if __name__ == '__main__':
-    from gpkit.tests.run_tests import run_tests
+    from gpkit.tests.helpers import run_tests
     run_tests(TESTS)

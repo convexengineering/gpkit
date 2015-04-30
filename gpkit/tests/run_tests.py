@@ -1,4 +1,4 @@
-"""Scripts for running unit tests"""
+"""Script for running all gpkit unit tests"""
 import unittest
 TESTS = []
 
@@ -25,15 +25,6 @@ TESTS += t_gp_solution_array.TESTS
 
 
 import gpkit
-
-
-def run_tests(tests):
-    """Default way to run tests, to be called in __main__ methods"""
-    suite = unittest.TestSuite()
-    loader = unittest.TestLoader()
-    for t in tests:
-        suite.addTests(loader.loadTestsFromTestCase(t))
-    unittest.TextTestRunner(verbosity=2).run(suite)
 
 
 def run(xmloutput=False):
