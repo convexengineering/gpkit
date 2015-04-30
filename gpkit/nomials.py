@@ -104,9 +104,9 @@ class Signomial(object):
 
         exps, cs = sort_and_simplify(exps, cs)
         if isinstance(cs, Quantity):
-            any_negative = any((c.magnitude <= 0 for c in cs))
+            any_negative = any((c.magnitude < 0 for c in cs))
         else:
-            any_negative = any((c <= 0 for c in cs))
+            any_negative = any((c < 0 for c in cs))
         if any_negative:
             from . import SIGNOMIALS_ENABLED
             if not SIGNOMIALS_ENABLED and not allow_negative:
