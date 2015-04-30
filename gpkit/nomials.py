@@ -108,8 +108,8 @@ class Signomial(object):
         else:
             any_negative = any((c <= 0 for c in cs))
         if any_negative:
-            from . import _SIGNOMIALS_ENABLED
-            if not _SIGNOMIALS_ENABLED and not allow_negative:
+            from . import SIGNOMIALS_ENABLED
+            if not SIGNOMIALS_ENABLED and not allow_negative:
                 raise ValueError("each c must be positive.")
         else:
             self.__class__ = Posynomial
@@ -373,25 +373,25 @@ class Signomial(object):
             return NotImplemented
 
     def __neg__(self):
-        from . import _SIGNOMIALS_ENABLED
+        from . import SIGNOMIALS_ENABLED
 
-        if not _SIGNOMIALS_ENABLED:
+        if not SIGNOMIALS_ENABLED:
             return NotImplemented
         else:
             return -1*self
 
     def __sub__(self, other):
-        from . import _SIGNOMIALS_ENABLED
+        from . import SIGNOMIALS_ENABLED
 
-        if not _SIGNOMIALS_ENABLED:
+        if not SIGNOMIALS_ENABLED:
             return NotImplemented
         else:
             return self + -other
 
     def __rsub__(self, other):
-        from . import _SIGNOMIALS_ENABLED
+        from . import SIGNOMIALS_ENABLED
 
-        if not _SIGNOMIALS_ENABLED:
+        if not SIGNOMIALS_ENABLED:
             return NotImplemented
         else:
             return other + -self
@@ -453,9 +453,9 @@ class Constraint(Posynomial):
     def __init__(self, p1, p2):
         p1 = Signomial(p1)
         p2 = Signomial(p2)
-        from . import _SIGNOMIALS_ENABLED
+        from . import SIGNOMIALS_ENABLED
 
-        if _SIGNOMIALS_ENABLED and not isinstance(p2, Monomial):
+        if SIGNOMIALS_ENABLED and not isinstance(p2, Monomial):
             if p1.units:
                 p = (p1 - p2)/p1.units + 1.0
             else:
@@ -477,7 +477,7 @@ class Constraint(Posynomial):
         for i, exp in enumerate(p.exps):
             if not exp:
                 if p.cs[i] < 1:
-                    if _SIGNOMIALS_ENABLED:
+                    if SIGNOMIALS_ENABLED:
                         const = p.cs[i]
                         p -= const
                         p /= (1-const)
@@ -486,7 +486,7 @@ class Constraint(Posynomial):
                         p.cs = np.hstack((p.cs[:i], p.cs[i+1:]))
                         p.exps = p.exps[:i] + p.exps[i+1:]
                         p = p/coeff
-                elif p.cs[i] > 1 and not _SIGNOMIALS_ENABLED:
+                elif p.cs[i] > 1 and not SIGNOMIALS_ENABLED:
                     raise ValueError("infeasible constraint:"
                                      "constant term too large.")
 
