@@ -108,24 +108,26 @@ def latex_num(c):
 def locate_vars(exps):
     "From exponents form a dictionary of which monomials each variable is in."
     varlocs = defaultdict(list)
-    varkeys = defaultdict(list)
+    varkeys = defaultdict(set)
     for i, exp in enumerate(exps):
         for var in exp:
             varlocs[var].append(i)
-            if var not in varkeys[var.name]:
-                varkeys[var.name].append(var)
+            varkeys[var.name].add(var)
 
     varkeys_ = dict(varkeys)
     for name, varl in varkeys_.items():
-        if "shape" in varl[0].descr:
+        for vk in varl:
+            descr = vk.descr
+            break
+        if "shape" in descr:
             # vector var
-            newlist = np.zeros(varl[0].descr["shape"], dtype="object")
+            newlist = np.zeros(descr["shape"], dtype="object")
             for var in varl:
                 newlist[var.descr["idx"]] = var
             varkeys[name] = newlist
         else:
             if len(varl) == 1:
-                varkeys[name] = varl[0]
+                varkeys[name] = varl.pop()
             else:
                 varkeys[name] = []
                 for var in varl:
