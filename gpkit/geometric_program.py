@@ -77,13 +77,13 @@ class GPSolutionArray(DictOfLists):
         """
         if len(self) > 1:
             subbeds = [p.sub(self.atindex(i)["sensitivities"]["variables"],
-                             allow_negative=True) for i in range(len(self))]
+                             require_positive=False) for i in range(len(self))]
             assert not any([subbed.exp for subbed in subbeds])
             return np.array([mag(subbed.c) for subbed in subbeds],
                             np.dtype('float'))
         else:
             subbed = p.sub(self["sensitivities"]["variables"],
-                           allow_negative=True)
+                           require_positive=False)
             assert isinstance(subbed, Monomial)
             assert not subbed.exp
             return subbed.c

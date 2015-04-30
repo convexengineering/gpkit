@@ -38,7 +38,7 @@ def mono_approx(p, x0):
     from . import units as ureg
     for vk in p.varlocs:
         units = vk.descr.get("units", 1) if ureg else 1
-        e = mag(x0[vk]*units * p.diff(vk).sub(x0, allow_negative=True).c / p0)
+        e = mag(x0[vk]*units * p.diff(vk).sub(x0, require_positive=False).c / p0)
         exp[vk] = e
         m0 *= (x0[vk]*units)**e
     return p0/m0, exp

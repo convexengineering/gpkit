@@ -43,7 +43,7 @@ class Signomial(object):
     """
 
     def __init__(self, exps=None, cs=1, varlocsandkeys=None,
-                 allow_negative=False, **descr):
+                 require_positive=True, **descr):
         units = None
         if isinstance(exps, Numbers):
             cs = exps
@@ -109,7 +109,7 @@ class Signomial(object):
             any_negative = any((c <= 0 for c in cs))
         if any_negative:
             from . import SIGNOMIALS_ENABLED
-            if not SIGNOMIALS_ENABLED and not allow_negative:
+            if require_positive and not SIGNOMIALS_ENABLED:
                 raise ValueError("each c must be positive.")
         else:
             self.__class__ = Posynomial
@@ -159,7 +159,7 @@ class Signomial(object):
             if len(vks) == 1:
                 var = vks[0]
         exps, cs = diff(self, var)
-        return Signomial(exps, cs, allow_negative=True)
+        return Signomial(exps, cs, require_positive=False)
 
     def mono_approximation(self, x0):
         if isinstance(self, Monomial):
@@ -169,12 +169,12 @@ class Signomial(object):
             c, exp = mono_approx(self, getsubs(self.varkeys, self.varlocs, x0))
             return Monomial(exp, c)
 
-    def sub(self, substitutions, val=None, allow_negative=False):
+    def sub(self, substitutions, val=None, require_positive=True):
         varlocs, exps, cs, subs = substitution(self.varlocs, self.varkeys,
                                                self.exps, self.cs,
                                                substitutions, val)
         return Signomial(exps, cs, units=self.units,
-                         allow_negative=allow_negative)
+                         require_positive=require_positive)
 
     def subcmag(self, substitutions, val=None):
         varlocs, exps, cs, subs = substitution(self.varlocs, self.varkeys,

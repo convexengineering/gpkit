@@ -152,9 +152,9 @@ class PosyArray(np.ndarray):
         else:
             return 1
 
-    def sub(self, subs, val=None, allow_negative=False):
+    def sub(self, subs, val=None, require_positive=True):
         "Substitutes into the array"
-        return PosyArray([p.sub(subs, val, allow_negative) for p in self])
+        return PosyArray([p.sub(subs, val, require_positive) for p in self])
 
     @property
     def right(self):
