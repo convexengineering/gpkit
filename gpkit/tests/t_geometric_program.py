@@ -41,7 +41,9 @@ class TestGP(unittest.TestCase):
                                self.ndig)
 
     def test_trivial_vector_gp(self):
-        """Create and solve a trivial GP with VectorVariables"""
+        """
+        Create and solve a trivial GP with VectorVariables
+        """
         x = VectorVariable(2, 'x')
         y = VectorVariable(2, 'y')
         prob = GP(cost=(sum(x) + 2*sum(y)),
@@ -147,7 +149,9 @@ class TestGP(unittest.TestCase):
         self.assertTrue((abs(a-b)/(a+b+1e-7) < 1e-7).all())
 
     def test_singular(self):
-        """GP with a singular A matrix"""
+        """
+        Create and solve GP with a singular A matrix
+        """
         if self.solver == 'cvxopt':
             # cvxopt can't solve this problem
             # (see https://github.com/cvxopt/cvxopt/issues/36)

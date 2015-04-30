@@ -109,7 +109,10 @@ class T_VectorVariable(unittest.TestCase):
         x = VectorVariable(N, 'x', x_arr, 'm', "Beam Location")
 
     def test_array_variable(self):
-        """I want to know if this changes"""
+        """
+        Make sure ArrayVariable is a shortcut to VectorVariable
+        (I want to know if this changes).
+        """
         self.assertTrue(ArrayVariable is VectorVariable)
 
 
