@@ -104,9 +104,9 @@ class Signomial(object):
 
         exps, cs = sort_and_simplify(exps, cs)
         if isinstance(cs, Quantity):
-            any_negative = any((c.magnitude < 0 for c in cs))
+            any_negative = any((c.magnitude <= 0 for c in cs))
         else:
-            any_negative = any((c < 0 for c in cs))
+            any_negative = any((c <= 0 for c in cs))
         if any_negative:
             from . import SIGNOMIALS_ENABLED
             if not SIGNOMIALS_ENABLED and not allow_negative:
@@ -316,6 +316,9 @@ class Signomial(object):
 
     def __mul__(self, other):
         if isinstance(other, Numbers):
+            if not other:
+                # assume other is multiplicative zero
+                return other
             return Signomial(self.exps, other*self.cs,
                              (self.varlocs, self.varkeys))
         elif isinstance(other, Signomial):

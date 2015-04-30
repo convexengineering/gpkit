@@ -124,6 +124,13 @@ class T_Monomial(unittest.TestCase):
         z = x * Monomial({'x': -1, 't': 2}, .5)
         self.assertEqual(z, Monomial({'x': 0, 'y': -1, 't': 2}, 2))
 
+        x0 = Monomial('x0')
+        self.assertEqual(0.0, 0.0*x0)
+        x1 = Monomial('x1')
+        n_hat = [1, 0]
+        p = n_hat[0]*x0 + n_hat[1]*x1
+        self.assertEqual(p, x0)
+
     def test_pow(self):
         x = Monomial({'x': 1, 'y': -1}, 4)
         self.assertEqual(x, Monomial({'x': 1, 'y': -1}, 4))
