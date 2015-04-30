@@ -87,7 +87,7 @@ class TestGP(unittest.TestCase):
             self.assertTrue(abs(1-sol_rat) < 1e-2)
 
     def test_simpleflight(self):
-        from .simpleflight import simpleflight_generator
+        from gpkit.tests.simpleflight import simpleflight_generator
         sf = simpleflight_generator()
         self.simpleflight_test_core(sf.gp())
 

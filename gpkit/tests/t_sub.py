@@ -190,7 +190,7 @@ class TestGPSubs(unittest.TestCase):
                      "Re": Re, "W": lol})
         self.assertIn("dum_drag"+str(k+1), gpl2.varkeys)
 
-        from .simpleflight import simpleflight_generator
+        from gpkit.tests.simpleflight import simpleflight_generator
         sf = simpleflight_generator(
             disableUnits=(type(W.varkeys["W"].descr["units"]) == str)).gp()
 
