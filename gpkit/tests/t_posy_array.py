@@ -116,6 +116,8 @@ class TestPosyArray(unittest.TestCase):
         empty_posy_array = x[:0]
         self.assertEqual(empty_posy_array.sum(), 0)
         self.assertEqual(empty_posy_array.prod(), 1)
+        self.assertFalse(isinstance(empty_posy_array.sum(), (bool, np.bool_)))
+        self.assertFalse(isinstance(empty_posy_array.prod(), (bool, np.bool_)))
         self.assertEqual(len(empty_posy_array), 0)
         self.assertEqual(empty_posy_array.ndim, 1)
 
