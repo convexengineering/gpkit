@@ -64,9 +64,11 @@ class PosyArray(np.ndarray):
         See http://docs.scipy.org/doc/numpy/user/basics.subclassing.html"""
         if out_arr.ndim:
             return np.ndarray.__array_wrap__(self, out_arr, context)
-        else:
-            return out_arr.item()
-
+        val = out_arr.item()  # zero-dimensional numeric
+        if isinstance(val, np.bool_):
+            # a bit hacky, this seems to occur when self is PosyArray([])
+            return 1 if val else 0
+        return val
 
     def _latex(self, unused=None, matwrap=True):
         "Returns 1D latex list of contents."
@@ -147,13 +149,6 @@ class PosyArray(np.ndarray):
     def outer(self, other):
         "Returns the array and argument's outer product."
         return PosyArray(np.outer(self, other))
-
-    def prod(self):
-        "Returns the product of the array."
-        if max(self.shape):
-            return reduce(mul, self[1:], self[0])
-        else:
-            return 1
 
     def sub(self, subs, val=None, require_positive=True):
         "Substitutes into the array"

@@ -99,12 +99,23 @@ class T_PosyArray(unittest.TestCase):
         m = x.prod()
         self.assertTrue(isinstance(m, Monomial))
         self.assertEqual(m, x[0]*x[1]*x[2])
+        self.assertEqual(m, np.prod(x))
 
     def test_outer(self):
         x = VectorVariable(3, 'x')
         y = VectorVariable(3, 'y')
         self.assertEqual(np.outer(x, y), x.outer(y))
         self.assertEqual(np.outer(y, x), y.outer(x))
+        self.assertTrue(isinstance(x.outer(y), PosyArray))
+
+    def test_empty(self):
+        x = VectorVariable(3, 'x')
+        # have to create this using slicing, to get object dtype
+        empty_posy_array = x[:0]
+        self.assertEqual(empty_posy_array.sum(), 0)
+        self.assertEqual(empty_posy_array.prod(), 1)
+        self.assertEqual(len(empty_posy_array), 0)
+        self.assertEqual(empty_posy_array.ndim, 1)
 
 
 TESTS = [T_PosyArray]
