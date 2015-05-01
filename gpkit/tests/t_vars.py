@@ -128,15 +128,14 @@ class TestArrayVariable(unittest.TestCase):
         self.assertRaises(NotImplementedError, lambda: x.left)
         self.assertRaises(NotImplementedError, lambda: x.right)
 
-    # # this currently fails
-    # def test_sum(self):
-    #     x = ArrayVariable((2, 3), 'x')
-    #     rowsums = x.sum(axis=1)
-    #     self.assertTrue(isinstance(rowsums, PosyArray))
-    #     self.assertEqual(len(rowsums), 2)
-    #     colsums = x.sum(axis=0)
-    #     self.assertTrue(isinstance(colsums, PosyArray))
-    #     self.assertEqual(len(colsums), 3)
+    def test_sum(self):
+        x = ArrayVariable((2, 3), 'x')
+        rowsums = x.sum(axis=1)
+        self.assertTrue(isinstance(rowsums, PosyArray))
+        self.assertEqual(len(rowsums), 2)
+        colsums = x.sum(axis=0)
+        self.assertTrue(isinstance(colsums, PosyArray))
+        self.assertEqual(len(colsums), 3)
 
     def test_str(self):
         x = ArrayVariable((2, 4), 'x')
