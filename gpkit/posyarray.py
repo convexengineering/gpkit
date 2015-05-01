@@ -9,8 +9,6 @@
 """
 
 import numpy as np
-from operator import add, mul
-from functools import reduce
 
 from . import units as ureg
 Quantity = ureg.Quantity
@@ -30,33 +28,25 @@ class PosyArray(np.ndarray):
 
     def __str__(self):
         "Returns list-like string, but with str(el) instead of repr(el)."
-        return "["+", ".join([str(p) for p in self])+"]"
+        return "[" + ", ".join(str(p) for p in self) + "]"
 
     def __repr__(self):
         "Returns str(self) tagged with gpkit information."
         return "gpkit.%s(%s)" % (self.__class__.__name__, str(self))
 
     def __hash__(self):
-        if hasattr(self, "_hashvalue"):
-            return self._hashvalue
-        else:
-            return np.ndarray.__hash__(self)
+        return getattr(self, "_hashvalue", np.ndarray.__hash__(self))
 
-    def __new__(cls, input_array, info=None):
+    def __new__(cls, input_array):
         "Constructor. Required for objects inheriting from np.ndarray."
         # Input array is an already formed ndarray instance
-        # We first cast to be our class type
+        # cast to be our class type
         obj = np.asarray(input_array).view(cls)
-        # add the new attribute to the created instance
-        obj.info = info
-        # Finally, we must return the newly created object:
         return obj
 
     def __array_finalize__(self, obj):
         "Finalizer. Required for objects inheriting from np.ndarray."
-        if obj is None:
-            return
-        self.info = getattr(obj, 'info', None)
+        pass
 
     def __array_wrap__(self, out_arr, context=None):
         """Called by numpy ufuncs.
