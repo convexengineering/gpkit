@@ -54,11 +54,7 @@ class PosyArray(np.ndarray):
         See http://docs.scipy.org/doc/numpy/user/basics.subclassing.html"""
         if out_arr.ndim:
             return np.ndarray.__array_wrap__(self, out_arr, context)
-        val = out_arr.item()  # zero-dimensional numeric
-        if isinstance(val, np.bool_):
-            # a bit hacky, this seems to occur when self is PosyArray([])
-            return 1 if val else 0
-        return val
+        return float(out_arr)
 
     def _latex(self, unused=None, matwrap=True):
         "Returns 1D latex list of contents."
