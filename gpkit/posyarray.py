@@ -9,8 +9,6 @@
 """
 
 import numpy as np
-from operator import add, mul
-from functools import reduce
 
 from . import units as ureg
 Quantity = ureg.Quantity
@@ -30,33 +28,40 @@ class PosyArray(np.ndarray):
 
     def __str__(self):
         "Returns list-like string, but with str(el) instead of repr(el)."
-        return "["+", ".join([str(p) for p in self])+"]"
+        return "[" + ", ".join(str(p) for p in self) + "]"
 
     def __repr__(self):
         "Returns str(self) tagged with gpkit information."
         return "gpkit.%s(%s)" % (self.__class__.__name__, str(self))
 
     def __hash__(self):
-        if hasattr(self, "_hashvalue"):
-            return self._hashvalue
-        else:
-            return np.ndarray.__hash__(self)
+        return getattr(self, "_hashvalue", np.ndarray.__hash__(self))
 
-    def __new__(cls, input_array, info=None):
+    def __new__(cls, input_array):
         "Constructor. Required for objects inheriting from np.ndarray."
         # Input array is an already formed ndarray instance
-        # We first cast to be our class type
+        # cast to be our class type
         obj = np.asarray(input_array).view(cls)
-        # add the new attribute to the created instance
-        obj.info = info
-        # Finally, we must return the newly created object:
         return obj
 
     def __array_finalize__(self, obj):
         "Finalizer. Required for objects inheriting from np.ndarray."
-        if obj is None:
-            return
-        self.info = getattr(obj, 'info', None)
+        pass
+
+    def __array_wrap__(self, out_arr, context=None):
+        """Called by numpy ufuncs.
+        Special case to avoid creation of 0-dimensional arrays
+        See http://docs.scipy.org/doc/numpy/user/basics.subclassing.html"""
+        if out_arr.ndim:
+            return np.ndarray.__array_wrap__(self, out_arr, context)
+        try:
+            val = out_arr.item()
+            return np.float(val) if isinstance(val, np.generic) else val
+        except:
+            print("Something went wrong. I'd like to raise a RuntimeWarning,"
+                  " but you wouldn't see it because numpy seems to catch all"
+                  " Exceptions coming from __array_wrap__.")
+            raise
 
     def _latex(self, unused=None, matwrap=True):
         "Returns 1D latex list of contents."
@@ -137,20 +142,6 @@ class PosyArray(np.ndarray):
     def outer(self, other):
         "Returns the array and argument's outer product."
         return PosyArray(np.outer(self, other))
-
-    def sum(self):
-        "Returns the sum of the array."
-        if max(self.shape):
-            return reduce(add, self[1:], self[0])
-        else:
-            return 0
-
-    def prod(self):
-        "Returns the product of the array."
-        if max(self.shape):
-            return reduce(mul, self[1:], self[0])
-        else:
-            return 1
 
     def sub(self, subs, val=None, require_positive=True):
         "Substitutes into the array"

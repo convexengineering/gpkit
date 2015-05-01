@@ -1,5 +1,6 @@
 """Tests for PosyArray class"""
 import unittest
+import numpy as np
 from gpkit import Monomial, Posynomial, PosyArray, VectorVariable
 import gpkit
 
@@ -80,6 +81,43 @@ class TestPosyArray(unittest.TestCase):
         self.assertEqual(xR[-1], 0)
         self.assertEqual(xR[0], x[1])
         self.assertEqual((xL + xR)[1:-1], x[2:] + x[:-2])
+
+    def test_sum(self):
+        x = VectorVariable(5, 'x')
+        p = x.sum()
+        self.assertTrue(isinstance(p, Posynomial))
+        self.assertEqual(p, sum(x))
+
+        x = VectorVariable((2, 3), 'x')
+        rowsum = x.sum(axis=1)
+        colsum = x.sum(axis=0)
+        self.assertTrue(isinstance(rowsum, PosyArray))
+        self.assertTrue(isinstance(colsum, PosyArray))
+        self.assertEqual(rowsum[0], sum(x[0]))
+        self.assertEqual(colsum[0], sum(x[:, 0]))
+
+    def test_prod(self):
+        x = VectorVariable(3, 'x')
+        m = x.prod()
+        self.assertTrue(isinstance(m, Monomial))
+        self.assertEqual(m, x[0]*x[1]*x[2])
+        self.assertEqual(m, np.prod(x))
+
+    def test_outer(self):
+        x = VectorVariable(3, 'x')
+        y = VectorVariable(3, 'y')
+        self.assertEqual(np.outer(x, y), x.outer(y))
+        self.assertEqual(np.outer(y, x), y.outer(x))
+        self.assertTrue(isinstance(x.outer(y), PosyArray))
+
+    def test_empty(self):
+        x = VectorVariable(3, 'x')
+        # have to create this using slicing, to get object dtype
+        empty_posy_array = x[:0]
+        self.assertEqual(empty_posy_array.sum(), 0)
+        self.assertEqual(empty_posy_array.prod(), 1)
+        self.assertEqual(len(empty_posy_array), 0)
+        self.assertEqual(empty_posy_array.ndim, 1)
 
 
 TESTS = [TestPosyArray]
