@@ -1,12 +1,12 @@
+"""Tests for GPSolutionArray class"""
 import unittest
 import time
 import numpy as np
 from gpkit import Variable, VectorVariable, GP, PosyArray
 from gpkit.geometric_program import GPSolutionArray
-from gpkit import settings
 
 
-class T_GPSolutionArray(unittest.TestCase):
+class TestGPSolutionArray(unittest.TestCase):
 
     def test_call(self):
         A = Variable('A', '-', 'Test Variable')
@@ -38,7 +38,7 @@ class T_GPSolutionArray(unittest.TestCase):
                   [x >= y, y >= z1, z1 >= z2, z2 >= z3, z3 >= z4, z4 >= L])
         sol = prob.solve(printing=False)
         t1 = time.time()
-        foo = sol(z1)
+        _ = sol(z1)
         self.assertTrue(time.time() - t1 <= 0.05)
 
     def test_subinto_senssubinto(self):
@@ -66,14 +66,13 @@ class T_GPSolutionArray(unittest.TestCase):
 
     def test_table(self):
         x = Variable('x')
-        y = Variable('y')
         gp = GP(x, [x >= 12])
         sol = gp.solve(solver='mosek', printing=False)
         tab = sol.table()
         self.assertTrue(isinstance(tab, str))
 
-TESTS = [T_GPSolutionArray]
+TESTS = [TestGPSolutionArray]
 
 if __name__ == '__main__':
-    from gpkit.tests.run_tests import run_tests
+    from gpkit.tests.helpers import run_tests
     run_tests(TESTS)

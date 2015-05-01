@@ -109,7 +109,10 @@ class T_VectorVariable(unittest.TestCase):
         x = VectorVariable(N, 'x', x_arr, 'm', "Beam Location")
 
     def test_array_variable(self):
-        """I want to know if this changes"""
+        """
+        Make sure ArrayVariable is a shortcut to VectorVariable
+        (I want to know if this changes).
+        """
         self.assertTrue(ArrayVariable is VectorVariable)
 
 
@@ -154,5 +157,5 @@ TESTS = [T_VarKey, T_Variable, T_VectorVariable]
 TESTS += [TestArrayVariable]    # avoiding merge conflict -- fix this
 
 if __name__ == '__main__':
-    from gpkit.tests.run_tests import run_tests
+    from gpkit.tests.helpers import run_tests
     run_tests(TESTS)
