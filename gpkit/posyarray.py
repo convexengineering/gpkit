@@ -54,7 +54,14 @@ class PosyArray(np.ndarray):
         See http://docs.scipy.org/doc/numpy/user/basics.subclassing.html"""
         if out_arr.ndim:
             return np.ndarray.__array_wrap__(self, out_arr, context)
-        return float(out_arr)
+        try:
+            val = out_arr.item()
+            return np.float(val) if isinstance(val, np.generic) else val
+        except:
+            print("Something went wrong. I'd like to raise a RuntimeWarning,"
+                  " but you wouldn't see it because numpy seems to catch all"
+                  " Exceptions coming from __array_wrap__.")
+            raise
 
     def _latex(self, unused=None, matwrap=True):
         "Returns 1D latex list of contents."
