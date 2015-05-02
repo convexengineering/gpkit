@@ -6,7 +6,17 @@ import gpkit
 
 
 class TestPosyArray(unittest.TestCase):
-    """TestCase for the PosyArray class"""
+    """TestCase for the PosyArray class.
+    Also tests VectorVariable, since VectorVariable returns a PosyArray
+    """
+
+    def test_shape(self):
+        x = VectorVariable((2, 3), 'x')
+        self.assertEqual(x.shape, (2, 3))
+
+    def test_ndim(self):
+        x = VectorVariable((3, 4), 'x')
+        self.assertEqual(x.ndim, 2)
 
     def test_array_mult(self):
         x = VectorVariable(3, 'x', label='dummy variable')
@@ -82,6 +92,10 @@ class TestPosyArray(unittest.TestCase):
         self.assertEqual(xR[0], x[1])
         self.assertEqual((xL + xR)[1:-1], x[2:] + x[:-2])
 
+        x = VectorVariable((2, 3), 'x')
+        self.assertRaises(NotImplementedError, lambda: x.left)
+        self.assertRaises(NotImplementedError, lambda: x.right)
+
     def test_sum(self):
         x = VectorVariable(5, 'x')
         p = x.sum()
@@ -95,6 +109,13 @@ class TestPosyArray(unittest.TestCase):
         self.assertTrue(isinstance(colsum, PosyArray))
         self.assertEqual(rowsum[0], sum(x[0]))
         self.assertEqual(colsum[0], sum(x[:, 0]))
+        self.assertEqual(len(rowsum), 2)
+        self.assertEqual(len(colsum), 3)
+
+    def test_getitem(self):
+        x = VectorVariable((2, 4), 'x')
+        self.assertTrue(isinstance(x[0][0], Monomial))
+        self.assertTrue(isinstance(x[0, 0], Monomial))
 
     def test_prod(self):
         x = VectorVariable(3, 'x')
