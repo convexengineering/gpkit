@@ -85,6 +85,8 @@ class VectorVariable(PosyArray):
 
         if isinstance(shape, Numbers):
             shape = (shape,)
+        else:
+            shape = tuple(shape)
 
         descr["shape"] = shape
 
@@ -100,14 +102,14 @@ class VectorVariable(PosyArray):
                 descr["label"] = arg
 
         values = descr.pop("value", [])
-        valuetype = ""
         if len(values):
-            if hasattr(values, "shape"):
+            if len(shape) == 1:
+                shape_match = len(values) == shape[0]
+                valuetype = "list"
+            else:
+                values = np.array(values)
                 shape_match = values.shape == shape
                 valuetype = "array"
-            else:
-                shape_match = len(shape) == 1 and len(values) == shape[0]
-                valuetype = "list"
             if not shape_match:
                 raise ValueError("the value's shape must be the same"
                                  " as the vector's.")
