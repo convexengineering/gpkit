@@ -102,6 +102,7 @@ class VectorVariable(PosyArray):
                 descr["label"] = arg
 
         values = descr.pop("value", [])
+        valuetype = ""
         if len(values):
             if len(shape) == 1:
                 shape_match = len(values) == shape[0]
