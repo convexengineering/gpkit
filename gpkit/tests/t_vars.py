@@ -4,7 +4,8 @@ from gpkit import (Monomial, Posynomial, PosyArray, Variable, VarKey,
                    VectorVariable, ArrayVariable)
 
 
-class T_VarKey(unittest.TestCase):
+class TestVarKey(unittest.TestCase):
+    """TestCase for the VarKey class"""
 
     def test_init(self):
         # test type
@@ -56,7 +57,8 @@ class T_VarKey(unittest.TestCase):
         self.assertEqual(len(d), 2)
 
 
-class T_Variable(unittest.TestCase):
+class TestVariable(unittest.TestCase):
+    """TestCase for the Variable class"""
 
     def test_init(self):
         v = Variable('v')
@@ -81,12 +83,15 @@ class T_Variable(unittest.TestCase):
         self.assertEqual(a.value, a)
 
 
-class T_VectorVariable(unittest.TestCase):
+class TestVectorVariable(unittest.TestCase):
+    """TestCase for the VectorVariable class.
+    Note: more relevant tests in t_posy_array."""
 
     def test_init(self):
         # test 1
         n = 3
         v = VectorVariable(n, 'v', label='dummy variable')
+        self.assertTrue(isinstance(v, PosyArray))
         v_mult = 3*v
         for i in range(n):
             self.assertTrue(isinstance(v[i], Variable))
@@ -108,37 +113,16 @@ class T_VectorVariable(unittest.TestCase):
         x_arr = np.arange(0, 5., 5./N) + 1e-6
         x = VectorVariable(N, 'x', x_arr, 'm', "Beam Location")
 
-    def test_array_variable(self):
+
+class TestArrayVariable(unittest.TestCase):
+    """TestCase for the ArrayVariable class"""
+
+    def test_is_vector_variable(self):
         """
         Make sure ArrayVariable is a shortcut to VectorVariable
         (I want to know if this changes).
         """
         self.assertTrue(ArrayVariable is VectorVariable)
-
-
-class TestArrayVariable(unittest.TestCase):
-
-    def test_shape(self):
-        x = ArrayVariable((2, 3), 'x')
-        self.assertEqual(x.shape, (2, 3))
-
-    def test_ndim(self):
-        x = ArrayVariable((3, 4), 'x')
-        self.assertEqual(x.ndim, 2)
-
-    def test_left_right(self):
-        x = ArrayVariable((2, 3), 'x')
-        self.assertRaises(NotImplementedError, lambda: x.left)
-        self.assertRaises(NotImplementedError, lambda: x.right)
-
-    def test_sum(self):
-        x = ArrayVariable((2, 3), 'x')
-        rowsums = x.sum(axis=1)
-        self.assertTrue(isinstance(rowsums, PosyArray))
-        self.assertEqual(len(rowsums), 2)
-        colsums = x.sum(axis=0)
-        self.assertTrue(isinstance(colsums, PosyArray))
-        self.assertEqual(len(colsums), 3)
 
     def test_str(self):
         x = ArrayVariable((2, 4), 'x')
@@ -146,14 +130,8 @@ class TestArrayVariable(unittest.TestCase):
         self.assertEqual(strx.count("["), 3)
         self.assertEqual(strx.count("]"), 3)
 
-    def test_getitem(self):
-        x = ArrayVariable((2, 4), 'x')
-        self.assertTrue(isinstance(x[0][0], Monomial))
-        self.assertTrue(isinstance(x[0, 0], Monomial))
 
-
-TESTS = [T_VarKey, T_Variable, T_VectorVariable]
-TESTS += [TestArrayVariable]    # avoiding merge conflict -- fix this
+TESTS = [TestVarKey, TestVariable, TestVectorVariable, TestArrayVariable]
 
 if __name__ == '__main__':
     from gpkit.tests.helpers import run_tests
