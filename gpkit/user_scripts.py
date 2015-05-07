@@ -5,6 +5,29 @@ from collections import Iterable
 from .nomials import Posynomial
 from .variables import Variable, VectorVariable
 from .posyarray import PosyArray
+from .geometric_program import GeometricProgram
+
+
+def make_feasibility_gp(gp, varname=None, flavour="max"):
+    if flavour == "max":
+        slackvar = Variable(varname)
+        gp_ = GeometricProgram(slackvar,
+                               [constraint <= slackvar
+                                for constraint in gp.constraints],
+                               substitutions=gp.substitutions)
+    elif flavour == "product":
+        slackvars = VectorVariable(len(gp.constraints), varname)
+        gp_ = GeometricProgram(slackvars.prod(),
+                               [constraint <= slackvars[i]
+                                for i, constraint in enumerate(gp.constraints)],
+                               substitutions=gp.substitutions)
+    else:
+        raise ValueError("'%s' is an unknown flavour of feasibility." % flavour)
+    return gp_
+
+
+def find_feasible_point(gp, flavour="max", *args, **kwargs):
+    return make_feasibility_gp(gp, flavour=flavour).solve(*args, **kwargs)
 
 
 def composite_objective(*objectives, **kwargs):
@@ -59,12 +82,14 @@ def link(gps, varids):
         gppile += gp
     return gppile
 
+
 def getvarkey(var):
     if isinstance(var, str):
         return gps[0].varkeys[var]
     else:
         # assume is VarKey or Monomial
         return var
+
 
 def getvarstr(var):
     if isinstance(var, str):

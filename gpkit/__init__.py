@@ -93,6 +93,7 @@ from .posyarray import PosyArray
 from .geometric_program import GeometricProgram
 from .signomial_program import SignomialProgram
 from .user_scripts import composite_objective, link
+from .user_scripts import make_feasibility_gp, find_feasible_point
 
 from .shortcuts import GP, SP
 
