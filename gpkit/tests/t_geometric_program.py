@@ -204,50 +204,6 @@ class TestSP(unittest.TestCase):
         gpsol = gp.solve(printing=False, solver=self.solver)
         self.assertAlmostEqual(spsol['cost'], gpsol['cost'])
 
-    def test_trivial_sp2(self):
-        gpkit.enable_signomials()
-        x = gpkit.Variable("x")
-        y = gpkit.Variable("y")
-
-        # converging from above
-        constraints = [y + x >= 2, y  >= x ]
-        objective = y
-        x0 = 1
-        y0 = 2
-        sp = gpkit.SP(objective, constraints)
-        sol = sp.localsolve(x0={"x": x0, "y":y0}, printing=False, solver=self.solver)
-        self.assertEqual(sol["variables"]["x"], 1.)
-        self.assertEqual(sol["variables"]["y"], 1.)
-
-        # converging from right
-        constraints = [y + x >= 2, y <= x ]
-        objective = x
-        x0 = 2
-        y0 = 1
-        sp = gpkit.SP(objective, constraints)
-        sol = sp.localsolve(x0={"x": x0, "y":y0}, printing=False, solver=self.solver)
-        self.assertEqual(sol["variables"]["x"], 1.)
-        self.assertEqual(sol["variables"]["y"], 1.)
-
-        # converging from below
-        constraints = [y + x <= 2, y  <= x ]
-        objective = 1/y
-        x0 = 1
-        y0 = 0.5
-        sp = gpkit.SP(objective, constraints)
-        sol = sp.localsolve(x0={"x": x0, "y":y0}, printing=False, solver=self.solver)
-        self.assertEqual(sol["variables"]["x"], 1.)
-        self.assertEqual(sol["variables"]["y"], 1.)
-
-        # converging from left
-        constraints = [y + x <= 2, y  >= x ]
-        objective = 1/x
-        x0 = 0.5
-        y0 = 1
-        sp = gpkit.SP(objective, constraints)
-        sol = sp.localsolve(x0={"x": x0, "y":y0}, printing=False, solver=self.solver)
-        self.assertEqual(sol["variables"]["x"], 1.)
-        self.assertEqual(sol["variables"]["y"], 1.)
 
 TEST_CASES = [TestGP, TestSP]
 
