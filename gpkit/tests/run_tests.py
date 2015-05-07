@@ -1,5 +1,5 @@
 """Script for running all gpkit unit tests"""
-import unittest
+from gpkit.tests.helpers import run_tests
 TESTS = []
 
 from gpkit.tests import t_sub
@@ -33,34 +33,20 @@ def run(xmloutput=False):
     Arguments
     ---------
     xmloutput: bool
-        If true, generate xml output files (used for continuous integration)
+        If true, generate xml output files for continuous integration
     """
-    suite = unittest.TestSuite()
-    loader = unittest.TestLoader()
-
-    for t in TESTS:
-        suite.addTests(loader.loadTestsFromTestCase(t))
-
     if xmloutput:
-        import xmlrunner
-        xmlrunner.XMLTestRunner(output='test_reports').run(suite)
+        run_tests(TESTS, xmloutput='test_reports')
     else:
-        unittest.TextTestRunner(verbosity=2).run(suite)
-
+        run_tests(TESTS)
     print("\n##################################"
           "####################################")
     print("Running with units disabled:")
     gpkit.disable_units()
-
-    suite = unittest.TestSuite()
-    loader = unittest.TestLoader()
-    for t in TESTS:
-        suite.addTests(loader.loadTestsFromTestCase(t))
-
     if xmloutput:
-        xmlrunner.XMLTestRunner(output='test_reports_nounits').run(suite)
+        run_tests(TESTS, xmloutput='test_reports_nounits')
     else:
-        unittest.TextTestRunner(verbosity=1).run(suite)
+        run_tests(TESTS, verbosity=1)
 
 if __name__ == '__main__':
     run()
