@@ -491,7 +491,10 @@ class GeometricProgram(Model):
                       " flag was set to True")
             else:
                 raise RuntimeWarning("final status of solver '%s' was '%s' not "
-                                     "'optimal'" % (self.solver, result['status']))
+                                     "'optimal'" % (self.solver, result['status'])
+                                     + "\n\nTo find a feasible solution to"
+                                     " a relaxed version of your gp,"
+                                     " run gpkit.find_feasible_point(gp).")
 
         variables = dict(zip(self.varlocs, np.exp(result['primal']).ravel()))
         variables.update(self.substitutions)

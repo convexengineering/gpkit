@@ -9,6 +9,24 @@ from .geometric_program import GeometricProgram
 
 
 def make_feasibility_gp(gp, varname=None, flavour="max"):
+    """Given a GP, returns a feasible GP.
+
+    "Flavour" specifies the objective function minimized in the search for
+    feasibility:
+
+        "max" (default) : Apply the same slack to all constraints and minimize
+                          that slack. Useful for finding the "closest"
+                          feasible point. Described in Eqn. 10 of [Boyd2007].
+
+        "product" : Apply a unique slack to all constraints and minimize the
+                    product of those slacks. Useful for identifying the most
+                    problematic constraints. Described in Eqn. 11 of [Boyd2007]
+
+
+    [Boyd2007] : "A tutorial on geometric programming", Optim Eng 8:67-122
+
+    """
+
     if flavour == "max":
         slackvar = Variable(varname)
         gp_ = GeometricProgram(slackvar,
@@ -26,7 +44,7 @@ def make_feasibility_gp(gp, varname=None, flavour="max"):
     return gp_
 
 
-def find_feasible_point(gp, flavour="max", *args, **kwargs):
+def closest_feasible_point(gp, flavour="max", *args, **kwargs):
     return make_feasibility_gp(gp, flavour=flavour).solve(*args, **kwargs)
 
 

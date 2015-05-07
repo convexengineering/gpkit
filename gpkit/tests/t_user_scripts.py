@@ -1,6 +1,6 @@
 import unittest
 import numpy as np
-from gpkit import (GP, Variable, find_feasible_point, make_feasibility_gp)
+from gpkit import (GP, Variable, closest_feasible_point, make_feasibility_gp)
 
 
 class TestFeasibilityHelpers(unittest.TestCase):
@@ -12,7 +12,7 @@ class TestFeasibilityHelpers(unittest.TestCase):
         self.assertRaises(RuntimeWarning, gp.solve, printing=False)
         fgp = make_feasibility_gp(gp, flavour=self.flavour)
         sol1 = fgp.solve(printing=False)
-        sol2 = find_feasible_point(gp, flavour=self.flavour, printing=False)
+        sol2 = closest_feasible_point(gp, flavour=self.flavour, printing=False)
         self.assertAlmostEqual(sol1["cost"], sol2["cost"])
 
 TEST_CASES = [TestFeasibilityHelpers]
