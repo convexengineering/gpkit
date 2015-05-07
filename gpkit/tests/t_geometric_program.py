@@ -215,7 +215,7 @@ class TestSP(unittest.TestCase):
         x0 = 1
         y0 = 2
         sp = gpkit.SP(objective, constraints)
-        sol = sp.localsolve(xk={"x": x0, "y":y0}, printing=False, solver=self.solver)
+        sol = sp.localsolve(x0={"x": x0, "y":y0}, printing=False, solver=self.solver)
         self.assertEqual(sol["variables"]["x"], 1.)
         self.assertEqual(sol["variables"]["y"], 1.)
 
@@ -225,7 +225,7 @@ class TestSP(unittest.TestCase):
         x0 = 2
         y0 = 1
         sp = gpkit.SP(objective, constraints)
-        sol = sp.localsolve(xk={"x": x0, "y":y0}, printing=False, solver=self.solver)
+        sol = sp.localsolve(x0={"x": x0, "y":y0}, printing=False, solver=self.solver)
         self.assertEqual(sol["variables"]["x"], 1.)
         self.assertEqual(sol["variables"]["y"], 1.)
 
@@ -235,7 +235,7 @@ class TestSP(unittest.TestCase):
         x0 = 1
         y0 = 0.5
         sp = gpkit.SP(objective, constraints)
-        sol = sp.localsolve(xk={"x": x0, "y":y0}, printing=False, solver=self.solver)
+        sol = sp.localsolve(x0={"x": x0, "y":y0}, printing=False, solver=self.solver)
         self.assertEqual(sol["variables"]["x"], 1.)
         self.assertEqual(sol["variables"]["y"], 1.)
 
@@ -245,7 +245,7 @@ class TestSP(unittest.TestCase):
         x0 = 0.5
         y0 = 1
         sp = gpkit.SP(objective, constraints)
-        sol = sp.localsolve(xk={"x": x0, "y":y0}, printing=False, solver=self.solver)
+        sol = sp.localsolve(x0={"x": x0, "y":y0}, printing=False, solver=self.solver)
         self.assertEqual(sol["variables"]["x"], 1.)
         self.assertEqual(sol["variables"]["y"], 1.)
 
