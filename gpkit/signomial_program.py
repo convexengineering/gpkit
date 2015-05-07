@@ -75,7 +75,8 @@ class SP(GP):
                                  " solve(), you can get a global optimum.")
 
         if self.x0:
-            subs = getsubs(neg_varkeys, self.varlocs, self.x0)
+            subs = getsubs({str(vk): vk for vk in neg_varkeys},
+                           self.varlocs, self.x0)
             missing_vks = [vk for vk in neg_varkeys if vk not in subs]
             if missing_vks:
                 raise RuntimeWarning("starting point for solution needs to"
