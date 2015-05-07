@@ -74,6 +74,12 @@ class SP(GP):
                                  " if you create it as a GP, and solve it with"
                                  " solve(), you can get a global optimum.")
 
+        if self.sp_iters == 1:
+            vk_inits = {vk: vk.descr["sp_init"] for vk in neg_varkeys
+                        if "sp_init" in vk.descr}
+            vk_inits.update(self.x0)
+            self.x0 = vk_inits
+
         if self.x0:
             subs = getsubs({str(vk): vk for vk in neg_varkeys},
                            self.varlocs, self.x0)
