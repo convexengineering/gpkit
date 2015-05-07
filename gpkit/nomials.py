@@ -163,8 +163,9 @@ class Signomial(object):
 
     def mono_approximation(self, x0):
         if isinstance(self, Monomial):
-            raise TypeError("making a Monomial approximation of a Monomial"
-                            " is unnecessary.")
+            raise TypeError("making a Monomial approximation of %s"
+                            " is unnecessary; it's already a Monomial."
+                            "" % str(self))
         else:
             c, exp = mono_approx(self, getsubs(self.varkeys, self.varlocs, x0))
             return Monomial(exp, c)

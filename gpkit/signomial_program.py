@@ -68,6 +68,12 @@ class SP(GP):
                 p_idxs.append(self.p_idxs[i])
                 unsubbedexps.append(self.unsubbed.exps[i])
 
+        if not approxs:
+            raise RuntimeWarning("this problem is a GP; it has no signomial"
+                                 " components, and has a global solution; "
+                                 " if you create it as a GP, and solve it with"
+                                 " solve(), you can get a global optimum.")
+
         if self.x0:
             subs = getsubs(neg_varkeys, self.varlocs, self.x0)
             missing_vks = [vk for vk in neg_varkeys if vk not in subs]
