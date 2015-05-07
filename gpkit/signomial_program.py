@@ -6,6 +6,7 @@ from .small_scripts import locate_vars
 from .nomials import Constraint, MonoEQConstraint
 from .small_classes import CootMatrix
 from .small_scripts import mag
+from .substitution import getsubs
 from collections import defaultdict
 
 
@@ -26,11 +27,11 @@ class SP(GP):
             if result['status'] not in ["optimal", "OPTIMAL"]:
                 raise RuntimeWarning("final status of solver '%s' was '%s' not "
                                      "'optimal'" % (self.solver, result['status']))
-            self.xk = dict(zip(varlocs, np.exp(result['primal']).ravel()))
+            self.x0 = dict(zip(varlocs, np.exp(result['primal']).ravel()))
             if "objective" in result:
                 obj = float(result["objective"])
             else:
-                obj = self.subbedcost.subcmag(self.xk)
+                obj = self.subbedcost.subcmag(self.x0)
 
         cs, p_idxs = map(np.array, [cs, p_idxs])
         return self._parse_result(result, unsubbedexps, unsubbedvarlocs,
@@ -40,21 +41,21 @@ class SP(GP):
         # A: exponents of the various free variables for each monomial
         #    rows of A are variables, columns are monomials
 
-        printing = printing and bool(self.xk)
+        printing = printing and bool(self.x0)
 
         unsubbedexps = []
         cs, exps, p_idxs = [], [], []
-        varkeys = []
+        neg_varkeys = []
         approxs = {}
 
         for i in range(len(self.cs)):
             if self.cs[i] < 0:
                 c = -self.cs[i]
                 exp = self.exps[i]
-                if self.xk:
+                if self.x0:
                     for vk in exp:
-                        if vk not in varkeys:
-                            varkeys.append(vk)
+                        if vk not in neg_varkeys:
+                            neg_varkeys.append(vk)
                 p_idx = self.p_idxs[i]
                 m = Monomial(exp, c)
                 if p_idx not in approxs:
@@ -67,15 +68,16 @@ class SP(GP):
                 p_idxs.append(self.p_idxs[i])
                 unsubbedexps.append(self.unsubbed.exps[i])
 
-        if self.xk:
-            missing_vks = [vk for vk in varkeys if vk not in self.xk]
+        if self.x0:
+            subs = getsubs(neg_varkeys, self.varlocs, self.x0)
+            missing_vks = [vk for vk in neg_varkeys if vk not in subs]
             if missing_vks:
                 raise RuntimeWarning("starting point for solution needs to"
-                                     "contain the following variables: "
+                                     " contain the following variables: "
                                      + str(missing_vks))
 
         for p_idx, p in approxs.items():
-            approxs[p_idx] = (1+p).mono_approximation(self.xk)
+            approxs[p_idx] = (1+p).mono_approximation(self.x0)
 
         for i, p_idx in enumerate(p_idxs):
             if p_idx in approxs:
@@ -138,12 +140,12 @@ class SP(GP):
 
         return cs, exps, varlocs, self.A, p_idxs, k, unsubbedexps, unsubbedvarlocs
 
-    def localsolve(self, solver=None, printing=True, xk={}, reltol=1e-4, *args, **kwargs):
+    def localsolve(self, solver=None, printing=True, x0={}, reltol=1e-4, *args, **kwargs):
         self.reltol = 1e-4
         if printing:
             print("Beginning signomial solve.")
 
-        self.xk = xk
+        self.x0 = x0
         self.sp_iters = 0
         self.presolve = self.last
         self.subbedcost = self.cost.sub(self.substitutions)
