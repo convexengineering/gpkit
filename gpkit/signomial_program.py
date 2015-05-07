@@ -138,7 +138,7 @@ class SP(GP):
 
         return cs, exps, varlocs, self.A, p_idxs, k, unsubbedexps, unsubbedvarlocs
 
-    def localsolve(self, solver, printing=True, xk={}, reltol=1e-4, *args, **kwargs):
+    def localsolve(self, solver=None, printing=True, xk={}, reltol=1e-4, *args, **kwargs):
         self.reltol = 1e-4
         if printing:
             print("Beginning signomial solve.")
