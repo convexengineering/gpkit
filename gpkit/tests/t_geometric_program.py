@@ -181,26 +181,6 @@ class TestSP(unittest.TestCase):
         self.assertAlmostEqual(sol["variables"]["x"], 0.9, self.ndig)
         gpkit.disable_signomials()
 
-    def test_united_interp(self):
-        gpkit.enable_signomials()
-        L = Variable("L", "m", "Length")
-        W = Variable("W", "m", "Width")
-        Obj = Variable("Obj", "1/m^4", "Objective")
-
-        a = Variable("a", np.linspace(0, 1, 10), "-", "Pareto Sweep Variable")
-
-        eqns = [L >= gpkit.units.m, W >= gpkit.units.m,
-                L*W == 10*gpkit.units.m**2,
-                Obj >= a*(2*L+2*W)*gpkit.units.m**-5 + (1-a)*(12*W**-1*L**-3)]
-
-        sp = SP(Obj, eqns)
-        if self.solver != "mosek_cli":
-            # the mosek_cli solver takes 5s on this problem!
-            sol = sp.localsolve(printing=False, solver=self.solver)
-            solv = sol["variables"]
-            self.assertAlmostEqual(solv["L"][3], 3.276042, 5)
-        gpkit.disable_signomials()
-
     def test_issue180(self):
         gpkit.enable_signomials()
         L = Variable("L")
@@ -224,6 +204,50 @@ class TestSP(unittest.TestCase):
         gpsol = gp.solve(printing=False, solver=self.solver)
         self.assertAlmostEqual(spsol['cost'], gpsol['cost'])
 
+    def test_trivial_sp2(self):
+        gpkit.enable_signomials()
+        x = gpkit.Variable("x")
+        y = gpkit.Variable("y")
+
+        # converging from above
+        constraints = [y + x >= 2, y  >= x ]
+        objective = y
+        x0 = 1
+        y0 = 2
+        sp = gpkit.SP(objective, constraints)
+        sol = sp.localsolve(xk={"x": x0, "y":y0}, printing=False, solver=self.solver)
+        self.assertEqual(sol["variables"]["x"], 1.)
+        self.assertEqual(sol["variables"]["y"], 1.)
+
+        # converging from right
+        constraints = [y + x >= 2, y <= x ]
+        objective = x
+        x0 = 2
+        y0 = 1
+        sp = gpkit.SP(objective, constraints)
+        sol = sp.localsolve(xk={"x": x0, "y":y0}, printing=False, solver=self.solver)
+        self.assertEqual(sol["variables"]["x"], 1.)
+        self.assertEqual(sol["variables"]["y"], 1.)
+
+        # converging from below
+        constraints = [y + x <= 2, y  <= x ]
+        objective = 1/y
+        x0 = 1
+        y0 = 0.5
+        sp = gpkit.SP(objective, constraints)
+        sol = sp.localsolve(xk={"x": x0, "y":y0}, printing=False, solver=self.solver)
+        self.assertEqual(sol["variables"]["x"], 1.)
+        self.assertEqual(sol["variables"]["y"], 1.)
+
+        # converging from left
+        constraints = [y + x <= 2, y  >= x ]
+        objective = 1/x
+        x0 = 0.5
+        y0 = 1
+        sp = gpkit.SP(objective, constraints)
+        sol = sp.localsolve(xk={"x": x0, "y":y0}, printing=False, solver=self.solver)
+        self.assertEqual(sol["variables"]["x"], 1.)
+        self.assertEqual(sol["variables"]["y"], 1.)
 
 TEST_CASES = [TestGP, TestSP]
 
