@@ -90,9 +90,11 @@ from .nomials import Monomial, Posynomial, Signomial
 from .variables import Variable, VectorVariable, ArrayVariable
 from .varkey import VarKey
 from .posyarray import PosyArray
-from .geometric_program import GP
-from .signomial_program import SP
+from .geometric_program import GeometricProgram
+from .signomial_program import SignomialProgram
 from .user_scripts import composite_objective, link
+
+from .shortcuts import GP, SP
 
 if units:
     # regain control of Quantities' interactions with Posynomials

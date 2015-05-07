@@ -1,9 +1,9 @@
 # -*- coding: utf-8 -*-
-"""Module for creating GP instances.
+"""Module for creating GeometricProgram instances.
 
     Example
     -------
-    >>> gp = gpkit.GP(cost, constraints, substitutions)
+    >>> gp = gpkit.GeometricProgram(cost, constraints, substitutions)
 
 """
 
@@ -115,7 +115,7 @@ class GPSolutionArray(DictOfLists):
         return "\n".join(strs)
 
 
-class GP(Model):
+class GeometricProgram(Model):
     """Holds a model and cost function for passing to solvers.
 
     Parameters
@@ -134,7 +134,7 @@ class GP(Model):
 
     Examples
     --------
-    >>> gp = gpkit.GP(  # minimize
+    >>> gp = gpkit.GeometricProgram(  # minimize
                         0.5*rho*S*C_D*V**2,
                         [   # subject to
                             Re <= (rho/mu)*V*(S/A)**0.5,
@@ -164,7 +164,7 @@ class GP(Model):
             try:
                 self.cost, constraints = ans
             except TypeError:
-                raise TypeError("GP setup must return 'cost, constraints'.")
+                raise TypeError("GeometricProgram setup must return 'cost, constraints'.")
         else:
             if "cost" in kwargs:
                 self.cost = kwargs["cost"]
@@ -189,8 +189,8 @@ class GP(Model):
                 posynomials.append(constraint)
         self.posynomials = tuple(posynomials)
         if hasattr(self, "setup"):
-            k = GP.model_nums[name]
-            GP.model_nums[name] = k+1
+            k = GeometricProgram.model_nums[name]
+            GeometricProgram.model_nums[name] = k+1
             name += str(k) if k else ""
             for p in self.posynomials:
                 for k in p.varlocs:
@@ -228,9 +228,9 @@ class GP(Model):
             self.options = {}
 
     def __add__(self, other):
-        if isinstance(other, GP):
+        if isinstance(other, GeometricProgram):
             # don't add costs b/c that breaks when costs have units
-            newgp = GP(self.cost * other.cost,
+            newgp = GeometricProgram(self.cost * other.cost,
                        self.constraints + other.constraints)
             subs = newgp.substitutions
             newgp._gen_unsubbed_vars([self.exps[0] + other.exps[0]]
@@ -286,16 +286,16 @@ class GP(Model):
         self.results[key] = value
 
     def __eq__(self, other):
-        "GP equality is determined by their string representations."
+        "GeometricProgram equality is determined by their string representations."
         return str(self) == str(other)
 
     def __ne__(self, other):
-        "GP inequality is determined by their string representations."
+        "GeometricProgram inequality is determined by their string representations."
         return not self == other
 
     def __repr__(self):
-        "The string representation of a GP contains all of its parameters."
-        return "\n".join(["gpkit.GP( # minimize",
+        "The string representation of a GeometricProgram contains all of its parameters."
+        return "\n".join(["gpkit.GeometricProgram( # minimize",
                           "          %s," % self.cost,
                           "          [   # subject to"] +
                          ["              %s," % constr
@@ -307,7 +307,7 @@ class GP(Model):
                          )
 
     def _latex(self, unused=None):
-        "The LaTeX representation of a GP contains all of its parameters."
+        "The LaTeX representation of a GeometricProgram contains all of its parameters."
         return "\n".join(["\\begin{array}[ll]",
                           "\\text{}",
                           "\\text{minimize}",
@@ -336,7 +336,7 @@ class GP(Model):
 
     def _solve(self, solver=None, printing=True, skipfailures=False,
                allownonoptimal=False):
-        """Solves a GP and returns the solution.
+        """Solves a GeometricProgram and returns the solution.
 
         Parameters
         ----------
@@ -397,12 +397,12 @@ class GP(Model):
         return self.solution
 
     def _solve_sweep(self, printing, skipfailures, allownonoptimal):
-        """Runs a GP through a sweep, solving at each grid point
+        """Runs a GeometricProgram through a sweep, solving at each grid point
 
         Parameters
         ----------
         printing : bool (optional)
-            If True, then prints out sweep and GP size.
+            If True, then prints out sweep and GeometricProgram size.
 
         Returns
         -------

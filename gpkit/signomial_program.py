@@ -1,7 +1,7 @@
 import numpy as np
 
 from .nomials import Monomial
-from .geometric_program import GP
+from .geometric_program import GeometricProgram
 from .small_scripts import locate_vars
 from .nomials import Constraint, MonoEQConstraint
 from .small_classes import CootMatrix
@@ -10,7 +10,7 @@ from .substitution import getsubs
 from collections import defaultdict
 
 
-class SP(GP):
+class SignomialProgram(GeometricProgram):
 
     def _run_solver(self, allownonoptimal):
         "Gets a solver's raw output, then checks and standardizes it."
