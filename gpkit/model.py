@@ -221,5 +221,5 @@ class Model(object):
         return cs, exps, self.A, p_idxs, k, removed_idxs
 
     def checkbounds(self):
-        for var, bound in self.missingbounds.items():
+        for var, bound in sorted(self.missingbounds.items()):
             print("%s has no %s bound" % (var, bound))
