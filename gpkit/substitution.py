@@ -53,7 +53,6 @@ def vectorsub(subs, var, sub, varset):
     if isvector:
         if isinstance(sub, VarKey):
             sub = VectorVariable(**sub.descr)
-
         if hasattr(sub, "__len__"):
             if hasattr(sub, "shape"):
                 isvector = bool(sub.shape)
@@ -61,19 +60,15 @@ def vectorsub(subs, var, sub, varset):
             isvector = False
 
     if isvector:
-        if not hasattr(var, "__len__"):
-            var = [var]
-        if isinstance(sub, np.ndarray):
-            subtype = "array"
-        else:
-            subtype = "list"
-
-        for var_ in var:
-            if var_:
+        sub = np.array(sub)
+        var = np.array(var)
+        it = np.nditer(var, flags=['multi_index', 'refs_ok'])
+        while not it.finished:
+            i = it.multi_index
+            it.iternext()
+            var_ = var[i]
+            if not var_ is 0:
                 v = VarKey(var_)
-                i = v.descr["idx"]
-                if subtype == "list":
-                    i = i[0]
                 if v in varset:
                     subs[v] = sub[i]
     elif var in varset:
