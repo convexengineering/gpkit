@@ -24,10 +24,15 @@ class SignomialProgram(GeometricProgram):
             lastobj = obj
             cs, exps, varlocs, A, p_idxs, k, unsubbedexps, unsubbedvarlocs = self.genA()
             result = self.solverfn(c=cs, A=A, p_idxs=p_idxs, k=k)
-            if (result['status'] not in ["optimal", "OPTIMAL"]
-                and not allownonoptimal):
-                raise RuntimeWarning("final status of solver '%s' was '%s' not "
-                                     "'optimal'" % (self.solver, result['status']))
+            if result['status'] not in ["optimal", "OPTIMAL"]:
+                if allownonoptimal:
+                    print("Nonoptimal result returned because 'allownonoptimal'"
+                          " flag was set to True")
+                    return self._parse_result(result, unsubbedexps, unsubbedvarlocs,
+                                              cs, p_idxs, allownonoptimal)
+                else:
+                    raise RuntimeWarning("final status of solver '%s' was '%s' not "
+                                         "'optimal'" % (self.solver, result['status']))
             self.x0 = dict(zip(varlocs, np.exp(result['primal']).ravel()))
             if "objective" in result:
                 obj = float(result["objective"])
