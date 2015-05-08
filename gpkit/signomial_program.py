@@ -42,7 +42,7 @@ class SignomialProgram(GeometricProgram):
 
         cs, p_idxs = map(np.array, [cs, p_idxs])
         return self._parse_result(result, unsubbedexps, unsubbedvarlocs,
-                                  cs, p_idxs, allownonoptimal)
+                                  varlocs, cs, p_idxs, allownonoptimal)
 
     def genA(self, printing=True):
         # A: exponents of the various free variables for each monomial

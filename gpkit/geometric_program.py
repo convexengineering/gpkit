@@ -206,7 +206,7 @@ class GeometricProgram(Model):
         self.sweep, self.linkedsweep = {}, {}
         self._gen_unsubbed_vars()
         values = {var: var.descr["value"]
-                  for var in self.varlocs if "value" in var.descr}
+                  for var in ocs if "value" in var.descr}
         if "substitutions" in kwargs:
             values.update(kwargs["substitutions"])
         elif len(args) > 0 and not hasattr(self, "setup"):
@@ -380,7 +380,7 @@ class GeometricProgram(Model):
             solution = self._solve_sweep(printing, skipfailures, allownonoptimal)
         else:
             if printing:
-                print("Solving for %i variables." % len(self.varlocs))
+                print("Solving for %i variables." % len(ocs))
             solution = GPSolutionArray()
             solution.append(self._run_solver(allownonoptimal))
             solution.toarray()
@@ -424,7 +424,7 @@ class GeometricProgram(Model):
                        for (var, grid) in zip(self.sweep, sweep_grids)}
         if printing:
             print("Solving for %i variables over %i passes." % (
-                  len(self.varlocs), N_passes))
+                  len(ocs), N_passes))
 
         linkedsweep = self.linkedsweep
 
@@ -478,8 +478,8 @@ class GeometricProgram(Model):
         return self._parse_result(result, unsubbedexps, unsubbedvarlocs,
                                   cs, p_idxs, allownonoptimal)
 
-    def _parse_result(self, result, unsubbedexps, unsubbedvarlocs, cs, p_idxs,
-                      allownonoptimal):
+    def _parse_result(self, result, unsubbedexps, unsubbedvarlocs, varlocs,
+                      cs, p_idxs, allownonoptimal):
         if cs is None:
             cs = self.cs
         if p_idxs is None:
@@ -496,7 +496,7 @@ class GeometricProgram(Model):
                                      " a relaxed version of your gp,"
                                      " run gpkit.find_feasible_point(gp).")
 
-        variables = dict(zip(self.varlocs, np.exp(result['primal']).ravel()))
+        variables = dict(zip(varlocs, np.exp(result['primal']).ravel()))
         variables.update(self.substitutions)
 
         # constraints must be within arbitrary epsilon 1e-4 of 1
@@ -585,6 +585,7 @@ class GeometricProgram(Model):
         free_variables = {var: val for var, val in variables.items()
                           if var not in self.substitutions}
         return dict(cost=cost,
+                    rawresult=result,
                     variables=variables,
                     sensitivities=sensitivities,
                     local_model=local_model)
