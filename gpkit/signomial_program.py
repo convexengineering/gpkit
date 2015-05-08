@@ -28,6 +28,7 @@ class SignomialProgram(GeometricProgram):
                 if allownonoptimal:
                     print("Nonoptimal result returned because 'allownonoptimal'"
                           " flag was set to True")
+                    cs, p_idxs = map(np.array, [cs, p_idxs])
                     return self._parse_result(result, unsubbedexps, unsubbedvarlocs,
                                               cs, p_idxs, allownonoptimal)
                 else:
