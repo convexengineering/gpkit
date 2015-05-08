@@ -206,7 +206,7 @@ class GeometricProgram(Model):
         self.sweep, self.linkedsweep = {}, {}
         self._gen_unsubbed_vars()
         values = {var: var.descr["value"]
-                  for var in ocs if "value" in var.descr}
+                  for var in self.varlocs if "value" in var.descr}
         if "substitutions" in kwargs:
             values.update(kwargs["substitutions"])
         elif len(args) > 0 and not hasattr(self, "setup"):
@@ -380,7 +380,7 @@ class GeometricProgram(Model):
             solution = self._solve_sweep(printing, skipfailures, allownonoptimal)
         else:
             if printing:
-                print("Solving for %i variables." % len(ocs))
+                print("Solving for %i variables." % len(self.varlocs))
             solution = GPSolutionArray()
             solution.append(self._run_solver(allownonoptimal))
             solution.toarray()
@@ -424,7 +424,7 @@ class GeometricProgram(Model):
                        for (var, grid) in zip(self.sweep, sweep_grids)}
         if printing:
             print("Solving for %i variables over %i passes." % (
-                  len(ocs), N_passes))
+                  len(self.varlocs), N_passes))
 
         linkedsweep = self.linkedsweep
 
