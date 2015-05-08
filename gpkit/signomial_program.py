@@ -59,10 +59,9 @@ class SignomialProgram(GeometricProgram):
             if self.cs[i] < 0:
                 c = -self.cs[i]
                 exp = self.exps[i]
-                if self.x0:
-                    for vk in exp:
-                        if vk not in neg_varkeys:
-                            neg_varkeys.append(vk)
+                for vk in exp:
+                    if vk not in neg_varkeys:
+                        neg_varkeys.append(vk)
                 p_idx = self.p_idxs[i]
                 m = Monomial(exp, c)
                 if p_idx not in approxs:

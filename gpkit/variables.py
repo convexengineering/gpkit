@@ -101,7 +101,12 @@ class VectorVariable(PosyArray):
             elif isinstance(arg, Strings) and "label" not in descr:
                 descr["label"] = arg
 
-        values = descr.pop("value", [])
+        values = []
+        for value_option in ["value", "sp_init"]:
+            if value_option in descr:
+                values = descr.pop(value_option)
+                break
+
         valuetype = ""
         if len(values):
             if len(shape) == 1:
@@ -125,9 +130,9 @@ class VectorVariable(PosyArray):
             it.iternext()
             descr.update({"idx": i})
             if valuetype == "array":
-                descr.update({"value": values[i]})
+                descr.update({value_option: values[i]})
             elif valuetype == "list":
-                descr.update({"value": values[i[0]]})
+                descr.update({value_option: values[i[0]]})
             vl[i] = Variable(**descr)
 
         obj = np.asarray(vl).view(cls)
