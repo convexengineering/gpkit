@@ -7,7 +7,7 @@ except ImportError:
 from ..small_scripts import unitstr
 
 
-def widget(gp, outputfn=None, ranges=None):
+def widget(gp, outputfn=None, ranges=None, **solveargs):
     gp = gp.copy()
 
     if not ranges:
@@ -22,12 +22,13 @@ def widget(gp, outputfn=None, ranges=None):
     gp.sweep = {}
     gp.prewidget = gp.last
 
+    solveargs["printing"] = False
     def display(**subs):
         gp.sub(subs, replace=True)
         if hasattr(gp, "localsolve"):
-            gp.localsolve(printing=False)
+            gp.localsolve(**solveargs)
         else:
-            gp.solve(printing=False)
+            gp.solve(**solveargs)
         outputfn(gp)
         gp.load(gp.prewidget)
 
