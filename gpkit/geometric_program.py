@@ -475,7 +475,7 @@ class GeometricProgram(Model):
                             if i not in removed_idxs]
             unsubbedvarlocs, __ = locate_vars(unsubbedexps)
 
-        return self._parse_result(result, unsubbedexps, unsubbedvarlocs,
+        return self._parse_result(result, unsubbedexps, unsubbedvarlocs, self.varlocs,
                                   cs, p_idxs, allownonoptimal)
 
     def _parse_result(self, result, unsubbedexps, unsubbedvarlocs, varlocs,
@@ -585,7 +585,6 @@ class GeometricProgram(Model):
         free_variables = {var: val for var, val in variables.items()
                           if var not in self.substitutions}
         return dict(cost=cost,
-                    rawresult=result,
                     variables=variables,
                     sensitivities=sensitivities,
                     local_model=local_model)
