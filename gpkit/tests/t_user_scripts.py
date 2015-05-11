@@ -7,7 +7,6 @@ class TestFeasibilityHelpers(unittest.TestCase):
     """TestCase for the feasibility scripts"""
 
     def test_feasibility_gp_(self):
-        return  # below currently fails; remove this return when it works
         x = Variable('x')
         gp = GP(x, [x**2 >= 1, x <= 0.5])
         self.assertRaises(RuntimeWarning, gp.solve, printing=False)

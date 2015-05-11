@@ -67,7 +67,7 @@ def imize_fn(filename):
 
         Raises
         ------
-        ValueError
+        RuntimeWarning
             If the format of mskexpopt's output file is unexpected.
 
         """
@@ -123,7 +123,7 @@ def assert_line(f, expected):
     received = f.readline()
     if tuple(expected[:-1].split()) != tuple(received[:-1].split()):
         errstr = repr(expected)+" is not the same as "+repr(received)
-        raise ValueError(errstr)
+        raise RuntimeWarning(errstr)
 
 
 def read_vals(f):
