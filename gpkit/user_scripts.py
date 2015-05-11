@@ -30,12 +30,14 @@ def make_feasibility_gp(gp, varname=None, flavour="max"):
     if flavour == "max":
         slackvar = Variable(varname)
         gp_ = GeometricProgram(slackvar,
+                               [slackvar >= 1],
                                [constraint <= slackvar
                                 for constraint in gp.constraints],
                                substitutions=gp.substitutions)
     elif flavour == "product":
         slackvars = VectorVariable(len(gp.constraints), varname)
         gp_ = GeometricProgram(slackvars.prod(),
+                               [slackvars >= 1],
                                [constraint <= slackvars[i]
                                 for i, constraint in enumerate(gp.constraints)],
                                substitutions=gp.substitutions)
