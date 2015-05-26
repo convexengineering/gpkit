@@ -31,9 +31,11 @@ class Signomial(object):
             Exponent dicts for each monomial term
         cs: tuple
             Coefficient values for each monomial term
-        varlocs: dict
+        varlocsandkeys: dict
             mapping from variable name to list of indices of monomial terms
             that variable appears in
+        require_positive: bool
+            If True and signomials not enabled, c <= 0 will raise ValueError
 
         Returns
         -------
@@ -171,6 +173,17 @@ class Signomial(object):
             return Monomial(exp, c)
 
     def sub(self, substitutions, val=None, require_positive=True):
+        """Make substitutions and return a new object, without modifying self.
+        
+        Parameters
+        ----------
+        substitutions: dict
+            Mapping from variables to substituted values or monomials
+        val: number
+            Optional way to substitute singlet variables
+        require_positive: bool
+            If True, require positive cs for returned Signomial.
+        """
         varlocs, exps, cs, subs = substitution(self.varlocs, self.varkeys,
                                                self.exps, self.cs,
                                                substitutions, val)

@@ -39,7 +39,7 @@ def getsubs(varkeys, varlocs, substitutions):
 
 
 def vectorsub(subs, var, sub, varset):
-    "Vectorized substitution via vecmons and Variables."
+    "Vectorized substitution"
 
     if hasattr(var, "__len__"):
         isvector = True
@@ -79,11 +79,11 @@ def substitution(varlocs, varkeys, exps, cs, substitutions, val=None):
         Parameters
         ----------
         varlocs : dict
-            Dictionary of monomial indexes for each variable.
-        exps : dict
-            Dictionary of variable exponents for each monomial.
+            Dictionary mapping variables to lists of monomial indices.
+        exps : Iterable of dicts
+            Dictionary mapping variables to exponents, for each monomial.
         cs : list
-            Coefficients each monomial.
+            Coefficient for each monomial.
         substitutions : dict
             Substitutions to apply to the above.
         val : number (optional)
