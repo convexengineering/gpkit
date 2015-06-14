@@ -44,7 +44,7 @@ This example comes from Section 3 of `Geometric Programming for Aircraft Design 
 
 .. literalinclude:: examples/simple_wing.py
 The output is
-.. literalinclude:: examples/simple_wint.txt
+.. literalinclude:: examples/simple_wing.txt
 
 .. Comments:
 
