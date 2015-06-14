@@ -43,8 +43,10 @@ Simple Wing
 This example comes from Section 3 of `Geometric Programming for Aircraft Design Optimization <http://web.mit.edu/~whoburg/www/papers/hoburgabbeel2014.pdf>`_, by W. Hoburg and P. Abbeel.
 
 .. literalinclude:: examples/simple_wing.py
+
 The output is
-.. literalinclude:: examples/simple_wing.txt
+
+.. literalinclude:: examples/simple_wing_output.txt
 
 .. Comments:
 
