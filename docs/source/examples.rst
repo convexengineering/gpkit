@@ -38,6 +38,14 @@ The output is
 
 .. literalinclude:: examples/water_tank_output.txt
 
+Simple Wing
+===========
+This example comes from Section 3 of `Geometric Programming for Aircraft Design Optimization <http://web.mit.edu/~whoburg/www/papers/hoburgabbeel2014.pdf>`_, by W. Hoburg and P. Abbeel.
+
+.. literalinclude:: examples/simple_wing.py
+The output is
+.. literalinclude:: examples/simple_wint.txt
+
 .. Comments:
 
 ..
