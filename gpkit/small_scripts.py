@@ -166,7 +166,7 @@ def sort_and_simplify(exps, cs):
 
 
 def results_table(data, title, minval=0, printunits=True, fixedcols=True,
-                  varfmt="%4s : ", valfmt="%-8.3g", vecfmt="%-7.2g"):
+                  varfmt="%s : ", valfmt="%-8.3g ", vecfmt="%-7.2g"):
     """
     Pretty string representation of a dict of VarKeys
     Iterable values are handled specially (partial printing)
@@ -190,7 +190,7 @@ def results_table(data, title, minval=0, printunits=True, fixedcols=True,
     """
     lines = []
     decorated = [(bool(v.shape) if isinstance(v, Iterable) else False,
-                 ('%s : ' % k),
+                 (varfmt % k),
                  i, k, v) for i, (k, v) in enumerate(data.items())
                  if np.max(abs(v)) >= minval]
     decorated.sort()
