@@ -4,18 +4,18 @@ Cost
 
 Variables
 ---------
-A_{floor} : 50       [m**2] upper limit, floor area        
- A_{wall} : 200      [m**2] upper limit, wall area         
-    alpha : 2               lower limit, wall aspect ratio 
-     beta : 10              upper limit, wall aspect ratio 
-        d : 8.17     [m]    depth                          
-    delta : 10              upper limit, floor aspect ratio
-    gamma : 2               lower limit, floor aspect ratio
-        h : 8.16     [m]    height                         
-        w : 4.08     [m]    width                          
+A_{floor} : 50        [m**2] upper limit, floor area        
+ A_{wall} : 200       [m**2] upper limit, wall area         
+    alpha : 2                lower limit, wall aspect ratio 
+     beta : 10               upper limit, wall aspect ratio 
+        d : 8.17      [m]    depth                          
+    delta : 10               upper limit, floor aspect ratio
+    gamma : 2                lower limit, floor aspect ratio
+        h : 8.16      [m]    height                         
+        w : 4.08      [m]    width                          
 
 Constant sensitivities
 ----------------------
-A_{wall} : -1.5    upper limit, wall area        
-   alpha : 0.5     lower limit, wall aspect ratio
+A_{wall} : -1.5     upper limit, wall area        
+   alpha : 0.5      lower limit, wall aspect ratio
 
