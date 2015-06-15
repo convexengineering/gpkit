@@ -1,39 +1,48 @@
+Using solver 'cvxopt'
+Solving for 9 variables.
+Solving took 0.0643 seconds.
+
 Cost
  255     
 
 Variables
 ---------
-          (CDA_0) : 0.0306  
-                A : 12.7    
-              C_D : 0.0231  
-              C_L : 0.651   
-              C_f : 0.00386 
-        C_{L,max} : 2       
-         N_{lift} : 2.5     
-               Re : 2.6e+06 
-               Re : 7.19e+03
-                S : 12.1    
-                V : 38.6    
-          V_{min} : 22      
-              W_0 : 4.94e+03
-              W_w : 2.25e+03
-\frac{S_{wet}}{S} : 2.05    
-              \mu : 1.78e-05
-             \rho : 1.23    
-             \tau : 0.12    
-                e : 0.96    
-                k : 1.2     
+          (CDA_0) : 0.0306    [m**2]    Fuselage drag area              
+                A : 12.7                Aspect ratio                    
+              C_D : 0.0231              Drag coefficient                
+              C_L : 0.651               Lift coefficient                
+              C_f : 0.00386             Skin friction coefficient       
+        C_{L,max} : 2                   Maximum C_L, flaps down         
+         N_{lift} : 2.5                 Ultimate load factor            
+               Re : 2.6e+06             Reynolds number                 
+               Re : 7.19e+03  [N]       Total aircraft weight           
+                S : 12.1      [m**2]    Wing planform area              
+                V : 38.6      [m/s]     Cruise velocity                 
+          V_{min} : 22        [m/s]     Desired landing speed           
+              W_0 : 4.94e+03  [N]       Aircraft weight excluding wing  
+              W_w : 2.25e+03  [N]       Wing weight                     
+\frac{S_{wet}}{S} : 2.05                Wetted area ratio               
+              \mu : 1.78e-05  [kg/m/s]  Viscosity of air                
+             \rho : 1.23      [kg/m**3] Density of air                  
+             \tau : 0.12                Airfoil thickness-to-chord ratio
+             cww1 : 45.4      [N/m**2]  Wing weight area factor         
+             cww2 : 8.71e-05  [1/m]     Wing weight bending factor      
+                e : 0.96                Oswald efficiency factor        
+                k : 1.2                 Form factor                     
 
 Constant sensitivities
 ----------------------
-          (CDA_0) : 0.11    
-        C_{L,max} : -0.131  
-         N_{lift} : 0.292   
-          V_{min} : -0.261  
-              W_0 : 0.995   
-\frac{S_{wet}}{S} : 0.411   
-              \mu : 0.0822  
-             \rho : -0.172  
-             \tau : -0.292  
-                e : -0.479  
-                k : 0.411
+          (CDA_0) : 0.11     Fuselage drag area              
+        C_{L,max} : -0.131   Maximum C_L, flaps down         
+         N_{lift} : 0.292    Ultimate load factor            
+          V_{min} : -0.261   Desired landing speed           
+              W_0 : 0.995    Aircraft weight excluding wing  
+\frac{S_{wet}}{S} : 0.411    Wetted area ratio               
+              \mu : 0.0822   Viscosity of air                
+             \rho : -0.172   Density of air                  
+             \tau : -0.292   Airfoil thickness-to-chord ratio
+             cww1 : 0.0943   Wing weight area factor         
+             cww2 : 0.292    Wing weight bending factor      
+                e : -0.479   Oswald efficiency factor        
+                k : 0.411    Form factor                     
+
