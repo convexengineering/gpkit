@@ -32,13 +32,13 @@ from .small_scripts import mag
 
 try:
     from IPython.parallel import Client
-    c = Client(timeout=0.01)
-    assert len(c) > 0
-    pool = c[:]
-    pool.use_dill()
-    print("Using parallel execution of sweeps on %s clients" % len(c))
+    CLIENT = Client(timeout=0.01)
+    assert len(CLIENT) > 0
+    POOL = CLIENT[:]
+    POOL.use_dill()
+    print("Using parallel execution of sweeps on %s clients" % len(CLIENT))
 except:
-    pool = None
+    POOL = None
 
 
 class GPSolutionArray(DictOfLists):
@@ -164,7 +164,8 @@ class GeometricProgram(Model):
             try:
                 self.cost, constraints = ans
             except TypeError:
-                raise TypeError("GeometricProgram setup must return 'cost, constraints'.")
+                raise TypeError("GeometricProgram setup must return "
+                                "(cost, constraints).")
         else:
             if "cost" in kwargs:
                 self.cost = kwargs["cost"]
@@ -231,10 +232,10 @@ class GeometricProgram(Model):
         if isinstance(other, GeometricProgram):
             # don't add costs b/c that breaks when costs have units
             newgp = GeometricProgram(self.cost * other.cost,
-                       self.constraints + other.constraints)
+                                     self.constraints + other.constraints)
             subs = newgp.substitutions
-            newgp._gen_unsubbed_vars([self.exps[0] + other.exps[0]]
-                                     + self.exps[1:]+other.exps[1:],
+            newgp._gen_unsubbed_vars([self.exps[0] + other.exps[0]] +
+                                     self.exps[1:] + other.exps[1:],
                                      np.hstack([self.cs[0] * other.cs[0],
                                                self.cs[1:], other.cs[1:]]))
             values = {var: var.descr["value"]
@@ -286,15 +287,16 @@ class GeometricProgram(Model):
         self.results[key] = value
 
     def __eq__(self, other):
-        "GeometricProgram equality is determined by their string representations."
+        "GeometricProgram equality is determined by string representations."
         return str(self) == str(other)
 
     def __ne__(self, other):
-        "GeometricProgram inequality is determined by their string representations."
+        "GeometricProgram inequality is determined by string representations."
         return not self == other
 
     def __repr__(self):
-        "The string representation of a GeometricProgram contains all of its parameters."
+        """String representation of a GeometricProgram.
+        Contains all of its parameters."""
         return "\n".join(["gpkit.GeometricProgram( # minimize",
                           "          %s," % self.cost,
                           "          [   # subject to"] +
@@ -303,11 +305,11 @@ class GeometricProgram(Model):
                          ['          ],',
                           "          substitutions={ %s }," %
                           pformat(self.substitutions, indent=26)[26:-1],
-                          '          solver="%s")' % self.solver]
-                         )
+                          '          solver="%s")' % self.solver])
 
     def _latex(self, unused=None):
-        "The LaTeX representation of a GeometricProgram contains all of its parameters."
+        """LaTeX representation of a GeometricProgram.
+        Contains all of its parameters."""
         return "\n".join(["\\begin{array}[ll]",
                           "\\text{}",
                           "\\text{minimize}",
@@ -377,7 +379,9 @@ class GeometricProgram(Model):
         self.starttime = time()
 
         if self.sweep:
-            solution = self._solve_sweep(printing, skipfailures, allownonoptimal)
+            solution = self._solve_sweep(printing,
+                                         skipfailures,
+                                         allownonoptimal)
         else:
             if printing:
                 print("Solving for %i variables." % len(self.varlocs))
@@ -444,8 +448,8 @@ class GeometricProgram(Model):
             else:
                 return self._run_solver(allownonoptimal)
 
-        if pool:
-            mapfn = pool.map_sync
+        if POOL:
+            mapfn = POOL.map_sync
         else:
             mapfn = map
 
@@ -465,7 +469,8 @@ class GeometricProgram(Model):
         allpos = not any(mag(self.cs) <= 0)
         cs, exps, A, p_idxs, k, removed_idxs = self.genA(allpos=allpos)
         result = self.solverfn(c=cs, A=A, p_idxs=p_idxs, k=k)
-        cs, p_idxs = map(np.array, [cs, p_idxs])
+        cs = np.array(cs)
+        p_idxs = np.array(p_idxs)
 
         if allpos:
             unsubbedexps = self.unsubbed.exps
@@ -473,10 +478,10 @@ class GeometricProgram(Model):
         else:
             unsubbedexps = [exp for i, exp in enumerate(self.unsubbed.exps)
                             if i not in removed_idxs]
-            unsubbedvarlocs, __ = locate_vars(unsubbedexps)
+            unsubbedvarlocs, _ = locate_vars(unsubbedexps)
 
-        return self._parse_result(result, unsubbedexps, unsubbedvarlocs, self.varlocs,
-                                  cs, p_idxs, allownonoptimal)
+        return self._parse_result(result, unsubbedexps, unsubbedvarlocs,
+                                  self.varlocs, cs, p_idxs, allownonoptimal)
 
     def _parse_result(self, result, unsubbedexps, unsubbedvarlocs, varlocs,
                       cs, p_idxs, allownonoptimal):
@@ -490,9 +495,10 @@ class GeometricProgram(Model):
                 print("Nonoptimal result returned because 'allownonoptimal'"
                       " flag was set to True")
             else:
-                raise RuntimeWarning("final status of solver '%s' was '%s' not "
-                                     "'optimal'" % (self.solver, result['status'])
-                                     + "\n\nTo find a feasible solution to"
+                raise RuntimeWarning("final status of solver '%s' was '%s', "
+                                     "not 'optimal'." %
+                                     (self.solver, result['status']) +
+                                     "\n\nTo find a feasible solution to"
                                      " a relaxed version of your gp,"
                                      " run gpkit.find_feasible_point(gp).")
 
@@ -571,7 +577,8 @@ class GeometricProgram(Model):
                         sensitivities["variables"][var]
                 except KeyError:
                     variables[veckey] = np.empty(var.descr["shape"]) + np.nan
-                    sensitivities["variables"][veckey] = np.empty(var.descr["shape"]) + np.nan
+                    sensitivities["variables"][veckey] = (
+                        np.empty(var.descr["shape"]) + np.nan)
 
                     variables[veckey][idx] = variables[var]
                     sensitivities["variables"][veckey][var.descr["idx"]] = \
