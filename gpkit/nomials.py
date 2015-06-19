@@ -17,11 +17,6 @@ Quantity = ureg.Quantity
 Numbers += (Quantity,)
 
 
-def vkSortBy(exp_item):
-    "Returns description from exps.items() elements, for sorting by exponent."
-    return list(exp_item[0].descr.items())
-
-
 class Signomial(object):
     """A representation of a signomial.
 
@@ -240,7 +235,8 @@ class Signomial(object):
         mstrs = []
         for c, exp in zip(self.cs, self.exps):
             varstrs = ['%s**%.2g' % (var, x) if x != 1 else "%s" % var
-                       for (var, x) in sorted(exp.items(), key=vkSortBy) if x != 0]
+                       for (var, x) in exp.items() if x != 0]
+            varstrs.sort()
             c = mag(c)
             cstr = "%.2g" % c
             if cstr == "-1":
@@ -257,22 +253,24 @@ class Signomial(object):
     def __repr__(self):
         return "gpkit.%s(%s)" % (self.__class__.__name__, str(self))
 
-    def _latex(self, unused=None):
+    def latex(self, unused=None):
         "For pretty printing with Sympy"
         mstrs = []
         for c, exp in zip(self.cs, self.exps):
             pos_vars, neg_vars = [], []
-            for var, x in sorted(exp.items(), key=vkSortBy):
+            for var, x in exp.items():
                 if x > 0:
-                    pos_vars.append((var._latex(), x))
+                    pos_vars.append((var.latex(), x))
                 elif x < 0:
-                    neg_vars.append((var._latex(), x))
+                    neg_vars.append((var.latex(), x))
 
             pvarstrs = ['%s^{%.2g}' % (varl, x) if "%.2g" % x != "1" else varl
                         for (varl, x) in pos_vars]
             nvarstrs = ['%s^{%.2g}' % (varl, -x)
                         if "%.2g" % -x != "1" else varl
                         for (varl, x) in neg_vars]
+            pvarstrs.sort()
+            nvarstrs.sort()
             pvarstr = ' '.join(pvarstrs)
             nvarstr = ' '.join(nvarstrs)
             c = mag(c)
@@ -451,8 +449,8 @@ class Constraint(Posynomial):
     def __repr__(self):
         return repr(self.left) + self.oper_s + repr(self.right)
 
-    def _latex(self, unused=None):
-        return self.left._latex() + self.oper_l + self.right._latex()
+    def latex(self, unused=None):
+        return self.left.latex() + self.oper_l + self.right.latex()
 
     def __init__(self, p1, p2):
         p1 = Signomial(p1)
