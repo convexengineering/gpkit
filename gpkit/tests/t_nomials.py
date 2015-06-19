@@ -70,7 +70,6 @@ class TestMonomial(unittest.TestCase):
 
     def test_str_with_units(self):
         "Make sure __str__() works when units are involved"
-        return # bypass until issue #275 fixed
         S = Monomial('S', units='m^2')
         rho = Monomial('rho', units='kg/m^3')
         x = rho*S
