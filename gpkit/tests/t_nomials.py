@@ -1,7 +1,7 @@
 """Tests for Monomial, Posynomial, and Signomial classes"""
 import math
 import unittest
-from gpkit import Monomial, Posynomial, Signomial
+from gpkit import Monomial, Posynomial
 from gpkit import enable_signomials, disable_signomials
 
 
@@ -12,6 +12,7 @@ class TestMonomial(unittest.TestCase):
         pass
 
     def test_init(self):
+        "Test multiple ways to create a Monomial"
         m = Monomial({'x': 2, 'y': -1}, 5)
         m2 = Monomial({'x': 2, 'y': -1}, 5)
         self.assertEqual(m.varlocs, {'x': [0], 'y': [0]})
@@ -32,7 +33,7 @@ class TestMonomial(unittest.TestCase):
         self.assertEqual(m.c, .1)
 
         # variable names not compatible with python namespaces
-        crazy_varstr = 'what the !!!/$\**?'
+        crazy_varstr = 'what the !!!/$**?'
         m = Monomial({'x': 1, crazy_varstr: .5}, 25)
         self.assertTrue(crazy_varstr in m.exp)
 
@@ -55,16 +56,20 @@ class TestMonomial(unittest.TestCase):
         self.assertEqual(list(x.exp)[0].descr['label'], 'dummy variable')
 
     def test_repr(self):
+        "Simple tests for __repr__, which prints more than str"
         m = Monomial({'x': 2, 'y': -1}, 5)
-        self.assertEqual(type(m.__repr__()), str)
+        r = m.__repr__()
+        self.assertEqual(type(r), str)
         self.assertEqual(Monomial('x').__repr__(), 'gpkit.Monomial(x)')
 
     def test_latex(self):
+        "Test latex string creation"
         m = Monomial({'x': 2, 'y': -1}, 5)._latex()
         self.assertEqual(type(m), str)
         self.assertEqual(Monomial('x', 5)._latex(), '5x')
 
     def test_eq_ne(self):
+        "Test equality and inequality comparators"
         # simple one
         x = Monomial('x')
         y = Monomial('y')
@@ -93,6 +98,7 @@ class TestMonomial(unittest.TestCase):
         self.assertNotEqual(m1, m4)
 
     def test_div(self):
+        "Test Monomial division"
         x = Monomial('x')
         y = Monomial('y')
         z = Monomial('z')
@@ -112,6 +118,7 @@ class TestMonomial(unittest.TestCase):
         self.assertEqual(c, Monomial({'x': 2, 'y': -1, 't': -2}, 72))
 
     def test_mul(self):
+        "Test monomial multiplication"
         x = Monomial({'x': 1, 'y': -1}, 4)
         # test integer division
         self.assertEqual(x/5, Monomial({'x': 1, 'y': -1}, 0.8))
@@ -134,6 +141,7 @@ class TestMonomial(unittest.TestCase):
         self.assertEqual(p, x0)
 
     def test_pow(self):
+        "Test Monomial exponentiation"
         x = Monomial({'x': 1, 'y': -1}, 4)
         self.assertEqual(x, Monomial({'x': 1, 'y': -1}, 4))
         # identity
@@ -147,7 +155,7 @@ class TestMonomial(unittest.TestCase):
         self.assertEqual(x, Monomial({'x': 1, 'y': -1}, 4))
 
     def test_numerical_precision(self):
-        # not sure what to test here, placeholder for now
+        "not sure what to test here, placeholder for now"
         c1, c2 = 1/700., 123e8
         m1 = Monomial({'x': 2, 'y': 1}, c1)
         m2 = Monomial({'y': -1, 'z': 3/2.}, c2)
@@ -159,6 +167,7 @@ class TestSignomial(unittest.TestCase):
     """TestCase for the Signomial class"""
 
     def test_init(self):
+        "Test Signomial construction"
         x = Monomial('x')
         y = Monomial('y')
         enable_signomials()
@@ -172,6 +181,7 @@ class TestPosynomial(unittest.TestCase):
     """TestCase for the Posynomial class"""
 
     def test_init(self):
+        "Test Posynomial construction"
         x = Monomial('x')
         y = Monomial('y')
         ms = [Monomial({'x': 1, 'y': 2}, 3.14),
@@ -199,32 +209,35 @@ class TestPosynomial(unittest.TestCase):
         self.assertTrue(all(len(p.varlocs[key]) == 1 for key in 'ghv'))
 
     def test_simplification(self):
+        "Make sure like monomial terms get automatically combined"
         x = Monomial('x')
         y = Monomial('y')
         p1 = x + y + y + (x+y) + (y+x**2) + 3*x
         p2 = 4*y + x**2 + 5*x
-        #ps1 = [list(exp.keys())for exp in p1.exps]
-        #ps2 = [list(exp.keys())for exp in p2.exps]
-        #print("%s, %s" % (ps1, ps2))  # python 3 dict reordering
+        # ps1 = [list(exp.keys())for exp in p1.exps]
+        # ps2 = [list(exp.keys())for exp in p2.exps]
+        # print("%s, %s" % (ps1, ps2))  # python 3 dict reordering
         self.assertEqual(p1, p2)
 
     def test_posyposy_mult(self):
+        "Test multiplication of Posynomial with Posynomial"
         x = Monomial('x')
         y = Monomial('y')
         p1 = x**2 + 2*y*x + y**2
         p2 = (x+y)**2
-        #ps1 = [list(exp.keys())for exp in p1.exps]
-        #ps2 = [list(exp.keys())for exp in p2.exps]
-        #print("%s, %s" % (ps1, ps2))  # python 3 dict reordering
+        # ps1 = [list(exp.keys())for exp in p1.exps]
+        # ps2 = [list(exp.keys())for exp in p2.exps]
+        # print("%s, %s" % (ps1, ps2))  # python 3 dict reordering
         self.assertEqual(p1, p2)
         p1 = (x+y)*(2*x+y**2)
         p2 = 2*x**2 + 2*y*x + y**2*x + y**3
-        #ps1 = [list(exp.keys())for exp in p1.exps]
-        #ps2 = [list(exp.keys())for exp in p2.exps]
-        #print("%s, %s" % (ps1, ps2))  # python 3 dict reordering
+        # ps1 = [list(exp.keys())for exp in p1.exps]
+        # ps2 = [list(exp.keys())for exp in p2.exps]
+        # print("%s, %s" % (ps1, ps2))  # python 3 dict reordering
         self.assertEqual(p1, p2)
 
     def test_constraint_gen(self):
+        "Test creation of Constraints via operator overloading"
         x = Monomial('x')
         y = Monomial('y')
         p = x**2 + 2*y*x + y**2
@@ -232,6 +245,7 @@ class TestPosynomial(unittest.TestCase):
         self.assertEqual(p <= x, p/x)
 
     def test_integer_division(self):
+        "Make sure division by integer doesn't use Python integer division"
         x = Monomial('x')
         y = Monomial('y')
         p = 4*x + y
@@ -241,6 +255,7 @@ class TestPosynomial(unittest.TestCase):
         self.assertTrue(equiv1 or equiv2)
 
     def test_diff(self):
+        "Test differentiation (!!)"
         x = Monomial('x')
         y = Monomial('y')
         self.assertEqual((y**2).diff(y), 2*y)
@@ -248,6 +263,7 @@ class TestPosynomial(unittest.TestCase):
         self.assertEqual((x + x*y**2).diff(y), 2*x*y)
 
     def test_monoapprox(self):
+        "Test monomial approximation"
         x = Monomial('x')
         y = Monomial('y')
         p = y**2 + 1
