@@ -253,16 +253,16 @@ class Signomial(object):
     def __repr__(self):
         return "gpkit.%s(%s)" % (self.__class__.__name__, str(self))
 
-    def _latex(self, unused=None):
+    def latex(self, unused=None):
         "For pretty printing with Sympy"
         mstrs = []
         for c, exp in zip(self.cs, self.exps):
             pos_vars, neg_vars = [], []
             for var, x in exp.items():
                 if x > 0:
-                    pos_vars.append((var._latex(), x))
+                    pos_vars.append((var.latex(), x))
                 elif x < 0:
-                    neg_vars.append((var._latex(), x))
+                    neg_vars.append((var.latex(), x))
 
             pvarstrs = ['%s^{%.2g}' % (varl, x) if "%.2g" % x != "1" else varl
                         for (varl, x) in pos_vars]
@@ -449,8 +449,8 @@ class Constraint(Posynomial):
     def __repr__(self):
         return repr(self.left) + self.oper_s + repr(self.right)
 
-    def _latex(self, unused=None):
-        return self.left._latex() + self.oper_l + self.right._latex()
+    def latex(self, unused=None):
+        return self.left.latex() + self.oper_l + self.right.latex()
 
     def __init__(self, p1, p2):
         p1 = Signomial(p1)
