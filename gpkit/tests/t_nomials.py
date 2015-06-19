@@ -68,6 +68,16 @@ class TestMonomial(unittest.TestCase):
         self.assertEqual(type(m), str)
         self.assertEqual(Monomial('x', 5)._latex(), '5x')
 
+    def test_str_with_units(self):
+        "Make sure __str__() works when units are involved"
+        return # bypass until issue #275 fixed
+        S = Monomial('S', units='m^2')
+        rho = Monomial('rho', units='kg/m^3')
+        x = rho*S
+        xstr = str(x)
+        self.assertEqual(type(xstr), str)
+        self.assertTrue('S' in xstr and 'rho' in xstr)
+
     def test_eq_ne(self):
         "Test equality and inequality comparators"
         # simple one
