@@ -132,8 +132,8 @@ class HashVector(dict):
     The HashVector class supports element-wise arithmetic:
     any undeclared variables are assumed to have a value of zero.
 
-    Parameters
-    ----------
+    Arguments
+    ---------
     arg : iterable
 
     Example

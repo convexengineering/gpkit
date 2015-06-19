@@ -17,8 +17,8 @@ class Variable(Monomial):
     def __init__(self, *args, **descr):
         """A described singlet Monomial.
 
-        Parameters
-        ----------
+        Arguments
+        ---------
         *args : list
             may contain "name" (Strings)
                         "value" (Numbers + Quantity) or (Iterable) for a sweep
@@ -59,8 +59,8 @@ class Variable(Monomial):
 class VectorVariable(PosyArray):
     """A described vector of singlet Monomials.
 
-    Parameters
-    ----------
+    Arguments
+    ---------
     shape : int or tuple
         length or shape of resulting array
     *args :

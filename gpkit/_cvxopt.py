@@ -14,8 +14,8 @@ def cvxoptimize_fn(options):
             m is the number of variables in the gp
             p is the number of posynomials in the gp
 
-            Parameters
-            ----------
+            Arguments
+            ---------
             c : floats array of shape n
                 Coefficients of each monomial
             A: floats array of shape (m,n)

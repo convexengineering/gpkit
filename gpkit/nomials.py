@@ -20,8 +20,8 @@ Numbers += (Quantity,)
 class Signomial(object):
     """A representation of a signomial.
 
-        Parameters
-        ----------
+        Arguments
+        ---------
         exps: tuple of dicts
             Exponent dicts for each monomial term
         cs: tuple

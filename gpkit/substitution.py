@@ -78,8 +78,8 @@ def vectorsub(subs, var, sub, varset):
 def substitution(varlocs, varkeys, exps, cs, substitutions, val=None):
     """Efficient substituton into a list of monomials.
 
-        Parameters
-        ----------
+        Arguments
+        ---------
         varlocs : dict
             Dictionary of monomial indexes for each variable.
         exps : dict

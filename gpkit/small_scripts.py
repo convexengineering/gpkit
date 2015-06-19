@@ -171,8 +171,8 @@ def results_table(data, title, minval=0, printunits=True, fixedcols=True,
     Pretty string representation of a dict of VarKeys
     Iterable values are handled specially (partial printing)
 
-    Parameters
-    ----------
+    Arguments
+    ---------
     data: dict whose keys are VarKey's
         data to represent in table
     title: string
@@ -220,8 +220,8 @@ def results_table(data, title, minval=0, printunits=True, fixedcols=True,
 def flatten(ible, classes):
     """Flatten an iterable that contains other iterables
 
-    Parameters
-    ----------
+    Arguments
+    ---------
     l : Iterable
         Top-level container
 

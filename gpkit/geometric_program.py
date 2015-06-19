@@ -118,8 +118,8 @@ class GPSolutionArray(DictOfLists):
 class GeometricProgram(Model):
     """Holds a model and cost function for passing to solvers.
 
-    Parameters
-    ----------
+    Arguments
+    ---------
     cost : Constraint
         Posynomial to minimize when solving
     constraints : list of (lists of) Constraints
@@ -340,8 +340,8 @@ class GeometricProgram(Model):
                allownonoptimal=False):
         """Solves a GeometricProgram and returns the solution.
 
-        Parameters
-        ----------
+        Arguments
+        ---------
         printing : bool (optional)
             If True (default), then prints out solver used and time to solve.
 
@@ -403,8 +403,8 @@ class GeometricProgram(Model):
     def _solve_sweep(self, printing, skipfailures, allownonoptimal):
         """Runs a GeometricProgram through a sweep, solving at each grid point
 
-        Parameters
-        ----------
+        Arguments
+        ---------
         printing : bool (optional)
             If True, then prints out sweep and GeometricProgram size.
 

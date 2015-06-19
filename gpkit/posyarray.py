@@ -17,8 +17,8 @@ Quantity = ureg.Quantity
 class PosyArray(np.ndarray):
     """A Numpy array with elementwise inequalities and substitutions.
 
-    Parameters
-    ----------
+    Arguments
+    ---------
     input_array : array-like
 
     Example

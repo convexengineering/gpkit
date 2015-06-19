@@ -15,8 +15,8 @@ Numbers += (Quantity,)
 class VarKey(object):
     """An object to correspond to each 'variable name'.
 
-    Parameters
-    ----------
+    Arguments
+    ---------
     k : object (usually str)
         The variable's name attribute is derived from str(k).
 
