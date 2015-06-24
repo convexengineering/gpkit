@@ -166,7 +166,7 @@ def sort_and_simplify(exps, cs):
 
 
 def results_table(data, title, minval=0, printunits=True, fixedcols=True,
-                  varfmt="%s : ", valfmt="%-8.3g ", vecfmt="%-7.2g"):
+                  varfmt="%s : ", valfmt="%-.4g ", vecfmt="%-8.3g"):
     """
     Pretty string representation of a dict of VarKeys
     Iterable values are handled specially (partial printing)

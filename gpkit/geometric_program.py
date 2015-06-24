@@ -95,12 +95,12 @@ class GPSolutionArray(DictOfLists):
             tables = [tables]
         strs = []
         if "cost" in tables:
-            strs += [""]
+            strs += ["\nCost\n----"]
             if len(self) > 1:
-                costs = ["%-7.2g" % c for c in self["cost"][:3]]
-                strs += ["Cost\n [%s ... ]" % "  ".join(costs)]
+                costs = ["%-7.3g" % c for c in self["cost"][:3]]
+                strs += [" [%s ... ]" % "  ".join(costs)]
             else:
-                strs += ["Cost\n %-8.3g" % self["cost"]]
+                strs += [" %-8.4g" % self["cost"]]
             strs += [""]
         if "variables" in tables:
             strs += [results_table(self["variables"],
