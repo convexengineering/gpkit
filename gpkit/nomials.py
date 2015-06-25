@@ -55,7 +55,7 @@ class Signomial(object):
             # building a Monomial
             if isinstance(exps, VarKey):
                 exp = {exps: 1}
-                units = exps.descr["units"] if "units" in exps.descr else None
+                units = exps.units
             elif exps is None or isinstance(exps, Strings):
                 exp = {VarKey(exps, **descr): 1}
                 descr = list(exp)[0].descr

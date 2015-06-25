@@ -60,6 +60,12 @@ class TestVarKey(unittest.TestCase):
         d = {VarKey(): None, VarKey(): 12}
         self.assertEqual(len(d), 2)
 
+    def test_units_attr(self):
+        """Make sure VarKey objects have a units attribute"""
+        x = VarKey('x')
+        for vk in (VarKey(), x, VarKey(x), VarKey(units='m')):
+            self.assertTrue(hasattr(vk, 'units'))
+
 
 class TestVariable(unittest.TestCase):
     """TestCase for the Variable class"""

@@ -48,12 +48,12 @@ class TestNomialSubs(unittest.TestCase):
         yvk = list(y.varkeys.values())[0]
         for x_ in ["x", xvk, x]:
             for y_ in ["y", yvk, y]:
-                if not isinstance(y_, str) and type(xvk.descr["units"]) != str:
+                if not isinstance(y_, str) and type(xvk.units) != str:
                     expected = 0.001
                 else:
                     expected = 1.0
                 self.assertAlmostEqual(expected, mag(x.sub(x_, y_).c))
-        if type(xvk.descr["units"]) != str:
+        if type(xvk.units) != str:
             z = Variable("z", "s")
             self.assertRaises(ValueError, y.sub, y, z)
 
@@ -126,7 +126,7 @@ class TestGPSubs(unittest.TestCase):
                 S = Variable("S", "m^2", "total wing area")
                 dum = Variable("dum", "-", "dummy variable")
 
-                if type(W.varkeys["W"].descr["units"]) != str:
+                if type(W.varkeys["W"].units) != str:
                     CDA0 = Variable("(CDA0)", 310.0, "cm^2",
                                     "fuselage drag area")
                 else:
@@ -149,7 +149,7 @@ class TestGPSubs(unittest.TestCase):
                 W_w = Variable("W_w", "N", "wing weight")
                 W = Variable("W", "N", "total aircraft weight")
 
-                if type(W.varkeys["W"].descr["units"]) != str:
+                if type(W.varkeys["W"].units) != str:
                     W_0 = Variable("W_0", 4.94, "kN",
                                    "aircraft weight excluding wing")
                     W_w_strc = 8.71e-5*N_ult*A**1.5*(W_0*W*S)**0.5/tau/units.m
@@ -204,7 +204,7 @@ class TestGPSubs(unittest.TestCase):
 
         from gpkit.tests.simpleflight import simpleflight_generator
         sf = simpleflight_generator(
-            disableUnits=(type(W.varkeys["W"].descr["units"]) == str)).gp()
+            disableUnits=(type(W.varkeys["W"].units) == str)).gp()
 
         def sorted_solve_array(sol):
             return np.array([x[1] for x in
