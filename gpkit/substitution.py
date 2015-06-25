@@ -134,9 +134,9 @@ def substitution(varlocs, varkeys, exps, cs, substitutions, val=None):
                 varlocs_[sub].append(i)
             elif isinstance(sub, VarKey):
                 sub = VarKey(sub)
-                if isinstance(var.descr["units"], Quantity):
+                if isinstance(var.units, Quantity):
                     try:
-                        new_units = var.descr["units"]/sub.descr["units"]
+                        new_units = var.units/sub.units
                         cs_[i] *= new_units.to('dimensionless')
                     except DimensionalityError:
                         raise ValueError("substituted variables need the same"
@@ -144,9 +144,9 @@ def substitution(varlocs, varkeys, exps, cs, substitutions, val=None):
                 exps_[i] += HashVector({sub: x})
                 varlocs_[sub].append(i)
             elif isinstance(sub, Monomial):
-                if isinstance(var.descr["units"], Quantity):
+                if isinstance(var.units, Quantity):
                     try:
-                        new_units = var.descr["units"]/sub.units
+                        new_units = var.units/sub.units
                         cs_[i] *= new_units.to('dimensionless')
                     except DimensionalityError:
                         raise ValueError("substituted monomials need the same"

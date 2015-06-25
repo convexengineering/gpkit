@@ -6,12 +6,20 @@ from gpkit.small_scripts import mag
 
 class TestNomialSubs(unittest.TestCase):
 
-    def test_basic(self):
+    def test_numeric(self):
         x = Variable("x")
         p = x**2
         self.assertEqual(p.sub(x, 3), 9)
         self.assertEqual(p.sub(x.varkeys["x"], 3), 9)
         self.assertEqual(p.sub("x", 3), 9)
+
+    def test_basic(self):
+        x = Variable('x')
+        y = Variable('y')
+        p = 1 + x**2
+        q = p.sub({x: y**2})
+        self.assertEqual(q, 1 + y**4)
+        self.assertEqual(x.sub({x: y}), y)
 
     def test_string_mutation(self):
         x = Variable("x", "m")
@@ -69,7 +77,7 @@ class TestGPSubs(unittest.TestCase):
         a = gp.solve(printing=False)["cost"]
         b = [10, 14, 22, 15, 21, 33]
         # below fails with changing dictionary keys in py3
-        #self.assertTrue(all(abs(a-b)/(a+b) < 1e-7))
+        # self.assertTrue(all(abs(a-b)/(a+b) < 1e-7))
 
         gp = GP(x, [x >= y.prod()])
 
@@ -133,18 +141,18 @@ class TestGPSubs(unittest.TestCase):
             def setup(self):
                 N_ult = Variable("N_{ult}", 3.8, "-", "ultimate load factor")
                 tau = Variable("\\tau", 0.12, "-",
-                          "airfoil thickness to chord ratio")
+                               "airfoil thickness to chord ratio")
                 W_w = Variable("W_w", "N", "wing weight")
                 W = Variable("W", "N", "total aircraft weight")
 
                 if type(W.varkeys["W"].descr["units"]) != str:
                     W_0 = Variable("W_0", 4.94, "kN",
-                              "aircraft weight excluding wing")
+                                   "aircraft weight excluding wing")
                     W_w_strc = 8.71e-5*N_ult*A**1.5*(W_0*W*S)**0.5/tau/units.m
                     W_w_surf = (45.24*units.Pa) * S
                 else:
                     W_0 = Variable("W_0", 4940, "N",
-                              "aircraft weight excluding wing")
+                                   "aircraft weight excluding wing")
                     W_w_strc = 8.71e-5*(N_ult*A**1.5*(W_0*W*S)**0.5)/tau
                     W_w_surf = 45.24 * S
 
