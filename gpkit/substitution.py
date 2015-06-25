@@ -65,7 +65,7 @@ def vectorsub(subs, var, sub, varset):
             i = it.multi_index
             it.iternext()
             var_ = var[i]
-            if not var_ is 0:
+            if var_ is not 0:
                 v = VarKey(var_)
                 if v in varset:
                     subs[v] = sub[i]
@@ -156,6 +156,6 @@ def substitution(varlocs, varkeys, exps, cs, substitutions, val=None):
                 for subvar in sub.exp:
                     varlocs_[subvar].append(i)
             else:
-                raise TypeError("could not substitue with value"
+                raise TypeError("could not substitute with value"
                                 " of type '%s'" % type(sub))
     return varlocs_, exps_, cs_, subs

@@ -1,6 +1,7 @@
+"""Test VarKey, Variable, VectorVariable, and ArrayVariable classes"""
 import unittest
 import numpy as np
-from gpkit import (Monomial, Posynomial, PosyArray, Variable, VarKey,
+from gpkit import (Monomial, PosyArray, Variable, VarKey,
                    VectorVariable, ArrayVariable)
 
 
@@ -8,6 +9,7 @@ class TestVarKey(unittest.TestCase):
     """TestCase for the VarKey class"""
 
     def test_init(self):
+        """Test VarKey initialization"""
         # test type
         x = VarKey('x')
         self.assertEqual(type(x), VarKey)
@@ -25,6 +27,7 @@ class TestVarKey(unittest.TestCase):
         self.assertRaises(ValueError, lambda: VarKey(x, name='y'))
 
     def test_eq_neq(self):
+        """Test boolean equality operators"""
         # no args
         x1 = VarKey()
         x2 = VarKey()
@@ -38,7 +41,8 @@ class TestVarKey(unittest.TestCase):
         self.assertEqual(vel, vel)
 
     def test_repr(self):
-        for k in ('x', '$x$', 'var_name', 'var name', '\\theta', '$\pi_{10}$'):
+        """Test __repr__ method"""
+        for k in ('x', '$x$', 'var_name', 'var name', r"\theta", r'$\pi_{10}$'):
             var = VarKey(k)
             self.assertEqual(repr(var), k)
         # not sure what this means, but I want to know if it changes
@@ -47,7 +51,7 @@ class TestVarKey(unittest.TestCase):
             self.assertEqual(v, VarKey(str(num)))
 
     def test_dict_key(self):
-        # make sure variables are well-behaved dict keys
+        """make sure variables are well-behaved dict keys"""
         v = VarKey()
         x = VarKey('$x$')
         d = {v: 1273, x: 'foo'}
@@ -61,6 +65,7 @@ class TestVariable(unittest.TestCase):
     """TestCase for the Variable class"""
 
     def test_init(self):
+        """Test Variable initialization"""
         v = Variable('v')
         self.assertTrue(isinstance(v, Variable))
         self.assertTrue(isinstance(v, Monomial))
@@ -69,6 +74,7 @@ class TestVariable(unittest.TestCase):
         self.assertFalse(isinstance(3*v, Variable))
 
     def test_value(self):
+        """Detailed tests for value kwarg of __init__"""
         a = Variable('a')
         b = Variable('b', value=4)
         c = a**2 + b
@@ -76,9 +82,6 @@ class TestVariable(unittest.TestCase):
         self.assertTrue(isinstance(b.value, float))
         p1 = c.value
         p2 = a**2 + 4
-        ps1 = [list(exp.keys())for exp in p1.exps]
-        ps2 = [list(exp.keys())for exp in p2.exps]
-        #print("%s, %s" % (ps1, ps2))  # python 3 dict reordering
         self.assertEqual(p1, p2)
         self.assertEqual(a.value, a)
 
@@ -88,6 +91,7 @@ class TestVectorVariable(unittest.TestCase):
     Note: more relevant tests in t_posy_array."""
 
     def test_init(self):
+        """Test VectorVariable initialization"""
         # test 1
         n = 3
         v = VectorVariable(n, 'v', label='dummy variable')
@@ -125,6 +129,7 @@ class TestArrayVariable(unittest.TestCase):
         self.assertTrue(ArrayVariable is VectorVariable)
 
     def test_str(self):
+        """Make sure string looks something like a numpy array"""
         x = ArrayVariable((2, 4), 'x')
         strx = str(x)
         self.assertEqual(strx.count("["), 3)

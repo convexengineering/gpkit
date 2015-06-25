@@ -1,3 +1,4 @@
+"""Test substitution capability across gpkit"""
 import unittest
 import numpy as np
 from gpkit import Monomial, Variable, VectorVariable, units, GP, link
@@ -5,8 +6,10 @@ from gpkit.small_scripts import mag
 
 
 class TestNomialSubs(unittest.TestCase):
+    """Test substitution for nomial-family objects"""
 
     def test_numeric(self):
+        """Basic substitution of numeric value"""
         x = Variable("x")
         p = x**2
         self.assertEqual(p.sub(x, 3), 9)
@@ -14,6 +17,7 @@ class TestNomialSubs(unittest.TestCase):
         self.assertEqual(p.sub("x", 3), 9)
 
     def test_basic(self):
+        """Basic substitution, symbolic"""
         x = Variable('x')
         y = Variable('y')
         p = 1 + x**2
@@ -31,7 +35,7 @@ class TestNomialSubs(unittest.TestCase):
         x_changed_descr["name"] = "y"
         y_descr = list(y.exp)[0].descr
         self.assertEqual(x_changed_descr["name"], y_descr["name"])
-        if type(descr_before["units"]) != str:
+        if not isinstance(descr_before["units"], str):
             self.assertAlmostEqual(x_changed_descr["units"]/y_descr["units"],
                                    1.0)
         self.assertEqual(x.sub("x", x), x)
