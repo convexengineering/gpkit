@@ -20,11 +20,12 @@ class CootMatrix(CootMatrixTuple):
     "A very simple sparse matrix representation."
     shape = (None, None)
 
-    def append(self, i, j, x):
-        assert (i >= 0 and j >= 0), "Only positive indices allowed"
-        self.row.append(i)
-        self.col.append(j)
-        self.data.append(x)
+    def append(self, row, col, data):
+        if row < 0 or col < 0:
+            raise ValueError("Only positive indices allowed")
+        self.row.append(row)
+        self.col.append(col)
+        self.data.append(data)
 
     def update_shape(self):
         self.shape = (max(self.row)+1, max(self.col)+1)
@@ -158,10 +159,10 @@ class HashVector(dict):
         "Return Hashvector with each value negated."
         return HashVector({key: -val for (key, val) in self.items()})
 
-    def __pow__(self, x):
+    def __pow__(self, other):
         "Accepts scalars. Return Hashvector with each value put to a power."
         if isinstance(other, Numbers):
-            return HashVector({key: val**x for (key, val) in self.items()})
+            return HashVector({key: val**other for (key, val) in self.items()})
         else:
             return NotImplemented
 
