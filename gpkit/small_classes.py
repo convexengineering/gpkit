@@ -144,10 +144,13 @@ class HashVector(dict):
     >>> x = gpkit.nomials.Monomial('x')
     >>> exp = gpkit.small_classes.HashVector({x: 2})
     """
+    def __init__(self, *args, **kwargs):
+        super(HashVector, self).__init__(*args, **kwargs)
+        self._hashvalue = None
 
     def __hash__(self):
         "Allows HashVectors to be used as dictionary keys."
-        if not hasattr(self, "_hashvalue"):
+        if self._hashvalue is None:
             self._hashvalue = hash(tuple(self.items()))
         return self._hashvalue
 
@@ -174,9 +177,8 @@ class HashVector(dict):
         if isinstance(other, Numbers):
             return HashVector({key: val*other for (key, val) in self.items()})
         elif isinstance(other, dict):
-            keys = set(self.keys()).intersection(other.keys())
-            sums = {key: self[key] * other[key] for key in keys}
-            return HashVector(sums)
+            keys = set(self).intersection(other)
+            return HashVector({key: self[key] * other[key] for key in keys})
         else:
             return NotImplemented
 
@@ -189,7 +191,7 @@ class HashVector(dict):
             return HashVector({key: val+other
                                for (key, val) in self.items()})
         elif isinstance(other, dict):
-            keys = set(self.keys()).union(other.keys())
+            keys = set(self).union(other)
             sums = {key: self.get(key, 0) + other.get(key, 0) for key in keys}
             return HashVector(sums)
         else:
