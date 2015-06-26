@@ -21,8 +21,8 @@ class TestVarKey(unittest.TestCase):
         self.assertEqual(x.name, 'x')
         x = VarKey(name='x')
         self.assertEqual(x.name, 'x')
-        self.assertRaises(ValueError, lambda: VarKey('x', name='y'))
-        self.assertRaises(ValueError, lambda: VarKey(x, name='y'))
+        self.assertRaises(TypeError, lambda: VarKey('x', name='y'))
+        self.assertRaises(TypeError, lambda: VarKey(x, name='y'))
 
     def test_eq_neq(self):
         # no args

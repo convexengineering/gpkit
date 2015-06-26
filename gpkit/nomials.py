@@ -49,7 +49,11 @@ class Signomial(object):
             if isinstance(exps, VarKey):
                 exp = {exps: 1}
                 units = exps.descr["units"] if "units" in exps.descr else None
-            elif exps is None or isinstance(exps, Strings):
+            elif exps is None:
+                exp = {VarKey(**descr): 1}
+                descr = list(exp)[0].descr
+                units = descr["units"] if "units" in descr else None
+            elif isinstance(exps, Strings):
                 exp = {VarKey(exps, **descr): 1}
                 descr = list(exp)[0].descr
                 units = descr["units"] if "units" in descr else None

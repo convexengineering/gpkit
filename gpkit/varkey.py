@@ -1,3 +1,4 @@
+"""Defines the VarKey class"""
 import numpy as np
 
 from .posyarray import PosyArray
@@ -7,7 +8,6 @@ from .small_classes import Strings, Numbers
 from .small_classes import count
 
 from . import units as ureg
-from . import DimensionalityError
 Quantity = ureg.Quantity
 Numbers += (Quantity,)
 
@@ -17,8 +17,8 @@ class VarKey(object):
 
     Arguments
     ---------
-    k : object (usually str)
-        The variable's name attribute is derived from str(k).
+    name : str, VarKey, or Monomial
+        Name of this Variable, or object to derive this Variable from.
 
     **kwargs :
         Any additional attributes, which become the descr attribute (a dict).
@@ -29,29 +29,22 @@ class VarKey(object):
     """
     new_unnamed_id = count()
 
-    def __init__(self, k=None, **kwargs):
+    def __init__(self, name=None, **kwargs):
         self.descr = kwargs
-        if 'name' in kwargs:
-            if k is None:
-                k = kwargs["name"]
-            else:
-                raise ValueError('name= not allowed when k argument specified')
-        if isinstance(k, VarKey):
-            self.name = k.name
-            self.descr.update(k.descr)
-        elif hasattr(k, "c") and hasattr(k, "exp"):
-            if mag(k.c) == 1 and len(k.exp) == 1:
-                var = list(k.exp)[0]
-                self.name = var.name
+        # Python arg handling guarantees 'name' won't appear in kwargs
+        if isinstance(name, VarKey):
+            self.descr.update(name.descr)
+        elif hasattr(name, "c") and hasattr(name, "exp"):
+            if mag(name.c) == 1 and len(name.exp) == 1:
+                var = list(name.exp)[0]
                 self.descr.update(var.descr)
             else:
                 raise TypeError("variables can only be formed from monomials"
                                 " with a c of 1 and a single variable")
         else:
-            if k is None:
-                k = "\\fbox{%s}" % VarKey.new_unnamed_id()
-            self.name = str(k)
-            self.descr["name"] = self.name
+            if name is None:
+                name = "\\fbox{%s}" % VarKey.new_unnamed_id()
+            self.descr["name"] = str(name)
 
         from . import units as ureg  # update in case user has disabled units
 
@@ -70,8 +63,17 @@ class VarKey(object):
             else:
                 raise ValueError("units must be either a string"
                                  " or a Quantity from gpkit.units.")
-        self.units = self.descr.get("units", None)
         self._hashvalue = hash(self._cmpstr)
+
+    @property
+    def name(self):
+        """name of this VarKey"""
+        return self.descr['name']
+
+    @property
+    def units(self):
+        """units of this VarKey"""
+        return self.descr.get("units", None)
 
     def __repr__(self):
         s = self.name
@@ -81,6 +83,7 @@ class VarKey(object):
         return s
 
     def latex(self, unused=None):
+        """Get latex for this VarKey. Returns str."""
         s = self.name
         for subscript in ["idx"]:  # +"model"?
             if subscript in self.descr:
