@@ -1,6 +1,7 @@
+"""Miscellaneous small classes"""
 import numpy as np
-
 from collections import namedtuple as nt
+from . import units
 
 try:
     isinstance("", basestring)
@@ -8,7 +9,8 @@ try:
 except NameError:
     Strings = (str,)
 
-Numbers = (int, float, np.number)
+Quantity = units.Quantity
+Numbers = (int, float, long, np.number, Quantity)
 
 PosyTuple = nt('PosyTuple', ['exps', 'cs', 'varlocs', 'substitutions'])
 CootMatrixTuple = nt('CootMatrix', ['row', 'col', 'data'])

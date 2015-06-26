@@ -6,7 +6,7 @@ import numpy as np
 from collections import defaultdict
 from collections import Iterable
 
-from .small_classes import Numbers, Strings
+from .small_classes import Numbers, Strings, Quantity
 from .small_classes import HashVector
 from .nomials import Monomial
 from .varkey import VarKey
@@ -16,10 +16,7 @@ from .small_scripts import locate_vars
 from .small_scripts import is_sweepvar
 from .small_scripts import mag
 
-from . import units as ureg
 from . import DimensionalityError
-Quantity = ureg.Quantity
-Numbers += (Quantity,)
 
 
 def getsubs(varkeys, varlocs, substitutions):

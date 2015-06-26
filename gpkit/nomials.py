@@ -1,6 +1,6 @@
 import numpy as np
 
-from .small_classes import Strings, Numbers
+from .small_classes import Strings, Numbers, Quantity
 from .posyarray import PosyArray
 from .varkey import VarKey
 
@@ -13,8 +13,6 @@ from .small_scripts import mag, unitstr
 
 from . import units as ureg
 from . import DimensionalityError
-Quantity = ureg.Quantity
-Numbers += (Quantity,)
 
 
 class Signomial(object):
