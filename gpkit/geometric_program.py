@@ -90,7 +90,8 @@ class GPSolutionArray(DictOfLists):
             return subbed.c
 
     def table(self,
-              tables=["cost", "variables", "sensitivities"],
+              tables=["cost", "freevariables", "sweptvariables",
+                      "constants", "sensitivities"],
               fixedcols=True):
         if isinstance(tables, Strings):
             tables = [tables]
@@ -98,19 +99,36 @@ class GPSolutionArray(DictOfLists):
         if "cost" in tables:
             strs += ["\nCost\n----"]
             if len(self) > 1:
-                costs = ["%-7.3g" % c for c in self["cost"][:3]]
-                strs += [" [%s ... ]" % "  ".join(costs)]
+                costs = ["%-8.3g" % c for c in self["cost"][:4]]
+                strs += [" [ %s %s ]" % ("  ".join(costs),
+                                        "..." if len(self) > 4 else "")]
             else:
-                strs += [" %-8.4g" % self["cost"]]
+                strs += [" %-.4g" % self["cost"]]
             strs[-1] += unitstr(self.gp.cost.units, into=" [%s] ", dimless="")
             strs += [""]
         if "variables" in tables:
             strs += [results_table(self["variables"],
                                    "Variables",
                                    fixedcols=fixedcols)]
+        if "freevariables" in tables:
+            strs += [results_table({k: v for (k, v) in self["variables"].items()
+                                         if k not in self.gp.substitutions
+                                         and k not in self.gp.sweep},
+                                   "Free variables",
+                                   fixedcols=fixedcols)]
+        if "sweptvariables" in tables:
+            strs += [results_table({k: v for (k, v) in self["variables"].items()
+                                         if k in self.gp.sweep},
+                                   "Swept variables",
+                                   fixedcols=fixedcols)]
+        if "constants" in tables:
+            strs += [results_table({k: v[0] for (k, v) in self["variables"].items()
+                                         if k in self.gp.substitutions},
+                                   "Constants",
+                                   fixedcols=fixedcols)]
         if "sensitivities" in tables:
             strs += [results_table(self["sensitivities"]["variables"],
-                                   "Constant sensitivities",
+                                   "Constant and swept variable sensitivities",
                                    fixedcols=fixedcols,
                                    minval=1e-2,
                                    printunits=False)]

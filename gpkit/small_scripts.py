@@ -198,8 +198,8 @@ def results_table(data, title, minval=0, printunits=True, fixedcols=True,
         label = var.descr.get('label', '')
         units = unitstr(var, into=" [%s] ", dimless="") if printunits else ""
         if isvector:
-            vals = [vecfmt % v for v in val[:3]]
-            ellipsis = " ..." if len(val) > 3 else ""
+            vals = [vecfmt % v for v in val[:4]]
+            ellipsis = " ..." if len(val) > 4 else ""
             valstr = "[ %s%s ] " % ("  ".join(vals), ellipsis)
         else:
             valstr = valfmt % val
