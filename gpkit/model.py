@@ -70,6 +70,31 @@ class Model(object):
         self.p_idxs = np.array(self.p_idxs)
 
     def sub(self, substitutions, val=None, frombase='last', replace=True):
+        """Substitutes into a model, modifying it in place.
+
+        Usage
+        -----
+        gp.sub({'x': 1, y: 2})
+        gp.sub(x, 3, replace=True)
+
+        Arguments
+        ---------
+        substitutions : dict or key
+            Either a dictionary whose keys are strings, Variables, or VarKeys, 
+            and whose values are numbers, or a string, Variable or Varkey.
+        val : number (optional)
+            If the substitutions entry is a single key, val holds the value
+        frombase : string (optional)
+            Which model state to update. By default updates the current state.
+        replace : boolean (optional, default is True)
+            Whether the substitution should only subtitute currently
+            unsubstituted values (False) or should also make replacements of
+            current substitutions (True).
+
+        Returns
+        -------
+        No return value: the model is modified in place.
+        """
         # look for sweep variables
         found_sweep = []
         if val is not None:
