@@ -166,6 +166,27 @@ class Signomial(object):
             return Monomial(exp, c)
 
     def sub(self, substitutions, val=None, require_positive=True):
+        """Returns a nomial with substitued values.
+
+        Usage
+        -----
+        3 == (x**2 + y).sub({'x': 1, y: 2})
+        3 == (x).gp.sub(x, 3)
+
+        Arguments
+        ---------
+        substitutions : dict or key
+            Either a dictionary whose keys are strings, Variables, or VarKeys, 
+            and whose values are numbers, or a string, Variable or Varkey.
+        val : number (optional)
+            If the substitutions entry is a single key, val holds the value
+        require_positive : boolean (optional, default is True)
+            Controls whether the returned value can be a signomial.
+
+        Returns
+        -------
+        Returns substituted nomial.
+        """
         varlocs, exps, cs, subs = substitution(self.varlocs, self.varkeys,
                                                self.exps, self.cs,
                                                substitutions, val)
