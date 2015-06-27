@@ -29,6 +29,7 @@ from .small_scripts import flatten
 from .small_scripts import locate_vars
 from .small_scripts import results_table
 from .small_scripts import mag
+from .small_scripts import unitstr
 
 try:
     from IPython.parallel import Client
@@ -101,6 +102,7 @@ class GPSolutionArray(DictOfLists):
                 strs += [" [%s ... ]" % "  ".join(costs)]
             else:
                 strs += [" %-8.4g" % self["cost"]]
+            strs[-1] += unitstr(self.gp.cost.units, into=" [%s] ", dimless="")
             strs += [""]
         if "variables" in tables:
             strs += [results_table(self["variables"],
@@ -386,6 +388,7 @@ class GeometricProgram(Model):
             if printing:
                 print("Solving for %i variables." % len(self.varlocs))
             solution = GPSolutionArray()
+            solution.gp = self
             solution.append(self._run_solver(allownonoptimal))
             solution.toarray()
 
@@ -415,6 +418,7 @@ class GeometricProgram(Model):
             for each free variable.
         """
         solution = GPSolutionArray()
+        solution.gp = self
 
         self.presweep = self.last
 
