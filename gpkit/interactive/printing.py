@@ -102,7 +102,7 @@ o can be printed with LaTeX.
             return all(_can_print_latex(i) and _can_print_latex(o[i]) for i in o)
         elif isinstance(o, bool):
             return False
-        elif hasattr(o, 'latex'):
+        elif hasattr(o, '_latex'):
             return True
         elif isinstance(o, (float, integer_types)) and print_builtin:
             return True

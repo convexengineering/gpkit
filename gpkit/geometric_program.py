@@ -327,18 +327,18 @@ class GeometricProgram(Model):
                           pformat(self.substitutions, indent=26)[26:-1],
                           '          solver="%s")' % self.solver])
 
-    def latex(self, unused=None):
+    def _latex(self, unused=None):
         """LaTeX representation of a GeometricProgram.
         Contains all of its parameters."""
         return "\n".join(["\\begin{array}[ll]",
                           "\\text{}",
                           "\\text{minimize}",
-                          "    & %s \\\\" % self.cost.latex(),
+                          "    & %s \\\\" % self.cost._latex(),
                           "\\text{subject to}"] +
-                         ["    & %s \\\\" % constr.latex()
+                         ["    & %s \\\\" % constr._latex()
                           for constr in self.constraints] +
                          ["\\text{substituting}"] +
-                         sorted(["    & %s = %s \\\\" % (var.latex(),
+                         sorted(["    & %s = %s \\\\" % (var._latex(),
                                                          latex_num(val))
                                  for var, val in self.substitutions.items()]) +
                          ["\\end{array}"])

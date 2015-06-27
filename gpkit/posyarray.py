@@ -63,15 +63,15 @@ class PosyArray(np.ndarray):
                   " Exceptions coming from __array_wrap__.")
             raise
 
-    def latex(self, unused=None, matwrap=True):
+    def _latex(self, unused=None, matwrap=True):
         "Returns 1D latex list of contents."
         if len(self.shape) == 1:
             return (("\\begin{bmatrix}" if matwrap else "") +
-                    " & ".join(el.latex() for el in self) +
+                    " & ".join(el._latex() for el in self) +
                     ("\\end{bmatrix}" if matwrap else ""))
         elif len(self.shape) == 2:
             return ("\\begin{bmatrix}" +
-                    " \\\\\n".join(el.latex(matwrap=False) for el in self) +
+                    " \\\\\n".join(el._latex(matwrap=False) for el in self) +
                     "\\end{bmatrix}")
         else:
             return None
