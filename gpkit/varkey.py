@@ -78,8 +78,7 @@ class VarKey(object):
                 s = "%s_%s" % (s, self.descr[subscript])
         return s
 
-    def latex(self, unused=None):
-        """Get latex for this VarKey. Returns str."""
+    def _latex(self, unused=None):
         s = self.name
         for subscript in ["idx"]:  # +"model"?
             if subscript in self.descr:
