@@ -71,6 +71,24 @@ class TestNomialSubs(unittest.TestCase):
         for x_ in ["x", x]:
             self.assertAlmostEqual(mag(xs.sub(x_, [1, 2, 3]).c), 3.0)
 
+    def test_variable(self):
+        """Test special single-argument substitution for Variable"""
+        x = Variable('x')
+        y = Variable('y')
+        m = x*y**2
+        self.assertEqual(x.sub(3), 3)
+        self.assertEqual(x.sub(y), y)
+        self.assertEqual(x.sub(m), m)
+        # make sure x was not mutated
+        self.assertEqual(x, Variable('x'))
+        self.assertNotEqual(x.sub(3), Variable('x'))
+        # also make sure the old way works
+        self.assertEqual(x.sub({x: 3}), 3)
+        self.assertEqual(x.sub({x: y}), y)
+        # and for vectors
+        x = VectorVariable(3, 'x')
+        self.assertEqual(x[1].sub(3), 3)
+
 
 class TestGPSubs(unittest.TestCase):
     def test_vector_sweep(self):

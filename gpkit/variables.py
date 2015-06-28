@@ -55,6 +55,20 @@ class Variable(Monomial):
     def descr(self):
         return list(self.exp)[0].descr
 
+    def sub(self, *args, **kwargs):
+        """Same as nomial substitution, but also allows single-argument calls
+
+        Example
+        -------
+        x = Variable('x')
+        assert x.sub(3) == Variable('x', value=3)
+        """
+        if len(args) == 1 and "val" not in kwargs:
+            arg = args[0]
+            if not isinstance(arg, dict):
+                args = ({self: arg},)
+        return super(Variable, self).sub(*args, **kwargs)
+
 
 class VectorVariable(PosyArray):
     """A described vector of singlet Monomials.
