@@ -122,7 +122,7 @@ class GPSolutionArray(DictOfLists):
                                    "Swept variables",
                                    fixedcols=fixedcols)]
         if "constants" in tables:
-            strs += [results_table({k: v[0] for (k, v) in self["variables"].items()
+            strs += [results_table({k: v for (k, v) in self["variables"].items()
                                          if k in self.gp.substitutions},
                                    "Constants",
                                    fixedcols=fixedcols)]
