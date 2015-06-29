@@ -98,7 +98,7 @@ class Model(object):
         #       anything that holds only posys and then saving that list.
         #       This will allow prettier constraint printing.
         posynomials = [self.cost]
-        for constraint in self.constraints:
+        for constraint in constraints:
             if isinstance(constraint, MonoEQConstraint):
                 posynomials += [constraint.leq, constraint.geq]
             else:
@@ -175,7 +175,8 @@ class Model(object):
                 this_pass.update(linked)
                 constants_ = constants
                 constants_.update(this_pass)
-                program, subs = self.formProgram(programType, constants_)
+                program, subs = self.formProgram(programType, posynomials,
+                                                 constants_)
 
                 try:
                     result = program.solve(*args, **kwargs)
@@ -200,7 +201,8 @@ class Model(object):
                     self.program.append(program)
                     solution.append(result)
         else:
-            self.program, subs = self.formProgram(programType, constants)
+            self.program, subs = self.formProgram(programType, posynomials, 
+                                                  constants)
             result = self.program.solve(*args, **kwargs)
             sol = self.parse_result(result, subs)
             solution.append(sol)
@@ -210,16 +212,18 @@ class Model(object):
         self.solution = solution
         return solution
 
-    def sub(self, substitutions):
+    def sub(self, substitutions, val=None):
+        if val:
+            substitutions = {substitutions: val}
         substitutions = self.substitutions.update(substitutions)
         return Model(self.cost, self.constraints, substitutions)
 
-    def formProgram(self, programType, constants):
+    def formProgram(self, programType, posynomials, constants):
         subs = {var: var.descr["value"]
                 for var in self.variables if "value" in var.descr}
         subs.update(constants)
-        cost = self.cost.sub(subs)
-        constraints = [c.sub(subs) for c in self.constraints]
+        cost = posynomials[0].sub(subs)
+        constraints = [p.sub(subs) for p in posynomials[1:]]
 
         if programType in ["gp", "GP"]:
             return GeometricProgram(cost, constraints), subs
@@ -295,7 +299,6 @@ class Model(object):
                                      " S_{%s} = %0.2e" % (var, S))
 
         localexp = {var: S for (var, S) in sens_vars.items() if abs(S) >= 0.1}
-        print variables, localexp
         localcs = (variables[var]**-S for (var, S) in localexp.items())
         localc = functools_reduce(mul, localcs, cost)
         localmodel = Monomial(localexp, localc)

@@ -37,7 +37,8 @@ class GeometricProgram(object):
             for var, bound in sorted(missingbounds.items()):
                 print("%s has no %s bound" % (var, bound))
 
-    def solve(self, solver=None, printing=True, skipfailures=False):
+    def solve(self, solver=None, printing=True, skipfailures=False,
+              options={}, *args, **kwargs):
         """Solves a GeometricProgram and returns the solution.
 
         Arguments
@@ -58,7 +59,7 @@ class GeometricProgram(object):
             solverfn = cvxoptimize_fn(self.options)
         elif solver == "mosek_cli":
             from ._mosek import cli_expopt
-            filename = self.options.get('filename', 'gpkit_mosek')
+            filename = options.get('filename', 'gpkit_mosek')
             solverfn = cli_expopt.imize_fn(filename)
         elif solver == "mosek":
             from ._mosek import expopt
@@ -120,13 +121,13 @@ class GeometricProgram(object):
         if solver_out["status"] not in ["optimal", "OPTIMAL"]:
             raise RuntimeWarning("final status of solver '%s' was '%s', "
                                  "not 'optimal'." %
-                                 (self.solver, result['status']) +
+                                 (solver, result.get('status', '(blank)')) +
                                  "\n\nTo find a feasible solution to a"
                                  " relaxed version of your Geometric Program,"
-                                 " run gpkit.find_feasible_point(model.gp)."
+                                 "\nrun gpkit.find_feasible_point(model.gp)."
                                  "\n\nThe solver's result is stored in the"
                                  "'result' attribute (e.g., model.gp.result)"
-                                 "and its raw output in 'solver_out'.")
+                                 "\nand its raw output in 'solver_out'.")
         else:
             return result
 

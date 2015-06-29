@@ -71,7 +71,7 @@ class SolutionArray(DictOfLists):
                 cost_units = self.program[0].cost.units
             else:
                 strs += [" %-.4g" % self["cost"]]
-
+                cost_units = self.program.cost.units
             strs[-1] += unitstr(cost_units, into=" [%s] ", dimless="")
             strs += [""]
         if "freevariables" in tables:
