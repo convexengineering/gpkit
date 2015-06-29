@@ -90,7 +90,7 @@ from .nomials import Monomial, Posynomial, Signomial
 from .variables import Variable, VectorVariable, ArrayVariable
 from .varkey import VarKey
 from .posyarray import PosyArray
-from .geometric_program import GeometricProgram
+from .newModel import Model
 from .signomial_program import SignomialProgram
 from .user_scripts import composite_objective, link
 from .user_scripts import make_feasibility_gp, closest_feasible_point

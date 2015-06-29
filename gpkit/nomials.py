@@ -265,7 +265,7 @@ class Signomial(object):
             else:
                 cstr = [cstr] if cstr != "1" or not varstrs else []
                 mstrs.append(mult_symbol.join(cstr + varstrs))
-        return " + ".join(sorted(mstrs)) + unitstr(self.units, ", units='%s'")
+        return " + ".join(sorted(mstrs)) + unitstr(self.units, " [%s]")
 
     def descr(self, descr):
         self.descr = descr
@@ -516,6 +516,8 @@ class Constraint(Posynomial):
         self.cs = p.cs
         self.exps = p.exps
         self.varlocs = p.varlocs
+        self.varkeys = p.varkeys
+        self.units = p.units
 
         if len(p1.exps) == len(p2.exps):
             if len(p1.exps[0]) <= len(p2.exps[0]):
