@@ -62,7 +62,7 @@ class Model(object):
             try:
                 cost, constraints = setup
             except TypeError:
-                raise TypeError("Modek 'setup' methods must return "
+                raise TypeError("Model 'setup' methods must return "
                                 "(cost, constraints).")
         self.cost = cost
         self.constraints = constraints

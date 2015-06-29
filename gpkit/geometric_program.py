@@ -154,7 +154,7 @@ class GeometricProgram(object):
                           "\\text{minimize}",
                           "    & %s \\\\" % self.cost._latex(),
                           "\\text{subject to}"] +
-                         ["    & %s \\\\" % constr._latex()
+                         ["    & %s \\leq 1\\\\" % constr._latex()
                           for constr in self.constraints] +
                          ["\\end{array}"])
 
