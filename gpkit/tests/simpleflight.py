@@ -64,12 +64,12 @@ class simpleflight_generator(object):
         self.pi, self.rho, self.mu, self.S_wetratio, self.k, self.e, self.N_ult, self.tau, self.C_Lmax, self.V_min, self.CDA0, self.W_0, self.CDA0, self.W_0, self.D, self.A, self.S, self.C_D, self.C_L, self.C_f, self.Re, self.W, self.W_w, self.V, self.C_D_fuse, self.C_D_wpar, self.C_D_ind, self.W_w_strc, self.W_w_surf, self.W_w_strc, self.W_w_surf, self.equations = pi, rho, mu, S_wetratio, k, e, N_ult, tau, C_Lmax, V_min, CDA0, W_0, CDA0, W_0, D, A, S, C_D, C_L, C_f, Re, W, W_w, V, C_D_fuse, C_D_wpar, C_D_ind, W_w_strc, W_w_surf, W_w_strc, W_w_surf, equations
 
     def gp(self):
-        return gpkit.GP(self.D, self.equations)
+        return gpkit.Model(self.D, self.equations)
 
     def sweep(self, n):
         substitutions = {self.V_min: ("sweep", np.linspace(20, 25, n)),
                          self.V: ("sweep", np.linspace(45, 55, n)), }
-        return gpkit.GP(self.D, self.equations, substitutions)
+        return gpkit.Model(self.D, self.equations, substitutions)
 
 
 if __name__ == "__main__":

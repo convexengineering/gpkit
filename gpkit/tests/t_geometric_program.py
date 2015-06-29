@@ -2,7 +2,7 @@
 import math
 import unittest
 import numpy as np
-from gpkit import GP, SP, Monomial, settings, VectorVariable, Variable
+from gpkit import Model, Monomial, settings, VectorVariable, Variable
 from gpkit.small_classes import CootMatrix
 import gpkit
 
@@ -30,10 +30,9 @@ class TestGP(unittest.TestCase):
         """
         x = Monomial('x')
         y = Monomial('y')
-        prob = GP(cost=(x + 2*y),
-                  constraints=[x*y >= 1],
-                  solver=self.solver)
-        sol = prob.solve(printing=False)["variables"]
+        prob = Model(cost=(x + 2*y),
+                  constraints=[x*y >= 1])
+        sol = prob.solve(solver=self.solver, verbosity=0)["variables"]
         self.assertAlmostEqual(sol["x"], math.sqrt(2.), self.ndig)
         self.assertAlmostEqual(sol["y"], 1/math.sqrt(2.), self.ndig)
         self.assertAlmostEqual(sol["x"] + 2*sol["y"],
@@ -46,19 +45,17 @@ class TestGP(unittest.TestCase):
         """
         x = VectorVariable(2, 'x')
         y = VectorVariable(2, 'y')
-        prob = GP(cost=(sum(x) + 2*sum(y)),
-                  constraints=[x*y >= 1],
-                  solver=self.solver)
-        sol = prob.solve(printing=False)['variables']
+        prob = Model(cost=(sum(x) + 2*sum(y)),
+                     constraints=[x*y >= 1])
+        sol = prob.solve(solver=self.solver, verbosity=0)['variables']
         self.assertEqual(sol['x'].shape, (2,))
         self.assertEqual(sol['y'].shape, (2,))
         for x, y in zip(sol['x'], sol['y']):
             self.assertAlmostEqual(x, math.sqrt(2.), self.ndig)
             self.assertAlmostEqual(y, 1/math.sqrt(2.), self.ndig)
 
-    def simpleflight_test_core(self, gp):
-        gp.solver = self.solver
-        sol = gp.solve(printing=False)
+    def simpleflight_test_core(self, m):
+        sol = m.solve(solver=self.solver, verbosity=0)
         freevarcheck = dict(A=8.46,
                             C_D=0.0206,
                             C_f=0.0036,
@@ -96,12 +93,12 @@ class TestGP(unittest.TestCase):
     def test_mdd_example(self):
         Cl = Variable("Cl", 0.5, "-", "Lift Coefficient")
         Mdd = Variable("Mdd", "-", "Drag Divergence Mach Number")
-        gp1 = GP(1/Mdd, [1 >= 5*Mdd + 0.5, Mdd >= 0.00001])
-        gp2 = GP(1/Mdd, [1 >= 5*Mdd + 0.5])
-        gp3 = GP(1/Mdd, [1 >= 5*Mdd + Cl, Mdd >= 0.00001])
-        sol1 = gp1.solve(printing=False, solver=self.solver)
-        sol2 = gp2.solve(printing=False, solver=self.solver)
-        sol3 = gp3.solve(printing=False, solver=self.solver)
+        gp1 = Model(1/Mdd, [1 >= 5*Mdd + 0.5, Mdd >= 0.00001])
+        gp2 = Model(1/Mdd, [1 >= 5*Mdd + 0.5])
+        gp3 = Model(1/Mdd, [1 >= 5*Mdd + Cl, Mdd >= 0.00001])
+        sol1 = gp1.solve(solver=self.solver, verbosity=0)
+        sol2 = gp2.solve(solver=self.solver, verbosity=0)
+        sol3 = gp3.solve(solver=self.solver, verbosity=0)
         self.assertEqual(gp1.A, CootMatrix(row=[0, 1, 2],
                                            col=[0, 0, 0],
                                            data=[-1, 1, -1]))
@@ -123,7 +120,7 @@ class TestGP(unittest.TestCase):
 
     def test_additive_constants(self):
         x = Variable('x')
-        gp = GP(1/x, [1 >= 5*x + 0.5, 1 >= 10*x])
+        m = Model(1/x, [1 >= 5*x + 0.5, 1 >= 10*x])
         gp.genA()
         self.assertEqual(gp.cs[1], gp.cs[2])
         self.assertEqual(gp.A.data[1], gp.A.data[2])
@@ -132,7 +129,7 @@ class TestGP(unittest.TestCase):
         L = Variable("L")
         k = Variable("k", 0)
         gpkit.enable_signomials()
-        sol = GP(1/L, [L-5*k <= 10]).solve(printing=False, solver=self.solver)
+        sol = Model(1/L, [L-5*k <= 10]).solve(verbosity=0, solver=self.solver)
         self.assertAlmostEqual(sol(L), 10, self.ndig)
         gpkit.disable_signomials()
 
@@ -142,7 +139,7 @@ class TestGP(unittest.TestCase):
         eqns = [L >= 1, W >= 1,
                 L*W == 10]
         obj = gpkit.composite_objective(L+W, W**-1 * L**-3, sub={L: 1, W: 1})
-        sol = GP(obj, eqns).solve(printing=False, solver=self.solver)
+        sol = Model(obj, eqns).solve(verbosity=0, solver=self.solver)
         a = sol["sensitivities"]["variables"]["w_{CO}"].flatten()
         b = np.array([0, 0.98809322, 0.99461408, 0.99688676, 0.99804287,
                       0.99874303, 0.99921254, 0.99954926, 0.99980255, 1])
@@ -158,8 +155,8 @@ class TestGP(unittest.TestCase):
             return
         x = Variable('x')
         y = Variable('y')
-        gp = GP(y*x, [y*x >= 12])
-        sol = gp.solve(solver=self.solver, printing=False)
+        m = Model(y*x, [y*x >= 12])
+        sol = m.solve(solver=self.solver, verbosity=0)
         self.assertAlmostEqual(sol["cost"], 12)
 
 
@@ -173,11 +170,11 @@ class TestSP(unittest.TestCase):
         x = Variable('x')
         y = Variable('y')
         gpkit.enable_signomials()
-        sp = SP(x, [x >= 1-y, y <= 0.1])
-        sol = sp.localsolve(printing=False, solver=self.solver)
+        m = Model(x, [x >= 1-y, y <= 0.1])
+        sol = m.localsolve(verbosity=0, solver=self.solver)
         self.assertAlmostEqual(sol["variables"]["x"], 0.9, self.ndig)
-        sp = SP(x, [x >= 0.1, x+y >= 1, y <= 0.1])
-        sol = sp.localsolve(printing=False, solver=self.solver)
+        m = Model(x, [x >= 0.1, x+y >= 1, y <= 0.1])
+        sol = m.localsolve(verbosity=0, solver=self.solver)
         self.assertAlmostEqual(sol["variables"]["x"], 0.9, self.ndig)
         gpkit.disable_signomials()
 
@@ -195,13 +192,13 @@ class TestSP(unittest.TestCase):
                 W <= Wmax,
                 L*W >= A,
                 Obj >= a*(2*L + 2*W) + (1-a)*(12 * W**-1 * L**-3)]
-        sp = SP(Obj, eqns)
-        spsol = sp.localsolve(printing=False, solver=self.solver)
+        m = Model(Obj, eqns)
+        spsol = m.localsolve(verbosity=0, solver=self.solver)
         gpkit.disable_signomials()
         # now solve as GP
         eqns[-1] = (Obj >= a_val*(2*L + 2*W) + (1-a_val)*(12 * W**-1 * L**-3))
-        gp = GP(Obj, eqns)
-        gpsol = gp.solve(printing=False, solver=self.solver)
+        m = Model(Obj, eqns)
+        gpsol = m.solve(verbosity=0, solver=self.solver)
         self.assertAlmostEqual(spsol['cost'], gpsol['cost'])
 
     def test_trivial_sp2(self):
@@ -215,7 +212,7 @@ class TestSP(unittest.TestCase):
         x0 = 1
         y0 = 2
         sp = gpkit.SP(objective, constraints)
-        sol1 = sp.localsolve(x0={x: x0, y: y0}, printing=False, solver=self.solver)
+        sol1 = sp.localsolve(x0={x: x0, y: y0}, verbosity=0, solver=self.solver)
 
         # converging from right
         constraints = [y + x >= 2, y <= x]
@@ -223,7 +220,7 @@ class TestSP(unittest.TestCase):
         x0 = 2
         y0 = 1
         sp = gpkit.SP(objective, constraints)
-        sol2 = sp.localsolve(x0={x: x0, y: y0}, printing=False, solver=self.solver)
+        sol2 = sp.localsolve(x0={x: x0, y: y0}, verbosity=0, solver=self.solver)
 
         self.assertAlmostEqual(sol1["variables"]["x"], sol2["variables"]["x"], self.ndig)
         self.assertAlmostEqual(sol1["variables"]["y"], sol2["variables"]["x"], self.ndig)
@@ -241,17 +238,17 @@ class TestSP(unittest.TestCase):
         objective = x
         sp = gpkit.SP(objective, constraints)
         try:
-            sol = sp.localsolve(x0={x: x0, y: y0}, printing=False, solver=self.solver)
+            sol = m.localsolve(x0={x: x0, y: y0}, verbosity=0, solver=self.solver)
         except TypeError:
             self.fail("Call to local solve with only variables failed")
 
         try:
-            sol = sp.localsolve(x0={"x": x0, "y": y0}, printing=False, solver=self.solver)
+            sol = m.localsolve(x0={"x": x0, "y": y0}, verbosity=0, solver=self.solver)
         except TypeError:
             self.fail("Call to local solve with only variable strings failed")
 
         try:
-            sol = sp.localsolve(x0={"x": x0, y: y0}, printing=False, solver=self.solver)
+            sol = m.localsolve(x0={"x": x0, y: y0}, verbosity=0, solver=self.solver)
         except TypeError:
             self.fail("Call to local solve with a mix of variable strings and variables failed")
 

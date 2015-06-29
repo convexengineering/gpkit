@@ -1,7 +1,7 @@
 """Test substitution capability across gpkit"""
 import unittest
 import numpy as np
-from gpkit import Monomial, Variable, VectorVariable, units, GP, link
+from gpkit import Monomial, Variable, VectorVariable, units, GP, Model, link
 from gpkit.small_scripts import mag
 
 
@@ -94,18 +94,18 @@ class TestGPSubs(unittest.TestCase):
     def test_vector_sweep(self):
         x = Variable("x")
         y = VectorVariable(2, "y")
-        gp = GP(x, [x >= y.prod()])
-        gp.sub(y, ('sweep', [[2, 3], [5, 7, 11]]))
-        a = gp.solve(printing=False)["cost"]
+        m = Model(x, [x >= y.prod()])
+        m.sub(y, ('sweep', [[2, 3], [5, 7, 11]]))
+        a = m.solve(verbosity=0)["cost"]
         b = [10, 14, 22, 15, 21, 33]
         # below fails with changing dictionary keys in py3
         # self.assertTrue(all(abs(a-b)/(a+b) < 1e-7))
 
-        gp = GP(x, [x >= y.prod()])
+        m = Model(x, [x >= y.prod()])
 
-        def bad_sub(gp):
-            gp.sub(y, ('sweep', [[2, 3], [5, 7], [9, 11], [13, 15]]))
-        self.assertRaises(ValueError, bad_sub, gp)
+        def bad_sub(m):
+            m.sub(y, ('sweep', [[2, 3], [5, 7], [9, 11], [13, 15]]))
+        self.assertRaises(ValueError, bad_sub, m)
 
     def test_vector_init(self):
         N = 6
@@ -121,7 +121,7 @@ class TestGPSubs(unittest.TestCase):
         objective = P
         eqns = phys_constraints
         gp = GP(objective, eqns)
-        sol = gp.solve(printing=False)
+        sol = gp.solve(verbosity=0)
         solv = sol['variables']
         a = solv["xi"]
         b = xi_dist
@@ -228,8 +228,8 @@ class TestGPSubs(unittest.TestCase):
             return np.array([x[1] for x in
                              sorted(sol["variables"].items(),
                                     key=lambda x: x[0].name)])
-        a = sorted_solve_array(sf.solve(printing=False))
-        sol = gpl.solve(printing=False)
+        a = sorted_solve_array(sf.solve(verbosity=0))
+        sol = gpl.solve(verbosity=0)
         del sol["variables"]["dum"], sol["variables"]["dum"]
         b = sorted_solve_array(sol)
         self.assertTrue(all(abs(a-b)/(a+b) < 1e-7))

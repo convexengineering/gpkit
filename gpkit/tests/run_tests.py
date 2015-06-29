@@ -23,8 +23,8 @@ TESTS += t_posy_array.TESTS
 from gpkit.tests import t_geometric_program
 TESTS += t_geometric_program.TESTS
 
-from gpkit.tests import t_gp_solution_array
-TESTS += t_gp_solution_array.TESTS
+from gpkit.tests import t_solution_array
+TESTS += t_solution_array.TESTS
 
 
 import gpkit
