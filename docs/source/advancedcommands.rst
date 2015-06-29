@@ -57,12 +57,12 @@ You can also substitute in sweep variables (see Sweeps_), strings, and monomials
     yvk = y.varkeys.values()[0]
     for x_ in ["x", xvk, x]:
         for y_ in ["y", yvk, y]:
-            if not isinstance(y_, str) and type(xvk.descr["units"]) != str:
+            if not isinstance(y_, str) and type(xvk.units) != str:
                 expected = 0.001
             else:
                 expected = 1.0
             assert abs(expected - mag(x.sub(x_, y_).c)) < 1e-6
-    if type(xvk.descr["units"]) != str:
+    if type(xvk.units) != str:
         # this means units are enabled
         z = Variable("z", "s")
         # y.sub(y, z) will raise ValueError due to unit mismatch

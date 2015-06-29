@@ -37,8 +37,8 @@ def contour_array(data, X, Y, Zs,
             vals = data[var][:, idx]
         else:
             vals = data[var]
-        if "units" in var.descr:
-            label += unitstr(var.descr["units"], " [%s] ")
+        if var.units:
+            label += unitstr(var.units, " [%s] ")
         if "label" in var.descr:
             label += " %s" % var.descr["label"]
         return label, vals

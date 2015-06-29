@@ -1,3 +1,4 @@
+"""Test substitution capability across gpkit"""
 import unittest
 import numpy as np
 from gpkit import Monomial, Variable, VectorVariable, units, GP, link
@@ -5,13 +6,24 @@ from gpkit.small_scripts import mag
 
 
 class TestNomialSubs(unittest.TestCase):
+    """Test substitution for nomial-family objects"""
 
-    def test_basic(self):
+    def test_numeric(self):
+        """Basic substitution of numeric value"""
         x = Variable("x")
         p = x**2
         self.assertEqual(p.sub(x, 3), 9)
         self.assertEqual(p.sub(x.varkeys["x"], 3), 9)
         self.assertEqual(p.sub("x", 3), 9)
+
+    def test_basic(self):
+        """Basic substitution, symbolic"""
+        x = Variable('x')
+        y = Variable('y')
+        p = 1 + x**2
+        q = p.sub({x: y**2})
+        self.assertEqual(q, 1 + y**4)
+        self.assertEqual(x.sub({x: y}), y)
 
     def test_string_mutation(self):
         x = Variable("x", "m")
@@ -23,7 +35,7 @@ class TestNomialSubs(unittest.TestCase):
         x_changed_descr["name"] = "y"
         y_descr = list(y.exp)[0].descr
         self.assertEqual(x_changed_descr["name"], y_descr["name"])
-        if type(descr_before["units"]) != str:
+        if not isinstance(descr_before["units"], str):
             self.assertAlmostEqual(x_changed_descr["units"]/y_descr["units"],
                                    1.0)
         self.assertEqual(x.sub("x", x), x)
@@ -36,12 +48,12 @@ class TestNomialSubs(unittest.TestCase):
         yvk = list(y.varkeys.values())[0]
         for x_ in ["x", xvk, x]:
             for y_ in ["y", yvk, y]:
-                if not isinstance(y_, str) and type(xvk.descr["units"]) != str:
+                if not isinstance(y_, str) and type(xvk.units) != str:
                     expected = 0.001
                 else:
                     expected = 1.0
                 self.assertAlmostEqual(expected, mag(x.sub(x_, y_).c))
-        if type(xvk.descr["units"]) != str:
+        if type(xvk.units) != str:
             z = Variable("z", "s")
             self.assertRaises(ValueError, y.sub, y, z)
 
@@ -59,6 +71,24 @@ class TestNomialSubs(unittest.TestCase):
         for x_ in ["x", x]:
             self.assertAlmostEqual(mag(xs.sub(x_, [1, 2, 3]).c), 3.0)
 
+    def test_variable(self):
+        """Test special single-argument substitution for Variable"""
+        x = Variable('x')
+        y = Variable('y')
+        m = x*y**2
+        self.assertEqual(x.sub(3), 3)
+        self.assertEqual(x.sub(y), y)
+        self.assertEqual(x.sub(m), m)
+        # make sure x was not mutated
+        self.assertEqual(x, Variable('x'))
+        self.assertNotEqual(x.sub(3), Variable('x'))
+        # also make sure the old way works
+        self.assertEqual(x.sub({x: 3}), 3)
+        self.assertEqual(x.sub({x: y}), y)
+        # and for vectors
+        x = VectorVariable(3, 'x')
+        self.assertEqual(x[1].sub(3), 3)
+
 
 class TestGPSubs(unittest.TestCase):
     def test_vector_sweep(self):
@@ -69,7 +99,7 @@ class TestGPSubs(unittest.TestCase):
         a = gp.solve(printing=False)["cost"]
         b = [10, 14, 22, 15, 21, 33]
         # below fails with changing dictionary keys in py3
-        #self.assertTrue(all(abs(a-b)/(a+b) < 1e-7))
+        # self.assertTrue(all(abs(a-b)/(a+b) < 1e-7))
 
         gp = GP(x, [x >= y.prod()])
 
@@ -114,7 +144,7 @@ class TestGPSubs(unittest.TestCase):
                 S = Variable("S", "m^2", "total wing area")
                 dum = Variable("dum", "-", "dummy variable")
 
-                if type(W.varkeys["W"].descr["units"]) != str:
+                if type(W.varkeys["W"].units) != str:
                     CDA0 = Variable("(CDA0)", 310.0, "cm^2",
                                     "fuselage drag area")
                 else:
@@ -133,18 +163,18 @@ class TestGPSubs(unittest.TestCase):
             def setup(self):
                 N_ult = Variable("N_{ult}", 3.8, "-", "ultimate load factor")
                 tau = Variable("\\tau", 0.12, "-",
-                          "airfoil thickness to chord ratio")
+                               "airfoil thickness to chord ratio")
                 W_w = Variable("W_w", "N", "wing weight")
                 W = Variable("W", "N", "total aircraft weight")
 
-                if type(W.varkeys["W"].descr["units"]) != str:
+                if type(W.varkeys["W"].units) != str:
                     W_0 = Variable("W_0", 4.94, "kN",
-                              "aircraft weight excluding wing")
+                                   "aircraft weight excluding wing")
                     W_w_strc = 8.71e-5*N_ult*A**1.5*(W_0*W*S)**0.5/tau/units.m
                     W_w_surf = (45.24*units.Pa) * S
                 else:
                     W_0 = Variable("W_0", 4940, "N",
-                              "aircraft weight excluding wing")
+                                   "aircraft weight excluding wing")
                     W_w_strc = 8.71e-5*(N_ult*A**1.5*(W_0*W*S)**0.5)/tau
                     W_w_surf = 45.24 * S
 
@@ -192,7 +222,7 @@ class TestGPSubs(unittest.TestCase):
 
         from gpkit.tests.simpleflight import simpleflight_generator
         sf = simpleflight_generator(
-            disableUnits=(type(W.varkeys["W"].descr["units"]) == str)).gp()
+            disableUnits=(type(W.varkeys["W"].units) == str)).gp()
 
         def sorted_solve_array(sol):
             return np.array([x[1] for x in
