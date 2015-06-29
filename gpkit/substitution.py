@@ -4,7 +4,6 @@
 import numpy as np
 
 from collections import defaultdict
-from collections import Iterable
 
 from .small_classes import Numbers, Strings
 from .small_classes import HashVector
@@ -12,7 +11,6 @@ from .nomials import Monomial
 from .varkey import VarKey
 from .variables import VectorVariable
 
-from .small_scripts import locate_vars
 from .small_scripts import is_sweepvar
 from .small_scripts import mag
 
@@ -32,16 +30,16 @@ def getsubs(varkeys, varlocs, substitutions):
                 if var_ in varset:
                     subs[var_] = sub
             elif isinstance(var, Strings):
-                    if var in varkeys:
-                        var_ = varkeys[var]
-                        vectorsub(subs, var_, sub, varset)
+                if var in varkeys:
+                    var_ = varkeys[var]
+                    vectorsub(subs, var_, sub, varset)
             else:
                 vectorsub(subs, var, sub, varset)
     return subs
 
 
 def vectorsub(subs, var, sub, varset):
-    "Vectorized substitution via vecmons and Variables."
+    "Vectorized substitution"
 
     if hasattr(var, "__len__"):
         isvector = True
@@ -67,7 +65,7 @@ def vectorsub(subs, var, sub, varset):
             i = it.multi_index
             it.iternext()
             var_ = var[i]
-            if not var_ is 0:
+            if var_ is not 0:
                 v = VarKey(var_)
                 if v in varset:
                     subs[v] = sub[i]
@@ -81,11 +79,11 @@ def substitution(varlocs, varkeys, exps, cs, substitutions, val=None):
         Arguments
         ---------
         varlocs : dict
-            Dictionary of monomial indexes for each variable.
-        exps : dict
-            Dictionary of variable exponents for each monomial.
+            Dictionary mapping variables to lists of monomial indices.
+        exps : Iterable of dicts
+            Dictionary mapping variables to exponents, for each monomial.
         cs : list
-            Coefficients each monomial.
+            Coefficient for each monomial.
         substitutions : dict
             Substitutions to apply to the above.
         val : number (optional)
@@ -136,9 +134,9 @@ def substitution(varlocs, varkeys, exps, cs, substitutions, val=None):
                 varlocs_[sub].append(i)
             elif isinstance(sub, VarKey):
                 sub = VarKey(sub)
-                if isinstance(var.descr["units"], Quantity):
+                if isinstance(var.units, Quantity):
                     try:
-                        new_units = var.descr["units"]/sub.descr["units"]
+                        new_units = var.units/sub.units
                         cs_[i] *= new_units.to('dimensionless')
                     except DimensionalityError:
                         raise ValueError("substituted variables need the same"
@@ -146,9 +144,9 @@ def substitution(varlocs, varkeys, exps, cs, substitutions, val=None):
                 exps_[i] += HashVector({sub: x})
                 varlocs_[sub].append(i)
             elif isinstance(sub, Monomial):
-                if isinstance(var.descr["units"], Quantity):
+                if isinstance(var.units, Quantity):
                     try:
-                        new_units = var.descr["units"]/sub.units
+                        new_units = var.units/sub.units
                         cs_[i] *= new_units.to('dimensionless')
                     except DimensionalityError:
                         raise ValueError("substituted monomials need the same"
@@ -158,6 +156,6 @@ def substitution(varlocs, varkeys, exps, cs, substitutions, val=None):
                 for subvar in sub.exp:
                     varlocs_[subvar].append(i)
             else:
-                raise TypeError("could not substitue with value"
+                raise TypeError("could not substitute with value"
                                 " of type '%s'" % type(sub))
     return varlocs_, exps_, cs_, subs

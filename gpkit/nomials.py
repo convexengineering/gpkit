@@ -26,9 +26,11 @@ class Signomial(object):
             Exponent dicts for each monomial term
         cs: tuple
             Coefficient values for each monomial term
-        varlocs: dict
+        varlocsandkeys: dict
             mapping from variable name to list of indices of monomial terms
             that variable appears in
+        require_positive: bool
+            If True and signomials not enabled, c <= 0 will raise ValueError
 
         Returns
         -------
@@ -48,7 +50,7 @@ class Signomial(object):
             # building a Monomial
             if isinstance(exps, VarKey):
                 exp = {exps: 1}
-                units = exps.descr["units"] if "units" in exps.descr else None
+                units = exps.units
             elif exps is None or isinstance(exps, Strings):
                 exp = {VarKey(exps, **descr): 1}
                 descr = list(exp)[0].descr
