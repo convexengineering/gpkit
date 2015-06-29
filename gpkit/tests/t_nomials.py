@@ -64,9 +64,9 @@ class TestMonomial(unittest.TestCase):
 
     def test_latex(self):
         "Test latex string creation"
-        m = Monomial({'x': 2, 'y': -1}, 5).latex()
+        m = Monomial({'x': 2, 'y': -1}, 5)._latex()
         self.assertEqual(type(m), str)
-        self.assertEqual(Monomial('x', 5).latex(), '5x')
+        self.assertEqual(Monomial('x', 5)._latex(), '5x')
 
     def test_str_with_units(self):
         "Make sure __str__() works when units are involved"
@@ -181,7 +181,7 @@ class TestSignomial(unittest.TestCase):
         y = Monomial('y')
         enable_signomials()
         self.assertEqual(str(1 - x - y**2 - 1), "-x + -y**2")
-        self.assertEqual((1 - x/y**2).latex(), "-\\frac{x}{y^{2}} + 1")
+        self.assertEqual((1 - x/y**2)._latex(), "-\\frac{x}{y^{2}} + 1")
         disable_signomials()
         self.assertRaises(TypeError, lambda: x-y)
 
