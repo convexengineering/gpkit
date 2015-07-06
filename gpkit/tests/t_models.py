@@ -1,4 +1,4 @@
-"""Tests for model library (gpkit/models/)"""
+"""Tests for model library (currently gpkit/math_models.py)"""
 import unittest
 from gpkit import Variable, VectorVariable
 
@@ -8,7 +8,7 @@ class TestMath(unittest.TestCase):
 
     def test_te_exp_minus1(self):
         """Test Taylor expansion of e^x - 1"""
-        from gpkit.models.math import te_exp_minus1
+        from gpkit.math_models import te_exp_minus1
         x = Variable('x')
         self.assertEqual(te_exp_minus1(x, 1), x)
         self.assertEqual(te_exp_minus1(x, 3), x + x**2/2. + x**3/6.)
