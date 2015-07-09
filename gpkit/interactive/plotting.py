@@ -1,12 +1,13 @@
+"""Plotting methods"""
+import matplotlib.pyplot as plt
 from ..nomials import VarKey
 from ..small_scripts import unitstr
-import matplotlib.pyplot as plt
-import numpy as np
 
-light_colors = ['#80cdc1']
-dark_colors = ['#01665e']
-neutral_dark = '#888888'
-neutral_light = '#aaaaaa'
+
+LIGHT_COLORS = ['#80cdc1']
+DARK_COLORS = ['#01665e']
+NEUTRAL_DARK = '#888888'
+NEUTRAL_LIGHT = '#aaaaaa'
 
 
 def contour_plot(ax, X, Y, Z, title, colors):
@@ -18,9 +19,9 @@ def contour_plot(ax, X, Y, Z, title, colors):
 
     plt.clabel(cont, fmt=fmt, colors=dark, fontsize=14)
     ax.set_title(title, color=dark, fontsize=14)
-    ax.tick_params(colors=neutral_dark)
+    ax.tick_params(colors=NEUTRAL_DARK)
     ax.set_frame_on(False)
-    ax.grid(which='both', color=neutral_light)
+    ax.grid(which='both', color=NEUTRAL_LIGHT)
 
 
 def contour_array(data, X, Y, Zs,
@@ -48,7 +49,7 @@ def contour_array(data, X, Y, Zs,
     Z_lgs = [get_label(Z) for Z in Zs]
 
     if colors is None:
-        colors = light_colors[0], dark_colors[0]
+        colors = LIGHT_COLORS[0], DARK_COLORS[0]
 
     fig, axes = plt.subplots(nrows, ncols, figsize=figsize,
                              sharex=True, sharey=True)
@@ -63,7 +64,7 @@ def contour_array(data, X, Y, Zs,
         ylabeledaxes = axes
 
     for ax in xlabeledaxes:
-        ax.set_xlabel(xlabel, color=neutral_dark)
+        ax.set_xlabel(xlabel, color=NEUTRAL_DARK)
         ax.set_xlim((Xgrid.min(), Xgrid.max()))
         if xticks is not None:
             ax.set_xticks(xticks, minor=True)
@@ -73,7 +74,7 @@ def contour_array(data, X, Y, Zs,
             ax.set_xticks(major_xticks)
             ax.set_xticklabels(major_ticklabels)
     for ax in ylabeledaxes:
-        ax.set_ylabel(ylabel, color=neutral_dark)
+        ax.set_ylabel(ylabel, color=NEUTRAL_DARK)
         ax.set_ylim((Ygrid.min(), Ygrid.max()))
         if yticks is not None:
             ax.set_yticks(yticks, minor=True)
@@ -86,10 +87,8 @@ def contour_array(data, X, Y, Zs,
 
     for i, Z_lg in enumerate(Z_lgs):
         zlabel, Zgrid = Z_lg
-        if nrows > 1: row_vector = axes[i % nrows, :]
-        else: row_vector = axes
-        if ncols > 1: ax = row_vector[i % ncols]
-        else: ax = row_vector[0]
+        row_vector = axes[i % nrows, :] if nrows > 1 else axes
+        ax = row_vector[i % ncols] if ncols > 1 else row_vector[0]
         # hack begins
         Xgrid = Xgrid.reshape(len(xticks), len(yticks))
         Ygrid = Ygrid.reshape(len(xticks), len(yticks))
@@ -106,15 +105,15 @@ def frontier_surface_plot(data, xvar, yvar, zvars,
 
 
 def plot_frontiers(gp, Zs, x=1, y=3, figsize=(15,5)):
-        "Helper function to plot 2d contour plots."
-        sol = gp.solution
-        data = dict(sol["variables"])
-        data.update({"S{%s}" % k: v
-                    for (k, v) in sol["sensitivities"]["variables"].items()})
-        if len(gp.sweep) == 2:
-            contour_array(data,
-                          gp.sweep.keys()[0],
-                          gp.sweep.keys()[1],
-                          Zs, x, y, figsize,
-                          xticks=gp.sweep.values()[0],
-                          yticks=gp.sweep.values()[1])
+    "Helper function to plot 2d contour plots."
+    sol = gp.solution
+    data = dict(sol["variables"])
+    data.update({"S{%s}" % k: v
+                 for (k, v) in sol["sensitivities"]["variables"].items()})
+    if len(gp.sweep) == 2:
+        contour_array(data,
+                      gp.sweep.keys()[0],
+                      gp.sweep.keys()[1],
+                      Zs, x, y, figsize,
+                      xticks=gp.sweep.values()[0],
+                      yticks=gp.sweep.values()[1])
