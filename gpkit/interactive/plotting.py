@@ -117,3 +117,43 @@ def plot_frontiers(gp, Zs, x=1, y=3, figsize=(15,5)):
                       Zs, x, y, figsize,
                       xticks=gp.sweep.values()[0],
                       yticks=gp.sweep.values()[1])
+
+
+def sensitivity_plot(gp, keys=None, xlim=(-1, 1)):
+    """Plot percentage change in objective (cost) as variables change,
+    using sensitivity information.
+
+    Arguments
+    ---------
+    gp (GeometricProgram): a solved GP
+    keys (iterable):
+        list of variable keys to plot sensitivities for.
+        None defaults to all gp substitutions.
+    xlim (2-tuple): min and max x percentages to plot
+
+    Returns
+    -------
+    matplotlib.pyplot Figure
+    """
+    if keys is None:
+        keys = gp.substitutions.keys()
+    sens_dict = gp.solution["sensitivities"]["variables"]
+    # set up for sorting (will need this later)
+    named_sensitivities = [(sens_dict[k], str(k)) for k in keys]
+    names = []
+    ticks = []
+    fig, left_ax = plt.subplots()
+    for s, name in named_sensitivities:
+        right_side_val = xlim[1]*s
+        left_ax.plot(xlim, (xlim[0]*s, right_side_val))
+        names.append(name)
+        ticks.append(right_side_val)
+
+    # now make a right-hand y axis with text labels for each sensitivity key
+    right_ax = left_ax.twinx()
+    right_ax.set_ylim(left_ax.get_ylim())
+    right_ax.set_yticks(ticks)
+    right_ax.set_yticklabels(names)
+    left_ax.set_xlabel("Percentage change")
+    left_ax.set_ylabel("Percentage change in cost")
+    return fig
