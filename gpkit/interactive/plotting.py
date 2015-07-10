@@ -119,6 +119,70 @@ def plot_frontiers(gp, Zs, x=1, y=3, figsize=(15,5)):
                       yticks=gp.sweep.values()[1])
 
 
+def _combine_nearby_ticks(ticks, lim, ntick=25):
+    """This function deals with overlapping labels in non-regularly-spaced
+    plotting ticks. Nearby ticks are combined (averaged), and their labels
+    are concatenated into a single label.
+
+    Arguments
+    ---------
+    ticks (list of (numeric, string) tuples):
+        A list of matched tick values and labels
+    lim (2-tuple) limits of this axis
+    ntick (int): maximum number of ticks for which tick labels don't overlap
+
+    Returns
+    -------
+    list, same format as 'ticks' input
+    """
+    min_spacing = (lim[1] - lim[0])/float(ntick - 1)
+    ticks = sorted(ticks)   # sort by location; don't modify the original
+    prevloc = float('-inf')
+    decorated = []
+    for t in ticks:
+        # dist_to_left_nbr, tick, weight
+        decorated.append([t[0] - prevloc, t, 1])
+        prevloc = t[0]
+    # hack together a doubly linked list -- add refs to left and right nghbrs
+    for i in xrange(len(ticks)):
+        decorated[i].extend([decorated[i-1] if i > 0 else None,
+                             decorated[i+1] if i+1 < len(ticks) else None])
+    while True: # will be terminated by break statement
+        spacing_violations = [d for d in decorated if d[0] < min_spacing]
+        if not spacing_violations:
+            break
+        # heuristic: deal with violations in order of severity
+        spacing_violations.sort()
+        for sv in spacing_violations:
+            #print sv[0], len(spacing_violations)
+            #print sv
+            if sv[0] >= min_spacing:
+                # previous tweaks solved an issue; recompute violations
+                break
+            _, (loc, name), weight, left, right = sv
+            ldist, (lloc, lname), lweight, lleft, lright = left
+            assert lright is sv
+            # this tick is too close to left nghbr.
+            # remove the left nghbr; recompute refs and distances
+            # steps: 1. update this, 2: update lefts (2x); 3: update right
+            newloc = (loc*weight + lloc*lweight)/float(weight + lweight)
+            sv[0] = newloc - left[1][0] + ldist
+            # print "combining point of weight %s at %s with w %s at %s" % (
+            #         weight, loc, lweight, lloc)
+            # print "new location is %s" % newloc
+            # print "new distance is %s" % sv[0]
+            sv[1] = (newloc, ", ".join([lname, name]))
+            sv[2] += lweight
+            sv[3] = lleft
+            left[:] = [float('inf'), None, 0, None, None]
+            # be careful here, might be on a boundary
+            if lleft is not None:
+                lleft[4] = sv
+            if right:
+                right[0] = right[1][0] - newloc
+    return [t for _, t, w, _, _ in decorated if w]
+
+
 def sensitivity_plot(gp, keys=None, xlim=(-1, 1)):
     """Plot percentage change in objective (cost) as variables change,
     using sensitivity information.
@@ -137,23 +201,21 @@ def sensitivity_plot(gp, keys=None, xlim=(-1, 1)):
     """
     if keys is None:
         keys = gp.substitutions.keys()
-    sens_dict = gp.solution["sensitivities"]["variables"]
-    # set up for sorting (will need this later)
-    named_sensitivities = [(sens_dict[k], str(k)) for k in keys]
-    names = []
     ticks = []
     fig, left_ax = plt.subplots()
-    for s, name in named_sensitivities:
+    for k in keys:
+        s = gp.solution["sensitivities"]["variables"][k]
         right_side_val = xlim[1]*s
         left_ax.plot(xlim, (xlim[0]*s, right_side_val))
-        names.append(name)
-        ticks.append(right_side_val)
+        ticks.append((right_side_val, str(k)))
 
     # now make a right-hand y axis with text labels for each sensitivity key
     right_ax = left_ax.twinx()
-    right_ax.set_ylim(left_ax.get_ylim())
-    right_ax.set_yticks(ticks)
-    right_ax.set_yticklabels(names)
+    ylim = left_ax.get_ylim()
+    ticks = _combine_nearby_ticks(ticks, lim=ylim)
+    right_ax.set_ylim(ylim)
+    right_ax.set_yticks([t[0] for t in ticks])
+    right_ax.set_yticklabels([t[1] for t in ticks])
     left_ax.set_xlabel("Percentage change")
     left_ax.set_ylabel("Percentage change in cost")
     return fig
