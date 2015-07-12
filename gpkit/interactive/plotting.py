@@ -183,7 +183,7 @@ def _combine_nearby_ticks(ticks, lim, ntick=25):
     return [t for _, t, w, _, _ in decorated if w]
 
 
-def sensitivity_plot(gp, keys=None, xlim=(-1, 1)):
+def sensitivity_plot(gp, keys=None, xmax=1, yxmax=1):
     """Plot percentage change in objective (cost) as variables change,
     using sensitivity information.
 
@@ -193,7 +193,10 @@ def sensitivity_plot(gp, keys=None, xlim=(-1, 1)):
     keys (iterable):
         list of variable keys to plot sensitivities for.
         None defaults to all gp substitutions.
-    xlim (2-tuple): min and max x percentages to plot
+    xmax (float):
+        max (and min) percentage to plot on x axis
+    yxmax (float):
+        max (and min) percentage for y axis, *as a fraction of xmax*
 
     Returns
     -------
@@ -201,21 +204,31 @@ def sensitivity_plot(gp, keys=None, xlim=(-1, 1)):
     """
     if keys is None:
         keys = gp.substitutions.keys()
-    ticks = []
+    right_ticks, top_ticks = [], []
     fig, left_ax = plt.subplots()
+    ymax = yxmax*xmax
+    left_ax.set_ylim((-ymax, ymax))
     for k in keys:
         s = gp.solution["sensitivities"]["variables"][k]
-        right_side_val = xlim[1]*s
-        left_ax.plot(xlim, (xlim[0]*s, right_side_val))
-        ticks.append((right_side_val, str(k)))
+        left_ax.plot((-xmax, xmax), (-xmax*s, xmax*s))
+        if abs(s) > yxmax:
+            top_ticks.append((ymax/s, str(k)))
+        else:
+            right_ticks.append((xmax*s, str(k)))
+    left_ax.set_xlabel("% change")
+    left_ax.set_ylabel("Approx. % change in cost")
 
     # now make a right-hand y axis with text labels for each sensitivity key
+    # might want to try Axes copy and ax.yaxis.tick_right()
     right_ax = left_ax.twinx()
+    top_ax = left_ax.twiny()
     ylim = left_ax.get_ylim()
-    ticks = _combine_nearby_ticks(ticks, lim=ylim)
-    right_ax.set_ylim(ylim)
-    right_ax.set_yticks([t[0] for t in ticks])
-    right_ax.set_yticklabels([t[1] for t in ticks])
-    left_ax.set_xlabel("Percentage change")
-    left_ax.set_ylabel("Percentage change in cost")
+    right_ticks = _combine_nearby_ticks(right_ticks, lim=ylim)
+    top_ticks = _combine_nearby_ticks(top_ticks, lim=(-xmax, xmax))
+    right_ax.set_yticks([t[0] for t in right_ticks])
+    right_ax.set_yticklabels([t[1] for t in right_ticks])
+    top_ax.set_xticks([t[0] for t in top_ticks])
+    top_ax.set_xticklabels([t[1] for t in top_ticks], rotation=90)
+    right_ax.set_ylim(ylim)  # this needs to occur after set_yticks().
+    top_ax.set_xlim(left_ax.get_xlim())
     return fig
