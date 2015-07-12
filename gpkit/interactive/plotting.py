@@ -211,6 +211,7 @@ def sensitivity_plot(gp, keys=None, xmax=1, yxmax=1):
             right_ticks.append((xmax*s, str(k)))
     left_ax.set_xlabel("% change")
     left_ax.set_ylabel("Approx. % change in cost")
+    left_ax.grid(True)
 
     # now make a right-hand y axis with text labels for each sensitivity key
     # might want to try Axes copy and ax.yaxis.tick_right()
