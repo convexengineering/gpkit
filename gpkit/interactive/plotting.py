@@ -154,8 +154,6 @@ def _combine_nearby_ticks(ticks, lim, ntick=25):
         # heuristic: deal with violations in order of severity
         spacing_violations.sort()
         for sv in spacing_violations:
-            #print sv[0], len(spacing_violations)
-            #print sv
             if sv[0] >= min_spacing:
                 # previous tweaks solved an issue; recompute violations
                 break
@@ -167,10 +165,6 @@ def _combine_nearby_ticks(ticks, lim, ntick=25):
             # steps: 1. update this, 2: update lefts (2x); 3: update right
             newloc = (loc*weight + lloc*lweight)/float(weight + lweight)
             sv[0] = newloc - left[1][0] + ldist
-            # print "combining point of weight %s at %s with w %s at %s" % (
-            #         weight, loc, lweight, lloc)
-            # print "new location is %s" % newloc
-            # print "new distance is %s" % sv[0]
             sv[1] = (newloc, ", ".join([lname, name]))
             sv[2] += lweight
             sv[3] = lleft
