@@ -14,7 +14,6 @@ from pprint import pformat
 from collections import defaultdict
 import functools
 from operator import mul
-from copy import deepcopy
 
 from .small_classes import Strings
 from .small_classes import DictOfLists
@@ -275,9 +274,6 @@ class GeometricProgram(Model):
             return out[0]
         else:
             return out
-
-    def copy(self):
-        return deepcopy(self)
 
     def __getitem__(self, key):
         for attr in ["result", "solution", "solv", "variables"]:
