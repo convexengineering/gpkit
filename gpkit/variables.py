@@ -4,13 +4,8 @@ from collections import Iterable
 from .varkey import VarKey
 from .nomials import Monomial
 from .posyarray import PosyArray
-from .small_classes import Strings, Numbers
+from .small_classes import Strings, Numbers, Quantity
 from .small_scripts import is_sweepvar
-
-from . import units as ureg
-from . import DimensionalityError
-Quantity = ureg.Quantity
-Numbers += (Quantity,)
 
 
 class Variable(Monomial):

@@ -1,6 +1,6 @@
 import numpy as np
 
-from .small_classes import Strings, Numbers
+from .small_classes import Strings, Numbers, Quantity
 from .posyarray import PosyArray
 from .varkey import VarKey
 
@@ -13,8 +13,6 @@ from .small_scripts import mag, unitstr
 
 from . import units as ureg
 from . import DimensionalityError
-Quantity = ureg.Quantity
-Numbers += (Quantity,)
 
 
 class Signomial(object):
@@ -52,7 +50,8 @@ class Signomial(object):
                 exp = {exps: 1}
                 units = exps.units
             elif exps is None or isinstance(exps, Strings):
-                exp = {VarKey(exps, **descr): 1}
+                exp = ({VarKey(**descr): 1} if exps is None else
+                       {VarKey(exps, **descr): 1})
                 descr = list(exp)[0].descr
                 units = descr["units"] if "units" in descr else None
             elif isinstance(exps, dict):

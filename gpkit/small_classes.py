@@ -1,6 +1,7 @@
+"""Miscellaneous small classes"""
 import numpy as np
-
 from collections import namedtuple as nt
+from . import units
 
 try:
     isinstance("", basestring)
@@ -8,7 +9,8 @@ try:
 except NameError:
     Strings = (str,)
 
-Numbers = (int, float, np.number)
+Quantity = units.Quantity
+Numbers = (int, float, long, np.number, Quantity)
 
 PosyTuple = nt('PosyTuple', ['exps', 'cs', 'varlocs', 'substitutions'])
 CootMatrixTuple = nt('CootMatrix', ['row', 'col', 'data'])
@@ -18,11 +20,12 @@ class CootMatrix(CootMatrixTuple):
     "A very simple sparse matrix representation."
     shape = (None, None)
 
-    def append(self, i, j, x):
-        assert (i >= 0 and j >= 0), "Only positive indices allowed"
-        self.row.append(i)
-        self.col.append(j)
-        self.data.append(x)
+    def append(self, row, col, data):
+        if row < 0 or col < 0:
+            raise ValueError("Only positive indices allowed")
+        self.row.append(row)
+        self.col.append(col)
+        self.data.append(data)
 
     def update_shape(self):
         self.shape = (max(self.row)+1, max(self.col)+1)
@@ -141,10 +144,13 @@ class HashVector(dict):
     >>> x = gpkit.nomials.Monomial('x')
     >>> exp = gpkit.small_classes.HashVector({x: 2})
     """
+    def __init__(self, *args, **kwargs):
+        super(HashVector, self).__init__(*args, **kwargs)
+        self._hashvalue = None
 
     def __hash__(self):
         "Allows HashVectors to be used as dictionary keys."
-        if not hasattr(self, "_hashvalue"):
+        if self._hashvalue is None:
             self._hashvalue = hash(tuple(self.items()))
         return self._hashvalue
 
@@ -156,10 +162,10 @@ class HashVector(dict):
         "Return Hashvector with each value negated."
         return HashVector({key: -val for (key, val) in self.items()})
 
-    def __pow__(self, x):
+    def __pow__(self, other):
         "Accepts scalars. Return Hashvector with each value put to a power."
         if isinstance(other, Numbers):
-            return HashVector({key: val**x for (key, val) in self.items()})
+            return HashVector({key: val**other for (key, val) in self.items()})
         else:
             return NotImplemented
 
@@ -171,9 +177,8 @@ class HashVector(dict):
         if isinstance(other, Numbers):
             return HashVector({key: val*other for (key, val) in self.items()})
         elif isinstance(other, dict):
-            keys = set(self.keys()).intersection(other.keys())
-            sums = {key: self[key] * other[key] for key in keys}
-            return HashVector(sums)
+            keys = set(self).intersection(other)
+            return HashVector({key: self[key] * other[key] for key in keys})
         else:
             return NotImplemented
 
@@ -186,7 +191,7 @@ class HashVector(dict):
             return HashVector({key: val+other
                                for (key, val) in self.items()})
         elif isinstance(other, dict):
-            keys = set(self.keys()).union(other.keys())
+            keys = set(self).union(other)
             sums = {key: self.get(key, 0) + other.get(key, 0) for key in keys}
             return HashVector(sums)
         else:

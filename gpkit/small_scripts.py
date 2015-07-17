@@ -4,10 +4,7 @@ from collections import defaultdict
 from collections import Iterable
 
 from .small_classes import HashVector
-from .small_classes import Strings, Numbers
-
-from . import units as ureg
-Quantity = ureg.Quantity
+from .small_classes import Strings, Quantity
 
 
 def diff(p, vk):
