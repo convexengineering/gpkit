@@ -2,8 +2,8 @@
 from gpkit.tests.helpers import run_tests
 TESTS = []
 
-from gpkit.tests import t_user_scripts
-TESTS += t_user_scripts.TESTS
+from gpkit.tests import t_tools
+TESTS += t_tools.TESTS
 
 from gpkit.tests import t_sub
 TESTS += t_sub.TESTS
