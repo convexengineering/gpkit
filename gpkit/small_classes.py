@@ -10,7 +10,7 @@ except NameError:
     Strings = (str,)
 
 Quantity = units.Quantity
-Numbers = (int, float, long, np.number, Quantity)
+Numbers = (int, float, np.number, Quantity)
 
 PosyTuple = nt('PosyTuple', ['exps', 'cs', 'varlocs', 'substitutions'])
 CootMatrixTuple = nt('CootMatrix', ['row', 'col', 'data'])
