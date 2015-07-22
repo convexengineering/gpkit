@@ -28,7 +28,8 @@ def errorRemoveReadonly(func, path, exc):
 
 
 def imize_fn(filename):
-    filename = "gpkit_tmp" + os.sep + filename
+    folder = os.path.expanduser("~") + os.sep + "gpkit_tmp"
+    filename = folder + os.sep + filename
     os.environ['PATH'] = (os.environ['PATH'] + ':%s' %
                           settings["mosek_bin_dir"][0])
 
@@ -71,8 +72,8 @@ def imize_fn(filename):
             If the format of mskexpopt's output file is unexpected.
 
         """
-        if not os.path.exists("gpkit_tmp"):
-            os.makedirs("gpkit_tmp")
+        if not os.path.exists(folder):
+            os.makedirs(folder)
 
         with open(filename, "w") as f:
             numcon = 1+p_idxs[-1]
@@ -108,7 +109,7 @@ def imize_fn(filename):
             assert_line(f, "INDEX   ACTIVITY\n")
             dual_vals = read_vals(f)
 
-        shutil.rmtree("gpkit_tmp", ignore_errors=False,
+        shutil.rmtree(folder, ignore_errors=False,
                       onerror=errorRemoveReadonly)
 
         return dict(status="optimal",
