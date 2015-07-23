@@ -583,9 +583,10 @@ class Constraint(Posynomial):
 
 
 class MonoEQConstraint(Constraint):
-    '''
-    TODO: Add docstring
-    '''
+    """
+    A Constraint of the form Monomial == Monomial.
+    Stored internally as a Monomial Constraint, (1 == self).
+    """
     def _set_operator(self, p1, p2):
         self.oper_l = " = "
         self.oper_s = " == "
