@@ -489,9 +489,14 @@ class Monomial(Posynomial):
 
 
 class Constraint(Posynomial):
-    '''
-    TODO: Add docstring
-    '''
+    """A constraint of the general form monomial > posynomial
+    Stored internally (exps, cs) as a single Posynomial (1 >= self)
+    Usually initialized via operator overloading, e.g. cc = y**2 >= 1 + x
+    Additionally stores input format (lhs vs rhs) in self.right and self.left
+    Form is self.left >= self.right.
+
+    TODO: this documentation needs to address Signomial Constraints.
+    """
     def _set_operator(self, p1, p2):
         if self.left is p1:
             self.oper_s = " <= "
@@ -510,6 +515,17 @@ class Constraint(Posynomial):
         return self.left._latex() + self.oper_l + self.right._latex()
 
     def __init__(self, p1, p2):
+        """Initialize a constraint of the form p2 >= p1.
+
+        Arguments
+        ---------
+        p1 (Signomial)
+        p2 (Signomial)
+
+        TODO: clarify how this __init__ handles Signomial constraints
+        TODO: change p1 and p2 to left and right instead of auto-selecting?
+        TODO: call super() from this __init__
+        """
         p1 = Signomial(p1)
         p2 = Signomial(p2)
         from . import SIGNOMIALS_ENABLED
