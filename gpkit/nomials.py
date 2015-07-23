@@ -1,3 +1,4 @@
+"""Signomial, Posynomial, Monomial, Constraint, & MonoEQCOnstraint classes"""
 import numpy as np
 
 from .small_classes import Strings, Numbers, Quantity
@@ -43,8 +44,8 @@ class Signomial(object):
         if isinstance(exps, Numbers):
             cs = exps
             exps = {}
-        if (isinstance(cs, Numbers)
-           and (exps is None or isinstance(exps, Strings + (VarKey, dict)))):
+        if (isinstance(cs, Numbers) and
+                (exps is None or isinstance(exps, Strings + (VarKey, dict)))):
             # building a Monomial
             if isinstance(exps, VarKey):
                 exp = {exps: 1}
@@ -136,6 +137,13 @@ class Signomial(object):
 
     @property
     def value(self):
+        """Self, with values substituted for variables that have values
+
+        Returns
+        -------
+        float, if no symbolic variables remain after substitution
+        (Monomial, Posynomial, or Signomial), otherwise.
+        """
         values = {vk: vk.descr["value"] for vk in self.varlocs.keys()
                   if "value" in vk.descr}
         p = self.sub(values)
@@ -147,14 +155,25 @@ class Signomial(object):
     def to(self, arg):
         return Signomial(self.exps, self.cs.to(arg).tolist())
 
-    def diff(self, var):
-        if var in self.varkeys:
-            var = self.varkeys[var]
-        elif isinstance(var, Monomial):
-            vks = list(var.exp)
+    def diff(self, wrt):
+        """Derivative of this with respect to a Variable
+
+        Arguments
+        ---------
+        wrt (Variable):
+            Variable to take derivative with respect to
+
+        Returns
+        -------
+        Signomial (or Posynomial or Monomial)
+        """
+        if wrt in self.varkeys:
+            wrt = self.varkeys[wrt]
+        elif isinstance(wrt, Monomial):
+            vks = list(wrt.exp)
             if len(vks) == 1:
-                var = vks[0]
-        exps, cs = diff(self, var)
+                wrt = vks[0]
+        exps, cs = diff(self, wrt)
         return Signomial(exps, cs, require_positive=False)
 
     def mono_approximation(self, x0):
@@ -177,7 +196,7 @@ class Signomial(object):
         Arguments
         ---------
         substitutions : dict or key
-            Either a dictionary whose keys are strings, Variables, or VarKeys, 
+            Either a dictionary whose keys are strings, Variables, or VarKeys,
             and whose values are numbers, or a string, Variable or Varkey.
         val : number (optional)
             If the substitutions entry is a single key, val holds the value
@@ -311,8 +330,8 @@ class Signomial(object):
             elif pos_vars and neg_vars:
                 mstrs.append("%s\\frac{%s}{%s}" % (cstr, pvarstr, nvarstr))
 
-        units = unitstr(self.units, "\mathrm{\\left[ %s \\right]}", "L~")
-        units_tf = units.replace("frac", "tfrac").replace("\\cdot", "\\cdot ")
+        units = unitstr(self.units, r"\mathrm{\left[ %s \right]}", "L~")
+        units_tf = units.replace("frac", "tfrac").replace(r"\cdot", r"\cdot ")
         return " + ".join(sorted(mstrs)) + units_tf
 
     # posynomial arithmetic
@@ -391,7 +410,7 @@ class Signomial(object):
                     x -= 1
                 return p
             else:
-                raise ValueError("Signomial are only closed under"
+                raise ValueError("Signomials are only closed under"
                                  " nonnegative integer exponents.")
         else:
             return NotImplemented
@@ -430,14 +449,30 @@ class Signomial(object):
 
 
 class Posynomial(Signomial):
+    """A Signomial with strictly positive cs
+
+    Arguments
+    ---------
+    Same as Signomial.
+    Note: Posynomial historically supported several different init formats
+          These will be deprecated in the future, replaced with a single
+          __init__ syntax, same as Signomial.
+    """
     pass
 
 
 class Monomial(Posynomial):
-    '''
-    TODO: Add docstring
-    '''
+    """A Posynomial with only one term
+
+    Arguments
+    ---------
+    Same as Signomial.
+    Note: Monomial historically supported several different init formats
+          These will be deprecated in the future, replaced with a single
+          __init__ syntax, same as Signomial.
+    """
     def __rdiv__(self, other):
+        """Divide other by this Monomial"""
         if isinstance(other, Numbers+(Posynomial,)):
             return other * self**-1
         else:
