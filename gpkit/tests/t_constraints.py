@@ -33,22 +33,35 @@ class TestMonoEQConstraint(unittest.TestCase):
     """Test monomial equality constraint class"""
 
     def test_init(self):
-        """Make sure initialization functions as expected"""
+        """Test initialization via both operator overloading and __init__"""
         x = Variable('x')
         y = Variable('y')
+        mono = y**2/x
+        # operator overloading
         mec = (x == y**2)
-        # test inheritance tree
+        # __init__
+        mec2 = MonoEQConstraint(x, y**2)
+        self.assertTrue(mec2 == mono or mec2 == 1/mono)
+        self.assertTrue(mec2 == mec or mec2 == 1/mec)
+        self.assertTrue(mec == mono or mec == 1/mono)
+        self.assertTrue(mec2 == mono or mec2 == 1/mono)
+
+    def test_inheritance(self):
+        """Make sure MonoEQConstraint inherits from the right things"""
+        F = Variable('F')
+        m = Variable('m')
+        a = Variable('a')
+        mec = (F == m*a)
         self.assertTrue(isinstance(mec, MonoEQConstraint))
         self.assertTrue(isinstance(mec, Constraint))
         # seems like mec should also be Monomial (not just Posynomial),
         # but that fails. TODO change next line to Monomial.
         self.assertTrue(isinstance(mec, Posynomial))
-        mono = y**2/x
-        self.assertTrue(mec == mono or mec == 1/mono)
-        # standard initialization
-        mec2 = MonoEQConstraint(x, y**2)
-        self.assertTrue(mec2 == mono or mec2 == 1/mono)
-        self.assertTrue(mec2 == mec or mec2 == 1/mec)
+
+    def test_non_monomial(self):
+        """Try to initialize a MonoEQConstraint with non-monomial args"""
+        x = Variable('x')
+        y = Variable('y')
         # try to initialize a Posynomial Equality constraint
         self.assertRaises(TypeError, MonoEQConstraint, x*y, x + y)
 

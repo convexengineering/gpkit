@@ -388,6 +388,7 @@ class Signomial(object):
         return self * other
 
     def __div__(self, other):
+        """Support the / operator in Python 2.x"""
         if isinstance(other, Numbers):
             return Signomial(self.exps, self.cs/other)
         elif isinstance(other, Monomial):
@@ -399,6 +400,7 @@ class Signomial(object):
             return NotImplemented
 
     def __truediv__(self, other):
+        """Support the / operator in Python 3.x"""
         return self.__div__(other)
 
     def __pow__(self, x):
@@ -479,6 +481,7 @@ class Monomial(Posynomial):
             return NotImplemented
 
     def __rtruediv__(self, other):
+        """rdiv for python 3.x"""
         return self.__rdiv__(other)
 
     def __pow__(self, other):
