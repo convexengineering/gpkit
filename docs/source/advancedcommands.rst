@@ -1,6 +1,54 @@
 Advanced Commands
 *****************
 
+
+Sensitivities and dual variables
+================================
+
+When a GP is solved, it returns not just the optimal value for the problem’s variables (known as the "primal solution") but also, as a side effect of the solving process, the effect that scaling the less-than side of each constraint would have on the overall objective (called the "dual solution", "shadow prices", or "posynomial sensitivities").
+
+Using variable sensitivities
+----------------------------
+
+GPkit takes this dual solution and use it to compute the sensitivities of each variable, which can be accessed most easily use a GPSolutionArray’s ``senssubinto()`` method, as in this example:
+
+.. code-block:: python
+
+    import gpkit
+    x = gpkit.Variable("x")
+    x_min = gpkit.Variable("x_{min}", 2)
+    sol = gpkit.GP(x, [x_min <= x]).solve()
+    assert sol.senssubinto(x_max) == 1
+
+These sensitivities are actually log derivatives (:math:`\frac{d log(y)}{d log{x}`); whereas a regular derivative is a tangent line, these are tangent monomials, so the ``1`` above indicates that ``x_max`` has a linear relation with the objective. This is confirmed by a further example:
+
+.. code-block:: python
+
+    import gpkit
+    x = gpkit.Variable("x")
+    x_squared_min = gpkit.Variable("x^2_{min}", 2)
+    sol = gpkit.GP(x, [x_squared_min <= x**2]).solve()
+    assert sol.senssubinto(x_max) == 2
+
+Plotting variable sensitivities
+-------------------------------
+
+Sensitivities are a useful way to evaluate the tradeoffs in your model, as well as what aspects of the model are driving the solution and should be examined. To help with this, GPkit has an automatic sensitivity plotting function that can be accessed as follows:
+
+.. code-block:: python
+
+    from gpkit.interactive.plotting import sensitivity_plot
+    _ = sensitivity_plot(gp)
+
+Which produces the following plot:
+
+.. figure::  sensitivities.png
+   :width: 500 px
+
+In this plot, steep lines that go up to the right are variables whose increase sharply increases (makes worse) the objective. Steep lines going down to the right are variables whose increase sharply decreases (improves) the objective.
+
+
+
 Substitutions
 =============
 
