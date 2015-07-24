@@ -20,7 +20,7 @@ GPkit takes this dual solution and use it to compute the sensitivities of each v
     sol = gpkit.GP(x, [x_min <= x]).solve()
     assert sol.senssubinto(x_max) == 1
 
-These sensitivities are actually log derivatives (:math:`\frac{d log(y)}{d log{x}`); whereas a regular derivative is a tangent line, these are tangent monomials, so the ``1`` above indicates that ``x_max`` has a linear relation with the objective. This is confirmed by a further example:
+These sensitivities are actually log derivatives (:math:`\frac{d log(y)}{d log(x)}`); whereas a regular derivative is a tangent line, these are tangent monomials, so the ``1`` above indicates that ``x_max`` has a linear relation with the objective. This is confirmed by a further example:
 
 .. code-block:: python
 
