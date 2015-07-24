@@ -189,7 +189,7 @@ def results_table(data, title, minval=0, printunits=True, fixedcols=True,
     decorated = [(bool(v.shape) if isinstance(v, Iterable) else False,
                  (varfmt % k),
                  i, k, v) for i, (k, v) in enumerate(data.items())
-                 if (np.max(abs(v)) >= minval) | (np.any(np.isnan(v)))]
+                 if (np.max(abs(v)) >= minval) or (np.any(np.isnan(v)))]
                 #                               allows nans to be printed 
     decorated.sort()
     for isvector, varstr, _, var, val in decorated:
