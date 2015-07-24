@@ -56,8 +56,8 @@ class TestResultsTable(unittest.TestCase):
         data = {x: np.array([np.nan,   1.,   1.,   1.,   1.])}
         title = "Free variables"
         printstr = results_table(data, title)
-        targetstr = "Free variables\n--------------\nx : [ nan       1         1         1        ... ] \n"
-        self.assertEqual(printstr, targetstr)
+        self.assertTrue("nan" in printstr)
+        self.assertTrue(title in printstr)
 
 TESTS = [TestHashVector, TestResultsTable]
 
