@@ -1,4 +1,4 @@
-.. figure::  gplogo.svg
+.. figure::  gplogo.png
    :width: 250 px
 
 GPkit is a Python package for defining and manipulating
