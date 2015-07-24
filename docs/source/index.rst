@@ -14,6 +14,7 @@ Table of contents
        :maxdepth: 2
 
        gp101
+       gpkit101
        installation
        gettingstarted
        basiccommands
