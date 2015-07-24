@@ -5,12 +5,12 @@ Advanced Commands
 Sensitivities and dual variables
 ================================
 
-When a GP is solved, it returns not just the optimal value for the problem’s variables (known as the "primal solution") but also, as a side effect of the solving process, the effect that scaling the less-than side of each constraint would have on the overall objective (called the "dual solution", "shadow prices", or "posynomial sensitivities").
+When a GP is solved, the solver returns not just the optimal value for the problem’s variables (known as the "primal solution") but also, as a side effect of the solving process, the effect that scaling the less-than side of each constraint would have on the overall objective (called the "dual solution", "shadow prices", or "posynomial sensitivities").
 
 Using variable sensitivities
 ----------------------------
 
-GPkit takes this dual solution and use it to compute the sensitivities of each variable, which can be accessed most easily use a GPSolutionArray’s ``senssubinto()`` method, as in this example:
+GPkit uses this dual solution to compute the sensitivities of each variable, which can be accessed most easily using a GPSolutionArray’s ``senssubinto()`` method, as in this example:
 
 .. code-block:: python
 
