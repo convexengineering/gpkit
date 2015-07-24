@@ -22,7 +22,7 @@ class TestMathModels(unittest.TestCase):
 
     def test_te_exp_minus1(self):
         """Test Taylor expansion of e^x - 1"""
-        from gpkit.math_models import te_exp_minus1
+        from gpkit.tools import te_exp_minus1
         x = Variable('x')
         self.assertEqual(te_exp_minus1(x, 1), x)
         self.assertEqual(te_exp_minus1(x, 3), x + x**2/2. + x**3/6.)
