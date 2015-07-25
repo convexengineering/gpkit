@@ -531,7 +531,8 @@ class GeometricProgram(Model):
         #        raise RuntimeWarning("constraint exceeded:"
         #                             " %s = 1 + %0.2e" % (p, val-1))
 
-        if "objective" in result:
+        if "objective" in result and "mosek" not in self.solver:
+            # TODO remove mosek conditional -- issue # 296
             cost = float(result["objective"])
         else:
             cost = self.cost.subcmag(variables)
