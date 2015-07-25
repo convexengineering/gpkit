@@ -162,6 +162,23 @@ class TestGP(unittest.TestCase):
         sol = gp.solve(solver=self.solver, printing=False)
         self.assertAlmostEqual(sol["cost"], 12)
 
+    def test_constants_in_objective_1(self):
+        '''Issue 296'''
+        x1 = Variable('x1')
+        x2 = Variable('x2')
+        gp = GP(1.+ x1 + x2, [x1 >= 1., x2 >= 1.])
+        sol = gp.solve(solver=self.solver, printing=False)
+        self.assertAlmostEqual(sol["cost"], 3)
+
+    def test_constants_in_objective_2(self):
+        '''Issue 296'''
+        x1 = Variable('x1')
+        x2 = Variable('x2')
+        gp = GP(x1**2 + 100 + 3*x2 , [x1 >= 10., x2 >= 15.])
+        sol = gp.solve(solver=self.solver, printing=False)
+        self.assertTrue(abs(sol["cost"] - 245) < 1e-4)
+        # may need to investigate why this assertion is weak
+
 
 class TestSP(unittest.TestCase):
     """test case for SP class -- gets run for each installed solver"""
