@@ -112,24 +112,6 @@ def imize_fn(filename):
         shutil.rmtree(folder, ignore_errors=False,
                       onerror=errorRemoveReadonly)
 
-        try:
-            Ad = A.tocoo().todense() # dense A
-            nmons = sum(p_idxs == 0) # number of monomials in objective function
-
-            # if there is a constant term in the objective function
-            if (Ad[range(nmons), :].sum(axis=1) == 0).any():
-                # In the case of a constant in the obj function, recalculates
-                # the optimal cost using the primal and the objective function
-                J = Ad.shape[1]
-                objective_val = 0
-                for i in range(nmons):
-                    obj1 = 1
-                    for j in range(J):
-                        obj1 = obj1*exp(primal_vals[j])**Ad[i,j]
-                    objective_val += c[i]*obj1
-        except TypeError:
-            pass
-
         return dict(status="optimal",
                     objective=objective_val,
                     primal=primal_vals,
