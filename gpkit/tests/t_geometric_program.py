@@ -168,7 +168,7 @@ class TestGP(unittest.TestCase):
         x2 = Variable('x2')
         gp = GP(1.+ x1 + x2, [x1 >= 1., x2 >= 1.])
         sol = gp.solve(solver=self.solver, printing=False)
-        self.assertAlmostEqual(sol["cost"], 3)
+        self.assertTrue(abs(sol["cost"] - 3) < 1e-6)
 
     def test_constants_in_objective_2(self):
         '''Issue 296'''
