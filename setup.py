@@ -48,11 +48,11 @@ SOFTWARE."""
 setup(
     name='gpkit',
     description='Package for defining and manipulating geometric programming models.',
-    author='Convex Optimization Group at MIT ACDL',
+    author='MIT Department of Aeronautics and Astronautics',
     author_email='convex@mit.edu',
     url='https://www.github.com/convexopt/gpkit',
     install_requires=['numpy'],
-    version='0.1.1',
+    version='0.2.0',
     packages=['gpkit', 'gpkit._mosek', 'gpkit.tests', 'gpkit.interactive'],
     package_data={'gpkit': ['env/*'],
                   'gpkit._mosek': ['lib/*']},

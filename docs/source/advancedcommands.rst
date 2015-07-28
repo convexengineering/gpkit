@@ -18,9 +18,9 @@ GPkit uses this dual solution to compute the sensitivities of each variable, whi
     x = gpkit.Variable("x")
     x_min = gpkit.Variable("x_{min}", 2)
     sol = gpkit.GP(x, [x_min <= x]).solve()
-    assert sol.senssubinto(x_max) == 1
+    assert sol.senssubinto(x_min) == 1
 
-These sensitivities are actually log derivatives (:math:`\frac{d \mathrm{log}(y)}{d \mathrm{log}(x)}`); whereas a regular derivative is a tangent line, these are tangent monomials, so the ``1`` above indicates that ``x_max`` has a linear relation with the objective. This is confirmed by a further example:
+These sensitivities are actually log derivatives (:math:`\frac{d \mathrm{log}(y)}{d \mathrm{log}(x)}`); whereas a regular derivative is a tangent line, these are tangent monomials, so the ``1`` above indicates that ``x_min`` has a linear relation with the objective. This is confirmed by a further example:
 
 .. code-block:: python
 
@@ -28,7 +28,7 @@ These sensitivities are actually log derivatives (:math:`\frac{d \mathrm{log}(y)
     x = gpkit.Variable("x")
     x_squared_min = gpkit.Variable("x^2_{min}", 2)
     sol = gpkit.GP(x, [x_squared_min <= x**2]).solve()
-    assert sol.senssubinto(x_max) == 2
+    assert sol.senssubinto(x_squared_min) == 2
 
 Plotting variable sensitivities
 -------------------------------
@@ -38,7 +38,7 @@ Sensitivities are a useful way to evaluate the tradeoffs in your model, as well 
 .. code-block:: python
 
     from gpkit.interactive.plotting import sensitivity_plot
-    _ = sensitivity_plot(gp)
+    sensitivity_plot(gp)
 
 Which produces the following plot:
 
@@ -234,7 +234,7 @@ where each :math:`f` is monomial while each :math:`g` and :math:`h` is a posynom
 
 This requires multiple solutions of geometric programs, and so will take longer to solve than an equivalent geometric programming formulation.
 
-The specification of the signomial problem affects its solve time in a nuanced way: ``gpkit.SP(x, [x >= 1-y, y <= 0.1]).localsolve()`` takes a third to a fifth as long to solve as ``gpkit.SP(x, [x >= 0.1, x+y >= 1, y <= 0.1]).localsolve()``, despite the two formulations being equivalent.
+The specification of the signomial problem affects its solve time in a nuanced way: ``gpkit.SP(x, [x >= 0.1, x+y >= 1, y <= 0.1]).localsolve()`` takes about four times as many iterations to solve as ``gpkit.SP(x, [x >= 1-y, y <= 0.1]).localsolve()``, despite the two formulations being arithmetically equivalent.
 
 In general, when given the choice of which variables to include in the positive-posynomial / :math:`g` side of the constraint, the modeler should:
 
