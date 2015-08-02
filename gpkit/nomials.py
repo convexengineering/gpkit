@@ -585,8 +585,13 @@ class MonoEQConstraint(Constraint):
         self.__class__ = MonoEQConstraint  # todo should not have to do this
         self.oper_l = " = "
         self.oper_s = " == "
-        self.leq = Constraint(m2, m1)
-        self.geq = Constraint(m1, m2)
+        # next two lines would be clean implementation, but Constraint
+        # inheritance from Posy won't allow division
+        # self.leq = self
+        # self.geq = 1 / self
+        # instead, we'll do this -- TODO improve
+        self.leq = m1/m2
+        self.geq = m2/m1
 
     def __nonzero__(self):
         # a constraint not guaranteed to be satisfied
