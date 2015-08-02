@@ -390,8 +390,7 @@ class Signomial(object):
         if isinstance(other, Numbers):
             return Signomial(self.exps, self.cs/other)
         elif isinstance(other, Monomial):
-            exps = [exp - other.exp for exp in self.exps]
-            return Signomial(exps, self.cs/other.c)
+            return other.__rdiv__(self)
         elif isinstance(other, PosyArray):
             return np.array(self)/other
         else:
@@ -473,7 +472,7 @@ class Monomial(Posynomial):
     """
     def __rdiv__(self, other):
         """Divide other by this Monomial"""
-        if isinstance(other, Numbers+(Posynomial,)):
+        if isinstance(other, Numbers + (Signomial,)):
             return other * self**-1
         else:
             return NotImplemented
