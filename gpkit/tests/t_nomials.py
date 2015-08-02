@@ -1,7 +1,7 @@
 """Tests for Monomial, Posynomial, and Signomial classes"""
 import math
 import unittest
-from gpkit import Monomial, Posynomial
+from gpkit import Variable, Monomial, Posynomial
 from gpkit import enable_signomials, disable_signomials
 
 
@@ -266,7 +266,7 @@ class TestPosynomial(unittest.TestCase):
     def test_diff(self):
         "Test differentiation (!!)"
         x = Monomial('x')
-        y = Monomial('y')
+        y = Variable('y')
         self.assertEqual((y**2).diff(y), 2*y)
         self.assertEqual((x + y**2).diff(y), 2*y)
         self.assertEqual((x + x*y**2).diff(y), 2*x*y)

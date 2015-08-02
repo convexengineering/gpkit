@@ -169,10 +169,8 @@ class Signomial(object):
         """
         if wrt in self.varkeys:
             wrt = self.varkeys[wrt]
-        elif isinstance(wrt, Monomial):
-            vks = list(wrt.exp)
-            if len(vks) == 1:
-                wrt = vks[0]
+        elif not isinstance(wrt, VarKey):
+            wrt = wrt.varkey
         exps, cs = diff(self, wrt)
         return Signomial(exps, cs, require_positive=False)
 
