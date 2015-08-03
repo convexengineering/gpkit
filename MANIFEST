@@ -10,6 +10,11 @@ gpkit/posyarray.py
 gpkit/small_classes.py
 gpkit/small_scripts.py
 gpkit/substitution.py
+gpkit/shortcuts.py
+gpkit/signomial_program.py
+gpkit/tools.py
+gpkit/variables.py
+gpkit/varkey.py
 gpkit/_mosek/__init__.py
 gpkit/_mosek/cli_expopt.py
 gpkit/_mosek/expopt.py
@@ -17,8 +22,14 @@ gpkit/interactive/__init__.py
 gpkit/interactive/plotting.py
 gpkit/interactive/printing.py
 gpkit/interactive/widget.py
+gpkit/interactive/pretty_print.py
+gpkit/interactive/ractor.py
 gpkit/tests/__init__.py
 gpkit/tests/run_tests.py
+gpkit/tests/helpers.py
+gpkit/tests/t_small.py
+gpkit/tests/t_sub.py
+gpkit/tests/t_tools.py
 gpkit/tests/simpleflight.py
 gpkit/tests/t_posy_array.py
 gpkit/tests/t_geometric_program.py
