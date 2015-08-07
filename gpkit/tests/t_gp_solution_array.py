@@ -67,7 +67,7 @@ class TestGPSolutionArray(unittest.TestCase):
     def test_table(self):
         x = Variable('x')
         gp = GP(x, [x >= 12])
-        sol = gp.solve(solver='mosek', printing=False)
+        sol = gp.solve(printing=False)
         tab = sol.table()
         self.assertTrue(isinstance(tab, str))
 
