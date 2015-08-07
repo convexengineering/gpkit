@@ -2,6 +2,7 @@ import numpy as np
 
 from collections import defaultdict
 from collections import Iterable
+from collections import OrderedDict
 
 from .small_classes import HashVector
 from .small_classes import Strings, Numbers
@@ -143,12 +144,16 @@ def locate_vars(exps):
     return dict(varlocs), dict(varkeys)
 
 
-def sort_and_simplify(exps, cs):
+def sort_and_simplify(exps, cs, return_map=False):
     "Reduces the number of monomials, and casts them to a sorted form."
     matches = defaultdict(float)
+    if return_map:
+        expmap = defaultdict(list)
     for i, exp in enumerate(exps):
         exp = HashVector({var: x for (var, x) in exp.items() if x != 0})
         matches[exp] += cs[i]
+        if return_map:
+            expmap[exp].append(i)
 
     if matches[HashVector({})] == 0 and len(matches) > 1:
         del matches[HashVector({})]
@@ -162,8 +167,16 @@ def sort_and_simplify(exps, cs):
         cs_ = [c.to(units).magnitude for c in cs_] * units
     else:
         cs_ = np.array(cs_, dtype='float')
-    return tuple(matches.keys()), cs_
 
+    exps_ = tuple(matches.keys())
+    if not return_map:
+        return exps_, cs_
+    else:
+        mmap = ["X"]*(i+1)
+        for exp, m_is in expmap.items():
+            for m_i in m_is:
+                mmap[m_i] = exps_.index(exp)
+        return exps_, cs_, mmap
 
 def results_table(data, title, minval=0, printunits=True, fixedcols=True,
                   varfmt="%s : ", valfmt="%-.4g ", vecfmt="%-8.3g"):

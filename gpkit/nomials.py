@@ -178,7 +178,7 @@ class Signomial(object):
         Arguments
         ---------
         substitutions : dict or key
-            Either a dictionary whose keys are strings, Variables, or VarKeys, 
+            Either a dictionary whose keys are strings, Variables, or VarKeys,
             and whose values are numbers, or a string, Variable or Varkey.
         val : number (optional)
             If the substitutions entry is a single key, val holds the value

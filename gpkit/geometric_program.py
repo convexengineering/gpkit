@@ -56,7 +56,7 @@ class GeometricProgram(object):
             solver = settings['installed_solvers'][0]
         if solver == 'cvxopt':
             from ._cvxopt import cvxoptimize_fn
-            solverfn = cvxoptimize_fn(self.options)
+            solverfn = cvxoptimize_fn(options)
         elif solver == "mosek_cli":
             from ._mosek import cli_expopt
             filename = options.get('filename', 'gpkit_mosek')
@@ -91,7 +91,7 @@ class GeometricProgram(object):
         if "objective" in solver_out:
             result["cost"] = float(solver_out["objective"])
         else:
-            result["cost"] = self.cost.subcmag(variables)
+            result["cost"] = self.cost.subcmag(result["variables"])
 
         result["sensitivities"] = {}
         if "nu" in solver_out:
@@ -104,7 +104,7 @@ class GeometricProgram(object):
                 # assume the cost's sensitivity has been dropped
                 la = np.hstack(([1.0], la))
             Ax = np.array(self.A.todense().dot(solver_out['primal'])).ravel()
-            z = Ax + np.log(cs)
+            z = Ax + np.log(self.cs)
             m_iss = [self.p_idxs == i for i in range(len(la))]
             nu = np.hstack([la[p_i]*np.exp(z[m_is])/sum(np.exp(z[m_is]))
                             for p_i, m_is in enumerate(m_iss)])

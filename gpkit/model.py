@@ -18,14 +18,16 @@ from copy import deepcopy
 from collections import Iterable
 
 from .nomials import Constraint, MonoEQConstraint
-from .nomials import Posynomial, Monomial
+from .nomials import Posynomial, Monomial, Signomial
 from .varkey import VarKey
+from .substitution import substitution
 
 from .small_classes import Strings
 from .small_scripts import flatten
 from .small_scripts import locate_vars
 from .small_scripts import mag
 from .small_scripts import is_sweepvar
+from .small_scripts import sort_and_simplify
 
 from .solution_array import SolutionArray
 from .signomial_program import SignomialProgram
@@ -54,6 +56,10 @@ class Model(object):
                 raise TypeError("Models can only be created without a cost"
                                 " if they have a 'setup' method.")
             try:
+                if "name" in kwargs:
+                    name = kwargs.pop("name")
+                else:
+                    name = self.__class__.__name__
                 setup = self.setup(*args, **kwargs)
             except:
                 # TODO: pass error through!
@@ -69,7 +75,7 @@ class Model(object):
         self.substitutions = substitutions
 
         if hasattr(self, "setup"):
-            # TODO: use super instead of Model
+            # TODO: use super instead of Model?
             k = Model.model_nums[name]
             Model.model_nums[name] = k+1
             name += str(k) if k else ""
@@ -161,7 +167,7 @@ class Model(object):
             N_passes = sweep_grids[0].size
             sweep_vects = {var: grid.reshape(N_passes)
                            for (var, grid) in zip(sweep, sweep_grids)}
-            
+
             if verbosity > 0:
                 print("Solving for %i variables over %i passes." % (
                       len(self.variables), N_passes))
@@ -175,12 +181,12 @@ class Model(object):
                 this_pass.update(linked)
                 constants_ = constants
                 constants_.update(this_pass)
-                program, subs = self.formProgram(programType, posynomials,
-                                                 constants_)
+                program, subs, mmaps = self.formProgram(programType, posynomials,
+                                                        constants_)
 
                 try:
                     result = program.solve(*args, **kwargs)
-                    sol = self.parse_result(result, subs,
+                    sol = self.parse_result(result, subs, mmaps,
                                             sweep, linkedsweep)
                     return program, sol
                 except (RuntimeWarning, ValueError):
@@ -201,16 +207,25 @@ class Model(object):
                     self.program.append(program)
                     solution.append(result)
         else:
-            self.program, subs = self.formProgram(programType, posynomials, 
-                                                  constants)
+            self.program, subs, mmaps = self.formProgram(programType,
+                                                         posynomials,
+                                                         constants)
             result = self.program.solve(*args, **kwargs)
-            sol = self.parse_result(result, subs)
+            sol = self.parse_result(result, subs, mmaps)
             solution.append(sol)
 
         solution.program = self.program
         solution.toarray()
         self.solution = solution
         return solution
+
+    @property
+    def gp(self):
+        # TODO: clean this up, use more properties?
+        if hasattr(self, "program"):
+            if len(self.program) == 1:
+                return self.program[0]
+        raise ValueError("there was no GP!" + str(self.program))
 
     def sub(self, substitutions, val=None):
         if val:
@@ -222,13 +237,22 @@ class Model(object):
         subs = {var: var.descr["value"]
                 for var in self.variables if "value" in var.descr}
         subs.update(constants)
-        cost = posynomials[0].sub(subs)
-        constraints = [p.sub(subs) for p in posynomials[1:]]
+        posynomials_, mmaps = [], []
+        for p in posynomials:
+            _, exps, cs, _ = substitution(p.varlocs, p.varkeys,
+                                          p.exps, p.cs, subs)
+
+            exps, cs, mmap = sort_and_simplify(exps, cs, return_map=True)
+            posynomials_.append(Signomial(exps, cs, units=p.units))
+            mmaps.append(mmap)
+
+        cost = posynomials_[0]
+        constraints = posynomials_[1:]
 
         if programType in ["gp", "GP"]:
-            return GeometricProgram(cost, constraints), subs
+            return GeometricProgram(cost, constraints), subs, mmaps
         elif programType in ["sp", "SP"]:
-            return SignomialProgram(cost, constraints), subs
+            return SignomialProgram(cost, constraints), subs, mmaps
         else:
             raise ValueError("unkonwn program type %s." % programType)
 
@@ -272,7 +296,7 @@ class Model(object):
                                  for var, val in subs.items()]) +
                          ["\\end{array}"])
 
-    def parse_result(self, result, constants, sweep={}, linkedsweep={}):
+    def parse_result(self, result, constants, mmaps, sweep={}, linkedsweep={}):
         cost = result["cost"]
         freevariables = dict(result["variables"])
         sweepvariables = {var: val for var, val in constants.items()
@@ -284,8 +308,17 @@ class Model(object):
         variables.update(sweepvariables)
         sensitivities = dict(result["sensitivities"])
 
+        # remap monomials after substitution and simplification
         nu = result["sensitivities"]["monomials"]
-        sens_vars = {var: (sum([self.unsubbed_exps[i][var]*nu[i]
+        nu_ = []
+        mons = 0
+        for mmap in mmaps:
+            for m_i in mmap:
+                nu_.append(nu[m_i + mons])
+            mons += 1 + max(mmap)
+        sensitivities["monomials"] = nu_
+
+        sens_vars = {var: (sum([self.unsubbed_exps[i][var]*nu_[i]
                                 for i in locs]))
                      for (var, locs) in self.unsubbed_varlocs.items()}
         sens_vars.update({v: 0 for v in self.unsubbed_varlocs
