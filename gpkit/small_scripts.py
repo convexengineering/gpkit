@@ -175,7 +175,10 @@ def sort_and_simplify(exps, cs, return_map=False):
         mmap = ["X"]*(i+1)
         for exp, m_is in expmap.items():
             for m_i in m_is:
-                mmap[m_i] = exps_.index(exp)
+                if exp in exps_:
+                    mmap[m_i] = exps_.index(exp)
+                else:
+                    mmap[m_i] = None
         return exps_, cs_, mmap
 
 def results_table(data, title, minval=0, printunits=True, fixedcols=True,

@@ -307,7 +307,10 @@ class Model(object):
         mons = 0
         for mmap in mmaps:
             for m_i in mmap:
-                nu_.append(nu[m_i + mons])
+                if m_i is not None:
+                    nu_.append(nu[m_i + mons])
+                else:
+                    nu_.append(0)
             mons += 1 + max(mmap)
         nu_ = np.array(nu_)
         sensitivities["monomials"] = nu_
