@@ -47,8 +47,13 @@ class Variable(Monomial):
         self.__class__ = Variable
 
     @property
+    def varkey(self):
+        """Get the VarKey associated with this Variable"""
+        return list(self.exp)[0]
+
+    @property
     def descr(self):
-        return list(self.exp)[0].descr
+        return self.varkey.descr
 
     def sub(self, *args, **kwargs):
         """Same as nomial substitution, but also allows single-argument calls
