@@ -49,11 +49,11 @@ class TestSolutionArray(unittest.TestCase):
         P_max = Variable("P", Pvals, "m", "Perimeter")
         H = Variable("H", "m", "Length")
         W = Variable("W", "m", "Width")
-        gp = Model(12/(W*H**3),
-                [H <= H_max,
-                 H*W >= A_min,
-                 P_max >= 2*H + 2*W])
-        sol = gp.solve(verbosity=0)
+        m = Model(12/(W*H**3),
+                  [H <= H_max,
+                   H*W >= A_min,
+                   P_max >= 2*H + 2*W])
+        sol = m.solve(verbosity=0)
         Psens = sol.senssubinto(P_max)
         self.assertEqual(len(Psens), Nsweep)
         self.assertEqual(type(Psens), np.ndarray)

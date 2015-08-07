@@ -118,10 +118,10 @@ class GeometricProgram(object):
         self.solver_out = solver_out
         # TODO: add a solver_log file using stream debugger
 
-        if solver_out["status"] not in ["optimal", "OPTIMAL"]:
+        if solver_out.get("status", None) not in ["optimal", "OPTIMAL"]:
             raise RuntimeWarning("final status of solver '%s' was '%s', "
                                  "not 'optimal'." %
-                                 (solver, result.get('status', '(blank)')) +
+                                 (solver, solver_out.get("status", None)) +
                                  "\n\nTo find a feasible solution to a"
                                  " relaxed version of your Geometric Program,"
                                  "\nrun gpkit.find_feasible_point(model.program)."

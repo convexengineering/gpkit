@@ -153,8 +153,12 @@ class Model(object):
         (self.unsubbed_varlocs,
          self.unsubbed_varkeys) = locate_vars(self.unsubbed_exps)
 
+        subs = {var: var.descr["value"]
+                for var in self.variables if "value" in var.descr}
+        subs.update(self.substitutions)
+
         (sweep, linkedsweep,
-         constants) = separate_subs(self.substitutions, self.unsubbed_varkeys)
+         constants) = separate_subs(subs, self.unsubbed_varkeys)
         solution = SolutionArray()
         kwargs.update({"printing": verbosity > 1})
 
@@ -219,24 +223,13 @@ class Model(object):
         self.solution = solution
         return solution
 
-    @property
-    def gp(self):
-        # TODO: clean this up, use more properties?
-        if hasattr(self, "program"):
-            if len(self.program) == 1:
-                return self.program[0]
-        raise ValueError("there was no GP!" + str(self.program))
-
     def sub(self, substitutions, val=None):
         if val:
             substitutions = {substitutions: val}
         substitutions = self.substitutions.update(substitutions)
         return Model(self.cost, self.constraints, substitutions)
 
-    def formProgram(self, programType, posynomials, constants):
-        subs = {var: var.descr["value"]
-                for var in self.variables if "value" in var.descr}
-        subs.update(constants)
+    def formProgram(self, programType, posynomials, subs):
         posynomials_, mmaps = [], []
         for p in posynomials:
             _, exps, cs, _ = substitution(p.varlocs, p.varkeys,
@@ -316,6 +309,7 @@ class Model(object):
             for m_i in mmap:
                 nu_.append(nu[m_i + mons])
             mons += 1 + max(mmap)
+        nu_ = np.array(nu_)
         sensitivities["monomials"] = nu_
 
         sens_vars = {var: (sum([self.unsubbed_exps[i][var]*nu_[i]
