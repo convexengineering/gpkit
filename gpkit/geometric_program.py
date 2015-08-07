@@ -116,7 +116,7 @@ class GeometricProgram(object):
         # SIDE EFFECTS AHOY
         self.result = result
         self.solver_out = solver_out
-        # add a solver_log file using stream debugger?
+        # TODO: add a solver_log file using stream debugger
 
         if solver_out["status"] not in ["optimal", "OPTIMAL"]:
             raise RuntimeWarning("final status of solver '%s' was '%s', "
@@ -124,9 +124,9 @@ class GeometricProgram(object):
                                  (solver, result.get('status', '(blank)')) +
                                  "\n\nTo find a feasible solution to a"
                                  " relaxed version of your Geometric Program,"
-                                 "\nrun gpkit.find_feasible_point(model.gp)."
-                                 "\n\nThe solver's result is stored in the"
-                                 "'result' attribute (e.g., model.gp.result)"
+                                 "\nrun gpkit.find_feasible_point(model.program)."
+                                 "\n\nThe infeasible solve's result is stored"
+                                 "in the 'result' attribute (model.program.result)"
                                  "\nand its raw output in 'solver_out'.")
         else:
             return result
