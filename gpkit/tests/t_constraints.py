@@ -30,30 +30,30 @@ class TestConstraint(unittest.TestCase):
         """Test Constraint __init__"""
         x = Variable('x')
         y = Variable('y')
-        # default assumes <= operator
+        # default assumes >= operator
         c = Constraint(x, y**2)
-        self.assertEqual(c, x/y**2)
-        self.assertEqual(c.left, x)
-        self.assertEqual(c.right, y**2)
-        self.assertTrue("<=" in str(c))
-        # now force >= operator
-        c = Constraint(x, y**2, oper_le=False)
         self.assertEqual(c, y**2/x)
         self.assertEqual(c.left, x)
         self.assertEqual(c.right, y**2)
         self.assertTrue(">=" in str(c))
+        # now force <= operator
+        c = Constraint(x, y**2, oper_ge=False)
+        self.assertEqual(c, x/y**2)
+        self.assertEqual(c.left, x)
+        self.assertEqual(c.right, y**2)
+        self.assertTrue("<=" in str(c))
 
     def test_oper_overload(self):
         """Test Constraint initialization by operator overloading"""
         x = Variable('x')
         y = Variable('y')
-        c = (1 + x**2 <= y)
+        c = (y >= 1 + x**2)
         self.assertEqual(c, 1/y + x**2/y)
-        self.assertEqual(c.left, 1 + x**2)
-        self.assertEqual(c.right, y)
-        self.assertTrue("<=" in str(c))
+        self.assertEqual(c.left, y)
+        self.assertEqual(c.right, 1 + x**2)
+        self.assertTrue(">=" in str(c))
         # same constraint, switched operator direction
-        c2 = (y >= 1 + x**2)  # same as c
+        c2 = (1 + x**2 <= y)  # same as c
         self.assertEqual(c2, c)
 
 

@@ -256,14 +256,14 @@ class Signomial(object):
         if isinstance(other, PosyArray):
             return NotImplemented
         else:
-            return Constraint(self, other, oper_le=True)
+            return Constraint(other, self, oper_ge=True)
 
     def __ge__(self, other):
         if isinstance(other, PosyArray):
             return NotImplemented
         else:
-            # by default all constraints take the form left <= right
-            return Constraint(other, self, oper_le=True)
+            # by default all constraints take the form left >= right
+            return Constraint(self, other, oper_ge=True)
 
     def __lt__(self, other):
         invalid_types_for_oper("<", self, other)
@@ -507,19 +507,19 @@ class Constraint(Posynomial):
     def _latex(self, unused=None):
         return self.left._latex() + self.oper_l + self.right._latex()
 
-    def __init__(self, left, right, oper_le=True):
-        """Initialize a constraint of the form left <= right
-        (or left >= right, if oper_le is False).
+    def __init__(self, left, right, oper_ge=True):
+        """Initialize a constraint of the form left >= right
+        (or left <= right, if oper_ge is False).
 
         Arguments
         ---------
         left: Signomial
         right: Signomial
-        oper_le: bool
-            If true, form is left <= right; otherwise, left >= right.
+        oper_ge: bool
+            If true, form is left >= right; otherwise, left <= right.
 
         Note: Constraints initialized via operator overloading always take
-              the form left <= right, e.g. (x >= y) becomes (y <= x).
+              the form left >= right, e.g. (x <= y) becomes (y >= x).
 
         TODO: clarify how this __init__ handles Signomial constraints
               (may want to create a SignomialConstraint class that does not
@@ -529,7 +529,7 @@ class Constraint(Posynomial):
         right = Signomial(right)
         from . import SIGNOMIALS_ENABLED
 
-        plt, pgt = (left, right) if oper_le else (right, left)
+        pgt, plt = (left, right) if oper_ge else (right, left)
 
         if SIGNOMIALS_ENABLED and not isinstance(pgt, Monomial):
             if plt.units:
@@ -571,8 +571,8 @@ class Constraint(Posynomial):
 
         self.left, self.right = left, right
 
-        self.oper_s = " <= " if oper_le else " >= "
-        self.oper_l = r" \leq " if oper_le else r" \geq "
+        self.oper_s = " >= " if oper_ge else " <= "
+        self.oper_l = r" \geq " if oper_ge else r" \leq "
 
 
 class MonoEQConstraint(Constraint):
