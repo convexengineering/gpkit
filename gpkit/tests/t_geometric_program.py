@@ -115,9 +115,9 @@ class TestGP(unittest.TestCase):
                                      col=[0, 0, 0],
                                      data=[-1, 1, -1])
         self.assertTrue(equiv1 or equiv2)
-        self.assertAlmostEqual(np.linalg.norm(sol1(Mdd)-sol2(Mdd)), 0)
-        self.assertAlmostEqual(np.linalg.norm(sol1(Mdd)-sol3(Mdd)), 0)
-        self.assertAlmostEqual(np.linalg.norm(sol2(Mdd)-sol3(Mdd)), 0)
+        self.assertAlmostEqual(sol1(Mdd), sol2(Mdd))
+        self.assertAlmostEqual(sol1(Mdd), sol3(Mdd))
+        self.assertAlmostEqual(sol2(Mdd), sol3(Mdd))
 
     def test_additive_constants(self):
         x = Variable('x')

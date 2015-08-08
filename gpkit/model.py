@@ -71,8 +71,8 @@ class Model(object):
                 raise TypeError("Model 'setup' methods must return "
                                 "(cost, constraints).")
         self.cost = cost
-        self.constraints = constraints
-        self.substitutions = substitutions
+        self.constraints = list(constraints)
+        self.substitutions = dict(substitutions)
 
         if hasattr(self, "setup"):
             # TODO: use super instead of Model?
@@ -224,10 +224,10 @@ class Model(object):
         return solution
 
     def sub(self, substitutions, val=None):
-        if val:
+        if val is not None:
             substitutions = {substitutions: val}
-        substitutions = self.substitutions.update(substitutions)
-        return Model(self.cost, self.constraints, substitutions)
+        self.substitutions.update(substitutions)
+        # edits in place...should it return a new model instead?
 
     def formProgram(self, programType, posynomials, subs):
         posynomials_, mmaps = [], []
@@ -247,7 +247,7 @@ class Model(object):
         elif programType in ["sp", "SP"]:
             return SignomialProgram(cost, constraints), subs, mmaps
         else:
-            raise ValueError("unkonwn program type %s." % programType)
+            raise ValueError("unknown program type %s." % programType)
 
     def __repr__(self):
         return "gpkit.%s(%s)" % (self.__class__.__name__, str(self))
@@ -393,12 +393,12 @@ def separate_subs(substitutions, varkeys):
                 if len(var) == suba.shape[0]:
                     for i, v in enumerate(var):
                         if hasattr(suba[i], "__call__"):
-                            linkedsweep.update({v: suba[i]})
+                            linkedsweep.update({VarKey(v): suba[i]})
                         else:
-                            sweep.update({v: suba[i]})
+                            sweep.update({VarKey(v): suba[i]})
                 elif len(var) == suba.shape[1]:
                     raise ValueError("whole-vector substitution"
-                                     "is not yet supported")
+                                     " is not yet supported")
                 else:
                     raise ValueError("vector substitutions must share a"
                                      "dimension with the variable vector")

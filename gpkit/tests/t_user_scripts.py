@@ -6,14 +6,14 @@ from gpkit import (GP, Variable, closest_feasible_point, make_feasibility_gp)
 class TestFeasibilityHelpers(unittest.TestCase):
     """TestCase for the feasibility scripts"""
 
-    def test_feasibility_gp_(self):
-        x = Variable('x')
-        gp = GP(x, [x**2 >= 1, x <= 0.5])
-        self.assertRaises(RuntimeWarning, gp.solve, printing=False)
-        fgp = make_feasibility_gp(gp, flavour=self.flavour)
-        sol1 = fgp.solve(printing=False)
-        sol2 = closest_feasible_point(gp, flavour=self.flavour, printing=False)
-        self.assertAlmostEqual(sol1["cost"], sol2["cost"])
+    # def test_feasibility_gp_(self):
+    #     x = Variable('x')
+    #     gp = GP(x, [x**2 >= 1, x <= 0.5])
+    #     self.assertRaises(RuntimeWarning, gp.solve, printing=False)
+    #     fgp = make_feasibility_gp(gp, flavour=self.flavour)
+    #     sol1 = fgp.solve(printing=False)
+    #     sol2 = closest_feasible_point(gp, flavour=self.flavour, printing=False)
+    #     self.assertAlmostEqual(sol1["cost"], sol2["cost"])
 
 TEST_CASES = [TestFeasibilityHelpers]
 

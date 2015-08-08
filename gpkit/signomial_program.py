@@ -4,6 +4,7 @@ from time import time
 from functools import reduce as functools_reduce
 from operator import add
 
+from .nomials import Posynomial
 from .small_classes import CootMatrix
 from .small_scripts import locate_vars
 from .small_scripts import mag
@@ -18,13 +19,26 @@ class SignomialProgram(object):
         self.constraints = constraints
         signomials = [cost] + list(constraints)
 
-        self.posynomials = [sum([0]+[m for m in sig if m.c > 0])
-                            for sig in signomials]
+        self.posynomials = []
+        self.negynomials = []
+        self.negvarkeys = set()
+        for sig in signomials:
+            p_exps, p_cs = [], []
+            n_exps, n_cs = [{}], [1]
+            for c, exp in zip(sig.cs, sig.exps):
+                if c > 0:
+                    p_cs.append(c)
+                    p_exps.append(exp)
+                elif c < 0:
+                    n_cs.append(-c)
+                    n_exps.append(exp)
+                    self.negvarkeys.update(exp.keys())
+            posy = Posynomial(p_exps, p_cs) if len(p_cs) else None
+            negy = Posynomial(n_exps, n_cs) if len(n_cs) > 1 else None
+            self.posynomials.append(posy)
+            self.negynomials.append(negy)
 
-        self.negynomials = [sum([0]+[1-m for m in sig if m.c < 0])
-                            for sig in signomials]
-
-        if all([all([m.c > 0 for m in sig]) for sig in signomials]):
+        if not self.negvarkeys:
             raise ValueError("SignomialPrograms must contain coefficients"
                              "less than zero.")
 
@@ -34,24 +48,27 @@ class SignomialProgram(object):
             print("Beginning signomial solve.")
             self.starttime = time()
 
-        sp_inits = {vk: vk.descr["sp_init"] for vk in neg_varkeys
+        sp_inits = {vk: vk.descr["sp_init"] for vk in self.negvarkeys
                     if "sp_init" in vk.descr}
         sp_inits.update(x0)
         x0 = sp_inits
 
-        posynomials_negynomials = zip(self.posynomials, self.negynomials)
         iterations = 0
         prevcost, cost = 1, 1
         self.gps = []
 
         while (iterations < iteration_limit
                and (iterations < 2 or
-                    abs(prevcost-cost)/(prevcost + cost) > self.reltol)):
+                    abs(prevcost-cost)/(prevcost + cost) > reltol)):
             if not x0:
                 posy_approxs = self.posynomials
             else:
-                posy_approxs = [p/n.mono_approximation(x0) for p, n
-                                in posynomials_negynomials]
+                posy_approxs = []
+                for p, n in zip(self.posynomials, self.negynomials):
+                    if n is not None:
+                        posy_approxs.append(p/n.mono_approximation(x0))
+                    else:
+                        posy_approxs.append(p)
 
             gp = GeometricProgram(posy_approxs[0], posy_approxs[1:])
             self.gps.append(gp)
@@ -69,6 +86,8 @@ class SignomialProgram(object):
             print("Solving took %i GP solves" % iterations
                   + " and %.3g seconds." % (time() - self.starttime))
 
+        # need to parse the result and return nu's of original monomials from
+        #  variable sensitivities
         return result
 
     def __repr__(self):

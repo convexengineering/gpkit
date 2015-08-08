@@ -123,11 +123,11 @@ class GeometricProgram(object):
                                  "not 'optimal'." %
                                  (solver, solver_out.get("status", None)) +
                                  "\n\nTo find a feasible solution to a"
-                                 " relaxed version of your Geometric Program,"
-                                 "\nrun gpkit.find_feasible_point(model.program)."
+                                 " relaxed version of your\nGeometric Program,"
+                                 " run gpkit.find_feasible_point(model.program)."
                                  "\n\nThe infeasible solve's result is stored"
-                                 "in the 'result' attribute (model.program.result)"
-                                 "\nand its raw output in 'solver_out'.")
+                                 " in the 'result' attribute\n(model.program.result)"
+                                 " and its raw output in 'solver_out'.")
         else:
             return result
 
