@@ -160,7 +160,7 @@ class Model(object):
         (sweep, linkedsweep,
          constants) = separate_subs(subs, self.unsubbed_varkeys)
         solution = SolutionArray()
-        kwargs.update({"printing": verbosity > 1})
+        kwargs.update({"verbosity": verbosity - 1})
 
         if sweep:
             if len(sweep) == 1:
@@ -238,6 +238,7 @@ class Model(object):
             exps, cs, mmap = sort_and_simplify(exps, cs, return_map=True)
             posynomials_.append(Signomial(exps, cs, units=p.units))
             mmaps.append(mmap)
+            # TODO: mmaps don't handle negative at all, but should?
 
         cost = posynomials_[0]
         constraints = posynomials_[1:]
@@ -315,11 +316,11 @@ class Model(object):
         nu_ = np.array(nu_)
         sensitivities["monomials"] = nu_
 
-        sens_vars = {var: (sum([self.unsubbed_exps[i][var]*nu_[i]
-                                for i in locs]))
+        sens_vars = {var: sum([self.unsubbed_exps[i][var]*nu_[i]
+                               for i in locs])
                      for (var, locs) in self.unsubbed_varlocs.items()}
-        sens_vars.update({v: 0 for v in self.unsubbed_varlocs
-                          if v not in sens_vars})
+        #print self.unsubbed_varlocs.items()
+        #print self.unsubbed_exps
         sensitivities["variables"] = sens_vars
 
         # free-variable sensitivities must be < arbitrary epsilon 1e-4

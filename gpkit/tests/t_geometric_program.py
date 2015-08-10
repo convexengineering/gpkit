@@ -3,6 +3,7 @@ import math
 import unittest
 import numpy as np
 from gpkit import Model, Monomial, settings, VectorVariable, Variable
+from gpkit.geometric_program import GeometricProgram
 from gpkit.small_classes import CootMatrix
 import gpkit
 
@@ -162,103 +163,113 @@ class TestGP(unittest.TestCase):
         sol = m.solve(solver=self.solver, verbosity=0)
         self.assertAlmostEqual(sol["cost"], 12)
 
-
-# class TestSP(unittest.TestCase):
-#     """test case for SP class -- gets run for each installed solver"""
-#     name = "TestSP_"
-#     solver = None
-#     ndig = None
-#
-#     def test_trivial_sp(self):
-#         x = Variable('x')
-#         y = Variable('y')
-#         gpkit.enable_signomials()
-#         m = Model(x, [x >= 1-y, y <= 0.1])
-#         sol = m.localsolve(verbosity=0, solver=self.solver)
-#         self.assertAlmostEqual(sol["variables"]["x"], 0.9, self.ndig)
-#         m = Model(x, [x >= 0.1, x+y >= 1, y <= 0.1])
-#         sol = m.localsolve(verbosity=0, solver=self.solver)
-#         self.assertAlmostEqual(sol["variables"]["x"], 0.9, self.ndig)
-#         gpkit.disable_signomials()
-#
-#     def test_issue180(self):
-#         gpkit.enable_signomials()
-#         L = Variable("L")
-#         Lmax = Variable("L_{max}", 10)
-#         W = Variable("W")
-#         Wmax = Variable("W_{max}", 10)
-#         A = Variable("A", 10)
-#         Obj = Variable("Obj")
-#         a_val = 0.01
-#         a = Variable("a", a_val)
-#         eqns = [L <= Lmax,
-#                 W <= Wmax,
-#                 L*W >= A,
-#                 Obj >= a*(2*L + 2*W) + (1-a)*(12 * W**-1 * L**-3)]
-#         m = Model(Obj, eqns)
-#         spsol = m.localsolve(verbosity=0, solver=self.solver)
-#         gpkit.disable_signomials()
-#         # now solve as GP
-#         eqns[-1] = (Obj >= a_val*(2*L + 2*W) + (1-a_val)*(12 * W**-1 * L**-3))
-#         m = Model(Obj, eqns)
-#         gpsol = m.solve(verbosity=0, solver=self.solver)
-#         self.assertAlmostEqual(spsol['cost'], gpsol['cost'])
-#
-#     def test_trivial_sp2(self):
-#         gpkit.enable_signomials()
-#         x = gpkit.Variable("x")
-#         y = gpkit.Variable("y")
-#
-#         # converging from above
-#         constraints = [y + x >= 2, y  >= x]
-#         objective = y
-#         x0 = 1
-#         y0 = 2
-#         sp = gpkit.SP(objective, constraints)
-#         sol1 = sp.localsolve(x0={x: x0, y: y0}, verbosity=0, solver=self.solver)
-#
-#         # converging from right
-#         constraints = [y + x >= 2, y <= x]
-#         objective = x
-#         x0 = 2
-#         y0 = 1
-#         sp = gpkit.SP(objective, constraints)
-#         sol2 = sp.localsolve(x0={x: x0, y: y0}, verbosity=0, solver=self.solver)
-#
-#         self.assertAlmostEqual(sol1["variables"]["x"], sol2["variables"]["x"], self.ndig)
-#         self.assertAlmostEqual(sol1["variables"]["y"], sol2["variables"]["x"], self.ndig)
-#
-#         gpkit.disable_signomials()
-#
-#
-#     def test_sp_initial_guess_sub(self):
-#         gpkit.enable_signomials()
-#         x = gpkit.Variable("x")
-#         y = gpkit.Variable("y")
-#         x0 = 1
-#         y0 = 2
-#         constraints = [y + x >= 2, y <= x]
-#         objective = x
-#         sp = gpkit.SP(objective, constraints)
-#         try:
-#             sol = m.localsolve(x0={x: x0, y: y0}, verbosity=0, solver=self.solver)
-#         except TypeError:
-#             self.fail("Call to local solve with only variables failed")
-#
-#         try:
-#             sol = m.localsolve(x0={"x": x0, "y": y0}, verbosity=0, solver=self.solver)
-#         except TypeError:
-#             self.fail("Call to local solve with only variable strings failed")
-#
-#         try:
-#             sol = m.localsolve(x0={"x": x0, y: y0}, verbosity=0, solver=self.solver)
-#         except TypeError:
-#             self.fail("Call to local solve with a mix of variable strings and variables failed")
-#
-#         gpkit.disable_signomials
+    def test_feasibility_gp_(self):
+        x = Variable('x')
+        gp = GeometricProgram(x, [x**2 >= 1, x <= 0.5])
+        self.assertRaises(RuntimeWarning, gp.solve, verbosity=0)
+        fgp = gp.feasibility_search(flavour="max")
+        sol1 = fgp.solve(verbosity=0)
+        fgp = gp.feasibility_search(flavour="product")
+        sol2 = fgp.solve(verbosity=0)
 
 
-TEST_CASES = [TestGP]#, TestSP]
+class TestSP(unittest.TestCase):
+    """test case for SP class -- gets run for each installed solver"""
+    name = "TestSP_"
+    solver = None
+    ndig = None
+
+    def test_trivial_sp(self):
+        x = Variable('x')
+        y = Variable('y')
+        gpkit.enable_signomials()
+        m = Model(x, [x >= 1-y, y <= 0.1])
+        sol = m.localsolve(verbosity=0, solver=self.solver)
+        self.assertAlmostEqual(sol["variables"]["x"], 0.9, self.ndig)
+        m = Model(x, [x+y >= 1, y <= 0.1])
+        sol = m.localsolve(verbosity=0, solver=self.solver)
+        self.assertAlmostEqual(sol["variables"]["x"], 0.9, self.ndig)
+        gpkit.disable_signomials()
+
+    def test_issue180(self):
+        gpkit.enable_signomials()
+        L = Variable("L")
+        Lmax = Variable("L_{max}", 10)
+        W = Variable("W")
+        Wmax = Variable("W_{max}", 10)
+        A = Variable("A", 10)
+        Obj = Variable("Obj")
+        a_val = 0.01
+        a = Variable("a", a_val)
+        eqns = [L <= Lmax,
+                W <= Wmax,
+                L*W >= A,
+                Obj >= a*(2*L + 2*W) + (1-a)*(12 * W**-1 * L**-3)]
+        m = Model(Obj, eqns)
+        spsol = m.solve(verbosity=0, solver=self.solver)
+        gpkit.disable_signomials()
+        # now solve as GP
+        eqns[-1] = (Obj >= a_val*(2*L + 2*W) + (1-a_val)*(12 * W**-1 * L**-3))
+        m = Model(Obj, eqns)
+        gpsol = m.solve(verbosity=0, solver=self.solver)
+        self.assertAlmostEqual(spsol['cost'], gpsol['cost'])
+
+    def test_trivial_sp2(self):
+        gpkit.enable_signomials()
+        x = gpkit.Variable("x")
+        y = gpkit.Variable("y")
+
+        # converging from above
+        constraints = [y + x >= 2, y  >= x]
+        objective = y
+        x0 = 1
+        y0 = 2
+        m = Model(objective, constraints)
+        sol1 = m.localsolve(x0={x: x0, y: y0}, verbosity=0, solver=self.solver)
+
+        # converging from right
+        constraints = [y + x >= 2, y <= x]
+        objective = x
+        x0 = 2
+        y0 = 1
+        m = Model(objective, constraints)
+        sol2 = m.localsolve(x0={x: x0, y: y0}, verbosity=0, solver=self.solver)
+
+        self.assertAlmostEqual(sol1["variables"]["x"],
+                               sol2["variables"]["x"], self.ndig)
+        self.assertAlmostEqual(sol1["variables"]["y"],
+                               sol2["variables"]["x"], self.ndig)
+
+        gpkit.disable_signomials()
+
+    def test_sp_initial_guess_sub(self):
+        gpkit.enable_signomials()
+        x = gpkit.Variable("x")
+        y = gpkit.Variable("y")
+        x0 = 1
+        y0 = 2
+        constraints = [y + x >= 2, y <= x]
+        objective = x
+        m = Model(objective, constraints)
+        try:
+            sol = m.localsolve(x0={x: x0, y: y0}, verbosity=0, solver=self.solver)
+        except TypeError:
+            self.fail("Call to local solve with only variables failed")
+
+        try:
+            sol = m.localsolve(x0={"x": x0, "y": y0}, verbosity=0, solver=self.solver)
+        except TypeError:
+            self.fail("Call to local solve with only variable strings failed")
+
+        try:
+            sol = m.localsolve(x0={"x": x0, y: y0}, verbosity=0, solver=self.solver)
+        except TypeError:
+            self.fail("Call to local solve with a mix of variable strings and variables failed")
+
+        gpkit.disable_signomials
+
+
+TEST_CASES = [TestGP, TestSP]
 
 TESTS = []
 for testcase in TEST_CASES:

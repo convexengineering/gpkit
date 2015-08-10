@@ -92,8 +92,6 @@ from .varkey import VarKey
 from .posyarray import PosyArray
 from .model import Model
 from .user_scripts import composite_objective, link
-from .user_scripts import make_feasibility_gp, closest_feasible_point
-
 from .shortcuts import GP, SP
 
 if units:

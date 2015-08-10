@@ -4,6 +4,7 @@ from time import time
 from functools import reduce as functools_reduce
 from operator import add
 
+from .variables import Variable, VectorVariable
 from .small_classes import CootMatrix
 from .small_scripts import locate_vars
 from .small_scripts import mag
@@ -11,11 +12,14 @@ from .small_scripts import mag
 
 class GeometricProgram(object):
 
-    def __init__(self, cost, constraints, printing=True):
+    def __init__(self, cost, constraints, verbosity=1):
         self.cost = cost
         self.constraints = constraints
         self.posynomials = [cost] + list(constraints)
-        self.cs = np.hstack((mag(p.cs) for p in self.posynomials))
+        try:
+            self.cs = np.hstack((mag(p.cs) for p in self.posynomials))
+        except:
+            print self.posynomials
         if not all([c >= 0 for c in self.cs]):
             raise ValueError("GeometricPrograms cannot contain coefficients"
                              "less than or equal to zero.")
@@ -33,11 +37,11 @@ class GeometricProgram(object):
 
         self.A, missingbounds = genA(self.exps, self.varlocs)
 
-        if printing:
+        if verbosity > 0:
             for var, bound in sorted(missingbounds.items()):
                 print("%s has no %s bound" % (var, bound))
 
-    def solve(self, solver=None, printing=True, skipfailures=False,
+    def solve(self, solver=None, verbosity=1, skipfailures=False,
               options={}, *args, **kwargs):
         """Solves a GeometricProgram and returns the solution.
 
@@ -74,7 +78,7 @@ class GeometricProgram(object):
                                  " during the install process.")
             raise ValueError("Solver %s is not implemented!" % solver)
 
-        if printing:
+        if verbosity > 0:
             print("Using solver '%s'" % solver)
             self.starttime = time()
             print("Solving for %i variables." % len(self.varlocs))
@@ -82,7 +86,7 @@ class GeometricProgram(object):
         solver_out = solverfn(self.cs, self.A, self.p_idxs, self.k)
         # TODO: add 'options' argument for coordinating messaging etc
 
-        if printing:
+        if verbosity > 0:
             print("Solving took %.3g seconds." % (time() - self.starttime))
 
         result = {}
@@ -122,14 +126,51 @@ class GeometricProgram(object):
             raise RuntimeWarning("final status of solver '%s' was '%s', "
                                  "not 'optimal'." %
                                  (solver, solver_out.get("status", None)) +
-                                 "\n\nTo find a feasible solution to a"
+                                 "\n\nTo generate a feasibility-finding"
                                  " relaxed version of your\nGeometric Program,"
-                                 " run gpkit.find_feasible_point(model.program)."
+                                 " run model.program.feasibility_search()."
                                  "\n\nThe infeasible solve's result is stored"
                                  " in the 'result' attribute\n(model.program.result)"
                                  " and its raw output in 'solver_out'.")
         else:
             return result
+
+    def feasibility_search(self, varname=None, flavour="max", *args, **kwargs):
+        """Given a GP, returns a feasible GP.
+
+        "Flavour" specifies the objective function minimized in the search for
+        feasibility:
+
+            "max" (default) : Apply the same slack to all constraints and minimize
+                              that slack. Useful for finding the "closest"
+                              feasible point. Described in Eqn. 10 of [Boyd2007].
+
+            "product" : Apply a unique slack to all constraints and minimize the
+                        product of those slacks. Useful for identifying the most
+                        problematic constraints. Described in Eqn. 11 of [Boyd2007]
+
+
+        [Boyd2007] : "A tutorial on geometric programming", Optim Eng 8:67-122
+
+        """
+
+        if flavour == "max":
+            slackvar = Variable(varname)
+            gp = GeometricProgram(slackvar,
+                                  [1/slackvar] +  # slackvar > 1
+                                  [constraint/slackvar # constraint <= sv
+                                   for constraint in self.constraints],
+                                  *args, **kwargs)
+        elif flavour == "product":
+            slackvars = VectorVariable(len(self.constraints), varname)
+            gp = GeometricProgram(slackvars.prod(),
+                                  (1/slackvars).tolist() +  # slackvars > 1
+                                  [constraint/slackvars[i]  # constraint <= sv
+                                   for i, constraint in enumerate(self.constraints)],
+                                  *args, **kwargs)
+        else:
+            raise ValueError("'%s' is an unknown flavour of feasibility." % flavour)
+        return gp
 
     def __repr__(self):
         return "gpkit.%s(\n%s)" % (self.__class__.__name__, str(self))
