@@ -20,7 +20,7 @@ from collections import Iterable
 from .nomials import Constraint, MonoEQConstraint
 from .nomials import Posynomial, Monomial, Signomial
 from .varkey import VarKey
-from .substitution import substitution
+from .substitution import substitution, getsubs
 
 from .small_classes import Strings
 from .small_scripts import flatten
@@ -158,7 +158,8 @@ class Model(object):
         subs.update(self.substitutions)
 
         (sweep, linkedsweep,
-         constants) = separate_subs(subs, self.unsubbed_varkeys)
+         constants) = separate_subs(subs, self.unsubbed_varkeys,
+                                    self.unsubbed_varlocs)
         solution = SolutionArray()
         kwargs.update({"verbosity": verbosity - 1})
 
@@ -234,7 +235,7 @@ class Model(object):
         for s in signomials:
             _, exps, cs, _ = substitution(s.varlocs, s.varkeys,
                                           s.exps, s.cs, subs)
-            if any(cs != 0):
+            if any((mag(c) != 0 for c in cs)):
                 exps, cs, mmap = sort_and_simplify(exps, cs, return_map=True)
                 signomials_.append(Signomial(exps, cs, units=s.units))
                 mmaps.append(mmap)
@@ -340,7 +341,7 @@ class Model(object):
         for var, S in sensitivities["variables"].items():
             if var in freevariables and abs(S) > 1e-4:
                 print("free variable too sensitive:"
-                                     " S_{%s} = %0.2e" % (var, S))
+                      " S_{%s} = %0.2e" % (var, S))
 
         localexp = {var: S for (var, S) in sens_vars.items() if abs(S) >= 0.1}
         localcs = (variables[var]**-S for (var, S) in localexp.items())
@@ -348,6 +349,7 @@ class Model(object):
         localmodel = Monomial(localexp, localc)
 
         # vectorvar substitution
+        veckeys = set()
         for var in self.unsubbed_varlocs:
             if "idx" in var.descr and "shape" in var.descr:
                 descr = dict(var.descr)
@@ -360,27 +362,24 @@ class Model(object):
                     veckey.descr["units"] = units
                 else:
                     veckey = VarKey(**descr)
+                veckeys.add(veckey)
 
-                try:
-                    variables[veckey][idx] = variables[var]
-                    sensitivities["variables"][veckey][var.descr["idx"]] = \
-                        sensitivities["variables"][var]
-                except KeyError:
-                    variables[veckey] = np.empty(var.descr["shape"]) + np.nan
-                    sensitivities["variables"][veckey] = (
-                        np.empty(var.descr["shape"]) + np.nan)
+                for vardict in [variables, sensitivities["variables"],
+                                constants, sweepvariables, freevariables]:
+                    if var in vardict:
+                        if veckey in vardict:
+                            vardict[veckey][idx] = vardict[var]
+                        else:
+                            vardict[veckey] = np.full(var.descr["shape"], np.nan)
+                            vardict[veckey][idx] = vardict[var]
 
-                    variables[veckey][idx] = variables[var]
-                    sensitivities["variables"][veckey][var.descr["idx"]] = \
-                        sensitivities["variables"][var]
+                        del vardict[var]
 
-                del variables[var]
-                del sensitivities["variables"][var]
-
-                for varlist in [constants, sweepvariables, freevariables]:
-                    if var in varlist:
-                        varlist[veckey] = variables[veckey]
-                        del varlist[var]
+        # for veckey in veckeys:
+        #     # TODO: print index that error occured at
+        #     if any(np.isnan(variables[veckey])):
+        #         print variables
+        #         raise RuntimeWarning("did not fully fill vector variables.")
 
         return dict(cost=cost,
                     constants=constants,
@@ -391,7 +390,7 @@ class Model(object):
                     localmodel=localmodel)
 
 
-def separate_subs(substitutions, varkeys):
+def separate_subs(substitutions, varkeys, varlocs):
     # TODO: refactor this
     sweep, linkedsweep = {}, {}
     constants = dict(substitutions)
@@ -420,4 +419,5 @@ def separate_subs(substitutions, varkeys):
                 linkedsweep.update({var: sub[1]})
             else:
                 sweep.update({var: sub[1]})
+    constants = getsubs(varkeys, varlocs, constants)
     return sweep, linkedsweep, constants

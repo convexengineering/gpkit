@@ -78,13 +78,12 @@ class SolutionArray(DictOfLists):
             strs += [results_table(self["freevariables"],
                                    "Free Variables",
                                    fixedcols=fixedcols)]
-        if "sweepvariables" in tables:
+        if "sweepvariables" in tables and self["sweepvariables"]:
             strs += [results_table(self["sweepvariables"],
                                    "Sweep Variables",
                                    fixedcols=fixedcols)]
-        if "constants" in tables:
-            strs += [results_table({k: v[0] for (k, v)
-                                    in self["constants"].items()},
+        if "constants" in tables and self["constants"]:
+            strs += [results_table(self["constants"],
                                    "Constants",
                                    fixedcols=fixedcols)]
         if "variables" in tables:

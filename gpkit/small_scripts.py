@@ -207,7 +207,7 @@ def results_table(data, title, minval=0, printunits=True, fixedcols=True,
     decorated = [(bool(v.shape) if isinstance(v, Iterable) else False,
                  (varfmt % k),
                  i, k, v) for i, (k, v) in enumerate(data.items())
-                 if np.max(abs(v)) >= minval]
+                 if np.max(abs(v)) >= minval or any(np.isnan(np.array([v])))]
     decorated.sort()
     for isvector, varstr, _, var, val in decorated:
         label = var.descr.get('label', '')
@@ -218,6 +218,7 @@ def results_table(data, title, minval=0, printunits=True, fixedcols=True,
             valstr = "[ %s%s ] " % ("  ".join(vals), ellipsis)
         else:
             valstr = valfmt % val
+        valstr = valstr.replace("nan", " - ")
         lines.append([varstr, valstr, units, label])
     if lines:
         maxlens = np.max([map(len, line) for line in lines], axis=0)
