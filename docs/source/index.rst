@@ -1,4 +1,4 @@
-.. figure::  gplogo.svg
+.. figure::  gplogo.png
    :width: 250 px
 
 GPkit is a Python package for defining and manipulating
@@ -14,6 +14,7 @@ Table of contents
        :maxdepth: 2
 
        gp101
+       gpkit101
        installation
        gettingstarted
        basiccommands

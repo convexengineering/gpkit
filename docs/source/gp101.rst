@@ -62,6 +62,13 @@ Geometric programs have several powerful properties:
 These properties arise because GPs become *convex optimization problems* via a logarithmic transformation. In addition to their mathematical benefits, recent research has shown that many **practical problems** can be formulated as GPs or closely approximated as GPs.
 
 
+What are Signomials / Signomial Programs?
+=========================================
+
+When the coefficients in a posynomial are allowed to be negative (but the variables stay strictly positive), that is called a Signomial.
+A Signomial Program has signomial constraints, and while they cannot be solved as quickly or to global optima, because they build on the structure of a GP they can be solved more quickly than a generic nonlinear program. More information on Signomial Programs can be found under "Advanced Commands".
+
+
 Where can I learn more?
 =======================
 

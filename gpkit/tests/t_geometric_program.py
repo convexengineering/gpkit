@@ -7,7 +7,8 @@ from gpkit.geometric_program import GeometricProgram
 from gpkit.small_classes import CootMatrix
 import gpkit
 
-NDIGS = {"cvxopt": 5, "mosek": 7, "mosek_cli": 5}
+NDIGS = {"cvxopt": 5, "mosek": 6, "mosek_cli": 5}
+# TODO revert "mosek" NDIGS to 7, once #296 fully resolved
 # name: decimal places of accuracy
 
 
@@ -33,12 +34,13 @@ class TestGP(unittest.TestCase):
         y = Monomial('y')
         prob = Model(cost=(x + 2*y),
                   constraints=[x*y >= 1])
-        sol = prob.solve(solver=self.solver, verbosity=0)["variables"]
-        self.assertAlmostEqual(sol["x"], math.sqrt(2.), self.ndig)
-        self.assertAlmostEqual(sol["y"], 1/math.sqrt(2.), self.ndig)
-        self.assertAlmostEqual(sol["x"] + 2*sol["y"],
+        sol = prob.solve(solver=self.solver, verbosity=0)
+        self.assertAlmostEqual(sol("x"), math.sqrt(2.), self.ndig)
+        self.assertAlmostEqual(sol("y"), 1/math.sqrt(2.), self.ndig)
+        self.assertAlmostEqual(sol("x") + 2*sol("y"),
                                2*math.sqrt(2),
                                self.ndig)
+        self.assertAlmostEqual(sol["cost"], 2*math.sqrt(2), self.ndig)
 
     def test_trivial_vector_gp(self):
         """
@@ -48,12 +50,13 @@ class TestGP(unittest.TestCase):
         y = VectorVariable(2, 'y')
         prob = Model(cost=(sum(x) + 2*sum(y)),
                      constraints=[x*y >= 1])
-        sol = prob.solve(solver=self.solver, verbosity=0)['variables']
-        self.assertEqual(sol['x'].shape, (2,))
-        self.assertEqual(sol['y'].shape, (2,))
-        for x, y in zip(sol['x'], sol['y']):
+        sol = prob.solve(solver=self.solver, verbosity=0)
+        self.assertEqual(sol('x').shape, (2,))
+        self.assertEqual(sol('y').shape, (2,))
+        for x, y in zip(sol('x'), sol('y')):
             self.assertAlmostEqual(x, math.sqrt(2.), self.ndig)
             self.assertAlmostEqual(y, 1/math.sqrt(2.), self.ndig)
+        self.assertAlmostEqual(sol["cost"]/(4*math.sqrt(2)), 1., self.ndig)
 
     def simpleflight_test_core(self, m):
         sol = m.solve(solver=self.solver, verbosity=0)
@@ -67,18 +70,18 @@ class TestGP(unittest.TestCase):
                             V=38.2,
                             W_w=2.40e+03)
         # sensitivity values from p. 34 of W. Hoburg's thesis
-        consenscheck = {"(\\frac{S}{S_{wet}})": 0.4300,
+        consenscheck = {r"(\frac{S}{S_{wet}})": 0.4300,
                         "e": -0.4785,
-                        "\\pi": -0.4785,
+                        r"\pi": -0.4785,
                         "V_{min}": -0.3691,
                         "k": 0.4300,
-                        "\mu": 0.0860,
+                        r"\mu": 0.0860,
                         "(CDA0)": 0.0915,
                         "C_{L,max}": -0.1845,
-                        "\\tau": -0.2903,
+                        r"\tau": -0.2903,
                         "N_{ult}": 0.2903,
                         "W_0": 1.0107,
-                        "\\rho": -0.2275}
+                        r"\rho": -0.2275}
         for key in freevarcheck:
             sol_rat = sol["variables"][key]/freevarcheck[key]
             self.assertTrue(abs(1-sol_rat) < 1e-2)
@@ -134,6 +137,7 @@ class TestGP(unittest.TestCase):
         gpkit.enable_signomials()
         sol = Model(1/L, [L-5*k <= 10]).solve(verbosity=0, solver=self.solver)
         self.assertAlmostEqual(sol(L), 10, self.ndig)
+        self.assertAlmostEqual(sol["cost"], 0.1, self.ndig)
         gpkit.disable_signomials()
 
     def test_composite_objective(self):
@@ -161,7 +165,23 @@ class TestGP(unittest.TestCase):
         y = Variable('y')
         m = Model(y*x, [y*x >= 12])
         sol = m.solve(solver=self.solver, verbosity=0)
-        self.assertAlmostEqual(sol["cost"], 12)
+        self.assertAlmostEqual(sol["cost"], 12, self.ndig)
+
+    def test_constants_in_objective_1(self):
+        '''Issue 296'''
+        x1 = Variable('x1')
+        x2 = Variable('x2')
+        m = Model(1.+ x1 + x2, [x1 >= 1., x2 >= 1.])
+        sol = m.solve(solver=self.solver, verbosity=0)
+        self.assertAlmostEqual(sol["cost"], 3, self.ndig)
+
+    def test_constants_in_objective_2(self):
+        '''Issue 296'''
+        x1 = Variable('x1')
+        x2 = Variable('x2')
+        m = Model(x1**2 + 100 + 3*x2, [x1 >= 10., x2 >= 15.])
+        sol = m.solve(solver=self.solver, verbosity=0)
+        self.assertAlmostEqual(sol["cost"]/245., 1, self.ndig)
 
     def test_feasibility_gp_(self):
         x = Variable('x')

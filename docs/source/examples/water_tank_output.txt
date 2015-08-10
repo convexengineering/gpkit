@@ -1,17 +1,24 @@
 
 Cost
- 1.29    
+----
+ 1.293 [m**2] 
 
-Variables
+Free variables
+--------------
+A : 1.293                             [m**2] Surface Area of the Tank
+V : 0.1                               [m**3] Volume of the Tank      
+d : [ 0.464     0.464     0.464    ]  [m]    Dimension Vector        
+
+Swept variables
+---------------
+
+Constants
 ---------
-   A : 1.29                           [m**2]    Surface Area of the Tank    
-   M : 100                            [kg]      Mass of Water in the Tank   
-   V : 0.1                            [m**3]    Volume of the Tank          
-\rho : 1e+03                          [kg/m**3] Density of Water in the Tank
-   d : [ 0.46     0.46     0.46    ]  [m]       Dimension Vector            
+   M : 100   [kg]      Mass of Water in the Tank   
+\rho : 1000  [kg/m**3] Density of Water in the Tank
 
-Constant sensitivities
-----------------------
-   M : 0.667    Mass of Water in the Tank   
-\rho : -0.667   Density of Water in the Tank
+Constant and swept variable sensitivities
+-----------------------------------------
+   M : 0.6667  Mass of Water in the Tank   
+\rho : -0.6667 Density of Water in the Tank
 

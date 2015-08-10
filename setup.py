@@ -1,8 +1,7 @@
+"""Standard Python setup script for gpkit"""
 from __future__ import print_function
 
-import os
 import sys
-import shutil
 
 # custom build script
 if sys.argv[1] in ["build", "install"]:
@@ -10,7 +9,7 @@ if sys.argv[1] in ["build", "install"]:
 
 from distutils.core import setup
 
-long_description = """
+LONG_DESCRIPTION = """
 GPkit is a Python package for defining and manipulating
 geometric programming models,
 abstracting away the backend solver.
@@ -23,7 +22,7 @@ and `CVXopt <http://cvxopt.org/>`_.
 `Citing GPkit <http://gpkit.rtfd.org/en/latest/citinggpkit.html>`_
 """
 
-license = """The MIT License (MIT)
+LICENSE = """The MIT License (MIT)
 
 Copyright (c) 2015 MIT Convex Optimization Group
 
@@ -47,15 +46,16 @@ SOFTWARE."""
 
 setup(
     name='gpkit',
-    description='Package for defining and manipulating geometric programming models.',
-    author='Convex Optimization Group at MIT ACDL',
-    author_email='convex@mit.edu',
+    description='Package for defining and manipulating geometric '
+                'programming models.',
+    author='MIT Department of Aeronautics and Astronautics',
+    author_email='gpkit@mit.edu',
     url='https://www.github.com/convexopt/gpkit',
     install_requires=['numpy'],
-    version='0.1.1',
+    version='0.2.1',
     packages=['gpkit', 'gpkit._mosek', 'gpkit.tests', 'gpkit.interactive'],
     package_data={'gpkit': ['env/*'],
                   'gpkit._mosek': ['lib/*']},
-    license=license,
-    long_description=long_description,
+    license=LICENSE,
+    long_description=LONG_DESCRIPTION,
 )

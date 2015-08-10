@@ -8,7 +8,17 @@ from ..small_scripts import unitstr
 
 
 def widget(gp, outputfn=None, ranges=None, **solveargs):
-    gp = gp.copy()
+    # HACK HACK HACK HACK
+    # copy doesn't work, issue 293
+    # and this should not use copy anyway
+    # keeping for now -- was intended to avoid widgets mutating the GP
+    # that should not be possible and needs to be refactored
+    from copy import deepcopy
+    original_cost_units = gp.cost.units
+    gp = deepcopy(gp)
+    gp.cost.units = original_cost_units
+    # end HACK
+
 
     if not ranges:
         ranges = {k._cmpstr: (min(vs), max(vs), (max(vs)-min(vs))/100.0)

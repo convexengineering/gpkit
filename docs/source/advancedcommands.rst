@@ -1,6 +1,54 @@
 Advanced Commands
 *****************
 
+
+Sensitivities and dual variables
+================================
+
+When a GP is solved, the solver returns not just the optimal value for the problem’s variables (known as the "primal solution") but also, as a side effect of the solving process, the effect that scaling the less-than side of each constraint would have on the overall objective (called the "dual solution", "shadow prices", or "posynomial sensitivities").
+
+Using variable sensitivities
+----------------------------
+
+GPkit uses this dual solution to compute the sensitivities of each variable, which can be accessed most easily using a GPSolutionArray’s ``senssubinto()`` method, as in this example:
+
+.. code-block:: python
+
+    import gpkit
+    x = gpkit.Variable("x")
+    x_min = gpkit.Variable("x_{min}", 2)
+    sol = gpkit.GP(x, [x_min <= x]).solve()
+    assert sol.senssubinto(x_min) == 1
+
+These sensitivities are actually log derivatives (:math:`\frac{d \mathrm{log}(y)}{d \mathrm{log}(x)}`); whereas a regular derivative is a tangent line, these are tangent monomials, so the ``1`` above indicates that ``x_min`` has a linear relation with the objective. This is confirmed by a further example:
+
+.. code-block:: python
+
+    import gpkit
+    x = gpkit.Variable("x")
+    x_squared_min = gpkit.Variable("x^2_{min}", 2)
+    sol = gpkit.GP(x, [x_squared_min <= x**2]).solve()
+    assert sol.senssubinto(x_squared_min) == 2
+
+Plotting variable sensitivities
+-------------------------------
+
+Sensitivities are a useful way to evaluate the tradeoffs in your model, as well as what aspects of the model are driving the solution and should be examined. To help with this, GPkit has an automatic sensitivity plotting function that can be accessed as follows:
+
+.. code-block:: python
+
+    from gpkit.interactive.plotting import sensitivity_plot
+    sensitivity_plot(gp)
+
+Which produces the following plot:
+
+.. figure::  sensitivities.png
+   :width: 500 px
+
+In this plot, steep lines that go up to the right are variables whose increase sharply increases (makes worse) the objective. Steep lines going down to the right are variables whose increase sharply decreases (improves) the objective.
+
+
+
 Substitutions
 =============
 
@@ -186,7 +234,7 @@ where each :math:`f` is monomial while each :math:`g` and :math:`h` is a posynom
 
 This requires multiple solutions of geometric programs, and so will take longer to solve than an equivalent geometric programming formulation.
 
-The specification of the signomial problem affects its solve time in a nuanced way: ``gpkit.SP(x, [x >= 1-y, y <= 0.1]).localsolve()`` takes a third to a fifth as long to solve as ``gpkit.SP(x, [x >= 0.1, x+y >= 1, y <= 0.1]).localsolve()``, despite the two formulations being equivalent.
+The specification of the signomial problem affects its solve time in a nuanced way: ``gpkit.SP(x, [x >= 0.1, x+y >= 1, y <= 0.1]).localsolve()`` takes about four times as many iterations to solve as ``gpkit.SP(x, [x >= 1-y, y <= 0.1]).localsolve()``, despite the two formulations being arithmetically equivalent.
 
 In general, when given the choice of which variables to include in the positive-posynomial / :math:`g` side of the constraint, the modeler should:
 

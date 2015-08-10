@@ -2,6 +2,9 @@
 from gpkit.tests.helpers import run_tests
 TESTS = []
 
+from gpkit.tests import t_tools
+TESTS += t_tools.TESTS
+
 from gpkit.tests import t_sub
 TESTS += t_sub.TESTS
 
@@ -22,6 +25,9 @@ TESTS += t_geometric_program.TESTS
 
 from gpkit.tests import t_solution_array
 TESTS += t_solution_array.TESTS
+
+from gpkit.tests import t_small
+TESTS += t_small.TESTS
 
 
 import gpkit

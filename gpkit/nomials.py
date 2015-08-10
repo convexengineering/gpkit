@@ -1,6 +1,7 @@
+"""Signomial, Posynomial, Monomial, Constraint, & MonoEQCOnstraint classes"""
 import numpy as np
 
-from .small_classes import Strings, Numbers
+from .small_classes import Strings, Numbers, Quantity
 from .posyarray import PosyArray
 from .varkey import VarKey
 
@@ -13,8 +14,6 @@ from .small_scripts import mag, unitstr
 
 from . import units as ureg
 from . import DimensionalityError
-Quantity = ureg.Quantity
-Numbers += (Quantity,)
 
 
 class Signomial(object):
@@ -45,14 +44,15 @@ class Signomial(object):
         if isinstance(exps, Numbers):
             cs = exps
             exps = {}
-        if (isinstance(cs, Numbers)
-           and (exps is None or isinstance(exps, Strings + (VarKey, dict)))):
+        if (isinstance(cs, Numbers) and
+                (exps is None or isinstance(exps, Strings + (VarKey, dict)))):
             # building a Monomial
             if isinstance(exps, VarKey):
                 exp = {exps: 1}
                 units = exps.units
             elif exps is None or isinstance(exps, Strings):
-                exp = {VarKey(exps, **descr): 1}
+                exp = ({VarKey(**descr): 1} if exps is None else
+                       {VarKey(exps, **descr): 1})
                 descr = list(exp)[0].descr
                 units = descr["units"] if "units" in descr else None
             elif isinstance(exps, dict):
@@ -137,6 +137,13 @@ class Signomial(object):
 
     @property
     def value(self):
+        """Self, with values substituted for variables that have values
+
+        Returns
+        -------
+        float, if no symbolic variables remain after substitution
+        (Monomial, Posynomial, or Signomial), otherwise.
+        """
         values = {vk: vk.descr["value"] for vk in self.varlocs.keys()
                   if "value" in vk.descr}
         p = self.sub(values)
@@ -148,14 +155,23 @@ class Signomial(object):
     def to(self, arg):
         return Signomial(self.exps, self.cs.to(arg).tolist())
 
-    def diff(self, var):
-        if var in self.varkeys:
-            var = self.varkeys[var]
-        elif isinstance(var, Monomial):
-            vks = list(var.exp)
-            if len(vks) == 1:
-                var = vks[0]
-        exps, cs = diff(self, var)
+    def diff(self, wrt):
+        """Derivative of this with respect to a Variable
+
+        Arguments
+        ---------
+        wrt (Variable):
+            Variable to take derivative with respect to
+
+        Returns
+        -------
+        Signomial (or Posynomial or Monomial)
+        """
+        if wrt in self.varkeys:
+            wrt = self.varkeys[wrt]
+        elif not isinstance(wrt, VarKey):
+            wrt = wrt.varkey
+        exps, cs = diff(self, wrt)
         return Signomial(exps, cs, require_positive=False)
 
     def mono_approximation(self, x0):
@@ -240,13 +256,14 @@ class Signomial(object):
         if isinstance(other, PosyArray):
             return NotImplemented
         else:
-            return Constraint(self, other)
+            return Constraint(other, self, oper_ge=True)
 
     def __ge__(self, other):
         if isinstance(other, PosyArray):
             return NotImplemented
         else:
-            return Constraint(other, self)
+            # by default all constraints take the form left >= right
+            return Constraint(self, other, oper_ge=True)
 
     def __lt__(self, other):
         invalid_types_for_oper("<", self, other)
@@ -312,8 +329,8 @@ class Signomial(object):
             elif pos_vars and neg_vars:
                 mstrs.append("%s\\frac{%s}{%s}" % (cstr, pvarstr, nvarstr))
 
-        units = unitstr(self.units, "\mathrm{\\left[ %s \\right]}", "L~")
-        units_tf = units.replace("frac", "tfrac").replace("\\cdot", "\\cdot ")
+        units = unitstr(self.units, r"\mathrm{\left[ %s \right]}", "L~")
+        units_tf = units.replace("frac", "tfrac").replace(r"\cdot", r"\cdot ")
         return " + ".join(sorted(mstrs)) + units_tf
 
     # posynomial arithmetic
@@ -370,17 +387,18 @@ class Signomial(object):
         return self * other
 
     def __div__(self, other):
+        """Support the / operator in Python 2.x"""
         if isinstance(other, Numbers):
             return Signomial(self.exps, self.cs/other)
         elif isinstance(other, Monomial):
-            exps = [exp - other.exp for exp in self.exps]
-            return Signomial(exps, self.cs/other.c)
+            return other.__rdiv__(self)
         elif isinstance(other, PosyArray):
             return np.array(self)/other
         else:
             return NotImplemented
 
     def __truediv__(self, other):
+        """Support the / operator in Python 3.x"""
         return self.__div__(other)
 
     def __pow__(self, x):
@@ -392,7 +410,7 @@ class Signomial(object):
                     x -= 1
                 return p
             else:
-                raise ValueError("Signomial are only closed under"
+                raise ValueError("Signomials are only closed under"
                                  " nonnegative integer exponents.")
         else:
             return NotImplemented
@@ -431,20 +449,37 @@ class Signomial(object):
 
 
 class Posynomial(Signomial):
+    """A Signomial with strictly positive cs
+
+    Arguments
+    ---------
+    Same as Signomial.
+    Note: Posynomial historically supported several different init formats
+          These will be deprecated in the future, replaced with a single
+          __init__ syntax, same as Signomial.
+    """
     pass
 
 
 class Monomial(Posynomial):
-    '''
-    TODO: Add docstring
-    '''
+    """A Posynomial with only one term
+
+    Arguments
+    ---------
+    Same as Signomial.
+    Note: Monomial historically supported several different init formats
+          These will be deprecated in the future, replaced with a single
+          __init__ syntax, same as Signomial.
+    """
     def __rdiv__(self, other):
-        if isinstance(other, Numbers+(Posynomial,)):
+        """Divide other by this Monomial"""
+        if isinstance(other, Numbers + (Signomial,)):
             return other * self**-1
         else:
             return NotImplemented
 
     def __rtruediv__(self, other):
+        """rdiv for python 3.x"""
         return self.__rdiv__(other)
 
     def __pow__(self, other):
@@ -455,17 +490,14 @@ class Monomial(Posynomial):
 
 
 class Constraint(Posynomial):
-    '''
-    TODO: Add docstring
-    '''
-    def _set_operator(self, p1, p2):
-        if self.left is p1:
-            self.oper_s = " <= "
-            self.oper_l = " \\leq "
-        else:
-            self.oper_s = " >= "
-            self.oper_l = " \\geq "
+    """A constraint of the general form posynomial <= monomial
+    Stored internally (exps, cs) as a single Posynomial (self <= 1)
+    Usually initialized via operator overloading, e.g. cc = y**2 >= 1 + x
+    Additionally stores input format (lhs vs rhs) in self.left and self.right
+    Form is self.left <= self.right.
 
+    TODO: this documentation needs to address Signomial Constraints.
+    """
     def __str__(self):
         return str(self.left) + self.oper_s + str(self.right)
 
@@ -475,18 +507,37 @@ class Constraint(Posynomial):
     def _latex(self, unused=None):
         return self.left._latex() + self.oper_l + self.right._latex()
 
-    def __init__(self, p1, p2):
-        p1 = Signomial(p1)
-        p2 = Signomial(p2)
+    def __init__(self, left, right, oper_ge=True):
+        """Initialize a constraint of the form left >= right
+        (or left <= right, if oper_ge is False).
+
+        Arguments
+        ---------
+        left: Signomial
+        right: Signomial
+        oper_ge: bool
+            If true, form is left >= right; otherwise, left <= right.
+
+        Note: Constraints initialized via operator overloading always take
+              the form left >= right, e.g. (x <= y) becomes (y >= x).
+
+        TODO: clarify how this __init__ handles Signomial constraints
+              (may want to create a SignomialConstraint class that does not
+               inherit from Posynomial and keeps left and right separate).
+        """
+        left = Signomial(left)
+        right = Signomial(right)
         from . import SIGNOMIALS_ENABLED
 
-        if SIGNOMIALS_ENABLED and not isinstance(p2, Monomial):
-            if p1.units:
-                p = (p1 - p2)/p1.units + 1.0
+        pgt, plt = (left, right) if oper_ge else (right, left)
+
+        if SIGNOMIALS_ENABLED and not isinstance(pgt, Monomial):
+            if plt.units:
+                p = (plt - pgt)/plt.units + 1.0
             else:
-                p = (p1 - p2) + 1.0
+                p = (plt - pgt) + 1.0
         else:
-            p = p1 / p2
+            p = plt / pgt
         if isinstance(p.cs, Quantity):
             try:
                 p = p.to('dimensionless')
@@ -494,10 +545,10 @@ class Constraint(Posynomial):
                 raise ValueError("constraints must have the same units"
                                  " on both sides: '%s' and '%s' can not"
                                  " be converted into each other."
-                                 "" % (p1.units.units, p2.units.units))
+                                 "" % (plt.units.units, pgt.units.units))
 
-        p1.units = None if all(p1.exps) else p1.units
-        p2.units = None if all(p2.exps) else p2.units
+        plt.units = None if all(plt.exps) else plt.units
+        pgt.units = None if all(pgt.exps) else pgt.units
 
         for i, exp in enumerate(p.exps):
             if not exp:
@@ -515,34 +566,32 @@ class Constraint(Posynomial):
                     raise ValueError("infeasible constraint:"
                                      "constant term too large.")
 
-        self.cs = p.cs
-        self.exps = p.exps
-        self.varlocs = p.varlocs
-        self.varkeys = p.varkeys
-        self.units = p.units
+        super(Constraint, self).__init__(p)
+        self.__class__ = Constraint  # TODO should not have to do this
 
-        if len(p1.exps) == len(p2.exps):
-            if len(p1.exps[0]) <= len(p2.exps[0]):
-                self.left, self.right = p1, p2
-            else:
-                self.left, self.right = p2, p1
-        elif len(p1.exps) < len(p2.exps):
-            self.left, self.right = p1, p2
-        else:
-            self.left, self.right = p2, p1
+        self.left, self.right = left, right
 
-        self._set_operator(p1, p2)
+        self.oper_s = " >= " if oper_ge else " <= "
+        self.oper_l = r" \geq " if oper_ge else r" \leq "
 
 
 class MonoEQConstraint(Constraint):
-    '''
-    TODO: Add docstring
-    '''
-    def _set_operator(self, p1, p2):
+    """
+    A Constraint of the form Monomial == Monomial.
+    Stored internally as a Monomial Constraint, (1 == self).
+    """
+    def __init__(self, m1, m2):
+        super(MonoEQConstraint, self).__init__(m1, m2)
+        self.__class__ = MonoEQConstraint  # todo should not have to do this
         self.oper_l = " = "
         self.oper_s = " == "
-        self.leq = Constraint(p2, p1)
-        self.geq = Constraint(p1, p2)
+        # next two lines would be clean implementation, but Constraint
+        # inheritance from Posy won't allow division
+        # self.leq = self
+        # self.geq = 1 / self
+        # instead, we'll do this -- TODO improve
+        self.leq = m1/m2
+        self.geq = m2/m1
 
     def __nonzero__(self):
         # a constraint not guaranteed to be satisfied

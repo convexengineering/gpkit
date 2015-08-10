@@ -91,7 +91,7 @@ from .variables import Variable, VectorVariable, ArrayVariable
 from .varkey import VarKey
 from .posyarray import PosyArray
 from .model import Model
-from .user_scripts import composite_objective, link
+from .tools import composite_objective, link
 from .shortcuts import GP, SP
 
 if units:

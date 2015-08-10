@@ -5,10 +5,7 @@ from collections import Iterable
 from collections import OrderedDict
 
 from .small_classes import HashVector
-from .small_classes import Strings, Numbers
-
-from . import units as ureg
-Quantity = ureg.Quantity
+from .small_classes import Strings, Quantity
 
 
 def diff(p, vk):
@@ -207,7 +204,7 @@ def results_table(data, title, minval=0, printunits=True, fixedcols=True,
     decorated = [(bool(v.shape) if isinstance(v, Iterable) else False,
                  (varfmt % k),
                  i, k, v) for i, (k, v) in enumerate(data.items())
-                 if np.max(abs(v)) >= minval or any(np.isnan(np.array([v])))]
+                 if (np.max(abs(v)) >= minval) or np.any(np.isnan(v))]
     decorated.sort()
     for isvector, varstr, _, var, val in decorated:
         label = var.descr.get('label', '')

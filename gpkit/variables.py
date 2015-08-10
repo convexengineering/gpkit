@@ -4,13 +4,8 @@ from collections import Iterable
 from .varkey import VarKey
 from .nomials import Monomial
 from .posyarray import PosyArray
-from .small_classes import Strings, Numbers
+from .small_classes import Strings, Numbers, Quantity
 from .small_scripts import is_sweepvar
-
-from . import units as ureg
-from . import DimensionalityError
-Quantity = ureg.Quantity
-Numbers += (Quantity,)
 
 
 class Variable(Monomial):
@@ -52,8 +47,13 @@ class Variable(Monomial):
         self.__class__ = Variable
 
     @property
+    def varkey(self):
+        """Get the VarKey associated with this Variable"""
+        return list(self.exp)[0]
+
+    @property
     def descr(self):
-        return list(self.exp)[0].descr
+        return self.varkey.descr
 
     def sub(self, *args, **kwargs):
         """Same as nomial substitution, but also allows single-argument calls
