@@ -11,18 +11,37 @@ from .small_scripts import mag
 
 
 class GeometricProgram(object):
+    """Prepares a collection of posynomials for a GP solver.
+
+    Arguments
+    ---------
+    cost : Constraint
+        Posynomial to minimize when solving
+    constraints : list of Posynomials
+        Constraints to maintain when solving (implicitly Posynomials <= 1)
+    verbosity : int (optional)
+        If verbosity is greater than zero, warns about missing bounds
+        on creation.
+
+    Examples
+    --------
+    >>> gp = gpkit.geometric_program.GeometricProgram(
+                        # minimize
+                        x,
+                        [   # subject to
+                            1/x  # <= 1, implicitly
+                        ])
+    >>> gp.solve()
+    """
 
     def __init__(self, cost, constraints, verbosity=1):
         self.cost = cost
         self.constraints = constraints
         self.posynomials = [cost] + list(constraints)
-        try:
-            self.cs = np.hstack((mag(p.cs) for p in self.posynomials))
-        except:
-            print self.posynomials
-        if not all([c >= 0 for c in self.cs]):
+        self.cs = np.hstack((mag(p.cs) for p in self.posynomials))
+        if not all(self.cs > 0):
             raise ValueError("GeometricPrograms cannot contain coefficients"
-                             "less than or equal to zero.")
+                             " less than or equal to zero.")
         self.exps = functools_reduce(add, (x.exps for x in self.posynomials))
         self.varlocs, self.varkeys = locate_vars(self.exps)
         # k [j]: number of monomials (columns of F) present in each constraint
@@ -41,14 +60,20 @@ class GeometricProgram(object):
             for var, bound in sorted(missingbounds.items()):
                 print("%s has no %s bound" % (var, bound))
 
-    def solve(self, solver=None, verbosity=1, skipfailures=False,
-              options={}, *args, **kwargs):
+    def solve(self, solver=None, verbosity=1, *args, **kwargs):
         """Solves a GeometricProgram and returns the solution.
 
         Arguments
         ---------
-        printing : bool (optional)
-            If True (default), then prints out solver used and time to solve.
+        solver : str or function (optional)
+            By default uses one of the solvers found during installation.
+            If set to "mosek", "mosek_cli", or "cvxopt", uses that solver.
+            If set to a function, passes that function cs, A, p_idxs, and k.
+        verbosity : int (optional)
+            If greater than 0, prints solver name and solve time.
+        *args, **kwargs :
+            Passed to solver constructor and solver function.
+
 
         Returns
         -------
@@ -58,13 +83,17 @@ class GeometricProgram(object):
         if solver is None:
             from . import settings
             solver = settings['installed_solvers'][0]
+            if not solver:
+                raise ValueError("No solver was given; perhaps gpkit was not"
+                                 " properly installed, or found no solvers"
+                                 " during the installation process.")
+
         if solver == 'cvxopt':
             from ._cvxopt import cvxoptimize_fn
-            solverfn = cvxoptimize_fn(options)
+            solverfn = cvxoptimize_fn(*args, **kwargs)
         elif solver == "mosek_cli":
             from ._mosek import cli_expopt
-            filename = options.get('filename', 'gpkit_mosek')
-            solverfn = cli_expopt.imize_fn(filename)
+            solverfn = cli_expopt.imize_fn(*args, **kwargs)
         elif solver == "mosek":
             from ._mosek import expopt
             solverfn = expopt.imize
@@ -72,19 +101,15 @@ class GeometricProgram(object):
             solverfn = solver
             solver = solver.__name__
         else:
-            if not solver:
-                raise ValueError("No solver was given; perhaps gpkit was not"
-                                 " properly installed, or found no solvers"
-                                 " during the install process.")
-            raise ValueError("Solver %s is not implemented!" % solver)
+            raise ValueError("Unknown solver '%s'." % solver)
 
         if verbosity > 0:
             print("Using solver '%s'" % solver)
             self.starttime = time()
             print("Solving for %i variables." % len(self.varlocs))
 
-        solver_out = solverfn(self.cs, self.A, self.p_idxs, self.k)
-        # TODO: add 'options' argument for coordinating messaging etc
+        solver_out = solverfn(self.cs, self.A, self.p_idxs, self.k,
+                              *args, **kwargs)
 
         if verbosity > 0:
             print("Solving took %.3g seconds." % (time() - self.starttime))
@@ -113,11 +138,11 @@ class GeometricProgram(object):
             nu = np.hstack([la[p_i]*np.exp(z[m_is])/sum(np.exp(z[m_is]))
                             for p_i, m_is in enumerate(m_iss)])
         else:
-            raise RuntimeWarning("the dual solution was not returned!")
+            raise RuntimeWarning("The dual solution was not returned.")
         result["sensitivities"]["monomials"] = nu
         result["sensitivities"]["posynomials"] = la
 
-        # SIDE EFFECTS AHOY
+        # NOTE: SIDE EFFECTS AHOY
         self.result = result
         self.solver_out = solver_out
         # TODO: add a solver_log file using stream debugger
@@ -136,19 +161,26 @@ class GeometricProgram(object):
             return result
 
     def feasibility_search(self, varname=None, flavour="max", *args, **kwargs):
-        """Given a GP, returns a feasible GP.
+        """Returns a new GP for the closest feasible point of the current GP.
 
-        "Flavour" specifies the objective function minimized in the search for
-        feasibility:
+        Arguments
+        ---------
+        varname : str
+            LaTeX name of slack variables.
+        flavour : str
+            Specifies the objective function minimized in the search:
 
-            "max" (default) : Apply the same slack to all constraints and minimize
-                              that slack. Useful for finding the "closest"
-                              feasible point. Described in Eqn. 10 of [Boyd2007].
+            "max" (default) : Apply the same slack to all constraints and
+                              minimize that slack. Described in Eqn. 10
+                              of [Boyd2007].
 
-            "product" : Apply a unique slack to all constraints and minimize the
-                        product of those slacks. Useful for identifying the most
-                        problematic constraints. Described in Eqn. 11 of [Boyd2007]
+            "product" : Apply a unique slack to all constraints and minimize
+                        the product of those slacks. Useful for identifying the
+                        most problematic constraints. Described in Eqn. 11
+                        of [Boyd2007]
 
+        *args, **kwargs
+            Passed on to GP initialization.
 
         [Boyd2007] : "A tutorial on geometric programming", Optim Eng 8:67-122
 
@@ -201,8 +233,23 @@ class GeometricProgram(object):
 
 
 def genA(exps, varlocs):
-    # A: exponents of the various free variables for each monomial
-    #    rows of A are variables, columns are monomials
+    """Generates A matrix from exps and varlocs
+
+    Arguments
+    ---------
+        exps : list of Hashvectors
+            Exponents for each monomial in a GP
+        varlocs : dict
+            Locations of each variable in exps
+
+    Returns
+    -------
+        A : sparse Cootmatrix
+            Exponents of the various free variables for each monomial: rows
+            of A are variables, columns of A are monomials.
+        missingbounds : dict
+            Keys: variables that lack bounds. Values: which bounds are missed.
+    """
 
     missingbounds = {}
     A = CootMatrix([], [], [])

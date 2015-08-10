@@ -9,6 +9,7 @@
 
 import os
 import shutil
+import tempfile
 import errno
 import stat
 from math import exp
@@ -27,8 +28,10 @@ def errorRemoveReadonly(func, path, exc):
         pass
 
 
-def imize_fn(filename):
-    filename = "gpkit_tmp" + os.sep + filename
+def imize_fn(path=None):
+    if not path:
+        path = tempfile.mkdtemp()
+    filename = path + os.sep + "gpkit_mosek"
     os.environ['PATH'] = (os.environ['PATH'] + ':%s' %
                           settings["mosek_bin_dir"][0])
 
@@ -71,8 +74,6 @@ def imize_fn(filename):
             If the format of mskexpopt's output file is unexpected.
 
         """
-        if not os.path.exists("gpkit_tmp"):
-            os.makedirs("gpkit_tmp")
 
         with open(filename, "w") as f:
             numcon = 1+p_idxs[-1]
@@ -108,8 +109,7 @@ def imize_fn(filename):
             assert_line(f, "INDEX   ACTIVITY\n")
             dual_vals = read_vals(f)
 
-        shutil.rmtree("gpkit_tmp", ignore_errors=False,
-                      onerror=errorRemoveReadonly)
+        shutil.rmtree(path, ignore_errors=False, onerror=errorRemoveReadonly)
 
         return dict(status="optimal",
                     objective=objective_val,

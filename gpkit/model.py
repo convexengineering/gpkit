@@ -302,25 +302,36 @@ class Model(object):
         variables.update(sweepvariables)
         sensitivities = dict(result["sensitivities"])
 
-        # remap monomials after substitution and simplification
+        # Remap monomials after substitution and simplification.
+        #  each "mmap" is a list whose elements are either None
+        #  (indicating that the monomial was removed after subsitution)
+        #  or a tuple with:
+        #    the index of the monomial they became after subsitution,
+        #    the percentage of that monomial that they formed
+        #      (their c/that monomial's final c)
+        #  The monomial sensitivities from the GP/SP are in terms of this
+        #   smaller post-substitution list of monomials, so we need to map that
+        #   back to the pre-substitution list.
         nu = result["sensitivities"]["monomials"]
         nu_ = []
         mons = 0
         for mmap in mmaps:
+            max_idx = 0
             for m_i in mmap:
-                if m_i is not None:
-                    nu_.append(nu[m_i + mons])
-                else:
+                if m_i is None:
                     nu_.append(0)
-            mons += 1 + max(mmap)
+                else:
+                    idx, percentage = m_i
+                    nu_.append(percentage*nu[idx + mons])
+                    if idx > max_idx:
+                        max_idx = idx
+            mons += 1 + max_idx
         nu_ = np.array(nu_)
         sensitivities["monomials"] = nu_
 
         sens_vars = {var: sum([self.unsubbed_exps[i][var]*nu_[i]
                                for i in locs])
                      for (var, locs) in self.unsubbed_varlocs.items()}
-        #print self.unsubbed_varlocs.items()
-        #print self.unsubbed_exps
         sensitivities["variables"] = sens_vars
 
         # free-variable sensitivities must be < arbitrary epsilon 1e-4

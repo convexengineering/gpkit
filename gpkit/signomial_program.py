@@ -14,6 +14,26 @@ from .geometric_program import GeometricProgram
 
 
 class SignomialProgram(object):
+    """Prepares a collection of signomials for a SP solve.
+
+    Arguments
+    ---------
+    cost : Constraint
+        Signomial to minimize when solving
+    constraints : list of Posynomials
+        Constraints to maintain when solving (implicitly Signomials <= 1)
+
+    Examples
+    --------
+    >>> gp = gpkit.geometric_program.SignomialProgram(
+                        # minimize
+                        x,
+                        [   # subject to
+                            1/x - y/x,  # <= 1, implicitly
+                            y/10  # <= 1
+                        ])
+    >>> gp.solve()
+    """
 
     def __init__(self, cost, constraints):
         self.cost = cost
@@ -44,6 +64,34 @@ class SignomialProgram(object):
 
     def solve(self, solver=None, verbosity=1, x0={}, reltol=1e-4,
               iteration_limit=50, *args, **kwargs):
+        """Solves a SignomialProgram and returns the solution.
+
+        Arguments
+        ---------
+        solver : str or function (optional)
+            By default uses one of the solvers found during installation.
+            If set to "mosek", "mosek_cli", or "cvxopt", uses that solver.
+            If set to a function, passes that function cs, A, p_idxs, and k.
+        verbosity : int (optional)
+            If greater than 0, prints solve time and number of iterations.
+            Each GP is created and solved with verbosity one less than this, so
+            if greater than 1, prints solver name and time for each GP.
+        x0 : dict (optional)
+            Initial location to approximate signomials about.
+        reltol : float
+            Iteration ends when this is greater than the distance between two
+            consecutive solve's objective values.
+        iteration_limit : int
+            Maximum GP iterations allowed.
+        *args, **kwargs :
+            Passed to solver function.
+
+
+        Returns
+        -------
+        result : dict
+            A dictionary containing the translated solver result.
+        """
         if verbosity > 0:
             print("Beginning signomial solve.")
             self.starttime = time()
@@ -80,6 +128,8 @@ class SignomialProgram(object):
                 result = gp.solve(solver, verbosity=verbosity-1,
                                   *args, **kwargs)
             except (RuntimeWarning, ValueError):
+                # TODO: should we add the nearest_feasible gp to the program?
+                # TODO: should we count it as an iteration?
                 nearest_feasible = gp.feasibility_search(verbosity=verbosity-1)
                 result = nearest_feasible.solve(verbosity=verbosity-1)
 
@@ -91,7 +141,7 @@ class SignomialProgram(object):
             print("Solving took %i GP solves" % iterations
                   + " and %.3g seconds." % (time() - self.starttime))
 
-        # need to parse the result and return nu's of original monomials from
+        # parse the result and return nu's of original monomials from
         #  variable sensitivities
         nu = result["sensitivities"]["monomials"]
         sens_vars = {var: sum([gp.exps[i][var]*nu[i] for i in locs])
@@ -102,8 +152,7 @@ class SignomialProgram(object):
                 var_ss = [sens_vars[var]*val for var, val in sens_vars.items()]
                 nu_.append(functools_reduce(mul, var_ss, np.sign(c)))
         result["sensitivities"]["monomials"] = np.array(nu_)
-        # TODO: this gives wrong results?
-        #  but at least the right number of monomials...
+        # TODO: SP sensitivities are weird, and potentially incorrect
 
         return result
 
@@ -111,7 +160,7 @@ class SignomialProgram(object):
         return "gpkit.%s(\n%s)" % (self.__class__.__name__, str(self))
 
     def __str__(self):
-        """String representation of a GeometricProgram.
+        """String representation of a SignomialProgram.
 
         Contains all of its parameters."""
         return "\n".join(["  # minimize",
@@ -122,7 +171,7 @@ class SignomialProgram(object):
                          [']'])
 
     def _latex(self, unused=None):
-        """LaTeX representation of a GeometricProgram.
+        """LaTeX representation of a SignomialProgram.
 
         Contains all of its parameters."""
         return "\n".join(["\\begin{array}[ll]",

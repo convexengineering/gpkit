@@ -1,4 +1,4 @@
-def cvxoptimize_fn(options):
+def cvxoptimize_fn(options={}):
     from cvxopt import solvers, spmatrix, matrix, log, exp
     solvers.options.update({'show_progress': False})
     solvers.options.update(options)

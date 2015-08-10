@@ -148,12 +148,12 @@ def sort_and_simplify(exps, cs, return_map=False):
     "Reduces the number of monomials, and casts them to a sorted form."
     matches = defaultdict(float)
     if return_map:
-        expmap = defaultdict(list)
+        expmap = defaultdict(dict)
     for i, exp in enumerate(exps):
         exp = HashVector({var: x for (var, x) in exp.items() if x != 0})
         matches[exp] += cs[i]
         if return_map:
-            expmap[exp].append(i)
+            expmap[exp][i] = cs[i]
 
     if matches[HashVector({})] == 0 and len(matches) > 1:
         del matches[HashVector({})]
@@ -172,14 +172,13 @@ def sort_and_simplify(exps, cs, return_map=False):
     if not return_map:
         return exps_, cs_
     else:
-        mmap = ["X"]*(i+1)
-        for exp, m_is in expmap.items():
-            for m_i in m_is:
-                if exp in exps_:
-                    mmap[m_i] = exps_.index(exp)
-                else:
-                    mmap[m_i] = None
+        mmap = [None]*len(cs)
+        for i, item in enumerate(matches.items()):
+            exp, c = item
+            for j in expmap[exp]:
+                mmap[j] = (i, expmap[exp][j]/c)
         return exps_, cs_, mmap
+
 
 def results_table(data, title, minval=0, printunits=True, fixedcols=True,
                   varfmt="%s : ", valfmt="%-.4g ", vecfmt="%-8.3g"):
