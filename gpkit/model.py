@@ -303,15 +303,16 @@ class Model(object):
         sensitivities = dict(result["sensitivities"])
 
         # Remap monomials after substitution and simplification.
-        #  each "mmap" is a list whose elements are either None
+        #  The monomial sensitivities from the GP/SP are in terms of this
+        #  smaller post-substitution list of monomials, so we need to map that
+        #  back to the pre-substitution list.
+        #
+        #  Each "mmap" is a list whose elements are either None
         #  (indicating that the monomial was removed after subsitution)
         #  or a tuple with:
         #    the index of the monomial they became after subsitution,
         #    the percentage of that monomial that they formed
-        #      (their c/that monomial's final c)
-        #  The monomial sensitivities from the GP/SP are in terms of this
-        #   smaller post-substitution list of monomials, so we need to map that
-        #   back to the pre-substitution list.
+        #      (equal to their c/that monomial's final c)
         nu = result["sensitivities"]["monomials"]
         nu_ = []
         mons = 0

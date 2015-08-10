@@ -1,12 +1,15 @@
 from .variables import Variable
 from .variables import VectorVariable
 from .variables import ArrayVariable
-from .geometric_program import GeometricProgram
-from .signomial_program import SignomialProgram
+from .model import Model
 
 Var = Variable
 Vec = VectorVariable
 Arr = ArrayVariable
 
-GP = GeometricProgram
-SP = SignomialProgram
+
+def GP(*args, **kwargs):
+    raise Exception("'Model' has replaced 'GP'. Please update your code!")
+
+def SP*args, **kwargs):
+    raise Exception("'Model' has replaced 'GP'. Please update your code!")
