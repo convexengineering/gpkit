@@ -345,8 +345,6 @@ class Model(object):
         localexp = {var: S for (var, S) in sens_vars.items() if abs(S) >= 0.1}
         localcs = (variables[var]**-S for (var, S) in localexp.items())
         localc = functools_reduce(mul, localcs, cost)
-        print sensitivities
-        print variables
         localmodel = Monomial(localexp, localc)
 
         # vectorvar substitution
