@@ -10,5 +10,5 @@ Arr = ArrayVariable
 def GP(*args, **kwargs):
     raise Exception("'Model' has replaced 'GP'. Please update your code!")
 
-def SP*args, **kwargs):
+def SP(*args, **kwargs):
     raise Exception("'Model' has replaced 'GP'. Please update your code!")

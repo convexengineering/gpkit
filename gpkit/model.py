@@ -229,19 +229,20 @@ class Model(object):
         self.substitutions.update(substitutions)
         # edits in place...should it return a new model instead?
 
-    def formProgram(self, programType, posynomials, subs):
-        posynomials_, mmaps = [], []
-        for p in posynomials:
-            _, exps, cs, _ = substitution(p.varlocs, p.varkeys,
-                                          p.exps, p.cs, subs)
+    def formProgram(self, programType, signomials, subs):
+        signomials_, mmaps = [], []
+        for s in signomials:
+            _, exps, cs, _ = substitution(s.varlocs, s.varkeys,
+                                          s.exps, s.cs, subs)
+            if any(cs != 0):
+                exps, cs, mmap = sort_and_simplify(exps, cs, return_map=True)
+                signomials_.append(Signomial(exps, cs, units=s.units))
+                mmaps.append(mmap)
+            else:
+                mmaps.append([None]*len(cs))
 
-            exps, cs, mmap = sort_and_simplify(exps, cs, return_map=True)
-            posynomials_.append(Signomial(exps, cs, units=p.units))
-            mmaps.append(mmap)
-            # TODO: mmaps don't handle negative at all, but should?
-
-        cost = posynomials_[0]
-        constraints = posynomials_[1:]
+        cost = signomials_[0]
+        constraints = signomials_[1:]
 
         if programType in ["gp", "GP"]:
             return GeometricProgram(cost, constraints), subs, mmaps
@@ -344,6 +345,8 @@ class Model(object):
         localexp = {var: S for (var, S) in sens_vars.items() if abs(S) >= 0.1}
         localcs = (variables[var]**-S for (var, S) in localexp.items())
         localc = functools_reduce(mul, localcs, cost)
+        print sensitivities
+        print variables
         localmodel = Monomial(localexp, localc)
 
         # vectorvar substitution

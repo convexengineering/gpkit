@@ -103,7 +103,7 @@ class SignomialProgram(object):
         sp_inits.update(x0)
         x0 = sp_inits
         # HACK: initial guess for negative variables
-        x0 = {var: 1 for var in self.negvarkeys if var not in x0}
+        x0.update({var: 1 for var in self.negvarkeys if var not in x0})
 
         iterations = 0
         prevcost, cost = 1, 1
