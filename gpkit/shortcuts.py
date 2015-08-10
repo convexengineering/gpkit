@@ -1,7 +1,6 @@
 from .variables import Variable
 from .variables import VectorVariable
 from .variables import ArrayVariable
-from .model import Model
 
 Var = Variable
 Vec = VectorVariable
