@@ -67,7 +67,7 @@ class TestSolutionArray(unittest.TestCase):
     def test_table(self):
         x = Variable('x')
         gp = Model(x, [x >= 12])
-        sol = gp.solve(solver='mosek', verbosity=0)
+        sol = gp.solve(verbosity=0)
         tab = sol.table()
         self.assertTrue(isinstance(tab, str))
 
