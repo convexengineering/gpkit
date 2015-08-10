@@ -120,7 +120,8 @@ class GeometricProgram(object):
         result = {}
         result["variables"] = dict(zip(self.varlocs,
                                    np.exp(solver_out['primal']).ravel()))
-        if "objective" in solver_out:
+        if "objective" in solver_out and "mosek" not in solver:
+            # HACK: for issue #296
             result["cost"] = float(solver_out["objective"])
         else:
             result["cost"] = self.cost.subcmag(result["variables"])
