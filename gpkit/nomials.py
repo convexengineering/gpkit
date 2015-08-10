@@ -261,8 +261,8 @@ class Signomial(object):
                        for (var, x) in exp.items() if x != 0]
             varstrs.sort()
             c = mag(c)
-            cstr = "%.2g" % c
-            if cstr == "-1":
+            cstr = "%.3g" % c
+            if cstr == "-1" and varstrs:
                 mstrs.append("-" + mult_symbol.join(varstrs))
             else:
                 cstr = [cstr] if cstr != "1" or not varstrs else []
