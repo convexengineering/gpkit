@@ -111,6 +111,9 @@ class GeometricProgram(object):
         solver_out = solverfn(self.cs, self.A, self.p_idxs, self.k,
                               *args, **kwargs)
 
+        self.solver_out = solver_out  # NOTE: SIDE EFFECTS AHOY
+        # TODO: add a solver_log file using stream debugger
+
         if verbosity > 0:
             print("Solving took %.3g seconds." % (time() - self.starttime))
 
@@ -142,10 +145,7 @@ class GeometricProgram(object):
         result["sensitivities"]["monomials"] = nu
         result["sensitivities"]["posynomials"] = la
 
-        # NOTE: SIDE EFFECTS AHOY
-        self.result = result
-        self.solver_out = solver_out
-        # TODO: add a solver_log file using stream debugger
+        self.result = result  # NOTE: SIDE EFFECTS AHOY
 
         if solver_out.get("status", None) not in ["optimal", "OPTIMAL"]:
             raise RuntimeWarning("final status of solver '%s' was '%s', "
@@ -246,7 +246,7 @@ def genA(exps, varlocs):
     -------
         A : sparse Cootmatrix
             Exponents of the various free variables for each monomial: rows
-            of A are variables, columns of A are monomials.
+            of A are monomials, columns of A are variables.
         missingbounds : dict
             Keys: variables that lack bounds. Values: which bounds are missed.
     """
@@ -274,7 +274,7 @@ def genA(exps, varlocs):
 
     # add subbed-out monomials at the end
     if not exps[-1]:
-        A.append(0, len(exps)-1, 0)
+        A.append(len(exps)-1, 0, 0)
 
     A.update_shape()
 

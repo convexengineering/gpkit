@@ -172,6 +172,12 @@ class TestGP(unittest.TestCase):
         fgp = gp.feasibility_search(flavour="product")
         sol2 = fgp.solve(verbosity=0)
 
+    def test_terminating_constant_(self):
+        x = Variable('x')
+        y = Variable('y', value=0.5)
+        prob = Model(1/x, [x + y <= 4])
+        sol = prob.solve(verbosity=0)
+
 
 class TestSP(unittest.TestCase):
     """test case for SP class -- gets run for each installed solver"""

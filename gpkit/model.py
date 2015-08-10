@@ -134,19 +134,19 @@ class Model(object):
 
     # TODO: add get_item
 
-    def solve(self, verbosity=2, skipfailures=True, *args, **kwargs):
+    def solve(self, solver=None, verbosity=2, skipfailures=True, *args, **kwargs):
         #if not all([isinstance(c, Posynomial) for c in constraints]):
         #    raise ValueError("'solve()' can only be called on models"
         #                     " that do not contain Signomials.")
-        return self._solve("gp", verbosity, skipfailures, *args, **kwargs)
+        return self._solve("gp", solver, verbosity, skipfailures, *args, **kwargs)
 
-    def localsolve(self, verbosity=2, skipfailures=True, *args, **kwargs):
+    def localsolve(self, solver=None, verbosity=2, skipfailures=True, *args, **kwargs):
         #if all([isinstance(c, Posynomial) for c in constraints]):
         #    raise ValueError("'localsolve()' can only be called on models"
         #                     " that contain Signomials.")
-        return self._solve("sp", verbosity, skipfailures, *args, **kwargs)
+        return self._solve("sp", solver, verbosity, skipfailures, *args, **kwargs)
 
-    def _solve(self, programType, verbosity, skipfailures, *args, **kwargs):
+    def _solve(self, programType, solver, verbosity, skipfailures, *args, **kwargs):
         posynomials = self.posynomials
         self.unsubbed_cs = np.hstack((mag(p.cs) for p in posynomials))
         self.unsubbed_exps = functools_reduce(add, (p.exps for p in posynomials))
@@ -161,6 +161,7 @@ class Model(object):
          constants) = separate_subs(subs, self.unsubbed_varkeys,
                                     self.unsubbed_varlocs)
         solution = SolutionArray()
+        kwargs.update({"solver": solver})
         kwargs.update({"verbosity": verbosity - 1})
 
         if sweep:
