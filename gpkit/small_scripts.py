@@ -173,12 +173,12 @@ def sort_and_simplify(exps, cs, return_map=False):
         if return_map:
             expmap[exp][i] = cs[i]
 
-    if matches[HashVector({})] == 0 and len(matches) > 1:
-        del matches[HashVector({})]
-    for exp, c in matches.items():
-        if c == 0 and len(matches) > 1:
+    if len(matches) > 1:
+        zeroed_terms = (exp for exp, c in matches.items() if c == 0)
+        for exp in zeroed_terms:
             del matches[exp]
 
+    exps_ = tuple(matches.keys())
     cs_ = list(matches.values())
     if isinstance(cs_[0], Quantity):
         units = cs_[0]/cs_[0].magnitude
@@ -186,7 +186,6 @@ def sort_and_simplify(exps, cs, return_map=False):
     else:
         cs_ = np.array(cs_, dtype='float')
 
-    exps_ = tuple(matches.keys())
     if not return_map:
         return exps_, cs_
     else:
