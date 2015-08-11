@@ -123,7 +123,7 @@ class SolutionArray(DictOfLists):
                                    fixedcols=fixedcols)]
         if "sensitivities" in tables:
             strs += [results_table(self["sensitivities"]["variables"],
-                                   "Constant and swept variable sensitivities",
+                                   "Sensitivities",
                                    fixedcols=fixedcols,
                                    minval=1e-2,
                                    printunits=False)]

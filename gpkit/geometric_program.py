@@ -26,6 +26,12 @@ class GeometricProgram(object):
         If verbosity is greater than zero, warns about missing bounds
         on creation.
 
+    Attributes with side effects
+    ----------------------------
+    `solver_out` is set during a solve
+    `solver_log` is set during a solve
+    `result` is set at the end of a solve
+
     Examples
     --------
     >>> gp = gpkit.geometric_program.GeometricProgram(

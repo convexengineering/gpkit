@@ -64,6 +64,11 @@ class Model(object):
         and also allows the declaration of sweeps and linked sweeps.
 
     *args, **kwargs : Passed to the setup method for inheritance.
+
+    Attributes with side effects
+    ----------------------------
+    `program` is set during a solve
+    `solution` is set at the end of a solve
     """
     model_nums = defaultdict(int)
 
@@ -364,13 +369,14 @@ class Model(object):
             self.program = []
             for program, result in mapfn(solve_pass, range(N_passes)):
                 if not skipfailures:
-                    self.program.append(program)
+                    self.program.append(program)  # NOTE: SIDE EFFECTS
                     solution.append(result)
                 elif not hasattr(result, "status"):
                     # this is an optimal solution
                     self.program.append(program)
                     solution.append(result)
         else:
+            # NOTE: SIDE EFFECTS
             self.program, mmaps = self.formProgram(programType, posynomials,
                                                    constants, verbosity)
             if programType == "gp":
@@ -382,7 +388,7 @@ class Model(object):
 
         solution.program = self.program
         solution.toarray()
-        self.solution = solution
+        self.solution = solution  # NOTE: SIDE EFFECTS
         return solution
 
     def gp(self, verbosity=2):

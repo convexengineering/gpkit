@@ -20,6 +20,11 @@ class SignomialProgram(object):
     constraints : list of Signomials
         Constraints to maintain when solving (implicitly Signomials <= 1)
 
+    Attributes with side effects
+    ----------------------------
+    `gps` is set during a solve
+    `result` is set at the end of a solve
+
     Examples
     --------
     >>> gp = gpkit.geometric_program.SignomialProgram(
@@ -113,7 +118,7 @@ class SignomialProgram(object):
                and (not (cost and prevcost)
                     or abs(prevcost-cost)/(prevcost + cost) > reltol)):
             gp = self.step(x0, verbosity)
-            self.gps.append(gp)
+            self.gps.append(gp)  # NOTE: SIDE EFFECTS
 
             try:
                 result = gp.solve(solver, verbosity=verbosity-1,
@@ -146,6 +151,7 @@ class SignomialProgram(object):
         result["sensitivities"]["monomials"] = np.array(nu_)
         # TODO: SP sensitivities are weird, and potentially incorrect
 
+        self.result = result  # NOTE: SIDE EFFECTS
         return result
 
     def step(self, x0=None, verbosity=1):
