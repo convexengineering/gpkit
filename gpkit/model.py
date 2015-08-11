@@ -430,7 +430,8 @@ class Model(object):
         for s in signomials:
             _, exps, cs, _ = substitution(s.varlocs, s.varkeys,
                                           s.exps, s.cs, subs)
-            if any((mag(c) != 0 for c in cs)):
+            notnan = ~np.isnan(cs)
+            if np.any(notnan) and np.any(cs[notnan] != 0):
                 exps, cs, mmap = sort_and_simplify(exps, cs, return_map=True)
                 signomials_.append(Signomial(exps, cs, units=s.units))
                 mmaps.append(mmap)

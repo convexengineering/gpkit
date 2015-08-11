@@ -119,7 +119,15 @@ def substitution(varlocs, varkeys, exps, cs, substitutions, val=None):
             if len(varlocs_[var]) == 0:
                 del varlocs_[var]
             if isinstance(sub, Numbers):
-                cs_[i] *= sub**x
+                try:
+                    cs_[i] *= sub**x
+                except ZeroDivisionError:
+                    if mag(cs_[i]) > 0:
+                        cs_[i] = np.inf
+                    elif mag(cs_[i]) < 0:
+                        cs_[i] = -np.inf
+                    else:
+                        cs_[i] = np.nan
             elif isinstance(sub, np.ndarray):
                 if not sub.shape:
                     cs_[i] *= sub.flatten()[0]**x

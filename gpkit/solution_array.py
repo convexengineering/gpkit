@@ -123,7 +123,7 @@ class SolutionArray(DictOfLists):
                                    fixedcols=fixedcols)]
         if "sensitivities" in tables:
             strs += [results_table(self["sensitivities"]["variables"],
-                                   "Sensitivities",
+                                   "Constant and swept variable sensitivities",
                                    fixedcols=fixedcols,
                                    minval=1e-2,
                                    printunits=False)]
@@ -154,10 +154,12 @@ def results_table(data, title, minval=0, printunits=True, fixedcols=True,
         format for vector values
     """
     lines = []
-    decorated = [(bool(v.shape) if isinstance(v, Iterable) else False,
-                 (varfmt % k),
-                 i, k, v) for i, (k, v) in enumerate(data.items())
-                 if (np.max(abs(v)) >= minval) or np.any(np.isnan(v))]
+    decorated = []
+    for i, (k, v) in enumerate(data.items()):
+        notnan = ~np.isnan(v)
+        if np.any(notnan) and np.max(np.abs(np.array(v)[notnan])) >= minval:
+            b = isinstance(v, Iterable) and bool(v.shape)
+            decorated.append((b, (varfmt % k), i, k, v))
     decorated.sort()
     for isvector, varstr, _, var, val in decorated:
         label = var.descr.get('label', '')
