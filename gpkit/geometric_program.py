@@ -124,7 +124,7 @@ class GeometricProgram(object):
         solver_out = solverfn(c=self.cs, A=self.A, p_idxs=self.p_idxs,
                               k=self.k, *args, **kwargs)
 
-        self.solver_out = solver_out  # NOTE: SIDE EFFECTS AHOY
+        self.solver_out = solver_out  # NOTE: SIDE EFFECTS
         # TODO: add a solver_log file using stream debugger
 
         if verbosity > 0:
@@ -136,7 +136,7 @@ class GeometricProgram(object):
         result["variables"] = dict(zip(self.varlocs,
                                        np.exp(solver_out['primal']).ravel()))
         if "objective" in solver_out and "mosek" not in solver:
-            # HACK: for issue #296
+            # HACK: "mosek" condition added for issue #296
             result["cost"] = float(solver_out["objective"])
         else:
             result["cost"] = self.cost.subcmag(result["variables"])
@@ -161,7 +161,7 @@ class GeometricProgram(object):
         result["sensitivities"]["monomials"] = nu
         result["sensitivities"]["posynomials"] = la
 
-        self.result = result  # NOTE: SIDE EFFECTS AHOY
+        self.result = result  # NOTE: SIDE EFFECTS
 
         if solver_out.get("status", None) not in ["optimal", "OPTIMAL"]:
             raise RuntimeWarning("final status of solver '%s' was '%s', "

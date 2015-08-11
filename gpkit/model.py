@@ -336,7 +336,7 @@ class Model(object):
         self.solution = solution
         return solution
 
-    # For now, let's require the use to use model.substitutions.update()
+    # For now, let's require users to use model.substitutions.update()
     #
     # def sub(self, substitutions, val=None):
     #     "Returns model with additional substitutions."
