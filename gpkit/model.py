@@ -45,13 +45,14 @@ except:
 
 
 class Model(object):
-    """Modification-friendly representation of an optimization problem.
+    """Symbolic representation of an optimization problem.
 
     The Model class is used both directly to create models with constants and
     sweeps, and indirectly inherited to create custom model classes.
 
     Arguments
-    ---------    cost : Signomial (optional)
+    ---------
+    cost : Signomial (optional)
         If this is undeclared, the Model will get its cost and constraints
         from its "setup" method. This allows for easy inheritance.
 
@@ -88,7 +89,7 @@ class Model(object):
         if substitutions is None:
             substitutions = {}
 
-        self.cost = cost
+        self.cost = Signomial(cost)
         self.constraints = list(constraints)
         self.substitutions = dict(substitutions)
 

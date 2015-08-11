@@ -30,7 +30,7 @@ class ModuleShortener(object):
     w/ModuleShortener:  MSK._makeemptytask
 
     Arguments
-    ----------
+    ---------
     stub : str
       String to append to all getattrs (the string "MSK_" above)
     module : str
