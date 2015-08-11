@@ -12,13 +12,9 @@
 
 """
 
-from math import exp
-from ctypes import CDLL
 from ctypes import pointer as ptr
 from ctypes import POINTER as ptr_factory
 from ctypes import c_double, c_int, c_void_p
-from os import sep as os_sep
-from os.path import dirname as os_path_dirname
 
 try:
     from .lib import expopt_h
@@ -26,12 +22,12 @@ except Exception as e:
     raise ImportError("Could not load MOSEK library: "+repr(e))
 
 
-class module_shortener(object):
+class ModuleShortener(object):
     """Makes ctype calls look like C calls, but still use namespaces.
 
-          example in C:  MSK_makeemptytask
-        regular python:  MSK.MSK_makeemptytask
-    w/module_shortener:  MSK._makeemptytask
+         example in C:  MSK_makeemptytask
+       regular python:  MSK.MSK_makeemptytask
+    w/ModuleShortener:  MSK._makeemptytask
 
     Parameters
     ----------
@@ -59,7 +55,7 @@ class module_shortener(object):
         return getattr(self.module, self.stub+attribute)
 
 
-MSK = module_shortener("MSK", expopt_h)
+MSK = ModuleShortener("MSK", expopt_h)
 
 MSK._SOL_STA_LOOKUPTABLE = ["UNKNOWN",
                             "OPTIMAL",

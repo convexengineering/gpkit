@@ -9,16 +9,14 @@
 
 import numpy as np
 
-from time import time
 from pprint import pformat
 from collections import defaultdict
 from functools import reduce as functools_reduce
 from operator import mul, add
-from copy import deepcopy
 from collections import Iterable
 
 from .nomials import Constraint, MonoEQConstraint
-from .nomials import Posynomial, Monomial, Signomial
+from .nomials import Monomial, Signomial
 from .varkey import VarKey
 from .substitution import substitution, getsubs
 
@@ -56,10 +54,7 @@ class Model(object):
                 raise TypeError("Models can only be created without a cost"
                                 " if they have a 'setup' method.")
             try:
-                if "name" in kwargs:
-                    name = kwargs.pop("name")
-                else:
-                    name = self.__class__.__name__
+                name = kwargs.pop("name", self.__class__.__name__)
                 setup = self.setup(*args, **kwargs)
             except:
                 print("The 'setup' method of this model had an error.")
@@ -105,7 +100,7 @@ class Model(object):
         posynomials = [self.cost]
         for constraint in constraints:
             if isinstance(constraint, MonoEQConstraint):
-                posynomials += [constraint.leq, constraint.geq]
+                posynomials.extend([constraint.leq, constraint.geq])
             else:
                 posynomials.append(constraint)
         return posynomials
@@ -165,7 +160,7 @@ class Model(object):
 
         if sweep:
             if len(sweep) == 1:
-                sweep_grids = np.array(list(sweep.values()))
+                sweep_grids = np.array(sweep.values())
             else:
                 sweep_grids = np.meshgrid(*list(sweep.values()))
 
@@ -174,8 +169,8 @@ class Model(object):
                            for (var, grid) in zip(sweep, sweep_grids)}
 
             if verbosity > 0:
-                print("Solving for %i variables over %i passes." % (
-                      len(self.variables), N_passes))
+                print("Solving for %i variables over %i passes." %
+                      (len(self.variables), N_passes))
 
             def solve_pass(i):
                 this_pass = {var: sweep_vect[i]
@@ -186,8 +181,8 @@ class Model(object):
                 this_pass.update(linked)
                 constants_ = constants
                 constants_.update(this_pass)
-                program, subs, mmaps = self.formProgram(programType, posynomials,
-                                                        constants_)
+                program, subs, mmaps = (
+                    self.formProgram(programType, posynomials, constants_))
 
                 try:
                     result = program.solve(*args, **kwargs)

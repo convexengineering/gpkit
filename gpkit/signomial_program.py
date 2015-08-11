@@ -1,15 +1,12 @@
+"""Implement the SignomialProgram class"""
 import numpy as np
 
 from time import time
 from functools import reduce as functools_reduce
-from operator import add, mul
+from operator import mul
 
 from .nomials import Posynomial
 from .substitution import getsubs
-from .small_classes import CootMatrix
-from .small_scripts import locate_vars
-from .small_scripts import mag
-
 from .geometric_program import GeometricProgram
 
 
@@ -113,7 +110,6 @@ class SignomialProgram(object):
                and (iterations < 2 or
                     abs(prevcost-cost)/(prevcost + cost) > reltol)):
             posy_approxs = []
-            abort = -1
             for p, n in zip(self.posynomials, self.negynomials):
                 if n is None:
                     posy_approx = p
