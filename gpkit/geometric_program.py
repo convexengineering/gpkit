@@ -135,8 +135,7 @@ class GeometricProgram(object):
         assert len(self.varlocs) == len(solver_out['primal'])
         result["variables"] = dict(zip(self.varlocs,
                                        np.exp(solver_out['primal']).ravel()))
-        if "objective" in solver_out and "mosek" not in solver:
-            # HACK: "mosek" condition added for issue #296
+        if "objective" in solver_out:
             result["cost"] = float(solver_out["objective"])
         else:
             result["cost"] = self.cost.subcmag(result["variables"])
@@ -294,9 +293,10 @@ def genA(exps, varlocs):
                 raise RuntimeWarning("Unexpected varsign %s" % varsign)
             missingbounds[var] = bound
 
-    # add subbed-out monomials at the end
-    if not exps[-1]:
-        A.append(len(exps)-1, 0, 0)
+    # add constant terms
+    for i, exp in enumerate(exps):
+        if not exp:
+            A.append(i, 0, 0)
 
     A.update_shape()
 
