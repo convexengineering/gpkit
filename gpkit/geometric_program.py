@@ -12,7 +12,7 @@ from .small_scripts import mag
 
 
 class GeometricProgram(object):
-    """Prepares a collection of posynomials for a GP solver.
+    """Standard mathematical representation of a GP.
 
     Arguments
     ---------
@@ -20,6 +20,8 @@ class GeometricProgram(object):
         Posynomial to minimize when solving
     constraints : list of Posynomials
         Constraints to maintain when solving (implicitly Posynomials <= 1)
+        GeometricProgram does not accept equality constraints (e.g. x == 1);
+         instead use two inequality constraints (e.g. x <= 1, 1/x <= 1)
     verbosity : int (optional)
         If verbosity is greater than zero, warns about missing bounds
         on creation.
@@ -41,8 +43,7 @@ class GeometricProgram(object):
         self.posynomials = [cost] + list(constraints)
         self.cs = np.hstack((mag(p.cs) for p in self.posynomials))
         if not all(self.cs > 0):
-            raise ValueError("GeometricPrograms cannot contain coefficients"
-                             " less than or equal to zero.")
+            raise ValueError("GeometricPrograms cannot contain Signomials.")
         self.exps = functools_reduce(add, (p.exps for p in self.posynomials))
         self.varlocs, self.varkeys = locate_vars(self.exps)
         # k [j]: number of monomials (columns of F) present in each constraint
@@ -79,12 +80,23 @@ class GeometricProgram(object):
         Returns
         -------
         result : dict
-            A dictionary containing the translated solver result.
+            A dictionary containing the translated solver result; keys below.
+
+            cost : float
+                The value of the objective at the solution.
+            variables : dict
+                The value of each variable at the solution.
+            sensitivities : dict
+                monomials : array of floats
+                    Each monomial's dual variable value at the solution.
+                posynomials : array of floats
+                    Each posynomials's dual variable value at the solution.
         """
         if solver is None:
             from . import settings
-            solver = settings['installed_solvers'][0]
-            if not solver:
+            if settings['installed_solvers']:
+                solver = settings['installed_solvers'][0]
+            else:
                 raise ValueError("No solver was given; perhaps gpkit was not"
                                  " properly installed, or found no solvers"
                                  " during the installation process.")

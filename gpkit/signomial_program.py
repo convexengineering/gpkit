@@ -5,7 +5,7 @@ from time import time
 from functools import reduce as functools_reduce
 from operator import mul
 
-from .nomials import Posynomial
+from .nomials import Posynomial, Signomial
 from .substitution import getsubs
 from .geometric_program import GeometricProgram
 
@@ -56,12 +56,12 @@ class SignomialProgram(object):
             self.negynomials.append(negy)
 
         if not self.negvarkeys:
-            raise ValueError("SignomialPrograms must contain coefficients"
-                             " less than zero.")
+            raise ValueError("SignomialPrograms must contain at least one"
+                             " Signomial.")
 
-    def solve(self, solver=None, verbosity=1, x0={}, reltol=1e-4,
+    def localsolve(self, solver=None, verbosity=1, x0={}, reltol=1e-4,
               iteration_limit=50, *args, **kwargs):
-        """Solves a SignomialProgram and returns the solution.
+        """Locally solves a SignomialProgram and returns the solution.
 
         Arguments
         ---------

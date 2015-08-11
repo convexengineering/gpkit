@@ -1,15 +1,41 @@
 import numpy as np
 
 from .posyarray import PosyArray
+from .nomials import Monomial
 from .small_classes import Strings
 from .small_classes import DictOfLists
-from .small_scripts import results_table
 from .small_scripts import unitstr
 from .small_scripts import mag
 
 
 class SolutionArray(DictOfLists):
-    "DictofLists extended with posynomial substitution."
+    """A dictionary (of dictionaries) of lists, with convenience methods.
+
+    Items
+    -----
+    cost : array
+    variables: dict of arrays
+    sensitivities: dict containing:
+        monomials : array
+        posynomials : array
+        variables: dict of arrays
+
+    Example
+    -------
+    >>> import gpkit
+    >>> import numpy as np
+    >>> x = gpkit.Variable("x")
+    >>> x_min = gpkit.Variable("x_{min}", 2)
+    >>> sol = gpkit.Model(x, [x >= x_min]).solve(verbosity=0)
+    >>> # ACCESS VALUES
+    >>> values = [sol(x), sol.subinto(x), sol["variables"]["x"]]
+    >>> assert all(np.array(values) == 2)
+    >>> # ACCESS SENSITIVITIES
+    >>> senss = [sol.sens(x_min), sol.senssubinto(x_min)]
+    >>> senss.append(sol["sensitivities"]["variables"]["x_{min}"])
+    >>> assert all(np.array(senss) == 1)
+
+    """
 
     def __len__(self):
         try:
@@ -17,15 +43,15 @@ class SolutionArray(DictOfLists):
         except TypeError:
             return 1
 
-    def __call__(self, p):
-        return mag(self.subinto(p).c)
-
     def getvars(self, *args):
         out = [self["variables"][arg] for arg in args]
         if len(out) == 1:
             return out[0]
         else:
             return out
+
+    def __call__(self, p):
+        return mag(self.subinto(p).c)
 
     def subinto(self, p):
         "Returns PosyArray of each solution substituted into p."
@@ -36,6 +62,9 @@ class SolutionArray(DictOfLists):
                               for i in range(len(self["cost"]))])
         else:
             return p.sub(self["variables"])
+
+    def sens(self, p):
+        return self.senssubinto(p)
 
     def senssubinto(self, p):
         """Returns array of each solution's sensitivity substituted into p
@@ -53,7 +82,7 @@ class SolutionArray(DictOfLists):
                            require_positive=False)
             assert isinstance(subbed, Monomial)
             assert not subbed.exp
-            return subbed.c
+            return mag(subbed.c)
 
     def table(self,
               tables=["cost", "freevariables", "sweepvariables",
@@ -97,3 +126,56 @@ class SolutionArray(DictOfLists):
                                    minval=1e-2,
                                    printunits=False)]
         return "\n".join(strs)
+
+
+def results_table(data, title, minval=0, printunits=True, fixedcols=True,
+                  varfmt="%s : ", valfmt="%-.4g ", vecfmt="%-8.3g"):
+    """
+    Pretty string representation of a dict of VarKeys
+    Iterable values are handled specially (partial printing)
+
+    Arguments
+    ---------
+    data: dict whose keys are VarKey's
+        data to represent in table
+    title: string
+    minval: float
+        skip values with all(abs(value)) < minval
+    printunits: bool
+    fixedcols: bool
+        if True, print rhs (val, units, label) in fixed-width cols
+    varfmt: string
+        format for variable names
+    valfmt: string
+        format for scalar values
+    vecfmt: string
+        format for vector values
+    """
+    lines = []
+    decorated = [(bool(v.shape) if isinstance(v, Iterable) else False,
+                 (varfmt % k),
+                 i, k, v) for i, (k, v) in enumerate(data.items())
+                 if (np.max(abs(v)) >= minval) or np.any(np.isnan(v))]
+    decorated.sort()
+    for isvector, varstr, _, var, val in decorated:
+        label = var.descr.get('label', '')
+        units = unitstr(var, into=" [%s] ", dimless="") if printunits else ""
+        if isvector:
+            vals = [vecfmt % v for v in val[:4]]
+            ellipsis = " ..." if len(val) > 4 else ""
+            valstr = "[ %s%s ] " % ("  ".join(vals), ellipsis)
+        else:
+            valstr = valfmt % val
+        valstr = valstr.replace("nan", " - ")
+        lines.append([varstr, valstr, units, label])
+    if lines:
+        maxlens = np.max([map(len, line) for line in lines], axis=0)
+        if not fixedcols:
+            maxlens = [maxlens[0], 0, 0, 0]
+        dirs = ['>', '<', '<', '<']
+        assert len(dirs) == len(maxlens)  # check lengths before using zip
+        fmts = ['{0:%s%s}' % (direc, L) for direc, L in zip(dirs, maxlens)]
+    lines = [[fmt.format(s) for fmt, s in zip(fmts, line)]
+             for line in lines]
+    lines = [title] + ["-"*len(title)] + [''.join(l) for l in lines] + [""]
+    return "\n".join(lines)

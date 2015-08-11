@@ -141,7 +141,29 @@ def locate_vars(exps):
 
 
 def sort_and_simplify(exps, cs, return_map=False):
-    "Reduces the number of monomials, and casts them to a sorted form."
+    """Reduces the number of monomials, and casts them to a sorted form.
+
+    Arguments
+    ---------
+
+    exps : list of Hashvectors
+        The exponents of each monomial
+    cs : array of floats or Quantities
+        The coefficients of each monomial
+    return_map : bool (optional)
+        Whether to return the map of which monomials combined to form a
+        simpler monomial, and their fractions of that monomial's final c.
+
+    Returns
+    -------
+
+    exps : list of Hashvectors
+        Exponents of simplified monomials.
+    cs : array of floats or Quantities
+        Coefficients of simplified monomials.
+    mmap : list of tuples
+        List for each original monomial of (destination index, fraction)
+    """
     matches = defaultdict(float)
     if return_map:
         expmap = defaultdict(dict)
@@ -174,59 +196,6 @@ def sort_and_simplify(exps, cs, return_map=False):
             for j in expmap[exp]:
                 mmap[j] = (i, expmap[exp][j]/c)
         return exps_, cs_, mmap
-
-
-def results_table(data, title, minval=0, printunits=True, fixedcols=True,
-                  varfmt="%s : ", valfmt="%-.4g ", vecfmt="%-8.3g"):
-    """
-    Pretty string representation of a dict of VarKeys
-    Iterable values are handled specially (partial printing)
-
-    Arguments
-    ---------
-    data: dict whose keys are VarKey's
-        data to represent in table
-    title: string
-    minval: float
-        skip values with all(abs(value)) < minval
-    printunits: bool
-    fixedcols: bool
-        if True, print rhs (val, units, label) in fixed-width cols
-    varfmt: string
-        format for variable names
-    valfmt: string
-        format for scalar values
-    vecfmt: string
-        format for vector values
-    """
-    lines = []
-    decorated = [(bool(v.shape) if isinstance(v, Iterable) else False,
-                 (varfmt % k),
-                 i, k, v) for i, (k, v) in enumerate(data.items())
-                 if (np.max(abs(v)) >= minval) or np.any(np.isnan(v))]
-    decorated.sort()
-    for isvector, varstr, _, var, val in decorated:
-        label = var.descr.get('label', '')
-        units = unitstr(var, into=" [%s] ", dimless="") if printunits else ""
-        if isvector:
-            vals = [vecfmt % v for v in val[:4]]
-            ellipsis = " ..." if len(val) > 4 else ""
-            valstr = "[ %s%s ] " % ("  ".join(vals), ellipsis)
-        else:
-            valstr = valfmt % val
-        valstr = valstr.replace("nan", " - ")
-        lines.append([varstr, valstr, units, label])
-    if lines:
-        maxlens = np.max([map(len, line) for line in lines], axis=0)
-        if not fixedcols:
-            maxlens = [maxlens[0], 0, 0, 0]
-        dirs = ['>', '<', '<', '<']
-        assert len(dirs) == len(maxlens)  # check lengths before using zip
-        fmts = ['{0:%s%s}' % (direc, L) for direc, L in zip(dirs, maxlens)]
-    lines = [[fmt.format(s) for fmt, s in zip(fmts, line)]
-             for line in lines]
-    lines = [title] + ["-"*len(title)] + [''.join(l) for l in lines] + [""]
-    return "\n".join(lines)
 
 
 def flatten(ible, classes):

@@ -29,7 +29,7 @@ class ModuleShortener(object):
        regular python:  MSK.MSK_makeemptytask
     w/ModuleShortener:  MSK._makeemptytask
 
-    Parameters
+    Arguments
     ----------
     stub : str
       String to append to all getattrs (the string "MSK_" above)
@@ -57,19 +57,21 @@ class ModuleShortener(object):
 
 MSK = ModuleShortener("MSK", expopt_h)
 
+# lookup table from mosek.h, "MSKsolsta_enum"
+# switched where indicated because MOSEK solves the dual GP problem
 MSK._SOL_STA_LOOKUPTABLE = ["UNKNOWN",
                             "OPTIMAL",
-                            "DUAL_FEAS",  # switched with below for GP
-                            "PRIM_FEAS",
+                            "DUAL_FEAS",  # originally position 3
+                            "PRIM_FEAS",  # originally position 2
                             "PRIM_AND_DUAL_FEAS",
-                            "DUAL_INFEAS_CER",  # switched with below
-                            "PRIM_INFEAS_CER",
+                            "DUAL_INFEAS_CER",  # originally position 6
+                            "PRIM_INFEAS_CER",  # originally position 5
                             "NEAR_OPTIMAL",
-                            "NEAR_DUAL_FEAS",  # switched with below
-                            "NEAR_PRIM_FEAS",
+                            "NEAR_DUAL_FEAS",  # originally position 9
+                            "NEAR_PRIM_FEAS",  # originally position 8
                             "NEAR_PRIM_AND_DUAL_FEAS",
-                            "NEAR_DUAL_INFEAS_CER",  # switched with below
-                            "NEAR_PRIM_INFEAS_CER",
+                            "NEAR_DUAL_INFEAS_CER",  # originally position 12
+                            "NEAR_PRIM_INFEAS_CER",  # originally position 11
                             "INTEGER_OPTIMAL",
                             "NEAR_INTEGER_OPTIMAL"]
 
@@ -77,7 +79,7 @@ MSK._SOL_STA_LOOKUPTABLE = ["UNKNOWN",
 def c_array(py_array, c_type):
     """Makes a C array from a python list or array and a C datatype
 
-    Parameters
+    Arguments
     ----------
       py_array: array-like data to convert
       c_type: C datatype to which elements of py_array will be converted
@@ -101,7 +103,7 @@ def printcb(void, msg):
         `print msg[:-1]`
     before the return statement.
 
-    Parameters
+    Arguments
     ----------
     void : None
       Placeholder to emulate C function
@@ -130,7 +132,7 @@ def imize(c, A, p_idxs, *args, **kwargs):
     m is the number of variables in the gp
     p is the number of posynomials in the gp
 
-    Parameters
+    Arguments
     ----------
     c : floats array of shape n
         Coefficients of each monomial

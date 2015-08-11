@@ -15,7 +15,7 @@ from functools import reduce as functools_reduce
 from operator import mul, add
 from collections import Iterable
 
-from .nomials import Constraint, MonoEQConstraint
+from .nomials import Constraint, MonoEQConstraint, Posynomial
 from .nomials import Monomial, Signomial
 from .varkey import VarKey
 from .substitution import substitution, getsubs
@@ -45,10 +45,29 @@ except:
 
 
 class Model(object):
+    """Modification-friendly representation of an optimization problem.
+
+    The Model class is used both directly to create models with constants and
+    sweeps, and indirectly inherited to create custom model classes.
+
+    Arguments
+    ---------    cost : Signomial (optional)
+        If this is undeclared, the Model will get its cost and constraints
+        from its "setup" method. This allows for easy inheritance.
+
+    constraints : list of Constraints (optional)
+        Defaults to an empty list.
+
+    substitutions : dict (optional)
+        This dictionary will be substituted into the problem before solving,
+        and also allows the declaration of sweeps and linked sweeps.
+
+    *args, **kwargs : Passed to the setup method for inheritance.
+    """
     model_nums = defaultdict(int)
 
-    def __init__(self, cost=None, constraints=[],
-                 substitutions={}, *args, **kwargs):
+    def __init__(self, cost=None, constraints=None, substitutions=None,
+                 *args, **kwargs):
         if cost is None:
             if not hasattr(self, "setup"):
                 raise TypeError("Models can only be created without a cost"
@@ -64,6 +83,11 @@ class Model(object):
             except TypeError:
                 raise TypeError("Model 'setup' methods must return "
                                 "(cost, constraints).")
+        if constraints is None:
+            constraints = []
+        if substitutions is None:
+            substitutions = {}
+
         self.cost = cost
         self.constraints = list(constraints)
         self.substitutions = dict(substitutions)
@@ -73,7 +97,7 @@ class Model(object):
             k = Model.model_nums[name]
             Model.model_nums[name] = k+1
             name += str(k) if k else ""
-            for p in posynomials:
+            for p in self.posynomials:
                 for k in p.varlocs:
                     if "model" not in k.descr:
                         newk = VarKey(k, model=name)
@@ -129,21 +153,109 @@ class Model(object):
     # TODO: add get_item
 
     def solve(self, solver=None, verbosity=2, skipfailures=True, *args, **kwargs):
-        #if not all([isinstance(c, Posynomial) for c in constraints]):
-        #    raise ValueError("'solve()' can only be called on models"
-        #                     " that do not contain Signomials.")
-        return self._solve("gp", solver, verbosity, skipfailures, *args, **kwargs)
+        """Forms a GeometricProgram and attempts to solve it.
+
+        Arguments
+        ---------
+        solver : string or function (optional)
+            If None, uses the default solver found in installation.
+
+        verbosity : int (optional)
+            If greater than 0 prints runtime messages.
+            Is decremented by one and then passed to programs.
+
+        skipfailures : bool (optional)
+            If True, when a solve errors during a sweep, skip it.
+
+        *args, **kwargs : Passed to solver
+
+        Returns
+        -------
+        sol : SolutionArray
+            See the SolutionArray documentation for details.
+
+        Raises
+        ------
+        ValueError if called on a model with Signomials.
+        RuntimeWarning if an error occurs in solving or parsing the solution.
+        """
+        try:
+            return self._solve("gp", solver, verbosity, skipfailures, *args, **kwargs)
+        except ValueError:
+            raise ValueError("'solve()' can only be called on models that do"
+                             " not contain Signomials, because only those"
+                             " models guarantee a global solution."
+                             " For a local solution, try 'localsolve()'.")
 
     def localsolve(self, solver=None, verbosity=2, skipfailures=True, *args, **kwargs):
-        #if all([isinstance(c, Posynomial) for c in constraints]):
-        #    raise ValueError("'localsolve()' can only be called on models"
-        #                     " that contain Signomials.")
-        return self._solve("sp", solver, verbosity, skipfailures, *args, **kwargs)
+        """Forms a SignomialProgram and attempts to locally solve it.
+
+        Arguments
+        ---------
+        solver : string or function (optional)
+            If None, uses the default solver found in installation.
+
+        verbosity : int (optional)
+            If greater than 0 prints runtime messages.
+            Is decremented by one and then passed to programs.
+
+        skipfailures : bool (optional)
+            If True, when a solve errors during a sweep, skip it.
+
+        *args, **kwargs : Passed to solver
+
+        Returns
+        -------
+        sol : SolutionArray
+            See the SolutionArray documentation for details.
+
+        Raises
+        ------
+        ValueError if called on a model without Signomials.
+        RuntimeWarning if an error occurs in solving or parsing the solution.
+        """
+        try:
+            return self._solve("sp", solver, verbosity, skipfailures, *args, **kwargs)
+        except ValueError:
+            raise ValueError("'localsolve()' can only be called on models that"
+                             " contain Signomials, because such"
+                             " models have only local solutions. Models"
+                             " without Signomials have global solutions,"
+                             " so try using 'solve()'.")
 
     def _solve(self, programType, solver, verbosity, skipfailures, *args, **kwargs):
+        """Generates a program and solves it, sweeping as appropriate.
+
+        Arguments
+        ---------
+        solver : string or function (optional)
+            If None, uses the default solver found in installation.
+
+        programType : "gp" or "sp"
+
+        verbosity : int (optional)
+            If greater than 0 prints runtime messages.
+            Is decremented by one and then passed to programs.
+
+        skipfailures : bool (optional)
+            If True, when a solve errors during a sweep, skip it.
+
+        *args, **kwargs : Passed to solver
+
+        Returns
+        -------
+        sol : SolutionArray
+            See the SolutionArray documentation for details.
+
+        Raises
+        ------
+        ValueError if programType and model constraints don't match.
+        RuntimeWarning if an error occurs in solving or parsing the solution.
+        """
         posynomials = self.posynomials
         self.unsubbed_cs = np.hstack((mag(p.cs) for p in posynomials))
         self.unsubbed_exps = functools_reduce(add, (p.exps for p in posynomials))
+        # NOTE these side effects should be removed
         (self.unsubbed_varlocs,
          self.unsubbed_varkeys) = locate_vars(self.unsubbed_exps)
 
@@ -181,12 +293,15 @@ class Model(object):
                 this_pass.update(linked)
                 constants_ = constants
                 constants_.update(this_pass)
-                program, subs, mmaps = (
-                    self.formProgram(programType, posynomials, constants_))
+                program, mmaps = self.formProgram(programType, posynomials,
+                                                  constants_, verbosity)
 
                 try:
-                    result = program.solve(*args, **kwargs)
-                    sol = self.parse_result(result, subs, mmaps,
+                    if programType == "gp":
+                        result = program.solve(*args, **kwargs)
+                    elif programType == "sp":
+                        result = program.localsolve(*args, **kwargs)
+                    sol = self.parse_result(result, constants_, mmaps,
                                             sweep, linkedsweep)
                     return program, sol
                 except (RuntimeWarning, ValueError):
@@ -207,11 +322,13 @@ class Model(object):
                     self.program.append(program)
                     solution.append(result)
         else:
-            self.program, subs, mmaps = self.formProgram(programType,
-                                                         posynomials,
-                                                         constants)
-            result = self.program.solve(*args, **kwargs)
-            sol = self.parse_result(result, subs, mmaps)
+            self.program, mmaps = self.formProgram(programType, posynomials,
+                                                   constants, verbosity)
+            if programType == "gp":
+                result = self.program.solve(*args, **kwargs)
+            elif programType == "sp":
+                result = self.program.localsolve(*args, **kwargs)
+            sol = self.parse_result(result, constants, mmaps)
             solution.append(sol)
 
         solution.program = self.program
@@ -219,13 +336,49 @@ class Model(object):
         self.solution = solution
         return solution
 
-    def sub(self, substitutions, val=None):
-        if val is not None:
-            substitutions = {substitutions: val}
-        self.substitutions.update(substitutions)
-        # edits in place...should it return a new model instead?
+    # For now, let's require the use to use model.substitutions.update()
+    #
+    # def sub(self, substitutions, val=None):
+    #     "Returns model with additional substitutions."
+    #     if val is not None:
+    #         substitutions = {substitutions: val}
+    #     subs = dict(self.substitutions)
+    #     subs.update(substitutions)
+    #     return Model(self.cost, self.constraints, subs)
+    #
+    # def sub_update(self, substitutions, val=None):
+    #     "Updates model with new substitutions."
+    #     if val is not None:
+    #         substitutions = {substitutions: val}
+    #     self.substitutions.update(substitutions)
 
-    def formProgram(self, programType, signomials, subs):
+    def formProgram(self, programType, signomials, subs, verbosity=2):
+        """Generates a program and solves it, sweeping as appropriate.
+
+        Arguments
+        ---------
+        programType : "gp" or "sp"
+
+        signomials : list of Signomials
+            The first Signomial is the cost function.
+
+        subs : dict
+            Substitutions to do before solving.
+
+        verbosity : int (optional)
+            If greater than 0 prints runtime messages.
+            Is decremented by one and then passed to program inits.
+
+        Returns
+        -------
+        program : GP or SP
+        mmaps : Map from initial monomials to substitued and simplified one.
+                See small_scripts.sort_and_simplify for more details.
+
+        Raises
+        ------
+        ValueError if programType and model constraints don't match.
+        """
         signomials_, mmaps = [], []
         for s in signomials:
             _, exps, cs, _ = substitution(s.varlocs, s.varkeys,
@@ -241,9 +394,9 @@ class Model(object):
         constraints = signomials_[1:]
 
         if programType in ["gp", "GP"]:
-            return GeometricProgram(cost, constraints), subs, mmaps
+            return GeometricProgram(cost, constraints, verbosity-1), mmaps
         elif programType in ["sp", "SP"]:
-            return SignomialProgram(cost, constraints), subs, mmaps
+            return SignomialProgram(cost, constraints), mmaps
         else:
             raise ValueError("unknown program type %s." % programType)
 
@@ -287,7 +440,9 @@ class Model(object):
                                  for var, val in subs.items()]) +
                          ["\\end{array}"])
 
-    def parse_result(self, result, constants, mmaps, sweep={}, linkedsweep={}):
+    def parse_result(self, result, constants, mmaps, sweep={}, linkedsweep={},
+                     freevar_sensitivity_tolerance=1e-4,
+                     localmodel_sensitivity_requirement=0.1):
         cost = result["cost"]
         freevariables = dict(result["variables"])
         sweepvariables = {var: val for var, val in constants.items()
@@ -334,11 +489,12 @@ class Model(object):
 
         # free-variable sensitivities must be < arbitrary epsilon 1e-4
         for var, S in sensitivities["variables"].items():
-            if var in freevariables and abs(S) > 1e-4:
+            if var in freevariables and abs(S) > freevar_sensitivity_tolerance:
                 print("free variable too sensitive:"
                       " S_{%s} = %0.2e" % (var, S))
 
-        localexp = {var: S for (var, S) in sens_vars.items() if abs(S) >= 0.1}
+        localexp = {var: S for (var, S) in sens_vars.items()
+                    if abs(S) >= localmodel_sensitivity_requirement}
         localcs = (variables[var]**-S for (var, S) in localexp.items())
         localc = functools_reduce(mul, localcs, cost)
         localmodel = Monomial(localexp, localc)
@@ -370,6 +526,7 @@ class Model(object):
 
                         del vardict[var]
 
+        # TODO: remove after issue #269 is resolved
         # for veckey in veckeys:
         #     # TODO: print index that error occured at
         #     if any(np.isnan(variables[veckey])):
@@ -386,6 +543,7 @@ class Model(object):
 
 
 def separate_subs(substitutions, varkeys, varlocs):
+    "Seperates sweep substitutions from constants."
     # TODO: refactor this
     sweep, linkedsweep = {}, {}
     constants = dict(substitutions)

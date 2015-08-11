@@ -32,7 +32,6 @@ def imize_fn(path=None):
 
     Arguments
     ---------
-
     path : str (optional)
         The directory in which to put the MOSEK CLI input/output files.
         By default uses a system-appropriate temp directory.
@@ -41,7 +40,7 @@ def imize_fn(path=None):
         path = tempfile.mkdtemp()
     filename = path + os.sep + "gpkit_mosek"
     os.environ['PATH'] = (os.environ['PATH'] + ':%s' %
-                          settings["mosek_bin_dir"][0])
+                          settings["mosek_bin_dir"])
 
     def imize(c, A, p_idxs, *args, **kwargs):
         """Interface to the MOSEK "mskexpopt" command line solver
@@ -53,8 +52,8 @@ def imize_fn(path=None):
         m is the number of variables in the gp
         p is the number of posynomials in the gp
 
-        Parameters
-        ----------
+        Arguments
+        ---------
         c : floats array of shape n
             Coefficients of each monomial
         A: floats array of shape (m,n)

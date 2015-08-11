@@ -96,13 +96,14 @@ class TestGPSubs(unittest.TestCase):
         x = Variable("x")
         y = VectorVariable(2, "y")
         m = Model(x, [x >= y.prod()])
-        m.sub(y, ('sweep', [[2, 3], [5, 7, 11]]))
+        m.substitutions.update({y: ('sweep', [[2, 3], [5, 7, 11]])})
         a = m.solve(verbosity=0)["cost"]
         b = [10, 14, 22, 15, 21, 33]
         # below line fails with changing dictionary keys in py3
         # self.assertTrue(all(abs(a-b)/(a+b) < 1e-7))
         m = Model(x, [x >= y.prod()])
-        m.sub(y, ('sweep', [[2, 3], [5, 7], [9, 11], [13, 15]]))
+        m.substitutions.update({y: ('sweep',
+                                    [[2, 3], [5, 7], [9, 11], [13, 15]])})
         self.assertRaises(ValueError, m.solve)
 
     def test_vector_init(self):

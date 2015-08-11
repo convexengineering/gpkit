@@ -70,7 +70,7 @@ if __name__=="__main__":
     usage = 'usage: %prog [options] /path/to/header.h ...'
     op = optparse.OptionParser(usage=usage)
 
-    # Parameters
+    # Arguments
     op.add_option('-o', '--output', dest='output', metavar='FILE',
         help='write wrapper to FILE [default stdout]')
     op.add_option('-l', '--library', dest='libraries', action='append',

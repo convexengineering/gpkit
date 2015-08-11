@@ -88,6 +88,8 @@ def disable_signomials():
 
 from .nomials import Monomial, Posynomial, Signomial
 from .variables import Variable, VectorVariable, ArrayVariable
+from .geometric_program import GeometricProgram
+from .signomial_program import SignomialProgram
 from .varkey import VarKey
 from .posyarray import PosyArray
 from .model import Model
@@ -165,7 +167,12 @@ try:
     with open(settings_path) as settingsfile:
         lines = [line[:-1].split(" : ") for line in settingsfile
                  if len(line.split(" : ")) == 2]
-        settings = {name: value.split(", ") for (name, value) in lines}
+        settings = {}
+        for name, value in lines:
+            if ", " in value:
+                settings[name] = value.split(", ")
+            else:
+                settings[name] = value
     try:
         del lines
         del line
@@ -173,7 +180,7 @@ try:
         pass
 except IOError:
     print("Could not load settings file.")
-    settings = {"installed_solvers": [""]}
+    settings = {"installed_solvers": ""}
 
 try:
     cfg = get_ipython().config
