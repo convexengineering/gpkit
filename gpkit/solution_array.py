@@ -156,8 +156,8 @@ def results_table(data, title, minval=0, printunits=True, fixedcols=True,
     lines = []
     decorated = []
     for i, (k, v) in enumerate(data.items()):
-        notnan = ~np.isnan(v)
-        if np.any(notnan) and np.max(np.abs(np.array(v)[notnan])) >= minval:
+        notnan = ~np.isnan([v])
+        if np.any(notnan) and np.max(np.abs(np.array([v])[notnan])) >= minval:
             b = isinstance(v, Iterable) and bool(v.shape)
             decorated.append((b, (varfmt % k), i, k, v))
     decorated.sort()
