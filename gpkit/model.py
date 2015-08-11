@@ -386,12 +386,12 @@ class Model(object):
         return solution
 
     def gp(self, verbosity=2):
-        return self.formProgram("gp", self.signomials, self.allsubs,
-                                verbosity)[0]
+        m, _ = self.formProgram("gp", self.signomials, self.allsubs, verbosity)
+        return m
 
     def sp(self, verbosity=2):
-        return self.formProgram("sp", self.signomials, self.allsubs,
-                                verbosity)[0]
+        m, _ = self.formProgram("sp", self.signomials, self.allsubs, verbosity)
+        return m
 
     def formProgram(self, programType, signomials, subs, verbosity=2):
         """Generates a program and solves it, sweeping as appropriate.
