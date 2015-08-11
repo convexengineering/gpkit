@@ -98,11 +98,11 @@ class Model(object):
             k = Model.model_nums[name]
             Model.model_nums[name] = k+1
             name += str(k) if k else ""
-            for p in self.posynomials:
-                for k in p.varlocs:
+            for s in self.signomials:
+                for k in s.varlocs:
                     if "model" not in k.descr:
                         newk = VarKey(k, model=name)
-                        p.varlocs[newk] = p.varlocs.pop(k)
+                        s.varlocs[newk] = s.varlocs.pop(k)
                 for exp in p.exps:
                     for k in exp:
                         if "model" not in k.descr:
@@ -110,14 +110,21 @@ class Model(object):
                             exp[newk] = exp.pop(k)
 
     @property
+    def allsubs(self):
+        subs = {var: var.descr["value"]
+                for var in self.variables if "value" in var.descr}
+        subs.update(self.substitutions)
+        return subs
+
+    @property
     def variables(self):
         variables = {}
-        for p in self.posynomials:
-            variables.update({vk: Variable(**vk.descr) for vk in p.varlocs})
+        for s in self.signomials:
+            variables.update({vk: Variable(**vk.descr) for vk in s.varlocs})
         return variables
 
     @property
-    def posynomials(self):
+    def signomials(self):
         constraints = tuple(flatten(self.constraints, Constraint))
         # TODO: parse constraints during flattening, calling Posyarray on
         #       anything that holds only posys and then saving that list.
@@ -129,6 +136,59 @@ class Model(object):
             else:
                 posynomials.append(constraint)
         return posynomials
+
+    # TODO: replcae the below with a dynamically created NomialData 'unsubbed'
+    @property
+    def unsubbed_cs(self):
+        return np.hstack((mag(s.cs) for s in self.signomials))
+
+    @property
+    def unsubbed_exps(self):
+     return functools_reduce(add, (s.exps for s in self.signomials))
+
+    @property
+    def unsubbed_varlocs(self):
+        return locate_vars(self.unsubbed_exps)[0]
+
+    @property
+    def unsubbed_varkeys(self):
+        return locate_vars(self.unsubbed_exps)[1]
+
+    @property
+    def separate_subs(self):
+        "Seperates sweep substitutions from constants."
+        # TODO: refactor this
+        substitutions = self.allsubs
+        varlocs, varkeys = self.unsubbed_varlocs, self.unsubbed_varkeys
+        sweep, linkedsweep = {}, {}
+        constants = dict(substitutions)
+        for var, sub in substitutions.items():
+            if is_sweepvar(sub):
+                del constants[var]
+                if isinstance(var, Strings):
+                    var = varkeys[var]
+                elif isinstance(var, Monomial):
+                    var = VarKey(var)
+                if isinstance(var, Iterable):
+                    suba = np.array(sub[1])
+                    if len(var) == suba.shape[0]:
+                        for i, v in enumerate(var):
+                            if hasattr(suba[i], "__call__"):
+                                linkedsweep.update({VarKey(v): suba[i]})
+                            else:
+                                sweep.update({VarKey(v): suba[i]})
+                    elif len(var) == suba.shape[1]:
+                        raise ValueError("whole-vector substitution"
+                                         " is not yet supported")
+                    else:
+                        raise ValueError("vector substitutions must share a"
+                                         "dimension with the variable vector")
+                elif hasattr(sub[1], "__call__"):
+                    linkedsweep.update({var: sub[1]})
+                else:
+                    sweep.update({var: sub[1]})
+        constants = getsubs(varkeys, varlocs, constants)
+        return sweep, linkedsweep, constants
 
     def __add__(self, other):
         if isinstance(other, Model):
@@ -253,20 +313,8 @@ class Model(object):
         ValueError if programType and model constraints don't match.
         RuntimeWarning if an error occurs in solving or parsing the solution.
         """
-        posynomials = self.posynomials
-        self.unsubbed_cs = np.hstack((mag(p.cs) for p in posynomials))
-        self.unsubbed_exps = functools_reduce(add, (p.exps for p in posynomials))
-        # NOTE these side effects should be removed
-        (self.unsubbed_varlocs,
-         self.unsubbed_varkeys) = locate_vars(self.unsubbed_exps)
-
-        subs = {var: var.descr["value"]
-                for var in self.variables if "value" in var.descr}
-        subs.update(self.substitutions)
-
-        (sweep, linkedsweep,
-         constants) = separate_subs(subs, self.unsubbed_varkeys,
-                                    self.unsubbed_varlocs)
+        posynomials = self.signomials
+        sweep, linkedsweep, constants = self.separate_subs
         solution = SolutionArray()
         kwargs.update({"solver": solver})
         kwargs.update({"verbosity": verbosity - 1})
@@ -337,21 +385,13 @@ class Model(object):
         self.solution = solution
         return solution
 
-    # For now, let's require users to use model.substitutions.update()
-    #
-    # def sub(self, substitutions, val=None):
-    #     "Returns model with additional substitutions."
-    #     if val is not None:
-    #         substitutions = {substitutions: val}
-    #     subs = dict(self.substitutions)
-    #     subs.update(substitutions)
-    #     return Model(self.cost, self.constraints, subs)
-    #
-    # def sub_update(self, substitutions, val=None):
-    #     "Updates model with new substitutions."
-    #     if val is not None:
-    #         substitutions = {substitutions: val}
-    #     self.substitutions.update(substitutions)
+    def gp(self, verbosity=2):
+        return self.formProgram("gp", self.signomials, self.allsubs,
+                                verbosity)[0]
+
+    def sp(self, verbosity=2):
+        return self.formProgram("sp", self.signomials, self.allsubs,
+                                verbosity)[0]
 
     def formProgram(self, programType, signomials, subs, verbosity=2):
         """Generates a program and solves it, sweeping as appropriate.
@@ -407,9 +447,6 @@ class Model(object):
     def __str__(self):
         """String representation of a Model.
         Contains all of its parameters."""
-        subs = {var: var.descr["value"]
-                for var in self.variables if "value" in var.descr}
-        subs.update(self.substitutions)
         return "\n".join(["# minimize",
                           "    %s," % self.cost,
                           "[   # subject to"] +
@@ -417,16 +454,12 @@ class Model(object):
                           for constr in self.constraints] +
                          ['],',
                           "    substitutions={ %s }" %
-                          pformat(subs, indent=20)[20:-1]])
+                          pformat(self.allsubs, indent=20)[20:-1]])
 
     def _latex(self, unused=None):
         """LaTeX representation of a GeometricProgram.
         Contains all of its parameters."""
-        sweep, linkedsweep,
-        constants = separate_subs(self.substitutions, self.varkeys)
-        subs = {var: var.descr["value"]
-                for var in self.variables if "value" in var.descr}
-        subs.update(constants)
+        sweep, linkedsweep, constants = self.separate_subs
         # TODO: print sweeps and linkedsweeps
         return "\n".join(["\\begin{array}[ll]",
                           "\\text{}",
@@ -541,37 +574,3 @@ class Model(object):
                     variables=variables,
                     sensitivities=sensitivities,
                     localmodel=localmodel)
-
-
-def separate_subs(substitutions, varkeys, varlocs):
-    "Seperates sweep substitutions from constants."
-    # TODO: refactor this
-    sweep, linkedsweep = {}, {}
-    constants = dict(substitutions)
-    for var, sub in substitutions.items():
-        if is_sweepvar(sub):
-            del constants[var]
-            if isinstance(var, Strings):
-                var = varkeys[var]
-            elif isinstance(var, Monomial):
-                var = VarKey(var)
-            if isinstance(var, Iterable):
-                suba = np.array(sub[1])
-                if len(var) == suba.shape[0]:
-                    for i, v in enumerate(var):
-                        if hasattr(suba[i], "__call__"):
-                            linkedsweep.update({VarKey(v): suba[i]})
-                        else:
-                            sweep.update({VarKey(v): suba[i]})
-                elif len(var) == suba.shape[1]:
-                    raise ValueError("whole-vector substitution"
-                                     " is not yet supported")
-                else:
-                    raise ValueError("vector substitutions must share a"
-                                     "dimension with the variable vector")
-            elif hasattr(sub[1], "__call__"):
-                linkedsweep.update({var: sub[1]})
-            else:
-                sweep.update({var: sub[1]})
-    constants = getsubs(varkeys, varlocs, constants)
-    return sweep, linkedsweep, constants
