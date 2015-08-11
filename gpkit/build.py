@@ -244,45 +244,47 @@ class Mosek(SolverBackend):
 
         return True
 
-if isfile("__init__.py"):
+
+def build_gpkit():
+    if isfile("__init__.py"):
+        #call("ls")
+        log("#     Don't want to be in a folder with __init__.py, going up!")
+        os.chdir("..")
+
+    log("Started building gpkit...\n")
+    settings = {}
+
+    log("Attempting to find and build solvers:\n")
+    solvers = [CVXopt(), Mosek(), Mosek_CLI()]
+    installed_solvers = [solver.name
+                         for solver in solvers
+                         if solver.installed]
+    if not installed_solvers:
+        log("Can't find any solvers!\n")
+    #    sys.stderr.write("Can't find any solvers!\n")
+    #    sys.exit(70)
+
+    log("...finished building gpkit.")
+
+    # Choose default solver
+    settings["installed_solvers"] = ", ".join(installed_solvers)
+    log("\nFound the following solvers: " + settings["installed_solvers"])
+
+    # Write settings
+    envpath = pathjoin("gpkit", "env")
+    replacedir(envpath)
+    log("Replaced the directory gpkit/env\n")
+    settingspath = envpath + os.sep + "settings"
+    with open(settingspath, "w") as f:
+        for setting, value in settings.items():
+            f.write("%s : %s\n" % (setting, value))
+        f.write("\n")
+
+    with open("gpkit/build.log", "w") as file:
+        file.write(logstr)
+
     #call("ls")
-    log("#     Don't want to be in a folder with __init__.py, going up!")
-    os.chdir("..")
-
-log("Started building gpkit...\n")
-settings = {}
-
-log("Attempting to find and build solvers:\n")
-solvers = [CVXopt(), Mosek(), Mosek_CLI()]
-installed_solvers = [solver.name
-                     for solver in solvers
-                     if solver.installed]
-if not installed_solvers:
-    log("Can't find any solvers!\n")
-#    sys.stderr.write("Can't find any solvers!\n")
-#    sys.exit(70)
-
-log("...finished building gpkit.")
-
-# Choose default solver
-settings["installed_solvers"] = ", ".join(installed_solvers)
-log("\nFound the following solvers: " + settings["installed_solvers"])
-
-# Write settings
-envpath = pathjoin("gpkit", "env")
-replacedir(envpath)
-log("Replaced the directory gpkit/env\n")
-settingspath = envpath + os.sep + "settings"
-with open(settingspath, "w") as f:
-    for setting, value in settings.items():
-        f.write("%s : %s\n" % (setting, value))
-    f.write("\n")
-
-with open("gpkit/build.log", "w") as file:
-    file.write(logstr)
-
-#call("ls")
-#call("echo \\# gpkit")
-#call("ls gpkit")
-#call("echo \\# gpkit/env")
-#call("ls gpkit/env")
+    #call("echo \\# gpkit")
+    #call("ls gpkit")
+    #call("echo \\# gpkit/env")
+    #call("ls gpkit/env")
