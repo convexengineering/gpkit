@@ -33,7 +33,7 @@ class TestGP(unittest.TestCase):
         x = Monomial('x')
         y = Monomial('y')
         prob = Model(cost=(x + 2*y),
-                  constraints=[x*y >= 1])
+                     constraints=[x*y >= 1])
         sol = prob.solve(solver=self.solver, verbosity=0)
         self.assertAlmostEqual(sol("x"), math.sqrt(2.), self.ndig)
         self.assertAlmostEqual(sol("y"), 1/math.sqrt(2.), self.ndig)
@@ -191,12 +191,15 @@ class TestGP(unittest.TestCase):
         sol1 = fgp.solve(verbosity=0)
         fgp = gp.feasibility_search(flavour="product")
         sol2 = fgp.solve(verbosity=0)
+        self.assertTrue(sol1["cost"] >= 1)
+        self.assertTrue(sol2["cost"] >= 1)
 
     def test_terminating_constant_(self):
         x = Variable('x')
         y = Variable('y', value=0.5)
         prob = Model(1/x, [x + y <= 4])
         sol = prob.solve(verbosity=0)
+        self.assertAlmostEqual(sol["cost"], 1/3.5, self.ndig)
 
 
 class TestSP(unittest.TestCase):
@@ -246,7 +249,7 @@ class TestSP(unittest.TestCase):
         y = gpkit.Variable("y")
 
         # converging from above
-        constraints = [y + x >= 2, y  >= x]
+        constraints = [y + x >= 2, y >= x]
         objective = y
         x0 = 1
         y0 = 2
@@ -278,21 +281,30 @@ class TestSP(unittest.TestCase):
         objective = x
         m = Model(objective, constraints)
         try:
-            sol = m.localsolve(x0={x: x0, y: y0}, verbosity=0, solver=self.solver)
+            sol = m.localsolve(x0={x: x0, y: y0}, verbosity=0,
+                               solver=self.solver)
         except TypeError:
             self.fail("Call to local solve with only variables failed")
+        self.assertAlmostEqual(sol(x), 1, self.ndig)
+        self.assertAlmostEqual(sol["cost"], 1, self.ndig)
 
         try:
-            sol = m.localsolve(x0={"x": x0, "y": y0}, verbosity=0, solver=self.solver)
+            sol = m.localsolve(x0={"x": x0, "y": y0}, verbosity=0,
+                               solver=self.solver)
         except TypeError:
             self.fail("Call to local solve with only variable strings failed")
+        self.assertAlmostEqual(sol("x"), 1, self.ndig)
+        self.assertAlmostEqual(sol["cost"], 1, self.ndig)
 
         try:
-            sol = m.localsolve(x0={"x": x0, y: y0}, verbosity=0, solver=self.solver)
+            sol = m.localsolve(x0={"x": x0, y: y0}, verbosity=0,
+                               solver=self.solver)
         except TypeError:
-            self.fail("Call to local solve with a mix of variable strings and variables failed")
+            self.fail("Call to local solve with a mix of variable strings "
+                      "and variables failed")
+        self.assertAlmostEqual(sol["cost"], 1, self.ndig)
 
-        gpkit.disable_signomials
+        gpkit.disable_signomials()
 
 
 TEST_CASES = [TestGP, TestSP]

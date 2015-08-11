@@ -2,7 +2,6 @@ import numpy as np
 
 from collections import defaultdict
 from collections import Iterable
-from collections import OrderedDict
 
 from .small_classes import HashVector
 from .small_classes import Strings, Quantity
@@ -43,8 +42,8 @@ def mono_approx(p, x0):
 
 
 def isequal(a, b):
-    if (isinstance(a, Iterable)
-       and not isinstance(a, Strings+(tuple, list, dict))):
+    if (isinstance(a, Iterable) and
+            not isinstance(a, Strings+(tuple, list, dict))):
         for i, a_i in enumerate(a):
             if not isequal(a_i, b[i]):
                 return False
