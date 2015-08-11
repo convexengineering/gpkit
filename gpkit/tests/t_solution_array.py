@@ -4,6 +4,8 @@ import time
 import numpy as np
 from gpkit import Variable, VectorVariable, Model, PosyArray
 from gpkit.solution_array import SolutionArray
+from gpkit.solution_array import results_table
+from gpkit.varkey import VarKey
 
 
 class TestSolutionArray(unittest.TestCase):
@@ -71,7 +73,20 @@ class TestSolutionArray(unittest.TestCase):
         tab = sol.table()
         self.assertTrue(isinstance(tab, str))
 
-TESTS = [TestSolutionArray]
+
+class TestResultsTable(unittest.TestCase):
+    """TestCase for results_table()"""
+
+    def test_nan_printing(self):
+        """Test that solution prints when it contains nans"""
+        x = VarKey(name='x')
+        data = {x: np.array([np.nan, 1., 1., 1., 1.])}
+        title = "Free variables"
+        printstr = results_table(data, title)
+        self.assertTrue(" - " in printstr)  # nan is printed as " - "
+        self.assertTrue(title in printstr)
+
+TESTS = [TestSolutionArray, TestResultsTable]
 
 if __name__ == '__main__':
     from gpkit.tests.helpers import run_tests

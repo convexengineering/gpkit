@@ -1,5 +1,7 @@
 import numpy as np
 
+from collections import Iterable
+
 from .posyarray import PosyArray
 from .nomials import Monomial
 from .small_classes import Strings
