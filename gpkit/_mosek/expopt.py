@@ -121,7 +121,7 @@ def printcb(void, msg):
     return 0
 
 
-def imize(c, A, p_idxs, k, *args, **kwargs):
+def imize(c, A, p_idxs, *args, **kwargs):
     """Interface to the MOSEK EXPOPT solver via C
 
     This code is based on the example C file "tskexpopt.c" at

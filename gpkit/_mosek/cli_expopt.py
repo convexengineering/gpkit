@@ -29,13 +29,22 @@ def errorRemoveReadonly(func, path, exc):
 
 
 def imize_fn(path=None):
+    """Constructor for the MOSEK CLI solver function.
+
+    Arguments
+    ---------
+
+    path : str (optional)
+        The directory in which to put the MOSEK CLI input/output files.
+        By default uses a system-appropriate temp directory.
+    """
     if not path:
         path = tempfile.mkdtemp()
     filename = path + os.sep + "gpkit_mosek"
     os.environ['PATH'] = (os.environ['PATH'] + ':%s' %
                           settings["mosek_bin_dir"][0])
 
-    def imize(c, A, p_idxs, k, *args, **kwargs):
+    def imize(c, A, p_idxs, *args, **kwargs):
         """Interface to the MOSEK "mskexpopt" command line solver
 
         Definitions

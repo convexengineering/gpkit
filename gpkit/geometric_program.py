@@ -108,8 +108,8 @@ class GeometricProgram(object):
             self.starttime = time()
             print("Solving for %i variables." % len(self.varlocs))
 
-        solver_out = solverfn(self.cs, self.A, self.p_idxs, self.k,
-                              *args, **kwargs)
+        solver_out = solverfn(c=self.cs, A=self.A, p_idxs=self.p_idxs,
+                              k=self.k, *args, **kwargs)
 
         self.solver_out = solver_out  # NOTE: SIDE EFFECTS AHOY
         # TODO: add a solver_log file using stream debugger

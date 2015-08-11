@@ -62,9 +62,8 @@ class Model(object):
                     name = self.__class__.__name__
                 setup = self.setup(*args, **kwargs)
             except:
-                # TODO: pass error through!
                 print("The 'setup' method of this model had an error.")
-                raise TypeError
+                raise
             try:
                 cost, constraints = setup
             except TypeError:

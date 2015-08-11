@@ -20,7 +20,7 @@ class SignomialProgram(object):
     ---------
     cost : Constraint
         Signomial to minimize when solving
-    constraints : list of Posynomials
+    constraints : list of Signomials
         Constraints to maintain when solving (implicitly Signomials <= 1)
 
     Examples
@@ -149,7 +149,7 @@ class SignomialProgram(object):
         nu_ = []
         for signomial in self.signomials:
             for c, exp in zip(signomial.cs, signomial.exps):
-                var_ss = [sens_vars[var]*val for var, val in sens_vars.items()]
+                var_ss = [sens_vars[var]*val for var, val in exp.items()]
                 nu_.append(functools_reduce(mul, var_ss, np.sign(c)))
         result["sensitivities"]["monomials"] = np.array(nu_)
         # TODO: SP sensitivities are weird, and potentially incorrect
