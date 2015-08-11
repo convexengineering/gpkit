@@ -14,7 +14,7 @@ NDIGS = {"cvxopt": 5, "mosek": 6, "mosek_cli": 5}
 
 class TestGP(unittest.TestCase):
     """
-    Test the GP class.
+    Test GeometricPrograms.
     This TestCase gets run once for each installed solver.
     """
     name = "TestGP_"

@@ -20,8 +20,8 @@ TESTS += t_constraints.TESTS
 from gpkit.tests import t_posy_array
 TESTS += t_posy_array.TESTS
 
-from gpkit.tests import t_geometric_program
-TESTS += t_geometric_program.TESTS
+from gpkit.tests import t_model
+TESTS += t_model.TESTS
 
 from gpkit.tests import t_solution_array
 TESTS += t_solution_array.TESTS
