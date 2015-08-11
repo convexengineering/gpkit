@@ -7,6 +7,7 @@ import subprocess
 import glob
 
 logstr = ""
+settings = {}
 
 
 def log(*args):
@@ -246,13 +247,14 @@ class Mosek(SolverBackend):
 
 
 def build_gpkit():
+    global settings
+
     if isfile("__init__.py"):
         #call("ls")
         log("#     Don't want to be in a folder with __init__.py, going up!")
         os.chdir("..")
 
     log("Started building gpkit...\n")
-    settings = {}
 
     log("Attempting to find and build solvers:\n")
     solvers = [CVXopt(), Mosek(), Mosek_CLI()]
