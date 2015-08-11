@@ -12,12 +12,11 @@ import shutil
 import tempfile
 import errno
 import stat
-from math import exp
 from subprocess import check_output
 from .. import settings
 
 
-def errorRemoveReadonly(func, path, exc):
+def error_remove_read_only(func, path, exc):
     excvalue = exc[1]
     if func in (os.rmdir, os.remove) and excvalue.errno == errno.EACCES:
         # change the file to be readable,writable,executable: 0777
@@ -109,7 +108,7 @@ def imize_fn(path=None):
             assert_line(f, "INDEX   ACTIVITY\n")
             dual_vals = read_vals(f)
 
-        shutil.rmtree(path, ignore_errors=False, onerror=errorRemoveReadonly)
+        shutil.rmtree(path, ignore_errors=False, onerror=error_remove_read_only)
 
         return dict(status="optimal",
                     objective=objective_val,
@@ -119,18 +118,18 @@ def imize_fn(path=None):
     return imize
 
 
-def assert_line(f, expected):
-    received = f.readline()
+def assert_line(fil, expected):
+    received = fil.readline()
     if tuple(expected[:-1].split()) != tuple(received[:-1].split()):
         errstr = repr(expected)+" is not the same as "+repr(received)
         raise RuntimeWarning(errstr)
 
 
-def read_vals(f):
+def read_vals(fil):
     vals = []
-    line = f.readline()
+    line = fil.readline()
     while line not in ["", "\n"]:
         # lines look like "1       2.390776e+000   \n"
         vals.append(float(line.split()[1]))
-        line = f.readline()
+        line = fil.readline()
     return vals

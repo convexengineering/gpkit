@@ -1,3 +1,4 @@
+"""Implement the GeometricProgram class"""
 import numpy as np
 
 from time import time
@@ -42,7 +43,7 @@ class GeometricProgram(object):
         if not all(self.cs > 0):
             raise ValueError("GeometricPrograms cannot contain coefficients"
                              " less than or equal to zero.")
-        self.exps = functools_reduce(add, (x.exps for x in self.posynomials))
+        self.exps = functools_reduce(add, (p.exps for p in self.posynomials))
         self.varlocs, self.varkeys = locate_vars(self.exps)
         # k [j]: number of monomials (columns of F) present in each constraint
         self.k = [len(p.cs) for p in self.posynomials]
@@ -118,8 +119,10 @@ class GeometricProgram(object):
             print("Solving took %.3g seconds." % (time() - self.starttime))
 
         result = {}
+        # confirm lengths before calling zip
+        assert len(self.varlocs) == len(solver_out['primal'])
         result["variables"] = dict(zip(self.varlocs,
-                                   np.exp(solver_out['primal']).ravel()))
+                                       np.exp(solver_out['primal']).ravel()))
         if "objective" in solver_out and "mosek" not in solver:
             # HACK: for issue #296
             result["cost"] = float(solver_out["objective"])
@@ -128,15 +131,15 @@ class GeometricProgram(object):
 
         result["sensitivities"] = {}
         if "nu" in solver_out:
-            nu = np.array(solver_out["nu"]).ravel()
+            nu = np.ravel(solver_out["nu"])
             la = np.array([sum(nu[self.p_idxs == i])
                            for i in range(len(self.posynomials))])
         elif "la" in solver_out:
-            la = np.array(solver_out["la"]).ravel()
+            la = np.ravel(solver_out["la"])
             if len(la) == len(self.posynomials) - 1:
                 # assume the cost's sensitivity has been dropped
                 la = np.hstack(([1.0], la))
-            Ax = np.array(self.A.todense().dot(solver_out['primal'])).ravel()
+            Ax = np.ravel(self.A.todense().dot(solver_out['primal']))
             z = Ax + np.log(self.cs)
             m_iss = [self.p_idxs == i for i in range(len(la))]
             nu = np.hstack([la[p_i]*np.exp(z[m_is])/sum(np.exp(z[m_is]))
@@ -156,7 +159,8 @@ class GeometricProgram(object):
                                  " relaxed version of your\nGeometric Program,"
                                  " run model.program.feasibility_search()."
                                  "\n\nThe infeasible solve's result is stored"
-                                 " in the 'result' attribute\n(model.program.result)"
+                                 " in the 'result' attribute\n"
+                                 "(model.program.result)"
                                  " and its raw output in 'solver_out'.")
         else:
             return result
@@ -196,13 +200,15 @@ class GeometricProgram(object):
                                   *args, **kwargs)
         elif flavour == "product":
             slackvars = VectorVariable(len(self.constraints), varname)
-            gp = GeometricProgram(slackvars.prod(),
+            gp = GeometricProgram(np.prod(slackvars),
                                   (1/slackvars).tolist() +  # slackvars > 1
                                   [constraint/slackvars[i]  # constraint <= sv
-                                   for i, constraint in enumerate(self.constraints)],
+                                   for i, constraint in
+                                   enumerate(self.constraints)],
                                   *args, **kwargs)
         else:
-            raise ValueError("'%s' is an unknown flavour of feasibility." % flavour)
+            raise ValueError("'%s' is an unknown flavour of feasibility." %
+                             flavour)
         return gp
 
     def __repr__(self):
@@ -271,6 +277,9 @@ def genA(exps, varlocs):
                 bound = "lower"
             elif varsign == -1:
                 bound = "upper"
+            else:
+                # just being safe
+                raise RuntimeWarning("Unexpected varsign %s" % varsign)
             missingbounds[var] = bound
 
     # add subbed-out monomials at the end

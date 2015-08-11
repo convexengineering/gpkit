@@ -1,7 +1,7 @@
 """Test substitution capability across gpkit"""
 import unittest
 import numpy as np
-from gpkit import Monomial, Variable, VectorVariable, units, GP, Model, link
+from gpkit import Variable, VectorVariable, Model
 from gpkit.small_scripts import mag
 
 

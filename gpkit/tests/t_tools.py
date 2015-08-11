@@ -1,6 +1,6 @@
 """Tests for tools module"""
 import unittest
-from gpkit import Model, Variable, VectorVariable
+from gpkit import Variable, VectorVariable
 
 
 class TestMathModels(unittest.TestCase):
