@@ -9,7 +9,9 @@ Arr = ArrayVariable
 Model = Model
 
 def GP(*args, **kwargs):
-    raise Exception("'Model' has replaced 'GP'. Please update your code!")
+    print("'Model' has replaced 'GP'. Please update your code!")
+    return Model(*args, **kwargs)
 
 def SP(*args, **kwargs):
-    raise Exception("'Model' has replaced 'GP'. Please update your code!")
+    print("'Model' has replaced 'GP'. Please update your code!")
+    return Model(*args, **kwargs)
