@@ -59,8 +59,8 @@ class SignomialProgram(object):
             raise ValueError("SignomialPrograms must contain at least one"
                              " Signomial.")
 
-    def localsolve(self, solver=None, verbosity=1, x0={}, reltol=1e-4,
-              iteration_limit=50, *args, **kwargs):
+    def localsolve(self, solver=None, verbosity=1, x0=None, reltol=1e-4,
+                   iteration_limit=50, *args, **kwargs):
         """Locally solves a SignomialProgram and returns the solution.
 
         Arguments
@@ -93,8 +93,11 @@ class SignomialProgram(object):
             print("Beginning signomial solve.")
             self.starttime = time()
 
-        x0 = getsubs({str(vk): vk for vk in self.negvarkeys},
-                     self.negvarkeys, x0)
+        if x0 is None:
+            x0 = {}
+        else:
+            x0 = getsubs({str(vk): vk for vk in self.negvarkeys},
+                         self.negvarkeys, x0)
         sp_inits = {vk: vk.descr["sp_init"] for vk in self.negvarkeys
                     if "sp_init" in vk.descr}
         sp_inits.update(x0)
@@ -103,23 +106,15 @@ class SignomialProgram(object):
         x0.update({var: 1 for var in self.negvarkeys if var not in x0})
 
         iterations = 0
-        prevcost, cost = 1, 1
+        prevcost, cost = None, None
         self.gps = []
 
         while (iterations < iteration_limit
-               and (iterations < 2 or
-                    abs(prevcost-cost)/(prevcost + cost) > reltol)):
-            posy_approxs = []
-            for p, n in zip(self.posynomials, self.negynomials):
-                if n is None:
-                    posy_approx = p
-                else:
-                    posy_approx = p/n.mono_approximation(x0)
-                posy_approxs.append(posy_approx)
-
-            gp = GeometricProgram(posy_approxs[0], posy_approxs[1:],
-                                  verbosity=verbosity-1)
+               and (not (cost and prevcost)
+                    or abs(prevcost-cost)/(prevcost + cost) > reltol)):
+            gp = self.step(x0, verbosity)
             self.gps.append(gp)
+
             try:
                 result = gp.solve(solver, verbosity=verbosity-1,
                                   *args, **kwargs)
@@ -128,6 +123,7 @@ class SignomialProgram(object):
                 # TODO: should we count it as an iteration?
                 nearest_feasible = gp.feasibility_search(verbosity=verbosity-1)
                 result = nearest_feasible.solve(verbosity=verbosity-1)
+                result["cost"] = None
 
             x0 = result["variables"]
             prevcost, cost = cost, result["cost"]
@@ -151,6 +147,22 @@ class SignomialProgram(object):
         # TODO: SP sensitivities are weird, and potentially incorrect
 
         return result
+
+    def step(self, x0=None, verbosity=1):
+        if x0 is None:
+            # HACK: initial guess for negative variables
+            x0 = {var: 1 for var in self.negvarkeys}
+        posy_approxs = []
+        for p, n in zip(self.posynomials, self.negynomials):
+            if n is None:
+                posy_approx = p
+            else:
+                posy_approx = p/n.mono_approximation(x0)
+            posy_approxs.append(posy_approx)
+
+        gp = GeometricProgram(posy_approxs[0], posy_approxs[1:],
+                              verbosity=verbosity-1)
+        return gp
 
     def __repr__(self):
         return "gpkit.%s(\n%s)" % (self.__class__.__name__, str(self))
