@@ -167,12 +167,11 @@ try:
     with open(settings_path) as settingsfile:
         lines = [line[:-1].split(" : ") for line in settingsfile
                  if len(line.split(" : ")) == 2]
-        settings = {}
-        for name, value in lines:
-            if ", " in value:
-                settings[name] = value.split(", ")
-            else:
-                settings[name] = value
+        settings = {name: value.split(", ") for name, value in lines}
+        for name, value in settings.items():
+            # hack to flatten 1-element lists, unlesss they're the solver list
+            if len(value) == 1 and name != "installed_solvers":
+                settings[name] = value[0]
     try:
         del lines
         del line
@@ -180,7 +179,7 @@ try:
         pass
 except IOError:
     print("Could not load settings file.")
-    settings = {"installed_solvers": ""}
+    settings = {"installed_solvers": [""]}
 
 try:
     cfg = get_ipython().config
