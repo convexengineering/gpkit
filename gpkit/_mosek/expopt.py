@@ -66,14 +66,14 @@ MSK._SOL_STA_LOOKUPTABLE = ["UNKNOWN",
                             "DUAL_FEAS",  # switched with below for GP
                             "PRIM_FEAS",
                             "PRIM_AND_DUAL_FEAS",
-                            "PRIM_INFEAS_CER",
                             "DUAL_INFEAS_CER",  # switched with below
+                            "PRIM_INFEAS_CER",
                             "NEAR_OPTIMAL",
                             "NEAR_DUAL_FEAS",  # switched with below
                             "NEAR_PRIM_FEAS",
                             "NEAR_PRIM_AND_DUAL_FEAS",
-                            "NEAR_PRIM_INFEAS_CER",
                             "NEAR_DUAL_INFEAS_CER",  # switched with below
+                            "NEAR_PRIM_INFEAS_CER",
                             "INTEGER_OPTIMAL",
                             "NEAR_INTEGER_OPTIMAL"]
 
