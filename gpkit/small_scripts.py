@@ -42,8 +42,8 @@ def mono_approx(p, x0):
 
 
 def isequal(a, b):
-    if (isinstance(a, Iterable)
-       and not isinstance(a, Strings+(tuple, list, dict))):
+    if (isinstance(a, Iterable) and
+            not isinstance(a, Strings+(tuple, list, dict))):
         for i, a_i in enumerate(a):
             if not isequal(a_i, b[i]):
                 return False
@@ -140,79 +140,61 @@ def locate_vars(exps):
     return dict(varlocs), dict(varkeys)
 
 
-def sort_and_simplify(exps, cs):
-    "Reduces the number of monomials, and casts them to a sorted form."
+def sort_and_simplify(exps, cs, return_map=False):
+    """Reduces the number of monomials, and casts them to a sorted form.
+
+    Arguments
+    ---------
+
+    exps : list of Hashvectors
+        The exponents of each monomial
+    cs : array of floats or Quantities
+        The coefficients of each monomial
+    return_map : bool (optional)
+        Whether to return the map of which monomials combined to form a
+        simpler monomial, and their fractions of that monomial's final c.
+
+    Returns
+    -------
+
+    exps : list of Hashvectors
+        Exponents of simplified monomials.
+    cs : array of floats or Quantities
+        Coefficients of simplified monomials.
+    mmap : list of tuples
+        List for each original monomial of (destination index, fraction)
+    """
     matches = defaultdict(float)
+    if return_map:
+        expmap = defaultdict(dict)
     for i, exp in enumerate(exps):
         exp = HashVector({var: x for (var, x) in exp.items() if x != 0})
         matches[exp] += cs[i]
+        if return_map:
+            expmap[exp][i] = cs[i]
 
-    if matches[HashVector({})] == 0 and len(matches) > 1:
-        del matches[HashVector({})]
-    for exp, c in matches.items():
-        if c == 0 and len(matches) > 1:
+    if len(matches) > 1:
+        zeroed_terms = (exp for exp, c in matches.items() if c == 0)
+        for exp in zeroed_terms:
             del matches[exp]
 
+    exps_ = tuple(matches.keys())
     cs_ = list(matches.values())
     if isinstance(cs_[0], Quantity):
         units = cs_[0]/cs_[0].magnitude
         cs_ = [c.to(units).magnitude for c in cs_] * units
     else:
         cs_ = np.array(cs_, dtype='float')
-    return tuple(matches.keys()), cs_
 
-
-def results_table(data, title, minval=0, printunits=True, fixedcols=True,
-                  varfmt="%s : ", valfmt="%-.4g ", vecfmt="%-8.3g"):
-    """
-    Pretty string representation of a dict of VarKeys
-    Iterable values are handled specially (partial printing)
-
-    Arguments
-    ---------
-    data: dict whose keys are VarKey's
-        data to represent in table
-    title: string
-    minval: float
-        skip values with all(abs(value)) < minval
-    printunits: bool
-    fixedcols: bool
-        if True, print rhs (val, units, label) in fixed-width cols
-    varfmt: string
-        format for variable names
-    valfmt: string
-        format for scalar values
-    vecfmt: string
-        format for vector values
-    """
-    lines = []
-    decorated = [(bool(v.shape) if isinstance(v, Iterable) else False,
-                 (varfmt % k),
-                 i, k, v) for i, (k, v) in enumerate(data.items())
-                 if (np.max(abs(v)) >= minval) or (np.any(np.isnan(v)))]
-                #                               allows nans to be printed 
-    decorated.sort()
-    for isvector, varstr, _, var, val in decorated:
-        label = var.descr.get('label', '')
-        units = unitstr(var, into=" [%s] ", dimless="") if printunits else ""
-        if isvector:
-            vals = [vecfmt % v for v in val[:4]]
-            ellipsis = " ..." if len(val) > 4 else ""
-            valstr = "[ %s%s ] " % ("  ".join(vals), ellipsis)
-        else:
-            valstr = valfmt % val
-        lines.append([varstr, valstr, units, label])
-    if lines:
-        maxlens = np.max([map(len, line) for line in lines], axis=0)
-        if not fixedcols:
-            maxlens = [maxlens[0], 0, 0, 0]
-        dirs = ['>', '<', '<', '<']
-        assert len(dirs) == len(maxlens)  # check lengths before using zip
-        fmts = ['{0:%s%s}' % (direc, L) for direc, L in zip(dirs, maxlens)]
-    lines = [[fmt.format(s) for fmt, s in zip(fmts, line)]
-             for line in lines]
-    lines = [title] + ["-"*len(title)] + [''.join(l) for l in lines] + [""]
-    return "\n".join(lines)
+    if not return_map:
+        return exps_, cs_
+    else:
+        mmap = [None]*len(cs)
+        for i, item in enumerate(matches.items()):
+            exp, c = item
+            for j in expmap[exp]:
+                mmap[j] = (i, expmap[exp][j]/c)
+        return exps_, cs_, mmap
 
 
 def flatten(ible, classes):

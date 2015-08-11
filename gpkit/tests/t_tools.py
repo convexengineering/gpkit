@@ -1,20 +1,6 @@
 """Tests for tools module"""
 import unittest
-from gpkit import (GP, Variable, VectorVariable,
-                   closest_feasible_point, make_feasibility_gp)
-
-
-class TestFeasibilityHelpers(unittest.TestCase):
-    """TestCase for the feasibility scripts"""
-
-    def test_feasibility_gp_(self):
-        x = Variable('x')
-        gp = GP(x, [x**2 >= 1, x <= 0.5])
-        self.assertRaises(RuntimeWarning, gp.solve, printing=False)
-        fgp = make_feasibility_gp(gp, flavour=self.flavour)
-        sol1 = fgp.solve(printing=False)
-        sol2 = closest_feasible_point(gp, flavour=self.flavour, printing=False)
-        self.assertAlmostEqual(sol1["cost"], sol2["cost"])
+from gpkit import Variable, VectorVariable
 
 
 class TestMathModels(unittest.TestCase):
@@ -37,16 +23,7 @@ class TestMathModels(unittest.TestCase):
         # make sure y was not modified
         self.assertEqual(y, VectorVariable(3, 'y'))
 
-TEST_CASES = [TestFeasibilityHelpers]
-
-TESTS = []
-for testcase in TEST_CASES:
-    for flavour in ["product", "max"]:
-        test = type(testcase.__name__+"_"+flavour,
-                    (testcase,), {})
-        setattr(test, "flavour", flavour)
-        TESTS.append(test)
-TESTS.extend([TestMathModels])
+TESTS = [TestMathModels]
 
 
 if __name__ == '__main__':

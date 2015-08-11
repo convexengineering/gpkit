@@ -9,14 +9,14 @@
 
 import os
 import shutil
+import tempfile
 import errno
 import stat
-from math import exp
 from subprocess import check_output
 from .. import settings
 
 
-def errorRemoveReadonly(func, path, exc):
+def error_remove_read_only(func, path, exc):
     excvalue = exc[1]
     if func in (os.rmdir, os.remove) and excvalue.errno == errno.EACCES:
         # change the file to be readable,writable,executable: 0777
@@ -27,13 +27,22 @@ def errorRemoveReadonly(func, path, exc):
         pass
 
 
-def imize_fn(filename):
-    folder = os.path.expanduser("~") + os.sep + "gpkit_tmp"
-    filename = folder + os.sep + filename
-    os.environ['PATH'] = (os.environ['PATH'] + ':%s' %
-                          settings["mosek_bin_dir"][0])
+def imize_fn(path=None):
+    """Constructor for the MOSEK CLI solver function.
 
-    def imize(c, A, p_idxs, k):
+    Arguments
+    ---------
+    path : str (optional)
+        The directory in which to put the MOSEK CLI input/output files.
+        By default uses a system-appropriate temp directory.
+    """
+    if not path:
+        path = tempfile.mkdtemp()
+    filename = path + os.sep + "gpkit_mosek"
+    os.environ['PATH'] = (os.environ['PATH'] + ':%s' %
+                          settings["mosek_bin_dir"])
+
+    def imize(c, A, p_idxs, *args, **kwargs):
         """Interface to the MOSEK "mskexpopt" command line solver
 
         Definitions
@@ -43,8 +52,8 @@ def imize_fn(filename):
         m is the number of variables in the gp
         p is the number of posynomials in the gp
 
-        Parameters
-        ----------
+        Arguments
+        ---------
         c : floats array of shape n
             Coefficients of each monomial
         A: floats array of shape (m,n)
@@ -72,8 +81,6 @@ def imize_fn(filename):
             If the format of mskexpopt's output file is unexpected.
 
         """
-        if not os.path.exists(folder):
-            os.makedirs(folder)
 
         with open(filename, "w") as f:
             numcon = 1+p_idxs[-1]
@@ -109,8 +116,7 @@ def imize_fn(filename):
             assert_line(f, "INDEX   ACTIVITY\n")
             dual_vals = read_vals(f)
 
-        shutil.rmtree(folder, ignore_errors=False,
-                      onerror=errorRemoveReadonly)
+        shutil.rmtree(path, ignore_errors=False, onerror=error_remove_read_only)
 
         return dict(status="optimal",
                     objective=objective_val,
@@ -120,18 +126,18 @@ def imize_fn(filename):
     return imize
 
 
-def assert_line(f, expected):
-    received = f.readline()
+def assert_line(fil, expected):
+    received = fil.readline()
     if tuple(expected[:-1].split()) != tuple(received[:-1].split()):
         errstr = repr(expected)+" is not the same as "+repr(received)
         raise RuntimeWarning(errstr)
 
 
-def read_vals(f):
+def read_vals(fil):
     vals = []
-    line = f.readline()
+    line = fil.readline()
     while line not in ["", "\n"]:
         # lines look like "1       2.390776e+000   \n"
         vals.append(float(line.split()[1]))
-        line = f.readline()
+        line = fil.readline()
     return vals

@@ -1,250 +1,576 @@
 # -*- coding: utf-8 -*-
-"""Module for creating models.
+"""Module for creating Model instances.
 
-    Currently these are only used for GP instances, but they may be further
-    abstractable.
+    Example
+    -------
+    >>> gp = gpkit.Model(cost, constraints, substitutions)
 
 """
 
 import numpy as np
 
+from pprint import pformat
+from collections import defaultdict
 from functools import reduce as functools_reduce
-from operator import add
+from operator import mul, add
 from collections import Iterable
 
-from .small_classes import Strings
-from .small_classes import PosyTuple
-from .small_classes import CootMatrix
-from .nomials import Constraint, Monomial
+from .nomials import Constraint, MonoEQConstraint, Posynomial
+from .nomials import Monomial, Signomial
 from .varkey import VarKey
+from .substitution import substitution, getsubs
 
-from .substitution import substitution
+from .small_classes import Strings
+from .small_scripts import flatten
 from .small_scripts import locate_vars
-from .small_scripts import is_sweepvar
 from .small_scripts import mag
+from .small_scripts import is_sweepvar
+from .small_scripts import sort_and_simplify
+
+from .solution_array import SolutionArray
+from .signomial_program import SignomialProgram
+from .geometric_program import GeometricProgram
+
+from .variables import Variable
+
+try:
+    from IPython.parallel import Client
+    CLIENT = Client(timeout=0.01)
+    assert len(CLIENT) > 0
+    POOL = CLIENT[:]
+    POOL.use_dill()
+    print("Using parallel execution of sweeps on %s clients" % len(CLIENT))
+except:
+    POOL = None
 
 
 class Model(object):
-    "Abstract class with substituion, loading / saving, and p_idx/A generation"
+    """Symbolic representation of an optimization problem.
 
-    def __repr__(self):
-        return "\n".join(["gpkit.Model with",
-                          "  Equations"] +
-                         ["     %s <= 1" % p._string()
-                          for p in self.posynomials])
+    The Model class is used both directly to create models with constants and
+    sweeps, and indirectly inherited to create custom model classes.
 
-    def add_constraints(self, constraints):
-        if isinstance(constraints, Constraint):
-            constraints = [constraints]
-        self.constraints += tuple(constraints)
-        self._gen_unsubbed_vars()
+    Arguments
+    ---------
+    cost : Signomial (optional)
+        If this is undeclared, the Model will get its cost and constraints
+        from its "setup" method. This allows for easy inheritance.
 
-    def rm_constraints(self, constraints):
-        if isinstance(constraints, Constraint):
-            constraints = [constraints]
-        for p in constraints:
-            self.constraints.remove(p)
-        self._gen_unsubbed_vars()
+    constraints : list of Constraints (optional)
+        Defaults to an empty list.
 
-    def _gen_unsubbed_vars(self, exps=None, cs=None):
-        posynomials = self.posynomials
-        if not exps and not cs:
-            exps = functools_reduce(add, (x.exps for x in posynomials))
-            cs = np.hstack((mag(p.cs) for p in posynomials))
-        varlocs, varkeys = locate_vars(exps)
+    substitutions : dict (optional)
+        This dictionary will be substituted into the problem before solving,
+        and also allows the declaration of sweeps and linked sweeps.
 
-        self.unsubbed = PosyTuple(exps, cs, varlocs, {})
-        self.variables = {k: Monomial(k) for k in varlocs}
-        self.varkeys = varkeys
-        self.load(self.unsubbed)
+    *args, **kwargs : Passed to the setup method for inheritance.
+    """
+    model_nums = defaultdict(int)
 
-        # k [j]: number of monomials (columns of F) present in each constraint
-        self.k = [len(p.cs) for p in posynomials]
+    def __init__(self, cost=None, constraints=None, substitutions=None,
+                 *args, **kwargs):
+        if cost is None:
+            if not hasattr(self, "setup"):
+                raise TypeError("Models can only be created without a cost"
+                                " if they have a 'setup' method.")
+            try:
+                name = kwargs.pop("name", self.__class__.__name__)
+                setup = self.setup(*args, **kwargs)
+            except:
+                print("The 'setup' method of this model had an error.")
+                raise
+            try:
+                cost, constraints = setup
+            except TypeError:
+                raise TypeError("Model 'setup' methods must return "
+                                "(cost, constraints).")
+        if constraints is None:
+            constraints = []
+        if substitutions is None:
+            substitutions = {}
 
-        # p_idxs [i]: posynomial index of each monomial
-        p_idx = 0
-        self.p_idxs = []
-        for p_len in self.k:
-            self.p_idxs += [p_idx]*p_len
-            p_idx += 1
-        self.p_idxs = np.array(self.p_idxs)
+        self.cost = Signomial(cost)
+        self.constraints = list(constraints)
+        self.substitutions = dict(substitutions)
 
-    def sub(self, substitutions, val=None, frombase='last', replace=True):
-        """Substitutes into a model, modifying it in place.
+        if hasattr(self, "setup"):
+            # TODO: use super instead of Model?
+            k = Model.model_nums[name]
+            Model.model_nums[name] = k+1
+            name += str(k) if k else ""
+            for s in self.signomials:
+                for k in s.varlocs:
+                    if "model" not in k.descr:
+                        newk = VarKey(k, model=name)
+                        s.varlocs[newk] = s.varlocs.pop(k)
+                for exp in p.exps:
+                    for k in exp:
+                        if "model" not in k.descr:
+                            newk = VarKey(k, model=name)
+                            exp[newk] = exp.pop(k)
 
-        Usage
-        -----
-        gp.sub({'x': 1, y: 2})
-        gp.sub(x, 3, replace=True)
+    @property
+    def allsubs(self):
+        subs = {var: var.descr["value"]
+                for var in self.variables if "value" in var.descr}
+        subs.update(self.substitutions)
+        return subs
 
-        Arguments
-        ---------
-        substitutions : dict or key
-            Either a dictionary whose keys are strings, Variables, or VarKeys, 
-            and whose values are numbers, or a string, Variable or Varkey.
-        val : number (optional)
-            If the substitutions entry is a single key, val holds the value
-        frombase : string (optional)
-            Which model state to update. By default updates the current state.
-        replace : boolean (optional, default is True)
-            Whether the substitution should only subtitute currently
-            unsubstituted values (False) or should also make replacements of
-            current substitutions (True).
+    @property
+    def variables(self):
+        variables = {}
+        for s in self.signomials:
+            variables.update({vk: Variable(**vk.descr) for vk in s.varlocs})
+        return variables
 
-        Returns
-        -------
-        No return value: the model is modified in place.
-        """
-        # look for sweep variables
-        found_sweep = []
-        if val is not None:
-            substitutions = {substitutions: val}
-        subs = dict(substitutions)
+    @property
+    def signomials(self):
+        constraints = tuple(flatten(self.constraints, Constraint))
+        # TODO: parse constraints during flattening, calling Posyarray on
+        #       anything that holds only posys and then saving that list.
+        #       This will allow prettier constraint printing.
+        posynomials = [self.cost]
+        for constraint in constraints:
+            if isinstance(constraint, MonoEQConstraint):
+                posynomials.extend([constraint.leq, constraint.geq])
+            else:
+                posynomials.append(constraint)
+        return posynomials
+
+    # TODO: replcae the below with a dynamically created NomialData 'unsubbed'
+    @property
+    def unsubbed_cs(self):
+        return np.hstack((mag(s.cs) for s in self.signomials))
+
+    @property
+    def unsubbed_exps(self):
+     return functools_reduce(add, (s.exps for s in self.signomials))
+
+    @property
+    def unsubbed_varlocs(self):
+        return locate_vars(self.unsubbed_exps)[0]
+
+    @property
+    def unsubbed_varkeys(self):
+        return locate_vars(self.unsubbed_exps)[1]
+
+    @property
+    def separate_subs(self):
+        "Seperates sweep substitutions from constants."
+        # TODO: refactor this
+        substitutions = self.allsubs
+        varlocs, varkeys = self.unsubbed_varlocs, self.unsubbed_varkeys
+        sweep, linkedsweep = {}, {}
+        constants = dict(substitutions)
         for var, sub in substitutions.items():
             if is_sweepvar(sub):
-                del subs[var]
+                del constants[var]
                 if isinstance(var, Strings):
-                    var = self.varkeys[var]
+                    var = varkeys[var]
                 elif isinstance(var, Monomial):
                     var = VarKey(var)
                 if isinstance(var, Iterable):
                     suba = np.array(sub[1])
                     if len(var) == suba.shape[0]:
                         for i, v in enumerate(var):
-                            found_sweep.append(v)
                             if hasattr(suba[i], "__call__"):
-                                self.linkedsweep.update({v: suba[i]})
+                                linkedsweep.update({VarKey(v): suba[i]})
                             else:
-                                self.sweep.update({v: suba[i]})
+                                sweep.update({VarKey(v): suba[i]})
                     elif len(var) == suba.shape[1]:
                         raise ValueError("whole-vector substitution"
-                                         "is not yet supported")
+                                         " is not yet supported")
                     else:
                         raise ValueError("vector substitutions must share a"
                                          "dimension with the variable vector")
                 elif hasattr(sub[1], "__call__"):
-                    found_sweep.append(var)
-                    self.linkedsweep.update({var: sub[1]})
+                    linkedsweep.update({var: sub[1]})
                 else:
-                    found_sweep.append(var)
-                    self.sweep.update({var: sub[1]})
+                    sweep.update({var: sub[1]})
+        constants = getsubs(varkeys, varlocs, constants)
+        return sweep, linkedsweep, constants
 
-        if not (subs or found_sweep):
-            raise KeyError("could not find anything"
-                           "to substitute in %s" % substitutions)
-
-        base = getattr(self, frombase)
-        substitutions = dict(base.substitutions)
-
-        if replace:
-            (varlocs,
-             exps,
-             cs) = self.unsubbed.varlocs, self.unsubbed.exps, self.unsubbed.cs
-            for sweepvar in found_sweep:
-                if sweepvar in substitutions:
-                    del substitutions[sweepvar]
-            if subs:
-                # resubstitute from the beginning, in reverse order
-                varlocs, exps, cs, subs = substitution(varlocs,
-                                                       self.varkeys,
-                                                       exps,
-                                                       cs,
-                                                       subs)
-                substitutions.update(subs)
-            try:
-                varlocs, exps, cs, subs = substitution(varlocs,
-                                                       self.varkeys,
-                                                       exps,
-                                                       cs,
-                                                       substitutions)
-            except KeyError:
-                # our new sub replaced the only previous sub
-                pass
+    def __add__(self, other):
+        if isinstance(other, Model):
+            substitutions = dict(self.substitutions)
+            substitutions.update(other.substitutions)
+            return Model(self.cost*other.cost,
+                         self.constraints + other.constraints,
+                         substitutions)
         else:
-            varlocs, exps, cs = base.varlocs, base.exps, base.cs
-            # substitute normally
-            if subs:
-                varlocs, exps, cs, subs = substitution(varlocs,
-                                                       exps,
-                                                       cs,
-                                                       subs)
-            substitutions.update(subs)
+            return NotImplemented
 
-        self.load(PosyTuple(exps, cs, varlocs, substitutions))
+    def __mul__(self, other):
+        if isinstance(other, Model):
+            # TODO: combine shared variables
+            substitutions = dict(self.substitutions)
+            substitutions.update(other.substitutions)
+            return Model(self.cost*other.cost,
+                         self.constraints + other.constraints,
+                         substitutions)
+        else:
+            return NotImplemented
 
-    def load(self, posytuple):
-        self.last = posytuple
-        for attr in ['exps', 'cs', 'varlocs', 'substitutions']:
-            setattr(self, attr, getattr(posytuple, attr))
+    # TODO: add get_item
 
-    def genA(self, allpos=True, printing=True):
-        # A: exponents of the various free variables for each monomial
-        #    rows of A are variables, columns are monomials
+    def solve(self, solver=None, verbosity=2, skipfailures=True, *args, **kwargs):
+        """Forms a GeometricProgram and attempts to solve it.
 
-        removed_idxs = []
+        Arguments
+        ---------
+        solver : string or function (optional)
+            If None, uses the default solver found in installation.
 
-        if not allpos:
-            cs, exps, p_idxs = [], [], []
-            for i in range(len(self.cs)):
-                if self.cs[i] < 0:
-                    raise RuntimeWarning("GPs cannot have negative "
-                                         "coefficients")
-                elif self.cs[i] > 0:
-                    cs.append(self.cs[i])
-                    exps.append(self.exps[i])
-                    p_idxs.append(self.p_idxs[i])
+        verbosity : int (optional)
+            If greater than 0 prints runtime messages.
+            Is decremented by one and then passed to programs.
+
+        skipfailures : bool (optional)
+            If True, when a solve errors during a sweep, skip it.
+
+        *args, **kwargs : Passed to solver
+
+        Returns
+        -------
+        sol : SolutionArray
+            See the SolutionArray documentation for details.
+
+        Raises
+        ------
+        ValueError if called on a model with Signomials.
+        RuntimeWarning if an error occurs in solving or parsing the solution.
+        """
+        try:
+            return self._solve("gp", solver, verbosity, skipfailures, *args, **kwargs)
+        except ValueError:
+            raise ValueError("'solve()' can only be called on models that do"
+                             " not contain Signomials, because only those"
+                             " models guarantee a global solution."
+                             " For a local solution, try 'localsolve()'.")
+
+    def localsolve(self, solver=None, verbosity=2, skipfailures=True, *args, **kwargs):
+        """Forms a SignomialProgram and attempts to locally solve it.
+
+        Arguments
+        ---------
+        solver : string or function (optional)
+            If None, uses the default solver found in installation.
+
+        verbosity : int (optional)
+            If greater than 0 prints runtime messages.
+            Is decremented by one and then passed to programs.
+
+        skipfailures : bool (optional)
+            If True, when a solve errors during a sweep, skip it.
+
+        *args, **kwargs : Passed to solver
+
+        Returns
+        -------
+        sol : SolutionArray
+            See the SolutionArray documentation for details.
+
+        Raises
+        ------
+        ValueError if called on a model without Signomials.
+        RuntimeWarning if an error occurs in solving or parsing the solution.
+        """
+        try:
+            return self._solve("sp", solver, verbosity, skipfailures, *args, **kwargs)
+        except ValueError:
+            raise ValueError("'localsolve()' can only be called on models that"
+                             " contain Signomials, because such"
+                             " models have only local solutions. Models"
+                             " without Signomials have global solutions,"
+                             " so try using 'solve()'.")
+
+    def _solve(self, programType, solver, verbosity, skipfailures, *args, **kwargs):
+        """Generates a program and solves it, sweeping as appropriate.
+
+        Arguments
+        ---------
+        solver : string or function (optional)
+            If None, uses the default solver found in installation.
+
+        programType : "gp" or "sp"
+
+        verbosity : int (optional)
+            If greater than 0 prints runtime messages.
+            Is decremented by one and then passed to programs.
+
+        skipfailures : bool (optional)
+            If True, when a solve errors during a sweep, skip it.
+
+        *args, **kwargs : Passed to solver
+
+        Returns
+        -------
+        sol : SolutionArray
+            See the SolutionArray documentation for details.
+
+        Raises
+        ------
+        ValueError if programType and model constraints don't match.
+        RuntimeWarning if an error occurs in solving or parsing the solution.
+        """
+        posynomials = self.signomials
+        sweep, linkedsweep, constants = self.separate_subs
+        solution = SolutionArray()
+        kwargs.update({"solver": solver})
+        kwargs.update({"verbosity": verbosity - 1})
+
+        if sweep:
+            if len(sweep) == 1:
+                sweep_grids = np.array(sweep.values())
+            else:
+                sweep_grids = np.meshgrid(*list(sweep.values()))
+
+            N_passes = sweep_grids[0].size
+            sweep_vects = {var: grid.reshape(N_passes)
+                           for (var, grid) in zip(sweep, sweep_grids)}
+
+            if verbosity > 0:
+                print("Solving for %i variables over %i passes." %
+                      (len(self.variables), N_passes))
+
+            def solve_pass(i):
+                this_pass = {var: sweep_vect[i]
+                             for (var, sweep_vect) in sweep_vects.items()}
+                linked = {var: fn(*[this_pass[VarKey(v)]
+                                    for v in var.descr["args"]])
+                          for var, fn in linkedsweep.items()}
+                this_pass.update(linked)
+                constants_ = constants
+                constants_.update(this_pass)
+                program, mmaps = self.formProgram(programType, posynomials,
+                                                  constants_, verbosity)
+
+                try:
+                    if programType == "gp":
+                        result = program.solve(*args, **kwargs)
+                    elif programType == "sp":
+                        result = program.localsolve(*args, **kwargs)
+                    sol = self.parse_result(result, constants_, mmaps,
+                                            sweep, linkedsweep)
+                    return program, sol
+                except (RuntimeWarning, ValueError):
+                    return program, program.result
+
+            if POOL:
+                mapfn = POOL.map_sync
+            else:
+                mapfn = map
+
+            self.program = []
+            for program, result in mapfn(solve_pass, range(N_passes)):
+                if not skipfailures:
+                    self.program.append(program)
+                    solution.append(result)
+                elif not hasattr(result, "status"):
+                    # this is an optimal solution
+                    self.program.append(program)
+                    solution.append(result)
+        else:
+            self.program, mmaps = self.formProgram(programType, posynomials,
+                                                   constants, verbosity)
+            if programType == "gp":
+                result = self.program.solve(*args, **kwargs)
+            elif programType == "sp":
+                result = self.program.localsolve(*args, **kwargs)
+            sol = self.parse_result(result, constants, mmaps)
+            solution.append(sol)
+
+        solution.program = self.program
+        solution.toarray()
+        self.solution = solution
+        return solution
+
+    def gp(self, verbosity=2):
+        m, _ = self.formProgram("gp", self.signomials, self.allsubs, verbosity)
+        return m
+
+    def sp(self, verbosity=2):
+        m, _ = self.formProgram("sp", self.signomials, self.allsubs, verbosity)
+        return m
+
+    def formProgram(self, programType, signomials, subs, verbosity=2):
+        """Generates a program and solves it, sweeping as appropriate.
+
+        Arguments
+        ---------
+        programType : "gp" or "sp"
+
+        signomials : list of Signomials
+            The first Signomial is the cost function.
+
+        subs : dict
+            Substitutions to do before solving.
+
+        verbosity : int (optional)
+            If greater than 0 prints runtime messages.
+            Is decremented by one and then passed to program inits.
+
+        Returns
+        -------
+        program : GP or SP
+        mmaps : Map from initial monomials to substitued and simplified one.
+                See small_scripts.sort_and_simplify for more details.
+
+        Raises
+        ------
+        ValueError if programType and model constraints don't match.
+        """
+        signomials_, mmaps = [], []
+        for s in signomials:
+            _, exps, cs, _ = substitution(s.varlocs, s.varkeys,
+                                          s.exps, s.cs, subs)
+            if any((mag(c) != 0 for c in cs)):
+                exps, cs, mmap = sort_and_simplify(exps, cs, return_map=True)
+                signomials_.append(Signomial(exps, cs, units=s.units))
+                mmaps.append(mmap)
+            else:
+                mmaps.append([None]*len(cs))
+
+        cost = signomials_[0]
+        constraints = signomials_[1:]
+
+        if programType in ["gp", "GP"]:
+            return GeometricProgram(cost, constraints, verbosity-1), mmaps
+        elif programType in ["sp", "SP"]:
+            return SignomialProgram(cost, constraints), mmaps
+        else:
+            raise ValueError("unknown program type %s." % programType)
+
+    def __repr__(self):
+        return "gpkit.%s(%s)" % (self.__class__.__name__, str(self))
+
+    def __str__(self):
+        """String representation of a Model.
+        Contains all of its parameters."""
+        return "\n".join(["# minimize",
+                          "    %s," % self.cost,
+                          "[   # subject to"] +
+                         ["    %s," % constr
+                          for constr in self.constraints] +
+                         ['],',
+                          "    substitutions={ %s }" %
+                          pformat(self.allsubs, indent=20)[20:-1]])
+
+    def _latex(self, unused=None):
+        """LaTeX representation of a GeometricProgram.
+        Contains all of its parameters."""
+        sweep, linkedsweep, constants = self.separate_subs
+        # TODO: print sweeps and linkedsweeps
+        return "\n".join(["\\begin{array}[ll]",
+                          "\\text{}",
+                          "\\text{minimize}",
+                          "    & %s \\\\" % self.cost._latex(),
+                          "\\text{subject to}"] +
+                         ["    & %s \\\\" % constr._latex()
+                          for constr in self.constraints] +
+                         ["\\text{substituting}"] +
+                         sorted(["    & %s = %s \\\\" % (var._latex(),
+                                                         latex_num(val))
+                                 for var, val in subs.items()]) +
+                         ["\\end{array}"])
+
+    def parse_result(self, result, constants, mmaps, sweep={}, linkedsweep={},
+                     freevar_sensitivity_tolerance=1e-4,
+                     localmodel_sensitivity_requirement=0.1):
+        cost = result["cost"]
+        freevariables = dict(result["variables"])
+        sweepvariables = {var: val for var, val in constants.items()
+                          if var in sweep or var in linkedsweep}
+        constants = {var: val for var, val in constants.items()
+                     if var not in sweepvariables}
+        variables = dict(freevariables)
+        variables.update(constants)
+        variables.update(sweepvariables)
+        sensitivities = dict(result["sensitivities"])
+
+        # Remap monomials after substitution and simplification.
+        #  The monomial sensitivities from the GP/SP are in terms of this
+        #  smaller post-substitution list of monomials, so we need to map that
+        #  back to the pre-substitution list.
+        #
+        #  Each "mmap" is a list whose elements are either None
+        #  (indicating that the monomial was removed after subsitution)
+        #  or a tuple with:
+        #    the index of the monomial they became after subsitution,
+        #    the percentage of that monomial that they formed
+        #      (equal to their c/that monomial's final c)
+        nu = result["sensitivities"]["monomials"]
+        nu_ = []
+        mons = 0
+        for mmap in mmaps:
+            max_idx = 0
+            for m_i in mmap:
+                if m_i is None:
+                    nu_.append(0)
                 else:
-                    removed_idxs.append(i)
+                    idx, percentage = m_i
+                    nu_.append(percentage*nu[idx + mons])
+                    if idx > max_idx:
+                        max_idx = idx
+            mons += 1 + max_idx
+        nu_ = np.array(nu_)
+        sensitivities["monomials"] = nu_
 
-            k = []
-            count = 1
-            last = None
-            for p in p_idxs:
-                if last == p:
-                    count += 1
-                elif last is not None:
-                    k.append(count)
-                    count = 1
-                last = p
-            k.append(count)
+        sens_vars = {var: sum([self.unsubbed_exps[i][var]*nu_[i]
+                               for i in locs])
+                     for (var, locs) in self.unsubbed_varlocs.items()}
+        sensitivities["variables"] = sens_vars
 
-            varlocs, _ = locate_vars(exps)
-        else:
-            cs, exps, p_idxs, k, varlocs = (self.cs, self.exps, self.p_idxs,
-                                            self.k, self.varlocs)
+        # free-variable sensitivities must be < arbitrary epsilon 1e-4
+        for var, S in sensitivities["variables"].items():
+            if var in freevariables and abs(S) > freevar_sensitivity_tolerance:
+                print("free variable too sensitive:"
+                      " S_{%s} = %0.2e" % (var, S))
 
-        missingbounds = {}
-        self.A = CootMatrix([], [], [])
-        for j, var in enumerate(varlocs):
-            varsign = "both" if "value" in var.descr else None
-            for i in varlocs[var]:
-                exp = exps[i][var]
-                self.A.append(i, j, exp)
-                if varsign is "both":
-                    pass
-                elif varsign is None:
-                    varsign = np.sign(exp)
-                elif np.sign(exp) != varsign:
-                    varsign = "both"
+        localexp = {var: S for (var, S) in sens_vars.items()
+                    if abs(S) >= localmodel_sensitivity_requirement}
+        localcs = (variables[var]**-S for (var, S) in localexp.items())
+        localc = functools_reduce(mul, localcs, cost)
+        localmodel = Monomial(localexp, localc)
 
-            if varsign != "both" and var not in self.sweep:
-                if varsign == 1:
-                    bound = "lower"
-                elif varsign == -1:
-                    bound = "upper"
-                missingbounds[var] = bound
+        # vectorvar substitution
+        veckeys = set()
+        for var in self.unsubbed_varlocs:
+            if "idx" in var.descr and "shape" in var.descr:
+                descr = dict(var.descr)
+                idx = descr.pop("idx")
+                if "value" in descr:
+                    descr.pop("value")
+                if "units" in descr:
+                    units = descr.pop("units")
+                    veckey = VarKey(**descr)
+                    veckey.descr["units"] = units
+                else:
+                    veckey = VarKey(**descr)
+                veckeys.add(veckey)
 
-        # add subbed-out monomials at the end
-        if not exps[-1]:
-            self.A.append(0, len(exps)-1, 0)
-        self.A.update_shape()
+                for vardict in [variables, sensitivities["variables"],
+                                constants, sweepvariables, freevariables]:
+                    if var in vardict:
+                        if veckey in vardict:
+                            vardict[veckey][idx] = vardict[var]
+                        else:
+                            vardict[veckey] = np.full(var.descr["shape"], np.nan)
+                            vardict[veckey][idx] = vardict[var]
 
-        self.missingbounds = missingbounds
-        if printing:
-            self.checkbounds()
+                        del vardict[var]
 
-        return cs, exps, self.A, p_idxs, k, removed_idxs
+        # TODO: remove after issue #269 is resolved
+        # for veckey in veckeys:
+        #     # TODO: print index that error occured at
+        #     if any(np.isnan(variables[veckey])):
+        #         print variables
+        #         raise RuntimeWarning("did not fully fill vector variables.")
 
-    def checkbounds(self):
-        for var, bound in sorted(self.missingbounds.items()):
-            print("%s has no %s bound" % (var, bound))
+        return dict(cost=cost,
+                    constants=constants,
+                    sweepvariables=sweepvariables,
+                    freevariables=freevariables,
+                    variables=variables,
+                    sensitivities=sensitivities,
+                    localmodel=localmodel)

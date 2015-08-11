@@ -2,8 +2,6 @@
 import unittest
 import numpy as np
 from gpkit.small_classes import HashVector
-from gpkit.small_scripts import results_table
-from gpkit.varkey import VarKey
 
 class TestHashVector(unittest.TestCase):
     """TestCase for the HashVector class"""
@@ -47,19 +45,7 @@ class TestHashVector(unittest.TestCase):
         self.assertEqual(a * b * c, HashVector())
         self.assertEqual(a * {'x': 6, 'k': 4}, HashVector(x=6))
 
-class TestResultsTable(unittest.TestCase):
-    """TestCase for results_table()"""
-
-    def test_nan_printing(self):
-        """Test that solution prints when it contains nans"""
-        x = VarKey(name='x')
-        data = {x: np.array([np.nan,   1.,   1.,   1.,   1.])}
-        title = "Free variables"
-        printstr = results_table(data, title)
-        self.assertTrue("nan" in printstr)
-        self.assertTrue(title in printstr)
-
-TESTS = [TestHashVector, TestResultsTable]
+TESTS = [TestHashVector]
 
 
 if __name__ == '__main__':

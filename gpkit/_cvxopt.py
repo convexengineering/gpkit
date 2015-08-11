@@ -1,10 +1,11 @@
-def cvxoptimize_fn(options):
-    from cvxopt import solvers, spmatrix, matrix, log, exp
+def cvxoptimize_fn(options=None):
+    from cvxopt import solvers, spmatrix, matrix, log
     solvers.options.update({'show_progress': False})
-    solvers.options.update(options)
+    if options:
+        solvers.options.update(options)
     gpsolver = solvers.gp
 
-    def cvxoptimize(c, A, p_idxs, k):
+    def cvxoptimize(c, A, k, *args, **kwargs):
         """Interface to the CVXOPT solver
 
             Definitions
@@ -18,10 +19,10 @@ def cvxoptimize_fn(options):
             ---------
             c : floats array of shape n
                 Coefficients of each monomial
-            A: floats array of shape (m,n)
+            A : floats array of shape (m,n)
                 Exponents of the various free variables for each monomial.
-            p_idxs: ints array of shape n
-                Posynomial index of each monomial (not used)
+            k : ints array of shape n
+                number of monomials (columns of F) present in each constraint
 
             Returns
             -------

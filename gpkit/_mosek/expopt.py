@@ -12,13 +12,9 @@
 
 """
 
-from math import exp
-from ctypes import CDLL
 from ctypes import pointer as ptr
 from ctypes import POINTER as ptr_factory
 from ctypes import c_double, c_int, c_void_p
-from os import sep as os_sep
-from os.path import dirname as os_path_dirname
 
 try:
     from .lib import expopt_h
@@ -26,15 +22,15 @@ except Exception as e:
     raise ImportError("Could not load MOSEK library: "+repr(e))
 
 
-class module_shortener(object):
+class ModuleShortener(object):
     """Makes ctype calls look like C calls, but still use namespaces.
 
-          example in C:  MSK_makeemptytask
-        regular python:  MSK.MSK_makeemptytask
-    w/module_shortener:  MSK._makeemptytask
+         example in C:  MSK_makeemptytask
+       regular python:  MSK.MSK_makeemptytask
+    w/ModuleShortener:  MSK._makeemptytask
 
-    Parameters
-    ----------
+    Arguments
+    ---------
     stub : str
       String to append to all getattrs (the string "MSK_" above)
     module : str
@@ -59,21 +55,23 @@ class module_shortener(object):
         return getattr(self.module, self.stub+attribute)
 
 
-MSK = module_shortener("MSK", expopt_h)
+MSK = ModuleShortener("MSK", expopt_h)
 
+# lookup table from mosek.h, "MSKsolsta_enum"
+# switched where indicated because MOSEK solves the dual GP problem
 MSK._SOL_STA_LOOKUPTABLE = ["UNKNOWN",
                             "OPTIMAL",
-                            "DUAL_FEAS",  # switched with below for GP
-                            "PRIM_FEAS",
+                            "DUAL_FEAS",  # originally position 3
+                            "PRIM_FEAS",  # originally position 2
                             "PRIM_AND_DUAL_FEAS",
-                            "PRIM_INFEAS_CER",
-                            "DUAL_INFEAS_CER",  # switched with below
+                            "DUAL_INFEAS_CER",  # originally position 6
+                            "PRIM_INFEAS_CER",  # originally position 5
                             "NEAR_OPTIMAL",
-                            "NEAR_DUAL_FEAS",  # switched with below
-                            "NEAR_PRIM_FEAS",
+                            "NEAR_DUAL_FEAS",  # originally position 9
+                            "NEAR_PRIM_FEAS",  # originally position 8
                             "NEAR_PRIM_AND_DUAL_FEAS",
-                            "NEAR_PRIM_INFEAS_CER",
-                            "NEAR_DUAL_INFEAS_CER",  # switched with below
+                            "NEAR_DUAL_INFEAS_CER",  # originally position 12
+                            "NEAR_PRIM_INFEAS_CER",  # originally position 11
                             "INTEGER_OPTIMAL",
                             "NEAR_INTEGER_OPTIMAL"]
 
@@ -81,7 +79,7 @@ MSK._SOL_STA_LOOKUPTABLE = ["UNKNOWN",
 def c_array(py_array, c_type):
     """Makes a C array from a python list or array and a C datatype
 
-    Parameters
+    Arguments
     ----------
       py_array: array-like data to convert
       c_type: C datatype to which elements of py_array will be converted
@@ -105,7 +103,7 @@ def printcb(void, msg):
         `print msg[:-1]`
     before the return statement.
 
-    Parameters
+    Arguments
     ----------
     void : None
       Placeholder to emulate C function
@@ -121,7 +119,7 @@ def printcb(void, msg):
     return 0
 
 
-def imize(c, A, p_idxs, k):
+def imize(c, A, p_idxs, *args, **kwargs):
     """Interface to the MOSEK EXPOPT solver via C
 
     This code is based on the example C file "tskexpopt.c" at
@@ -134,7 +132,7 @@ def imize(c, A, p_idxs, k):
     m is the number of variables in the gp
     p is the number of posynomials in the gp
 
-    Parameters
+    Arguments
     ----------
     c : floats array of shape n
         Coefficients of each monomial

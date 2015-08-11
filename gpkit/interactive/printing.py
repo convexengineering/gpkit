@@ -217,7 +217,7 @@ def init_printing(pretty_print=True, order=None, use_unicode=None,
     """
 Initializes pretty-printer depending on the environment.
 
-Parameters
+Arguments
 ==========
 
 pretty_print: boolean

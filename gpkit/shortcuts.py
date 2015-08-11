@@ -1,12 +1,17 @@
 from .variables import Variable
 from .variables import VectorVariable
 from .variables import ArrayVariable
-from .geometric_program import GeometricProgram
-from .signomial_program import SignomialProgram
+from .model import Model
 
 Var = Variable
 Vec = VectorVariable
 Arr = ArrayVariable
+Model = Model
 
-GP = GeometricProgram
-SP = SignomialProgram
+def GP(*args, **kwargs):
+    print("'Model' has replaced 'GP'. Please update your code!")
+    return Model(*args, **kwargs)
+
+def SP(*args, **kwargs):
+    print("'Model' has replaced 'GP'. Please update your code!")
+    return Model(*args, **kwargs)

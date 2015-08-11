@@ -278,13 +278,13 @@ class Signomial(object):
                        for (var, x) in exp.items() if x != 0]
             varstrs.sort()
             c = mag(c)
-            cstr = "%.2g" % c
-            if cstr == "-1":
+            cstr = "%.3g" % c
+            if cstr == "-1" and varstrs:
                 mstrs.append("-" + mult_symbol.join(varstrs))
             else:
                 cstr = [cstr] if cstr != "1" or not varstrs else []
                 mstrs.append(mult_symbol.join(cstr + varstrs))
-        return " + ".join(sorted(mstrs)) + unitstr(self.units, ", units='%s'")
+        return " + ".join(sorted(mstrs)) + unitstr(self.units, " [%s]")
 
     def descr(self, descr):
         self.descr = descr

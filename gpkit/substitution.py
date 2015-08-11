@@ -19,7 +19,7 @@ from . import DimensionalityError
 
 def getsubs(varkeys, varlocs, substitutions):
     subs = {}
-    varset = frozenset(varlocs.keys())
+    varset = frozenset(varlocs)
     for var, sub in substitutions.items():
         if not is_sweepvar(sub):
             if isinstance(var, Monomial):

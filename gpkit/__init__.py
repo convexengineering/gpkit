@@ -88,13 +88,12 @@ def disable_signomials():
 
 from .nomials import Monomial, Posynomial, Signomial
 from .variables import Variable, VectorVariable, ArrayVariable
-from .varkey import VarKey
-from .posyarray import PosyArray
 from .geometric_program import GeometricProgram
 from .signomial_program import SignomialProgram
+from .varkey import VarKey
+from .posyarray import PosyArray
+from .model import Model
 from .tools import composite_objective, link
-from .tools import make_feasibility_gp, closest_feasible_point
-
 from .shortcuts import GP, SP
 
 if units:
@@ -168,7 +167,11 @@ try:
     with open(settings_path) as settingsfile:
         lines = [line[:-1].split(" : ") for line in settingsfile
                  if len(line.split(" : ")) == 2]
-        settings = {name: value.split(", ") for (name, value) in lines}
+        settings = {name: value.split(", ") for name, value in lines}
+        for name, value in settings.items():
+            # hack to flatten 1-element lists, unlesss they're the solver list
+            if len(value) == 1 and name != "installed_solvers":
+                settings[name] = value[0]
     try:
         del lines
         del line
