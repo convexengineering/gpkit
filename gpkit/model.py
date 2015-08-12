@@ -18,6 +18,7 @@ from collections import Iterable
 from .nomials import Constraint, MonoEQConstraint, Posynomial
 from .nomials import Monomial, Signomial
 from .varkey import VarKey
+from .posyarray import PosyArray
 from .substitution import substitution, getsubs
 
 from .small_classes import Strings
@@ -31,7 +32,7 @@ from .solution_array import SolutionArray
 from .signomial_program import SignomialProgram
 from .geometric_program import GeometricProgram
 
-from .variables import Variable
+from .variables import Variable, VectorVariable
 
 try:
     from IPython.parallel import Client
@@ -115,22 +116,8 @@ class Model(object):
                             exp[newk] = exp.pop(k)
 
     @property
-    def allsubs(self):
-        subs = {var: var.descr["value"]
-                for var in self.variables if "value" in var.descr}
-        subs.update(self.substitutions)
-        return subs
-
-    @property
-    def variables(self):
-        variables = {}
-        for s in self.signomials:
-            variables.update({vk: Variable(**vk.descr) for vk in s.varlocs})
-        return variables
-
-    @property
     def signomials(self):
-        constraints = tuple(flatten(self.constraints, Constraint))
+        constraints = tuple(flatten(self.constraints, Signomial))
         # TODO: parse constraints during flattening, calling Posyarray on
         #       anything that holds only posys and then saving that list.
         #       This will allow prettier constraint printing.
@@ -142,14 +129,14 @@ class Model(object):
                 posynomials.append(constraint)
         return posynomials
 
-    # TODO: replcae the below with a dynamically created NomialData 'unsubbed'
+    # TODO: replace the below with a dynamically created NomialData 'unsubbed'
     @property
     def unsubbed_cs(self):
         return np.hstack((mag(s.cs) for s in self.signomials))
 
     @property
     def unsubbed_exps(self):
-     return functools_reduce(add, (s.exps for s in self.signomials))
+        return functools_reduce(add, (s.exps for s in self.signomials))
 
     @property
     def unsubbed_varlocs(self):
@@ -160,8 +147,30 @@ class Model(object):
         return locate_vars(self.unsubbed_exps)[1]
 
     @property
-    def separate_subs(self):
-        "Seperates sweep substitutions from constants."
+    def variables(self):
+        "All variables currently in the Model."
+        variables = {}
+        for s in self.signomials:
+            variables.update({vk: Variable(**vk.descr) for vk in s.varlocs})
+        return variables
+
+    @property
+    def allsubs(self):
+        "All substitutions currently in the Model."
+        subs = {var: var.descr["value"]
+                for var in self.variables if "value" in var.descr}
+        subs.update(self.substitutions)
+        return subs
+
+    @property
+    def constants(self):
+        "All constants (non-sweep substitutions) currently in the Model."
+        return getsubs(self.unsubbed_varkeys, self.unsubbed_varlocs,
+                       self.allsubs)
+
+    @property
+    def separatesubs(self):
+        "All substitutions in the model, separated."
         # TODO: refactor this
         substitutions = self.allsubs
         varlocs, varkeys = self.unsubbed_varlocs, self.unsubbed_varkeys
@@ -319,7 +328,7 @@ class Model(object):
         RuntimeWarning if an error occurs in solving or parsing the solution.
         """
         posynomials = self.signomials
-        sweep, linkedsweep, constants = self.separate_subs
+        sweep, linkedsweep, constants = self.separatesubs
         solution = SolutionArray()
         kwargs.update({"solver": solver})
         kwargs.update({"verbosity": verbosity - 1})
@@ -389,15 +398,142 @@ class Model(object):
         solution.program = self.program
         solution.toarray()
         self.solution = solution  # NOTE: SIDE EFFECTS
+        if verbosity > 0:
+            print solution.table()
         return solution
 
+    # TODO: add sweepgp(index)?
+
     def gp(self, verbosity=2):
-        m, _ = self.formProgram("gp", self.signomials, self.allsubs, verbosity)
+        m, _ = self.formProgram("gp", self.signomials, self.constants, verbosity)
         return m
 
     def sp(self, verbosity=2):
-        m, _ = self.formProgram("sp", self.signomials, self.allsubs, verbosity)
+        m, _ = self.formProgram("sp", self.signomials, self.constants, verbosity)
         return m
+
+    def feasibility(self,
+                    search=["overall", "constraints", "constants"],
+                    constvars=None, verbosity=0):
+        """Searches for feasibile versions of the Model.
+
+        Argument
+        --------
+        search : list of strings or string
+            The search(es) to perform. Details on each type below.
+        constvars : iterable
+            If declared, only constants in constvars will be changed.
+            Otherwise, all constants can be changed in a constants search.
+        verbosity : int
+            If greater than 0, will print a report.
+            Decremented by 1 and passed to solvers.
+
+        Returns
+        -------
+        feasibilities : dict, float, or list
+            Has an entry for each search; if only one, returns that directly.
+
+            "overall" : float
+                The smallest number each constraint's less-than side would
+                have to be divided by to make the program feasible.
+            "constraints" : array of floats
+                Similar to "overall", but contains a number for each
+                constraint, and minimizes the product of those numbers.
+            "constants" : dict of varkeys: floats
+                A substitution dictionary that would make the program feasible,
+                chosen to minimize the product of new_values/old_values.
+
+        Examples
+        -------
+        >>> from gpkit import Variable, Model, PosyArray
+        >>> x = Variable("x")
+        >>> x_min = Variable("x_min", 2)
+        >>> x_max = Variable("x_max", 1)
+        >>> m = Model(x, [x <= x_max, x >= x_min])
+        >>> # m.solve()  # RuntimeWarning!
+        >>> feas = m.feasibility()
+        >>>
+        >>> # USING OVERALL
+        >>> m.constraints = PosyArray(m.signomials)/feas["overall"]
+        >>> m.solve()
+        >>>
+        >>> # USING CONSTRAINTS
+        >>> m = Model(x, [x <= x_max, x >= x_min])
+        >>> m.constraints = PosyArray(m.signomials)/feas["constraints"]
+        >>> m.solve()
+        >>>
+        >>> # USING CONSTANTS
+        >>> m = Model(x, [x <= x_max, x >= x_min])
+        >>> m.substitutions.update(feas["constants"])
+        >>> m.solve()
+        """
+        feasibilities = {}
+
+        if all(isinstance(s, Posynomial) for s in self.signomials):
+            if verbosity > 0:
+                print("")
+                print("Infeasibility report")
+                print("--------------------")
+            if "overall" in search:
+                max_gp = self.gp().feasibility_search("max")
+                infeasibility = max_gp.solve(verbosity=verbosity-1)["cost"]
+                if verbosity > 0:
+                    print "      overall : %.2f" % infeasibility
+                feasibilities["overall"] = infeasibility
+
+            if "constraints" in search:
+                prod_gp = self.gp().feasibility_search("product")
+                slackvars = list(prod_gp.cost.varkeys.values())[0]
+                result = prod_gp.solve(verbosity=verbosity-1)
+                con_infeas = [result["variables"][sv] for sv in slackvars]
+                if verbosity > 0:
+                    print "  constraints : %s" % con_infeas
+                feasibilities["constraints"] = con_infeas
+
+        constants = self.constants
+        if constvars:
+            constvars = set(constvars)
+            # get varkey versions
+            constvars = getsubs(self.unsubbed_varkeys, self.unsubbed_varlocs,
+                                dict(zip(constvars, constvars)))
+            # filter constants
+            constants = {k: v for k, v in constants.items() if k in constvars}
+        if "constants" in search and constants:
+            slackb = VectorVariable(len(constants))
+            constvarkeys, constvars, rmvalue, addvalue = [], [], {}, {}
+            for vk in constants.keys():
+                descr = dict(vk.descr)
+                del descr["value"]
+                vk_ = VarKey(**descr)
+                rmvalue[vk] = vk_
+                addvalue[vk_] = vk
+                constvarkeys.append(vk_)
+                constvars.append(Variable(**descr))
+            constvars = PosyArray(constvars)
+            constvalues = PosyArray(constants.values())
+            constraints = [c.sub(rmvalue) for c in self.constraints]
+            # cost function could also be .sum(), self.cost would break ties
+            var_m = Model(slackb.prod(),
+                          constraints
+                          + [slackb >= 1,
+                             constvalues/slackb <= constvars,
+                             constvars <= constvalues*slackb])
+            sol = var_m.solve(verbosity=verbosity-1)
+            feasible_constvalues = sol(constvars).tolist()
+            changed_vals = feasible_constvalues != np.array(constvalues)
+            var_infeas = {addvalue[constvarkeys[i]]: feasible_constvalues[i]
+                          for i in np.where(changed_vals)}
+            if verbosity > 0:
+                print "    constants : %s" % var_infeas
+            feasibilities["constants"] = var_infeas
+
+        if verbosity > 0:
+            print("")
+
+        if len(feasibilities) > 1:
+            return feasibilities
+        else:
+            return feasibilities.values()[0]
 
     def formProgram(self, programType, signomials, subs, verbosity=2):
         """Generates a program and solves it, sweeping as appropriate.
@@ -465,7 +601,6 @@ class Model(object):
     def _latex(self, unused=None):
         """LaTeX representation of a GeometricProgram.
         Contains all of its parameters."""
-        sweep, linkedsweep, constants = self.separate_subs
         # TODO: print sweeps and linkedsweeps
         return "\n".join(["\\begin{array}[ll]",
                           "\\text{}",
@@ -477,7 +612,7 @@ class Model(object):
                          ["\\text{substituting}"] +
                          sorted(["    & %s = %s \\\\" % (var._latex(),
                                                          latex_num(val))
-                                 for var, val in subs.items()]) +
+                                 for var, val in self.constants.items()]) +
                          ["\\end{array}"])
 
     def parse_result(self, result, constants, mmaps, sweep={}, linkedsweep={},

@@ -182,13 +182,11 @@ class GeometricProgram(object):
         else:
             return result
 
-    def feasibility_search(self, varname=None, flavour="max", *args, **kwargs):
+    def feasibility_search(self, flavour="max", varname=None, *args, **kwargs):
         """Returns a new GP for the closest feasible point of the current GP.
 
         Arguments
         ---------
-        varname : str
-            LaTeX name of slack variables.
         flavour : str
             Specifies the objective function minimized in the search:
 
@@ -200,6 +198,9 @@ class GeometricProgram(object):
                         the product of those slacks. Useful for identifying the
                         most problematic constraints. Described in Eqn. 11
                         of [Boyd2007]
+
+        varname : str
+            LaTeX name of slack variables.
 
         *args, **kwargs
             Passed on to GP initialization.
