@@ -76,9 +76,19 @@ SIGNOMIALS_ENABLED = False
 
 
 class enable_signomials(object):
-    "Class to put up and tear down signomial support in an instance of GPkit."
+    """Class to put up and tear down signomial support in an instance of GPkit.
 
-    def __enter__(self, enable=True):
+    Example
+    -------
+    >>> import gpkit
+    >>> x = gpkit.Variable("x")
+    >>> y = gpkit.Variable("y", 0.1)
+    >>> with enable_signomials():
+    >>>     constraints = [x >= 1-y]
+    >>> gpkit.Model(x, constraints).localsolve()
+    """
+
+    def __enter__(self):
         global SIGNOMIALS_ENABLED
         if enable:
             SIGNOMIALS_ENABLED = True
