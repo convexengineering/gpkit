@@ -9,30 +9,26 @@
 
 import numpy as np
 
-from pprint import pformat
-from collections import defaultdict
-from functools import reduce as functools_reduce
-from operator import mul, add
 from collections import Iterable
 
-from .nomials import Constraint, MonoEQConstraint, Posynomial
-from .nomials import Monomial, Signomial
-from .varkey import VarKey
-from .posyarray import PosyArray
-from .substitution import substitution, getsubs
+from pprint import pformat
+from collections import defaultdict
 
+from .nomials import Constraint, MonoEQConstraint
+from .nomials import Monomial, Posynomial, Signomial
+from .posyarray import PosyArray
+from .varkey import VarKey
+from .variables import Variable, VectorVariable
+from .solution_array import SolutionArray
 from .small_classes import Strings
+from .nomial_data import NomialData
+
+from .solution_array import parse_result
+from .substitution import getconstants, separatesubs
 from .small_scripts import flatten
-from .small_scripts import locate_vars
 from .small_scripts import mag
 from .small_scripts import is_sweepvar
-from .small_scripts import sort_and_simplify
-
-from .solution_array import SolutionArray
-from .signomial_program import SignomialProgram
-from .geometric_program import GeometricProgram
-
-from .variables import Variable, VectorVariable
+from .form_program import form_program
 
 try:
     from IPython.parallel import Client
@@ -129,80 +125,31 @@ class Model(object):
                 posynomials.append(constraint)
         return posynomials
 
-    # TODO: replace the below with a dynamically created NomialData 'unsubbed'
     @property
-    def unsubbed_cs(self):
-        return np.hstack((mag(s.cs) for s in self.signomials))
-
-    @property
-    def unsubbed_exps(self):
-        return functools_reduce(add, (s.exps for s in self.signomials))
-
-    @property
-    def unsubbed_varlocs(self):
-        return locate_vars(self.unsubbed_exps)[0]
-
-    @property
-    def unsubbed_varkeys(self):
-        return locate_vars(self.unsubbed_exps)[1]
-
-    @property
-    def variables(self):
-        "All variables currently in the Model."
-        variables = {}
-        for s in self.signomials:
-            variables.update({vk: Variable(**vk.descr) for vk in s.varlocs})
-        return variables
+    def unsubbed(self):
+        return NomialData(signomials=self.signomials, simplify=False)
 
     @property
     def allsubs(self):
         "All substitutions currently in the Model."
-        subs = {var: var.descr["value"]
-                for var in self.variables if "value" in var.descr}
+        subs = self.unsubbed.values
         subs.update(self.substitutions)
         return subs
 
     @property
-    def constants(self):
-        "All constants (non-sweep substitutions) currently in the Model."
-        return getsubs(self.unsubbed_varkeys, self.unsubbed_varlocs,
-                       self.allsubs)
+    def signomials_et_al(self):
+        "Get signomials, unsubbed, allsubs in one pass."
+        signomials = self.signomials
+        unsubbed = NomialData(signomials=signomials, simplify=False)
+        allsubs = unsubbed.values
+        allsubs.update(self.substitutions)
+        return signomials, unsubbed, allsubs
 
     @property
-    def separatesubs(self):
-        "All substitutions in the model, separated."
-        # TODO: refactor this
-        substitutions = self.allsubs
-        varlocs, varkeys = self.unsubbed_varlocs, self.unsubbed_varkeys
-        sweep, linkedsweep = {}, {}
-        constants = dict(substitutions)
-        for var, sub in substitutions.items():
-            if is_sweepvar(sub):
-                del constants[var]
-                if isinstance(var, Strings):
-                    var = varkeys[var]
-                elif isinstance(var, Monomial):
-                    var = VarKey(var)
-                if isinstance(var, Iterable):
-                    suba = np.array(sub[1])
-                    if len(var) == suba.shape[0]:
-                        for i, v in enumerate(var):
-                            if hasattr(suba[i], "__call__"):
-                                linkedsweep.update({VarKey(v): suba[i]})
-                            else:
-                                sweep.update({VarKey(v): suba[i]})
-                    elif len(var) == suba.shape[1]:
-                        raise ValueError("whole-vector substitution"
-                                         " is not yet supported")
-                    else:
-                        raise ValueError("vector substitutions must share a"
-                                         "dimension with the variable vector")
-                elif hasattr(sub[1], "__call__"):
-                    linkedsweep.update({var: sub[1]})
-                else:
-                    sweep.update({var: sub[1]})
-        constants = getsubs(varkeys, varlocs, constants)
-        return sweep, linkedsweep, constants
+    def constants(self):
+        "All constants (non-sweep substitutions) currently in the Model."
+        unsubbed, allsubs = self._unsubbed_allsubs()
+        return getconstants(unsubbed, allsubs)
 
     def __add__(self, other):
         if isinstance(other, Model):
@@ -254,13 +201,13 @@ class Model(object):
         ValueError if called on a model with Signomials.
         RuntimeWarning if an error occurs in solving or parsing the solution.
         """
-        try:
-            return self._solve("gp", solver, verbosity, skipfailures, *args, **kwargs)
-        except ValueError:
-            raise ValueError("'solve()' can only be called on models that do"
-                             " not contain Signomials, because only those"
-                             " models guarantee a global solution."
-                             " For a local solution, try 'localsolve()'.")
+        # try:
+        return self._solve("gp", solver, verbosity, skipfailures, *args, **kwargs)
+        # except ValueError:
+        #     raise ValueError("'solve()' can only be called on models that do"
+        #                      " not contain Signomials, because only those"
+        #                      " models guarantee a global solution."
+        #                      " For a local solution, try 'localsolve()'.")
 
     def localsolve(self, solver=None, verbosity=2, skipfailures=True, *args, **kwargs):
         """Forms a SignomialProgram and attempts to locally solve it.
@@ -289,14 +236,14 @@ class Model(object):
         ValueError if called on a model without Signomials.
         RuntimeWarning if an error occurs in solving or parsing the solution.
         """
-        try:
-            return self._solve("sp", solver, verbosity, skipfailures, *args, **kwargs)
-        except ValueError:
-            raise ValueError("'localsolve()' can only be called on models that"
-                             " contain Signomials, because such"
-                             " models have only local solutions. Models"
-                             " without Signomials have global solutions,"
-                             " so try using 'solve()'.")
+        # try:
+        return self._solve("sp", solver, verbosity, skipfailures, *args, **kwargs)
+        # except ValueError:
+        #     raise ValueError("'localsolve()' can only be called on models that"
+        #                      " contain Signomials, because such"
+        #                      " models have only local solutions. Models"
+        #                      " without Signomials have global solutions,"
+        #                      " so try using 'solve()'.")
 
     def _solve(self, programType, solver, verbosity, skipfailures, *args, **kwargs):
         """Generates a program and solves it, sweeping as appropriate.
@@ -327,8 +274,8 @@ class Model(object):
         ValueError if programType and model constraints don't match.
         RuntimeWarning if an error occurs in solving or parsing the solution.
         """
-        posynomials = self.signomials
-        sweep, linkedsweep, constants = self.separatesubs
+        signomials, unsubbed, allsubs = self.signomials_et_al
+        sweep, linkedsweep, constants = separatesubs(unsubbed, allsubs)
         solution = SolutionArray()
         kwargs.update({"solver": solver})
         kwargs.update({"verbosity": verbosity - 1})
@@ -356,16 +303,15 @@ class Model(object):
                 this_pass.update(linked)
                 constants_ = constants
                 constants_.update(this_pass)
-                program, mmaps = self.formProgram(programType, posynomials,
-                                                  constants_, verbosity)
-
+                program, unsubbed.mmaps = form_program(
+                    programType, signomials, constants_, verbosity)
                 try:
                     if programType == "gp":
                         result = program.solve(*args, **kwargs)
                     elif programType == "sp":
                         result = program.localsolve(*args, **kwargs)
-                    sol = self.parse_result(result, constants_, mmaps,
-                                            sweep, linkedsweep)
+                    sol = parse_result(result, constants_, unsubbed,
+                                       sweep, linkedsweep)
                     return program, sol
                 except (RuntimeWarning, ValueError):
                     return program, program.result
@@ -377,24 +323,24 @@ class Model(object):
 
             self.program = []
             for program, result in mapfn(solve_pass, range(N_passes)):
-                if not skipfailures:
+                if not hasattr(result, "status"):
+                    # this is an optimal solution
                     self.program.append(program)  # NOTE: SIDE EFFECTS
                     solution.append(result)
-                elif not hasattr(result, "status"):
-                    # this is an optimal solution
-                    self.program.append(program)
-                    solution.append(result)
+                elif not skipfailures:
+                    # we had a failed solve; append the program and then error
+                    self.program.append(program)  # NOTE: SIDE EFFECTS
+                    raise RuntimeWarning("solve failed during sweep; program"
+                                         " has been saved to m.program[-1].")
         else:
             # NOTE: SIDE EFFECTS
-            self.program, mmaps = self.formProgram(programType, posynomials,
-                                                   constants, verbosity)
+            self.program, unsubbed.mmaps = form_program(
+                programType, signomials, constants, verbosity)
             if programType == "gp":
                 result = self.program.solve(*args, **kwargs)
             elif programType == "sp":
                 result = self.program.localsolve(*args, **kwargs)
-            sol = self.parse_result(result, constants, mmaps)
-            solution.append(sol)
-
+            solution.append_parse(result, constants, unsubbed)
         solution.program = self.program
         solution.toarray()
         self.solution = solution  # NOTE: SIDE EFFECTS
@@ -405,12 +351,12 @@ class Model(object):
     # TODO: add sweepgp(index)?
 
     def gp(self, verbosity=2):
-        m, _ = self.formProgram("gp", self.signomials, self.constants, verbosity)
-        return m
+        gp, _ = form_program("gp", self.signomials, self.constants, verbosity)
+        return gp
 
     def sp(self, verbosity=2):
-        m, _ = self.formProgram("sp", self.signomials, self.constants, verbosity)
-        return m
+        sp, _ = form_program("sp", self.signomials, self.constants, verbosity)
+        return sp
 
     def feasibility(self,
                     search=["overall", "constraints", "constants"],
@@ -468,8 +414,9 @@ class Model(object):
         >>> m.solve()
         """
         feasibilities = {}
+        signomials, unsubbed, allsubs = self.signomials_et_al
 
-        if all(isinstance(s, Posynomial) for s in self.signomials):
+        if all(isinstance(s, Posynomial) for s in signomials):
             if verbosity > 0:
                 print("")
                 print("Infeasibility report")
@@ -490,11 +437,11 @@ class Model(object):
                     print "  constraints : %s" % con_infeas
                 feasibilities["constraints"] = con_infeas
 
-        constants = self.constants
+        constants = getconstants(unsubbed, allsubs)
         if constvars:
             constvars = set(constvars)
             # get varkey versions
-            constvars = getsubs(self.unsubbed_varkeys, self.unsubbed_varlocs,
+            constvars = getconstants(unsubbed.varkeys, unsubbed.varlocs,
                                 dict(zip(constvars, constvars)))
             # filter constants
             constants = {k: v for k, v in constants.items() if k in constvars}
@@ -535,54 +482,6 @@ class Model(object):
         else:
             return feasibilities.values()[0]
 
-    def formProgram(self, programType, signomials, subs, verbosity=2):
-        """Generates a program and solves it, sweeping as appropriate.
-
-        Arguments
-        ---------
-        programType : "gp" or "sp"
-
-        signomials : list of Signomials
-            The first Signomial is the cost function.
-
-        subs : dict
-            Substitutions to do before solving.
-
-        verbosity : int (optional)
-            If greater than 0 prints runtime messages.
-            Is decremented by one and then passed to program inits.
-
-        Returns
-        -------
-        program : GP or SP
-        mmaps : Map from initial monomials to substitued and simplified one.
-                See small_scripts.sort_and_simplify for more details.
-
-        Raises
-        ------
-        ValueError if programType and model constraints don't match.
-        """
-        signomials_, mmaps = [], []
-        for s in signomials:
-            _, exps, cs, _ = substitution(s.varlocs, s.varkeys,
-                                          s.exps, s.cs, subs)
-            if any((mag(c) != 0 for c in cs)):
-                exps, cs, mmap = sort_and_simplify(exps, cs, return_map=True)
-                signomials_.append(Signomial(exps, cs, units=s.units))
-                mmaps.append(mmap)
-            else:
-                mmaps.append([None]*len(cs))
-
-        cost = signomials_[0]
-        constraints = signomials_[1:]
-
-        if programType in ["gp", "GP"]:
-            return GeometricProgram(cost, constraints, verbosity-1), mmaps
-        elif programType in ["sp", "SP"]:
-            return SignomialProgram(cost, constraints), mmaps
-        else:
-            raise ValueError("unknown program type %s." % programType)
-
     def __repr__(self):
         return "gpkit.%s(%s)" % (self.__class__.__name__, str(self))
 
@@ -614,104 +513,3 @@ class Model(object):
                                                          latex_num(val))
                                  for var, val in self.constants.items()]) +
                          ["\\end{array}"])
-
-    def parse_result(self, result, constants, mmaps, sweep={}, linkedsweep={},
-                     freevar_sensitivity_tolerance=1e-4,
-                     localmodel_sensitivity_requirement=0.1):
-        cost = result["cost"]
-        freevariables = dict(result["variables"])
-        sweepvariables = {var: val for var, val in constants.items()
-                          if var in sweep or var in linkedsweep}
-        constants = {var: val for var, val in constants.items()
-                     if var not in sweepvariables}
-        variables = dict(freevariables)
-        variables.update(constants)
-        variables.update(sweepvariables)
-        sensitivities = dict(result["sensitivities"])
-
-        # Remap monomials after substitution and simplification.
-        #  The monomial sensitivities from the GP/SP are in terms of this
-        #  smaller post-substitution list of monomials, so we need to map that
-        #  back to the pre-substitution list.
-        #
-        #  Each "mmap" is a list whose elements are either None
-        #  (indicating that the monomial was removed after subsitution)
-        #  or a tuple with:
-        #    the index of the monomial they became after subsitution,
-        #    the percentage of that monomial that they formed
-        #      (equal to their c/that monomial's final c)
-        nu = result["sensitivities"]["monomials"]
-        nu_ = []
-        mons = 0
-        for mmap in mmaps:
-            max_idx = 0
-            for m_i in mmap:
-                if m_i is None:
-                    nu_.append(0)
-                else:
-                    idx, percentage = m_i
-                    nu_.append(percentage*nu[idx + mons])
-                    if idx > max_idx:
-                        max_idx = idx
-            mons += 1 + max_idx
-        nu_ = np.array(nu_)
-        sensitivities["monomials"] = nu_
-
-        sens_vars = {var: sum([self.unsubbed_exps[i][var]*nu_[i]
-                               for i in locs])
-                     for (var, locs) in self.unsubbed_varlocs.items()}
-        sensitivities["variables"] = sens_vars
-
-        # free-variable sensitivities must be < arbitrary epsilon 1e-4
-        for var, S in sensitivities["variables"].items():
-            if var in freevariables and abs(S) > freevar_sensitivity_tolerance:
-                print("free variable too sensitive:"
-                      " S_{%s} = %0.2e" % (var, S))
-
-        localexp = {var: S for (var, S) in sens_vars.items()
-                    if abs(S) >= localmodel_sensitivity_requirement}
-        localcs = (variables[var]**-S for (var, S) in localexp.items())
-        localc = functools_reduce(mul, localcs, cost)
-        localmodel = Monomial(localexp, localc)
-
-        # vectorvar substitution
-        veckeys = set()
-        for var in self.unsubbed_varlocs:
-            if "idx" in var.descr and "shape" in var.descr:
-                descr = dict(var.descr)
-                idx = descr.pop("idx")
-                if "value" in descr:
-                    descr.pop("value")
-                if "units" in descr:
-                    units = descr.pop("units")
-                    veckey = VarKey(**descr)
-                    veckey.descr["units"] = units
-                else:
-                    veckey = VarKey(**descr)
-                veckeys.add(veckey)
-
-                for vardict in [variables, sensitivities["variables"],
-                                constants, sweepvariables, freevariables]:
-                    if var in vardict:
-                        if veckey in vardict:
-                            vardict[veckey][idx] = vardict[var]
-                        else:
-                            vardict[veckey] = np.full(var.descr["shape"], np.nan)
-                            vardict[veckey][idx] = vardict[var]
-
-                        del vardict[var]
-
-        # TODO: remove after issue #269 is resolved
-        # for veckey in veckeys:
-        #     # TODO: print index that error occured at
-        #     if any(np.isnan(variables[veckey])):
-        #         print variables
-        #         raise RuntimeWarning("did not fully fill vector variables.")
-
-        return dict(cost=cost,
-                    constants=constants,
-                    sweepvariables=sweepvariables,
-                    freevariables=freevariables,
-                    variables=variables,
-                    sensitivities=sensitivities,
-                    localmodel=localmodel)

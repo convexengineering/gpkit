@@ -6,8 +6,9 @@ from functools import reduce as functools_reduce
 from operator import mul
 
 from .nomials import Posynomial, Signomial
-from .substitution import getsubs
 from .geometric_program import GeometricProgram
+
+from .substitution import getconstants
 
 
 class SignomialProgram(object):
@@ -101,8 +102,11 @@ class SignomialProgram(object):
         if x0 is None:
             x0 = {}
         else:
-            x0 = getsubs({str(vk): vk for vk in self.negvarkeys},
-                         self.negvarkeys, x0)
+            # dummy nomial data to turn x0's keys into VarKeys
+            self.negydata = lambda: None
+            self.negydata.varlocs = self.negvarkeys
+            self.negydata.varstrs = {str(vk): vk for vk in self.negvarkeys}
+            x0 = getconstants(self.negydata, x0)
         sp_inits = {vk: vk.descr["sp_init"] for vk in self.negvarkeys
                     if "sp_init" in vk.descr}
         sp_inits.update(x0)

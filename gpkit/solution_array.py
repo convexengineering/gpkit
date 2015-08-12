@@ -1,9 +1,12 @@
 import numpy as np
 
 from collections import Iterable
+from functools import reduce as functools_reduce
+from operator import mul, add
 
 from .posyarray import PosyArray
 from .nomials import Monomial
+from .varkey import VarKey
 from .small_classes import Strings
 from .small_classes import DictOfLists
 from .small_scripts import unitstr
@@ -29,15 +32,26 @@ class SolutionArray(DictOfLists):
     >>> x = gpkit.Variable("x")
     >>> x_min = gpkit.Variable("x_{min}", 2)
     >>> sol = gpkit.Model(x, [x >= x_min]).solve(verbosity=0)
-    >>> # ACCESS VALUES
+    >>>
+    >>> # VALUES
     >>> values = [sol(x), sol.subinto(x), sol["variables"]["x"]]
     >>> assert all(np.array(values) == 2)
-    >>> # ACCESS SENSITIVITIES
+    >>>
+    >>> # SENSITIVITIES
     >>> senss = [sol.sens(x_min), sol.senssubinto(x_min)]
     >>> senss.append(sol["sensitivities"]["variables"]["x_{min}"])
     >>> assert all(np.array(senss) == 1)
 
     """
+
+    def append_parse(self, *args, **kwargs):
+        """Parses and then appends a GP-like result.
+
+        Arguments
+        ---------
+        *args, **kwargs : passed to parse_result()
+        """
+        self.append(parse_result(*args, **kwargs))
 
     def __len__(self):
         try:
@@ -181,3 +195,107 @@ def results_table(data, title, minval=0, printunits=True, fixedcols=True,
              for line in lines]
     lines = [title] + ["-"*len(title)] + [''.join(l) for l in lines] + [""]
     return "\n".join(lines)
+
+
+def parse_result(result, constants, unsubbed, sweep={}, linkedsweep={},
+                 freevar_sensitivity_tolerance=1e-4,
+                 localmodel_sensitivity_requirement=0.1):
+    "Parses a GP-like result dict into a SolutionArray-like dict."
+    cost = result["cost"]
+    freevariables = dict(result["variables"])
+    sweepvariables = {var: val for var, val in constants.items()
+                      if var in sweep or var in linkedsweep}
+    constants = {var: val for var, val in constants.items()
+                 if var not in sweepvariables}
+    variables = dict(freevariables)
+    variables.update(constants)
+    variables.update(sweepvariables)
+    sensitivities = dict(result["sensitivities"])
+
+    # Remap monomials after substitution and simplification.
+    #  The monomial sensitivities from the GP/SP are in terms of this
+    #  smaller post-substitution list of monomials, so we need to map that
+    #  back to the pre-substitution list.
+    #
+    #  Each "mmap" is a list whose elements are either None
+    #  (indicating that the monomial was removed after subsitution)
+    #  or a tuple with:
+    #    the index of the monomial they became after subsitution,
+    #    the percentage of that monomial that they formed
+    #      (equal to their c/that monomial's final c)
+    nu = result["sensitivities"]["monomials"]
+    if hasattr(unsubbed, "mmaps"):
+        nu_ = []
+        mons = 0
+        for mmap in unsubbed.mmaps:
+            max_idx = 0
+            for m_i in mmap:
+                if m_i is None:
+                    nu_.append(0)
+                else:
+                    idx, percentage = m_i
+                    nu_.append(percentage*nu[idx + mons])
+                    if idx > max_idx:
+                        max_idx = idx
+            mons += 1 + max_idx
+        nu = np.array(nu_)
+    sensitivities["monomials"] = nu
+
+    sens_vars = {var: sum([unsubbed.exps[i][var]*nu_[i]
+                           for i in locs])
+                 for (var, locs) in unsubbed.varlocs.items()}
+    sensitivities["variables"] = sens_vars
+
+    # free-variable sensitivities must be < arbitrary epsilon 1e-4
+    for var, S in sensitivities["variables"].items():
+        if var in freevariables and abs(S) > freevar_sensitivity_tolerance:
+            print("free variable too sensitive:"
+                  " S_{%s} = %0.2e" % (var, S))
+
+    localexp = {var: S for (var, S) in sens_vars.items()
+                if abs(S) >= localmodel_sensitivity_requirement}
+    localcs = (variables[var]**-S for (var, S) in localexp.items())
+    localc = functools_reduce(mul, localcs, cost)
+    localmodel = Monomial(localexp, localc)
+
+    # vectorvar substitution
+    veckeys = set()
+    for var in unsubbed.varlocs:
+        if "idx" in var.descr and "shape" in var.descr:
+            descr = dict(var.descr)
+            idx = descr.pop("idx")
+            if "value" in descr:
+                descr.pop("value")
+            if "units" in descr:
+                units = descr.pop("units")
+                veckey = VarKey(**descr)
+                veckey.descr["units"] = units
+            else:
+                veckey = VarKey(**descr)
+            veckeys.add(veckey)
+
+            for vardict in [variables, sensitivities["variables"],
+                            constants, sweepvariables, freevariables]:
+                if var in vardict:
+                    if veckey in vardict:
+                        vardict[veckey][idx] = vardict[var]
+                    else:
+                        vardict[veckey] = np.full(var.descr["shape"], np.nan)
+                        vardict[veckey][idx] = vardict[var]
+
+                    del vardict[var]
+
+    # TODO: remove after issue #269 is resolved
+    # for veckey in veckeys:
+    #     # TODO: print index that error occured at
+    #     if any(np.isnan(variables[veckey])):
+    #         print variables
+    #         raise RuntimeWarning("did not fully fill vector variables.")
+
+    return dict(cost=cost,
+                constants=constants,
+                sweepvariables=sweepvariables,
+                freevariables=freevariables,
+                variables=variables,
+                sensitivities=sensitivities,
+                localmodel=localmodel)

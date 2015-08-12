@@ -1,6 +1,5 @@
 import numpy as np
 
-from collections import defaultdict
 from collections import Iterable
 
 from .small_classes import HashVector
@@ -100,101 +99,6 @@ def latex_num(c):
         idx = cstr.index('e')
         cstr = "%s \\times 10^{%i}" % (cstr[:idx], int(cstr[idx+1:]))
     return cstr
-
-
-def locate_vars(exps):
-    "From exponents form a dictionary of which monomials each variable is in."
-    varlocs = defaultdict(list)
-    varkeys = defaultdict(set)
-    for i, exp in enumerate(exps):
-        for var in exp:
-            varlocs[var].append(i)
-            varkeys[var.name].add(var)
-
-    varkeys_ = dict(varkeys)
-    for name, varl in varkeys_.items():
-        for vk in varl:
-            descr = vk.descr
-            break
-        if "shape" in descr:
-            # vector var
-            newlist = np.zeros(descr["shape"], dtype="object")
-            for var in varl:
-                newlist[var.descr["idx"]] = var
-            varkeys[name] = newlist
-        else:
-            if len(varl) == 1:
-                varkeys[name] = varl.pop()
-            else:
-                varkeys[name] = []
-                for var in varl:
-                    if "model" in var.descr:
-                        varkeys[name+"_%s" % var.descr["model"]] = var
-                    else:
-                        varkeys[name].append(var)
-                if len(varkeys[name]) == 1:
-                    varkeys[name] = varkeys[name][0]
-                elif len(varkeys[name]) == 0:
-                    del varkeys[name]
-
-    return dict(varlocs), dict(varkeys)
-
-
-def sort_and_simplify(exps, cs, return_map=False):
-    """Reduces the number of monomials, and casts them to a sorted form.
-
-    Arguments
-    ---------
-
-    exps : list of Hashvectors
-        The exponents of each monomial
-    cs : array of floats or Quantities
-        The coefficients of each monomial
-    return_map : bool (optional)
-        Whether to return the map of which monomials combined to form a
-        simpler monomial, and their fractions of that monomial's final c.
-
-    Returns
-    -------
-
-    exps : list of Hashvectors
-        Exponents of simplified monomials.
-    cs : array of floats or Quantities
-        Coefficients of simplified monomials.
-    mmap : list of tuples
-        List for each original monomial of (destination index, fraction)
-    """
-    matches = defaultdict(float)
-    if return_map:
-        expmap = defaultdict(dict)
-    for i, exp in enumerate(exps):
-        exp = HashVector({var: x for (var, x) in exp.items() if x != 0})
-        matches[exp] += cs[i]
-        if return_map:
-            expmap[exp][i] = cs[i]
-
-    if len(matches) > 1:
-        zeroed_terms = (exp for exp, c in matches.items() if c == 0)
-        for exp in zeroed_terms:
-            del matches[exp]
-
-    exps_ = tuple(matches.keys())
-    cs_ = list(matches.values())
-    if isinstance(cs_[0], Quantity):
-        units = cs_[0]/cs_[0].magnitude
-        cs_ = [c.to(units).magnitude for c in cs_] * units
-    else:
-        cs_ = np.array(cs_, dtype='float')
-
-    if not return_map:
-        return exps_, cs_
-    else:
-        mmap = [None]*len(cs)
-        for i, item in enumerate(matches.items()):
-            exp, c = item
-            for j in expmap[exp]:
-                mmap[j] = (i, expmap[exp][j]/c)
-        return exps_, cs_, mmap
 
 
 def flatten(ible, classes):

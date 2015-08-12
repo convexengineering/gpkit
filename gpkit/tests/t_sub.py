@@ -13,7 +13,7 @@ class TestNomialSubs(unittest.TestCase):
         x = Variable("x")
         p = x**2
         self.assertEqual(p.sub(x, 3), 9)
-        self.assertEqual(p.sub(x.varkeys["x"], 3), 9)
+        self.assertEqual(p.sub(x.varstrs["x"], 3), 9)
         self.assertEqual(p.sub("x", 3), 9)
 
     def test_basic(self):
@@ -42,10 +42,10 @@ class TestNomialSubs(unittest.TestCase):
 
     def test_scalar_units(self):
         x = Variable("x", "m")
-        xvk = list(x.varkeys.values())[0]
+        xvk = list(x.varstrs.values())[0]
         descr_before = list(x.exp)[0].descr
         y = Variable("y", "km")
-        yvk = list(y.varkeys.values())[0]
+        yvk = list(y.varstrs.values())[0]
         for x_ in ["x", xvk, x]:
             for y_ in ["y", yvk, y]:
                 if not isinstance(y_, str) and type(xvk.units) != str:
