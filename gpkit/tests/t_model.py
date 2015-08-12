@@ -3,7 +3,7 @@ import math
 import unittest
 import numpy as np
 from gpkit import (Model, Monomial, settings, VectorVariable, Variable,
-                   enable_signomials, ArrayVariable)
+                   EnableSignomials, ArrayVariable)
 from gpkit.geometric_program import GeometricProgram
 from gpkit.small_classes import CootMatrix
 
@@ -277,7 +277,6 @@ class TestSP(unittest.TestCase):
                                sol2["variables"]["x"], self.ndig)
         self.assertAlmostEqual(sol1["variables"]["y"],
                                sol2["variables"]["x"], self.ndig)
-
 
     def test_sp_initial_guess_sub(self):
         x = Variable("x")

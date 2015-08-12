@@ -19,7 +19,7 @@ from .nomials import Constraint, MonoEQConstraint, Posynomial
 from .nomials import Monomial, Signomial
 from .varkey import VarKey
 from .substitution import substitution, getsubs
-from . import enable_signomials
+from . import EnableSignomials
 
 from .small_classes import Strings
 from .small_scripts import flatten
@@ -283,7 +283,7 @@ class Model(object):
         RuntimeWarning if an error occurs in solving or parsing the solution.
         """
         try:
-            with enable_signomials():
+            with EnableSignomials():
                 return self._solve("sp", solver, verbosity, skipfailures,
                                    *args, **kwargs)
         except ValueError:
