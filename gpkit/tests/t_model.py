@@ -234,13 +234,13 @@ class TestSP(unittest.TestCase):
 
         gpkit.enable_signomials()
         A = VectorVariable(2, "A")
-        B = ArrayVariable([2,2],"B")
+        B = ArrayVariable([2, 2], "B")
         C = VectorVariable(2, "C")
-        constraints = [ A <= B.dot(C),
-                        B <= 1,
-                        C <= 1 ]
+        constraints = [A <= B.dot(C),
+                       B <= 1,
+                       C <= 1]
         obj = 1/A[0] + 1/A[1]
-        m = Model(obj,constraints)
+        m = Model(obj, constraints)
         m.localsolve(verbosity=0)
 
     def test_issue180(self):
