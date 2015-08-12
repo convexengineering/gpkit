@@ -5,7 +5,8 @@ import sys
 
 # custom build script
 if sys.argv[1] in ["build", "install"]:
-    import gpkit.build
+    from gpkit.build import build_gpkit
+    build_gpkit()
 
 from distutils.core import setup
 
