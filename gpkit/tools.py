@@ -7,8 +7,9 @@ from .variables import Variable, VectorVariable
 from .posyarray import PosyArray
 
 
-def zero_lower_unbounded(model, zeros=True):
+def zero_lower_unbounded(model):
     "Recursively substitutes 0 for a Model's variables that lack a lower bound"
+    zeros = True
     while zeros:
         bounds = model.gp(verbosity=0).missingbounds
         zeros = {var: 0 for var, bound in bounds.items() if bound == "lower"}
