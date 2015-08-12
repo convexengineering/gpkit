@@ -24,6 +24,8 @@ class SolutionArray(DictOfLists):
         monomials : array
         posynomials : array
         variables: dict of arrays
+    localmodels : PosyArray
+        Local power-law fits (small sensitivities are cut off)
 
     Example
     -------
