@@ -18,6 +18,7 @@ from collections import Iterable
 from .nomials import Constraint, MonoEQConstraint, Posynomial
 from .nomials import Monomial, Signomial
 from .varkey import VarKey
+from .posyarray import PosyArray
 from .substitution import substitution, getsubs
 
 from .small_classes import Strings
@@ -31,7 +32,7 @@ from .solution_array import SolutionArray
 from .signomial_program import SignomialProgram
 from .geometric_program import GeometricProgram
 
-from .variables import Variable
+from .variables import Variable, VectorVariable
 
 try:
     from IPython.parallel import Client
@@ -113,6 +114,11 @@ class Model(object):
                         if "model" not in k.descr:
                             newk = VarKey(k, model=name)
                             exp[newk] = exp.pop(k)
+
+    @property
+    def constants(self):
+        return getsubs(self.unsubbed_varkeys, self.unsubbed_varlocs,
+                       self.allsubs)
 
     @property
     def allsubs(self):
@@ -389,15 +395,71 @@ class Model(object):
         solution.program = self.program
         solution.toarray()
         self.solution = solution  # NOTE: SIDE EFFECTS
+        if verbosity > 0:
+            print solution.table()
         return solution
 
+    # TODO: add sweepgp(index)?
+
     def gp(self, verbosity=2):
-        m, _ = self.formProgram("gp", self.signomials, self.allsubs, verbosity)
+        m, _ = self.formProgram("gp", self.signomials, self.constants, verbosity)
         return m
 
     def sp(self, verbosity=2):
-        m, _ = self.formProgram("sp", self.signomials, self.allsubs, verbosity)
+        m, _ = self.formProgram("sp", self.signomials, self.constants, verbosity)
         return m
+
+    def feasibility_report(self, verbosity=1):
+        infeasibilities = {}
+        if all([isinstance(s, Posynomial) for s in self.signomials]):
+            if verbosity > 0:
+                print("Infeasibility")
+                print("-------------")
+            gp = self.gp().feasibility_search("max")
+            infeasibility = gp.solve(verbosity=verbosity-1)["cost"]
+            if verbosity > 0:
+                print "      overall : %.2f" % infeasibility
+            infeasibilities["overall"] = infeasibility
+
+            gp = self.gp().feasibility_search("product")
+            slackvars = list(gp.cost.varkeys.values())[0]
+            result = gp.solve(verbosity=verbosity-1)
+            con_infeas = [result["variables"][sv] for sv in slackvars]
+            if verbosity > 0:
+                print "   constraint : %s" % con_infeas
+            infeasibilities["constraints"] = con_infeas
+
+            constants = self.constants
+            if constants:
+                slacklb = VectorVariable(len(constants))
+                slackub = VectorVariable(len(constants))
+                constantvars = constants.keys()
+                for var in constantvars:
+                    del var.descr["value"]
+                constantvars = PosyArray(constantvars)
+                values = PosyArray(constants.values())
+                lower_bounds = (values*slacklb <= constantvars)
+                upper_bounds = (constantvars <= values*slackub)
+                slack_bounds = [slackub >= 1, slacklb <= 1]
+                bounds = [lower_bounds, upper_bounds] + slack_bounds
+                m = Model(slackub.prod()/slacklb.prod(),
+                          self.constraints + bounds)
+                sol = m.solve(verbosity=verbosity-1)
+                lb_infeas = sol(slacklb)
+                ub_infeas = sol(slackub)
+                var_infeas = {}
+                for i, c in enumerate(constantvars):
+                    if 1/lb_infeas[i] >= ub_infeas[i]:
+                        b_infeas = lb_infeas[i]
+                    else:
+                        b_infeas = ub_infeas[i]
+                    if b_infeas != 1:  # i.e., the bounds were active
+                        var_infeas[c] = b_infeas*values[i]
+                if verbosity > 0:
+                    print "     constant : %s" % var_infeas
+                infeasibilities["constants"] = var_infeas
+
+            return infeasibilities
 
     def formProgram(self, programType, signomials, subs, verbosity=2):
         """Generates a program and solves it, sweeping as appropriate.
@@ -465,7 +527,6 @@ class Model(object):
     def _latex(self, unused=None):
         """LaTeX representation of a GeometricProgram.
         Contains all of its parameters."""
-        sweep, linkedsweep, constants = self.separate_subs
         # TODO: print sweeps and linkedsweeps
         return "\n".join(["\\begin{array}[ll]",
                           "\\text{}",
@@ -477,7 +538,7 @@ class Model(object):
                          ["\\text{substituting}"] +
                          sorted(["    & %s = %s \\\\" % (var._latex(),
                                                          latex_num(val))
-                                 for var, val in subs.items()]) +
+                                 for var, val in self.constants.items()]) +
                          ["\\end{array}"])
 
     def parse_result(self, result, constants, mmaps, sweep={}, linkedsweep={},
