@@ -8,6 +8,7 @@ from .posyarray import PosyArray
 
 
 def zero_lower_unbounded(model, zeros=True):
+    "Recursively substitutes 0 for a Model's variables that lack a lower bound"
     while zeros:
         bounds = model.gp(verbosity=0).missingbounds
         zeros = {var: 0 for var, bound in bounds.items() if bound == "lower"}
