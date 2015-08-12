@@ -134,7 +134,7 @@ class TestGP(unittest.TestCase):
     def test_zeroing(self):
         L = Variable("L")
         k = Variable("k", 0)
-        with enable_signomials():
+        with EnableSignomials():
             constr = [L-5*k <= 10]
         sol = Model(1/L, constr).solve(verbosity=0, solver=self.solver)
         self.assertAlmostEqual(sol(L), 10, self.ndig)
@@ -198,11 +198,11 @@ class TestSP(unittest.TestCase):
     def test_trivial_sp(self):
         x = Variable('x')
         y = Variable('y')
-        with enable_signomials():
+        with EnableSignomials():
             m = Model(x, [x >= 1-y, y <= 0.1])
         sol = m.localsolve(verbosity=0, solver=self.solver)
         self.assertAlmostEqual(sol["variables"]["x"], 0.9, self.ndig)
-        with enable_signomials():
+        with EnableSignomials():
             m = Model(x, [x+y >= 1, y <= 0.1])
         sol = m.localsolve(verbosity=0, solver=self.solver)
         self.assertAlmostEqual(sol["variables"]["x"], 0.9, self.ndig)
@@ -210,7 +210,7 @@ class TestSP(unittest.TestCase):
     def test_relaxation(self):
         x = Variable("x")
         y = Variable("y")
-        with enable_signomials():
+        with EnableSignomials():
             constraints = [y + x >= 2, y <= x]
         objective = x
         m = Model(objective, constraints)
@@ -221,7 +221,7 @@ class TestSP(unittest.TestCase):
         A = VectorVariable(2, "A")
         B = ArrayVariable([2, 2], "B")
         C = VectorVariable(2, "C")
-        with enable_signomials():
+        with EnableSignomials():
             constraints = [A <= B.dot(C),
                            B <= 1,
                            C <= 1]
@@ -238,7 +238,7 @@ class TestSP(unittest.TestCase):
         Obj = Variable("Obj")
         a_val = 0.01
         a = Variable("a", a_val)
-        with enable_signomials():
+        with EnableSignomials():
             eqns = [L <= Lmax,
                     W <= Wmax,
                     L*W >= A,
@@ -256,7 +256,7 @@ class TestSP(unittest.TestCase):
         y = Variable("y")
 
         # converging from above
-        with enable_signomials():
+        with EnableSignomials():
             constraints = [y + x >= 2, y >= x]
         objective = y
         x0 = 1
@@ -265,7 +265,7 @@ class TestSP(unittest.TestCase):
         sol1 = m.localsolve(x0={x: x0, y: y0}, verbosity=0, solver=self.solver)
 
         # converging from right
-        with enable_signomials():
+        with EnableSignomials():
             constraints = [y + x >= 2, y <= x]
         objective = x
         x0 = 2
@@ -284,7 +284,7 @@ class TestSP(unittest.TestCase):
         y = Variable("y")
         x0 = 1
         y0 = 2
-        with enable_signomials():
+        with EnableSignomials():
             constraints = [y + x >= 2, y <= x]
         objective = x
         m = Model(objective, constraints)
