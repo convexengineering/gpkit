@@ -3,7 +3,7 @@ import math
 import unittest
 import numpy as np
 from gpkit import (Model, Monomial, settings, VectorVariable, Variable,
-                   enable_signomials)
+                   enable_signomials, ArrayVariable)
 from gpkit.geometric_program import GeometricProgram
 from gpkit.small_classes import CootMatrix
 
@@ -206,6 +206,28 @@ class TestSP(unittest.TestCase):
             m = Model(x, [x+y >= 1, y <= 0.1])
         sol = m.localsolve(verbosity=0, solver=self.solver)
         self.assertAlmostEqual(sol["variables"]["x"], 0.9, self.ndig)
+
+    def test_relaxation(self):
+        x = Variable("x")
+        y = Variable("y")
+        with enable_signomials():
+            constraints = [y + x >= 2, y <= x]
+        objective = x
+        m = Model(objective, constraints)
+        m.localsolve(verbosity=0)
+
+        # issue #257
+
+        A = VectorVariable(2, "A")
+        B = ArrayVariable([2, 2], "B")
+        C = VectorVariable(2, "C")
+        with enable_signomials():
+            constraints = [A <= B.dot(C),
+                           B <= 1,
+                           C <= 1]
+        obj = 1/A[0] + 1/A[1]
+        m = Model(obj, constraints)
+        m.localsolve(verbosity=0)
 
     def test_issue180(self):
         L = Variable("L")
