@@ -136,7 +136,7 @@ class Model(object):
 
     @property
     def signomials(self):
-        constraints = tuple(flatten(self.constraints, Constraint))
+        constraints = tuple(flatten(self.constraints, Signomial))
         # TODO: parse constraints during flattening, calling Posyarray on
         #       anything that holds only posys and then saving that list.
         #       This will allow prettier constraint printing.
@@ -409,53 +409,128 @@ class Model(object):
         m, _ = self.formProgram("sp", self.signomials, self.constants, verbosity)
         return m
 
-    def feasibility_report(self, verbosity=1):
-        infeasibilities = {}
+    def feasible(self,
+                 search=["overall", "constraints", "constants"],
+                 constvars=None, verbosity=0):
+        """Searches for feasibile versions of the Model.
+
+        Argument
+        --------
+        search : list of strings or string
+            The search(es) to perform. Details on each type below.
+        constvars : iterable
+            If declared, only constants in constvars will be changed.
+            Otherwise, all constants can be changed in a constants search.
+        verbosity : int
+            If greater than 0, will print a report.
+            Decremented by 1 and passed to solvers.
+
+        Returns
+        -------
+        feasibilities : dict, float, or list
+            Has an entry for each search; if only one, returns that directly.
+
+            "overall" : float
+                The smallest number each constraint's less-than side would
+                have to be divided by to make the program feasible.
+            "constraints" : array of floats
+                Similar to "overall", but contains a number for each
+                constraint, and minimizes the product of those numbers.
+            "constants" : dict of varkeys: floats
+                A substitution dictionary that would make the program feasible,
+                chosen to minimize the product of new_values/old_values.
+
+        Examples
+        -------
+        >>> from gpkit import Variable, Model, PosyArray
+        >>> x = Variable("x")
+        >>> x_min = Variable("x_min", 2)
+        >>> x_max = Variable("x_max", 1)
+        >>> m = Model(x, [x <= x_max, x >= x_min])
+        >>> # m.solve()  # RuntimeWarning!
+        >>> feas = m.feasible
+        >>>
+        >>> # USING OVERALL
+        >>> m.constraints = PosyArray(m.signomials)/feas["overall"]
+        >>> m.solve()
+        >>>
+        >>> # USING CONSTRAINTS
+        >>> m = Model(x, [x <= x_max, x >= x_min])
+        >>> m.constraints = PosyArray(m.signomials)/feas["constraints"]
+        >>> m.solve()
+        >>>
+        >>> # USING CONSTANTS
+        >>> m = Model(x, [x <= x_max, x >= x_min])
+        >>> m.substitutions.update(feas["constants"])
+        >>> m.solve()
+        """
+        feasibilities = {}
+
         if all(isinstance(s, Posynomial) for s in self.signomials):
             if verbosity > 0:
-                print("Infeasibility")
-                print("-------------")
-            max_gp = self.gp().feasibility_search("max")
-            infeasibility = max_gp.solve(verbosity=verbosity-1)["cost"]
-            if verbosity > 0:
-                print "      overall : %.2f" % infeasibility
-            infeasibilities["overall"] = infeasibility
-
-            prod_gp = self.gp().feasibility_search("product")
-            slackvars = list(prod_gp.cost.varkeys.values())[0]
-            result = prod_gp.solve(verbosity=verbosity-1)
-            con_infeas = [result["variables"][sv] for sv in slackvars]
-            if verbosity > 0:
-                print "   constraint : %s" % con_infeas
-            infeasibilities["constraints"] = con_infeas
-
-            constants = self.constants
-            if constants:
-                slacklb = VectorVariable(len(constants))
-                slackub = VectorVariable(len(constants))
-                constvarkeys = list(constants.keys())
-                for var in constvarkeys:
-                    del var.descr["value"]
-                constvars = [Variable(**vk.descr) for vk in constvarkeys]
-                constvars = PosyArray(constvars)
-                constvalues = PosyArray(constants.values())
-                lower_bounds = (constvalues*slacklb <= constvars)
-                upper_bounds = (constvars <= constvalues*slackub)
-                slack_bounds = [slackub >= 1, slacklb <= 1]
-                bounds = [lower_bounds, upper_bounds] + slack_bounds
-                var_m = Model(slackub.prod()/slacklb.prod(),
-                              self.constraints + bounds)
-                sol = var_m.solve(verbosity=verbosity-1)
-                feasible_constvalues = sol(constvars)
-                changed_vals = feasible_constvalues != np.array(constvalues)
-                var_infeas = {}
-                for i in np.where(changed_vals):
-                    var_infeas[constvarkeys[i]] = feasible_constvalues[i]
+                print("")
+                print("Infeasibility report")
+                print("--------------------")
+            if "overall" in search:
+                max_gp = self.gp().feasibility_search("max")
+                infeasibility = max_gp.solve(verbosity=verbosity-1)["cost"]
                 if verbosity > 0:
-                    print "     constant : %s" % var_infeas
-                infeasibilities["constants"] = var_infeas
+                    print "      overall : %.2f" % infeasibility
+                feasibilities["overall"] = infeasibility
 
-            return infeasibilities
+            if "constraints" in search:
+                prod_gp = self.gp().feasibility_search("product")
+                slackvars = list(prod_gp.cost.varkeys.values())[0]
+                result = prod_gp.solve(verbosity=verbosity-1)
+                con_infeas = [result["variables"][sv] for sv in slackvars]
+                if verbosity > 0:
+                    print "  constraints : %s" % con_infeas
+                feasibilities["constraints"] = con_infeas
+
+        constants = self.constants
+        if constvars:
+            constvars = set(constvars)
+            # get varkey versions
+            constvars = getsubs(self.unsubbed_varkeys, self.unsubbed_varlocs,
+                                dict(zip(constvars, constvars)))
+            # filter constants
+            constants = {k: v for k, v in constants.items() if k in constvars}
+        if "constants" in search and constants:
+            slackb = VectorVariable(len(constants))
+            constvarkeys, constvars, rmvalue, addvalue = [], [], {}, {}
+            for vk in constants.keys():
+                descr = dict(vk.descr)
+                del descr["value"]
+                vk_ = VarKey(**descr)
+                rmvalue[vk] = vk_
+                addvalue[vk_] = vk
+                constvarkeys.append(vk_)
+                constvars.append(Variable(**descr))
+            constvars = PosyArray(constvars)
+            constvalues = PosyArray(constants.values())
+            constraints = [c.sub(rmvalue) for c in self.constraints]
+            # cost function could also be .sum(), self.cost would break ties
+            var_m = Model(slackb.prod(),
+                          constraints
+                          + [slackb >= 1,
+                             constvalues/slackb <= constvars,
+                             constvars <= constvalues*slackb])
+            sol = var_m.solve(verbosity=verbosity-1)
+            feasible_constvalues = sol(constvars).tolist()
+            changed_vals = feasible_constvalues != np.array(constvalues)
+            var_infeas = {addvalue[constvarkeys[i]]: feasible_constvalues[i]
+                          for i in np.where(changed_vals)}
+            if verbosity > 0:
+                print "    constants : %s" % var_infeas
+            feasibilities["constants"] = var_infeas
+
+        if verbosity > 0:
+            print("")
+
+        if len(feasibilities) > 1:
+            return feasibilities
+        else:
+            return feasibilities.values()[0]
 
     def formProgram(self, programType, signomials, subs, verbosity=2):
         """Generates a program and solves it, sweeping as appropriate.
