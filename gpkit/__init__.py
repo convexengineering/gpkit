@@ -93,7 +93,6 @@ from .signomial_program import SignomialProgram
 from .varkey import VarKey
 from .posyarray import PosyArray
 from .model import Model
-from .tools import composite_objective, link, zero_lower_unbounded
 from .shortcuts import GP, SP
 
 if units:

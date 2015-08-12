@@ -140,19 +140,6 @@ class TestGP(unittest.TestCase):
         self.assertAlmostEqual(sol["cost"], 0.1, self.ndig)
         gpkit.disable_signomials()
 
-    def test_composite_objective(self):
-        L = Variable("L")
-        W = Variable("W")
-        eqns = [L >= 1, W >= 1,
-                L*W == 10]
-        obj = gpkit.composite_objective(L+W, W**-1 * L**-3, sub={L: 1, W: 1})
-        m = Model(obj, eqns)
-        sol = m.solve(verbosity=0, solver=self.solver)
-        a = sol["sensitivities"]["variables"]["w_{CO}"].flatten()
-        b = np.array([0, 0.98809322, 0.99461408, 0.99688676, 0.99804287,
-                      0.99874303, 0.99921254, 0.99954926, 0.99980255, 1])
-        self.assertTrue((abs(a-b)/(a+b+1e-7) < 1e-7).all())
-
     def test_singular(self):
         """
         Create and solve GP with a singular A matrix
