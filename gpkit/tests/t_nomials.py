@@ -2,7 +2,7 @@
 import math
 import unittest
 from gpkit import Variable, Monomial, Posynomial
-from gpkit import enable_signomials, disable_signomials
+from gpkit import EnableSignomials
 
 
 class TestMonomial(unittest.TestCase):
@@ -179,10 +179,9 @@ class TestSignomial(unittest.TestCase):
         "Test Signomial construction"
         x = Monomial('x')
         y = Monomial('y')
-        enable_signomials()
-        self.assertEqual(str(1 - x - y**2 - 1), "-x + -y**2")
-        self.assertEqual((1 - x/y**2)._latex(), "-\\frac{x}{y^{2}} + 1")
-        disable_signomials()
+        with EnableSignomials():
+            self.assertEqual(str(1 - x - y**2 - 1), "-x + -y**2")
+            self.assertEqual((1 - x/y**2)._latex(), "-\\frac{x}{y^{2}} + 1")
         self.assertRaises(TypeError, lambda: x-y)
 
 
