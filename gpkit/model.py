@@ -20,6 +20,7 @@ from .nomials import Monomial, Signomial
 from .varkey import VarKey
 from .posyarray import PosyArray
 from .substitution import substitution, getsubs
+from . import EnableSignomials
 
 from .small_classes import Strings
 from .small_scripts import flatten
@@ -255,7 +256,8 @@ class Model(object):
         RuntimeWarning if an error occurs in solving or parsing the solution.
         """
         try:
-            return self._solve("gp", solver, verbosity, skipfailures, *args, **kwargs)
+            return self._solve("gp", solver, verbosity, skipfailures,
+                               *args, **kwargs)
         except ValueError:
             raise ValueError("'solve()' can only be called on models that do"
                              " not contain Signomials, because only those"
@@ -290,7 +292,9 @@ class Model(object):
         RuntimeWarning if an error occurs in solving or parsing the solution.
         """
         try:
-            return self._solve("sp", solver, verbosity, skipfailures, *args, **kwargs)
+            with EnableSignomials():
+                return self._solve("sp", solver, verbosity, skipfailures,
+                                   *args, **kwargs)
         except ValueError:
             raise ValueError("'localsolve()' can only be called on models that"
                              " contain Signomials, because such"
@@ -298,7 +302,8 @@ class Model(object):
                              " without Signomials have global solutions,"
                              " so try using 'solve()'.")
 
-    def _solve(self, programType, solver, verbosity, skipfailures, *args, **kwargs):
+    def _solve(self, programType, solver, verbosity, skipfailures,
+               *args, **kwargs):
         """Generates a program and solves it, sweeping as appropriate.
 
         Arguments

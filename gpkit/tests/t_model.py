@@ -3,10 +3,9 @@ import math
 import unittest
 import numpy as np
 from gpkit import (Model, Monomial, settings, VectorVariable, Variable,
-                   ArrayVariable)
+                   EnableSignomials, ArrayVariable)
 from gpkit.geometric_program import GeometricProgram
 from gpkit.small_classes import CootMatrix
-import gpkit
 
 NDIGS = {"cvxopt": 5, "mosek": 6, "mosek_cli": 5}
 # TODO revert "mosek" NDIGS to 7, once #296 fully resolved
@@ -135,24 +134,11 @@ class TestGP(unittest.TestCase):
     def test_zeroing(self):
         L = Variable("L")
         k = Variable("k", 0)
-        gpkit.enable_signomials()
-        sol = Model(1/L, [L-5*k <= 10]).solve(verbosity=0, solver=self.solver)
+        with EnableSignomials():
+            constr = [L-5*k <= 10]
+        sol = Model(1/L, constr).solve(verbosity=0, solver=self.solver)
         self.assertAlmostEqual(sol(L), 10, self.ndig)
         self.assertAlmostEqual(sol["cost"], 0.1, self.ndig)
-        gpkit.disable_signomials()
-
-    def test_composite_objective(self):
-        L = Variable("L")
-        W = Variable("W")
-        eqns = [L >= 1, W >= 1,
-                L*W == 10]
-        obj = gpkit.composite_objective(L+W, W**-1 * L**-3, sub={L: 1, W: 1})
-        m = Model(obj, eqns)
-        sol = m.solve(verbosity=0, solver=self.solver)
-        a = sol["sensitivities"]["variables"]["w_{CO}"].flatten()
-        b = np.array([0, 0.98809322, 0.99461408, 0.99688676, 0.99804287,
-                      0.99874303, 0.99921254, 0.99954926, 0.99980255, 1])
-        self.assertTrue((abs(a-b)/(a+b+1e-7) < 1e-7).all())
 
     def test_singular(self):
         """
@@ -212,39 +198,38 @@ class TestSP(unittest.TestCase):
     def test_trivial_sp(self):
         x = Variable('x')
         y = Variable('y')
-        gpkit.enable_signomials()
-        m = Model(x, [x >= 1-y, y <= 0.1])
+        with EnableSignomials():
+            m = Model(x, [x >= 1-y, y <= 0.1])
         sol = m.localsolve(verbosity=0, solver=self.solver)
         self.assertAlmostEqual(sol["variables"]["x"], 0.9, self.ndig)
-        m = Model(x, [x+y >= 1, y <= 0.1])
+        with EnableSignomials():
+            m = Model(x, [x+y >= 1, y <= 0.1])
         sol = m.localsolve(verbosity=0, solver=self.solver)
         self.assertAlmostEqual(sol["variables"]["x"], 0.9, self.ndig)
-        gpkit.disable_signomials()
 
     def test_relaxation(self):
-        gpkit.enable_signomials()
         x = Variable("x")
         y = Variable("y")
-        constraints = [y + x >= 2, y <= x]
+        with EnableSignomials():
+            constraints = [y + x >= 2, y <= x]
         objective = x
         m = Model(objective, constraints)
         m.localsolve(verbosity=0)
 
         # issue #257
 
-        gpkit.enable_signomials()
         A = VectorVariable(2, "A")
         B = ArrayVariable([2, 2], "B")
         C = VectorVariable(2, "C")
-        constraints = [A <= B.dot(C),
-                       B <= 1,
-                       C <= 1]
+        with EnableSignomials():
+            constraints = [A <= B.dot(C),
+                           B <= 1,
+                           C <= 1]
         obj = 1/A[0] + 1/A[1]
         m = Model(obj, constraints)
         m.localsolve(verbosity=0)
 
     def test_issue180(self):
-        gpkit.enable_signomials()
         L = Variable("L")
         Lmax = Variable("L_{max}", 10)
         W = Variable("W")
@@ -253,13 +238,13 @@ class TestSP(unittest.TestCase):
         Obj = Variable("Obj")
         a_val = 0.01
         a = Variable("a", a_val)
-        eqns = [L <= Lmax,
-                W <= Wmax,
-                L*W >= A,
-                Obj >= a*(2*L + 2*W) + (1-a)*(12 * W**-1 * L**-3)]
+        with EnableSignomials():
+            eqns = [L <= Lmax,
+                    W <= Wmax,
+                    L*W >= A,
+                    Obj >= a*(2*L + 2*W) + (1-a)*(12 * W**-1 * L**-3)]
         m = Model(Obj, eqns)
         spsol = m.solve(verbosity=0, solver=self.solver)
-        gpkit.disable_signomials()
         # now solve as GP
         eqns[-1] = (Obj >= a_val*(2*L + 2*W) + (1-a_val)*(12 * W**-1 * L**-3))
         m = Model(Obj, eqns)
@@ -267,12 +252,12 @@ class TestSP(unittest.TestCase):
         self.assertAlmostEqual(spsol['cost'], gpsol['cost'])
 
     def test_trivial_sp2(self):
-        gpkit.enable_signomials()
-        x = gpkit.Variable("x")
-        y = gpkit.Variable("y")
+        x = Variable("x")
+        y = Variable("y")
 
         # converging from above
-        constraints = [y + x >= 2, y >= x]
+        with EnableSignomials():
+            constraints = [y + x >= 2, y >= x]
         objective = y
         x0 = 1
         y0 = 2
@@ -280,7 +265,8 @@ class TestSP(unittest.TestCase):
         sol1 = m.localsolve(x0={x: x0, y: y0}, verbosity=0, solver=self.solver)
 
         # converging from right
-        constraints = [y + x >= 2, y <= x]
+        with EnableSignomials():
+            constraints = [y + x >= 2, y <= x]
         objective = x
         x0 = 2
         y0 = 1
@@ -292,15 +278,13 @@ class TestSP(unittest.TestCase):
         self.assertAlmostEqual(sol1["variables"]["y"],
                                sol2["variables"]["x"], self.ndig)
 
-        gpkit.disable_signomials()
-
     def test_sp_initial_guess_sub(self):
-        gpkit.enable_signomials()
-        x = gpkit.Variable("x")
-        y = gpkit.Variable("y")
+        x = Variable("x")
+        y = Variable("y")
         x0 = 1
         y0 = 2
-        constraints = [y + x >= 2, y <= x]
+        with EnableSignomials():
+            constraints = [y + x >= 2, y <= x]
         objective = x
         m = Model(objective, constraints)
         try:
@@ -326,8 +310,6 @@ class TestSP(unittest.TestCase):
             self.fail("Call to local solve with a mix of variable strings "
                       "and variables failed")
         self.assertAlmostEqual(sol["cost"], 1, self.ndig)
-
-        gpkit.disable_signomials()
 
 
 TEST_CASES = [TestGP, TestSP]

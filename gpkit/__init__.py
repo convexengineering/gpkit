@@ -75,16 +75,47 @@ enable_units()
 SIGNOMIALS_ENABLED = False
 
 
+class EnableSignomials(object):
+    """Class to put up and tear down signomial support in an instance of GPkit.
+
+    Example
+    -------
+    >>> import gpkit
+    >>> x = gpkit.Variable("x")
+    >>> y = gpkit.Variable("y", 0.1)
+    >>> with enable_signomials():
+    >>>     constraints = [x >= 1-y]
+    >>> gpkit.Model(x, constraints).localsolve()
+    """
+
+    def __enter__(self):
+        global SIGNOMIALS_ENABLED
+        SIGNOMIALS_ENABLED = True
+
+    def __exit__(self, type, value, traceback):
+        global SIGNOMIALS_ENABLED
+        SIGNOMIALS_ENABLED = False
+
+
 def enable_signomials():
     """Enables signomial support in a particular instance of GPkit."""
     global SIGNOMIALS_ENABLED
     SIGNOMIALS_ENABLED = True
+    print("'enable_signomials()' has been replaced by 'EnableSignomials'"
+          " in a 'with' statement (e.g. 'with EnableSignomials():  constraints"
+          " = [1-x]'). enable_signomials() will be removed in the next point"
+          " release, so please update your code!")
 
 
 def disable_signomials():
     """Disables signomial support in a particular instance of GPkit."""
     global SIGNOMIALS_ENABLED
     SIGNOMIALS_ENABLED = False
+    print("'disable_signomials()' has been replaced by 'EnableSignomials'"
+          " in a 'with' statement (e.g. 'with EnableSignomials():  constraints"
+          " = [1-x]'). enable_signomials() will be removed in the next point"
+          " release, so please update your code!")
+
 
 from .nomials import Monomial, Posynomial, Signomial
 from .variables import Variable, VectorVariable, ArrayVariable
@@ -93,7 +124,6 @@ from .signomial_program import SignomialProgram
 from .varkey import VarKey
 from .posyarray import PosyArray
 from .model import Model
-from .tools import composite_objective, link
 from .shortcuts import GP, SP
 
 if units:

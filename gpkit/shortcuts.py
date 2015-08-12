@@ -8,10 +8,14 @@ Vec = VectorVariable
 Arr = ArrayVariable
 Model = Model
 
+
 def GP(*args, **kwargs):
-    print("'Model' has replaced 'GP'. Please update your code!")
+    print("'GP' has been replaced by 'Model', and will be removed in the next"
+          " point release. Please update your code!")
     return Model(*args, **kwargs)
 
+
 def SP(*args, **kwargs):
-    print("'Model' has replaced 'GP'. Please update your code!")
+    print("'SP' has been replaced by 'Model', and will be removed in the next"
+          " point release. Please update your code!")
     return Model(*args, **kwargs)
