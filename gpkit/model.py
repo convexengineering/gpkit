@@ -116,25 +116,6 @@ class Model(object):
                             exp[newk] = exp.pop(k)
 
     @property
-    def constants(self):
-        return getsubs(self.unsubbed_varkeys, self.unsubbed_varlocs,
-                       self.allsubs)
-
-    @property
-    def allsubs(self):
-        subs = {var: var.descr["value"]
-                for var in self.variables if "value" in var.descr}
-        subs.update(self.substitutions)
-        return subs
-
-    @property
-    def variables(self):
-        variables = {}
-        for s in self.signomials:
-            variables.update({vk: Variable(**vk.descr) for vk in s.varlocs})
-        return variables
-
-    @property
     def signomials(self):
         constraints = tuple(flatten(self.constraints, Signomial))
         # TODO: parse constraints during flattening, calling Posyarray on
@@ -148,14 +129,14 @@ class Model(object):
                 posynomials.append(constraint)
         return posynomials
 
-    # TODO: replcae the below with a dynamically created NomialData 'unsubbed'
+    # TODO: replace the below with a dynamically created NomialData 'unsubbed'
     @property
     def unsubbed_cs(self):
         return np.hstack((mag(s.cs) for s in self.signomials))
 
     @property
     def unsubbed_exps(self):
-     return functools_reduce(add, (s.exps for s in self.signomials))
+        return functools_reduce(add, (s.exps for s in self.signomials))
 
     @property
     def unsubbed_varlocs(self):
@@ -166,8 +147,30 @@ class Model(object):
         return locate_vars(self.unsubbed_exps)[1]
 
     @property
-    def separate_subs(self):
-        "Seperates sweep substitutions from constants."
+    def variables(self):
+        "All variables currently in the Model."
+        variables = {}
+        for s in self.signomials:
+            variables.update({vk: Variable(**vk.descr) for vk in s.varlocs})
+        return variables
+
+    @property
+    def allsubs(self):
+        "All substitutions currently in the Model."
+        subs = {var: var.descr["value"]
+                for var in self.variables if "value" in var.descr}
+        subs.update(self.substitutions)
+        return subs
+
+    @property
+    def constants(self):
+        "All constants (non-sweep substitutions) currently in the Model."
+        return getsubs(self.unsubbed_varkeys, self.unsubbed_varlocs,
+                       self.allsubs)
+
+    @property
+    def separatesubs(self):
+        "All substitutions in the model, separated."
         # TODO: refactor this
         substitutions = self.allsubs
         varlocs, varkeys = self.unsubbed_varlocs, self.unsubbed_varkeys
@@ -325,7 +328,7 @@ class Model(object):
         RuntimeWarning if an error occurs in solving or parsing the solution.
         """
         posynomials = self.signomials
-        sweep, linkedsweep, constants = self.separate_subs
+        sweep, linkedsweep, constants = self.separatesubs
         solution = SolutionArray()
         kwargs.update({"solver": solver})
         kwargs.update({"verbosity": verbosity - 1})
