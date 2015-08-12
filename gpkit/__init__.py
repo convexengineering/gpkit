@@ -90,8 +90,7 @@ class enable_signomials(object):
 
     def __enter__(self):
         global SIGNOMIALS_ENABLED
-        if enable:
-            SIGNOMIALS_ENABLED = True
+        SIGNOMIALS_ENABLED = True
 
     def __exit__(self, type, value, traceback):
         global SIGNOMIALS_ENABLED
