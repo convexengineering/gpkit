@@ -1,4 +1,4 @@
-from gpkit import Variable, GP
+from gpkit import Variable, Model
 
 # Parameters
 alpha = Variable("alpha", 2, "-", "lower limit, wall aspect ratio")
@@ -25,11 +25,11 @@ constraints = [A_wall >= 2*h*w + 2*h*d,
 V = h*w*d
 objective = 1/V #To maximize V, we minimize its reciprocal
 
-# Formulate the GP
-gp = GP(objective, constraints)
+# Formulate the Model
+m = Model(objective, constraints)
 
-# Solve the GP
-sol = gp.solve(printing=False)
+# Solve the Model
+sol = m.solve(verbosity=0)
 
 # Print results table
 print sol.table()

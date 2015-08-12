@@ -17,7 +17,7 @@ GPkit uses this dual solution to compute the sensitivities of each variable, whi
     import gpkit
     x = gpkit.Variable("x")
     x_min = gpkit.Variable("x_{min}", 2)
-    sol = gpkit.GP(x, [x_min <= x]).solve()
+    sol = gpkit.Model(x, [x_min <= x]).solve()
     assert sol.senssubinto(x_min) == 1
 
 These sensitivities are actually log derivatives (:math:`\frac{d \mathrm{log}(y)}{d \mathrm{log}(x)}`); whereas a regular derivative is a tangent line, these are tangent monomials, so the ``1`` above indicates that ``x_min`` has a linear relation with the objective. This is confirmed by a further example:
@@ -27,7 +27,7 @@ These sensitivities are actually log derivatives (:math:`\frac{d \mathrm{log}(y)
     import gpkit
     x = gpkit.Variable("x")
     x_squared_min = gpkit.Variable("x^2_{min}", 2)
-    sol = gpkit.GP(x, [x_squared_min <= x**2]).solve()
+    sol = gpkit.Model(x, [x_squared_min <= x**2]).solve()
     assert sol.senssubinto(x_squared_min) == 2
 
 Plotting variable sensitivities
@@ -38,7 +38,7 @@ Sensitivities are a useful way to evaluate the tradeoffs in your model, as well 
 .. code-block:: python
 
     from gpkit.interactive.plotting import sensitivity_plot
-    sensitivity_plot(gp)
+    sensitivity_plot(m)
 
 Which produces the following plot:
 
@@ -127,10 +127,10 @@ Fixed Variables
 
 When a GP is created, any fixed Variables are used to form a dictionary: ``{var: var.descr["value"] for var in self.varlocs if "value" in var.descr}``. This dictionary in then substituted into the GP's cost and constraints before the ``substitutions`` argument.
 
-Substituting from a GP solution array
+Substituting from a solution array
 -------------------------------------
 
-``gp.solution.subinto(p)`` will substitute the solution(s) for variables into the posynomial ``p``, returning a PosyArray. For a non-swept solution, this is equivalent to ``p.sub(gp.solution["variables"])``.
+``m.solution.subinto(p)`` will substitute the solution(s) for variables into the posynomial ``p``, returning a PosyArray. For a non-swept solution, this is equivalent to ``p.sub(gp.solution["variables"])``.
 
 You can also substitute by just calling the solution, i.e. ``gp.solution(p)``. This returns a numpy array of just the coefficients (``c``) of the posynomial after substitution, and will raise a` ``ValueError``` if some of the variables in ``p`` were not found in ``gp.solution``.
 
@@ -147,7 +147,7 @@ Sweeps are useful for analyzing tradeoff surfaces. A sweep “value” is an Ite
 Solving Sweeps
 --------------
 
-A GP with sweeps will solve for all possible combinations: e.g., if there’s a variable ``x`` with value ``('sweep', [1, 3])`` and a variable ``y`` with value ``('sweep', [14, 17])`` then the gp will be solved four times, for :math:`(x,y)\in\left\{(1, 14),\ (1, 17),\ (3, 14),\ (3, 17)\right\}`. The returned solutions will be a one-dimensional array (or 2-D for vector variables), accessed in the usual way.
+A Model with sweeps will solve for all possible combinations: e.g., if there’s a variable ``x`` with value ``('sweep', [1, 3])`` and a variable ``y`` with value ``('sweep', [14, 17])`` then the gp will be solved four times, for :math:`(x,y)\in\left\{(1, 14),\ (1, 17),\ (3, 14),\ (3, 17)\right\}`. The returned solutions will be a one-dimensional array (or 2-D for vector variables), accessed in the usual way.
 Sweeping Vector Variables
 
 Vector variables may also be substituted for: ``y = VectorVariable(3, "y", value=('sweep' ,[[1, 2], [1, 2], [1, 2]])`` will sweep :math:`y\ \forall~y_i\in\left\{1,2\right\}`.
@@ -155,7 +155,7 @@ Vector variables may also be substituted for: ``y = VectorVariable(3, "y", value
 Parallel Sweeps
 -----------------------
 
-During a normal sweep, each result is independent, so they can be run in parallel. To use this feature, run ``$ ipcluster start`` at a terminal: it will automatically start a number of iPython parallel computing engines equal to the number of cores on your machine, and when you next import gpkit you should see a note like ``Using parallel execution of sweeps on 4 clients``. If you do, then all sweeps performed with that import of gpkit will be parellelized.
+During a normal sweep, each result is independent, so they can be run in parallel. To use this feature, run ``$ ipcluster start`` at a terminal: it will automatically start a number of iPython parallel computing engines equal to the number of cores on your machine, and when you next import gpkit you should see a note like ``Using parallel execution of sweeps on 4 clients``. If you do, then all sweeps performed with that import of gpkit will be parallelized.
 
 This parallelization sets the stage for gpkit solves to be outsourced to a server, which may be valuable for faster results; alternately, it could allow the use of gpkit without installing a solver.
 
@@ -170,13 +170,13 @@ Example Usage
 .. code-block:: python
 
     # code from t_GPSubs.test_VectorSweep in tests/t_sub.py
-    from gpkit import Variable, VectorVariable, GP
+    from gpkit import Variable, VectorVariable, Model
 
     x = Variable("x")
     y = VectorVariable(2, "y")
-    gp = GP(x, [x >= y.prod()])
-    gp.sub(y, ('sweep', [[2, 3], [5, 7, 11]]))
-    a = gp.solve(printing=False)["cost"]
+    m = Model(x, [x >= y.prod()])
+    m.substitutions.update({y: ('sweep', [[2, 3], [5, 7, 11]])})
+    a = m.solve(printing=False)["cost"]
     b = [10, 14, 22, 15, 21, 33]
     assert all(abs(a-b)/(a+b) < 1e-7)
 
@@ -206,12 +206,12 @@ Example Usage
 
     co_sweep = [0] + np.logspace(-6, 0, 10).tolist()
 
-    obj = gpkit.composite_objective(L+W, W**-1 * L**-3,
-                                    normsub={L:10, W: 10},
-                                    sweep=co_sweep)
+    obj = gpkit.tools.composite_objective(L+W, W**-1 * L**-3,
+                                          normsub={L:10, W: 10},
+                                          sweep=co_sweep)
 
-    gp = gpkit.GP(obj, eqns)
-    gp.solve()
+    m = gpkit.Model(obj, eqns)
+    m.solve()
 
 The ``normsub`` argument specifies an expected value for your solution to normalize the different :math:`g_i` (you can also do this by hand). The feasibility of the problem should not depend on the normalization, but the spacing of the sweep will.
 

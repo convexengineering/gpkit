@@ -1,4 +1,4 @@
-from gpkit import Variable, GP
+from gpkit import Variable, Model
 
 # Decision variable
 x = Variable('x')
@@ -9,11 +9,11 @@ constraints = [x >= 1]
 # Objective (to minimize)
 objective = x
 
-# Formulate the GP
-gp = GP(objective, constraints)
+# Formulate the Model
+m = Model(objective, constraints)
 
-# Solve the GP
-sol = gp.solve(printing=False)
+# Solve the Model
+sol = m.solve(verbosity=0)
 
 # print selected results
 print "Optimal cost:  %s" % sol['cost']
