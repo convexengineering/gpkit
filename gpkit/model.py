@@ -17,9 +17,9 @@ from collections import defaultdict
 from .nomials import Constraint, MonoEQConstraint
 from .nomials import Monomial, Posynomial, Signomial
 from .posyarray import PosyArray
-from .varkey import VarKey
-from .variables import Variable, VectorVariable
 from .solution_array import SolutionArray
+from . import EnableSignomials
+
 from .small_classes import Strings
 from .nomial_data import NomialData
 
@@ -201,13 +201,14 @@ class Model(object):
         ValueError if called on a model with Signomials.
         RuntimeWarning if an error occurs in solving or parsing the solution.
         """
-        # try:
-        return self._solve("gp", solver, verbosity, skipfailures, *args, **kwargs)
-        # except ValueError:
-        #     raise ValueError("'solve()' can only be called on models that do"
-        #                      " not contain Signomials, because only those"
-        #                      " models guarantee a global solution."
-        #                      " For a local solution, try 'localsolve()'.")
+        try:
+            return self._solve("gp", solver, verbosity, skipfailures,
+                               *args, **kwargs)
+        except ValueError:
+            raise ValueError("'solve()' can only be called on models that do"
+                             " not contain Signomials, because only those"
+                             " models guarantee a global solution."
+                             " For a local solution, try 'localsolve()'.")
 
     def localsolve(self, solver=None, verbosity=2, skipfailures=True, *args, **kwargs):
         """Forms a SignomialProgram and attempts to locally solve it.
@@ -236,16 +237,19 @@ class Model(object):
         ValueError if called on a model without Signomials.
         RuntimeWarning if an error occurs in solving or parsing the solution.
         """
-        # try:
-        return self._solve("sp", solver, verbosity, skipfailures, *args, **kwargs)
-        # except ValueError:
-        #     raise ValueError("'localsolve()' can only be called on models that"
-        #                      " contain Signomials, because such"
-        #                      " models have only local solutions. Models"
-        #                      " without Signomials have global solutions,"
-        #                      " so try using 'solve()'.")
+        try:
+            with EnableSignomials():
+                return self._solve("sp", solver, verbosity, skipfailures,
+                                   *args, **kwargs)
+        except ValueError:
+            raise ValueError("'localsolve()' can only be called on models that"
+                             " contain Signomials, because such"
+                             " models have only local solutions. Models"
+                             " without Signomials have global solutions,"
+                             " so try using 'solve()'.")
 
-    def _solve(self, programType, solver, verbosity, skipfailures, *args, **kwargs):
+    def _solve(self, programType, solver, verbosity, skipfailures,
+               *args, **kwargs):
         """Generates a program and solves it, sweeping as appropriate.
 
         Arguments
