@@ -409,9 +409,9 @@ class Model(object):
         m, _ = self.formProgram("sp", self.signomials, self.constants, verbosity)
         return m
 
-    def feasible(self,
-                 search=["overall", "constraints", "constants"],
-                 constvars=None, verbosity=0):
+    def feasibility(self,
+                    search=["overall", "constraints", "constants"],
+                    constvars=None, verbosity=0):
         """Searches for feasibile versions of the Model.
 
         Argument
@@ -448,7 +448,7 @@ class Model(object):
         >>> x_max = Variable("x_max", 1)
         >>> m = Model(x, [x <= x_max, x >= x_min])
         >>> # m.solve()  # RuntimeWarning!
-        >>> feas = m.feasible
+        >>> feas = m.feasibility()
         >>>
         >>> # USING OVERALL
         >>> m.constraints = PosyArray(m.signomials)/feas["overall"]
