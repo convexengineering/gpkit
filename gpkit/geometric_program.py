@@ -58,10 +58,10 @@ class GeometricProgram(object):
             p_idx += 1
         self.p_idxs = np.array(p_idxs)
 
-        self.A, missingbounds = genA(self.exps, self.varlocs)
+        self.A, self.missingbounds = genA(self.exps, self.varlocs)
 
         if verbosity > 0:
-            for var, bound in sorted(missingbounds.items()):
+            for var, bound in sorted(self.missingbounds.items()):
                 print("%s has no %s bound" % (var, bound))
 
     def solve(self, solver=None, verbosity=1, *args, **kwargs):

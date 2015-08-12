@@ -1,3 +1,5 @@
+import numpy as np
+
 from .nomials import Signomial
 from .geometric_program import GeometricProgram
 from .signomial_program import SignomialProgram
@@ -5,6 +7,7 @@ from .nomial_data import sort_and_simplify
 
 from .substitution import substitution
 from .small_scripts import mag
+
 
 def form_program(programType, signomials, subs, verbosity=2):
     """Generates a program and solves it, sweeping as appropriate.
@@ -36,7 +39,9 @@ def form_program(programType, signomials, subs, verbosity=2):
     signomials_, mmaps = [], []
     for s in signomials:
         _, exps, cs, _ = substitution(s, subs)
-        if any((mag(c) != 0 for c in cs)):
+        # remove any cs that are just nans and/or 0s
+        notnan = ~np.isnan(cs)
+        if np.any(notnan) and np.any(cs[notnan] != 0):
             exps, cs, mmap = sort_and_simplify(exps, cs, return_map=True)
             signomials_.append(Signomial(exps, cs, units=s.units))
             mmaps.append(mmap)

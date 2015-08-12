@@ -18,6 +18,7 @@ from .nomials import Constraint, MonoEQConstraint
 from .nomials import Monomial, Posynomial, Signomial
 from .posyarray import PosyArray
 from .solution_array import SolutionArray
+from .varkey import VarKey
 from . import EnableSignomials
 
 from .small_classes import Strings
@@ -148,7 +149,7 @@ class Model(object):
     @property
     def constants(self):
         "All constants (non-sweep substitutions) currently in the Model."
-        unsubbed, allsubs = self._unsubbed_allsubs()
+        _, unsubbed, allsubs = self.signomials_et_al
         return getconstants(unsubbed, allsubs)
 
     def __add__(self, other):
