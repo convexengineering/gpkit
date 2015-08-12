@@ -6,6 +6,9 @@ from gpkit import Variable, VectorVariable
 class TestMathModels(unittest.TestCase):
     """TestCase for math models"""
 
+    def test_failure(self):
+        self.fail("Testing failure.")
+
     def test_te_exp_minus1(self):
         """Test Taylor expansion of e^x - 1"""
         from gpkit.tools import te_exp_minus1
