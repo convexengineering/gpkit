@@ -411,19 +411,19 @@ class Model(object):
 
     def feasibility_report(self, verbosity=1):
         infeasibilities = {}
-        if all([isinstance(s, Posynomial) for s in self.signomials]):
+        if all(isinstance(s, Posynomial) for s in self.signomials):
             if verbosity > 0:
                 print("Infeasibility")
                 print("-------------")
-            gp = self.gp().feasibility_search("max")
-            infeasibility = gp.solve(verbosity=verbosity-1)["cost"]
+            max_gp = self.gp().feasibility_search("max")
+            infeasibility = max_gp.solve(verbosity=verbosity-1)["cost"]
             if verbosity > 0:
                 print "      overall : %.2f" % infeasibility
             infeasibilities["overall"] = infeasibility
 
-            gp = self.gp().feasibility_search("product")
-            slackvars = list(gp.cost.varkeys.values())[0]
-            result = gp.solve(verbosity=verbosity-1)
+            prod_gp = self.gp().feasibility_search("product")
+            slackvars = list(prod_gp.cost.varkeys.values())[0]
+            result = prod_gp.solve(verbosity=verbosity-1)
             con_infeas = [result["variables"][sv] for sv in slackvars]
             if verbosity > 0:
                 print "   constraint : %s" % con_infeas
@@ -433,28 +433,24 @@ class Model(object):
             if constants:
                 slacklb = VectorVariable(len(constants))
                 slackub = VectorVariable(len(constants))
-                constantvars = constants.keys()
-                for var in constantvars:
+                constvarkeys = list(constants.keys())
+                for var in constvarkeys:
                     del var.descr["value"]
-                constantvars = PosyArray(constantvars)
-                values = PosyArray(constants.values())
-                lower_bounds = (values*slacklb <= constantvars)
-                upper_bounds = (constantvars <= values*slackub)
+                constvars = [Variable(**vk.descr) for vk in constvarkeys]
+                constvars = PosyArray(constvars)
+                constvalues = PosyArray(constants.values())
+                lower_bounds = (constvalues*slacklb <= constvars)
+                upper_bounds = (constvars <= constvalues*slackub)
                 slack_bounds = [slackub >= 1, slacklb <= 1]
                 bounds = [lower_bounds, upper_bounds] + slack_bounds
-                m = Model(slackub.prod()/slacklb.prod(),
-                          self.constraints + bounds)
-                sol = m.solve(verbosity=verbosity-1)
-                lb_infeas = sol(slacklb)
-                ub_infeas = sol(slackub)
+                var_m = Model(slackub.prod()/slacklb.prod(),
+                              self.constraints + bounds)
+                sol = var_m.solve(verbosity=verbosity-1)
+                feasible_constvalues = sol(constvars)
+                changed_vals = feasible_constvalues != np.array(constvalues)
                 var_infeas = {}
-                for i, c in enumerate(constantvars):
-                    if 1/lb_infeas[i] >= ub_infeas[i]:
-                        b_infeas = lb_infeas[i]
-                    else:
-                        b_infeas = ub_infeas[i]
-                    if b_infeas != 1:  # i.e., the bounds were active
-                        var_infeas[c] = b_infeas*values[i]
+                for i in np.where(changed_vals):
+                    var_infeas[constvarkeys[i]] = feasible_constvalues[i]
                 if verbosity > 0:
                     print "     constant : %s" % var_infeas
                 infeasibilities["constants"] = var_infeas
