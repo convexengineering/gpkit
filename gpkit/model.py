@@ -19,7 +19,7 @@ from .nomials import Monomial, Posynomial, Signomial
 from .posyarray import PosyArray
 from .solution_array import SolutionArray
 from .varkey import VarKey
-from . import EnableSignomials
+from . import SignomialsEnabled
 
 from .small_classes import Strings
 from .nomial_data import NomialData
@@ -239,7 +239,7 @@ class Model(object):
         RuntimeWarning if an error occurs in solving or parsing the solution.
         """
         try:
-            with EnableSignomials():
+            with SignomialsEnabled():
                 return self._solve("sp", solver, verbosity, skipfailures,
                                    *args, **kwargs)
         except ValueError:

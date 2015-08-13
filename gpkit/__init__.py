@@ -75,7 +75,7 @@ enable_units()
 SIGNOMIALS_ENABLED = False
 
 
-class EnableSignomials(object):
+class SignomialsEnabled(object):
     """Class to put up and tear down signomial support in an instance of GPkit.
 
     Example
@@ -101,8 +101,8 @@ def enable_signomials():
     """Enables signomial support in a particular instance of GPkit."""
     global SIGNOMIALS_ENABLED
     SIGNOMIALS_ENABLED = True
-    print("'enable_signomials()' has been replaced by 'EnableSignomials'"
-          " in a 'with' statement (e.g. 'with EnableSignomials():  constraints"
+    print("'enable_signomials()' has been replaced by 'SignomialsEnabled'"
+          " in a 'with' statement (e.g. 'with SignomialsEnabled():  constraints"
           " = [1-x]'). enable_signomials() will be removed in the next point"
           " release, so please update your code!")
 
@@ -111,8 +111,8 @@ def disable_signomials():
     """Disables signomial support in a particular instance of GPkit."""
     global SIGNOMIALS_ENABLED
     SIGNOMIALS_ENABLED = False
-    print("'disable_signomials()' has been replaced by 'EnableSignomials'"
-          " in a 'with' statement (e.g. 'with EnableSignomials():  constraints"
+    print("'disable_signomials()' has been replaced by 'SignomialsEnabled'"
+          " in a 'with' statement (e.g. 'with SignomialsEnabled():  constraints"
           " = [1-x]'). enable_signomials() will be removed in the next point"
           " release, so please update your code!")
 
