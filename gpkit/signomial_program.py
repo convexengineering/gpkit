@@ -39,14 +39,21 @@ class SignomialProgram(object):
 
     def __init__(self, cost, constraints):
         self.cost = cost
+        if any(self.cost.cs <= 0):
+            raise TypeError("SignomialPrograms need Posynomial objectives."
+                            " The equivalent of a Signomial objective"
+                            " can be constructed by constraining a dummy"
+                            " variable (z) to be greater than the desired"
+                            " signomial objective (z >= s) and then"
+                            " minimizing z.")
         self.constraints = constraints
         self.signomials = [cost] + list(constraints)
 
-        self.posynomials, self.negynomials = [], []
+        self.posynomials, self.negynomials = [self.cost], [None]
         self.negvarkeys = set()
-        for sig in self.signomials:
+        for sig in self.constraints:
             p_exps, p_cs = [], []
-            n_exps, n_cs = [{}], [1]
+            n_exps, n_cs = [{}], [1]  # add the 1 from the "<= 1" constraint
             for c, exp in zip(sig.cs, sig.exps):
                 if c > 0:
                     p_cs.append(c)
@@ -132,6 +139,7 @@ class SignomialProgram(object):
 
             x0 = result["variables"]
             prevcost, cost = cost, result["cost"]
+            print cost
             iterations += 1
 
         if verbosity > 0:
@@ -160,7 +168,7 @@ class SignomialProgram(object):
             x0 = {var: 1 for var in self.negvarkeys}
             sp_inits = {vk: vk.descr["sp_init"] for vk in self.negvarkeys
                         if "sp_init" in vk.descr}
-            x0,update(sp_inits)
+            x0.update(sp_inits)
         posy_approxs = []
         for p, n in zip(self.posynomials, self.negynomials):
             if n is None:
