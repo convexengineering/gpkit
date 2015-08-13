@@ -233,17 +233,13 @@ class TestSP(unittest.TestCase):
         x = Variable('x')
         y = Variable('y')
         z = Variable('z')
-
-        gpkit.enable_signomials()
-        J = 1*((x - 1)**2 + (y - 1)**2) + (x*y - 1)**2
-
-        sp = Model(z, [z >= J])
+        with EnableSignomials():
+            J = 1*((x - 1)**2 + (y - 1)**2) + (x*y - 1)**2
+            sp = Model(z, [z >= J])
         sol = sp.localsolve("cvxopt", verbosity=0)
         self.assertAlmostEqual(sol["cost"], 0.0, 2)
         self.assertAlmostEqual(sol(x), 1.0, 2)
         self.assertAlmostEqual(sol(y), 1.0, 2)
-
-        gpkit.disable_signomials()
 
     def test_issue180(self):
         L = Variable("L")
