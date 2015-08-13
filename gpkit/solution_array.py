@@ -102,10 +102,8 @@ class SolutionArray(DictOfLists):
             assert not subbed.exp
             return mag(subbed.c)
 
-    def table(self,
-              tables=["cost", "freevariables", "sweepvariables",
-                      "constants", "sensitivities"],
-              fixedcols=True):
+    def table(self, tables=["cost", "freevariables", "sweepvariables",
+                            "constants", "sensitivities"], fixedcols=True):
         if isinstance(tables, Strings):
             tables = [tables]
         strs = []
@@ -114,7 +112,7 @@ class SolutionArray(DictOfLists):
             if len(self) > 1:
                 costs = ["%-8.3g" % c for c in self["cost"][:4]]
                 strs += [" [ %s %s ]" % ("  ".join(costs),
-                                        "..." if len(self) > 4 else "")]
+                                         "..." if len(self) > 4 else "")]
                 cost_units = self.program[0].cost.units
             else:
                 strs += [" %-.4g" % self["cost"]]
@@ -195,8 +193,7 @@ def results_table(data, title, minval=0, printunits=True, fixedcols=True,
         dirs = ['>', '<', '<', '<']
         assert len(dirs) == len(maxlens)  # check lengths before using zip
         fmts = ['{0:%s%s}' % (direc, L) for direc, L in zip(dirs, maxlens)]
-    lines = [[fmt.format(s) for fmt, s in zip(fmts, line)]
-             for line in lines]
+    lines = [[fmt.format(s) for fmt, s in zip(fmts, line)] for line in lines]
     lines = [title] + ["-"*len(title)] + [''.join(l) for l in lines] + [""]
     return "\n".join(lines)
 
@@ -245,16 +242,14 @@ def parse_result(result, constants, unsubbed, sweep={}, linkedsweep={},
         nu = np.array(nu_)
     sensitivities["monomials"] = nu
 
-    sens_vars = {var: sum([unsubbed.exps[i][var]*nu_[i]
-                           for i in locs])
+    sens_vars = {var: sum([unsubbed.exps[i][var]*nu_[i] for i in locs])
                  for (var, locs) in unsubbed.varlocs.items()}
     sensitivities["variables"] = sens_vars
 
-    # free-variable sensitivities must be < arbitrary epsilon 1e-4
+    # free-variable sensitivities must be <= some epsilon
     for var, S in sensitivities["variables"].items():
         if var in freevariables and abs(S) > freevar_sensitivity_tolerance:
-            print("free variable too sensitive:"
-                  " S_{%s} = %0.2e" % (var, S))
+            print("free variable too sensitive: S_{%s} = %0.2e" % (var, S))
 
     localexp = {var: S for (var, S) in sens_vars.items()
                 if abs(S) >= localmodel_sensitivity_requirement}
@@ -288,13 +283,6 @@ def parse_result(result, constants, unsubbed, sweep={}, linkedsweep={},
                         vardict[veckey][idx] = vardict[var]
 
                     del vardict[var]
-
-    # TODO: remove after issue #269 is resolved
-    # for veckey in veckeys:
-    #     # TODO: print index that error occured at
-    #     if any(np.isnan(variables[veckey])):
-    #         print variables
-    #         raise RuntimeWarning("did not fully fill vector variables.")
 
     return dict(cost=cost,
                 constants=constants,
