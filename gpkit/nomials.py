@@ -590,8 +590,9 @@ class MonoEQConstraint(Constraint):
         # self.leq = self
         # self.geq = 1 / self
         # instead, we'll do this -- TODO improve
-        self.leq = m1/m2
-        self.geq = m2/m1
+        m = Monomial(self.exps, self.cs)
+        self.leq = m
+        self.geq = 1/m
 
     def __nonzero__(self):
         # a constraint not guaranteed to be satisfied
