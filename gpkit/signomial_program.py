@@ -116,7 +116,8 @@ class SignomialProgram(object):
 
         while (iterations < iteration_limit
                and (not (cost and prevcost)
-                    or abs(prevcost-cost)/(prevcost + cost + 1e-6) > reltol)):
+                    or abs(prevcost-cost)/(prevcost + cost) > reltol)
+               and (cost > 1e-10 or cost == None)):
 
             gp = self.step(x0, verbosity)
             self.gps.append(gp)  # NOTE: SIDE EFFECTS

@@ -318,6 +318,7 @@ class TestSP(unittest.TestCase):
             J = 0.01*(x - 1)**2
             sp = Model(z, [z >= J])
             sol = sp.localsolve(verbosity=0, iteration_limit=50)
+            self.assertTrue(len(sp.program.gps) < 50)
             self.assertAlmostEqual(sol('x'), 1, self.ndig)
             self.assertAlmostEqual(sol['cost'], 0, self.ndig)
 
