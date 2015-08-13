@@ -236,7 +236,7 @@ class TestSP(unittest.TestCase):
         with EnableSignomials():
             J = 1*((x - 1)**2 + (y - 1)**2) + (x*y - 1)**2
             sp = Model(z, [z >= J])
-        sol = sp.localsolve("cvxopt", verbosity=0)
+        sol = sp.localsolve(verbosity=0)
         self.assertAlmostEqual(sol["cost"], 0.0, 2)
         self.assertAlmostEqual(sol(x), 1.0, 2)
         self.assertAlmostEqual(sol(y), 1.0, 2)
