@@ -38,12 +38,6 @@ class SignomialProgram(object):
     """
 
     def __init__(self, cost, constraints):
-        if any(cost.cs < 0):
-            raise ValueError("Signomials are not permitted in the objective (all"
-                             " coefficients must be positive). Reformulate this"
-                             " problem by making the signomial a constraint and"
-                             " introducing a dummy variable as both the objective"
-                             " and the upper bound on the new constraint.")
         self.cost = cost
         self.constraints = constraints
         self.signomials = [cost] + list(constraints)
@@ -122,9 +116,7 @@ class SignomialProgram(object):
 
         while (iterations < iteration_limit
                and (not (cost and prevcost)
-                    or abs(prevcost-cost)/(prevcost + cost) > reltol)
-               and (cost > 1e-10 or cost == None)):
-
+                    or abs(prevcost-cost)/(prevcost + cost) > reltol)):
             gp = self.step(x0, verbosity)
             self.gps.append(gp)  # NOTE: SIDE EFFECTS
 
