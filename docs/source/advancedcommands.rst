@@ -125,14 +125,11 @@ Any of the substitutions above can be run with ``p.sub(*args, replace=True)`` to
 Fixed Variables
 ---------------
 
-When a GP is created, any fixed Variables are used to form a dictionary: ``{var: var.descr["value"] for var in self.varlocs if "value" in var.descr}``. This dictionary in then substituted into the GP's cost and constraints before the ``substitutions`` argument.
+When a Model is created, any fixed Variables are used to form a dictionary: ``{var: var.descr["value"] for var in self.varlocs if "value" in var.descr}``. This dictionary in then substituted into the Model's cost and constraints before the ``substitutions`` argument is (and hence values are supplanted by any later substitutions).
 
-Substituting from a solution array
--------------------------------------
+``solution.subinto(p)`` will substitute the solution(s) for variables into the posynomial ``p``, returning a PosyArray. For a non-swept solution, this is equivalent to ``p.sub(solution["variables"])``.
 
-``m.solution.subinto(p)`` will substitute the solution(s) for variables into the posynomial ``p``, returning a PosyArray. For a non-swept solution, this is equivalent to ``p.sub(gp.solution["variables"])``.
-
-You can also substitute by just calling the solution, i.e. ``gp.solution(p)``. This returns a numpy array of just the coefficients (``c``) of the posynomial after substitution, and will raise a` ``ValueError``` if some of the variables in ``p`` were not found in ``gp.solution``.
+You can also substitute by just calling the solution, i.e. ``solution(p)``. This returns a numpy array of just the coefficients (``c``) of the posynomial after substitution, and will raise a` ``ValueError``` if some of the variables in ``p`` were not found in ``solution``.
 
 .. _Sweeps:
 
@@ -175,7 +172,11 @@ Example Usage
     x = Variable("x")
     y = VectorVariable(2, "y")
     m = Model(x, [x >= y.prod()])
+<<<<<<< Updated upstream
     m.substitutions.update({y: ('sweep', [[2, 3], [5, 7, 11]])})
+=======
+    m.sub(y, ('sweep', [[2, 3], [5, 7, 11]]))
+>>>>>>> Stashed changes
     a = m.solve(printing=False)["cost"]
     b = [10, 14, 22, 15, 21, 33]
     assert all(abs(a-b)/(a+b) < 1e-7)

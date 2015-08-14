@@ -6,7 +6,7 @@ x = gpkit.Variable('x')
 y = gpkit.Variable('y')
 
 # must enable signomials for subtraction
-with gpkit.enable_signomials():
+with gpkit.SignomialsEnabled():
     constraints = [x >= 1-y, y <= 0.1]
 
 # create and solve the SP

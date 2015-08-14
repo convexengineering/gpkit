@@ -14,6 +14,14 @@ gpkit.interactive.plotting module
     :undoc-members:
     :show-inheritance:
 
+gpkit.interactive.pretty_print module
+-------------------------------------
+
+.. automodule:: gpkit.interactive.pretty_print
+    :members:
+    :undoc-members:
+    :show-inheritance:
+
 gpkit.interactive.printing module
 ---------------------------------
 
@@ -22,18 +30,18 @@ gpkit.interactive.printing module
     :undoc-members:
     :show-inheritance:
 
-gpkit.interactive.widget module
--------------------------------
-
-.. automodule:: gpkit.interactive.widget
-    :members:
-    :undoc-members:
-    :show-inheritance:
-
 gpkit.interactive.ractor module
 -------------------------------
 
 .. automodule:: gpkit.interactive.ractor
+    :members:
+    :undoc-members:
+    :show-inheritance:
+
+gpkit.interactive.widget module
+-------------------------------
+
+.. automodule:: gpkit.interactive.widget
     :members:
     :undoc-members:
     :show-inheritance:

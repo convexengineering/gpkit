@@ -7,7 +7,7 @@ The first thing to do when using GPkit is to import the classes and modules you 
 
 .. code-block:: python
 
-    from gpkit import Variable, VectorVariable, GP
+    from gpkit import Variable, VectorVariable, Model
 
 
 Declaring Variables
@@ -36,8 +36,10 @@ To declare a variable with a constant value, use the ``Variable`` class, as abov
 
 .. code-block:: python
 
-    # Declare '\\rho' equal to 1.225 kg/m^3
-    rho = Variable('\\rho', 1.225, 'kg/m^3', 'Density of air at sea level')
+    # Declare \rho equal to 1.225 kg/m^3.
+    # NOTE: starting a Python string with 'r' makes the backslashes literal,
+    #       which is useful for LaTeX strings.
+    rho = Variable(r'\rho', 1.225, 'kg/m^3', 'Density of air at sea level')
 
 In the example above, the key name ``'\\rho'`` is for LaTeX printing (described later). The unit and description arguments are optional.
 
@@ -86,7 +88,7 @@ This is implemented under-the-hood using operator overloading in Python.
 Declaring Constraints
 =====================
 
-``Constraint`` objects represent constraints of the form ``Monomial >= Posynomial``  or ``Monomial == Monomial`` (which are the forms required for GP-compatibility).
+``Constraint`` objects represent constraints of the form ``Monomial >= Posynomial``  or ``Monomial == Monomial`` (which are the forms required for Model-compatibility).
 
 Note that constraints must be formed using ``<=``, ``>=``, or ``==`` operators, not ``<`` or ``>``.
 
@@ -113,20 +115,20 @@ To declare an objective function, assign a Posynomial (or Monomial) to a variabl
 By convention, the objective is the function to be *minimized*. If you wish to *maximize* a function, take its reciprocal. For example, the code above creates an objective which, when minimized, will maximize ``x*y*z``.
 
 
-Formulating a GP
+Formulating a Model
 ================
 
-The ``GP`` class represents a geometric programming problem. To create one, pass an objective and list of Constraints:
+The ``Model`` class represents an optimization problem. To create one, pass an objective and list of Constraints:
 
 .. code-block:: python
 
     objective = 1/(x*y*z)
     constraints = [2*x*y + 2*x*z + 2*y*z <= S,
                    x >= 2*y]
-    gp = GP(objective, constraints)
+    gp = Model(objective, constraints)
 
 
-Solving the GP
+Solving the Model
 ==============
 
 .. code-block:: python
