@@ -233,7 +233,7 @@ class TestSP(unittest.TestCase):
         x = Variable('x')
         y = Variable('y')
         z = Variable('z')
-        nonzero_adder = 0.1
+        nonzero_adder = 0.1  # TODO this should not be necessary
         local_ndig = 4
         with EnableSignomials():
             J = 1*((x - 1)**2 + (y - 1)**2) + (x*y - 1)**2 + nonzero_adder
