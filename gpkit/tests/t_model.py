@@ -229,6 +229,18 @@ class TestSP(unittest.TestCase):
         m = Model(obj, constraints)
         m.localsolve(verbosity=0)
 
+    def test_issue274(self):
+        x = Variable('x')
+        y = Variable('y')
+        z = Variable('z')
+        with EnableSignomials():
+            J = 1*((x - 1)**2 + (y - 1)**2) + (x*y - 1)**2
+            sp = Model(z, [z >= J])
+        sol = sp.localsolve(verbosity=0)
+        self.assertAlmostEqual(sol["cost"], 0.0, 2)
+        self.assertAlmostEqual(sol(x), 1.0, 2)
+        self.assertAlmostEqual(sol(y), 1.0, 2)
+
     def test_issue180(self):
         L = Variable("L")
         Lmax = Variable("L_{max}", 10)
