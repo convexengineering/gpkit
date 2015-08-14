@@ -57,6 +57,13 @@ class TestNomialSubs(unittest.TestCase):
             z = Variable("z", "s")
             self.assertRaises(ValueError, y.sub, y, z)
 
+    def test_dimensionless_units(self):
+        x = Variable('x', 3, 'ft')
+        y = Variable('y', 1, 'm')
+        if type(x.units) != str:
+            # units are enabled
+            self.assertAlmostEqual((x/y).value, 0.9144)
+
     def test_vector(self):
         x = Variable("x")
         y = Variable("y")

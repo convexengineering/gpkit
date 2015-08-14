@@ -5,7 +5,7 @@ from time import time
 from functools import reduce as functools_reduce
 from operator import mul
 
-from .nomials import Posynomial, Signomial
+from .nomials import Posynomial
 from .geometric_program import GeometricProgram
 
 from .substitution import getconstants
@@ -39,15 +39,22 @@ class SignomialProgram(object):
     """
 
     def __init__(self, cost, constraints):
+        if any(cost.cs <= 0):
+            raise TypeError("""SignomialPrograms need Posyomial objectives.
+
+    The equivalent of a Signomial objective can be constructed by constraining
+    a dummy variable z to be greater than the desired Signomial objective s
+    (z >= s) and then minimizing that dummy variable.""")
+
         self.cost = cost
         self.constraints = constraints
         self.signomials = [cost] + list(constraints)
 
-        self.posynomials, self.negynomials = [], []
+        self.posynomials, self.negynomials = [self.cost], [None]
         self.negvarkeys = set()
-        for sig in self.signomials:
+        for sig in self.constraints:
             p_exps, p_cs = [], []
-            n_exps, n_cs = [{}], [1]
+            n_exps, n_cs = [{}], [1]  # add the 1 from the "<= 1" constraint
             for c, exp in zip(sig.cs, sig.exps):
                 if c > 0:
                     p_cs.append(c)
@@ -120,7 +127,9 @@ class SignomialProgram(object):
 
         while (iterations < iteration_limit
                and (not (cost and prevcost)
-                    or abs(prevcost-cost)/(prevcost + cost) > reltol)):
+                    or abs(prevcost-cost)/(prevcost + cost) > reltol)
+               and (cost > 1e-10 or cost == None)):
+
             gp = self.step(x0, verbosity)
             self.gps.append(gp)  # NOTE: SIDE EFFECTS
 

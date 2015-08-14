@@ -79,6 +79,7 @@ class Signomial(NomialData):
                     units = cs[0]/cs[0].magnitude
                     if units.dimensionless:
                         cs = [c * ureg.dimensionless for c in cs]
+                        units = ureg.dimensionless
                     cs = [c.to(units).magnitude for c in cs] * units
                     if not all([c.dimensionality == units.dimensionality
                                 for c in cs]):
