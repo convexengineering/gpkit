@@ -2,7 +2,7 @@ import numpy as np
 
 from collections import Iterable
 from functools import reduce as functools_reduce
-from operator import mul, add
+from operator import mul
 
 from .posyarray import PosyArray
 from .nomials import Monomial

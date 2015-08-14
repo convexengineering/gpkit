@@ -9,12 +9,11 @@
 
 import numpy as np
 
-from collections import Iterable
-
 from pprint import pformat
 from collections import defaultdict
 
-from .nomials import Constraint, MonoEQConstraint
+from .nomials import MonoEQConstraint
+from .nomials import Posynomial, Signomial
 from .nomials import Monomial, Posynomial, Signomial
 from .geometric_program import GeometricProgram
 from .signomial_program import SignomialProgram
@@ -23,15 +22,12 @@ from .solution_array import SolutionArray
 from .varkey import VarKey
 from . import SignomialsEnabled
 
-from .small_classes import Strings
 from .nomial_data import NomialData
 
 from .solution_array import parse_result
 from .substitution import get_constants, separate_subs
 from .substitution import simplify_and_mmap
 from .small_scripts import flatten
-from .small_scripts import mag
-from .small_scripts import is_sweepvar
 
 try:
     from IPython.parallel import Client
