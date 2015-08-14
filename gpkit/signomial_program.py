@@ -40,12 +40,11 @@ class SignomialProgram(object):
     def __init__(self, cost, constraints):
         self.cost = cost
         if any(self.cost.cs <= 0):
-            raise TypeError("SignomialPrograms need Posynomial objectives."
-                            " The equivalent of a Signomial objective"
-                            " can be constructed by constraining a dummy"
-                            " variable (z) to be greater than the desired"
-                            " signomial objective (z >= s) and then"
-                            " minimizing z.")
+            raise TypeError("Signomials are not permitted in the objective (all"
+                            " coefficients must be positive). Reformulate this"
+                            " problem by making the signomial a constraint and "
+                            "introducing a dummy variable as both the objective"
+                            " and the upper bound on the new constraint.")
         self.constraints = constraints
         self.signomials = [cost] + list(constraints)
 
