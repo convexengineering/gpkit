@@ -259,7 +259,6 @@ class Model(object):
             return self._solve("gp", solver, verbosity, skipfailures,
                                *args, **kwargs)
         except ValueError as err:
-            print repr(err.message)
             if err.message == ("GeometricPrograms cannot contain Signomials"):
                 raise ValueError("""Signomials remained after substitution.
 
@@ -300,7 +299,6 @@ class Model(object):
                 return self._solve("sp", solver, verbosity, skipfailures,
                                    *args, **kwargs)
         except ValueError as err:
-            print repr(err.message)
             if err.message == ("SignomialPrograms must contain at least one"
                                " Signomial."):
                 raise ValueError("""No Signomials remained after substitution.
