@@ -258,11 +258,14 @@ class Model(object):
         try:
             return self._solve("gp", solver, verbosity, skipfailures,
                                *args, **kwargs)
-        except ValueError:
-            raise ValueError("'solve()' can only be called on models that do"
-                             " not contain Signomials, because only those"
-                             " models guarantee a global solution."
-                             " For a local solution, try 'localsolve()'.")
+        except ValueError as err:
+            if err.message == ("GeometricPrograms cannot contain Signomials"):
+                raise ValueError("""Signomials remained after substitution.
+
+    'Model.solve()' can only be called on Models without Signomials, because
+    only those Models guarantee a global solution. Models with Signomials
+    have only local solutions, and are solved with 'Model.localsolve()'.""")
+            raise
 
     def localsolve(self, solver=None, verbosity=2, skipfailures=True, *args, **kwargs):
         """Forms a SignomialProgram and attempts to locally solve it.
@@ -295,12 +298,15 @@ class Model(object):
             with EnableSignomials():
                 return self._solve("sp", solver, verbosity, skipfailures,
                                    *args, **kwargs)
-        except ValueError:
-            raise ValueError("'localsolve()' can only be called on models that"
-                             " contain Signomials, because such"
-                             " models have only local solutions. Models"
-                             " without Signomials have global solutions,"
-                             " so try using 'solve()'.")
+        except ValueError as err:
+            if err.message == ("SignomialPrograms must contain at least one"
+                               " Signomial."):
+                raise ValueError("""No Signomials remained after substitution.
+
+    'Model.localsolve()' can only be called on models containing Signomials,
+    since such models have only local solutions. Models without Signomials have
+    global solutions, and can be solved with 'Model.solve()'.""")
+            raise
 
     def _solve(self, programType, solver, verbosity, skipfailures,
                *args, **kwargs):
