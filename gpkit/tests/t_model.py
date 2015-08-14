@@ -311,16 +311,17 @@ class TestSP(unittest.TestCase):
                       "and variables failed")
         self.assertAlmostEqual(sol["cost"], 1, self.ndig)
 
-    def test_while_loop_exit_condition(self):
+    def test_small_signomial(self):
+        x = Variable('x')
+        z = Variable('z')
+        local_ndig = 4
+        nonzero_adder = 0.1  # TODO: support reaching zero, issue #348
         with SignomialsEnabled():
-            x = Variable('x')
-            z = Variable('z')
-            J = 0.01*(x - 1)**2
+            J = 0.01*(x - 1)**2 + nonzero_adder
             m = Model(z, [z >= J])
-            sol = m.localsolve(verbosity=0, iteration_limit=50)
-            self.assertTrue(len(m.program.gps) < 50)
-            self.assertAlmostEqual(sol('x'), 1, self.ndig)
-            self.assertAlmostEqual(sol['cost'], 0, self.ndig)
+        sol = m.localsolve(verbosity=0)
+        self.assertAlmostEqual(sol['cost'], nonzero_adder, local_ndig)
+        self.assertAlmostEqual(sol('x'), 0.987, 3)
 
     def test_signomials_not_allowed_in_objective(self):
         with SignomialsEnabled():

@@ -75,7 +75,7 @@ class SignomialProgram(object):
             raise ValueError("SignomialPrograms must contain at least one"
                              " Signomial.")
 
-    def localsolve(self, solver=None, verbosity=1, x0=None, reltol=1e-4,
+    def localsolve(self, solver=None, verbosity=1, x0=None, rel_tol=1e-4,
                    iteration_limit=50, *args, **kwargs):
         """Locally solves a SignomialProgram and returns the solution.
 
@@ -91,7 +91,7 @@ class SignomialProgram(object):
             if greater than 1, prints solver name and time for each GP.
         x0 : dict (optional)
             Initial location to approximate signomials about.
-        reltol : float
+        rel_tol : float
             Iteration ends when this is greater than the distance between two
             consecutive solve's objective values.
         iteration_limit : int
@@ -125,13 +125,16 @@ class SignomialProgram(object):
         x0.update({var: 1 for var in self.negvarkeys if var not in x0})
 
         iterations = 0
-        prevcost, cost = None, None
+        prevcost, cost, rel_improvement = None, None, None
         self.gps = []
 
-        while (iterations < iteration_limit
-               and (not (cost and prevcost)
-                    or abs(prevcost-cost)/(prevcost + cost) > reltol)
-               and (cost > 1e-10 or cost == None)):
+        while rel_improvement is None or rel_improvement > rel_tol:
+            if iterations > iteration_limit:
+                raise RuntimeWarning("""problem unsolved after %s iterations.
+
+    The last result is available in Model.program.gps[-1].result. If the gps
+    appear to be converging, you may wish to increase the iteration limit by
+    calling .localsolve(..., iteration_limit=NEWLIMIT).""" % iterations)
 
             gp = self.step(x0, verbosity)
             self.gps.append(gp)  # NOTE: SIDE EFFECTS
@@ -148,8 +151,12 @@ class SignomialProgram(object):
 
             x0 = result["variables"]
             prevcost, cost = cost, result["cost"]
+            if cost and prevcost:
+                rel_improvement = abs(prevcost-cost)/(prevcost + cost)
+
             iterations += 1
 
+        # solved successfully!
         if verbosity > 0:
             print("Solving took %i GP solves" % iterations
                   + " and %.3g seconds." % (time() - self.starttime))
