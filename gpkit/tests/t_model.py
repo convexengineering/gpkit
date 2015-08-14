@@ -312,7 +312,7 @@ class TestSP(unittest.TestCase):
         self.assertAlmostEqual(sol["cost"], 1, self.ndig)
 
     def test_while_loop_exit_condition(self):
-        with EnableSignomials():
+        with SignomialsEnabled():
             x = Variable('x')
             z = Variable('z')
             J = 0.01*(x - 1)**2
@@ -323,7 +323,7 @@ class TestSP(unittest.TestCase):
             self.assertAlmostEqual(sol['cost'], 0, self.ndig)
 
     def test_signomials_not_allowed_in_objective(self):
-        with EnableSignomials():
+        with SignomialsEnabled():
             x = Variable('x')
             y = Variable('y')
             J = 0.01*((x - 1)**2 + (y - 1)**2) + (x*y - 1)**2
