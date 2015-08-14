@@ -39,7 +39,7 @@ class SignomialProgram(object):
 
     def __init__(self, cost, constraints):
         if any(cost.cs <= 0):
-            raise ValueError("""SignomialPrograms need Posyomial objectives.
+            raise TypeError("""SignomialPrograms need Posyomial objectives.
 
     The equivalent of a Signomial objective can be constructed by constraining
     a dummy variable z to be greater than the desired Signomial objective s

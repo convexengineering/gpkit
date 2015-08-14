@@ -85,6 +85,7 @@ class Signomial(object):
                     units = cs[0]/cs[0].magnitude
                     if units.dimensionless:
                         cs = [c * ureg.dimensionless for c in cs]
+                        units = ureg.dimensionless
                     cs = [c.to(units).magnitude for c in cs] * units
                     if not all([c.dimensionality == units.dimensionality
                                 for c in cs]):
@@ -590,9 +591,8 @@ class MonoEQConstraint(Constraint):
         # self.leq = self
         # self.geq = 1 / self
         # instead, we'll do this -- TODO improve
-        m = Monomial(self.exps, self.cs)
-        self.leq = m
-        self.geq = 1/m
+        self.leq = m1/m2
+        self.geq = m2/m1
 
     def __nonzero__(self):
         # a constraint not guaranteed to be satisfied

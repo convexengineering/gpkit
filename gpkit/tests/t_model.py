@@ -311,6 +311,26 @@ class TestSP(unittest.TestCase):
                       "and variables failed")
         self.assertAlmostEqual(sol["cost"], 1, self.ndig)
 
+    def test_while_loop_exit_condition(self):
+        with EnableSignomials():
+            x = Variable('x')
+            z = Variable('z')
+            J = 0.01*(x - 1)**2
+            m = Model(z, [z >= J])
+            sol = m.localsolve(verbosity=0, iteration_limit=50)
+            self.assertTrue(len(m.program.gps) < 50)
+            self.assertAlmostEqual(sol('x'), 1, self.ndig)
+            self.assertAlmostEqual(sol['cost'], 0, self.ndig)
+
+    def test_signomials_not_allowed_in_objective(self):
+        with EnableSignomials():
+            x = Variable('x')
+            y = Variable('y')
+            J = 0.01*((x - 1)**2 + (y - 1)**2) + (x*y - 1)**2
+            m = Model(J)
+            with self.assertRaises(ValueError):
+                sol = m.localsolve(verbosity=0)
+
 
 TEST_CASES = [TestGP, TestSP]
 
