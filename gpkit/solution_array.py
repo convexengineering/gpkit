@@ -46,15 +46,6 @@ class SolutionArray(DictOfLists):
 
     """
 
-    def append_parse(self, *args, **kwargs):
-        """Parses and then appends a GP-like result.
-
-        Arguments
-        ---------
-        *args, **kwargs : passed to parse_result()
-        """
-        self.append(parse_result(*args, **kwargs))
-
     def __len__(self):
         try:
             return len(self["cost"])

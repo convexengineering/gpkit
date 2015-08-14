@@ -345,13 +345,13 @@ class Model(object):
                     raise RuntimeWarning("solve failed during sweep; program"
                                          " has been saved to m.program[-1].")
         else:
-            # NOTE: SIDE EFFECTS
             signomials, unsubbed.mmaps = simplify_and_mmap(signomials,
                                                            constants)
+            # NOTE: SIDE EFFECTS
             self.program, solvefn = form_program(programType, signomials,
                                                  verbosity=verbosity-1)
             result = solvefn(*args, **kwargs)
-            solution.append_parse(result, constants, unsubbed)
+            sol.append(parse_result(result, constants, unsubbed))
         solution.program = self.program
         solution.toarray()
         self.solution = solution  # NOTE: SIDE EFFECTS
