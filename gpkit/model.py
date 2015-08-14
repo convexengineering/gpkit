@@ -339,7 +339,9 @@ class Model(object):
                     # we had a failed solve; append the program and then error
                     self.program.append(program)  # NOTE: SIDE EFFECTS
                     raise RuntimeWarning("solve failed during sweep; program"
-                                         " has been saved to m.program[-1].")
+                                         " has been saved to m.program[-1]."
+                                         " To ignore such failures, solve with"
+                                         " skipfailures=True.")
         else:
             signomials, unsubbed.mmaps = simplify_and_mmap(signomials,
                                                            constants)
