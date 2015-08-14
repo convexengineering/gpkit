@@ -5,6 +5,7 @@ gpkit/build.py
 gpkit/ctypesgen.py
 gpkit/geometric_program.py
 gpkit/model.py
+gpkit/nomial_data.py
 gpkit/nomials.py
 gpkit/posyarray.py
 gpkit/small_classes.py
@@ -12,6 +13,7 @@ gpkit/small_scripts.py
 gpkit/substitution.py
 gpkit/shortcuts.py
 gpkit/signomial_program.py
+gpkit/solution_array.py
 gpkit/tools.py
 gpkit/variables.py
 gpkit/varkey.py
@@ -32,8 +34,8 @@ gpkit/tests/t_sub.py
 gpkit/tests/t_tools.py
 gpkit/tests/simpleflight.py
 gpkit/tests/t_posy_array.py
-gpkit/tests/t_geometric_program.py
-gpkit/tests/t_gp_solution_array.py
+gpkit/tests/t_model.py
+gpkit/tests/t_solution_array.py
 gpkit/tests/t_constraints.py
 gpkit/tests/t_nomials.py
 gpkit/tests/t_vars.py
