@@ -46,6 +46,8 @@ class GeometricProgram(NomialData):
         NomialData.__init__(self, signomials=self.posynomials, simplify=False)
         if not all(self.cs > 0):
             raise ValueError("GeometricPrograms cannot contain Signomials.")
+        if self.values:
+            raise ValueError("GeometricPrograms do not handle substitution.")
         # k [j]: number of monomials (columns of F) present in each constraint
         self.k = [len(p.cs) for p in self.posynomials]
         # p_idxs [i]: posynomial index of each monomial
