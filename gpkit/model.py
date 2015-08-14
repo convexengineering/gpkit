@@ -351,7 +351,7 @@ class Model(object):
             self.program, solvefn = form_program(programType, signomials,
                                                  verbosity=verbosity-1)
             result = solvefn(*args, **kwargs)
-            sol.append(parse_result(result, constants, unsubbed))
+            solution.append(parse_result(result, constants, unsubbed))
         solution.program = self.program
         solution.toarray()
         self.solution = solution  # NOTE: SIDE EFFECTS
