@@ -130,7 +130,7 @@ class Model(object):
 
     @property
     def unsubbed(self):
-        return NomialData(signomials=self.signomials, simplify=False)
+        return NomialData(nomials=self.signomials)
 
     @property
     def allsubs(self):
@@ -143,7 +143,7 @@ class Model(object):
     def signomials_et_al(self):
         "Get signomials, unsubbed, allsubs in one pass."
         signomials = self.signomials
-        unsubbed = NomialData(signomials=signomials, simplify=False)
+        unsubbed = NomialData(nomials=signomials)
         allsubs = unsubbed.values
         allsubs.update(self.substitutions)
         return signomials, unsubbed, allsubs

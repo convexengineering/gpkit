@@ -11,13 +11,19 @@ from .small_scripts import mag
 
 
 class NomialData(object):
+    "Object for holding cs, exps, and other basic 'nomial' properties."
 
-    def __init__(self, exps=None, cs=None, signomials=None, simplify=True):
-        if signomials:
-            exps = functools_reduce(add, (tuple(s.exps) for s in signomials))
-            cs = np.hstack((mag(s.cs) for s in signomials))
-        if exps is None or cs is None:
+    def __init__(self, exps=None, cs=None, nomials=None, simplify=True):
+        if nomials and (exps or cs):
+            raise ValueError("The NomialData initializor accepts either"
+                             " exps and cs, or nomials, but not both.")
+        elif nomials:
+            exps = functools_reduce(add, (tuple(s.exps) for s in nomials))
+            cs = np.hstack((mag(s.cs) for s in nomials))
+            simplify = False  # nomials have already been simplified
+        elif exps is None or cs is None:
             raise ValueError("creation of a NomialData requires exps and cs.")
+
         if simplify:
             exps, cs = sort_and_simplify(exps, cs)
         self.exps, self.cs = exps, cs
