@@ -42,6 +42,22 @@ class TestGP(unittest.TestCase):
                                self.ndig)
         self.assertAlmostEqual(sol["cost"], 2*math.sqrt(2), self.ndig)
 
+    def test_simple_united_gp(self):
+        R = Variable('R', units="nautical_miles")
+        a0 = Variable('a0', 340.29, 'm/s')
+        theta = Variable(r'\theta', 0.7598)
+        t = Variable('t', 10, 'hr')
+        T_loiter = Variable('T_{loiter}', 1, 'hr')
+        T_reserve = Variable('T_{reserve}', 45, 'min')
+        M = VectorVariable(2, 'M')
+
+        if not isinstance(R.units, str):
+            prob = Model(1/R,
+                         [t >= sum(R/a0/M/theta**0.5) + T_loiter + T_reserve,
+                          M <= 0.76])
+            sol = prob.solve(verbosity=0)
+            self.assertAlmostEqual(sol["cost"], 0.0005532, self.ndig)
+
     def test_trivial_vector_gp(self):
         """
         Create and solve a trivial GP with VectorVariables
