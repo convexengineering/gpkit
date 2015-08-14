@@ -5,7 +5,7 @@ from time import time
 from functools import reduce as functools_reduce
 from operator import mul
 
-from .nomials import Posynomial, Signomial
+from .nomials import Posynomial
 from .substitution import getsubs
 from .geometric_program import GeometricProgram
 
@@ -38,13 +38,14 @@ class SignomialProgram(object):
     """
 
     def __init__(self, cost, constraints):
+        if any(cost.cs <= 0):
+            raise ValueError("""SignomialPrograms need Posyomial objectives.
+
+    The equivalent of a Signomial objective can be constructed by constraining
+    a dummy variable z to be greater than the desired Signomial objective s
+    (z >= s) and then minimizing that dummy variable."""")
+
         self.cost = cost
-        if any(self.cost.cs <= 0):
-            raise TypeError("Signomials are not permitted in the objective (all"
-                            " coefficients must be positive). Reformulate this"
-                            " problem by making the signomial a constraint and "
-                            "introducing a dummy variable as both the objective"
-                            " and the upper bound on the new constraint.")
         self.constraints = constraints
         self.signomials = [cost] + list(constraints)
 
@@ -122,7 +123,9 @@ class SignomialProgram(object):
 
         while (iterations < iteration_limit
                and (not (cost and prevcost)
-                    or abs(prevcost-cost)/(prevcost + cost) > reltol)):
+                    or abs(prevcost-cost)/(prevcost + cost) > reltol)
+               and (cost > 1e-10 or cost == None)):
+
             gp = self.step(x0, verbosity)
             self.gps.append(gp)  # NOTE: SIDE EFFECTS
 
@@ -138,7 +141,6 @@ class SignomialProgram(object):
 
             x0 = result["variables"]
             prevcost, cost = cost, result["cost"]
-            print cost
             iterations += 1
 
         if verbosity > 0:
@@ -167,7 +169,7 @@ class SignomialProgram(object):
             x0 = {var: 1 for var in self.negvarkeys}
             sp_inits = {vk: vk.descr["sp_init"] for vk in self.negvarkeys
                         if "sp_init" in vk.descr}
-            x0.update(sp_inits)
+            x0,update(sp_inits)
         posy_approxs = []
         for p, n in zip(self.posynomials, self.negynomials):
             if n is None:
