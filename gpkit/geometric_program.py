@@ -51,11 +51,9 @@ class GeometricProgram(NomialData):
         # k [j]: number of monomials (columns of F) present in each constraint
         self.k = [len(p.cs) for p in self.posynomials]
         # p_idxs [i]: posynomial index of each monomial
-        p_idx = 0
         p_idxs = []
-        for p_len in self.k:
-            p_idxs += [p_idx]*p_len
-            p_idx += 1
+        for i, p_len in enumerate(self.k):
+            p_idxs += [i]*p_len
         self.p_idxs = np.array(p_idxs)
 
         self.A, self.missingbounds = genA(self.exps, self.varlocs)
