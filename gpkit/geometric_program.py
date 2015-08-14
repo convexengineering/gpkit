@@ -8,7 +8,7 @@ from .small_classes import CootMatrix
 from .nomial_data import NomialData
 
 
-class GeometricProgram(object):
+class GeometricProgram(NomialData):
     """Standard mathematical representation of a GP.
 
     Arguments
@@ -43,11 +43,9 @@ class GeometricProgram(object):
         self.cost = cost
         self.constraints = constraints
         self.posynomials = [cost] + list(constraints)
-        nd = NomialData(signomials=self.posynomials, simplify=False)
-        if not all(nd.cs > 0):
+        NomialData.__init__(self, signomials=self.posynomials, simplify=False)
+        if not all(self.cs > 0):
             raise ValueError("GeometricPrograms cannot contain Signomials.")
-        self.exps, self.cs = nd.exps, nd.cs
-        self.varlocs, self.varstrs = nd.varlocs, nd.varstrs
         # k [j]: number of monomials (columns of F) present in each constraint
         self.k = [len(p.cs) for p in self.posynomials]
         # p_idxs [i]: posynomial index of each monomial
