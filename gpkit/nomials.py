@@ -93,7 +93,8 @@ class Signomial(NomialData):
             except AssertionError:
                 raise TypeError("cs and exps must have the same length.")
 
-        NomialData.__init__(self, exps, cs, simplify=simplify)
+        # init NomialData to create self.exps, self.cs, and so on
+        super(Signomial, self).__init__(exps, cs, simplify=simplify)
 
         if self.any_nonpositive_cs:
             from . import SIGNOMIALS_ENABLED
