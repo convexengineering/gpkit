@@ -242,15 +242,6 @@ class TestSP(unittest.TestCase):
         self.assertAlmostEqual(sol["cost"], nonzero_adder, local_ndig)
         self.assertAlmostEqual(sol(x), 1.0, local_ndig)
         self.assertAlmostEqual(sol(y), 1.0, local_ndig)
-        # now move J to ocjective instead of constraint
-        # TODO make this test work!
-        # with EnableSignomials():
-        #     J = 1*((x - 1)**2 + (y - 1)**2) + (x*y - 1)**2 + nonzero_adder
-        #     sp = Model(J, [])
-        # sol = sp.localsolve(verbosity=0)
-        # self.assertAlmostEqual(sol["cost"], nonzero_adder, local_ndig)
-        # self.assertAlmostEqual(sol(x), 1.0, local_ndig)
-        # self.assertAlmostEqual(sol(y), 1.0, local_ndig)
 
     def test_issue180(self):
         L = Variable("L")
