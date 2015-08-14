@@ -42,7 +42,7 @@ class SignomialProgram(object):
     """
 
     def __init__(self, cost, constraints, verbosity=2):
-        if any(cost.cs <= 0):
+        if cost.any_nonpositive_cs:
             raise TypeError("""SignomialPrograms need Posyomial objectives.
 
     The equivalent of a Signomial objective can be constructed by constraining

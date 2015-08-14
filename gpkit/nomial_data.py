@@ -27,6 +27,7 @@ class NomialData(object):
         if simplify:
             exps, cs = sort_and_simplify(exps, cs)
         self.exps, self.cs = exps, cs
+        self.any_nonpositive_cs = any(mag(c) <= 0 for c in self.cs)
         self.varlocs, self.varstrs = locate_vars(self.exps)
         self.values = {vk: vk.descr["value"] for vk in self.varlocs
                        if "value" in vk.descr}

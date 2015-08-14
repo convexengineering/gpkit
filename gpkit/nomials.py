@@ -95,11 +95,7 @@ class Signomial(NomialData):
 
         NomialData.__init__(self, exps, cs, simplify=simplify)
 
-        if isinstance(self.cs, Quantity):
-            any_negative = any(c.magnitude <= 0 for c in self.cs)
-        else:
-            any_negative = any(c <= 0 for c in self.cs)
-        if any_negative:
+        if self.any_nonpositive_cs:
             from . import SIGNOMIALS_ENABLED
             if require_positive and not SIGNOMIALS_ENABLED:
                 raise ValueError("each c must be positive.")
