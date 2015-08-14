@@ -16,6 +16,8 @@ from collections import defaultdict
 
 from .nomials import Constraint, MonoEQConstraint
 from .nomials import Monomial, Posynomial, Signomial
+from .geometric_program import GeometricProgram
+from .signomial_program import SignomialProgram
 from .posyarray import PosyArray
 from .solution_array import SolutionArray
 from .varkey import VarKey
@@ -25,11 +27,11 @@ from .small_classes import Strings
 from .nomial_data import NomialData
 
 from .solution_array import parse_result
-from .substitution import getconstants, separatesubs
+from .substitution import get_constants, separate_subs
+from .substitution import simplify_and_mmap
 from .small_scripts import flatten
 from .small_scripts import mag
 from .small_scripts import is_sweepvar
-from .form_program import form_program
 
 try:
     from IPython.parallel import Client
@@ -150,7 +152,7 @@ class Model(object):
     def constants(self):
         "All constants (non-sweep substitutions) currently in the Model."
         _, unsubbed, allsubs = self.signomials_et_al
-        return getconstants(unsubbed, allsubs)
+        return get_constants(unsubbed, allsubs)
 
     def __add__(self, other):
         if isinstance(other, Model):
@@ -286,7 +288,7 @@ class Model(object):
         RuntimeWarning if an error occurs in solving or parsing the solution.
         """
         signomials, unsubbed, allsubs = self.signomials_et_al
-        sweep, linkedsweep, constants = separatesubs(unsubbed, allsubs)
+        sweep, linkedsweep, constants = separate_subs(unsubbed, allsubs)
         solution = SolutionArray()
         kwargs.update({"solver": solver})
         kwargs.update({"verbosity": verbosity - 1})
@@ -314,13 +316,12 @@ class Model(object):
                 this_pass.update(linked)
                 constants_ = constants
                 constants_.update(this_pass)
-                program, unsubbed.mmaps = form_program(
-                    programType, signomials, constants_, verbosity)
+                signomials_, unsubbed.mmaps = simplify_and_mmap(signomials,
+                                                                constants_)
+                program, solvefn = form_program(programType, signomials_,
+                                                verbosity=verbosity-1)
                 try:
-                    if programType == "gp":
-                        result = program.solve(*args, **kwargs)
-                    elif programType == "sp":
-                        result = program.localsolve(*args, **kwargs)
+                    result = solvefn(*args, **kwargs)
                     sol = parse_result(result, constants_, unsubbed,
                                        sweep, linkedsweep)
                     return program, sol
@@ -345,12 +346,11 @@ class Model(object):
                                          " has been saved to m.program[-1].")
         else:
             # NOTE: SIDE EFFECTS
-            self.program, unsubbed.mmaps = form_program(
-                programType, signomials, constants, verbosity)
-            if programType == "gp":
-                result = self.program.solve(*args, **kwargs)
-            elif programType == "sp":
-                result = self.program.localsolve(*args, **kwargs)
+            signomials, unsubbed.mmaps = simplify_and_mmap(signomials,
+                                                           constants)
+            self.program, solvefn = form_program(programType, signomials,
+                                                 verbosity=verbosity-1)
+            result = solvefn(*args, **kwargs)
             solution.append_parse(result, constants, unsubbed)
         solution.program = self.program
         solution.toarray()
@@ -362,11 +362,13 @@ class Model(object):
     # TODO: add sweepgp(index)?
 
     def gp(self, verbosity=2):
-        gp, _ = form_program("gp", self.signomials, self.constants, verbosity)
+        signomials, _ = simplify_and_mmap(self.signomials, self.constants)
+        gp, _ = form_program("gp", signomials, verbosity)
         return gp
 
     def sp(self, verbosity=2):
-        sp, _ = form_program("sp", self.signomials, self.constants, verbosity)
+        signomials, _ = simplify_and_mmap(self.signomials, self.constants)
+        sp, _ = form_program("sp", signomials, verbosity)
         return sp
 
     def feasibility(self,
@@ -448,11 +450,11 @@ class Model(object):
                     print "  constraints : %s" % con_infeas
                 feasibilities["constraints"] = con_infeas
 
-        constants = getconstants(unsubbed, allsubs)
+        constants = get_constants(unsubbed, allsubs)
         if constvars:
             constvars = set(constvars)
             # get varkey versions
-            constvars = getconstants(unsubbed.varkeys, unsubbed.varlocs,
+            constvars = get_constants(unsubbed.varkeys, unsubbed.varlocs,
                                 dict(zip(constvars, constvars)))
             # filter constants
             constants = {k: v for k, v in constants.items() if k in constvars}
@@ -524,3 +526,16 @@ class Model(object):
                                                          latex_num(val))
                                  for var, val in self.constants.items()]) +
                          ["\\end{array}"])
+
+
+def form_program(programType, signomials, verbosity=2):
+    "Generates a program and returns it and its solve function."
+    cost, constraints = signomials[0], signomials[1:]
+    if programType == "gp":
+        gp = GeometricProgram(cost, constraints, verbosity)
+        return gp, gp.solve
+    elif programType == "sp":
+        sp = SignomialProgram(cost, constraints, verbosity)
+        return sp, sp.localsolve
+    else:
+        raise ValueError("unknown program type %s." % programType)

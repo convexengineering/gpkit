@@ -14,7 +14,7 @@ class NomialData(object):
 
     def __init__(self, exps=None, cs=None, signomials=None, simplify=True):
         if signomials:
-            exps = functools_reduce(add, (s.exps for s in signomials))
+            exps = functools_reduce(add, (tuple(s.exps) for s in signomials))
             cs = np.hstack((mag(s.cs) for s in signomials))
         if exps is None or cs is None:
             raise ValueError("creation of a NomialData requires exps and cs.")

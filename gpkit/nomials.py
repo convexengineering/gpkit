@@ -34,7 +34,8 @@ class Signomial(NomialData):
         Monomial   (if the input has one term and only positive cs)
     """
 
-    def __init__(self, exps=None, cs=1, require_positive=True, **descr):
+    def __init__(self, exps=None, cs=1, require_positive=True, simplify=True,
+                 **descr):
         if isinstance(exps, Numbers):
             cs = exps
             exps = {}
@@ -55,8 +56,7 @@ class Signomial(NomialData):
                         exp[VarKey(key)] = exp.pop(key)
             else:
                 raise TypeError("could not make Monomial with %s" % type(exps))
-            #TODO: this shouldn't require simplification
-            simplify = True
+            #simplify = False #TODO: this shouldn't require simplification
             cs = [cs]
             exps = [HashVector(exp)]
         elif isinstance(exps, Signomial):
@@ -64,9 +64,8 @@ class Signomial(NomialData):
             cs = exps.cs
             exps = exps.exps
         else:
-            simplify = True
-            # test for presence of length and identical lengths
             try:
+                # test for presence of length and identical lengths
                 assert len(cs) == len(exps)
                 exps_ = list(range(len(exps)))
                 if not isinstance(cs[0], Quantity):
@@ -86,7 +85,7 @@ class Signomial(NomialData):
                         raise ValueError("cannot add monomials of"
                                          " different units together")
                 for i in range(len(exps)):
-                    exps_[i] = dict(exps[i])
+                    exps_[i] = HashVector(exps[i])
                     for key in exps_[i]:
                         if isinstance(key, Strings+(Monomial,)):
                             exps_[i][VarKey(key)] = exps_[i].pop(key)
@@ -165,7 +164,7 @@ class Signomial(NomialData):
                             " is unnecessary; it's already a Monomial."
                             "" % str(self))
         else:
-            c, exp = mono_approx(self, getconstants(self, x0))
+            c, exp = mono_approx(self, get_constants(self, x0))
             return Monomial(exp, c)
 
     def sub(self, substitutions, val=None, require_positive=True):
@@ -571,4 +570,4 @@ class MonoEQConstraint(Constraint):
         return self.__nonzero__()
 
 
-from .substitution import substitution, getconstants
+from .substitution import substitution, get_constants
