@@ -1,14 +1,13 @@
 """Signomial, Posynomial, Monomial, Constraint, & MonoEQCOnstraint classes"""
 import numpy as np
 
-from .small_classes import Strings, Numbers, Quantity
+from .small_classes import Strings, Numbers, Quantity, HashVector
 from .posyarray import PosyArray
 from .varkey import VarKey
+from .nomial_data import NomialData
 
 from .small_scripts import diff, mono_approx
 from .small_scripts import latex_num
-from .small_scripts import sort_and_simplify
-from .small_scripts import locate_vars
 from .small_scripts import invalid_types_for_oper
 from .small_scripts import mag, unitstr
 
@@ -16,7 +15,7 @@ from . import units as ureg
 from . import DimensionalityError
 
 
-class Signomial(object):
+class Signomial(NomialData):
     """A representation of a signomial.
 
         Arguments
@@ -25,9 +24,6 @@ class Signomial(object):
             Exponent dicts for each monomial term
         cs: tuple
             Coefficient values for each monomial term
-        varlocsandkeys: dict
-            mapping from variable name to list of indices of monomial terms
-            that variable appears in
         require_positive: bool
             If True and signomials not enabled, c <= 0 will raise ValueError
 
@@ -38,9 +34,8 @@ class Signomial(object):
         Monomial   (if the input has one term and only positive cs)
     """
 
-    def __init__(self, exps=None, cs=1, varlocsandkeys=None,
-                 require_positive=True, **descr):
-        units = None
+    def __init__(self, exps=None, cs=1, require_positive=True, simplify=True,
+                 **descr):
         if isinstance(exps, Numbers):
             cs = exps
             exps = {}
@@ -54,7 +49,6 @@ class Signomial(object):
                 exp = ({VarKey(**descr): 1} if exps is None else
                        {VarKey(exps, **descr): 1})
                 descr = list(exp)[0].descr
-                units = descr["units"] if "units" in descr else None
             elif isinstance(exps, dict):
                 exp = dict(exps)
                 for key in exps:
@@ -62,17 +56,16 @@ class Signomial(object):
                         exp[VarKey(key)] = exp.pop(key)
             else:
                 raise TypeError("could not make Monomial with %s" % type(exps))
-            if isinstance(units, Quantity):
-                cs = cs * units
+            #simplify = False #TODO: this shouldn't require simplification
             cs = [cs]
-            exps = [exp]
+            exps = [HashVector(exp)]
         elif isinstance(exps, Signomial):
+            simplify = False
             cs = exps.cs
-            varlocs = exps.varlocs
             exps = exps.exps
         else:
-            # test for presence of length and identical lengths
             try:
+                # test for presence of length and identical lengths
                 assert len(cs) == len(exps)
                 exps_ = list(range(len(exps)))
                 if not isinstance(cs[0], Quantity):
@@ -92,7 +85,7 @@ class Signomial(object):
                         raise ValueError("cannot add monomials of"
                                          " different units together")
                 for i in range(len(exps)):
-                    exps_[i] = dict(exps[i])
+                    exps_[i] = HashVector(exps[i])
                     for key in exps_[i]:
                         if isinstance(key, Strings+(Monomial,)):
                             exps_[i][VarKey(key)] = exps_[i].pop(key)
@@ -100,41 +93,30 @@ class Signomial(object):
             except AssertionError:
                 raise TypeError("cs and exps must have the same length.")
 
-        exps, cs = sort_and_simplify(exps, cs)
-        if isinstance(cs, Quantity):
-            any_negative = any((c.magnitude <= 0 for c in cs))
-        else:
-            any_negative = any((c <= 0 for c in cs))
-        if any_negative:
+        # init NomialData to create self.exps, self.cs, and so on
+        super(Signomial, self).__init__(exps, cs, simplify=simplify)
+
+        if self.any_nonpositive_cs:
             from . import SIGNOMIALS_ENABLED
             if require_positive and not SIGNOMIALS_ENABLED:
                 raise ValueError("each c must be positive.")
         else:
             self.__class__ = Posynomial
 
-        if isinstance(cs[0], Quantity):
-            units = cs[0]/cs[0].magnitude
+        units = None
+        if isinstance(self.cs[0], Quantity):
+            units = self.cs[0]/self.cs[0].magnitude
         elif "units" in descr:
             units = descr["units"]
             if isinstance(units, Quantity):
-                cs = cs*units
-        else:
-            units = None
-        self.cs = cs
-        self.exps = exps
+                self.cs = self.cs*units
         self.units = units
 
-        if len(exps) == 1:
+        if len(self.exps) == 1:
             if self.__class__ is Posynomial:
                 self.__class__ = Monomial
-            self.exp = exps[0]
-            self.c = cs[0]
-
-        if varlocsandkeys is None:
-            varlocsandkeys = locate_vars(exps)
-        self.varlocs, self.varkeys = varlocsandkeys
-
-        self._hashvalue = hash(tuple(zip(self.exps, tuple(self.cs))))
+            self.exp = self.exps[0]
+            self.c = self.cs[0]
 
     @property
     def value(self):
@@ -145,9 +127,7 @@ class Signomial(object):
         float, if no symbolic variables remain after substitution
         (Monomial, Posynomial, or Signomial), otherwise.
         """
-        values = {vk: vk.descr["value"] for vk in self.varlocs.keys()
-                  if "value" in vk.descr}
-        p = self.sub(values)
+        p = self.sub(self.values)
         if isinstance(p, Monomial):
             if not p.exp:
                 return p.c
@@ -168,8 +148,8 @@ class Signomial(object):
         -------
         Signomial (or Posynomial or Monomial)
         """
-        if wrt in self.varkeys:
-            wrt = self.varkeys[wrt]
+        if wrt in self.varstrs:
+            wrt = self.varstrs[wrt]
         elif not isinstance(wrt, VarKey):
             wrt = wrt.varkey
         exps, cs = diff(self, wrt)
@@ -181,7 +161,7 @@ class Signomial(object):
                             " is unnecessary; it's already a Monomial."
                             "" % str(self))
         else:
-            c, exp = mono_approx(self, getsubs(self.varkeys, self.varlocs, x0))
+            c, exp = mono_approx(self, get_constants(self, x0))
             return Monomial(exp, c)
 
     def sub(self, substitutions, val=None, require_positive=True):
@@ -206,16 +186,13 @@ class Signomial(object):
         -------
         Returns substituted nomial.
         """
-        varlocs, exps, cs, subs = substitution(self.varlocs, self.varkeys,
-                                               self.exps, self.cs,
-                                               substitutions, val)
+        _, exps, cs, _ = substitution(self, substitutions, val)
         return Signomial(exps, cs, units=self.units,
                          require_positive=require_positive)
 
-    def subcmag(self, substitutions, val=None):
-        varlocs, exps, cs, subs = substitution(self.varlocs, self.varkeys,
-                                               self.exps, mag(self.cs),
-                                               substitutions, val)
+    def subsummag(self, substitutions, val=None):
+        "Returns the sum of the magnitudes of the substituted Signomial."
+        _, exps, cs, _ = substitution(self, substitutions, val)
         if any(exps):
             raise ValueError("could not substitute for all variables.")
         return mag(cs).sum()
@@ -226,13 +203,9 @@ class Signomial(object):
     def sum(self):
         return self
 
-    # hashing, immutability, Signomial inequality
-    def __hash__(self):
-        return self._hashvalue
-
     def __ne__(self, other):
         if isinstance(other, Signomial):
-            return not (self.exps == other.exps and self.cs == other.cs)
+            return hash(self) != hash(other)
         else:
             return False
 
@@ -287,10 +260,6 @@ class Signomial(object):
                 mstrs.append(mult_symbol.join(cstr + varstrs))
         return " + ".join(sorted(mstrs)) + unitstr(self.units, " [%s]")
 
-    def descr(self, descr):
-        self.descr = descr
-        return self
-
     def __repr__(self):
         return "gpkit.%s(%s)" % (self.__class__.__name__, str(self))
 
@@ -338,8 +307,7 @@ class Signomial(object):
     def __add__(self, other):
         if isinstance(other, Numbers):
             if other == 0:
-                return Signomial(self.exps, self.cs,
-                                 (self.varlocs, self.varkeys))
+                return Signomial(self.exps, self.cs)
             else:
                 return Signomial(self.exps + ({},),
                                  self.cs.tolist() + [other])
@@ -359,8 +327,7 @@ class Signomial(object):
             if not other:
                 # assume other is multiplicative zero
                 return other
-            return Signomial(self.exps, other*self.cs,
-                             (self.varlocs, self.varkeys))
+            return Signomial(self.exps, other*self.cs)
         elif isinstance(other, Signomial):
             C = np.outer(self.cs, other.cs)
             if isinstance(self.cs, Quantity) or isinstance(other.cs, Quantity):
@@ -372,7 +339,7 @@ class Signomial(object):
                     ounits = ureg.dimensionless
                 else:
                     ounits = other.cs[0]/other.cs[0].magnitude
-                # hack fix for pint not working with np.outer
+                # HACK: fix for pint not working with np.outer
                 C = C * sunits * ounits
             Exps = np.empty((len(self.exps), len(other.exps)), dtype="object")
             for i, exp_s in enumerate(self.exps):
@@ -418,35 +385,32 @@ class Signomial(object):
 
     def __neg__(self):
         from . import SIGNOMIALS_ENABLED
-
-        if not SIGNOMIALS_ENABLED:
-            return NotImplemented
-        else:
+        if SIGNOMIALS_ENABLED:
             return -1*self
+        else:
+            return NotImplemented
 
     def __sub__(self, other):
         from . import SIGNOMIALS_ENABLED
-
-        if not SIGNOMIALS_ENABLED:
-            return NotImplemented
-        else:
+        if SIGNOMIALS_ENABLED:
             return self + -other
+        else:
+            return NotImplemented
 
     def __rsub__(self, other):
         from . import SIGNOMIALS_ENABLED
-
-        if not SIGNOMIALS_ENABLED:
-            return NotImplemented
-        else:
+        if SIGNOMIALS_ENABLED:
             return other + -self
+        else:
+            return NotImplemented
 
     def __float__(self):
         if len(self.exps) == 1:
             if not self.exps[0]:
                 return mag(self.c)
-
-        raise AttributeError("float() can only be called"
-                             " on monomials with no variable terms")
+        else:
+            raise AttributeError("float() can only be called on"
+                                 " monomials with no variable terms")
 
 
 class Posynomial(Signomial):
@@ -473,14 +437,14 @@ class Monomial(Posynomial):
           __init__ syntax, same as Signomial.
     """
     def __rdiv__(self, other):
-        """Divide other by this Monomial"""
+        "Divide other by this Monomial"
         if isinstance(other, Numbers + (Signomial,)):
             return other * self**-1
         else:
             return NotImplemented
 
     def __rtruediv__(self, other):
-        """rdiv for python 3.x"""
+        "__rdiv__ for python 3.x"
         return self.__rdiv__(other)
 
     def __pow__(self, other):
@@ -603,4 +567,4 @@ class MonoEQConstraint(Constraint):
         return self.__nonzero__()
 
 
-from .substitution import substitution, getsubs
+from .substitution import substitution, get_constants

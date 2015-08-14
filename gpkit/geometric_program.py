@@ -2,16 +2,13 @@
 import numpy as np
 
 from time import time
-from functools import reduce as functools_reduce
-from operator import add
 
 from .variables import Variable, VectorVariable
 from .small_classes import CootMatrix
-from .small_scripts import locate_vars
-from .small_scripts import mag
+from .nomial_data import NomialData
 
 
-class GeometricProgram(object):
+class GeometricProgram(NomialData):
     """Standard mathematical representation of a GP.
 
     Arguments
@@ -28,8 +25,7 @@ class GeometricProgram(object):
 
     Attributes with side effects
     ----------------------------
-    `solver_out` is set during a solve
-    `solver_log` is set during a solve
+    `solver_out` and `solver_log` are set during a solve
     `result` is set at the end of a solve
 
     Examples
@@ -47,19 +43,18 @@ class GeometricProgram(object):
         self.cost = cost
         self.constraints = constraints
         self.posynomials = [cost] + list(constraints)
-        self.cs = np.hstack((mag(p.cs) for p in self.posynomials))
-        if not all(self.cs > 0):
+        # init NomialData to create self.exps, self.cs, and so on
+        super(GeometricProgram, self).__init__(nomials=self.posynomials)
+        if self.any_nonpositive_cs:
             raise ValueError("GeometricPrograms cannot contain Signomials.")
-        self.exps = functools_reduce(add, (p.exps for p in self.posynomials))
-        self.varlocs, self.varkeys = locate_vars(self.exps)
+        if self.values:
+            raise ValueError("GeometricPrograms do not handle substitution.")
         # k [j]: number of monomials (columns of F) present in each constraint
         self.k = [len(p.cs) for p in self.posynomials]
         # p_idxs [i]: posynomial index of each monomial
-        p_idx = 0
         p_idxs = []
-        for p_len in self.k:
-            p_idxs += [p_idx]*p_len
-            p_idx += 1
+        for i, p_len in enumerate(self.k):
+            p_idxs += [i]*p_len
         self.p_idxs = np.array(p_idxs)
 
         self.A, self.missingbounds = genA(self.exps, self.varlocs)
@@ -144,7 +139,7 @@ class GeometricProgram(object):
         if "objective" in solver_out:
             result["cost"] = float(solver_out["objective"])
         else:
-            result["cost"] = self.cost.subcmag(result["variables"])
+            result["cost"] = self.cost.subsummag(result["variables"])
 
         result["sensitivities"] = {}
         if "nu" in solver_out:

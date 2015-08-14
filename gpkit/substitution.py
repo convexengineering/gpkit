@@ -3,8 +3,9 @@
 
 import numpy as np
 
-from collections import defaultdict
+from collections import defaultdict, Iterable
 
+from .nomials import Signomial
 from .small_classes import Numbers, Strings, Quantity
 from .small_classes import HashVector
 from .nomials import Monomial
@@ -13,13 +14,14 @@ from .variables import VectorVariable
 
 from .small_scripts import is_sweepvar
 from .small_scripts import mag
+from .nomial_data import sort_and_simplify
 
 from . import DimensionalityError
 
 
-def getsubs(varkeys, varlocs, substitutions):
+def get_constants(nomial, substitutions):
     subs = {}
-    varset = frozenset(varlocs)
+    varset = frozenset(nomial.varlocs)
     for var, sub in substitutions.items():
         if not is_sweepvar(sub):
             if isinstance(var, Monomial):
@@ -27,8 +29,8 @@ def getsubs(varkeys, varlocs, substitutions):
                 if var_ in varset:
                     subs[var_] = sub
             elif isinstance(var, Strings):
-                if var in varkeys:
-                    var_ = varkeys[var]
+                if var in nomial.varstrs:
+                    var_ = nomial.varstrs[var]
                     vectorsub(subs, var_, sub, varset)
             else:
                 vectorsub(subs, var, sub, varset)
@@ -70,7 +72,40 @@ def vectorsub(subs, var, sub, varset):
         subs[var] = sub
 
 
-def substitution(varlocs, varkeys, exps, cs, substitutions, val=None):
+def separate_subs(nomial, substitutions):
+    "Separate substitutions by type."
+    sweep, linkedsweep = {}, {}
+    constants = dict(substitutions)
+    for var, sub in substitutions.items():
+        if is_sweepvar(sub):
+            del constants[var]
+            if isinstance(var, Strings):
+                var = nomial.varstrs[var]
+            elif isinstance(var, Monomial):
+                var = VarKey(var)
+            if isinstance(var, Iterable):
+                suba = np.array(sub[1])
+                if len(var) == suba.shape[0]:
+                    for i, v in enumerate(var):
+                        if hasattr(suba[i], "__call__"):
+                            linkedsweep.update({VarKey(v): suba[i]})
+                        else:
+                            sweep.update({VarKey(v): suba[i]})
+                elif len(var) == suba.shape[1]:
+                    raise ValueError("whole-vector substitution"
+                                     " is not yet supported")
+                else:
+                    raise ValueError("vector substitutions must share a"
+                                     "dimension with the variable vector")
+            elif hasattr(sub[1], "__call__"):
+                linkedsweep.update({var: sub[1]})
+            else:
+                sweep.update({var: sub[1]})
+    constants = get_constants(nomial, constants)
+    return sweep, linkedsweep, constants
+
+
+def substitution(nomial, substitutions, val=None):
     """Efficient substituton into a list of monomials.
 
         Arguments
@@ -101,19 +136,20 @@ def substitution(varlocs, varkeys, exps, cs, substitutions, val=None):
     if val is not None:
         substitutions = {substitutions: val}
 
-    subs = getsubs(varkeys, varlocs, substitutions)
+    subs = get_constants(nomial, substitutions)
 
     if not subs:
-        return varlocs, exps, cs, subs
+        return nomial.varlocs, nomial.exps, nomial.cs, subs
         # raise KeyError("could not find anything to substitute"
         #                "in %s" % substitutions)
 
-    exps_ = [HashVector(exp) for exp in exps]
-    cs_ = np.array(cs)
+    exps_ = [HashVector(exp) for exp in nomial.exps]
+    cs_ = np.array(nomial.cs)
     varlocs_ = defaultdict(list)
-    varlocs_.update({var: list(idxs) for (var, idxs) in varlocs.items()})
+    varlocs_.update({var: list(idxs)
+                     for (var, idxs) in nomial.varlocs.items()})
     for var, sub in subs.items():
-        for i in varlocs[var]:
+        for i in nomial.varlocs[var]:
             x = exps_[i].pop(var)
             varlocs_[var].remove(i)
             if len(varlocs_[var]) == 0:
@@ -164,3 +200,36 @@ def substitution(varlocs, varkeys, exps, cs, substitutions, val=None):
                 raise TypeError("could not substitute with value"
                                 " of type '%s'" % type(sub))
     return varlocs_, exps_, cs_, subs
+
+
+def simplify_and_mmap(signomials, subs):
+    """Simplifies a list of signomials and returns them with their mmaps.
+
+    Arguments
+    ---------
+    signomials : list of Signomials
+
+    subs : dict
+        Substitutions to do before simplifying.
+
+    Returns
+    -------
+    signomials : list of simplified Signomials
+        Signomials with cs that are solely nans and/or zeroes are removed.
+
+    mmaps : Map from initial monomials to substitued and simplified one.
+            See small_scripts.sort_and_simplify for more details.
+    """
+    signomials_, mmaps = [], []
+    for s in signomials:
+        _, exps, cs, _ = substitution(s, subs)
+        # remove any cs that are just nans and/or 0s
+        notnan = ~np.isnan(cs)
+        if np.any(notnan) and np.any(cs[notnan] != 0):
+            exps, cs, mmap = sort_and_simplify(exps, cs, return_map=True)
+            signomials_.append(Signomial(exps, cs, simplify=False))
+            mmaps.append(mmap)
+        else:
+            mmaps.append([None]*len(cs))
+
+    return signomials_, mmaps

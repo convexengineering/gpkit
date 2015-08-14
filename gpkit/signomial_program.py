@@ -6,8 +6,9 @@ from functools import reduce as functools_reduce
 from operator import mul
 
 from .nomials import Posynomial
-from .substitution import getsubs
 from .geometric_program import GeometricProgram
+
+from .substitution import get_constants
 
 
 class SignomialProgram(object):
@@ -19,6 +20,9 @@ class SignomialProgram(object):
         Signomial to minimize when solving
     constraints : list of Signomials
         Constraints to maintain when solving (implicitly Signomials <= 1)
+    verbosity : int (optional)
+        Currently has no effect: SignomialPrograms don't know anything new
+        after being created, unlike GeometricPrograms.
 
     Attributes with side effects
     ----------------------------
@@ -37,8 +41,8 @@ class SignomialProgram(object):
     >>> gp.solve()
     """
 
-    def __init__(self, cost, constraints):
-        if any(cost.cs <= 0):
+    def __init__(self, cost, constraints, verbosity=2):
+        if cost.any_nonpositive_cs:
             raise TypeError("""SignomialPrograms need Posyomial objectives.
 
     The equivalent of a Signomial objective can be constructed by constraining
@@ -108,8 +112,11 @@ class SignomialProgram(object):
         if x0 is None:
             x0 = {}
         else:
-            x0 = getsubs({str(vk): vk for vk in self.negvarkeys},
-                         self.negvarkeys, x0)
+            # dummy nomial data to turn x0's keys into VarKeys
+            self.negydata = lambda: None
+            self.negydata.varlocs = self.negvarkeys
+            self.negydata.varstrs = {str(vk): vk for vk in self.negvarkeys}
+            x0 = get_constants(self.negydata, x0)
         sp_inits = {vk: vk.descr["sp_init"] for vk in self.negvarkeys
                     if "sp_init" in vk.descr}
         sp_inits.update(x0)
