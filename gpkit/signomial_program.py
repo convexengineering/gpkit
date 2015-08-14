@@ -43,7 +43,7 @@ class SignomialProgram(object):
 
     The equivalent of a Signomial objective can be constructed by constraining
     a dummy variable z to be greater than the desired Signomial objective s
-    (z >= s) and then minimizing that dummy variable."""")
+    (z >= s) and then minimizing that dummy variable.""")
 
         self.cost = cost
         self.constraints = constraints
