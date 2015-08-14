@@ -9,26 +9,21 @@
 
 import numpy as np
 
-from collections import Iterable
-
 from pprint import pformat
 from collections import defaultdict
 
-from .nomials import Constraint, MonoEQConstraint
-from .nomials import Monomial, Posynomial, Signomial
+from .nomials import MonoEQConstraint
+from .nomials import Posynomial, Signomial
 from .posyarray import PosyArray
 from .solution_array import SolutionArray
 from .varkey import VarKey
 from . import SignomialsEnabled
 
-from .small_classes import Strings
 from .nomial_data import NomialData
 
 from .solution_array import parse_result
 from .substitution import getconstants, separatesubs
 from .small_scripts import flatten
-from .small_scripts import mag
-from .small_scripts import is_sweepvar
 from .form_program import form_program
 
 try:

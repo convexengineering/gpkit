@@ -1,3 +1,4 @@
+"""Machinery for exps, cs, varlocs data -- common to nomials and programs"""
 import numpy as np
 
 from collections import defaultdict
@@ -24,6 +25,8 @@ class NomialData(object):
         self.varlocs, self.varstrs = locate_vars(self.exps)
         self.values = {vk: vk.descr["value"] for vk in self.varlocs
                        if "value" in vk.descr}
+        # confirm lengths before calling zip
+        assert len(self.exps) == len(self.cs)
         self._hash = hash(tuple(zip(self.exps, tuple(self.cs))))
 
     def __hash__(self):
@@ -49,7 +52,6 @@ def sort_and_simplify(exps, cs, return_map=False):
 
     Returns
     -------
-
     exps : list of Hashvectors
         Exponents of simplified monomials.
     cs : array of floats or Quantities

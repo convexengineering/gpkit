@@ -94,7 +94,7 @@ class Signomial(NomialData):
             except AssertionError:
                 raise TypeError("cs and exps must have the same length.")
 
-        NomialData.__init__(self, exps, cs, simplify=simplify)
+        super(Signomial, self).__init__(exps, cs, simplify=simplify)
 
         if isinstance(self.cs, Quantity):
             any_negative = any(c.magnitude <= 0 for c in self.cs)
@@ -190,13 +190,13 @@ class Signomial(NomialData):
         -------
         Returns substituted nomial.
         """
-        varlocs, exps, cs, subs = substitution(self, substitutions, val)
+        _, exps, cs, _ = substitution(self, substitutions, val)
         return Signomial(exps, cs, units=self.units,
                          require_positive=require_positive)
 
     def subsummag(self, substitutions, val=None):
         "Returns the sum of the magnitudes of the substituted Signomial."
-        varlocs, exps, cs, subs = substitution(self, substitutions, val)
+        _, exps, cs, _ = substitution(self, substitutions, val)
         if any(exps):
             raise ValueError("could not substitute for all variables.")
         return mag(cs).sum()

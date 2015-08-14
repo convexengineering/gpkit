@@ -43,7 +43,8 @@ class GeometricProgram(NomialData):
         self.cost = cost
         self.constraints = constraints
         self.posynomials = [cost] + list(constraints)
-        NomialData.__init__(self, signomials=self.posynomials, simplify=False)
+        super(GeometricProgram, self).__init__(signomials=self.posynomials,
+                                               simplify=False)
         if not all(self.cs > 0):
             raise ValueError("GeometricPrograms cannot contain Signomials.")
         if self.values:

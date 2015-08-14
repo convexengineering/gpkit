@@ -1,3 +1,4 @@
+"""Defines form_program method"""
 import numpy as np
 
 from .nomials import Signomial
@@ -6,15 +7,15 @@ from .signomial_program import SignomialProgram
 from .nomial_data import sort_and_simplify
 
 from .substitution import substitution
-from .small_scripts import mag
 
 
-def form_program(programType, signomials, subs, verbosity=2):
-    """Generates a program and solves it, sweeping as appropriate.
+def form_program(program_type, signomials, subs, verbosity=2):
+    """Generates a program, applying substitutions
 
     Arguments
     ---------
-    programType : "gp" or "sp"
+    program_type : string
+        "gp" or "sp"
 
     signomials : list of Signomials
         The first Signomial is the cost function.
@@ -34,7 +35,7 @@ def form_program(programType, signomials, subs, verbosity=2):
 
     Raises
     ------
-    ValueError if programType and model constraints don't match.
+    ValueError if program_type and model constraints don't match.
     """
     signomials_, mmaps = [], []
     for s in signomials:
@@ -51,9 +52,9 @@ def form_program(programType, signomials, subs, verbosity=2):
     cost = signomials_[0]
     constraints = signomials_[1:]
 
-    if programType in ["gp", "GP"]:
+    if program_type in ["gp", "GP"]:
         return GeometricProgram(cost, constraints, verbosity-1), mmaps
-    elif programType in ["sp", "SP"]:
+    elif program_type in ["sp", "SP"]:
         return SignomialProgram(cost, constraints), mmaps
     else:
-        raise ValueError("unknown program type %s." % programType)
+        raise ValueError("unknown program type %s." % program_type)

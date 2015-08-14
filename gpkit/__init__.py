@@ -92,7 +92,7 @@ class SignomialsEnabled(object):
         global SIGNOMIALS_ENABLED
         SIGNOMIALS_ENABLED = True
 
-    def __exit__(self, type, value, traceback):
+    def __exit__(self, type_, val, traceback):
         global SIGNOMIALS_ENABLED
         SIGNOMIALS_ENABLED = False
 
