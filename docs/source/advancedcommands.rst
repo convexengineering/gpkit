@@ -1,6 +1,35 @@
 Advanced Commands
 *****************
 
+Feasibility Analysis
+====================
+
+If your Model doesn't solve, you can automatically find the nearest feasible version of it with the ``Model.feasibility()`` command, as shown below. The feasible version can either involve dividing all constraints by the smallest number possible, dividing each constraint by its own number and minimizing the product of those numbers, or changing each constant by the smallest total percentage possible.
+
+.. code-block:: python
+
+    from gpkit import Variable, Model, PosyArray
+    x = Variable("x")
+    x_min = Variable("x_min", 2)
+    x_max = Variable("x_max", 1)
+    m = Model(x, [x <= x_max, x >= x_min])
+    # m.solve()  # raises a RuntimeWarning!
+    feas = m.feasibility()
+
+    # USING OVERALL
+    m.constraints = PosyArray(m.signomials)/feas["overall"]
+    m.solve()
+
+    # USING CONSTRAINTS
+    m = Model(x, [x <= x_max, x >= x_min])
+    m.constraints = PosyArray(m.signomials)/feas["constraints"]
+    m.solve()
+
+    # USING CONSTANTS
+    m = Model(x, [x <= x_max, x >= x_min])
+    m.substitutions.update(feas["constants"])
+    m.solve()
+
 
 Sensitivities and dual variables
 ================================
@@ -172,11 +201,7 @@ Example Usage
     x = Variable("x")
     y = VectorVariable(2, "y")
     m = Model(x, [x >= y.prod()])
-<<<<<<< Updated upstream
     m.substitutions.update({y: ('sweep', [[2, 3], [5, 7, 11]])})
-=======
-    m.sub(y, ('sweep', [[2, 3], [5, 7, 11]]))
->>>>>>> Stashed changes
     a = m.solve(printing=False)["cost"]
     b = [10, 14, 22, 15, 21, 33]
     assert all(abs(a-b)/(a+b) < 1e-7)
