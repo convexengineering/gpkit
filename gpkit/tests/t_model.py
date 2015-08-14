@@ -233,13 +233,15 @@ class TestSP(unittest.TestCase):
         x = Variable('x')
         y = Variable('y')
         z = Variable('z')
+        nonzero_adder = 0.1  # TODO this should not be necessary
+        local_ndig = 4
         with EnableSignomials():
-            J = 1*((x - 1)**2 + (y - 1)**2) + (x*y - 1)**2
+            J = 1*((x - 1)**2 + (y - 1)**2) + (x*y - 1)**2 + nonzero_adder
             sp = Model(z, [z >= J])
         sol = sp.localsolve(verbosity=0)
-        self.assertAlmostEqual(sol["cost"], 0.0, 2)
-        self.assertAlmostEqual(sol(x), 1.0, 2)
-        self.assertAlmostEqual(sol(y), 1.0, 2)
+        self.assertAlmostEqual(sol["cost"], nonzero_adder, local_ndig)
+        self.assertAlmostEqual(sol(x), 1.0, local_ndig)
+        self.assertAlmostEqual(sol(y), 1.0, local_ndig)
 
     def test_issue180(self):
         L = Variable("L")
