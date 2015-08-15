@@ -31,24 +31,27 @@ class CootMatrix(CootMatrixTuple):
         self.shape = (max(self.row)+1, max(self.col)+1)
 
     def tocoo(self):
-        "Converts to a Scipy sparse coo_matrix"
-        from scipy.sparse import coo_matrix
-        return coo_matrix((self.data, (self.row, self.col)))
+        return self.tocsr().tocoo()
 
     def todense(self):
-        return self.tocoo().todense()
+        return self.tocsr().todense()
 
     def tocsr(self):
-        return self.tocoo().tocsr()
+        "Converts to a Scipy sparse csr_matrix"
+        from scipy.sparse import csr_matrix
+        return csr_matrix((self.data, (self.row, self.col)))
 
     def tocsc(self):
-        return self.tocoo().tocsc()
+        return self.tocsr().tocsc()
 
     def todok(self):
-        return self.tocoo().todok()
+        return self.tocsr().todok()
 
     def todia(self):
-        return self.tocoo().todia()
+        return self.tocsr().todia()
+
+    def dot(self, arg):
+        return self.tocsr().dot(arg)
 
 
 class count(object):
