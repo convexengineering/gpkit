@@ -9,10 +9,10 @@ Mac OS X
 1. Install Python and build dependencies
 ++++++++++++++++++++++++++++++++++++++++
   - Install the Python 2.7 version of `Anaconda <http://continuum.io/downloads>`_.
-  - If you don't want to install Anaconda, you'll need gcc and pip, and may find sympy, scipy, and iPython Notebook useful.
+  - If you don't want to install Anaconda, you'll need gcc, pip, numpy, and scipy, and may find iPython Notebook useful as a modeling environment.
   - If ``which gcc`` does not return anything, install the `Apple Command Line Tools <https://developer.apple.com/downloads/index.action?=command%20line%20tools>`_.
   - *Optional:* to install gpkit into an isolated python environment you can create a new conda virtual environment with ``conda create -n gpkit anaconda`` and activate it with ``source activate gpkit``.
-  - Run ``pip install ctypesgen --pre`` in the Terminal.
+  - Run ``pip install ctypesgen --pre`` in the Terminal if you want to use a MOSEK solver.
 
 
 2. Install either the MOSEK or CVXOPT GP solvers
@@ -57,11 +57,11 @@ Linux
 2. Install GPkit
 ++++++++++++++++
   - _Optional:_ to install gpkit into an isolated python environment, install virtualenv, run ``virtualenv $DESTINATION_DIR`` then activate it with ``source activate $DESTINATION_DIR/bin``.
-  - Run ``pip install ctypesgen --pre`` at the command line.
+  - Run ``pip install ctypesgen --pre`` at the command line if you want to use a MOSEK solver.
   - Run ``pip install gpkit`` at the command line.
   - Run ``python -c "import gpkit.tests; gpkit.tests.run()"``
   - If you want units support, install pint with ``pip install pint``.
-  - You may find sympy, scipy, and iPython Notebook to be useful additional packages as well.
+  - You may find iPython Notebook to be useful modeling environment.
 
 
 
@@ -72,9 +72,9 @@ Windows
 1. Install Python dependencies
 ++++++++++++++++++++++++++++++
   - Install the Python 2.7 version of `Anaconda <http://continuum.io/downloads>`_.
-  - If you don't want to install Anaconda, you'll need gcc and pip, and may find sympy, scipy, and iPython Notebook useful.
+  - If you don't want to install Anaconda, you'll need gcc, pip, numpy, and scipy, and may find iPython Notebook useful as a modeling environment.
   - *Optional:* to install gpkit into an isolated python environment you can create a new conda virtual environment with ``conda create -n gpkit anaconda`` and activate it with ``source activate gpkit``.
-  - Run ``pip install ctypesgen --pre`` at an Anaconda Command Prompt.
+  - Run ``pip install ctypesgen --pre`` at an Anaconda Command Prompt if you want to use a MOSEK solver.
 
 
 2. Install either the MOSEK or CVXOPT GP solvers
