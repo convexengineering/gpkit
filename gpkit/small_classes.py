@@ -71,8 +71,7 @@ class SolverLog(list):
 
     def write(self, writ):
         if writ != "\n":
-            if writ and writ[-1] == "\n":
-                writ = writ[:-1]
+            writ = writ.rstrip("\n")
             self.append(writ)
         if self.verbosity > 0:
             self.original_stdout.write(writ)
