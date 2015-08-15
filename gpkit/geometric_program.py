@@ -173,11 +173,7 @@ class GeometricProgram(NomialData):
             print ("result packing took %.2g%% of solve time" %
                    ((time() - tic) / soltime * 100))
         tic = time()
-        self.check_solution(result)
-        if verbosity > 1:
-            print ("solution checking took %.2g%% of solve time" %
-                   ((time() - tic) / soltime * 100))
-
+        
         if solver_out.get("status", None) not in ["optimal", "OPTIMAL"]:
             raise RuntimeWarning("final status of solver '%s' was '%s', "
                                  "not 'optimal'." %
@@ -189,8 +185,12 @@ class GeometricProgram(NomialData):
                                  " in the 'result' attribute\n"
                                  "(model.program.result)"
                                  " and its raw output in 'solver_out'.")
-        else:
-            return result
+        
+        self.check_solution(result)
+        if verbosity > 1:
+            print ("solution checking took %.2g%% of solve time" %
+                   ((time() - tic) / soltime * 100))
+        return result
 
     def check_solution(self, sol, tol=1e-5):
         """Run a series of checks to mathematically confirm sol solves this GP
@@ -206,7 +206,9 @@ class GeometricProgram(NomialData):
         """
         def _almost_equal(num1, num2):
             "local almost equal test"
-            return (0 == num1 == num2) or (abs(np.log(num1/num2)) < tol)
+            if num2 == 0:
+                return num1 == 0
+            return abs(np.log(num1/num2)) < tol
         cost = sol["cost"]
         primal_sol = np.log(sol["variables"].values())
         nu = sol["sensitivities"]["monomials"]
