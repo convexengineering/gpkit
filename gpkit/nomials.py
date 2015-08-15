@@ -118,6 +118,8 @@ class Signomial(NomialData):
             self.exp = self.exps[0]
             self.c = self.cs[0]
 
+    __hash__ = NomialData.__hash__
+
     @property
     def value(self):
         """Self, with values substituted for variables that have values

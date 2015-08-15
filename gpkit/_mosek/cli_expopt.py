@@ -101,8 +101,8 @@ def imize_fn(path=None):
                           for x in t_j_Atj])
 
         log = check_output(["mskexpopt", filename])
-        for logline in log.split("\n"):
-            print logline
+        for logline in log.split(b"\n"):
+            print(logline)
 
         with open(filename+".sol") as f:
             assert_line(f, "PROBLEM STATUS      : PRIMAL_AND_DUAL_FEASIBLE\n")

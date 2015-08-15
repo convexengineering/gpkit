@@ -3,6 +3,7 @@ from collections import Iterable
 
 from .varkey import VarKey
 from .nomials import Monomial
+from .nomial_data import NomialData
 from .posyarray import PosyArray
 from .small_classes import Strings, Numbers, Quantity
 from .small_scripts import is_sweepvar
@@ -45,6 +46,8 @@ class Variable(Monomial):
 
         Monomial.__init__(self, **descr)
         self.__class__ = Variable
+
+    __hash__ = NomialData.__hash__
 
     @property
     def varkey(self):
