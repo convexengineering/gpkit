@@ -157,7 +157,7 @@ class GeometricProgram(NomialData):
             if len(la) == len(self.posynomials) - 1:
                 # assume the cost's sensitivity has been dropped
                 la = np.hstack(([1.0], la))
-            Ax = np.ravel(self.A.todense().dot(solver_out['primal']))
+            Ax = np.ravel(self.A.dot(solver_out['primal']))
             z = Ax + np.log(self.cs)
             m_iss = [self.p_idxs == i for i in range(len(la))]
             nu = np.hstack([la[p_i]*np.exp(z[m_is])/sum(np.exp(z[m_is]))
