@@ -130,10 +130,12 @@ class GeometricProgram(NomialData):
         tic = time()
         original_stdout = sys.stdout
         self.solver_log = SolverLog()  # NOTE: SIDE EFFECTS
-        sys.stdout = self.solver_log   # CAPTURING STDOUT
-        solver_out = solverfn(c=self.cs, A=self.A, p_idxs=self.p_idxs,
-                              k=self.k, *args, **kwargs)
-        sys.stdout = original_stdout   # RETURNING STDOUT
+        try:
+            sys.stdout = self.solver_log   # CAPTURING STDOUT
+            solver_out = solverfn(c=self.cs, A=self.A, p_idxs=self.p_idxs,
+                                  k=self.k, *args, **kwargs)
+        finally:
+            sys.stdout = original_stdout   # RETURNING STDOUT
         self.solver_out = solver_out   # END SIDE EFFECTS
 
         soltime = time() - tic
