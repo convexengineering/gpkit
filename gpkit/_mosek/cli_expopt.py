@@ -100,7 +100,9 @@ def imize_fn(path=None):
             f.writelines(["%d %d %.20e\n" % tuple(x)
                           for x in t_j_Atj])
 
-        check_output(["mskexpopt", filename])
+        log = check_output(["mskexpopt", filename])
+        for logline in log.split("\n"):
+            print logline
 
         with open(filename+".sol") as f:
             assert_line(f, "PROBLEM STATUS      : PRIMAL_AND_DUAL_FEASIBLE\n")

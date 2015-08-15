@@ -1,11 +1,13 @@
 """Implement the GeometricProgram class"""
 import numpy as np
 
+import sys
 from time import time
 
 from .variables import Variable, VectorVariable
 from .small_classes import CootMatrix
 from .nomial_data import NomialData
+from .small_classes import SolverLog
 
 
 class GeometricProgram(NomialData):
@@ -122,11 +124,13 @@ class GeometricProgram(NomialData):
             self.starttime = time()
             print("Solving for %i variables." % len(self.varlocs))
 
+        original_stdout = sys.stdout
+        self.solver_log = SolverLog()  # NOTE: SIDE EFFECTS
+        sys.stdout = self.solver_log   # CAPTURING STDOUT
         solver_out = solverfn(c=self.cs, A=self.A, p_idxs=self.p_idxs,
                               k=self.k, *args, **kwargs)
-
-        self.solver_out = solver_out  # NOTE: SIDE EFFECTS
-        # TODO: add a solver_log file using stream debugger
+        sys.stdout = original_stdout   # RETURNING STDOUT
+        self.solver_out = solver_out   # END SIDE EFFECTS
 
         if verbosity > 0:
             print("Solving took %.3g seconds." % (time() - self.starttime))

@@ -51,7 +51,7 @@ class CootMatrix(CootMatrixTuple):
         return self.tocoo().todia()
 
 
-class count(object):
+class Counter(object):
 
     def __init__(self):
         self.start = -1
@@ -59,6 +59,16 @@ class count(object):
     def __call__(self):
         self.start += 1
         return self.start
+
+
+class SolverLog(list):
+    "Adds a `write` method to list so it's file-like and can replace stdout."
+
+    def write(self, writ):
+        if writ != "\n":
+            if writ and writ[-1] == "\n":
+                writ = writ[:-1]
+            self.append(writ)
 
 
 class DictOfLists(dict):
