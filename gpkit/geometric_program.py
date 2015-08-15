@@ -58,7 +58,7 @@ class GeometricProgram(NomialData):
         p_idxs = []
         m_idxs = []
         for i, p_len in enumerate(self.k):
-            m_idxs.append(range(len(p_idxs), len(p_idxs) + p_len))
+            m_idxs.append(list(range(len(p_idxs), len(p_idxs) + p_len)))
             p_idxs += [i]*p_len
         self.p_idxs = np.array(p_idxs)
         self.m_idxs = m_idxs
@@ -215,7 +215,7 @@ class GeometricProgram(NomialData):
             "local almost equal test"
             return num1 == num2 or abs((num1 - num2) / (num1 + num2)) < tol
         cost = sol["cost"]
-        primal_sol = np.log(sol["variables"].values())
+        primal_sol = np.log(list(sol["variables"].values()))
         nu = sol["sensitivities"]["monomials"]
         la = sol["sensitivities"]["posynomials"]
         A = self.A.tocsr()

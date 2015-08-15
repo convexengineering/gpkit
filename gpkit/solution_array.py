@@ -182,7 +182,8 @@ def results_table(data, title, minval=0, printunits=True, fixedcols=True,
         if not fixedcols:
             maxlens = [maxlens[0], 0, 0, 0]
         dirs = ['>', '<', '<', '<']
-        assert len(dirs) == len(maxlens)  # check lengths before using zip
+        # check lengths before using zip
+        assert len(list(dirs)) == len(list(maxlens))
         fmts = ['{0:%s%s}' % (direc, L) for direc, L in zip(dirs, maxlens)]
     lines = [[fmt.format(s) for fmt, s in zip(fmts, line)] for line in lines]
     lines = [title] + ["-"*len(title)] + [''.join(l) for l in lines] + [""]

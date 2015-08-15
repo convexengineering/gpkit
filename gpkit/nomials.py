@@ -118,6 +118,11 @@ class Signomial(NomialData):
             self.exp = self.exps[0]
             self.c = self.cs[0]
 
+    def __hash__(self):
+        if not hasattr(self, "_hash"):
+            self._hash = hash(tuple(zip(self.exps, tuple(self.cs))))
+        return self._hash
+
     @property
     def value(self):
         """Self, with values substituted for variables that have values

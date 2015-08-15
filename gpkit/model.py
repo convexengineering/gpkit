@@ -291,7 +291,7 @@ class Model(object):
 
         if sweep:
             if len(sweep) == 1:
-                sweep_grids = np.array(sweep.values())
+                sweep_grids = np.array(list(sweep.values()))
             else:
                 sweep_grids = np.meshgrid(*list(sweep.values()))
 
@@ -351,7 +351,7 @@ class Model(object):
         solution.toarray()
         self.solution = solution  # NOTE: SIDE EFFECTS
         if verbosity > 0:
-            print solution.table()
+            print(solution.table())
         return solution
 
     # TODO: add sweepgp(index)?
@@ -433,7 +433,7 @@ class Model(object):
                 max_gp = self.gp().feasibility_search("max")
                 infeasibility = max_gp.solve(verbosity=verbosity-1)["cost"]
                 if verbosity > 0:
-                    print "      overall : %.2f" % infeasibility
+                    print("      overall : %.2f" % infeasibility)
                 feasibilities["overall"] = infeasibility
 
             if "constraints" in search:
@@ -442,7 +442,7 @@ class Model(object):
                 result = prod_gp.solve(verbosity=verbosity-1)
                 con_infeas = [result["variables"][sv] for sv in slackvars]
                 if verbosity > 0:
-                    print "  constraints : %s" % con_infeas
+                    print("  constraints : %s" % con_infeas)
                 feasibilities["constraints"] = con_infeas
 
         constants = get_constants(unsubbed, allsubs)
@@ -479,7 +479,7 @@ class Model(object):
             var_infeas = {addvalue[constvarkeys[i]]: feasible_constvalues[i]
                           for i in np.where(changed_vals)}
             if verbosity > 0:
-                print "    constants : %s" % var_infeas
+                print("    constants : %s" % var_infeas)
             feasibilities["constants"] = var_infeas
 
         if verbosity > 0:

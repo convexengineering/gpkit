@@ -38,9 +38,10 @@ class NomialData(object):
                        if "value" in vk.descr}
         # confirm lengths before calling zip
         assert len(self.exps) == len(self.cs)
-        self._hash = hash(tuple(zip(self.exps, tuple(self.cs))))
 
     def __hash__(self):
+        if not hasattr(self, "_hash"):
+            self._hash = hash(tuple(zip(self.exps, tuple(self.cs))))
         return self._hash
 
     def __repr__(self):

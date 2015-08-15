@@ -35,7 +35,7 @@ def te_exp_minus1(posy, nterm):
         raise ValueError("Unexpected number of terms, nterm=%s" % nterm)
     res = 0
     factorial_denom = 1
-    for i in xrange(1, nterm + 1):
+    for i in range(1, nterm + 1):
         factorial_denom *= i
         res += posy**i / factorial_denom
     return res
