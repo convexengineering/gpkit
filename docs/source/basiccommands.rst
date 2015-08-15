@@ -41,12 +41,12 @@ To declare a variable with a constant value, use the ``Variable`` class, as abov
     #       which is useful for LaTeX strings.
     rho = Variable(r'\rho', 1.225, 'kg/m^3', 'Density of air at sea level')
 
-In the example above, the key name ``'\\rho'`` is for LaTeX printing (described later). The unit and description arguments are optional.
+In the example above, the key name ``r'\rho'`` is for LaTeX printing (described later). The unit and description arguments are optional.
 
 .. code-block:: python
 
     #Declare pi equal to 3.14
-    pi = Variable('\\pi', 3.14)
+    pi = Variable(r'\pi', 3.14)
 
 
 

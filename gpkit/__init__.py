@@ -85,7 +85,7 @@ class SignomialsEnabled(object):
     >>> import gpkit
     >>> x = gpkit.Variable("x")
     >>> y = gpkit.Variable("y", 0.1)
-    >>> with enable_signomials():
+    >>> with SignomialsEnabled():
     >>>     constraints = [x >= 1-y]
     >>> gpkit.Model(x, constraints).localsolve()
     """
@@ -115,7 +115,7 @@ def disable_signomials():
     SIGNOMIALS_ENABLED = False
     print("'disable_signomials()' has been replaced by 'SignomialsEnabled'"
           " in a 'with' statement (e.g. 'with SignomialsEnabled():  constraints"
-          " = [1-x]'). enable_signomials() will be removed in the next point"
+          " = [1-x]'). disable_signomials() will be removed in the next point"
           " release, so please update your code!")
 
 
