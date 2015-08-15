@@ -36,11 +36,11 @@ class NomialData(object):
         self.varlocs, self.varstrs = locate_vars(self.exps)
         self.values = {vk: vk.descr["value"] for vk in self.varlocs
                        if "value" in vk.descr}
-        # confirm lengths before calling zip
-        assert len(self.exps) == len(self.cs)
 
     def __hash__(self):
         if not hasattr(self, "_hash"):
+            # confirm lengths before calling zip
+            assert len(self.exps) == len(self.cs)
             self._hash = hash(tuple(zip(self.exps, tuple(self.cs))))
         return self._hash
 

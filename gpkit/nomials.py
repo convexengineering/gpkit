@@ -118,10 +118,7 @@ class Signomial(NomialData):
             self.exp = self.exps[0]
             self.c = self.cs[0]
 
-    def __hash__(self):
-        if not hasattr(self, "_hash"):
-            self._hash = hash(tuple(zip(self.exps, tuple(self.cs))))
-        return self._hash
+    __hash__ = NomialData.__hash__
 
     @property
     def value(self):
