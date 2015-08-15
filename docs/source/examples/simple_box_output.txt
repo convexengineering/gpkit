@@ -3,14 +3,11 @@ Cost
 ----
  0.003674 [1/m**3] 
 
-Free variables
+Free Variables
 --------------
 d : 8.17   [m] depth 
 h : 8.163  [m] height
 w : 4.081  [m] width 
-
-Swept variables
----------------
 
 Constants
 ---------
@@ -21,8 +18,8 @@ A_{floor} : 50   [m**2] upper limit, floor area
     delta : 10          upper limit, floor aspect ratio
     gamma : 2           lower limit, floor aspect ratio
 
-Constant and swept variable sensitivities
------------------------------------------
+Sensitivities
+-------------
 A_{wall} : -1.5 upper limit, wall area        
    alpha : 0.5  lower limit, wall aspect ratio
 

@@ -16,6 +16,8 @@
         Contains settings loaded from ``./env/settings``
 """
 
+__version__ = "0.3.0"
+
 
 def disable_units():
     """Disables units support in a particular instance of GPkit.

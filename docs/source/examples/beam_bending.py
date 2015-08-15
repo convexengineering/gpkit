@@ -1,4 +1,4 @@
-from gpkit import Variable, VectorVariable, GP
+from gpkit import Variable, VectorVariable, Model
 import numpy as np
 
 N = 4
@@ -43,7 +43,7 @@ constraints = (V == Load,
 			   Mass == rho*Volume
 			  )
 
-gp = GP(Mass, constraints)
-sol = gp.solve(printing=False)
+m = Model(Mass, constraints)
+sol = m.solve(verbosity=0)
 print sol(Mass)
 print sol(d)

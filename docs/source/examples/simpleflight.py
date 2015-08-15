@@ -56,14 +56,14 @@ equations += [D >= 0.5*rho*S*C_D*V**2,
               W >= W_0 + W_w]
 
 
-def gp():
-    return gpkit.GP(D, equations)
+def m():
+    return gpkit.Model(D, equations)
 
 
 def sweep(n):
     substitutions = {V_min: ("sweep", np.linspace(20, 25, n)),
                      V: ("sweep", np.linspace(45, 55, n)), }
-    return gpkit.GP(D, equations, substitutions)
+    return gpkit.Model(D, equations, substitutions)
 
 
 if __name__ == "__main__":

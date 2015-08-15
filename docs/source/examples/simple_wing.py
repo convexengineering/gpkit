@@ -40,11 +40,8 @@ constraints = [C_f * Re**0.2 >= 0.074,
                0.5 * rho * V_min**2 * C_Lmax * S >= W,
                Re == rho * V * (S/A)**0.5 / mu]
 
-# Formulate the GP
-gp = GP(objective, constraints)
+# Formulate the Model
+m = Model(objective, constraints)
 
-# Solve the GP
-sol = gp.solve()
-
-# Print the solution table
-print sol.table()
+# Solve the Model
+sol = m.solve()
