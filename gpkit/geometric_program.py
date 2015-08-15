@@ -206,9 +206,7 @@ class GeometricProgram(NomialData):
         """
         def _almost_equal(num1, num2):
             "local almost equal test"
-            if num2 == 0:
-                return num1 == 0
-            return abs(np.log(num1/num2)) < tol
+            return num1 == num2 or abs((num1 - num2) / (num1 + num2)) < tol
         cost = sol["cost"]
         primal_sol = np.log(sol["variables"].values())
         nu = sol["sensitivities"]["monomials"]
