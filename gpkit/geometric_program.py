@@ -52,10 +52,14 @@ class GeometricProgram(NomialData):
         # k [j]: number of monomials (columns of F) present in each constraint
         self.k = [len(p.cs) for p in self.posynomials]
         # p_idxs [i]: posynomial index of each monomial
+        # m_idxs [i]: monomial indices of each posynomial
         p_idxs = []
+        m_idxs = []
         for i, p_len in enumerate(self.k):
+            m_idxs.append(range(len(p_idxs), len(p_idxs) + p_len))
             p_idxs += [i]*p_len
         self.p_idxs = np.array(p_idxs)
+        self.m_idxs = m_idxs
 
         self.A, self.missingbounds = genA(self.exps, self.varlocs)
 
@@ -163,6 +167,8 @@ class GeometricProgram(NomialData):
 
         self.result = result  # NOTE: SIDE EFFECTS
 
+        self.check_solution(result)
+
         if solver_out.get("status", None) not in ["optimal", "OPTIMAL"]:
             raise RuntimeWarning("final status of solver '%s' was '%s', "
                                  "not 'optimal'." %
@@ -176,6 +182,55 @@ class GeometricProgram(NomialData):
                                  " and its raw output in 'solver_out'.")
         else:
             return result
+
+    def check_solution(self, sol, tol=1e-5):
+        """Run a series of checks to mathematically confirm sol solves this GP
+
+        Arguments
+        ---------
+        sol: dict
+            solution dict, same format as return type of solve()
+
+        Raises
+        ------
+        RuntimeWarning, if any problems are found
+        """
+        def _almost_equal(a, b):
+            "local almost equal test"
+            return abs(np.log(a/b)) < tol
+        cost = sol["cost"]
+        primal_sol = np.log(sol["variables"].values())
+        nu = sol["sensitivities"]["monomials"]
+        la = sol["sensitivities"]["posynomials"]
+        A = self.A.tocsr()
+        # check primal sol
+        primal_exp_vals = self.cs * np.exp(A.dot(primal_sol))   # c*e^Ax
+        if not _almost_equal(primal_exp_vals[self.m_idxs[0]].sum(), cost):
+            raise RuntimeWarning("Primal solution computed cost did not match"
+                                 "solver-returned cost: %s vs %s" %
+                                 (primal_exp_vals[self.m_idxs[0]].sum(), cost))
+        for mi in self.m_idxs[1:]:
+            if primal_exp_vals[mi].sum() > 1 + tol:
+                raise RuntimeWarning("Primal solution violates constraint:"
+                                     " %s is greater than 1." %
+                                     primal_exp_vals[mi].sum())
+        # check dual sol
+        nu0 = nu[self.m_idxs[0]]
+        if not _almost_equal(nu0.sum(), 1.):
+            raise RuntimeWarning("Dual variables associated with objective"
+                                 "sum to %s, not 1" % nu0.sum())
+        if any(nu < 0):
+            raise RuntimeWarning("Dual solution has negative entries")
+        nuA = A.T.dot(nu)
+        if any(np.abs(nuA) > tol):
+            raise RuntimeWarning("sum of nu^T * A did not vanish")
+        b = np.log(self.cs)
+        dual_cost = sum(nu[mi].dot(b[mi]) -
+                        (nu[mi].dot(np.log(nu[mi]/la[i])) if la[i] else 0)
+                        for i, mi in enumerate(self.m_idxs))
+        if not _almost_equal(np.exp(dual_cost), cost):
+            raise RuntimeWarning("Dual cost %s does not match primal"
+                                 " cost %s" % (np.exp(dual_cost), cost))
 
     def feasibility_search(self, flavour="max", varname=None, *args, **kwargs):
         """Returns a new GP for the closest feasible point of the current GP.

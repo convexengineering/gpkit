@@ -12,8 +12,12 @@ from .small_scripts import mag
 
 
 class NomialData(object):
-    "Object for holding cs, exps, and other basic 'nomial' properties."
+    """Object for holding cs, exps, and other basic 'nomial' properties.
 
+    cs: array (coefficient of each monomial term)
+    exps: tuple of {VarKey: float} (exponents of each monomial term)
+    varlocs: {VarKey: list} (terms each variable appears in)
+    """
     def __init__(self, exps=None, cs=None, nomials=None, simplify=True):
         if nomials and (exps or cs):
             raise ValueError("The NomialData initializor accepts either"
