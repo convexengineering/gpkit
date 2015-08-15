@@ -331,13 +331,10 @@ class Model(object):
 
             self.program = []
             for program, result in mapfn(solve_pass, range(N_passes)):
-                if not hasattr(result, "status"):
-                    # this is an optimal solution
-                    self.program.append(program)  # NOTE: SIDE EFFECTS
+                self.program.append(program)  # NOTE: SIDE EFFECTS
+                if not hasattr(result, "status"):  # solve succeeded
                     solution.append(result)
                 elif not skipfailures:
-                    # we had a failed solve; append the program and then error
-                    self.program.append(program)  # NOTE: SIDE EFFECTS
                     raise RuntimeWarning("solve failed during sweep; program"
                                          " has been saved to m.program[-1]."
                                          " To ignore such failures, solve with"
