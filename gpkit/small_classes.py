@@ -66,15 +66,18 @@ class Counter(object):
 
 class SolverLog(list):
     "Adds a `write` method to list so it's file-like and can replace stdout."
-    verbosity = 0
-    original_stdout = 0
+
+    def __init__(self, verbosity=0, output=None, *args, **kwargs):
+        super(list, self).__init__(*args, **kwargs)
+        self.verbosity = verbosity
+        self.output = output
 
     def write(self, writ):
         if writ != "\n":
             writ = writ.rstrip("\n")
             self.append(writ)
         if self.verbosity > 0:
-            self.original_stdout.write(writ)
+            self.output.write(writ)
 
 
 class DictOfLists(dict):
