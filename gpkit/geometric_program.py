@@ -123,17 +123,19 @@ class GeometricProgram(NomialData):
 
         if verbosity > 0:
             print("Using solver '%s'" % solver)
-            self.starttime = time()
             print("Solving for %i variables." % len(self.varlocs))
 
+        tic = time()
         solver_out = solverfn(c=self.cs, A=self.A, p_idxs=self.p_idxs,
                               k=self.k, *args, **kwargs)
 
         self.solver_out = solver_out  # NOTE: SIDE EFFECTS
         # TODO: add a solver_log file using stream debugger
 
+        soltime = time() - tic
+        tic = time()
         if verbosity > 0:
-            print("Solving took %.3g seconds." % (time() - self.starttime))
+            print("Solving took %.3g seconds." % (time() - tic))
 
         result = {}
         # confirm lengths before calling zip
@@ -167,7 +169,14 @@ class GeometricProgram(NomialData):
 
         self.result = result  # NOTE: SIDE EFFECTS
 
+        if verbosity > 1:
+            print ("result packing took %.2g%% of solve time" %
+                   ((time() - tic) / soltime * 100))
+        tic = time()
         self.check_solution(result)
+        if verbosity > 1:
+            print ("solution checking took %.2g%% of solve time" %
+                   ((time() - tic) / soltime * 100))
 
         if solver_out.get("status", None) not in ["optimal", "OPTIMAL"]:
             raise RuntimeWarning("final status of solver '%s' was '%s', "
@@ -195,9 +204,9 @@ class GeometricProgram(NomialData):
         ------
         RuntimeWarning, if any problems are found
         """
-        def _almost_equal(a, b):
+        def _almost_equal(num1, num2):
             "local almost equal test"
-            return abs(np.log(a/b)) < tol
+            return (0 == num1 == num2) or (abs(np.log(num1/num2)) < tol)
         cost = sol["cost"]
         primal_sol = np.log(sol["variables"].values())
         nu = sol["sensitivities"]["monomials"]
@@ -215,10 +224,12 @@ class GeometricProgram(NomialData):
                                      " %s is greater than 1." %
                                      primal_exp_vals[mi].sum())
         # check dual sol
+        # note: follows dual formulation in section 3.1 of
+        # http://web.mit.edu/~whoburg/www/papers/hoburg_phd_thesis.pdf
         nu0 = nu[self.m_idxs[0]]
         if not _almost_equal(nu0.sum(), 1.):
             raise RuntimeWarning("Dual variables associated with objective"
-                                 "sum to %s, not 1" % nu0.sum())
+                                 " sum to %s, not 1" % nu0.sum())
         if any(nu < 0):
             raise RuntimeWarning("Dual solution has negative entries")
         nuA = A.T.dot(nu)
