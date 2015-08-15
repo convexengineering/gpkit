@@ -218,7 +218,7 @@ class GeometricProgram(NomialData):
         primal_exp_vals = self.cs * np.exp(A.dot(primal_sol))   # c*e^Ax
         if not _almost_equal(primal_exp_vals[self.m_idxs[0]].sum(), cost):
             raise RuntimeWarning("Primal solution computed cost did not match"
-                                 "solver-returned cost: %s vs %s" %
+                                 " solver-returned cost: %s vs %s" %
                                  (primal_exp_vals[self.m_idxs[0]].sum(), cost))
         for mi in self.m_idxs[1:]:
             if primal_exp_vals[mi].sum() > 1 + tol:
