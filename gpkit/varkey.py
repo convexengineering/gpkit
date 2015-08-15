@@ -5,7 +5,7 @@ from .posyarray import PosyArray
 from .small_scripts import mag
 from .small_scripts import isequal
 from .small_classes import Strings, Quantity
-from .small_classes import count
+from .small_classes import Counter
 
 
 class VarKey(object):
@@ -23,7 +23,7 @@ class VarKey(object):
     -------
     VarKey with the given name and descr.
     """
-    new_unnamed_id = count()
+    new_unnamed_id = Counter()
 
     def __init__(self, name=None, **kwargs):
         self.descr = kwargs

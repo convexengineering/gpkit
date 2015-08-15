@@ -1,6 +1,7 @@
+from cvxopt import solvers, spmatrix, matrix, log
+
+
 def cvxoptimize_fn(options=None):
-    from cvxopt import solvers, spmatrix, matrix, log
-    solvers.options.update({'show_progress': False})
     if options:
         solvers.options.update(options)
     gpsolver = solvers.gp

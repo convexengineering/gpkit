@@ -1,11 +1,13 @@
 """Implement the GeometricProgram class"""
 import numpy as np
 
+import sys
 from time import time
 
 from .variables import Variable, VectorVariable
 from .small_classes import CootMatrix
 from .nomial_data import NomialData
+from .small_classes import SolverLog
 
 
 class GeometricProgram(NomialData):
@@ -126,11 +128,16 @@ class GeometricProgram(NomialData):
             print("Solving for %i variables." % len(self.varlocs))
 
         tic = time()
-        solver_out = solverfn(c=self.cs, A=self.A, p_idxs=self.p_idxs,
-                              k=self.k, *args, **kwargs)
-
-        self.solver_out = solver_out  # NOTE: SIDE EFFECTS
-        # TODO: add a solver_log file using stream debugger
+        original_stdout = sys.stdout
+        # NOTE: SIDE EFFECTS
+        self.solver_log = SolverLog(verbosity-1, original_stdout)
+        try:
+            sys.stdout = self.solver_log   # CAPTURING STDOUT
+            solver_out = solverfn(c=self.cs, A=self.A, p_idxs=self.p_idxs,
+                                  k=self.k, *args, **kwargs)
+        finally:
+            sys.stdout = original_stdout   # RETURNING STDOUT
+        self.solver_out = solver_out   # END SIDE EFFECTS
 
         soltime = time() - tic
         tic = time()
@@ -173,7 +180,7 @@ class GeometricProgram(NomialData):
             print ("result packing took %.2g%% of solve time" %
                    ((time() - tic) / soltime * 100))
         tic = time()
-        
+
         if solver_out.get("status", None) not in ["optimal", "OPTIMAL"]:
             raise RuntimeWarning("final status of solver '%s' was '%s', "
                                  "not 'optimal'." %
@@ -185,7 +192,7 @@ class GeometricProgram(NomialData):
                                  " in the 'result' attribute\n"
                                  "(model.program.result)"
                                  " and its raw output in 'solver_out'.")
-        
+
         self.check_solution(result)
         if verbosity > 1:
             print ("solution checking took %.2g%% of solve time" %

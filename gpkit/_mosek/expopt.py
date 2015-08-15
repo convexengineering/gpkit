@@ -115,7 +115,7 @@ def printcb(void, msg):
     result : int
       0 indicates success
     """
-
+    print msg[:-1]
     return 0
 
 

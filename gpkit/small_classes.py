@@ -54,7 +54,7 @@ class CootMatrix(CootMatrixTuple):
         return self.tocsr().dot(arg)
 
 
-class count(object):
+class Counter(object):
 
     def __init__(self):
         self.start = -1
@@ -62,6 +62,22 @@ class count(object):
     def __call__(self):
         self.start += 1
         return self.start
+
+
+class SolverLog(list):
+    "Adds a `write` method to list so it's file-like and can replace stdout."
+
+    def __init__(self, verbosity=0, output=None, *args, **kwargs):
+        super(list, self).__init__(*args, **kwargs)
+        self.verbosity = verbosity
+        self.output = output
+
+    def write(self, writ):
+        if writ != "\n":
+            writ = writ.rstrip("\n")
+            self.append(writ)
+        if self.verbosity > 0:
+            self.output.write(writ)
 
 
 class DictOfLists(dict):
