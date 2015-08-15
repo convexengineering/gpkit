@@ -45,6 +45,3 @@ m = Model(objective, constraints)
 
 # Solve the Model
 sol = m.solve()
-
-# Print the solution table
-print sol.table()
