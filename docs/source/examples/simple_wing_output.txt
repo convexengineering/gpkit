@@ -1,6 +1,55 @@
 Using solver 'cvxopt'
 Solving for 9 variables.
-Solving took 0.0486 seconds.
+Solving took 0.049 seconds.
+
+Cost
+----
+ 255 [kg*m/s**2] 
+
+Free Variables
+--------------
+  A : 12.7              Aspect ratio             
+C_D : 0.0231            Drag coefficient         
+C_L : 0.6512            Lift coefficient         
+C_f : 0.003857          Skin friction coefficient
+ Re : 2.598e+06         Reynolds number          
+ Re : 7189       [N]    Total aircraft weight    
+  S : 12.08      [m**2] Wing planform area       
+  V : 38.55      [m/s]  Cruise velocity          
+W_w : 2249       [N]    Wing weight              
+
+Constants
+---------
+          (CDA_0) : 0.0306    [m**2]    Fuselage drag area              
+        C_{L,max} : 2                   Maximum C_L, flaps down         
+         N_{lift} : 2.5                 Ultimate load factor            
+          V_{min} : 22        [m/s]     Desired landing speed           
+              W_0 : 4940      [N]       Aircraft weight excluding wing  
+\frac{S_{wet}}{S} : 2.05                Wetted area ratio               
+              \mu : 1.78e-05  [kg/m/s]  Viscosity of air                
+             \rho : 1.23      [kg/m**3] Density of air                  
+             \tau : 0.12                Airfoil thickness-to-chord ratio
+             cww1 : 45.42     [N/m**2]  Wing weight area factor         
+             cww2 : 8.71e-05  [1/m]     Wing weight bending factor      
+                e : 0.96                Oswald efficiency factor        
+                k : 1.2                 Form factor                     
+
+Sensitivities
+-------------
+          (CDA_0) : 0.1097  Fuselage drag area              
+        C_{L,max} : -0.1307 Maximum C_L, flaps down         
+         N_{lift} : 0.2923  Ultimate load factor            
+          V_{min} : -0.2614 Desired landing speed           
+              W_0 : 0.9953  Aircraft weight excluding wing  
+\frac{S_{wet}}{S} : 0.4108  Wetted area ratio               
+              \mu : 0.08217 Viscosity of air                
+             \rho : -0.1718 Density of air                  
+             \tau : -0.2923 Airfoil thickness-to-chord ratio
+             cww1 : 0.09428 Wing weight area factor         
+             cww2 : 0.2923  Wing weight bending factor      
+                e : -0.4795 Oswald efficiency factor        
+                k : 0.4108  Form factor                     
+
 
 Cost
 ----
