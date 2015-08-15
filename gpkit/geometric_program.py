@@ -130,6 +130,8 @@ class GeometricProgram(NomialData):
         tic = time()
         original_stdout = sys.stdout
         self.solver_log = SolverLog()  # NOTE: SIDE EFFECTS
+        self.solver_log.verbosity = verbosity-1
+        self.solver_log.original_stdout = original_stdout
         try:
             sys.stdout = self.solver_log   # CAPTURING STDOUT
             solver_out = solverfn(c=self.cs, A=self.A, p_idxs=self.p_idxs,
