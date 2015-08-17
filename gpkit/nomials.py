@@ -457,11 +457,11 @@ class Monomial(Posynomial):
 
 
 class Constraint(Posynomial):
-    """A constraint of the general form posynomial <= monomial
-    Stored internally (exps, cs) as a single Posynomial (self <= 1)
-    Usually initialized via operator overloading, e.g. cc = y**2 >= 1 + x
-    Additionally stores input format (lhs vs rhs) in self.left and self.right
-    Form is self.left <= self.right.
+    """A constraint of the general form monomial >= posynomial
+    Stored internally (exps, cs) as a single Posynomial (1 >= self)
+    Usually initialized via operator overloading, e.g. cc = (y**2 >= 1 + x)
+    Additionally retains input format (lhs vs rhs) in self.left and self.right
+    Form is self.left >= self.right.
 
     TODO: this documentation needs to address Signomial Constraints.
     """
