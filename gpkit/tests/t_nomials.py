@@ -216,6 +216,20 @@ class TestPosynomial(unittest.TestCase):
         self.assertEqual(len(p.varlocs['m']), 2)
         self.assertTrue(all(len(p.varlocs[key]) == 1 for key in 'ghv'))
 
+    def test_eq(self):
+        """Test Posynomial __eq__"""
+        x = Variable('x')
+        y = Variable('y')
+        self.assertTrue((1 + x) == (1 + x))
+        self.assertFalse((1 + x) == 2*(1 + x))
+        self.assertFalse((1 + x) == 0.5*(1 + x))
+        self.assertFalse((1 + x) == (1 + y))
+        x = Variable('x', value=3)
+        y = Variable('y', value=2)
+        # TODO should the next line work?
+        # self.assertEqual(1 + x**2, 4 + y + y**2)
+
+
     def test_simplification(self):
         "Make sure like monomial terms get automatically combined"
         x = Monomial('x')

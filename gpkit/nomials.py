@@ -220,9 +220,9 @@ class Signomial(NomialData):
         elif isinstance(other, Signomial) and isinstance(self, Signomial):
             if self.exps == other.exps:
                 if isinstance(self.cs, Quantity):
-                    return all(self.cs.magnitude <= other.cs)
+                    return all(self.cs.magnitude == other.cs)
                 else:
-                    return all(self.cs <= other.cs)
+                    return all(self.cs == other.cs)
             else:
                 return False
         else:
