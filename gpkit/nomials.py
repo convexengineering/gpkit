@@ -232,14 +232,14 @@ class Signomial(NomialData):
         if isinstance(other, PosyArray):
             return NotImplemented
         else:
-            return Constraint(other, self, oper_ge=True)
+            return SignomialConstraint(other, self, oper_ge=True)
 
     def __ge__(self, other):
         if isinstance(other, PosyArray):
             return NotImplemented
         else:
             # by default all constraints take the form left >= right
-            return Constraint(self, other, oper_ge=True)
+            return SignomialConstraint(self, other, oper_ge=True)
 
     def __lt__(self, other):
         invalid_types_for_oper("<", self, other)
@@ -425,8 +425,14 @@ class Posynomial(Signomial):
           These will be deprecated in the future, replaced with a single
           __init__ syntax, same as Signomial.
     """
-    pass
+    def __le__(self, other):
+        if isinstance(other, (Signomial, PosyArray)):
+            # fall back on other's __ge__
+            return NotImplemented
+        # assume other is a Number
+        return Constraint(other, self, oper_ge=True)
 
+    # Posynomial.__ge__ falls back on Signomial.__ge__
 
 class Monomial(Posynomial):
     """A Posynomial with only one term
@@ -455,6 +461,17 @@ class Monomial(Posynomial):
         else:
             return NotImplemented
 
+    # Monomial.__le__ falls back on Posynomial.__le__
+
+    def __ge__(self, other):
+        if isinstance(other, Signomial) and not isinstance(other, Posynomial):
+            # a card-carrying Signomial with negative cs
+            return NotImplemented   # fall back on Signomial.__le__
+        if isinstance(other, PosyArray):
+            return NotImplemented
+        # assume other is a Posynomial or Number
+        return Constraint(self, other, oper_ge=True)
+
 
 class Constraint(Posynomial):
     """A constraint of the general form monomial >= posynomial
@@ -462,8 +479,6 @@ class Constraint(Posynomial):
     Usually initialized via operator overloading, e.g. cc = (y**2 >= 1 + x)
     Additionally retains input format (lhs vs rhs) in self.left and self.right
     Form is self.left >= self.right.
-
-    TODO: this documentation needs to address Signomial Constraints.
     """
     def __str__(self):
         return str(self.left) + self.oper_s + str(self.right)
@@ -480,31 +495,20 @@ class Constraint(Posynomial):
 
         Arguments
         ---------
-        left: Signomial
-        right: Signomial
+        left: Monomial if oper_ge=True, else Posynomial
+        right: Posynomial if oper_ge=True, else Monomial
         oper_ge: bool
             If true, form is left >= right; otherwise, left <= right.
 
         Note: Constraints initialized via operator overloading always take
               the form left >= right, e.g. (x <= y) becomes (y >= x).
-
-        TODO: clarify how this __init__ handles Signomial constraints
-              (may want to create a SignomialConstraint class that does not
-               inherit from Posynomial and keeps left and right separate).
         """
-        left = Signomial(left)
-        right = Signomial(right)
-        from . import SIGNOMIALS_ENABLED
-
         pgt, plt = (left, right) if oper_ge else (right, left)
+        plt = Posynomial(plt)
+        pgt = Monomial(pgt)
 
-        if SIGNOMIALS_ENABLED and not isinstance(pgt, Monomial):
-            if plt.units:
-                p = (plt - pgt)/plt.units + 1.0
-            else:
-                p = (plt - pgt) + 1.0
-        else:
-            p = plt / pgt
+        p = plt / pgt
+
         if isinstance(p.cs, Quantity):
             try:
                 p = p.to('dimensionless')
@@ -514,22 +518,14 @@ class Constraint(Posynomial):
                                  " be converted into each other."
                                  "" % (plt.units.units, pgt.units.units))
 
-        plt.units = None if all(plt.exps) else plt.units
-        pgt.units = None if all(pgt.exps) else pgt.units
-
         for i, exp in enumerate(p.exps):
             if not exp:
                 if p.cs[i] < 1:
-                    if SIGNOMIALS_ENABLED:
-                        const = p.cs[i]
-                        p -= const
-                        p /= (1-const)
-                    else:
-                        coeff = float(1 - p.cs[i])
-                        p.cs = np.hstack((p.cs[:i], p.cs[i+1:]))
-                        p.exps = p.exps[:i] + p.exps[i+1:]
-                        p = p/coeff
-                elif p.cs[i] > 1 and not SIGNOMIALS_ENABLED:
+                    coeff = float(1 - p.cs[i])
+                    p.cs = np.hstack((p.cs[:i], p.cs[i+1:]))
+                    p.exps = p.exps[:i] + p.exps[i+1:]
+                    p = p/coeff
+                elif p.cs[i] > 1:
                     raise ValueError("infeasible constraint:"
                                      "constant term too large.")
 
@@ -567,6 +563,77 @@ class MonoEQConstraint(Constraint):
 
     def __bool__(self):
         return self.__nonzero__()
+
+
+class SignomialConstraint(Signomial):
+    """A constraint of the general form posynomial >= posynomial
+    Stored internally (exps, cs) as a single Signomial (0 >= self)
+    Usually initialized via operator overloading, e.g. cc = (y**2 >= 1 + x - y)
+    Additionally retains input format (lhs vs rhs) in self.left and self.right
+    Form is self.left >= self.right.
+    """
+    def __str__(self):
+        return str(self.left) + self.oper_s + str(self.right)
+
+    def __repr__(self):
+        return repr(self.left) + self.oper_s + repr(self.right)
+
+    def _latex(self, unused=None):
+        return self.left._latex() + self.oper_l + self.right._latex()
+
+    def __init__(self, left, right, oper_ge=True):
+        """Initialize a constraint of the form left >= right
+        (or left <= right, if oper_ge is False).
+
+        Arguments
+        ---------
+        left: Signomial
+        right: Signomial
+        oper_ge: bool
+            If true, form is left >= right; otherwise, left <= right.
+
+        Note: Constraints initialized via operator overloading always take
+              the form left >= right, e.g. (x <= y) becomes (y >= x).
+        """
+        left = Signomial(left)
+        right = Signomial(right)
+        pgt, plt = (left, right) if oper_ge else (right, left)
+
+        from . import SIGNOMIALS_ENABLED
+        if not SIGNOMIALS_ENABLED:
+            raise TypeError("Cannot initialize SignomialConstraint "
+                            "without SignomialsEnabled.")
+
+
+        if not isinstance(pgt, Monomial):
+            if plt.units:
+                p = (plt - pgt)/plt.units + 1.0
+            else:
+                p = (plt - pgt) + 1.0
+        else:
+            p = plt / pgt
+        if isinstance(p.cs, Quantity):
+            try:
+                p = p.to('dimensionless')
+            except DimensionalityError:
+                raise ValueError("constraints must have the same units"
+                                 " on both sides: '%s' and '%s' can not"
+                                 " be converted into each other."
+                                 "" % (plt.units.units, pgt.units.units))
+
+        for i, exp in enumerate(p.exps):
+            if not exp:
+                if p.cs[i] < 1:
+                    const = p.cs[i]
+                    p -= const
+                    p /= (1-const)
+
+        super(SignomialConstraint, self).__init__(p)
+        self.__class__ = SignomialConstraint  # TODO should not have to do this
+        self.left, self.right = left, right
+
+        self.oper_s = " >= " if oper_ge else " <= "
+        self.oper_l = r" \geq " if oper_ge else r" \leq "
 
 
 from .substitution import substitution, get_constants
