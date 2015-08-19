@@ -36,16 +36,17 @@ class NomialData(object):
         self.varlocs, self.varstrs = locate_vars(self.exps)
         self.values = {vk: vk.descr["value"] for vk in self.varlocs
                        if "value" in vk.descr}
+        self._hashvalue = None
 
     def __hash__(self):
-        if not hasattr(self, "_hash"):
+        if self._hashvalue is None:
             # confirm lengths before calling zip
             assert len(self.exps) == len(self.cs)
-            self._hash = hash(tuple(zip(self.exps, tuple(self.cs))))
-        return self._hash
+            self._hashvalue = hash(tuple(zip(self.exps, self.cs)))
+        return self._hashvalue
 
     def __repr__(self):
-        return "gpkit.%s(%s)" % (self.__class__.__name__, str(self._hash))
+        return "gpkit.%s(%s)" % (self.__class__.__name__, hash(self))
 
     def _get_varkey(self, var):
         """Cast a var associated with this problem to type VarKey
