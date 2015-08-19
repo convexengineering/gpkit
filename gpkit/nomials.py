@@ -6,7 +6,7 @@ from .posyarray import PosyArray
 from .varkey import VarKey
 from .nomial_data import NomialData
 
-from .small_scripts import diff, mono_approx
+from .small_scripts import mono_approx
 from .small_scripts import latex_num
 from .small_scripts import invalid_types_for_oper
 from .small_scripts import mag, unitstr
@@ -144,18 +144,14 @@ class Signomial(NomialData):
         Arguments
         ---------
         wrt (Variable):
-            Variable to take derivative with respect to
+        Variable to take derivative with respect to
 
         Returns
         -------
         Signomial (or Posynomial or Monomial)
         """
-        if wrt in self.varstrs:
-            wrt = self.varstrs[wrt]
-        elif not isinstance(wrt, VarKey):
-            wrt = wrt.varkey
-        exps, cs = diff(self, wrt)
-        return Signomial(exps, cs, require_positive=False)
+        deriv = super(Signomial, self).diff(wrt)
+        return Signomial(exps=deriv.exps, cs=deriv.cs)
 
     def mono_approximation(self, x0):
         if isinstance(self, Monomial):

@@ -282,7 +282,9 @@ class TestPosynomial(unittest.TestCase):
         y = Variable('y')
         self.assertEqual((y**2).diff(y), 2*y)
         self.assertEqual((x + y**2).diff(y), 2*y)
+        self.assertEqual((x + y**2).diff('x'), 1)
         self.assertEqual((x + x*y**2).diff(y), 2*x*y)
+        self.assertEqual((2*y).diff(y), 2)
 
     def test_monoapprox(self):
         "Test monomial approximation"

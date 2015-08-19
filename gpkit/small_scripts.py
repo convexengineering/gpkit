@@ -1,26 +1,8 @@
-import numpy as np
-
+"""Assorted helper methods"""
 from collections import Iterable
 
 from .small_classes import HashVector
 from .small_classes import Strings, Quantity
-
-
-def diff(p, vk):
-    exps, cs = [], []
-    from . import units as ureg
-    units = vk.descr.get("units", 1) if ureg else 1
-    for i, exp in enumerate(p.exps):
-        exp = HashVector(exp)
-        if vk in exp:
-            e = exp[vk]
-            if e == 1:
-                del exp[vk]
-            else:
-                exp[vk] -= 1
-            exps.append(exp)
-            cs.append(e*p.cs[i]/units)
-    return exps, cs
 
 
 def mono_approx(p, x0):

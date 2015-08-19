@@ -6,8 +6,8 @@ from collections import defaultdict
 from functools import reduce as functools_reduce
 from operator import add
 
+from .varkey import VarKey
 from .small_classes import HashVector, Quantity
-
 from .small_scripts import mag
 
 
@@ -46,6 +46,52 @@ class NomialData(object):
 
     def __repr__(self):
         return "gpkit.%s(%s)" % (self.__class__.__name__, str(self._hash))
+
+    def _get_varkey(self, var):
+        """Cast a var associated with this problem to type VarKey
+
+        Arguments
+        ---------
+        var (Variable, VarKey, or str):
+            the variable to cast
+
+        Returns
+        -------
+        VarKey
+        """
+        if isinstance(var, VarKey):
+            return var
+        if var in self.varstrs:
+            return self.varstrs[var]
+        try:
+            return var.varkey
+        except AttributeError:
+            raise TypeError("Cannot convert %s to VarKey" % var)
+
+    def diff(self, var):
+        """Derivative of this with respect to a Variable
+
+        Arguments
+        ---------
+        var (Variable):
+            Variable to take derivative with respect to
+
+        Returns
+        -------
+        NomialData
+        """
+        var = self._get_varkey(var)
+        exps, cs = [], []
+        var_units = var.units if var.units else 1
+        for i, exp in enumerate(self.exps):
+            exp = HashVector(exp)   # copy -- exp is mutated below
+            e = exp.get(var, 0)
+            if var in exp:
+                exp[var] -= 1
+            exps.append(exp)
+            cs.append(e*self.cs[i] / var_units)
+        # don't simplify to keep length same as self
+        return NomialData(exps=exps, cs=cs, simplify=False)
 
 
 def sort_and_simplify(exps, cs, return_map=False):
