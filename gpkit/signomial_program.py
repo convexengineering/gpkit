@@ -108,26 +108,8 @@ class SignomialProgram(object):
         if verbosity > 0:
             print("Beginning signomial solve.")
             self.starttime = time()
-
-        if x0 is None:
-            x0 = {}
-        else:
-            # dummy nomial data to turn x0's keys into VarKeys
-            self.negydata = lambda: None
-            self.negydata.varlocs = self.negvarkeys
-            self.negydata.varstrs = {str(vk): vk for vk in self.negvarkeys}
-            x0 = get_constants(self.negydata, x0)
-        sp_inits = {vk: vk.descr["sp_init"] for vk in self.negvarkeys
-                    if "sp_init" in vk.descr}
-        sp_inits.update(x0)
-        x0 = sp_inits
-        # HACK: initial guess for negative variables
-        x0.update({var: 1 for var in self.negvarkeys if var not in x0})
-
-        iterations = 0
-        prevcost, cost, rel_improvement = None, None, None
-        self.gps = []
-
+        self.gps = []  # NOTE: SIDE EFFECTS
+        iterations, prevcost, cost, rel_improvement = 0, None, None, None
         while rel_improvement is None or rel_improvement > rel_tol:
             if iterations > iteration_limit:
                 raise RuntimeWarning("""problem unsolved after %s iterations.
@@ -135,8 +117,7 @@ class SignomialProgram(object):
     The last result is available in Model.program.gps[-1].result. If the gps
     appear to be converging, you may wish to increase the iteration limit by
     calling .localsolve(..., iteration_limit=NEWLIMIT).""" % iterations)
-
-            gp = self.step(x0, verbosity)
+            gp = self.step(x0, verbosity=verbosity-1)
             self.gps.append(gp)  # NOTE: SIDE EFFECTS
 
             try:
@@ -151,9 +132,10 @@ class SignomialProgram(object):
 
             x0 = result["variables"]
             prevcost, cost = cost, result["cost"]
-            if cost and prevcost:
+            if prevcost and cost:
                 rel_improvement = abs(prevcost-cost)/(prevcost + cost)
-
+            else:
+                rel_improvement = None
             iterations += 1
 
         # solved successfully!
@@ -179,11 +161,16 @@ class SignomialProgram(object):
 
     def step(self, x0=None, verbosity=1):
         if x0 is None:
-            # HACK: initial guess for negative variables
-            x0 = {var: 1 for var in self.negvarkeys}
+            # dummy nomial data to turn x0's keys into VarKeys
+            self.negydata = lambda: None
+            self.negydata.varlocs = self.negvarkeys
+            self.negydata.varstrs = {str(vk): vk for vk in self.negvarkeys}
+            x0 = get_constants(self.negydata, {})
             sp_inits = {vk: vk.descr["sp_init"] for vk in self.negvarkeys
                         if "sp_init" in vk.descr}
             x0.update(sp_inits)
+            # HACK: initial guess for negative variables
+            x0.update({var: 1 for var in self.negvarkeys if var not in x0})
         posy_approxs = []
         for p, n in zip(self.posynomials, self.negynomials):
             if n is None:
@@ -193,7 +180,7 @@ class SignomialProgram(object):
             posy_approxs.append(posy_approx)
 
         gp = GeometricProgram(posy_approxs[0], posy_approxs[1:],
-                              verbosity=verbosity-1)
+                              verbosity=verbosity)
         return gp
 
     def __repr__(self):
