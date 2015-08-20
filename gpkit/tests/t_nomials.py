@@ -290,21 +290,21 @@ class TestPosynomial(unittest.TestCase):
         d = (3*x**2).diff(x)
         self.assertEqual(d, 6*x)
 
-    def test_monoapprox(self):
+    def test_mono_lower_bound(self):
         "Test monomial approximation"
         x = Variable('x')
         y = Variable('y')
         p = y**2 + 1
-        self.assertRaises(TypeError, lambda: y.mono_approximation({y: 1}))
-        self.assertEqual(p.mono_approximation({y: 1}), 2*y)
-        self.assertEqual(p.mono_approximation({y: 0}), 1)
-        self.assertEqual((x*y**2 + 1).mono_approximation({y: 1, x: 1}),
+        self.assertRaises(TypeError, lambda: y.mono_lower_bound({y: 1}))
+        self.assertEqual(p.mono_lower_bound({y: 1}), 2*y)
+        self.assertEqual(p.mono_lower_bound({y: 0}), 1)
+        self.assertEqual((x*y**2 + 1).mono_lower_bound({y: 1, x: 1}),
                          2*y*x**0.5)
         # test with units
         d = Variable('d', units='ft')
         h = Variable('h', units='ft')
         p = (d*h**2 + h*d**2)
-        m = p.mono_approximation({d: 1, h: 1})
+        m = p.mono_lower_bound({d: 1, h: 1})
         self.assertEqual(m, 2*(d*h)**1.5)
 
 

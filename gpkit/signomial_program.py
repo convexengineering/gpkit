@@ -16,9 +16,9 @@ class SignomialProgram(object):
 
     Arguments
     ---------
-    cost : Constraint
-        Signomial to minimize when solving
-    constraints : list of Signomials
+    cost : Posynomial
+        Objective to minimize when solving
+    constraints : list of Constraint or SignomialConstraint objects
         Constraints to maintain when solving (implicitly Signomials <= 1)
     verbosity : int (optional)
         Currently has no effect: SignomialPrograms don't know anything new
@@ -189,7 +189,7 @@ class SignomialProgram(object):
             if n is None:
                 posy_approx = p
             else:
-                posy_approx = p/n.mono_approximation(x0)
+                posy_approx = p/n.mono_lower_bound(x0)
             posy_approxs.append(posy_approx)
 
         gp = GeometricProgram(posy_approxs[0], posy_approxs[1:],

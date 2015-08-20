@@ -451,6 +451,21 @@ class Posynomial(Signomial):
 
     # Posynomial.__ge__ falls back on Signomial.__ge__
 
+    def mono_lower_bound(self, x_0):
+        """Monomial lower bound at a point x0
+
+        Arguments
+        ---------
+        x_0 (dict):
+            point to make lower bound exact
+
+        Returns
+        -------
+        Monomial
+        """
+        return self.mono_approximation(x_0)
+
+
 class Monomial(Posynomial):
     """A Posynomial with only one term
 
