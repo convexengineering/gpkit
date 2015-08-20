@@ -183,7 +183,7 @@ class SignomialProgram(object):
             x0 = {var: 1 for var in self.negvarkeys}
             sp_inits = {vk: vk.descr["sp_init"] for vk in self.negvarkeys
                         if "sp_init" in vk.descr}
-            x0,update(sp_inits)
+            x0.update(sp_inits)
         posy_approxs = []
         for p, n in zip(self.posynomials, self.negynomials):
             if n is None:
