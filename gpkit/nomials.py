@@ -6,7 +6,6 @@ from .posyarray import PosyArray
 from .varkey import VarKey
 from .nomial_data import NomialData
 
-from .small_scripts import mono_approx
 from .small_scripts import latex_num
 from .small_scripts import invalid_types_for_oper
 from .small_scripts import mag, unitstr
@@ -154,13 +153,35 @@ class Signomial(NomialData):
         return Signomial(exps=deriv.exps, cs=deriv.cs)
 
     def mono_approximation(self, x0):
-        if isinstance(self, Monomial):
-            raise TypeError("making a Monomial approximation of %s"
-                            " is unnecessary; it's already a Monomial."
-                            "" % str(self))
-        else:
-            c, exp = mono_approx(self, get_constants(self, x0))
-            return Monomial(exp, c)
+        """Monomial approximation about a point x0
+
+        Arguments
+        ---------
+        x0 (dict):
+            point to monomialize about
+
+        Returns
+        -------
+        Monomial (unless self(x0) < 0, in which case a Signomial is returned)
+        """
+        if not x0:
+            for i, exp in enumerate(self.exps):
+                if exp == {}:
+                    return Monomial({}, self.cs[i])
+        x0 = get_constants(self, x0)
+        exp = HashVector()
+        psub = self.sub(x0)
+        if psub.varlocs:
+            raise ValueError("Variables %s remained after substituting x0=%s"
+                             % (list(psub.varlocs), x0))
+        p0 = psub.value  # includes any units
+        m0 = 1
+        for vk in self.varlocs:
+            e = mag(x0[vk]*self.diff(vk).sub(x0, require_positive=False).c/p0)
+            exp[vk] = e
+            m0 *= (x0[vk])**e
+        return Monomial(exp, p0/mag(m0))
+
 
     def sub(self, substitutions, val=None, require_positive=True):
         """Returns a nomial with substitued values.
@@ -467,6 +488,10 @@ class Monomial(Posynomial):
             return NotImplemented
         # assume other is a Posynomial or Number
         return Constraint(self, other, oper_ge=True)
+
+    def mono_approximation(self, x0):
+        raise TypeError("Monomial approximation of %s is unnecessary - "
+                        "it's already a Monomial." % str(self))
 
 
 class Constraint(Posynomial):

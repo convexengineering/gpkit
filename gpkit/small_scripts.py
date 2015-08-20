@@ -1,25 +1,6 @@
 """Assorted helper methods"""
 from collections import Iterable
-
-from .small_classes import HashVector
 from .small_classes import Strings, Quantity
-
-
-def mono_approx(p, x0):
-    if not x0:
-        for i, exp in enumerate(p.exps):
-            if exp == {}:
-                return p.cs[i], {}
-    exp = HashVector()
-    p0 = p.sub(x0).c
-    m0 = 1
-    from . import units as ureg
-    for vk in p.varlocs:
-        units = vk.descr.get("units", 1) if ureg else 1
-        e = mag(x0[vk]*units * p.diff(vk).sub(x0, require_positive=False).c / p0)
-        exp[vk] = e
-        m0 *= (x0[vk]*units)**e
-    return p0/m0, exp
 
 
 def isequal(a, b):

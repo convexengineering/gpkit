@@ -83,7 +83,9 @@ class NomialData(object):
         """
         var = self._get_varkey(var)
         exps, cs = [], []
-        var_units = var.units if var.units else 1
+        # var.units may be str if units disabled
+        var_units = (var.units if var.units and not isinstance(var.units, str)
+                     else 1)
         for i, exp in enumerate(self.exps):
             exp = HashVector(exp)   # copy -- exp is mutated below
             e = exp.get(var, 0)
