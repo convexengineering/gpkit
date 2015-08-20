@@ -109,21 +109,6 @@ class SignomialProgram(object):
             print("Beginning signomial solve.")
             self.starttime = time()
 
-        if x0 is None:
-            x0 = {}
-        else:
-            # dummy nomial data to turn x0's keys into VarKeys
-            self.negydata = lambda: None
-            self.negydata.varlocs = self.negvarkeys
-            self.negydata.varstrs = {str(vk): vk for vk in self.negvarkeys}
-            x0 = get_constants(self.negydata, x0)
-        sp_inits = {vk: vk.descr["sp_init"] for vk in self.negvarkeys
-                    if "sp_init" in vk.descr}
-        sp_inits.update(x0)
-        x0 = sp_inits
-        # HACK: initial guess for negative variables
-        x0.update({var: 1 for var in self.negvarkeys if var not in x0})
-
         iterations = 0
         prevcost, cost, rel_improvement = None, None, None
         self.gps = []
@@ -179,11 +164,16 @@ class SignomialProgram(object):
 
     def step(self, x0=None, verbosity=1):
         if x0 is None:
-            # HACK: initial guess for negative variables
-            x0 = {var: 1 for var in self.negvarkeys}
+            # dummy nomial data to turn x0's keys into VarKeys
+            self.negydata = lambda: None
+            self.negydata.varlocs = self.negvarkeys
+            self.negydata.varstrs = {str(vk): vk for vk in self.negvarkeys}
+            x0 = get_constants(self.negydata, {})
             sp_inits = {vk: vk.descr["sp_init"] for vk in self.negvarkeys
                         if "sp_init" in vk.descr}
-            x0,update(sp_inits)
+            x0.update(sp_inits)
+            # HACK: initial guess for negative variables
+            x0.update({var: 1 for var in self.negvarkeys if var not in x0})
         posy_approxs = []
         for p, n in zip(self.posynomials, self.negynomials):
             if n is None:
