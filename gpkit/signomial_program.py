@@ -57,7 +57,10 @@ class SignomialProgram(object):
         self.negvarkeys = set()
         for sig in self.constraints:
             p_exps, p_cs = [], []
-            n_exps, n_cs = [{}], [1]  # add the 1 from the "<= 1" constraint
+            if isinstance(sig, Posynomial):
+                n_exps, n_cs = [{}], [1]  # add the 1 from the "<= 1"
+            else:
+                n_exps, n_cs = [], []
             for c, exp in zip(sig.cs, sig.exps):
                 if c > 0:
                     p_cs.append(c)
@@ -66,8 +69,16 @@ class SignomialProgram(object):
                     n_cs.append(-c)
                     n_exps.append(exp)
                     self.negvarkeys.update(exp.keys())
-            posy = Posynomial(p_exps, p_cs) if p_cs != [] else None
-            negy = Posynomial(n_exps, n_cs) if n_cs != [1] else None
+            if isinstance(sig, Posynomial):
+                posy = Posynomial(p_exps, p_cs) if p_cs != [] else None
+                negy = Posynomial(n_exps, n_cs) if n_cs != [1] else None
+                assert posy
+                assert not negy
+            else:
+                posy = Posynomial(p_exps, p_cs) if p_cs != [] else None
+                negy = Posynomial(n_exps, n_cs) if n_cs != [] else None
+                assert posy
+                assert negy
             self.posynomials.append(posy)
             self.negynomials.append(negy)
 

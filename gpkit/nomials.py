@@ -630,6 +630,8 @@ class SignomialConstraint(Signomial):
 
         Note: Constraints initialized via operator overloading always take
               the form left >= right, e.g. (x <= y) becomes (y >= x).
+
+        Note: Unlike Constraints, SignomialConstraints have units.
         """
         left = Signomial(left)
         right = Signomial(right)
@@ -641,28 +643,31 @@ class SignomialConstraint(Signomial):
                             "without SignomialsEnabled.")
 
 
-        if not isinstance(pgt, Monomial):
-            if plt.units:
-                p = (plt - pgt)/plt.units + 1.0
-            else:
-                p = (plt - pgt) + 1.0
-        else:
-            p = plt / pgt
-        if isinstance(p.cs, Quantity):
-            try:
-                p = p.to('dimensionless')
-            except DimensionalityError:
-                raise ValueError("constraints must have the same units"
-                                 " on both sides: '%s' and '%s' can not"
-                                 " be converted into each other."
-                                 "" % (plt.units.units, pgt.units.units))
+        #if not isinstance(pgt, Monomial):
+        #    if plt.units:
+        #        p = (plt - pgt)/plt.units + 1.0
+        #    else:
+        #        p = (plt - pgt) + 1.0
+        #else:
+        #    p = plt / pgt
 
-        for i, exp in enumerate(p.exps):
-            if not exp:
-                if p.cs[i] < 1:
-                    const = p.cs[i]
-                    p -= const
-                    p /= (1-const)
+        p = plt - pgt
+
+        #if isinstance(p.cs, Quantity):
+        #    try:
+        #        p = p.to('dimensionless')
+        #    except DimensionalityError:
+        #        raise ValueError("constraints must have the same units"
+        #                         " on both sides: '%s' and '%s' can not"
+        #                         " be converted into each other."
+        #                         "" % (plt.units.units, pgt.units.units))
+
+        #for i, exp in enumerate(p.exps):
+        #    if not exp:
+        #        if p.cs[i] < 1:
+        #            const = p.cs[i]
+        #            p -= const
+        #            p /= (1-const)
 
         super(SignomialConstraint, self).__init__(p)
         self.__class__ = SignomialConstraint  # TODO should not have to do this

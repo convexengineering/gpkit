@@ -14,7 +14,6 @@ from collections import defaultdict
 
 from .nomials import MonoEQConstraint
 from .nomials import Posynomial, Signomial
-from .nomials import Monomial, Posynomial, Signomial
 from .geometric_program import GeometricProgram
 from .signomial_program import SignomialProgram
 from .posyarray import PosyArray
@@ -104,7 +103,7 @@ class Model(object):
                     if "model" not in k.descr:
                         newk = VarKey(k, model=name)
                         s.varlocs[newk] = s.varlocs.pop(k)
-                for exp in p.exps:
+                for exp in s.exps:
                     for k in exp:
                         if "model" not in k.descr:
                             newk = VarKey(k, model=name)
@@ -139,7 +138,7 @@ class Model(object):
     def signomials_et_al(self):
         "Get signomials, unsubbed, allsubs in one pass."
         signomials = self.signomials
-        unsubbed = NomialData(nomials=signomials)
+        unsubbed = self.unsubbed
         allsubs = unsubbed.values
         allsubs.update(self.substitutions)
         return signomials, unsubbed, allsubs
@@ -173,7 +172,8 @@ class Model(object):
 
     # TODO: add get_item
 
-    def solve(self, solver=None, verbosity=2, skipfailures=True, *args, **kwargs):
+    def solve(self, solver=None, verbosity=2, skipfailures=True,
+              *args, **kwargs):
         """Forms a GeometricProgram and attempts to solve it.
 
         Arguments
@@ -212,7 +212,8 @@ class Model(object):
     have only local solutions, and are solved with 'Model.localsolve()'.""")
             raise
 
-    def localsolve(self, solver=None, verbosity=2, skipfailures=True, *args, **kwargs):
+    def localsolve(self, solver=None, verbosity=2, skipfailures=True,
+                   *args, **kwargs):
         """Forms a SignomialProgram and attempts to locally solve it.
 
         Arguments
@@ -450,7 +451,7 @@ class Model(object):
             constvars = set(constvars)
             # get varkey versions
             constvars = get_constants(unsubbed.varkeys, unsubbed.varlocs,
-                                dict(zip(constvars, constvars)))
+                                      dict(zip(constvars, constvars)))
             # filter constants
             constants = {k: v for k, v in constants.items() if k in constvars}
         if "constants" in search and constants:
