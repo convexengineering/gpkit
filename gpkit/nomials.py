@@ -231,7 +231,7 @@ class Signomial(NomialData):
     # constraint generation
     def __eq__(self, other):
         # if at least one is a monomial, return a constraint
-        mons = Numbers+(Monomial,)
+        mons = Numbers + (Monomial,)
         if isinstance(other, mons) and isinstance(self, mons):
             return MonoEQConstraint(self, other)
         elif isinstance(other, Signomial) and isinstance(self, Signomial):
@@ -443,11 +443,11 @@ class Posynomial(Signomial):
           __init__ syntax, same as Signomial.
     """
     def __le__(self, other):
-        if isinstance(other, (Signomial, PosyArray)):
+        if isinstance(other, Numbers + (Monomial,)):
+            return Constraint(other, self, oper_ge=True)
+        else:
             # fall back on other's __ge__
             return NotImplemented
-        # assume other is a Number
-        return Constraint(other, self, oper_ge=True)
 
     # Posynomial.__ge__ falls back on Signomial.__ge__
 
@@ -496,13 +496,11 @@ class Monomial(Posynomial):
     # Monomial.__le__ falls back on Posynomial.__le__
 
     def __ge__(self, other):
-        if isinstance(other, Signomial) and not isinstance(other, Posynomial):
-            # a card-carrying Signomial with negative cs
-            return NotImplemented   # fall back on Signomial.__le__
-        if isinstance(other, PosyArray):
+        if isinstance(other, Numbers + (Monomial,)):
+            return Constraint(self, other, oper_ge=True)
+        else:
+            # fall back on other's __ge__
             return NotImplemented
-        # assume other is a Posynomial or Number
-        return Constraint(self, other, oper_ge=True)
 
     def mono_approximation(self, x0):
         raise TypeError("Monomial approximation of %s is unnecessary - "
@@ -603,7 +601,7 @@ class MonoEQConstraint(Constraint):
 
 class SignomialConstraint(Signomial):
     """A constraint of the general form posynomial >= posynomial
-    Stored internally (exps, cs) as a single Signomial (0 >= self)
+    Stored internally (exps, cs) as a single Signomial (self <= 0)
     Usually initialized via operator overloading, e.g. cc = (y**2 >= 1 + x - y)
     Additionally retains input format (lhs vs rhs) in self.left and self.right
     Form is self.left >= self.right.
@@ -642,32 +640,7 @@ class SignomialConstraint(Signomial):
             raise TypeError("Cannot initialize SignomialConstraint "
                             "without SignomialsEnabled.")
 
-
-        #if not isinstance(pgt, Monomial):
-        #    if plt.units:
-        #        p = (plt - pgt)/plt.units + 1.0
-        #    else:
-        #        p = (plt - pgt) + 1.0
-        #else:
-        #    p = plt / pgt
-
         p = plt - pgt
-
-        #if isinstance(p.cs, Quantity):
-        #    try:
-        #        p = p.to('dimensionless')
-        #    except DimensionalityError:
-        #        raise ValueError("constraints must have the same units"
-        #                         " on both sides: '%s' and '%s' can not"
-        #                         " be converted into each other."
-        #                         "" % (plt.units.units, pgt.units.units))
-
-        #for i, exp in enumerate(p.exps):
-        #    if not exp:
-        #        if p.cs[i] < 1:
-        #            const = p.cs[i]
-        #            p -= const
-        #            p /= (1-const)
 
         super(SignomialConstraint, self).__init__(p)
         self.__class__ = SignomialConstraint  # TODO should not have to do this

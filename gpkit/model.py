@@ -138,7 +138,7 @@ class Model(object):
     def signomials_et_al(self):
         "Get signomials, unsubbed, allsubs in one pass."
         signomials = self.signomials
-        unsubbed = self.unsubbed
+        unsubbed = NomialData(nomials=signomials)
         allsubs = unsubbed.values
         allsubs.update(self.substitutions)
         return signomials, unsubbed, allsubs
