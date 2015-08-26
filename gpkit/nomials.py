@@ -67,7 +67,7 @@ class Signomial(NomialData):
                 # test for presence of length and identical lengths
                 assert len(cs) == len(exps)
                 exps_ = list(range(len(exps)))
-                if not isinstance(cs[0], Quantity):
+                if not all(isinstance(c, Quantity) for c in cs):
                     try:
                         cs = np.array(cs, dtype='float')
                     except ValueError:
