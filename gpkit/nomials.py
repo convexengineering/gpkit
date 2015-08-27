@@ -36,6 +36,7 @@ class Signomial(NomialData):
 
     def __init__(self, exps=None, cs=1, require_positive=True, simplify=True,
                  **descr):
+        units = descr.get("units", None)
         if isinstance(exps, Numbers):
             cs = exps
             exps = {}
@@ -93,6 +94,12 @@ class Signomial(NomialData):
             except AssertionError:
                 raise TypeError("cs and exps must have the same length.")
 
+        if isinstance(units, Quantity):
+            if not isinstance(cs, Quantity):
+                cs = cs*units
+            else:
+                cs = cs.to(units)
+
         # init NomialData to create self.exps, self.cs, and so on
         super(Signomial, self).__init__(exps, cs, simplify=simplify)
 
@@ -102,15 +109,6 @@ class Signomial(NomialData):
                 raise ValueError("each c must be positive.")
         else:
             self.__class__ = Posynomial
-
-        units = None
-        if isinstance(self.cs[0], Quantity):
-            units = self.cs[0]/self.cs[0].magnitude
-        elif "units" in descr:
-            units = descr["units"]
-            if isinstance(units, Quantity):
-                self.cs = self.cs*units
-        self.units = units
 
         if len(self.exps) == 1:
             if self.__class__ is Posynomial:
@@ -206,27 +204,15 @@ class Signomial(NomialData):
         return self
 
     def __ne__(self, other):
-        if isinstance(other, Signomial):
-            return hash(self) != hash(other)
-        else:
-            return False
+        return not super(Signomial, self).__eq__(other)
 
     # constraint generation
     def __eq__(self, other):
         # if at least one is a monomial, return a constraint
-        mons = Numbers+(Monomial,)
+        mons = Numbers + (Monomial,)
         if isinstance(other, mons) and isinstance(self, mons):
             return MonoEQConstraint(self, other)
-        elif isinstance(other, Signomial) and isinstance(self, Signomial):
-            if self.exps == other.exps:
-                if isinstance(self.cs, Quantity):
-                    return all(self.cs.magnitude <= other.cs)
-                else:
-                    return all(self.cs <= other.cs)
-            else:
-                return False
-        else:
-            return False
+        return super(Signomial, self).__eq__(other)
 
     def __le__(self, other):
         if isinstance(other, PosyArray):
