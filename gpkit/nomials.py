@@ -36,7 +36,9 @@ class Signomial(NomialData):
 
     def __init__(self, exps=None, cs=1, require_positive=True, simplify=True,
                  **descr):
+        # this is somewhat deprecated, used for Variables and subbing Monomials
         units = descr.get("units", None)
+        # If cs has units, then they will override this setting.
         if isinstance(exps, Numbers):
             cs = exps
             exps = {}
@@ -47,10 +49,10 @@ class Signomial(NomialData):
                 exp = {exps: 1}
                 units = exps.units
             elif exps is None or isinstance(exps, Strings):
-                exp = ({VarKey(**descr): 1} if exps is None else
-                       {VarKey(exps, **descr): 1})
-                descr = list(exp)[0].descr
-                units = list(exp)[0].units
+                vk = VarKey(**descr) if exps is None else VarKey(exps, **descr)
+                descr = vk.descr
+                units = vk.units
+                exp = {vk: 1}
             elif isinstance(exps, dict):
                 exp = dict(exps)
                 for key in exps:
