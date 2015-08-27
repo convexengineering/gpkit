@@ -187,8 +187,7 @@ def substitution(nomial, substitutions, val=None):
             elif isinstance(sub, Monomial):
                 if isinstance(var.units, Quantity):
                     try:
-                        sub_units = Quantity(1, sub.units)
-                        new_units = var.units/sub_units
+                        new_units = var.units/sub.units
                         cs_[i] *= new_units.to('dimensionless')
                     except DimensionalityError:
                         raise ValueError("substituted monomials need the same"

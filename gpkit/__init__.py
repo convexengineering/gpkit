@@ -129,67 +129,21 @@ from .model import Model
 from .shortcuts import GP, SP
 
 if units:
-    # regain control of Quantities' interactions with Posynomials
-    Posynomial = Posynomial
-    import operator
-
-    def Qadd(self, other):
-        if isinstance(other, (PosyArray, Signomial)):
-            return NotImplemented
-        return self._add_sub(other, operator.add)
-
-    def Qmul(self, other):
-        if isinstance(other, (PosyArray, Signomial)):
-            return NotImplemented
-        else:
-            return self._mul_div(other, operator.mul)
-
-    def Qtruediv(self, other):
-        if isinstance(other, (PosyArray, Signomial)):
-            return NotImplemented
-        else:
-            return self._mul_div(other, operator.truediv)
-
-    def Qfloordiv(self, other):
-        if isinstance(other, (PosyArray, Signomial)):
-            return NotImplemented
-        else:
-            return self._mul_div(other, operator.floordiv,
-                                 units_op=operator.truediv)
-
-    for oper in ["eq"]:
-        #TODO: this should all be abstractable like this, but fails on lambdas?
-        fname = "__"+oper+"__"
-        oldf = getattr(units.Quantity, fname)
-        setattr(units.Quantity, "__"+fname, oldf)
-
-        def newf(self, other):
-            if isinstance(other, (PosyArray, Signomial)):
+    def skip_if_gpkit_objects(fallback, objects=(PosyArray, Signomial)):
+        def newfn(self, other):
+            if isinstance(other, objects):
                 return NotImplemented
             else:
-                getattr(units.Quantity, "__"+fname)(self, other)
+                return getattr(self, fallback)(other)
+        return newfn
 
-        setattr(units.Quantity, fname, newf)
-
-    def Qle(self, other):
-        if isinstance(other, (PosyArray, Signomial)):
-            return NotImplemented
-        else:
-            return self.compare(other, op=operator.le)
-
-    def Qge(self, other):
-        if isinstance(other, (PosyArray, Signomial)):
-            return NotImplemented
-        else:
-            return self.compare(other, op=operator.ge)
-
-    units.Quantity.__add__ = Qadd
-    units.Quantity.__mul__ = Qmul
-    units.Quantity.__div__ = Qtruediv
-    units.Quantity.__truediv__ = Qtruediv
-    units.Quantity.__floordiv__ = Qfloordiv
-    units.Quantity.__le__ = Qle
-    units.Quantity.__ge__ = Qge
+    for op in "eq ge le add mul div truediv floordiv".split():
+        dunder = "__%s__" % op
+        trunder = "___%s___" % op
+        original = getattr(units.Quantity, dunder)
+        setattr(units.Quantity, trunder, original)
+        newfn = skip_if_gpkit_objects(fallback=trunder)
+        setattr(units.Quantity, dunder, newfn)
 
 # Load settings
 from os import sep as os_sep

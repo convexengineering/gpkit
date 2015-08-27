@@ -77,7 +77,7 @@ class Signomial(NomialData):
                         raise ValueError("cannot add dimensioned and"
                                          " dimensionless monomials together.")
                 else:
-                    units = cs[0]/cs[0].magnitude
+                    units = Quantity(1, cs[0].units)
                     if units.dimensionless:
                         cs = [c * ureg.dimensionless for c in cs]
                         units = ureg.dimensionless
@@ -188,8 +188,7 @@ class Signomial(NomialData):
         Returns substituted nomial.
         """
         _, exps, cs, _ = substitution(self, substitutions, val)
-        units = Quantity(1, self.units) if self.units else None
-        return Signomial(exps, cs, units=units,
+        return Signomial(exps, cs, units=self.units,
                          require_positive=require_positive)
 
     def subsummag(self, substitutions, val=None):
@@ -324,11 +323,11 @@ class Signomial(NomialData):
                 if not isinstance(self.cs, Quantity):
                     sunits = ureg.dimensionless
                 else:
-                    sunits = self.cs[0]/self.cs[0].magnitude
+                    sunits = Quantity(1, self.cs[0].units)
                 if not isinstance(other.cs, Quantity):
                     ounits = ureg.dimensionless
                 else:
-                    ounits = other.cs[0]/other.cs[0].magnitude
+                    ounits = Quantity(1, other.cs[0].units)
                 # HACK: fix for pint not working with np.outer
                 C = C * sunits * ounits
             Exps = np.empty((len(self.exps), len(other.exps)), dtype="object")

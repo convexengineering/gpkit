@@ -39,7 +39,7 @@ class NomialData(object):
         if nomials:
             self.units = tuple(s.units for s in nomials)
         elif isinstance(self.cs, Quantity):
-            self.units = self.cs.units
+            self.units = Quantity(1, self.cs.units)
         else:
             self.units = None
 
@@ -56,7 +56,7 @@ class NomialData(object):
     def __eq__(self, other):
         """Equality test"""
         if not all(hasattr(other, a) for a in ("exps", "cs", "units")):
-            return False
+            return NotImplemented
         if self.exps != other.exps:
             return False
         if not all(mag(self.cs) == mag(other.cs)):
