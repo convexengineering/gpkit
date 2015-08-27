@@ -17,6 +17,28 @@
 """
 
 __version__ = "0.3.1"
+UNIT_REGISTRY = None
+SIGNOMIALS_ENABLED = False
+
+
+def enable_units():
+    """Enables units support in a particular instance of GPkit.
+
+    Posynomials created after calling this are incompatible with those created
+    before.
+
+    If gpkit is imported multiple times, this needs to be run each time."""
+    global units, DimensionalityError, UNIT_REGISTRY
+    try:
+        import pint
+        if UNIT_REGISTRY is None:
+            UNIT_REGISTRY = pint.UnitRegistry()
+        units = UNIT_REGISTRY
+        DimensionalityError = pint.DimensionalityError
+    except ImportError:
+        print("Optional Python units library (Pint) not installed;"
+              " unit support disabled.")
+        disable_units()
 
 
 def disable_units():
@@ -54,27 +76,7 @@ def disable_units():
     units = DummyUnits()
     DimensionalityError = ValueError
 
-
-def enable_units():
-    """Enables units support in a particular instance of GPkit.
-
-    Posynomials created after calling this are incompatible with those created
-    before.
-
-    If gpkit is imported multiple times, this needs to be run each time."""
-    global units, DimensionalityError
-    try:
-        import pint
-        units = pint.UnitRegistry()
-        DimensionalityError = pint.DimensionalityError
-    except ImportError:
-        print("Optional Python units library (Pint) not installed;"
-              " unit support disabled.")
-        disable_units()
-
 enable_units()
-
-SIGNOMIALS_ENABLED = False
 
 
 class SignomialsEnabled(object):
@@ -114,10 +116,9 @@ def disable_signomials():
     global SIGNOMIALS_ENABLED
     SIGNOMIALS_ENABLED = False
     print("'disable_signomials()' has been replaced by 'SignomialsEnabled'"
-          " in a 'with' statement (e.g. 'with SignomialsEnabled():  constraints"
+          " in a 'with' statement (e.g. 'with SignomialsEnabled(): constraints"
           " = [1-x]'). disable_signomials() will be removed in the next point"
           " release, so please update your code!")
-
 
 from .nomials import Monomial, Posynomial, Signomial
 from .variables import Variable, VectorVariable, ArrayVariable
