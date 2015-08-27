@@ -7,8 +7,7 @@ from gpkit import (Model, Monomial, settings, VectorVariable, Variable,
 from gpkit.geometric_program import GeometricProgram
 from gpkit.small_classes import CootMatrix
 
-NDIGS = {"cvxopt": 5, "mosek": 6, "mosek_cli": 5}
-# TODO revert "mosek" NDIGS to 7, once #296 fully resolved
+NDIGS = {"cvxopt": 5, "mosek": 7, "mosek_cli": 5}
 # name: decimal places of accuracy
 
 
