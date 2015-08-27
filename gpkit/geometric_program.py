@@ -146,7 +146,7 @@ class GeometricProgram(NomialData):
 
         result = {}
         # confirm lengths before calling zip
-        primal = solver_out['primal'].ravel()
+        primal = solver_out['primal']
         assert len(self.varlocs) == len(primal)
         result["variables"] = dict(zip(self.varlocs,
                                        np.exp(primal)))
