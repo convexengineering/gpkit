@@ -50,6 +50,7 @@ class Signomial(NomialData):
                 exp = ({VarKey(**descr): 1} if exps is None else
                        {VarKey(exps, **descr): 1})
                 descr = list(exp)[0].descr
+                units = list(exp)[0].units
             elif isinstance(exps, dict):
                 exp = dict(exps)
                 for key in exps:
@@ -80,9 +81,9 @@ class Signomial(NomialData):
                     if units.dimensionless:
                         cs = [c * ureg.dimensionless for c in cs]
                         units = ureg.dimensionless
-                    cs = [c.to(units).magnitude for c in cs] * units
-                    if not all([c.dimensionality == units.dimensionality
-                                for c in cs]):
+                    try:
+                        cs = [c.to(units).magnitude for c in cs] * units
+                    except DimensionalityError:
                         raise ValueError("cannot add monomials of"
                                          " different units together")
                 for i in range(len(exps)):
@@ -187,7 +188,8 @@ class Signomial(NomialData):
         Returns substituted nomial.
         """
         _, exps, cs, _ = substitution(self, substitutions, val)
-        return Signomial(exps, cs, units=self.units,
+        units = Quantity(1, self.units) if self.units else None
+        return Signomial(exps, cs, units=units,
                          require_positive=require_positive)
 
     def subsummag(self, substitutions, val=None):
@@ -498,7 +500,7 @@ class Constraint(Posynomial):
                 raise ValueError("constraints must have the same units"
                                  " on both sides: '%s' and '%s' can not"
                                  " be converted into each other."
-                                 "" % (plt.units.units, pgt.units.units))
+                                 "" % (plt.units, pgt.units))
 
         plt.units = None if all(plt.exps) else plt.units
         pgt.units = None if all(pgt.exps) else pgt.units
