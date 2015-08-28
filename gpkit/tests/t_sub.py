@@ -42,25 +42,25 @@ class TestNomialSubs(unittest.TestCase):
 
     def test_scalar_units(self):
         x = Variable("x", "m")
-        xvk = list(x.varstrs.values())[0]
-        descr_before = list(x.exp)[0].descr
+        xvk = x.varkey
         y = Variable("y", "km")
-        yvk = list(y.varstrs.values())[0]
+        yvk = y.varkey
+        units_exist = bool(x.units)
         for x_ in ["x", xvk, x]:
             for y_ in ["y", yvk, y]:
-                if not isinstance(y_, str) and type(xvk.units) != str:
+                if not isinstance(y_, str) and units_exist:
                     expected = 0.001
                 else:
                     expected = 1.0
                 self.assertAlmostEqual(expected, mag(x.sub(x_, y_).c))
-        if type(xvk.units) != str:
+        if units_exist:
             z = Variable("z", "s")
             self.assertRaises(ValueError, y.sub, y, z)
 
     def test_dimensionless_units(self):
         x = Variable('x', 3, 'ft')
         y = Variable('y', 1, 'm')
-        if type(x.units) != str:
+        if x.units is not None:
             # units are enabled
             self.assertAlmostEqual((x/y).value, 0.9144)
 

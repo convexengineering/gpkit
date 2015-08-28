@@ -35,6 +35,9 @@ class Signomial(NomialData):
 
     def __init__(self, exps=None, cs=1, require_positive=True, simplify=True,
                  **descr):
+        # this is somewhat deprecated, used for Variables and subbing Monomials
+        units = descr.get("units", None)
+        # If cs has units, then they will override this setting.
         if isinstance(exps, Numbers):
             cs = exps
             exps = {}
@@ -45,9 +48,10 @@ class Signomial(NomialData):
                 exp = {exps: 1}
                 units = exps.units
             elif exps is None or isinstance(exps, Strings):
-                exp = ({VarKey(**descr): 1} if exps is None else
-                       {VarKey(exps, **descr): 1})
-                descr = list(exp)[0].descr
+                vk = VarKey(**descr) if exps is None else VarKey(exps, **descr)
+                descr = vk.descr
+                units = vk.units
+                exp = {vk: 1}
             elif isinstance(exps, dict):
                 exp = dict(exps)
                 for key in exps:
@@ -74,13 +78,13 @@ class Signomial(NomialData):
                         raise ValueError("cannot add dimensioned and"
                                          " dimensionless monomials together.")
                 else:
-                    units = cs[0]/cs[0].magnitude
+                    units = Quantity(1, cs[0].units)
                     if units.dimensionless:
                         cs = [c * ureg.dimensionless for c in cs]
                         units = ureg.dimensionless
-                    cs = [c.to(units).magnitude for c in cs] * units
-                    if not all([c.dimensionality == units.dimensionality
-                                for c in cs]):
+                    try:
+                        cs = [c.to(units).magnitude for c in cs] * units
+                    except DimensionalityError:
                         raise ValueError("cannot add monomials of"
                                          " different units together")
                 for i in range(len(exps)):
@@ -92,6 +96,12 @@ class Signomial(NomialData):
             except AssertionError:
                 raise TypeError("cs and exps must have the same length.")
 
+        if isinstance(units, Quantity):
+            if not isinstance(cs, Quantity):
+                cs = cs*units
+            else:
+                cs = cs.to(units)
+
         # init NomialData to create self.exps, self.cs, and so on
         super(Signomial, self).__init__(exps, cs, simplify=simplify)
 
@@ -101,15 +111,6 @@ class Signomial(NomialData):
                 raise ValueError("each c must be positive.")
         else:
             self.__class__ = Posynomial
-
-        units = None
-        if isinstance(self.cs[0], Quantity):
-            units = self.cs[0]/self.cs[0].magnitude
-        elif "units" in descr:
-            units = descr["units"]
-            if isinstance(units, Quantity):
-                self.cs = self.cs*units
-        self.units = units
 
         if len(self.exps) == 1:
             if self.__class__ is Posynomial:
@@ -223,10 +224,7 @@ class Signomial(NomialData):
         return self
 
     def __ne__(self, other):
-        if isinstance(other, Signomial):
-            return hash(self) != hash(other)
-        else:
-            return False
+        return not super(Signomial, self).__eq__(other)
 
     # constraint generation
     def __eq__(self, other):
@@ -234,16 +232,7 @@ class Signomial(NomialData):
         mons = Numbers + (Monomial,)
         if isinstance(other, mons) and isinstance(self, mons):
             return MonoEQConstraint(self, other)
-        elif isinstance(other, Signomial) and isinstance(self, Signomial):
-            if self.exps == other.exps:
-                if isinstance(self.cs, Quantity):
-                    return all(self.cs.magnitude == other.cs)
-                else:
-                    return all(self.cs == other.cs)
-            else:
-                return False
-        else:
-            return False
+        return super(Signomial, self).__eq__(other)
 
     def __le__(self, other):
         if isinstance(other, PosyArray):
@@ -353,11 +342,11 @@ class Signomial(NomialData):
                 if not isinstance(self.cs, Quantity):
                     sunits = ureg.dimensionless
                 else:
-                    sunits = self.cs[0]/self.cs[0].magnitude
+                    sunits = Quantity(1, self.cs[0].units)
                 if not isinstance(other.cs, Quantity):
                     ounits = ureg.dimensionless
                 else:
-                    ounits = other.cs[0]/other.cs[0].magnitude
+                    ounits = Quantity(1, other.cs[0].units)
                 # HACK: fix for pint not working with np.outer
                 C = C * sunits * ounits
             Exps = np.empty((len(self.exps), len(other.exps)), dtype="object")
@@ -550,7 +539,7 @@ class Constraint(Posynomial):
                 raise ValueError("constraints must have the same units"
                                  " on both sides: '%s' and '%s' can not"
                                  " be converted into each other."
-                                 "" % (plt.units.units, pgt.units.units))
+                                 "" % (plt.units, pgt.units))
 
         for i, exp in enumerate(p.exps):
             if not exp:

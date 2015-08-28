@@ -17,6 +17,28 @@
 """
 
 __version__ = "0.3.1"
+UNIT_REGISTRY = None
+SIGNOMIALS_ENABLED = False
+
+
+def enable_units():
+    """Enables units support in a particular instance of GPkit.
+
+    Posynomials created after calling this are incompatible with those created
+    before.
+
+    If gpkit is imported multiple times, this needs to be run each time."""
+    global units, DimensionalityError, UNIT_REGISTRY
+    try:
+        import pint
+        if UNIT_REGISTRY is None:
+            UNIT_REGISTRY = pint.UnitRegistry()
+        units = UNIT_REGISTRY
+        DimensionalityError = pint.DimensionalityError
+    except ImportError:
+        print("Optional Python units library (Pint) not installed;"
+              " unit support disabled.")
+        disable_units()
 
 
 def disable_units():
@@ -54,27 +76,7 @@ def disable_units():
     units = DummyUnits()
     DimensionalityError = ValueError
 
-
-def enable_units():
-    """Enables units support in a particular instance of GPkit.
-
-    Posynomials created after calling this are incompatible with those created
-    before.
-
-    If gpkit is imported multiple times, this needs to be run each time."""
-    global units, DimensionalityError
-    try:
-        import pint
-        units = pint.UnitRegistry()
-        DimensionalityError = pint.DimensionalityError
-    except ImportError:
-        print("Optional Python units library (Pint) not installed;"
-              " unit support disabled.")
-        disable_units()
-
 enable_units()
-
-SIGNOMIALS_ENABLED = False
 
 
 class SignomialsEnabled(object):
@@ -114,10 +116,9 @@ def disable_signomials():
     global SIGNOMIALS_ENABLED
     SIGNOMIALS_ENABLED = False
     print("'disable_signomials()' has been replaced by 'SignomialsEnabled'"
-          " in a 'with' statement (e.g. 'with SignomialsEnabled():  constraints"
+          " in a 'with' statement (e.g. 'with SignomialsEnabled(): constraints"
           " = [1-x]'). disable_signomials() will be removed in the next point"
           " release, so please update your code!")
-
 
 from .nomials import Monomial, Posynomial, Signomial
 from .variables import Variable, VectorVariable, ArrayVariable
@@ -129,67 +130,21 @@ from .model import Model
 from .shortcuts import GP, SP
 
 if units:
-    # regain control of Quantities' interactions with Posynomials
-    Posynomial = Posynomial
-    import operator
-
-    def Qadd(self, other):
-        if isinstance(other, (PosyArray, Signomial)):
-            return NotImplemented
-        return self._add_sub(other, operator.add)
-
-    def Qmul(self, other):
-        if isinstance(other, (PosyArray, Signomial)):
-            return NotImplemented
-        else:
-            return self._mul_div(other, operator.mul)
-
-    def Qtruediv(self, other):
-        if isinstance(other, (PosyArray, Signomial)):
-            return NotImplemented
-        else:
-            return self._mul_div(other, operator.truediv)
-
-    def Qfloordiv(self, other):
-        if isinstance(other, (PosyArray, Signomial)):
-            return NotImplemented
-        else:
-            return self._mul_div(other, operator.floordiv,
-                                 units_op=operator.truediv)
-
-    for oper in ["eq"]:
-        #TODO: this should all be abstractable like this, but fails on lambdas?
-        fname = "__"+oper+"__"
-        oldf = getattr(units.Quantity, fname)
-        setattr(units.Quantity, "__"+fname, oldf)
-
-        def newf(self, other):
-            if isinstance(other, (PosyArray, Signomial)):
+    def skip_if_gpkit_objects(fallback, objects=(PosyArray, Signomial)):
+        def newfn(self, other):
+            if isinstance(other, objects):
                 return NotImplemented
             else:
-                getattr(units.Quantity, "__"+fname)(self, other)
+                return getattr(self, fallback)(other)
+        return newfn
 
-        setattr(units.Quantity, fname, newf)
-
-    def Qle(self, other):
-        if isinstance(other, (PosyArray, Signomial)):
-            return NotImplemented
-        else:
-            return self.compare(other, op=operator.le)
-
-    def Qge(self, other):
-        if isinstance(other, (PosyArray, Signomial)):
-            return NotImplemented
-        else:
-            return self.compare(other, op=operator.ge)
-
-    units.Quantity.__add__ = Qadd
-    units.Quantity.__mul__ = Qmul
-    units.Quantity.__div__ = Qtruediv
-    units.Quantity.__truediv__ = Qtruediv
-    units.Quantity.__floordiv__ = Qfloordiv
-    units.Quantity.__le__ = Qle
-    units.Quantity.__ge__ = Qge
+    for op in "eq ge le add mul div truediv floordiv".split():
+        dunder = "__%s__" % op
+        trunder = "___%s___" % op
+        original = getattr(units.Quantity, dunder)
+        setattr(units.Quantity, trunder, original)
+        newfn = skip_if_gpkit_objects(fallback=trunder)
+        setattr(units.Quantity, dunder, newfn)
 
 # Load settings
 from os import sep as os_sep
