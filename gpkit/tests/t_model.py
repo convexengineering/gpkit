@@ -7,8 +7,7 @@ from gpkit import (Model, Monomial, settings, VectorVariable, Variable,
 from gpkit.geometric_program import GeometricProgram
 from gpkit.small_classes import CootMatrix
 
-NDIGS = {"cvxopt": 5, "mosek": 6, "mosek_cli": 5}
-# TODO revert "mosek" NDIGS to 7, once #296 fully resolved
+NDIGS = {"cvxopt": 5, "mosek": 7, "mosek_cli": 5}
 # name: decimal places of accuracy
 
 
@@ -204,6 +203,27 @@ class TestGP(unittest.TestCase):
         sol = prob.solve(verbosity=0)
         self.assertAlmostEqual(sol["cost"], 1/3.5, self.ndig)
 
+    def test_check_result(self):
+        """issue 361"""
+        N = 5
+        L = 5.
+        dx = L/(N-1)
+        EI = Variable("EI",10)
+        p = VectorVariable(N, "p")
+        p = p.sub(p, 100*np.ones(N))
+        V  = VectorVariable(N, "V")
+        M  = VectorVariable(N, "M")
+        th = VectorVariable(N, "th")
+        w  = VectorVariable(N, "w")
+        eps = 1E-6
+        substitutions = {var: eps for var in [V[-1], M[-1], th[0], w[0]]}
+        objective = w[-1]
+        constraints = [EI*V.left[1:N]     >= EI*V[1:N]    + 0.5*dx*p.left[1:N]     + 0.5*dx*p[1:N],
+                       EI*M.left[1:N]     >= EI*M[1:N]    + 0.5*dx*V.left[1:N]     + 0.5*dx*V[1:N],
+                       EI*th.right[0:N-1] >= EI*th[0:N-1] + 0.5*dx*M.right[0:N-1]  + 0.5*dx*M[0:N-1],
+                       EI*w.right[0:N-1]  >= EI*w[0:N-1]  + 0.5*dx*th.right[0:N-1] + 0.5*dx*th[0:N-1]]
+        m = Model(objective, constraints, substitutions)
+        sol = m.solve(verbosity=0)
 
 class TestSP(unittest.TestCase):
     """test case for SP class -- gets run for each installed solver"""

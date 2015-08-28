@@ -146,9 +146,10 @@ class GeometricProgram(NomialData):
 
         result = {}
         # confirm lengths before calling zip
-        assert len(self.varlocs) == len(solver_out['primal'])
+        primal = np.ravel(solver_out['primal'])
+        assert len(self.varlocs) == len(primal)
         result["variables"] = dict(zip(self.varlocs,
-                                       np.exp(solver_out['primal']).ravel()))
+                                       np.exp(primal)))
         if "objective" in solver_out:
             result["cost"] = float(solver_out["objective"])
         else:
@@ -193,19 +194,26 @@ class GeometricProgram(NomialData):
                                  "(model.program.result)"
                                  " and its raw output in 'solver_out'.")
 
-        self.check_solution(result)
+        self.check_solution(result["cost"], primal, nu, la)
+
         if verbosity > 1:
             print ("solution checking took %.2g%% of solve time" %
                    ((time() - tic) / soltime * 100))
         return result
 
-    def check_solution(self, sol, tol=1e-5):
+    def check_solution(self, cost, primal, nu, la, tol=1e-5):
         """Run a series of checks to mathematically confirm sol solves this GP
 
         Arguments
         ---------
-        sol: dict
-            solution dict, same format as return type of solve()
+        cost:   float
+            cost returned by solver
+        primal: list
+            primal solution returned by solver
+        nu:     numpy.ndarray
+            monomial lagrange multiplier
+        la:     numpy.ndarray
+            posynomial lagrange multiplier
 
         Raises
         ------
@@ -214,13 +222,9 @@ class GeometricProgram(NomialData):
         def _almost_equal(num1, num2):
             "local almost equal test"
             return num1 == num2 or abs((num1 - num2) / (num1 + num2)) < tol
-        cost = sol["cost"]
-        primal_sol = np.log(list(sol["variables"].values()))
-        nu = sol["sensitivities"]["monomials"]
-        la = sol["sensitivities"]["posynomials"]
         A = self.A.tocsr()
         # check primal sol
-        primal_exp_vals = self.cs * np.exp(A.dot(primal_sol))   # c*e^Ax
+        primal_exp_vals = self.cs * np.exp(A.dot(primal))   # c*e^Ax
         if not _almost_equal(primal_exp_vals[self.m_idxs[0]].sum(), cost):
             raise RuntimeWarning("Primal solution computed cost did not match"
                                  " solver-returned cost: %s vs %s" %
