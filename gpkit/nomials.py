@@ -311,6 +311,28 @@ class Signomial(NomialData):
         units_tf = units.replace("frac", "tfrac").replace(r"\cdot", r"\cdot ")
         return " + ".join(sorted(mstrs)) + units_tf
 
+    def _posy_negy(self):
+        """Get the positive and negative parts, both as Posynomials
+
+        Returns
+        -------
+        Posynomial, Posynomial:
+            p_pos and p_neg in (self = p_pos - p_neg) decomposition,
+        """
+        p_exp, p_cs, n_exp, n_cs = [], [], [], []
+        assert len(self.cs) == len(self.exps)   # assert before calling zip
+        for c, exp in zip(self.cs, self.exps):
+            if mag(c) > 0:
+                p_exp.append(exp)
+                p_cs.append(c)
+            elif mag(c) < 0:
+                n_exp.append(exp)
+                n_cs.append(-c)  # -c to keep posynomial
+            else:
+                raise ValueError("Unexpected c=%s in %s" % (c, self))
+        return (Posynomial(p_exp, p_cs) if p_cs else 0,
+                Posynomial(n_exp, n_cs) if n_cs else 0)
+
     # posynomial arithmetic
     def __add__(self, other):
         if isinstance(other, Numbers):
@@ -638,5 +660,29 @@ class SignomialConstraint(Signomial):
         self.oper_s = " >= " if oper_ge else " <= "
         self.oper_l = r" \geq " if oper_ge else r" \leq "
 
+    def sub(self, substitutions, *args, **kwargs):
+        """Returns a signomial constraint with substitued values.
+        
+        Arguments
+        ---------
+        substitutions : dict or key
+            Either a dictionary whose keys are strings, Variables, or VarKeys,
+            and whose values are numbers, or a string, Variable or Varkey.
+        args, kwargs:
+            same as Signomial.sub
+
+        Returns
+        -------
+        Constraint, if substitution makes the constraint Posynomial.
+        SignomialConstraint, otherwise.
+        """
+        if 'require_positive' not in kwargs:
+            kwargs['require_positive'] = False
+        s = super(SignomialConstraint, self).sub(substitutions,
+                                                 *args, **kwargs)
+        posy, negy = s._posy_negy()
+        if isinstance(negy, Monomial):
+            return Constraint(negy, posy)
+        return SignomialConstraint(negy, posy)
 
 from .substitution import substitution, get_constants
