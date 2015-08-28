@@ -281,6 +281,17 @@ class TestPosynomial(unittest.TestCase):
         self.assertEqual((x*y**2 + 1).mono_approximation({y: 1, x: 1}),
                          2*y*x**0.5)
 
+    def test_eq(self):
+        """Test equality and inequality"""
+        p1 = Variable('x') + Variable('y')
+        p2 = Variable('x') + Variable('y')
+        p1u = Variable('x', units="m") + Variable('y', units="m")
+        p2u = Variable('x', units="m") + Variable('y', units="m")
+        self.assertEqual(p1, p2)
+        self.assertEqual(p1u, p2u)
+        self.assertFalse(p1 == p1u)
+        self.assertNotEqual(p1, p1u)
+
 # test substitution
 
 TESTS = [TestPosynomial, TestMonomial, TestSignomial]

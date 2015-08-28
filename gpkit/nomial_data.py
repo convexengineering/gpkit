@@ -7,7 +7,6 @@ from functools import reduce as functools_reduce
 from operator import add
 
 from .small_classes import HashVector, Quantity
-
 from .small_scripts import mag
 
 
@@ -17,6 +16,7 @@ class NomialData(object):
     cs: array (coefficient of each monomial term)
     exps: tuple of {VarKey: float} (exponents of each monomial term)
     varlocs: {VarKey: list} (terms each variable appears in)
+    units: pint.UnitsContainer
     """
     def __init__(self, exps=None, cs=None, nomials=None, simplify=True):
         if nomials and (exps or cs):
@@ -36,6 +36,12 @@ class NomialData(object):
         self.varlocs, self.varstrs = locate_vars(self.exps)
         self.values = {vk: vk.descr["value"] for vk in self.varlocs
                        if "value" in vk.descr}
+        if nomials:
+            self.units = tuple(s.units for s in nomials)
+        elif isinstance(self.cs, Quantity):
+            self.units = Quantity(1, self.cs.units)
+        else:
+            self.units = None
 
     def __hash__(self):
         if not hasattr(self, "_hash"):
@@ -46,6 +52,18 @@ class NomialData(object):
 
     def __repr__(self):
         return "gpkit.%s(%s)" % (self.__class__.__name__, str(self._hash))
+
+    def __eq__(self, other):
+        """Equality test"""
+        if not all(hasattr(other, a) for a in ("exps", "cs", "units")):
+            return NotImplemented
+        if self.exps != other.exps:
+            return False
+        if not all(mag(self.cs) == mag(other.cs)):
+            return False
+        if self.units != other.units:
+            return False
+        return True
 
 
 def sort_and_simplify(exps, cs, return_map=False):

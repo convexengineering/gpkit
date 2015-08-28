@@ -51,7 +51,7 @@ class TestGP(unittest.TestCase):
         T_reserve = Variable('T_{reserve}', 45, 'min')
         M = VectorVariable(2, 'M')
 
-        if not isinstance(R.units, str):
+        if R.units:
             prob = Model(1/R,
                          [t >= sum(R/a0/M/theta**0.5) + T_loiter + T_reserve,
                           M <= 0.76])
