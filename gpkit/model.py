@@ -300,8 +300,7 @@ class Model(object):
                            for (var, grid) in zip(sweep, sweep_grids)}
 
             if verbosity > 0:
-                print("Solving for %i variables over %i passes." %
-                      (len(self.variables), N_passes))
+                print("Solving over %i passes." % N_passes)
 
             def solve_pass(i):
                 this_pass = {var: sweep_vect[i]
