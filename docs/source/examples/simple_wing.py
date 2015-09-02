@@ -23,7 +23,7 @@ C_L = Var('C_L', label='Lift coefficient')
 C_f = Var('C_f', label='Skin friction coefficient')
 S = Var('S', 'm^2', label='Wing planform area')
 Re = Var('Re', label='Reynolds number')
-W = Var('Re', 'N', label='Total aircraft weight')
+W = Var('W', 'N', label='Total aircraft weight')
 W_w = Var('W_w', 'N', label='Wing weight')
 V = Var('V', 'm/s', label='Cruise velocity')
 

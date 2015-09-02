@@ -142,7 +142,7 @@ class GeometricProgram(NomialData):
         soltime = time() - tic
         tic = time()
         if verbosity > 0:
-            print("Solving took %.3g seconds." % (time() - tic))
+            print("Solving took %.3g seconds." % (soltime,))
 
         result = {}
         # confirm lengths before calling zip

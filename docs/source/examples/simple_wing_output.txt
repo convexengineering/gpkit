@@ -1,10 +1,10 @@
 Using solver 'cvxopt'
 Solving for 9 variables.
-Solving took 0.0487 seconds.
+Solving took 0.0492 seconds.
 
 Cost
 ----
- 255 [kg*m/s**2] 
+ 255
 
 Free Variables
 --------------
@@ -13,9 +13,9 @@ C_D : 0.0231            Drag coefficient
 C_L : 0.6512            Lift coefficient         
 C_f : 0.003857          Skin friction coefficient
  Re : 2.598e+06         Reynolds number          
- Re : 7189       [N]    Total aircraft weight    
   S : 12.08      [m**2] Wing planform area       
   V : 38.55      [m/s]  Cruise velocity          
+  W : 7189       [N]    Total aircraft weight    
 W_w : 2249       [N]    Wing weight              
 
 Constants
