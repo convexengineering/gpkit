@@ -6,18 +6,18 @@ import numpy as np
 import matplotlib.pyplot as plt
 from gpkit.shortcuts import *
 
-def beam(N, L, EI, P):
+def beam(N=10, L=5., EI=1E4, P=100):
 
-    dx = L/(N-1)
-    EI = Var("EI", EI)
+    dx = Var("dx", L/(N-1), units="m")
+    EI = Var("EI", EI, units="N*m^2")
 
-    p = Vec(N, "p", label="Distributed load")
+    p = Vec(N, "p", units="N/m", label="Distributed load")
     p = p.sub(p, P*np.ones(N))
 
-    V  = Vec(N, "V", label="Internal shear")
-    M  = Vec(N, "M", label="Internal moment")
-    th = Vec(N, "th", label="Slope")
-    w  = Vec(N, "w", label="Displacement")
+    V  = Vec(N, "V", units="N", label="Internal shear")
+    M  = Vec(N, "M", units="N*m", label="Internal moment")
+    th = Vec(N, "th", units="-", label="Slope")
+    w  = Vec(N, "w", units="m", label="Displacement")
 
     eps = 1E-16 #an arbitrarily small positive number
 
@@ -50,7 +50,7 @@ if __name__ == "__main__":
     w_gp = sol("w") # deflection along beam
     w_exact =  P/(24.*EI)* x**2 * (x**2  - 4*L*x + 6*L**2) # analytical soln
 
-    assert max(abs(w_gp - w_exact)) <= 1e-4
+    assert max(abs(w_gp - w_exact)) <= 1e-2
 
     if PLOT:
         plt.plot(x, w_gp, 'k', x, w_exact, 'b')
