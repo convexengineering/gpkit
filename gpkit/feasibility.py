@@ -1,7 +1,6 @@
 import numpy as np
 
 from .variables import Variable, VectorVariable
-from .substitution import get_constants
 from .varkey import VarKey
 from .posyarray import PosyArray
 
