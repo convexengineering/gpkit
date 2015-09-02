@@ -6,6 +6,7 @@ from gpkit import (Model, Monomial, settings, VectorVariable, Variable,
                    SignomialsEnabled, ArrayVariable)
 from gpkit.geometric_program import GeometricProgram
 from gpkit.small_classes import CootMatrix
+from gpkit.feasibility import feasibility_model
 
 NDIGS = {"cvxopt": 5, "mosek": 7, "mosek_cli": 5}
 # name: decimal places of accuracy
@@ -187,12 +188,14 @@ class TestGP(unittest.TestCase):
 
     def test_feasibility_gp_(self):
         x = Variable('x')
-        gp = GeometricProgram(x, [x**2 >= 1, x <= 0.5])
-        self.assertRaises(RuntimeWarning, gp.solve, verbosity=0)
-        fgp = gp.feasibility_search(flavour="max")
-        sol1 = fgp.solve(verbosity=0)
-        fgp = gp.feasibility_search(flavour="product")
-        sol2 = fgp.solve(verbosity=0)
+        m = Model(x, [x**2 >= 1, x <= 0.5])
+        self.assertRaises(RuntimeWarning, m.solve, verbosity=0)
+        cost, constraints = feasibility_model(m, "max")
+        fm = Model(cost, constraints)
+        sol1 = fm.solve(verbosity=0)
+        cost, constraints, slackvars = feasibility_model(m, "product")
+        fm = Model(cost, constraints)
+        sol2 = fm.solve(verbosity=0)
         self.assertTrue(sol1["cost"] >= 1)
         self.assertTrue(sol2["cost"] >= 1)
 

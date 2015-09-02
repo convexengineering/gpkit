@@ -424,66 +424,40 @@ class Model(object):
         feasibilities = {}
         signomials, unsubbed, allsubs = self.signomials_et_al
 
-        if all(isinstance(s, Posynomial) for s in signomials):
-            if verbosity > 0:
-                print("")
-                print("Infeasibility report")
-                print("--------------------")
-            if "overall" in search:
-                max_gp = self.gp().feasibility_search("max")
-                infeasibility = max_gp.solve(verbosity=verbosity-1)["cost"]
-                if verbosity > 0:
-                    print("      overall : %.2f" % infeasibility)
-                feasibilities["overall"] = infeasibility
+        if "overall" in search:
+            cost, constraints = feasibility_model(self, "max")
+            m = Model(cost, constraints, allsubs)
+            infeasibility = m.solve(verbosity=verbosity-1)["cost"]
+            feasibilities["overall"] = infeasibility
 
-            if "constraints" in search:
-                prod_gp = self.gp().feasibility_search("product")
-                slackvars = list(prod_gp.cost.varkeys.values())[0]
-                result = prod_gp.solve(verbosity=verbosity-1)
-                con_infeas = [result["variables"][sv] for sv in slackvars]
-                if verbosity > 0:
-                    print("  constraints : %s" % con_infeas)
-                feasibilities["constraints"] = con_infeas
+        if "constraints" in search:
+            cost, constraints, slackvars = feasibility_model(self, "product")
+            m = Model(cost, constraints, allsubs)
+            result = m.gp().solve(verbosity=verbosity-1)
+            con_infeas = [result["variables"][sv.varkey] for sv in slackvars]
+            feasibilities["constraints"] = con_infeas
 
-        constants = get_constants(unsubbed, allsubs)
-        if constvars:
-            constvars = set(constvars)
-            # get varkey versions
-            constvars = get_constants(unsubbed.varkeys, unsubbed.varlocs,
-                                dict(zip(constvars, constvars)))
-            # filter constants
-            constants = {k: v for k, v in constants.items() if k in constvars}
-        if "constants" in search and constants:
-            slackb = VectorVariable(len(constants))
-            constvarkeys, constvars, rmvalue, addvalue = [], [], {}, {}
-            for vk in constants.keys():
-                descr = dict(vk.descr)
-                del descr["value"]
-                vk_ = VarKey(**descr)
-                rmvalue[vk] = vk_
-                addvalue[vk_] = vk
-                constvarkeys.append(vk_)
-                constvars.append(Variable(**descr))
-            constvars = PosyArray(constvars)
-            constvalues = PosyArray(constants.values())
-            constraints = [c.sub(rmvalue) for c in self.constraints]
-            # cost function could also be .sum(), self.cost would break ties
-            var_m = Model(slackb.prod(),
-                          constraints
-                          + [slackb >= 1,
-                             constvalues/slackb <= constvars,
-                             constvars <= constvalues*slackb])
-            sol = var_m.solve(verbosity=verbosity-1)
-            feasible_constvalues = sol(constvars).tolist()
-            changed_vals = feasible_constvalues != np.array(constvalues)
-            var_infeas = {addvalue[constvarkeys[i]]: feasible_constvalues[i]
-                          for i in np.where(changed_vals)}
-            if verbosity > 0:
-                print("    constants : %s" % var_infeas)
-            feasibilities["constants"] = var_infeas
-
-        if verbosity > 0:
-            print("")
+        if "constants" in search:
+            constants = get_constants(unsubbed, allsubs)
+            if constvars:
+                constvars = set(constvars)
+                # get varkey versions
+                constvars = get_constants(unsubbed.varkeys, unsubbed.varlocs,
+                                          dict(zip(constvars, constvars)))
+                # filter constants
+                constants = {k: v for k, v in constants.items()
+                             if k in constvars}
+            if constants:
+                (cost, constraints, addvalue, constvars, constvarkeys,
+                 constvalues) = feasibility_model(self, "constants",
+                                                  constants=constants)
+                m = Model(cost, constraints)  # no constants anymore!
+                sol = m.solve(verbosity=verbosity-1)
+                feasible_constvalues = sol(constvars).tolist()
+                changed_vals = feasible_constvalues != np.array(constvalues)
+                var_infeas = {addvalue[constvarkeys[i]]: feasible_constvalues[i]
+                              for i in np.where(changed_vals)}
+                feasibilities["constants"] = var_infeas
 
         if len(feasibilities) > 1:
             return feasibilities
