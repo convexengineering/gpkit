@@ -48,6 +48,22 @@ The output is
 
 .. literalinclude:: examples/simple_wing_output.txt
 
+Simple Beam
+===========
+In this example we consider a beam subjected to a uniformly distributed transverse force along its length. The beam has fixed geometry so we are not optimizing its shape, rather we are simply solving a discretization of the Euler-Bernoulli beam bending equations using GP.
+
+.. literalinclude:: examples/beam.py
+
+The output is
+
+.. literalinclude:: examples/beam_output.txt
+
+By plotting the deflection, we can see that the agreement between the analytical solution and the GP solution is good.
+
+.. figure:: examples/beam.png
+   :width: 500 px
+   :align: center
+
 .. Comments:
 
 ..
