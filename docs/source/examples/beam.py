@@ -1,0 +1,60 @@
+"""
+A simple beam example with fixed geometry. Solves the discretized
+Euler-Bernoulli beam equations for a constant distributed load
+"""
+import numpy as np
+import matplotlib.pyplot as plt
+from gpkit.shortcuts import *
+
+def beam(N=10, L=5., EI=1E4, P=100):
+
+    dx = Var("dx", L/(N-1), units="m")
+    EI = Var("EI", EI, units="N*m^2")
+
+    p = Vec(N, "p", units="N/m", label="Distributed load")
+    p = p.sub(p, P*np.ones(N))
+
+    V  = Vec(N, "V", units="N", label="Internal shear")
+    M  = Vec(N, "M", units="N*m", label="Internal moment")
+    th = Vec(N, "th", units="-", label="Slope")
+    w  = Vec(N, "w", units="m", label="Displacement")
+
+    eps = 1E-16 #an arbitrarily small positive number
+
+    substitutions = {var: eps for var in [V[-1], M[-1], th[0], w[0]]}
+
+    objective = w[-1]
+
+    constraints = [V.left[1:N]     >= V[1:N]    + 0.5*dx*(p.left[1:N]    + p[1:N]),
+                   M.left[1:N]     >= M[1:N]    + 0.5*dx*(V.left[1:N]    + V[1:N]),
+                   th.right[0:N-1] >= th[0:N-1] + 0.5*dx*(M.right[0:N-1] + M[0:N-1])/EI,
+                   w.right[0:N-1]  >= w[0:N-1]  + 0.5*dx*(th.right[0:N-1]+ th[0:N-1])
+                  ]
+
+    return Model(objective, constraints, substitutions)
+
+
+if __name__ == "__main__":
+
+    PLOT = True
+
+    N = 10 #  [-] grid size
+    L = 5. #   [m] beam length
+    EI = 1E4 # [N*m^2] elastic modulus * area moment of inertia
+    P = 100 #  [N/m] magnitude of distributed load 
+
+    m = beam(N, L, EI, P)
+    sol = m.solve(verbosity=1)
+
+    x = np.linspace(0, L, N) # position along beam
+    w_gp = sol("w") # deflection along beam
+    w_exact =  P/(24.*EI)* x**2 * (x**2  - 4*L*x + 6*L**2) # analytical soln
+
+    assert max(abs(w_gp - w_exact)) <= 1e-2
+
+    if PLOT:
+        plt.plot(x, w_gp, 'k', x, w_exact, 'b')
+        plt.xlabel('x')
+        plt.ylabel('Deflection')
+        plt.axis('equal')
+        plt.show()
