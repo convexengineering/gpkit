@@ -31,7 +31,7 @@ class NomialData(object):
             raise ValueError("creation of a NomialData requires exps and cs.")
 
         if simplify:
-            exps, cs = sort_and_simplify(exps, cs)
+            exps, cs = simplify_exps_and_cs(exps, cs)
         self.exps, self.cs = exps, cs
         self.any_nonpositive_cs = any(mag(c) <= 0 for c in self.cs)
         self.varlocs, self.varstrs = locate_vars(self.exps)
@@ -117,7 +117,7 @@ class NomialData(object):
         return True
 
 
-def sort_and_simplify(exps, cs, return_map=False):
+def simplify_exps_and_cs(exps, cs, return_map=False):
     """Reduces the number of monomials, and casts them to a sorted form.
 
     Arguments
@@ -165,11 +165,11 @@ def sort_and_simplify(exps, cs, return_map=False):
     if not return_map:
         return exps_, cs_
     else:
-        mmap = [None]*len(cs)
+        mmap = [HashVector() for c in cs_]
         for i, item in enumerate(matches.items()):
             exp, c = item
             for j in expmap[exp]:
-                mmap[j] = (i, expmap[exp][j]/c)
+                mmap[i][j] = mag(expmap[exp][j]/c)
         return exps_, cs_, mmap
 
 

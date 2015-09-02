@@ -1,4 +1,4 @@
-"""Unit tests for Constraint, MonoEQConstraint and SignomialConstraint"""
+"""Unit tests for Constraint, MonoEQConstraint and signomialConstraint"""
 import unittest
 from gpkit import Variable, SignomialsEnabled
 from gpkit.nomials import Posynomial
@@ -96,7 +96,7 @@ class TestMonoEQConstraint(unittest.TestCase):
 
 
 class TestSignomialConstraint(unittest.TestCase):
-    """Test signomial constraints"""
+    """Test Signomial constraints"""
     def test_init(self):
         "Test initialization and types"
         D = Variable('D', units="N")
@@ -105,24 +105,6 @@ class TestSignomialConstraint(unittest.TestCase):
             sc = (D >= x1 + x2 - x3)
         self.assertTrue(isinstance(sc, SignomialConstraint))
         self.assertFalse(isinstance(sc, Posynomial))
-
-    def test_sub(self):
-        """Test signomial constraint substitution"""
-        D = Variable('D', units="N")
-        x = Variable('x', units="N")
-        y = Variable('y', units="N")
-        a = Variable('a')
-        with SignomialsEnabled():
-            sc = (D >= a*x + (1 - a)*y)
-        subbed = sc.sub({a: 0.1})
-        self.assertTrue(isinstance(subbed, Constraint))
-        self.assertEqual(subbed, 0.1*x/D + 0.9*y/D)  # <= 1
-        with SignomialsEnabled():
-            subbed = sc.sub({a: 2.0})
-        self.assertTrue(isinstance(subbed, SignomialConstraint))
-        with SignomialsEnabled():
-            test_sig = (2*x - y - D)
-        self.assertEqual(subbed, test_sig)  # <= 0
 
 
 TESTS = [TestConstraint, TestMonoEQConstraint, TestSignomialConstraint]

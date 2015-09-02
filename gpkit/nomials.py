@@ -15,7 +15,7 @@ from . import DimensionalityError
 
 
 class Signomial(NomialData):
-    """A representation of a signomial.
+    """A representation of a Signomial.
 
         Arguments
         ---------
@@ -24,7 +24,7 @@ class Signomial(NomialData):
         cs: tuple
             Coefficient values for each monomial term
         require_positive: bool
-            If True and signomials not enabled, c <= 0 will raise ValueError
+            If True and Signomials not enabled, c <= 0 will raise ValueError
 
         Returns
         -------
@@ -200,7 +200,7 @@ class Signomial(NomialData):
         val : number (optional)
             If the substitutions entry is a single key, val holds the value
         require_positive : boolean (optional, default is True)
-            Controls whether the returned value can be a signomial.
+            Controls whether the returned value can be a Signomial.
 
         Returns
         -------
@@ -659,30 +659,5 @@ class SignomialConstraint(Signomial):
 
         self.oper_s = " >= " if oper_ge else " <= "
         self.oper_l = r" \geq " if oper_ge else r" \leq "
-
-    def sub(self, substitutions, *args, **kwargs):
-        """Returns a signomial constraint with substitued values.
-        
-        Arguments
-        ---------
-        substitutions : dict or key
-            Either a dictionary whose keys are strings, Variables, or VarKeys,
-            and whose values are numbers, or a string, Variable or Varkey.
-        args, kwargs:
-            same as Signomial.sub
-
-        Returns
-        -------
-        Constraint, if substitution makes the constraint Posynomial.
-        SignomialConstraint, otherwise.
-        """
-        if 'require_positive' not in kwargs:
-            kwargs['require_positive'] = False
-        s = super(SignomialConstraint, self).sub(substitutions,
-                                                 *args, **kwargs)
-        posy, negy = s._posy_negy()
-        if isinstance(negy, Monomial):
-            return Constraint(negy, posy)
-        return SignomialConstraint(negy, posy)
 
 from .substitution import substitution, get_constants

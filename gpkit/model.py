@@ -25,8 +25,9 @@ from .nomial_data import NomialData
 
 from .solution_array import parse_result
 from .substitution import get_constants, separate_subs
-from .substitution import simplify_and_mmap
+from .substitution import substitution
 from .small_scripts import flatten
+from .nomial_data import simplify_exps_and_cs
 
 try:
     from IPython.parallel import Client
@@ -124,30 +125,30 @@ class Model(object):
         return posynomials
 
     @property
-    def unsubbed(self):
+    def presubbed(self):
         return NomialData(nomials=self.signomials)
 
     @property
     def allsubs(self):
         "All substitutions currently in the Model."
-        subs = self.unsubbed.values
+        subs = self.presubbed.values
         subs.update(self.substitutions)
         return subs
 
     @property
     def signomials_et_al(self):
-        "Get signomials, unsubbed, allsubs in one pass."
+        "Get signomials, presubbed, allsubs in one pass."
         signomials = self.signomials
-        unsubbed = NomialData(nomials=signomials)
-        allsubs = unsubbed.values
+        presubbed = NomialData(nomials=signomials)
+        allsubs = presubbed.values
         allsubs.update(self.substitutions)
-        return signomials, unsubbed, allsubs
+        return signomials, presubbed, allsubs
 
     @property
     def constants(self):
         "All constants (non-sweep substitutions) currently in the Model."
-        _, unsubbed, allsubs = self.signomials_et_al
-        return get_constants(unsubbed, allsubs)
+        _, presubbed, allsubs = self.signomials_et_al
+        return get_constants(presubbed, allsubs)
 
     def __add__(self, other):
         if isinstance(other, Model):
@@ -284,8 +285,9 @@ class Model(object):
         ValueError if programType and model constraints don't match.
         RuntimeWarning if an error occurs in solving or parsing the solution.
         """
-        signomials, unsubbed, allsubs = self.signomials_et_al
-        sweep, linkedsweep, constants = separate_subs(unsubbed, allsubs)
+        signomials, presubbed, allsubs = self.signomials_et_al
+        presubbed.signomials = signomials
+        sweep, linkedsweep, constants = separate_subs(presubbed, allsubs)
         solution = SolutionArray()
         kwargs.update({"solver": solver})
         kwargs.update({"verbosity": verbosity - 1})
@@ -313,13 +315,13 @@ class Model(object):
                 this_pass.update(linked)
                 constants_ = constants
                 constants_.update(this_pass)
-                signomials_, unsubbed.mmaps = simplify_and_mmap(signomials,
+                signomials_, presubbed.smaps = simplify_and_mmap(signomials,
                                                                 constants_)
                 program, solvefn = form_program(programType, signomials_,
                                                 verbosity=verbosity-1)
                 try:
                     result = solvefn(*args, **kwargs)
-                    sol = parse_result(result, constants_, unsubbed,
+                    sol = parse_result(result, constants_, presubbed,
                                        sweep, linkedsweep)
                     return program, sol
                 except (RuntimeWarning, ValueError):
@@ -341,13 +343,13 @@ class Model(object):
                                          " To ignore such failures, solve with"
                                          " skipfailures=True.")
         else:
-            signomials, unsubbed.mmaps = simplify_and_mmap(signomials,
+            signomials, presubbed.smaps = simplify_and_mmap(signomials,
                                                            constants)
             # NOTE: SIDE EFFECTS
             self.program, solvefn = form_program(programType, signomials,
                                                  verbosity=verbosity-1)
             result = solvefn(*args, **kwargs)
-            solution.append(parse_result(result, constants, unsubbed))
+            solution.append(parse_result(result, constants, presubbed))
         solution.program = self.program
         solution.toarray()
         self.solution = solution  # NOTE: SIDE EFFECTS
@@ -423,7 +425,7 @@ class Model(object):
         >>> m.solve()
         """
         feasibilities = {}
-        signomials, unsubbed, allsubs = self.signomials_et_al
+        signomials, presubbed, allsubs = self.signomials_et_al
 
         if all(isinstance(s, Posynomial) for s in signomials):
             if verbosity > 0:
@@ -446,11 +448,11 @@ class Model(object):
                     print("  constraints : %s" % con_infeas)
                 feasibilities["constraints"] = con_infeas
 
-        constants = get_constants(unsubbed, allsubs)
+        constants = get_constants(presubbed, allsubs)
         if constvars:
             constvars = set(constvars)
             # get varkey versions
-            constvars = get_constants(unsubbed.varkeys, unsubbed.varlocs,
+            constvars = get_constants(presubbed.varkeys, presubbed.varlocs,
                                       dict(zip(constvars, constvars)))
             # filter constants
             constants = {k: v for k, v in constants.items() if k in constvars}
@@ -535,3 +537,53 @@ def form_program(programType, signomials, verbosity=2):
         return sp, sp.localsolve
     else:
         raise ValueError("unknown program type %s." % programType)
+
+
+def simplify_and_mmap(signomials, subs):
+    """Simplifies a list of signomials and returns them with their mmaps.
+
+    Arguments
+    ---------
+    signomials : list of Signomials
+
+    subs : dict
+        Substitutions to do before simplifying.
+
+    Returns
+    -------
+    signomials : list of simplified Signomials
+        Signomials with cs that are solely nans and/or zeroes are removed.
+
+    mmaps : Map from initial monomials to substitued and simplified one.
+            See small_scripts.sort_and_simplify for more details.
+    """
+    signomials_, smaps = [], []
+    for s in signomials:
+        _, exps, cs, _ = substitution(s, subs)
+        # remove any cs that are just nans and/or 0s
+        notnan = ~np.isnan(cs)
+        if np.any(notnan) and np.any(cs[notnan] != 0):
+            exps, cs, smap = simplify_exps_and_cs(exps, cs, return_map=True)
+            if s.any_nonpositive_cs:
+                negative_c_count = (cs <= 0).sum()
+                if negative_c_count == 0:
+                    raise RuntimeWarning("""Infeasible SignomialConstraint.
+
+    %s became infeasible  when all negative terms were substituted out.""" % s)
+                elif negative_c_count == 1:
+                    # turn it into a Posynomial constraint
+                    idx = cs.argmin()
+                    div_c = cs[idx]
+                    exps = list(exps)
+                    div_exp = exps.pop(idx)
+                    div_mmap = smap.pop(idx)
+                    cs /= -cs[idx]
+                    cs = np.hstack((cs[:idx], cs[idx+1:]))
+                    exps = tuple(exp-div_exp for exp in exps)
+                    smap = [mmap-div_mmap for mmap in smap]
+            signomials_.append(Signomial(exps, cs, simplify=False))
+            smaps.append(smap)
+        else:
+            smaps.append([])
+
+    return signomials_, smaps

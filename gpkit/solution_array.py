@@ -190,7 +190,7 @@ def results_table(data, title, minval=0, printunits=True, fixedcols=True,
     return "\n".join(lines)
 
 
-def parse_result(result, constants, unsubbed, sweep={}, linkedsweep={},
+def parse_result(result, constants, presubbed, sweep={}, linkedsweep={},
                  freevar_sensitivity_tolerance=1e-4,
                  localmodel_sensitivity_requirement=0.1):
     "Parses a GP-like result dict into a SolutionArray-like dict."
@@ -210,32 +210,25 @@ def parse_result(result, constants, unsubbed, sweep={}, linkedsweep={},
     #  smaller post-substitution list of monomials, so we need to map that
     #  back to the pre-substitution list.
     #
-    #  Each "mmap" is a list whose elements are either None
-    #  (indicating that the monomial was removed after subsitution)
-    #  or a tuple with:
-    #    the index of the monomial they became after subsitution,
-    #    the percentage of that monomial that they formed
-    #      (equal to their c/that monomial's final c)
+    #  Each "smap" is a list of HashVectors (mmaps),
+    #    whose keys are monomial indexes pre-substitution,
+    #    and whose values are the percentage of the simplified monomial's
+    #    coefficient that came from that particular parent
     nu = result["sensitivities"]["monomials"]
-    if hasattr(unsubbed, "mmaps"):
-        nu_ = []
-        mons = 0
-        for mmap in unsubbed.mmaps:
-            max_idx = 0
-            for m_i in mmap:
-                if m_i is None:
-                    nu_.append(0)
-                else:
-                    idx, percentage = m_i
-                    nu_.append(percentage*nu[idx + mons])
-                    if idx > max_idx:
-                        max_idx = idx
-            mons += 1 + max_idx
-        nu = np.array(nu_)
-    sensitivities["monomials"] = nu
+    if hasattr(presubbed, "smaps"):
+        # HACK: simplified solves need a mutated presubbed, as created in Model
+        nu_ = np.zeros(len(presubbed.cs))
+        little_counter, big_counter = 0, 0
+        for j, smap in enumerate(presubbed.smaps):
+            for i, mmap in enumerate(smap):
+                for idx, percentage in mmap.items():
+                    nu_[idx + big_counter] += percentage*nu[i + little_counter]
+            little_counter += len(smap)
+            big_counter += len(presubbed.signomials[j].cs)
+    sensitivities["monomials"] = nu_
 
-    sens_vars = {var: sum([unsubbed.exps[i][var]*nu_[i] for i in locs])
-                 for (var, locs) in unsubbed.varlocs.items()}
+    sens_vars = {var: sum([presubbed.exps[i][var]*nu_[i] for i in locs])
+                 for (var, locs) in presubbed.varlocs.items()}
     sensitivities["variables"] = sens_vars
 
     # free-variable sensitivities must be <= some epsilon
@@ -252,7 +245,7 @@ def parse_result(result, constants, unsubbed, sweep={}, linkedsweep={},
 
     # vectorvar substitution
     veckeys = set()
-    for var in unsubbed.varlocs:
+    for var in presubbed.varlocs:
         if "idx" in var.descr and "shape" in var.descr:
             descr = dict(var.descr)
             idx = descr.pop("idx")

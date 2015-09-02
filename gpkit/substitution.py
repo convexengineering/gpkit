@@ -5,7 +5,6 @@ import numpy as np
 
 from collections import defaultdict, Iterable
 
-from .nomials import Signomial
 from .small_classes import Numbers, Strings, Quantity
 from .small_classes import HashVector
 from .nomials import Monomial
@@ -14,7 +13,6 @@ from .variables import VectorVariable
 
 from .small_scripts import is_sweepvar
 from .small_scripts import mag
-from .nomial_data import sort_and_simplify
 
 from . import DimensionalityError
 
@@ -200,36 +198,3 @@ def substitution(nomial, substitutions, val=None):
                 raise TypeError("could not substitute with value"
                                 " of type '%s'" % type(sub))
     return varlocs_, exps_, cs_, subs
-
-
-def simplify_and_mmap(signomials, subs):
-    """Simplifies a list of signomials and returns them with their mmaps.
-
-    Arguments
-    ---------
-    signomials : list of Signomials
-
-    subs : dict
-        Substitutions to do before simplifying.
-
-    Returns
-    -------
-    signomials : list of simplified Signomials
-        Signomials with cs that are solely nans and/or zeroes are removed.
-
-    mmaps : Map from initial monomials to substitued and simplified one.
-            See small_scripts.sort_and_simplify for more details.
-    """
-    signomials_, mmaps = [], []
-    for s in signomials:
-        _, exps, cs, _ = substitution(s, subs)
-        # remove any cs that are just nans and/or 0s
-        notnan = ~np.isnan(cs)
-        if np.any(notnan) and np.any(cs[notnan] != 0):
-            exps, cs, mmap = sort_and_simplify(exps, cs, return_map=True)
-            signomials_.append(Signomial(exps, cs, simplify=False))
-            mmaps.append(mmap)
-        else:
-            mmaps.append([None]*len(cs))
-
-    return signomials_, mmaps

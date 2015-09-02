@@ -165,8 +165,8 @@ ipython/IPython/hooks.py:155
 
     import IPython
     if IPython.__version__ >= '0.11':
-        from gpkit import Signomial, PosyArray, GP
-        printable_types = [Signomial, PosyArray, GP]
+        from gpkit import signomial, PosyArray, GP
+        printable_types = [signomial, PosyArray, GP]
 
         plaintext_formatter = ip.display_formatter.formatters['text/plain']
 
