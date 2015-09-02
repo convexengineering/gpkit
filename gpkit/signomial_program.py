@@ -127,8 +127,7 @@ class SignomialProgram(object):
             except (RuntimeWarning, ValueError):
                 # TODO: should we add the nearest_feasible gp to the program?
                 # TODO: should we count it as an iteration?
-                cost, constraints = feasibility_model(gp, "max")
-                nearest_feasible = GeometricProgram(cost, constraints)
+                nearest_feasible = feasibility_model(gp, "max")
                 result = nearest_feasible.solve(verbosity=verbosity-1)
                 result["cost"] = None
 

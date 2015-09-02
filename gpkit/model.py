@@ -28,6 +28,7 @@ from .solution_array import parse_result
 from .substitution import get_constants, separate_subs
 from .substitution import simplify_and_mmap
 from .small_scripts import flatten
+from .feasibility import feasibility_model
 
 try:
     from IPython.parallel import Client
@@ -248,7 +249,7 @@ class Model(object):
                                " Signomial."):
                 raise ValueError("""No Signomials remained after substitution.
 
-    'Model.localsolve()' can only be called on models containing Signomials,
+    'Model.localsolve()' can only be called on models with Signomials,
     since such models have only local solutions. Models without Signomials have
     global solutions, and can be solved with 'Model.solve()'.""")
             raise
@@ -421,20 +422,55 @@ class Model(object):
         >>> m.substitutions.update(feas["constants"])
         >>> m.solve()
         """
-        feasibilities = {}
         signomials, unsubbed, allsubs = self.signomials_et_al
 
+        try:
+            m.gp()
+        except ValueError as err:
+            if err.message == ("GeometricPrograms cannot contain Signomials"):
+                raise ValueError("""Signomials remained after substitution.
+
+    'Model.feasibility()' can only be called on Models without Signomials,
+    because only those Models guarantee global feasibilities. Models with
+    Signomials have only local feasibilities, which can be found with
+    'Model.localfeasibility()'.""")
+            raise
+        else:
+            return self._feasibility(search, constvars, verbosity)
+
+    def localfeasibility(self,
+                         search=["overall", "constraints", "constants"],
+                         constvars=None, verbosity=0):
+        try:
+            m.sp()
+        except ValueError as err:
+            if err.message == ("SignomialPrograms must contain at least one"
+                               " Signomial."):
+                raise ValueError("""No Signomials remained after substitution.
+
+    'Model.localfeasibility()' can only be called on models containing
+    Signomials, since such models have only local feasibilities. Models without
+    Signomials have global feasibilities, which can be found with
+    'Model.feasibility()'.""")
+            raise
+        else:
+            return self._feasibility(search, constvars, verbosity)
+
+    def _feasibility(self, search, constvars, verbosity):
+        signomials, unsubbed, allsubs = self.signomials_et_al
+        feasibilities = {}
+
         if "overall" in search:
-            cost, constraints = feasibility_model(self, "max")
-            m = Model(cost, constraints, allsubs)
+            m = feasibility_model(self, "max")
+            m.substitutions = allsubs
             infeasibility = m.solve(verbosity=verbosity-1)["cost"]
             feasibilities["overall"] = infeasibility
 
         if "constraints" in search:
-            cost, constraints, slackvars = feasibility_model(self, "product")
-            m = Model(cost, constraints, allsubs)
-            result = m.gp().solve(verbosity=verbosity-1)
-            con_infeas = [result["variables"][sv.varkey] for sv in slackvars]
+            m = feasibility_model(self, "product")
+            m.substitutions = allsubs
+            result = m.solve(verbosity=verbosity-1)
+            con_infeas = [result["variables"][sv.varkey] for sv in m.slackvars]
             feasibilities["constraints"] = con_infeas
 
         if "constants" in search:
@@ -448,14 +484,11 @@ class Model(object):
                 constants = {k: v for k, v in constants.items()
                              if k in constvars}
             if constants:
-                (cost, constraints, addvalue, constvars, constvarkeys,
-                 constvalues) = feasibility_model(self, "constants",
-                                                  constants=constants)
-                m = Model(cost, constraints)  # no constants anymore!
+                m = feasibility_model(self, "constants", constants=constants)
                 sol = m.solve(verbosity=verbosity-1)
-                feasible_constvalues = sol(constvars).tolist()
-                changed_vals = feasible_constvalues != np.array(constvalues)
-                var_infeas = {addvalue[constvarkeys[i]]: feasible_constvalues[i]
+                feasiblevalues = sol(m.constvars).tolist()
+                changed_vals = feasiblevalues != np.array(m.constvalues)
+                var_infeas = {m.addvalue[m.constvarkeys[i]]: feasiblevalues[i]
                               for i in np.where(changed_vals)}
                 feasibilities["constants"] = var_infeas
 

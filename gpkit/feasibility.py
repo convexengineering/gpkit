@@ -39,6 +39,7 @@ def feasibility_model(model, flavour="max", varname=None, constants=None):
 
     cost = model.cost
     constraints = model.constraints
+    programType = model.__class__
 
     if flavour == "max":
         slackvar = Variable(varname)
@@ -46,7 +47,7 @@ def feasibility_model(model, flavour="max", varname=None, constants=None):
         constraints = ([1/slackvar] +  # slackvar > 1
                        [constraint/slackvar  # constraint <= sv
                         for constraint in constraints])
-        return cost, constraints
+        prog = programType(cost, constraints)
 
     elif flavour == "product":
         slackvars = VectorVariable(len(constraints), varname)
@@ -54,7 +55,8 @@ def feasibility_model(model, flavour="max", varname=None, constants=None):
         constraints = ((1/slackvars).tolist() +  # slackvars > 1
                        [constraint/slackvars[i]  # constraint <= sv
                         for i, constraint in enumerate(constraints)])
-        return cost, constraints, slackvars
+        prog = programType(cost, constraints)
+        prog.slackvars = slackvars
 
     elif flavour == "constants":
         if not constants:
@@ -79,6 +81,13 @@ def feasibility_model(model, flavour="max", varname=None, constants=None):
         constraints = ([slackb >= 1,
                         constvalues/slackb <= constvars,
                         constvars <= constvalues*slackb])
-        return cost, constraints, addvalue, constvars, constvarkeys, constvalues
+        prog = programType(cost, constraints)
+        prog.addvalue = addvalue
+        prog.constvars = constvars
+        prog.constvarkeys = constvarkeys
+        prog.constvalues = constvalues
+
     else:
         raise ValueError("'%s' is not a flavour of feasibility." % flavour)
+
+    return prog
