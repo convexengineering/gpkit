@@ -53,36 +53,22 @@ class SignomialProgram(object):
         self.constraints = constraints
         self.signomials = [cost] + list(constraints)
 
-        self.posynomials, self.negynomials = [self.cost], [None]
+        self.posynomials, self.negynomials = [self.cost], [0]
         self.negvarkeys = set()
         for sig in self.constraints:
-            p_exps, p_cs = [], []
-            if isinstance(sig, Posynomial):
-                n_exps, n_cs = [{}], [1]  # add the 1 from the "<= 1"
+            if not sig.any_nonpositive_cs:
+                posy, negy = sig, 0
             else:
-                n_exps, n_cs = [], []
-            for c, exp in zip(sig.cs, sig.exps):
-                if c > 0:
-                    p_cs.append(c)
-                    p_exps.append(exp)
-                elif c < 0:
-                    n_cs.append(-c)
-                    n_exps.append(exp)
-                    self.negvarkeys.update(exp.keys())
-            if isinstance(sig, Posynomial):
-                posy = Posynomial(p_exps, p_cs) if p_cs != [] else None
-                negy = Posynomial(n_exps, n_cs) if n_cs != [1] else None
-                assert posy
-                assert not negy
-            else:
-                posy = Posynomial(p_exps, p_cs) if p_cs != [] else None
-                negy = Posynomial(n_exps, n_cs) if n_cs != [] else None
-                assert posy
-                assert negy
+                posy, negy = sig.posy_negy()
+                if len(negy.cs) == 1:
+                    raise ValueError("Signomial constraint has only one"
+                                     "negative monomial; it should have been"
+                                     "a Posynomial constraint.")
+                self.negvarkeys.update(negy.varlocs)
             self.posynomials.append(posy)
             self.negynomials.append(negy)
 
-        if not self.negvarkeys:
+        if not any(self.negvarkeys):
             raise ValueError("SignomialPrograms must contain at least one"
                              " Signomial.")
 
@@ -184,7 +170,7 @@ class SignomialProgram(object):
             x0.update({var: 1 for var in self.negvarkeys if var not in x0})
         posy_approxs = []
         for p, n in zip(self.posynomials, self.negynomials):
-            if n is None:
+            if n is 0:
                 posy_approx = p
             else:
                 posy_approx = p/n.mono_lower_bound(x0)

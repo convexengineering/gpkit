@@ -311,7 +311,7 @@ class Signomial(NomialData):
         units_tf = units.replace("frac", "tfrac").replace(r"\cdot", r"\cdot ")
         return " + ".join(sorted(mstrs)) + units_tf
 
-    def _posy_negy(self):
+    def posy_negy(self):
         """Get the positive and negative parts, both as Posynomials
 
         Returns
