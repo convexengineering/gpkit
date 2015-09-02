@@ -55,7 +55,7 @@ constraints += [D >= 0.5*rho*S*C_D*V**2,
                 W >= W_0 + W_w]
 
 
-def m():
+def model():
     return gpkit.Model(D, constraints)
 
 
