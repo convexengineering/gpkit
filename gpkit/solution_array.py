@@ -190,7 +190,7 @@ def results_table(data, title, minval=0, printunits=True, fixedcols=True,
     return "\n".join(lines)
 
 
-def parse_result(result, constants, presubbed, sweep={}, linkedsweep={},
+def parse_result(result, constants, beforesubs, sweep={}, linkedsweep={},
                  freevar_sensitivity_tolerance=1e-4,
                  localmodel_sensitivity_requirement=0.1):
     "Parses a GP-like result dict into a SolutionArray-like dict."
@@ -215,20 +215,20 @@ def parse_result(result, constants, presubbed, sweep={}, linkedsweep={},
     #    and whose values are the percentage of the simplified monomial's
     #    coefficient that came from that particular parent
     nu = result["sensitivities"]["monomials"]
-    if hasattr(presubbed, "smaps"):
-        # HACK: simplified solves need a mutated presubbed, as created in Model
-        nu_ = np.zeros(len(presubbed.cs))
+    if hasattr(beforesubs, "smaps"):
+        # HACK: simplified solves need a mutated beforesubs, as created in Model
+        nu_ = np.zeros(len(beforesubs.cs))
         little_counter, big_counter = 0, 0
-        for j, smap in enumerate(presubbed.smaps):
+        for j, smap in enumerate(beforesubs.smaps):
             for i, mmap in enumerate(smap):
                 for idx, percentage in mmap.items():
                     nu_[idx + big_counter] += percentage*nu[i + little_counter]
             little_counter += len(smap)
-            big_counter += len(presubbed.signomials[j].cs)
+            big_counter += len(beforesubs.signomials[j].cs)
     sensitivities["monomials"] = nu_
 
-    sens_vars = {var: sum([presubbed.exps[i][var]*nu_[i] for i in locs])
-                 for (var, locs) in presubbed.varlocs.items()}
+    sens_vars = {var: sum([beforesubs.exps[i][var]*nu_[i] for i in locs])
+                 for (var, locs) in beforesubs.varlocs.items()}
     sensitivities["variables"] = sens_vars
 
     # free-variable sensitivities must be <= some epsilon
@@ -245,7 +245,7 @@ def parse_result(result, constants, presubbed, sweep={}, linkedsweep={},
 
     # vectorvar substitution
     veckeys = set()
-    for var in presubbed.varlocs:
+    for var in beforesubs.varlocs:
         if "idx" in var.descr and "shape" in var.descr:
             descr = dict(var.descr)
             idx = descr.pop("idx")

@@ -125,30 +125,30 @@ class Model(object):
         return posynomials
 
     @property
-    def presubbed(self):
+    def beforesubs(self):
         return NomialData(nomials=self.signomials)
 
     @property
     def allsubs(self):
         "All substitutions currently in the Model."
-        subs = self.presubbed.values
+        subs = self.beforesubs.values
         subs.update(self.substitutions)
         return subs
 
     @property
     def signomials_et_al(self):
-        "Get signomials, presubbed, allsubs in one pass."
+        "Get signomials, beforesubs, allsubs in one pass."
         signomials = self.signomials
-        presubbed = NomialData(nomials=signomials)
-        allsubs = presubbed.values
+        beforesubs = NomialData(nomials=signomials)
+        allsubs = beforesubs.values
         allsubs.update(self.substitutions)
-        return signomials, presubbed, allsubs
+        return signomials, beforesubs, allsubs
 
     @property
     def constants(self):
         "All constants (non-sweep substitutions) currently in the Model."
-        _, presubbed, allsubs = self.signomials_et_al
-        return get_constants(presubbed, allsubs)
+        _, beforesubs, allsubs = self.signomials_et_al
+        return get_constants(beforesubs, allsubs)
 
     def __add__(self, other):
         if isinstance(other, Model):
@@ -285,9 +285,9 @@ class Model(object):
         ValueError if programType and model constraints don't match.
         RuntimeWarning if an error occurs in solving or parsing the solution.
         """
-        signomials, presubbed, allsubs = self.signomials_et_al
-        presubbed.signomials = signomials
-        sweep, linkedsweep, constants = separate_subs(presubbed, allsubs)
+        signomials, beforesubs, allsubs = self.signomials_et_al
+        beforesubs.signomials = signomials
+        sweep, linkedsweep, constants = separate_subs(beforesubs, allsubs)
         solution = SolutionArray()
         kwargs.update({"solver": solver})
         kwargs.update({"verbosity": verbosity - 1})
@@ -315,13 +315,13 @@ class Model(object):
                 this_pass.update(linked)
                 constants_ = constants
                 constants_.update(this_pass)
-                signomials_, presubbed.smaps = simplify_and_mmap(signomials,
+                signomials_, beforesubs.smaps = simplify_and_mmap(signomials,
                                                                 constants_)
                 program, solvefn = form_program(programType, signomials_,
                                                 verbosity=verbosity-1)
                 try:
                     result = solvefn(*args, **kwargs)
-                    sol = parse_result(result, constants_, presubbed,
+                    sol = parse_result(result, constants_, beforesubs,
                                        sweep, linkedsweep)
                     return program, sol
                 except (RuntimeWarning, ValueError):
@@ -343,13 +343,13 @@ class Model(object):
                                          " To ignore such failures, solve with"
                                          " skipfailures=True.")
         else:
-            signomials, presubbed.smaps = simplify_and_mmap(signomials,
+            signomials, beforesubs.smaps = simplify_and_mmap(signomials,
                                                            constants)
             # NOTE: SIDE EFFECTS
             self.program, solvefn = form_program(programType, signomials,
                                                  verbosity=verbosity-1)
             result = solvefn(*args, **kwargs)
-            solution.append(parse_result(result, constants, presubbed))
+            solution.append(parse_result(result, constants, beforesubs))
         solution.program = self.program
         solution.toarray()
         self.solution = solution  # NOTE: SIDE EFFECTS
@@ -425,7 +425,7 @@ class Model(object):
         >>> m.solve()
         """
         feasibilities = {}
-        signomials, presubbed, allsubs = self.signomials_et_al
+        signomials, beforesubs, allsubs = self.signomials_et_al
 
         if all(isinstance(s, Posynomial) for s in signomials):
             if verbosity > 0:
@@ -448,11 +448,11 @@ class Model(object):
                     print("  constraints : %s" % con_infeas)
                 feasibilities["constraints"] = con_infeas
 
-        constants = get_constants(presubbed, allsubs)
+        constants = get_constants(beforesubs, allsubs)
         if constvars:
             constvars = set(constvars)
             # get varkey versions
-            constvars = get_constants(presubbed.varkeys, presubbed.varlocs,
+            constvars = get_constants(beforesubs.varkeys, beforesubs.varlocs,
                                       dict(zip(constvars, constvars)))
             # filter constants
             constants = {k: v for k, v in constants.items() if k in constvars}

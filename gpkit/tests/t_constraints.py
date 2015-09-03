@@ -1,4 +1,4 @@
-"""Unit tests for Constraint, MonoEQConstraint and signomialConstraint"""
+"""Unit tests for Constraint, MonoEQConstraint and SignomialConstraint"""
 import unittest
 from gpkit import Variable, SignomialsEnabled
 from gpkit.nomials import Posynomial

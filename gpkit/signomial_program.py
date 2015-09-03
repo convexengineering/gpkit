@@ -62,13 +62,13 @@ class SignomialProgram(object):
                 posy, negy = sig.posy_negy()
                 if len(negy.cs) == 1:
                     raise ValueError("Signomial constraint has only one"
-                                     "negative monomial; it should have been"
-                                     "a Posynomial constraint.")
+                                     " negative monomial; it should have been"
+                                     " a Posynomial constraint.")
                 self.negvarkeys.update(negy.varlocs)
             self.posynomials.append(posy)
             self.negynomials.append(negy)
 
-        if not any(self.negvarkeys):
+        if not self.negvarkeys:
             raise ValueError("SignomialPrograms must contain at least one"
                              " Signomial.")
 
