@@ -436,11 +436,15 @@ class Model(object):
     'Model.localfeasibility()'.""")
             raise
         else:
-            return self._feasibility(search, constvars, verbosity)
+            return self._feasibility("gp", search, constvars, verbosity)
 
     def localfeasibility(self,
                          search=["overall", "constraints", "constants"],
                          constvars=None, verbosity=0):
+        """Searches for locally feasibile versions of the Model.
+
+        For details, see the docstring for Model.feasibility.
+        """
         try:
             m.sp()
         except ValueError as err:
@@ -454,22 +458,22 @@ class Model(object):
     'Model.feasibility()'.""")
             raise
         else:
-            return self._feasibility(search, constvars, verbosity)
+            return self._feasibility("sp", search, constvars, verbosity)
 
-    def _feasibility(self, search, constvars, verbosity):
+    def _feasibility(self, programtype, search, constvars, verbosity):
         signomials, unsubbed, allsubs = self.signomials_et_al
         feasibilities = {}
 
         if "overall" in search:
             m = feasibility_model(self, "max")
             m.substitutions = allsubs
-            infeasibility = m.solve(verbosity=verbosity-1)["cost"]
+            infeasibility = m._solve(programtype, None, verbosity-1, False)["cost"]
             feasibilities["overall"] = infeasibility
 
         if "constraints" in search:
             m = feasibility_model(self, "product")
             m.substitutions = allsubs
-            result = m.solve(verbosity=verbosity-1)
+            result = m._solve(programtype, None, verbosity-1, False)
             con_infeas = [result["variables"][sv.varkey] for sv in m.slackvars]
             feasibilities["constraints"] = con_infeas
 
@@ -485,7 +489,7 @@ class Model(object):
                              if k in constvars}
             if constants:
                 m = feasibility_model(self, "constants", constants=constants)
-                sol = m.solve(verbosity=verbosity-1)
+                sol = m._solve(programtype, None, verbosity-1, False)
                 feasiblevalues = sol(m.constvars).tolist()
                 changed_vals = feasiblevalues != np.array(m.constvalues)
                 var_infeas = {m.addvalue[m.constvarkeys[i]]: feasiblevalues[i]

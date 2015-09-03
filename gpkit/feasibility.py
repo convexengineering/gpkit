@@ -5,7 +5,7 @@ from .varkey import VarKey
 from .posyarray import PosyArray
 
 
-def feasibility_model(model, flavour="max", varname=None, constants=None):
+def feasibility_model(program, flavour="max", varname=None, constants=None):
     """Returns a new GP for the closest feasible point of the current GP.
 
     Arguments
@@ -18,28 +18,28 @@ def feasibility_model(model, flavour="max", varname=None, constants=None):
                           of [Boyd2007].
 
         "product" : Apply a unique slack to all constraints and minimize
-                    the product of those slacks. Useful for identifying the
-                    most problematic constraints. Described in Eqn. 11
-                    of [Boyd2007]
+                    the product of those slack variables.. Useful for
+                    identifying the most problematic constraints. Described in
+                    Eqn. 11 of [Boyd2007]
+
+        "constants" : Slack the constants of a problem and minimize the product
+                      of those slack variables.
 
     varname : str
         LaTeX name of slack variables.
 
-    *args, **kwargs
-        Passed on to GP initialization.
-
     Returns
     -------
-    cost : Posynomial
-    constraints : list (of lists) of Signomials
+    program : Program of the same type as the input
+              (Model, GeometricProgram, or SignomialProgram)
 
     [Boyd2007] : "A tutorial on geometric programming", Optim Eng 8:67-122
 
     """
 
-    cost = model.cost
-    constraints = model.constraints
-    programType = model.__class__
+    cost = program.cost
+    constraints = program.constraints
+    programType = program.__class__
 
     if flavour == "max":
         slackvar = Variable(varname)
