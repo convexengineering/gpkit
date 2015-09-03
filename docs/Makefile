@@ -182,3 +182,4 @@ examples:
 	python source/examples/simple_box.py > source/examples/simple_box_output.txt
 	python source/examples/water_tank.py > source/examples/water_tank_output.txt
 	python source/examples/simple_wing.py > source/examples/simple_wing_output.txt
+	python source/examples/beam.py > source/examples/beam_output.txt

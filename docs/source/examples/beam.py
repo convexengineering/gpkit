@@ -53,8 +53,13 @@ if __name__ == "__main__":
     assert max(abs(w_gp - w_exact)) <= 1e-2
 
     if PLOT:
-        plt.plot(x, w_gp, 'k', x, w_exact, 'b')
-        plt.xlabel('x')
-        plt.ylabel('Deflection')
+        x_exact = np.linspace(0, L, 1000)
+        w_exact =  P/(24.*EI)* x_exact**2 * (x_exact**2  - 4*L*x_exact + 6*L**2)
+        plt.plot(x, w_gp, color='red', linestyle='solid', marker='^',
+                markersize=8)
+        plt.plot(x_exact, w_exact, color='blue', linestyle='dashed')
+        plt.xlabel('x [m]')
+        plt.ylabel('Deflection [m]')
         plt.axis('equal')
+        plt.legend(['GP solution', 'Analytical solution'])
         plt.show()
