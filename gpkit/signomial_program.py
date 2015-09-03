@@ -5,7 +5,6 @@ from time import time
 from functools import reduce as functools_reduce
 from operator import mul
 
-from .nomials import Posynomial
 from .geometric_program import GeometricProgram
 
 from .substitution import get_constants
@@ -17,9 +16,9 @@ class SignomialProgram(object):
 
     Arguments
     ---------
-    cost : Constraint
-        Signomial to minimize when solving
-    constraints : list of Signomials
+    cost : Posynomial
+        Objective to minimize when solving
+    constraints : list of Constraint or SignomialConstraint objects
         Constraints to maintain when solving (implicitly Signomials <= 1)
     verbosity : int (optional)
         Currently has no effect: SignomialPrograms don't know anything new
@@ -54,21 +53,18 @@ class SignomialProgram(object):
         self.constraints = constraints
         self.signomials = [cost] + list(constraints)
 
-        self.posynomials, self.negynomials = [self.cost], [None]
+        self.posynomials, self.negynomials = [self.cost], [0]
         self.negvarkeys = set()
         for sig in self.constraints:
-            p_exps, p_cs = [], []
-            n_exps, n_cs = [{}], [1]  # add the 1 from the "<= 1" constraint
-            for c, exp in zip(sig.cs, sig.exps):
-                if c > 0:
-                    p_cs.append(c)
-                    p_exps.append(exp)
-                elif c < 0:
-                    n_cs.append(-c)
-                    n_exps.append(exp)
-                    self.negvarkeys.update(exp.keys())
-            posy = Posynomial(p_exps, p_cs) if p_cs != [] else None
-            negy = Posynomial(n_exps, n_cs) if n_cs != [1] else None
+            if not sig.any_nonpositive_cs:
+                posy, negy = sig, 0
+            else:
+                posy, negy = sig.posy_negy()
+                if len(negy.cs) == 1:
+                    raise ValueError("Signomial constraint has only one"
+                                     " negative monomial; it should have been"
+                                     " a Posynomial constraint.")
+                self.negvarkeys.update(negy.varlocs)
             self.posynomials.append(posy)
             self.negynomials.append(negy)
 
@@ -174,10 +170,10 @@ class SignomialProgram(object):
             x0.update({var: 1 for var in self.negvarkeys if var not in x0})
         posy_approxs = []
         for p, n in zip(self.posynomials, self.negynomials):
-            if n is None:
+            if n is 0:
                 posy_approx = p
             else:
-                posy_approx = p/n.mono_approximation(x0)
+                posy_approx = p/n.mono_lower_bound(x0)
             posy_approxs.append(posy_approx)
 
         gp = GeometricProgram(posy_approxs[0], posy_approxs[1:],

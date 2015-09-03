@@ -1,7 +1,8 @@
-"""Unit tests for classes Constraint and MonoEQConstraint"""
+"""Unit tests for Constraint, MonoEQConstraint and SignomialConstraint"""
 import unittest
-from gpkit import Variable
-from gpkit.nomials import Constraint, MonoEQConstraint, Posynomial
+from gpkit import Variable, SignomialsEnabled
+from gpkit.nomials import Posynomial
+from gpkit.nomials import Constraint, MonoEQConstraint, SignomialConstraint
 
 
 class TestConstraint(unittest.TestCase):
@@ -94,7 +95,19 @@ class TestMonoEQConstraint(unittest.TestCase):
         self.assertRaises(TypeError, MonoEQConstraint, x*y, x + y)
 
 
-TESTS = [TestConstraint, TestMonoEQConstraint]
+class TestSignomialConstraint(unittest.TestCase):
+    """Test Signomial constraints"""
+    def test_init(self):
+        "Test initialization and types"
+        D = Variable('D', units="N")
+        x1, x2, x3 = (Variable("x_%s" % i, units="N") for i in range(3))
+        with SignomialsEnabled():
+            sc = (D >= x1 + x2 - x3)
+        self.assertTrue(isinstance(sc, SignomialConstraint))
+        self.assertFalse(isinstance(sc, Posynomial))
+
+
+TESTS = [TestConstraint, TestMonoEQConstraint, TestSignomialConstraint]
 
 if __name__ == '__main__':
     from gpkit.tests.helpers import run_tests

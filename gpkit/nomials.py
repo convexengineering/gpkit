@@ -6,7 +6,6 @@ from .posyarray import PosyArray
 from .varkey import VarKey
 from .nomial_data import NomialData
 
-from .small_scripts import diff, mono_approx
 from .small_scripts import latex_num
 from .small_scripts import invalid_types_for_oper
 from .small_scripts import mag, unitstr
@@ -16,7 +15,7 @@ from . import DimensionalityError
 
 
 class Signomial(NomialData):
-    """A representation of a signomial.
+    """A representation of a Signomial.
 
         Arguments
         ---------
@@ -25,7 +24,7 @@ class Signomial(NomialData):
         cs: tuple
             Coefficient values for each monomial term
         require_positive: bool
-            If True and signomials not enabled, c <= 0 will raise ValueError
+            If True and Signomials not enabled, c <= 0 will raise ValueError
 
         Returns
         -------
@@ -72,7 +71,7 @@ class Signomial(NomialData):
                 # test for presence of length and identical lengths
                 assert len(cs) == len(exps)
                 exps_ = list(range(len(exps)))
-                if not isinstance(cs[0], Quantity):
+                if not all(isinstance(c, Quantity) for c in cs):
                     try:
                         cs = np.array(cs, dtype='float')
                     except ValueError:
@@ -145,27 +144,45 @@ class Signomial(NomialData):
         Arguments
         ---------
         wrt (Variable):
-            Variable to take derivative with respect to
+        Variable to take derivative with respect to
 
         Returns
         -------
         Signomial (or Posynomial or Monomial)
         """
-        if wrt in self.varstrs:
-            wrt = self.varstrs[wrt]
-        elif not isinstance(wrt, VarKey):
-            wrt = wrt.varkey
-        exps, cs = diff(self, wrt)
-        return Signomial(exps, cs, require_positive=False)
+        deriv = super(Signomial, self).diff(wrt)
+        return Signomial(exps=deriv.exps, cs=deriv.cs)
 
-    def mono_approximation(self, x0):
-        if isinstance(self, Monomial):
-            raise TypeError("making a Monomial approximation of %s"
-                            " is unnecessary; it's already a Monomial."
-                            "" % str(self))
-        else:
-            c, exp = mono_approx(self, get_constants(self, x0))
-            return Monomial(exp, c)
+    def mono_approximation(self, x_0):
+        """Monomial approximation about a point x_0
+
+        Arguments
+        ---------
+        x_0 (dict):
+            point to monomialize about
+
+        Returns
+        -------
+        Monomial (unless self(x_0) < 0, in which case a Signomial is returned)
+        """
+        if not x_0:
+            for i, exp in enumerate(self.exps):
+                if exp == {}:
+                    return Monomial({}, self.cs[i])
+        x_0 = get_constants(self, x_0)
+        exp = HashVector()
+        psub = self.sub(x_0)
+        if psub.varlocs:
+            raise ValueError("Variables %s remained after substituting x_0=%s"
+                             % (list(psub.varlocs), x_0))
+        p0 = psub.value  # includes any units
+        m0 = 1
+        for vk in self.varlocs:
+            e = mag(x_0[vk]*self.diff(vk).sub(x_0, require_positive=False).c/p0)
+            exp[vk] = e
+            m0 *= (x_0[vk])**e
+        return Monomial(exp, p0/mag(m0))
+
 
     def sub(self, substitutions, val=None, require_positive=True):
         """Returns a nomial with substitued values.
@@ -183,7 +200,7 @@ class Signomial(NomialData):
         val : number (optional)
             If the substitutions entry is a single key, val holds the value
         require_positive : boolean (optional, default is True)
-            Controls whether the returned value can be a signomial.
+            Controls whether the returned value can be a Signomial.
 
         Returns
         -------
@@ -221,14 +238,14 @@ class Signomial(NomialData):
         if isinstance(other, PosyArray):
             return NotImplemented
         else:
-            return Constraint(other, self, oper_ge=True)
+            return SignomialConstraint(other, self, oper_ge=True)
 
     def __ge__(self, other):
         if isinstance(other, PosyArray):
             return NotImplemented
         else:
             # by default all constraints take the form left >= right
-            return Constraint(self, other, oper_ge=True)
+            return SignomialConstraint(self, other, oper_ge=True)
 
     def __lt__(self, other):
         invalid_types_for_oper("<", self, other)
@@ -293,6 +310,28 @@ class Signomial(NomialData):
         units = unitstr(self.units, r"\mathrm{\left[ %s \right]}", "L~")
         units_tf = units.replace("frac", "tfrac").replace(r"\cdot", r"\cdot ")
         return " + ".join(sorted(mstrs)) + units_tf
+
+    def posy_negy(self):
+        """Get the positive and negative parts, both as Posynomials
+
+        Returns
+        -------
+        Posynomial, Posynomial:
+            p_pos and p_neg in (self = p_pos - p_neg) decomposition,
+        """
+        p_exp, p_cs, n_exp, n_cs = [], [], [], []
+        assert len(self.cs) == len(self.exps)   # assert before calling zip
+        for c, exp in zip(self.cs, self.exps):
+            if mag(c) > 0:
+                p_exp.append(exp)
+                p_cs.append(c)
+            elif mag(c) < 0:
+                n_exp.append(exp)
+                n_cs.append(-c)  # -c to keep posynomial
+            else:
+                raise ValueError("Unexpected c=%s in %s" % (c, self))
+        return (Posynomial(p_exp, p_cs) if p_cs else 0,
+                Posynomial(n_exp, n_cs) if n_cs else 0)
 
     # posynomial arithmetic
     def __add__(self, other):
@@ -414,7 +453,28 @@ class Posynomial(Signomial):
           These will be deprecated in the future, replaced with a single
           __init__ syntax, same as Signomial.
     """
-    pass
+    def __le__(self, other):
+        if isinstance(other, Numbers + (Monomial,)):
+            return Constraint(other, self, oper_ge=True)
+        else:
+            # fall back on other's __ge__
+            return NotImplemented
+
+    # Posynomial.__ge__ falls back on Signomial.__ge__
+
+    def mono_lower_bound(self, x_0):
+        """Monomial lower bound at a point x0
+
+        Arguments
+        ---------
+        x_0 (dict):
+            point to make lower bound exact
+
+        Returns
+        -------
+        Monomial
+        """
+        return self.mono_approximation(x_0)
 
 
 class Monomial(Posynomial):
@@ -444,6 +504,19 @@ class Monomial(Posynomial):
         else:
             return NotImplemented
 
+    # Monomial.__le__ falls back on Posynomial.__le__
+
+    def __ge__(self, other):
+        if isinstance(other, Numbers + (Monomial,)):
+            return Constraint(self, other, oper_ge=True)
+        else:
+            # fall back on other's __ge__
+            return NotImplemented
+
+    def mono_approximation(self, x0):
+        raise TypeError("Monomial approximation of %s is unnecessary - "
+                        "it's already a Monomial." % str(self))
+
 
 class Constraint(Posynomial):
     """A constraint of the general form monomial >= posynomial
@@ -451,8 +524,6 @@ class Constraint(Posynomial):
     Usually initialized via operator overloading, e.g. cc = (y**2 >= 1 + x)
     Additionally retains input format (lhs vs rhs) in self.left and self.right
     Form is self.left >= self.right.
-
-    TODO: this documentation needs to address Signomial Constraints.
     """
     def __str__(self):
         return str(self.left) + self.oper_s + str(self.right)
@@ -469,31 +540,20 @@ class Constraint(Posynomial):
 
         Arguments
         ---------
-        left: Signomial
-        right: Signomial
+        left: Monomial if oper_ge=True, else Posynomial
+        right: Posynomial if oper_ge=True, else Monomial
         oper_ge: bool
             If true, form is left >= right; otherwise, left <= right.
 
         Note: Constraints initialized via operator overloading always take
               the form left >= right, e.g. (x <= y) becomes (y >= x).
-
-        TODO: clarify how this __init__ handles Signomial constraints
-              (may want to create a SignomialConstraint class that does not
-               inherit from Posynomial and keeps left and right separate).
         """
-        left = Signomial(left)
-        right = Signomial(right)
-        from . import SIGNOMIALS_ENABLED
-
         pgt, plt = (left, right) if oper_ge else (right, left)
+        plt = Posynomial(plt)
+        pgt = Monomial(pgt)
 
-        if SIGNOMIALS_ENABLED and not isinstance(pgt, Monomial):
-            if plt.units:
-                p = (plt - pgt)/plt.units + 1.0
-            else:
-                p = (plt - pgt) + 1.0
-        else:
-            p = plt / pgt
+        p = plt / pgt
+
         if isinstance(p.cs, Quantity):
             try:
                 p = p.to('dimensionless')
@@ -503,22 +563,14 @@ class Constraint(Posynomial):
                                  " be converted into each other."
                                  "" % (plt.units, pgt.units))
 
-        plt.units = None if all(plt.exps) else plt.units
-        pgt.units = None if all(pgt.exps) else pgt.units
-
         for i, exp in enumerate(p.exps):
             if not exp:
                 if p.cs[i] < 1:
-                    if SIGNOMIALS_ENABLED:
-                        const = p.cs[i]
-                        p -= const
-                        p /= (1-const)
-                    else:
-                        coeff = float(1 - p.cs[i])
-                        p.cs = np.hstack((p.cs[:i], p.cs[i+1:]))
-                        p.exps = p.exps[:i] + p.exps[i+1:]
-                        p = p/coeff
-                elif p.cs[i] > 1 and not SIGNOMIALS_ENABLED:
+                    coeff = float(1 - p.cs[i])
+                    p.cs = np.hstack((p.cs[:i], p.cs[i+1:]))
+                    p.exps = p.exps[:i] + p.exps[i+1:]
+                    p = p/coeff
+                elif p.cs[i] > 1:
                     raise ValueError("infeasible constraint:"
                                      "constant term too large.")
 
@@ -557,5 +609,55 @@ class MonoEQConstraint(Constraint):
     def __bool__(self):
         return self.__nonzero__()
 
+
+class SignomialConstraint(Signomial):
+    """A constraint of the general form posynomial >= posynomial
+    Stored internally (exps, cs) as a single Signomial (0 >= self)
+    Usually initialized via operator overloading, e.g. cc = (y**2 >= 1 + x - y)
+    Additionally retains input format (lhs vs rhs) in self.left and self.right
+    Form is self.left >= self.right.
+    """
+    def __str__(self):
+        return str(self.left) + self.oper_s + str(self.right)
+
+    def __repr__(self):
+        return repr(self.left) + self.oper_s + repr(self.right)
+
+    def _latex(self, unused=None):
+        return self.left._latex() + self.oper_l + self.right._latex()
+
+    def __init__(self, left, right, oper_ge=True):
+        """Initialize a constraint of the form left >= right
+        (or left <= right, if oper_ge is False).
+
+        Arguments
+        ---------
+        left: Signomial
+        right: Signomial
+        oper_ge: bool
+            If true, form is left >= right; otherwise, left <= right.
+
+        Note: Constraints initialized via operator overloading always take
+              the form left >= right, e.g. (x <= y) becomes (y >= x).
+
+        Note: Unlike Constraints, SignomialConstraints have units.
+        """
+        left = Signomial(left)
+        right = Signomial(right)
+        pgt, plt = (left, right) if oper_ge else (right, left)
+
+        from . import SIGNOMIALS_ENABLED
+        if not SIGNOMIALS_ENABLED:
+            raise TypeError("Cannot initialize SignomialConstraint "
+                            "without SignomialsEnabled.")
+
+        p = plt - pgt
+
+        super(SignomialConstraint, self).__init__(p)
+        self.__class__ = SignomialConstraint  # TODO should not have to do this
+        self.left, self.right = left, right
+
+        self.oper_s = " >= " if oper_ge else " <= "
+        self.oper_l = r" \geq " if oper_ge else r" \leq "
 
 from .substitution import substitution, get_constants

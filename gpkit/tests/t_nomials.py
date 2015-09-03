@@ -216,6 +216,19 @@ class TestPosynomial(unittest.TestCase):
         self.assertEqual(len(p.varlocs['m']), 2)
         self.assertTrue(all(len(p.varlocs[key]) == 1 for key in 'ghv'))
 
+    def test_eq(self):
+        """Test Posynomial __eq__"""
+        x = Variable('x')
+        y = Variable('y')
+        self.assertTrue((1 + x) == (1 + x))
+        self.assertFalse((1 + x) == 2*(1 + x))
+        self.assertFalse((1 + x) == 0.5*(1 + x))
+        self.assertFalse((1 + x) == (1 + y))
+        x = Variable('x', value=3)
+        y = Variable('y', value=2)
+        self.assertEqual((1 + x**2).value, (4 + y + y**2).value)
+
+
     def test_simplification(self):
         "Make sure like monomial terms get automatically combined"
         x = Monomial('x')
@@ -264,22 +277,35 @@ class TestPosynomial(unittest.TestCase):
 
     def test_diff(self):
         "Test differentiation (!!)"
-        x = Monomial('x')
+        x = Variable('x')
         y = Variable('y')
         self.assertEqual((y**2).diff(y), 2*y)
         self.assertEqual((x + y**2).diff(y), 2*y)
+        self.assertEqual((x + y**2).diff('x'), 1)
         self.assertEqual((x + x*y**2).diff(y), 2*x*y)
+        self.assertEqual((2*y).diff(y), 2)
+        # test with units
+        x = Variable('x', units='ft')
+        d = (3*x**2).diff(x)
+        self.assertEqual(d, 6*x)
 
-    def test_monoapprox(self):
+    def test_mono_lower_bound(self):
         "Test monomial approximation"
-        x = Monomial('x')
-        y = Monomial('y')
+        x = Variable('x')
+        y = Variable('y')
         p = y**2 + 1
-        self.assertRaises(TypeError, lambda: y.mono_approximation({y: 1}))
-        self.assertEqual(p.mono_approximation({y: 1}), 2*y)
-        self.assertEqual(p.mono_approximation({y: 0}), y/y)
-        self.assertEqual((x*y**2 + 1).mono_approximation({y: 1, x: 1}),
+        self.assertRaises(TypeError, lambda: y.mono_lower_bound({y: 1}))
+        self.assertEqual(p.mono_lower_bound({y: 1}), 2*y)
+        self.assertEqual(p.mono_lower_bound({y: 0}), 1)
+        self.assertEqual((x*y**2 + 1).mono_lower_bound({y: 1, x: 1}),
                          2*y*x**0.5)
+        # test with units
+        d = Variable('d', units='ft')
+        h = Variable('h', units='ft')
+        p = (d*h**2 + h*d**2)
+        m = p.mono_lower_bound({d: 1, h: 1})
+        self.assertEqual(m, 2*(d*h)**1.5)
+
 
     def test_eq(self):
         """Test equality and inequality"""

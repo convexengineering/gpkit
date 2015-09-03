@@ -1,7 +1,8 @@
 """Test substitution capability across gpkit"""
 import unittest
 import numpy as np
-from gpkit import Variable, VectorVariable, Model
+from gpkit import SignomialsEnabled
+from gpkit import Variable, VectorVariable, Model, Signomial
 from gpkit.small_scripts import mag
 
 
@@ -95,6 +96,21 @@ class TestNomialSubs(unittest.TestCase):
         # and for vectors
         x = VectorVariable(3, 'x')
         self.assertEqual(x[1].sub(3), 3)
+
+    def test_signomial(self):
+        """Test Signomial substitution"""
+        D = Variable('D', units="N")
+        x = Variable('x', units="N")
+        y = Variable('y', units="N")
+        a = Variable('a')
+        with SignomialsEnabled():
+            sc = (a*x + (1 - a)*y - D)
+            subbed = sc.sub({a: 0.1})
+            self.assertEqual(subbed, 0.1*x + 0.9*y - D)
+            self.assertTrue(isinstance(subbed, Signomial))
+            subbed = sc.sub({a: 2.0})
+            self.assertTrue(isinstance(subbed, Signomial))
+            self.assertEqual(subbed, 2*x - y - D)
 
 
 class TestGPSubs(unittest.TestCase):
