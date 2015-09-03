@@ -142,7 +142,7 @@ class GeometricProgram(NomialData):
         soltime = time() - tic
         tic = time()
         if verbosity > 0:
-            print("Solving took %.3g seconds." % (time() - tic))
+            print("Solving took %.3g seconds." % (soltime,))
 
         result = {}
         # confirm lengths before calling zip
@@ -186,13 +186,14 @@ class GeometricProgram(NomialData):
             raise RuntimeWarning("final status of solver '%s' was '%s', "
                                  "not 'optimal'." %
                                  (solver, solver_out.get("status", None)) +
-                                 "\n\nTo generate a feasibility-finding"
-                                 " relaxed version of your\nGeometric Program,"
-                                 " run model.program.feasibility_search()."
                                  "\n\nThe infeasible solve's result is stored"
                                  " in the 'result' attribute\n"
                                  "(model.program.result)"
-                                 " and its raw output in 'solver_out'.")
+                                 " and its raw output in 'solver_out'."
+                                 "\n\nIf the problem was Primal Infeasible,"
+                                 " you can generate a feasibility-finding"
+                                 " relaxation of your\nModel with"
+                                 " model.feasibility().")
 
         self.check_solution(result["cost"], primal, nu, la)
 
@@ -253,53 +254,6 @@ class GeometricProgram(NomialData):
         if not _almost_equal(np.exp(dual_cost), cost):
             raise RuntimeWarning("Dual cost %s does not match primal"
                                  " cost %s" % (np.exp(dual_cost), cost))
-
-    def feasibility_search(self, flavour="max", varname=None, *args, **kwargs):
-        """Returns a new GP for the closest feasible point of the current GP.
-
-        Arguments
-        ---------
-        flavour : str
-            Specifies the objective function minimized in the search:
-
-            "max" (default) : Apply the same slack to all constraints and
-                              minimize that slack. Described in Eqn. 10
-                              of [Boyd2007].
-
-            "product" : Apply a unique slack to all constraints and minimize
-                        the product of those slacks. Useful for identifying the
-                        most problematic constraints. Described in Eqn. 11
-                        of [Boyd2007]
-
-        varname : str
-            LaTeX name of slack variables.
-
-        *args, **kwargs
-            Passed on to GP initialization.
-
-        [Boyd2007] : "A tutorial on geometric programming", Optim Eng 8:67-122
-
-        """
-
-        if flavour == "max":
-            slackvar = Variable(varname)
-            gp = GeometricProgram(slackvar,
-                                  [1/slackvar] +  # slackvar > 1
-                                  [constraint/slackvar # constraint <= sv
-                                   for constraint in self.constraints],
-                                  *args, **kwargs)
-        elif flavour == "product":
-            slackvars = VectorVariable(len(self.constraints), varname)
-            gp = GeometricProgram(np.prod(slackvars),
-                                  (1/slackvars).tolist() +  # slackvars > 1
-                                  [constraint/slackvars[i]  # constraint <= sv
-                                   for i, constraint in
-                                   enumerate(self.constraints)],
-                                  *args, **kwargs)
-        else:
-            raise ValueError("'%s' is an unknown flavour of feasibility." %
-                             flavour)
-        return gp
 
     def __repr__(self):
         return "gpkit.%s(\n%s)" % (self.__class__.__name__, str(self))

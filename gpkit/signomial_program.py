@@ -9,6 +9,7 @@ from .nomials import Posynomial
 from .geometric_program import GeometricProgram
 
 from .substitution import get_constants
+from .feasibility import feasibility_model
 
 
 class SignomialProgram(object):
@@ -123,7 +124,7 @@ class SignomialProgram(object):
             except (RuntimeWarning, ValueError):
                 # TODO: should we add the nearest_feasible gp to the program?
                 # TODO: should we count it as an iteration?
-                nearest_feasible = gp.feasibility_search(verbosity=verbosity-1)
+                nearest_feasible = feasibility_model(gp, "max")
                 result = nearest_feasible.solve(verbosity=verbosity-1)
                 result["cost"] = None
 
