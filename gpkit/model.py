@@ -548,25 +548,25 @@ def form_program(programType, signomials, verbosity=2):
         raise ValueError("unknown program type %s." % programType)
 
 
-def simplify_and_mmap(signomials, subs):
-    """Simplifies a list of signomials and returns them with their mmaps.
+def simplify_and_mmap(constraints, subs):
+    """Simplifies a list of constraints and returns them with their mmaps.
 
     Arguments
     ---------
-    signomials : list of Signomials
+    constraints : list of Signomials
     subs : dict
         Substitutions to do before simplifying.
 
     Returns
     -------
-    signomials : list of simplified Signomials
+    constraints : list of simplified Signomials
         Signomials with cs that are solely nans and/or zeroes are removed.
 
     mmaps : Map from initial monomials to substitued and simplified one.
             See small_scripts.sort_and_simplify for more details.
     """
     signomials_, smaps = [], []
-    for s in signomials:
+    for s in constraints:
         _, exps, cs, _ = substitution(s, subs)
         # remove any cs that are just nans and/or 0s
         notnan = ~np.isnan(cs)
