@@ -5,7 +5,6 @@ from time import time
 from functools import reduce as functools_reduce
 from operator import mul
 
-from .nomials import Posynomial
 from .geometric_program import GeometricProgram
 
 from .substitution import get_constants

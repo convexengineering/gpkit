@@ -13,10 +13,9 @@ from pprint import pformat
 from collections import defaultdict
 
 from .nomials import MonoEQConstraint
-from .nomials import Posynomial, Signomial
+from .nomials import Signomial
 from .geometric_program import GeometricProgram
 from .signomial_program import SignomialProgram
-from .posyarray import PosyArray
 from .solution_array import SolutionArray
 from .varkey import VarKey
 from . import SignomialsEnabled
@@ -127,6 +126,7 @@ class Model(object):
 
     @property
     def beforesubs(self):
+        "Get this Model's NomialData before any substitutuions"
         return NomialData(nomials=self.signomials)
 
     @property
@@ -554,7 +554,6 @@ def simplify_and_mmap(signomials, subs):
     Arguments
     ---------
     signomials : list of Signomials
-
     subs : dict
         Substitutions to do before simplifying.
 
@@ -582,7 +581,6 @@ def simplify_and_mmap(signomials, subs):
                 elif negative_c_count == 1:
                     # turn it into a Posynomial constraint
                     idx = cs.argmin()
-                    div_c = cs[idx]
                     exps = list(exps)
                     div_exp = exps.pop(idx)
                     div_mmap = smap.pop(idx)

@@ -226,8 +226,7 @@ class TestPosynomial(unittest.TestCase):
         self.assertFalse((1 + x) == (1 + y))
         x = Variable('x', value=3)
         y = Variable('y', value=2)
-        # TODO should the next line work?
-        # self.assertEqual(1 + x**2, 4 + y + y**2)
+        self.assertEqual((1 + x**2).value, (4 + y + y**2).value)
 
 
     def test_simplification(self):

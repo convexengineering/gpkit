@@ -153,34 +153,34 @@ class Signomial(NomialData):
         deriv = super(Signomial, self).diff(wrt)
         return Signomial(exps=deriv.exps, cs=deriv.cs)
 
-    def mono_approximation(self, x0):
-        """Monomial approximation about a point x0
+    def mono_approximation(self, x_0):
+        """Monomial approximation about a point x_0
 
         Arguments
         ---------
-        x0 (dict):
+        x_0 (dict):
             point to monomialize about
 
         Returns
         -------
-        Monomial (unless self(x0) < 0, in which case a Signomial is returned)
+        Monomial (unless self(x_0) < 0, in which case a Signomial is returned)
         """
-        if not x0:
+        if not x_0:
             for i, exp in enumerate(self.exps):
                 if exp == {}:
                     return Monomial({}, self.cs[i])
-        x0 = get_constants(self, x0)
+        x_0 = get_constants(self, x_0)
         exp = HashVector()
-        psub = self.sub(x0)
+        psub = self.sub(x_0)
         if psub.varlocs:
-            raise ValueError("Variables %s remained after substituting x0=%s"
-                             % (list(psub.varlocs), x0))
+            raise ValueError("Variables %s remained after substituting x_0=%s"
+                             % (list(psub.varlocs), x_0))
         p0 = psub.value  # includes any units
         m0 = 1
         for vk in self.varlocs:
-            e = mag(x0[vk]*self.diff(vk).sub(x0, require_positive=False).c/p0)
+            e = mag(x_0[vk]*self.diff(vk).sub(x_0, require_positive=False).c/p0)
             exp[vk] = e
-            m0 *= (x0[vk])**e
+            m0 *= (x_0[vk])**e
         return Monomial(exp, p0/mag(m0))
 
 
@@ -612,7 +612,7 @@ class MonoEQConstraint(Constraint):
 
 class SignomialConstraint(Signomial):
     """A constraint of the general form posynomial >= posynomial
-    Stored internally (exps, cs) as a single Signomial (self <= 0)
+    Stored internally (exps, cs) as a single Signomial (0 >= self)
     Usually initialized via operator overloading, e.g. cc = (y**2 >= 1 + x - y)
     Additionally retains input format (lhs vs rhs) in self.left and self.right
     Form is self.left >= self.right.

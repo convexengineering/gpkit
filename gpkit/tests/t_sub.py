@@ -110,8 +110,7 @@ class TestNomialSubs(unittest.TestCase):
             self.assertTrue(isinstance(subbed, Signomial))
             subbed = sc.sub({a: 2.0})
             self.assertTrue(isinstance(subbed, Signomial))
-            test_sig = (2*x - y - D)
-            self.assertEqual(subbed, test_sig)
+            self.assertEqual(subbed, 2*x - y - D)
 
 
 class TestGPSubs(unittest.TestCase):
