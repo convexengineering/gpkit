@@ -215,8 +215,8 @@ def parse_result(result, constants, beforesubs, sweep={}, linkedsweep={},
     #    and whose values are the percentage of the simplified monomial's
     #    coefficient that came from that particular parent
     nu = result["sensitivities"]["monomials"]
+    # HACK: simplified solves need a mutated beforesubs, as created in Model
     if hasattr(beforesubs, "smaps"):
-        # HACK: simplified solves need a mutated beforesubs, as created in Model
         nu_ = np.zeros(len(beforesubs.cs))
         little_counter, big_counter = 0, 0
         for j, smap in enumerate(beforesubs.smaps):

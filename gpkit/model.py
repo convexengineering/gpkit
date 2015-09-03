@@ -591,6 +591,8 @@ def simplify_and_mmap(signomials, subs):
             signomials_.append(Signomial(exps, cs, simplify=False))
             smaps.append(smap)
         else:
+            # This constraint is being removed; append an empty smap so that
+            # smaps keeps the same length as signomials.
             smaps.append([])
 
     return signomials_, smaps

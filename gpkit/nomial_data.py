@@ -137,8 +137,8 @@ def simplify_exps_and_cs(exps, cs, return_map=False):
         Exponents of simplified monomials.
     cs : array of floats or Quantities
         Coefficients of simplified monomials.
-    mmap : list of tuples
-        List for each original monomial of (destination index, fraction)
+    mmap : list of HashVectors
+        List for each new monomial of {originating indexes: fractions}
     """
     matches = defaultdict(float)
     if return_map:
