@@ -60,7 +60,7 @@ The output is
 
 By plotting the deflection, we can see that the agreement between the analytical solution and the GP solution is good.
 
-.. figure:: examples/beam.png
+.. figure:: examples/beam.svg
    :width: 500 px
    :align: center
 
