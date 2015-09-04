@@ -225,12 +225,7 @@ class Signomial(NomialData):
     def __ne__(self, other):
         return not super(Signomial, self).__eq__(other)
 
-    # constraint generation
     def __eq__(self, other):
-        # if at least one is a monomial, return a constraint
-        mons = Numbers + (Monomial,)
-        if isinstance(other, mons) and isinstance(self, mons):
-            return MonoEQConstraint(self, other)
         return super(Signomial, self).__eq__(other)
 
     def __le__(self, other):
@@ -502,6 +497,22 @@ class Monomial(Posynomial):
             return Monomial(self.exp*other, self.c**other)
         else:
             return NotImplemented
+
+    def __ne__(self, other):
+        "Inequality test"
+        if isinstance(other, Numbers):
+            # numeric comparison
+            return bool(self.exp) or self.value != other
+        return super(Monomial, self).__ne__(other)
+
+    def __eq__(self, other):
+        mons = Numbers + (Monomial,)
+        if isinstance(other, mons):
+            # if both are monomials, return a constraint
+            return MonoEQConstraint(self, other)
+        # fall back on Monomial __ne__ for boolean comparison
+        return not self.__ne__(other)
+
 
     # Monomial.__le__ falls back on Posynomial.__le__
 
