@@ -146,8 +146,7 @@ def substitution(nomial, substitutions, val=None):
     if nomial.units:
         cs_ = Quantity(cs_, nomial.cs.units)
     varlocs_ = defaultdict(list)
-    varlocs_.update({var: list(idxs)
-                     for (var, idxs) in nomial.varlocs.items()})
+    varlocs_.update({vk: list(idxs) for (vk, idxs) in nomial.varlocs.items()})
     for var, sub in subs.items():
         for i in nomial.varlocs[var]:
             x = exps_[i].pop(var)
