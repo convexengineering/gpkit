@@ -31,7 +31,7 @@ class Beam(Model):
         # shear and moment increase from tip to base (left > right)
         shear_eq = [V.left >= V + 0.5*dx*(p.left + p)]
         moment_eq = [M.left >= M + 0.5*dx*(V.left + V)]
-        # theta and displacement increase from base to tip (right > left)
+        # theta and displacement decrease from tip to base (right > left)
         theta_eq = [th.right >= th + 0.5*dx*(M.right + M)/EI]
         displ_eq = [w.right >= w + 0.5*dx*(th.right + th)]
         # minimize tip displacement (the last w)
