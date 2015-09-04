@@ -3,7 +3,6 @@ A simple beam example with fixed geometry. Solves the discretized
 Euler-Bernoulli beam equations for a constant distributed load
 """
 import numpy as np
-#import matplotlib.pyplot as plt
 from gpkit.shortcuts import *
 
 
@@ -51,6 +50,7 @@ if __name__ == "__main__":
     assert max(abs(w_gp - w_exact)) <= 1e-2
 
     if PLOT:
+        import matplotlib.pyplot as plt
         x_exact = np.linspace(0, L, 1000)
         w_exact = P/(24.*EI) * x_exact**2 * (x_exact**2 - 4*L*x_exact + 6*L**2)
         plt.plot(x, w_gp, color='red', linestyle='solid', marker='^',
