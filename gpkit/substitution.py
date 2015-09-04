@@ -143,7 +143,7 @@ def substitution(nomial, substitutions, val=None):
 
     exps_ = [HashVector(exp) for exp in nomial.exps]
     cs_ = np.array(nomial.cs)
-    if hasattr(nomial.cs, "units"):
+    if nomial.units:
         cs_ = Quantity(cs_, nomial.cs.units)
     varlocs_ = defaultdict(list)
     varlocs_.update({var: list(idxs)
