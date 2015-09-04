@@ -183,7 +183,6 @@ class Signomial(NomialData):
             m0 *= (x_0[vk])**e
         return Monomial(exp, p0/mag(m0))
 
-
     def sub(self, substitutions, val=None, require_positive=True):
         """Returns a nomial with substitued values.
 
@@ -550,9 +549,11 @@ class Constraint(Posynomial):
         """
         pgt, plt = (left, right) if oper_ge else (right, left)
         plt = Posynomial(plt)
-        pgt = Monomial(pgt)
-
-        p = plt / pgt
+        if pgt != 0:
+            pgt = Monomial(pgt)
+            p = plt / pgt
+        else:
+            p = Monomial(np.nan)
 
         if isinstance(p.cs, Quantity):
             try:

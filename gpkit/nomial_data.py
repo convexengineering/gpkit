@@ -107,7 +107,7 @@ class NomialData(object):
     def __eq__(self, other):
         """Equality test"""
         if not all(hasattr(other, a) for a in ("exps", "cs", "units")):
-            return NotImplemented
+            return False
         if self.exps != other.exps:
             return False
         if not all(mag(self.cs) == mag(other.cs)):

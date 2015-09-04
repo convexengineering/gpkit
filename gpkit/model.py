@@ -70,29 +70,27 @@ class Model(object):
 
     def __init__(self, cost=None, constraints=None, substitutions=None,
                  *args, **kwargs):
-        if cost is None:
-            if not hasattr(self, "setup"):
-                raise TypeError("Models can only be created without a cost"
-                                " if they have a 'setup' method.")
+
+        if hasattr(self, "setup"):
+            extended_args = [arg for arg in [cost, constraints, substitutions]
+                             if arg is not None]
+            extended_args.extend(args)
             try:
                 name = kwargs.pop("name", self.__class__.__name__)
-                setup = self.setup(*args, **kwargs)
+                setup = self.setup(*extended_args, **kwargs)
             except:
-                print("The 'setup' method of this model had an error.")
+                print("The 'setup' method of this Model had an error.")
                 raise
             try:
                 cost, constraints = setup
+                substitutions = {}
             except TypeError:
                 raise TypeError("Model 'setup' methods must return "
                                 "(cost, constraints).")
-        if constraints is None:
-            constraints = []
-        if substitutions is None:
-            substitutions = {}
 
         self.cost = Signomial(cost)
-        self.constraints = list(constraints)
-        self.substitutions = dict(substitutions)
+        self.constraints = list(constraints) if constraints else []
+        self.substitutions = dict(substitutions) if substitutions else {}
 
         if hasattr(self, "setup"):
             # TODO: use super instead of Model?
@@ -562,7 +560,7 @@ def simplify_and_mmap(constraints, subs):
     constraints : list of simplified Signomials
         Signomials with cs that are solely nans and/or zeroes are removed.
 
-    mmaps : Map from initial monomials to substitued and simplified one.
+    smaps : Map from initial monomials to substitued and simplified one.
             See small_scripts.sort_and_simplify for more details.
     """
     signomials_, smaps = [], []

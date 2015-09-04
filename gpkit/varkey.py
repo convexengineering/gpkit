@@ -80,7 +80,7 @@ class VarKey(object):
 
     def _latex(self, unused=None):
         s = self.name
-        for subscript in ["idx"]:  # +"model"?
+        for subscript in ["idx"]:  # TODO: should latex also show  the model?
             if subscript in self.descr:
                 s = "{%s}_{%s}" % (s, self.descr[subscript])
         return s

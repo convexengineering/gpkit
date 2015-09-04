@@ -3,60 +3,58 @@ A simple beam example with fixed geometry. Solves the discretized
 Euler-Bernoulli beam equations for a constant distributed load
 """
 import numpy as np
-import matplotlib.pyplot as plt
+#import matplotlib.pyplot as plt
 from gpkit.shortcuts import *
 
-def beam(N=10, L=5., EI=1E4, P=100):
 
-    dx = Var("dx", L/(N-1), units="m")
-    EI = Var("EI", EI, units="N*m^2")
+class Beam(Model):
+    """Discretization of the Euler beam equations for a distributed load.
 
-    p = Vec(N, "p", units="N/m", label="Distributed load")
-    p = p.sub(p, P*np.ones(N))
-
-    V  = Vec(N, "V", units="N", label="Internal shear")
-    M  = Vec(N, "M", units="N*m", label="Internal moment")
-    th = Vec(N, "th", units="-", label="Slope")
-    w  = Vec(N, "w", units="m", label="Displacement")
-
-    eps = 1E-16 #an arbitrarily small positive number
-
-    substitutions = {var: eps for var in [V[-1], M[-1], th[0], w[0]]}
-
-    objective = w[-1]
-
-    constraints = [V.left[1:N]     >= V[1:N]    + 0.5*dx*(p.left[1:N]    + p[1:N]),
-                   M.left[1:N]     >= M[1:N]    + 0.5*dx*(V.left[1:N]    + V[1:N]),
-                   th.right[0:N-1] >= th[0:N-1] + 0.5*dx*(M.right[0:N-1] + M[0:N-1])/EI,
-                   w.right[0:N-1]  >= w[0:N-1]  + 0.5*dx*(th.right[0:N-1]+ th[0:N-1])
-                  ]
-
-    return Model(objective, constraints, substitutions)
+    Arguments
+    ---------
+    N : int
+        Number of finite elements that compose the beam.
+    L : float
+        [m] Length of beam.
+    EI : float
+        [N m^2] Elastic modulus times cross-section's area moment of inertia.
+    P : float
+        [N/m] Loading density.
+    """
+    def setup(self, N=10, L=5, EI=1e4, P=100):
+        dx = Var("dx", L/float(N-1), "m", "Length of an element")
+        EI = Var("EI", EI, "N*m^2")
+        p  = Vec(N, "p", P*np.ones(N), "N/m", "Distributed load")
+        V  = Vec(N, "V", "N", "Internal shear")
+        M  = Vec(N, "M", "N*m", "Internal moment")
+        th = Vec(N, "\\theta", "-", "Slope")
+        w  = Vec(N, "w", "m", "Displacement")
+        # shear and moment increase from tip to base (left > right)
+        shear_eq = [V.left >= V + 0.5*dx*(p.left + p)]
+        moment_eq = [M.left >= M + 0.5*dx*(V.left + V)]
+        # theta and displacement increase from base to tip (right > left)
+        theta_eq = [th.right >= th + 0.5*dx*(M.right + M)/EI]
+        displ_eq = [w.right >= w + 0.5*dx*(th.right + th)]
+        # minimize tip displacement (the last w)
+        return w[-1], [shear_eq, moment_eq, theta_eq, displ_eq]
 
 
 if __name__ == "__main__":
-
     PLOT = True
-
-    N = 10 #  [-] grid size
-    L = 5. #   [m] beam length
-    EI = 1E4 # [N*m^2] elastic modulus * area moment of inertia
-    P = 100 #  [N/m] magnitude of distributed load 
-
-    m = beam(N, L, EI, P)
+    N, L, EI, P = 10, 5, 1e4, 100
+    m = Beam(N, L, EI, P)
     sol = m.solve(verbosity=1)
-
-    x = np.linspace(0, L, N) # position along beam
-    w_gp = sol("w") # deflection along beam
-    w_exact =  P/(24.*EI)* x**2 * (x**2  - 4*L*x + 6*L**2) # analytical soln
+    x = np.linspace(0, L, N)  # position along beam
+    w_gp = sol("w")  # deflection along beam
+    w_exact = P/(24.*EI) * x**2 * (x**2 - 4*L*x + 6*L**2)  # analytical soln
 
     assert max(abs(w_gp - w_exact)) <= 1e-2
 
     if PLOT:
         x_exact = np.linspace(0, L, 1000)
-        w_exact =  P/(24.*EI)* x_exact**2 * (x_exact**2  - 4*L*x_exact + 6*L**2)
+        w_exact = P/(24.*EI) * x_exact**2 * (x_exact**2 - 4*L*x_exact + 6*L**2)
         plt.plot(x, w_gp, color='red', linestyle='solid', marker='^',
-                markersize=8)
+                 markersize=8)
         plt.plot(x_exact, w_exact, color='blue', linestyle='dashed')
         plt.xlabel('x [m]')
         plt.ylabel('Deflection [m]')
