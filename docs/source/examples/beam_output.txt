@@ -5,22 +5,20 @@ Cost
 
 Free Variables
 --------------
- M : [ 1.25e+03  988       756       556      ... ]  [N*m] Internal moment
- V : [ 500       444       389       333      ... ]  [N]   Internal shear 
-th : [  -        0.0622    0.111     0.147    ... ]        Slope          
- w : [  -        0.0173    0.0653    0.137    ... ]  [m]   Displacement   
+     M_Beam : [ 1.25e+03  988       756       556      ... ]  [N*m] Internal moment
+     V_Beam : [ 500       444       389       333      ... ]  [N]   Internal shear 
+\theta_Beam : [ 2.25e-09  0.0622    0.111     0.147    ... ]        Slope          
+     w_Beam : [ 1.51e-08  0.0173    0.0653    0.137    ... ]  [m]   Displacement   
 
 Constants
 ---------
-EI : 1e+04                                           [N*m**2]                
-dx : 0.5556                                          [m]                     
- M : [  -         -         -         -       ... ]  [N*m]    Internal moment
- V : [  -         -         -         -       ... ]  [N]      Internal shear 
-th : [ 1e-16      -         -         -       ... ]           Slope          
- w : [ 1e-16      -         -         -       ... ]  [m]      Displacement   
+EI_Beam : 1e+04                                           [N*m**2]                     
+dx_Beam : 0.5556                                          [m]      Length of an element
+ p_Beam : [ 100       100       100       100      ... ]  [N/m]    Distributed load    
 
 Sensitivities
 -------------
-EI : -1 
-dx : 4 
+EI_Beam : -1                                                                 
+dx_Beam : 4                                              Length of an element
+ p_Beam : [ 0.0013    0.00762   0.0223    0.0454   ... ] Distributed load    
 
