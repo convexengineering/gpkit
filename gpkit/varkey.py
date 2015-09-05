@@ -1,7 +1,6 @@
 """Defines the VarKey class"""
 import numpy as np
 
-from .posyarray import PosyArray
 from .small_scripts import mag
 from .small_scripts import isequal
 from .small_classes import Strings, Quantity
@@ -116,7 +115,7 @@ class VarKey(object):
             return True
         elif isinstance(other, Strings):
             return self._cmpstr == other
-        elif isinstance(other, PosyArray):
+        elif isinstance(other, np.ndarray):
             it = np.nditer(other, flags=['multi_index', 'refs_ok'])
             while not it.finished:
                 i = it.multi_index

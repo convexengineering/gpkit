@@ -10,6 +10,8 @@
 
 import numpy as np
 
+from .nomials import Monomial
+
 from . import units as ureg
 Quantity = ureg.Quantity
 
@@ -153,7 +155,9 @@ class PosyArray(np.ndarray):
         if self.ndim != 1:
             raise NotImplementedError("not implemented for ndim = %s" %
                                       self.ndim)
-        return PosyArray(np.hstack((self[1:], 0)))
+        zero = Monomial(0, units=self[-1].units, require_positive=False)
+        zero.fencepost = ["pgt"]
+        return PosyArray(np.hstack((self[1:], zero)))
 
     @property
     def left(self):
@@ -161,4 +165,6 @@ class PosyArray(np.ndarray):
         if self.ndim != 1:
             raise NotImplementedError("not implemented for ndim = %s"
                                       % self.ndim)
-        return PosyArray(np.hstack((0, self[:-1])))
+        zero = Monomial(0, units=self[0].units, require_positive=False)
+        zero.fencepost = ["pgt"]
+        return PosyArray(np.hstack((zero, self[:-1])))

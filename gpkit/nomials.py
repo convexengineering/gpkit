@@ -2,7 +2,6 @@
 import numpy as np
 
 from .small_classes import Strings, Numbers, Quantity, HashVector
-from .posyarray import PosyArray
 from .varkey import VarKey
 from .nomial_data import NomialData
 
@@ -233,13 +232,13 @@ class Signomial(NomialData):
         return super(Signomial, self).__eq__(other)
 
     def __le__(self, other):
-        if isinstance(other, PosyArray):
+        if isinstance(other, np.ndarray):
             return NotImplemented
         else:
             return SignomialConstraint(other, self, oper_ge=True)
 
     def __ge__(self, other):
-        if isinstance(other, PosyArray):
+        if isinstance(other, np.ndarray):
             return NotImplemented
         else:
             # by default all constraints take the form left >= right
@@ -342,7 +341,7 @@ class Signomial(NomialData):
         elif isinstance(other, Signomial):
             return Signomial(self.exps + other.exps,
                              self.cs.tolist() + other.cs.tolist())
-        elif isinstance(other, PosyArray):
+        elif isinstance(other, np.ndarray):
             return np.array(self)+other
         else:
             return NotImplemented
@@ -374,7 +373,7 @@ class Signomial(NomialData):
                 for j, exp_o in enumerate(other.exps):
                     Exps[i, j] = exp_s + exp_o
             return Signomial(Exps.flatten(), C.flatten())
-        elif isinstance(other, PosyArray):
+        elif isinstance(other, np.ndarray):
             return np.array(self)*other
         else:
             return NotImplemented
@@ -388,7 +387,7 @@ class Signomial(NomialData):
             return Signomial(self.exps, self.cs/other)
         elif isinstance(other, Monomial):
             return other.__rdiv__(self)
-        elif isinstance(other, PosyArray):
+        elif isinstance(other, np.ndarray):
             return np.array(self)/other
         else:
             return NotImplemented
@@ -524,12 +523,18 @@ class Constraint(Posynomial):
     Form is self.left >= self.right.
     """
     def __str__(self):
+        if self.void:
+            return "VOID"
         return str(self.left) + self.oper_s + str(self.right)
 
     def __repr__(self):
+        if self.void:
+            return "VOID"
         return repr(self.left) + self.oper_s + repr(self.right)
 
     def _latex(self, unused=None):
+        if self.void:
+            return "VOID"
         return self.left._latex() + self.oper_l + self.right._latex()
 
     def __init__(self, left, right, oper_ge=True):
@@ -547,12 +552,16 @@ class Constraint(Posynomial):
               the form left >= right, e.g. (x <= y) becomes (y >= x).
         """
         pgt, plt = (left, right) if oper_ge else (right, left)
-        plt = Posynomial(plt)
-        if pgt != 0:
+        pgt_fenced = hasattr(pgt, "fencepost") and "pgt" in pgt.fencepost
+        plt_fenced = hasattr(plt, "fencepost") and "plt" in pgt.fencepost
+        if pgt_fenced or plt_fenced:
+            p = Monomial(np.nan)  # this constraint is voided
+            self.void = True
+        else:
+            self.void = False
+            plt = Posynomial(plt)
             pgt = Monomial(pgt)
             p = plt / pgt
-        else:
-            p = Monomial(np.nan)
 
         if isinstance(p.cs, Quantity):
             try:
