@@ -23,13 +23,10 @@ constraints = [A_wall >= 2*h*w + 2*h*d,
 
 #Objective function
 V = h*w*d
-objective = 1/V #To maximize V, we minimize its reciprocal
+objective = 1/V  # To maximize V, we minimize its reciprocal
 
 # Formulate the Model
 m = Model(objective, constraints)
 
-# Solve the Model
-sol = m.solve(verbosity=0)
-
-# Print results table
-print sol.table()
+# Solve the Model and print the results table
+sol = m.solve(verbosity=1)
