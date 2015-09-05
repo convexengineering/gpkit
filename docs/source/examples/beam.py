@@ -38,26 +38,25 @@ class Beam(Model):
         return w[-1], [shear_eq, moment_eq, theta_eq, displ_eq]
 
 
-if __name__ == "__main__":
-    PLOT = True
-    N, L, EI, P = 10, 5, 1e4, 100
-    m = Beam(N, L, EI, P)
-    sol = m.solve(verbosity=1)
-    x = np.linspace(0, L, N)  # position along beam
-    w_gp = sol("w")  # deflection along beam
-    w_exact = P/(24.*EI) * x**2 * (x**2 - 4*L*x + 6*L**2)  # analytical soln
+N, L, EI, P = 10, 5, 1e4, 100
+m = Beam(N, L, EI, P)
+sol = m.solve(verbosity=1)
+x = np.linspace(0, L, N)  # position along beam
+w_gp = sol("w")  # deflection along beam
+w_exact = P/(24.*EI) * x**2 * (x**2 - 4*L*x + 6*L**2)  # analytical soln
 
-    assert max(abs(w_gp - w_exact)) <= 1e-2
+assert max(abs(w_gp - w_exact)) <= 1e-2
 
-    if PLOT:
-        import matplotlib.pyplot as plt
-        x_exact = np.linspace(0, L, 1000)
-        w_exact = P/(24.*EI) * x_exact**2 * (x_exact**2 - 4*L*x_exact + 6*L**2)
-        plt.plot(x, w_gp, color='red', linestyle='solid', marker='^',
-                 markersize=8)
-        plt.plot(x_exact, w_exact, color='blue', linestyle='dashed')
-        plt.xlabel('x [m]')
-        plt.ylabel('Deflection [m]')
-        plt.axis('equal')
-        plt.legend(['GP solution', 'Analytical solution'])
-        plt.show()
+PLOT = False
+if PLOT:
+    import matplotlib.pyplot as plt
+    x_exact = np.linspace(0, L, 1000)
+    w_exact = P/(24.*EI) * x_exact**2 * (x_exact**2 - 4*L*x_exact + 6*L**2)
+    plt.plot(x, w_gp, color='red', linestyle='solid', marker='^',
+             markersize=8)
+    plt.plot(x_exact, w_exact, color='blue', linestyle='dashed')
+    plt.xlabel('x [m]')
+    plt.ylabel('Deflection [m]')
+    plt.axis('equal')
+    plt.legend(['GP solution', 'Analytical solution'])
+    plt.show()

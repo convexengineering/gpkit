@@ -29,6 +29,9 @@ TESTS += t_solution_array.TESTS
 from gpkit.tests import t_small
 TESTS += t_small.TESTS
 
+from gpkit.tests import t_examples
+TESTS += t_examples.TESTS
+
 
 import gpkit
 

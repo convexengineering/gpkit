@@ -29,8 +29,8 @@ gpkit/interactive/ractor.py
 gpkit/interactive/widget.py
 gpkit/tests/__init__.py
 gpkit/tests/helpers.py
-gpkit/tests/simpleflight.py
 gpkit/tests/t_constraints.py
+gpkit/tests/t_examples.py
 gpkit/tests/t_model.py
 gpkit/tests/t_nomials.py
 gpkit/tests/t_posy_array.py

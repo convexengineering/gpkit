@@ -74,42 +74,6 @@ class TestGP(unittest.TestCase):
             self.assertAlmostEqual(y, 1/math.sqrt(2.), self.ndig)
         self.assertAlmostEqual(sol["cost"]/(4*math.sqrt(2)), 1., self.ndig)
 
-    def simpleflight_test_core(self, m):
-        sol = m.solve(solver=self.solver, verbosity=0)
-        freevarcheck = dict(A=8.46,
-                            C_D=0.0206,
-                            C_f=0.0036,
-                            C_L=0.499,
-                            Re=3.68e+06,
-                            S=16.4,
-                            W=7.34e+03,
-                            V=38.2,
-                            W_w=2.40e+03)
-        # sensitivity values from p. 34 of W. Hoburg's thesis
-        consenscheck = {r"(\frac{S}{S_{wet}})": 0.4300,
-                        "e": -0.4785,
-                        r"\pi": -0.4785,
-                        "V_{min}": -0.3691,
-                        "k": 0.4300,
-                        r"\mu": 0.0860,
-                        "(CDA0)": 0.0915,
-                        "C_{L,max}": -0.1845,
-                        r"\tau": -0.2903,
-                        "N_{ult}": 0.2903,
-                        "W_0": 1.0107,
-                        r"\rho": -0.2275}
-        for key in freevarcheck:
-            sol_rat = sol["variables"][key]/freevarcheck[key]
-            self.assertTrue(abs(1-sol_rat) < 1e-2)
-        for key in consenscheck:
-            sol_rat = sol["sensitivities"]["variables"][key]/consenscheck[key]
-            self.assertTrue(abs(1-sol_rat) < 1e-2)
-
-    def test_simpleflight(self):
-        from gpkit.tests.simpleflight import simpleflight_generator
-        sf = simpleflight_generator()
-        self.simpleflight_test_core(sf.gp())
-
     def test_mdd_example(self):
         Cl = Variable("Cl", 0.5, "-", "Lift Coefficient")
         Mdd = Variable("Mdd", "-", "Drag Divergence Mach Number")
@@ -225,6 +189,7 @@ class TestGP(unittest.TestCase):
                        EI*w.right[0:N-1]  >= EI*w[0:N-1]  + 0.5*dx*th.right[0:N-1] + 0.5*dx*th[0:N-1]]
         m = Model(objective, constraints, substitutions)
         sol = m.solve(verbosity=0)
+
 
 class TestSP(unittest.TestCase):
     """test case for SP class -- gets run for each installed solver"""

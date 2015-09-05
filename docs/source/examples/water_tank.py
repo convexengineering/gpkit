@@ -7,9 +7,7 @@ d   = VectorVariable(3, "d", "m", "Dimension Vector")
 
 constraints = (A >= 2*(d[0]*d[1] + d[0]*d[2] + d[1]*d[2]),
                V == d[0]*d[1]*d[2],
-               M == V*rho
-               )
+               M == V*rho)
 
 m = Model(A, constraints)
-sol = m.solve(verbosity=0)
-print sol.table()
+sol = m.solve(verbosity=1)

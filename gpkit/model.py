@@ -300,7 +300,7 @@ class Model(object):
             sweep_vects = {var: grid.reshape(N_passes)
                            for (var, grid) in zip(sweep, sweep_grids)}
 
-            if verbosity > 0:
+            if verbosity > 1:
                 print("Solving over %i passes." % N_passes)
 
             def solve_pass(i):
