@@ -53,7 +53,7 @@ class VarKey(object):
             units = self.descr["units"]
             if isinstance(units, Strings):
                 units = units.replace("-", "dimensionless")
-                self.descr["units"] = 1.0*ureg.parse_expression(units)
+                self.descr["units"] = Quantity(1.0, units)
             elif isinstance(units, Quantity):
                 self.descr["units"] = units/units.magnitude
             else:

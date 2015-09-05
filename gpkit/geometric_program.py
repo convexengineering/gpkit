@@ -188,7 +188,7 @@ class GeometricProgram(NomialData):
                                  (solver, solver_out.get("status", None)) +
                                  "\n\nThe infeasible solve's result is stored"
                                  " in the 'result' attribute"
-                                 "( model.program.result)"
+                                 " (model.program.result)"
                                  " and its raw output in 'solver_out'."
                                  "\n\nIf the problem was Primal Infeasible,"
                                  " you can generate a feasibility-finding"
