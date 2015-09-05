@@ -9,7 +9,6 @@
 
 import numpy as np
 
-from pprint import pformat
 from collections import defaultdict
 
 from .nomials import MonoEQConstraint
@@ -512,8 +511,7 @@ class Model(object):
                          ["    %s," % constr
                           for constr in self.constraints] +
                          ['],',
-                          "    substitutions={ %s }" %
-                          pformat(self.allsubs, indent=20)[20:-1]])
+                          "    substitutions=%s" % self.allsubs])
 
     def _latex(self, unused=None):
         """LaTeX representation of a GeometricProgram.

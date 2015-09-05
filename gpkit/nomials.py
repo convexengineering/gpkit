@@ -206,8 +206,7 @@ class Signomial(NomialData):
         Returns substituted nomial.
         """
         _, exps, cs, _ = substitution(self, substitutions, val)
-        return Signomial(exps, cs, units=self.units,
-                         require_positive=require_positive)
+        return Signomial(exps, cs, require_positive=require_positive)
 
     def subsummag(self, substitutions, val=None):
         "Returns the sum of the magnitudes of the substituted Signomial."
