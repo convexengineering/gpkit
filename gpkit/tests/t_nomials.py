@@ -106,6 +106,13 @@ class TestMonomial(unittest.TestCase):
         self.assertNotEqual(m1, m3)
         self.assertNotEqual(m1, m4)
 
+        # numeric
+        self.assertEqual(Monomial(3), 3)
+        self.assertEqual(Monomial(3), Monomial(3))
+        self.assertNotEqual(Monomial(3), 2)
+        self.assertNotEqual(Monomial('x'), 3)
+        self.assertNotEqual(Monomial(3), Monomial('x'))
+
     def test_div(self):
         "Test Monomial division"
         x = Monomial('x')
