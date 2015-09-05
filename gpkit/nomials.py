@@ -108,12 +108,12 @@ class Signomial(NomialData):
             from . import SIGNOMIALS_ENABLED
             if require_positive and not SIGNOMIALS_ENABLED:
                 raise ValueError("each c must be positive.")
+            self.__class__ = Signomial
         else:
             self.__class__ = Posynomial
 
         if len(self.exps) == 1:
-            if self.__class__ is Posynomial:
-                self.__class__ = Monomial
+            self.__class__ = Monomial
             self.exp = self.exps[0]
             self.c = self.cs[0]
 
@@ -500,17 +500,18 @@ class Monomial(Posynomial):
         "Inequality test"
         if isinstance(other, Numbers):
             # numeric comparison
-            return bool(self.exp) or self.value != other
+            return bool(self.exp) or self.c != other
         return super(Monomial, self).__ne__(other)
 
     def __eq__(self, other):
         mons = Numbers + (Monomial,)
         if isinstance(other, mons):
+            if not self.exp:
+                return self.c == other
             # if both are monomials, return a constraint
             return MonoEQConstraint(self, other)
         # fall back on Monomial __ne__ for boolean comparison
         return not self.__ne__(other)
-
 
     # Monomial.__le__ falls back on Posynomial.__le__
 
