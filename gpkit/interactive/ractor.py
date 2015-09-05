@@ -1,5 +1,5 @@
 import numpy as np
-from ..geometric_program import GPSolutionArray
+from ..solution_array import SolutionArray
 from string import Template
 import itertools
 
@@ -72,7 +72,7 @@ def ractorjs(title, gp, update_py, ranges, constraint_js=""):
         data_init += "%s: %i, " % (varname, (len(array)-1)/2)
         i += 1
 
-    evalarray = [""]*(np.prod(lengths))
+    evalarray = [""]*np.prod(lengths)
 
     gp.sweep = {}
     gp.prewidget = gp.last
@@ -83,7 +83,7 @@ def ractorjs(title, gp, update_py, ranges, constraint_js=""):
         soljv = solj["variables"]
         idxs = [subs[var][1].index(soljv[var]) for var in subs]
         k = sum(np.array(idxs) * np.array([1]+bases[:-1]))
-        evalarray[k] = update_py(GPSolutionArray(solj))
+        evalarray[k] = update_py(SolutionArray(solj))
     display(HTML("<script> %s.storage = %s </script>" % (widget_id, evalarray)))
     gp.load(gp.prewidget)
 

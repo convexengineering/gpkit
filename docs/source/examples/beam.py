@@ -3,7 +3,6 @@ A simple beam example with fixed geometry. Solves the discretized
 Euler-Bernoulli beam equations for a constant distributed load
 """
 import numpy as np
-import matplotlib.pyplot as plt
 from gpkit.shortcuts import *
 
 def beam(N=10, L=5., EI=1E4, P=100):
@@ -34,32 +33,30 @@ def beam(N=10, L=5., EI=1E4, P=100):
     return Model(objective, constraints, substitutions)
 
 
-if __name__ == "__main__":
+N = 10 #  [-] grid size
+L = 5. #   [m] beam length
+EI = 1E4 # [N*m^2] elastic modulus * area moment of inertia
+P = 100 #  [N/m] magnitude of distributed load
 
-    PLOT = True
+m = beam(N, L, EI, P)
+sol = m.solve(verbosity=1)
 
-    N = 10 #  [-] grid size
-    L = 5. #   [m] beam length
-    EI = 1E4 # [N*m^2] elastic modulus * area moment of inertia
-    P = 100 #  [N/m] magnitude of distributed load 
+x = np.linspace(0, L, N) # position along beam
+w_gp = sol("w") # deflection along beam
+w_exact =  P/(24.*EI)* x**2 * (x**2  - 4*L*x + 6*L**2) # analytical soln
 
-    m = beam(N, L, EI, P)
-    sol = m.solve(verbosity=1)
+assert max(abs(w_gp - w_exact)) <= 1e-2
 
-    x = np.linspace(0, L, N) # position along beam
-    w_gp = sol("w") # deflection along beam
-    w_exact =  P/(24.*EI)* x**2 * (x**2  - 4*L*x + 6*L**2) # analytical soln
-
-    assert max(abs(w_gp - w_exact)) <= 1e-2
-
-    if PLOT:
-        x_exact = np.linspace(0, L, 1000)
-        w_exact =  P/(24.*EI)* x_exact**2 * (x_exact**2  - 4*L*x_exact + 6*L**2)
-        plt.plot(x, w_gp, color='red', linestyle='solid', marker='^',
-                markersize=8)
-        plt.plot(x_exact, w_exact, color='blue', linestyle='dashed')
-        plt.xlabel('x [m]')
-        plt.ylabel('Deflection [m]')
-        plt.axis('equal')
-        plt.legend(['GP solution', 'Analytical solution'])
-        plt.show()
+PLOT = False
+if PLOT:
+    import matplotlib.pyplot as plt
+    x_exact = np.linspace(0, L, 1000)
+    w_exact =  P/(24.*EI)* x_exact**2 * (x_exact**2  - 4*L*x_exact + 6*L**2)
+    plt.plot(x, w_gp, color='red', linestyle='solid', marker='^',
+            markersize=8)
+    plt.plot(x_exact, w_exact, color='blue', linestyle='dashed')
+    plt.xlabel('x [m]')
+    plt.ylabel('Deflection [m]')
+    plt.axis('equal')
+    plt.legend(['GP solution', 'Analytical solution'])
+    plt.show()
