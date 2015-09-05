@@ -178,7 +178,7 @@ def results_table(data, title, minval=0, printunits=True, fixedcols=True,
         valstr = valstr.replace("nan", " - ")
         lines.append([varstr, valstr, units, label])
     if lines:
-        maxlens = np.max([map(len, line) for line in lines], axis=0)
+        maxlens = np.max([list(map(len, line)) for line in lines], axis=0)
         if not fixedcols:
             maxlens = [maxlens[0], 0, 0, 0]
         dirs = ['>', '<', '<', '<']

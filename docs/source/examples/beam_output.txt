@@ -1,7 +1,7 @@
 
 Cost
 ----
- 0.7812 [m] 
+ 0.7813 [m] 
 
 Free Variables
 --------------
@@ -22,5 +22,5 @@ th : [ 1e-16      -         -         -       ... ]           Slope
 Sensitivities
 -------------
 EI : -1 
-dx : 4 
+dx : 4  
 
