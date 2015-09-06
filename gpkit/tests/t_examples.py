@@ -130,7 +130,7 @@ def new_test(name, solver):
                     IMPORTED_EXAMPLES[name] = importlib.import_module(name)
                 else:
                     reload(IMPORTED_EXAMPLES[name])
-                getattr(self, name)(IMPORTED_EXAMPLES[name])
+            getattr(self, name)(IMPORTED_EXAMPLES[name])
     return test
 
 
