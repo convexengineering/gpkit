@@ -20,20 +20,25 @@ class Beam(Model):
     P : float
         [N/m] Loading density.
     """
-    def setup(self, N=10, L=5, EI=1e4, P=100):
-        dx = Var("dx", L/float(N-1), "m", "Length of an element")
+    def setup(self, N=4, L=5, EI=1e4, P=100):
         EI = Var("EI", EI, "N*m^2")
-        p  = Vec(N, "p", P*np.ones(N), "N/m", "Distributed load")
-        V  = Vec(N, "V", "N", "Internal shear")
-        M  = Vec(N, "M", "N*m", "Internal moment")
+        dx = Var("dx", L/float(N-1), "m", "Length of an element")
+        p = Vec(N-1, "p", [P]*(N-1), "N/m", "Distributed load per element")
+        V = Vec(N, "V", "N", "Internal shear")
+        M = Vec(N, "M", "N*m", "Internal moment")
         th = Vec(N, "\\theta", "-", "Slope")
-        w  = Vec(N, "w", "m", "Displacement")
-        # shear and moment increase from tip to base (left > right)
-        shear_eq = [V.left >= V + 0.5*dx*(p.left + p)]
-        moment_eq = [M.left >= M + 0.5*dx*(V.left + V)]
-        # theta and displacement decrease from tip to base (right > left)
-        theta_eq = [th.right >= th + 0.5*dx*(M.right + M)/EI]
-        displ_eq = [w.right >= w + 0.5*dx*(th.right + th)]
+        w = Vec(N, "w", "m", "Displacement")
+        # tip loading and moment are 0
+        V[-1]["value"], M[-1]["value"] = 0, 0
+        # shear sums up the loads from tip to base
+        shear_eq = [V.left >= V + (dx*p).padleft]
+        # moment increases from tip to base
+        moment_eq = [M.left >= M + 0.5*dx*(V + V.left)]
+        # base slope and displacement are 0
+        th[0]["value"], w[0]["value"] = 0, 0
+        # slope and displacement increase from base to tip
+        theta_eq = [th.right >= th + 0.5*dx*(M + M.right)/EI]
+        displ_eq = [w.right >= w + 0.5*dx*(th + th.right)]
         # minimize tip displacement (the last w)
         return w[-1], [shear_eq, moment_eq, theta_eq, displ_eq]
 

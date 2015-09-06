@@ -11,8 +11,10 @@
 import numpy as np
 
 from .nomials import Monomial
+from .small_classes import Numbers
 
 from . import units as ureg
+from . import DimensionalityError
 Quantity = ureg.Quantity
 
 
@@ -150,21 +152,45 @@ class PosyArray(np.ndarray):
         return PosyArray([p.sub(subs, val, require_positive) for p in self])
 
     @property
-    def right(self):
-        "Self, sampled one index up, with zeropad"
-        if self.ndim != 1:
-            raise NotImplementedError("not implemented for ndim = %s" %
-                                      self.ndim)
-        zero = Monomial(0, units=self[-1].units, require_positive=False)
-        zero.fencepost = ["pgt"]
-        return PosyArray(np.hstack((self[1:], zero)))
+    def units(self):
+        units = None
+        for el in self:
+            if not isinstance(el, Numbers) or el != 0 and not np.isnan(el):
+                if units:
+                    try:
+                        (units/el.units).to("dimensionless")
+                    except DimensionalityError:
+                        raise ValueError("all elements of a PosyArray must"
+                                         " have the same units.")
+                else:
+                    units = el.units
+        return units
+
+    @property
+    def padleft(self):
+        "Returns (0, self[0], self[1] ... self[N])"
+        return PosyArray(np.hstack((fencepost_zero(self), self)))
+
+    @property
+    def padright(self):
+        "Returns (self[0], self[1] ... self[N], 0)"
+        return PosyArray(np.hstack((self, fencepost_zero(self))))
 
     @property
     def left(self):
-        "Self, sampled one index down, with zeropad"
-        if self.ndim != 1:
-            raise NotImplementedError("not implemented for ndim = %s"
-                                      % self.ndim)
-        zero = Monomial(0, units=self[0].units, require_positive=False)
-        zero.fencepost = ["pgt"]
-        return PosyArray(np.hstack((zero, self[:-1])))
+        "Returns (0, self[0], self[1] ... self[N-1])"
+        return self.padleft[:-1]
+
+    @property
+    def right(self):
+        "Returns (self[1], self[2] ... self[N], 0)"
+        return self.padright[1:]
+
+
+def fencepost_zero(array):
+    if array.ndim != 1:
+        raise NotImplementedError("not implemented for ndim = %s" %
+                                  array.ndim)
+    zero = Monomial(0, units=array.units, require_positive=False)
+    zero.fencepost = ["pgt"]  # no reason to plt fence a zero
+    return zero
