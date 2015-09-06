@@ -113,10 +113,10 @@ class Signomial(NomialData):
             self.__class__ = Posynomial
 
         if len(self.exps) == 1:
-            if self.__class__ == Posynomial:
+            if self.__class__ is Posynomial or mag(self.cs[0]) == 0:
                 self.__class__ = Monomial
-                self.exp = self.exps[0]
-                self.c = self.cs[0]
+            self.exp = self.exps[0]
+            self.c = self.cs[0]
 
     __hash__ = NomialData.__hash__
 
@@ -222,9 +222,19 @@ class Signomial(NomialData):
         return self
 
     def __ne__(self, other):
-        return not super(Signomial, self).__eq__(other)
+        return not Signomial.__eq__(self, other)
 
     def __eq__(self, other):
+        """Equality test
+
+        Returns
+        -------
+        bool
+        """
+        if isinstance(other, Numbers):
+            return (len(self.exps) == 1 and  # single term
+                    not self.exps[0] and     # constant
+                    self.cs[0] == other)     # the right constant
         return super(Signomial, self).__eq__(other)
 
     def __le__(self, other):
@@ -497,12 +507,7 @@ class Monomial(Posynomial):
         else:
             return NotImplemented
 
-    def __ne__(self, other):
-        "Inequality test"
-        if isinstance(other, Numbers):
-            # numeric comparison
-            return bool(self.exp) or self.c != other
-        return super(Monomial, self).__ne__(other)
+    # inherit __ne__ from Signomial
 
     def __eq__(self, other):
         mons = Numbers + (Monomial,)
@@ -511,8 +516,7 @@ class Monomial(Posynomial):
                 return self.c == other
             # if both are monomials, return a constraint
             return MonoEQConstraint(self, other)
-        # fall back on Monomial __ne__ for boolean comparison
-        return not self.__ne__(other)
+        return super(Monomial, self).__eq__(other)
 
     # Monomial.__le__ falls back on Posynomial.__le__
 
