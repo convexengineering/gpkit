@@ -223,9 +223,19 @@ class Signomial(NomialData):
         return self
 
     def __ne__(self, other):
-        return not super(Signomial, self).__eq__(other)
+        return not Signomial.__eq__(self, other)
 
     def __eq__(self, other):
+        """Equality test
+
+        Returns
+        -------
+        bool
+        """
+        if isinstance(other, Numbers):
+            return (len(self.exps) == 1 and  # single term
+                    not self.exps[0] and     # constant
+                    self.cs[0] == other)     # the right constant
         return super(Signomial, self).__eq__(other)
 
     def __le__(self, other):
@@ -498,21 +508,14 @@ class Monomial(Posynomial):
         else:
             return NotImplemented
 
-    def __ne__(self, other):
-        "Inequality test"
-        if isinstance(other, Numbers):
-            # numeric comparison
-            return bool(self.exp) or self.value != other
-        return super(Monomial, self).__ne__(other)
+    # inherit __ne__ from Signomial
 
     def __eq__(self, other):
         mons = Numbers + (Monomial,)
         if isinstance(other, mons):
             # if both are monomials, return a constraint
             return MonoEQConstraint(self, other)
-        # fall back on Monomial __ne__ for boolean comparison
-        return not self.__ne__(other)
-
+        return super(Monomial, self).__eq__(other)
 
     # Monomial.__le__ falls back on Posynomial.__le__
 

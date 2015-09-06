@@ -1,7 +1,7 @@
 """Tests for Monomial, Posynomial, and Signomial classes"""
 import math
 import unittest
-from gpkit import Variable, Monomial, Posynomial
+from gpkit import Variable, Monomial, Posynomial, Signomial
 from gpkit import SignomialsEnabled
 
 
@@ -190,6 +190,19 @@ class TestSignomial(unittest.TestCase):
             self.assertEqual(str(1 - x - y**2 - 1), "-x + -y**2")
             self.assertEqual((1 - x/y**2)._latex(), "-\\frac{x}{y^{2}} + 1")
         self.assertRaises(TypeError, lambda: x-y)
+
+    def test_eq_ne(self):
+        "Test Signomial equality and inequality operators"
+        x = Variable('x')
+        xu = Variable('x', units="ft")
+        with SignomialsEnabled():
+            self.assertEqual(x - x**2, -x**2 + x)
+            self.assertNotEqual(-x, -xu)
+            # numeric
+            self.assertEqual(Signomial(0), 0)
+            self.assertNotEqual(Signomial(0), 1)
+            self.assertEqual(Signomial(-3), -3)
+            self.assertNotEqual(Signomial(-3), 3)
 
 
 class TestPosynomial(unittest.TestCase):
