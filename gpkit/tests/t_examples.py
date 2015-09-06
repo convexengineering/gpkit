@@ -82,7 +82,7 @@ class TestExamples(unittest.TestCase):
             self.assertTrue(abs(1-sol_rat) < 1e-2)
 
 
-class default_solver(object):
+class NewDefaultSolver(object):
     def __init__(self, solver):
         self.solver = solver
 
@@ -95,7 +95,7 @@ class default_solver(object):
         gpkit.settings["installed_solvers"] = SOLVERS
 
 
-class nullFile(object):
+class NullFile(object):
     def write(self, string):
         pass
 
@@ -103,7 +103,7 @@ class nullFile(object):
         pass
 
 
-class capture_stdout(object):
+class StdoutCaptured(object):
     def __init__(self, logfilename=None):
         self.logfilename = logfilename
 
@@ -113,7 +113,7 @@ class capture_stdout(object):
             filepath = EXAMPLE_DIR+os.sep+"%s_output.txt" % self.logfilename
             logfile = open(filepath, "w")
         else:
-            logfile = nullFile()
+            logfile = NullFile()
         sys.stdout = logfile
 
     def __exit__(self, *args):
@@ -123,9 +123,9 @@ class capture_stdout(object):
 
 def new_test(name, solver):
     def test(self):
-        with default_solver(solver):
+        with NewDefaultSolver(solver):
             logfilename = name if name not in IMPORTED_EXAMPLES else None
-            with capture_stdout(logfilename):
+            with StdoutCaptured(logfilename):
                 if name not in IMPORTED_EXAMPLES:
                     IMPORTED_EXAMPLES[name] = importlib.import_module(name)
                 else:
