@@ -113,9 +113,10 @@ class Signomial(NomialData):
             self.__class__ = Posynomial
 
         if len(self.exps) == 1:
-            self.__class__ = Monomial
-            self.exp = self.exps[0]
-            self.c = self.cs[0]
+            if self.__class__ == Posynomial:
+                self.__class__ = Monomial
+                self.exp = self.exps[0]
+                self.c = self.cs[0]
 
     __hash__ = NomialData.__hash__
 
