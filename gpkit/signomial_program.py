@@ -113,7 +113,7 @@ class SignomialProgram(object):
 
     The last result is available in Model.program.gps[-1].result. If the gps
     appear to be converging, you may wish to increase the iteration limit by
-    calling .localsolve(..., iteration_limit=NEWLIMIT).""" % iterations)
+    calling .localsolve(..., iteration_limit=NEWLIMIT).""" % len(self.gps))
             gp = self.step(x0, verbosity=verbosity-1)
             self.gps.append(gp)  # NOTE: SIDE EFFECTS
             try:
