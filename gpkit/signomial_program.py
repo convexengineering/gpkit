@@ -136,7 +136,7 @@ class SignomialProgram(object):
 
         # solved successfully!
         if verbosity > 0:
-            print("Solving took %i GP solves" % iterations
+            print("Solving took %i GP solves" % len(self.gps)
                   + " and %.3g seconds." % (time() - self.starttime))
 
         # parse the result and return nu's of original monomials from
