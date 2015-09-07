@@ -106,9 +106,9 @@ class SignomialProgram(object):
             print("Beginning signomial solve.")
             self.starttime = time()
         self.gps = []  # NOTE: SIDE EFFECTS
-        iterations, prevcost, cost, rel_improvement = 0, None, None, None
+        prevcost, cost, rel_improvement = None, None, None
         while rel_improvement is None or rel_improvement > rel_tol:
-            if iterations > iteration_limit:
+            if len(self.gps) > iteration_limit:
                 raise RuntimeWarning("""problem unsolved after %s iterations.
 
     The last result is available in Model.program.gps[-1].result. If the gps
@@ -124,6 +124,7 @@ class SignomialProgram(object):
                 # TODO: should we add the nearest_feasible gp to the program?
                 # TODO: should we count it as an iteration?
                 nearest_feasible = feasibility_model(gp, "max")
+                self.gps.append(nearest_feasible)
                 result = nearest_feasible.solve(verbosity=verbosity-1)
                 result["cost"] = None
 
@@ -133,7 +134,6 @@ class SignomialProgram(object):
                 rel_improvement = abs(prevcost-cost)/(prevcost + cost)
             else:
                 rel_improvement = None
-            iterations += 1
 
         # solved successfully!
         if verbosity > 0:
