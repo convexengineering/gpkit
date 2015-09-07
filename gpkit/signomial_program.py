@@ -116,7 +116,6 @@ class SignomialProgram(object):
     calling .localsolve(..., iteration_limit=NEWLIMIT).""" % iterations)
             gp = self.step(x0, verbosity=verbosity-1)
             self.gps.append(gp)  # NOTE: SIDE EFFECTS
-
             try:
                 result = gp.solve(solver, verbosity=verbosity-1,
                                   *args, **kwargs)
