@@ -117,23 +117,18 @@ class SignomialProgram(object):
             gp = self.step(x0, verbosity=verbosity-1)
             self.gps.append(gp)  # NOTE: SIDE EFFECTS
             try:
-                result = gp.solve(solver, verbosity=verbosity-1,
-                                  *args, **kwargs)
+                result = gp.solve(solver, verbosity-1, *args, **kwargs)
             except (RuntimeWarning, ValueError):
-                # TODO: should we add the nearest_feasible gp to the program?
-                # TODO: should we count it as an iteration?
                 nearest_feasible = feasibility_model(gp, "max")
                 self.gps.append(nearest_feasible)
                 result = nearest_feasible.solve(verbosity=verbosity-1)
                 result["cost"] = None
-
             x0 = result["variables"]
             prevcost, cost = cost, result["cost"]
             if prevcost and cost:
                 rel_improvement = abs(prevcost-cost)/(prevcost + cost)
             else:
                 rel_improvement = None
-
         # solved successfully!
         if verbosity > 0:
             print("Solving took %i GP solves" % len(self.gps)
