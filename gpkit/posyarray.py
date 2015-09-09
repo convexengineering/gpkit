@@ -10,7 +10,7 @@
 
 import numpy as np
 
-from .nomials import Monomial
+from .nomials import Monomial, Signomial
 from .small_classes import Numbers
 
 from . import units as ureg
@@ -191,6 +191,7 @@ def fencepost_zero(array):
     if array.ndim != 1:
         raise NotImplementedError("not implemented for ndim = %s" %
                                   array.ndim)
-    zero = Monomial(0, units=array.units, require_positive=False)
+    zero = Signomial(0, units=array.units, require_positive=False)
+    zero.__class__ = Monomial  # cast to Monomial for creating posy contraints
     zero.fencepost = ["pgt"]  # no reason to plt fence a zero
     return zero
