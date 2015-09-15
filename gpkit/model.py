@@ -572,7 +572,7 @@ def simplify_and_mmap(constraints, subs):
             exps, cs, smap = simplify_exps_and_cs(exps, cs, return_map=True)
             if s.any_nonpositive_cs:
                 negative_c_count = (cs <= 0).sum()
-                if negative_c_count == 0:
+                if negative_c_count == 0 and s is not constraints[0]:
                     raise RuntimeWarning("""Infeasible SignomialConstraint.
 
     %s became infeasible  when all negative terms were substituted out.""" % s)
