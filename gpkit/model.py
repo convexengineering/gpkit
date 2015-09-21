@@ -213,7 +213,7 @@ class Model(object):
     have only local solutions, and are solved with 'Model.localsolve()'.""")
             raise
 
-    def localsolve(self, solver=None, verbosity=2, skipfailures=True,
+    def localsolve(self, solver=None, verbosity=2, skipfailures=True, algorithm=None,
                    *args, **kwargs):
         """Forms a SignomialProgram and attempts to locally solve it.
 
@@ -243,7 +243,7 @@ class Model(object):
         """
         try:
             with SignomialsEnabled():
-                return self._solve("sp", solver, verbosity, skipfailures,
+                return self._solve("sp", solver, verbosity, skipfailures, algorithm,
                                    *args, **kwargs)
         except ValueError as err:
             if err.message == ("SignomialPrograms must contain at least one"
@@ -255,7 +255,7 @@ class Model(object):
     global solutions, and can be solved with 'Model.solve()'.""")
             raise
 
-    def _solve(self, programType, solver, verbosity, skipfailures,
+    def _solve(self, programType, solver, verbosity, skipfailures, algorithm,
                *args, **kwargs):
         """Generates a program and solves it, sweeping as appropriate.
 
@@ -345,7 +345,7 @@ class Model(object):
             signomials, beforesubs.smaps = simplify_and_mmap(signomials,
                                                            constants)
             # NOTE: SIDE EFFECTS
-            self.program, solvefn = form_program(programType, signomials,
+            self.program, solvefn = form_program(programType, signomials, algorithm,
                                                  verbosity=verbosity-1)
             result = solvefn(*args, **kwargs)
             solution.append(parse_result(result, constants, beforesubs))
@@ -533,7 +533,7 @@ class Model(object):
                          ["\\end{array}"])
 
 
-def form_program(programType, signomials, verbosity=2):
+def form_program(programType, signomials, algorithm=None, verbosity=2):
     "Generates a program and returns it and its solve function."
     cost, constraints = signomials[0], signomials[1:]
     if programType == "gp":
@@ -541,7 +541,11 @@ def form_program(programType, signomials, verbosity=2):
         return gp, gp.solve
     elif programType == "sp":
         sp = SignomialProgram(cost, constraints, verbosity)
-        return sp, sp.localsolve
+        if algorithm == "Xu":
+            solvefn = sp.xusolve
+        else:
+            solvefn = sp.localsolve
+        return sp, solvefn
     else:
         raise ValueError("unknown program type %s." % programType)
 

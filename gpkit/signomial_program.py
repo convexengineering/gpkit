@@ -72,6 +72,110 @@ class SignomialProgram(object):
             raise ValueError("SignomialPrograms must contain at least one"
                              " Signomial.")
 
+    def xusolve(self, solver=None, M=10, w0=1, verbosity=1, x0=None, rel_tol=1e-4, *args, **kwargs):
+        """Solves a SignomialProgram using the Xu algorithm"""
+
+        if verbosity > 0:
+            print("Beginning signomial solve.")
+            self.starttime = time()
+        self.gps = []
+        prevcost, cost, rel_improvement = None, None, None
+        while rel_improvement is None or rel_improvement > rel_tol:
+            gp = self.xustep(x0, M, w0, verbosity=verbosity-1)
+            self.gps.append(gp)
+            try:
+                result = gp.solve(solver, verbosity-1, *args, **kwargs)
+            except (RuntimeWarning, ValueError):
+                nearest_feasible = feasibility_model(gp, "max")
+                self.gps.append(nearest_feasible)
+                result = nearest_feasible.solve(verbosity=verbosity-1)
+                result["cost"] = None
+            x0 = result["variables"]
+            prevcost, cost = cost, result["cost"]
+            if prevcost and cost:
+                rel_improvement = abs(prevcost-cost)/(prevcost + cost)
+            else:
+                rel_improvement = None
+        if verbosity > 0:
+            print("Solving took %i GP solves" % len(self.gps)
+                  + " and %.3g seconds." % (time() - self.starttime))
+        self.result = result
+        return result
+
+    def xustep(self, x0=None, M=10, w0=1, verbosity=1):
+        if x0 is None:
+            # dummy nomial data to turn x0's keys into VarKeys
+            self.negydata = lambda: None
+            self.negydata.varlocs = self.negvarkeys
+            self.negydata.varstrs = {str(vk): vk for vk in self.negvarkeys}
+            x0 = get_constants(self.negydata, {})
+            sp_inits = {vk: vk.descr["sp_init"] for vk in self.negvarkeys
+                        if "sp_init" in vk.descr}
+            x0.update(sp_inits)
+            x0.update({var: 1 for var in self.negvarkeys if var not in x0})
+        posy_approxs = []
+
+        # First constraint (constructed from original objective)
+        if not self.cost.any_nonpositive_cs:
+            p, n = self.cost, 0
+        else:
+            p, n = self.cost.posy_negy()
+            # self.negvarkeys.update(negy.varlocs) #NOTE: Does this need to be here?
+        print type(p)
+        print M
+        print p + M
+        constraints = [(p+M)/n.mono_lower_bound(x0) <= 1]
+
+        # All the other constraints
+        for p, n in zip(self.posynomials[1:], self.negynomials[1:]): # don't want the objective ones
+            s = [] # list of slack variables
+            w = []
+            j = 0 # counter for slack variables
+            if constraint.oper_s == " >= ":
+                # K_1
+                if type(n+1) == gpkit.Monomial:
+                    # K_11
+                    # Treat like3
+                    constraints += p/(n+1)
+                else:
+                    # K_12
+                    posy_approx = p/n.mono_lower_bound(x0)
+            elif constraint.oper_s == " == ":
+                # K_2
+                if type(p) == gpkit.Monomial and type(n+1) == gpkit.Monomial:
+                    # K_21
+                    constraints += (p/(n+1) == 1)
+                elif type(p) == gpkit.Posynomial and type(n+1) == gpkit.Monomial:
+                    # K_22
+                    s.append(Variable('s_{0}'.format(j)))
+                    w.append(w0)
+                    constraints += (p/(n+1) <= 1)
+                    constraints += (s[j]**-1*(n+1)/p.mono_lower_bound(x0) <= 1)
+                    constraints += (s[j] >= 1)
+                    j += 1
+                elif type(p) == gpkit.Monomial and type(n+1) == gpkit.Posynomial:
+                    # K_23
+                    s.append(Variable('s_{0}'.format(j)))
+                    w.append(w0)
+                    constraints += ((n+1)/p <= 1)
+                    constraints += (s[j]**-1*p/n.mono_lower_bound(x0) <= 1)
+                    constraints += (s[j] >= 1)
+                    j += 1
+                else:
+                    # K_24
+                    s.append(Variable('s_{0}'.format(j)))
+                    w.append(w0)
+                    constraints += (p/n.mono_lower_bound(x0) <= 1)
+                    constraints += (s[j]**-1*(n+1)/p.mono_lower_bound(x0) <= 1)
+                    constraints += s[j] >= 1
+                    j += 1
+
+        objective = t + np.dot(w*s)
+
+        gp = GeometricProgram(objective, constraints ,
+                              verbosity=verbosity)
+        return gp
+
     def localsolve(self, solver=None, verbosity=1, x0=None, rel_tol=1e-4,
                    iteration_limit=50, *args, **kwargs):
         """Locally solves a SignomialProgram and returns the solution.
