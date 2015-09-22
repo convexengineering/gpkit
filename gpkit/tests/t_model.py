@@ -190,6 +190,12 @@ class TestGP(unittest.TestCase):
         m = Model(objective, constraints, substitutions)
         sol = m.solve(verbosity=0)
 
+    def test_exps_is_tuple(self):
+        """issue 407"""
+        x = Variable('x')
+        m = Model(x, [x >= 1])
+        m.solve(verbosity=0)
+        self.assertEqual(type(m.program.cost.exps), tuple)
 
 class TestSP(unittest.TestCase):
     """test case for SP class -- gets run for each installed solver"""
