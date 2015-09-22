@@ -92,7 +92,7 @@ class Signomial(NomialData):
                     for key in exps_[i]:
                         if isinstance(key, Strings+(Monomial,)):
                             exps_[i][VarKey(key)] = exps_[i].pop(key)
-                exps = exps_
+                exps = tuple(exps_)
             except AssertionError:
                 raise TypeError("cs and exps must have the same length.")
 
