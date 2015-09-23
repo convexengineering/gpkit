@@ -13,9 +13,9 @@ def widget(gp, outputfn=None, ranges=None, **solveargs):
     # and this should not use copy anyway
     # keeping for now -- was intended to avoid widgets mutating the GP
     # that should not be possible and needs to be refactored
-    from copy import deepcopy
     original_cost_units = gp.cost.units
-    gp = deepcopy(gp)
+    # while we're hacking, hack some more -- avoid calling copy
+    gp = gp.__class__(gp.cost, gp.constraints)
     gp.cost.units = original_cost_units
     # end HACK
 
@@ -30,17 +30,17 @@ def widget(gp, outputfn=None, ranges=None, **solveargs):
             print gp.solution.table(["cost", "free_variables"])
 
     gp.sweep = {}
-    gp.prewidget = gp.last
+    # gp.prewidget = gp.last
 
-    solveargs["printing"] = False
+    solveargs["verbosity"] = 0
     def display(**subs):
-        gp.sub(subs, replace=True)
-        if hasattr(gp, "localsolve"):
-            gp.localsolve(**solveargs)
-        else:
-            gp.solve(**solveargs)
+        gp.substitutions.update(subs)
+        # if hasattr(gp, "localsolve"):
+        #     gp.localsolve(**solveargs)
+        # else:
+        gp.solve(**solveargs)
         outputfn(gp)
-        gp.load(gp.prewidget)
+        # gp.load(gp.prewidget)
 
     return interactive(display, **ranges)
 
