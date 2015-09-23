@@ -18,8 +18,7 @@ def showcadtoon(title, css=""):
 def ractorpy(gp, update_py, ranges, constraint_js="",
              showtables=["cost", "sensitivities"]):
     def ractivefn(gp):
-        sol = gp.solution
-        live = "<script>" + update_py(sol) + "\n" + constraint_js + "</script>"
+        live = "<script>" + update_py(gp) + "\n" + constraint_js + "</script>"
         display(HTML(live))
         if showtables:
             print sol.table(showtables)
