@@ -660,21 +660,20 @@ class SignomialConstraint(Signomial):
             raise TypeError("Cannot initialize SignomialConstraint "
                             "without SignomialsEnabled.")
 
+        left = Signomial(left)
+        right = Signomial(right)
+        pgt, plt = (left, right) if oper_ge else (right, left)
+
+        p = plt - pgt
+
+        super(SignomialConstraint, self).__init__(p)
+        self.__class__ = SignomialConstraint  # TODO should not have to do this
+        self.left, self.right = left, right
+
         if oper_eq == True:
             self.oper_s = " == "
             self.oper_l = " = "
-            self.left, self.right = left, right
         else:
-            left = Signomial(left)
-            right = Signomial(right)
-            pgt, plt = (left, right) if oper_ge else (right, left)
-
-            p = plt - pgt
-
-            super(SignomialConstraint, self).__init__(p)
-            self.__class__ = SignomialConstraint  # TODO should not have to do this
-            self.left, self.right = left, right
-
             self.oper_s = " >= " if oper_ge else " <= "
             self.oper_l = r" \geq " if oper_ge else r" \leq "
 
