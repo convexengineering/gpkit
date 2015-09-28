@@ -173,7 +173,7 @@ class Model(object):
 
     # TODO: add get_item
 
-    def solve(self, solver=None, verbosity=2, skipfailures=True,
+    def solve(self, solver=None, verbosity=2, skipfailures=True, algorithm=None,
               *args, **kwargs):
         """Forms a GeometricProgram and attempts to solve it.
 
@@ -202,7 +202,7 @@ class Model(object):
         RuntimeWarning if an error occurs in solving or parsing the solution.
         """
         try:
-            return self._solve("gp", solver, verbosity, skipfailures,
+            return self._solve("gp", solver, verbosity, skipfailures, algorithm=None,
                                *args, **kwargs)
         except ValueError as err:
             if err.message == ("GeometricPrograms cannot contain Signomials"):

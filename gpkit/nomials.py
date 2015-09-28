@@ -92,7 +92,7 @@ class Signomial(NomialData):
                     for key in exps_[i]:
                         if isinstance(key, Strings+(Monomial,)):
                             exps_[i][VarKey(key)] = exps_[i].pop(key)
-                exps = exps_
+                exps = tuple(exps_)
             except AssertionError:
                 raise TypeError("cs and exps must have the same length.")
 
@@ -226,16 +226,16 @@ class Signomial(NomialData):
         return not Signomial.__eq__(self, other)
 
     def __eq__(self, other):
-        """Equality test
-
-        Returns
-        -------
-        bool
-        """
-        if isinstance(other, Numbers):
-            return (len(self.exps) == 1 and  # single term
-                    not self.exps[0] and     # constant
-                    self.cs[0] == other)     # the right constant
+        mons = Numbers + (Monomial,) + (Posynomial,)
+        from . import SIGNOMIALS_ENABLED
+        if SIGNOMIALS_ENABLED:
+            if isinstance(other, mons):
+                return SignomialConstraint(self, other, oper_eq=True)
+        # else:
+        #     if isinstance(other, Numbers):
+        #         return (len(self.exps) == 1 and  # single term
+        #                 not self.exps[0] and     # constant
+        #                 self.cs[0] == other)     # the right constant
         return super(Signomial, self).__eq__(other)
 
     def __le__(self, other):
@@ -639,7 +639,7 @@ class SignomialConstraint(Signomial):
     def _latex(self, unused=None):
         return self.left._latex() + self.oper_l + self.right._latex()
 
-    def __init__(self, left, right, oper_ge=True):
+    def __init__(self, left, right, oper_ge=True, oper_eq=False):
         """Initialize a constraint of the form left >= right
         (or left <= right, if oper_ge is False).
 
@@ -655,22 +655,27 @@ class SignomialConstraint(Signomial):
 
         Note: Unlike Constraints, SignomialConstraints have units.
         """
-        left = Signomial(left)
-        right = Signomial(right)
-        pgt, plt = (left, right) if oper_ge else (right, left)
-
         from . import SIGNOMIALS_ENABLED
         if not SIGNOMIALS_ENABLED:
             raise TypeError("Cannot initialize SignomialConstraint "
                             "without SignomialsEnabled.")
 
-        p = plt - pgt
+        if oper_eq == True:
+            self.oper_s = " == "
+            self.oper_l = " = "
+            self.left, self.right = left, right
+        else:
+            left = Signomial(left)
+            right = Signomial(right)
+            pgt, plt = (left, right) if oper_ge else (right, left)
 
-        super(SignomialConstraint, self).__init__(p)
-        self.__class__ = SignomialConstraint  # TODO should not have to do this
-        self.left, self.right = left, right
+            p = plt - pgt
 
-        self.oper_s = " >= " if oper_ge else " <= "
-        self.oper_l = r" \geq " if oper_ge else r" \leq "
+            super(SignomialConstraint, self).__init__(p)
+            self.__class__ = SignomialConstraint  # TODO should not have to do this
+            self.left, self.right = left, right
+
+            self.oper_s = " >= " if oper_ge else " <= "
+            self.oper_l = r" \geq " if oper_ge else r" \leq "
 
 from .substitution import substitution, get_constants
