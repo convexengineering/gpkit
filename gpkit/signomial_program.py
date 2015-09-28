@@ -116,7 +116,6 @@ class SignomialProgram(object):
                         if "sp_init" in vk.descr}
             x0.update(sp_inits)
             x0.update({var: 1 for var in self.negvarkeys if var not in x0})
-        posy_approxs = []
 
         # First constraint (constructed from original objective)
         t = Variable('t')
@@ -145,40 +144,40 @@ class SignomialProgram(object):
                     constraints.append(p/n.mono_lower_bound(x0))
             elif self.constraints[i].oper_s == " == ":
                 # K_2
-                if type(p) == Monomial and type(Monomial(n+1)) == Monomial:
+                if type(p+1) == Monomial and type(Monomial(n+1)) == Monomial:
                     # K_21
-                    constraints.append((p/(n+1) == 1))
-                elif type(p) == Posynomial and type(Monomial(n+1)) == Monomial:
+                    constraints.append((p+1)/(n+1))
+                    constraints.append(((p+1)/(n+1))**-1)
+                elif type(p+1) == Posynomial and type(Monomial(n+1)) == Monomial:
                     # K_22
                     s.append(Variable('s_{0}'.format(j)))
                     w.append(w0)
-                    constraints.append((p/(n+1) <= 1))
-                    constraints.append((s[j]**-1*(n+1)/p.mono_lower_bound(x0) <= 1))
-                    constraints.append((s[j] >= 1))
+                    constraints.append((p+1)/(n+1))
+                    constraints.append(s[j]**-1*(n+1)/(p+1).mono_lower_bound(x0))
+                    constraints.append(s[j]**-1)
                     j += 1
-                elif type(p) == Monomial and type(Monomial(n+1)) == Posynomial:
+                elif type(p+1) == Monomial and type(Monomial(n+1)) == Posynomial:
                     # K_23
                     s.append(Variable('s_{0}'.format(j)))
                     w.append(w0)
-                    constraints.append(((n+1)/p <= 1))
-                    constraints.append((s[j]**-1*p/n.mono_lower_bound(x0) <= 1))
-                    constraints.append((s[j] >= 1))
+                    constraints.append((n+1)/(p+1))
+                    constraints.append(s[j]**-1*(p+1)/n.mono_lower_bound(x0))
+                    constraints.append(s[j]**-1)
                     j += 1
                 else:
                     # K_24
                     s.append(Variable('s_{0}'.format(j)))
                     w.append(w0)
-                    print n
-                    constraints.append((p/n.mono_lower_bound(x0) <= 1))
-                    constraints.append((s[j]**-1*(n+1)/p.mono_lower_bound(x0) <= 1))
-                    constraints.append(s[j] >= 1)
+                    constraints.append((p+1)/n.mono_lower_bound(x0))
+                    constraints.append(s[j]**-1*(n+1)/(p+1).mono_lower_bound(x0))
+                    constraints.append(s[j]**-1)
                     j += 1
             i += 1
 
         if not s:
             objective = t
         else:
-            objective = t + np.dot(w*s)
+            objective = t + np.dot(w,s)
 
         gp = GeometricProgram(objective, constraints ,
                               verbosity=verbosity)
