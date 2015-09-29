@@ -334,6 +334,14 @@ class TestSP(unittest.TestCase):
             with self.assertRaises(TypeError):
                 sol = m.localsolve(verbosity=0)
 
+    def test_simplify_and_mmap(self):
+        with SignomialsEnabled():
+            c1 = (x + y >= 4)
+            c2 = (x + y == 4)
+            s1, _ = simplify_and_mmap([c1], {})
+            s2, _ = simplify_and_mmap([c2], {})
+            self.assertEqual(-s1[0].cs, s2[0].cs)
+
 
 TEST_CASES = [TestGP, TestSP]
 

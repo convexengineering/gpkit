@@ -12,6 +12,7 @@ import numpy as np
 from collections import defaultdict
 
 from .nomials import MonoEQConstraint
+from .nomials import SignomialEQConstraint
 from .nomials import Signomial
 from .geometric_program import GeometricProgram
 from .signomial_program import SignomialProgram
@@ -173,7 +174,7 @@ class Model(object):
 
     # TODO: add get_item
 
-    def solve(self, solver=None, verbosity=2, skipfailures=True, algorithm=None,
+    def solve(self, solver=None, verbosity=2, skipfailures=True,
               *args, **kwargs):
         """Forms a GeometricProgram and attempts to solve it.
 
@@ -580,7 +581,7 @@ def simplify_and_mmap(constraints, subs):
                     raise RuntimeWarning("""Infeasible SignomialConstraint.
 
     %s became infeasible  when all negative terms were substituted out.""" % s)
-                elif negative_c_count == 1:
+                elif negative_c_count == 1 and not isinstance(s, SignomialEQConstraint):
                     # turn it into a Posynomial constraint
                     idx = cs.argmin()
                     exps = list(exps)
