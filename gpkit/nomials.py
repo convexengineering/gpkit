@@ -226,11 +226,11 @@ class Signomial(NomialData):
         return not Signomial.__eq__(self, other)
 
     def __eq__(self, other):
-        mons = Numbers + (Monomial,) + (Posynomial,)
+        mons = Numbers + (Monomial,) + (Posynomial,) + (Signomial,)
         from . import SIGNOMIALS_ENABLED
         if SIGNOMIALS_ENABLED:
             if isinstance(other, mons):
-                return SignomialConstraint(self, other, oper_eq=True)
+                return SignomialEQConstraint(self, other)
         # else:
         #     if isinstance(other, Numbers):
         #         return (len(self.exps) == 1 and  # single term
@@ -639,7 +639,7 @@ class SignomialConstraint(Signomial):
     def _latex(self, unused=None):
         return self.left._latex() + self.oper_l + self.right._latex()
 
-    def __init__(self, left, right, oper_ge=True, oper_eq=False):
+    def __init__(self, left, right, oper_ge=True):
         """Initialize a constraint of the form left >= right
         (or left <= right, if oper_ge is False).
 
@@ -670,11 +670,45 @@ class SignomialConstraint(Signomial):
         self.__class__ = SignomialConstraint  # TODO should not have to do this
         self.left, self.right = left, right
 
-        if oper_eq == True:
-            self.oper_s = " == "
-            self.oper_l = " = "
-        else:
-            self.oper_s = " >= " if oper_ge else " <= "
-            self.oper_l = r" \geq " if oper_ge else r" \leq "
+        self.oper_s = " >= " if oper_ge else " <= "
+        self.oper_l = r" \geq " if oper_ge else r" \leq "
+
+class SignomialEQConstraint(SignomialConstraint):
+    """A constraint of the general form posynomial == posynomial
+    Stored internally (exps, cs) as a single Signomial (0 == self)
+    Usually initialized via operator overloading, e.g. cc = (y**2 == 1 + x - y)
+    Additionally retains input format (lhs vs rhs) in self.left and self.right
+    Form is self.left == self.right.
+    """
+
+    def __init__(self, left, right):
+        """Initialize a constraint of the form left == right
+
+        Arguments
+        ---------
+        left: Signomial
+        right: Signomial
+
+        Note: Constraints initialized via operator overloading always take
+              the form left >= right, e.g. (x <= y) becomes (y >= x).
+
+        Note: Unlike Constraints, SignomialConstraints have units.
+        """
+        from . import SIGNOMIALS_ENABLED
+        if not SIGNOMIALS_ENABLED:
+            raise TypeError("Cannot initialize SignomialEQConstraint "
+                            "without SignomialsEnabled.")
+
+        left = Signomial(left)
+        right = Signomial(right)
+        pl, pr = (left, right)
+        p = pl - pr # signomial constraint is arbitrarily left - right == 0
+
+        super(SignomialConstraint, self).__init__(p)
+        self.__class__ = SignomialEQConstraint  # TODO should not have to do this
+        self.left, self.right = left, right
+
+        self.oper_s = " == "
+        self.oper_l = " = "
 
 from .substitution import substitution, get_constants
