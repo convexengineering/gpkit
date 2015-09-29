@@ -7,6 +7,7 @@ from gpkit import (Model, Monomial, settings, VectorVariable, Variable,
 from gpkit.geometric_program import GeometricProgram
 from gpkit.small_classes import CootMatrix
 from gpkit.feasibility import feasibility_model
+from gpkit.model import simplify_and_mmap
 
 NDIGS = {"cvxopt": 5, "mosek": 7, "mosek_cli": 5}
 # name: decimal places of accuracy
@@ -336,11 +337,13 @@ class TestSP(unittest.TestCase):
 
     def test_simplify_and_mmap(self):
         with SignomialsEnabled():
+            x = Variable('x')
+            y = Variable('y')
             c1 = (x + y >= 4)
             c2 = (x + y == 4)
             s1, _ = simplify_and_mmap([c1], {})
             s2, _ = simplify_and_mmap([c2], {})
-            self.assertEqual(-s1[0].cs, s2[0].cs)
+            self.assertTrue(all(-s1[0].cs == s2[0].cs))
 
 
 TEST_CASES = [TestGP, TestSP]
