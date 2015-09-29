@@ -571,7 +571,9 @@ def simplify_and_mmap(constraints, subs):
         if np.any(notnan) and np.any(cs[notnan] != 0):
             exps, cs, smap = simplify_exps_and_cs(exps, cs, return_map=True)
             if s is not constraints[0] and s.any_nonpositive_cs:
-                # if s is still a Signomial we'll let SP throw the error
+                # if s is still a Signomial cost we'll let SP throw the error
+                # if s was a Signomial constraint, catch impossibilities
+                # and convert to Posynomial consrtaints as possible
                 negative_c_count = (cs <= 0).sum()
                 if negative_c_count == 0:
                     raise RuntimeWarning("""Infeasible SignomialConstraint.
