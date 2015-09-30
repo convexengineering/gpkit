@@ -63,17 +63,18 @@ class SignomialProgram(object):
                 posy, negy = sig, 0
             else:
                 posy, negy = sig.posy_negy()
-                if len(negy.cs) == 1:
-                    raise ValueError("Signomial constraint has only one"
-                                     " negative monomial; it should have been"
-                                     " a Posynomial constraint.")
+                #if len(negy.cs) == 1:
+                #    raise ValueError("Signomial constraint has only one"
+                #                     " negative monomial; it should have been"
+                #                     " a Posynomial constraint.")
                 self.negvarkeys.update(negy.varlocs)
             self.posynomials.append(posy)
             self.negynomials.append(negy)
 
-        if not self.negvarkeys:
-            raise ValueError("SignomialPrograms must contain at least one"
-                             " Signomial.")
+        #if not self.negvarkeys:
+        #    print "sup"
+        #    raise ValueError("SignomialPrograms must contain at least one"
+        #                     " Signomial.")
 
     def xusolve(self, solver=None, M=10, w0=1, verbosity=1, x0=None, rel_tol=1e-4, *args, **kwargs):
         """Solves a SignomialProgram using the Xu algorithm"""
@@ -133,7 +134,7 @@ class SignomialProgram(object):
             s = [] # list of slack variables
             w = []
             j = 0 # counter for slack variables
-            if self.constraints[i].oper_s == " >= ":
+            if self.constraints[i].isEQC == False:
                 # K_1
                 if type(Monomial(n+1)) == Monomial:
                     # K_11
@@ -142,7 +143,7 @@ class SignomialProgram(object):
                 else:
                     # K_12
                     constraints.append(p/n.mono_lower_bound(x0))
-            elif self.constraints[i].oper_s == " == ":
+            elif self.constraints[i].isEQC == True:
                 # K_2
                 if type(p+1) == Monomial and type(Monomial(n+1)) == Monomial:
                     # K_21

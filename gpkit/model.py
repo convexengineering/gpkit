@@ -591,7 +591,16 @@ def simplify_and_mmap(constraints, subs):
                     cs = np.hstack((cs[:idx], cs[idx+1:]))
                     exps = tuple(exp-div_exp for exp in exps)
                     smap = [mmap-div_mmap for mmap in smap]
-            signomials_.append(Signomial(exps, cs, simplify=False))
+
+            signomial = Signomial(exps, cs, simplify=False)
+            try:
+                if s.oper_s == " == ":
+                    signomial.isEQC = True # Signomial Equality Constraint
+                else:
+                    signomial.isEQC = False
+            except AttributeError:
+                pass
+            signomials_.append(signomial)
             smaps.append(smap)
         else:
             # This constraint is being removed; append an empty smap so that
