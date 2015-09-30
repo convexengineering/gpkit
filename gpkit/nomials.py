@@ -673,13 +673,22 @@ class SignomialConstraint(Signomial):
         self.oper_s = " >= " if oper_ge else " <= "
         self.oper_l = r" \geq " if oper_ge else r" \leq "
 
-class SignomialEQConstraint(SignomialConstraint):
+class SignomialEQConstraint(Signomial):
     """A constraint of the general form posynomial == posynomial
     Stored internally (exps, cs) as a single Signomial (0 == self)
     Usually initialized via operator overloading, e.g. cc = (y**2 == 1 + x - y)
     Additionally retains input format (lhs vs rhs) in self.left and self.right
     Form is self.left == self.right.
     """
+
+    def __str__(self):
+        return str(self.left) + self.oper_s + str(self.right)
+
+    def __repr__(self):
+        return repr(self.left) + self.oper_s + repr(self.right)
+
+    def _latex(self, unused=None):
+        return self.left._latex() + self.oper_l + self.right._latex()
 
     def __init__(self, left, right):
         """Initialize a constraint of the form left == right
