@@ -20,35 +20,50 @@ class Beam(Model):
     P : float
         [N/m] Loading density.
     """
-    def setup(self, N=4, L=5, EI=1e4, P=100):
+    def setup(self, N=4, L=5, EI=1e4, q=100):
+        # store attributes for later external use
+        self.N, self.L, self.EI, self.q = N, L, EI, q
         EI = Var("EI", EI, "N*m^2")
+        #L = Var("L", L, "m", "Length of beam")
         dx = Var("dx", L/float(N-1), "m", "Length of an element")
-        p = Vec(N-1, "p", [P]*(N-1), "N/m", "Distributed load per element")
+        #dx_def = (dx == L/(N-1))
+        if hasattr(q, "__len__") and len(q) != N:
+                raise TypeError("beam loading must be either a single number"
+                                " or the distributed load (in N/m) observed"
+                                " at each point.")
+        else:
+            q = [q]*N
+        q = Vec(N, "q", q, "N/m", "Distributed load at each point")
         V = Vec(N, "V", "N", "Internal shear")
+        V_tip = Var("V_{tip}", 0, "N", "Tip loading")
         M = Vec(N, "M", "N*m", "Internal moment")
+        M_tip = Var("M_{tip}", 0, "N*m", "Tip moment")
         th = Vec(N, "\\theta", "-", "Slope")
+        th_base = Var("\\theta_{base}", 0, "-", "Base angle")
         w = Vec(N, "w", "m", "Displacement")
-        # tip loading and moment are 0
-        V[-1]["value"], M[-1]["value"] = 0, 0
-        # shear sums up the loads from tip to base
-        shear_eq = [V.left >= V + (dx*p).padleft]
-        # moment increases from tip to base
-        moment_eq = [M.left >= M + 0.5*dx*(V + V.left)]
-        # base slope and displacement are 0
-        th[0]["value"], w[0]["value"] = 0, 0
-        # slope and displacement increase from base to tip
-        theta_eq = [th.right >= th + 0.5*dx*(M + M.right)/EI]
-        displ_eq = [w.right >= w + 0.5*dx*(th + th.right)]
+        w_base = Var("w_{base}", 0, "m", "Base deflection")
+        # below: trapezoidal integration to form a piecewise-linear
+        #        approximation of loading, shear, and so on
+        # shear and moment increase from tip to base (left > right)
+        shear_eq = (V >= V.right + 0.5*dx*(q + q.right))
+        shear_eq[-1] = (V[-1] >= V_tip)  # tip boundary condition
+        moment_eq = (M >= M.right + 0.5*dx*(V + V.right))
+        moment_eq[-1] = (M[-1] >= M_tip)
+        # slope and displacement increase from base to tip (right > left)
+        theta_eq = (th >= th.left + 0.5*dx*(M + M.left)/EI)
+        theta_eq[0] = (th[0] >= th_base)  # base boundary condition
+        displ_eq = (w >= w.left + 0.5*dx*(th + th.left))
+        displ_eq[0] = (w[0] >= w_base)
         # minimize tip displacement (the last w)
         return w[-1], [shear_eq, moment_eq, theta_eq, displ_eq]
 
 
-N, L, EI, P = 10, 5, 1e4, 100
-m = Beam(N, L, EI, P)
+m = Beam(N=10, L=5, EI=1e4, q=100)
 sol = m.solve(verbosity=1)
-x = np.linspace(0, L, N)  # position along beam
+m.solve("mosek", verbosity=1)
+x = np.linspace(0, m.L, m.N)  # position along beam
 w_gp = sol("w")  # deflection along beam
-w_exact = P/(24.*EI) * x**2 * (x**2 - 4*L*x + 6*L**2)  # analytical soln
+w_exact = m.q/(24.*m.EI) * x**2 * (x**2 - 4*m.L*x + 6*m.L**2)  # analytical soln
 
 assert max(abs(w_gp - w_exact)) <= 1e-2
 

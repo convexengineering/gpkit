@@ -566,7 +566,11 @@ def simplify_and_mmap(constraints, subs):
         _, exps, cs, _ = substitution(s, subs)
         # remove any cs that are just nans and/or 0s
         notnan = ~np.isnan(cs)
-        if np.any(notnan) and np.any(cs[notnan] != 0):
+        if np.any(notnan):
+            if np.all(cs[notnan] == 0):
+                # replacing 0 constraint with epsilon constraint for MOSEK
+                for i, c in enumerate(cs):
+                    cs[i] = 1e-234
             exps, cs, smap = simplify_exps_and_cs(exps, cs, return_map=True)
             if s.any_nonpositive_cs:
                 negative_c_count = (cs <= 0).sum()

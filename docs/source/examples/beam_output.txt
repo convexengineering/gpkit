@@ -1,28 +1,56 @@
 
 Cost
 ----
- 0.7813 [m] 
+ 0.7812 [m] 
 
 Free Variables
 --------------
      M_Beam : [ 1.25e+03  988       756       556      ... ]  [N*m] Internal moment
      V_Beam : [ 500       444       389       333      ... ]  [N]   Internal shear 
-\theta_Beam : [  -        0.0622    0.111     0.147    ... ]        Slope          
-     w_Beam : [  -        0.0173    0.0653    0.137    ... ]  [m]   Displacement   
+\theta_Beam : [ 7.45e-09  0.0622    0.111     0.147    ... ]        Slope          
+     w_Beam : [ 1.44e-07  0.0173    0.0653    0.137    ... ]  [m]   Displacement   
 
 Constants
 ---------
-    EI_Beam : 1e+04                                           [N*m**2]                             
-    dx_Beam : 0.5556                                          [m]      Length of an element        
-     M_Beam : [  -         -         -         -       ... ]  [N*m]    Internal moment             
-     V_Beam : [  -         -         -         -       ... ]  [N]      Internal shear              
-\theta_Beam : [ 0          -         -         -       ... ]           Slope                       
-     p_Beam : [ 100       100       100       100      ... ]  [N/m]    Distributed load per element
-     w_Beam : [ 0          -         -         -       ... ]  [m]      Displacement                
+           EI_Beam : 1e+04                                           [N*m**2]                               
+      M_{tip}_Beam : 0                                               [N*m]    Tip moment                    
+      V_{tip}_Beam : 0                                               [N]      Tip loading                   
+\theta_{base}_Beam : 0                                                        Base angle                    
+           dx_Beam : 0.5556                                          [m]      Length of an element          
+     w_{base}_Beam : 0                                               [m]      Base deflection               
+            q_Beam : [ 100       100       100       100      ... ]  [N/m]    Distributed load at each point
 
 Sensitivities
 -------------
-EI_Beam : -1                                                                         
-dx_Beam : 4                                              Length of an element        
- p_Beam : [ 0.00259   0.0127    0.0319    0.059    ... ] Distributed load per element
+EI_Beam : -1                                                                           
+dx_Beam : 4                                              Length of an element          
+ q_Beam : [ 0.0013    0.00762   0.0223    0.0454   ... ] Distributed load at each point
+
+
+Cost
+----
+ 0.7812 [m] 
+
+Free Variables
+--------------
+     M_Beam : [ 1.25e+03  988       756       556      ... ]  [N*m] Internal moment
+     V_Beam : [ 500       444       389       333      ... ]  [N]   Internal shear 
+\theta_Beam : [ 0         0.0622    0.111     0.147    ... ]        Slope          
+     w_Beam : [ 0         0.0173    0.0653    0.137    ... ]  [m]   Displacement   
+
+Constants
+---------
+           EI_Beam : 1e+04                                           [N*m**2]                               
+      M_{tip}_Beam : 0                                               [N*m]    Tip moment                    
+      V_{tip}_Beam : 0                                               [N]      Tip loading                   
+\theta_{base}_Beam : 0                                                        Base angle                    
+           dx_Beam : 0.5556                                          [m]      Length of an element          
+     w_{base}_Beam : 0                                               [m]      Base deflection               
+            q_Beam : [ 100       100       100       100      ... ]  [N/m]    Distributed load at each point
+
+Sensitivities
+-------------
+EI_Beam : -1                                                                           
+dx_Beam : 4                                              Length of an element          
+ q_Beam : [ 0.0013    0.00762   0.0223    0.0454   ... ] Distributed load at each point
 

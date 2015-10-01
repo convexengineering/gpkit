@@ -166,32 +166,34 @@ class PosyArray(np.ndarray):
                     units = el.units
         return units
 
-    @property
-    def padleft(self):
-        "Returns (0, self[0], self[1] ... self[N])"
-        return PosyArray(np.hstack((fencepost_zero(self), self)))
+    def padleft(self, padding):
+        "Returns ({padding}, self[0], self[1] ... self[N])"
+        if self.ndim != 1:
+            raise NotImplementedError("not implemented for ndim = %s" %
+                                      self.ndim)
+        padded = PosyArray(np.hstack((padding, self)))
+        padded.units  # check that the units are consistent
+        return padded
 
-    @property
-    def padright(self):
-        "Returns (self[0], self[1] ... self[N], 0)"
-        return PosyArray(np.hstack((self, fencepost_zero(self))))
+    def padright(self, padding):
+        "Returns (self[0], self[1] ... self[N], {padding})"
+        if self.ndim != 1:
+            raise NotImplementedError("not implemented for ndim = %s" %
+                                      self.ndim)
+        padded = PosyArray(np.hstack((self, padding)))
+        padded.units  # check that the units are consistent
+        return padded
 
     @property
     def left(self):
         "Returns (0, self[0], self[1] ... self[N-1])"
-        return self.padleft[:-1]
+        return self.padleft(unit_zero(self.units))[:-1]
 
     @property
     def right(self):
         "Returns (self[1], self[2] ... self[N], 0)"
-        return self.padright[1:]
+        return self.padright(unit_zero(self.units))[1:]
 
 
-def fencepost_zero(array):
-    if array.ndim != 1:
-        raise NotImplementedError("not implemented for ndim = %s" %
-                                  array.ndim)
-    zero = Signomial(0, units=array.units, require_positive=False)
-    zero.__class__ = Monomial  # cast to Monomial for creating posy contraints
-    zero.fencepost = ["pgt"]  # no reason to plt fence a zero
-    return zero
+def unit_zero(units):
+    return Signomial(0, units=units, require_positive=False)

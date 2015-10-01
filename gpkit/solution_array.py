@@ -13,6 +13,14 @@ from .small_scripts import unitstr
 from .small_scripts import mag
 
 
+def filter_epsilon(val):
+    "Replaces MOSEK's required epsilons for zero-bounds with zeros."
+    if val < 1.01e-234 and val > 0.99e-234:
+        return 0.0
+    else:
+        return val
+
+
 class SolutionArray(DictOfLists):
     """A dictionary (of dictionaries) of lists, with convenience methods.
 
@@ -170,11 +178,11 @@ def results_table(data, title, minval=0, printunits=True, fixedcols=True,
         label = var.descr.get('label', '')
         units = unitstr(var, into=" [%s] ", dimless="") if printunits else ""
         if isvector:
-            vals = [vecfmt % v for v in val[:4]]
+            vals = [vecfmt % filter_epsilon(v) for v in val[:4]]
             ellipsis = " ..." if len(val) > 4 else ""
             valstr = "[ %s%s ] " % ("  ".join(vals), ellipsis)
         else:
-            valstr = valfmt % val
+            valstr = valfmt % filter_epsilon(val)
         valstr = valstr.replace("nan", " - ")
         lines.append([varstr, valstr, units, label])
     if lines:

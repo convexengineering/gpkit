@@ -540,18 +540,12 @@ class Constraint(Posynomial):
     Form is self.left >= self.right.
     """
     def __str__(self):
-        if self.void:
-            return "VOID"
         return str(self.left) + self.oper_s + str(self.right)
 
     def __repr__(self):
-        if self.void:
-            return "VOID"
         return repr(self.left) + self.oper_s + repr(self.right)
 
     def _latex(self, unused=None):
-        if self.void:
-            return "VOID"
         return self.left._latex() + self.oper_l + self.right._latex()
 
     def __init__(self, left, right, oper_ge=True):
@@ -569,16 +563,9 @@ class Constraint(Posynomial):
               the form left >= right, e.g. (x <= y) becomes (y >= x).
         """
         pgt, plt = (left, right) if oper_ge else (right, left)
-        pgt_fenced = hasattr(pgt, "fencepost") and "pgt" in pgt.fencepost
-        plt_fenced = hasattr(plt, "fencepost") and "plt" in pgt.fencepost
-        if pgt_fenced or plt_fenced:
-            p = Monomial(np.nan)  # this constraint is voided
-            self.void = True
-        else:
-            self.void = False
-            plt = Posynomial(plt)
-            pgt = Monomial(pgt)
-            p = plt / pgt
+        plt = Posynomial(plt)
+        pgt = Monomial(pgt)
+        p = plt / pgt
 
         if isinstance(p.cs, Quantity):
             try:
