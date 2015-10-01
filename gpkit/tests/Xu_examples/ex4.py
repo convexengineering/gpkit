@@ -18,5 +18,5 @@ with SignomialsEnabled():
               2*x2 - x1 >= 1
               ])
 
-m.localsolve()
+m.localsolve(algorithm="Xu")
 

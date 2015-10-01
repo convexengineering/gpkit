@@ -42,5 +42,5 @@ with SignomialsEnabled():
               x6 <= 16
               ])
 
-m.localsolve()
+m.localsolve(algorithm="Xu")
 

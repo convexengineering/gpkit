@@ -31,5 +31,5 @@ with SignomialsEnabled():
               R**-1*Rm - 0.5*H*R**-1 >= 1,
               ])
 
-m.localsolve()
+m.localsolve(algorithm="Xu")
 

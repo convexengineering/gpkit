@@ -22,5 +22,4 @@ with SignomialsEnabled():
               x2 <= 100,
               x3 <= 100])
 
-m.localsolve()
-
+m.localsolve(algorithm="Xu")

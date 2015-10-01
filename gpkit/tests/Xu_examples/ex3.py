@@ -40,5 +40,5 @@ with SignomialsEnabled():
               x7 <= 1000,
               x8 <= 1000])
 
-m.localsolve()
+m.localsolve(algorithm="Xu")
 
