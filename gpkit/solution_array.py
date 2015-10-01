@@ -231,11 +231,11 @@ def parse_result(result, constants, beforesubs, sweep={}, linkedsweep={},
                  for (var, locs) in beforesubs.varlocs.items()}
     sensitivities["variables"] = sens_vars
 
-    # free-variable sensitivities must be <= some epsilon
-    for var, S in sensitivities["variables"].items():
-        if var in freevariables and abs(S) > freevar_sensitivity_tolerance:
-            raise ValueError("free variable too sensitive: S_{%s} = "
-                             "%0.2e" % (var, S))
+    ## free-variable sensitivities must be <= some epsilon
+    #for var, S in sensitivities["variables"].items():
+    #    if var in freevariables and abs(S) > freevar_sensitivity_tolerance:
+    #        raise ValueError("free variable too sensitive: S_{%s} = "
+    #                         "%0.2e" % (var, S))
 
     localexp = {var: S for (var, S) in sens_vars.items()
                 if abs(S) >= localmodel_sensitivity_requirement}
