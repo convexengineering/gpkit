@@ -2,7 +2,6 @@
 import numpy as np
 
 from .small_classes import Strings, Numbers, Quantity, HashVector
-from .posyarray import PosyArray
 from .varkey import VarKey
 from .nomial_data import NomialData
 
@@ -109,6 +108,7 @@ class Signomial(NomialData):
             from . import SIGNOMIALS_ENABLED
             if require_positive and not SIGNOMIALS_ENABLED:
                 raise ValueError("each c must be positive.")
+            self.__class__ = Signomial
         else:
             self.__class__ = Posynomial
 
@@ -183,7 +183,6 @@ class Signomial(NomialData):
             m0 *= (x_0[vk])**e
         return Monomial(exp, p0/mag(m0))
 
-
     def sub(self, substitutions, val=None, require_positive=True):
         """Returns a nomial with substitued values.
 
@@ -239,13 +238,13 @@ class Signomial(NomialData):
         return super(Signomial, self).__eq__(other)
 
     def __le__(self, other):
-        if isinstance(other, PosyArray):
+        if isinstance(other, np.ndarray):
             return NotImplemented
         else:
             return SignomialConstraint(other, self, oper_ge=True)
 
     def __ge__(self, other):
-        if isinstance(other, PosyArray):
+        if isinstance(other, np.ndarray):
             return NotImplemented
         else:
             # by default all constraints take the form left >= right
@@ -348,7 +347,7 @@ class Signomial(NomialData):
         elif isinstance(other, Signomial):
             return Signomial(self.exps + other.exps,
                              self.cs.tolist() + other.cs.tolist())
-        elif isinstance(other, PosyArray):
+        elif isinstance(other, np.ndarray):
             return np.array(self)+other
         else:
             return NotImplemented
@@ -380,7 +379,7 @@ class Signomial(NomialData):
                 for j, exp_o in enumerate(other.exps):
                     Exps[i, j] = exp_s + exp_o
             return Signomial(Exps.flatten(), C.flatten())
-        elif isinstance(other, PosyArray):
+        elif isinstance(other, np.ndarray):
             return np.array(self)*other
         else:
             return NotImplemented
@@ -394,7 +393,7 @@ class Signomial(NomialData):
             return Signomial(self.exps, self.cs/other)
         elif isinstance(other, Monomial):
             return other.__rdiv__(self)
-        elif isinstance(other, PosyArray):
+        elif isinstance(other, np.ndarray):
             return np.array(self)/other
         else:
             return NotImplemented
@@ -513,6 +512,8 @@ class Monomial(Posynomial):
     def __eq__(self, other):
         mons = Numbers + (Monomial,)
         if isinstance(other, mons):
+            if not self.exp:
+                return self.c == other
             # if both are monomials, return a constraint
             return MonoEQConstraint(self, other)
         return super(Monomial, self).__eq__(other)
@@ -564,7 +565,6 @@ class Constraint(Posynomial):
         pgt, plt = (left, right) if oper_ge else (right, left)
         plt = Posynomial(plt)
         pgt = Monomial(pgt)
-
         p = plt / pgt
 
         if isinstance(p.cs, Quantity):

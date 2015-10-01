@@ -1,7 +1,6 @@
 """Defines the VarKey class"""
 import numpy as np
 
-from .posyarray import PosyArray
 from .small_scripts import mag
 from .small_scripts import isequal
 from .small_classes import Strings, Quantity
@@ -53,7 +52,7 @@ class VarKey(object):
             units = self.descr["units"]
             if isinstance(units, Strings):
                 units = units.replace("-", "dimensionless")
-                self.descr["units"] = 1.0*ureg.parse_expression(units)
+                self.descr["units"] = Quantity(1.0, units)
             elif isinstance(units, Quantity):
                 self.descr["units"] = units/units.magnitude
             else:
@@ -80,7 +79,7 @@ class VarKey(object):
 
     def _latex(self, unused=None):
         s = self.name
-        for subscript in ["idx"]:  # +"model"?
+        for subscript in ["idx"]:  # TODO: should latex also show  the model?
             if subscript in self.descr:
                 s = "{%s}_{%s}" % (s, self.descr[subscript])
         return s
@@ -116,7 +115,7 @@ class VarKey(object):
             return True
         elif isinstance(other, Strings):
             return self._cmpstr == other
-        elif isinstance(other, PosyArray):
+        elif isinstance(other, np.ndarray):
             it = np.nditer(other, flags=['multi_index', 'refs_ok'])
             while not it.finished:
                 i = it.multi_index

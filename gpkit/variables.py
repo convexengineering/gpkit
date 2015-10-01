@@ -58,6 +58,19 @@ class Variable(Monomial):
     def descr(self):
         return self.varkey.descr
 
+    # Variables act as a window into their varkey's descr
+    def __getitem__(self, key):
+        return self.descr[key]
+
+    def __setitem__(self, key, value):
+        self.descr[key] = value
+
+    def __delitem__(self, key):
+        del self.descr[key]
+
+    def pop(self, key, default=None):
+        return self.descr.pop(key, default)
+
     def sub(self, *args, **kwargs):
         """Same as nomial substitution, but also allows single-argument calls
 
