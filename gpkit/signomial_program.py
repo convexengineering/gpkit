@@ -110,7 +110,7 @@ class SignomialProgram(object):
     def xustep(self, x0=None, M=10, w0=1, verbosity=1):
         if x0 is None:
             # want posy vars as well (e.g. x + y - 1  == 0)
-            x0 = self.define_initial_guess(negOnly=False) 
+            x0 = self.define_initial_guess(neg_only=False) 
 
         # First constraint (constructed from original objective)
         t = Variable('t')
@@ -275,7 +275,7 @@ class SignomialProgram(object):
                               verbosity=verbosity)
         return gp
 
-    def define_initial_guess(self, negOnly=True):
+    def default_initial_guess(self, neg_only=True):
         """Initializes x0 for signomial solve"""
         # dummy nomial data to turn x0's keys into VarKeys
         self.negydata = lambda: None
@@ -286,7 +286,7 @@ class SignomialProgram(object):
                     if "sp_init" in vk.descr}
         x0.update(sp_inits)
         x0.update({var: 1 for var in self.negvarkeys if var not in x0})
-        if not negOnly:
+        if not neg_only:
             # This is a really inelegant way of doing this
             self.posydata = lambda: None
             self.posydata.varlocs = self.posvarkeys
