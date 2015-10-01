@@ -110,7 +110,7 @@ class SignomialProgram(object):
     def xustep(self, x0=None, M=10, w0=1, verbosity=1):
         if x0 is None:
             # want posy vars as well (e.g. x + y - 1  == 0)
-            x0 = self.define_initial_guess(neg_only=False) 
+            x0 = self.default_initial_guess(neg_only=False) 
 
         # First constraint (constructed from original objective)
         t = Variable('t')
@@ -261,7 +261,7 @@ class SignomialProgram(object):
 
     def step(self, x0=None, verbosity=1):
         if x0 is None:
-            x0 = self.define_initial_guess()
+            x0 = self.default_initial_guess()
 
         posy_approxs = []
         for p, n in zip(self.posynomials, self.negynomials):
