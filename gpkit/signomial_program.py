@@ -57,7 +57,7 @@ class SignomialProgram(object):
         self.signomials = [cost] + list(constraints)
 
         self.posynomials, self.negynomials = [self.cost], [0]
-        self.negvarkeys = set()
+        self.posvarkeys, self.negvarkeys = set(), set()
         for sig in self.constraints:
             if not sig.any_nonpositive_cs:
                 posy, negy = sig, 0
@@ -68,6 +68,7 @@ class SignomialProgram(object):
                 #                     " negative monomial; it should have been"
                 #                     " a Posynomial constraint.")
                 self.negvarkeys.update(negy.varlocs)
+            self.posvarkeys.update(posy.varlocs)
             self.posynomials.append(posy)
             self.negynomials.append(negy)
 
@@ -108,15 +109,8 @@ class SignomialProgram(object):
 
     def xustep(self, x0=None, M=10, w0=1, verbosity=1):
         if x0 is None:
-            # dummy nomial data to turn x0's keys into VarKeys
-            self.negydata = lambda: None
-            self.negydata.varlocs = self.negvarkeys
-            self.negydata.varstrs = {str(vk): vk for vk in self.negvarkeys}
-            x0 = get_constants(self.negydata, {})
-            sp_inits = {vk: vk.descr["sp_init"] for vk in self.negvarkeys
-                        if "sp_init" in vk.descr}
-            x0.update(sp_inits)
-            x0.update({var: 1 for var in self.negvarkeys if var not in x0})
+            # want posy vars as well (e.g. x + y - 1  == 0)
+            x0 = self.define_initial_guess(negOnly=False) 
 
         # First constraint (constructed from original objective)
         t = Variable('t')
@@ -138,39 +132,42 @@ class SignomialProgram(object):
                 # K_1
                 if type(Monomial(n+1)) == Monomial:
                     # K_11
-                    # Treat like3
                     constraints.append(p/(n+1))
                 else:
                     # K_12
-                    constraints.append(p/n.mono_lower_bound(x0))
+                    p = p + 1 # Add 1 to make s(x) <= 1
+                    constraints.append(p/(n.mono_lower_bound(x0)))
             elif self.constraints[i].isEQC == True:
                 # K_2
-                if type(p+1) == Monomial and type(Monomial(n+1)) == Monomial:
+                if type(p) == Monomial and type(Monomial(n+1)) == Monomial:
                     # K_21
-                    constraints.append((p+1)/(n+1))
-                    constraints.append(((p+1)/(n+1))**-1)
+                    constraints.append(p/(n+1))
+                    constraints.append((p/(n+1))**-1)
                 elif type(p+1) == Posynomial and type(Monomial(n+1)) == Monomial:
                     # K_22
                     s.append(Variable('s_{0}'.format(j)))
                     w.append(w0)
-                    constraints.append((p+1)/(n+1))
-                    constraints.append(s[j]**-1*(n+1)/(p+1).mono_lower_bound(x0))
+                    p = p + 1 # Add 1 to make s(x) <= 1
+                    constraints.append(p/(n+1))
+                    constraints.append(s[j]**-1*(n+1)/(p.mono_lower_bound(x0)))
                     constraints.append(s[j]**-1)
                     j += 1
                 elif type(p+1) == Monomial and type(Monomial(n+1)) == Posynomial:
                     # K_23
                     s.append(Variable('s_{0}'.format(j)))
                     w.append(w0)
-                    constraints.append((n+1)/(p+1))
-                    constraints.append(s[j]**-1*(p+1)/n.mono_lower_bound(x0))
+                    p = p + 1 # Add 1 to make s(x) <= 1
+                    constraints.append((n+1)/p)
+                    constraints.append(s[j]**-1*p/(n.mono_lower_bound(x0)))
                     constraints.append(s[j]**-1)
                     j += 1
                 else:
                     # K_24
                     s.append(Variable('s_{0}'.format(j)))
                     w.append(w0)
-                    constraints.append((p+1)/n.mono_lower_bound(x0))
-                    constraints.append(s[j]**-1*(n+1)/(p+1).mono_lower_bound(x0))
+                    p = p + 1 # Add 1 to make s(x) <= 1
+                    constraints.append(p/(n.mono_lower_bound(x0)))
+                    constraints.append(s[j]**-1*(n+1)/(p.mono_lower_bound(x0)))
                     constraints.append(s[j]**-1)
                     j += 1
             i += 1
@@ -264,16 +261,8 @@ class SignomialProgram(object):
 
     def step(self, x0=None, verbosity=1):
         if x0 is None:
-            # dummy nomial data to turn x0's keys into VarKeys
-            self.negydata = lambda: None
-            self.negydata.varlocs = self.negvarkeys
-            self.negydata.varstrs = {str(vk): vk for vk in self.negvarkeys}
-            x0 = get_constants(self.negydata, {})
-            sp_inits = {vk: vk.descr["sp_init"] for vk in self.negvarkeys
-                        if "sp_init" in vk.descr}
-            x0.update(sp_inits)
-            # HACK: initial guess for negative variables
-            x0.update({var: 1 for var in self.negvarkeys if var not in x0})
+            x0 = self.define_initial_guess()
+
         posy_approxs = []
         for p, n in zip(self.posynomials, self.negynomials):
             if n is 0:
@@ -285,6 +274,29 @@ class SignomialProgram(object):
         gp = GeometricProgram(posy_approxs[0], posy_approxs[1:],
                               verbosity=verbosity)
         return gp
+
+    def define_initial_guess(self, negOnly=True):
+        """Initializes x0 for signomial solve"""
+        # dummy nomial data to turn x0's keys into VarKeys
+        self.negydata = lambda: None
+        self.negydata.varlocs = self.negvarkeys
+        self.negydata.varstrs = {str(vk): vk for vk in self.negvarkeys}
+        x0 = get_constants(self.negydata, {})
+        sp_inits = {vk: vk.descr["sp_init"] for vk in self.negvarkeys
+                    if "sp_init" in vk.descr}
+        x0.update(sp_inits)
+        x0.update({var: 1 for var in self.negvarkeys if var not in x0})
+        if not negOnly:
+            # This is a really inelegant way of doing this
+            self.posydata = lambda: None
+            self.posydata.varlocs = self.posvarkeys
+            self.posydata.varstrs = {str(vk): vk for vk in self.posvarkeys}
+            x0.update(get_constants(self.posydata, {}))
+            sp_inits = {vk: vk.descr["sp_init"] for vk in self.posvarkeys
+                        if "sp_init" in vk.descr}
+            x0.update(sp_inits)
+            x0.update({var: 1 for var in self.posvarkeys if var not in x0})
+        return x0
 
     def __repr__(self):
         return "gpkit.%s(\n%s)" % (self.__class__.__name__, str(self))
