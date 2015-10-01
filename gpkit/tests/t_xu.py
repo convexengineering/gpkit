@@ -8,8 +8,6 @@ def test_xu_ineq():
                         x + y >= 1,
                         x + y <= 1])
     sol = m.localsolve(algorithm="Xu")
-    print sol['variables']['x']
-    print sol['variables']['y']
 
 def test_xu_eq():
     x = Variable('x')
@@ -18,8 +16,6 @@ def test_xu_eq():
         m  = Model(x, [x >= 0.1,
                        x + y == 1])
     sol = m.localsolve(algorithm="Xu")
-    print sol['variables']['x']
-    print sol['variables']['y']
 
-#test_xu_ineq()
+test_xu_ineq()
 test_xu_eq()
