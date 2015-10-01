@@ -203,7 +203,7 @@ class Model(object):
         RuntimeWarning if an error occurs in solving or parsing the solution.
         """
         try:
-            return self._solve("gp", solver, verbosity, skipfailures, algorithm=None,
+            return self._solve("gp", solver, verbosity, skipfailures,
                                *args, **kwargs)
         except ValueError as err:
             if err.message == ("GeometricPrograms cannot contain Signomials"):
@@ -256,7 +256,7 @@ class Model(object):
     global solutions, and can be solved with 'Model.solve()'.""")
             raise
 
-    def _solve(self, programType, solver, verbosity, skipfailures, algorithm,
+    def _solve(self, programType, solver, verbosity, skipfailures, algorithm=None,
                *args, **kwargs):
         """Generates a program and solves it, sweeping as appropriate.
 
