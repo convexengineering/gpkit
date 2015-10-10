@@ -1,6 +1,6 @@
 '''
 Example 3, Xu 2013
-Status: (very) approximately correct solution
+Status: Correct answer to 3sf if rel_tol small
 '''
 
 from gpkit.shortcuts import *
@@ -40,5 +40,5 @@ with SignomialsEnabled():
               x7 <= 1000,
               x8 <= 1000])
 
-m.localsolve()
+sol = m.localsolve(rel_tol=1E-08)
 

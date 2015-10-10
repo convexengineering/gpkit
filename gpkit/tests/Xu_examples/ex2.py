@@ -41,5 +41,5 @@ with SignomialsEnabled():
               x8 <= 10])
 
 
-m.localsolve()
+sol = m.localsolve(rel_tol=1.E-6)
 

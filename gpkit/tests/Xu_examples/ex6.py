@@ -20,5 +20,5 @@ with SignomialsEnabled():
               x1 <= 5.5,
               x2 <= 5.5])
 
-m.localsolve()
+sol = m.localsolve(rel_tol=1E-6)
 
