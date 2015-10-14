@@ -74,12 +74,15 @@ Windows
 1. Install Python dependencies
 ++++++++++++++++++++++++++++++
   - Install the Python 2.7 version of `Python (x,y) <https://python-xy.github.io/downloads.html>`_.
+    - Python (x,y) recommends removing any previous installations of Python before installation.
+    - Make sure to check the cvxopt checkbox under "Choose components" during installation.
 
 
 2. (optional) Install the MOSEK GP solver
 +++++++++++++++++++++++++++++++++++++++++
 
   - CVXOPT is included with Python (x,y) and does not need to be installed
+    - Installing CVXOPT with Anaconda or another Python distribution can be difficult, which is why we reccomend Python (x,y).
 
   - Download `MOSEK <http://mosek.com/resources/downloads>`_, then:
       - Follow `these steps for Windows <http://docs.mosek.com/7.0/toolsinstall/Windows_installation.html>`_.
