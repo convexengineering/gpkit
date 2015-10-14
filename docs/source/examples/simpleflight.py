@@ -3,6 +3,7 @@ from gpkit.shortcuts import *
 import gpkit
 import sys
 
+# Constants
 k = Var("k", 1.2, "-", "form factor")
 e = Var("e", 0.95, "-", "Oswald efficiency factor")
 mu = Var("\\mu", 1.78e-5, "kg/m/s", "viscosity of air")
@@ -13,14 +14,12 @@ N_ult = Var("N_{ult}", 3.8, "-", "ultimate load factor")
 V_min = Var("V_{min}", 22, "m/s", "takeoff speed")
 C_Lmax = Var("C_{L,max}", 1.5, "-", "max CL with flaps down")
 S_wetratio = Var("(\\frac{S}{S_{wet}})", 2.05, "-", "wetted area ratio")
+W_W_coeff1 = Var("W_{W_{coeff1}}",8.71e-5,"1/m","Wing Weight Coefficent 1")
+W_W_coeff2 = Var("W_{W_{coeff2}}",45.24,"Pa","Wing Weight Coefficent 2")
+CDA0 = Var("(CDA0)", 0.031, "m^2", "fuselage drag area")
+W_0 = Var("W_0", 4940.0, "N", "aircraft weight excluding wing")
 
-if gpkit.units:
-    CDA0 = Var("(CDA0)", 310.0, "cm^2", "fuselage drag area")
-    W_0 = Var("W_0", 4.94, "kN", "aircraft weight excluding wing")
-else:
-    CDA0 = Var("(CDA0)", 0.031, "m^2", "fuselage drag area")
-    W_0 = Var("W_0", 4940.0, "N", "aircraft weight excluding wing")
-
+# Free Variables
 D = Var("D", "N", "total drag force")
 A = Var("A", "-", "aspect ratio")
 S = Var("S", "m^2", "total wing area")
@@ -32,7 +31,6 @@ C_L = Var("C_L", "-", "Lift coefficent of wing")
 C_f = Var("C_f", "-", "skin friction coefficient")
 W_w = Var("W_w", "N", "wing weight")
 
-
 constraints = []
 
 # Drag model
@@ -42,12 +40,8 @@ C_D_ind = C_L**2/(pi*A*e)
 constraints += [C_D >= C_D_fuse + C_D_wpar + C_D_ind]
 
 # Wing weight model
-if gpkit.units:
-    W_w_strc = 8.71e-5*(N_ult*A**1.5*(W_0*W*S)**0.5)/tau / gpkit.units.m
-    W_w_surf = (45.24*gpkit.units.Pa) * S
-else:
-    W_w_strc = 8.71e-5*(N_ult*A**1.5*(W_0*W*S)**0.5)/tau
-    W_w_surf = 45.24 * S
+W_w_strc = W_W_coeff1*(N_ult*A**1.5*(W_0*W*S)**0.5)/tau
+W_w_surf = W_W_coeff2 * S
 constraints += [W_w >= W_w_surf + W_w_strc]
 
 # and the rest of the models
