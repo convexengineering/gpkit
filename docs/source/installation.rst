@@ -73,20 +73,18 @@ Windows
 
 1. Install Python dependencies
 ++++++++++++++++++++++++++++++
-  - Install the Python 2.7 version of `Anaconda <http://continuum.io/downloads>`_.
-  - If you don't want to install Anaconda, you'll need gcc, pip, numpy, and scipy, and may find iPython Notebook useful as a modeling environment.
-  - *Optional:* to install gpkit into an isolated python environment you can create a new conda virtual environment with ``conda create -n gpkit anaconda`` and activate it with ``source activate gpkit``.
+  - Install the Python 2.7 version of `Python (x,y) <https://python-xy.github.io/downloads.html>`_.
 
 
-2. Install either the MOSEK or CVXOPT GP solvers
-++++++++++++++++++++++++++++++++++++++++++++++++
+2. (optional) Install the MOSEK GP solver
++++++++++++++++++++++++++++++++++++++++++
 
-  - Download `CVXOPT <http://cvxopt.org/download/index.html>`_, then follow `these steps <http://cvxopt.org/install/index.html#building-cvxopt-for-windows>`_ to install a linear algebra library
+  - CVXOPT is included with Python (x,y) and does not need to be installed
 
   - Download `MOSEK <http://mosek.com/resources/downloads>`_, then:
       - Follow `these steps for Windows <http://docs.mosek.com/7.0/toolsinstall/Windows_installation.html>`_.
       - Request an `academic license file <http://license.mosek.com/academic>`_ and put it in ``~/mosek/``
-      - Run ``pip install ctypesgen --pre`` in the Anaconda Command Prompt (gpkit uses ctypesgen to interface with the MOSEK C bindings)
+      - Run ``pip install ctypesgen --pre`` in the Command Prompt (gpkit uses ctypesgen to interface with the MOSEK C bindings)
 
 
 3. Install GPkit
