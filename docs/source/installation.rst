@@ -87,11 +87,14 @@ Windows
   - Download `MOSEK <http://mosek.com/resources/downloads>`_, then:
       - Follow `these steps for Windows <http://docs.mosek.com/7.0/toolsinstall/Windows_installation.html>`_.
       - Request an `academic license file <http://license.mosek.com/academic>`_ and put it in ``~/mosek/``
-      - Run ``pip install ctypesgen --pre`` in the Command Prompt (gpkit uses ctypesgen to interface with the MOSEK C bindings)
+      - To use the MOSEK C bindings solver:
+        - Make sure "gcc" is on your system path (that is, you can type ``gcc`` into a command prompt and not get "executable not found")
+        - Run ``pip install ctypesgen --pre`` in the Command Prompt (gpkit uses ctypesgen to interface with the MOSEK C bindings)
 
 
 3. Install GPkit
 ++++++++++++++++
   - Run ``pip install gpkit`` at an Anaconda Command Prompt.
   - Run ``python -c "import gpkit.tests; gpkit.tests.run()"``
+    - If no solver tests fail, and ``import gpkit`` prints "Could not find settings file", then run ``python -c "import gpkit.build; gpkit.build.build_gpkit()"``, which should print out which solvers were found. (For some reason gpkit is not always properly built on Windows.)
   - If you want units support, install pint with ``pip install pint``.
