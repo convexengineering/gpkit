@@ -1,7 +1,5 @@
 import numpy as np
 from gpkit.shortcuts import *
-import gpkit
-import sys
 
 # Constants
 k = Var("k", 1.2, "-", "form factor")
@@ -14,8 +12,8 @@ N_ult = Var("N_{ult}", 3.8, "-", "ultimate load factor")
 V_min = Var("V_{min}", 22, "m/s", "takeoff speed")
 C_Lmax = Var("C_{L,max}", 1.5, "-", "max CL with flaps down")
 S_wetratio = Var("(\\frac{S}{S_{wet}})", 2.05, "-", "wetted area ratio")
-W_W_coeff1 = Var("W_{W_{coeff1}}",8.71e-5,"1/m","Wing Weight Coefficent 1")
-W_W_coeff2 = Var("W_{W_{coeff2}}",45.24,"Pa","Wing Weight Coefficent 2")
+W_W_coeff1 = Var("W_{W_{coeff1}}", 8.71e-5, "1/m", "Wing Weight Coefficent 1")
+W_W_coeff2 = Var("W_{W_{coeff2}}", 45.24, "Pa", "Wing Weight Coefficent 2")
 CDA0 = Var("(CDA0)", 0.031, "m^2", "fuselage drag area")
 W_0 = Var("W_0", 4940.0, "N", "aircraft weight excluding wing")
 
