@@ -96,5 +96,5 @@ Windows
 ++++++++++++++++
   - Run ``pip install gpkit`` at an Anaconda Command Prompt.
   - Run ``python -c "import gpkit.tests; gpkit.tests.run()"``
-    - If no solver tests fail, and ``import gpkit`` prints "Could not find settings file", then run ``python -c "import gpkit.build; gpkit.build.build_gpkit()"``, which should print out which solvers were found. (For some reason gpkit is not always properly built on Windows.)
+      - If attempting to run the tests results in ``ValueError: Unknown solver ''.`` and ``python -c "import gpkit"`` prints "Could not find settings file", then run ``python -c "import gpkit.build; gpkit.build.build_gpkit()"``, to look for and install solvers.
   - If you want units support, install pint with ``pip install pint``.
