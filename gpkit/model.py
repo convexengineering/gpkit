@@ -12,6 +12,7 @@ import numpy as np
 from collections import defaultdict
 
 from .nomials import MonoEQConstraint
+from .nomials import SignomialEQConstraint
 from .nomials import Signomial
 from .geometric_program import GeometricProgram
 from .signomial_program import SignomialProgram
@@ -213,7 +214,7 @@ class Model(object):
     have only local solutions, and are solved with 'Model.localsolve()'.""")
             raise
 
-    def localsolve(self, solver=None, verbosity=2, skipfailures=True,
+    def localsolve(self, solver=None, verbosity=2, skipfailures=True, algorithm=None,
                    *args, **kwargs):
         """Forms a SignomialProgram and attempts to locally solve it.
 
@@ -243,7 +244,7 @@ class Model(object):
         """
         try:
             with SignomialsEnabled():
-                return self._solve("sp", solver, verbosity, skipfailures,
+                return self._solve("sp", solver, verbosity, skipfailures, algorithm,
                                    *args, **kwargs)
         except ValueError as err:
             if err.message == ("SignomialPrograms must contain at least one"
@@ -255,7 +256,7 @@ class Model(object):
     global solutions, and can be solved with 'Model.solve()'.""")
             raise
 
-    def _solve(self, programType, solver, verbosity, skipfailures,
+    def _solve(self, programType, solver, verbosity, skipfailures, algorithm=None,
                *args, **kwargs):
         """Generates a program and solves it, sweeping as appropriate.
 
@@ -345,7 +346,7 @@ class Model(object):
             signomials, beforesubs.smaps = simplify_and_mmap(signomials,
                                                            constants)
             # NOTE: SIDE EFFECTS
-            self.program, solvefn = form_program(programType, signomials,
+            self.program, solvefn = form_program(programType, signomials, algorithm,
                                                  verbosity=verbosity-1)
             result = solvefn(*args, **kwargs)
             solution.append(parse_result(result, constants, beforesubs))
@@ -533,7 +534,7 @@ class Model(object):
                          ["\\end{array}"])
 
 
-def form_program(programType, signomials, verbosity=2):
+def form_program(programType, signomials, algorithm=None, verbosity=2):
     "Generates a program and returns it and its solve function."
     cost, constraints = signomials[0], signomials[1:]
     if programType == "gp":
@@ -541,7 +542,11 @@ def form_program(programType, signomials, verbosity=2):
         return gp, gp.solve
     elif programType == "sp":
         sp = SignomialProgram(cost, constraints, verbosity)
-        return sp, sp.localsolve
+        if algorithm == "Xu":
+            solvefn = sp.xusolve
+        else:
+            solvefn = sp.localsolve
+        return sp, solvefn
     else:
         raise ValueError("unknown program type %s." % programType)
 
@@ -579,7 +584,7 @@ def simplify_and_mmap(constraints, subs):
                     raise RuntimeWarning("""Infeasible SignomialConstraint.
 
     %s became infeasible  when all negative terms were substituted out.""" % s)
-                elif negative_c_count == 1:
+                elif negative_c_count == 1 and not isinstance(s, SignomialEQConstraint):
                     # turn it into a Posynomial constraint
                     idx = cs.argmin()
                     exps = list(exps)
@@ -589,7 +594,16 @@ def simplify_and_mmap(constraints, subs):
                     cs = np.hstack((cs[:idx], cs[idx+1:]))
                     exps = tuple(exp-div_exp for exp in exps)
                     smap = [mmap-div_mmap for mmap in smap]
-            signomials_.append(Signomial(exps, cs, simplify=False))
+
+            signomial = Signomial(exps, cs, simplify=False)
+            try:
+                if s.oper_s == " == ":
+                    signomial.isEQC = True # Signomial Equality Constraint
+                else:
+                    signomial.isEQC = False
+            except AttributeError:
+                pass
+            signomials_.append(signomial)
             smaps.append(smap)
         else:
             # This constraint is being removed; append an empty smap so that
