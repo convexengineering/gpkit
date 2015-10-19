@@ -1,0 +1,3 @@
+[submodule "gpkit/models"]
+	path = gpkit/models
+	url = git@github.com:aeroa/gpkit-models.git
