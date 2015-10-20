@@ -183,7 +183,6 @@ class Signomial(NomialData):
             m0 *= (x_0[vk])**e
         return Monomial(exp, p0/mag(m0))
 
-
     def sub(self, substitutions, val=None, require_positive=True):
         """Returns a nomial with substitued values.
 

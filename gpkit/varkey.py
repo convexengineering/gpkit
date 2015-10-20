@@ -116,6 +116,8 @@ class VarKey(object):
             return True
         elif isinstance(other, Strings):
             return self._cmpstr == other
+        elif hasattr(other, "key"):
+            return other.key == self
         elif isinstance(other, PosyArray):
             it = np.nditer(other, flags=['multi_index', 'refs_ok'])
             while not it.finished:

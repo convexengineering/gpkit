@@ -54,10 +54,7 @@ class SolutionArray(DictOfLists):
 
     def getvars(self, *args):
         out = [self["variables"][arg] for arg in args]
-        if len(out) == 1:
-            return out[0]
-        else:
-            return out
+        return out[0] if len(out) == 1 else out
 
     def __call__(self, p):
         return mag(self.subinto(p).c)
@@ -269,6 +266,18 @@ def parse_result(result, constants, beforesubs, sweep={}, linkedsweep={},
                         vardict[veckey][idx] = vardict[var]
 
                     del vardict[var]
+
+    if hasattr(beforesubs, "varkeysubs"):
+        for origvk, subvk in beforesubs.varkeysubs.items():
+            for data in [constants, sweepvariables, freevariables, variables,
+                         sensitivities["variables"]]:
+                if subvk in data:
+                    from . import units as ureg
+                    if data is sensitivities["variables"] or not ureg:
+                        data[origvk] = data[subvk]
+                    else:
+                        scale = (subvk.units/origvk.units).to("dimensionless")
+                        data[origvk] = data[subvk] * scale
 
     return dict(cost=cost,
                 constants=constants,

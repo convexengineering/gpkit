@@ -24,6 +24,7 @@ class NomialData(object):
             raise ValueError("The NomialData initializor accepts either"
                              " exps and cs, or nomials, but not both.")
         elif nomials:
+            self.nomials = nomials
             exps = functools_reduce(add, (tuple(s.exps) for s in nomials))
             cs = np.hstack((mag(s.cs) for s in nomials))
             simplify = False  # nomials have already been simplified
@@ -73,9 +74,19 @@ class NomialData(object):
         if var in self.varstrs:
             return self.varstrs[var]
         try:
-            return var.varkey
+            return var.key
         except AttributeError:
             raise TypeError("Cannot convert %s to VarKey" % var)
+
+    def sub(self, substitutions, val=None, require_positive=True):
+        if hasattr(self, "nomials"):
+            subbed_nomials = [n.sub(substitutions, val, require_positive)
+                              for n in self.nomials]
+            nd = NomialData(nomials=subbed_nomials)
+        else:
+            _, exps, cs, _ = substitution(self, substitutions, val)
+            nd = NomialData(exps, cs)
+        return nd
 
     def diff(self, var):
         """Derivative of this with respect to a Variable
