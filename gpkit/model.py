@@ -112,13 +112,19 @@ class Model(object):
                             exp[newk] = exp.pop(k)
 
     def __or__(self, other):
-        substitutions = dict(self.substitutions)
-        substitutions.update(other.substitutions)
-        return Model(self.cost*other.cost,  # alternately, keep the leftmost
-                     self.constraints + other.constraints,
-                     substitutions)
+        return self.concat(other)
 
     def __and__(self, other):
+        return self.merge(other)
+
+    def __getitem__(self, item):
+        # note: this rebuilds the dictionary on every acess
+        # if this is too slow, there could be some hashing and caching
+        return self.varsbyname[item]
+
+    def merge(self, other):
+        if not isinstance(other, Model):
+            return NotImplemented
         selfvars = self.varsbyname
         othervars = other.varsbyname
         overlap = set(selfvars.keys()) & set(othervars.keys())
@@ -139,10 +145,14 @@ class Model(object):
                      self.constraints + other.constraints,
                      substitutions)
 
-    def __getitem__(self, item):
-        # note: this rebuilds the dictionary on every acess
-        # if this is too slow, there could be some hashing and caching
-        return self.varsbyname[item]
+    def concat(self, other):
+        if not isinstance(other, Model):
+            return NotImplemented
+        substitutions = dict(self.substitutions)
+        substitutions.update(other.substitutions)
+        return Model(self.cost*other.cost,  # alternately, keep the leftmost
+                     self.constraints + other.constraints,
+                     substitutions)
 
     @property
     def varsbyname(self):
