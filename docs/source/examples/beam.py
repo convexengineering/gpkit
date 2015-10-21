@@ -5,58 +5,77 @@ Euler-Bernoulli beam equations for a constant distributed load
 import numpy as np
 from gpkit.shortcuts import *
 
-def beam(N=10, L=5., EI=1E4, P=100):
 
-    dx = Var("dx", L/(N-1), units="m")
-    EI = Var("EI", EI, units="N*m^2")
+class Beam(Model):
+    """Discretization of the Euler beam equations for a distributed load.
 
-    p = Vec(N, "p", units="N/m", label="Distributed load")
-    p = p.sub(p, P*np.ones(N))
+    Arguments
+    ---------
+    N : int
+        Number of finite elements that compose the beam.
+    L : float
+        [m] Length of beam.
+    EI : float
+        [N m^2] Elastic modulus times cross-section's area moment of inertia.
+    P : float
+        [N/m] Loading density.
+    """
+    def setup(self, N=4, L=5, EI=1e4, q=100):
+        # store attributes for later external use
+        self.N, self.L, self.EI, self.q = N, L, EI, q
+        EI = Var("EI", EI, "N*m^2")
+        #L = Var("L", L, "m", "Length of beam")
+        dx = Var("dx", L/float(N-1), "m", "Length of an element")
+        #dx_def = (dx == L/(N-1))
+        if hasattr(q, "__len__") and len(q) != N:
+                raise TypeError("beam loading must be either a single number"
+                                " or the distributed load (in N/m) observed"
+                                " at each point.")
+        else:
+            q = [q]*N
+        q = Vec(N, "q", q, "N/m", "Distributed load at each point")
+        V = Vec(N, "V", "N", "Internal shear")
+        V_tip = Var("V_{tip}", 0, "N", "Tip loading")
+        M = Vec(N, "M", "N*m", "Internal moment")
+        M_tip = Var("M_{tip}", 0, "N*m", "Tip moment")
+        th = Vec(N, "\\theta", "-", "Slope")
+        th_base = Var("\\theta_{base}", 0, "-", "Base angle")
+        w = Vec(N, "w", "m", "Displacement")
+        w_base = Var("w_{base}", 0, "m", "Base deflection")
+        w_tip = Var("w_{base}", "m", "Base deflection")
+        # below: trapezoidal integration to form a piecewise-linear
+        #        approximation of loading, shear, and so on
+        # shear and moment increase from tip to base (left > right)
+        shear_eq = (V >= V.right + 0.5*dx*(q + q.right))
+        moment_eq = (M >= M.right + 0.5*dx*(V + V.right))
+        # slope and displacement increase from base to tip (right > left)
+        theta_eq = (th >= th.left + 0.5*dx*(M + M.left)/EI)
+        displ_eq = (w >= w.left + 0.5*dx*(th + th.left))
 
-    V  = Vec(N, "V", units="N", label="Internal shear")
-    M  = Vec(N, "M", units="N*m", label="Internal moment")
-    th = Vec(N, "th", units="-", label="Slope")
-    w  = Vec(N, "w", units="m", label="Displacement")
-
-    eps = 1E-16 #an arbitrarily small positive number
-
-    substitutions = {var: eps for var in [V[-1], M[-1], th[0], w[0]]}
-
-    objective = w[-1]
-
-    constraints = [V.left[1:N]     >= V[1:N]    + 0.5*dx*(p.left[1:N]    + p[1:N]),
-                   M.left[1:N]     >= M[1:N]    + 0.5*dx*(V.left[1:N]    + V[1:N]),
-                   th.right[0:N-1] >= th[0:N-1] + 0.5*dx*(M.right[0:N-1] + M[0:N-1])/EI,
-                   w.right[0:N-1]  >= w[0:N-1]  + 0.5*dx*(th.right[0:N-1]+ th[0:N-1])
-                  ]
-
-    return Model(objective, constraints, substitutions)
+        substitutions = {V[-1].key: V_tip.key, M[-1].key: M_tip.key, w[-1].key: w_tip.key,
+                         th[0].key: th_base.key, w[0].key: w_base.key}
+        return w[-1], [shear_eq, moment_eq, theta_eq, displ_eq], substitutions
 
 
-N = 10 #  [-] grid size
-L = 5. #   [m] beam length
-EI = 1E4 # [N*m^2] elastic modulus * area moment of inertia
-P = 100 #  [N/m] magnitude of distributed load
-
-m = beam(N, L, EI, P)
-sol = m.solve(verbosity=1)
-
-x = np.linspace(0, L, N) # position along beam
-w_gp = sol("w") # deflection along beam
-w_exact =  P/(24.*EI)* x**2 * (x**2  - 4*L*x + 6*L**2) # analytical soln
-
-assert max(abs(w_gp - w_exact)) <= 1e-2
-
-PLOT = False
-if PLOT:
-    import matplotlib.pyplot as plt
-    x_exact = np.linspace(0, L, 1000)
-    w_exact =  P/(24.*EI)* x_exact**2 * (x_exact**2  - 4*L*x_exact + 6*L**2)
-    plt.plot(x, w_gp, color='red', linestyle='solid', marker='^',
-            markersize=8)
-    plt.plot(x_exact, w_exact, color='blue', linestyle='dashed')
-    plt.xlabel('x [m]')
-    plt.ylabel('Deflection [m]')
-    plt.axis('equal')
-    plt.legend(['GP solution', 'Analytical solution'])
-    plt.show()
+# b = Beam(N=10, L=5, EI=1e4, q=100)
+# sol = b.solve(verbosity=1)
+# b.solve("mosek", verbosity=1)
+# x = np.linspace(0, b.L, b.N)  # position along beam
+# w_gp = sol("w")  # deflection along beam
+# w_exact = b.q/(24.*b.EI) * x**2 * (x**2 - 4*b.L*x + 6*b.L**2)  # analytical soln
+#
+# assert max(abs(w_gp - w_exact)) <= 1e-2
+#
+# PLOT = False
+# if PLOT:
+#     import matplotlib.pyplot as plt
+#     x_exact = np.linspace(0, L, 1000)
+#     w_exact = P/(24.*EI) * x_exact**2 * (x_exact**2 - 4*L*x_exact + 6*L**2)
+#     plt.plot(x, w_gp, color='red', linestyle='solid', marker='^',
+#              markersize=8)
+#     plt.plot(x_exact, w_exact, color='blue', linestyle='dashed')
+#     plt.xlabel('x [m]')
+#     plt.ylabel('Deflection [m]')
+#     plt.axis('equal')
+#     plt.legend(['GP solution', 'Analytical solution'])
+#     plt.show()

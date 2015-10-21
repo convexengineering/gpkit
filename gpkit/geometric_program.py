@@ -190,9 +190,9 @@ class GeometricProgram(NomialData):
                                  " in the 'result' attribute"
                                  " (model.program.result)"
                                  " and its raw output in 'solver_out'."
-                                 "\n\nIf the problem was Primal Infeasible,"
+                                 " If the problem was Primal Infeasible,"
                                  " you can generate a feasibility-finding"
-                                 " relaxation of your\nModel with"
+                                 " relaxation of your Model with"
                                  " model.feasibility().")
 
         self.check_solution(result["cost"], primal, nu, la)

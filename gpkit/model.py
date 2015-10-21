@@ -11,6 +11,7 @@ import numpy as np
 
 from collections import defaultdict
 
+from .small_classes import Numbers
 from .nomials import MonoEQConstraint
 from .nomials import Signomial
 from .geometric_program import GeometricProgram
@@ -75,7 +76,7 @@ class Model(object):
                                 " if they have a 'setup' method.")
             try:
                 extended_args = [arg for arg in [cost, constraints, substitutions]
-                                if arg is not None]
+                                 if arg is not None]
                 extended_args.extend(args)
                 name = kwargs.pop("name", self.__class__.__name__)
                 setup = self.setup(*extended_args, **kwargs)
@@ -83,10 +84,18 @@ class Model(object):
                 print("The 'setup' method of this model had an error.")
                 raise
             try:
-                cost, constraints = setup
+                if isinstance(setup, Model):
+                    cost, constraints = setup.cost, setup.constraints
+                    substitutions = setup.substitutions
+                elif len(setup) == 2:
+                    cost, constraints = setup
+                elif len(setup) == 3:
+                    cost, constraints, substitutions = setup
             except TypeError:
-                raise TypeError("Model 'setup' methods must return "
-                                "(cost, constraints).")
+                raise TypeError("Model 'setup' methods must return either"
+                                " a Model, a tuple of (cost, constraints),"
+                                " or a tuple of (cost, constraints,"
+                                " substitutions).")
 
         self.cost = Signomial(cost)
         self.constraints = list(constraints) if constraints else []
@@ -170,7 +179,14 @@ class Model(object):
         else:
             return NotImplemented
 
-    # TODO: add get_item
+    def zero_lower_unbounded_variables(self):
+        "Recursively substitutes 0 for variables that lack a lower bound"
+        zeros = True
+        while zeros:
+            bounds = self.gp(verbosity=0).missingbounds
+            zeros = {var: 0 for var, bound in bounds.items()
+                     if bound == "lower"}
+            self.substitutions.update(zeros)
 
     def solve(self, solver=None, verbosity=1, skipfailures=True,
               *args, **kwargs):
@@ -284,6 +300,12 @@ class Model(object):
         ValueError if programType and model constraints don't match.
         RuntimeWarning if an error occurs in solving or parsing the solution.
         """
+        if any(isinstance(val, Numbers) and val == 0
+               for val in self.allsubs.values()):
+            if verbosity > 0:
+                print("A zero-substitution, triggered the zeroing of lower-"
+                      "unbounded variables to maintain solver compatibility.")
+            self.zero_lower_unbounded_variables()
         signomials, beforesubs, allsubs = self.signomials_et_al
         beforesubs.signomials = signomials
         sweep, linkedsweep, constants = separate_subs(beforesubs, allsubs)

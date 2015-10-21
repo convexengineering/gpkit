@@ -155,7 +155,10 @@ def substitution(nomial, substitutions, val=None):
                 del varlocs_[var]
             if isinstance(sub, Numbers):
                 try:
-                    cs_[i] *= sub**x
+                    if sub == 0:
+                        cs_[i] = 0
+                    else:
+                        cs_[i] *= sub**x
                 except ZeroDivisionError:
                     if mag(cs_[i]) > 0:
                         cs_[i] = np.inf
