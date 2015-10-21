@@ -527,9 +527,9 @@ class Model(object):
                          ["    & %s \\\\" % constr._latex()
                           for constr in self.constraints] +
                          ["\\text{substituting}"] +
-                         sorted(["    & %s \leftarrow %s %s \\\\" % (var._latex(),
-                                                         latex_num(val),
-                                                         sub_units(var))
+                         sorted(["    & %s \gets %s %s \\\\" % (var._latex(),
+                                                                latex_num(val),
+                                                                sub_units(var))
                                  for var, val in self.constants.items()]) +
                          ["\\end{array}"])
 
