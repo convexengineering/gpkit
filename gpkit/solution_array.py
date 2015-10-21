@@ -161,9 +161,14 @@ def results_table(data, title, minval=0, printunits=True, fixedcols=True,
         notnan = ~np.isnan([v])
         if np.any(notnan) and np.max(np.abs(np.array([v])[notnan])) >= minval:
             b = isinstance(v, Iterable) and bool(v.shape)
-            decorated.append((b, (varfmt % k), i, k, v))
+            model = k.descr.get("model", "")
+            decorated.append((model, b, (varfmt % k.nomstr), i, k, v))
     decorated.sort()
-    for isvector, varstr, _, var, val in decorated:
+    oldmodel = ""
+    for model, isvector, varstr, _, var, val in decorated:
+        if model != oldmodel:
+            lines.append(["", "", "", ""])
+            lines.append([model+" | ", "", "", ""])
         label = var.descr.get('label', '')
         units = unitstr(var, into=" [%s] ", dimless="") if printunits else ""
         if isvector:
