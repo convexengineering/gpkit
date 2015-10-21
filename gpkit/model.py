@@ -25,7 +25,7 @@ from .nomial_data import NomialData
 from .solution_array import parse_result
 from .substitution import get_constants, separate_subs
 from .substitution import substitution
-from .small_scripts import flatten, latex_num, unitstr
+from .small_scripts import mag, flatten, latex_num, unitstr
 from .nomial_data import simplify_exps_and_cs
 from .feasibility import feasibility_model
 
@@ -613,7 +613,7 @@ def simplify_and_mmap(constraints, subs):
                 # if s is still a Signomial cost we'll let SP throw the error
                 # if s was a Signomial constraint, catch impossibilities
                 # and convert to Posynomial consrtaints as possible
-                negative_c_count = (cs <= 0).sum()
+                negative_c_count = (mag(cs) <= 0).sum()
                 if negative_c_count == 0:
                     raise RuntimeWarning("""Infeasible SignomialConstraint.
 
