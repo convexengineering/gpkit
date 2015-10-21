@@ -74,8 +74,11 @@ class Model(object):
                 raise TypeError("Models can only be created without a cost"
                                 " if they have a 'setup' method.")
             try:
+                extended_args = [arg for arg in [cost, constraints, substitutions]
+                                if arg is not None]
+                extended_args.extend(args)
                 name = kwargs.pop("name", self.__class__.__name__)
-                setup = self.setup(*args, **kwargs)
+                setup = self.setup(*extended_args, **kwargs)
             except:
                 print("The 'setup' method of this model had an error.")
                 raise
@@ -84,14 +87,10 @@ class Model(object):
             except TypeError:
                 raise TypeError("Model 'setup' methods must return "
                                 "(cost, constraints).")
-        if constraints is None:
-            constraints = []
-        if substitutions is None:
-            substitutions = {}
 
         self.cost = Signomial(cost)
-        self.constraints = list(constraints)
-        self.substitutions = dict(substitutions)
+        self.constraints = list(constraints) if constraints else []
+        self.substitutions = dict(substitutions) if substitutions else {}
 
         if hasattr(self, "setup"):
             # TODO: use super instead of Model?

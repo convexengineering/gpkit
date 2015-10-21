@@ -9,8 +9,10 @@
 """
 
 import numpy as np
+from .small_classes import Numbers
 
 from . import units as ureg
+from . import DimensionalityError
 Quantity = ureg.Quantity
 
 
@@ -148,17 +150,44 @@ class PosyArray(np.ndarray):
         return PosyArray([p.sub(subs, val, require_positive) for p in self])
 
     @property
-    def right(self):
-        "Self, sampled one index up, with zeropad"
+    def units(self):
+        units = None
+        for el in self:  # does this need to be done with np.iter?
+            if not isinstance(el, Numbers) or el != 0 and not np.isnan(el):
+                if units:
+                    try:
+                        (units/el.units).to("dimensionless")
+                    except DimensionalityError:
+                        raise ValueError("all elements of a PosyArray must"
+                                         " have the same units.")
+                else:
+                    units = el.units
+        return units
+
+    def padleft(self, padding):
+        "Returns ({padding}, self[0], self[1] ... self[N])"
         if self.ndim != 1:
             raise NotImplementedError("not implemented for ndim = %s" %
                                       self.ndim)
-        return PosyArray(np.hstack((self[1:], 0)))
+        padded = PosyArray(np.hstack((padding, self)))
+        padded.units  # check that the units are consistent
+        return padded
+
+    def padright(self, padding):
+        "Returns (self[0], self[1] ... self[N], {padding})"
+        if self.ndim != 1:
+            raise NotImplementedError("not implemented for ndim = %s" %
+                                      self.ndim)
+        padded = PosyArray(np.hstack((self, padding)))
+        padded.units  # check that the units are consistent
+        return padded
 
     @property
     def left(self):
-        "Self, sampled one index down, with zeropad"
-        if self.ndim != 1:
-            raise NotImplementedError("not implemented for ndim = %s"
-                                      % self.ndim)
-        return PosyArray(np.hstack((0, self[:-1])))
+        "Returns (0, self[0], self[1] ... self[N-1])"
+        return self.padleft(0)[:-1]
+
+    @property
+    def right(self):
+        "Returns (self[1], self[2] ... self[N], 0)"
+        return self.padright(0)[1:]

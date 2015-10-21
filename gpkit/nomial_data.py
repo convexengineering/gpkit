@@ -157,7 +157,7 @@ def simplify_exps_and_cs(exps, cs, return_map=False):
     exps_ = tuple(matches.keys())
     cs_ = list(matches.values())
     if isinstance(cs_[0], Quantity):
-        units = cs_[0]/cs_[0].magnitude
+        units = Quantity(1, cs_[0].units)
         cs_ = [c.to(units).magnitude for c in cs_] * units
     else:
         cs_ = np.array(cs_, dtype='float')
