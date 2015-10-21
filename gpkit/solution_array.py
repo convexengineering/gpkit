@@ -110,13 +110,13 @@ class SolutionArray(DictOfLists):
                 cost_units = self.program.cost.units
             strs[-1] += unitstr(cost_units, into=" [%s] ", dimless="")
             strs += [""]
-        if "freevariables" in tables:
-            strs += [results_table(self["freevariables"],
-                                   "Free Variables",
-                                   fixedcols=fixedcols)]
         if "sweepvariables" in tables and self["sweepvariables"]:
             strs += [results_table(self["sweepvariables"],
                                    "Sweep Variables",
+                                   fixedcols=fixedcols)]
+        if "freevariables" in tables:
+            strs += [results_table(self["freevariables"],
+                                   "Free Variables",
                                    fixedcols=fixedcols)]
         if "constants" in tables and self["constants"]:
             strs += [results_table(self["constants"],

@@ -173,7 +173,7 @@ class Model(object):
 
     # TODO: add get_item
 
-    def solve(self, solver=None, verbosity=2, skipfailures=True,
+    def solve(self, solver=None, verbosity=1, skipfailures=True,
               *args, **kwargs):
         """Forms a GeometricProgram and attempts to solve it.
 
@@ -213,7 +213,7 @@ class Model(object):
     have only local solutions, and are solved with 'Model.localsolve()'.""")
             raise
 
-    def localsolve(self, solver=None, verbosity=2, skipfailures=True,
+    def localsolve(self, solver=None, verbosity=1, skipfailures=True,
                    *args, **kwargs):
         """Forms a SignomialProgram and attempts to locally solve it.
 
@@ -315,9 +315,9 @@ class Model(object):
                 constants_ = constants
                 constants_.update(this_pass)
                 signomials_, beforesubs.smaps = simplify_and_mmap(signomials,
-                                                                constants_)
+                                                                  constants_)
                 program, solvefn = form_program(programType, signomials_,
-                                                verbosity=verbosity-1)
+                                                verbosity=verbosity)
                 try:
                     result = solvefn(*args, **kwargs)
                     sol = parse_result(result, constants_, beforesubs,
@@ -341,12 +341,14 @@ class Model(object):
                                          " has been saved to m.program[-1]."
                                          " To ignore such failures, solve with"
                                          " skipfailures=True.")
+            for var, val in solution["constants"].items():
+                solution["constants"][var] = [val[0]]
         else:
             signomials, beforesubs.smaps = simplify_and_mmap(signomials,
-                                                           constants)
+                                                             constants)
             # NOTE: SIDE EFFECTS
             self.program, solvefn = form_program(programType, signomials,
-                                                 verbosity=verbosity-1)
+                                                 verbosity=verbosity)
             result = solvefn(*args, **kwargs)
             solution.append(parse_result(result, constants, beforesubs))
         solution.program = self.program
