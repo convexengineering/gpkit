@@ -312,7 +312,7 @@ class Model(object):
         if any(isinstance(val, Numbers) and val == 0
                for val in self.allsubs.values()):
             if verbosity > 0:
-                print("A zero-substitution, triggered the zeroing of lower-"
+                print("A zero-substitution triggered the zeroing of lower-"
                       "unbounded variables to maintain solver compatibility.")
             self.zero_lower_unbounded_variables()
         signomials, beforesubs, allsubs = self.signomials_et_al
