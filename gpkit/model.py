@@ -127,7 +127,7 @@ class Model(object):
             return NotImplemented
         selfvars = self.varsbyname
         othervars = other.varsbyname
-        overlap = set(selfvars.keys()) & set(othervars.keys())
+        overlap = set(selfvars) & set(othervars)
         substitutions = dict(self.substitutions)
         substitutions.update(other.substitutions)
         for name in overlap:
@@ -159,7 +159,7 @@ class Model(object):
         varkeys = set()
         for signomial in self.signomials:
             for exp in signomial.exps:
-                varkeys.update(exp.keys())
+                varkeys.update(exp)
         varsbyname = defaultdict(list)
         for varkey in varkeys:
             if varkey in self.substitutions:

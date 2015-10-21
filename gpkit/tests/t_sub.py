@@ -173,7 +173,7 @@ class TestGPSubs(unittest.TestCase):
         m.cost = m["x"]
         sol = m.solve(verbosity=0)
         if not isinstance(m["x"].key.units, str):
-            self.assertAlmostEqual(sol["cost"], 0.032808399)
+            self.assertAlmostEqual(sol["cost"], 0.032808399)  # 1 cm/1 yd
         self.assertIn(m["x"], sol["variables"])
         self.assertIn(a1["x"], sol["variables"])
         self.assertIn(b1["x"], sol["variables"])
@@ -181,6 +181,7 @@ class TestGPSubs(unittest.TestCase):
         self.assertNotIn(b["x"], sol["variables"])
 
         # add unit test for varsbyname, vector composition
+        # @whoburg: and some for unions and intersections before solving
 
     # def test_simpleaircraft(self):
     #
