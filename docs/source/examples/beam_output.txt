@@ -1,4 +1,4 @@
-A zero-substitution, triggered the zeroing of lower-unbounded variables to maintain solver compatibility.
+A zero-substitution triggered the zeroing of lower-unbounded variables to maintain solver compatibility.
 
 Cost
 ----
@@ -31,7 +31,7 @@ EI_Beam : -1
 dx_Beam : 4                                              Length of an element          
  q_Beam : [ 0.0013    0.00762   0.0223    0.0454   ... ] Distributed load at each point
 
-A zero-substitution, triggered the zeroing of lower-unbounded variables to maintain solver compatibility.
+A zero-substitution triggered the zeroing of lower-unbounded variables to maintain solver compatibility.
 
 Cost
 ----

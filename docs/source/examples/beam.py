@@ -58,7 +58,7 @@ class Beam(Model):
 
 b = Beam(N=10, L=5, EI=1e4, q=100)
 sol = b.solve(verbosity=1)
-b.solve("mosek", verbosity=1)
+b.solve(verbosity=1)
 x = np.linspace(0, b.L, b.N)  # position along beam
 w_gp = sol("w")  # deflection along beam
 w_exact = b.q/(24.*b.EI) * x**2 * (x**2 - 4*b.L*x + 6*b.L**2)  # analytic soln
