@@ -24,9 +24,7 @@ class Beam(Model):
         # store attributes for later external use
         self.N, self.L, self.EI, self.q = N, L, EI, q
         EI = Var("EI", EI, "N*m^2")
-        #L = Var("L", L, "m", "Length of beam")
         dx = Var("dx", L/float(N-1), "m", "Length of an element")
-        #dx_def = (dx == L/(N-1))
         if hasattr(q, "__len__") and len(q) != N:
                 raise TypeError("beam loading must be either a single number"
                                 " or the distributed load (in N/m) observed"
@@ -42,40 +40,41 @@ class Beam(Model):
         th_base = Var("\\theta_{base}", 0, "-", "Base angle")
         w = Vec(N, "w", "m", "Displacement")
         w_base = Var("w_{base}", 0, "m", "Base deflection")
-        w_tip = Var("w_{base}", "m", "Base deflection")
         # below: trapezoidal integration to form a piecewise-linear
         #        approximation of loading, shear, and so on
         # shear and moment increase from tip to base (left > right)
         shear_eq = (V >= V.right + 0.5*dx*(q + q.right))
+        shear_eq[-1] = (V[-1] >= V_tip)  # tip boundary condition
         moment_eq = (M >= M.right + 0.5*dx*(V + V.right))
+        moment_eq[-1] = (M[-1] >= M_tip)
         # slope and displacement increase from base to tip (right > left)
         theta_eq = (th >= th.left + 0.5*dx*(M + M.left)/EI)
+        theta_eq[0] = (th[0] >= th_base)  # base boundary condition
         displ_eq = (w >= w.left + 0.5*dx*(th + th.left))
+        displ_eq[0] = (w[0] >= w_base)
+        # minimize tip displacement (the last w)
+        return w[-1], [shear_eq, moment_eq, theta_eq, displ_eq]
 
-        substitutions = {V[-1].key: V_tip.key, M[-1].key: M_tip.key, w[-1].key: w_tip.key,
-                         th[0].key: th_base.key, w[0].key: w_base.key}
-        return w[-1], [shear_eq, moment_eq, theta_eq, displ_eq], substitutions
 
+b = Beam(N=10, L=5, EI=1e4, q=100)
+sol = b.solve(verbosity=1)
+b.solve("mosek", verbosity=1)
+x = np.linspace(0, b.L, b.N)  # position along beam
+w_gp = sol("w")  # deflection along beam
+w_exact = b.q/(24.*b.EI) * x**2 * (x**2 - 4*b.L*x + 6*b.L**2)  # analytic soln
 
-# b = Beam(N=10, L=5, EI=1e4, q=100)
-# sol = b.solve(verbosity=1)
-# b.solve("mosek", verbosity=1)
-# x = np.linspace(0, b.L, b.N)  # position along beam
-# w_gp = sol("w")  # deflection along beam
-# w_exact = b.q/(24.*b.EI) * x**2 * (x**2 - 4*b.L*x + 6*b.L**2)  # analytical soln
-#
-# assert max(abs(w_gp - w_exact)) <= 1e-2
-#
-# PLOT = False
-# if PLOT:
-#     import matplotlib.pyplot as plt
-#     x_exact = np.linspace(0, L, 1000)
-#     w_exact = P/(24.*EI) * x_exact**2 * (x_exact**2 - 4*L*x_exact + 6*L**2)
-#     plt.plot(x, w_gp, color='red', linestyle='solid', marker='^',
-#              markersize=8)
-#     plt.plot(x_exact, w_exact, color='blue', linestyle='dashed')
-#     plt.xlabel('x [m]')
-#     plt.ylabel('Deflection [m]')
-#     plt.axis('equal')
-#     plt.legend(['GP solution', 'Analytical solution'])
-#     plt.show()
+assert max(abs(w_gp - w_exact)) <= 1e-2
+
+PLOT = False
+if PLOT:
+    import matplotlib.pyplot as plt
+    x_exact = np.linspace(0, L, 1000)
+    w_exact = P/(24.*EI) * x_exact**2 * (x_exact**2 - 4*L*x_exact + 6*L**2)
+    plt.plot(x, w_gp, color='red', linestyle='solid', marker='^',
+             markersize=8)
+    plt.plot(x_exact, w_exact, color='blue', linestyle='dashed')
+    plt.xlabel('x [m]')
+    plt.ylabel('Deflection [m]')
+    plt.axis('equal')
+    plt.legend(['GP solution', 'Analytical solution'])
+    plt.show()

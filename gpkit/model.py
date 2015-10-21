@@ -116,6 +116,15 @@ class Model(object):
                         if "model" not in k.descr:
                             newk = VarKey(k, model=name)
                             exp[newk] = exp.pop(k)
+            for k, v in self.substitutions.items():
+                # doesn't work for Var / Vec substitution yet
+                if "model" not in k.descr:
+                    newk = VarKey(k, model=name)
+                    if isinstance(v, VarKey):
+                        newv = VarKey(v, model=name)
+                        exp[newk] = newv
+                    else:
+                        exp[newk] = exp.pop(k)
 
     @property
     def signomials(self):
