@@ -24,7 +24,7 @@ from .nomial_data import NomialData
 from .solution_array import parse_result
 from .substitution import get_constants, separate_subs
 from .substitution import substitution
-from .small_scripts import flatten, latex_num
+from .small_scripts import flatten, latex_num, unitstr
 from .nomial_data import simplify_exps_and_cs
 from .feasibility import feasibility_model
 
@@ -527,10 +527,17 @@ class Model(object):
                          ["    & %s \\\\" % constr._latex()
                           for constr in self.constraints] +
                          ["\\text{substituting}"] +
-                         sorted(["    & %s = %s \\\\" % (var._latex(),
-                                                         latex_num(val))
+                         sorted(["    & %s \leftarrow %s %s \\\\" % (var._latex(),
+                                                         latex_num(val),
+                                                         sub_units(var))
                                  for var, val in self.constants.items()]) +
                          ["\\end{array}"])
+
+
+def sub_units(varkey):
+    units = unitstr(varkey.units, r"\mathrm{ %s }", "L~")
+    units_tf = units.replace("frac", "tfrac").replace(r"\cdot", r"\cdot ")
+    return units_tf
 
 
 def form_program(programType, signomials, verbosity=2):

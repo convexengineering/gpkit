@@ -275,7 +275,7 @@ class Signomial(NomialData):
     def __repr__(self):
         return "gpkit.%s(%s)" % (self.__class__.__name__, str(self))
 
-    def _latex(self, unused=None):
+    def _latex(self, unused=None, showunits=True):
         "For pretty printing with Sympy"
         mstrs = []
         for c, exp in zip(self.cs, self.exps):
@@ -310,6 +310,9 @@ class Signomial(NomialData):
                 mstrs.append("\\frac{%s}{%s}" % (cstr, nvarstr))
             elif pos_vars and neg_vars:
                 mstrs.append("%s\\frac{%s}{%s}" % (cstr, pvarstr, nvarstr))
+
+        if not showunits:
+            return " + ".join(sorted(mstrs))
 
         units = unitstr(self.units, r"\mathrm{\left[ %s \right]}", "L~")
         units_tf = units.replace("frac", "tfrac").replace(r"\cdot", r"\cdot ")
@@ -545,7 +548,7 @@ class Constraint(Posynomial):
         return repr(self.left) + self.oper_s + repr(self.right)
 
     def _latex(self, unused=None):
-        return self.left._latex() + self.oper_l + self.right._latex()
+        return self.left._latex(showunits=False) + self.oper_l + self.right._latex(showunits=False)
 
     def __init__(self, left, right, oper_ge=True):
         """Initialize a constraint of the form left >= right
