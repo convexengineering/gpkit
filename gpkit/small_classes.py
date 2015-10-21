@@ -129,7 +129,10 @@ def index_dict(idx, i, o):
         if isinstance(v, dict):
             o[k] = index_dict(idx, v, {})
         else:
-            o[k] = v[idx]
+            try:
+                o[k] = v[idx]
+            except IndexError:  # if not an array, return as is
+                o[k] = v
     assert set(i.keys()) == set(o.keys())
     return o
 
