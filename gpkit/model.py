@@ -30,7 +30,7 @@ from .nomial_data import simplify_exps_and_cs
 from .feasibility import feasibility_model
 
 try:
-    from IPython.parallel import Client
+    from ipyparallel import Client
     CLIENT = Client(timeout=0.01)
     assert len(CLIENT) > 0
     POOL = CLIENT[:]
@@ -166,27 +166,6 @@ class Model(object):
         "All constants (non-sweep substitutions) currently in the Model."
         _, beforesubs, allsubs = self.signomials_et_al
         return get_constants(beforesubs, allsubs)
-
-    def __add__(self, other):
-        if isinstance(other, Model):
-            substitutions = dict(self.substitutions)
-            substitutions.update(other.substitutions)
-            return Model(self.cost*other.cost,
-                         self.constraints + other.constraints,
-                         substitutions)
-        else:
-            return NotImplemented
-
-    def __mul__(self, other):
-        if isinstance(other, Model):
-            # TODO: combine shared variables
-            substitutions = dict(self.substitutions)
-            substitutions.update(other.substitutions)
-            return Model(self.cost*other.cost,
-                         self.constraints + other.constraints,
-                         substitutions)
-        else:
-            return NotImplemented
 
     def zero_lower_unbounded_variables(self):
         "Recursively substitutes 0 for variables that lack a lower bound"
