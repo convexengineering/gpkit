@@ -1,46 +1,38 @@
-try:
-    from IPython.html.widgets import interactive, FloatSliderWidget
-    from IPython.display import Math, display
-except ImportError:
-    pass
+# try:
+from ipywidgets import interactive, FloatSlider
+from IPython.display import Math, display
+# except ImportError:
+#     pass
 
 from ..small_scripts import unitstr
 
 
-def widget(gp, outputfn=None, ranges=None, **solveargs):
+def widget(m, outputfn=None, ranges=None, **solveargs):
     # HACK HACK HACK HACK
     # copy doesn't work, issue 293
     # and this should not use copy anyway
     # keeping for now -- was intended to avoid widgets mutating the GP
     # that should not be possible and needs to be refactored
-    original_cost_units = gp.cost.units
+    original_cost_units = m.cost.units
     # while we're hacking, hack some more -- avoid calling copy
-    gp = gp.__class__(gp.cost, gp.constraints)
-    gp.cost.units = original_cost_units
+    m = m.__class__(m.cost, m.constraints, m.substitutions)
+    m.cost.units = original_cost_units
     # end HACK
 
-
     if not ranges:
-        ranges = {k._cmpstr: (min(vs), max(vs), (max(vs)-min(vs))/100.0)
-                  for k, vs in gp.sweep.items()}
-        ranges.update({k._cmpstr: FloatSliderWidget(min=v/10.0, max=10*v , step=v/10.0, value=v)
-                       for k, v in gp.substitutions.items()})
+        ranges = {k._cmpstr: FloatSlider(min=v/10.0, max=10*v,
+                                         step=v/10.0, value=v)
+                  for k, v in m.constants.items()}
     if not outputfn:
-        def outputfn(gp):
-            print gp.solution.table(["cost", "free_variables"])
-
-    gp.sweep = {}
-    # gp.prewidget = gp.last
+        def outputfn(m):
+            print m.solution.table(["cost", "freevariables"])
 
     solveargs["verbosity"] = 0
+
     def display(**subs):
-        gp.substitutions.update(subs)
-        # if hasattr(gp, "localsolve"):
-        #     gp.localsolve(**solveargs)
-        # else:
-        gp.solve(**solveargs)
-        outputfn(gp)
-        # gp.load(gp.prewidget)
+        m.substitutions.update(subs)
+        m.solve(**solveargs)
+        outputfn(m)
 
     return interactive(display, **ranges)
 

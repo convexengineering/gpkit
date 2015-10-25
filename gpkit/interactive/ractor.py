@@ -21,7 +21,7 @@ def ractorpy(gp, update_py, ranges, constraint_js="",
         live = "<script>" + update_py(gp) + "\n" + constraint_js + "</script>"
         display(HTML(live))
         if showtables:
-            print sol.table(showtables)
+            print gp.solution.table(showtables)
     return widget(gp, ractivefn, ranges)
 
 new_jswidget_id = itertools.count().next
