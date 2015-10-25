@@ -290,9 +290,9 @@ class Model(object):
         sweep, linkedsweep, constants = separate_subs(beforesubs, allsubs)
         solution = SolutionArray()
         kwargs.update({"solver": solver})
-        kwargs.update({"verbosity": verbosity - 1})
 
         if sweep:
+            kwargs.update({"verbosity": verbosity - 1})
             if len(sweep) == 1:
                 sweep_grids = np.array(list(sweep.values()))
             else:
@@ -344,6 +344,7 @@ class Model(object):
             for var, val in solution["constants"].items():
                 solution["constants"][var] = [val[0]]
         else:
+            kwargs.update({"verbosity": verbosity})
             signomials, beforesubs.smaps = simplify_and_mmap(signomials,
                                                              constants)
             # NOTE: SIDE EFFECTS
