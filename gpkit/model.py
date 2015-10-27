@@ -71,10 +71,11 @@ class Model(object):
 
     def __init__(self, cost=None, constraints=None, substitutions=None,
                  *args, **kwargs):
-        if cost is None:
-            if not hasattr(self, "setup"):
+        isobjectmodel = isobjectmodel  # not sure about the name
+        if cost is None and not isobjectmodel:
                 raise TypeError("Models can only be created without a cost"
                                 " if they have a 'setup' method.")
+        elif isobjectmodel:
             try:
                 name = kwargs.pop("name", self.__class__.__name__)
                 setup = self.setup(*args, **kwargs)
@@ -95,7 +96,7 @@ class Model(object):
         self.constraints = list(constraints)
         self.substitutions = dict(substitutions)
 
-        if hasattr(self, "setup"):
+        if isobjectmodel:
             # TODO: use super instead of Model?
             k = Model.model_nums[name]
             Model.model_nums[name] = k+1
