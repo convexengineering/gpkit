@@ -163,7 +163,7 @@ def substitution(nomial, substitutions, val=None):
                         elif mag(cs_[i]) < 0:
                             cs_[i] = -np.inf
                         else:
-                            cs_[i] = np.nan
+                            cs_[i] = 1.0
                     else:
                         cs_[i] = np.nan
                 else:
