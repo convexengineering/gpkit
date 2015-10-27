@@ -154,7 +154,9 @@ def substitution(nomial, substitutions, val=None):
             if len(varlocs_[var]) == 0:
                 del varlocs_[var]
             if isinstance(sub, Numbers):
-                if sub == 0:  # frickin' pints bug. let's reimplement pow()
+                if sub != 0:
+                    cs_[i] *= sub**x
+                else:  # frickin' pints bug. let's reimplement pow()
                     if x > 0:
                         cs_[i] = 0.0
                     elif x < 0:
@@ -166,8 +168,6 @@ def substitution(nomial, substitutions, val=None):
                             cs_[i] = np.nan
                     else:
                         cs_[i] = 1.0
-                else:
-                    cs_[i] *= sub**x
             elif isinstance(sub, np.ndarray):
                 if not sub.shape:
                     cs_[i] *= sub.flatten()[0]**x
