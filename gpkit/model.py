@@ -108,23 +108,23 @@ class Model(object):
             name += str(k) if k else ""
             for s in self.signomials:
                 for k in s.varlocs:
-                    if "model" not in k.descr:
-                        newk = VarKey(k, model=name)
-                        s.varlocs[newk] = s.varlocs.pop(k)
+                    model = name+k.descr.pop("model", "")
+                    newk = VarKey(k, model=model)
+                    s.varlocs[newk] = s.varlocs.pop(k)
                 for exp in s.exps:
                     for k in exp:
-                        if "model" not in k.descr:
-                            newk = VarKey(k, model=name)
-                            exp[newk] = exp.pop(k)
+                        model = name + k.descr.pop("model", "")
+                        newk = VarKey(k, model=model)
+                        exp[newk] = exp.pop(k)
             for k, v in self.substitutions.items():
                 # doesn't work for Var / Vec substitution yet
-                if "model" not in k.descr:
-                    newk = VarKey(k, model=name)
-                    if isinstance(v, VarKey):
-                        newv = VarKey(v, model=name)
-                        exp[newk] = newv
-                    else:
-                        exp[newk] = exp.pop(k)
+                model = name + k.descr.pop("model", "")
+                newk = VarKey(k, model=model)
+                if isinstance(v, VarKey):
+                    newv = VarKey(v, model=model)
+                    exp[newk] = newv
+                else:
+                    exp[newk] = exp.pop(k)
 
     @property
     def signomials(self):
