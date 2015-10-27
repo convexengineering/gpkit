@@ -164,11 +164,14 @@ def results_table(data, title, minval=0, printunits=True, fixedcols=True,
             model = k.descr.get("model", "")
             decorated.append((model, b, (varfmt % k.nomstr), i, k, v))
     decorated.sort()
-    oldmodel = ""
+    oldmodel = None
     for model, isvector, varstr, _, var, val in decorated:
         if model != oldmodel:
-            lines.append(["", "", "", ""])
-            lines.append([model+" | ", "", "", ""])
+            if oldmodel is not None:
+                lines.append(["", "", "", ""])
+            if model is not "":
+                lines.append([model+" | ", "", "", ""])
+            oldmodel = model
         label = var.descr.get('label', '')
         units = unitstr(var, into=" [%s] ", dimless="") if printunits else ""
         if isvector:

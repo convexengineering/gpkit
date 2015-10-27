@@ -71,7 +71,7 @@ class Model(object):
 
     def __init__(self, cost=None, constraints=None, substitutions=None,
                  *args, **kwargs):
-        isobjectmodel = isobjectmodel  # not sure about the name
+        isobjectmodel = hasattr(self, "setup")  # not sure about the name
         if cost is None and not isobjectmodel:
                 raise TypeError("Models can only be created without a cost"
                                 " if they have a 'setup' method.")
