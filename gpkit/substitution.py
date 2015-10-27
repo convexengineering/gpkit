@@ -154,18 +154,20 @@ def substitution(nomial, substitutions, val=None):
             if len(varlocs_[var]) == 0:
                 del varlocs_[var]
             if isinstance(sub, Numbers):
-                try:
-                    if sub == 0:
-                        cs_[i] = 0
-                    else:
-                        cs_[i] *= sub**x
-                except ZeroDivisionError:
-                    if mag(cs_[i]) > 0:
-                        cs_[i] = np.inf
-                    elif mag(cs_[i]) < 0:
-                        cs_[i] = -np.inf
+                if sub == 0:  # frickin' pints bug. let's reimplement pow()
+                    if x > 0:
+                        cs_[i] = 0.0
+                    elif x < 0:
+                        if mag(cs_[i]) > 0:
+                            cs_[i] = np.inf
+                        elif mag(cs_[i]) < 0:
+                            cs_[i] = -np.inf
+                        else:
+                            cs_[i] = np.nan
                     else:
                         cs_[i] = np.nan
+                else:
+                    cs_[i] *= sub**x
             elif isinstance(sub, np.ndarray):
                 if not sub.shape:
                     cs_[i] *= sub.flatten()[0]**x
