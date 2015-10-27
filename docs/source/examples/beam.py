@@ -17,8 +17,8 @@ class Beam(Model):
         [m] Length of beam.
     EI : float
         [N m^2] Elastic modulus times cross-section's area moment of inertia.
-    P : float
-        [N/m] Loading density.
+    q : float or N-vector of floats
+        [N/m] Loading density: can be specified as constants or as an array.
     """
     def setup(self, N=4, L=5, EI=1e4, q=100):
         # store attributes for later external use
