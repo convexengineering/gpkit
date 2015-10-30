@@ -11,6 +11,7 @@ import numpy as np
 
 from collections import defaultdict
 
+from .small_classes import Numbers
 from .nomials import MonoEQConstraint
 from .nomials import Signomial
 from .geometric_program import GeometricProgram
@@ -24,12 +25,12 @@ from .nomial_data import NomialData
 from .solution_array import parse_result
 from .substitution import get_constants, separate_subs
 from .substitution import substitution
-from .small_scripts import flatten, latex_num, unitstr
+from .small_scripts import mag, flatten, latex_num, unitstr
 from .nomial_data import simplify_exps_and_cs
 from .feasibility import feasibility_model
 
 try:
-    from IPython.parallel import Client
+    from ipyparallel import Client
     CLIENT = Client(timeout=0.01)
     assert len(CLIENT) > 0
     POOL = CLIENT[:]
@@ -74,24 +75,31 @@ class Model(object):
                 raise TypeError("Models can only be created without a cost"
                                 " if they have a 'setup' method.")
             try:
+                extended_args = [arg for arg in [cost, constraints, substitutions]
+                                 if arg is not None]
+                extended_args.extend(args)
                 name = kwargs.pop("name", self.__class__.__name__)
-                setup = self.setup(*args, **kwargs)
+                setup = self.setup(*extended_args, **kwargs)
             except:
                 print("The 'setup' method of this model had an error.")
                 raise
             try:
-                cost, constraints = setup
+                if isinstance(setup, Model):
+                    cost, constraints = setup.cost, setup.constraints
+                    substitutions = setup.substitutions
+                elif len(setup) == 2:
+                    cost, constraints = setup
+                elif len(setup) == 3:
+                    cost, constraints, substitutions = setup
             except TypeError:
-                raise TypeError("Model 'setup' methods must return "
-                                "(cost, constraints).")
-        if constraints is None:
-            constraints = []
-        if substitutions is None:
-            substitutions = {}
+                raise TypeError("Model 'setup' methods must return either"
+                                " a Model, a tuple of (cost, constraints),"
+                                " or a tuple of (cost, constraints,"
+                                " substitutions).")
 
         self.cost = Signomial(cost)
-        self.constraints = list(constraints)
-        self.substitutions = dict(substitutions)
+        self.constraints = list(constraints) if constraints else []
+        self.substitutions = dict(substitutions) if substitutions else {}
 
         if hasattr(self, "setup"):
             # TODO: use super instead of Model?
@@ -100,14 +108,23 @@ class Model(object):
             name += str(k) if k else ""
             for s in self.signomials:
                 for k in s.varlocs:
-                    if "model" not in k.descr:
-                        newk = VarKey(k, model=name)
-                        s.varlocs[newk] = s.varlocs.pop(k)
+                    model = name+k.descr.pop("model", "")
+                    newk = VarKey(k, model=model)
+                    s.varlocs[newk] = s.varlocs.pop(k)
                 for exp in s.exps:
                     for k in exp:
-                        if "model" not in k.descr:
-                            newk = VarKey(k, model=name)
-                            exp[newk] = exp.pop(k)
+                        model = name + k.descr.pop("model", "")
+                        newk = VarKey(k, model=model)
+                        exp[newk] = exp.pop(k)
+            for k, v in self.substitutions.items():
+                # doesn't work for Var / Vec substitution yet
+                model = name + k.descr.pop("model", "")
+                newk = VarKey(k, model=model)
+                if isinstance(v, VarKey):
+                    newv = VarKey(v, model=model)
+                    exp[newk] = newv
+                else:
+                    exp[newk] = exp.pop(k)
 
     @property
     def signomials(self):
@@ -150,28 +167,14 @@ class Model(object):
         _, beforesubs, allsubs = self.signomials_et_al
         return get_constants(beforesubs, allsubs)
 
-    def __add__(self, other):
-        if isinstance(other, Model):
-            substitutions = dict(self.substitutions)
-            substitutions.update(other.substitutions)
-            return Model(self.cost*other.cost,
-                         self.constraints + other.constraints,
-                         substitutions)
-        else:
-            return NotImplemented
-
-    def __mul__(self, other):
-        if isinstance(other, Model):
-            # TODO: combine shared variables
-            substitutions = dict(self.substitutions)
-            substitutions.update(other.substitutions)
-            return Model(self.cost*other.cost,
-                         self.constraints + other.constraints,
-                         substitutions)
-        else:
-            return NotImplemented
-
-    # TODO: add get_item
+    def zero_lower_unbounded_variables(self):
+        "Recursively substitutes 0 for variables that lack a lower bound"
+        zeros = True
+        while zeros:
+            bounds = self.gp(verbosity=0).missingbounds
+            zeros = {var: 0 for var, bound in bounds.items()
+                     if bound == "lower"}
+            self.substitutions.update(zeros)
 
     def solve(self, solver=None, verbosity=1, skipfailures=True,
               *args, **kwargs):
@@ -285,6 +288,12 @@ class Model(object):
         ValueError if programType and model constraints don't match.
         RuntimeWarning if an error occurs in solving or parsing the solution.
         """
+        if any(isinstance(val, Numbers) and val == 0
+               for val in self.allsubs.values()):
+            if verbosity > 0:
+                print("A zero-substitution triggered the zeroing of lower-"
+                      "unbounded variables to maintain solver compatibility.")
+            self.zero_lower_unbounded_variables()
         signomials, beforesubs, allsubs = self.signomials_et_al
         beforesubs.signomials = signomials
         sweep, linkedsweep, constants = separate_subs(beforesubs, allsubs)
@@ -584,7 +593,7 @@ def simplify_and_mmap(constraints, subs):
                 # if s is still a Signomial cost we'll let SP throw the error
                 # if s was a Signomial constraint, catch impossibilities
                 # and convert to Posynomial consrtaints as possible
-                negative_c_count = (cs <= 0).sum()
+                negative_c_count = (mag(cs) <= 0).sum()
                 if negative_c_count == 0:
                     raise RuntimeWarning("""Infeasible SignomialConstraint.
 

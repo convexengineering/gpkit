@@ -74,6 +74,19 @@ class TestGP(unittest.TestCase):
             self.assertAlmostEqual(y, 1/math.sqrt(2.), self.ndig)
         self.assertAlmostEqual(sol["cost"]/(4*math.sqrt(2)), 1., self.ndig)
 
+    def test_zero_lower_unbounded(self):
+        from gpkit.shortcuts import *
+        x = Variable('x', value=4)
+        y = Variable('y', value=0)
+        z = Variable('z')
+        t1 = Variable('t1')
+        t2 = Variable('t2')
+
+        prob = Model(z, [z >= x + t1,
+                         t1 >= t2,
+                         t2 >= y])
+        sol = prob.solve(verbosity=0)
+
     def test_mdd_example(self):
         Cl = Variable("Cl", 0.5, "-", "Lift Coefficient")
         Mdd = Variable("Mdd", "-", "Drag Divergence Mach Number")
