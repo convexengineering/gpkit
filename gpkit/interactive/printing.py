@@ -318,7 +318,6 @@ x**2 + x + y**2 + y
 x + y +
 x**2 + y**2
 """
-    print("tryna init printing")
     import sys
     from sympy.printing.printer import Printer
 
