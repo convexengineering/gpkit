@@ -176,7 +176,7 @@ class Model(object):
                      if bound == "lower"}
             self.substitutions.update(zeros)
 
-    def solve(self, solver=None, verbosity=1, skipfailures=True,
+    def solve(self, solver=None, verbosity=1, skipfailures=False,
               *args, **kwargs):
         """Forms a GeometricProgram and attempts to solve it.
 
@@ -216,7 +216,7 @@ class Model(object):
     have only local solutions, and are solved with 'Model.localsolve()'.""")
             raise
 
-    def localsolve(self, solver=None, verbosity=1, skipfailures=True,
+    def localsolve(self, solver=None, verbosity=1, skipfailures=False,
                    *args, **kwargs):
         """Forms a SignomialProgram and attempts to locally solve it.
 
@@ -333,7 +333,7 @@ class Model(object):
                                        sweep, linkedsweep)
                     return program, sol
                 except (RuntimeWarning, ValueError):
-                    return program, program.result
+                    return program, None
 
             if POOL:
                 mapfn = POOL.map_sync
@@ -343,7 +343,7 @@ class Model(object):
             self.program = []
             for program, result in mapfn(solve_pass, range(N_passes)):
                 self.program.append(program)  # NOTE: SIDE EFFECTS
-                if not hasattr(result, "status"):  # solve succeeded
+                if result:  # solve succeeded
                     solution.append(result)
                 elif not skipfailures:
                     raise RuntimeWarning("solve failed during sweep; program"
@@ -543,6 +543,30 @@ class Model(object):
                                                                 sub_units(var))
                                  for var, val in self.constants.items()]) +
                          ["\\end{array}"])
+
+    def interact(self,  fn_of_sol=None, ranges=None, **solveargs):
+        try:
+            from ipywidgets import interactive, FloatSlider
+        except ImportError:
+            from IPython.html.widgets import interactive, FloatSliderWidget
+            FloatSlider = FloatSliderWidget
+
+        if ranges is None:
+            ranges = {k._cmpstr: FloatSlider(min=v/10.0, max=10*v,
+                                             step=v/10.0, value=v)
+                      for k, v in self.constants.items()}
+        if fn_of_sol is None:
+            def fn_of_sol(solution):
+                print solution.table(["cost", "freevariables"])
+
+        solveargs["verbosity"] = 0
+
+        def display(**subs):
+            self.substitutions.update(subs)
+            self.solve(**solveargs)
+            fn_of_sol(self.solution)
+
+        return interactive(display, **ranges)
 
 
 def sub_units(varkey):

@@ -10,23 +10,27 @@ except ImportError:
 
 from widget import widget
 
+
 def showcadtoon(title, css=""):
     with open("%s.gpkit" % title, 'r') as f:
         css = "<style> #ractivecontainer { %s } </style>" % css
         display(HTML(f.read() + css))
 
-def ractorpy(gp, update_py, ranges, constraint_js="",
+
+def ractorpy(m, update_py, ranges, constraint_js="",
              showtables=["cost", "sensitivities"]):
-    def ractivefn(gp):
-        live = "<script>" + update_py(gp) + "\n" + constraint_js + "</script>"
+    def ractivefn(sol):
+        live = "<script>" + update_py(sol) + "\n" + constraint_js + "</script>"
         display(HTML(live))
         if showtables:
-            print gp.solution.table(showtables)
-    return widget(gp, ractivefn, ranges)
+            print sol.table(showtables)
+    return m.interact(ractivefn, ranges)
+
 
 new_jswidget_id = itertools.count().next
 
-def ractorjs(title, gp, update_py, ranges, constraint_js=""):
+
+def ractorjs(title, m, update_py, ranges, constraint_js=""):
     widget_id = "jswidget_"+str(new_jswidget_id())
     display(HTML("<script id='%s-after' type='text/throwaway'>%s</script>" %
                  (widget_id, constraint_js)))
@@ -44,7 +48,7 @@ def ractorjs(title, gp, update_py, ranges, constraint_js=""):
     lengths = []
     bases = []
 
-    varkeys = gp.beforesubs.varlocs.keys()
+    varkeys = m.beforesubs.varlocs.keys()
 
     for var, values in ranges.items():
         mini, maxi, step = values
@@ -73,10 +77,8 @@ def ractorjs(title, gp, update_py, ranges, constraint_js=""):
 
     evalarray = [""]*np.prod(lengths)
 
-    gp.sweep = {}
-    gp.prewidget = gp.last
-    gp.sub(subs, replace=True)
-    sol = gp.solve(printing=False, skipfailures=True)
+    m.substitutions.update(subs)
+    sol = m.solve(verbosity=0, skipfailures=True)
     for j in range(len(sol)):
         solj = sol.atindex(j)
         soljv = solj["variables"]
@@ -84,7 +86,6 @@ def ractorjs(title, gp, update_py, ranges, constraint_js=""):
         k = sum(np.array(idxs) * np.array([1]+bases[:-1]))
         evalarray[k] = update_py(SolutionArray(solj))
     display(HTML("<script> %s.storage = %s </script>" % (widget_id, evalarray)))
-    gp.load(gp.prewidget)
 
     display(HTML(template + "</table></script>"))
 
