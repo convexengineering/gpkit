@@ -1,41 +1,11 @@
 A zero-substitution triggered the zeroing of lower-unbounded variables to maintain solver compatibility.
+Using solver 'cvxopt'
+Solving for 36 variables.
+Solving took 0.0483 seconds.
 
 Cost
 ----
  0.7813 [m] 
-
-Free Variables
---------------
-     M_Beam : [ 1.25e+03  988       756       556      ... ]  [N*m] Internal moment
-     V_Beam : [ 500       444       389       333      ... ]  [N]   Internal shear 
-\theta_Beam : [  -        0.0622    0.111     0.147    ... ]        Slope          
-     w_Beam : [  -        0.0173    0.0653    0.137    ... ]  [m]   Displacement   
-
-Constants
----------
-           EI_Beam : 1e+04                                           [N*m**2]                               
-      M_{tip}_Beam : 0                                               [N*m]    Tip moment                    
-      V_{tip}_Beam : 0                                               [N]      Tip loading                   
-\theta_{base}_Beam : 0                                                        Base angle                    
-           dx_Beam : 0.5556                                          [m]      Length of an element          
-     w_{base}_Beam : 0                                               [m]      Base deflection               
-            M_Beam : [  -         -         -         -       ... ]  [N*m]    Internal moment               
-            V_Beam : [  -         -         -         -       ... ]  [N]      Internal shear                
-       \theta_Beam : [ 0          -         -         -       ... ]           Slope                         
-            q_Beam : [ 100       100       100       100      ... ]  [N/m]    Distributed load at each point
-            w_Beam : [ 0          -         -         -       ... ]  [m]      Displacement                  
-
-Sensitivities
--------------
-EI_Beam : -1                                                                           
-dx_Beam : 4                                              Length of an element          
- q_Beam : [ 0.0013    0.00762   0.0223    0.0454   ... ] Distributed load at each point
-
-A zero-substitution triggered the zeroing of lower-unbounded variables to maintain solver compatibility.
-
-Cost
-----
- 0.7812 [m] 
 
 Free Variables
 --------------
