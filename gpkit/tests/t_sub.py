@@ -43,9 +43,9 @@ class TestNomialSubs(unittest.TestCase):
 
     def test_scalar_units(self):
         x = Variable("x", "m")
-        xvk = x.varkey
+        xvk = x.key
         y = Variable("y", "km")
-        yvk = y.varkey
+        yvk = y.key
         units_exist = bool(x.units)
         for x_ in ["x", xvk, x]:
             for y_ in ["y", yvk, y]:
@@ -148,6 +148,40 @@ class TestGPSubs(unittest.TestCase):
         a = solv["xi"]
         b = xi_dist
         self.assertTrue(all(abs(a-b)/(a+b) < 1e-7))
+
+    def test_model_composition_units(self):
+        class Above(Model):
+            def setup(self):
+                x = Variable("x", "ft")
+                x_max = Variable("x_{max}", 1, "yard")
+                return 1/x, [x <= x_max]
+
+        class Below(Model):
+            def setup(self):
+                x = Variable("x", "m")
+                x_min = Variable("x_{min}", 1, "cm")
+                return x, [x >= x_min]
+
+        a, b = Above(), Below()
+        if not isinstance(a["x"].key.units, str):
+            self.assertAlmostEqual(a.solve(verbosity=0)["cost"], 0.3333333)
+            self.assertAlmostEqual(b.solve(verbosity=0)["cost"], 0.01)
+            concat_cost = (a | b).solve(verbosity=0)["cost"]
+            self.assertAlmostEqual(concat_cost, 0.0109361)
+        a1, b1 = Above(), Below()
+        m = a1 & b1
+        m.cost = m["x"]
+        sol = m.solve(verbosity=0)
+        if not isinstance(m["x"].key.units, str):
+            self.assertAlmostEqual(sol["cost"], 0.032808399)  # 1 cm/1 yd
+        self.assertIn(m["x"], sol["variables"])
+        self.assertIn(a1["x"], sol["variables"])
+        self.assertIn(b1["x"], sol["variables"])
+        self.assertNotIn(a["x"], sol["variables"])
+        self.assertNotIn(b["x"], sol["variables"])
+
+        # add unit test for varsbyname, vector composition
+        # @whoburg: and some for unions and intersections before solving
 
     # def test_simpleaircraft(self):
     #

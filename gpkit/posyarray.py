@@ -89,7 +89,11 @@ class PosyArray(np.ndarray):
     @property
     def c(self):
         try:
-            return np.array(self, dtype='float')
+            floatarray = np.array(self, dtype='float')
+            if not floatarray.shape:
+                return floatarray.flatten()[0]
+            else:
+                return floatarray
         except TypeError:
             raise ValueError("only a posyarray of numbers has a 'c'")
 

@@ -63,17 +63,22 @@ class VarKey(object):
 
     @property
     def name(self):
-        """name of this VarKey"""
+        "name of this VarKey"
         return self.descr['name']
+
+    @property
+    def nomstr(self):
+        "string representation of this VarKey without the modelname"
+        return self.__repr__(["idx"])
 
     @property
     def units(self):
         """units of this VarKey"""
         return self.descr.get("units", None)
 
-    def __repr__(self):
+    def __repr__(self, subscripts=["model", "idx"]):
         s = self.name
-        for subscript in ["model", "idx"]:
+        for subscript in subscripts:
             if subscript in self.descr:
                 s = "%s_%s" % (s, self.descr[subscript])
         return s
@@ -116,6 +121,8 @@ class VarKey(object):
             return True
         elif isinstance(other, Strings):
             return self._cmpstr == other
+        elif hasattr(other, "key"):
+            return other.key == self
         elif isinstance(other, PosyArray):
             it = np.nditer(other, flags=['multi_index', 'refs_ok'])
             while not it.finished:

@@ -18,6 +18,8 @@ from .geometric_program import GeometricProgram
 from .signomial_program import SignomialProgram
 from .solution_array import SolutionArray
 from .varkey import VarKey
+from .variables import Variable
+from .posyarray import PosyArray
 from . import SignomialsEnabled
 
 from .nomial_data import NomialData
@@ -70,10 +72,11 @@ class Model(object):
 
     def __init__(self, cost=None, constraints=None, substitutions=None,
                  *args, **kwargs):
-        if cost is None:
-            if not hasattr(self, "setup"):
+        isobjectmodel = hasattr(self, "setup")  # not sure about the name
+        if cost is None and not isobjectmodel:
                 raise TypeError("Models can only be created without a cost"
                                 " if they have a 'setup' method.")
+        elif isobjectmodel:
             try:
                 extended_args = [arg for arg in [cost, constraints, substitutions]
                                  if arg is not None]
@@ -101,7 +104,7 @@ class Model(object):
         self.constraints = list(constraints) if constraints else []
         self.substitutions = dict(substitutions) if substitutions else {}
 
-        if hasattr(self, "setup"):
+        if isobjectmodel:
             # TODO: use super instead of Model?
             k = Model.model_nums[name]
             Model.model_nums[name] = k+1
@@ -125,6 +128,91 @@ class Model(object):
                     exp[newk] = newv
                 else:
                     exp[newk] = exp.pop(k)
+
+    def __or__(self, other):
+        return self.concat(other)
+
+    def __and__(self, other):
+        return self.merge(other)
+
+    def __getitem__(self, item):
+        # note: this rebuilds the dictionary on every acess
+        # if this is too slow, there could be some hashing and caching
+        return self.varsbyname[item]
+
+    def merge(self, other):
+        if not isinstance(other, Model):
+            return NotImplemented
+        selfvars = self.varsbyname
+        othervars = other.varsbyname
+        overlap = set(selfvars) & set(othervars)
+        substitutions = dict(self.substitutions)
+        substitutions.update(other.substitutions)
+        for name in overlap:
+            descr = self[name].descr
+            descr.pop("model", None)
+            newvar = Variable(**descr)
+            svars = (selfvars[name] if isinstance(selfvars[name], list)
+                     else [selfvars[name]])
+            ovars = (othervars[name] if isinstance(othervars[name], list)
+                     else [othervars[name]])
+            for var in svars + ovars:
+                if var != newvar:
+                    substitutions[var.key] = newvar.key  # vectors???
+        return Model(self.cost*other.cost,  # alternately, keep the leftmost
+                     self.constraints + other.constraints,
+                     substitutions)
+
+    def concat(self, other):
+        if not isinstance(other, Model):
+            return NotImplemented
+        substitutions = dict(self.substitutions)
+        substitutions.update(other.substitutions)
+        return Model(self.cost*other.cost,  # alternately, keep the leftmost
+                     self.constraints + other.constraints,
+                     substitutions)
+
+    @property
+    def varsbyname(self):
+        varkeys = set()
+        for signomial in self.signomials:
+            for exp in signomial.exps:
+                varkeys.update(exp)
+        varsbyname = defaultdict(list)
+        for varkey in varkeys:
+            if varkey in self.substitutions:
+                sub = self.substitutions[varkey]
+                if isinstance(sub, VarKey):
+                    varkey = sub
+            var = Variable(**varkey.descr)
+            if "idx" in varkey.descr and "shape" in varkey.descr:
+                descr = dict(varkey.descr)
+                idx = descr.pop("idx")
+                if "value" in descr:
+                    descr.pop("value")
+                if "units" in descr:
+                    units = descr.pop("units")
+                    veckey = VarKey(**descr)
+                    veckey.descr["units"] = units
+                else:
+                    veckey = VarKey(**descr)
+                try:
+                    vecidx = [i for i, li in enumerate(varsbyname[varkey.name])
+                              if veckey == li][0]
+                    varsbyname[varkey.name][vecidx][idx] = var
+                except IndexError:  # veckey not in list!
+                    nanarray = np.full(var.descr["shape"], np.nan, dtype="object")
+                    nanPosyArray = PosyArray(nanarray)
+                    nanPosyArray[idx] = var
+                    nanPosyArray.veckey = veckey
+                    varsbyname[varkey.name].append(nanPosyArray)
+            else:
+                if var not in varsbyname[varkey.name]:
+                    varsbyname[varkey.name].append(var)
+        for name, variables in varsbyname.items():
+            if len(variables) == 1:
+                varsbyname[name] = variables[0]
+        return dict(varsbyname)
 
     @property
     def signomials(self):
@@ -154,11 +242,18 @@ class Model(object):
 
     @property
     def signomials_et_al(self):
-        "Get signomials, beforesubs, allsubs in one pass."
+        "Get signomials, beforesubs, allsubs in one pass; applies VarKey subs."
         signomials = self.signomials
         beforesubs = NomialData(nomials=signomials)
         allsubs = beforesubs.values
         allsubs.update(self.substitutions)
+        varkeysubs = {vk: nvk for vk, nvk in allsubs.items()
+                      if isinstance(nvk, VarKey)}
+        if varkeysubs:
+            beforesubs = beforesubs.sub(varkeysubs, require_positive=False)
+            beforesubs.varkeysubs = varkeysubs
+            signomials = [s.sub(varkeysubs, require_positive=False)
+                          for s in signomials]
         return signomials, beforesubs, allsubs
 
     @property

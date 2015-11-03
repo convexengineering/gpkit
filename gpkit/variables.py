@@ -46,17 +46,18 @@ class Variable(Monomial):
 
         Monomial.__init__(self, **descr)
         self.__class__ = Variable
+        self._hashvalue = hash(VarKey(**descr))
 
     __hash__ = NomialData.__hash__
 
     @property
-    def varkey(self):
+    def key(self):
         """Get the VarKey associated with this Variable"""
         return list(self.exp)[0]
 
     @property
     def descr(self):
-        return self.varkey.descr
+        return self.key.descr
 
     def sub(self, *args, **kwargs):
         """Same as nomial substitution, but also allows single-argument calls
@@ -155,6 +156,7 @@ class VectorVariable(PosyArray):
         obj = np.asarray(vl).view(cls)
         obj.descr = descr
         obj.descr.pop("idx", None)
+        obj.key = VarKey(**obj.descr)
         obj._hashvalue = hash(VarKey(**obj.descr))
 
         return obj
