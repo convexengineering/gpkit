@@ -7,7 +7,7 @@ from operator import mul
 from .posyarray import PosyArray
 from .nomials import Monomial
 from .varkey import VarKey
-from .small_classes import Strings
+from .small_classes import Strings, Quantity
 from .small_classes import DictOfLists
 from .small_scripts import unitstr
 from .small_scripts import mag
@@ -280,8 +280,8 @@ def parse_result(result, constants, beforesubs, sweep={}, linkedsweep={},
             for data in [constants, sweepvariables, freevariables, variables,
                          sensitivities["variables"]]:
                 if subvk in data:
-                    from . import units as ureg
-                    if data is sensitivities["variables"] or not ureg:
+                    qty = isinstance(origvk.units, Quantity)
+                    if data is sensitivities["variables"] or not qty:
                         data[origvk] = data[subvk]
                     else:
                         scale = (subvk.units/origvk.units).to("dimensionless")

@@ -109,25 +109,30 @@ class Model(object):
             k = Model.model_nums[name]
             Model.model_nums[name] = k+1
             name += str(k) if k else ""
+            processed_keys = set()
             for s in self.signomials:
                 for k in s.varlocs:
-                    model = name+k.descr.pop("model", "")
-                    newk = VarKey(k, model=model)
-                    s.varlocs[newk] = s.varlocs.pop(k)
+                    if k not in processed_keys:
+                        processed_keys.add(k)
+                        model = name+k.descr.get("model", "")
+                        k.descr["model"] = model
                 for exp in s.exps:
                     for k in exp:
-                        model = name + k.descr.pop("model", "")
-                        newk = VarKey(k, model=model)
-                        exp[newk] = exp.pop(k)
+                        if k not in processed_keys:
+                            processed_keys.add(k)
+                            model = name + k.descr.pop("model", "")
+                            k.descr["model"] = model
             for k, v in self.substitutions.items():
                 # doesn't work for Var / Vec substitution yet
-                model = name + k.descr.pop("model", "")
-                newk = VarKey(k, model=model)
+                kmodel = name + k.descr.pop("model", "")
+                if k not in processed_keys:
+                    processed_keys.add(k)
+                    k.descr["model"] = kmodel
                 if isinstance(v, VarKey):
-                    newv = VarKey(v, model=model)
-                    exp[newk] = newv
-                else:
-                    exp[newk] = exp.pop(k)
+                    vmodel = name + v.descr.pop("model", "")
+                    if v not in processed_keys:
+                        processed_keys.add(v)
+                        v.descr["model"] = vmodel
 
     def __or__(self, other):
         return self.concat(other)
@@ -140,7 +145,7 @@ class Model(object):
         # if this is too slow, there could be some hashing and caching
         return self.varsbyname[item]
 
-    def merge(self, other):
+    def merge(self, other, excluded_names=[]):
         if not isinstance(other, Model):
             return NotImplemented
         selfvars = self.varsbyname
@@ -149,6 +154,8 @@ class Model(object):
         substitutions = dict(self.substitutions)
         substitutions.update(other.substitutions)
         for name in overlap:
+            if name in excluded_names:
+                continue
             descr = self[name].descr
             descr.pop("model", None)
             newvar = Variable(**descr)

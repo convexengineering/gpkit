@@ -180,6 +180,26 @@ class TestGPSubs(unittest.TestCase):
         self.assertNotIn(a["x"], sol["variables"])
         self.assertNotIn(b["x"], sol["variables"])
 
+    def test_model_recursion(self):
+        class Top(Model):
+            def setup(self):
+                x = Variable('x')
+                y = Variable('y')
+                m = Model(x, [x >= y, y >= 1])
+                combined = m & Sub()
+                combined.cost = x
+                return combined
+
+        class Sub(Model):
+            def setup(self):
+                y = Variable('y')
+                objective = y
+                constraints = [y >= 2]
+                return objective, constraints
+
+        sol = Top().solve(verbosity=0)
+        self.assertAlmostEqual(sol['cost'], 2)
+
         # add unit test for varsbyname, vector composition
         # @whoburg: and some for unions and intersections before solving
 

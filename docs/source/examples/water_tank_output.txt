@@ -1,6 +1,6 @@
 Using solver 'cvxopt'
 Solving for 5 variables.
-Solving took 0.00694 seconds.
+Solving took 0.00585 seconds.
 
 Cost
 ----
