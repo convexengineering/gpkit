@@ -197,7 +197,7 @@ def sensitivity_plot(gp, keys=None, xmax=1, yxmax=1):
     matplotlib.pyplot Figure
     """
     if keys is None:
-        keys = gp.substitutions.keys()
+        keys = gp.solution["constants"].keys()
     right_ticks, top_ticks = [], []
     fig, left_ax = plt.subplots()
     ymax = yxmax*xmax
