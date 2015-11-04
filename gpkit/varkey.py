@@ -83,12 +83,19 @@ class VarKey(object):
                 s = "%s_%s" % (s, self.descr[subscript])
         return s
 
-    def _latex(self, unused=None):
+    def latex(self, unused=None):
         s = self.name
         for subscript in ["idx"]:  # +"model"?
             if subscript in self.descr:
                 s = "{%s}_{%s}" % (s, self.descr[subscript])
+                if subscript == "idx":
+                    if len(self.descr["idx"]) == 1:
+                        # drop the comma for 1-d vectors
+                        s = s[:-3]+s[-2:]
         return s
+
+    def _repr_latex_(self):
+        return "$$"+self.latex()+"$$"
 
     @property
     def _cmpstr(self):

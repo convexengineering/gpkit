@@ -184,19 +184,28 @@ class SignomialProgram(object):
         return "\n".join(["  # minimize",
                           "    %s," % self.cost,
                           "[ # subject to"] +
-                         ["    %s <= 1," % constr
+                         ["    %s <= 0," % constr
                           for constr in self.constraints] +
                          [']'])
 
-    def _latex(self, unused=None):
+    def latex(self, unused=None):
         """LaTeX representation of a SignomialProgram.
 
         Contains all of its parameters."""
+        posy_neg = []
+        for p, n in zip(self.posynomials, self.negynomials[1:]):
+            try:
+                posy_neg.append((p.latex(), n.latex()))
+            except:
+                posy_neg.append((p.latex(), str(n)))
         return "\n".join(["\\begin{array}[ll]",
                           "\\text{}",
                           "\\text{minimize}",
-                          "    & %s \\\\" % self.cost._latex(),
+                          "    & %s \\\\" % self.cost.latex(),
                           "\\text{subject to}"] +
-                         ["    & %s \\leq 1\\\\" % constr._latex()
-                          for constr in self.constraints] +
+                         ["    & %s \\leq %s\\\\" % (p, n)
+                          for (p, n) in posy_neg] +
                          ["\\end{array}"])
+
+    def _repr_latex_(self):
+        return "$$"+self.latex()+"$$"

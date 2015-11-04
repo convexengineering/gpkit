@@ -269,18 +269,21 @@ class GeometricProgram(NomialData):
                           for constr in self.constraints] +
                          [']'])
 
-    def _latex(self, unused=None):
+    def latex(self, unused=None):
         """LaTeX representation of a GeometricProgram.
 
         Contains all of its parameters."""
         return "\n".join(["\\begin{array}[ll]",
                           "\\text{}",
                           "\\text{minimize}",
-                          "    & %s \\\\" % self.cost._latex(),
+                          "    & %s \\\\" % self.cost.latex(),
                           "\\text{subject to}"] +
-                         ["    & %s \\leq 1\\\\" % constr._latex()
+                         ["    & %s \\leq 1\\\\" % constr.latex()
                           for constr in self.constraints] +
                          ["\\end{array}"])
+
+    def _repr_latex_(self):
+        return "$$"+self.latex()+"$$"
 
 
 def genA(exps, varlocs):

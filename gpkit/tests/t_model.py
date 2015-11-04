@@ -35,6 +35,8 @@ class TestGP(unittest.TestCase):
         prob = Model(cost=(x + 2*y),
                      constraints=[x*y >= 1])
         sol = prob.solve(solver=self.solver, verbosity=0)
+        self.assertEqual(type(prob.latex()), str)
+        self.assertEqual(type(prob._repr_latex_()), str)
         self.assertAlmostEqual(sol("x"), math.sqrt(2.), self.ndig)
         self.assertAlmostEqual(sol("y"), 1/math.sqrt(2.), self.ndig)
         self.assertAlmostEqual(sol("x") + 2*sol("y"),

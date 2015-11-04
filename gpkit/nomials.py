@@ -274,16 +274,16 @@ class Signomial(NomialData):
     def __repr__(self):
         return "gpkit.%s(%s)" % (self.__class__.__name__, str(self))
 
-    def _latex(self, unused=None, showunits=True):
+    def latex(self, unused=None, showunits=True):
         "For pretty printing with Sympy"
         mstrs = []
         for c, exp in zip(self.cs, self.exps):
             pos_vars, neg_vars = [], []
             for var, x in exp.items():
                 if x > 0:
-                    pos_vars.append((var._latex(), x))
+                    pos_vars.append((var.latex(), x))
                 elif x < 0:
-                    neg_vars.append((var._latex(), x))
+                    neg_vars.append((var.latex(), x))
 
             pvarstrs = ['%s^{%.2g}' % (varl, x) if "%.2g" % x != "1" else varl
                         for (varl, x) in pos_vars]
@@ -316,6 +316,9 @@ class Signomial(NomialData):
         units = unitstr(self.units, r"\mathrm{\left[ %s \right]}", "L~")
         units_tf = units.replace("frac", "tfrac").replace(r"\cdot", r"\cdot ")
         return " + ".join(sorted(mstrs)) + units_tf
+
+    def _repr_latex_(self):
+        return "$$"+self.latex()+"$$"
 
     def posy_negy(self):
         """Get the positive and negative parts, both as Posynomials
@@ -546,8 +549,8 @@ class Constraint(Posynomial):
     def __repr__(self):
         return repr(self.left) + self.oper_s + repr(self.right)
 
-    def _latex(self, unused=None):
-        return self.left._latex(showunits=False) + self.oper_l + self.right._latex(showunits=False)
+    def latex(self, unused=None):
+        return self.left.latex(showunits=False) + self.oper_l + self.right.latex(showunits=False)
 
     def __init__(self, left, right, oper_ge=True):
         """Initialize a constraint of the form left >= right
@@ -566,6 +569,7 @@ class Constraint(Posynomial):
         pgt, plt = (left, right) if oper_ge else (right, left)
         plt = Posynomial(plt)
         pgt = Monomial(pgt)
+        self.left, self.right = (pgt, plt) if oper_ge else (plt, pgt)
 
         p = plt / pgt
 
@@ -591,8 +595,6 @@ class Constraint(Posynomial):
 
         super(Constraint, self).__init__(p)
         self.__class__ = Constraint  # TODO should not have to do this
-
-        self.left, self.right = left, right
 
         self.oper_s = " >= " if oper_ge else " <= "
         self.oper_l = r" \geq " if oper_ge else r" \leq "
@@ -638,8 +640,8 @@ class SignomialConstraint(Signomial):
     def __repr__(self):
         return repr(self.left) + self.oper_s + repr(self.right)
 
-    def _latex(self, unused=None):
-        return self.left._latex() + self.oper_l + self.right._latex()
+    def latex(self, unused=None):
+        return self.left.latex() + self.oper_l + self.right.latex()
 
     def __init__(self, left, right, oper_ge=True):
         """Initialize a constraint of the form left >= right

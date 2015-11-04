@@ -2,7 +2,7 @@ SINGLE
 ======
 Using solver 'cvxopt'
 Solving for 10 variables.
-Solving took 0.0115 seconds.
+Solving took 0.0118 seconds.
 
 Cost
 ----

@@ -167,10 +167,3 @@ try:
 except IOError:
     print("Could not load settings file.")
     settings = {"installed_solvers": [""]}
-
-try:
-    cfg = get_ipython().config
-    if cfg['IPKernelApp']['parent_appname'] == 'ipython-notebook':
-        import interactive
-except NameError:
-    pass
