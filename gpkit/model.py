@@ -374,6 +374,19 @@ class Model(object):
         gp, _ = form_program("gp", signomials, verbosity)
         return gp
 
+    @property
+    def isGP(self):
+        try:
+            self.gp()
+            return True
+        except ValueError as err:
+            if err.message == ("GeometricPrograms cannot contain Signomials"):
+                return False
+
+    @property
+    def isSP(self):
+        return not isGP()
+
     def sp(self, verbosity=2):
         signomials, _ = simplify_and_mmap(self.signomials, self.constants)
         sp, _ = form_program("sp", signomials, verbosity)
@@ -436,11 +449,8 @@ class Model(object):
         """
         signomials, unsubbed, allsubs = self.signomials_et_al
 
-        try:
-            self.gp()
-        except ValueError as err:
-            if err.message == ("GeometricPrograms cannot contain Signomials"):
-                raise ValueError("""Signomials remained after substitution.
+        if self.isSP:
+            raise ValueError("""Signomials remained after substitution.
 
     'Model.feasibility()' can only be called on Models without Signomials,
     because only those Models guarantee global feasibilities. Models with
@@ -457,12 +467,8 @@ class Model(object):
 
         For details, see the docstring for Model.feasibility.
         """
-        try:
-            self.sp()
-        except ValueError as err:
-            if err.message == ("SignomialPrograms must contain at least one"
-                               " Signomial."):
-                raise ValueError("""No Signomials remained after substitution.
+        if self.isGP:
+            raise ValueError("""No Signomials remained after substitution.
 
     'Model.localfeasibility()' can only be called on models containing
     Signomials, since such models have only local feasibilities. Models without
@@ -586,16 +592,9 @@ class Model(object):
 
         solvekwargs["verbosity"] = 0
 
-        try:
-            self.gp()
-            geometricprogram = True
-        except ValueError as err:
-            if err.message == ("GeometricPrograms cannot contain Signomials"):
-                geometricprogam = False
-
         def display(**subs):
             self.substitutions.update(subs)
-            if geometricprogam:
+            if self.isGP:
                 self.solve(**solvekwargs)
             else:
                 self.localsolve(**solvekwargs)
