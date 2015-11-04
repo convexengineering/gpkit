@@ -166,7 +166,9 @@ class TestGPSubs(unittest.TestCase):
         if not isinstance(a["x"].key.units, str):
             self.assertAlmostEqual(a.solve(verbosity=0)["cost"], 0.3333333)
             self.assertAlmostEqual(b.solve(verbosity=0)["cost"], 0.01)
-            concat_cost = (a | b).solve(verbosity=0)["cost"]
+            concatm = a | b
+            concatm.cost = a.cost*b.cost
+            concat_cost = concatm.solve(verbosity=0)["cost"]
             self.assertAlmostEqual(concat_cost, 0.0109361)
         a1, b1 = Above(), Below()
         m = a1 & b1
@@ -187,7 +189,6 @@ class TestGPSubs(unittest.TestCase):
                 y = Variable('y')
                 m = Model(x, [x >= y, y >= 1])
                 combined = m & Sub()
-                combined.cost = x
                 return combined
 
         class Sub(Model):
