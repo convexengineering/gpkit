@@ -78,7 +78,7 @@ def ractorjs(title, m, update_py, ranges, constraint_js=""):
     evalarray = [""]*np.prod(lengths)
 
     m.substitutions.update(subs)
-    sol = m.solve(verbosity=0, skipfailures=True)
+    sol = m.solve(verbosity=0, skipsweepfailures=True)
     for j in range(len(sol)):
         solj = sol.atindex(j)
         soljv = solj["variables"]
