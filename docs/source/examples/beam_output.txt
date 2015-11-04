@@ -1,7 +1,7 @@
 A zero-substitution triggered the zeroing of lower-unbounded variables to maintain solver compatibility.
 Using solver 'cvxopt'
 Solving for 36 variables.
-Solving took 0.0361 seconds.
+Solving took 0.0355 seconds.
 
 Cost
 ----
