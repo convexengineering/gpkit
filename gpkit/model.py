@@ -176,7 +176,7 @@ class Model(object):
                      if bound == "lower"}
             self.substitutions.update(zeros)
 
-    def solve(self, solver=None, verbosity=1, skipfailures=False,
+    def solve(self, solver=None, verbosity=1, skipsweepfailures=False,
               *args, **kwargs):
         """Forms a GeometricProgram and attempts to solve it.
 
@@ -189,7 +189,7 @@ class Model(object):
             If greater than 0 prints runtime messages.
             Is decremented by one and then passed to programs.
 
-        skipfailures : bool (optional)
+        skipsweepfailures : bool (optional)
             If True, when a solve errors during a sweep, skip it.
 
         *args, **kwargs : Passed to solver
@@ -205,7 +205,7 @@ class Model(object):
         RuntimeWarning if an error occurs in solving or parsing the solution.
         """
         try:
-            return self._solve("gp", solver, verbosity, skipfailures,
+            return self._solve("gp", solver, verbosity, skipsweepfailures,
                                *args, **kwargs)
         except ValueError as err:
             if err.message == ("GeometricPrograms cannot contain Signomials"):
@@ -216,7 +216,7 @@ class Model(object):
     have only local solutions, and are solved with 'Model.localsolve()'.""")
             raise
 
-    def localsolve(self, solver=None, verbosity=1, skipfailures=False,
+    def localsolve(self, solver=None, verbosity=1, skipsweepfailures=False,
                    *args, **kwargs):
         """Forms a SignomialProgram and attempts to locally solve it.
 
@@ -229,7 +229,7 @@ class Model(object):
             If greater than 0 prints runtime messages.
             Is decremented by one and then passed to programs.
 
-        skipfailures : bool (optional)
+        skipsweepfailures : bool (optional)
             If True, when a solve errors during a sweep, skip it.
 
         *args, **kwargs : Passed to solver
@@ -246,7 +246,7 @@ class Model(object):
         """
         try:
             with SignomialsEnabled():
-                return self._solve("sp", solver, verbosity, skipfailures,
+                return self._solve("sp", solver, verbosity, skipsweepfailures,
                                    *args, **kwargs)
         except ValueError as err:
             if err.message == ("SignomialPrograms must contain at least one"
@@ -258,7 +258,7 @@ class Model(object):
     global solutions, and can be solved with 'Model.solve()'.""")
             raise
 
-    def _solve(self, programType, solver, verbosity, skipfailures,
+    def _solve(self, programType, solver, verbosity, skipsweepfailures,
                *args, **kwargs):
         """Generates a program and solves it, sweeping as appropriate.
 
@@ -273,7 +273,7 @@ class Model(object):
             If greater than 0 prints runtime messages.
             Is decremented by one and then passed to programs.
 
-        skipfailures : bool (optional)
+        skipsweepfailures : bool (optional)
             If True, when a solve errors during a sweep, skip it.
 
         *args, **kwargs : Passed to solver
@@ -345,11 +345,11 @@ class Model(object):
                 self.program.append(program)  # NOTE: SIDE EFFECTS
                 if result:  # solve succeeded
                     solution.append(result)
-                elif not skipfailures:
+                elif not skipsweepfailures:
                     raise RuntimeWarning("solve failed during sweep; program"
                                          " has been saved to m.program[-1]."
                                          " To ignore such failures, solve with"
-                                         " skipfailures=True.")
+                                         " skipsweepfailures=True.")
             for var, val in solution["constants"].items():
                 solution["constants"][var] = [val[0]]
         else:
@@ -544,7 +544,26 @@ class Model(object):
                                  for var, val in self.constants.items()]) +
                          ["\\end{array}"])
 
-    def interact(self,  fn_of_sol=None, ranges=None, **solveargs):
+    def interact(self, fn_of_sol=None, ranges=None, **solvekwargs):
+        """Easy model interaction in IPython / Jupyter
+
+        By default, this creates a model with sliders for every constant
+        which prints a new solution table whenever the sliders are changed.
+
+        Arguments
+        ---------
+        fn_of_sol : function
+            The function called with the solution after each solve that
+            displays the result. By default prints a table.
+
+        ranges : dictionary {str: Slider object or tuple}
+            Determines which sliders get created. Tuple values may contain
+            two or three floats: two correspond to (min, max), while three
+            correspond to (min, step, max)
+
+        **solvekwargs
+            kwargs which get passed to the solve()/localsolve() method.
+        """
         try:
             from ipywidgets import interactive, FloatSlider
         except ImportError:
@@ -552,18 +571,34 @@ class Model(object):
             FloatSlider = FloatSliderWidget
 
         if ranges is None:
-            ranges = {k._cmpstr: FloatSlider(min=v/10.0, max=10*v,
-                                             step=v/10.0, value=v)
+            ranges = {k._cmpstr: FloatSlider(min=v/2.0, max=2.0*v,
+                                             step=v/16.0, value=v)
                       for k, v in self.constants.items()}
         if fn_of_sol is None:
             def fn_of_sol(solution):
-                print solution.table(["cost", "freevariables"])
+                tables = ["cost", "freevariables"]
+                printedvarcount = len(solution["freevariables"])
+                for tablename in ["sensitivities", "constants"]:
+                    if printedvarcount < 20:
+                        tables.append(tablename)
+                        printedvarcount += len(solution[tablename])
+                print solution.table(tables)
 
-        solveargs["verbosity"] = 0
+        solvekwargs["verbosity"] = 0
+
+        try:
+            self.gp()
+            geometricprogram = True
+        except ValueError as err:
+            if err.message == ("GeometricPrograms cannot contain Signomials"):
+                geometricprogam = False
 
         def display(**subs):
             self.substitutions.update(subs)
-            self.solve(**solveargs)
+            if geometricprogam:
+                self.solve(**solvekwargs)
+            else:
+                self.localsolve(**solvekwargs)
             fn_of_sol(self.solution)
 
         return interactive(display, **ranges)
