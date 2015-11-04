@@ -166,7 +166,7 @@ class Model(object):
             for var in svars + ovars:
                 if var != newvar:
                     substitutions[var.key] = newvar.key  # vectors???
-        return Model(self.cost*other.cost,  # alternately, keep the leftmost
+        return Model(self.cost,
                      self.constraints + other.constraints,
                      substitutions)
 
@@ -175,7 +175,7 @@ class Model(object):
             return NotImplemented
         substitutions = dict(self.substitutions)
         substitutions.update(other.substitutions)
-        return Model(self.cost*other.cost,  # alternately, keep the leftmost
+        return Model(self.cost,
                      self.constraints + other.constraints,
                      substitutions)
 
