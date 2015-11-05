@@ -133,7 +133,8 @@ class SolutionArray(DictOfLists):
 
 
 def results_table(data, title, minval=0, printunits=True, fixedcols=True,
-                  varfmt="%s : ", valfmt="%-.4g ", vecfmt="%-8.3g"):
+                  varfmt="%s : ", valfmt="%-.4g ", vecfmt="%-8.3g",
+                  include_models=None, exclude_models=None):
     """
     Pretty string representation of a dict of VarKeys
     Iterable values are handled specially (partial printing)
@@ -157,16 +158,22 @@ def results_table(data, title, minval=0, printunits=True, fixedcols=True,
     """
     lines = []
     decorated = []
+    models = set()
     for i, (k, v) in enumerate(data.items()):
         notnan = ~np.isnan([v])
         if np.any(notnan) and np.max(np.abs(np.array([v])[notnan])) >= minval:
             b = isinstance(v, Iterable) and bool(v.shape)
             model = k.descr.get("model", "")
+            models.add(model)
             decorated.append((model, b, (varfmt % k.nomstr), i, k, v))
+    if exclude_models:
+        models = models.difference(exclude_models)
+    if include_models:
+        models = models.intersection(include_models)
     decorated.sort()
     oldmodel = None
     for model, isvector, varstr, _, var, val in decorated:
-        if model != oldmodel:
+        if model != oldmodel and len(models) > 1:
             if oldmodel is not None:
                 lines.append(["", "", "", ""])
             if model is not "":

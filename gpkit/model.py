@@ -687,7 +687,7 @@ class Model(object):
                       for k, v in self.constants.items()}
         if fn_of_sol is None:
             def fn_of_sol(solution):
-                tables = ["cost", "freevariables"]
+                tables = ["cost", "freevariables", "sweepvariables"]
                 if len(solution["freevariables"]) < 20:
                     tables.append("sensitivities")
                 print solution.table(tables)
