@@ -9,6 +9,8 @@ from .small_classes import CootMatrix
 from .nomial_data import NomialData
 from .small_classes import SolverLog
 
+from .small_scripts import is_sweepvar
+
 
 class GeometricProgram(NomialData):
     """Standard mathematical representation of a GP.
@@ -49,7 +51,7 @@ class GeometricProgram(NomialData):
         super(GeometricProgram, self).__init__(nomials=self.posynomials)
         if self.any_nonpositive_cs:
             raise ValueError("GeometricPrograms cannot contain Signomials.")
-        if self.values:
+        if [v for v in self.values.values() if not is_sweepvar(v)]:
             raise ValueError("GeometricPrograms do not handle substitution.")
         # k [j]: number of monomials (columns of F) present in each constraint
         self.k = [len(p.cs) for p in self.posynomials]

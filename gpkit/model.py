@@ -485,10 +485,12 @@ class Model(object):
         except ValueError as err:
             if err.message == ("GeometricPrograms cannot contain Signomials"):
                 return False
+            else:
+                raise err
 
     @property
     def isSP(self):
-        return not isGP()
+        return not self.isGP
 
     def sp(self, verbosity=2):
         signomials, _ = simplify_and_mmap(self.signomials, self.constants)
