@@ -688,11 +688,8 @@ class Model(object):
         if fn_of_sol is None:
             def fn_of_sol(solution):
                 tables = ["cost", "freevariables"]
-                printedvarcount = len(solution["freevariables"])
-                for tablename in ["sensitivities", "constants"]:
-                    if printedvarcount < 20:
-                        tables.append(tablename)
-                        printedvarcount += len(solution[tablename])
+                if len(solution["freevariables"]) < 20:
+                    tables.append("sensitivities")
                 print solution.table(tables)
 
         solvekwargs["verbosity"] = 0
