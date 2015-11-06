@@ -70,10 +70,10 @@ class TestMonoEQConstraint(unittest.TestCase):
         mec = (x == y**2)
         # __init__
         mec2 = MonoEQConstraint(x, y**2)
-        self.assertTrue(mec2 == mono or mec2 == 1/mono)
-        self.assertTrue(mec2 == mec or mec2 == 1/mec)
-        self.assertTrue(mec == mono or mec == 1/mono)
-        self.assertTrue(mec2 == mono or mec2 == 1/mono)
+        self.assertTrue(mec2.leq == mono or mec2.geq == mono)
+        self.assertTrue(mono == mec2.leq or mono == mec2.geq)
+        self.assertTrue(mono == mec.leq or mono == mec.geq)
+        self.assertTrue(mec.leq == mono or mec.geq == mono)
 
     def test_inheritance(self):
         """Make sure MonoEQConstraint inherits from the right things"""

@@ -604,22 +604,15 @@ class MonoEQConstraint(Constraint):
     Stored internally as a Monomial Constraint, (1 == self).
     """
     def __init__(self, m1, m2):
-        super(MonoEQConstraint, self).__init__(m1, m2)
-        self.__class__ = MonoEQConstraint  # todo should not have to do this
         self.oper_l = " = "
         self.oper_s = " == "
-        # next two lines would be clean implementation, but Constraint
-        # inheritance from Posy won't allow division
-        # self.leq = self
-        # self.geq = 1 / self
-        # instead, we'll do this -- TODO improve
         self.leq = m1/m2
         self.geq = m2/m1
 
     def __nonzero__(self):
         # a constraint not guaranteed to be satisfied
         # evaluates as "False"
-        return bool(mag(self.cs[0]) == 1.0 and self.exps[0] == {})
+        return bool(mag(self.leq.cs[0]) == 1.0 and self.leq.exps[0] == {})
 
     def __bool__(self):
         return self.__nonzero__()
