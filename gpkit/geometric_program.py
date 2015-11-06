@@ -128,8 +128,8 @@ class GeometricProgram(NomialData):
         if verbosity > 0:
             print("Using solver '%s'" % solver)
             print("Solving for %i variables." % len(self.varlocs))
+            tic = time()
 
-        tic = time()
         original_stdout = sys.stdout
         # NOTE: SIDE EFFECTS
         self.solver_log = SolverLog(verbosity-1, original_stdout)
@@ -141,10 +141,10 @@ class GeometricProgram(NomialData):
             sys.stdout = original_stdout   # RETURNING STDOUT
         self.solver_out = solver_out   # END SIDE EFFECTS
 
-        soltime = time() - tic
-        tic = time()
         if verbosity > 0:
+            soltime = time() - tic
             print("Solving took %.3g seconds." % (soltime,))
+            tic = time()
 
         result = {}
         # confirm lengths before calling zip
@@ -182,7 +182,7 @@ class GeometricProgram(NomialData):
         if verbosity > 1:
             print ("result packing took %.2g%% of solve time" %
                    ((time() - tic) / soltime * 100))
-        tic = time()
+            tic = time()
 
         if solver_out.get("status", None) not in ["optimal", "OPTIMAL"]:
             raise RuntimeWarning("final status of solver '%s' was '%s', "

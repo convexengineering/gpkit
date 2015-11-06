@@ -1,8 +1,5 @@
 SINGLE
 ======
-Using solver 'cvxopt'
-Solving for 10 variables.
-Solving took 0.0122 seconds.
 
 Cost
 ----

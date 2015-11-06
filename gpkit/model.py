@@ -10,6 +10,7 @@
 import numpy as np
 
 from collections import defaultdict
+from time import time
 
 from .small_classes import Numbers
 from .nomials import MonoEQConstraint
@@ -278,7 +279,7 @@ class Model(object):
                      if bound == "lower"}
             self.substitutions.update(zeros)
 
-    def solve(self, solver=None, verbosity=1, skipsweepfailures=False,
+    def solve(self, solver=None, verbosity=2, skipsweepfailures=False,
               *args, **kwargs):
         """Forms a GeometricProgram and attempts to solve it.
 
@@ -318,7 +319,7 @@ class Model(object):
     have only local solutions, and are solved with 'Model.localsolve()'.""")
             raise
 
-    def localsolve(self, solver=None, verbosity=1, skipsweepfailures=False,
+    def localsolve(self, solver=None, verbosity=2, skipsweepfailures=False,
                    *args, **kwargs):
         """Forms a SignomialProgram and attempts to locally solve it.
 
@@ -392,7 +393,7 @@ class Model(object):
         """
         if any(isinstance(val, Numbers) and val == 0
                for val in self.allsubs.values()):
-            if verbosity > 0:
+            if verbosity > 1:
                 print("A zero-substitution triggered the zeroing of lower-"
                       "unbounded variables to maintain solver compatibility.")
             self.zero_lower_unbounded_variables()
@@ -403,7 +404,7 @@ class Model(object):
         kwargs.update({"solver": solver})
 
         if sweep:
-            kwargs.update({"verbosity": verbosity - 1})
+            kwargs.update({"verbosity": verbosity-2})
             if len(sweep) == 1:
                 sweep_grids = np.array(list(sweep.values()))
             else:
@@ -415,6 +416,7 @@ class Model(object):
 
             if verbosity > 1:
                 print("Solving over %i passes." % N_passes)
+                tic = time()
 
             def solve_pass(i):
                 this_pass = {var: sweep_vect[i]
@@ -454,8 +456,12 @@ class Model(object):
                                          " skipsweepfailures=True.")
             for var, val in solution["constants"].items():
                 solution["constants"][var] = [val[0]]
+
+            if verbosity > 1:
+                soltime = time() - tic
+                print("Sweeping took %.3g seconds." % (soltime,))
         else:
-            kwargs.update({"verbosity": verbosity})
+            kwargs.update({"verbosity": verbosity-1})
             signomials, beforesubs.smaps = simplify_and_mmap(signomials,
                                                              constants)
             # NOTE: SIDE EFFECTS
