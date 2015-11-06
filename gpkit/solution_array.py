@@ -64,31 +64,10 @@ class SolutionArray(DictOfLists):
         if p in self["variables"]:
             return PosyArray(self["variables"][p])
         if len(self) > 1:
-            return PosyArray([p.sub(self.atindex(i)["variables"])
-                              for i in range(len(self["cost"]))])
+            return np.array([self.atindex(i).subinto(p)
+                             for i in range(len(self))])
         else:
             return p.sub(self["variables"])
-
-    def sens(self, p):
-        return self.senssubinto(p)
-
-    def senssubinto(self, p):
-        """Returns array of each solution's sensitivity substituted into p
-
-        Returns only scalar values.
-        """
-        if len(self) > 1:
-            subbeds = [p.sub(self.atindex(i)["sensitivities"]["variables"],
-                             require_positive=False) for i in range(len(self))]
-            assert not any([subbed.exp for subbed in subbeds])
-            return np.array([mag(subbed.c) for subbed in subbeds],
-                            np.dtype('float'))
-        else:
-            subbed = p.sub(self["sensitivities"]["variables"],
-                           require_positive=False)
-            assert isinstance(subbed, Monomial)
-            assert not subbed.exp
-            return mag(subbed.c)
 
     def table(self, tables=["cost", "freevariables", "sweepvariables",
                             "constants", "sensitivities"], fixedcols=True):
