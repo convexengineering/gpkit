@@ -1,4 +1,4 @@
-"""Tests for GPSolutionArray class"""
+"""Tests for SolutionArray class"""
 import unittest
 import time
 import numpy as np
@@ -43,7 +43,7 @@ class TestSolutionArray(unittest.TestCase):
         _ = sol(z1)
         self.assertTrue(time.time() - t1 <= 0.05)
 
-    def test_subinto_senssubinto(self):
+    def test_subinto_sens(self):
         Nsweep = 20
         Pvals = np.linspace(13, 24, Nsweep)
         H_max = Variable("H_max", 10, "m", "Length")

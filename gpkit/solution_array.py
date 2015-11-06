@@ -40,7 +40,7 @@ class SolutionArray(DictOfLists):
     >>> assert all(np.array(values) == 2)
     >>>
     >>> # SENSITIVITIES
-    >>> senss = [sol.sens(x_min), sol.senssubinto(x_min)]
+    >>> senss = [sol.sens(x_min), sol.sens(x_min)]
     >>> senss.append(sol["sensitivities"]["variables"]["x_{min}"])
     >>> assert all(np.array(senss) == 1)
 
@@ -63,11 +63,29 @@ class SolutionArray(DictOfLists):
         "Returns PosyArray of each solution substituted into p."
         if p in self["variables"]:
             return PosyArray(self["variables"][p])
-        if len(self) > 1:
+        elif len(self) > 1:
             return np.array([self.atindex(i).subinto(p)
                              for i in range(len(self))])
         else:
             return p.sub(self["variables"])
+
+    def sens(self, p):
+        """Returns array of each solution's sensitivity substituted into p
+
+        Returns scalar, unitless values.
+        """
+        if p in self["variables"]["sensitivities"]:
+            return PosyArray(self["variables"]["sensitivities"][p])
+        elif len(self) > 1:
+            return np.array([self.atindex(i).subinto(p)
+                             for i in range(len(self))])
+        else:
+            subbed = p.sub(self["variables"]["sensitivities"],
+                           require_positive=False)
+            assert isinstance(subbed, Monomial)
+            assert not subbed.exp
+            return mag(subbed.c)
+
 
     def table(self, tables=["cost", "freevariables", "sweepvariables",
                             "constants", "sensitivities"], fixedcols=True):
