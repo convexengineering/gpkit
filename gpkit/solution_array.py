@@ -72,6 +72,10 @@ class SolutionArray(DictOfLists):
     def sens(self, p):
         """Returns array of each solution's sensitivity substituted into p
 
+        Note: this does not return monomial sensitivities if you pass it a
+        signomial; it returns each variable's sensitivity substituted in for it
+        in that signomial.
+
         Returns scalar, unitless values.
         """
         if p in self["variables"]["sensitivities"]:
