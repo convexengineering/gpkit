@@ -1,13 +1,17 @@
 import numpy as np
 from gpkit import Monomial
 from gpkit.small_scripts import mag, latex_num
+from gpkit.nomials import MonoEQConstraint
 
-BLUE = np.array([16,131,246])/255.0
-RED = np.array([211,24,16])/255.0
+
+BLUE = np.array([16, 131, 246])/255.0
+RED = np.array([211, 24, 16])/255.0
 GRAY = 0.7*np.ones(3)
+
 
 def colorfn_gen(scale, power=0.66):
     scale = float(scale)
+
     def colorfn(senss):
         if senss < 0:
             senss = -senss
@@ -15,21 +19,21 @@ def colorfn_gen(scale, power=0.66):
         else:
             color = RED
         blended_color = GRAY + (color-GRAY)*(senss/scale)**power
-        return "[rgb]{%.2f,%.2f,%.2f}"% tuple(blended_color)
+        return "[rgb]{%.2f,%.2f,%.2f}" % tuple(blended_color)
     return colorfn
 
-def sig_senss_latex(sig, sol, colorfn):
+
+def signomial_print(sig, sol, colorfn, paintby="variables", idx=None):
     "For pretty printing with Sympy"
     mstrs = []
     for c, exp in zip(sig.cs, sig.exps):
         pos_vars, neg_vars = [], []
         for var, x in exp.items():
             varlatex = var._latex()
-            # painting
-            senss = sol["sensitivities"]["variables"][var]
-            colorstr = colorfn(senss)
-            varlatex = "\\textcolor%s{%s}" % (colorstr, varlatex)
-            # end painting
+            if paintby == "variables":
+                senss = sol["sensitivities"]["variables"][var]
+                colorstr = colorfn(senss)
+                varlatex = "\\textcolor%s{%s}" % (colorstr, varlatex)
             if x > 0:
                 pos_vars.append((varlatex, x))
             elif x < 0:
@@ -62,15 +66,43 @@ def sig_senss_latex(sig, sol, colorfn):
 
         mstrs.append(mstr)
 
-    return " + ".join(sorted(mstrs))
+    if paintby == "monomials":
+        mstrs_ = []
+        for mstr in mstrs:
+            senss = sol["sensitivities"]["monomials"][idx]
+            idx += 1
+            colorstr = colorfn(senss)
+            mstrs_.append("\\textcolor%s{%s}" % (colorstr, mstr))
+        return " + ".join(sorted(mstrs_)), idx
+    else:
+        return " + ".join(sorted(mstrs))
 
 
 class SensitivityMap(object):
+    """Latex representations of a model heatmapped by its latest sensitivities
 
-    def __init__(self, model):
+    Arguments
+    ---------
+    model : Model
+        The Model object that the Map will be based on
+
+    paintby : string
+        The unit of colouring. Must be one of "variables", "monomials", or
+        "posynomials".
+
+    Usage
+    -----
+    from IPython.display import display
+    for key in m.solution["sensitivities"]:
+        print key
+        display(SensitivityMap(m, paintby=key))
+    """
+
+    def __init__(self, model, paintby="variables"):
         self.model = model
         self.costlatex = model.cost._latex()
         self.constraints = model.constraints
+        self.paintby = paintby
 
     @property
     def solution(self):
@@ -81,31 +113,54 @@ class SensitivityMap(object):
         else:
             return self.model.solution
 
-    @property
-    def constraint_latex_list(self):
-        return ["    & %s \\\\" % self.constraint_latex(constr)
-                for constr in self.constraints]
-
-    def constraint_latex(self, constraint):
-        left = self.signomial_latex(constraint.left)
-        right = self.signomial_latex(constraint.right)
-        return left + constraint.oper_l + right
-
-    def signomial_latex(self, signomial):
-        maxsenss = max(self.solution["sensitivities"]["variables"].values())
-        colorfn = colorfn_gen(maxsenss, 0.66)
-        return sig_senss_latex(signomial, self.solution, colorfn)
+    def _repr_latex_(self):
+        return "$$\\require{color}\n"+self.latex+"\n$$"
 
     @property
-    def latex(self):
+    def latex(self, paintby=None):
+        if not paintby:
+            paintby = self.paintby
         return "\n".join(["\\color[gray]{%.2f}" % GRAY[0],
                           "\\begin{array}[ll]",
                           "\\text{}",
                           "\\text{minimize}",
                           "    & %s \\\\" % self.costlatex,
                           "\\text{subject to}"] +
-                         self.constraint_latex_list +
+                         self.constraint_latex_list(paintby) +
                          ["\\end{array}"])
 
-    def _repr_latex_(self):
-        return "$$\\require{color}\n"+self.latex+"\n$$"
+    def constraint_latex_list(self, paintby, scale=None):
+        constraint_latex_list = []
+        sol = self.solution
+        if self.paintby == "variables":
+            senss = abs(np.array(sol["sensitivities"]["variables"].values()))
+        else:
+            idx = len(self.model.cost.exps) if paintby == "monomials" else 1
+            senss = sol["sensitivities"][paintby][idx:]
+        colorfn = colorfn_gen(max(senss))
+
+        for i, constr in enumerate(self.model.constraints):
+            if self.paintby == "variables":
+                left = signomial_print(constr.left, sol, colorfn, paintby)
+                right = signomial_print(constr.right, sol, colorfn, paintby)
+                constr_tex = "    & %s \\\\" % (left + constr.oper_l + right)
+            else:
+                if isinstance(constr, MonoEQConstraint):
+                    constrs = [constr.leq, constr.geq]
+                else:
+                    constrs = [constr]
+                constr_texs = []
+                for constr in constrs:
+                    # TODO: not the right way to check if Signomial
+                    rhs = "\leq 0" if constr.any_nonpositive_cs else "\leq 1"
+                    if self.paintby == "monomials":
+                        tex, idx = signomial_print(constr, sol, colorfn,
+                                                        paintby, idx)
+                    elif self.paintby == "posynomials":
+                        color = colorfn(senss[i])
+                        tex = signomial_print(constr, None, None, paintby)
+                        tex = "\\textcolor%s{%s}" % (color, tex)
+                    constr_texs.append("    & %s %s\\\\" % (tex, rhs))
+                constr_tex = "\n".join(constr_texs)
+            constraint_latex_list.append(constr_tex)
+        return constraint_latex_list
