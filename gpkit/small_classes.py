@@ -93,7 +93,7 @@ class DictOfLists(dict):
 
     def atindex(self, i):
         "Indexes into each list independently."
-        return index_dict(i, self, {})
+        return self.__class__(index_dict(i, self, {}))
 
     def toarray(self, shape=None):
         "Converts all lists into arrays."
