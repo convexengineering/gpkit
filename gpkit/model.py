@@ -471,6 +471,7 @@ class Model(object):
             solution.append(parse_result(result, constants, beforesubs))
         solution.program = self.program
         solution.toarray()
+        solution["localmodel"] = PosyArray(solution["localmodel"])
         self.solution = solution  # NOTE: SIDE EFFECTS
         if verbosity > 0:
             print(solution.table())
@@ -643,23 +644,26 @@ class Model(object):
                          ['],',
                           "    substitutions=%s" % self.allsubs])
 
-    def _latex(self, unused=None):
+    def latex(self, unused=None):
         """LaTeX representation of a GeometricProgram.
         Contains all of its parameters."""
         # TODO: print sweeps and linkedsweeps
         return "\n".join(["\\begin{array}[ll]",
                           "\\text{}",
                           "\\text{minimize}",
-                          "    & %s \\\\" % self.cost._latex(),
+                          "    & %s \\\\" % self.cost.latex(),
                           "\\text{subject to}"] +
-                         ["    & %s \\\\" % constr._latex()
+                         ["    & %s \\\\" % constr.latex()
                           for constr in self.constraints] +
                          ["\\text{substituting}"] +
-                         sorted(["    & %s \gets %s %s \\\\" % (var._latex(),
+                         sorted(["    & %s \gets %s %s \\\\" % (var.latex(),
                                                                 latex_num(val),
                                                                 sub_units(var))
                                  for var, val in self.constants.items()]) +
                          ["\\end{array}"])
+
+    def _repr_latex_(self):
+        return "$$"+self.latex()+"$$"
 
     def interact(self, fn_of_sol=None, ranges=None, **solvekwargs):
         """Easy model interaction in IPython / Jupyter

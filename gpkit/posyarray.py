@@ -30,11 +30,17 @@ class PosyArray(np.ndarray):
 
     def __str__(self):
         "Returns list-like string, but with str(el) instead of repr(el)."
-        return "[" + ", ".join(str(p) for p in self) + "]"
+        if self.shape:
+            return "[" + ", ".join(str(p) for p in self) + "]"
+        else:
+            return str(self.flatten()[0])
 
     def __repr__(self):
         "Returns str(self) tagged with gpkit information."
-        return "gpkit.%s(%s)" % (self.__class__.__name__, str(self))
+        if self.shape:
+            return "gpkit.%s(%s)" % (self.__class__.__name__, str(self))
+        else:
+            return str(self.flatten()[0])
 
     def __hash__(self):
         return getattr(self, "_hashvalue", np.ndarray.__hash__(self))
@@ -65,18 +71,23 @@ class PosyArray(np.ndarray):
                   " Exceptions coming from __array_wrap__.")
             raise
 
-    def _latex(self, unused=None, matwrap=True):
+    def latex(self, unused=None, matwrap=True):
         "Returns 1D latex list of contents."
+        if len(self.shape) == 0:
+            return self.flatten()[0].latex()
         if len(self.shape) == 1:
             return (("\\begin{bmatrix}" if matwrap else "") +
-                    " & ".join(el._latex() for el in self) +
+                    " & ".join(el.latex() for el in self) +
                     ("\\end{bmatrix}" if matwrap else ""))
         elif len(self.shape) == 2:
             return ("\\begin{bmatrix}" +
-                    " \\\\\n".join(el._latex(matwrap=False) for el in self) +
+                    " \\\\\n".join(el.latex(matwrap=False) for el in self) +
                     "\\end{bmatrix}")
         else:
             return None
+
+    def _repr_latex_(self):
+        return "$$"+self.latex()+"$$"
 
     def __nonzero__(self):
         "Allows the use of PosyArrays as truth elements."
