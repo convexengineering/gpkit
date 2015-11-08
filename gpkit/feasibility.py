@@ -38,6 +38,7 @@ def feasibility_model(program, flavour="max", varname=None, constants=None):
     """
 
     cost = program.cost
+    constraints = program.constraints
     programType = program.__class__
 
     if flavour == "max":
