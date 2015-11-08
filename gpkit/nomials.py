@@ -313,7 +313,7 @@ class Signomial(NomialData):
         if not showunits:
             return " + ".join(sorted(mstrs))
 
-        units = unitstr(self.units, r"\mathrm{\left[ %s \right]}", "L~")
+        units = unitstr(self.units, r"\mathrm{~\left[ %s \right]}", "L~")
         units_tf = units.replace("frac", "tfrac").replace(r"\cdot", r"\cdot ")
         return " + ".join(sorted(mstrs)) + units_tf
 
@@ -549,7 +549,7 @@ class Constraint(Posynomial):
     def __repr__(self):
         return repr(self.left) + self.oper_s + repr(self.right)
 
-    def latex(self, unused=None):
+    def latex(self):
         return self.left.latex(showunits=False) + self.oper_l + self.right.latex(showunits=False)
 
     def __init__(self, left, right, oper_ge=True):
@@ -608,8 +608,12 @@ class MonoEQConstraint(Constraint):
     def __init__(self, m1, m2):
         self.oper_l = " = "
         self.oper_s = " == "
+        m1, m2 = map(Monomial, [m1, m2])
         self.leq = m1/m2
         self.geq = m2/m1
+
+        self.left = m1
+        self.right = m2
 
     def __nonzero__(self):
         # a constraint not guaranteed to be satisfied
@@ -633,7 +637,7 @@ class SignomialConstraint(Signomial):
     def __repr__(self):
         return repr(self.left) + self.oper_s + repr(self.right)
 
-    def latex(self, unused=None):
+    def latex(self):
         return self.left.latex() + self.oper_l + self.right.latex()
 
     def __init__(self, left, right, oper_ge=True):
