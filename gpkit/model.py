@@ -19,7 +19,7 @@ from .geometric_program import GeometricProgram
 from .signomial_program import SignomialProgram
 from .solution_array import SolutionArray
 from .varkey import VarKey
-from .variables import Variable
+from .variables import Variable, VectorVariable
 from .posyarray import PosyArray
 from . import SignomialsEnabled
 
@@ -29,6 +29,7 @@ from .solution_array import parse_result
 from .substitution import get_constants, separate_subs
 from .substitution import substitution
 from .small_scripts import mag, flatten, latex_num, unitstr
+from .small_scripts import is_sweepvar
 from .nomial_data import simplify_exps_and_cs
 from .feasibility import feasibility_model
 
@@ -597,17 +598,18 @@ class Model(object):
         if "overall" in search:
             m = feasibility_model(self, "max")
             m.substitutions = allsubs
-            infeasibility = m._solve(programtype, None, verbosity-1, False)["cost"]
+            infeasibility = m._solve(programtype, None, verbosity, False)["cost"]
             feasibilities["overall"] = infeasibility
 
         if "constraints" in search:
             m = feasibility_model(self, "product")
             m.substitutions = allsubs
-            sol = m._solve(programtype, None, verbosity-1, False)
+            sol = m._solve(programtype, None, verbosity, False)
             feasibilities["constraints"] = sol(m.slackvars)
 
         if "constants" in search:
             constants = get_constants(unsubbed, allsubs)
+            signomials, _ = simplify_and_mmap(signomials, {})
             if constvars:
                 constvars = set(constvars)
                 # get varkey versions
@@ -617,18 +619,44 @@ class Model(object):
                 constants = {k: v for k, v in constants.items()
                              if k in constvars}
             if constants:
-                m = feasibility_model(self, "constants", constants=constants)
-                sol = m._solve(programtype, None, verbosity-1, False)
+                slackb = VectorVariable(len(constants), units="-")
+                constvarkeys, constvars, rmvalue, addvalue = [], [], {}, {}
+                for vk in constants.keys():
+                    descr = dict(vk.descr)
+                    del descr["value"]
+                    vk_ = VarKey(**descr)
+                    rmvalue[vk] = vk_
+                    addvalue[vk_] = vk
+                    constvarkeys.append(vk_)
+                    constvars.append(Variable(**descr))
+                constvars = PosyArray(constvars)
+                constvalues = PosyArray(constants.values())
+                constraints = [c.sub(rmvalue) for c in signomials]
+                cost = slackb.prod()
+                # cost function could also be .sum(); self.cost would break ties
+                for i in range(len(constvars)):
+                    slack = slackb[i]
+                    constvar, constvalue = constvars[i], constvalues[i]
+                    if constvar.units:
+                        constvalue *= constvar.units
+                    constraints += [slack >= 1,
+                                    constvalue/slack <= constvar,
+                                    constvar <= constvalue*slack]
+                m = Model(cost, constraints)
+                m.addvalue = addvalue
+                m.constvars = constvars
+                m.constvarkeys = constvarkeys
+                m.constvalues = constvalues
+                sol = m.solve(verbosity=verbosity)
                 feasiblevalues = sol(m.constvars).tolist()
-                changed_vals = feasiblevalues != np.array(m.constvalues)
                 var_infeas = {m.addvalue[m.constvarkeys[i]]: feasiblevalues[i]
-                              for i in np.where(changed_vals)}
+                              for i in np.where(sol(slackb) > 1.01)}
                 feasibilities["constants"] = var_infeas
 
-        if len(feasibilities) > 1:
-            return feasibilities
-        else:
+        if len(feasibilities) == 1:
             return feasibilities.values()[0]
+        else:
+            return feasibilities
 
     def __repr__(self):
         return "gpkit.%s(%s)" % (self.__class__.__name__, str(self))
@@ -644,28 +672,30 @@ class Model(object):
                          ['],',
                           "    substitutions=%s" % self.allsubs])
 
-    def latex(self, unused=None):
+    def latex(self, show_subs=True):
         """LaTeX representation of a GeometricProgram.
         Contains all of its parameters."""
         # TODO: print sweeps and linkedsweeps
-        return "\n".join(["\\begin{array}[ll]",
-                          "\\text{}",
-                          "\\text{minimize}",
-                          "    & %s \\\\" % self.cost.latex(),
-                          "\\text{subject to}"] +
-                         ["    & %s \\\\" % constr.latex()
-                          for constr in self.constraints] +
-                         ["\\text{substituting}"] +
-                         sorted(["    & %s \gets %s %s \\\\" % (var.latex(),
-                                                                latex_num(val),
-                                                                sub_units(var))
-                                 for var, val in self.constants.items()]) +
-                         ["\\end{array}"])
+        latex_list = ["\\begin{array}[ll]",
+                      "\\text{}",
+                      "\\text{minimize}",
+                      "    & %s \\\\" % self.cost.latex(),
+                      "\\text{subject to}"]
+        latex_list += ["    & %s \\\\" % constr.latex()
+                       for constr in self.constraints]
+        if show_subs:
+            sub_latex = ["    & %s \gets %s~%s \\\\" % (var.latex(),
+                                                        latex_num(val),
+                                                        sub_units(var))
+                         for var, val in self.constants.items()]
+            latex_list += ["\\text{substituting}"] + sorted(sub_latex)
+        latex_list += ["\\end{array}"]
+        return "\n".join(latex_list)
 
     def _repr_latex_(self):
         return "$$"+self.latex()+"$$"
 
-    def interact(self, fn_of_sol=None, ranges=None, **solvekwargs):
+    def interact(self, ranges=None, fn_of_sol=None, **solvekwargs):
         """Easy model interaction in IPython / Jupyter
 
         By default, this creates a model with sliders for every constant
@@ -685,16 +715,29 @@ class Model(object):
         **solvekwargs
             kwargs which get passed to the solve()/localsolve() method.
         """
-        try:
-            from ipywidgets import interactive, FloatSlider
-        except ImportError:
-            from IPython.html.widgets import interactive, FloatSliderWidget
-            FloatSlider = FloatSliderWidget
+        import ipywidgets as widgets
 
         if ranges is None:
-            ranges = {k._cmpstr: FloatSlider(min=v/2.0, max=2.0*v,
-                                             step=v/16.0, value=v)
-                      for k, v in self.constants.items()}
+            ranges = {}
+            for k, v in self.allsubs.items():
+                if is_sweepvar(v) or isinstance(v, Numbers):
+                    if is_sweepvar(v):
+                        sweep = v[1]
+                        v = sweep[0]
+                        self.substitutions.update({k: v})
+                    vmin, vmax = v/2.0, v*2.0
+                    if is_sweepvar(v):
+                        vmin = min(vmin, min(sweep))
+                        vmax = max(vmax, min(sweep))
+                    vstep = (vmax-vmin)/24.0
+                    varkey_latex = "$"+k.latex()+"$"
+                    floatslider = widgets.FloatSlider(min=vmin, max=vmax,
+                                                      step=vstep, value=v,
+                                                      description=varkey_latex)
+                    floatslider.width = "20ex"
+                    floatslider.varkey = k
+                    ranges[k._cmpstr] = floatslider
+
         if fn_of_sol is None:
             def fn_of_sol(solution):
                 tables = ["cost", "freevariables", "sweepvariables"]
@@ -704,21 +747,98 @@ class Model(object):
 
         solvekwargs["verbosity"] = 0
 
-        def display(**subs):
+        def resolve(**subs):
             self.substitutions.update(subs)
-            if self.isGP:
-                self.solve(**solvekwargs)
-            else:
-                self.localsolve(**solvekwargs)
-            fn_of_sol(self.solution)
+            try:
+                try:
+                    self.solve(**solvekwargs)
+                except ValueError:
+                    self.localsolve(**solvekwargs)
+                fn_of_sol(self.solution)
+            except RuntimeWarning:
+                out = "THE PROBLEM IS INFEASIBLE"
+                try:
+                    const_feas = self.feasibility(["constants"])
+                    out += "\n    but would become with this substitution:\n"
+                    out += str(const_feas)
+                except:
+                    pass
+                finally:
+                    print(out)
 
-        return interactive(display, **ranges)
+        resolve()
+
+        return widgets.interactive(resolve, **ranges)
+
+    def controlpanel(self, *args, **kwargs):
+        import ipywidgets as widgets
+        from traitlets import link
+
+        sliders = self.interact(*args, **kwargs)
+        sliderboxes = []
+        for sl in sliders.children:
+            cb = widgets.Checkbox(value=True)
+            unit_latex = sub_units(sl.varkey)
+            if unit_latex:
+                unit_latex = "$\scriptsize"+unit_latex+"$"
+            units = widgets.Latex(value=unit_latex)
+            units.font_size = "1.15em"
+            box = widgets.HBox(children=[cb, sl, units])
+            link((box, 'visible'), (cb, 'value'))
+            sliderboxes.append(box)
+
+        settings = []
+        for sliderbox in sliderboxes:
+            settings.append(create_settings(sliderbox))
+
+        model_latex = "$"+self.latex(show_subs=False)+"$"
+        model_eq = widgets.Latex(model_latex)
+        tabs = widgets.Tab(children=[widgets.Box(children=sliderboxes,
+                                                 padding="1.25ex"),
+                                     widgets.Box(children=settings,
+                                                 padding="1.25ex"),
+                                     widgets.Box(children=[model_eq],
+                                                 padding="1.25ex")])
+
+        tabs.set_title(0, 'Variable Sliders')
+        tabs.set_title(1, 'Slider Settings')
+        tabs.set_title(2, 'Model Equations')
+
+        return tabs
+
+
+def create_settings(box):
+    import ipywidgets as widgets
+    from traitlets import link
+    sl_enable, slider, sl_units = box.children
+
+    enable = widgets.Checkbox(value=box.visible)
+    link((box, 'visible'), (enable, 'value'))
+    value = widgets.FloatText(value=slider.value, description=slider.description)
+    link((slider, 'value'), (value, 'value'))
+    units = widgets.Latex(value="")
+    link((sl_units, 'value'), (units, 'value'))
+    units.font_size = "1.15em"
+    fromlabel = widgets.HTML("<span class='form-control' style='width: auto;'>"
+                             "from")
+    setmin = widgets.FloatText(value=slider.min)
+    link((slider, 'min'), (setmin, 'value'))
+    tolabel = widgets.HTML("<span class='form-control' style='width: auto;'>"
+                           "to")
+    setmax = widgets.FloatText(value=slider.max)
+    link((slider, 'max'), (setmax, 'value'))
+    descr = widgets.HTML("<span class='form-control' style='width: auto;'>"
+                         + slider.varkey.descr.get("label", ""))
+    descr.width = "40ex"
+
+    return widgets.HBox(children=[enable, value, descr,
+                                  fromlabel, setmin, tolabel, setmax, units])
 
 
 def sub_units(varkey):
-    units = unitstr(varkey.units, r"\mathrm{ %s }", "L~")
+    units = unitstr(varkey.units, r"~\mathrm{ %s }", "L~")
     units_tf = units.replace("frac", "tfrac").replace(r"\cdot", r"\cdot ")
-    return units_tf
+    return units_tf if units_tf != r"~\mathrm{ - }" else ""
 
 
 def form_program(programType, signomials, verbosity=2):
