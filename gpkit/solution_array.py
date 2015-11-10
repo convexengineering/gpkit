@@ -40,7 +40,7 @@ class SolutionArray(DictOfLists):
     >>> assert all(np.array(values) == 2)
     >>>
     >>> # SENSITIVITIES
-    >>> senss = [sol.sens(x_min), sol.senssubinto(x_min)]
+    >>> senss = [sol.sens(x_min), sol.sens(x_min)]
     >>> senss.append(sol["sensitivities"]["variables"]["x_{min}"])
     >>> assert all(np.array(senss) == 1)
 
@@ -63,32 +63,33 @@ class SolutionArray(DictOfLists):
         "Returns PosyArray of each solution substituted into p."
         if p in self["variables"]:
             return PosyArray(self["variables"][p])
-        if len(self) > 1:
-            return PosyArray([p.sub(self.atindex(i)["variables"])
-                              for i in range(len(self["cost"]))])
+        elif len(self) > 1:
+            return np.array([self.atindex(i).subinto(p)
+                             for i in range(len(self))])
         else:
             return p.sub(self["variables"])
 
     def sens(self, p):
-        return self.senssubinto(p)
-
-    def senssubinto(self, p):
         """Returns array of each solution's sensitivity substituted into p
 
-        Returns only scalar values.
+        Note: this does not return monomial sensitivities if you pass it a
+        signomial; it returns each variable's sensitivity substituted in for it
+        in that signomial.
+
+        Returns scalar, unitless values.
         """
-        if len(self) > 1:
-            subbeds = [p.sub(self.atindex(i)["sensitivities"]["variables"],
-                             require_positive=False) for i in range(len(self))]
-            assert not any([subbed.exp for subbed in subbeds])
-            return np.array([mag(subbed.c) for subbed in subbeds],
-                            np.dtype('float'))
+        if p in self["variables"]["sensitivities"]:
+            return PosyArray(self["variables"]["sensitivities"][p])
+        elif len(self) > 1:
+            return np.array([self.atindex(i).subinto(p)
+                             for i in range(len(self))])
         else:
-            subbed = p.sub(self["sensitivities"]["variables"],
+            subbed = p.sub(self["variables"]["sensitivities"],
                            require_positive=False)
             assert isinstance(subbed, Monomial)
             assert not subbed.exp
             return mag(subbed.c)
+
 
     def table(self, tables=["cost", "freevariables", "sweepvariables",
                             "constants", "sensitivities"], fixedcols=True):

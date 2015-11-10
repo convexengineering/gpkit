@@ -39,7 +39,7 @@ When a GP is solved, the solver returns not just the optimal value for the probl
 Using variable sensitivities
 ----------------------------
 
-GPkit uses this dual solution to compute the sensitivities of each variable, which can be accessed most easily using a GPSolutionArray’s ``senssubinto()`` method, as in this example:
+GPkit uses this dual solution to compute the sensitivities of each variable, which can be accessed most easily using a SolutionArray’s ``sens()`` method, as in this example:
 
 .. code-block:: python
 
@@ -47,7 +47,7 @@ GPkit uses this dual solution to compute the sensitivities of each variable, whi
     x = gpkit.Variable("x")
     x_min = gpkit.Variable("x_{min}", 2)
     sol = gpkit.Model(x, [x_min <= x]).solve()
-    assert sol.senssubinto(x_min) == 1
+    assert sol.sens(x_min) == 1
 
 These sensitivities are actually log derivatives (:math:`\frac{d \mathrm{log}(y)}{d \mathrm{log}(x)}`); whereas a regular derivative is a tangent line, these are tangent monomials, so the ``1`` above indicates that ``x_min`` has a linear relation with the objective. This is confirmed by a further example:
 
@@ -57,7 +57,7 @@ These sensitivities are actually log derivatives (:math:`\frac{d \mathrm{log}(y)
     x = gpkit.Variable("x")
     x_squared_min = gpkit.Variable("x^2_{min}", 2)
     sol = gpkit.Model(x, [x_squared_min <= x**2]).solve()
-    assert sol.senssubinto(x_squared_min) == 2
+    assert sol.sens(x_squared_min) == 2
 
 Plotting variable sensitivities
 -------------------------------
