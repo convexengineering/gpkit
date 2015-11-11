@@ -1,4 +1,3 @@
-# This Python file uses the following encoding: utf-8
 """Defines the VarKey class"""
 import numpy as np
 
@@ -6,7 +5,7 @@ from .posyarray import PosyArray
 from .small_classes import Strings, Quantity
 from .small_classes import Counter
 
-from .small_scripts import isequal, mag, unitstr
+from .small_scripts import isequal, mag
 
 
 class VarKey(object):
@@ -96,7 +95,7 @@ class VarKey(object):
         return s
 
     def _repr_latex_(self):
-        return "$$ "+self.latex()+"$$"
+        return "$$"+self.latex()+"$$"
 
     @property
     def _cmpstr(self):
