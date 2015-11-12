@@ -56,7 +56,8 @@ class NomialData(object):
         """Way to initialize from nomials. Calls __init__.
         Used by subclass __init__ methods.
         """
-        exps, cs = exps_and_cs_from_nomials(nomials)
+        exps = functools_reduce(add, (tuple(s.exps) for s in nomials))
+        cs = np.hstack((mag(s.cs) for s in nomials))
         # nomials are already simplified, so simplify=False
         NomialData.__init__(self, exps, cs, simplify=False)
         self.nomials = nomials  # TODO eliminate constructor-dependent state
@@ -134,13 +135,6 @@ class NomialData(object):
         if self.units != other.units:
             return False
         return True
-
-
-def exps_and_cs_from_nomials(nomials):
-    "Flatten an iterable of nomials into exps and cs"
-    exps = functools_reduce(add, (tuple(s.exps) for s in nomials))
-    cs = np.hstack((mag(s.cs) for s in nomials))
-    return exps, cs
 
 
 def simplify_exps_and_cs(exps, cs, return_map=False):
