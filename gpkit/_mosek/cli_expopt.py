@@ -27,7 +27,7 @@ def error_remove_read_only(func, path, exc):
         pass
 
 
-def imize_fn(path=None):
+def imize_fn(path=None, clearfiles=True):
     """Constructor for the MOSEK CLI solver function.
 
     Arguments
@@ -118,7 +118,9 @@ def imize_fn(path=None):
             assert_line(f, "INDEX   ACTIVITY\n")
             dual_vals = read_vals(f)
 
-        shutil.rmtree(path, ignore_errors=False, onerror=error_remove_read_only)
+        if clearfiles:
+            shutil.rmtree(path, ignore_errors=False,
+                          onerror=error_remove_read_only)
 
         return dict(status="optimal",
                     objective=objective_val,
