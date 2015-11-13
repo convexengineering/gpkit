@@ -611,6 +611,9 @@ class MonoEQConstraint(Constraint):
         self.leq = m1/m2
         self.geq = m2/m1
 
+        self.left = m1
+        self.right = m2
+
     def __nonzero__(self):
         # a constraint not guaranteed to be satisfied
         # evaluates as "False"

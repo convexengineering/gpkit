@@ -94,6 +94,13 @@ class TestMonoEQConstraint(unittest.TestCase):
         # try to initialize a Posynomial Equality constraint
         self.assertRaises(TypeError, MonoEQConstraint, x*y, x + y)
 
+    def test_str(self):
+        "Test that MonoEQConstraint.__str__ returns a string"
+        x = Variable('x')
+        y = Variable('y')
+        mec = (x == y)
+        self.assertEqual(type(str(mec)), str)
+
 
 class TestSignomialConstraint(unittest.TestCase):
     """Test Signomial constraints"""
