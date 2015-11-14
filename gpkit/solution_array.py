@@ -64,7 +64,7 @@ class SolutionArray(DictOfLists):
         if p in self["variables"]:
             return PosyArray(self["variables"][p])
         elif len(self) > 1:
-            return np.array([self.atindex(i).subinto(p)
+            return PosyArray([self.atindex(i).subinto(p)
                              for i in range(len(self))])
         else:
             return p.sub(self["variables"])
@@ -81,7 +81,7 @@ class SolutionArray(DictOfLists):
         if p in self["variables"]["sensitivities"]:
             return PosyArray(self["variables"]["sensitivities"][p])
         elif len(self) > 1:
-            return np.array([self.atindex(i).subinto(p)
+            return PosyArray([self.atindex(i).subinto(p)
                              for i in range(len(self))])
         else:
             subbed = p.sub(self["variables"]["sensitivities"],

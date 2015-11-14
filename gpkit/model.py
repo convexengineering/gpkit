@@ -619,38 +619,15 @@ class Model(object):
                 constants = {k: v for k, v in constants.items()
                              if k in constvars}
             if constants:
-                slackb = VectorVariable(len(constants), units="-")
-                constvarkeys, constvars, rmvalue, addvalue = [], [], {}, {}
-                for vk in constants.keys():
-                    descr = dict(vk.descr)
-                    del descr["value"]
-                    vk_ = VarKey(**descr)
-                    rmvalue[vk] = vk_
-                    addvalue[vk_] = vk
-                    constvarkeys.append(vk_)
-                    constvars.append(Variable(**descr))
-                constvars = PosyArray(constvars)
-                constvalues = PosyArray(constants.values())
-                constraints = [c.sub(rmvalue) for c in signomials]
-                cost = slackb.prod()
-                # cost function could also be .sum(); self.cost would break ties
-                for i in range(len(constvars)):
-                    slack = slackb[i]
-                    constvar, constvalue = constvars[i], constvalues[i]
-                    if constvar.units:
-                        constvalue *= constvar.units
-                    constraints += [slack >= 1,
-                                    constvalue/slack <= constvar,
-                                    constvar <= constvalue*slack]
-                m = Model(cost, constraints)
-                m.addvalue = addvalue
-                m.constvars = constvars
-                m.constvarkeys = constvarkeys
-                m.constvalues = constvalues
+                m = feasibility_model(self, "constants", constants=constants,
+                                      signomials=signomials, programType=Model)
                 sol = m.solve(verbosity=verbosity)
-                feasiblevalues = sol(m.constvars).tolist()
-                var_infeas = {m.addvalue[m.constvarkeys[i]]: feasiblevalues[i]
-                              for i in np.where(sol(slackb) > 1.01)}
+                feasiblevalues = sol(m.constvars)
+                var_infeas = {}
+                for i, slackval in enumerate(sol(m.slackb)):
+                    if slackval > 1.01:
+                        original_varkey = m.addvalue[m.constvarkeys[i]]
+                        var_infeas[original_varkey] = feasiblevalues[i]
                 feasibilities["constants"] = var_infeas
 
         if len(feasibilities) == 1:
