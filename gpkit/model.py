@@ -239,7 +239,7 @@ class Model(object):
     @property
     def beforesubs(self):
         "Get this Model's NomialData before any substitutuions"
-        return NomialData(nomials=self.signomials)
+        return NomialData.fromnomials(self.signomials)
 
     @property
     def allsubs(self):
@@ -252,7 +252,7 @@ class Model(object):
     def signomials_et_al(self):
         "Get signomials, beforesubs, allsubs in one pass; applies VarKey subs."
         signomials = self.signomials
-        beforesubs = NomialData(nomials=signomials)
+        beforesubs = NomialData.fromnomials(signomials)
         allsubs = beforesubs.values
         allsubs.update(self.substitutions)
         varkeysubs = {vk: nvk for vk, nvk in allsubs.items()
