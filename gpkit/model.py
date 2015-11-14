@@ -252,6 +252,7 @@ class Model(object):
     def signomials_et_al(self):
         "Get signomials, beforesubs, allsubs in one pass; applies VarKey subs."
         signomials = self.signomials
+        # don't use self.beforesubs here to avoid re-computing self.signomials
         beforesubs = NomialData.fromnomials(signomials)
         allsubs = beforesubs.values
         allsubs.update(self.substitutions)
