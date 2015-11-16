@@ -171,14 +171,25 @@ except IOError:
 # Load IPython CSS
 try:
     from IPython.display import HTML, display
-    display(HTML("<style>"
-                 '[style="font-size: 1.15em;"] { padding-top: 0.25em; }'
-                 ".widget-numeric-text { width: auto; }"
-                 ".widget-numeric-text .widget-label { width: 15ex; }"
-                 ".widget-numeric-text .form-control { background: #fbfbfb; width: 10ex; }"
-                 ".widget-slider .widget-label { width: 15ex; }"
-                 ".widget-checkbox .widget-label { width: 15ex; }"
-                 ".form-control { border: none; box-shadow: none; }"
-                 "</style>"))
+
+    class invisibleHTML(HTML):
+        "HTML which shows on import only if the viewer supports HTML"
+
+        def __repr__(self):
+            return ""
+
+        def __str__(self):
+            return ""
+
+    gpkcss = invisibleHTML("""<style>
+    [style="font-size: 1.15em;"] { padding-top: 0.25em; }
+    .widget-numeric-text { width: auto; }
+    .widget-numeric-text .widget-label { width: 15ex; }
+    .widget-numeric-text .form-control { background: #fbfbfb; width: 10ex; }
+    .widget-slider .widget-label { width: 15ex; }
+    .widget-checkbox .widget-label { width: 15ex; }
+    .form-control { border: none; box-shadow: none; }
+    </style>""")
+    display(gpkcss)
 except:
     pass
