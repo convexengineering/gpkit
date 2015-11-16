@@ -692,124 +692,17 @@ class Model(object):
         **solvekwargs
             kwargs which get passed to the solve()/localsolve() method.
         """
-        import ipywidgets as widgets
-
-        if ranges is None:
-            ranges = {}
-            for k, v in self.allsubs.items():
-                if is_sweepvar(v) or isinstance(v, Numbers):
-                    if is_sweepvar(v):
-                        sweep = v[1]
-                        v = sweep[0]
-                        self.substitutions.update({k: v})
-                    vmin, vmax = v/2.0, v*2.0
-                    if is_sweepvar(v):
-                        vmin = min(vmin, min(sweep))
-                        vmax = max(vmax, min(sweep))
-                    vstep = (vmax-vmin)/24.0
-                    varkey_latex = "$"+k.latex()+"$"
-                    floatslider = widgets.FloatSlider(min=vmin, max=vmax,
-                                                      step=vstep, value=v,
-                                                      description=varkey_latex)
-                    floatslider.width = "20ex"
-                    floatslider.varkey = k
-                    ranges[k._cmpstr] = floatslider
-
-        if fn_of_sol is None:
-            def fn_of_sol(solution):
-                tables = ["cost", "freevariables", "sweepvariables"]
-                if len(solution["freevariables"]) < 20:
-                    tables.append("sensitivities")
-                print solution.table(tables)
-
-        solvekwargs["verbosity"] = 0
-
-        def resolve(**subs):
-            self.substitutions.update(subs)
-            try:
-                try:
-                    self.solve(**solvekwargs)
-                except ValueError:
-                    self.localsolve(**solvekwargs)
-                fn_of_sol(self.solution)
-            except RuntimeWarning:
-                out = "THE PROBLEM IS INFEASIBLE"
-                try:
-                    const_feas = self.feasibility(["constants"])
-                    out += "\n    but would become with this substitution:\n"
-                    out += str(const_feas)
-                except:
-                    pass
-                finally:
-                    print(out)
-
-        resolve()
-
-        return widgets.interactive(resolve, **ranges)
+        from .interactive.ipywidgets import modelinteract
+        return modelinteract(ranges, fn_of_sol, **solvekwargs)
 
     def controlpanel(self, *args, **kwargs):
-        import ipywidgets as widgets
-        from traitlets import link
+        """Easy model control in IPython / Jupyter
 
-        sliders = self.interact(*args, **kwargs)
-        sliderboxes = []
-        for sl in sliders.children:
-            cb = widgets.Checkbox(value=True)
-            unit_latex = sub_units(sl.varkey)
-            if unit_latex:
-                unit_latex = "$\scriptsize"+unit_latex+"$"
-            units = widgets.Latex(value=unit_latex)
-            units.font_size = "1.15em"
-            box = widgets.HBox(children=[cb, sl, units])
-            link((box, 'visible'), (cb, 'value'))
-            sliderboxes.append(box)
-
-        settings = []
-        for sliderbox in sliderboxes:
-            settings.append(create_settings(sliderbox))
-
-        model_latex = "$"+self.latex(show_subs=False)+"$"
-        model_eq = widgets.Latex(model_latex)
-        tabs = widgets.Tab(children=[widgets.Box(children=sliderboxes,
-                                                 padding="1.25ex"),
-                                     widgets.Box(children=settings,
-                                                 padding="1.25ex"),
-                                     widgets.Box(children=[model_eq],
-                                                 padding="1.25ex")])
-
-        tabs.set_title(0, 'Variable Sliders')
-        tabs.set_title(1, 'Slider Settings')
-        tabs.set_title(2, 'Model Equations')
-
-        return tabs
-
-
-def create_settings(box):
-    import ipywidgets as widgets
-    from traitlets import link
-    sl_enable, slider, sl_units = box.children
-
-    enable = widgets.Checkbox(value=box.visible)
-    link((box, 'visible'), (enable, 'value'))
-    value = widgets.FloatText(value=slider.value, description=slider.description)
-    link((slider, 'value'), (value, 'value'))
-    units = widgets.Latex(value="")
-    link((sl_units, 'value'), (units, 'value'))
-    units.font_size = "1.15em"
-    fromlabel = widgets.HTML("<span class='form-control' style='width: auto;'>"
-                             "from")
-    setmin = widgets.FloatText(value=slider.min)
-    link((slider, 'min'), (setmin, 'value'))
-    tolabel = widgets.HTML("<span class='form-control' style='width: auto;'>"
-                           "to")
-    setmax = widgets.FloatText(value=slider.max)
-    link((slider, 'max'), (setmax, 'value'))
-    descr = widgets.HTML("<span class='form-control' style='width: auto;'>"
-                         + slider.varkey.descr.get("label", ""))
-    descr.width = "40ex"
-
-    return widgets.HBox(children=[enable, value, descr,
-                                  fromlabel, setmin, tolabel, setmax, units])
+        Like interact(), but with the ability to control sliders and their ranges
+        live. args and kwargs are passed on to interact()
+        """
+        from .interactive.ipywidgets import modelcontrolpanel
+        return modelcontrolpanel(ranges, fn_of_sol, **solvekwargs)
 
 
 def sub_units(varkey):
