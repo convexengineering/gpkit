@@ -172,7 +172,7 @@ except IOError:
 try:
     from IPython.display import HTML, display
 
-    class invisibleHTML(HTML):
+    class InvisibleHTML(HTML):
         "HTML which shows on import only if the viewer supports HTML"
 
         def __repr__(self):
@@ -181,7 +181,7 @@ try:
         def __str__(self):
             return ""
 
-    gpkcss = invisibleHTML("""<style>
+    display(InvisibleHTML("""<style>
     [style="font-size: 1.15em;"] { padding-top: 0.25em; }
     .widget-numeric-text { width: auto; }
     .widget-numeric-text .widget-label { width: 15ex; }
@@ -189,7 +189,6 @@ try:
     .widget-slider .widget-label { width: 15ex; }
     .widget-checkbox .widget-label { width: 15ex; }
     .form-control { border: none; box-shadow: none; }
-    </style>""")
-    display(gpkcss)
+    </style>"""))
 except:
     pass
