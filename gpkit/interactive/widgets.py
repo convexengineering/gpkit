@@ -1,4 +1,7 @@
 import ipywidgets as widgets
+from traitlets import link
+from ..small_scripts import is_sweepvar
+from ..small_classes import Numbers
 
 
 def modelinteract(model, ranges=None, fn_of_sol=None, **solvekwargs):
@@ -85,14 +88,12 @@ def modelcontrolpanel(model, *args, **kwargs):
     Like interact(), but with the ability to control sliders and their ranges
     live. args and kwargs are passed on to interact()
     """
-    import ipywidgets as widgets
-    from traitlets import link
 
     sliders = model.interact(*args, **kwargs)
     sliderboxes = []
     for sl in sliders.children:
         cb = widgets.Checkbox(value=True)
-        unit_latex = sub_units(sl.varkey)
+        unit_latex = sl.varkey.unitstr
         if unit_latex:
             unit_latex = "$\scriptsize"+unit_latex+"$"
         units = widgets.Latex(value=unit_latex)
@@ -123,8 +124,6 @@ def modelcontrolpanel(model, *args, **kwargs):
 
 def create_settings(box):
     "Creates a widget Container for settings and info of  a particular slider."
-    import ipywidgets as widgets
-    from traitlets import link
     sl_enable, slider, sl_units = box.children
 
     enable = widgets.Checkbox(value=box.visible)

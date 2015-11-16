@@ -28,8 +28,7 @@ from .nomial_data import NomialData
 from .solution_array import parse_result
 from .substitution import get_constants, separate_subs
 from .substitution import substitution
-from .small_scripts import mag, flatten, latex_num, unitstr
-from .small_scripts import is_sweepvar
+from .small_scripts import mag, flatten, latex_num
 from .nomial_data import simplify_exps_and_cs
 from .feasibility import feasibility_model
 
@@ -661,9 +660,9 @@ class Model(object):
         latex_list += ["    & %s \\\\" % constr.latex()
                        for constr in self.constraints]
         if show_subs:
-            sub_latex = ["    & %s \gets %s~%s \\\\" % (var.latex(),
+            sub_latex = ["    & %s \gets %s%s \\\\" % (var.latex(),
                                                         latex_num(val),
-                                                        sub_units(var))
+                                                        var.unitstr)
                          for var, val in self.constants.items()]
             latex_list += ["\\text{substituting}"] + sorted(sub_latex)
         latex_list += ["\\end{array}"]
@@ -692,8 +691,8 @@ class Model(object):
         **solvekwargs
             kwargs which get passed to the solve()/localsolve() method.
         """
-        from .interactive.ipywidgets import modelinteract
-        return modelinteract(ranges, fn_of_sol, **solvekwargs)
+        from .interactive.widgets import modelinteract
+        return modelinteract(self, ranges, fn_of_sol, **solvekwargs)
 
     def controlpanel(self, *args, **kwargs):
         """Easy model control in IPython / Jupyter
@@ -701,14 +700,8 @@ class Model(object):
         Like interact(), but with the ability to control sliders and their ranges
         live. args and kwargs are passed on to interact()
         """
-        from .interactive.ipywidgets import modelcontrolpanel
-        return modelcontrolpanel(ranges, fn_of_sol, **solvekwargs)
-
-
-def sub_units(varkey):
-    units = unitstr(varkey.units, r"~\mathrm{ %s }", "L~")
-    units_tf = units.replace("frac", "tfrac").replace(r"\cdot", r"\cdot ")
-    return units_tf if units_tf != r"~\mathrm{ - }" else ""
+        from .interactive.widgets import modelcontrolpanel
+        return modelcontrolpanel(self, *args, **kwargs)
 
 
 def form_program(programType, signomials, verbosity=2):
