@@ -8,8 +8,6 @@ try:
 except ImportError:
     pass
 
-from widget import widget
-
 
 def showcadtoon(title, css=""):
     with open("%s.gpkit" % title, 'r') as f:

@@ -167,3 +167,28 @@ try:
 except IOError:
     print("Could not load settings file.")
     settings = {"installed_solvers": [""]}
+
+# Load IPython CSS
+try:
+    from IPython.display import HTML, display
+
+    class InvisibleHTML(HTML):
+        "HTML which shows on import only if the viewer supports HTML"
+
+        def __repr__(self):
+            return ""
+
+        def __str__(self):
+            return ""
+
+    display(InvisibleHTML("""<style>
+    [style="font-size: 1.15em;"] { padding-top: 0.25em; }
+    .widget-numeric-text { width: auto; }
+    .widget-numeric-text .widget-label { width: 15ex; }
+    .widget-numeric-text .form-control { background: #fbfbfb; width: 10ex; }
+    .widget-slider .widget-label { width: 15ex; }
+    .widget-checkbox .widget-label { width: 15ex; }
+    .form-control { border: none; box-shadow: none; }
+    </style>"""))
+except:
+    pass

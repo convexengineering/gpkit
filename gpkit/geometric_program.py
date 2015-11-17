@@ -271,7 +271,7 @@ class GeometricProgram(NomialData):
                           for constr in self.constraints] +
                          [']'])
 
-    def latex(self, unused=None):
+    def latex(self):
         """LaTeX representation of a GeometricProgram.
 
         Contains all of its parameters."""

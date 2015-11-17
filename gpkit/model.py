@@ -19,7 +19,7 @@ from .geometric_program import GeometricProgram
 from .signomial_program import SignomialProgram
 from .solution_array import SolutionArray
 from .varkey import VarKey
-from .variables import Variable
+from .variables import Variable, VectorVariable
 from .posyarray import PosyArray
 from . import SignomialsEnabled
 
@@ -28,7 +28,7 @@ from .nomial_data import NomialData
 from .solution_array import parse_result
 from .substitution import get_constants, separate_subs
 from .substitution import substitution
-from .small_scripts import mag, flatten, latex_num, unitstr
+from .small_scripts import mag, flatten, latex_num
 from .nomial_data import simplify_exps_and_cs
 from .feasibility import feasibility_model
 
@@ -598,17 +598,18 @@ class Model(object):
         if "overall" in search:
             m = feasibility_model(self, "max")
             m.substitutions = allsubs
-            infeasibility = m._solve(programtype, None, verbosity-1, False)["cost"]
+            infeasibility = m._solve(programtype, None, verbosity, False)["cost"]
             feasibilities["overall"] = infeasibility
 
         if "constraints" in search:
             m = feasibility_model(self, "product")
             m.substitutions = allsubs
-            sol = m._solve(programtype, None, verbosity-1, False)
+            sol = m._solve(programtype, None, verbosity, False)
             feasibilities["constraints"] = sol(m.slackvars)
 
         if "constants" in search:
             constants = get_constants(unsubbed, allsubs)
+            signomials, _ = simplify_and_mmap(signomials, {})
             if constvars:
                 constvars = set(constvars)
                 # get varkey versions
@@ -618,18 +619,21 @@ class Model(object):
                 constants = {k: v for k, v in constants.items()
                              if k in constvars}
             if constants:
-                m = feasibility_model(self, "constants", constants=constants)
-                sol = m._solve(programtype, None, verbosity-1, False)
-                feasiblevalues = sol(m.constvars).tolist()
-                changed_vals = feasiblevalues != np.array(m.constvalues)
-                var_infeas = {m.addvalue[m.constvarkeys[i]]: feasiblevalues[i]
-                              for i in np.where(changed_vals)}
+                m = feasibility_model(self, "constants", constants=constants,
+                                      signomials=signomials, programType=Model)
+                sol = m.solve(verbosity=verbosity)
+                feasiblevalues = sol(m.constvars)
+                var_infeas = {}
+                for i, slackval in enumerate(sol(m.slackb)):
+                    if slackval > 1.01:
+                        original_varkey = m.addvalue[m.constvarkeys[i]]
+                        var_infeas[original_varkey] = feasiblevalues[i]
                 feasibilities["constants"] = var_infeas
 
-        if len(feasibilities) > 1:
-            return feasibilities
-        else:
+        if len(feasibilities) == 1:
             return feasibilities.values()[0]
+        else:
+            return feasibilities
 
     def __repr__(self):
         return "gpkit.%s(%s)" % (self.__class__.__name__, str(self))
@@ -645,28 +649,30 @@ class Model(object):
                          ['],',
                           "    substitutions=%s" % self.allsubs])
 
-    def latex(self, unused=None):
+    def latex(self, show_subs=True):
         """LaTeX representation of a GeometricProgram.
         Contains all of its parameters."""
         # TODO: print sweeps and linkedsweeps
-        return "\n".join(["\\begin{array}[ll]",
-                          "\\text{}",
-                          "\\text{minimize}",
-                          "    & %s \\\\" % self.cost.latex(),
-                          "\\text{subject to}"] +
-                         ["    & %s \\\\" % constr.latex()
-                          for constr in self.constraints] +
-                         ["\\text{substituting}"] +
-                         sorted(["    & %s \gets %s %s \\\\" % (var.latex(),
-                                                                latex_num(val),
-                                                                sub_units(var))
-                                 for var, val in self.constants.items()]) +
-                         ["\\end{array}"])
+        latex_list = ["\\begin{array}[ll]",
+                      "\\text{}",
+                      "\\text{minimize}",
+                      "    & %s \\\\" % self.cost.latex(),
+                      "\\text{subject to}"]
+        latex_list += ["    & %s \\\\" % constr.latex()
+                       for constr in self.constraints]
+        if show_subs:
+            sub_latex = ["    & %s \gets %s%s \\\\" % (var.latex(),
+                                                        latex_num(val),
+                                                        var.unitstr)
+                         for var, val in self.constants.items()]
+            latex_list += ["\\text{substituting}"] + sorted(sub_latex)
+        latex_list += ["\\end{array}"]
+        return "\n".join(latex_list)
 
     def _repr_latex_(self):
         return "$$"+self.latex()+"$$"
 
-    def interact(self, fn_of_sol=None, ranges=None, **solvekwargs):
+    def interact(self, ranges=None, fn_of_sol=None, **solvekwargs):
         """Easy model interaction in IPython / Jupyter
 
         By default, this creates a model with sliders for every constant
@@ -686,40 +692,17 @@ class Model(object):
         **solvekwargs
             kwargs which get passed to the solve()/localsolve() method.
         """
-        try:
-            from ipywidgets import interactive, FloatSlider
-        except ImportError:
-            from IPython.html.widgets import interactive, FloatSliderWidget
-            FloatSlider = FloatSliderWidget
+        from .interactive.widgets import modelinteract
+        return modelinteract(self, ranges, fn_of_sol, **solvekwargs)
 
-        if ranges is None:
-            ranges = {k._cmpstr: FloatSlider(min=v/2.0, max=2.0*v,
-                                             step=v/16.0, value=v)
-                      for k, v in self.constants.items()}
-        if fn_of_sol is None:
-            def fn_of_sol(solution):
-                tables = ["cost", "freevariables", "sweepvariables"]
-                if len(solution["freevariables"]) < 20:
-                    tables.append("sensitivities")
-                print solution.table(tables)
+    def controlpanel(self, *args, **kwargs):
+        """Easy model control in IPython / Jupyter
 
-        solvekwargs["verbosity"] = 0
-
-        def display(**subs):
-            self.substitutions.update(subs)
-            if self.isGP:
-                self.solve(**solvekwargs)
-            else:
-                self.localsolve(**solvekwargs)
-            fn_of_sol(self.solution)
-
-        return interactive(display, **ranges)
-
-
-def sub_units(varkey):
-    units = unitstr(varkey.units, r"\mathrm{ %s }", "L~")
-    units_tf = units.replace("frac", "tfrac").replace(r"\cdot", r"\cdot ")
-    return units_tf
+        Like interact(), but with the ability to control sliders and their ranges
+        live. args and kwargs are passed on to interact()
+        """
+        from .interactive.widgets import modelcontrolpanel
+        return modelcontrolpanel(self, *args, **kwargs)
 
 
 def form_program(programType, signomials, verbosity=2):
