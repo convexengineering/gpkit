@@ -7,6 +7,7 @@ from time import time
 from .variables import Variable, VectorVariable
 from .small_classes import CootMatrix
 from .nomial_data import NomialData
+from .nomials import Posynomial
 from .small_classes import SolverLog
 
 from .small_scripts import is_sweepvar
@@ -46,7 +47,10 @@ class GeometricProgram(NomialData):
     def __init__(self, cost, constraints, verbosity=1):
         self.cost = cost
         self.constraints = constraints
-        self.posynomials = [cost] + list(constraints)
+        self.posynomials = [cost]
+        for constraint in constraints:
+            self.posynomials.extend(constraint.as_posyslt1())
+        # TODO: add constraint_idxs
         # init NomialData to create self.exps, self.cs, and so on
         super(GeometricProgram, self).init_from_nomials(self.posynomials)
         if self.any_nonpositive_cs:
@@ -269,7 +273,7 @@ class GeometricProgram(NomialData):
         return "\n".join(["  # minimize",
                           "    %s," % self.cost,
                           "[ # subject to"] +
-                         ["    %s <= 1," % constr
+                         ["    %s," % constr
                           for constr in self.constraints] +
                          [']'])
 
@@ -282,7 +286,7 @@ class GeometricProgram(NomialData):
                           "\\text{minimize}",
                           "    & %s \\\\" % self.cost.latex(),
                           "\\text{subject to}"] +
-                         ["    & %s \\leq 1\\\\" % constr.latex()
+                         ["    & %s \\\\" % constr.latex()
                           for constr in self.constraints] +
                          ["\\end{array}"])
 

@@ -6,6 +6,7 @@ from functools import reduce as functools_reduce
 from operator import mul
 
 from .geometric_program import GeometricProgram
+from .nomials import Signomial, PosynomialConstraint
 
 from .substitution import get_constants
 from .feasibility import feasibility_model
@@ -51,26 +52,25 @@ class SignomialProgram(object):
 
         self.cost = cost
         self.constraints = constraints
-        self.signomials = [cost] + list(constraints)
+        self.posyconstraints = []
+        self.localposyconstraints = []
 
-        self.posynomials, self.negynomials = [self.cost], [0]
-        self.negvarkeys = set()
-        for sig in self.constraints:
-            if not sig.any_nonpositive_cs:
-                posy, negy = sig, 0
+        for constraint in self.constraints:
+            posy = False
+            if hasattr(constraint, "as_posyslt1"):
+                posy = constraint.as_posyslt1()
+            if posy:
+                if posy is not True:
+                    self.posyconstraints.append(posy)
+            elif hasattr(constraint, "as_localposyconstr"):
+                self.localposyconstraints.append(constraint)
             else:
-                posy, negy = sig.posy_negy()
-                if len(negy.cs) == 1:
-                    raise ValueError("Signomial constraint has only one"
-                                     " negative monomial; it should have been"
-                                     " a Posynomial constraint.")
-                self.negvarkeys.update(negy.varlocs)
-            self.posynomials.append(posy)
-            self.negynomials.append(negy)
+                raise ValueError("%s is an invalid constraint for a"
+                                 " SignomialProgram" % constraint)
 
-        if not self.negvarkeys:
+        if not self.localposyconstraints:
             raise ValueError("SignomialPrograms must contain at least one"
-                             " Signomial.")
+                             " SignomialConstraint.")
 
     def localsolve(self, solver=None, verbosity=1, x0=None, rel_tol=1e-4,
                    iteration_limit=50, *args, **kwargs):
@@ -136,43 +136,33 @@ class SignomialProgram(object):
 
         # parse the result and return nu's of original monomials from
         #  variable sensitivities
-        nu = result["sensitivities"]["monomials"]
-        sens_vars = {var: sum([gp.exps[i][var]*nu[i] for i in locs])
-                     for (var, locs) in gp.varlocs.items()}
-        nu_ = []
-        for signomial in self.signomials:
-            for c, exp in zip(signomial.cs, signomial.exps):
-                var_ss = [sens_vars[var]*val for var, val in exp.items()]
-                nu_.append(functools_reduce(mul, var_ss, np.sign(c)))
-        result["sensitivities"]["monomials"] = np.array(nu_)
+        # TODO TODO posy monomials senss, correct. negy monomials, -posy senss??? or 0
+        # nu = result["sensitivities"]["monomials"]
+        # sens_vars = {var: sum([gp.exps[i][var]*nu[i] for i in locs])
+        #              for (var, locs) in gp.varlocs.items()}
+        # nu_ = []
+        # for signomial in self.signomials:
+        #     for c, exp in zip(signomial.cs, signomial.exps):
+        #         var_ss = [sens_vars[var]*val for var, val in exp.items()]
+        #         nu_.append(functools_reduce(mul, var_ss, np.sign(c)))
+        # result["sensitivities"]["monomials"] = np.array(nu_)
         # TODO: SP sensitivities are weird, and potentially incorrect
 
         self.result = result  # NOTE: SIDE EFFECTS
         return result
 
     def step(self, x0=None, verbosity=1):
-        if x0 is None:
-            # dummy nomial data to turn x0's keys into VarKeys
-            self.negydata = lambda: None
-            self.negydata.varlocs = self.negvarkeys
-            self.negydata.varstrs = {str(vk): vk for vk in self.negvarkeys}
-            x0 = get_constants(self.negydata, {})
-            sp_inits = {vk: vk.descr["sp_init"] for vk in self.negvarkeys
-                        if "sp_init" in vk.descr}
-            x0.update(sp_inits)
-            # HACK: initial guess for negative variables
-            x0.update({var: 1 for var in self.negvarkeys if var not in x0})
-        posy_approxs = []
-        for p, n in zip(self.posynomials, self.negynomials):
-            if n is 0:
-                posy_approx = p
-            else:
-                posy_approx = p/n.mono_lower_bound(x0)
-            posy_approxs.append(posy_approx)
-
-        gp = GeometricProgram(posy_approxs[0], posy_approxs[1:],
-                              verbosity=verbosity)
-        return gp
+        localposyconstraints = []
+        for constraint in self.localposyconstraints:
+            lpc = constraint.as_localposyconstr(x0)
+            if not lpc:
+                constraint = self.localposyconstraints[i]
+                raise ValueError("%s is an invalid constraint for a"
+                                 " SignomialProgram" % constraint)
+            elif lpc is not True:
+                localposyconstraints.append(lpc)
+        constraints = self.posyconstraints + localposyconstraints
+        return GeometricProgram(self.cost, constraints, verbosity=verbosity)
 
     def __repr__(self):
         return "gpkit.%s(\n%s)" % (self.__class__.__name__, str(self))
@@ -184,7 +174,7 @@ class SignomialProgram(object):
         return "\n".join(["  # minimize",
                           "    %s," % self.cost,
                           "[ # subject to"] +
-                         ["    %s <= 0," % constr
+                         ["    %s," % constr
                           for constr in self.constraints] +
                          [']'])
 
@@ -203,8 +193,8 @@ class SignomialProgram(object):
                           "\\text{minimize}",
                           "    & %s \\\\" % self.cost.latex(),
                           "\\text{subject to}"] +
-                         ["    & %s \\leq %s\\\\" % (p, n)
-                          for (p, n) in posy_neg] +
+                         ["    & %s \\\\" % constr
+                          for constr in self.constraints] +
                          ["\\end{array}"])
 
     def _repr_latex_(self):

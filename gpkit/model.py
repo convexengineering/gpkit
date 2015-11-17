@@ -14,6 +14,7 @@ from time import time
 
 from .small_classes import Numbers, Strings
 from .nomials import MonoEQConstraint
+from .nomials import PosynomialConstraint, SignomialConstraint
 from .nomials import Signomial, Monomial
 from .geometric_program import GeometricProgram
 from .signomial_program import SignomialProgram
@@ -250,17 +251,16 @@ class Model(object):
 
     @property
     def signomials(self):
-        constraints = tuple(flatten(self.constraints, Signomial))
-        # TODO: parse constraints during flattening, calling Posyarray on
-        #       anything that holds only posys and then saving that list.
-        #       This will allow prettier constraint printing.
-        posynomials = [self.cost]
-        for constraint in constraints:
-            if isinstance(constraint, MonoEQConstraint):
-                posynomials.extend([constraint.leq, constraint.geq])
-            else:
-                posynomials.append(constraint)
-        return posynomials
+        signomials = [self.cost]
+        for constraint in self.constraints:
+            if hasattr(constraint, "as_sigy_lt0"):
+                signomial_list = constraint.as_sigy_lt0()
+            elif hasattr(constraint, "as_posy_lt1"):
+                signomial_list = constraint.as_posy_lt1()
+            for signomial in signomial_list:
+                signomial.originating_constraint = constraint
+            signomials.extend(signomial_list)
+        return signomials
 
     @property
     def beforesubs(self):
