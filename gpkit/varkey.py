@@ -134,7 +134,7 @@ class VarKey(object):
                 i = it.multi_index
                 it.iternext()
                 p = other[i]
-                if not hasattr(p, "exp"):
+                if not hasattr(p, "exp"):  # array contains non-Monomial
                     return False
                 v = VarKey(list(p.exp)[0])
                 if v.descr.pop("idx", None) != i:

@@ -173,7 +173,7 @@ class Model(object):
                      else [othervars[name]])
             for var in svars + ovars:
                 if var.key != newvar.key:
-                    substitutions[var.key] = newvar.key  # vectors???
+                    substitutions[var.key] = newvar.key
         return Model(self.cost,
                      self.constraints + other.constraints,
                      substitutions)
@@ -198,8 +198,7 @@ class Model(object):
     @property
     def varsbyname(self):
         varsbyname = defaultdict(list)
-        varkeys = self.varkeys.values()
-        for varkey in varkeys:
+        for varkey in self.varkeys.values():
             if varkey in self.substitutions:
                 sub = self.substitutions[varkey]
                 if isinstance(sub, VarKey):
