@@ -48,7 +48,7 @@ class GeometricProgram(NomialData):
         self.constraints = constraints
         self.posynomials = [cost] + list(constraints)
         # init NomialData to create self.exps, self.cs, and so on
-        super(GeometricProgram, self).__init__(nomials=self.posynomials)
+        super(GeometricProgram, self).init_from_nomials(self.posynomials)
         if self.any_nonpositive_cs:
             raise ValueError("GeometricPrograms cannot contain Signomials.")
         if [v for v in self.values.values() if not is_sweepvar(v)]:
@@ -271,7 +271,7 @@ class GeometricProgram(NomialData):
                           for constr in self.constraints] +
                          [']'])
 
-    def latex(self, unused=None):
+    def latex(self):
         """LaTeX representation of a GeometricProgram.
 
         Contains all of its parameters."""

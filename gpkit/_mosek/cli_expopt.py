@@ -83,7 +83,7 @@ def imize_fn(path=None, clearfiles=True):
         """
 
         with open(filename, "w") as f:
-            numcon = 1+p_idxs[-1]
+            numcon = p_idxs[-1]
             numter, numvar = map(int, A.shape)
             for n in [numcon, numvar, numter]:
                 f.write("%d\n" % n)

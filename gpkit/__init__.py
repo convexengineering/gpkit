@@ -101,25 +101,6 @@ class SignomialsEnabled(object):
         SIGNOMIALS_ENABLED = False
 
 
-def enable_signomials():
-    """Enables signomial support in a particular instance of GPkit."""
-    global SIGNOMIALS_ENABLED
-    SIGNOMIALS_ENABLED = True
-    print("'enable_signomials()' has been replaced by 'SignomialsEnabled'"
-          " in a 'with' statement (e.g. 'with SignomialsEnabled():  constraints"
-          " = [1-x]'). enable_signomials() will be removed in the next point"
-          " release, so please update your code!")
-
-
-def disable_signomials():
-    """Disables signomial support in a particular instance of GPkit."""
-    global SIGNOMIALS_ENABLED
-    SIGNOMIALS_ENABLED = False
-    print("'disable_signomials()' has been replaced by 'SignomialsEnabled'"
-          " in a 'with' statement (e.g. 'with SignomialsEnabled(): constraints"
-          " = [1-x]'). disable_signomials() will be removed in the next point"
-          " release, so please update your code!")
-
 from .nomials import Monomial, Posynomial, Signomial
 from .variables import Variable, VectorVariable, ArrayVariable
 from .geometric_program import GeometricProgram
@@ -130,40 +111,44 @@ from .model import Model
 from .shortcuts import GP, SP
 
 if units:
-    def skip_if_gpkit_objects(fallback, objects=(PosyArray, Signomial)):
-        def newfn(self, other):
-            if isinstance(other, objects):
-                return NotImplemented
-            else:
-                return getattr(self, fallback)(other)
-        return newfn
+    def _subvert_pint():
+        """
+        When gpkit objects appear in mathematical operations with pint
+        Quantity objects, let the gpkit implementations determine what to do
+        """
+        def skip_if_gpkit_objects(fallback, objects=(PosyArray, Signomial)):
+            def _newfn(self, other):
+                if isinstance(other, objects):
+                    return NotImplemented
+                else:
+                    return getattr(self, fallback)(other)
+            return _newfn
 
-    for op in "eq ge le add mul div truediv floordiv".split():
-        dunder = "__%s__" % op
-        trunder = "___%s___" % op
-        original = getattr(units.Quantity, dunder)
-        setattr(units.Quantity, trunder, original)
-        newfn = skip_if_gpkit_objects(fallback=trunder)
-        setattr(units.Quantity, dunder, newfn)
+        for op in "eq ge le add mul div truediv floordiv".split():
+            dunder = "__%s__" % op
+            trunder = "___%s___" % op
+            original = getattr(units.Quantity, dunder)
+            setattr(units.Quantity, trunder, original)
+            newfn = skip_if_gpkit_objects(fallback=trunder)
+            setattr(units.Quantity, dunder, newfn)
 
 # Load settings
 from os import sep as os_sep
 from os.path import dirname as os_path_dirname
-settings_path = os_sep.join([os_path_dirname(__file__), "env", "settings"])
-try:
-    with open(settings_path) as settingsfile:
-        lines = [line[:-1].split(" : ") for line in settingsfile
-                 if len(line.split(" : ")) == 2]
-        settings = {name: value.split(", ") for name, value in lines}
-        for name, value in settings.items():
-            # hack to flatten 1-element lists, unlesss they're the solver list
-            if len(value) == 1 and name != "installed_solvers":
-                settings[name] = value[0]
+SETTINGS_PATH = os_sep.join([os_path_dirname(__file__), "env", "settings"])
+def load_settings(path=SETTINGS_PATH):
     try:
-        del lines
-        del line
-    except NameError:
-        pass
-except IOError:
-    print("Could not load settings file.")
-    settings = {"installed_solvers": [""]}
+        with open(path) as settingsfile:
+            lines = [line[:-1].split(" : ") for line in settingsfile
+                     if len(line.split(" : ")) == 2]
+            settings_ = {name: value.split(", ") for name, value in lines}
+            for name, value in settings_.items():
+                # hack to flatten 1-element lists,
+                # unlesss they're the solver list
+                if len(value) == 1 and name != "installed_solvers":
+                    settings_[name] = value[0]
+    except IOError:
+        print("Could not load settings file.")
+        settings_ = {"installed_solvers": [""]}
+    return settings_
+settings = load_settings()

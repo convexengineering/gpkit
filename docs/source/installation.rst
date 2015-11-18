@@ -34,6 +34,7 @@ Mac OS X
 3. Install GPkit
 ++++++++++++++++
   - Run ``pip install gpkit`` at the command line.
+  - Run ``pip install ipywidgets`` for interactive control of models (optional)
   - Run ``python -c "import gpkit.tests; gpkit.tests.run()"``
   - If you want units support, install pint with ``pip install pint``.
 
@@ -61,6 +62,7 @@ Linux
 ++++++++++++++++
   - _Optional:_ to install gpkit into an isolated python environment, install virtualenv, run ``virtualenv $DESTINATION_DIR`` then activate it with ``source activate $DESTINATION_DIR/bin``.
   - Run ``pip install gpkit`` at the command line.
+  - Run ``pip install ipywidgets`` for interactive control of models (optional)
   - Run ``python -c "import gpkit.tests; gpkit.tests.run()"``
   - If you want units support, install pint with ``pip install pint``.
   - You may find iPython Notebook to be useful modeling environment.
@@ -95,6 +97,7 @@ Windows
 3. Install GPkit
 ++++++++++++++++
   - Run ``pip install gpkit`` at an Anaconda Command Prompt.
+  - Run ``pip install ipywidgets`` for interactive control of models (optional)
   - Run ``python -c "import gpkit.tests; gpkit.tests.run()"``
       - If attempting to run the tests results in ``ValueError: Unknown solver ''.`` and ``python -c "import gpkit"`` prints "Could not find settings file", then run ``python -c "import gpkit.build; gpkit.build.build_gpkit()"``, to look for and install solvers. After doing so (it should say which solvers have been found), run     ``python -c "import gpkit.tests; gpkit.tests.run()"`` again.
   - If you want units support, install pint with ``pip install pint``.

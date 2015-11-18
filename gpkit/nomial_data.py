@@ -19,18 +19,11 @@ class NomialData(object):
     varlocs: {VarKey: list} (terms each variable appears in)
     units: pint.UnitsContainer
     """
-    def __init__(self, exps=None, cs=None, nomials=None, simplify=True):
-        if nomials and (exps or cs):
-            raise ValueError("The NomialData initializor accepts either"
-                             " exps and cs, or nomials, but not both.")
-        elif nomials:
-            self.nomials = nomials
-            exps = functools_reduce(add, (tuple(s.exps) for s in nomials))
-            cs = np.hstack((mag(s.cs) for s in nomials))
-            simplify = False  # nomials have already been simplified
-        elif exps is None or cs is None:
-            raise ValueError("creation of a NomialData requires exps and cs.")
-
+    def __init__(self, exps=None, cs=None, simplify=True):
+        if exps is None and cs is None:
+            # pass through for classmethods to get a NomialData object,
+            # which they will then call __init__ on
+            return
         if simplify:
             exps, cs = simplify_exps_and_cs(exps, cs)
         self.exps, self.cs = exps, cs
@@ -38,9 +31,7 @@ class NomialData(object):
         self.varlocs, self.varstrs = locate_vars(self.exps)
         self.values = {vk: vk.descr["value"] for vk in self.varlocs
                        if "value" in vk.descr}
-        if nomials:
-            self.units = tuple(s.units for s in nomials)
-        elif isinstance(self.cs, Quantity):
+        if isinstance(self.cs, Quantity):
             self.units = Quantity(1, self.cs.units)
         else:
             self.units = None
@@ -53,6 +44,24 @@ class NomialData(object):
             assert len(self.exps) == len(self.cs)
             self._hashvalue = hash(tuple(zip(self.exps, self.cs)))
         return self._hashvalue
+
+    @classmethod
+    def fromnomials(cls, nomials):
+        """Construct a NomialData from an iterable of Signomial objects"""
+        nd = cls()  # use pass-through version of __init__
+        nd.init_from_nomials(nomials)
+        return nd
+
+    def init_from_nomials(self, nomials):
+        """Way to initialize from nomials. Calls __init__.
+        Used by subclass __init__ methods.
+        """
+        exps = functools_reduce(add, (tuple(s.exps) for s in nomials))
+        cs = np.hstack((mag(s.cs) for s in nomials))
+        # nomials are already simplified, so simplify=False
+        NomialData.__init__(self, exps, cs, simplify=False)
+        self.nomials = nomials  # TODO eliminate constructor-dependent state
+        self.units = tuple(s.units for s in nomials)
 
     def __repr__(self):
         return "gpkit.%s(%s)" % (self.__class__.__name__, hash(self))
@@ -82,7 +91,7 @@ class NomialData(object):
         if hasattr(self, "nomials"):
             subbed_nomials = [n.sub(substitutions, val, require_positive)
                               for n in self.nomials]
-            nd = NomialData(nomials=subbed_nomials)
+            nd = NomialData.fromnomials(subbed_nomials)
         else:
             _, exps, cs, _ = substitution(self, substitutions, val)
             nd = NomialData(exps, cs)

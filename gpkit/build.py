@@ -185,14 +185,6 @@ class Mosek(SolverBackend):
         global settings
         settings["mosek_bin_dir"] = self.bin_dir
         os.environ['PATH'] = os.environ['PATH']+':%s' % self.bin_dir
-        if sys.platform == "darwin":
-            prev = os.environ.get('DYLD_LIBRARY_PATH', "")
-            os.environ['DYLD_LIBRARY_PATH'] = prev +':%s' % self.bin_dir
-            prof_str = "export DYLD_LIBRARY_PATH=\$DYLD_LIBRARY_PATH:" + self.bin_dir
-            call(('if ! grep "^%s" $HOME/.bash_profile;'
-                  ' then echo "%s" >> $HOME/.bash_profile;'
-                  ' fi') % (prof_str, prof_str))
-            call("cat $HOME/.bash_profile")
 
         return "version %s, installed to %s" % (self.version, self.dir)
 
@@ -228,6 +220,10 @@ class Mosek(SolverBackend):
                                 "    " + " ".join(expopt_build_files) +
                                 '   "' + self.lib_path + '"' +
                                 " -o " + pathjoin(solib_dir, "expopt.so"))
+        if sys.platform == "darwin":
+            link_library = call("install_name_tool -change @loader_path/libmosek64.7.1.dylib "
+                                + self.lib_path + " "
+                                + pathjoin(solib_dir, "expopt.so"))
         if built_expopt_lib != 0:
             return False
 
