@@ -47,7 +47,7 @@ def modelinteract(model, ranges=None, fn_of_sol=None, **solvekwargs):
                                                   description=varkey_latex)
                 floatslider.width = "20ex"
                 floatslider.varkey = k
-                ranges[k._cmpstr] = floatslider
+                ranges[str(k)] = floatslider
 
     if fn_of_sol is None:
         def fn_of_sol(solution):
@@ -59,6 +59,7 @@ def modelinteract(model, ranges=None, fn_of_sol=None, **solvekwargs):
     solvekwargs["verbosity"] = 0
 
     def resolve(**subs):
+        subs = {model.varkeys[k]: v for k, v in subs.items()}
         model.substitutions.update(subs)
         try:
             try:
@@ -111,9 +112,9 @@ def modelcontrolpanel(model, *args, **kwargs):
     [style="font-size: 1.16em;"] { padding-top: 0.25em; }
     [style="width: 3ex; font-size: 1.165em;"] { padding-top: 0.2em; }
     .widget-numeric-text { width: auto; }
-    .widget-numeric-text .widget-label { width: 15ex; }
+    .widget-numeric-text .widget-label { width: 20ex; }
     .widget-numeric-text .form-control { background: #fbfbfb; width: 8.5ex; }
-    .widget-slider .widget-label { width: 15ex; }
+    .widget-slider .widget-label { width: 20ex; }
     .widget-checkbox .widget-label { width: 15ex; }
     .form-control { border: none; box-shadow: none; }
     </style>""")
