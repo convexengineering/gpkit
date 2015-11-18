@@ -2,10 +2,10 @@
 import numpy as np
 
 from .posyarray import PosyArray
-from .small_scripts import mag
-from .small_scripts import isequal
 from .small_classes import Strings, Quantity
 from .small_classes import Counter
+
+from .small_scripts import isequal, mag, unitstr
 
 
 class VarKey(object):
@@ -76,6 +76,12 @@ class VarKey(object):
         """units of this VarKey"""
         return self.descr.get("units", None)
 
+    @property
+    def unitstr(self):
+        units = unitstr(self.units, r"~\mathrm{%s}", "L~")
+        units_tf = units.replace("frac", "tfrac").replace(r"\cdot", r"\cdot ")
+        return units_tf if units_tf != r"~\mathrm{-}" else ""
+
     def __repr__(self, subscripts=["model", "idx"]):
         s = self.name
         for subscript in subscripts:
@@ -83,7 +89,7 @@ class VarKey(object):
                 s = "%s_%s" % (s, self.descr[subscript])
         return s
 
-    def latex(self, unused=None):
+    def latex(self):
         s = self.name
         for subscript in ["idx"]:  # +"model"?
             if subscript in self.descr:

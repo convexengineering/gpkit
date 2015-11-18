@@ -188,7 +188,7 @@ class SignomialProgram(object):
                           for constr in self.constraints] +
                          [']'])
 
-    def latex(self, unused=None):
+    def latex(self):
         """LaTeX representation of a SignomialProgram.
 
         Contains all of its parameters."""
