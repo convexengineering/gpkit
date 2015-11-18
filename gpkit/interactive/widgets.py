@@ -57,9 +57,10 @@ def modelinteract(model, ranges=None, fn_of_sol=None, **solvekwargs):
             print solution.table(tables)
 
     solvekwargs["verbosity"] = 0
+    modelvarkeys = model.varkeys
 
     def resolve(**subs):
-        subs = {model.varkeys[k]: v for k, v in subs.items()}
+        subs = {modelvarkeys[k]: v for k, v in subs.items()}
         model.substitutions.update(subs)
         try:
             try:
