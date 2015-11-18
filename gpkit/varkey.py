@@ -60,6 +60,7 @@ class VarKey(object):
                 raise ValueError("units must be either a string"
                                  " or a Quantity from gpkit.units.")
         self._hashvalue = hash(self.nomstr)
+        self.key = self
 
     @property
     def name(self):
@@ -133,6 +134,8 @@ class VarKey(object):
                 i = it.multi_index
                 it.iternext()
                 p = other[i]
+                if not hasattr(p, "exp"):
+                    return False
                 v = VarKey(list(p.exp)[0])
                 if v.descr.pop("idx", None) != i:
                     return False

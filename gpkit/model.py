@@ -164,15 +164,15 @@ class Model(object):
         for name in overlap:
             if name in excluded_names:
                 continue
-            descr = self[name].descr
+            descr = self[name].key.descr
             descr.pop("model", None)
-            newvar = Variable(**descr)
+            newvar = VarKey(**descr)
             svars = (selfvars[name] if isinstance(selfvars[name], list)
                      else [selfvars[name]])
             ovars = (othervars[name] if isinstance(othervars[name], list)
                      else [othervars[name]])
             for var in svars + ovars:
-                if var != newvar:
+                if var.key != newvar.key:
                     substitutions[var.key] = newvar.key  # vectors???
         return Model(self.cost,
                      self.constraints + other.constraints,
@@ -198,7 +198,8 @@ class Model(object):
     @property
     def varsbyname(self):
         varsbyname = defaultdict(list)
-        for varkey in self.varkeys.values():
+        varkeys = self.varkeys.values()
+        for varkey in varkeys:
             if varkey in self.substitutions:
                 sub = self.substitutions[varkey]
                 if isinstance(sub, VarKey):
@@ -223,7 +224,7 @@ class Model(object):
                     nanarray = np.full(var.descr["shape"], np.nan, dtype="object")
                     nanPosyArray = PosyArray(nanarray)
                     nanPosyArray[idx] = var
-                    nanPosyArray.veckey = veckey
+                    nanPosyArray.key = veckey
                     varsbyname[varkey.name].append(nanPosyArray)
             else:
                 if var not in varsbyname[varkey.name]:
