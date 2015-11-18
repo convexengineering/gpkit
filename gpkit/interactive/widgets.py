@@ -107,12 +107,21 @@ def modelcontrolpanel(model, *args, **kwargs):
         settings.append(create_settings(sliderbox))
 
     model_latex = "$"+model.latex(show_subs=False)+"$"
+    widgets_css = widgets.HTML("""<style>
+    [style="font-size: 1.15em;"] { padding-top: 0.25em; }
+    .widget-numeric-text { width: auto; }
+    .widget-numeric-text .widget-label { width: 15ex; }
+    .widget-numeric-text .form-control { background: #fbfbfb; width: 10ex; }
+    .widget-slider .widget-label { width: 15ex; }
+    .widget-checkbox .widget-label { width: 15ex; }
+    .form-control { border: none; box-shadow: none; }
+    </style>""")
     model_eq = widgets.Latex(model_latex)
     tabs = widgets.Tab(children=[widgets.Box(children=sliderboxes,
                                              padding="1.25ex"),
                                  widgets.Box(children=settings,
                                              padding="1.25ex"),
-                                 widgets.Box(children=[model_eq],
+                                 widgets.Box(children=[widgets_css, model_eq],
                                              padding="1.25ex")])
 
     tabs.set_title(0, 'Variable Sliders')
