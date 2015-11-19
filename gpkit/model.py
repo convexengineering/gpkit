@@ -1,4 +1,4 @@
-# -*- c ding: utf-8 -*-
+# -*- coding: utf-8 -*-
 """Module for creating Model instances.
 
     Example
