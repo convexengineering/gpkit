@@ -155,9 +155,11 @@ class Model(object):
         # if this is too slow, there could be some hashing and caching
         return self.varsbyname[item]
 
-    def merge(self, other, excluded=[]):
+    def merge(self, other, excluded=None):
         if not isinstance(other, Model):
             return NotImplemented
+        if excluded is None:
+            excluded = []
         selfvars = self.varsbyname
         othervars = other.varsbyname
         overlap = set(selfvars) & set(othervars)
@@ -172,6 +174,8 @@ class Model(object):
             ovars = othervars[name]
             if not isinstance(ovars, list):
                 ovars = [ovars]
+            # descr is taken from the first varkey of a given name in self.
+            # The loop below compares it to other varkeys of that name.
             descr = dict(svars[0].key.descr)
             descr.pop("model", None)
             for var in svars + ovars:

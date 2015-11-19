@@ -92,7 +92,7 @@ class SolutionArray(DictOfLists):
 
     def table(self, tables=["cost", "freevariables", "sweepvariables",
                             "constants", "sensitivities"], fixedcols=True,
-                            include_models=None, exclude_models=None):
+                            included_models=None, excluded_models=None):
         if isinstance(tables, Strings):
             tables = [tables]
         strs = []
@@ -112,32 +112,32 @@ class SolutionArray(DictOfLists):
             strs += [results_table(self["sweepvariables"],
                                    "Sweep Variables",
                                    fixedcols=fixedcols,
-                                   include_models=include_models,
-                                   exclude_models=exclude_models)]
+                                   included_models=included_models,
+                                   excluded_models=excluded_models)]
         if "freevariables" in tables:
             strs += [results_table(self["freevariables"],
                                    "Free Variables",
                                    fixedcols=fixedcols,
-                                   include_models=include_models,
-                                   exclude_models=exclude_models)]
+                                   included_models=included_models,
+                                   excluded_models=excluded_models)]
         if "constants" in tables and self["constants"]:
             strs += [results_table(self["constants"],
                                    "Constants",
                                    fixedcols=fixedcols,
-                                   include_models=include_models,
-                                   exclude_models=exclude_models)]
+                                   included_models=included_models,
+                                   excluded_models=excluded_models)]
         if "variables" in tables:
             strs += [results_table(self["variables"],
                                    "Variables",
                                    fixedcols=fixedcols,
-                                   include_models=include_models,
-                                   exclude_models=exclude_models)]
+                                   included_models=included_models,
+                                   excluded_models=excluded_models)]
         if "sensitivities" in tables:
             strs += [results_table(self["sensitivities"]["variables"],
                                    "Sensitivities",
                                    fixedcols=fixedcols,
-                                   include_models=include_models,
-                                   exclude_models=exclude_models,
+                                   included_models=included_models,
+                                   excluded_models=excluded_models,
                                    minval=1e-2,
                                    printunits=False)]
         return "\n".join(strs)
@@ -145,7 +145,7 @@ class SolutionArray(DictOfLists):
 
 def results_table(data, title, minval=0, printunits=True, fixedcols=True,
                   varfmt="%s : ", valfmt="%-.4g ", vecfmt="%-8.3g",
-                  include_models=None, exclude_models=None):
+                  included_models=None, excluded_models=None):
     """
     Pretty string representation of a dict of VarKeys
     Iterable values are handled specially (partial printing)
@@ -177,12 +177,12 @@ def results_table(data, title, minval=0, printunits=True, fixedcols=True,
             model = k.descr.get("model", "")
             models.add(model)
             decorated.append((model, b, (varfmt % k.nomstr), i, k, v))
-    if include_models:
-        include_models = set(include_models)
-        include_models.add("")
-        models = models.intersection(include_models)
-    if exclude_models:
-        models = models.difference(exclude_models)
+    if included_models:
+        included_models = set(included_models)
+        included_models.add("")
+        models = models.intersection(included_models)
+    if excluded_models:
+        models = models.difference(excluded_models)
     decorated.sort()
     oldmodel = None
     for model, isvector, varstr, _, var, val in decorated:
