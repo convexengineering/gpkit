@@ -1,4 +1,4 @@
-# -*- coding: utf-8 -*-
+# -*- c ding: utf-8 -*-
 """Module for creating Model instances.
 
     Example
@@ -135,6 +135,7 @@ class Model(object):
                 # doesn't work for Var / Vec substitution yet
                 if k not in processed_keys:
                     processed_keys.add(k)
+                    # implement nested model names
                     kmodel = name + k.descr.pop("model", "")
                     k.descr["model"] = kmodel
                 if isinstance(v, VarKey):
@@ -176,6 +177,7 @@ class Model(object):
             for var in svars + ovars:
                 descr_ = dict(var.key.descr)
                 descr_.pop("model", None)
+                # if values disagree, drop self's value
                 if descr.get("value", None) != descr_.get("value", None):
                     descr.pop("value", None)
             newvar = VarKey(**descr)
