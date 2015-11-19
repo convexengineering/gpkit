@@ -119,7 +119,7 @@ def append_dict(i, o):
             o[k] = append_dict(v, o[k])
         else:
             o[k].append(v)
-    assert set(i.keys()) == set(o.keys())
+    # assert set(i.keys()) == set(o.keys())  # keys change with swept varkeys
     return o
 
 
@@ -133,7 +133,7 @@ def index_dict(idx, i, o):
                 o[k] = v[idx]
             except IndexError:  # if not an array, return as is
                 o[k] = v
-    assert set(i.keys()) == set(o.keys())
+    # assert set(i.keys()) == set(o.keys())  # keys change with swept varkeys
     return o
 
 
@@ -147,7 +147,7 @@ def enray_dict(i, o):
                 o[k] = np.array(v[0])
             else:
                 o[k] = np.array(v)
-    assert set(i.keys()) == set(o.keys())
+    # assert set(i.keys()) == set(o.keys())  # keys change with swept varkeys
     return o
 
 

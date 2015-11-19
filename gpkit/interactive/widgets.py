@@ -47,7 +47,7 @@ def modelinteract(model, ranges=None, fn_of_sol=None, **solvekwargs):
                                                   description=varkey_latex)
                 floatslider.width = "20ex"
                 floatslider.varkey = k
-                ranges[k._cmpstr] = floatslider
+                ranges[str(k)] = floatslider
 
     if fn_of_sol is None:
         def fn_of_sol(solution):
@@ -57,8 +57,10 @@ def modelinteract(model, ranges=None, fn_of_sol=None, **solvekwargs):
             print solution.table(tables)
 
     solvekwargs["verbosity"] = 0
+    modelvarkeys = model.varkeys
 
     def resolve(**subs):
+        subs = {modelvarkeys[k]: v for k, v in subs.items()}
         model.substitutions.update(subs)
         try:
             try:
@@ -97,7 +99,7 @@ def modelcontrolpanel(model, *args, **kwargs):
         if unit_latex:
             unit_latex = "$\scriptsize"+unit_latex+"$"
         units = widgets.Latex(value=unit_latex)
-        units.font_size = "1.15em"
+        units.font_size = "1.16em"
         box = widgets.HBox(children=[cb, sl, units])
         link((box, 'visible'), (cb, 'value'))
         sliderboxes.append(box)
@@ -108,11 +110,12 @@ def modelcontrolpanel(model, *args, **kwargs):
 
     model_latex = "$"+model.latex(show_subs=False)+"$"
     widgets_css = widgets.HTML("""<style>
-    [style="font-size: 1.15em;"] { padding-top: 0.25em; }
+    [style="font-size: 1.16em;"] { padding-top: 0.25em; }
+    [style="width: 3ex; font-size: 1.165em;"] { padding-top: 0.2em; }
     .widget-numeric-text { width: auto; }
-    .widget-numeric-text .widget-label { width: 15ex; }
-    .widget-numeric-text .form-control { background: #fbfbfb; width: 10ex; }
-    .widget-slider .widget-label { width: 15ex; }
+    .widget-numeric-text .widget-label { width: 20ex; }
+    .widget-numeric-text .form-control { background: #fbfbfb; width: 8.5ex; }
+    .widget-slider .widget-label { width: 20ex; }
     .widget-checkbox .widget-label { width: 15ex; }
     .form-control { border: none; box-shadow: none; }
     </style>""")
@@ -141,8 +144,9 @@ def create_settings(box):
                               description=slider.description)
     link((slider, 'value'), (value, 'value'))
     units = widgets.Latex(value="")
+    units.width = "3ex"
+    units.font_size = "1.165em"
     link((sl_units, 'value'), (units, 'value'))
-    units.font_size = "1.15em"
     fromlabel = widgets.HTML("<span class='form-control' style='width: auto;'>"
                              "from")
     setmin = widgets.FloatText(value=slider.min)
@@ -151,9 +155,15 @@ def create_settings(box):
                            "to")
     setmax = widgets.FloatText(value=slider.max)
     link((slider, 'max'), (setmax, 'value'))
+    bylabel = widgets.HTML("<span class='form-control' style='width: auto;'>"
+                           "by")
+    setstep = widgets.FloatText(value=slider.step)
+    link((slider, 'step'), (setstep, 'value'))
     descr = widgets.HTML("<span class='form-control' style='width: auto;'>"
                          + slider.varkey.descr.get("label", ""))
     descr.width = "40ex"
 
-    return widgets.HBox(children=[enable, value, descr,
-                                  fromlabel, setmin, tolabel, setmax, units])
+    return widgets.HBox(children=[enable, value, units, descr,
+                                  fromlabel, setmin,
+                                  tolabel, setmax,
+                                  bylabel, setstep])

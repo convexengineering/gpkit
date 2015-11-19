@@ -12,9 +12,9 @@ import numpy as np
 from collections import defaultdict
 from time import time
 
-from .small_classes import Numbers
+from .small_classes import Numbers, Strings
 from .nomials import MonoEQConstraint
-from .nomials import Signomial
+from .nomials import Signomial, Monomial
 from .geometric_program import GeometricProgram
 from .signomial_program import SignomialProgram
 from .solution_array import SolutionArray
@@ -73,13 +73,13 @@ class Model(object):
 
     def __init__(self, cost=None, constraints=None, substitutions=None,
                  *args, **kwargs):
+        if substitutions is None:
+            substitutions = {}
         isobjectmodel = hasattr(self, "setup")  # not sure about the name
-        if cost is None and not isobjectmodel:
-                raise TypeError("Models can only be created without a cost"
-                                " if they have a 'setup' method.")
-        elif isobjectmodel:
+        if isobjectmodel:
             try:
-                extended_args = [arg for arg in [cost, constraints, substitutions]
+                substitutionsarg = substitutions
+                extended_args = [arg for arg in [cost, constraints]
                                  if arg is not None]
                 extended_args.extend(args)
                 name = kwargs.pop("name", self.__class__.__name__)
@@ -93,17 +93,24 @@ class Model(object):
                     substitutions = setup.substitutions
                 elif len(setup) == 2:
                     cost, constraints = setup
+                    substitutions = {}
                 elif len(setup) == 3:
                     cost, constraints, substitutions = setup
+                substitutions.update(substitutionsarg)
             except TypeError:
                 raise TypeError("Model 'setup' methods must return either"
                                 " a Model, a tuple of (cost, constraints),"
                                 " or a tuple of (cost, constraints,"
                                 " substitutions).")
 
-        self.cost = Signomial(cost)
+        self.cost = Signomial(cost) if cost else Monomial(1)
         self.constraints = list(constraints) if constraints else []
-        self.substitutions = dict(substitutions) if substitutions else {}
+        self.substitutions = substitutions
+        for key, value in substitutions.items():
+            # update string keys to varkeys
+            if isinstance(key, Strings):
+                del self.substitutions[key]
+                self.substitutions[self[key]] = value
 
         if isobjectmodel:
             # TODO: use super instead of Model?
@@ -157,16 +164,16 @@ class Model(object):
         for name in overlap:
             if name in excluded_names:
                 continue
-            descr = self[name].descr
+            descr = self[name].key.descr
             descr.pop("model", None)
-            newvar = Variable(**descr)
+            newvar = VarKey(**descr)
             svars = (selfvars[name] if isinstance(selfvars[name], list)
                      else [selfvars[name]])
             ovars = (othervars[name] if isinstance(othervars[name], list)
                      else [othervars[name]])
             for var in svars + ovars:
-                if var != newvar:
-                    substitutions[var.key] = newvar.key  # vectors???
+                if var.key != newvar.key:
+                    substitutions[var.key] = newvar.key
         return Model(self.cost,
                      self.constraints + other.constraints,
                      substitutions)
@@ -181,13 +188,17 @@ class Model(object):
                      substitutions)
 
     @property
-    def varsbyname(self):
+    def varkeys(self):
         varkeys = set()
         for signomial in self.signomials:
             for exp in signomial.exps:
                 varkeys.update(exp)
+        return {str(vk): vk for vk in varkeys}
+
+    @property
+    def varsbyname(self):
         varsbyname = defaultdict(list)
-        for varkey in varkeys:
+        for varkey in self.varkeys.values():
             if varkey in self.substitutions:
                 sub = self.substitutions[varkey]
                 if isinstance(sub, VarKey):
@@ -212,7 +223,7 @@ class Model(object):
                     nanarray = np.full(var.descr["shape"], np.nan, dtype="object")
                     nanPosyArray = PosyArray(nanarray)
                     nanPosyArray[idx] = var
-                    nanPosyArray.veckey = veckey
+                    nanPosyArray.key = veckey
                     varsbyname[varkey.name].append(nanPosyArray)
             else:
                 if var not in varsbyname[varkey.name]:
