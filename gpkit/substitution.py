@@ -160,16 +160,16 @@ def substitution(nomial, substitutions, val=None):
                     cs_[i] *= sub**x
                 else:  # frickin' pints bug. let's reimplement pow()
                     if x > 0:
-                        cs_[i] = 0.0
+                        cs_.magnitude[i] = 0.0
                     elif x < 0:
                         if mag(cs_[i]) > 0:
-                            cs_[i] = np.inf
+                            cs_.magnitude[i] = np.inf
                         elif mag(cs_[i]) < 0:
-                            cs_[i] = -np.inf
+                            cs_.magnitude[i] = -np.inf
                         else:
-                            cs_[i] = np.nan
+                            cs_.magnitude[i] = np.nan
                     else:
-                        cs_[i] = 1.0
+                        cs_.magnitude[i] = 1.0
             elif isinstance(sub, np.ndarray):
                 if not sub.shape:
                     cs_[i] *= sub.flatten()[0]**x

@@ -51,8 +51,10 @@ class GeometricProgram(NomialData):
         super(GeometricProgram, self).init_from_nomials(self.posynomials)
         if self.any_nonpositive_cs:
             raise ValueError("GeometricPrograms cannot contain Signomials.")
-        if [v for v in self.values.values() if not is_sweepvar(v)]:
-            raise ValueError("GeometricPrograms do not handle substitution.")
+        unsubbed = [k for k, v in self.values.items() if not is_sweepvar(v)]
+        if unsubbed:
+            raise ValueError("GeometricPrograms do not handle substitution,"
+                             " but varkeys %s had a value." % unsubbed)
         # k [j]: number of monomials (columns of F) present in each constraint
         self.k = [len(p.cs) for p in self.posynomials]
         # p_idxs [i]: posynomial index of each monomial
