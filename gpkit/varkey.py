@@ -59,7 +59,8 @@ class VarKey(object):
             else:
                 raise ValueError("units must be either a string"
                                  " or a Quantity from gpkit.units.")
-        self._hashvalue = hash(self._cmpstr)
+        self._hashvalue = hash(self.nomstr)
+        self.key = self
 
     @property
     def name(self):
@@ -91,25 +92,16 @@ class VarKey(object):
 
     def latex(self):
         s = self.name
-        for subscript in ["idx"]:  # +"model"?
+        for subscript in ["idx", "model"]:
             if subscript in self.descr:
                 s = "{%s}_{%s}" % (s, self.descr[subscript])
                 if subscript == "idx":
                     if len(self.descr["idx"]) == 1:
-                        # drop the comma for 1-d vectors
-                        s = s[:-3]+s[-2:]
+                        s = s[:-3]+s[-2:]  # drop the comma for 1-d vectors
         return s
 
     def _repr_latex_(self):
         return "$$"+self.latex()+"$$"
-
-    @property
-    def _cmpstr(self):
-        s = self.name
-        for subscript in ["idx"]:
-            if subscript in self.descr:
-                s = "%s_%s" % (s, self.descr[subscript])
-        return s
 
     def __hash__(self):
         return self._hashvalue
@@ -133,7 +125,7 @@ class VarKey(object):
                         return False
             return True
         elif isinstance(other, Strings):
-            return self._cmpstr == other
+            return self.nomstr == other
         elif hasattr(other, "key"):
             return other.key == self
         elif isinstance(other, PosyArray):
@@ -142,6 +134,8 @@ class VarKey(object):
                 i = it.multi_index
                 it.iternext()
                 p = other[i]
+                if not hasattr(p, "exp"):  # array contains non-Monomial
+                    return False
                 v = VarKey(list(p.exp)[0])
                 if v.descr.pop("idx", None) != i:
                     return False

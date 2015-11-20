@@ -41,7 +41,9 @@ def vectorsub(subs, var, sub, varset):
     if hasattr(var, "__len__"):
         isvector = True
     elif hasattr(var, "descr"):
-        isvector = "shape" in var.descr
+        isvector = "shape" in var.descr and not "idx" in var.descr
+        if isvector:
+            var = VectorVariable(**var.descr)
     else:
         isvector = False
 
