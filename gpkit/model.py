@@ -664,7 +664,7 @@ class Model(object):
         """LaTeX representation of a GeometricProgram.
         Contains all of its parameters."""
         # TODO: print sweeps and linkedsweeps
-        latex_list = ["\\begin{array}[ll]",
+        latex_list = ["\\begin{array}{ll}",
                       "\\text{}",
                       "\\text{minimize}",
                       "    & %s \\\\" % self.cost.latex(),
