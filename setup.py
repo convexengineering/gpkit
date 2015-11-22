@@ -53,7 +53,7 @@ setup(
     author_email="gpkit@mit.edu",
     url="https://www.github.com/convexopt/gpkit",
     install_requires=["numpy", "scipy"],
-    version="0.3.4.0",
+    version="0.3.4.1",
     packages=["gpkit", "gpkit._mosek", "gpkit.tests", "gpkit.interactive",
               "gpkit.models"],
     package_data={"gpkit": ["env/*"],
