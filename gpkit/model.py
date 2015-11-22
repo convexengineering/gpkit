@@ -134,6 +134,7 @@ class Model(object):
             for k, v in self.substitutions.items():
                 # doesn't work for Var / Vec substitution yet
                 if k not in processed_keys:
+                    k = k.key
                     processed_keys.add(k)
                     # implement nested model names
                     kmodel = name + k.descr.pop("model", "")
