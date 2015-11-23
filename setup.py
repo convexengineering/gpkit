@@ -46,17 +46,18 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE."""
 
 setup(
-    name='gpkit',
-    description='Package for defining and manipulating geometric '
-                'programming models.',
-    author='MIT Department of Aeronautics and Astronautics',
-    author_email='gpkit@mit.edu',
-    url='https://www.github.com/convexopt/gpkit',
-    install_requires=['numpy', 'scipy'],
-    version='0.3.3.0',
-    packages=['gpkit', 'gpkit._mosek', 'gpkit.tests', 'gpkit.interactive'],
-    package_data={'gpkit': ['env/*'],
-                  'gpkit._mosek': ['lib/*']},
+    name="gpkit",
+    description="Package for defining and manipulating geometric "
+                "programming models.",
+    author="MIT Department of Aeronautics and Astronautics",
+    author_email="gpkit@mit.edu",
+    url="https://www.github.com/convexopt/gpkit",
+    install_requires=["numpy", "scipy"],
+    version="0.3.4.1",
+    packages=["gpkit", "gpkit._mosek", "gpkit.tests", "gpkit.interactive",
+              "gpkit.models"],
+    package_data={"gpkit": ["env/*"],
+                  "gpkit._mosek": ["lib/*"]},
     license=LICENSE,
     long_description=LONG_DESCRIPTION,
 )

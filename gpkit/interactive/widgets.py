@@ -140,30 +140,39 @@ def create_settings(box):
 
     enable = widgets.Checkbox(value=box.visible)
     link((box, 'visible'), (enable, 'value'))
-    value = widgets.FloatText(value=slider.value,
-                              description=slider.description)
-    link((slider, 'value'), (value, 'value'))
+
+    def slider_link(obj, attr):
+        def link_fn(name, new_value):
+            if new_value <= slider.min:
+                slider.min = new_value
+            elif new_value >= slider.max:
+                slider.max = new_value
+            if attr is "max" and new_value <= slider.value:
+                slider.value = new_value
+            elif attr is "min" and new_value >= slider.value:
+                slider.value = new_value
+            setattr(slider, attr, new_value)
+            slider.step = (slider.max - slider.min)/24.0
+        obj.on_trait_change(link_fn, "value")
+        link((slider, attr), (obj, "value"))
+
+    text_html = "<span class='form-control' style='width: auto;'>"
+    setvalue = widgets.FloatText(value=slider.value,
+                                 description=slider.description)
+    slider_link(setvalue, "value")
+    fromlabel = widgets.HTML(text_html + "from")
+    setmin = widgets.FloatText(value=slider.min)
+    slider_link(setmin, "min")
+    tolabel = widgets.HTML(text_html + "to")
+    setmax = widgets.FloatText(value=slider.max)
+    slider_link(setmax, "max")
+
     units = widgets.Latex(value="")
     units.width = "3ex"
     units.font_size = "1.165em"
     link((sl_units, 'value'), (units, 'value'))
-    fromlabel = widgets.HTML("<span class='form-control' style='width: auto;'>"
-                             "from")
-    setmin = widgets.FloatText(value=slider.min)
-    link((slider, 'min'), (setmin, 'value'))
-    tolabel = widgets.HTML("<span class='form-control' style='width: auto;'>"
-                           "to")
-    setmax = widgets.FloatText(value=slider.max)
-    link((slider, 'max'), (setmax, 'value'))
-    bylabel = widgets.HTML("<span class='form-control' style='width: auto;'>"
-                           "by")
-    setstep = widgets.FloatText(value=slider.step)
-    link((slider, 'step'), (setstep, 'value'))
-    descr = widgets.HTML("<span class='form-control' style='width: auto;'>"
-                         + slider.varkey.descr.get("label", ""))
+    descr = widgets.HTML(text_html + slider.varkey.descr.get("label", ""))
     descr.width = "40ex"
 
-    return widgets.HBox(children=[enable, value, units, descr,
-                                  fromlabel, setmin,
-                                  tolabel, setmax,
-                                  bylabel, setstep])
+    return widgets.HBox(children=[enable, setvalue, units, descr,
+                                  fromlabel, setmin, tolabel, setmax])

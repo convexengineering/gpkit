@@ -1,22 +1,23 @@
 
 Cost
 ----
- 0.7813 [m] 
+ 1.473 [m] 
 
 Free Variables
 --------------
-     M : [ 1.25e+03  988       756       556      ... ]  [N*m] Internal moment
-     V : [ 500       444       389       333      ... ]  [N]   Internal shear 
-\theta : [  -        0.0622    0.111     0.147    ... ]        Slope          
-     w : [  -        0.0173    0.0653    0.137    ... ]  [m]   Displacement   
+    dx : 0.6667                                          [m]   Length of an element
+     M : [ 1.8e+03   1.42e+03  1.09e+03  800      ... ]  [N*m] Internal moment     
+     V : [ 600       533       467       400      ... ]  [N]   Internal shear      
+\theta : [  -        0.0976    0.174     0.231    ... ]        Slope               
+     w : [  -        0.0325    0.123     0.258    ... ]  [m]   Displacement        
 
 Constants
 ---------
-           EI : 1e+04                                           [N*m**2]                               
+           EI : 1.1e+04                                         [N*m**2]                               
+            L : 6                                               [m]      Overall beam length           
       M_{tip} : 0                                               [N*m]    Tip moment                    
       V_{tip} : 0                                               [N]      Tip loading                   
 \theta_{base} : 0                                                        Base angle                    
-           dx : 0.5556                                          [m]      Length of an element          
      w_{base} : 0                                               [m]      Base deflection               
             M : [  -         -         -         -       ... ]  [N*m]    Internal moment               
             V : [  -         -         -         -       ... ]  [N]      Internal shear                
@@ -27,6 +28,6 @@ Constants
 Sensitivities
 -------------
 EI : -1                                                                           
-dx : 4                                              Length of an element          
+ L : 4                                              Overall beam length           
  q : [ 0.0013    0.00762   0.0223    0.0454   ... ] Distributed load at each point
 

@@ -16,7 +16,7 @@
         Contains settings loaded from ``./env/settings``
 """
 
-__version__ = "0.3.3"
+__version__ = "0.3.4"
 UNIT_REGISTRY = None
 SIGNOMIALS_ENABLED = False
 
