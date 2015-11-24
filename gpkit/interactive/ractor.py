@@ -22,7 +22,7 @@ def ractorpy(m, update_py, ranges, constraint_js="",
         display(HTML(live))
         if showtables:
             print sol.table(showtables)
-    return m.interact(ractivefn, ranges)
+    return m.interact(ranges, ractivefn)
 
 
 new_jswidget_id = itertools.count().next
