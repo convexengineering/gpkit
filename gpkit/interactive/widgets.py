@@ -168,7 +168,7 @@ def create_settings(box):
     slider_link(setmax, "max")
 
     units = widgets.Latex(value="")
-    units.width = "3ex"
+    units.width = "6ex"
     units.font_size = "1.165em"
     link((sl_units, 'value'), (units, 'value'))
     descr = widgets.HTML(text_html + slider.varkey.descr.get("label", ""))
