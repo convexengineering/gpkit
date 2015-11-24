@@ -69,15 +69,17 @@ def modelinteract(model, ranges=None, fn_of_sol=None, **solvekwargs):
                 model.localsolve(**solvekwargs)
             fn_of_sol(model.solution)
         except RuntimeWarning:
-            out = "THE PROBLEM IS INFEASIBLE"
-            try:
-                const_feas = model.feasibility(["constants"])
-                out += "\n    but would become with this substitution:\n"
-                out += str(const_feas)
-            except:
-                pass
-            finally:
-                print(out)
+            raise
+            # TODO: implement some nicer feasibility warning, like the below
+            # out = "THE PROBLEM IS INFEASIBLE"
+            # try:
+            #     const_feas = model.feasibility(["constants"])
+            #     out += "\n    but would become with this substitution:\n"
+            #     out += str(const_feas)
+            # except:
+            #     pass
+            # finally:
+            #     print(out)
 
     resolve()
 
