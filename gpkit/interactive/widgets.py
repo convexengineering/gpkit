@@ -104,10 +104,6 @@ def modelcontrolpanel(model, *args, **kwargs):
         link((box, 'visible'), (cb, 'value'))
         sliderboxes.append(box)
 
-    settings = []
-    for sliderbox in sliderboxes:
-        settings.append(create_settings(sliderbox))
-
     widgets_css = widgets.HTML("""<style>
     [style="font-size: 1.16em;"] { padding-top: 0.25em; }
     [style="width: 3ex; font-size: 1.165em;"] { padding-top: 0.2em; }
@@ -118,6 +114,9 @@ def modelcontrolpanel(model, *args, **kwargs):
     .widget-checkbox .widget-label { width: 15ex; }
     .form-control { border: none; box-shadow: none; }
     </style>""")
+    settings = [widgets_css]
+    for sliderbox in sliderboxes:
+        settings.append(create_settings(sliderbox))
     # model_latex = "$"+model.latex(show_subs=False)+"$"
     # model_eq = widgets.Latex(model_latex)
     tabs = widgets.Tab(children=[widgets.Box(children=sliderboxes,
@@ -125,7 +124,7 @@ def modelcontrolpanel(model, *args, **kwargs):
                                  widgets.Box(children=settings,
                                              padding="1.25ex")])
                                 # TODO: fix model equation display
-                                # widgets.Box(children=[widgets_css, model_eq],
+                                # widgets.Box(children=[model_eq],
                                 #             padding="1.25ex")])
 
     tabs.set_title(0, 'Variable Sliders')
