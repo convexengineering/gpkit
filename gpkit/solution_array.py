@@ -92,7 +92,8 @@ class SolutionArray(DictOfLists):
 
 
     def table(self, tables=["cost", "freevariables", "sweepvariables",
-                            "constants", "sensitivities"], fixedcols=True):
+                            "constants", "sensitivities"], fixedcols=True,
+                            latex=False):
         if isinstance(tables, Strings):
             tables = [tables]
         strs = []
@@ -111,31 +112,36 @@ class SolutionArray(DictOfLists):
         if "sweepvariables" in tables and self["sweepvariables"]:
             strs += [results_table(self["sweepvariables"],
                                    "Sweep Variables",
-                                   fixedcols=fixedcols)]
+                                   fixedcols=fixedcols,
+                                   latex=latex)]
         if "freevariables" in tables:
             strs += [results_table(self["freevariables"],
                                    "Free Variables",
-                                   fixedcols=fixedcols)]
+                                   fixedcols=fixedcols,
+                                   latex=latex)]
         if "constants" in tables and self["constants"]:
             strs += [results_table(self["constants"],
                                    "Constants",
-                                   fixedcols=fixedcols)]
+                                   fixedcols=fixedcols,
+                                   latex=latex)]
         if "variables" in tables:
             strs += [results_table(self["variables"],
                                    "Variables",
-                                   fixedcols=fixedcols)]
+                                   fixedcols=fixedcols,
+                                   latex=latex)]
         if "sensitivities" in tables:
             strs += [results_table(self["sensitivities"]["variables"],
                                    "Sensitivities",
                                    fixedcols=fixedcols,
                                    minval=1e-2,
-                                   printunits=False)]
+                                   printunits=False,
+                                   latex=latex)]
         return "\n".join(strs)
 
 
 def results_table(data, title, minval=0, printunits=True, fixedcols=True,
                   varfmt="%s : ", valfmt="%-.4g ", vecfmt="%-8.3g",
-                  include_models=None, exclude_models=None):
+                  include_models=None, exclude_models=None, latex=False):
     """
     Pretty string representation of a dict of VarKeys
     Iterable values are handled specially (partial printing)
@@ -189,17 +195,24 @@ def results_table(data, title, minval=0, printunits=True, fixedcols=True,
         else:
             valstr = valfmt % val
         valstr = valstr.replace("nan", " - ")
-        lines.append([varstr, valstr, units, label])
-    if lines:
-        maxlens = np.max([list(map(len, line)) for line in lines], axis=0)
-        if not fixedcols:
-            maxlens = [maxlens[0], 0, 0, 0]
-        dirs = ['>', '<', '<', '<']
-        # check lengths before using zip
-        assert len(list(dirs)) == len(list(maxlens))
-        fmts = ['{0:%s%s}' % (direc, L) for direc, L in zip(dirs, maxlens)]
-    lines = [[fmt.format(s) for fmt, s in zip(fmts, line)] for line in lines]
-    lines = [title] + ["-"*len(title)] + [''.join(l) for l in lines] + [""]
+        if latex == False:
+            lines.append([varstr, valstr, units, label])
+        else:
+            varstr = varstr.replace(" : ", "")
+            lines.append(["$", varstr, "$ & ",  valstr, " & ",  units, " & ", label, " \\\\"])
+    if latex == False:
+        if lines:
+            maxlens = np.max([list(map(len, line)) for line in lines], axis=0)
+            if not fixedcols:
+                maxlens = [maxlens[0], 0, 0, 0]
+            dirs = ['>', '<', '<', '<']
+            # check lengths before using zip
+            assert len(list(dirs)) == len(list(maxlens))
+            fmts = ['{0:%s%s}' % (direc, L) for direc, L in zip(dirs, maxlens)]
+        lines = [[fmt.format(s) for fmt, s in zip(fmts, line)] for line in lines]
+        lines = [title] + ["-"*len(title)] + [''.join(l) for l in lines] + [""]
+    else:
+        lines = ["\\toprule"] + [title + "\\\\"] + ["\\midrule"] + [''.join(l) for l in lines] + ["\\bottomrule"] + [""] 
     return "\n".join(lines)
 
 
