@@ -1,3 +1,4 @@
+"""Defines SolutionArray class"""
 import numpy as np
 
 from collections import Iterable
@@ -65,7 +66,7 @@ class SolutionArray(DictOfLists):
             return PosyArray(self["variables"][p])
         elif len(self) > 1:
             return PosyArray([self.atindex(i).subinto(p)
-                             for i in range(len(self))])
+                              for i in range(len(self))])
         else:
             return p.sub(self["variables"])
 
@@ -82,7 +83,7 @@ class SolutionArray(DictOfLists):
             return PosyArray(self["variables"]["sensitivities"][p])
         elif len(self) > 1:
             return PosyArray([self.atindex(i).subinto(p)
-                             for i in range(len(self))])
+                              for i in range(len(self))])
         else:
             subbed = p.sub(self["variables"]["sensitivities"],
                            require_positive=False)
@@ -91,9 +92,9 @@ class SolutionArray(DictOfLists):
             return mag(subbed.c)
 
     def table(self, tables=["cost", "freevariables", "sweepvariables",
-                            "constants", "sensitivities"], fixedcols=True,
-                            included_models=None, excluded_models=None,
-                            latex=False):
+                            "constants", "sensitivities"],
+              fixedcols=True, included_models=None, excluded_models=None,
+              latex=False):
         if isinstance(tables, Strings):
             tables = [tables]
         strs = []
@@ -213,7 +214,8 @@ def results_table(data, title, minval=0, printunits=True, fixedcols=True,
             lines.append([varstr, valstr, units, label])
         else:
             varstr = varstr.replace(" : ", "")
-            lines.append(["$", varstr, "$ & ",  valstr, " & ",  units, " & ", label, " \\\\"])
+            lines.append(["$", varstr, "$ & ", valstr, " & ", units,
+                          " & ", label, " \\\\"])
     if latex == False:
         if lines:
             maxlens = np.max([list(map(len, line)) for line in lines], axis=0)
@@ -223,10 +225,12 @@ def results_table(data, title, minval=0, printunits=True, fixedcols=True,
             # check lengths before using zip
             assert len(list(dirs)) == len(list(maxlens))
             fmts = ['{0:%s%s}' % (direc, L) for direc, L in zip(dirs, maxlens)]
-        lines = [[fmt.format(s) for fmt, s in zip(fmts, line)] for line in lines]
+        lines = [[fmt.format(s) for fmt, s in zip(fmts, line)]
+                 for line in lines]
         lines = [title] + ["-"*len(title)] + [''.join(l) for l in lines] + [""]
     else:
-        lines = ["\\toprule"] + [title + "\\\\"] + ["\\midrule"] + [''.join(l) for l in lines] + ["\\bottomrule"] + [""] 
+        lines = (["\\toprule"] + [title + "\\\\"] + ["\\midrule"] +
+                 [''.join(l) for l in lines] + ["\\bottomrule"] + [""])
     return "\n".join(lines)
 
 
