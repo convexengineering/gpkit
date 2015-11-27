@@ -93,6 +93,7 @@ class SolutionArray(DictOfLists):
 
     def table(self, tables=["cost", "freevariables", "sweepvariables",
                             "constants", "sensitivities"], fixedcols=True,
+                            included_models=None, excluded_models=None,
                             latex=False):
         if isinstance(tables, Strings):
             tables = [tables]
@@ -113,21 +114,29 @@ class SolutionArray(DictOfLists):
             strs += [results_table(self["sweepvariables"],
                                    "Sweep Variables",
                                    fixedcols=fixedcols,
+                                   included_models=included_models,
+                                   excluded_models=excluded_models,
                                    latex=latex)]
         if "freevariables" in tables:
             strs += [results_table(self["freevariables"],
                                    "Free Variables",
                                    fixedcols=fixedcols,
+                                   included_models=included_models,
+                                   excluded_models=excluded_models,
                                    latex=latex)]
         if "constants" in tables and self["constants"]:
             strs += [results_table(self["constants"],
                                    "Constants",
                                    fixedcols=fixedcols,
+                                   included_models=included_models,
+                                   excluded_models=excluded_models,
                                    latex=latex)]
         if "variables" in tables:
             strs += [results_table(self["variables"],
                                    "Variables",
                                    fixedcols=fixedcols,
+                                   included_models=included_models,
+                                   excluded_models=excluded_models,
                                    latex=latex)]
         if "sensitivities" in tables:
             strs += [results_table(self["sensitivities"]["variables"],
@@ -141,7 +150,7 @@ class SolutionArray(DictOfLists):
 
 def results_table(data, title, minval=0, printunits=True, fixedcols=True,
                   varfmt="%s : ", valfmt="%-.4g ", vecfmt="%-8.3g",
-                  include_models=None, exclude_models=None, latex=False):
+                  included_models=None, excluded_models=None, latex=False):
     """
     Pretty string representation of a dict of VarKeys
     Iterable values are handled specially (partial printing)
