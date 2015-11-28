@@ -42,7 +42,7 @@ class SignomialProgram(object):
     >>> gp.solve()
     """
 
-    def __init__(self, cost, constraints, verbosity=2):
+    def __init__(self, cost, constraints, substitutions=None, verbosity=2):
         if cost.any_nonpositive_cs:
             raise TypeError("""SignomialPrograms need Posyomial objectives.
 
@@ -54,8 +54,12 @@ class SignomialProgram(object):
         self.constraints = constraints
         self.posyconstraints = []
         self.localposyconstraints = []
+        if substitutions is None:
+            substitutions = {}
+        self.substitutions = substitutions
 
         for constraint in self.constraints:
+            constraint.substitutions.update(substitutions)
             posy = False
             if hasattr(constraint, "as_posyslt1"):
                 posy = constraint.as_posyslt1()
@@ -102,6 +106,7 @@ class SignomialProgram(object):
         result : dict
             A dictionary containing the translated solver result.
         """
+        startpoint = x0 if x0 else {}
         if verbosity > 0:
             print("Beginning signomial solve.")
             self.starttime = time()
@@ -134,20 +139,8 @@ class SignomialProgram(object):
             print("Solving took %i GP solves" % len(self.gps)
                   + " and %.3g seconds." % (time() - self.starttime))
 
-        # parse the result and return nu's of original monomials from
-        #  variable sensitivities
-        # TODO TODO posy monomials senss, correct. negy monomials, -posy senss??? or 0
-        # nu = result["sensitivities"]["monomials"]
-        # sens_vars = {var: sum([gp.exps[i][var]*nu[i] for i in locs])
-        #              for (var, locs) in gp.varlocs.items()}
-        # nu_ = []
-        # for signomial in self.signomials:
-        #     for c, exp in zip(signomial.cs, signomial.exps):
-        #         var_ss = [sens_vars[var]*val for var, val in exp.items()]
-        #         nu_.append(functools_reduce(mul, var_ss, np.sign(c)))
-        # result["sensitivities"]["monomials"] = np.array(nu_)
-        # TODO: SP sensitivities are weird, and potentially incorrect
-
+        result["startpoint"] = startpoint
+        result["endpoint"] = x0
         self.result = result  # NOTE: SIDE EFFECTS
         return result
 
@@ -162,7 +155,8 @@ class SignomialProgram(object):
             elif lpc is not True:
                 localposyconstraints.append(lpc)
         constraints = self.posyconstraints + localposyconstraints
-        return GeometricProgram(self.cost, constraints, verbosity=verbosity)
+        return GeometricProgram(self.cost, constraints, self.substitutions,
+                                verbosity=verbosity)
 
     def __repr__(self):
         return "gpkit.%s(\n%s)" % (self.__class__.__name__, str(self))

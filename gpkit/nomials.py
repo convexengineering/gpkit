@@ -9,6 +9,7 @@ from .nomial_data import NomialData
 from .small_scripts import latex_num
 from .small_scripts import invalid_types_for_oper
 from .small_scripts import mag, unitstr
+from .nomial_data import simplify_exps_and_cs
 
 from . import units as ureg
 from . import DimensionalityError
@@ -174,7 +175,8 @@ class Signomial(NomialData):
         psub = self.sub(x_0)
         if psub.varlocs:
             raise ValueError("Variables %s remained after substituting x_0=%s"
-                             % (list(psub.varlocs), x_0))
+                             % (list(psub.varlocs), x_0)
+                             + " into %s" % self)
         p0 = psub.value  # includes any units
         m0 = 1
         for vk in self.varlocs:
@@ -532,7 +534,7 @@ class Monomial(Posynomial):
 
 class Constraint(object):
     """Retains input format (lhs vs rhs) in self.left and self.right
-    Calls self.constraint_init for child class initialization.
+    Calls self._constraint_init_ for child class initialization.
     """
     latex_opers = {"<=": "\\leq", ">=": "\\geq", "=": "="}
 
@@ -544,8 +546,8 @@ class Constraint(object):
         self.left = Signomial(left)
         self.oper = oper
         self.right = Signomial(right)
-        if hasattr(self, "constraint_init"):
-            self.constraint_init()
+        if hasattr(self, "_constraint_init_"):
+            self._constraint_init_()
 
     def __str__(self):
         return "%s %s %s" % (self.left, self.oper, self.right)
@@ -577,7 +579,10 @@ class PosynomialConstraint(Constraint):
     default_oper = "<="
     default_right = 1
 
-    def constraint_init(self):
+    def __hash__(self):
+        return hash(self.posy_lt1_rep)
+
+    def _constraint_init_(self):
         if self.oper == "<=":
             plt, pgt = self.left, self.right
         elif self.oper == ">=":
@@ -608,16 +613,62 @@ class PosynomialConstraint(Constraint):
                     raise ValueError("infeasible constraint:"
                                      " constant term too large.")
         self.posy_lt1_rep = p
+        self.substitutions = p.values
 
     def as_posyslt1(self):
-        return [self.posy_lt1_rep]
+        if not self.substitutions:
+            # just return the pre-generated posynomial representation
+            return [self.posy_lt1_rep]
+
+        _, exps, cs, _ = substitution(self.posy_lt1_rep, self.substitutions)
+        # remove any cs that are just nans and/or 0s
+        nans = np.isnan(cs)
+        if np.all(nans) or np.all(cs[~nans] == 0):
+            return True  # skip nan'd or 0'd constraint
+
+        exps, cs, pmap = simplify_exps_and_cs(exps, cs, return_map=True)
+        self.pmap = pmap
+        p = Posynomial(exps, cs, simplify=False)
+        if p.any_nonpositive_cs:
+            raise RuntimeWarning("PosynomialConstraint %s became Signomial"
+                                 " after substitution" % self)
+        return [p]
+
+    def sensitivities(self, p_senss, m_sensss):
+        assert len(p_senss) == len(m_sensss) and len(m_sensss) == 1
+        p_sens, m_senss = p_senss[0], m_sensss[0]
+        presub = self.posy_lt1_rep
+        constr_sens = {"overall": p_sens}
+        if hasattr(self, "pmap"):
+            # Remap monomials after substitution and simplification.
+            #  The monomial sensitivities from the GP/SP are in terms of this
+            #  smaller post-substitution list of monomials, so we need to map
+            #  back to the pre-substitution list.
+            #
+            #  A "pmap" is a list of HashVectors (mmaps),
+            #    whose keys are monomial indexes pre-substitution,
+            #    and whose values are the percentage of the simplified
+            #    monomial's coefficient that came from that particular parent
+            m_senss_ = np.zeros(len(presub.cs))
+            counter = 0
+            for i, mmap in enumerate(self.pmap):
+                for idx, percentage in mmap.items():
+                    m_senss_[idx] += percentage*m_senss[i]
+            m_senss = m_senss_
+        for i, mono_sens in enumerate(m_senss):
+            mono = Monomial(presub.exps[i], presub.cs[i])
+            constr_sens[mono] = mono_sens
+        # TODO could check only for constants...
+        var_senss = {var: sum([presub.exps[i][var]*m_senss[i] for i in locs])
+                     for (var, locs) in presub.varlocs.items()}
+        return constr_sens, HashVector(var_senss)
 
 
 class MonoEQConstraint(PosynomialConstraint):
     """A Constraint of the form Monomial == Monomial.
     """
 
-    def constraint_init(self):
+    def _constraint_init_(self):
         if self.oper != "=":
             raise ValueError("operator %s is not supported by"
                              " SignomialConstraint." % self.oper)
@@ -643,7 +694,7 @@ class SignomialConstraint(Constraint):
     default_oper = "<="
     default_right = 0
 
-    def constraint_init(self):
+    def _constraint_init_(self):
         from . import SIGNOMIALS_ENABLED
         if not SIGNOMIALS_ENABLED:
             raise TypeError("Cannot initialize SignomialConstraint"
@@ -656,6 +707,7 @@ class SignomialConstraint(Constraint):
             raise ValueError("operator %s is not supported by Signomial"
                              "Constraint." % self.oper)
         self.sigy_lt0_rep = self.left - self.right
+        self.substitutions = self.sigy_lt0_rep.values
 
     def as_localposyconstr(self, x0):
         posy, negy = self.sigy_lt0_rep.posy_negy()
@@ -671,6 +723,9 @@ class SignomialConstraint(Constraint):
             x0.update(sp_inits)
             # HACK: initial guess for negative variables
             x0.update({var: 1 for var in negy.varlocs if var not in x0})
+        else:
+            x0 = dict(x0)
+        x0.update(self.substitutions)
         return PosynomialConstraint(posy, "<=", negy.mono_lower_bound(x0))
 
 
