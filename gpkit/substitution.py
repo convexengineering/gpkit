@@ -19,17 +19,17 @@ from . import DimensionalityError
 
 def get_constants(nomial, substitutions):
     subs = {}
-    varset = frozenset(nomial.varlocs)
+    varset = frozenset(nomial.varkeys)
     for var, sub in substitutions.items():
         if not is_sweepvar(sub):
             if isinstance(var, Monomial):
                 var_ = VarKey(var)
                 if var_ in varset:
                     subs[var_] = sub
-            elif isinstance(var, Strings):
-                if var in nomial.varstrs:
-                    var_ = nomial.varstrs[var]
-                    vectorsub(subs, var_, sub, varset)
+            # elif isinstance(var, Strings):
+            #     if var in nomial.varstrs:
+            #         var_ = nomial.varstrs[var]
+            #         vectorsub(subs, var_, sub, varset)
             else:
                 vectorsub(subs, var, sub, varset)
     return subs
@@ -79,10 +79,10 @@ def separate_subs(nomial, substitutions):
     for var, sub in substitutions.items():
         if is_sweepvar(sub):
             del constants[var]
-            if isinstance(var, Strings):
-                var = nomial.varstrs[var]
-            elif isinstance(var, Monomial):
+            if isinstance(var, Monomial):
                 var = VarKey(var)
+            # elif isinstance(var, Strings):
+            #     var = nomial.varstrs[var]
             if isinstance(var, Iterable):
                 suba = np.array(sub[1])
                 if len(var) == suba.shape[0]:

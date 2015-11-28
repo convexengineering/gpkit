@@ -210,8 +210,16 @@ class Model(object):
         return varkeys
 
     @property
-    def varkeysbystr(self):
+    def varstrs(self):
         return {str(vk): vk for vk in self.varkeys}
+
+    @property
+    def allsubs(self):
+        substitutions = {}
+        for constraint in self.constraints:
+            substitutions.update(constraint.substitutions)
+        substitutions.update(self.substitutions)
+        return substitutions
 
     @property
     def varsbyname(self):
@@ -379,8 +387,7 @@ class Model(object):
         #               "unbounded variables to maintain solver compatibility.")
         #     self.zero_lower_unbounded_variables()
 
-        #sweep, linkedsweep, constants = separate_subs(beforesubs, allsubs)
-        sweep = {}
+        sweep, linkedsweep, _ = separate_subs(self, self.allsubs)
         solution = SolutionArray()
         kwargs.update({"solver": solver})
 
@@ -406,17 +413,11 @@ class Model(object):
                                     for v in var.descr["args"]])
                           for var, fn in linkedsweep.items()}
                 this_pass.update(linked)
-                constants_ = constants
-                constants_.update(this_pass)
-                signomials_, beforesubs.smaps = simplify_and_mmap(signomials,
-                                                                  constants_)
-                program, solvefn = form_program(programType, signomials_,
-                                                verbosity=verbosity)
+                program, solvefn = self.form_program(programType, verbosity,
+                                                     substitutions=this_pass)
                 try:
                     result = solvefn(*args, **kwargs)
-                    sol = parse_result(result, constants_, beforesubs,
-                                       sweep, linkedsweep)
-                    return program, sol
+                    return program, result
                 except (RuntimeWarning, ValueError):
                     return program, None
 
@@ -435,8 +436,16 @@ class Model(object):
                                          " has been saved to m.program[-1]."
                                          " To ignore such failures, solve with"
                                          " skipsweepfailures=True.")
+
+            solution["sweepvariables"] = {}
             for var, val in solution["constants"].items():
-                solution["constants"][var] = [val[0]]
+                if var in sweep or var in linked_sweep:
+                    solution["sweepvariables"][var] = val
+                    del solution["constants"][var]
+                else:
+                    solution["constants"][var] = [val[0]]
+            if not solution["constants"]:
+                del solution["constants"]
 
             if verbosity > 1:
                 soltime = time() - tic
@@ -680,15 +689,16 @@ class Model(object):
         from .interactive.widgets import modelcontrolpanel
         return modelcontrolpanel(self, *args, **kwargs)
 
-    def form_program(self, programType, verbosity=2):
+    def form_program(self, programType, verbosity=2, substitutions=None):
         "Generates a program and returns it and its solve function."
+        subs = dict(self.substitutions)
+        if substitutions:
+            subs.update(substitutions)
         if programType == "gp":
-            gp = GeometricProgram(self.cost, self.constraints,
-                                  self.substitutions, verbosity)
+            gp = GeometricProgram(self.cost, self.constraints, subs, verbosity)
             return gp, gp.solve
         elif programType == "sp":
-            sp = SignomialProgram(self.cost, self.constraints,
-                                  self.substitutions, verbosity)
+            sp = SignomialProgram(self.cost, self.constraints, subs, verbosity)
             return sp, sp.localsolve
         else:
             raise ValueError("unknown program type %s." % programType)

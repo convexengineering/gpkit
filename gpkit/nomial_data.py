@@ -28,9 +28,17 @@ class NomialData(object):
             exps, cs = simplify_exps_and_cs(exps, cs)
         self.exps, self.cs = exps, cs
         self.any_nonpositive_cs = any(mag(c) <= 0 for c in self.cs)
-        self.varlocs, self.varstrs = locate_vars(self.exps)
-        self.values = {vk: vk.descr["value"] for vk in self.varlocs
+
+        varlocs = defaultdict(list)
+        for i, exp in enumerate(exps):
+            for var in exp:
+                varlocs[var].append(i)
+        self.varlocs = varlocs
+        self.varkeys = frozenset(self.varlocs)
+        self.varstrs = {str(vk): vk for vk in self.varkeys}
+        self.values = {vk: vk.descr["value"] for vk in self.varkeys
                        if "value" in vk.descr}
+
         if isinstance(self.cs, Quantity):
             self.units = Quantity(1, self.cs.units)
         else:
@@ -191,41 +199,3 @@ def simplify_exps_and_cs(exps, cs, return_map=False):
             for j in expmap[exp]:
                 mmap[i][j] = mag(expmap[exp][j]/c)
         return exps_, cs_, mmap
-
-
-def locate_vars(exps):
-    "From exponents form a dictionary of which monomials each variable is in."
-    varlocs = defaultdict(list)
-    varstrs = defaultdict(set)
-    for i, exp in enumerate(exps):
-        for var in exp:
-            varlocs[var].append(i)
-            varstrs[var.name].add(var)
-
-    varkeys_ = dict(varstrs)
-    for name, varl in varkeys_.items():
-        for vk in varl:
-            descr = vk.descr
-            break
-        if "shape" in descr:
-            # vector var
-            newlist = np.zeros(descr["shape"], dtype="object")
-            for var in varl:
-                newlist[var.descr["idx"]] = var
-            varstrs[name] = newlist
-        else:
-            if len(varl) == 1:
-                varstrs[name] = varl.pop()
-            else:
-                varstrs[name] = []
-                for var in varl:
-                    if "model" in var.descr:
-                        varstrs[name+"_%s" % var.descr["model"]] = var
-                    else:
-                        varstrs[name].append(var)
-                if len(varstrs[name]) == 1:
-                    varstrs[name] = varstrs[name][0]
-                elif len(varstrs[name]) == 0:
-                    del varstrs[name]
-
-    return dict(varlocs), dict(varstrs)
