@@ -2,6 +2,7 @@
 # Based on the International System of Units
 # Language: english
 # :copyright: 2013 by Pint Authors, see AUTHORS for more details.
+# Modified 2015 by GPkit authors
 
 # decimal prefixes
 yocto- = 1e-24 = y-
@@ -164,7 +165,7 @@ kayser = 1 / centimeter = wavenumber
 # Mass
 dram = oz / 16 = dr = avoirdupois_dram
 ounce = 28.349523125 * gram = oz = avoirdupois_ounce
-mass_pound = 0.45359237 * kilogram = lbm = avoirdupois_pound
+pound = 0.45359237 * kilogram = lb = lbm = avoirdupois_pound = pound_mass
 stone = 14 * lbm = st
 carat = 200 * milligram
 grain = 64.79891 * milligram = gr
@@ -208,7 +209,7 @@ bar = 100000 * pascal
 atmosphere = 101325 * pascal = atm = standard_atmosphere
 technical_atmosphere = kilogram * gravity / centimeter ** 2 = at
 torr = atm / 760
-psi = mass_pound * gravity / inch ** 2 = pound_force_per_square_inch
+psi = pound_mass * gravity / inch ** 2 = pound_force_per_square_inch
 ksi = kip / inch ** 2 = kip_per_square_inch
 barye = 0.1 * newton / meter ** 2 = barie = barad = barrie = baryd = Ba
 mmHg = millimeter * Hg = mm_Hg = millimeter_Hg = millimeter_Hg_0C
