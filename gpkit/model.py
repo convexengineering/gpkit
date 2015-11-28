@@ -205,15 +205,18 @@ class Model(object):
     @property
     def varkeys(self):
         varkeys = set()
-        for signomial in self.signomials:
-            for exp in signomial.exps:
-                varkeys.update(exp)
-        return {str(vk): vk for vk in varkeys}
+        for constraint in self.constraints:
+            varkeys.update(constraint.varkeys)
+        return varkeys
+
+    @property
+    def varkeysbystr(self):
+        return {str(vk): vk for vk in self.varkeys}
 
     @property
     def varsbyname(self):
         varsbyname = defaultdict(list)
-        for varkey in self.varkeys.values():
+        for varkey in self.varkeys:
             if varkey in self.substitutions:
                 sub = self.substitutions[varkey]
                 if isinstance(sub, VarKey):

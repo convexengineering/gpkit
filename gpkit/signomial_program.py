@@ -65,8 +65,7 @@ class SignomialProgram(object):
             if hasattr(constraint, "as_posyslt1"):
                 posy = constraint.as_posyslt1()
             if posy:
-                if posy is not True:
-                    self.posyconstraints.append(posy)
+                self.posyconstraints.append(posy)
             elif hasattr(constraint, "as_localposyconstr"):
                 self.localposyconstraints.append(constraint)
             else:

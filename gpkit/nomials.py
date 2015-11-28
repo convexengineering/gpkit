@@ -548,6 +548,8 @@ class Constraint(object):
         self.left = Signomial(left)
         self.oper = oper
         self.right = Signomial(right)
+        self.varkeys = (set(self.left.varlocs.keys()) |
+                        set(self.right.varlocs.keys()))
         if hasattr(self, "_constraint_init_"):
             self._constraint_init_()
 
@@ -562,15 +564,17 @@ class Constraint(object):
         return ("%s %s %s" % (self.left.latex(showunits=False), latex_oper,
                               self.right.latex(showunits=False)))
 
-    def sub(self, subs):
+    def sub(self, subs, value=None):
+        if value:
+            subs = {subs: value}
         return self.__class__(self.left.sub(subs), self.oper,
                               self.right.sub(subs))
 
     def as_posyslt1(self):
-        return False
+        return None
 
     def as_localposyconstr(self, x0):
-        return False
+        return None
 
 
 class PosynomialConstraint(Constraint):
@@ -620,11 +624,15 @@ class PosynomialConstraint(Constraint):
             # just return the pre-generated posynomial representation
             return [self.posy_lt1_rep]
 
+        m_gt = self.m_gt.sub(self.substitutions, require_positive=False)
+        if m_gt.c == 0:
+            return []
+
         _, exps, cs, _ = substitution(self.posy_lt1_rep, self.substitutions)
         # remove any cs that are just nans and/or 0s
         nans = np.isnan(cs)
         if np.all(nans) or np.all(cs[~nans] == 0):
-            return True  # skip nan'd or 0'd constraint
+            return []  # skip nan'd or 0'd constraint
 
         exps, cs, pmap = simplify_exps_and_cs(exps, cs, return_map=True)
         self.pmap = pmap
@@ -635,6 +643,9 @@ class PosynomialConstraint(Constraint):
         return [p]
 
     def sensitivities(self, p_senss, m_sensss):
+        if not p_senss or not m_sensss:
+            # as_posy_lt1 created no inequalities
+            return {}, {}
         assert len(p_senss) == len(m_sensss) and len(m_sensss) == 1
         p_sens, m_senss = p_senss[0], m_sensss[0]
         presub = self.posy_lt1_rep
