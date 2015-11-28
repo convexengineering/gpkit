@@ -50,11 +50,6 @@ def feasibility_model(program, flavour="max", varname=None,
                        [posy <= slackvar
                         for posy in posynomials[1:]])
         prog = programType(slackvar, constraints)
-        print "#####"
-        print program
-        print posynomials
-        print "---"
-        print prog
 
     elif flavour == "product":
         slackvars = VectorVariable(len(constraints), varname)

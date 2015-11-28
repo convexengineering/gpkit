@@ -521,7 +521,7 @@ class Monomial(Posynomial):
     # Monomial.__le__ falls back on Posynomial.__le__
 
     def __ge__(self, other):
-        if isinstance(other, Numbers + (Monomial,)):
+        if isinstance(other, Numbers + (Posynomial,)):
             return PosynomialConstraint(self, ">=", other)
         else:
             # fall back on other's __ge__
@@ -543,6 +543,8 @@ class Constraint(object):
             oper = self.default_oper
         if right is None:
             right = self.default_right
+        if not isinstance(oper, Strings):
+            raise ValueError("operator must be string, not %s" % type(oper))
         self.left = Signomial(left)
         self.oper = oper
         self.right = Signomial(right)
@@ -579,19 +581,16 @@ class PosynomialConstraint(Constraint):
     default_oper = "<="
     default_right = 1
 
-    def __hash__(self):
-        return hash(self.posy_lt1_rep)
-
     def _constraint_init_(self):
         if self.oper == "<=":
-            plt, pgt = self.left, self.right
+            p_lt, m_gt = self.left, self.right
         elif self.oper == ">=":
-            pgt, plt = self.left, self.right
+            m_gt, p_lt = self.left, self.right
         else:
             raise ValueError("operator %s is not supported by Posynomial"
                              "Constraint." % self.oper)
 
-        p = plt / pgt
+        p = p_lt / m_gt
 
         if isinstance(p.cs, Quantity):
             try:
@@ -600,7 +599,7 @@ class PosynomialConstraint(Constraint):
                 raise ValueError("constraints must have the same units"
                                  " on both sides: '%s' and '%s' can not"
                                  " be converted into each other."
-                                 "" % (plt.units, pgt.units))
+                                 "" % (p_lt.units, pgt.units))
 
         for i, exp in enumerate(p.exps):
             if not exp:
@@ -612,6 +611,7 @@ class PosynomialConstraint(Constraint):
                 elif p.cs[i] > 1:
                     raise ValueError("infeasible constraint:"
                                      " constant term too large.")
+        self.p_lt, self.m_gt = p_lt, m_gt
         self.posy_lt1_rep = p
         self.substitutions = p.values
 
@@ -655,23 +655,31 @@ class PosynomialConstraint(Constraint):
                 for idx, percentage in mmap.items():
                     m_senss_[idx] += percentage*m_senss[i]
             m_senss = m_senss_
+        # Monomial sensitivities
+        constr_sens[self.m_gt] = p_sens
         for i, mono_sens in enumerate(m_senss):
-            mono = Monomial(presub.exps[i], presub.cs[i])
+            mono = Monomial(self.p_lt.exps[i], self.p_lt.cs[i])
             constr_sens[mono] = mono_sens
+        # Variable sensitivities
         # TODO could check only for constants...
         var_senss = {var: sum([presub.exps[i][var]*m_senss[i] for i in locs])
                      for (var, locs) in presub.varlocs.items()}
         return constr_sens, HashVector(var_senss)
 
+    def process_result(self, result):
+        return dict(constants=self.substitutions,
+                    variables=self.substitutions)
+
 
 class MonoEQConstraint(PosynomialConstraint):
     """A Constraint of the form Monomial == Monomial.
     """
+    default_right = NotImplemented
 
     def _constraint_init_(self):
-        if self.oper != "=":
+        if self.oper is not "=":
             raise ValueError("operator %s is not supported by"
-                             " SignomialConstraint." % self.oper)
+                             " MonoEQConstraint." % self.oper)
         self.posy_lt1_rep = [self.left/self.right, self.right/self.left]
 
     def __nonzero__(self):
@@ -728,5 +736,13 @@ class SignomialConstraint(Constraint):
         x0.update(self.substitutions)
         return PosynomialConstraint(posy, "<=", negy.mono_lower_bound(x0))
 
+    def sensitivities(self, posyapprox, posyapprox_sens, var_senss):
+        constr_sens = dict(posyapprox_sens)
+        del constr_sens[posyapprox.m_gt]
+        _, negy = self.sigy_lt0_rep.posy_negy()
+        constr_sens[negy] = posyapprox_sens["overall"]
+        posyapprox_sens[posyapprox] = posyapprox_sens.pop("overall")
+        constr_sens["posyapprox"] = posyapprox_sens
+        return constr_sens
 
 from .substitution import substitution, get_constants

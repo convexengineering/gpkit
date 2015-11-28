@@ -165,8 +165,9 @@ class GeometricProgram(NomialData):
         # confirm lengths before calling zip
         primal = np.ravel(solver_out['primal'])
         assert len(self.varlocs) == len(primal)
-        result["variables"] = dict(zip(self.varlocs,
-                                       np.exp(primal)))
+        result["freevariables"] = dict(zip(self.varlocs, np.exp(primal)))
+        result["variables"] = dict(result["freevariables"])
+
         if "objective" in solver_out:
             result["cost"] = float(solver_out["objective"])
         else:
@@ -190,7 +191,7 @@ class GeometricProgram(NomialData):
         else:
             raise RuntimeWarning("The dual solution was not returned.")
 
-        result["sensitivities"] = {}
+        result["sensitivities"] = {"constraints": {}}
         var_senss = {var: sum([self.cost.exps[i][var]*nu[i] for i in locs])
                      for (var, locs) in self.cost.varlocs.items()}
         var_senss = HashVector(var_senss)
@@ -199,9 +200,15 @@ class GeometricProgram(NomialData):
             p_senss = [la[p_i] for p_i in posy_idxs]
             m_sensss = [[nu[i] for i in self.m_idxs[p_i]] for p_i in posy_idxs]
             constr_sens, p_var_senss = constr.sensitivities(p_senss, m_sensss)
-            result["sensitivities"][constr] = constr_sens
+            result["sensitivities"]["constraints"][constr] = constr_sens
             var_senss += p_var_senss
         result["sensitivities"]["variables"] = var_senss
+        for constraint in self.constraints:
+            if hasattr(constraint, "process_result"):
+                for key, value in constraint.process_result(result).items():
+                    if not key in result:
+                        result[key] = {}
+                    result[key].update(value)
 
         self.result = result  # NOTE: SIDE EFFECTS
 

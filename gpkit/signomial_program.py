@@ -59,7 +59,8 @@ class SignomialProgram(object):
         self.substitutions = substitutions
 
         for constraint in self.constraints:
-            constraint.substitutions.update(substitutions)
+            if substitutions:
+                constraint.substitutions.update(substitutions)
             posy = False
             if hasattr(constraint, "as_posyslt1"):
                 posy = constraint.as_posyslt1()
@@ -139,8 +140,17 @@ class SignomialProgram(object):
             print("Solving took %i GP solves" % len(self.gps)
                   + " and %.3g seconds." % (time() - self.starttime))
 
-        result["startpoint"] = startpoint
-        result["endpoint"] = x0
+        constr_senss = result["sensitivities"]["constraints"]
+        posyapproxs = gp.constraints[len(self.posyconstraints):]
+        for i, posyapprox in enumerate(posyapproxs):
+            constr = self.localposyconstraints[i]
+            posyapprox_sens = constr_senss.pop(posyapprox)
+            var_senss = result["sensitivities"]["variables"]
+            constr_sens = constr.sensitivities(posyapprox, posyapprox_sens,
+                                               var_senss)
+            result["sensitivities"]["constraints"][constr] = constr_sens
+
+        result["signomialstart"] = startpoint
         self.result = result  # NOTE: SIDE EFFECTS
         return result
 
