@@ -550,6 +550,7 @@ class Constraint(object):
         self.right = Signomial(right)
         self.varkeys = (set(self.left.varlocs.keys()) |
                         set(self.right.varlocs.keys()))
+        self.substitutions = {}
         if hasattr(self, "_constraint_init_"):
             self._constraint_init_()
 
@@ -682,25 +683,54 @@ class PosynomialConstraint(Constraint):
                     variables=self.substitutions)
 
 
-class MonoEQConstraint(PosynomialConstraint):
+class MonoEQConstraint(Constraint):
     """A Constraint of the form Monomial == Monomial.
     """
+    default_oper = "="
     default_right = NotImplemented
 
     def _constraint_init_(self):
         if self.oper is not "=":
             raise ValueError("operator %s is not supported by"
                              " MonoEQConstraint." % self.oper)
-        self.posy_lt1_rep = [self.left/self.right, self.right/self.left]
+        self.posys_lt1_rep = [self.left/self.right, self.right/self.left]
 
     def __nonzero__(self):
         # a constraint not guaranteed to be satisfied
         # evaluates as "False"
-        return bool(mag(self.posy_lt1_rep[0].c) == 1.0
-                    and self.posy_lt1_rep[0].exp == {})
+        return bool(mag(self.posys_lt1_rep[0].c) == 1.0
+                    and self.posys_lt1_rep[0].exp == {})
 
     def __bool__(self):
         return self.__nonzero__()
+
+    def as_posyslt1(self):
+        if not self.substitutions:
+            # just return the pre-generated posynomial representation
+            return self.posys_lt1_rep
+
+        # TODO: SOMEHOW INHERIT THIS
+
+        m_gt = self.m_gt.sub(self.substitutions, require_positive=False)
+        if m_gt.c == 0:
+            return []
+
+        _, exps, cs, _ = substitution(self.posy_lt1_rep, self.substitutions)
+        # remove any cs that are just nans and/or 0s
+        nans = np.isnan(cs)
+        if np.all(nans) or np.all(cs[~nans] == 0):
+            return []  # skip nan'd or 0'd constraint
+
+        exps, cs, pmap = simplify_exps_and_cs(exps, cs, return_map=True)
+        self.pmap = pmap
+        p = Posynomial(exps, cs, simplify=False)
+        if p.any_nonpositive_cs:
+            raise RuntimeWarning("PosynomialConstraint %s became Signomial"
+                                 " after substitution" % self)
+        return [p]
+
+    def sensitivities(self):
+        return {}, {}
 
 
 class SignomialConstraint(Constraint):
