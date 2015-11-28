@@ -282,7 +282,7 @@ class TestPosynomial(unittest.TestCase):
         x = Monomial('x')
         y = Monomial('y')
         p = x**2 + 2*y*x + y**2
-        self.assertEqual(p <= 1, p)
+        self.assertEqual(p <= 1, p.posy_lt1_rep)
         self.assertEqual(p <= x, p/x)
 
     def test_integer_division(self):
