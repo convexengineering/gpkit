@@ -20,8 +20,13 @@ __version__ = "0.3.4"
 UNIT_REGISTRY = None
 SIGNOMIALS_ENABLED = False
 
+from os import sep as os_sep
+from os.path import dirname as os_path_dirname
+UNITDEF_PATH = os_sep.join([os_path_dirname(__file__), "gpkit_units.txt"])
+SETTINGS_PATH = os_sep.join([os_path_dirname(__file__), "env", "settings"])
 
-def enable_units():
+
+def enable_units(path=UNITDEF_PATH):
     """Enables units support in a particular instance of GPkit.
 
     Posynomials created after calling this are incompatible with those created
@@ -32,7 +37,7 @@ def enable_units():
     try:
         import pint
         if UNIT_REGISTRY is None:
-            UNIT_REGISTRY = pint.UnitRegistry()
+            UNIT_REGISTRY = pint.UnitRegistry(path)
         units = UNIT_REGISTRY
         DimensionalityError = pint.DimensionalityError
     except ImportError:
@@ -133,9 +138,6 @@ if units:
             setattr(units.Quantity, dunder, newfn)
 
 # Load settings
-from os import sep as os_sep
-from os.path import dirname as os_path_dirname
-SETTINGS_PATH = os_sep.join([os_path_dirname(__file__), "env", "settings"])
 def load_settings(path=SETTINGS_PATH):
     try:
         with open(path) as settingsfile:
