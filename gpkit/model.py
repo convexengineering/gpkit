@@ -649,7 +649,7 @@ class Model(object):
             sub_latex = ["    & %s \gets %s%s \\\\" % (var.latex(),
                                                         latex_num(val),
                                                         var.unitstr)
-                         for var, val in self.constants.items()]
+                         for var, val in self.allsubs.items()]
             latex_list += ["\\text{substituting}"] + sorted(sub_latex)
         latex_list += ["\\end{array}"]
         return "\n".join(latex_list)

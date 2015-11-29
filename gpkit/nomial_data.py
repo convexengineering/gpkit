@@ -7,7 +7,7 @@ from functools import reduce as functools_reduce
 from operator import add
 
 from .varkey import VarKey
-from .small_classes import HashVector, Quantity
+from .small_classes import HashVector, Quantity, KeyDict, KeyVector
 from .small_scripts import mag
 
 
@@ -29,9 +29,12 @@ class NomialData(object):
         self.exps, self.cs = exps, cs
         self.any_nonpositive_cs = any(mag(c) <= 0 for c in self.cs)
 
-        varlocs = defaultdict(list)
+        varlocs = KeyDict()
+        varlocs.collapse_arrays = False
         for i, exp in enumerate(exps):
             for var in exp:
+                if var not in varlocs:
+                    varlocs[var] = []
                 varlocs[var].append(i)
         self.varlocs = varlocs
         self.varkeys = frozenset(self.varlocs)
@@ -123,7 +126,7 @@ class NomialData(object):
         var_units = (var.units if var.units and not isinstance(var.units, str)
                      else 1)
         for i, exp in enumerate(self.exps):
-            exp = HashVector(exp)   # copy -- exp is mutated below
+            exp = KeyVector(exp)   # copy -- exp is mutated below
             e = exp.get(var, 0)
             if var in exp:
                 exp[var] -= 1
@@ -172,7 +175,7 @@ def simplify_exps_and_cs(exps, cs, return_map=False):
     if return_map:
         expmap = defaultdict(dict)
     for i, exp in enumerate(exps):
-        exp = HashVector({var: x for (var, x) in exp.items() if x != 0})
+        exp = KeyVector({var: x for (var, x) in exp.items() if x != 0})
         matches[exp] += cs[i]
         if return_map:
             expmap[exp][i] = cs[i]

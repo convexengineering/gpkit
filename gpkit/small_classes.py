@@ -60,11 +60,26 @@ class KeyDict(dict):
         self.update(*args, **kwargs)
         self.baked_keystrs = None
 
+    def __contains__(self, key):
+        if dict.__contains__(self, key):
+            return True
+        elif hasattr(key, "key"):
+            if dict.__contains__(self, key.key):
+                return True
+            elif self.is_index_into_vector(key.key):
+                if dict.__contains__(self, veckeyed(key.key)):
+                    return True
+        elif key in self.keystrs():
+            return True
+
+        return False
+
     def update(self, *args, **kwargs):
         for k, v in dict(*args, **kwargs).items():
             self[k] = v
 
     def bake(self):
+        self.baked_keystrs = None
         self.baked_keystrs = self.keystrs()
 
     def keystrs(self):
@@ -82,28 +97,32 @@ class KeyDict(dict):
         elif hasattr(key, "key"):
             return set([key.key])
         else:
-            # fallback to regular behaviour
-            return set([key])
+            raise ValueError("%s (type %s) is an invalid key for a KeyDict."
+                             % (key, type(key)))
 
     def is_index_into_vector(self, key):
         return ("idx" in key.descr and
                 "shape" in key.descr and self.collapse_arrays)
 
+    def __dgi(self, key):
+        return dict.__getitem__(self, key)
+
     def __getitem__(self, key):
         keys = self.getkeys(key)
         if len(keys) > 1:
             out = KeyDict()
+            out.collapse_arrays = self.collapse_arrays
             for key in keys:
                 if self.is_index_into_vector(key):
-                    out[key] = self.get(veckeyed(key))[key.descr["idx"]]
+                    out[key] = self.__dgi(veckeyed(key))[key.descr["idx"]]
                 else:
-                    out[key] = self.get(key)
+                    out[key] = self.__dgi(key)
         elif keys:
             key, = keys
             if self.is_index_into_vector(key):
-                out = self.get(veckeyed(key))[key.descr["idx"]]
+                out = self.__dgi(veckeyed(key))[key.descr["idx"]]
             else:
-                out = self.get(key)
+                out = self.__dgi(key)
         else:
             raise KeyError("%s was not found." % key)
         return out
@@ -115,16 +134,16 @@ class KeyDict(dict):
                 if veckey not in self:
                     emptyvec = np.full(key.descr["shape"], np.nan)
                     dict.__setitem__(self, veckey, emptyvec)
-                self.get(veckey)[key.descr["idx"]] = value
+                self.__dgi(veckey)[key.descr["idx"]] = value
             else:
                 dict.__setitem__(self, key, value)
 
     def __delitem__(self, key):
         for key in self.getkeys(key):
-            if key in self.dict:
+            if key in self:
                 dict.__delitem__(self, key)
             elif "shape" in key.descr and "idx" in key.descr:
-                self.dict.get(veckeyed(key))[key.descr["idx"]] = np.nan
+                self.__dgi(veckeyed(key))[key.descr["idx"]] = np.nan
 
 
 def veckeyed(key):
@@ -182,7 +201,7 @@ class DictOfLists(dict):
 def enlist_dict(i, o):
     "Recursviely copies dict i into o, placing non-dict items into lists."
     for k, v in i.items():
-        if isinstance(v, (dict, KeyDict)):
+        if isinstance(v, dict):
             o[k] = enlist_dict(v, v.__class__())
         else:
             o[k] = [v]
@@ -193,7 +212,7 @@ def enlist_dict(i, o):
 def append_dict(i, o):
     "Recursively travels dict o and appends items found in i."
     for k, v in i.items():
-        if isinstance(v, (dict, KeyDict)):
+        if isinstance(v, dict):
             o[k] = append_dict(v, o[k])
         else:
             o[k].append(v)
@@ -205,7 +224,7 @@ def append_dict(i, o):
 def index_dict(idx, i, o):
     "Recursviely travels dict i, placing items at idx into dict o."
     for k, v in i.items():
-        if isinstance(v, (dict, KeyDict)):
+        if isinstance(v, dict):
             o[k] = index_dict(idx, v, v.__class__())
         else:
             try:
@@ -220,7 +239,7 @@ def index_dict(idx, i, o):
 def enray_dict(i, o):
     "Recursively turns lists into numpy arrays."
     for k, v in i.items():
-        if isinstance(v, (dict, KeyDict)):
+        if isinstance(v, dict):
             o[k] = enray_dict(v, v.__class__())
         else:
             if len(v) == 1:
@@ -230,7 +249,6 @@ def enray_dict(i, o):
                 # consider apennding nan / nanvector for new / missed keys
     # assert set(i.keys()) == set(o.keys())  # keys change with swept varkeys
     return o
-
 
 class HashVector(dict):
     """A simple, sparse, string-indexed vector. Inherits from dict.
@@ -247,7 +265,6 @@ class HashVector(dict):
     >>> x = gpkit.nomials.Monomial('x')
     >>> exp = gpkit.small_classes.HashVector({x: 2})
     """
-#    collapse_arrays = False
 
     def __init__(self, *args, **kwargs):
         super(HashVector, self).__init__(*args, **kwargs)
@@ -308,3 +325,7 @@ class HashVector(dict):
     def __div__(self, other): return self * other**-1
     def __rdiv__(self, other): return other * self**-1
     def __rmul__(self, other): return self * other
+
+
+class KeyVector(HashVector, KeyDict):
+    collapse_arrays = False

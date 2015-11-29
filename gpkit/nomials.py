@@ -1,7 +1,7 @@
 """Signomial, Posynomial, Monomial, Constraint, & MonoEQCOnstraint classes"""
 import numpy as np
 
-from .small_classes import Strings, Numbers, Quantity, HashVector
+from .small_classes import Strings, Numbers, Quantity, KeyVector
 from .posyarray import PosyArray
 from .varkey import VarKey
 from .nomial_data import NomialData
@@ -62,7 +62,7 @@ class Signomial(NomialData):
                 raise TypeError("could not make Monomial with %s" % type(exps))
             #simplify = False #TODO: this shouldn't require simplification
             cs = [cs]
-            exps = [HashVector(exp)]
+            exps = [KeyVector(exp)]
         elif isinstance(exps, Signomial):
             simplify = False
             cs = exps.cs
@@ -89,7 +89,7 @@ class Signomial(NomialData):
                         raise ValueError("cannot add monomials of"
                                          " different units together")
                 for i in range(len(exps)):
-                    exps_[i] = HashVector(exps[i])
+                    exps_[i] = KeyVector(exps[i])
                     for key in exps_[i]:
                         if isinstance(key, Strings+(Monomial,)):
                             exps_[i][VarKey(key)] = exps_[i].pop(key)
@@ -171,7 +171,7 @@ class Signomial(NomialData):
                 if exp == {}:
                     return Monomial({}, self.cs[i])
         x_0 = get_constants(self, x_0)
-        exp = HashVector()
+        exp = KeyVector()
         psub = self.sub(x_0)
         if psub.varlocs:
             raise ValueError("Variables %s remained after substituting x_0=%s"
@@ -572,10 +572,10 @@ class Constraint(object):
                               self.right.sub(subs))
 
     def as_posyslt1(self):
-        return None
+        return [None]
 
     def as_localposyconstr(self, x0):
-        return None
+        return [None]
 
 
 class PosynomialConstraint(Constraint):
@@ -676,7 +676,7 @@ class PosynomialConstraint(Constraint):
         # TODO could check only for constants...
         var_senss = {var: sum([presub.exps[i][var]*m_senss[i] for i in locs])
                      for (var, locs) in presub.varlocs.items()}
-        return constr_sens, HashVector(var_senss)
+        return constr_sens, KeyVector(var_senss)
 
     def process_result(self, result):
         return dict(constants=self.substitutions,
@@ -763,7 +763,7 @@ class SignomialConstraint(Constraint):
         if x0 is None:
             # dummy nomial data to turn x0's keys into VarKeys
             self.negydata = lambda: None
-            self.negydata.varlocs = negy.varlocs
+            self.negydata.varkeys = negy.varkeys
             self.negydata.varstrs = {str(vk): vk for vk in negy.varlocs}
             x0 = get_constants(self.negydata, {})
              # TODO: don't all the equivalencies collide by now?
