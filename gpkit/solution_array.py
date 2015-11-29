@@ -214,7 +214,7 @@ def results_table(data, title, minval=0, printunits=True, fixedcols=True,
             lines.append([varstr, valstr, units, label])
         else:
             varstr = varstr.replace(" : ", "")
-            lines.append(["$", varstr, "$ & ", valstr, " & $",
+            lines.append(["$", varstr, "$ & ", valstr, " & $ ",
                           units.replace('**', '^'), "$ & ", label, " \\\\"])
     if not latex:
         if lines:
