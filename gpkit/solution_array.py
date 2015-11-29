@@ -210,13 +210,13 @@ def results_table(data, title, minval=0, printunits=True, fixedcols=True,
         else:
             valstr = valfmt % val
         valstr = valstr.replace("nan", " - ")
-        if latex == False:
+        if not latex:
             lines.append([varstr, valstr, units, label])
         else:
             varstr = varstr.replace(" : ", "")
-            lines.append(["$", varstr, "$ & ", valstr, " & ", units,
-                          " & ", label, " \\\\"])
-    if latex == False:
+            lines.append(["$", varstr, "$ & ", valstr, " & $",
+                          units.replace('**', '^'), "$ & ", label, " \\\\"])
+    if not latex:
         if lines:
             maxlens = np.max([list(map(len, line)) for line in lines], axis=0)
             if not fixedcols:
