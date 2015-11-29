@@ -311,7 +311,7 @@ class Model(object):
 
     def solve(self, solver=None, verbosity=2, skipsweepfailures=False,
               *args, **kwargs):
-        """Forms a GeometricProgram and attempts to solve it.
+        """Forms a mathematical program and attempts to solve it.
 
         Arguments
         ---------
@@ -679,10 +679,10 @@ class Model(object):
                           "    substitutions=%s" % self.allsubs])
 
     def latex(self, show_subs=True):
-        """LaTeX representation of a GeometricProgram.
+        """LaTeX representation of a Model.
         Contains all of its parameters."""
         # TODO: print sweeps and linkedsweeps
-        latex_list = ["\\begin{array}[ll]",
+        latex_list = ["\\begin{array}{ll}",
                       "\\text{}",
                       "\\text{minimize}",
                       "    & %s \\\\" % self.cost.latex(),
