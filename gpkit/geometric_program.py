@@ -5,7 +5,7 @@ import sys
 from time import time
 
 from .variables import Variable, VectorVariable
-from .small_classes import CootMatrix, HashVector
+from .small_classes import CootMatrix, HashVector, KeyDict
 from .nomial_data import NomialData
 from .nomials import Posynomial
 from .small_classes import SolverLog
@@ -164,8 +164,8 @@ class GeometricProgram(NomialData):
         # confirm lengths before calling zip
         primal = np.ravel(solver_out['primal'])
         assert len(self.varlocs) == len(primal)
-        result["freevariables"] = dict(zip(self.varlocs, np.exp(primal)))
-        result["variables"] = dict(result["freevariables"])
+        result["freevariables"] = KeyDict(zip(self.varlocs, np.exp(primal)))
+        result["variables"] = KeyDict(result["freevariables"])
 
         if "objective" in solver_out:
             result["cost"] = float(solver_out["objective"])
@@ -201,13 +201,24 @@ class GeometricProgram(NomialData):
             constr_sens, p_var_senss = constr.sensitivities(p_senss, m_sensss)
             result["sensitivities"]["constraints"][constr] = constr_sens
             var_senss += p_var_senss
-        result["sensitivities"]["variables"] = var_senss
+        result["sensitivities"]["variables"] = KeyDict(var_senss)
+        keydicts_added = set()
         for constraint in self.constraints:
             if hasattr(constraint, "process_result"):
                 for key, value in constraint.process_result(result).items():
                     if not key in result:
-                        result[key] = {}
+                        if type(value) is dict:
+                            if all(hasattr(k, "key") for k in value.keys()):
+                                result[key] = KeyDict()
+                                keydicts_added.add(key)
+                            else:
+                                result[key] = {}
                     result[key].update(value)
+
+        result["freevariables"].bake()
+        result["variables"].bake()
+        for key in keydicts_added:
+            result[key].bake()
 
         self.result = result  # NOTE: SIDE EFFECTS
 

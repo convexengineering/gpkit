@@ -108,31 +108,32 @@ class SolutionArray(DictOfLists):
                 cost_units = self.program.cost.units
             strs[-1] += unitstr(cost_units, into=" [%s] ", dimless="")
             strs += [""]
-        if "sweepvariables" in tables and "sweepvariables" in self:
+        if in_both_and_truthy_in_second("sweepvariables", tables, self):
             strs += [results_table(self["sweepvariables"],
                                    "Sweep Variables",
                                    fixedcols=fixedcols,
                                    included_models=included_models,
                                    excluded_models=excluded_models)]
-        if "freevariables" in tables:
+        if in_both_and_truthy_in_second("freevariables", tables, self):
             strs += [results_table(self["freevariables"],
                                    "Free Variables",
                                    fixedcols=fixedcols,
                                    included_models=included_models,
                                    excluded_models=excluded_models)]
-        if "constants" in tables and "constants" in self:
+        if in_both_and_truthy_in_second("constants", tables, self):
             strs += [results_table(self["constants"],
                                    "Constants",
                                    fixedcols=fixedcols,
                                    included_models=included_models,
                                    excluded_models=excluded_models)]
-        if "variables" in tables:
+        if in_both_and_truthy_in_second("variables", tables, self):
             strs += [results_table(self["variables"],
                                    "Variables",
                                    fixedcols=fixedcols,
                                    included_models=included_models,
                                    excluded_models=excluded_models)]
-        if "sensitivities" in tables:
+        if (in_both_and_truthy_in_second("sensitivities", tables, self) and
+            "constants" in self and self["constants"]):
             strs += [results_table(self["sensitivities"]["variables"],
                                    "Sensitivities",
                                    fixedcols=fixedcols,
@@ -141,6 +142,10 @@ class SolutionArray(DictOfLists):
                                    minval=1e-2,
                                    printunits=False)]
         return "\n".join(strs)
+
+
+def in_both_and_truthy_in_second(key, tables, dictionary):
+    return bool(key in tables and key in dictionary and dictionary[key])
 
 
 def results_table(data, title, minval=0, printunits=True, fixedcols=True,

@@ -43,7 +43,7 @@ class PosyArray(np.ndarray):
             return str(self.flatten()[0])
 
     def __hash__(self):
-        return getattr(self, "_hashvalue", hash(self.tostring()))
+        return hash(self.tostring())
 
     def __new__(cls, input_array):
         "Constructor. Required for objects inheriting from np.ndarray."

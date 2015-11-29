@@ -46,7 +46,6 @@ class Variable(Monomial):
 
         Monomial.__init__(self, **descr)
         self.__class__ = Variable
-        self._hashvalue = hash(VarKey(**descr))
 
     __hash__ = NomialData.__hash__
 
@@ -157,7 +156,6 @@ class VectorVariable(PosyArray):
         obj.descr = descr
         obj.descr.pop("idx", None)
         obj.key = VarKey(**obj.descr)
-        obj._hashvalue = hash(VarKey(**obj.descr))
 
         return obj
 

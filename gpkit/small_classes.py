@@ -1,6 +1,6 @@
 """Miscellaneous small classes"""
 import numpy as np
-from collections import namedtuple as nt
+from collections import namedtuple, defaultdict
 from . import units
 
 try:
@@ -12,8 +12,7 @@ except NameError:
 Quantity = units.Quantity
 Numbers = (int, float, np.number, Quantity)
 
-PosyTuple = nt('PosyTuple', ['exps', 'cs', 'varlocs', 'substitutions'])
-CootMatrixTuple = nt('CootMatrix', ['row', 'col', 'data'])
+CootMatrixTuple = namedtuple('CootMatrix', ['row', 'col', 'data'])
 
 
 class CootMatrix(CootMatrixTuple):
@@ -54,14 +53,93 @@ class CootMatrix(CootMatrixTuple):
         return self.tocsr().dot(arg)
 
 
-class Counter(object):
+class KeyDict(dict):
+    collapse_arrays = True
 
+    def __init__(self, *args, **kwargs):
+        self.update(*args, **kwargs)
+        self.baked_keystrs = None
+
+    def update(self, *args, **kwargs):
+        for k, v in dict(*args, **kwargs).items():
+            self[k] = v
+
+    def bake(self):
+        self.baked_keystrs = self.keystrs()
+
+    def keystrs(self):
+        if self.baked_keystrs:
+            return self.baked_keystrs
+        keystrs = defaultdict(set)
+        for key in self.keys():
+            for keystr in key.allstrs:
+                keystrs[keystr].add(key)
+        return keystrs
+
+    def getkeys(self, key):
+        if isinstance(key, Strings):
+            return self.keystrs()[key]
+        elif hasattr(key, "key"):
+            return set([key.key])
+        else:
+            # fallback to regular behaviour
+            return set([key])
+
+    def is_index_into_vector(self, key):
+        return ("idx" in key.descr and
+                "shape" in key.descr and self.collapse_arrays)
+
+    def __getitem__(self, key):
+        keys = self.getkeys(key)
+        if len(keys) > 1:
+            out = KeyDict()
+            for key in keys:
+                if self.is_index_into_vector(key):
+                    out[key] = self.get(veckeyed(key))[key.descr["idx"]]
+                else:
+                    out[key] = self.get(key)
+        elif keys:
+            key, = keys
+            if self.is_index_into_vector(key):
+                out = self.get(veckeyed(key))[key.descr["idx"]]
+            else:
+                out = self.get(key)
+        else:
+            raise KeyError("%s was not found." % key)
+        return out
+
+    def __setitem__(self, key, value):
+        for key in self.getkeys(key):
+            if self.is_index_into_vector(key):
+                veckey = veckeyed(key)
+                if veckey not in self:
+                    emptyvec = np.full(key.descr["shape"], np.nan)
+                    dict.__setitem__(self, veckey, emptyvec)
+                self.get(veckey)[key.descr["idx"]] = value
+            else:
+                dict.__setitem__(self, key, value)
+
+    def __delitem__(self, key):
+        for key in self.getkeys(key):
+            if key in self.dict:
+                dict.__delitem__(self, key)
+            elif "shape" in key.descr and "idx" in key.descr:
+                self.dict.get(veckeyed(key))[key.descr["idx"]] = np.nan
+
+
+def veckeyed(key):
+    vecdescr = dict(key.descr)
+    del vecdescr["idx"]
+    return key.__class__(**vecdescr)
+
+
+class Counter(object):
     def __init__(self):
-        self.start = -1
+        self.count = -1
 
     def __call__(self):
-        self.start += 1
-        return self.start
+        self.count += 1
+        return self.count
 
 
 class SolverLog(list):
@@ -104,8 +182,8 @@ class DictOfLists(dict):
 def enlist_dict(i, o):
     "Recursviely copies dict i into o, placing non-dict items into lists."
     for k, v in i.items():
-        if isinstance(v, dict):
-            o[k] = enlist_dict(v, {})
+        if isinstance(v, (dict, KeyDict)):
+            o[k] = enlist_dict(v, v.__class__())
         else:
             o[k] = [v]
     assert set(i.keys()) == set(o.keys())
@@ -113,9 +191,9 @@ def enlist_dict(i, o):
 
 
 def append_dict(i, o):
-    "Recursviely travels dict o and appends items found in i."
+    "Recursively travels dict o and appends items found in i."
     for k, v in i.items():
-        if isinstance(v, dict):
+        if isinstance(v, (dict, KeyDict)):
             o[k] = append_dict(v, o[k])
         else:
             o[k].append(v)
@@ -127,8 +205,8 @@ def append_dict(i, o):
 def index_dict(idx, i, o):
     "Recursviely travels dict i, placing items at idx into dict o."
     for k, v in i.items():
-        if isinstance(v, dict):
-            o[k] = index_dict(idx, v, {})
+        if isinstance(v, (dict, KeyDict)):
+            o[k] = index_dict(idx, v, v.__class__())
         else:
             try:
                 o[k] = v[idx]
@@ -142,8 +220,8 @@ def index_dict(idx, i, o):
 def enray_dict(i, o):
     "Recursively turns lists into numpy arrays."
     for k, v in i.items():
-        if isinstance(v, dict):
-            o[k] = enray_dict(v, {})
+        if isinstance(v, (dict, KeyDict)):
+            o[k] = enray_dict(v, v.__class__())
         else:
             if len(v) == 1:
                 o[k] = np.array(v[0])
@@ -169,6 +247,8 @@ class HashVector(dict):
     >>> x = gpkit.nomials.Monomial('x')
     >>> exp = gpkit.small_classes.HashVector({x: 2})
     """
+#    collapse_arrays = False
+
     def __init__(self, *args, **kwargs):
         super(HashVector, self).__init__(*args, **kwargs)
         self._hashvalue = None
