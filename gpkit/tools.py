@@ -38,13 +38,14 @@ def composite_objective(*objectives, **kwargs):
     if "k" in kwargs:
         k = kwargs["k"]
     else:
-        k = 10
+        k = 4
     if "sweep" in kwargs:
         sweeps = [kwargs["sweep"]]*(n-1)
     elif "sweeps" in kwargs:
         sweeps = kwargs["sweeps"]
     else:
-        sweeps = [np.linspace(0, 1, k)]*(n-1)
+        kf = 1/float(k)
+        sweeps = [np.linspace(kf, 1-kf, k)]*(n-1)
     if "normsub" in kwargs:
         normalization = [p.sub(kwargs["normsub"]) for p in objectives]
     else:

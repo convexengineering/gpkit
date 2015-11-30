@@ -1,6 +1,13 @@
 """Assorted helper methods"""
 from collections import Iterable
-from .small_classes import Strings, Quantity
+from .small_classes import Strings, Quantity, veckeyed
+
+
+def listify(l):
+    if isinstance(l, Iterable):
+        return list(l)
+    else:
+        return [l]
 
 
 def isequal(a, b):

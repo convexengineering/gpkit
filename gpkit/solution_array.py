@@ -132,9 +132,10 @@ class SolutionArray(DictOfLists):
                                    fixedcols=fixedcols,
                                    included_models=included_models,
                                    excluded_models=excluded_models)]
-        if (in_both_and_truthy_in_second("sensitivities", tables, self) and
-            "constants" in self and self["constants"]):
-            strs += [results_table(self["sensitivities"]["variables"],
+        if (in_both_and_truthy_in_second("sensitivities", tables, self)
+                and "constants" in self["sensitivities"]
+                and self["sensitivities"]["constants"]):
+            strs += [results_table(self["sensitivities"]["constants"],
                                    "Sensitivities",
                                    fixedcols=fixedcols,
                                    included_models=included_models,

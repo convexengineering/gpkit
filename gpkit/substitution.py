@@ -6,103 +6,60 @@ import numpy as np
 from collections import defaultdict, Iterable
 
 from .small_classes import Numbers, Strings, Quantity
-from .small_classes import HashVector
+from .small_classes import HashVector, KeyDict
 from .nomials import Monomial
 from .varkey import VarKey
 from .variables import VectorVariable
 
-from .small_scripts import is_sweepvar
+from .small_scripts import is_sweepvar, veckeyed
 from .small_scripts import mag
 
 from . import DimensionalityError
 
 
-def get_constants(nomial, substitutions):
-    subs = {}
-    varset = frozenset(nomial.varkeys)
+def parse_subs(varkeys, substitutions):
+    constants, sweep, linkedsweep = {}, {}, {}
     for var, sub in substitutions.items():
-        if not is_sweepvar(sub):
-            if isinstance(var, Monomial):
-                var_ = VarKey(var)
-                if var_ in varset:
-                    subs[var_] = sub
-            # elif isinstance(var, Strings):
-            #     if var in nomial.varstrs:
-            #         var_ = nomial.varstrs[var]
-            #         vectorsub(subs, var_, sub, varset)
+        keys = varkeys[var]
+        if keys:
+            sweepsub = is_sweepvar(sub)
+            if sweepsub:
+                _, sub = sub  # _ catches the "sweep" marker
+        for key in keys:
+            if not key.shape or not hasattr(sub, "__len__"):
+                value = sub
             else:
-                vectorsub(subs, var, sub, varset)
-    return subs
-
-
-def vectorsub(subs, var, sub, varset):
-    "Vectorized substitution"
-
-    if hasattr(var, "__len__"):
-        isvector = True
-    elif hasattr(var, "descr"):
-        isvector = "shape" in var.descr and not "idx" in var.descr
-        if isvector:
-            var = VectorVariable(**var.descr)
-    else:
-        isvector = False
-
-    if isvector:
-        if isinstance(sub, VarKey):
-            sub = VectorVariable(**sub.descr)
-        if hasattr(sub, "__len__"):
-            if hasattr(sub, "shape"):
-                isvector = bool(sub.shape)
-        else:
-            isvector = False
-
-    if isvector:
-        sub = np.array(sub)
-        var = np.array(var)
-        it = np.nditer(var, flags=['multi_index', 'refs_ok'])
-        while not it.finished:
-            i = it.multi_index
-            it.iternext()
-            var_ = var[i]
-            if var_ is not 0:
-                v = VarKey(var_)
-                if v in varset:
-                    subs[v] = sub[i]
-    elif var in varset:
-        subs[var] = sub
-
-
-def separate_subs(nomial, substitutions):
-    "Separate substitutions by type."
-    sweep, linkedsweep = {}, {}
-    constants = dict(substitutions)
-    for var, sub in substitutions.items():
-        if is_sweepvar(sub):
-            del constants[var]
-            if isinstance(var, Monomial):
-                var = VarKey(var)
-            # elif isinstance(var, Strings):
-            #     var = nomial.varstrs[var]
-            if isinstance(var, Iterable):
-                suba = np.array(sub[1])
-                if len(var) == suba.shape[0]:
-                    for i, v in enumerate(var):
-                        if hasattr(suba[i], "__call__"):
-                            linkedsweep.update({VarKey(v): suba[i]})
-                        else:
-                            sweep.update({VarKey(v): suba[i]})
-                elif len(var) == suba.shape[1]:
-                    raise ValueError("whole-vector substitution"
-                                     " is not yet supported")
+                sub = np.array(sub) if not hasattr(sub, "shape") else sub
+                if key.shape == sub.shape:
+                    value = sub[key.idx]
+                    if is_sweepvar(value):
+                        _, value = value
+                        sweepsub = True
+                elif sweepsub:
+                    try:
+                        assert key.shape != sub.shape
+                        np.broadcast(sub, np.empty(key.shape))
+                    except ValueError:
+                        raise ValueError("cannot sweep variable %s of shape %s"
+                                         " with array of shape %s; array shape"
+                                         " must either be %s or %s" %
+                                         (key.str_without("model"), key.shape,
+                                          sub.shape,
+                                          key.shape, ("N",)+key.shape))
+                    idx = (slice(None),)+key.descr["idx"]
+                    value = sub[idx]
                 else:
-                    raise ValueError("vector substitutions must share a"
-                                     "dimension with the variable vector")
-            elif hasattr(sub[1], "__call__"):
-                linkedsweep.update({var: sub[1]})
+                    raise ValueError("cannot substitute array of shape %s for"
+                                     " variable %s of shape %s." %
+                                     (sub.shape, key.str_without("model"),
+                                      key.shape))
+            if not sweepsub:
+                constants[key] = value
+            elif not hasattr(value, "__call__"):
+                sweep[key] = value
             else:
-                sweep.update({var: sub[1]})
-    constants = get_constants(nomial, constants)
-    return sweep, linkedsweep, constants
+                linkedsweep[key] = value
+    return constants, sweep, linkedsweep
 
 
 def substitution(nomial, substitutions, val=None):
@@ -136,12 +93,13 @@ def substitution(nomial, substitutions, val=None):
     if val is not None:
         substitutions = {substitutions: val}
 
-    subs = get_constants(nomial, substitutions)
+    if not substitutions:
+        return nomial.varlocs, nomial.exps, nomial.cs, substitutions
+
+    subs, _, _ = parse_subs(nomial.varkeys, substitutions)
 
     if not subs:
         return nomial.varlocs, nomial.exps, nomial.cs, subs
-        # raise KeyError("could not find anything to substitute"
-        #                "in %s" % substitutions)
 
     exps_ = [HashVector(exp) for exp in nomial.exps]
     cs_ = np.array(nomial.cs)

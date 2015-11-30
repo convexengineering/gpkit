@@ -8,34 +8,35 @@ from gpkit import SignomialsEnabled
 class TestMonomial(unittest.TestCase):
     """TestCase for the Monomial class"""
 
-    def setUp(self):
-        pass
-
     def test_init(self):
         "Test multiple ways to create a Monomial"
         m = Monomial({'x': 2, 'y': -1}, 5)
         m2 = Monomial({'x': 2, 'y': -1}, 5)
-        self.assertEqual(m.varlocs, {'x': [0], 'y': [0]})
-        self.assertEqual(m.exp, {'x': 2, 'y': -1})
+        x, y = m.varkeys.map("x y".split())
+        self.assertEqual(m.varlocs, {x: [0], y: [0]})
+        self.assertEqual(m.exp, {x: 2, y: -1})
         self.assertEqual(m.c, 5)
         self.assertEqual(m, m2)
 
         # default c and a
         m = Monomial('x')
-        self.assertEqual(m.varlocs, {'x': [0]})
-        self.assertEqual(m.exp, {'x': 1})
+        x = m.varkeys.map("x")
+        self.assertEqual(m.varlocs, {x: [0]})
+        self.assertEqual(m.exp, {x: 1})
         self.assertEqual(m.c, 1)
 
         # single (string) var with non-default c
         m = Monomial('tau', .1)
-        self.assertEqual(m.varlocs, {'tau': [0]})
-        self.assertEqual(m.exp, {'tau': 1})
+        tau = m.varkeys.map(["tau"])
+        self.assertEqual(m.varlocs, {tau: [0]})
+        self.assertEqual(m.exp, {tau: 1})
         self.assertEqual(m.c, .1)
 
         # variable names not compatible with python namespaces
         crazy_varstr = 'what the !!!/$**?'
         m = Monomial({'x': 1, crazy_varstr: .5}, 25)
-        self.assertTrue(crazy_varstr in m.exp)
+        crazy_varkey = m.varkeys.map([crazy_varstr])
+        self.assertTrue(crazy_varkey in m.exp)
 
         # non-positive c raises
         self.assertRaises(ValueError, Monomial, 'x', -2)
@@ -228,13 +229,14 @@ class TestPosynomial(unittest.TestCase):
         p = Posynomial(({'m': 1, 'v': 2},
                         {'m': 1, 'g': 1, 'h': 1}),
                        (0.5, 1))
+        m, g, h, v = p.varkeys.map("m g h v".split())
         self.assertTrue(all(isinstance(x, float) for x in p.cs))
         self.assertEqual(len(p.exps), 2)
-        self.assertEqual(set(p.varlocs), set(('m', 'g', 'h', 'v')))
-        self.assertEqual(p.varlocs['g'], p.varlocs['h'])
-        self.assertNotEqual(p.varlocs['g'], p.varlocs['v'])
-        self.assertEqual(len(p.varlocs['m']), 2)
-        self.assertTrue(all(len(p.varlocs[key]) == 1 for key in 'ghv'))
+        self.assertEqual(set(p.varlocs), set([m, g, h, v]))
+        self.assertEqual(p.varlocs[g], p.varlocs[h])
+        self.assertNotEqual(p.varlocs[g], p.varlocs[v])
+        self.assertEqual(len(p.varlocs[m]), 2)
+        self.assertTrue(all(len(p.varlocs[key]) == 1 for key in [g, h, v]))
 
     def test_eq(self):
         """Test Posynomial __eq__"""
@@ -282,8 +284,10 @@ class TestPosynomial(unittest.TestCase):
         x = Monomial('x')
         y = Monomial('y')
         p = x**2 + 2*y*x + y**2
-        self.assertEqual(p <= 1, p.posy_lt1_rep)
-        self.assertEqual(p <= x, p/x)
+        self.assertEqual((p <= 1).posylt1_rep
+, p)
+        self.assertEqual((p <= x).posylt1_rep
+, p/x)
 
     def test_integer_division(self):
         "Make sure division by integer doesn't use Python integer division"
@@ -325,7 +329,6 @@ class TestPosynomial(unittest.TestCase):
         p = (d*h**2 + h*d**2)
         m = p.mono_lower_bound({d: 1, h: 1})
         self.assertEqual(m, 2*(d*h)**1.5)
-
 
     def test_eq(self):
         """Test equality and inequality"""

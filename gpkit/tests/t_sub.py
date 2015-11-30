@@ -14,7 +14,7 @@ class TestNomialSubs(unittest.TestCase):
         x = Variable("x")
         p = x**2
         self.assertEqual(p.sub(x, 3), 9)
-        self.assertEqual(p.sub(x.varstrs["x"], 3), 9)
+        self.assertEqual(p.sub(x.varkeys["x"][0], 3), 9)
         self.assertEqual(p.sub("x", 3), 9)
 
     def test_basic(self):
@@ -119,15 +119,19 @@ class TestGPSubs(unittest.TestCase):
         x = Variable("x")
         y = VectorVariable(2, "y")
         m = Model(x, [x >= y.prod()])
+        m.substitutions.update({y: ('sweep', [[2, 3], [5, 7], [9, 11]])})
+        a = m.solve(verbosity=0)["cost"]
+        b = [6, 14, 22, 15, 35, 55, 27, 63, 99]
+        # below line fails with changing dictionary keys in py3
+        self.assertTrue(all(abs(a-b)/(a+b) < 1e-7))
+        m = Model(x, [x >= y.prod()])
         m.substitutions.update({y: ('sweep', [[2, 3], [5, 7, 11]])})
         a = m.solve(verbosity=0)["cost"]
         b = [10, 14, 22, 15, 21, 33]
-        # below line fails with changing dictionary keys in py3
-        # self.assertTrue(all(abs(a-b)/(a+b) < 1e-7))
+        self.assertTrue(all(abs(a-b)/(a+b) < 1e-7))
         m = Model(x, [x >= y.prod()])
-        m.substitutions.update({y: ('sweep',
-                                    [[2, 3], [5, 7], [9, 11], [13, 15]])})
-        self.assertRaises(ValueError, m.solve)
+        m.substitutions.update({y: ('sweep', [[2, 3, 9], [5, 7, 11]])})
+        self.assertRaises(ValueError, m.solve, verbosity=0)
 
     def test_vector_init(self):
         N = 6

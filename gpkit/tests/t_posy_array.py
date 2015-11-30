@@ -60,16 +60,15 @@ class TestPosyArray(unittest.TestCase):
         x_2 = Monomial('x', idx=(2,), shape=(3,), label='dummy variable')
         v = PosyArray([1, 2, 3]).T
         p = [x_0, x_1/2, x_2/3]
-        self.assertEqual(x <= v, p)
+        self.assertEqual((x <= v).as_posyslt1(), p)
 
     def test_substition(self):
         x = VectorVariable(3, 'x', label='dummy variable')
         c = {x: [1, 2, 3]}
-        s = PosyArray([Monomial({}, e) for e in [1, 2, 3]])
-        self.assertEqual(x.sub(c), s)
+        s = PosyArray([1, 2, 3])
+        self.assertEqual(x.sub(c), [Monomial({}, e) for e in [1, 2, 3]])
         p = x**2
-        s2 = PosyArray([Monomial({}, e) for e in [1, 4, 9]])
-        self.assertEqual(p.sub(c), s2)
+        self.assertEqual(p.sub(c), [Monomial({}, e) for e in [1, 4, 9]])
         d = p.sum()
         self.assertEqual(d.sub(c), Monomial({}, 14))
 

@@ -182,34 +182,13 @@ class TestGP(unittest.TestCase):
         sol = prob.solve(verbosity=0)
         self.assertAlmostEqual(sol["cost"], 1/3.5, self.ndig)
 
-    def test_check_result(self):
-        """issue 361"""
-        N = 5
-        L = 5.
-        dx = L/(N-1)
-        EI = Variable("EI",10)
-        p = VectorVariable(N, "p")
-        p = p.sub(p, 100*np.ones(N))
-        V  = VectorVariable(N, "V")
-        M  = VectorVariable(N, "M")
-        th = VectorVariable(N, "th")
-        w  = VectorVariable(N, "w")
-        eps = 1E-6
-        substitutions = {var: eps for var in [V[-1], M[-1], th[0], w[0]]}
-        objective = w[-1]
-        constraints = [EI*V.left[1:N]     >= EI*V[1:N]    + 0.5*dx*p.left[1:N]     + 0.5*dx*p[1:N],
-                       EI*M.left[1:N]     >= EI*M[1:N]    + 0.5*dx*V.left[1:N]     + 0.5*dx*V[1:N],
-                       EI*th.right[0:N-1] >= EI*th[0:N-1] + 0.5*dx*M.right[0:N-1]  + 0.5*dx*M[0:N-1],
-                       EI*w.right[0:N-1]  >= EI*w[0:N-1]  + 0.5*dx*th.right[0:N-1] + 0.5*dx*th[0:N-1]]
-        m = Model(objective, constraints, substitutions)
-        sol = m.solve(verbosity=0)
-
     def test_exps_is_tuple(self):
         """issue 407"""
         x = Variable('x')
         m = Model(x, [x >= 1])
         m.solve(verbosity=0)
         self.assertEqual(type(m.program.cost.exps), tuple)
+
 
 class TestSP(unittest.TestCase):
     """test case for SP class -- gets run for each installed solver"""

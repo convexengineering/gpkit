@@ -57,8 +57,32 @@ class KeyDict(dict):
     collapse_arrays = True
 
     def __init__(self, *args, **kwargs):
-        self.update(*args, **kwargs)
         self.baked_keystrs = None
+        self.update(*args, **kwargs)
+
+    @classmethod
+    def with_keys(cls, varkeys, *dictionaries):
+        out = cls()
+        for dictionary in dictionaries:
+            for key, value in dictionary.items():
+                keys = varkeys[key]
+                for key in keys:
+                    if not "shape" in key.descr and "idx" not in key.descr:
+                        # not a veckey
+                        out[key] = value
+                    else:
+                        out[veckeyed(key)] = value
+        return out
+
+    @classmethod
+    def from_constraints(cls, varkeys, constraints, substitutions=None):
+        substitutions = substitutions if substitutions else {}
+        constraintsubs = []
+        for constraint in constraints:
+            constraintsubs.append(constraint.substitutions)
+            constraint.substitutions = {}
+        sublist = constraintsubs + [substitutions]
+        return cls.with_keys(varkeys, *sublist)
 
     def __contains__(self, key):
         if dict.__contains__(self, key):
@@ -66,6 +90,9 @@ class KeyDict(dict):
         elif hasattr(key, "key"):
             if dict.__contains__(self, key.key):
                 return True
+            elif self.is_veckey_but_not_collapsed(key):
+                if any(k in self for k in self.getkeys(key)):
+                    return True
             elif self.is_index_into_vector(key.key):
                 if dict.__contains__(self, veckeyed(key.key)):
                     return True
@@ -95,14 +122,39 @@ class KeyDict(dict):
         if isinstance(key, Strings):
             return self.keystrs()[key]
         elif hasattr(key, "key"):
-            return set([key.key])
-        else:
-            raise ValueError("%s (type %s) is an invalid key for a KeyDict."
-                             % (key, type(key)))
+            key = key.key
+            if self.is_veckey_but_not_collapsed(key):
+                keys = set()
+                array = np.empty(key.descr["shape"])
+                it = np.nditer(array, flags=['multi_index', 'refs_ok'])
+                while not it.finished:
+                    i = it.multi_index
+                    it.iternext()
+                    idx_key = key.__class__(idx=i, **key.descr)
+                    keys.add(idx_key)
+                return keys
+            else:
+                return set([key])
+        raise ValueError("%s %s is an invalid key for a KeyDict."
+                         % (key, type(key)))
+
+    def is_veckey_but_not_collapsed(self, key):
+        if "shape" not in key.descr:
+            return False
+        if "idx" in key.descr:
+            return False
+        if self.collapse_arrays:
+            return False
+        return True
 
     def is_index_into_vector(self, key):
-        return ("idx" in key.descr and
-                "shape" in key.descr and self.collapse_arrays)
+        if not self.collapse_arrays:
+            return False
+        if "idx" not in key.descr:
+            return False
+        if "shape" not in key.descr:
+            return False
+        return True
 
     def __dgi(self, key):
         return dict.__getitem__(self, key)
@@ -132,7 +184,10 @@ class KeyDict(dict):
             if self.is_index_into_vector(key):
                 veckey = veckeyed(key)
                 if veckey not in self:
-                    emptyvec = np.full(key.descr["shape"], np.nan)
+                    kwargs = {}
+                    if not isinstance(value, Numbers):
+                        kwargs["dtype"] = "object"
+                    emptyvec = np.full(key.descr["shape"], np.nan, **kwargs)
                     dict.__setitem__(self, veckey, emptyvec)
                 self.__dgi(veckey)[key.descr["idx"]] = value
             else:
@@ -146,9 +201,34 @@ class KeyDict(dict):
                 self.__dgi(veckeyed(key))[key.descr["idx"]] = np.nan
 
 
+class KeySet(KeyDict):
+    collapse_arrays = False
+
+    def __getitem__(self, key):
+        if key not in self:
+            return []
+        return [k for k in self.getkeys(key) if k in self]
+
+    def __setitem__(self, key, value):
+        KeyDict.__setitem__(self, key, None)
+
+    def map(self, iterable):
+        varkeys = []
+        for key in iterable:
+            keys = self[key]
+            if len(keys) > 1:
+                raise ValueError("KeySet.map() only accepts unambiguous keys.")
+            key, = keys
+            varkeys.append(key)
+        if len(varkeys) == 1:
+            varkeys = varkeys[0]
+        return varkeys
+
+
 def veckeyed(key):
     vecdescr = dict(key.descr)
     del vecdescr["idx"]
+    vecdescr.pop("value", None)
     return key.__class__(**vecdescr)
 
 
@@ -204,6 +284,8 @@ def enlist_dict(i, o):
         if isinstance(v, dict):
             o[k] = enlist_dict(v, v.__class__())
         else:
+            if isinstance(v, np.ndarray) and v.size == 1:
+                v = v.flatten()[0]
             o[k] = [v]
     assert set(i.keys()) == set(o.keys())
     return o
@@ -215,6 +297,8 @@ def append_dict(i, o):
         if isinstance(v, dict):
             o[k] = append_dict(v, o[k])
         else:
+            if isinstance(v, np.ndarray) and v.size == 1:
+                v = v.flatten()[0]
             o[k].append(v)
             # consider apennding nan / nanvector for new / missed keys
     # assert set(i.keys()) == set(o.keys())  # keys change with swept varkeys
@@ -243,7 +327,7 @@ def enray_dict(i, o):
             o[k] = enray_dict(v, v.__class__())
         else:
             if len(v) == 1:
-                o[k] = np.array(v[0])
+                o[k] = v[0]
             else:
                 o[k] = np.array(v)
                 # consider apennding nan / nanvector for new / missed keys
@@ -282,12 +366,12 @@ class HashVector(dict):
 
     def __neg__(self):
         "Return Hashvector with each value negated."
-        return HashVector({key: -val for (key, val) in self.items()})
+        return self.__class__({key: -val for (key, val) in self.items()})
 
     def __pow__(self, other):
         "Accepts scalars. Return Hashvector with each value put to a power."
         if isinstance(other, Numbers):
-            return HashVector({key: val**other for (key, val) in self.items()})
+            return self.__class__({key: val**other for (key, val) in self.items()})
         else:
             return NotImplemented
 
@@ -297,10 +381,10 @@ class HashVector(dict):
         If the other object inherits from dict, multiplication is element-wise
         and their key's intersection will form the new keys."""
         if isinstance(other, Numbers):
-            return HashVector({key: val*other for (key, val) in self.items()})
+            return self.__class__({key: val*other for (key, val) in self.items()})
         elif isinstance(other, dict):
             keys = set(self).intersection(other)
-            return HashVector({key: self[key] * other[key] for key in keys})
+            return self.__class__({key: self[key] * other[key] for key in keys})
         else:
             return NotImplemented
 
@@ -310,12 +394,12 @@ class HashVector(dict):
         If the other object inherits from dict, addition is element-wise
         and their key's union will form the new keys."""
         if isinstance(other, Numbers):
-            return HashVector({key: val+other
+            return self.__class__({key: val+other
                                for (key, val) in self.items()})
         elif isinstance(other, dict):
             keys = set(self).union(other)
             sums = {key: self.get(key, 0) + other.get(key, 0) for key in keys}
-            return HashVector(sums)
+            return self.__class__(sums)
         else:
             return NotImplemented
 

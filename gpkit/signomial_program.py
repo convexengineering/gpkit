@@ -8,7 +8,6 @@ from operator import mul
 from .geometric_program import GeometricProgram
 from .nomials import Signomial, PosynomialConstraint
 
-from .substitution import get_constants
 from .feasibility import feasibility_model
 
 
@@ -54,23 +53,23 @@ class SignomialProgram(object):
         self.constraints = constraints
         self.posyconstraints = []
         self.localposyconstraints = []
-        if substitutions is None:
-            substitutions = {}
-        self.substitutions = substitutions
+        self.substitutions = substitutions if substitutions else {}
 
         for constraint in self.constraints:
             if substitutions:
                 constraint.substitutions.update(substitutions)
             posy = False
-            if hasattr(constraint, "as_posyslt1"):
+            if hasattr(constraint, "as_localposyconstr"):
+                posy = constraint.as_localposyconstr(None)
+                if posy:
+                    self.localposyconstraints.append(constraint)
+            if not posy and hasattr(constraint, "as_posyslt1"):
                 posy = constraint.as_posyslt1()
-            if posy:
-                self.posyconstraints.append(posy)
-            elif hasattr(constraint, "as_localposyconstr"):
-                self.localposyconstraints.append(constraint)
-            else:
-                raise ValueError("%s is an invalid constraint for a"
-                                 " SignomialProgram" % constraint)
+                if posy:
+                    self.posyconstraints.append(constraint)
+                else:
+                    raise ValueError("%s is an invalid constraint for a"
+                                     " SignomialProgram" % constraint)
 
         if not self.localposyconstraints:
             raise ValueError("SignomialPrograms must contain at least one"
@@ -143,11 +142,11 @@ class SignomialProgram(object):
         posyapproxs = gp.constraints[len(self.posyconstraints):]
         for i, posyapprox in enumerate(posyapproxs):
             constr = self.localposyconstraints[i]
-            posyapprox_sens = constr_senss.pop(posyapprox)
-            var_senss = result["sensitivities"]["variables"]
-            constr_sens = constr.sensitivities(posyapprox, posyapprox_sens,
-                                               var_senss)
-            result["sensitivities"]["constraints"][constr] = constr_sens
+            posyapprox_sens = constr_senss.pop(str(posyapprox))
+            var_senss = result["sensitivities"]["constants"]
+            constr_sens = constr.sp_sensitivities(posyapprox, posyapprox_sens,
+                                                  var_senss)
+            result["sensitivities"]["constraints"][str(constr)] = constr_sens
 
         result["signomialstart"] = startpoint
         self.result = result  # NOTE: SIDE EFFECTS
@@ -158,11 +157,9 @@ class SignomialProgram(object):
         for constraint in self.localposyconstraints:
             lpc = constraint.as_localposyconstr(x0)
             if not lpc:
-                constraint = self.localposyconstraints[i]
                 raise ValueError("%s is an invalid constraint for a"
                                  " SignomialProgram" % constraint)
-            elif lpc is not True:
-                localposyconstraints.append(lpc)
+            localposyconstraints.append(lpc)
         constraints = self.posyconstraints + localposyconstraints
         return GeometricProgram(self.cost, constraints, self.substitutions,
                                 verbosity=verbosity)

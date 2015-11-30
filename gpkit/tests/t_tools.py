@@ -16,9 +16,8 @@ class TestMathModels(unittest.TestCase):
         obj = composite_objective(L+W, W**-1 * L**-3, sub={L: 1, W: 1})
         m = Model(obj, eqns)
         sol = m.solve(verbosity=0)
-        a = sol["sensitivities"]["variables"]["w_{CO}"].flatten()
-        b = np.array([0, 0.98809322, 0.99461408, 0.99688676, 0.99804287,
-                      0.99874303, 0.99921254, 0.99954926, 0.99980255, 1])
+        a = sol["cost"]
+        b = np.array([1.58856898, 2.6410391,  3.69348122, 4.74591386])
         self.assertTrue((abs(a-b)/(a+b+1e-7) < 1e-7).all())
 
     def test_te_exp_minus1(self):

@@ -12,7 +12,7 @@ import numpy as np
 from collections import defaultdict
 from time import time
 
-from .small_classes import Numbers, Strings
+from .small_classes import Numbers, Strings, KeySet, KeyDict
 from .nomials import MonoEQConstraint
 from .nomials import PosynomialConstraint, SignomialConstraint
 from .nomials import Signomial, Monomial
@@ -26,9 +26,9 @@ from . import SignomialsEnabled
 
 from .nomial_data import NomialData
 
-from .substitution import get_constants, separate_subs
+from .substitution import parse_subs
 from .substitution import substitution
-from .small_scripts import mag, flatten, latex_num
+from .small_scripts import mag, flatten, latex_num, veckeyed
 from .nomial_data import simplify_exps_and_cs
 from .feasibility import feasibility_model
 
@@ -105,13 +105,10 @@ class Model(object):
 
         self.cost = Signomial(cost) if cost else Monomial(1)
         self.constraints = list(constraints) if constraints else []
-        self.substitutions = substitutions
-        for key, value in substitutions.items():
-            # update string keys to varkeys
-            if isinstance(key, Strings):
-                del self.substitutions[key]
-                self.substitutions[self[key]] = value
-
+        subs = self.cost.values
+        subs.update(substitutions)
+        self.substitutions = KeyDict.from_constraints(self.varkeys,
+                                                      self.constraints, subs)
         if isobjectmodel:
             # TODO: use super instead of Model?
             k = Model.model_nums[name]
@@ -119,18 +116,12 @@ class Model(object):
             name += str(k) if k else ""
             self.modelname = name
             processed_keys = set()
-            for s in self.signomials:
-                for k in s.varlocs:
+            for c in self.constraints:
+                for k in c.varkeys:
                     if k not in processed_keys:
                         processed_keys.add(k)
                         model = name + k.descr.get("model", "")
                         k.descr["model"] = model
-                for exp in s.exps:
-                    for k in exp:
-                        if k not in processed_keys:
-                            processed_keys.add(k)
-                            model = name + k.descr.pop("model", "")
-                            k.descr["model"] = model
             for k, v in self.substitutions.items():
                 # doesn't work for Var / Vec substitution yet
                 if k not in processed_keys:
@@ -204,22 +195,16 @@ class Model(object):
 
     @property
     def varkeys(self):
-        varkeys = set()
+        varkeys = KeySet(self.cost.varkeys)
         for constraint in self.constraints:
             varkeys.update(constraint.varkeys)
         return varkeys
 
     @property
-    def varstrs(self):
-        return {str(vk): vk for vk in self.varkeys}
-
-    @property
     def allsubs(self):
-        substitutions = {}
-        for constraint in self.constraints:
-            substitutions.update(constraint.substitutions)
-        substitutions.update(self.substitutions)
-        return substitutions
+        newsubs = KeyDict.from_constraints(self.varkeys, self.constraints)
+        self.substitutions.update(newsubs)
+        return self.substitutions
 
     @property
     def varsbyname(self):
@@ -387,7 +372,7 @@ class Model(object):
         #               "unbounded variables to maintain solver compatibility.")
         #     self.zero_lower_unbounded_variables()
 
-        sweep, linkedsweep, _ = separate_subs(self, self.allsubs)
+        constants, sweep, linkedsweep = parse_subs(self.varkeys, self.allsubs)
         solution = SolutionArray()
         kwargs.update({"solver": solver})
 
@@ -413,8 +398,9 @@ class Model(object):
                                     for v in var.descr["args"]])
                           for var, fn in linkedsweep.items()}
                 this_pass.update(linked)
+                constants.update(this_pass)
                 program, solvefn = self.form_program(programType, verbosity,
-                                                     substitutions=this_pass)
+                                                     substitutions=constants)
                 try:
                     result = solvefn(*args, **kwargs)
                     return program, result
@@ -437,9 +423,10 @@ class Model(object):
                                          " To ignore such failures, solve with"
                                          " skipsweepfailures=True.")
 
-            solution["sweepvariables"] = {}
+            solution["sweepvariables"] = KeyDict()
+            ksweep, klinkedsweep = KeyDict(sweep), KeyDict(linkedsweep)
             for var, val in solution["constants"].items():
-                if var in sweep or var in linked_sweep:
+                if var in ksweep or var in klinkedsweep:
                     solution["sweepvariables"][var] = val
                     del solution["constants"][var]
                 else:
@@ -453,7 +440,8 @@ class Model(object):
         else:
             kwargs.update({"verbosity": verbosity-1})
             # NOTE: SIDE EFFECTS
-            self.program, solvefn = self.form_program(programType, verbosity)
+            self.program, solvefn = self.form_program(programType, verbosity,
+                                                      substitutions=constants)
             result = solvefn(*args, **kwargs)
             # add localmodel here
             solution.append(result)
@@ -468,11 +456,11 @@ class Model(object):
     # TODO: add sweepgp(index)?
 
     def gp(self, verbosity=2):
-        gp, _ = form_program("gp", verbosity)
+        gp, _ = self.form_program("gp", verbosity)
         return gp
 
     def sp(self, verbosity=2):
-        sp, _ = form_program("sp", verbosity)
+        sp, _ = self.form_program("sp", verbosity)
         return sp
 
     @property
@@ -489,136 +477,6 @@ class Model(object):
     @property
     def isSP(self):
         return not self.isGP
-
-    def feasibility(self,
-                    search=["overall", "constraints", "constants"],
-                    constvars=None, verbosity=0):
-        """Searches for feasibile versions of the Model.
-
-        Argument
-        --------
-        search : list of strings or string
-            The search(es) to perform. Details on each type below.
-        constvars : iterable
-            If declared, only constants in constvars will be changed.
-            Otherwise, all constants can be changed in a constants search.
-        verbosity : int
-            If greater than 0, will print a report.
-            Decremented by 1 and passed to solvers.
-
-        Returns
-        -------
-        feasibilities : dict, float, or list
-            Has an entry for each search; if only one, returns that directly.
-
-            "overall" : float
-                The smallest number each constraint's less-than side would
-                have to be divided by to make the program feasible.
-            "constraints" : array of floats
-                Similar to "overall", but contains a number for each
-                constraint, and minimizes the product of those numbers.
-            "constants" : dict of varkeys: floats
-                A substitution dictionary that would make the program feasible,
-                chosen to minimize the product of new_values/old_values.
-
-        Examples
-        -------
-        >>> from gpkit import Variable, Model, PosyArray
-        >>> x = Variable("x")
-        >>> x_min = Variable("x_min", 2)
-        >>> x_max = Variable("x_max", 1)
-        >>> m = Model(x, [x <= x_max, x >= x_min])
-        >>> # m.solve()  # RuntimeWarning!
-        >>> feas = m.feasibility()
-        >>>
-        >>> # USING OVERALL
-        >>> m.constraints = PosyArray(m.signomials)/feas["overall"]
-        >>> m.solve()
-        >>>
-        >>> # USING CONSTRAINTS
-        >>> m = Model(x, [x <= x_max, x >= x_min])
-        >>> m.constraints = PosyArray(m.signomials)/feas["constraints"]
-        >>> m.solve()
-        >>>
-        >>> # USING CONSTANTS
-        >>> m = Model(x, [x <= x_max, x >= x_min])
-        >>> m.substitutions.update(feas["constants"])
-        >>> m.solve()
-        """
-        signomials, unsubbed, allsubs = self.signomials_et_al
-
-        if self.isSP:
-            raise ValueError("""Signomials remained after substitution.
-
-    'Model.feasibility()' can only be called on Models without Signomials,
-    because only those Models guarantee global feasibilities. Models with
-    Signomials have only local feasibilities, which can be found with
-    'Model.localfeasibility()'.""")
-            raise
-        else:
-            return self._feasibility("gp", search, constvars, verbosity)
-
-    def localfeasibility(self,
-                         search=["overall", "constraints", "constants"],
-                         constvars=None, verbosity=0):
-        """Searches for locally feasibile versions of the Model.
-
-        For details, see the docstring for Model.feasibility.
-        """
-        if self.isGP:
-            raise ValueError("""No Signomials remained after substitution.
-
-    'Model.localfeasibility()' can only be called on models containing
-    Signomials, since such models have only local feasibilities. Models without
-    Signomials have global feasibilities, which can be found with
-    'Model.feasibility()'.""")
-            raise
-        else:
-            return self._feasibility("sp", search, constvars, verbosity)
-
-    def _feasibility(self, programtype, search, constvars, verbosity):
-        signomials, unsubbed, allsubs = self.signomials_et_al
-        feasibilities = {}
-
-        if "overall" in search:
-            m = feasibility_model(self, "max")
-            m.substitutions = allsubs
-            infeasibility = m._solve(programtype, None, verbosity, False)["cost"]
-            feasibilities["overall"] = infeasibility
-
-        if "constraints" in search:
-            m = feasibility_model(self, "product")
-            m.substitutions = allsubs
-            sol = m._solve(programtype, None, verbosity, False)
-            feasibilities["constraints"] = sol(m.slackvars)
-
-        if "constants" in search:
-            constants = get_constants(unsubbed, allsubs)
-            signomials, _ = simplify_and_mmap(signomials, {})
-            if constvars:
-                constvars = set(constvars)
-                # get varkey versions
-                constvars = get_constants(unsubbed.varkeys, unsubbed.varlocs,
-                                          dict(zip(constvars, constvars)))
-                # filter constants
-                constants = {k: v for k, v in constants.items()
-                             if k in constvars}
-            if constants:
-                m = feasibility_model(self, "constants", constants=constants,
-                                      signomials=signomials, programType=Model)
-                sol = m.solve(verbosity=verbosity)
-                feasiblevalues = sol(m.constvars)
-                var_infeas = {}
-                for i, slackval in enumerate(sol(m.slackb)):
-                    if slackval > 1.01:
-                        original_varkey = m.addvalue[m.constvarkeys[i]]
-                        var_infeas[original_varkey] = feasiblevalues[i]
-                feasibilities["constants"] = var_infeas
-
-        if len(feasibilities) == 1:
-            return feasibilities.values()[0]
-        else:
-            return feasibilities
 
     def __repr__(self):
         return "gpkit.%s(%s)" % (self.__class__.__name__, str(self))
@@ -691,9 +549,7 @@ class Model(object):
 
     def form_program(self, programType, verbosity=2, substitutions=None):
         "Generates a program and returns it and its solve function."
-        subs = dict(self.substitutions)
-        if substitutions:
-            subs.update(substitutions)
+        subs = substitutions if substitutions else {}
         if programType == "gp":
             gp = GeometricProgram(self.cost, self.constraints, subs, verbosity)
             return gp, gp.solve

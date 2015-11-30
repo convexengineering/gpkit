@@ -15,8 +15,12 @@ class TestConstraint(unittest.TestCase):
         c2 = 1 >= 5*x + 0.5
         self.assertEqual(type(c1), PosynomialConstraint)
         self.assertEqual(type(c2), PosynomialConstraint)
-        self.assertEqual(c1.posy_lt1_rep.cs, c2.posy_lt1_rep.cs)
-        self.assertEqual(c1.posy_lt1_rep.exps, c2.posy_lt1_rep.exps)
+        self.assertEqual(c1.posylt1_rep
+.cs, c2.posylt1_rep
+.cs)
+        self.assertEqual(c1.posylt1_rep
+.exps, c2.posylt1_rep
+.exps)
 
     def test_additive_scalar_gt1(self):
         """1 can't be greater than (1 + something positive)"""
@@ -32,13 +36,14 @@ class TestConstraint(unittest.TestCase):
         x = Variable('x')
         y = Variable('y')
         c = PosynomialConstraint(x, ">=", y**2)
-        self.assertEqual(c, y**2/x)
+        self.assertEqual(c.posylt1_rep
+, y**2/x)
         self.assertEqual(c.left, x)
         self.assertEqual(c.right, y**2)
         self.assertTrue(">=" in str(c))
-        # now force <= operator
-        c = Constraint(x, y**2, oper_ge=False)
-        self.assertEqual(c, x/y**2)
+        c = PosynomialConstraint(x, "<=", y**2)
+        self.assertEqual(c.posylt1_rep
+, x/y**2)
         self.assertEqual(c.left, x)
         self.assertEqual(c.right, y**2)
         self.assertTrue("<=" in str(c))
@@ -48,13 +53,16 @@ class TestConstraint(unittest.TestCase):
         x = Variable('x')
         y = Variable('y')
         c = (y >= 1 + x**2)
-        self.assertEqual(c.posy_lt1_rep, 1/y + x**2/y)
+        self.assertEqual(c.posylt1_rep
+, 1/y + x**2/y)
         self.assertEqual(c.left, y)
         self.assertEqual(c.right, 1 + x**2)
         self.assertTrue(">=" in str(c))
         # same constraint, switched operator direction
         c2 = (1 + x**2 <= y)  # same as c
-        self.assertEqual(c2.posy_lt1_rep, c.posy_lt1_rep)
+        self.assertEqual(c2.posylt1_rep
+, c.posylt1_rep
+)
 
 
 class TestMonoEQConstraint(unittest.TestCase):
@@ -69,7 +77,8 @@ class TestMonoEQConstraint(unittest.TestCase):
         mec = (x == y**2)
         # __init__
         mec2 = MonoEQConstraint(x, "=", y**2)
-        self.assertTrue(mono in mec2.posys_lt1_rep)
+        self.assertTrue(mono in mec2.posylt1_rep
+)
 
     def test_inheritance(self):
         """Make sure MonoEQConstraint inherits from the right things"""
