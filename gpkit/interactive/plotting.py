@@ -109,7 +109,7 @@ def plot_frontiers(gp, Zs, x=1, y=3, figsize=(15,5)):
     sol = gp.solution
     data = dict(sol["variables"])
     data.update({"S{%s}" % k: v
-                 for (k, v) in sol["sensitivities"]["variables"].items()})
+                 for (k, v) in sol["sensitivities"]["constants"].items()})
     if len(gp.sweep) == 2:
         contour_array(data,
                       gp.sweep.keys()[0],
@@ -203,7 +203,7 @@ def sensitivity_plot(gp, keys=None, xmax=1, yxmax=1):
     ymax = yxmax*xmax
     left_ax.set_ylim((-ymax, ymax))
     for k in keys:
-        s = gp.solution["sensitivities"]["variables"][k]
+        s = gp.solution["sensitivities"]["constants"][k]
         left_ax.plot((-xmax, xmax), (-xmax*s, xmax*s))
         if abs(s) > yxmax:
             top_ticks.append((ymax/s, str(k)))
