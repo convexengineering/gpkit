@@ -549,7 +549,7 @@ class Model(object):
 
     def form_program(self, programType, verbosity=2, substitutions=None):
         "Generates a program and returns it and its solve function."
-        subs = substitutions if substitutions else {}
+        subs = substitutions if substitutions else self.allsubs
         if programType == "gp":
             gp = GeometricProgram(self.cost, self.constraints, subs, verbosity)
             return gp, gp.solve

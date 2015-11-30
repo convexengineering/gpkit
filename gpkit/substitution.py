@@ -37,7 +37,6 @@ def parse_subs(varkeys, substitutions):
                         sweepsub = True
                 elif sweepsub:
                     try:
-                        assert key.shape != sub.shape
                         np.broadcast(sub, np.empty(key.shape))
                     except ValueError:
                         raise ValueError("cannot sweep variable %s of shape %s"

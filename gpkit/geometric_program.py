@@ -57,7 +57,7 @@ class GeometricProgram(NomialData):
             constr_posys = constraint.as_posyslt1()
             if not all(constr_posys):
                 raise ValueError("%s is an invalid constraint for a"
-                                 " GeometricProgram" % constr_posys)
+                                 " GeometricProgram" % constraint)
             self.constr_idxs.append(range(len(self.posynomials),
                                     len(self.posynomials)+len(constr_posys)))
             self.posynomials.extend(constr_posys)
