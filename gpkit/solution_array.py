@@ -182,7 +182,7 @@ def results_table(data, title, minval=0, printunits=True, fixedcols=True,
             b = isinstance(v, Iterable) and bool(v.shape)
             model = k.descr.get("model", "")
             models.add(model)
-            decorated.append((model, b, (varfmt % k.nomstr), i, k, v))
+            decorated.append((model, b, (varfmt % k.str_without("model")), i, k, v))
     if included_models:
         included_models = set(included_models)
         included_models.add("")
