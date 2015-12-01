@@ -93,6 +93,7 @@ class SolutionArray(DictOfLists):
 
     def table(self, tables=["cost", "freevariables", "sweepvariables",
                             "constants", "sensitivities"], fixedcols=True,
+                            included_models=None, excluded_models=None,
                             latex=False):
         if isinstance(tables, Strings):
             tables = [tables]
@@ -113,27 +114,38 @@ class SolutionArray(DictOfLists):
             strs += [results_table(self["sweepvariables"],
                                    "Sweep Variables",
                                    fixedcols=fixedcols,
+                                   included_models=None,
+                                   excluded_models=None,
                                    latex=latex)]
         if "freevariables" in tables:
             strs += [results_table(self["freevariables"],
                                    "Free Variables",
                                    fixedcols=fixedcols,
+                                   included_models=None,
+                                   excluded_models=None,
                                    latex=latex)]
         if "constants" in tables and self["constants"]:
             strs += [results_table(self["constants"],
                                    "Constants",
                                    fixedcols=fixedcols,
+                                   included_models=None,
+                                   excluded_models=None,
                                    latex=latex)]
         if "variables" in tables:
             strs += [results_table(self["variables"],
                                    "Variables",
                                    fixedcols=fixedcols,
+                                   included_models=None,
+                                   excluded_models=None,
                                    latex=latex)]
         if "sensitivities" in tables:
             strs += [results_table(self["sensitivities"]["variables"],
                                    "Sensitivities",
                                    fixedcols=fixedcols,
+                                   included_models=None,
+                                   excluded_models=None,
                                    minval=1e-2,
+                                   sortbyvals=True,
                                    printunits=False,
                                    latex=latex)]
         return "\n".join(strs)
@@ -141,7 +153,8 @@ class SolutionArray(DictOfLists):
 
 def results_table(data, title, minval=0, printunits=True, fixedcols=True,
                   varfmt="%s : ", valfmt="%-.4g ", vecfmt="%-8.3g",
-                  include_models=None, exclude_models=None, latex=False):
+                  included_models=None, excluded_models=None, latex=False,
+                  sortbyvals=False):
     """
     Pretty string representation of a dict of VarKeys
     Iterable values are handled specially (partial printing)
@@ -172,14 +185,25 @@ def results_table(data, title, minval=0, printunits=True, fixedcols=True,
             b = isinstance(v, Iterable) and bool(v.shape)
             model = k.descr.get("model", "")
             models.add(model)
-            decorated.append((model, b, (varfmt % k.nomstr), i, k, v))
-    if exclude_models:
-        models = models.difference(exclude_models)
-    if include_models:
-        models = models.intersection(include_models)
-    decorated.sort()
+            if not sortbyvals:
+                decorated.append((model, b, (varfmt % k.nomstr), i, k, v))
+            else:
+                decorated.append((model, np.mean(v), b, (varfmt % k.nomstr), i, k, v))
+    if included_models:
+        included_models = set(included_models)
+        included_models.add("")
+        models = models.intersection(included_models)
+    if excluded_models:
+        models = models.difference(excluded_models)
+    decorated.sort(reverse=sortbyvals)
     oldmodel = None
-    for model, isvector, varstr, _, var, val in decorated:
+    for varlist in decorated:
+        if not sortbyvals:
+            model, isvector, varstr, _, var, val = varlist
+        else:
+            model, _, isvector, varstr, _, var, val = varlist
+        if model not in models:
+            continue
         if model != oldmodel and len(models) > 1:
             if oldmodel is not None:
                 lines.append(["", "", "", ""])
@@ -212,7 +236,7 @@ def results_table(data, title, minval=0, printunits=True, fixedcols=True,
         lines = [[fmt.format(s) for fmt, s in zip(fmts, line)] for line in lines]
         lines = [title] + ["-"*len(title)] + [''.join(l) for l in lines] + [""]
     else:
-        lines = ["\\toprule"] + [title + "\\\\"] + ["\\midrule"] + [''.join(l) for l in lines] + ["\\bottomrule"] + [""] 
+        lines = ["\\toprule"] + [title + "\\\\"] + ["\\midrule"] + [''.join(l) for l in lines] + ["\\bottomrule"] + [""]
     return "\n".join(lines)
 
 
