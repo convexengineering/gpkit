@@ -98,7 +98,7 @@ class SolutionArray(DictOfLists):
         if isinstance(tables, Strings):
             tables = [tables]
         strs = []
-        if "cost" in tables:
+        if not latex and "cost" in tables:
             strs += ["\nCost\n----"]
             if len(self) > 1:
                 costs = ["%-8.3g" % c for c in self["cost"][:4]]
@@ -199,7 +199,10 @@ def results_table(data, title, minval=0, printunits=True, fixedcols=True,
             if oldmodel is not None:
                 lines.append(["", "", "", ""])
             if model is not "":
-                lines.append([model+" | ", "", "", ""])
+                if not latex:
+                    lines.append([model+" | ", "", "", ""])
+                else:
+                    lines.append(["\\textbf{" + model + "} \\\\"])
             oldmodel = model
         label = var.descr.get('label', '')
         units = unitstr(var, into=" [%s] ", dimless="") if printunits else ""
@@ -214,8 +217,13 @@ def results_table(data, title, minval=0, printunits=True, fixedcols=True,
             lines.append([varstr, valstr, units, label])
         else:
             varstr = varstr.replace(" : ", "")
-            lines.append(["$", varstr, "$ & ", valstr, " & $ ",
-                          units.replace('**', '^'), "$ & ", label, " \\\\"])
+            if latex == 1:
+                lines.append(["$", varstr, "$ & ", valstr, "& $ ",
+                              units.replace('**', '^'), "$ & ", label, " \\\\"])
+            elif latex == 2:
+                lines.append(["$", varstr, "$ & $ ",
+                              units.replace('**', '^'), "$ & ", label, " \\\\"])
+
     if not latex:
         if lines:
             maxlens = np.max([list(map(len, line)) for line in lines], axis=0)
@@ -228,8 +236,11 @@ def results_table(data, title, minval=0, printunits=True, fixedcols=True,
         lines = [[fmt.format(s) for fmt, s in zip(fmts, line)]
                  for line in lines]
         lines = [title] + ["-"*len(title)] + [''.join(l) for l in lines] + [""]
-    else:
-        lines = (["\\toprule"] + [title + "\\\\"] + ["\\midrule"] +
+    elif latex == 1:
+        lines = (["\\toprule"] + [title + " & Value & Units & Description \\\\"] + ["\\midrule"] +
+                 [''.join(l) for l in lines] + ["\\bottomrule"] + [""])
+    elif latex == 2:
+        lines = (["\\toprule"] + [title + " & Units & Description \\\\"] + ["\\midrule"] +
                  [''.join(l) for l in lines] + ["\\bottomrule"] + [""])
     return "\n".join(lines)
 
