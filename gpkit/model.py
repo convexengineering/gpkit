@@ -109,6 +109,7 @@ class Model(object):
         subs.update(substitutions)
         self.substitutions = KeyDict.from_constraints(self.varkeys,
                                                       self.constraints, subs)
+        self.modelname = None
         if isobjectmodel:
             # TODO: use super instead of Model?
             k = Model.model_nums[name]
@@ -155,8 +156,7 @@ class Model(object):
         selfvars = self.varsbyname
         othervars = other.varsbyname
         overlap = set(selfvars) & set(othervars)
-        substitutions = dict(self.substitutions)
-        substitutions.update(other.substitutions)
+        varsubs = {}
         for name in overlap:
             if name in excluded:
                 continue
@@ -179,10 +179,17 @@ class Model(object):
             newvar = VarKey(**descr)
             for var in svars + ovars:
                 if var.key != newvar.key:
-                    substitutions[var.key] = newvar.key
-        return Model(self.cost,
-                     self.constraints + other.constraints,
-                     substitutions)
+                    varsubs[var.key] = newvar.key
+        cost = self.cost.sub(varsubs)
+        constraints = [c.sub(varsubs)
+                       for c in self.constraints + other.constraints]
+        substitutions = dict(self.substitutions)
+        substitutions.update(other.substitutions)
+        for var, subvar in varsubs.items():
+            if var in substitutions:
+                substitutions[subvar] = substitutions[var]
+                del substitutions[var]
+        return Model(self.cost, constraints, substitutions)
 
     def concat(self, other):
         if not isinstance(other, Model):
