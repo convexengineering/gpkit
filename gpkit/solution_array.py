@@ -237,11 +237,13 @@ def results_table(data, title, minval=0, printunits=True, fixedcols=True,
                  for line in lines]
         lines = [title] + ["-"*len(title)] + [''.join(l) for l in lines] + [""]
     elif latex == 1:
-        lines = (["\\toprule"] + [title + " & Value & Units & Description \\\\"] + ["\\midrule"] +
-                 [''.join(l) for l in lines] + ["\\bottomrule"] + [""])
+        lines = (["{\\footnotesize"] + ["\\begin{longtable}{llll}"] +
+                 ["\\toprule"] + [title + " & Value & Units & Description \\\\"] + ["\\midrule"] +
+                 [''.join(l) for l in lines] + ["\\bottomrule"] + ["\\end{longtable}}"] + [""])
     elif latex == 2:
-        lines = (["\\toprule"] + [title + " & Units & Description \\\\"] + ["\\midrule"] +
-                 [''.join(l) for l in lines] + ["\\bottomrule"] + [""])
+        lines = (["{\\footnotesize"] + ["\\begin{longtable}{lll}"] +
+                 ["\\toprule"] + [title + " & Units & Description \\\\"] + ["\\midrule"] +
+                 [''.join(l) for l in lines] + ["\\bottomrule"] + ["\\end{longtable}}"] + [""])
     return "\n".join(lines)
 
 
