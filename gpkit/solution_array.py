@@ -138,7 +138,7 @@ class SolutionArray(DictOfLists):
                                    included_models=included_models,
                                    excluded_models=excluded_models,
                                    latex=latex)]
-        if "sensitivities" in tables:
+        if "sensitivities" in tables and not latex: # TODO remove this
             strs += [results_table(self["sensitivities"]["variables"],
                                    "Sensitivities",
                                    fixedcols=fixedcols,
@@ -202,7 +202,7 @@ def results_table(data, title, minval=0, printunits=True, fixedcols=True,
                 if not latex:
                     lines.append([model+" | ", "", "", ""])
                 else:
-                    lines.append(["\\textbf{" + model + "} \\\\"])
+                    lines.append(["\multicolumn{3}{l}{\\textbf{" + model + "}} \\\\"])
             oldmodel = model
         label = var.descr.get('label', '')
         units = unitstr(var, into=" [%s] ", dimless="") if printunits else ""
@@ -217,12 +217,15 @@ def results_table(data, title, minval=0, printunits=True, fixedcols=True,
             lines.append([varstr, valstr, units, label])
         else:
             varstr = varstr.replace(" : ", "")
-            if latex == 1:
+            if latex == 1: # normal results table
                 lines.append(["$", varstr, "$ & ", valstr, "& $ ",
                               units.replace('**', '^'), "$ & ", label, " \\\\"])
-            elif latex == 2:
+            elif latex == 2: # no values
                 lines.append(["$", varstr, "$ & $ ",
                               units.replace('**', '^'), "$ & ", label, " \\\\"])
+            elif latex == 3: # no description
+                lines.append(["$", varstr, "$ & ", valstr, "& $ ",
+                              units.replace('**', '^'), "$ \\\\"])
 
     if not latex:
         if lines:
@@ -243,6 +246,10 @@ def results_table(data, title, minval=0, printunits=True, fixedcols=True,
     elif latex == 2:
         lines = (["{\\footnotesize"] + ["\\begin{longtable}{lll}"] +
                  ["\\toprule"] + [title + " & Units & Description \\\\"] + ["\\midrule"] +
+                 [''.join(l) for l in lines] + ["\\bottomrule"] + ["\\end{longtable}}"] + [""])
+    elif latex == 3:
+        lines = (["{\\footnotesize"] + ["\\begin{longtable}{lll}"] +
+                 ["\\toprule"] + [title + " & Value & Units \\\\"] + ["\\midrule"] +
                  [''.join(l) for l in lines] + ["\\bottomrule"] + ["\\end{longtable}}"] + [""])
     return "\n".join(lines)
 
