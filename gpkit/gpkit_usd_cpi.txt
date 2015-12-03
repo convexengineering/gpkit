@@ -1,3 +1,4 @@
+# source: http://www.bls.gov/cpi/cpid1510.pdf, table 24 (page 73)
 CPI = [money]
 USD2014 = CPI/236.736 = USD
 USD2013 = CPI/232.957
