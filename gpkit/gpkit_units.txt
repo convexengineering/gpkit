@@ -308,7 +308,7 @@ fluid_dram = floz / 8 = fldr = fluidram
 firkin = barrel / 4
 
 # GPkit units
-dollar = [money] = USD
+@import gpkit_usd_cpi.txt
 
 # contexts
 @context(n=1) spectroscopy = sp
