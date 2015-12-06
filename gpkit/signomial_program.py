@@ -139,6 +139,7 @@ class SignomialProgram(object):
                   + " and %.3g seconds." % (time() - self.starttime))
 
         constr_senss = result["sensitivities"]["constraints"]
+        # the approximated constraints are at the front of list
         posyapproxs = gp.constraints[len(self.posyconstraints):]
         for i, posyapprox in enumerate(posyapproxs):
             constr = self.localposyconstraints[i]

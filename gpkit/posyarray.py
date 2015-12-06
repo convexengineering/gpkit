@@ -9,7 +9,7 @@
 """
 
 import numpy as np
-from .small_classes import Numbers, KeyVector, KeySet, KeyDict
+from .small_classes import Numbers, HashVector, KeySet, KeyDict
 from .constraints import LocallyApproximableConstraint, GPConstraint
 
 from . import units as ureg
@@ -307,7 +307,7 @@ class ConstraintSet(LocallyApproximableConstraint, GPConstraint):
     def sens_from_dual(self, p_senss, m_sensss):
         assert self.all_have_posy_rep
         constr_sens = {}
-        var_senss = KeyVector()
+        var_senss = HashVector()
         offset = 0
         for i, n_posys in enumerate(self.posymap):
             constr = self.allposyconstrs[i]

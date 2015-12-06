@@ -165,7 +165,6 @@ class GeometricProgram(NomialData):
         assert len(self.varlocs) == len(primal)
         result["freevariables"] = dict(zip(self.varlocs, np.exp(primal)))
         result["variables"] = result["freevariables"]
-        x = result["variables"].keys()[0]
 
         if "objective" in solver_out:
             result["cost"] = float(solver_out["objective"])
@@ -192,6 +191,7 @@ class GeometricProgram(NomialData):
             raise RuntimeWarning("The dual solution was not returned.")
 
         result["sensitivities"] = {"constraints": {}}
+        # initialized the var_senss dict with constants in the subbed cost
         var_senss = {var: sum([self.cost.exps[i][var]*nu[i] for i in locs])
                      for (var, locs) in self.cost.varlocs.items()
                      if (var in self.cost.varlocs
@@ -214,7 +214,7 @@ class GeometricProgram(NomialData):
             result[key] = KeyDict(result[key])
             result[key].bake()
 
-        for constaint in self.constraints:
+        for constraint in self.constraints:
             if hasattr(constraint, "process_result"):
                 constraint.process_result(result)
 
@@ -353,7 +353,6 @@ def genA(exps, varlocs):
     for j, var in enumerate(varlocs):
         varsign = "both" if "value" in var.descr else None
         for i in varlocs[var]:
-            act_key = exps[i].keys()[exps[i].keys().index(var)]
             exp = exps[i][var]
             A.append(i, j, exp)
             if varsign is "both":

@@ -232,7 +232,3 @@ class HashVector(dict):
     def __div__(self, other): return self * other**-1
     def __rdiv__(self, other): return other * self**-1
     def __rmul__(self, other): return self * other
-
-
-class KeyVector(HashVector, KeyDict):
-    collapse_arrays = False
