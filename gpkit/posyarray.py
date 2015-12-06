@@ -10,6 +10,7 @@
 
 import numpy as np
 from .small_classes import Numbers, KeyVector, KeySet, KeyDict
+from .constraints import LocalConstraint, GlobalConstraint
 
 from . import units as ureg
 from . import DimensionalityError
@@ -208,7 +209,8 @@ class PosyArray(np.ndarray):
         return self.padright(0)[1:]
 
 
-class ConstraintSet(object):
+class ConstraintSet(LocalConstraint, GlobalConstraint):
+    substitutions = None
 
     def __init__(self, constraints, substitutions=None,
                  latex=None, string=None):
@@ -216,21 +218,17 @@ class ConstraintSet(object):
         cs = self.flatconstraints()
         vks = self.make_varkeys(cs)
         self.substitutions = KeyDict.from_constraints(vks, cs, substitutions)
-        if latex:
-            self.latex_rep = latex  # TODO
-        if string:
-            self.string = string  # TODO
 
     @property
     def varkeys(self):
         return self.make_varkeys()
 
     def make_varkeys(self, constraints=None):
-        self._varkeys = KeySet()
+        varkeys = KeySet()
         constraints = constraints if constraints else self.flatconstraints()
         for constr in constraints:
-            self._varkeys.update(constr.varkeys)
-        return self._varkeys
+            varkeys.update(constr.varkeys)
+        return varkeys
 
     def flatconstraints(self):
         constraints = self.constraints
@@ -266,6 +264,9 @@ class ConstraintSet(object):
     def __len__(self):
         return len(self.constraints)
 
+    def __getattr__(self, attr):
+        return getattr(self.constraints, attr)
+
     def __getitem__(self, idx):
         return self.constraints[idx]
 
@@ -294,13 +295,16 @@ class ConstraintSet(object):
         localposyconstrs.extend(self.onlyposyconstrs)
         return ConstraintSet(localposyconstrs, self.substitutions)
 
+    def __str__(self):
+        return str(self.constraints)
+
     def latex(self):
-        return "hihi"  # TODO
+        return self.constraints.latex()
 
     def sub(self, subs, value=None):
         return self  # TODO
 
-    def sensitivities(self, p_senss, m_sensss):
+    def sensitivities_from_dual(self, p_senss, m_sensss):
         assert self.all_have_posy_rep
         constr_sens = {}
         var_senss = KeyVector()
@@ -309,17 +313,17 @@ class ConstraintSet(object):
             constr = self.allposyconstrs[i]
             p_ss = p_senss[offset:offset+n_posys]
             m_sss = m_sensss[offset:offset+n_posys]
-            constr_sens[str(constr)], v_ss = constr.sensitivities(p_ss, m_sss)
+            constr_sens[str(constr)], v_ss = constr.sensitivities_from_dual(p_ss, m_sss)
             var_senss += v_ss
 
         return constr_sens, var_senss
 
-    def sp_sensitivities(self, posyapprox, posy_approx_sens, var_senss):
+    def sensitivities_from_approx(self, posyapprox, posy_approx_sens, var_senss):
         constr_sens = {}
         for i, lpc in enumerate(self.localposyconstrs):
             pa = posyapprox[i]
             p_a_s = posy_approx_sens[str(pa)]
-            constr_sens[str(lpc)] = lpc.sp_sensitivities(pa, p_a_s, var_senss)
+            constr_sens[str(lpc)] = lpc.sensitivities_from_approx(pa, p_a_s, var_senss)
         return constr_sens
 
     def process_result(self, result):

@@ -201,7 +201,7 @@ class GeometricProgram(NomialData):
             constr = self.constraints[c_i]
             p_senss = [la[p_i] for p_i in posy_idxs]
             m_sensss = [[nu[i] for i in self.m_idxs[p_i]] for p_i in posy_idxs]
-            constr_sens, p_var_senss = constr.sensitivities(p_senss, m_sensss)
+            constr_sens, p_var_senss = constr.sensitivities_from_dual(p_senss, m_sensss)
             result["sensitivities"]["constraints"][str(constr)] = constr_sens
             var_senss += p_var_senss
         result["sensitivities"]["constants"] = KeyDict(var_senss)

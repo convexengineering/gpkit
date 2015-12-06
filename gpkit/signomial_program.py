@@ -142,10 +142,10 @@ class SignomialProgram(object):
         posyapproxs = gp.constraints[len(self.posyconstraints):]
         for i, posyapprox in enumerate(posyapproxs):
             constr = self.localposyconstraints[i]
-            posyapprox_sens = constr_senss.pop(str(posyapprox))
+            pa_sens = constr_senss.pop(str(posyapprox))
             var_senss = result["sensitivities"]["constants"]
-            constr_sens = constr.sp_sensitivities(posyapprox, posyapprox_sens,
-                                                  var_senss)
+            constr_sens = constr.sensitivities_from_approx(posyapprox,
+                                                           pa_sens, var_senss)
             result["sensitivities"]["constraints"][str(constr)] = constr_sens
 
         result["signomialstart"] = startpoint

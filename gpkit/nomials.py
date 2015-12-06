@@ -1,6 +1,7 @@
 """Signomial, Posynomial, Monomial, Constraint, & MonoEQCOnstraint classes"""
 import numpy as np
 
+from .constraints import LocalConstraint, GlobalConstraint
 from .small_classes import Strings, Numbers, Quantity
 from .small_classes import HashVector, KeySet, KeyDict
 from .posyarray import PosyArray
@@ -536,11 +537,13 @@ class Monomial(Posynomial):
                         "it's already a Monomial." % str(self))
 
 
-class Constraint(object):
+class OneEQConstraint(object):
     """Retains input format (lhs vs rhs) in self.left and self.right
     Calls self._constraint_init_ for child class initialization.
     """
     latex_opers = {"<=": "\\leq", ">=": "\\geq", "=": "="}
+    varkeys = None
+    substitutions = None
 
     def __init__(self, left, oper=None, right=None):
         if oper is None:
@@ -575,26 +578,11 @@ class Constraint(object):
         return self.__class__(self.left.sub(subs), self.oper,
                               self.right.sub(subs))
 
-    def as_posyslt1(self):
-        return [None]
-
-    def as_localposyconstr(self, x0):
-        return None
-
-    def sensitivities(self, p_senss, m_sensss):
-        constr_sens, var_senss = {}, {}
-        assert False
-        return constr_sens, var_senss
-
-    def sp_sensitivities(self, posyapprox, posyapprox_sens, var_senss):
-        constr_sens = {}
-        assert False
-        return constr_sens
-
-    # optional: process_result
+    def process_result(self, result):
+        pass
 
 
-class PosynomialConstraint(Constraint):
+class PosynomialConstraint(OneEQConstraint, GlobalConstraint):
     """A constraint of the general form monomial >= posynomial
     Stored in the posylt1_rep attribute as a single Posynomial (self <= 1)
     Usually initialized via operator overloading, e.g. cc = (y**2 >= 1 + x)
@@ -675,7 +663,7 @@ class PosynomialConstraint(Constraint):
             out.append(p)
         return out
 
-    def sensitivities(self, p_senss, m_sensss):
+    def sensitivities_from_dual(self, p_senss, m_sensss):
         if not p_senss or not m_sensss:
             # as_posyslt1 created no inequalities
             return {}, {}
@@ -724,7 +712,7 @@ class MonoEQConstraint(PosynomialConstraint):
     def __bool__(self):
         return self.__nonzero__()
 
-    def sensitivities(self, p_senss, m_sensss):
+    def sensitivities_from_dual(self, p_senss, m_sensss):
         left, right = p_senss
         constr_sens = {str(self.left): left-right,
                        str(self.right): right-left}
@@ -739,7 +727,7 @@ class MonoEQConstraint(PosynomialConstraint):
         return constr_sens, var_senss
 
 
-class SignomialConstraint(Constraint):
+class SignomialConstraint(OneEQConstraint, LocalConstraint):
     """A constraint of the general form posynomial >= posynomial
     Stored internally (exps, cs) as a single Signomial (0 >= self)
     Usually initialized via operator overloading, e.g. cc = (y**2 >= 1 + x - y)
@@ -789,13 +777,13 @@ class SignomialConstraint(Constraint):
         x0.update(self.substitutions)
         return PosynomialConstraint(posy, "<=", negy.mono_lower_bound(x0))
 
-    def sp_sensitivities(self, posyapprox, posyapprox_sens, var_senss):
-        constr_sens = dict(posyapprox_sens)
+    def sensitivities_from_approx(self, posyapprox, pa_sens, var_senss):
+        constr_sens = dict(pa_sens)
         del constr_sens[str(posyapprox.m_gt)]
         _, negy = self.sigy_lt0_rep.posy_negy()
-        constr_sens[str(negy)] = posyapprox_sens["overall"]
-        posyapprox_sens[str(posyapprox)] = posyapprox_sens.pop("overall")
-        constr_sens["posyapprox"] = posyapprox_sens
+        constr_sens[str(negy)] = pa_sens["overall"]
+        pa_sens[str(posyapprox)] = pa_sens.pop("overall")
+        constr_sens["posyapprox"] = pa_sens
         return constr_sens
 
 from .substitution import substitution, parse_subs
