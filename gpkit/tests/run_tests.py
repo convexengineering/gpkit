@@ -32,6 +32,9 @@ TESTS += t_small.TESTS
 from gpkit.tests import t_examples
 TESTS += t_examples.TESTS
 
+from gpkit.tests import t_issue476
+TESTS += t_issue476.TESTS
+
 
 import gpkit
 
