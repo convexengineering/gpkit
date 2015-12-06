@@ -78,7 +78,7 @@ class TestResultsTable(unittest.TestCase):
         x = VarKey(name='x')
         data = {x: np.array([np.nan, 1., 1., 1., 1.])}
         title = "Free variables"
-        printstr = results_table(data, title)
+        printstr = "\n".join(results_table(data, title))
         self.assertTrue(" - " in printstr)  # nan is printed as " - "
         self.assertTrue(title in printstr)
 

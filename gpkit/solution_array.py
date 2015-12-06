@@ -45,6 +45,12 @@ class SolutionArray(DictOfLists):
     >>> assert all(np.array(senss) == 1)
 
     """
+    table_titles = {"cost": "Cost",
+                    "sweepvariables": "Sweep Variables",
+                    "freevariables": "Free Variables",
+                    "constants": "Constants",
+                    "variables": "Variables",
+                    "sensitivities": "Sensitivities"}
 
     def __len__(self):
         try:
@@ -91,63 +97,44 @@ class SolutionArray(DictOfLists):
             return mag(subbed.c)
 
 
-    def table(self, tables=["cost", "freevariables", "sweepvariables",
-                            "constants", "sensitivities"], fixedcols=True,
-                            included_models=None, excluded_models=None,
-                            latex=False):
+    def table(self, tables=["cost", "sweepvariables", "freevariables",
+                            "constants", "sensitivities"], latex=False,
+              fixedcols=True, included_models=None, excluded_models=None):
         if isinstance(tables, Strings):
             tables = [tables]
         strs = []
-        if "cost" in tables:
-            strs += ["\nCost\n----"]
-            if len(self) > 1:
-                costs = ["%-8.3g" % c for c in self["cost"][:4]]
-                strs += [" [ %s %s ]" % ("  ".join(costs),
-                                         "..." if len(self) > 4 else "")]
-                cost_units = self.program[0].cost.units
+        for table in tables:
+            subdict = self.get(table, None)
+            table_title = self.table_titles[table]
+            if table == "cost":
+                strs += ["\n%s\n----" % table_title]
+                if len(self) > 1:
+                    costs = ["%-8.3g" % c for c in subdict[:4]]
+                    strs += [" [ %s %s ]" % ("  ".join(costs),
+                                             "..." if len(self) > 4 else "")]
+                    cost_units = self.program[0].cost.units
+                else:
+                    strs += [" %-.4g" % subdict]
+                    cost_units = self.program.cost.units
+                strs[-1] += unitstr(cost_units, into=" [%s] ", dimless="")
+                strs += [""]
+            elif not subdict:
+                continue
+            elif table == "sensitivities":
+                strs += results_table(subdict["variables"], table_title,
+                                      fixedcols=fixedcols,
+                                      included_models=included_models,
+                                      excluded_models=excluded_models,
+                                      minval=1e-2,
+                                      sortbyvals=True,
+                                      printunits=False,
+                                      latex=latex)
             else:
-                strs += [" %-.4g" % self["cost"]]
-                cost_units = self.program.cost.units
-            strs[-1] += unitstr(cost_units, into=" [%s] ", dimless="")
-            strs += [""]
-        if "sweepvariables" in tables and self["sweepvariables"]:
-            strs += [results_table(self["sweepvariables"],
-                                   "Sweep Variables",
-                                   fixedcols=fixedcols,
-                                   included_models=None,
-                                   excluded_models=None,
-                                   latex=latex)]
-        if "freevariables" in tables:
-            strs += [results_table(self["freevariables"],
-                                   "Free Variables",
-                                   fixedcols=fixedcols,
-                                   included_models=None,
-                                   excluded_models=None,
-                                   latex=latex)]
-        if "constants" in tables and self["constants"]:
-            strs += [results_table(self["constants"],
-                                   "Constants",
-                                   fixedcols=fixedcols,
-                                   included_models=None,
-                                   excluded_models=None,
-                                   latex=latex)]
-        if "variables" in tables:
-            strs += [results_table(self["variables"],
-                                   "Variables",
-                                   fixedcols=fixedcols,
-                                   included_models=None,
-                                   excluded_models=None,
-                                   latex=latex)]
-        if "sensitivities" in tables:
-            strs += [results_table(self["sensitivities"]["variables"],
-                                   "Sensitivities",
-                                   fixedcols=fixedcols,
-                                   included_models=None,
-                                   excluded_models=None,
-                                   minval=1e-2,
-                                   sortbyvals=True,
-                                   printunits=False,
-                                   latex=latex)]
+                strs += results_table(subdict, table_title,
+                                      fixedcols=fixedcols,
+                                      included_models=included_models,
+                                      excluded_models=excluded_models,
+                                      latex=latex)
         return "\n".join(strs)
 
 
@@ -237,7 +224,7 @@ def results_table(data, title, minval=0, printunits=True, fixedcols=True,
         lines = [title] + ["-"*len(title)] + [''.join(l) for l in lines] + [""]
     else:
         lines = ["\\toprule"] + [title + "\\\\"] + ["\\midrule"] + [''.join(l) for l in lines] + ["\\bottomrule"] + [""]
-    return "\n".join(lines)
+    return lines
 
 
 def parse_result(result, constants, beforesubs, sweep={}, linkedsweep={},
