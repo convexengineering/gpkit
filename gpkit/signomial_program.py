@@ -59,8 +59,8 @@ class SignomialProgram(object):
             if substitutions:
                 constraint.substitutions.update(substitutions)
             posy = False
-            if hasattr(constraint, "as_localposyconstr"):
-                posy = constraint.as_localposyconstr(None)
+            if hasattr(constraint, "as_gpconstr"):
+                posy = constraint.as_gpconstr(None)
                 if posy:
                     self.localposyconstraints.append(constraint)
             if not posy and hasattr(constraint, "as_posyslt1"):
@@ -144,7 +144,7 @@ class SignomialProgram(object):
             constr = self.localposyconstraints[i]
             pa_sens = constr_senss.pop(str(posyapprox))
             var_senss = result["sensitivities"]["constants"]
-            constr_sens = constr.sensitivities_from_approx(posyapprox,
+            constr_sens = constr.sens_from_gpconstr(posyapprox,
                                                            pa_sens, var_senss)
             result["sensitivities"]["constraints"][str(constr)] = constr_sens
 
@@ -155,7 +155,7 @@ class SignomialProgram(object):
     def step(self, x0=None, verbosity=1):
         localposyconstraints = []
         for constraint in self.localposyconstraints:
-            lpc = constraint.as_localposyconstr(x0)
+            lpc = constraint.as_gpconstr(x0)
             if not lpc:
                 raise ValueError("%s is an invalid constraint for a"
                                  " SignomialProgram" % constraint)

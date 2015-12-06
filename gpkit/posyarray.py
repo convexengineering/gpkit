@@ -10,7 +10,7 @@
 
 import numpy as np
 from .small_classes import Numbers, KeyVector, KeySet, KeyDict
-from .constraints import LocalConstraint, GlobalConstraint
+from .constraints import LocallyApproximableConstraint, GPConstraint
 
 from . import units as ureg
 from . import DimensionalityError
@@ -209,7 +209,7 @@ class PosyArray(np.ndarray):
         return self.padright(0)[1:]
 
 
-class ConstraintSet(LocalConstraint, GlobalConstraint):
+class ConstraintSet(LocallyApproximableConstraint, GPConstraint):
     substitutions = None
 
     def __init__(self, constraints, substitutions=None,
@@ -245,8 +245,8 @@ class ConstraintSet(LocalConstraint, GlobalConstraint):
         for constr in self.flatconstraints():
             constr.substitutions.update(self.substitutions)
             localposy = False
-            if hasattr(constr, "as_localposyconstr"):
-                localposy = constr.as_localposyconstr(None)
+            if hasattr(constr, "as_gpconstr"):
+                localposy = constr.as_gpconstr(None)
                 if localposy:
                     self.localposyconstrs.append(constr)
             if hasattr(constr, "as_posyslt1"):
@@ -257,7 +257,7 @@ class ConstraintSet(LocalConstraint, GlobalConstraint):
                 self.all_have_posy_rep = False
             else:
                 raise ValueError("constraints must have either an"
-                                 "`as_localposyconstr` method or an"
+                                 "`as_gpconstr` method or an"
                                  "`as_posyslt1` method, but %s has neither"
                                  % constr)
 
@@ -285,12 +285,12 @@ class ConstraintSet(LocalConstraint, GlobalConstraint):
         else:
             return [None]
 
-    def as_localposyconstr(self, x0):
+    def as_gpconstr(self, x0):
         self.parse_constraints()
         if not self.localposyconstrs:
             return None
         self.posymap = "sp"
-        localposyconstrs = [c.as_localposyconstr(x0)
+        localposyconstrs = [c.as_gpconstr(x0)
                             for c in self.localposyconstrs]
         localposyconstrs.extend(self.onlyposyconstrs)
         return ConstraintSet(localposyconstrs, self.substitutions)
@@ -304,7 +304,7 @@ class ConstraintSet(LocalConstraint, GlobalConstraint):
     def sub(self, subs, value=None):
         return self  # TODO
 
-    def sensitivities_from_dual(self, p_senss, m_sensss):
+    def sens_from_dual(self, p_senss, m_sensss):
         assert self.all_have_posy_rep
         constr_sens = {}
         var_senss = KeyVector()
@@ -313,17 +313,17 @@ class ConstraintSet(LocalConstraint, GlobalConstraint):
             constr = self.allposyconstrs[i]
             p_ss = p_senss[offset:offset+n_posys]
             m_sss = m_sensss[offset:offset+n_posys]
-            constr_sens[str(constr)], v_ss = constr.sensitivities_from_dual(p_ss, m_sss)
+            constr_sens[str(constr)], v_ss = constr.sens_from_dual(p_ss, m_sss)
             var_senss += v_ss
 
         return constr_sens, var_senss
 
-    def sensitivities_from_approx(self, posyapprox, posy_approx_sens, var_senss):
+    def sens_from_gpconstr(self, posyapprox, posy_approx_sens, var_senss):
         constr_sens = {}
         for i, lpc in enumerate(self.localposyconstrs):
             pa = posyapprox[i]
             p_a_s = posy_approx_sens[str(pa)]
-            constr_sens[str(lpc)] = lpc.sensitivities_from_approx(pa, p_a_s, var_senss)
+            constr_sens[str(lpc)] = lpc.sens_from_gpconstr(pa, p_a_s, var_senss)
         return constr_sens
 
     def process_result(self, result):
