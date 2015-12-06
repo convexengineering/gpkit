@@ -137,6 +137,8 @@ if units:
             newfn = skip_if_gpkit_objects(fallback=trunder)
             setattr(units.Quantity, dunder, newfn)
 
+    _subvert_pint()
+
 # Load settings
 def load_settings(path=SETTINGS_PATH):
     try:
