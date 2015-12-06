@@ -1,3 +1,4 @@
+"""Defines SolutionArray class"""
 import numpy as np
 
 from collections import Iterable
@@ -71,7 +72,7 @@ class SolutionArray(DictOfLists):
             return PosyArray(self["variables"][p])
         elif len(self) > 1:
             return PosyArray([self.atindex(i).subinto(p)
-                             for i in range(len(self))])
+                              for i in range(len(self))])
         else:
             return p.sub(self["variables"])
 
@@ -88,7 +89,7 @@ class SolutionArray(DictOfLists):
             return PosyArray(self["variables"]["sensitivities"][p])
         elif len(self) > 1:
             return PosyArray([self.atindex(i).subinto(p)
-                             for i in range(len(self))])
+                              for i in range(len(self))])
         else:
             subbed = p.sub(self["variables"]["sensitivities"],
                            require_positive=False)
@@ -96,10 +97,9 @@ class SolutionArray(DictOfLists):
             assert not subbed.exp
             return mag(subbed.c)
 
-
     def table(self, tables=["cost", "sweepvariables", "freevariables",
-                            "constants", "sensitivities"], latex=False,
-              fixedcols=True, included_models=None, excluded_models=None):
+                            "constants", "sensitivities"], fixedcols=True,
+              latex=False, included_models=None, excluded_models=None):
         if isinstance(tables, Strings):
             tables = [tables]
         strs = []
@@ -195,7 +195,10 @@ def results_table(data, title, minval=0, printunits=True, fixedcols=True,
             if oldmodel is not None:
                 lines.append(["", "", "", ""])
             if model is not "":
-                lines.append([model+" | ", "", "", ""])
+                if not latex:
+                    lines.append([model+" | ", "", "", ""])
+                else:
+                    lines.append(["\multicolumn{3}{l}{\\textbf{" + model + "}} \\\\"])
             oldmodel = model
         label = var.descr.get('label', '')
         units = unitstr(var, into=" [%s] ", dimless="") if printunits else ""
@@ -210,7 +213,15 @@ def results_table(data, title, minval=0, printunits=True, fixedcols=True,
             lines.append([varstr, valstr, units, label])
         else:
             varstr = varstr.replace(" : ", "")
-            lines.append(["$", varstr, "$ & ",  valstr, " & $",  units.replace('**','^'), "$ & ", label, " \\\\"])
+            if latex == 1: # normal results table
+                lines.append(["$", varstr, "$ & ", valstr, "& $ ",
+                              units.replace('**', '^'), "$ & ", label, " \\\\"])
+            elif latex == 2: # no values
+                lines.append(["$", varstr, "$ & $ ",
+                              units.replace('**', '^'), "$ & ", label, " \\\\"])
+            elif latex == 3: # no description
+                lines.append(["$", varstr, "$ & ", valstr, "& $ ",
+                              units.replace('**', '^'), "$ \\\\"])
     if not latex:
         if lines:
             maxlens = np.max([list(map(len, line)) for line in lines], axis=0)
@@ -220,10 +231,21 @@ def results_table(data, title, minval=0, printunits=True, fixedcols=True,
             # check lengths before using zip
             assert len(list(dirs)) == len(list(maxlens))
             fmts = ['{0:%s%s}' % (direc, L) for direc, L in zip(dirs, maxlens)]
-        lines = [[fmt.format(s) for fmt, s in zip(fmts, line)] for line in lines]
+        lines = [[fmt.format(s) for fmt, s in zip(fmts, line)]
+                 for line in lines]
         lines = [title] + ["-"*len(title)] + [''.join(l) for l in lines] + [""]
-    else:
-        lines = ["\\toprule"] + [title + "\\\\"] + ["\\midrule"] + [''.join(l) for l in lines] + ["\\bottomrule"] + [""]
+    elif latex == 1:
+        lines = (["{\\footnotesize"] + ["\\begin{longtable}{llll}"] +
+                 ["\\toprule"] + [title + " & Value & Units & Description \\\\"] + ["\\midrule"] +
+                 [''.join(l) for l in lines] + ["\\bottomrule"] + ["\\end{longtable}}"] + [""])
+    elif latex == 2:
+        lines = (["{\\footnotesize"] + ["\\begin{longtable}{lll}"] +
+                 ["\\toprule"] + [title + " & Units & Description \\\\"] + ["\\midrule"] +
+                 [''.join(l) for l in lines] + ["\\bottomrule"] + ["\\end{longtable}}"] + [""])
+    elif latex == 3:
+        lines = (["{\\footnotesize"] + ["\\begin{longtable}{lll}"] +
+                 ["\\toprule"] + [title + " & Value & Units \\\\"] + ["\\midrule"] +
+                 [''.join(l) for l in lines] + ["\\bottomrule"] + ["\\end{longtable}}"] + [""])
     return lines
 
 

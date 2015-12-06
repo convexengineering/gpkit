@@ -23,10 +23,9 @@ gpkit/_mosek/cli_expopt.py
 gpkit/_mosek/expopt.py
 gpkit/interactive/__init__.py
 gpkit/interactive/plotting.py
-gpkit/interactive/pretty_print.py
-gpkit/interactive/printing.py
 gpkit/interactive/ractor.py
-gpkit/interactive/widget.py
+gpkit/interactive/widgets.py
+gpkit/interactive/sensitivity_map.py
 gpkit/tests/__init__.py
 gpkit/tests/helpers.py
 gpkit/tests/t_constraints.py
@@ -40,3 +39,7 @@ gpkit/tests/t_sub.py
 gpkit/tests/t_tools.py
 gpkit/tests/t_vars.py
 gpkit/tests/run_tests.py
+gpkit/models/__init__.py
+gpkit/models/beam.py
+gpkit/models/troposhere.py
+gpkit/models/troposhere_sp.py

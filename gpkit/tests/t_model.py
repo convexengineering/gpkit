@@ -77,7 +77,6 @@ class TestGP(unittest.TestCase):
         self.assertAlmostEqual(sol["cost"]/(4*math.sqrt(2)), 1., self.ndig)
 
     def test_zero_lower_unbounded(self):
-        from gpkit.shortcuts import *
         x = Variable('x', value=4)
         y = Variable('y', value=0)
         z = Variable('z')

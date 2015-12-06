@@ -69,15 +69,17 @@ def modelinteract(model, ranges=None, fn_of_sol=None, **solvekwargs):
                 model.localsolve(**solvekwargs)
             fn_of_sol(model.solution)
         except RuntimeWarning:
-            out = "THE PROBLEM IS INFEASIBLE"
-            try:
-                const_feas = model.feasibility(["constants"])
-                out += "\n    but would become with this substitution:\n"
-                out += str(const_feas)
-            except:
-                pass
-            finally:
-                print(out)
+            raise
+            # TODO: implement some nicer feasibility warning, like the below
+            # out = "THE PROBLEM IS INFEASIBLE"
+            # try:
+            #     const_feas = model.feasibility(["constants"])
+            #     out += "\n    but would become with this substitution:\n"
+            #     out += str(const_feas)
+            # except:
+            #     pass
+            # finally:
+            #     print(out)
 
     resolve()
 
@@ -104,11 +106,6 @@ def modelcontrolpanel(model, *args, **kwargs):
         link((box, 'visible'), (cb, 'value'))
         sliderboxes.append(box)
 
-    settings = []
-    for sliderbox in sliderboxes:
-        settings.append(create_settings(sliderbox))
-
-    model_latex = "$"+model.latex(show_subs=False)+"$"
     widgets_css = widgets.HTML("""<style>
     [style="font-size: 1.16em;"] { padding-top: 0.25em; }
     [style="width: 3ex; font-size: 1.165em;"] { padding-top: 0.2em; }
@@ -119,17 +116,22 @@ def modelcontrolpanel(model, *args, **kwargs):
     .widget-checkbox .widget-label { width: 15ex; }
     .form-control { border: none; box-shadow: none; }
     </style>""")
-    model_eq = widgets.Latex(model_latex)
+    settings = [widgets_css]
+    for sliderbox in sliderboxes:
+        settings.append(create_settings(sliderbox))
+    # model_latex = "$"+model.latex(show_subs=False)+"$"
+    # model_eq = widgets.Latex(model_latex)
     tabs = widgets.Tab(children=[widgets.Box(children=sliderboxes,
                                              padding="1.25ex"),
                                  widgets.Box(children=settings,
-                                             padding="1.25ex"),
-                                 widgets.Box(children=[widgets_css, model_eq],
                                              padding="1.25ex")])
+                                # TODO: fix model equation display
+                                # widgets.Box(children=[model_eq],
+                                #             padding="1.25ex")])
 
     tabs.set_title(0, 'Variable Sliders')
     tabs.set_title(1, 'Slider Settings')
-    tabs.set_title(2, 'Model Equations')
+    #tabs.set_title(2, 'Model Equations')
 
     return tabs
 
@@ -140,30 +142,39 @@ def create_settings(box):
 
     enable = widgets.Checkbox(value=box.visible)
     link((box, 'visible'), (enable, 'value'))
-    value = widgets.FloatText(value=slider.value,
-                              description=slider.description)
-    link((slider, 'value'), (value, 'value'))
+
+    def slider_link(obj, attr):
+        def link_fn(name, new_value):
+            if new_value <= slider.min:
+                slider.min = new_value
+            elif new_value >= slider.max:
+                slider.max = new_value
+            if attr is "max" and new_value <= slider.value:
+                slider.value = new_value
+            elif attr is "min" and new_value >= slider.value:
+                slider.value = new_value
+            setattr(slider, attr, new_value)
+            slider.step = (slider.max - slider.min)/24.0
+        obj.on_trait_change(link_fn, "value")
+        link((slider, attr), (obj, "value"))
+
+    text_html = "<span class='form-control' style='width: auto;'>"
+    setvalue = widgets.FloatText(value=slider.value,
+                                 description=slider.description)
+    slider_link(setvalue, "value")
+    fromlabel = widgets.HTML(text_html + "from")
+    setmin = widgets.FloatText(value=slider.min)
+    slider_link(setmin, "min")
+    tolabel = widgets.HTML(text_html + "to")
+    setmax = widgets.FloatText(value=slider.max)
+    slider_link(setmax, "max")
+
     units = widgets.Latex(value="")
-    units.width = "3ex"
+    units.width = "6ex"
     units.font_size = "1.165em"
     link((sl_units, 'value'), (units, 'value'))
-    fromlabel = widgets.HTML("<span class='form-control' style='width: auto;'>"
-                             "from")
-    setmin = widgets.FloatText(value=slider.min)
-    link((slider, 'min'), (setmin, 'value'))
-    tolabel = widgets.HTML("<span class='form-control' style='width: auto;'>"
-                           "to")
-    setmax = widgets.FloatText(value=slider.max)
-    link((slider, 'max'), (setmax, 'value'))
-    bylabel = widgets.HTML("<span class='form-control' style='width: auto;'>"
-                           "by")
-    setstep = widgets.FloatText(value=slider.step)
-    link((slider, 'step'), (setstep, 'value'))
-    descr = widgets.HTML("<span class='form-control' style='width: auto;'>"
-                         + slider.varkey.descr.get("label", ""))
+    descr = widgets.HTML(text_html + slider.varkey.descr.get("label", ""))
     descr.width = "40ex"
 
-    return widgets.HBox(children=[enable, value, units, descr,
-                                  fromlabel, setmin,
-                                  tolabel, setmax,
-                                  bylabel, setstep])
+    return widgets.HBox(children=[enable, setvalue, units, descr,
+                                  fromlabel, setmin, tolabel, setmax])

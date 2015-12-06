@@ -612,6 +612,16 @@ class MonoEQConstraint(Constraint):
         self.leq = m1/m2
         self.geq = m2/m1
 
+        if isinstance(self.leq.cs, Quantity):
+            try:
+                self.leq = self.leq.to('dimensionless')
+                self.geq = self.geq.to('dimensionless')
+            except DimensionalityError:
+                raise ValueError("constraints must have the same units"
+                                 " on both sides: '%s' and '%s' can not"
+                                 " be converted into each other."
+                                 "" % (m1.units, m2.units))
+
         self.left = m1
         self.right = m2
 

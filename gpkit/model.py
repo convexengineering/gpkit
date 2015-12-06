@@ -117,12 +117,13 @@ class Model(object):
             k = Model.model_nums[name]
             Model.model_nums[name] = k+1
             name += str(k) if k else ""
+            self.modelname = name
             processed_keys = set()
             for s in self.signomials:
                 for k in s.varlocs:
                     if k not in processed_keys:
                         processed_keys.add(k)
-                        model = name+k.descr.get("model", "")
+                        model = name + k.descr.get("model", "")
                         k.descr["model"] = model
                 for exp in s.exps:
                     for k in exp:
@@ -132,14 +133,16 @@ class Model(object):
                             k.descr["model"] = model
             for k, v in self.substitutions.items():
                 # doesn't work for Var / Vec substitution yet
-                kmodel = name + k.descr.pop("model", "")
                 if k not in processed_keys:
+                    k = k.key
                     processed_keys.add(k)
+                    # implement nested model names
+                    kmodel = name + k.descr.pop("model", "")
                     k.descr["model"] = kmodel
                 if isinstance(v, VarKey):
-                    vmodel = name + v.descr.pop("model", "")
                     if v not in processed_keys:
                         processed_keys.add(v)
+                        vmodel = name + v.descr.pop("model", "")
                         v.descr["model"] = vmodel
 
     def __or__(self, other):
@@ -153,24 +156,36 @@ class Model(object):
         # if this is too slow, there could be some hashing and caching
         return self.varsbyname[item]
 
-    def merge(self, other, excluded_names=[]):
+    def merge(self, other, excluded=None):
         if not isinstance(other, Model):
             return NotImplemented
+        if excluded is None:
+            excluded = []
         selfvars = self.varsbyname
         othervars = other.varsbyname
         overlap = set(selfvars) & set(othervars)
         substitutions = dict(self.substitutions)
         substitutions.update(other.substitutions)
         for name in overlap:
-            if name in excluded_names:
+            if name in excluded:
                 continue
-            descr = self[name].key.descr
+            svars = selfvars[name]
+            if not isinstance(svars, list):
+                svars = [svars]
+            ovars = othervars[name]
+            if not isinstance(ovars, list):
+                ovars = [ovars]
+            # descr is taken from the first varkey of a given name in self.
+            # The loop below compares it to other varkeys of that name.
+            descr = dict(svars[0].key.descr)
             descr.pop("model", None)
+            for var in svars + ovars:
+                descr_ = dict(var.key.descr)
+                descr_.pop("model", None)
+                # if values disagree, drop self's value
+                if descr.get("value", None) != descr_.get("value", None):
+                    descr.pop("value", None)
             newvar = VarKey(**descr)
-            svars = (selfvars[name] if isinstance(selfvars[name], list)
-                     else [selfvars[name]])
-            ovars = (othervars[name] if isinstance(othervars[name], list)
-                     else [othervars[name]])
             for var in svars + ovars:
                 if var.key != newvar.key:
                     substitutions[var.key] = newvar.key
@@ -270,6 +285,9 @@ class Model(object):
         varkeysubs = {vk: nvk for vk, nvk in allsubs.items()
                       if isinstance(nvk, VarKey)}
         if varkeysubs:
+            for nvk in varkeysubs.values():
+                if "value" in nvk.descr:
+                    allsubs.update({nvk: nvk.descr["value"]})
             beforesubs = beforesubs.sub(varkeysubs, require_positive=False)
             beforesubs.varkeysubs = varkeysubs
             signomials = [s.sub(varkeysubs, require_positive=False)
