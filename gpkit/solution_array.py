@@ -97,9 +97,28 @@ class SolutionArray(DictOfLists):
             assert not subbed.exp
             return mag(subbed.c)
 
-    def table(self, tables=["cost", "sweepvariables", "freevariables",
-                            "constants", "sensitivities"], fixedcols=True,
-              latex=False, included_models=None, excluded_models=None):
+    def table(self, tables=("cost", "sweepvariables", "freevariables",
+                            "constants", "sensitivities"),
+              fixedcols=True, latex=False,
+              included_models=None, excluded_models=None):
+        """A table representation of this SolutionArray
+        
+        Arguments
+        ---------
+        tables: Iterable
+            Which to print of ("cost", "sweepvariables", "freevariables",
+                               "constants", "sensitivities")
+        fixedcols: If true, print vectors in fixed-width format
+        latex: If true, return latex format; otherwise plain text
+        included_models: Iterable
+            If specified, the models to include
+        excluded_models: Iterable
+            If specified, models to exclude
+
+        Returns
+        -------
+        str
+        """
         if isinstance(tables, Strings):
             tables = [tables]
         strs = []
