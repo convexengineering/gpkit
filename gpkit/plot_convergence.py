@@ -1,12 +1,13 @@
 import matplotlib.pyplot as plt
 import numpy as np
 
+
 def plot_convergence(m):
     keyList = m.program.gps[0].result['variables'].keys()
 
     newDict = {}
 
-    fig = plt.figure()
+    plt.figure()
     ax = plt.subplot(111)
 
     for k in keyList:
