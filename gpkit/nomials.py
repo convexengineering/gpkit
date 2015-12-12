@@ -3,13 +3,12 @@ import numpy as np
 
 from .constraints import LocallyApproximableConstraint, GPConstraint
 from .small_classes import Strings, Numbers, Quantity
-from .small_classes import HashVector, KeySet, KeyDict
+from .small_classes import HashVector, KeySet
 from .posyarray import PosyArray
 from .varkey import VarKey
 from .nomial_data import NomialData
 
 from .small_scripts import latex_num
-from .small_scripts import invalid_types_for_oper
 from .small_scripts import mag, unitstr, listify
 from .nomial_data import simplify_exps_and_cs
 

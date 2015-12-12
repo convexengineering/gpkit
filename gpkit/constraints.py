@@ -13,7 +13,7 @@ class Constraint(object):
     def substitutions(self):
         "Substitutions that the Constraint currently knows about"
         pass
-    
+
     @substitutions.setter
     def substitutions(self, newvalue):
         ".substitutions mist be settable"
@@ -42,14 +42,14 @@ class Constraint(object):
     def process_result(self, result):
         """Does arbitrary computation / manipulation of a program's result
 
-        There's no guarantee what order different constraints will process results in,
-        so any changes made to the program's result should be careful not to step on
-        other constraints toes.
+        There's no guarantee what order different constraints will process
+        results in, so any changes made to the program's result should be
+        careful not to step on other constraints toes.
 
         Potential Uses
         --------------
           - check that an inequality was tight
-          - add values computer from solved variables
+          - add values computed from solved variables
 
         """
         pass
@@ -72,7 +72,7 @@ class GPConstraint(Constraint):
         p_senss : list
             Sensitivity of each posynomial returned by `self.as_posyslt1()`
 
-        m_sensss: list of lists 
+        m_sensss: list of lists
             Each posynomial's monomial sensitivities
 
 
@@ -104,7 +104,7 @@ class LocallyApproximableConstraint(Constraint):
         gpconstr : GPConstraint
             Sensitivity of the GPConstraint returned by `self.as_gpconstr()`
 
-        gpconstr_sens : 
+        gpconstr_sens :
             Sensitivities created by `gpconstr.sens_from_dual`
 
         var_senss : dict

@@ -14,7 +14,7 @@ class TestNomialSubs(unittest.TestCase):
         x = Variable("x")
         p = x**2
         self.assertEqual(p.sub(x, 3), 9)
-        self.assertEqual(p.sub(x.varkeys["x"][0], 3), 9)
+        self.assertEqual(p.sub(x.key, 3), 9)
         self.assertEqual(p.sub("x", 3), 9)
 
     def test_basic(self):

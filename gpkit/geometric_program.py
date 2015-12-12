@@ -4,10 +4,8 @@ import numpy as np
 import sys
 from time import time
 
-from .variables import Variable, VectorVariable
-from .small_classes import CootMatrix, HashVector, KeyDict, KeySet
+from .small_classes import CootMatrix, HashVector, KeyDict
 from .nomial_data import NomialData
-from .nomials import Posynomial
 from .small_classes import SolverLog
 
 from .small_scripts import is_sweepvar
@@ -58,14 +56,14 @@ class GeometricProgram(NomialData):
             if not all(constr_posys):
                 raise ValueError("%s is an invalid constraint for a"
                                  " GeometricProgram" % constraint)
-            self.constr_idxs.append(range(len(self.posynomials),
-                                    len(self.posynomials)+len(constr_posys)))
+            self.constr_idxs.append(
+                range(len(self.posynomials),
+                      len(self.posynomials) + len(constr_posys)))
             self.posynomials.extend(constr_posys)
         # init NomialData to create self.exps, self.cs, and so on
         super(GeometricProgram, self).init_from_nomials(self.posynomials)
         if self.any_nonpositive_cs:
             raise ValueError("GeometricPrograms cannot contain Signomials.")
-        unsubbed = [k for k, v in self.values.items() if not is_sweepvar(v)]
         # k [j]: number of monomials (columns of F) present in each constraint
         self.k = [len(p.cs) for p in self.posynomials]
         # p_idxs [i]: posynomial index of each monomial
@@ -191,7 +189,7 @@ class GeometricProgram(NomialData):
             raise RuntimeWarning("The dual solution was not returned.")
 
         result["sensitivities"] = {"constraints": {}}
-        # initialized the var_senss dict with constants in the subbed cost
+        # initialize the var_senss dict with constants in the subbed cost
         var_senss = {var: sum([self.cost.exps[i][var]*nu[i] for i in locs])
                      for (var, locs) in self.cost.varlocs.items()
                      if (var in self.cost.varlocs

@@ -1,12 +1,7 @@
 """Implement the SignomialProgram class"""
-import numpy as np
-
 from time import time
-from functools import reduce as functools_reduce
-from operator import mul
 
 from .geometric_program import GeometricProgram
-from .nomials import Signomial, PosynomialConstraint
 
 from .feasibility import feasibility_model
 
@@ -146,7 +141,7 @@ class SignomialProgram(object):
             pa_sens = constr_senss.pop(str(posyapprox))
             var_senss = result["sensitivities"]["constants"]
             constr_sens = constr.sens_from_gpconstr(posyapprox,
-                                                           pa_sens, var_senss)
+                                                    pa_sens, var_senss)
             result["sensitivities"]["constraints"][str(constr)] = constr_sens
 
         result["signomialstart"] = startpoint

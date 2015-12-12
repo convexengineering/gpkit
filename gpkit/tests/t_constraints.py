@@ -2,7 +2,7 @@
 import unittest
 from gpkit import Variable, SignomialsEnabled
 from gpkit.nomials import Posynomial, PosynomialConstraint, MonoEQConstraint
-from gpkit.nomials import Signomial, SignomialConstraint
+from gpkit.nomials import SignomialConstraint
 
 
 class TestConstraint(unittest.TestCase):
@@ -68,6 +68,7 @@ class TestMonoEQConstraint(unittest.TestCase):
         mec = (x == y**2)
         # __init__
         mec2 = MonoEQConstraint(x, "=", y**2)
+        self.assertTrue(mono in mec.posylt1_rep)
         self.assertTrue(mono in mec2.posylt1_rep)
 
     def test_inheritance(self):
