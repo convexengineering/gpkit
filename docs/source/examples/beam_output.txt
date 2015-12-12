@@ -27,7 +27,7 @@ Constants
 
 Sensitivities
 -------------
-EI : -1                                                                           
  L : 4                                              Overall beam length           
  q : [ 0.0013    0.00762   0.0223    0.0454   ... ] Distributed load at each point
+EI : -1                                                                           
 
