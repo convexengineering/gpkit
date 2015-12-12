@@ -109,11 +109,12 @@ class SolutionArray(DictOfLists):
             Which to print of ("cost", "sweepvariables", "freevariables",
                                "constants", "sensitivities")
         fixedcols: If true, print vectors in fixed-width format
-        latex: If true, return latex format; otherwise plain text
-        included_models: Iterable
-            If specified, the models to include
-        excluded_models: Iterable
-            If specified, models to exclude
+        latex: int
+            If > 0, return latex format (options 1-3); otherwise plain text
+        included_models: Iterable of strings
+            If specified, the models (by name) to include
+        excluded_models: Iterable of strings
+            If specified, model names to exclude
 
         Returns
         -------
@@ -181,6 +182,14 @@ def results_table(data, title, minval=0, printunits=True, fixedcols=True,
         format for scalar values
     vecfmt: string
         format for vector values
+    latex: int
+        If > 0, return latex format (options 1-3); otherwise plain text
+    included_models: Iterable of strings
+        If specified, the models (by name) to include
+    excluded_models: Iterable of strings
+        If specified, model names to exclude
+    sortbyvals : boolean
+        If true, rows are sorted by their average value instead of by name.
     """
     lines = []
     decorated = []
