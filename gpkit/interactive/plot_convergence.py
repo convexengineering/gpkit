@@ -26,8 +26,8 @@ def plot_convergence(m):
         a = np.array([])
         for j in range(len(m.program.gps)):
             a = np.append(a, m.program.gps[j].result['variables'][k])
-        newDict[k] = a/max(a)
-        plt.plot(newDict[k], label=k.name + ' ({:6.2f})'.format(max(a)))
+        newDict[k] = a
+        plt.semilogy(np.arange(len(newDict[k])), newDict[k], label=k.name)
 
     box = ax.get_position()
     ax.set_position([box.x0, box.y0, box.width * 0.8, box.height])
