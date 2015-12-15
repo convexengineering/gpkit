@@ -1,8 +1,20 @@
+"""Plotting the convergence of signomial programs"""
 import matplotlib.pyplot as plt
 import numpy as np
 
 
 def plot_convergence(m):
+    """Plots the convergence of a signomial programming model
+    
+    Arguments
+    ---------
+    m: Signomial programming model that has already been solved
+    
+    Returns
+    -------
+    Doesn't return anything, but produces a plot
+    """
+
     keyList = m.program.gps[0].result['variables'].keys()
 
     newDict = {}
