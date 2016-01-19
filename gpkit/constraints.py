@@ -44,7 +44,7 @@ class Constraint(object):
 
         There's no guarantee what order different constraints will process
         results in, so any changes made to the program's result should be
-        careful not to step on other constraints toes.
+        careful not to step on other constraint's toes.
 
         Potential Uses
         --------------

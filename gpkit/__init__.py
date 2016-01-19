@@ -30,7 +30,19 @@ def enable_units(path=UNITDEF_PATH):
     """Enables units support in a particular instance of GPkit.
 
     Posynomials created after calling this are incompatible with those created
-    before.
+    before.def approx_c(constraint, x0):
+            if (hasattr(constraint, "any_nonpositive_cs")
+                    and constraint.any_nonpositive_cs):
+                with SignomialsEnabled():
+                    p, n = constraint.posy_negy()
+                    return p/n.mono_lower_bound(x0)
+            else:
+                return constraint
+
+        x0 = sol["variables"]
+        constraints_ = [approx_c(c, x0) for c in self.constraints]
+        gp_model = Model(self.cost, constraints_, self.substitutions)
+        sol = gp_model.solve()
 
     If gpkit is imported multiple times, this needs to be run each time."""
     global units, DimensionalityError, UNIT_REGISTRY
@@ -148,7 +160,7 @@ def load_settings(path=SETTINGS_PATH):
             settings_ = {name: value.split(", ") for name, value in lines}
             for name, value in settings_.items():
                 # hack to flatten 1-element lists,
-                # unlesss they're the solver list
+                # unless they're the solver list
                 if len(value) == 1 and name != "installed_solvers":
                     settings_[name] = value[0]
     except IOError:
