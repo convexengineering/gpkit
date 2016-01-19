@@ -12,7 +12,7 @@ except NameError:
 Quantity = units.Quantity
 Numbers = (int, float, np.number, Quantity)
 
-from .keydict import KeyDict, KeySet, veckeyed
+from .keydict import KeyDict, KeySet
 
 CootMatrixTuple = namedtuple('CootMatrix', ['row', 'col', 'data'])
 

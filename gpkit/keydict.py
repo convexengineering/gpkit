@@ -1,6 +1,7 @@
 import numpy as np
 from collections import defaultdict
 from .small_classes import Numbers, Strings
+from .small_scripts import is_sweepvar, veckeyed
 
 
 class KeyDict(dict):
@@ -15,6 +16,7 @@ class KeyDict(dict):
         out = cls()
         for dictionary in dictionaries:
             for key, value in dictionary.items():
+                ovalue = value
                 keys = varkeys[key]
                 for key in keys:
                     if not key.idx:
@@ -22,7 +24,7 @@ class KeyDict(dict):
                     else:
                         if not hasattr(value, "shape"):
                             value = np.array(value)
-                        if not np.isnan(value[key.idx]):
+                        if is_sweepvar(value[key.idx]) or not np.isnan(value[key.idx]):
                             out[key] = value[key.idx]
         return out
 
@@ -175,10 +177,3 @@ class KeySet(KeyDict):
         if len(varkeys) == 1:
             varkeys = varkeys[0]
         return varkeys
-
-
-def veckeyed(key):
-    vecdescr = dict(key.descr)
-    del vecdescr["idx"]
-    vecdescr.pop("value", None)
-    return key.__class__(**vecdescr)

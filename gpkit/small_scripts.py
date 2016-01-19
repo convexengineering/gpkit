@@ -1,6 +1,13 @@
 """Assorted helper methods"""
 from collections import Iterable
-from .small_classes import Strings, Quantity, veckeyed
+from .small_classes import Strings, Quantity
+
+
+def veckeyed(key):
+    vecdescr = dict(key.descr)
+    del vecdescr["idx"]
+    vecdescr.pop("value", None)
+    return key.__class__(**vecdescr)
 
 
 def listify(l):

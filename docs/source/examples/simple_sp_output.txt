@@ -8,6 +8,3 @@ Free Variables
 x : 0.9 
 y : 0.1 
 
-Sensitivities
--------------
-
