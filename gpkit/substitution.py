@@ -140,7 +140,7 @@ def substitution(nomial, substitutions, val=None):
                 sub = VarKey(sub)
                 if isinstance(var.units, Quantity):
                     try:
-                        new_units = var.units/sub.units
+                        new_units = sub.units/var.units
                         cs_[i] *= new_units.to('dimensionless')
                     except DimensionalityError:
                         raise ValueError("substituted variables need the same"
@@ -150,7 +150,7 @@ def substitution(nomial, substitutions, val=None):
             elif isinstance(sub, Monomial):
                 if isinstance(var.units, Quantity):
                     try:
-                        new_units = var.units/sub.units
+                        new_units = sub.units/var.units
                         cs_[i] *= new_units.to('dimensionless')
                     except DimensionalityError:
                         raise ValueError("substituted monomials need the same"

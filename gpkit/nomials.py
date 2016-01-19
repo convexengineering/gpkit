@@ -618,7 +618,7 @@ class PosynomialConstraint(OneEqConstraint, GPConstraint):
                 raise ValueError("constraints must have the same units"
                                  " on both sides: '%s' and '%s' can not"
                                  " be converted into each other."
-                                 "" % (p_lt.units, pgt.units))
+                                 "" % (p_lt.units, m_gt.units))
 
         for i, exp in enumerate(p.exps):
             if not exp:

@@ -189,7 +189,7 @@ class Model(object):
             if var in substitutions:
                 substitutions[subvar] = substitutions[var]
                 del substitutions[var]
-        return Model(self.cost, constraints, substitutions)
+        return Model(cost, constraints, substitutions)
 
     def concat(self, other):
         if not isinstance(other, Model):

@@ -50,7 +50,7 @@ class TestNomialSubs(unittest.TestCase):
         for x_ in ["x", xvk, x]:
             for y_ in ["y", yvk, y]:
                 if not isinstance(y_, str) and units_exist:
-                    expected = 0.001
+                    expected = 1000
                 else:
                     expected = 1.0
                 self.assertAlmostEqual(expected, mag(x.sub(x_, y_).c))
@@ -173,13 +173,13 @@ class TestGPSubs(unittest.TestCase):
             concatm = a | b
             concatm.cost = a.cost*b.cost
             concat_cost = concatm.solve(verbosity=0)["cost"]
-            self.assertAlmostEqual(concat_cost, 0.0109361)
+            self.assertAlmostEqual(concat_cost, 0.0109361)  # 1 cm/1 yd
         a1, b1 = Above(), Below()
         m = a1 & b1
         m.cost = m["x"]
         sol = m.solve(verbosity=0)
         if not isinstance(m["x"].key.units, str):
-            self.assertAlmostEqual(sol["cost"], 0.032808399)  # 1 cm/1 yd
+            self.assertAlmostEqual(sol["cost"], 0.032808399)  # 1 cm/1 ft
         self.assertIn(m["x"], sol["variables"])
         self.assertIn(a1["x"], sol["variables"])
         self.assertIn(b1["x"], sol["variables"])

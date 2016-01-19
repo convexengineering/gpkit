@@ -162,7 +162,7 @@ class GeometricProgram(NomialData):
         primal = np.ravel(solver_out['primal'])
         assert len(self.varlocs) == len(primal)
         result["freevariables"] = dict(zip(self.varlocs, np.exp(primal)))
-        result["variables"] = result["freevariables"]
+        result["variables"] = dict(result["freevariables"])
 
         if "objective" in solver_out:
             result["cost"] = float(solver_out["objective"])
