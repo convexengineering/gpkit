@@ -56,6 +56,7 @@ class Constraint(object):
 
 
 class GPConstraint(Constraint):
+    "Interface for constraints representable as posynomials <= 1"
     __metaclass__ = ABCMeta
 
     @abstractmethod
@@ -88,11 +89,14 @@ class GPConstraint(Constraint):
 
 
 class LocallyApproximableConstraint(Constraint):
+    "Interface for constraints locally approximable as posynomials <= 1"
     __metaclass__ = ABCMeta
 
     @abstractmethod
     def as_gpconstr(self, x0):
-        "Returns GPConstraint approximating this constraint at x0"
+        """Returns GPConstraint approximating this constraint at x0
+
+        When x0 is none, may return a default guess."""
         pass
 
     @abstractmethod
