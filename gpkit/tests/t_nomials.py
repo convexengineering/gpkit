@@ -2,7 +2,7 @@
 import math
 import unittest
 from gpkit import Variable, Monomial, Posynomial, Signomial
-from gpkit import SignomialsEnabled
+from gpkit import units, SignomialsEnabled
 
 
 class TestMonomial(unittest.TestCase):
@@ -178,6 +178,17 @@ class TestMonomial(unittest.TestCase):
         m2 = Monomial({'y': -1, 'z': 3/2.}, c2)
         self.assertEqual(math.log((m1**4 * m2**3).c),
                          4*math.log(c1) + 3*math.log(c2))
+
+    def test_units(self):
+        "make sure multiplication with units works (issue 492)"
+        # have had issues where Quantity.__mul__ causes wrong return type
+        m = 1.2 * units.ft * Variable('x')**2
+        self.assertTrue(isinstance(m, Monomial))
+        self.assertEqual(m.units, units.ft)
+        # also multiply at the end, though this has not been a problem
+        m = 0.5 * Variable('x')**2 * units.kg
+        self.assertTrue(isinstance(m, Monomial))
+        self.assertEqual(m.units, units.kg)
 
 
 class TestSignomial(unittest.TestCase):
