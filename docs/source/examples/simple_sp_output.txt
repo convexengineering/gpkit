@@ -5,6 +5,9 @@ Cost
 
 Free Variables
 --------------
-x : 0.9 
-y : 0.1 
+None : 0.1 
+None : 0.9 
+
+Sensitivities
+-------------
 

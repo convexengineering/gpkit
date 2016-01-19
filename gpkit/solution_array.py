@@ -1,3 +1,4 @@
+"""Defines SolutionArray class"""
 import numpy as np
 
 from collections import Iterable
@@ -45,6 +46,12 @@ class SolutionArray(DictOfLists):
     >>> assert all(np.array(senss) == 1)
 
     """
+    table_titles = {"cost": "Cost",
+                    "sweepvariables": "Sweep Variables",
+                    "freevariables": "Free Variables",
+                    "constants": "Constants",
+                    "variables": "Variables",
+                    "sensitivities": "Sensitivities"}
 
     def __len__(self):
         try:
@@ -65,7 +72,7 @@ class SolutionArray(DictOfLists):
             return PosyArray(self["variables"][p])
         elif len(self) > 1:
             return PosyArray([self.atindex(i).subinto(p)
-                             for i in range(len(self))])
+                              for i in range(len(self))])
         else:
             return p.sub(self["variables"])
 
@@ -82,7 +89,7 @@ class SolutionArray(DictOfLists):
             return PosyArray(self["variables"]["sensitivities"][p])
         elif len(self) > 1:
             return PosyArray([self.atindex(i).subinto(p)
-                             for i in range(len(self))])
+                              for i in range(len(self))])
         else:
             subbed = p.sub(self["variables"]["sensitivities"],
                            require_positive=False)
@@ -90,58 +97,64 @@ class SolutionArray(DictOfLists):
             assert not subbed.exp
             return mag(subbed.c)
 
-    def table(self, tables=["cost", "freevariables", "sweepvariables",
-                            "constants", "sensitivities"], fixedcols=True,
-                            included_models=None, excluded_models=None):
+    def table(self, tables=("cost", "sweepvariables", "freevariables",
+                            "constants", "sensitivities"),
+              fixedcols=True, latex=False,
+              included_models=None, excluded_models=None):
+        """A table representation of this SolutionArray
+
+        Arguments
+        ---------
+        tables: Iterable
+            Which to print of ("cost", "sweepvariables", "freevariables",
+                               "constants", "sensitivities")
+        fixedcols: If true, print vectors in fixed-width format
+        latex: int
+            If > 0, return latex format (options 1-3); otherwise plain text
+        included_models: Iterable of strings
+            If specified, the models (by name) to include
+        excluded_models: Iterable of strings
+            If specified, model names to exclude
+
+        Returns
+        -------
+        str
+        """
         if isinstance(tables, Strings):
             tables = [tables]
         strs = []
-        if "cost" in tables:
-            strs += ["\nCost\n----"]
-            if len(self) > 1:
-                costs = ["%-8.3g" % c for c in self["cost"][:4]]
-                strs += [" [ %s %s ]" % ("  ".join(costs),
-                                         "..." if len(self) > 4 else "")]
-                cost_units = self.program[0].cost.units
+        for table in tables:
+            subdict = self.get(table, None)
+            table_title = self.table_titles[table]
+            if table == "cost":
+                strs += ["\n%s\n----" % table_title]
+                if len(self) > 1:
+                    costs = ["%-8.3g" % c for c in subdict[:4]]
+                    strs += [" [ %s %s ]" % ("  ".join(costs),
+                                             "..." if len(self) > 4 else "")]
+                    cost_units = self.program[0].cost.units
+                else:
+                    strs += [" %-.4g" % subdict]
+                    cost_units = self.program.cost.units
+                strs[-1] += unitstr(cost_units, into=" [%s] ", dimless="")
+                strs += [""]
+            elif not subdict:
+                continue
+            elif table == "sensitivities":
+                strs += results_table(subdict["constants"], table_title,
+                                      fixedcols=fixedcols,
+                                      included_models=included_models,
+                                      excluded_models=excluded_models,
+                                      minval=1e-2,
+                                      sortbyvals=True,
+                                      printunits=False,
+                                      latex=latex)
             else:
-                strs += [" %-.4g" % self["cost"]]
-                cost_units = self.program.cost.units
-            strs[-1] += unitstr(cost_units, into=" [%s] ", dimless="")
-            strs += [""]
-        if in_both_and_truthy_in_second("sweepvariables", tables, self):
-            strs += [results_table(self["sweepvariables"],
-                                   "Sweep Variables",
-                                   fixedcols=fixedcols,
-                                   included_models=included_models,
-                                   excluded_models=excluded_models)]
-        if in_both_and_truthy_in_second("freevariables", tables, self):
-            strs += [results_table(self["freevariables"],
-                                   "Free Variables",
-                                   fixedcols=fixedcols,
-                                   included_models=included_models,
-                                   excluded_models=excluded_models)]
-        if in_both_and_truthy_in_second("constants", tables, self):
-            strs += [results_table(self["constants"],
-                                   "Constants",
-                                   fixedcols=fixedcols,
-                                   included_models=included_models,
-                                   excluded_models=excluded_models)]
-        if in_both_and_truthy_in_second("variables", tables, self):
-            strs += [results_table(self["variables"],
-                                   "Variables",
-                                   fixedcols=fixedcols,
-                                   included_models=included_models,
-                                   excluded_models=excluded_models)]
-        if (in_both_and_truthy_in_second("sensitivities", tables, self)
-                and "constants" in self["sensitivities"]
-                and self["sensitivities"]["constants"]):
-            strs += [results_table(self["sensitivities"]["constants"],
-                                   "Sensitivities",
-                                   fixedcols=fixedcols,
-                                   included_models=included_models,
-                                   excluded_models=excluded_models,
-                                   minval=1e-2,
-                                   printunits=False)]
+                strs += results_table(subdict, table_title,
+                                      fixedcols=fixedcols,
+                                      included_models=included_models,
+                                      excluded_models=excluded_models,
+                                      latex=latex)
         return "\n".join(strs)
 
 
@@ -151,7 +164,8 @@ def in_both_and_truthy_in_second(key, tables, dictionary):
 
 def results_table(data, title, minval=0, printunits=True, fixedcols=True,
                   varfmt="%s : ", valfmt="%-.4g ", vecfmt="%-8.3g",
-                  included_models=None, excluded_models=None):
+                  included_models=None, excluded_models=None, latex=False,
+                  sortbyvals=False):
     """
     Pretty string representation of a dict of VarKeys
     Iterable values are handled specially (partial printing)
@@ -172,6 +186,14 @@ def results_table(data, title, minval=0, printunits=True, fixedcols=True,
         format for scalar values
     vecfmt: string
         format for vector values
+    latex: int
+        If > 0, return latex format (options 1-3); otherwise plain text
+    included_models: Iterable of strings
+        If specified, the models (by name) to include
+    excluded_models: Iterable of strings
+        If specified, model names to exclude
+    sortbyvals : boolean
+        If true, rows are sorted by their average value instead of by name.
     """
     lines = []
     decorated = []
@@ -182,23 +204,33 @@ def results_table(data, title, minval=0, printunits=True, fixedcols=True,
             b = isinstance(v, Iterable) and bool(v.shape)
             model = k.descr.get("model", "")
             models.add(model)
-            decorated.append((model, b, (varfmt % k.str_without("model")), i, k, v))
+            if not sortbyvals:
+                decorated.append((model, b, (varfmt % k.nomstr), i, k, v))
+            else:
+                decorated.append((model, np.mean(v), b, (varfmt % k.nomstr), i, k, v))
     if included_models:
         included_models = set(included_models)
         included_models.add("")
         models = models.intersection(included_models)
     if excluded_models:
         models = models.difference(excluded_models)
-    decorated.sort()
+    decorated.sort(reverse=sortbyvals)
     oldmodel = None
-    for model, isvector, varstr, _, var, val in decorated:
+    for varlist in decorated:
+        if not sortbyvals:
+            model, isvector, varstr, _, var, val = varlist
+        else:
+            model, _, isvector, varstr, _, var, val = varlist
         if model not in models:
             continue
         if model != oldmodel and len(models) > 1:
             if oldmodel is not None:
                 lines.append(["", "", "", ""])
             if model is not "":
-                lines.append([model+" | ", "", "", ""])
+                if not latex:
+                    lines.append([model+" | ", "", "", ""])
+                else:
+                    lines.append(["\multicolumn{3}{l}{\\textbf{" + model + "}} \\\\"])
             oldmodel = model
         label = var.descr.get('label', '')
         units = unitstr(var, into=" [%s] ", dimless="") if printunits else ""
@@ -209,15 +241,41 @@ def results_table(data, title, minval=0, printunits=True, fixedcols=True,
         else:
             valstr = valfmt % val
         valstr = valstr.replace("nan", " - ")
-        lines.append([varstr, valstr, units, label])
-    if lines:
-        maxlens = np.max([list(map(len, line)) for line in lines], axis=0)
-        if not fixedcols:
-            maxlens = [maxlens[0], 0, 0, 0]
-        dirs = ['>', '<', '<', '<']
-        # check lengths before using zip
-        assert len(list(dirs)) == len(list(maxlens))
-        fmts = ['{0:%s%s}' % (direc, L) for direc, L in zip(dirs, maxlens)]
-    lines = [[fmt.format(s) for fmt, s in zip(fmts, line)] for line in lines]
-    lines = [title] + ["-"*len(title)] + [''.join(l) for l in lines] + [""]
-    return "\n".join(lines)
+        if not latex:
+            lines.append([varstr, valstr, units, label])
+        else:
+            varstr = varstr.replace(" : ", "")
+            if latex == 1:  # normal results table
+                lines.append(["$", varstr, "$ & ", valstr, "& $ ",
+                              units.replace('**', '^'), "$ & ", label, " \\\\"])
+            elif latex == 2:  # no values
+                lines.append(["$", varstr, "$ & $ ",
+                              units.replace('**', '^'), "$ & ", label, " \\\\"])
+            elif latex == 3:  # no description
+                lines.append(["$", varstr, "$ & ", valstr, "& $ ",
+                              units.replace('**', '^'), "$ \\\\"])
+    if not latex:
+        if lines:
+            maxlens = np.max([list(map(len, line)) for line in lines], axis=0)
+            if not fixedcols:
+                maxlens = [maxlens[0], 0, 0, 0]
+            dirs = ['>', '<', '<', '<']
+            # check lengths before using zip
+            assert len(list(dirs)) == len(list(maxlens))
+            fmts = ['{0:%s%s}' % (direc, L) for direc, L in zip(dirs, maxlens)]
+        lines = [[fmt.format(s) for fmt, s in zip(fmts, line)]
+                 for line in lines]
+        lines = [title] + ["-"*len(title)] + [''.join(l) for l in lines] + [""]
+    elif latex == 1:
+        lines = (["{\\footnotesize"] + ["\\begin{longtable}{llll}"] +
+                 ["\\toprule"] + [title + " & Value & Units & Description \\\\"] + ["\\midrule"] +
+                 [''.join(l) for l in lines] + ["\\bottomrule"] + ["\\end{longtable}}"] + [""])
+    elif latex == 2:
+        lines = (["{\\footnotesize"] + ["\\begin{longtable}{lll}"] +
+                 ["\\toprule"] + [title + " & Units & Description \\\\"] + ["\\midrule"] +
+                 [''.join(l) for l in lines] + ["\\bottomrule"] + ["\\end{longtable}}"] + [""])
+    elif latex == 3:
+        lines = (["{\\footnotesize"] + ["\\begin{longtable}{lll}"] +
+                 ["\\toprule"] + [title + " & Value & Units \\\\"] + ["\\midrule"] +
+                 [''.join(l) for l in lines] + ["\\bottomrule"] + ["\\end{longtable}}"] + [""])
+    return lines
