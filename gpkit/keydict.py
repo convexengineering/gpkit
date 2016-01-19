@@ -5,40 +5,81 @@ from .small_scripts import is_sweepvar, veckeyed
 
 
 class KeyDict(dict):
+    """KeyDicts allow storing and accessing the same value with multiple keys
+
+    A KeyDict keeps an internal list of VarKeys as canonical keys,but allow
+    accessing their values with any object whose `key` attribute matches
+    one of those VarKeys, or with strings who match any of the multiple
+    possible string interpretations of each key.
+
+    In addition, if collapse_arrays is True then VarKeys which have a `shape`
+    parameter (indicating they are part of an array) are stored as numpy
+    arrays, and automatically de-indexed when a matching VarKey with a
+    particular `idx` parameter is used as a key.
+
+    By default a KeyDict will regenerate the list of possible key strings
+    for every usage; a KeyDict may instead be "baked" to have a fixed list of
+    keystrings by calling the `bake()` method.
+    """
     collapse_arrays = True
 
     def __init__(self, *args, **kwargs):
+        "Passes through to dict.__init__ via the `update()` method"
         self.baked_keystrs = None
         self.update(*args, **kwargs)
 
+    def update(self, *args, **kwargs):
+        "Iterates through the dictionary created by args and kwargs"
+        for k, v in dict(*args, **kwargs).items():
+            self[k] = v
+
+    def bake(self):
+        "Permanently sets the keystrs of a KeyDict"
+        self.baked_keystrs = None
+        self.baked_keystrs = self.keystrs()
+
+    def keystrs(self):
+        "Generates the strings that may be used as keys for a KeyDict"
+        if self.baked_keystrs:
+            return self.baked_keystrs
+        keystrs = defaultdict(set)
+        for key in self.keys():
+            for keystr in key.allstrs:
+                keystrs[keystr].add(key)
+        return keystrs
+
     @classmethod
-    def with_keys(cls, varkeys, *dictionaries):
+    def with_keys(cls, keyset, *dictionaries):
+        "Generates a KeyDict from a KeySet and list of dictionaries"
         out = cls()
         for dictionary in dictionaries:
             for key, value in dictionary.items():
-                ovalue = value
-                keys = varkeys[key]
+                # The keyset filters and converts each dictionary's keys
+                keys = keyset[key]
                 for key in keys:
                     if not key.idx:
                         out[key] = value
                     else:
                         if not hasattr(value, "shape"):
                             value = np.array(value)
-                        if is_sweepvar(value[key.idx]) or not np.isnan(value[key.idx]):
-                            out[key] = value[key.idx]
+                        val_i = value[key.idx]
+                        if is_sweepvar(val_i) or not np.isnan(val_i):
+                            out[key] = val_i
         return out
 
     @classmethod
-    def from_constraints(cls, varkeys, constraints, substitutions=None):
+    def from_constraints(cls, keyset, constraints, substitutions=None):
+        "Collapses constraint substitutions into a single KeyDict"
         substitutions = substitutions if substitutions else {}
         constraintsubs = []
         for constraint in constraints:
             constraintsubs.append(constraint.substitutions)
             constraint.substitutions = {}
         sublist = constraintsubs + [substitutions]
-        return cls.with_keys(varkeys, *sublist)
+        return cls.with_keys(keyset, *sublist)
 
     def __contains__(self, key):
+        "In a winding way, figures out if a key is in the KeyDict"
         if dict.__contains__(self, key):
             return True
         elif hasattr(key, "key"):
@@ -53,26 +94,8 @@ class KeyDict(dict):
         elif key in self.keystrs():
             return True
 
-        return False
-
-    def update(self, *args, **kwargs):
-        for k, v in dict(*args, **kwargs).items():
-            self[k] = v
-
-    def bake(self):
-        self.baked_keystrs = None
-        self.baked_keystrs = self.keystrs()
-
-    def keystrs(self):
-        if self.baked_keystrs:
-            return self.baked_keystrs
-        keystrs = defaultdict(set)
-        for key in self.keys():
-            for keystr in key.allstrs:
-                keystrs[keystr].add(key)
-        return keystrs
-
     def getkeys(self, key):
+        "Gets all keys in self that are represented by a given key"
         if isinstance(key, Strings):
             return self.keystrs()[key]
         elif hasattr(key, "key"):
@@ -93,6 +116,7 @@ class KeyDict(dict):
                          % (key, type(key)))
 
     def is_veckey_but_not_collapsed(self, key):
+        "True iff the key is a veckey and this KeyDict doesn't collapse arrays"
         if "shape" not in key.descr:
             return False
         if "idx" in key.descr:
@@ -102,6 +126,7 @@ class KeyDict(dict):
         return True
 
     def is_index_into_vector(self, key):
+        "True iff the key indexes into a collapsed array"
         if not self.collapse_arrays:
             return False
         if "idx" not in key.descr:
@@ -111,9 +136,11 @@ class KeyDict(dict):
         return True
 
     def __dgi(self, key):
+        "Shortcut for calling dict.__getitem__"
         return dict.__getitem__(self, key)
 
     def __getitem__(self, key):
+        "Overloads __getitem__ and [] access to work with all keys"
         keys = self.getkeys(key)
         if len(keys) > 1:
             out = KeyDict()
@@ -134,6 +161,7 @@ class KeyDict(dict):
         return out
 
     def __setitem__(self, key, value):
+        "Overloads __setitem__ and []= to work with all keys"
         for key in self.getkeys(key):
             if self.is_index_into_vector(key):
                 veckey = veckeyed(key)
@@ -148,6 +176,7 @@ class KeyDict(dict):
                 dict.__setitem__(self, key, value)
 
     def __delitem__(self, key):
+        "Overloads del [] to work with all keys"
         for key in self.getkeys(key):
             if key in self:
                 dict.__delitem__(self, key)
@@ -156,22 +185,26 @@ class KeyDict(dict):
 
 
 class KeySet(KeyDict):
+    "KeySets are KeyDicts without values, serving only to filter and map keys"
     collapse_arrays = False
 
     def __getitem__(self, key):
+        "Given a key, returns a list of VarKeys"
         if key not in self:
             return []
         return [k for k in self.getkeys(key) if k in self]
 
     def __setitem__(self, key, value):
+        "Assigns None, every time."
         KeyDict.__setitem__(self, key, None)
 
     def map(self, iterable):
+        "Given a list of keys, returns a list of VarKeys"
         varkeys = []
         for key in iterable:
             keys = self[key]
             if len(keys) > 1:
-                raise ValueError("KeySet.map() only accepts unambiguous keys.")
+                raise ValueError("KeySet.map() accepts only unambiguous keys.")
             key, = keys
             varkeys.append(key)
         if len(varkeys) == 1:

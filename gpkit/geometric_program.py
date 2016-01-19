@@ -148,8 +148,9 @@ class GeometricProgram(NomialData):
         self.solver_log = SolverLog(verbosity-1, original_stdout)
         try:
             sys.stdout = self.solver_log   # CAPTURED
-            self.solver_out = solverfn(c=self.cs, A=self.A, p_idxs=self.p_idxs,
-                                       k=self.k, *args, **kwargs)
+            solver_out = solverfn(c=self.cs, A=self.A, p_idxs=self.p_idxs,
+                                  k=self.k, *args, **kwargs)
+            self.solver_out = solver_out
         finally:
             sys.stdout = original_stdout
          # STDOUT HAS BEEN RETURNED. ENDING SIDE EFFECTS.
