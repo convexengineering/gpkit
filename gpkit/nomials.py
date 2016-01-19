@@ -538,7 +538,7 @@ class Monomial(Posynomial):
 
 from abc import ABCMeta, abstractproperty
 
-class OneEqConstraint(object):
+class SingletonConstraint(object):
     """Retains input format (lhs vs rhs) in self.left and self.right
     Calls self._constraint_init_ for child class initialization.
     """
@@ -591,7 +591,7 @@ class OneEqConstraint(object):
         pass
 
 
-class PosynomialConstraint(OneEqConstraint, GPConstraint):
+class PosynomialConstraint(SingletonConstraint, GPConstraint):
     """A constraint of the general form monomial >= posynomial
     Stored in the posylt1_rep attribute as a single Posynomial (self <= 1)
     Usually initialized via operator overloading, e.g. cc = (y**2 >= 1 + x)
@@ -600,7 +600,7 @@ class PosynomialConstraint(OneEqConstraint, GPConstraint):
     default_right = 1
 
     def __init__(self, *args, **kwargs):
-        OneEqConstraint.__init__(self, *args, **kwargs)
+        SingletonConstraint.__init__(self, *args, **kwargs)
         if self.oper == "<=":
             p_lt, m_gt = self.left, self.right
         elif self.oper == ">=":
@@ -707,7 +707,7 @@ class MonoEQConstraint(PosynomialConstraint):
     default_right = NotImplemented
 
     def __init__(self, *args, **kwargs):
-        OneEqConstraint.__init__(self, *args, **kwargs)
+        SingletonConstraint.__init__(self, *args, **kwargs)
         if self.oper is not "=":
             raise ValueError("operator %s is not supported by"
                              " MonoEQConstraint." % self.oper)
@@ -738,7 +738,7 @@ class MonoEQConstraint(PosynomialConstraint):
         return constr_sens, var_senss
 
 
-class SignomialConstraint(OneEqConstraint, LocallyApproximableConstraint):
+class SignomialConstraint(SingletonConstraint, LocallyApproximableConstraint):
     """A constraint of the general form posynomial >= posynomial
     Stored internally (exps, cs) as a single Signomial (0 >= self)
     Usually initialized via operator overloading, e.g. cc = (y**2 >= 1 + x - y)
@@ -749,7 +749,7 @@ class SignomialConstraint(OneEqConstraint, LocallyApproximableConstraint):
     default_right = 0
 
     def __init__(self, *args, **kwargs):
-        OneEqConstraint.__init__(self, *args, **kwargs)
+        SingletonConstraint.__init__(self, *args, **kwargs)
         from . import SIGNOMIALS_ENABLED
         if not SIGNOMIALS_ENABLED:
             raise TypeError("Cannot initialize SignomialConstraint"

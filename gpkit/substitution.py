@@ -53,11 +53,15 @@ def parse_subs(varkeys, substitutions):
                                      (sub.shape, key.str_without("model"),
                                       key.shape))
             if not sweepsub:
-                constants[key] = value
+                try:
+                    assert np.isnan(value)
+                except:
+                    constants[key] = value
             elif not hasattr(value, "__call__"):
                 sweep[key] = value
             else:
                 linkedsweep[key] = value
+
     return constants, sweep, linkedsweep
 
 

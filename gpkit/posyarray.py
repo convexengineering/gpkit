@@ -315,6 +315,7 @@ class ConstraintSet(LocallyApproximableConstraint, GPConstraint):
             m_sss = m_sensss[offset:offset+n_posys]
             constr_sens[str(constr)], v_ss = constr.sens_from_dual(p_ss, m_sss)
             var_senss += v_ss
+            offset += n_posys
 
         return constr_sens, var_senss
 

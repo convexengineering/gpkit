@@ -49,7 +49,8 @@ class Beam(Model):
         return w[-1], [shear_eq, moment_eq, theta_eq, displ_eq, L == (N-1)*dx]
 
 
-b = Beam(N=10, substitutions={"L": 6, "EI": 1.1e4, "q": 110*np.ones(10)})
+b = Beam(N=6, substitutions={"L": 6, "EI": 1.1e4, "q": 110*np.ones(10)})
+b.zero_lower_unbounded_variables()
 sol = b.solve(verbosity=1)
 L, EI, q = sol("L"), sol("EI"), sol("q")
 N = len(q)

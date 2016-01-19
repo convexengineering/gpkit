@@ -77,6 +77,7 @@ class TestGP(unittest.TestCase):
         self.assertAlmostEqual(sol["cost"]/(4*math.sqrt(2)), 1., self.ndig)
 
     def test_zero_lower_unbounded(self):
+        from gpkit import *
         x = Variable('x', value=4)
         y = Variable('y', value=0)
         z = Variable('z')
@@ -86,6 +87,7 @@ class TestGP(unittest.TestCase):
         prob = Model(z, [z >= x + t1,
                          t1 >= t2,
                          t2 >= y])
+        prob.zero_lower_unbounded_variables()
         sol = prob.solve(verbosity=0)
 
     def test_mdd_example(self):
