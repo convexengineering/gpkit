@@ -9,8 +9,8 @@
 """
 
 import numpy as np
-from .small_classes import Numbers, HashVector, KeySet, KeyDict
-from .constraints import LocallyApproximableConstraint, GPConstraint
+from .small_classes import Numbers
+from .constraint_set import ArrayConstraint
 
 from . import units as ureg
 from . import DimensionalityError
@@ -29,12 +29,16 @@ class PosyArray(np.ndarray):
     >>> px = gpkit.PosyArray([1, x, x**2])
     """
 
-    def __str__(self):
-        "Returns list-like string, but with str(el) instead of repr(el)."
+    def str_without(self, *excluded_keyfields):
         if self.shape:
-            return "[" + ", ".join(str(p) for p in self) + "]"
+            return "[" + ", ".join(p.str_without(*excluded_keyfields)
+                                   for p in self) + "]"
         else:
             return str(self.flatten()[0])
+
+    def __str__(self):
+        "Returns list-like string, but with str(el) instead of repr(el)."
+        return self.str_without()
 
     def __repr__(self):
         "Returns str(self) tagged with gpkit information."
@@ -72,7 +76,7 @@ class PosyArray(np.ndarray):
                   " Exceptions coming from __array_wrap__.")
             raise
 
-    def latex(self, unused=None, matwrap=True):
+    def latex(self, matwrap=True):
         "Returns 1D latex list of contents."
         if len(self.shape) == 0:
             return self.flatten()[0].latex()
@@ -114,14 +118,20 @@ class PosyArray(np.ndarray):
     def __eq__(self, other):
         "Applies == in a vectorized fashion."
         if isinstance(other, Quantity):
+            # Quantities don't interact well with np.vectorize
             if isinstance(other.magnitude, np.ndarray):
                 l = []
                 for i, e in enumerate(self):
                     l.append(e == other[i])
-                return VectorConstraint(l)
+                ac = ArrayConstraint(l)
             else:
-                return VectorConstraint([e == other for e in self])
-        return VectorConstraint(self._eq(self, other))
+                ac = ArrayConstraint([e == other for e in self])
+        else:
+            ac = ArrayConstraint(self._eq(self, other))
+        ac.left = self.key if hasattr(self, "key") else self
+        ac.right = other.key if hasattr(other, "key") else other
+        ac.oper = "=="
+        return ac
 
     def __ne__(self, other):
         "Does type checking, then applies 'not ==' in a vectorized fashion."
@@ -134,28 +144,40 @@ class PosyArray(np.ndarray):
     def __le__(self, other):
         "Applies '<=' in a vectorized fashion."
         if isinstance(other, Quantity):
+            # Quantities don't interact well with np.vectorize
             if isinstance(other.magnitude, np.ndarray):
                 l = []
                 for i, e in enumerate(self):
                     l.append(e <= other[i])
-                return VectorConstraint(l)
+                ac = ArrayConstraint(l)
             else:
-                return VectorConstraint([e <= other for e in self])
-        return VectorConstraint(self._leq(self, other))
+                ac = ArrayConstraint([e <= other for e in self])
+        else:
+            ac = ArrayConstraint(self._leq(self, other))
+        ac.left = self.key if hasattr(self, "key") else self
+        ac.right = other.key if hasattr(other, "key") else other
+        ac.oper = "<="
+        return ac
 
     _geq = np.vectorize(lambda a, b: a >= b)
 
     def __ge__(self, other):
         "Applies '>=' in a vectorized fashion."
         if isinstance(other, Quantity):
+            # Quantities don't interact well with np.vectorize
             if isinstance(other.magnitude, np.ndarray):
                 l = []
                 for i, e in enumerate(self):
                     l.append(e >= other[i])
-                return VectorConstraint(l)
+                ac = ArrayConstraint(l)
             else:
-                return VectorConstraint([e >= other for e in self])
-        return VectorConstraint(self._geq(self, other))
+                ac = ArrayConstraint([e >= other for e in self])
+        else:
+            ac = ArrayConstraint(self._geq(self, other))
+        ac.left = self.key if hasattr(self, "key") else self
+        ac.right = other.key if hasattr(other, "key") else other
+        ac.oper = ">="
+        return ac
 
     def outer(self, other):
         "Returns the array and argument's outer product."
@@ -207,135 +229,3 @@ class PosyArray(np.ndarray):
     def right(self):
         "Returns (self[1], self[2] ... self[N], 0)"
         return self.padright(0)[1:]
-
-
-class ConstraintSet(LocallyApproximableConstraint, GPConstraint):
-    substitutions = None
-
-    def __init__(self, constraints, substitutions=None,
-                 latex=None, string=None):
-        self.constraints = constraints
-        cs = self.flatconstraints()
-        vks = self.make_varkeys(cs)
-        self.substitutions = KeyDict.from_constraints(vks, cs, substitutions)
-
-    @property
-    def varkeys(self):
-        return self.make_varkeys()
-
-    def make_varkeys(self, constraints=None):
-        varkeys = KeySet()
-        constraints = constraints if constraints else self.flatconstraints()
-        for constr in constraints:
-            varkeys.update(constr.varkeys)
-        return varkeys
-
-    def flatconstraints(self):
-        constraints = self.constraints
-        if hasattr(constraints, "flatten"):
-            constraints = constraints.flatten()
-            isnt_numpy_bool = lambda c: c and type(c) is not np.bool_
-            constraints = filter(isnt_numpy_bool, constraints)
-        return constraints
-
-    def parse_constraints(self):
-        self.onlyposyconstrs, self.localposyconstrs = [], []
-        self.all_have_posy_rep = True
-        self.allposyconstrs = []
-        for constr in self.flatconstraints():
-            constr.substitutions.update(self.substitutions)
-            localposy = False
-            if hasattr(constr, "as_gpconstr"):
-                localposy = constr.as_gpconstr(None)
-                if localposy:
-                    self.localposyconstrs.append(constr)
-            if hasattr(constr, "as_posyslt1"):
-                self.allposyconstrs.append(constr)
-                if not localposy:
-                    self.onlyposyconstrs.append(constr)
-            elif localposy:
-                self.all_have_posy_rep = False
-            else:
-                raise ValueError("constraints must have either an"
-                                 "`as_gpconstr` method or an"
-                                 "`as_posyslt1` method, but %s has neither"
-                                 % constr)
-
-    def __len__(self):
-        return len(self.constraints)
-
-    def __getattr__(self, attr):
-        return getattr(self.constraints, attr)
-
-    def __getitem__(self, idx):
-        return self.constraints[idx]
-
-    def __setitem__(self, idx, value):
-        self.constraints[idx] = value
-
-    def as_posyslt1(self):
-        self.parse_constraints()
-        if self.all_have_posy_rep:
-            posyss, self.posymap = [], []
-            for c in self.allposyconstrs:
-                posys = c.as_posyslt1()
-                self.posymap.append(len(posys))
-                posyss.extend(posys)
-            return posyss
-        else:
-            return [None]
-
-    def as_gpconstr(self, x0):
-        self.parse_constraints()
-        if not self.localposyconstrs:
-            return None
-        self.posymap = "sp"
-        localposyconstrs = [c.as_gpconstr(x0)
-                            for c in self.localposyconstrs]
-        localposyconstrs.extend(self.onlyposyconstrs)
-        return ConstraintSet(localposyconstrs, self.substitutions)
-
-    def __str__(self):
-        return str(self.constraints)
-
-    def latex(self):
-        return self.constraints.latex()
-
-    def sub(self, subs, value=None):
-        return self  # TODO
-
-    def sens_from_dual(self, p_senss, m_sensss):
-        assert self.all_have_posy_rep
-        constr_sens = {}
-        var_senss = HashVector()
-        offset = 0
-        for i, n_posys in enumerate(self.posymap):
-            constr = self.allposyconstrs[i]
-            p_ss = p_senss[offset:offset+n_posys]
-            m_sss = m_sensss[offset:offset+n_posys]
-            constr_sens[str(constr)], v_ss = constr.sens_from_dual(p_ss, m_sss)
-            var_senss += v_ss
-            offset += n_posys
-
-        return constr_sens, var_senss
-
-    def sens_from_gpconstr(self, posyapprox, posy_approx_sens, var_senss):
-        constr_sens = {}
-        for i, lpc in enumerate(self.localposyconstrs):
-            pa = posyapprox[i]
-            p_a_s = posy_approx_sens[str(pa)]
-            constr_sens[str(lpc)] = lpc.sens_from_gpconstr(pa, p_a_s, var_senss)
-        return constr_sens
-
-    def process_result(self, result):
-        processed = {}
-        for constraint in self.constraints:
-            if hasattr(constraint, "process_result"):
-                p = constraint.process_result(result)
-                if p:
-                    processed.update(p)
-        return processed
-
-
-class VectorConstraint(ConstraintSet):
-    pass

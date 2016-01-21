@@ -1,7 +1,7 @@
 """Signomial, Posynomial, Monomial, Constraint, & MonoEQCOnstraint classes"""
 import numpy as np
 
-from .constraints import LocallyApproximableConstraint, GPConstraint
+from .constraint_meta import LocallyApproximableConstraint, GPConstraint
 from .small_classes import Strings, Numbers, Quantity
 from .small_classes import HashVector, KeySet
 from .posyarray import PosyArray
@@ -256,20 +256,28 @@ class Signomial(NomialData):
             # by default all constraints take the form left >= right
             return SignomialConstraint(self, ">=", other)
 
-    def __str__(self, mult_symbol='*'):
+    def str_without(self, *excluded_keyfields):
         mstrs = []
         for c, exp in zip(self.cs, self.exps):
-            varstrs = ['%s**%.2g' % (var, x) if x != 1 else "%s" % var
-                       for (var, x) in exp.items() if x != 0]
+            varstrs = []
+            for (var, x) in exp.items():
+                if x != 0:
+                    varstr = var.str_without(*excluded_keyfields)
+                    if x != 1:
+                        varstr += "**%.2g" % x
+                    varstrs.append(varstr)
             varstrs.sort()
             c = mag(c)
             cstr = "%.3g" % c
             if cstr == "-1" and varstrs:
-                mstrs.append("-" + mult_symbol.join(varstrs))
+                mstrs.append("-" + "*".join(varstrs))
             else:
                 cstr = [cstr] if cstr != "1" or not varstrs else []
-                mstrs.append(mult_symbol.join(cstr + varstrs))
+                mstrs.append("*".join(cstr + varstrs))
         return " + ".join(sorted(mstrs)) + unitstr(self.units, " [%s]")
+
+    def __str__(self):
+        return self.str_without()
 
     def __repr__(self):
         return "gpkit.%s(%s)" % (self.__class__.__name__, str(self))

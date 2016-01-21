@@ -65,14 +65,16 @@ class VarKey(object):
         self.key = self
         self.descr["unitstr"] = self.make_unitstr()
 
-    def __repr__(self, *exclude):
+    def __repr__(self):
         return self.str_without()
 
-    def str_without(self, *exclude):
+    def str_without(self, *excluded_fields):
         string = self.name
         for subscript in self.subscripts:
-            if subscript in self.descr and subscript not in exclude:
+            if subscript in self.descr and subscript not in excluded_fields:
                 string += "_" + str(self.descr[subscript])
+        if self.shape and not self.idx:
+            string = "\\vec{%s}" % string
         return string
 
     @property
