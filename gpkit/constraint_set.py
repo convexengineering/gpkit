@@ -13,6 +13,15 @@ class ConstraintSet(LocallyApproximableConstraint, GPConstraint):
         vks = self.make_varkeys(cs)
         self.substitutions = KeyDict.from_constraints(vks, cs, substitutions)
 
+    def __str__(self):
+        return str(self.constraints)
+
+    def __repr__(self):
+        return "gpkit.%s(%s)" % (self.__class__.__name__, str(self))
+
+    def latex(self):
+        return self.constraints.latex()
+
     @property
     def varkeys(self):
         return self.make_varkeys()
@@ -89,15 +98,6 @@ class ConstraintSet(LocallyApproximableConstraint, GPConstraint):
         localposyconstrs.extend(self.onlyposyconstrs)
         return ConstraintSet(localposyconstrs, self.substitutions)
 
-    def __repr__(self):
-        return "gpkit.%s(%s)" % (self.__class__.__name__, str(self))
-
-    def __str__(self):
-        return str(self.constraints)
-
-    def latex(self):
-        return self.constraints.latex()
-
     def sub(self, subs, value=None):
         return self  # TODO
 
@@ -138,11 +138,8 @@ class ArrayConstraint(ConstraintSet):
     def __str__(self):
         return "%s %s %s" % (self.left, self.oper, self.right)
 
-    def __repr__(self):
-        return "gpkit.%s(%s)" % (self.__class__.__name__, self)
-
     def latex(self):
         latex_oper = self.latex_opers[self.oper]
-        units = bool(self.units)
+        units = bool(self.left.units)
         return ("%s %s %s" % (self.left.latex(showunits=units), latex_oper,
                               self.right.latex(showunits=units)))

@@ -73,8 +73,7 @@ class VarKey(object):
         for subscript in self.subscripts:
             if subscript in self.descr and subscript not in excluded_fields:
                 string += "_" + str(self.descr[subscript])
-        if self.shape and not self.idx:
-            string = "\\vec{%s}" % string
+        # TODO: add latex \vec{} to the string rep of veckeys?
         return string
 
     @property
@@ -99,6 +98,8 @@ class VarKey(object):
                 if subscript == "idx":
                     if len(self.descr["idx"]) == 1:
                         s = s[:-3]+s[-2:]  # drop the comma for 1-d vectors
+        if self.shape and not self.idx:
+            s = "\\vec{%s}" % s  # add vector arrow for veckeys
         return s
 
     def _repr_latex_(self):

@@ -204,10 +204,11 @@ def results_table(data, title, minval=0, printunits=True, fixedcols=True,
             b = isinstance(v, Iterable) and bool(v.shape)
             model = k.descr.get("model", "")
             models.add(model)
+            s = k.str_without("model")
             if not sortbyvals:
-                decorated.append((model, b, (varfmt % k.nomstr), i, k, v))
+                decorated.append((model, b, (varfmt % s), i, k, v))
             else:
-                decorated.append((model, np.mean(v), b, (varfmt % k.nomstr), i, k, v))
+                decorated.append((model, np.mean(v), b, (varfmt % s), i, k, v))
     if included_models:
         included_models = set(included_models)
         included_models.add("")

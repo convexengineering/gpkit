@@ -5,21 +5,21 @@ Cost
 
 Free Variables
 --------------
-None : 8.163  [m] height
-None : 8.17   [m] depth 
-None : 4.081  [m] width 
+d : 8.17   [m] depth 
+h : 8.163  [m] height
+w : 4.081  [m] width 
 
 Constants
 ---------
-None : 50   [m**2] upper limit, floor area        
-None : 10          upper limit, wall aspect ratio 
-None : 10          upper limit, floor aspect ratio
-None : 200  [m**2] upper limit, wall area         
-None : 2           lower limit, wall aspect ratio 
-None : 2           lower limit, floor aspect ratio
+A_{floor} : 50   [m**2] upper limit, floor area        
+ A_{wall} : 200  [m**2] upper limit, wall area         
+    alpha : 2           lower limit, wall aspect ratio 
+     beta : 10          upper limit, wall aspect ratio 
+    delta : 10          upper limit, floor aspect ratio
+    gamma : 2           lower limit, floor aspect ratio
 
 Sensitivities
 -------------
-None : 0.5  lower limit, wall aspect ratio
-None : -1.5 upper limit, wall area        
+   alpha : 0.5  lower limit, wall aspect ratio
+A_{wall} : -1.5 upper limit, wall area        
 

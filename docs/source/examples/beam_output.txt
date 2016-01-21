@@ -5,25 +5,25 @@ Cost
 
 Free Variables
 --------------
-None : 1                                               [m]   Length of an element
-None : [ 500       400       300       200      ... ]  [N]   Internal shear      
-None : [ 1.25e+03  800       450       200      ... ]  [N*m] Internal moment     
-None : [  -        0.0513    0.185     0.366    ... ]  [m]   Displacement        
-None : [  -        0.103     0.165     0.198    ... ]        Slope               
+    dx : 1                                               [m]   Length of an element
+     M : [ 1.25e+03  800       450       200      ... ]  [N*m] Internal moment     
+     V : [ 500       400       300       200      ... ]  [N]   Internal shear      
+\theta : [  -        0.103     0.165     0.198    ... ]        Slope               
+     w : [  -        0.0513    0.185     0.366    ... ]  [m]   Displacement        
 
 Constants
 ---------
-None : 1e+04                                           [N*m**2]                               
-None : 5                                               [m]      Overall beam length           
-None : [  -         -         -         -       ... ]  [N*m]    Internal moment               
-None : [ 0          -         -         -       ... ]           Slope                         
-None : [ 100       100       100       100      ... ]  [N/m]    Distributed load at each point
-None : [ 0          -         -         -       ... ]  [m]      Displacement                  
-None : [  -         -         -         -       ... ]  [N]      Internal shear                
+    EI : 1e+04                                           [N*m**2]                               
+     L : 5                                               [m]      Overall beam length           
+     M : [  -         -         -         -       ... ]  [N*m]    Internal moment               
+     V : [  -         -         -         -       ... ]  [N]      Internal shear                
+\theta : [ 0          -         -         -       ... ]           Slope                         
+     q : [ 100       100       100       100      ... ]  [N/m]    Distributed load at each point
+     w : [ 0          -         -         -       ... ]  [m]      Displacement                  
 
 Sensitivities
 -------------
-None : 4                                              Overall beam length           
-None : [ 0.0072    0.0416    0.118     0.234    ... ] Distributed load at each point
-None : -1                                                                           
+ L : 4                                              Overall beam length           
+ q : [ 0.0072    0.0416    0.118     0.234    ... ] Distributed load at each point
+EI : -1                                                                           
 

@@ -29,7 +29,7 @@ class PosyArray(np.ndarray):
     >>> px = gpkit.PosyArray([1, x, x**2])
     """
 
-    def str_without(self, *excluded_keyfields):
+    def str_without(self, excluded_keyfields=[]):
         if self.shape:
             return "[" + ", ".join(p.str_without(*excluded_keyfields)
                                    for p in self) + "]"
@@ -46,6 +46,24 @@ class PosyArray(np.ndarray):
             return "gpkit.%s(%s)" % (self.__class__.__name__, str(self))
         else:
             return str(self.flatten()[0])
+
+    def latex(self, matwrap=True):
+        "Returns 1D latex list of contents."
+        if len(self.shape) == 0:
+            return self.flatten()[0].latex()
+        if len(self.shape) == 1:
+            return (("\\begin{bmatrix}" if matwrap else "") +
+                    " & ".join(el.latex() for el in self) +
+                    ("\\end{bmatrix}" if matwrap else ""))
+        elif len(self.shape) == 2:
+            return ("\\begin{bmatrix}" +
+                    " \\\\\n".join(el.latex(matwrap=False) for el in self) +
+                    "\\end{bmatrix}")
+        else:
+            return None
+
+    def _repr_latex_(self):
+        return "$$"+self.latex()+"$$"
 
     def __hash__(self):
         return hash(self.tostring())
@@ -75,24 +93,6 @@ class PosyArray(np.ndarray):
                   " but you wouldn't see it because numpy seems to catch all"
                   " Exceptions coming from __array_wrap__.")
             raise
-
-    def latex(self, matwrap=True):
-        "Returns 1D latex list of contents."
-        if len(self.shape) == 0:
-            return self.flatten()[0].latex()
-        if len(self.shape) == 1:
-            return (("\\begin{bmatrix}" if matwrap else "") +
-                    " & ".join(el.latex() for el in self) +
-                    ("\\end{bmatrix}" if matwrap else ""))
-        elif len(self.shape) == 2:
-            return ("\\begin{bmatrix}" +
-                    " \\\\\n".join(el.latex(matwrap=False) for el in self) +
-                    "\\end{bmatrix}")
-        else:
-            return None
-
-    def _repr_latex_(self):
-        return "$$"+self.latex()+"$$"
 
     def __nonzero__(self):
         "Allows the use of PosyArrays as truth elements."
