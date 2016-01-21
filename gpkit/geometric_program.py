@@ -312,6 +312,7 @@ class GeometricProgram(NomialData):
 
     def __str__(self):
         "String representation of a GeometricProgram."
+        #TODO: should this print posynomials <= 1? Substitutions?
         return "\n".join(["  # minimize",
                           "    %s," % self.cost,
                           "[ # subject to"] +
@@ -324,6 +325,7 @@ class GeometricProgram(NomialData):
 
     def latex(self):
         "LaTeX representation of a GeometricProgram."
+        #TODO: should this print posynomials <= 1? Substitutions?
         return "\n".join(["\\begin{array}[ll]",
                           "\\text{}",
                           "\\text{minimize}",
