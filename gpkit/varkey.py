@@ -92,7 +92,9 @@ class VarKey(object):
 
     def latex(self):
         s = self.name
-        for subscript in ["idx", "model"]:
+        from . import settings
+        subscripts = ["idx"]+(["model"] if settings["latex_modelname"] else [])
+        for subscript in subscripts:
             if subscript in self.descr:
                 s = "{%s}_{%s}" % (s, self.descr[subscript])
                 if subscript == "idx":
