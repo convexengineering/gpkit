@@ -594,8 +594,10 @@ class SingletonConstraint(object):
     def sub(self, subs, value=None):
         if value:
             subs = {subs: value}
-        return self.__class__(self.left.sub(subs), self.oper,
-                              self.right.sub(subs))
+        subbed = self.__class__(self.left.sub(subs), self.oper,
+                                self.right.sub(subs))
+        subbed.substitutions = self.substitutions
+        return subbed
 
     def process_result(self, result):
         pass
