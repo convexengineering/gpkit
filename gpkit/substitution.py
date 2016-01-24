@@ -147,8 +147,11 @@ def substitution(nomial, substitutions, val=None):
                         new_units = sub.units/var.units
                         cs_[i] *= new_units.to('dimensionless')
                     except DimensionalityError:
-                        raise ValueError("substituted variables need the same"
-                                         " units as variables they replace.")
+                        raise ValueError("units of the substituted variable"
+                                         " '%s' [%s] are not compatible with"
+                                         " those of the original '%s' [%s]." %
+                                         (sub, sub.units.units,
+                                          var, var.units.units))
                 exps_[i] += HashVector({sub: x})
                 varlocs_[sub].append(i)
             elif isinstance(sub, Monomial):
@@ -157,8 +160,12 @@ def substitution(nomial, substitutions, val=None):
                         new_units = sub.units/var.units
                         cs_[i] *= new_units.to('dimensionless')
                     except DimensionalityError:
-                        raise ValueError("substituted monomials need the same"
-                                         " units as monomials they replace.")
+                        raise ValueError("units of the substituted monomial"
+                                         " '%s' [%s] are not compatible with"
+                                         " those of the original '%s' [%s]." %
+                                         (sub.str_without(showunits=False),
+                                          sub.units.units,
+                                          var, var.units.units))
                 exps_[i] += x*sub.exp
                 cs_[i] *= mag(sub.c)**x
                 for subvar in sub.exp:
