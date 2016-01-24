@@ -8,7 +8,7 @@ gpkit/model.py
 gpkit/modified_ctypesgen.py
 gpkit/nomial_data.py
 gpkit/nomials.py
-gpkit/posyarray.py
+gpkit/nomialarray.py
 gpkit/shortcuts.py
 gpkit/signomial_program.py
 gpkit/small_classes.py

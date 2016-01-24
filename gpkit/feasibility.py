@@ -2,7 +2,7 @@ import numpy as np
 
 from .variables import Variable, VectorVariable
 from .varkey import VarKey
-from .posyarray import PosyArray
+from .nomialarray import NomialArray
 
 
 def feasibility_model(program, flavour="max", varname=None,
@@ -70,8 +70,8 @@ def feasibility_model(program, flavour="max", varname=None,
             addvalue[vk_] = vk
             constvarkeys.append(vk_)
             constvars.append(Variable(**descr))
-        constvars = PosyArray(constvars)
-        constvalues = PosyArray(constants.values())
+        constvars = NomialArray(constvars)
+        constvalues = NomialArray(constants.values())
         constraints = [c.sub(rmvalue) for c in signomials]
         cost = slackb.prod()
         # cost function could also be .sum(); self.cost would break ties

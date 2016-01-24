@@ -1,10 +1,10 @@
 # -*coding: utf-8 -*-
-"""Module for creating PosyArray instances.
+"""Module for creating NomialArray instances.
 
     Example
     -------
     >>> x = gpkit.Monomial('x')
-    >>> px = gpkit.PosyArray([1, x, x**2])
+    >>> px = gpkit.NomialArray([1, x, x**2])
 
 """
 
@@ -17,7 +17,7 @@ from . import DimensionalityError
 Quantity = ureg.Quantity
 
 
-class PosyArray(np.ndarray):
+class NomialArray(np.ndarray):
     """A Numpy array with elementwise inequalities and substitutions.
 
     Arguments
@@ -26,7 +26,7 @@ class PosyArray(np.ndarray):
 
     Example
     -------
-    >>> px = gpkit.PosyArray([1, x, x**2])
+    >>> px = gpkit.NomialArray([1, x, x**2])
     """
 
     def str_without(self, excluded_keyfields=[]):
@@ -95,11 +95,11 @@ class PosyArray(np.ndarray):
             raise
 
     def __nonzero__(self):
-        "Allows the use of PosyArrays as truth elements."
+        "Allows the use of NomialArrays as truth elements."
         return all(p.__nonzero__() for p in self)
 
     def __bool__(self):
-        "Allows the use of PosyArrays as truth elements in python3."
+        "Allows the use of NomialArrays as truth elements in python3."
         return all(p.__bool__() for p in self)
 
     @property
@@ -111,7 +111,7 @@ class PosyArray(np.ndarray):
             else:
                 return floatarray
         except TypeError:
-            raise ValueError("only a posyarray of numbers has a 'c'")
+            raise ValueError("only a nomialarray of numbers has a 'c'")
 
     _eq = np.vectorize(lambda a, b: a == b)
 
@@ -181,11 +181,11 @@ class PosyArray(np.ndarray):
 
     def outer(self, other):
         "Returns the array and argument's outer product."
-        return PosyArray(np.outer(self, other))
+        return NomialArray(np.outer(self, other))
 
     def sub(self, subs, val=None, require_positive=True):
         "Substitutes into the array"
-        return PosyArray([p.sub(subs, val, require_positive) for p in self])
+        return NomialArray([p.sub(subs, val, require_positive) for p in self])
 
     @property
     def units(self):
@@ -196,7 +196,7 @@ class PosyArray(np.ndarray):
                     try:
                         (units/el.units).to("dimensionless")
                     except DimensionalityError:
-                        raise ValueError("all elements of a PosyArray must"
+                        raise ValueError("all elements of a NomialArray must"
                                          " have the same units.")
                 else:
                     units = el.units
@@ -207,7 +207,7 @@ class PosyArray(np.ndarray):
         if self.ndim != 1:
             raise NotImplementedError("not implemented for ndim = %s" %
                                       self.ndim)
-        padded = PosyArray(np.hstack((padding, self)))
+        padded = NomialArray(np.hstack((padding, self)))
         padded.units  # check that the units are consistent
         return padded
 
@@ -216,7 +216,7 @@ class PosyArray(np.ndarray):
         if self.ndim != 1:
             raise NotImplementedError("not implemented for ndim = %s" %
                                       self.ndim)
-        padded = PosyArray(np.hstack((self, padding)))
+        padded = NomialArray(np.hstack((self, padding)))
         padded.units  # check that the units are consistent
         return padded
 

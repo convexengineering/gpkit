@@ -21,7 +21,7 @@ from .signomial_program import SignomialProgram
 from .solution_array import SolutionArray
 from .varkey import VarKey
 from .variables import Variable, VectorVariable
-from .posyarray import PosyArray
+from .nomialarray import NomialArray
 from . import SignomialsEnabled
 
 from .nomial_data import NomialData
@@ -239,10 +239,10 @@ class Model(object):
                     varsbyname[varkey.name][vecidx][idx] = var
                 except IndexError:  # veckey not in list!
                     nanarray = np.full(var.descr["shape"], np.nan, dtype="object")
-                    nanPosyArray = PosyArray(nanarray)
-                    nanPosyArray[idx] = var
-                    nanPosyArray.key = veckey
-                    varsbyname[varkey.name].append(nanPosyArray)
+                    nanNomialArray = NomialArray(nanarray)
+                    nanNomialArray[idx] = var
+                    nanNomialArray.key = veckey
+                    varsbyname[varkey.name].append(nanNomialArray)
             else:
                 if var not in varsbyname[varkey.name]:
                     varsbyname[varkey.name].append(var)
@@ -454,7 +454,7 @@ class Model(object):
             solution.append(result)
         solution.program = self.program
         solution.toarray()
-        # solution["localmodel"] = PosyArray(solution["localmodel"])
+        # solution["localmodel"] = NomialArray(solution["localmodel"])
         self.solution = solution  # NOTE: SIDE EFFECTS
         if verbosity > 0:
             print(solution.table())

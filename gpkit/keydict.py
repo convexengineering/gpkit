@@ -7,15 +7,34 @@ from .small_scripts import is_sweepvar, veckeyed
 class KeyDict(dict):
     """KeyDicts allow storing and accessing the same value with multiple keys
 
-    A KeyDict keeps an internal list of VarKeys as canonical keys,but allow
+    A KeyDict keeps an internal list of VarKeys as canonical keys, but allows
     accessing their values with any object whose `key` attribute matches
     one of those VarKeys, or with strings who match any of the multiple
     possible string interpretations of each key.
+
+    ```
+    kd = gpkit.keydict.KeyDict()
+    x = gpkit.Variable("x", model="test")
+    kd[x] = 1
+    assert kd[x] == kd[x.key] == kd["x"] == kd["x_test"] == 1
+    ```
 
     In addition, if collapse_arrays is True then VarKeys which have a `shape`
     parameter (indicating they are part of an array) are stored as numpy
     arrays, and automatically de-indexed when a matching VarKey with a
     particular `idx` parameter is used as a key.
+
+    ```
+    v = gpkit.VectorVariable(3, "v")
+    kd[v] = np.array([2, 3, 4])
+    assert all(kd[v] == kd[v.key])
+    assert all(kd["v"] == np.array([2, 3, 4]))
+    assert v[0].key.idx == (0,)
+    assert kd[v][0] == kd[v[0]] == 2
+    kd[v[0]] = 6
+    assert kd[v][0] == kd[v[0]] == 6
+    assert all(kd[v] == np.array([6, 3, 4]))
+    ```
 
     By default a KeyDict will regenerate the list of possible key strings
     for every usage; a KeyDict may instead be "baked" to have a fixed list of

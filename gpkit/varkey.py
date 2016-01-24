@@ -1,7 +1,7 @@
 """Defines the VarKey class"""
 import numpy as np
 
-from .posyarray import PosyArray
+from .nomialarray import NomialArray
 from .small_classes import Strings, Quantity
 from .small_classes import Counter
 
@@ -25,7 +25,7 @@ class VarKey(object):
     """
     new_unnamed_id = Counter()
     subscripts = ["model", "idx"]
-    eq_ignores = frozenset(["units", "value"])
+    eq_ignores = frozenset(["units", "unitstr", "value"])
 
     def __init__(self, name=None, **kwargs):
         self.descr = kwargs

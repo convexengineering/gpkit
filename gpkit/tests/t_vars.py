@@ -1,7 +1,7 @@
 """Test VarKey, Variable, VectorVariable, and ArrayVariable classes"""
 import unittest
 import numpy as np
-from gpkit import (Monomial, PosyArray, Variable, VarKey,
+from gpkit import (Monomial, NomialArray, Variable, VarKey,
                    VectorVariable, ArrayVariable)
 
 
@@ -39,6 +39,10 @@ class TestVarKey(unittest.TestCase):
         self.assertTrue(V == vel)
         self.assertFalse(V != vel)
         self.assertEqual(vel, vel)
+        x1 = Variable("x", 3, "m")
+        x2 = Variable("x", 2, "ft")
+        # do we want these to collide?
+        self.assertEqual(x1.key, x2.key)
 
     def test_repr(self):
         """Test __repr__ method"""
@@ -101,7 +105,7 @@ class TestVectorVariable(unittest.TestCase):
         # test 1
         n = 3
         v = VectorVariable(n, 'v', label='dummy variable')
-        self.assertTrue(isinstance(v, PosyArray))
+        self.assertTrue(isinstance(v, NomialArray))
         v_mult = 3*v
         for i in range(n):
             self.assertTrue(isinstance(v[i], Variable))
@@ -115,7 +119,7 @@ class TestVectorVariable(unittest.TestCase):
         x_0 = Monomial('x', idx=(0,), shape=(3,), label='dummy variable')
         x_1 = Monomial('x', idx=(1,), shape=(3,), label='dummy variable')
         x_2 = Monomial('x', idx=(2,), shape=(3,), label='dummy variable')
-        x2 = PosyArray([x_0, x_1, x_2])
+        x2 = NomialArray([x_0, x_1, x_2])
         self.assertEqual(x, x2)
 
         # test inspired by issue 137

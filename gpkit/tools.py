@@ -4,7 +4,7 @@ import numpy as np
 from collections import Iterable
 
 from .variables import Variable, VectorVariable
-from .posyarray import PosyArray
+from .nomialarray import NomialArray
 
 
 def te_exp_minus1(posy, nterm):
@@ -59,7 +59,7 @@ def composite_objective(*objectives, **kwargs):
         del descr["value"]
         descr["name"] = "v_{CO}"
         w_s.append(Variable(value=('sweep', lambda x: 1-x), args=[w], **descr))
-    w_s = normalization[-1]*PosyArray(w_s)*objectives[-1]
+    w_s = normalization[-1]*NomialArray(w_s)*objectives[-1]
     objective = w_s.prod()
     for i, obj in enumerate(objectives[:-1]):
         objective += ws[i]*w_s[:i].prod()*w_s[i+1:].prod()*obj/normalization[i]

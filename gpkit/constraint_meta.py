@@ -11,12 +11,12 @@ class Constraint(object):
 
     @abstractproperty
     def substitutions(self):
-        "Substitutions that the Constraint currently knows about"
+        "Substitutions to apply before returning a posylt1 or approximation."
         pass
 
     @substitutions.setter
     def substitutions(self, newvalue):
-        ".substitutions mist be settable"
+        ".substitutions must be settable"
         pass
 
     @abstractmethod

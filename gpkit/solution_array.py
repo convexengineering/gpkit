@@ -5,7 +5,7 @@ from collections import Iterable
 from functools import reduce as functools_reduce
 from operator import mul
 
-from .posyarray import PosyArray
+from .nomialarray import NomialArray
 from .nomials import Monomial
 from .varkey import VarKey
 from .small_classes import Strings, Quantity
@@ -25,7 +25,7 @@ class SolutionArray(DictOfLists):
         monomials : array
         posynomials : array
         variables: dict of arrays
-    localmodels : PosyArray
+    localmodels : NomialArray
         Local power-law fits (small sensitivities are cut off)
 
     Example
@@ -67,11 +67,11 @@ class SolutionArray(DictOfLists):
         return mag(self.subinto(p).c)
 
     def subinto(self, p):
-        "Returns PosyArray of each solution substituted into p."
+        "Returns NomialArray of each solution substituted into p."
         if p in self["variables"]:
-            return PosyArray(self["variables"][p])
+            return NomialArray(self["variables"][p])
         elif len(self) > 1:
-            return PosyArray([self.atindex(i).subinto(p)
+            return NomialArray([self.atindex(i).subinto(p)
                               for i in range(len(self))])
         else:
             return p.sub(self["variables"])
@@ -86,9 +86,9 @@ class SolutionArray(DictOfLists):
         Returns scalar, unitless values.
         """
         if p in self["variables"]["sensitivities"]:
-            return PosyArray(self["variables"]["sensitivities"][p])
+            return NomialArray(self["variables"]["sensitivities"][p])
         elif len(self) > 1:
-            return PosyArray([self.atindex(i).subinto(p)
+            return NomialArray([self.atindex(i).subinto(p)
                               for i in range(len(self))])
         else:
             subbed = p.sub(self["variables"]["sensitivities"],
@@ -156,10 +156,6 @@ class SolutionArray(DictOfLists):
                                       excluded_models=excluded_models,
                                       latex=latex)
         return "\n".join(strs)
-
-
-def in_both_and_truthy_in_second(key, tables, dictionary):
-    return bool(key in tables and key in dictionary and dictionary[key])
 
 
 def results_table(data, title, minval=0, printunits=True, fixedcols=True,

@@ -2,7 +2,7 @@
 import unittest
 import time
 import numpy as np
-from gpkit import Variable, VectorVariable, Model, PosyArray
+from gpkit import Variable, VectorVariable, Model, NomialArray
 from gpkit.solution_array import SolutionArray
 from gpkit.solution_array import results_table
 from gpkit.varkey import VarKey
@@ -58,7 +58,7 @@ class TestSolutionArray(unittest.TestCase):
         sol = m.solve(verbosity=0)
         Psol = sol.subinto(P_max)
         self.assertEqual(len(Psol), Nsweep)
-        self.assertEqual(type(Psol), PosyArray)
+        self.assertEqual(type(Psol), NomialArray)
         self.assertAlmostEqual(0, np.max(np.abs(Pvals - Psol.c)))
         self.assertAlmostEqual(0, np.max(np.abs(Psol.c - sol(P_max))))
 

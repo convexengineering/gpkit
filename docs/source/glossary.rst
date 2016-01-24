@@ -60,10 +60,10 @@ gpkit.nomials
     :undoc-members:
     :show-inheritance:
 
-gpkit.posyarray
+gpkit.nomialarray
 ----------------------
 
-.. automodule:: gpkit.posyarray
+.. automodule:: gpkit.nomialarray
     :members:
     :undoc-members:
     :show-inheritance:

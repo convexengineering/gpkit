@@ -30,19 +30,7 @@ def enable_units(path=UNITDEF_PATH):
     """Enables units support in a particular instance of GPkit.
 
     Posynomials created after calling this are incompatible with those created
-    before.def approx_c(constraint, x0):
-            if (hasattr(constraint, "any_nonpositive_cs")
-                    and constraint.any_nonpositive_cs):
-                with SignomialsEnabled():
-                    p, n = constraint.posy_negy()
-                    return p/n.mono_lower_bound(x0)
-            else:
-                return constraint
-
-        x0 = sol["variables"]
-        constraints_ = [approx_c(c, x0) for c in self.constraints]
-        gp_model = Model(self.cost, constraints_, self.substitutions)
-        sol = gp_model.solve()
+    before.
 
     If gpkit is imported multiple times, this needs to be run each time."""
     global units, DimensionalityError, UNIT_REGISTRY
@@ -123,7 +111,7 @@ from .variables import Variable, VectorVariable, ArrayVariable
 from .geometric_program import GeometricProgram
 from .signomial_program import SignomialProgram
 from .varkey import VarKey
-from .posyarray import PosyArray
+from .nomialarray import NomialArray
 from .model import Model
 from .shortcuts import GP, SP
 
@@ -133,7 +121,7 @@ if units:
         When gpkit objects appear in mathematical operations with pint
         Quantity objects, let the gpkit implementations determine what to do
         """
-        def skip_if_gpkit_objects(fallback, objects=(PosyArray, Signomial)):
+        def skip_if_gpkit_objects(fallback, objects=(NomialArray, Signomial)):
             def _newfn(self, other):
                 if isinstance(other, objects):
                     return NotImplemented

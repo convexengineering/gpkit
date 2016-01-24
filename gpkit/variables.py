@@ -4,7 +4,7 @@ from collections import Iterable
 from .varkey import VarKey
 from .nomials import Monomial
 from .nomial_data import NomialData
-from .posyarray import PosyArray
+from .nomialarray import NomialArray
 from .small_classes import Strings, Numbers, Quantity
 from .small_scripts import is_sweepvar
 
@@ -73,7 +73,7 @@ class Variable(Monomial):
         return super(Variable, self).sub(*args, **kwargs)
 
 
-class VectorVariable(PosyArray):
+class VectorVariable(NomialArray):
     """A described vector of singlet Monomials.
 
     Arguments
@@ -90,12 +90,12 @@ class VectorVariable(PosyArray):
 
     Returns
     -------
-    PosyArray of Monomials, each containing a VarKey with name '$name_{i}',
+    NomialArray of Monomials, each containing a VarKey with name '$name_{i}',
     where $name is the vector's name and i is the VarKey's index.
     """
 
     def __new__(cls, shape, *args, **descr):
-        cls = PosyArray
+        cls = NomialArray
 
         if "idx" in descr:
             raise KeyError("the description field 'idx' is reserved")
