@@ -106,9 +106,9 @@ Windows
 Updating GPkit between releases
 ===============================
 
-Active developers may wish to install the `latest GPkit <http://github.com/convexopt/gpkit>` directly from the source code on Github. To do so,
+Active developers may wish to install the `latest GPkit <http://github.com/hoburg/gpkit>` directly from the source code on Github. To do so,
 
   - Run ``pip uninstall gpkit`` to uninstall your existing GPkit.
-  - Run ``git clone https://github.com/convexopt/gpkit.git`` to clone the GPkit repository, or ``cd gpkit; git pull origin master; cd ..`` to update your existing repository.
+  - Run ``git clone https://github.com/hoburg/gpkit.git`` to clone the GPkit repository, or ``cd gpkit; git pull origin master; cd ..`` to update your existing repository.
   - Run ``pip install -e gpkit`` to reinstall GPkit.
   - Run ``python -c "import gpkit.tests; gpkit.tests.run()"`` to test your installation.

@@ -51,7 +51,7 @@ setup(
                 "programming models.",
     author="MIT Department of Aeronautics and Astronautics",
     author_email="gpkit@mit.edu",
-    url="https://www.github.com/convexopt/gpkit",
+    url="https://www.github.com/hoburg/gpkit",
     install_requires=["numpy", "scipy"],
     version="0.3.4.2",
     packages=["gpkit", "gpkit._mosek", "gpkit.tests", "gpkit.interactive",
