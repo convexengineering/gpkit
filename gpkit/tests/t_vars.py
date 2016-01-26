@@ -41,8 +41,10 @@ class TestVarKey(unittest.TestCase):
         self.assertEqual(vel, vel)
         x1 = Variable("x", 3, "m")
         x2 = Variable("x", 2, "ft")
+        x3 = Variable("x", 2, "m")
+        self.assertNotEqual(x1.key, x2.key)
         # do we want these to collide?
-        self.assertEqual(x1.key, x2.key)
+        self.assertEqual(x1.key, x3.key)
 
     def test_repr(self):
         """Test __repr__ method"""
