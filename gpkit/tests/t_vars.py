@@ -42,7 +42,7 @@ class TestVarKey(unittest.TestCase):
         x1 = Variable("x", 3, "m")
         x2 = Variable("x", 2, "ft")
         x3 = Variable("x", 2, "m")
-        self.assertNotEqual(x1.key, x2.key)
+        self.assertNotEqual(x2.key, x3.key)
         # do we want these to collide?
         self.assertEqual(x1.key, x3.key)
 

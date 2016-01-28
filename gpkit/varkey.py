@@ -25,8 +25,9 @@ class VarKey(object):
     """
     new_unnamed_id = Counter()
     subscripts = ["model", "idx"]
-    # units work funny in eq, and we've decided to ignore value
     eq_ignores = frozenset(["units", "value"])
+    # ignore value in ==. Also skip units, since pints is weird and the unitstr
+    #    will be compared anyway
 
     def __init__(self, name=None, **kwargs):
         self.descr = kwargs
