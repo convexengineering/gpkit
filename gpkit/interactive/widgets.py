@@ -150,7 +150,11 @@ def create_settings(box):
             elif new_value >= slider.max:
                 slider.max = new_value
             if attr is "max" and new_value <= slider.value:
-                slider.value = new_value
+                if slider.max >= slider.min:
+                    slider.value = slider.max
+                else:
+                    pass  # bounds nonsensical, probably because we picked up
+                          # a small value during user typing.
             elif attr is "min" and new_value >= slider.value:
                 slider.value = new_value
             setattr(slider, attr, new_value)
