@@ -145,10 +145,12 @@ def create_settings(box):
 
     def slider_link(obj, attr):
         def link_fn(name, new_value):
-            if new_value <= slider.min:
-                slider.min = new_value
-            elif new_value >= slider.max:
+            if new_value >= slider.max:
                 slider.max = new_value
+            # if any value is greater than the max, the max slides up
+            # however, this is not held true for the minimum, because
+            # during typing the max or value will grow, and we don't want
+            # to permanently anchor the minimum to unfinished typing
             if attr is "max" and new_value <= slider.value:
                 if slider.max >= slider.min:
                     slider.value = new_value
