@@ -51,9 +51,7 @@ def modelinteract(model, ranges=None, fn_of_sol=None, **solvekwargs):
 
     if fn_of_sol is None:
         def fn_of_sol(solution):
-            tables = ["cost", "freevariables", "sweepvariables"]
-            if len(solution["freevariables"]) < 20:
-                tables.append("sensitivities")
+            tables = ["cost", "freevariables", "sensitivities"]
             print solution.table(tables)
 
     solvekwargs["verbosity"] = 0
