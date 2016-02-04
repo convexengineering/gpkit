@@ -1,5 +1,7 @@
 """Plotting methods"""
 import matplotlib.pyplot as plt
+from matplotlib.mlab import griddata
+from matplotlib.colors import LinearSegmentedColormap
 import numpy as np
 from ..nomials import VarKey
 from ..small_scripts import unitstr
@@ -36,10 +38,12 @@ def contour_array(model, X, Y, Zs, cellsize=(5, 5),
     if ncols is None:
         ncols = 2 if n >= 2 else 1
     figsize = (cellsize[0]*ncols, cellsize[1]*nrows)
+    x_sweep = model.substitutions[model[str(X)].key][1]
+    y_sweep = model.substitutions[model[str(Y)].key][1]
     if xticks is None:
-        xticks = model.substitutions[model[str(X)].key][1]
+        xticks = x_sweep
     if yticks is None:
-        yticks = model.substitutions[model[str(Y)].key][1]
+        yticks = y_sweep
 
     def get_label(var):
         var = model[str(var)].key
@@ -57,8 +61,8 @@ def contour_array(model, X, Y, Zs, cellsize=(5, 5),
             label += " %s" % var.descr["label"]
         return label, vals
 
-    xlabel, Xgrid = get_label(X)
-    ylabel, Ygrid = get_label(Y)
+    xlabel, x_sol = get_label(X)
+    ylabel, y_sol = get_label(Y)
     Z_lgs = [get_label(Z) for Z in Zs]
 
     if colors is None:
@@ -78,7 +82,7 @@ def contour_array(model, X, Y, Zs, cellsize=(5, 5),
 
     for ax in xlabeledaxes:
         ax.set_xlabel(xlabel, color=NEUTRAL_DARK)
-        ax.set_xlim((Xgrid.min(), Xgrid.max()))
+        ax.set_xlim((x_sol.min(), x_sol.max()))
         if xticks is not None:
             ax.set_xticks(xticks, minor=True)
             m = len(xticks)
@@ -88,7 +92,7 @@ def contour_array(model, X, Y, Zs, cellsize=(5, 5),
             ax.set_xticklabels(major_ticklabels)
     for ax in ylabeledaxes:
         ax.set_ylabel(ylabel, color=NEUTRAL_DARK)
-        ax.set_ylim((Ygrid.min(), Ygrid.max()))
+        ax.set_ylim((y_sol.min(), y_sol.max()))
         if yticks is not None:
             ax.set_yticks(yticks, minor=True)
             m = len(yticks)
@@ -99,19 +103,21 @@ def contour_array(model, X, Y, Zs, cellsize=(5, 5),
     fig.tight_layout(h_pad=3)
 
     for i, Z_lg in enumerate(Z_lgs):
-        zlabel, Zgrid = Z_lg
+        zlabel, z_sol = Z_lg
         row_idx = i/ncols  # 0, 0, 1, 1, 2, 2 for ncols = 2
         col_vector = axes[row_idx, :] if nrows > 1 else axes
         ax = col_vector[(i-row_idx*ncols) % ncols] if ncols > 1 else row_vector[0]
-        lablevels = [np.percentile(Zgrid, 100*i/7.0) for i in range(8)]
+        lablevels = [np.percentile(z_sol, 100*i/7.0) for i in range(8)]
         shortlevels = [(lablevels[4]-lablevels[3])/6.0 * j + lablevels[3]
                        for j in range(-32, 33)]
-        # hack begins
-        Xgrid = Xgrid.reshape(len(yticks), len(xticks))
-        Ygrid = Ygrid.reshape(len(yticks), len(xticks))
-        Zgrid = Zgrid.reshape(len(yticks), len(xticks))
-        # hack ends
-        contour_plot(ax, Xgrid, Ygrid, Zgrid, zlabel, colors, shortlevels, lablevels)
+        Zgrid = griddata(x_sol, y_sol, z_sol, x_sweep, y_sweep, interp='linear')
+        cm = {'red':    ((0.0, 0.0, 0.0), (1.0, 1.0, 1.0)),
+              'green':  ((0.0, 0.0, 0.0), (1.0, 0.0, 1.0)),
+              'blue':   ((0.0, 0.0, 0.0), (1.0, 0.0, 1.0)),
+              'alpha':  ((0.0, 0.0, 0.0), (1.0, 0.3, 1.0))}
+        cm = LinearSegmentedColormap('masked', cm)
+        cf = ax.contourf(x_sweep, y_sweep, Zgrid.mask, cmap=cm, linewidth=0)
+        contour_plot(ax, x_sweep, y_sweep, Zgrid, zlabel, colors, shortlevels, lablevels)
 
     return fig, axes
 
