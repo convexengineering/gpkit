@@ -111,12 +111,6 @@ def contour_array(model, X, Y, Zs, cellsize=(5, 5),
         shortlevels = [(lablevels[4]-lablevels[3])/6.0 * j + lablevels[3]
                        for j in range(-32, 33)]
         Zgrid = griddata(x_sol, y_sol, z_sol, x_sweep, y_sweep, interp='linear')
-        cm = {'red':    ((0.0, 0.0, 0.0), (1.0, 1.0, 1.0)),
-              'green':  ((0.0, 0.0, 0.0), (1.0, 0.0, 1.0)),
-              'blue':   ((0.0, 0.0, 0.0), (1.0, 0.0, 1.0)),
-              'alpha':  ((0.0, 0.0, 0.0), (1.0, 0.3, 1.0))}
-        cm = LinearSegmentedColormap('masked', cm)
-        cf = ax.contourf(x_sweep, y_sweep, Zgrid.mask, cmap=cm, linewidth=0)
         contour_plot(ax, x_sweep, y_sweep, Zgrid, zlabel, colors, shortlevels, lablevels)
 
     return fig, axes
