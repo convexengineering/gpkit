@@ -11,12 +11,12 @@ NEUTRAL_DARK = '#888888'
 NEUTRAL_LIGHT = '#aaaaaa'
 
 
-def contour_plot(ax, X, Y, Z, title, colors):
+def contour_plot(ax, X, Y, Z, title, colors, shortlevels, lablevels):
     light, dark = colors
     fmt = '%.4g'
 
-    contf = ax.contour(X, Y, Z, 72, linewidths=0.5, colors=light)
-    cont = ax.contour(X, Y, Z, 6, linewidths=1, colors=dark)
+    contf = ax.contour(X, Y, Z, levels=shortlevels, linewidths=0.5, colors=light)
+    cont = ax.contour(X, Y, Z, levels=lablevels, linewidths=1, colors=dark)
 
     plt.clabel(cont, fmt=fmt, colors=dark, fontsize=14)
     ax.set_title(title, color=dark, fontsize=14)
@@ -25,12 +25,24 @@ def contour_plot(ax, X, Y, Z, title, colors):
     ax.grid(which='both', color=NEUTRAL_LIGHT)
 
 
-def contour_array(data, X, Y, Zs,
-                  nrows, ncols, figsize,
+def contour_array(model, X, Y, Zs, cellsize=(5, 5),
+                  nrows=None, ncols=None,
                   xticks=None, yticks=None, colors=None):
 
+    data = model.solution["variables"]
+    n = len(Zs)
+    if nrows is None:
+        nrows = (n+1)/2
+    if ncols is None:
+        ncols = 2 if n >= 2 else 1
+    figsize = (cellsize[0]*ncols, cellsize[1]*nrows)
+    if xticks is None:
+        xticks = model.substitutions[model[str(X)].key][1]
+    if yticks is None:
+        yticks = model.substitutions[model[str(Y)].key][1]
+
     def get_label(var):
-        var = VarKey(var)
+        var = model[str(var)].key
         label = var.name
         if "idx" in var.descr:
             idx = var.descr.pop("idx", None)
@@ -88,14 +100,18 @@ def contour_array(data, X, Y, Zs,
 
     for i, Z_lg in enumerate(Z_lgs):
         zlabel, Zgrid = Z_lg
-        row_vector = axes[i % nrows, :] if nrows > 1 else axes
-        ax = row_vector[i % ncols] if ncols > 1 else row_vector[0]
+        row_idx = i/ncols  # 0, 0, 1, 1, 2, 2 for ncols = 2
+        col_vector = axes[row_idx, :] if nrows > 1 else axes
+        ax = col_vector[(i-row_idx*ncols) % ncols] if ncols > 1 else row_vector[0]
+        lablevels = [np.percentile(Zgrid, 100*i/7.0) for i in range(8)]
+        shortlevels = [(lablevels[4]-lablevels[3])/6.0 * j + lablevels[3]
+                       for j in range(-32, 33)]
         # hack begins
-        Xgrid = Xgrid.reshape(len(xticks), len(yticks))
-        Ygrid = Ygrid.reshape(len(xticks), len(yticks))
-        Zgrid = Zgrid.reshape(len(xticks), len(yticks))
+        Xgrid = Xgrid.reshape(len(yticks), len(xticks))
+        Ygrid = Ygrid.reshape(len(yticks), len(xticks))
+        Zgrid = Zgrid.reshape(len(yticks), len(xticks))
         # hack ends
-        contour_plot(ax, Xgrid, Ygrid, Zgrid, zlabel, colors)
+        contour_plot(ax, Xgrid, Ygrid, Zgrid, zlabel, colors, shortlevels, lablevels)
 
     return fig, axes
 
