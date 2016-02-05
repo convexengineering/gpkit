@@ -1,5 +1,7 @@
-"""Internal convenience classes and functions for gpkit unit testing"""
+"""Convenience classes and functions for unit testing"""
 import unittest
+import sys
+import os
 
 
 def run_tests(tests, xmloutput=None, verbosity=2):
@@ -23,3 +25,29 @@ def run_tests(tests, xmloutput=None, verbosity=2):
         xmlrunner.XMLTestRunner(output=xmloutput).run(suite)
     else:
         unittest.TextTestRunner(verbosity=verbosity).run(suite)
+
+
+class NullFile(object):
+    """A fake file interface that does nothing"""
+    def write(self, string):
+        pass
+
+    def close(self):
+        pass
+
+
+class StdoutCaptured(object):
+    "Puts everything that would have printed to stdout in a log file instead"
+    def __init__(self, logfilepath=None):
+        self.logfilepath = logfilepath
+        self.original_stdout = None
+
+    def __enter__(self):
+        self.original_stdout = sys.stdout
+        logfile = (open(self.logfilepath, "w") if self.logfilepath
+                   else NullFile())
+        sys.stdout = logfile
+
+    def __exit__(self, *args):
+        sys.stdout.close()
+        sys.stdout = self.original_stdout
