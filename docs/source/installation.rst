@@ -60,7 +60,7 @@ Linux
 
 2. Install GPkit
 ++++++++++++++++
-  - _Optional:_ to install gpkit into an isolated python environment, install virtualenv, run ``virtualenv $DESTINATION_DIR`` then activate it with ``source activate $DESTINATION_DIR/bin``.
+  - _Optional:_ to install gpkit into an isolated python environment, install virtualenv, run ``virtualenv $DESTINATION_DIR`` then activate it with ``source $DESTINATION_DIR/bin/activate``.
   - Run ``pip install gpkit`` at the command line.
   - Run ``pip install ipywidgets`` for interactive control of models (optional)
   - Run ``python -c "import gpkit.tests; gpkit.tests.run()"``
