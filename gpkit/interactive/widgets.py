@@ -51,9 +51,7 @@ def modelinteract(model, ranges=None, fn_of_sol=None, **solvekwargs):
 
     if fn_of_sol is None:
         def fn_of_sol(solution):
-            tables = ["cost", "freevariables", "sweepvariables"]
-            if len(solution["freevariables"]) < 20:
-                tables.append("sensitivities")
+            tables = ["cost", "freevariables", "sensitivities"]
             print solution.table(tables)
 
     solvekwargs["verbosity"] = 0
@@ -145,12 +143,18 @@ def create_settings(box):
 
     def slider_link(obj, attr):
         def link_fn(name, new_value):
-            if new_value <= slider.min:
-                slider.min = new_value
-            elif new_value >= slider.max:
+            if new_value >= slider.max:
                 slider.max = new_value
+            # if any value is greater than the max, the max slides up
+            # however, this is not held true for the minimum, because
+            # during typing the max or value will grow, and we don't want
+            # to permanently anchor the minimum to unfinished typing
             if attr is "max" and new_value <= slider.value:
-                slider.value = new_value
+                if slider.max >= slider.min:
+                    slider.value = new_value
+                else:
+                    pass  # bounds nonsensical, probably because we picked up
+                          # a small value during user typing.
             elif attr is "min" and new_value >= slider.value:
                 slider.value = new_value
             setattr(slider, attr, new_value)

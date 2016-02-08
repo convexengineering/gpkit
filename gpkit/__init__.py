@@ -154,3 +154,4 @@ def load_settings(path=SETTINGS_PATH):
         settings_ = {"installed_solvers": [""]}
     return settings_
 settings = load_settings()
+settings["latex_modelname"] = True

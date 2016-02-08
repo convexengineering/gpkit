@@ -4,7 +4,7 @@ Examples
 iPython Notebook Examples
 =========================
 
-More examples, including some in-depth and experimental models, can be seen `on nbviewer <http://nbviewer.ipython.org/github/convexopt/gpkit/tree/master/docs/source/ipynb/>`_.
+More examples, including some in-depth and experimental models, can be seen `on nbviewer <http://nbviewer.ipython.org/github/hoburg/gpkit/tree/master/docs/source/ipynb/>`_.
 
 
 A Trivial GP

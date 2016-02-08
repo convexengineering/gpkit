@@ -1,5 +1,7 @@
 """Plotting methods"""
 import matplotlib.pyplot as plt
+from matplotlib.mlab import griddata
+from matplotlib.colors import LinearSegmentedColormap
 import numpy as np
 from ..nomials import VarKey
 from ..small_scripts import unitstr
@@ -11,12 +13,12 @@ NEUTRAL_DARK = '#888888'
 NEUTRAL_LIGHT = '#aaaaaa'
 
 
-def contour_plot(ax, X, Y, Z, title, colors):
+def contour_plot(ax, X, Y, Z, title, colors, shortlevels, lablevels):
     light, dark = colors
     fmt = '%.4g'
 
-    contf = ax.contour(X, Y, Z, 72, linewidths=0.5, colors=light)
-    cont = ax.contour(X, Y, Z, 6, linewidths=1, colors=dark)
+    contf = ax.contour(X, Y, Z, levels=shortlevels, linewidths=0.5, colors=light)
+    cont = ax.contour(X, Y, Z, levels=lablevels, linewidths=1, colors=dark)
 
     plt.clabel(cont, fmt=fmt, colors=dark, fontsize=14)
     ax.set_title(title, color=dark, fontsize=14)
@@ -25,12 +27,26 @@ def contour_plot(ax, X, Y, Z, title, colors):
     ax.grid(which='both', color=NEUTRAL_LIGHT)
 
 
-def contour_array(data, X, Y, Zs,
-                  nrows, ncols, figsize,
+def contour_array(model, X, Y, Zs, cellsize=(5, 5),
+                  nrows=None, ncols=None,
                   xticks=None, yticks=None, colors=None):
 
+    data = model.solution["variables"]
+    n = len(Zs)
+    if nrows is None:
+        nrows = (n+1)/2
+    if ncols is None:
+        ncols = 2 if n >= 2 else 1
+    figsize = (cellsize[0]*ncols, cellsize[1]*nrows)
+    x_sweep = model.substitutions[model[str(X)].key][1]
+    y_sweep = model.substitutions[model[str(Y)].key][1]
+    if xticks is None:
+        xticks = x_sweep
+    if yticks is None:
+        yticks = y_sweep
+
     def get_label(var):
-        var = VarKey(var)
+        var = model[str(var)].key
         label = var.name
         if "idx" in var.descr:
             idx = var.descr.pop("idx", None)
@@ -45,8 +61,8 @@ def contour_array(data, X, Y, Zs,
             label += " %s" % var.descr["label"]
         return label, vals
 
-    xlabel, Xgrid = get_label(X)
-    ylabel, Ygrid = get_label(Y)
+    xlabel, x_sol = get_label(X)
+    ylabel, y_sol = get_label(Y)
     Z_lgs = [get_label(Z) for Z in Zs]
 
     if colors is None:
@@ -66,7 +82,7 @@ def contour_array(data, X, Y, Zs,
 
     for ax in xlabeledaxes:
         ax.set_xlabel(xlabel, color=NEUTRAL_DARK)
-        ax.set_xlim((Xgrid.min(), Xgrid.max()))
+        ax.set_xlim((x_sol.min(), x_sol.max()))
         if xticks is not None:
             ax.set_xticks(xticks, minor=True)
             m = len(xticks)
@@ -76,7 +92,7 @@ def contour_array(data, X, Y, Zs,
             ax.set_xticklabels(major_ticklabels)
     for ax in ylabeledaxes:
         ax.set_ylabel(ylabel, color=NEUTRAL_DARK)
-        ax.set_ylim((Ygrid.min(), Ygrid.max()))
+        ax.set_ylim((y_sol.min(), y_sol.max()))
         if yticks is not None:
             ax.set_yticks(yticks, minor=True)
             m = len(yticks)
@@ -87,15 +103,15 @@ def contour_array(data, X, Y, Zs,
     fig.tight_layout(h_pad=3)
 
     for i, Z_lg in enumerate(Z_lgs):
-        zlabel, Zgrid = Z_lg
-        row_vector = axes[i % nrows, :] if nrows > 1 else axes
-        ax = row_vector[i % ncols] if ncols > 1 else row_vector[0]
-        # hack begins
-        Xgrid = Xgrid.reshape(len(xticks), len(yticks))
-        Ygrid = Ygrid.reshape(len(xticks), len(yticks))
-        Zgrid = Zgrid.reshape(len(xticks), len(yticks))
-        # hack ends
-        contour_plot(ax, Xgrid, Ygrid, Zgrid, zlabel, colors)
+        zlabel, z_sol = Z_lg
+        row_idx = i/ncols  # 0, 0, 1, 1, 2, 2 for ncols = 2
+        col_vector = axes[row_idx, :] if nrows > 1 else axes
+        ax = col_vector[(i-row_idx*ncols) % ncols] if ncols > 1 else row_vector[0]
+        lablevels = [np.percentile(z_sol, 100*i/7.0) for i in range(8)]
+        shortlevels = [(lablevels[4]-lablevels[3])/6.0 * j + lablevels[3]
+                       for j in range(-32, 33)]
+        Zgrid = griddata(x_sol, y_sol, z_sol, x_sweep, y_sweep, interp='linear')
+        contour_plot(ax, x_sweep, y_sweep, Zgrid, zlabel, colors, shortlevels, lablevels)
 
     return fig, axes
 

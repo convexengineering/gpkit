@@ -1,5 +1,8 @@
 setup.py
 gpkit/__init__.py
+gpkit/gpkit_units.txt
+gpkit/gpkit_constants.txt
+gpkit/gpkit_usd_cpi.txt
 gpkit/_cvxopt.py
 gpkit/build.py
 gpkit/feasibility.py

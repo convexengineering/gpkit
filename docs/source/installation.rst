@@ -60,7 +60,7 @@ Linux
 
 2. Install GPkit
 ++++++++++++++++
-  - _Optional:_ to install gpkit into an isolated python environment, install virtualenv, run ``virtualenv $DESTINATION_DIR`` then activate it with ``source activate $DESTINATION_DIR/bin``.
+  - _Optional:_ to install gpkit into an isolated python environment, install virtualenv, run ``virtualenv $DESTINATION_DIR`` then activate it with ``source $DESTINATION_DIR/bin/activate``.
   - Run ``pip install gpkit`` at the command line.
   - Run ``pip install ipywidgets`` for interactive control of models (optional)
   - Run ``python -c "import gpkit.tests; gpkit.tests.run()"``
@@ -76,15 +76,15 @@ Windows
 1. Install Python dependencies
 ++++++++++++++++++++++++++++++
   - Install the Python 2.7 version of `Python (x,y) <https://python-xy.github.io/downloads.html>`_.
-    - Python (x,y) recommends removing any previous installations of Python before installation.
-    - Make sure to check the cvxopt checkbox under "Choose components" during installation.
+      - Python (x,y) recommends removing any previous installations of Python before installation.
+      - Make sure to check the cvxopt checkbox under "Choose components" during installation.
 
 
 2. (optional) Install the MOSEK GP solver
 +++++++++++++++++++++++++++++++++++++++++
 
   - CVXOPT is included with Python (x,y) and does not need to be installed
-    - Installing CVXOPT with Anaconda or another Python distribution can be difficult, which is why we reccomend Python (x,y).
+      - Installing CVXOPT with Anaconda or another Python distribution can be difficult, which is why we reccomend Python (x,y).
 
   - Download `MOSEK <http://mosek.com/resources/downloads>`_, then:
       - Follow `these steps for Windows <http://docs.mosek.com/7.0/toolsinstall/Windows_installation.html>`_.
@@ -106,9 +106,9 @@ Windows
 Updating GPkit between releases
 ===============================
 
-Active developers may wish to install the `latest GPkit <http://github.com/convexopt/gpkit>` directly from the source code on Github. To do so,
+Active developers may wish to install the `latest GPkit <http://github.com/hoburg/gpkit>` directly from the source code on Github. To do so,
 
   - Run ``pip uninstall gpkit`` to uninstall your existing GPkit.
-  - Run ``git clone https://github.com/convexopt/gpkit.git`` to clone the GPkit repository, or ``cd gpkit; git pull origin master; cd ..`` to update your existing repository.
+  - Run ``git clone https://github.com/hoburg/gpkit.git`` to clone the GPkit repository, or ``cd gpkit; git pull origin master; cd ..`` to update your existing repository.
   - Run ``pip install -e gpkit`` to reinstall GPkit.
   - Run ``python -c "import gpkit.tests; gpkit.tests.run()"`` to test your installation.
