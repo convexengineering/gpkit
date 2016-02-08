@@ -99,10 +99,10 @@ class NewDefaultSolver(object):
 def new_test(name, solver, exampledir=EXAMPLE_DIR):
     def test(self):
         with NewDefaultSolver(solver):
-            examplename = name if name not in IMPORTED_EXAMPLES else None
-            filepath = "".join([exampledir,
-                                os.sep,
-                                "%s_output.txt" % examplename])
+            filepath = ("".join([exampledir,
+                                 os.sep,
+                                 "%s_output.txt" % name])
+                        if name not in IMPORTED_EXAMPLES else None)
             with StdoutCaptured(logfilepath=filepath):
                 if name not in IMPORTED_EXAMPLES:
                     IMPORTED_EXAMPLES[name] = importlib.import_module(name)
