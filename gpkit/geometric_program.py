@@ -1,13 +1,10 @@
 """Implement the GeometricProgram class"""
 import numpy as np
-
 import sys
 from time import time
-
+from .nomials import NomialData
 from .small_classes import CootMatrix, HashVector, KeyDict
-from .nomial_data import NomialData
 from .small_classes import SolverLog
-
 from .small_scripts import is_sweepvar
 
 

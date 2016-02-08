@@ -8,28 +8,19 @@
 """
 
 import numpy as np
-
 from collections import defaultdict
 from time import time
-
-from .small_classes import Numbers, Strings, KeySet, KeyDict
-from .nomials import MonoEQConstraint
-from .nomials import PosynomialConstraint, SignomialConstraint
+from .nomials import NomialArray
 from .nomials import Signomial, Monomial
+from .nomials import Variable, VectorVariable
+from .nomials.substitution import parse_subs, substitution
+from .small_classes import Numbers, Strings, KeySet, KeyDict
 from .geometric_program import GeometricProgram
 from .signomial_program import SignomialProgram
 from .solution_array import SolutionArray
 from .varkey import VarKey
-from .variables import Variable, VectorVariable
-from .nomialarray import NomialArray
 from . import SignomialsEnabled
-
-from .nomial_data import NomialData
-
-from .substitution import parse_subs
-from .substitution import substitution
 from .small_scripts import mag, flatten, latex_num, veckeyed
-from .nomial_data import simplify_exps_and_cs
 from .feasibility import feasibility_model
 
 try:

@@ -1,8 +1,9 @@
-"""Unit tests for Constraint, MonoEQConstraint and SignomialConstraint"""
+"""Unit tests for Constraint, MonomialEquality and SignomialInequality"""
 import unittest
 from gpkit import Variable, SignomialsEnabled
-from gpkit.nomials import Posynomial, PosynomialConstraint, MonoEQConstraint
-from gpkit.nomials import SignomialConstraint
+from gpkit.nomials import Posynomial
+from gpkit.nomials import SignomialInequality, PosynomialInequality
+from gpkit.nomials import MonomialEquality
 
 
 class TestConstraint(unittest.TestCase):
@@ -13,8 +14,8 @@ class TestConstraint(unittest.TestCase):
         x = Variable('x')
         c1 = 1 >= 10*x
         c2 = 1 >= 5*x + 0.5
-        self.assertEqual(type(c1), PosynomialConstraint)
-        self.assertEqual(type(c2), PosynomialConstraint)
+        self.assertEqual(type(c1), PosynomialInequality)
+        self.assertEqual(type(c2), PosynomialInequality)
         self.assertEqual(c1.posylt1_rep.cs, c2.posylt1_rep.cs)
         self.assertEqual(c1.posylt1_rep.exps, c2.posylt1_rep.exps)
 
@@ -31,12 +32,12 @@ class TestConstraint(unittest.TestCase):
         """Test Constraint __init__"""
         x = Variable('x')
         y = Variable('y')
-        c = PosynomialConstraint(x, ">=", y**2)
+        c = PosynomialInequality(x, ">=", y**2)
         self.assertEqual(c.posylt1_rep, y**2/x)
         self.assertEqual(c.left, x)
         self.assertEqual(c.right, y**2)
         self.assertTrue(">=" in str(c))
-        c = PosynomialConstraint(x, "<=", y**2)
+        c = PosynomialInequality(x, "<=", y**2)
         self.assertEqual(c.posylt1_rep, x/y**2)
         self.assertEqual(c.left, x)
         self.assertEqual(c.right, y**2)
@@ -56,7 +57,7 @@ class TestConstraint(unittest.TestCase):
         self.assertEqual(c2.posylt1_rep, c.posylt1_rep)
 
 
-class TestMonoEQConstraint(unittest.TestCase):
+class TestMonomialEquality(unittest.TestCase):
     """Test monomial equality constraint class"""
 
     def test_init(self):
@@ -67,34 +68,34 @@ class TestMonoEQConstraint(unittest.TestCase):
         # operator overloading
         mec = (x == y**2)
         # __init__
-        mec2 = MonoEQConstraint(x, "=", y**2)
+        mec2 = MonomialEquality(x, "=", y**2)
         self.assertTrue(mono in mec.posylt1_rep)
         self.assertTrue(mono in mec2.posylt1_rep)
 
     def test_inheritance(self):
-        """Make sure MonoEQConstraint inherits from the right things"""
+        """Make sure MonomialEquality inherits from the right things"""
         F = Variable('F')
         m = Variable('m')
         a = Variable('a')
         mec = (F == m*a)
-        self.assertTrue(isinstance(mec, MonoEQConstraint))
+        self.assertTrue(isinstance(mec, MonomialEquality))
 
     def test_non_monomial(self):
-        """Try to initialize a MonoEQConstraint with non-monomial args"""
+        """Try to initialize a MonomialEquality with non-monomial args"""
         x = Variable('x')
         y = Variable('y')
         # try to initialize a Posynomial Equality constraint
-        self.assertRaises(TypeError, MonoEQConstraint, x*y, "=", x + y)
+        self.assertRaises(TypeError, MonomialEquality, x*y, "=", x + y)
 
     def test_str(self):
-        "Test that MonoEQConstraint.__str__ returns a string"
+        "Test that MonomialEquality.__str__ returns a string"
         x = Variable('x')
         y = Variable('y')
         mec = (x == y)
         self.assertEqual(type(str(mec)), str)
 
 
-class TestSignomialConstraint(unittest.TestCase):
+class TestSignomialInequality(unittest.TestCase):
     """Test Signomial constraints"""
     def test_init(self):
         "Test initialization and types"
@@ -102,11 +103,11 @@ class TestSignomialConstraint(unittest.TestCase):
         x1, x2, x3 = (Variable("x_%s" % i, units="N") for i in range(3))
         with SignomialsEnabled():
             sc = (D >= x1 + x2 - x3)
-        self.assertTrue(isinstance(sc, SignomialConstraint))
+        self.assertTrue(isinstance(sc, SignomialInequality))
         self.assertFalse(isinstance(sc, Posynomial))
 
 
-TESTS = [TestConstraint, TestMonoEQConstraint, TestSignomialConstraint]
+TESTS = [TestConstraint, TestMonomialEquality, TestSignomialInequality]
 
 if __name__ == '__main__':
     from gpkit.tests.helpers import run_tests

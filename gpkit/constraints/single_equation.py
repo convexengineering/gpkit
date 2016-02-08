@@ -1,5 +1,5 @@
 from operator import le, ge, eq
-from .small_scripts import try_str_without
+from ..small_scripts import try_str_without
 
 
 class SingleEquationConstraint(object):

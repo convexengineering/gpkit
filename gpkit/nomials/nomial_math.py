@@ -1,21 +1,18 @@
 """Signomial, Posynomial, Monomial, Constraint, & MonoEQCOnstraint classes"""
 import numpy as np
-
-from .small_classes import Strings, Numbers, Quantity
-from .small_classes import HashVector, KeySet
-from .nomialarray import NomialArray
-from .varkey import VarKey
-from .nomial_data import NomialData
-
-from .small_scripts import latex_num
-from .small_scripts import mag, unitstr, listify
-from .nomial_data import simplify_exps_and_cs
-
-from . import units as ureg
-from . import DimensionalityError
+from .data import simplify_exps_and_cs
+from .array import NomialArray
+from .nomial_core import Nomial
+from ..constraints import SingleEquationConstraint
+from ..small_classes import Strings, Numbers, Quantity
+from ..small_classes import HashVector, KeySet
+from ..varkey import VarKey
+from ..small_scripts import mag, listify
+from .. import units as ureg
+from .. import DimensionalityError
 
 
-class Signomial(NomialData):
+class Signomial(Nomial):
     """A representation of a Signomial.
 
         Arguments
@@ -33,7 +30,6 @@ class Signomial(NomialData):
         Posynomial (if the input has only positive cs)
         Monomial   (if the input has one term and only positive cs)
     """
-
     def __init__(self, exps=None, cs=1, require_positive=True, simplify=True,
                  **descr):
         # this is somewhat deprecated, used for Variables and subbing Monomials
@@ -63,7 +59,7 @@ class Signomial(NomialData):
             #simplify = False #TODO: this shouldn't require simplification
             cs = [cs]
             exps = [HashVector(exp)]
-        elif isinstance(exps, Signomial):
+        elif isinstance(exps, Nomial):
             simplify = False
             cs = exps.cs
             exps = exps.exps
@@ -104,10 +100,10 @@ class Signomial(NomialData):
                 cs = cs.to(units)
 
         # init NomialData to create self.exps, self.cs, and so on
-        super(Signomial, self).__init__(exps, cs, simplify=simplify)
+        super(Nomial, self).__init__(exps, cs, simplify=simplify)
 
         if self.any_nonpositive_cs:
-            from . import SIGNOMIALS_ENABLED
+            from .. import SIGNOMIALS_ENABLED
             if require_positive and not SIGNOMIALS_ENABLED:
                 raise ValueError("each c must be positive.")
         else:
@@ -118,97 +114,6 @@ class Signomial(NomialData):
                 self.__class__ = Monomial
             self.exp = self.exps[0]
             self.c = self.cs[0]
-
-    def str_without(self, excluded=[]):
-        mstrs = []
-        for c, exp in zip(self.cs, self.exps):
-            varstrs = []
-            for (var, x) in exp.items():
-                if x != 0:
-                    varstr = var.str_without(*excluded)
-                    if x != 1:
-                        varstr += "**%.2g" % x
-                    varstrs.append(varstr)
-            varstrs.sort()
-            c = mag(c)
-            cstr = "%.3g" % c
-            if cstr == "-1" and varstrs:
-                mstrs.append("-" + "*".join(varstrs))
-            else:
-                cstr = [cstr] if (cstr != "1" or not varstrs) else []
-                mstrs.append("*".join(cstr + varstrs))
-        showunits = "units" not in excluded
-        units = unitstr(self.units, " [%s]") if showunits else ""
-        return " + ".join(sorted(mstrs)) + units
-
-    def __str__(self):
-        return self.str_without()
-
-    def __repr__(self):
-        return "gpkit.%s(%s)" % (self.__class__.__name__, str(self))
-
-    def latex(self, showunits=True):
-        "For pretty printing with Sympy"
-        mstrs = []
-        for c, exp in zip(self.cs, self.exps):
-            pos_vars, neg_vars = [], []
-            for var, x in exp.items():
-                if x > 0:
-                    pos_vars.append((var.latex(), x))
-                elif x < 0:
-                    neg_vars.append((var.latex(), x))
-
-            pvarstrs = ['%s^{%.2g}' % (varl, x) if "%.2g" % x != "1" else varl
-                        for (varl, x) in pos_vars]
-            nvarstrs = ['%s^{%.2g}' % (varl, -x)
-                        if "%.2g" % -x != "1" else varl
-                        for (varl, x) in neg_vars]
-            pvarstrs.sort()
-            nvarstrs.sort()
-            pvarstr = ' '.join(pvarstrs)
-            nvarstr = ' '.join(nvarstrs)
-            c = mag(c)
-            cstr = "%.2g" % c
-            if pos_vars and (cstr == "1" or cstr == "-1"):
-                cstr = cstr[:-1]
-            else:
-                cstr = latex_num(c)
-
-            if not pos_vars and not neg_vars:
-                mstrs.append("%s" % cstr)
-            elif pos_vars and not neg_vars:
-                mstrs.append("%s%s" % (cstr, pvarstr))
-            elif neg_vars and not pos_vars:
-                mstrs.append("\\frac{%s}{%s}" % (cstr, nvarstr))
-            elif pos_vars and neg_vars:
-                mstrs.append("%s\\frac{%s}{%s}" % (cstr, pvarstr, nvarstr))
-
-        if not showunits:
-            return " + ".join(sorted(mstrs))
-
-        units = unitstr(self.units, r"\mathrm{~\left[ %s \right]}", "L~")
-        units_tf = units.replace("frac", "tfrac").replace(r"\cdot", r"\cdot ")
-        return " + ".join(sorted(mstrs)) + units_tf
-
-    def _repr_latex_(self):
-        return "$$"+self.latex()+"$$"
-
-    __hash__ = NomialData.__hash__
-
-    @property
-    def value(self):
-        """Self, with values substituted for variables that have values
-
-        Returns
-        -------
-        float, if no symbolic variables remain after substitution
-        (Monomial, Posynomial, or Signomial), otherwise.
-        """
-        p = self.sub(self.values)
-        if isinstance(p, Monomial):
-            if not p.exp:
-                return p.c
-        return p
 
     def to(self, arg):
         return Signomial(self.exps, self.cs.to(arg).tolist())
@@ -227,6 +132,28 @@ class Signomial(NomialData):
         """
         deriv = super(Signomial, self).diff(wrt)
         return Signomial(exps=deriv.exps, cs=deriv.cs)
+
+    def posy_negy(self):
+        """Get the positive and negative parts, both as Posynomials
+
+        Returns
+        -------
+        Posynomial, Posynomial:
+            p_pos and p_neg in (self = p_pos - p_neg) decomposition,
+        """
+        p_exp, p_cs, n_exp, n_cs = [], [], [], []
+        assert len(self.cs) == len(self.exps)   # assert before calling zip
+        for c, exp in zip(self.cs, self.exps):
+            if mag(c) > 0:
+                p_exp.append(exp)
+                p_cs.append(c)
+            elif mag(c) < 0:
+                n_exp.append(exp)
+                n_cs.append(-c)  # -c to keep posynomial
+            else:
+                raise ValueError("Unexpected c=%s in %s" % (c, self))
+        return (Posynomial(p_exp, p_cs) if p_cs else 0,
+                Posynomial(n_exp, n_cs) if n_cs else 0)
 
     def mono_approximation(self, x0):
         """Monomial approximation about a point x0
@@ -285,7 +212,7 @@ class Signomial(NomialData):
         return Signomial(exps, cs, require_positive=require_positive)
 
     def subsummag(self, substitutions, val=None):
-        "Returns the sum of the magnitudes of the substituted Signomial."
+        "Returns the sum of the magnitudes of the substituted Nomial."
         _, exps, cs, _ = substitution(self, substitutions, val)
         if any(exps):
             keys = set()
@@ -294,62 +221,18 @@ class Signomial(NomialData):
             raise ValueError("could not substitute for %s" % keys)
         return mag(cs).sum()
 
-    def prod(self):
-        return self
-
-    def sum(self):
-        return self
-
-    def __ne__(self, other):
-        return not Signomial.__eq__(self, other)
-
-    def __eq__(self, other):
-        """Equality test
-
-        Returns
-        -------
-        bool
-        """
-        if isinstance(other, Numbers):
-            return (len(self.exps) == 1 and  # single term
-                    not self.exps[0] and     # constant
-                    self.cs[0] == other)     # the right constant
-        return super(Signomial, self).__eq__(other)
-
     def __le__(self, other):
         if isinstance(other, NomialArray):
             return NotImplemented
         else:
-            return SignomialConstraint(self, "<=", other)
+            return SignomialInequality(self, "<=", other)
 
     def __ge__(self, other):
         if isinstance(other, NomialArray):
             return NotImplemented
         else:
             # by default all constraints take the form left >= right
-            return SignomialConstraint(self, ">=", other)
-
-    def posy_negy(self):
-        """Get the positive and negative parts, both as Posynomials
-
-        Returns
-        -------
-        Posynomial, Posynomial:
-            p_pos and p_neg in (self = p_pos - p_neg) decomposition,
-        """
-        p_exp, p_cs, n_exp, n_cs = [], [], [], []
-        assert len(self.cs) == len(self.exps)   # assert before calling zip
-        for c, exp in zip(self.cs, self.exps):
-            if mag(c) > 0:
-                p_exp.append(exp)
-                p_cs.append(c)
-            elif mag(c) < 0:
-                n_exp.append(exp)
-                n_cs.append(-c)  # -c to keep posynomial
-            else:
-                raise ValueError("Unexpected c=%s in %s" % (c, self))
-        return (Posynomial(p_exp, p_cs) if p_cs else 0,
-                Posynomial(n_exp, n_cs) if n_cs else 0)
+            return SignomialInequality(self, ">=", other)
 
     # posynomial arithmetic
     def __add__(self, other):
@@ -399,9 +282,6 @@ class Signomial(NomialData):
         else:
             return NotImplemented
 
-    def __rmul__(self, other):
-        return self * other
-
     def __div__(self, other):
         """Support the / operator in Python 2.x"""
         if isinstance(other, Numbers):
@@ -412,10 +292,6 @@ class Signomial(NomialData):
             return np.array(self)/other
         else:
             return NotImplemented
-
-    def __truediv__(self, other):
-        """Support the / operator in Python 3.x"""
-        return self.__div__(other)
 
     def __pow__(self, x):
         if isinstance(x, int):
@@ -432,33 +308,25 @@ class Signomial(NomialData):
             return NotImplemented
 
     def __neg__(self):
-        from . import SIGNOMIALS_ENABLED
+        from .. import SIGNOMIALS_ENABLED
         if SIGNOMIALS_ENABLED:
             return -1*self
         else:
             return NotImplemented
 
     def __sub__(self, other):
-        from . import SIGNOMIALS_ENABLED
+        from .. import SIGNOMIALS_ENABLED
         if SIGNOMIALS_ENABLED:
             return self + -other
         else:
             return NotImplemented
 
     def __rsub__(self, other):
-        from . import SIGNOMIALS_ENABLED
+        from .. import SIGNOMIALS_ENABLED
         if SIGNOMIALS_ENABLED:
             return other + -self
         else:
             return NotImplemented
-
-    def __float__(self):
-        if len(self.exps) == 1:
-            if not self.exps[0]:
-                return mag(self.c)
-        else:
-            raise AttributeError("float() can only be called on"
-                                 " monomials with no variable terms")
 
 
 class Posynomial(Signomial):
@@ -473,10 +341,12 @@ class Posynomial(Signomial):
     """
     def __le__(self, other):
         if isinstance(other, Numbers + (Monomial,)):
-            return PosynomialConstraint(self, "<=", other)
+            return PosynomialInequality(self, "<=", other)
         else:
             # fall back on other's __ge__
             return NotImplemented
+        """Support the / operator in Python 3.x"""
+        return self.__div__(other)
 
     # Posynomial.__ge__ falls back on Signomial.__ge__
 
@@ -528,14 +398,14 @@ class Monomial(Posynomial):
         mons = Numbers + (Monomial,)
         if isinstance(other, mons):
             # if both are monomials, return a constraint
-            return MonoEQConstraint(self, "=", other)
+            return MonomialEquality(self, "=", other)
         return super(Monomial, self).__eq__(other)
 
     # Monomial.__le__ falls back on Posynomial.__le__
 
     def __ge__(self, other):
         if isinstance(other, Numbers + (Posynomial,)):
-            return PosynomialConstraint(self, ">=", other)
+            return PosynomialInequality(self, ">=", other)
         else:
             # fall back on other's __ge__
             return NotImplemented
@@ -545,7 +415,9 @@ class Monomial(Posynomial):
                         "it's already a Monomial." % str(self))
 
 
-from constraint_single_equation import SingleEquationConstraint
+#######################################################
+####### CONSTRAINTS ###################################
+#######################################################
 
 
 class ScalarSingleEquationConstraint(SingleEquationConstraint):
@@ -559,7 +431,7 @@ class ScalarSingleEquationConstraint(SingleEquationConstraint):
         self.varkeys.update(self.right.varkeys)
 
 
-class PosynomialConstraint(ScalarSingleEquationConstraint):
+class PosynomialInequality(ScalarSingleEquationConstraint):
     """A constraint of the general form monomial >= posynomial
     Stored in the posylt1_rep attribute as a single Posynomial (self <= 1)
     Usually initialized via operator overloading, e.g. cc = (y**2 >= 1 + x)
@@ -634,7 +506,7 @@ class PosynomialConstraint(ScalarSingleEquationConstraint):
             self.pmap = pmap
             p = Posynomial(exps, cs, simplify=False)
             if p.any_nonpositive_cs:
-                raise RuntimeWarning("PosynomialConstraint %s became Signomial"
+                raise RuntimeWarning("PosynomialInequality %s became Signomial"
                                      " after substitution" % self)
             out.append(p)
         return out
@@ -672,7 +544,7 @@ class PosynomialConstraint(ScalarSingleEquationConstraint):
         return pa_sens
 
 
-class MonoEQConstraint(PosynomialConstraint):
+class MonomialEquality(PosynomialInequality):
     """A Constraint of the form Monomial == Monomial.
     """
 
@@ -680,7 +552,7 @@ class MonoEQConstraint(PosynomialConstraint):
         ScalarSingleEquationConstraint.__init__(self, left, oper, right)
         if self.oper is not "=":
             raise ValueError("operator %s is not supported by"
-                             " MonoEQConstraint." % self.oper)
+                             " MonomialEquality." % self.oper)
         self.posylt1_rep = [self.left/self.right, self.right/self.left]
         self.substitutions = self.posylt1_rep[0].values
 
@@ -708,7 +580,7 @@ class MonoEQConstraint(PosynomialConstraint):
         return constr_sens, var_senss
 
 
-class SignomialConstraint(ScalarSingleEquationConstraint):
+class SignomialInequality(ScalarSingleEquationConstraint):
     """A constraint of the general form posynomial >= posynomial
     Stored internally (exps, cs) as a single Signomial (0 >= self)
     Usually initialized via operator overloading, e.g. cc = (y**2 >= 1 + x - y)
@@ -718,9 +590,9 @@ class SignomialConstraint(ScalarSingleEquationConstraint):
 
     def __init__(self, left, oper, right):
         ScalarSingleEquationConstraint.__init__(self, left, oper, right)
-        from . import SIGNOMIALS_ENABLED
+        from .. import SIGNOMIALS_ENABLED
         if not SIGNOMIALS_ENABLED:
-            raise TypeError("Cannot initialize SignomialConstraint"
+            raise TypeError("Cannot initialize SignomialInequality"
                             " outside of a SignomialsEnabled environment.")
         if self.oper == "<=":
             plt, pgt = self.left, self.right
@@ -739,7 +611,7 @@ class SignomialConstraint(ScalarSingleEquationConstraint):
         if len(negy.cs) != 1:
             return [None]
         else:
-            self.__class__ = PosynomialConstraint
+            self.__class__ = PosynomialInequality
             self.__init__(posy, "<=", negy)
             return [posy/negy]
 
@@ -756,7 +628,7 @@ class SignomialConstraint(ScalarSingleEquationConstraint):
         else:
             x0 = dict(x0)
         x0.update(self.substitutions)
-        pc = PosynomialConstraint(posy, "<=", negy.mono_lower_bound(x0))
+        pc = PosynomialInequality(posy, "<=", negy.mono_lower_bound(x0))
         pc.substitutions = self.substitutions
         return pc
 

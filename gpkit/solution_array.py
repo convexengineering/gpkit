@@ -1,11 +1,9 @@
 """Defines SolutionArray class"""
 import numpy as np
-
 from collections import Iterable
 from functools import reduce as functools_reduce
 from operator import mul
-
-from .nomialarray import NomialArray
+from .nomials import NomialArray
 from .nomials import Monomial
 from .varkey import VarKey
 from .small_classes import Strings, Quantity

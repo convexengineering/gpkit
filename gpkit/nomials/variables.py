@@ -1,12 +1,11 @@
 import numpy as np
 from collections import Iterable
-
-from .varkey import VarKey
-from .nomials import Monomial
-from .nomial_data import NomialData
-from .nomialarray import NomialArray
-from .small_classes import Strings, Numbers, Quantity
-from .small_scripts import is_sweepvar
+from .data import NomialData
+from .array import NomialArray
+from .nomial_math import Monomial
+from ..varkey import VarKey
+from ..small_classes import Strings, Numbers, Quantity
+from ..small_scripts import is_sweepvar
 
 
 class Variable(Monomial):
@@ -73,7 +72,7 @@ class Variable(Monomial):
         return super(Variable, self).sub(*args, **kwargs)
 
 
-class VectorVariable(NomialArray):
+class ArrayVariable(NomialArray):
     """A described vector of singlet Monomials.
 
     Arguments
@@ -158,6 +157,3 @@ class VectorVariable(NomialArray):
         obj.key = VarKey(**obj.descr)
 
         return obj
-
-
-ArrayVariable = VectorVariable

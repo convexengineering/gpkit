@@ -1,7 +1,6 @@
 """Defines the VarKey class"""
 import numpy as np
 
-from .nomialarray import NomialArray
 from .small_classes import Strings, Quantity
 from .small_classes import Counter
 

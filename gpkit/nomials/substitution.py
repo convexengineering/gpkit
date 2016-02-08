@@ -2,19 +2,14 @@
 "Module containing the substitution function"
 
 import numpy as np
-
 from collections import defaultdict, Iterable
-
-from .small_classes import Numbers, Strings, Quantity
-from .small_classes import HashVector, KeyDict
-from .nomials import Monomial
-from .varkey import VarKey
-from .variables import VectorVariable
-
-from .small_scripts import is_sweepvar, veckeyed
-from .small_scripts import mag
-
-from . import DimensionalityError
+from .nomial_math import Monomial
+from ..small_classes import Numbers, Strings, Quantity
+from ..small_classes import HashVector, KeyDict
+from ..varkey import VarKey
+from ..small_scripts import is_sweepvar, veckeyed
+from ..small_scripts import mag
+from .. import DimensionalityError
 
 
 def parse_subs(varkeys, substitutions):

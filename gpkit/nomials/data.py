@@ -6,9 +6,9 @@ from collections import defaultdict
 from functools import reduce as functools_reduce
 from operator import add
 
-from .varkey import VarKey
-from .small_classes import HashVector, Quantity, KeySet, KeyDict
-from .small_scripts import mag
+from ..varkey import VarKey
+from ..small_classes import HashVector, Quantity, KeySet, KeyDict
+from ..small_scripts import mag
 
 
 class NomialData(object):

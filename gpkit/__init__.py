@@ -22,7 +22,7 @@ SIGNOMIALS_ENABLED = False
 
 from os import sep as os_sep
 from os.path import dirname as os_path_dirname
-UNITDEF_PATH = os_sep.join([os_path_dirname(__file__), "gpkit_units.txt"])
+UNITDEF_PATH = os_sep.join([os_path_dirname(__file__), "pint", "units.txt"])
 SETTINGS_PATH = os_sep.join([os_path_dirname(__file__), "env", "settings"])
 
 
@@ -106,14 +106,12 @@ class SignomialsEnabled(object):
         SIGNOMIALS_ENABLED = False
 
 
-from .nomials import Monomial, Posynomial, Signomial
-from .variables import Variable, VectorVariable, ArrayVariable
+from .nomials import *
+from .constraints import *
 from .geometric_program import GeometricProgram
 from .signomial_program import SignomialProgram
 from .varkey import VarKey
-from .nomialarray import NomialArray
 from .model import Model
-from .shortcuts import GP, SP
 
 if units:
     def _subvert_pint():
@@ -139,7 +137,7 @@ if units:
 
     _subvert_pint()
 
-# Load settings
+
 def load_settings(path=SETTINGS_PATH):
     try:
         with open(path) as settingsfile:

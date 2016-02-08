@@ -1,8 +1,7 @@
 import numpy as np
-
-from .variables import Variable, VectorVariable
+from .nomials import NomialArray
+from .nomials import Variable, VectorVariable
 from .varkey import VarKey
-from .nomialarray import NomialArray
 
 
 def feasibility_model(program, flavour="max", varname=None,

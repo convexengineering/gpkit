@@ -10,11 +10,10 @@
 
 import numpy as np
 from operator import eq, le, ge
-from .small_classes import Numbers
-from .small_scripts import try_str_without
-
-from . import units as ureg
-from . import DimensionalityError
+from ..small_classes import Numbers
+from ..small_scripts import try_str_without
+from .. import units as ureg
+from .. import DimensionalityError
 Quantity = ureg.Quantity
 
 
@@ -218,4 +217,4 @@ class NomialArray(np.ndarray):
         "Returns (self[1], self[2] ... self[N], 0)"
         return self.padright(0)[1:]
 
-from .constraint_set import ArrayConstraint
+from ..constraints.array import ArrayConstraint
