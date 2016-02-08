@@ -163,7 +163,7 @@ def substitution(nomial, substitutions, val=None):
                         raise ValueError("units of the substituted monomial"
                                          " '%s' [%s] are not compatible with"
                                          " those of the original '%s' [%s]." %
-                                         (sub.str_without(showunits=False),
+                                         (sub.str_without(["units"]),
                                           sub.units.units,
                                           var, var.units.units))
                 exps_[i] += x*sub.exp

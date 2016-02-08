@@ -1,7 +1,6 @@
 """Signomial, Posynomial, Monomial, Constraint, & MonoEQCOnstraint classes"""
 import numpy as np
 
-from .constraint_meta import LocallyApproximableConstraint, GPConstraint
 from .small_classes import Strings, Numbers, Quantity
 from .small_classes import HashVector, KeySet
 from .nomialarray import NomialArray
@@ -120,13 +119,13 @@ class Signomial(NomialData):
             self.exp = self.exps[0]
             self.c = self.cs[0]
 
-    def str_without(self, excluded_keyfields=[], showunits=True):
+    def str_without(self, excluded=[]):
         mstrs = []
         for c, exp in zip(self.cs, self.exps):
             varstrs = []
             for (var, x) in exp.items():
                 if x != 0:
-                    varstr = var.str_without(*excluded_keyfields)
+                    varstr = var.str_without(*excluded)
                     if x != 1:
                         varstr += "**%.2g" % x
                     varstrs.append(varstr)
@@ -138,6 +137,7 @@ class Signomial(NomialData):
             else:
                 cstr = [cstr] if (cstr != "1" or not varstrs) else []
                 mstrs.append("*".join(cstr + varstrs))
+        showunits = "units" not in excluded
         units = unitstr(self.units, " [%s]") if showunits else ""
         return " + ".join(sorted(mstrs)) + units
 
@@ -545,74 +545,28 @@ class Monomial(Posynomial):
                         "it's already a Monomial." % str(self))
 
 
-from abc import ABCMeta, abstractproperty
+from constraint_single_equation import SingleEquationConstraint
 
-class SingletonConstraint(object):
-    """Retains input format (lhs vs rhs) in self.left and self.right
-    Calls self._constraint_init_ for child class initialization.
-    """
-    __metaclass__ = ABCMeta
-    latex_opers = {"<=": "\\leq", ">=": "\\geq", "=": "="}
-    varkeys = None
-    substitutions = None
-    units = None
 
-    @abstractproperty
-    def default_oper(self):
-        pass
+class ScalarSingleEquationConstraint(SingleEquationConstraint):
 
-    @abstractproperty
-    def default_right(self):
-        pass
-
-    def __init__(self, left, oper=None, right=None):
-        if oper is None:
-            oper = self.default_oper
-        if right is None:
-            right = self.default_right
-        if not isinstance(oper, Strings):
-            raise ValueError("operator must be string, not %s" % type(oper))
+    def __init__(self, left, oper, right):
+        "As the original class, but casts arguments to Signomial"
         self.left = Signomial(left)
         self.oper = oper
         self.right = Signomial(right)
         self.varkeys = KeySet(self.left.varkeys)
         self.varkeys.update(self.right.varkeys)
 
-    def __str__(self):
-        return "%s %s %s" % (self.left.str_without(showunits=False), self.oper,
-                             self.right.str_without(showunits=False))
 
-    def __repr__(self):
-        return "gpkit.%s(%s)" % (self.__class__.__name__, self)
-
-    def latex(self):
-        latex_oper = self.latex_opers[self.oper]
-        showunits = False  # previously bool(self.left.units)
-        return ("%s %s %s" % (self.left.latex(showunits=showunits), latex_oper,
-                              self.right.latex(showunits=showunits)))
-
-    def sub(self, subs, value=None):
-        if value:
-            subs = {subs: value}
-        subbed = self.__class__(self.left.sub(subs), self.oper,
-                                self.right.sub(subs))
-        subbed.substitutions = self.substitutions
-        return subbed
-
-    def process_result(self, result):
-        pass
-
-
-class PosynomialConstraint(SingletonConstraint, GPConstraint):
+class PosynomialConstraint(ScalarSingleEquationConstraint):
     """A constraint of the general form monomial >= posynomial
     Stored in the posylt1_rep attribute as a single Posynomial (self <= 1)
     Usually initialized via operator overloading, e.g. cc = (y**2 >= 1 + x)
     """
-    default_oper = "<="
-    default_right = 1
 
-    def __init__(self, *args, **kwargs):
-        SingletonConstraint.__init__(self, *args, **kwargs)
+    def __init__(self, left, oper, right):
+        ScalarSingleEquationConstraint.__init__(self, left, oper, right)
         if self.oper == "<=":
             p_lt, m_gt = self.left, self.right
         elif self.oper == ">=":
@@ -711,15 +665,19 @@ class PosynomialConstraint(SingletonConstraint, GPConstraint):
                      if var in self.substitutions}
         return constr_sens, var_senss
 
+    def as_gpconstr(self, x0):
+        return self
+
+    def sens_from_gpconstr(self, posyapprox, pa_sens, var_senss):
+        return pa_sens
+
 
 class MonoEQConstraint(PosynomialConstraint):
     """A Constraint of the form Monomial == Monomial.
     """
-    default_oper = "="
-    default_right = NotImplemented
 
-    def __init__(self, *args, **kwargs):
-        SingletonConstraint.__init__(self, *args, **kwargs)
+    def __init__(self, left, oper, right):
+        ScalarSingleEquationConstraint.__init__(self, left, oper, right)
         if self.oper is not "=":
             raise ValueError("operator %s is not supported by"
                              " MonoEQConstraint." % self.oper)
@@ -750,18 +708,16 @@ class MonoEQConstraint(PosynomialConstraint):
         return constr_sens, var_senss
 
 
-class SignomialConstraint(SingletonConstraint, LocallyApproximableConstraint):
+class SignomialConstraint(ScalarSingleEquationConstraint):
     """A constraint of the general form posynomial >= posynomial
     Stored internally (exps, cs) as a single Signomial (0 >= self)
     Usually initialized via operator overloading, e.g. cc = (y**2 >= 1 + x - y)
     Additionally retains input format (lhs vs rhs) in self.left and self.right
     Form is self.left >= self.right.
     """
-    default_oper = "<="
-    default_right = 0
 
-    def __init__(self, *args, **kwargs):
-        SingletonConstraint.__init__(self, *args, **kwargs)
+    def __init__(self, left, oper, right):
+        ScalarSingleEquationConstraint.__init__(self, left, oper, right)
         from . import SIGNOMIALS_ENABLED
         if not SIGNOMIALS_ENABLED:
             raise TypeError("Cannot initialize SignomialConstraint"
@@ -800,7 +756,9 @@ class SignomialConstraint(SingletonConstraint, LocallyApproximableConstraint):
         else:
             x0 = dict(x0)
         x0.update(self.substitutions)
-        return PosynomialConstraint(posy, "<=", negy.mono_lower_bound(x0))
+        pc = PosynomialConstraint(posy, "<=", negy.mono_lower_bound(x0))
+        pc.substitutions = self.substitutions
+        return pc
 
     def sens_from_gpconstr(self, posyapprox, pa_sens, var_senss):
         constr_sens = dict(pa_sens)

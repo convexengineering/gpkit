@@ -9,12 +9,31 @@
 """
 
 import numpy as np
+from operator import eq, le, ge
 from .small_classes import Numbers
-from .constraint_set import ArrayConstraint
+from .small_scripts import try_str_without
 
 from . import units as ureg
 from . import DimensionalityError
 Quantity = ureg.Quantity
+
+
+@np.vectorize
+def vec_recurse(element, function, *args, **kwargs):
+    if hasattr(element, "recurse"):
+        return element.recurse(function, *args, **kwargs)
+    else:
+        return function(element, *args, **kwargs)
+
+
+def array_constrain(func):
+    "Makes an array constraint out of an array of constraints."
+    def wrapped_func(self, other):
+        result, label = func(self, other)
+        left = self.key if hasattr(self, "key") else self
+        right = other.key if hasattr(other, "key") else other
+        return ArrayConstraint(result, left, label, right)
+    return wrapped_func
 
 
 class NomialArray(np.ndarray):
@@ -29,23 +48,19 @@ class NomialArray(np.ndarray):
     >>> px = gpkit.NomialArray([1, x, x**2])
     """
 
-    def str_without(self, excluded_keyfields=[]):
+    def str_without(self, excluded=[]):
         if self.shape:
-            return "[" + ", ".join(p.str_without(*excluded_keyfields)
-                                   for p in self) + "]"
+            return "[" + ", ".join([try_str_without(el, excluded)
+                                    for el in self]) + "]"
         else:
-            return str(self.flatten()[0])
+            return str(self.flatten()[0])  # TODO THIS IS WEIRD
 
     def __str__(self):
         "Returns list-like string, but with str(el) instead of repr(el)."
         return self.str_without()
 
     def __repr__(self):
-        "Returns str(self) tagged with gpkit information."
-        if self.shape:
-            return "gpkit.%s(%s)" % (self.__class__.__name__, str(self))
-        else:
-            return str(self.flatten()[0])
+        return "gpkit.%s(%s)" % (self.__class__.__name__, self)
 
     def latex(self, matwrap=True):
         "Returns 1D latex list of contents."
@@ -66,7 +81,8 @@ class NomialArray(np.ndarray):
         return "$$"+self.latex()+"$$"
 
     def __hash__(self):
-        return hash(self.tostring())
+        #TODO: speed this up
+        return hash(tuple(self.recurse(hash).tolist()))
 
     def __new__(cls, input_array):
         "Constructor. Required for objects inheriting from np.ndarray."
@@ -96,11 +112,11 @@ class NomialArray(np.ndarray):
 
     def __nonzero__(self):
         "Allows the use of NomialArrays as truth elements."
-        return all(p.__nonzero__() for p in self)
+        return all(bool(p) for p in self)
 
     def __bool__(self):
         "Allows the use of NomialArrays as truth elements in python3."
-        return all(p.__bool__() for p in self)
+        return all(bool(p) for p in self)
 
     @property
     def c(self):
@@ -113,71 +129,40 @@ class NomialArray(np.ndarray):
         except TypeError:
             raise ValueError("only a nomialarray of numbers has a 'c'")
 
-    _eq = np.vectorize(lambda a, b: a == b)
+    def recurse(self, function, *args):
+        "Apply a function to each terminal constraint, returning the array"
+        return vec_recurse(self, function, *args)
 
-    def __eq__(self, other):
-        "Applies == in a vectorized fashion."
-        if isinstance(other, Quantity):
-            # Quantities don't interact well with np.vectorize
-            if isinstance(other.magnitude, np.ndarray):
-                l = []
-                for i, e in enumerate(self):
-                    l.append(e == other[i])
-                ac = ArrayConstraint(l)
+    def iter(self):
+        "Iterate through each terminal constraint"
+        it = np.nditer(self, flags=['multi_index', 'refs_ok'])
+        while not it.finished:
+            i = it.multi_index
+            item = self[i]
+            if hasattr(item, "iter_recurse"):
+                try:
+                    yield item.iter_recurse.next()
+                except StopIteration:
+                    pass
             else:
-                ac = ArrayConstraint([e == other for e in self])
-        else:
-            ac = ArrayConstraint(self._eq(self, other))
-        ac.left = self.key if hasattr(self, "key") else self
-        ac.right = other.key if hasattr(other, "key") else other
-        ac.oper = "=="
-        return ac
+                yield item
+            it.iternext()
+
+    @array_constrain
+    def __eq__(self, other):
+        return self.recurse(eq, other), "="
 
     def __ne__(self, other):
         "Does type checking, then applies 'not ==' in a vectorized fashion."
-        return (not isinstance(other, self.__class__)
-                or not all(self._eq(self, other)))
+        return not isinstance(other, self.__class__) or not all(self == other)
 
-    # inequality constraints
-    _leq = np.vectorize(lambda a, b: a <= b)
-
+    @array_constrain
     def __le__(self, other):
-        "Applies '<=' in a vectorized fashion."
-        if isinstance(other, Quantity):
-            # Quantities don't interact well with np.vectorize
-            if isinstance(other.magnitude, np.ndarray):
-                l = []
-                for i, e in enumerate(self):
-                    l.append(e <= other[i])
-                ac = ArrayConstraint(l)
-            else:
-                ac = ArrayConstraint([e <= other for e in self])
-        else:
-            ac = ArrayConstraint(self._leq(self, other))
-        ac.left = self.key if hasattr(self, "key") else self
-        ac.right = other.key if hasattr(other, "key") else other
-        ac.oper = "<="
-        return ac
+        return self.recurse(le, other), "<="
 
-    _geq = np.vectorize(lambda a, b: a >= b)
-
+    @array_constrain
     def __ge__(self, other):
-        "Applies '>=' in a vectorized fashion."
-        if isinstance(other, Quantity):
-            # Quantities don't interact well with np.vectorize
-            if isinstance(other.magnitude, np.ndarray):
-                l = []
-                for i, e in enumerate(self):
-                    l.append(e >= other[i])
-                ac = ArrayConstraint(l)
-            else:
-                ac = ArrayConstraint([e >= other for e in self])
-        else:
-            ac = ArrayConstraint(self._geq(self, other))
-        ac.left = self.key if hasattr(self, "key") else self
-        ac.right = other.key if hasattr(other, "key") else other
-        ac.oper = ">="
-        return ac
+        return self.recurse(ge, other), ">="
 
     def outer(self, other):
         "Returns the array and argument's outer product."
@@ -185,28 +170,32 @@ class NomialArray(np.ndarray):
 
     def sub(self, subs, val=None, require_positive=True):
         "Substitutes into the array"
-        return NomialArray([p.sub(subs, val, require_positive) for p in self])
+        return self.recurse(lambda nom: nom.sub(subs, val, require_positive))
 
     @property
     def units(self):
         units = None
-        for el in self:  # does this need to be done with np.iter?
-            if not isinstance(el, Numbers) or el != 0 and not np.isnan(el):
-                if units:
-                    try:
-                        (units/el.units).to("dimensionless")
-                    except DimensionalityError:
-                        raise ValueError("all elements of a NomialArray must"
-                                         " have the same units.")
-                else:
-                    units = el.units
+        for el in self.iter():
+            if isinstance(el, Numbers):
+                if units and not (el == 0 or np.isnan(el)):
+                    raise DimensionalityError("elements of a NomialArray"
+                                              "must have the same units.")
+            elif units:
+                try:
+                    (units/el.units).to("dimensionless")
+                except DimensionalityError:
+                    raise DimensionalityError("elements of a NomialArray"
+                                              "must have the same units.")
+                except:
+                    raise RuntimeWarning("%s %s" % (type(el), el))
+            else:
+                units = el.units
         return units
 
     def padleft(self, padding):
         "Returns ({padding}, self[0], self[1] ... self[N])"
         if self.ndim != 1:
-            raise NotImplementedError("not implemented for ndim = %s" %
-                                      self.ndim)
+            raise NotImplementedError("unimplemented for ndim=%s" % self.ndim)
         padded = NomialArray(np.hstack((padding, self)))
         padded.units  # check that the units are consistent
         return padded
@@ -214,8 +203,7 @@ class NomialArray(np.ndarray):
     def padright(self, padding):
         "Returns (self[0], self[1] ... self[N], {padding})"
         if self.ndim != 1:
-            raise NotImplementedError("not implemented for ndim = %s" %
-                                      self.ndim)
+            raise NotImplementedError("unimplemented for ndim=%s" % self.ndim)
         padded = NomialArray(np.hstack((self, padding)))
         padded.units  # check that the units are consistent
         return padded
@@ -229,3 +217,5 @@ class NomialArray(np.ndarray):
     def right(self):
         "Returns (self[1], self[2] ... self[N], 0)"
         return self.padright(0)[1:]
+
+from .constraint_set import ArrayConstraint

@@ -84,7 +84,6 @@ class TestMonoEQConstraint(unittest.TestCase):
         x = Variable('x')
         y = Variable('y')
         # try to initialize a Posynomial Equality constraint
-        self.assertRaises(ValueError, MonoEQConstraint, x*y, x + y)
         self.assertRaises(TypeError, MonoEQConstraint, x*y, "=", x + y)
 
     def test_str(self):

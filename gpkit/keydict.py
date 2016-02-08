@@ -1,7 +1,18 @@
 import numpy as np
 from collections import defaultdict
+from itertools import chain
 from .small_classes import Numbers, Strings
 from .small_scripts import is_sweepvar, veckeyed
+
+
+def iter_subs(substitutions, constraintset):
+    if substitutions:
+        yield substitutions
+    for constraint in constraintset.iter():
+        if hasattr(constraint, "substitutions"):
+            dictionary = constraint.substitutions
+            constraint.substitutions = {}
+            yield dictionary
 
 
 class KeyDict(dict):
@@ -68,8 +79,8 @@ class KeyDict(dict):
         return keystrs
 
     @classmethod
-    def with_keys(cls, keyset, *dictionaries):
-        "Generates a KeyDict from a KeySet and list of dictionaries"
+    def with_keys(cls, keyset, dictionaries):
+        "Generates a KeyDict from a KeySet and iterable of dictionaries"
         out = cls()
         for dictionary in dictionaries:
             for key, value in dictionary.items():
@@ -86,16 +97,24 @@ class KeyDict(dict):
                             out[key] = val_i
         return out
 
+    # TODO: remove this
     @classmethod
-    def from_constraints(cls, keyset, constraints, substitutions=None):
+    def subs_from_constraints(cls, keyset, constraints, substitutions=None):
         "Collapses constraint substitutions into a single KeyDict"
         substitutions = substitutions if substitutions else {}
         constraintsubs = []
         for constraint in constraints:
-            constraintsubs.append(constraint.substitutions)
-            constraint.substitutions = {}
+            if hasattr(constraint, "substitutions"):
+                constraintsubs.append(constraint.substitutions)
+                constraint.substitutions = {}
         sublist = constraintsubs + [substitutions]
-        return cls.with_keys(keyset, *sublist)
+        return cls.with_keys(keyset, sublist)
+
+    @classmethod
+    def from_constraintset_subs(cls, constraintset, substitutions=None):
+        "Collapses constraint substitutions into a single KeyDict"
+        keyset = KeySet.from_constraintset(constraintset)
+        return cls.with_keys(keyset, iter_subs(substitutions, constraintset))
 
     def __contains__(self, key):
         "In a winding way, figures out if a key is in the KeyDict"
@@ -214,8 +233,17 @@ class KeySet(KeyDict):
         return [k for k in self.getkeys(key) if k in self]
 
     def __setitem__(self, key, value):
-        "Assigns None, every time."
-        KeyDict.__setitem__(self, key, None)
+        "Assigns the key itself every time."
+        KeyDict.__setitem__(self, key, key)
+
+    @classmethod
+    def from_constraintset(cls, constraintset):
+        out = cls()
+        for constraint in constraintset.iter():
+            if hasattr(constraint, "varkeys"):
+                #TODO: all constraints should have varkeys
+                out.update(constraint.varkeys)
+        return out
 
     def map(self, iterable):
         "Given a list of keys, returns a list of VarKeys"

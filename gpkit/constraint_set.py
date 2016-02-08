@@ -1,51 +1,36 @@
 import numpy as np
+from .nomialarray import NomialArray
 from .small_classes import Numbers, HashVector, KeySet, KeyDict
-from .constraint_meta import LocallyApproximableConstraint, GPConstraint
+from .constraint_single_equation import SingleEquationConstraint
 
 
-class ConstraintSet(LocallyApproximableConstraint, GPConstraint):
+class ConstraintSet(NomialArray):
     substitutions = None
 
-    def __init__(self, constraints, substitutions=None,
-                 latex=None, string=None):
-        self.constraints = constraints
-        cs = self.flatconstraints()
-        vks = self.make_varkeys(cs)
-        self.substitutions = KeyDict.from_constraints(vks, cs, substitutions)
+    def __new__(cls, input_array, substitutions=None):
+        "Constructor. Required for objects inheriting from np.ndarray."
+        # Input array is an already formed ndarray instance
+        # cast to be our class type
+        obj = np.asarray(input_array).view(cls)
+        obj.substitutions = KeyDict.from_constraintset_subs(obj, substitutions)
+        return obj
 
-    def __str__(self):
-        return str(self.constraints)
-
-    def __repr__(self):
-        return "gpkit.%s(%s)" % (self.__class__.__name__, str(self))
-
-    def latex(self):
-        return self.constraints.latex()
+    def __array_finalize__(self, obj):
+        "Finalizer. Required for objects inheriting from np.ndarray."
+        if obj is None:
+            return
+        self.substitutions = getattr(obj, 'substitutions', {})
 
     @property
     def varkeys(self):
-        return self.make_varkeys()
-
-    def make_varkeys(self, constraints=None):
-        varkeys = KeySet()
-        constraints = constraints if constraints else self.flatconstraints()
-        for constr in constraints:
-            varkeys.update(constr.varkeys)
-        return varkeys
-
-    def flatconstraints(self):
-        constraints = self.constraints
-        if hasattr(constraints, "flatten"):
-            constraints = constraints.flatten()
-            isnt_numpy_bool = lambda c: c and type(c) is not np.bool_
-            constraints = filter(isnt_numpy_bool, constraints)
-        return constraints
+        "Varkeys present in the constraints"
+        return KeySet.from_constraintset(self)
 
     def parse_constraints(self):
         self.onlyposyconstrs, self.localposyconstrs = [], []
         self.all_have_posy_rep = True
         self.allposyconstrs = []
-        for constr in self.flatconstraints():
+        for constr in self.iter():
             constr.substitutions.update(self.substitutions)
             localposy = False
             if hasattr(constr, "as_gpconstr"):
@@ -64,50 +49,41 @@ class ConstraintSet(LocallyApproximableConstraint, GPConstraint):
                                  "`as_posyslt1` method, but %s has neither"
                                  % constr)
 
-    def __len__(self):
-        return len(self.constraints)
-
-    def __getattr__(self, attr):
-        return getattr(self.constraints, attr)
-
-    def __getitem__(self, idx):
-        return self.constraints[idx]
-
-    def __setitem__(self, idx, value):
-        self.constraints[idx] = value
-
     def as_posyslt1(self):
-        self.parse_constraints()
-        if self.all_have_posy_rep:
-            posyss, self.posymap = [], []
-            for c in self.allposyconstrs:
-                posys = c.as_posyslt1()
-                self.posymap.append(len(posys))
-                posyss.extend(posys)
-            return posyss
-        else:
-            return [None]
-
-    def as_gpconstr(self, x0):
-        self.parse_constraints()
-        if not self.localposyconstrs:
-            return None
-        self.posymap = "sp"
-        localposyconstrs = [c.as_gpconstr(x0)
-                            for c in self.localposyconstrs]
-        localposyconstrs.extend(self.onlyposyconstrs)
-        return ConstraintSet(localposyconstrs, self.substitutions)
-
-    def sub(self, subs, value=None):
-        return self  # TODO
+        "Returns list of posynomials which must be kept <= 1"
+        posylist, self.posymap = [], []
+        for constraint in self.iter():
+            constraint.substitutions.update(self.substitutions)
+            posys = constraint.as_posyslt1()
+            self.posymap.append(len(posys))
+            posylist.extend(posys)
+        return posylist
 
     def sens_from_dual(self, p_senss, m_sensss):
-        assert self.all_have_posy_rep
+        """Computes constraint and variable sensitivities from dual solution
+
+        Arguments
+        ---------
+        p_senss : list
+            Sensitivity of each posynomial returned by `self.as_posyslt1()`
+
+        m_sensss: list of lists
+            Each posynomial's monomial sensitivities
+
+
+        Returns
+        -------
+        constraint_sens : dict
+            The interesting and computable sensitivities of this constraint
+
+        var_senss : dict
+            The variable sensitivities of this constraint
+        """
         constr_sens = {}
         var_senss = HashVector()
         offset = 0
-        for i, n_posys in enumerate(self.posymap):
-            constr = self.allposyconstrs[i]
+        for i, constr in enumerate(self.iter()):
+            n_posys = self.posymap[i]
             p_ss = p_senss[offset:offset+n_posys]
             m_sss = m_sensss[offset:offset+n_posys]
             constr_sens[str(constr)], v_ss = constr.sens_from_dual(p_ss, m_sss)
@@ -116,17 +92,58 @@ class ConstraintSet(LocallyApproximableConstraint, GPConstraint):
 
         return constr_sens, var_senss
 
+    def as_gpconstr(self, x0):
+        """Returns GPConstraint approximating this constraint at x0
+
+        When x0 is none, may return a default guess."""
+        as_gpconstr = lambda c: c.as_gpconstr(x0)
+        cs = ConstraintSet(self.recurse(as_gpconstr))
+        cs.substitutions.update(self.substitutions)
+        return cs
+
     def sens_from_gpconstr(self, posyapprox, posy_approx_sens, var_senss):
-        constr_sens = {}
-        for i, lpc in enumerate(self.localposyconstrs):
-            pa = posyapprox[i]
-            p_a_s = posy_approx_sens[str(pa)]
-            constr_sens[str(lpc)] = lpc.sens_from_gpconstr(pa, p_a_s, var_senss)
-        return constr_sens
+        """Computes sensitivities from GPConstraint approximation
+
+        Arguments
+        ---------
+        gpconstr : GPConstraint
+            Sensitivity of the GPConstraint returned by `self.as_gpconstr()`
+
+        gpconstr_sens :
+            Sensitivities created by `gpconstr.sens_from_dual`
+
+        var_senss : dict
+            Variable sensitivities from last GP solve.
+
+
+        Returns
+        -------
+        constraint_sens : dict
+            The interesting and computable sensitivities of this constraint
+        """
+        pass
+        # constr_sens = {}
+        # for i, lpc in enumerate(self):
+        #     pa = posyapprox[i]
+        #     p_a_s = posy_approx_sens[str(pa)]
+        #     constr_sens[str(lpc)] = lpc.sens_from_gpconstr(pa, p_a_s, var_senss)
+        # return constr_sens
 
     def process_result(self, result):
+        """Does arbitrary computation / manipulation of a program's result
+
+        There's no guarantee what order different constraints will process
+        results in, so any changes made to the program's result should be
+        careful not to step on other constraint's toes.
+
+        Potential Uses
+        --------------
+          - check that an inequality was tight
+          - add values computed from solved variables
+
+        """
         processed = {}
-        for constraint in self.constraints:
+        for constraint in self.iter():
             if hasattr(constraint, "process_result"):
                 p = constraint.process_result(result)
                 if p:
@@ -134,12 +151,34 @@ class ConstraintSet(LocallyApproximableConstraint, GPConstraint):
         return processed
 
 
-class ArrayConstraint(ConstraintSet):
-    def __str__(self):
-        return "%s %s %s" % (self.left, self.oper, self.right)
+class ArrayConstraint(SingleEquationConstraint, ConstraintSet):
+    left = None
+    oper = None
+    right = None
+    substitutions = None
 
-    def latex(self):
-        latex_oper = self.latex_opers[self.oper]
-        units = bool(self.left.units)
-        return ("%s %s %s" % (self.left.latex(showunits=units), latex_oper,
-                              self.right.latex(showunits=units)))
+    def __new__(cls, input_array, left, oper, right):
+        "Constructor. Required for objects inheriting from np.ndarray."
+        obj = ConstraintSet.__new__(cls, input_array, {})
+        obj.left = left
+        obj.oper = oper
+        obj.right = right
+        return obj
+
+    def __array_finalize__(self, obj):
+        "Finalizer. Required for objects inheriting from np.ndarray."
+        if obj is None:
+            return
+        ConstraintSet.__array_finalize__(self, obj)
+
+    def str_without(self, excluded=["units"]):
+        if self.oper:
+            return SingleEquationConstraint.str_without(self, excluded)
+        else:
+            return NomialArray.str_without(self, excluded)
+
+    def latex(self, *args, **kwargs):
+        if self.oper:
+            return SingleEquationConstraint.latex(self)
+        else:
+            return NomialArray.latex(self, *args, **kwargs)

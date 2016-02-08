@@ -3,6 +3,13 @@ from collections import Iterable
 from .small_classes import Strings, Quantity
 
 
+def try_str_without(el, excluded):
+    if hasattr(el, "str_without"):
+        return el.str_without(excluded)
+    else:
+        return str(el)
+
+
 def veckeyed(key):
     vecdescr = dict(key.descr)
     del vecdescr["idx"]

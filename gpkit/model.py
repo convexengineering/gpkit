@@ -107,7 +107,7 @@ class Model(object):
         self.constraints = list(constraints) if constraints else []
         subs = self.cost.values
         subs.update(substitutions)
-        self.substitutions = KeyDict.from_constraints(self.varkeys,
+        self.substitutions = KeyDict.subs_from_constraints(self.varkeys,
                                                       self.constraints, subs)
         self.modelname = None
         if isobjectmodel:
@@ -209,7 +209,7 @@ class Model(object):
 
     @property
     def allsubs(self):
-        newsubs = KeyDict.from_constraints(self.varkeys, self.constraints)
+        newsubs = KeyDict.subs_from_constraints(self.varkeys, self.constraints)
         self.substitutions.update(newsubs)
         return self.substitutions
 
