@@ -476,7 +476,7 @@ class PosynomialInequality(ScalarSingleEquationConstraint):
         posys = listify(self.posylt1_rep)
         if not self.substitutions:
             # just return the pre-generated posynomial representation
-            return posys
+            return posys, [len(posys)]
 
         out = []
         for posy in posys:
@@ -484,13 +484,13 @@ class PosynomialInequality(ScalarSingleEquationConstraint):
                 m_gt = self.m_gt.sub(self.substitutions,
                                      require_positive=False)
                 if m_gt.c == 0:
-                    return []
+                    return [], [0]
 
             _, exps, cs, _ = substitution(posy, self.substitutions)
             # remove any cs that are just nans and/or 0s
             nans = np.isnan(cs)
             if np.all(nans) or np.all(cs[~nans] == 0):
-                return []  # skip nan'd or 0'd constraint
+                return [], [0]  # skip nan'd or 0'd constraint
 
             exps, cs, pmap = simplify_exps_and_cs(exps, cs, return_map=True)
 
@@ -509,9 +509,9 @@ class PosynomialInequality(ScalarSingleEquationConstraint):
                 raise RuntimeWarning("PosynomialInequality %s became Signomial"
                                      " after substitution" % self)
             out.append(p)
-        return out
+        return out, [len(out)]
 
-    def sens_from_dual(self, p_senss, m_sensss):
+    def sens_from_dual(self, posymap, p_senss, m_sensss):
         if not p_senss or not m_sensss:
             # as_posyslt1 created no inequalities
             return {}, {}
@@ -565,7 +565,7 @@ class MonomialEquality(PosynomialInequality):
     def __bool__(self):
         return self.__nonzero__()
 
-    def sens_from_dual(self, p_senss, m_sensss):
+    def sens_from_dual(self, posymap, p_senss, m_sensss):
         left, right = p_senss
         constr_sens = {str(self.left): left-right,
                        str(self.right): right-left}
@@ -609,11 +609,11 @@ class SignomialInequality(ScalarSingleEquationConstraint):
         s = self.sigy_lt0_rep.sub(self.substitutions, require_positive=False)
         posy, negy = s.posy_negy()
         if len(negy.cs) != 1:
-            return [None]
+            return []
         else:
             self.__class__ = PosynomialInequality
             self.__init__(posy, "<=", negy)
-            return [posy/negy]
+            return [posy/negy], [1]
 
     def as_gpconstr(self, x0):
         posy, negy = self.sigy_lt0_rep.posy_negy()

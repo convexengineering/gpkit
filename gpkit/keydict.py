@@ -8,7 +8,7 @@ from .small_scripts import is_sweepvar, veckeyed
 def iter_subs(substitutions, constraintset):
     if substitutions:
         yield substitutions
-    for constraint in constraintset.iter():
+    for constraint in constraintset.iter_flat():
         if hasattr(constraint, "substitutions"):
             dictionary = constraint.substitutions
             constraint.substitutions = {}
@@ -239,7 +239,7 @@ class KeySet(KeyDict):
     @classmethod
     def from_constraintset(cls, constraintset):
         out = cls()
-        for constraint in constraintset.iter():
+        for constraint in constraintset.iter_flat():
             if hasattr(constraint, "varkeys"):
                 #TODO: all constraints should have varkeys
                 out.update(constraint.varkeys)

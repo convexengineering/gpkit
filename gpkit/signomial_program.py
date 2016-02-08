@@ -1,12 +1,12 @@
 """Implement the SignomialProgram class"""
 from time import time
-
+import numpy as np
 from .geometric_program import GeometricProgram
-
 from .feasibility import feasibility_model
+from .constraints import ConstraintSet
 
 
-class SignomialProgram(object):
+class SignomialProgram(ConstraintSet):
     """Prepares a collection of signomials for a SP solve.
 
     Arguments
@@ -35,40 +35,19 @@ class SignomialProgram(object):
                         ])
     >>> gp.solve()
     """
+    cost = None
 
-    def __init__(self, cost, constraints, substitutions=None, verbosity=2):
+    def __new__(cls, cost, constraints, substitutions=None, verbosity=2):
+        "Constructor. Required for objects inheriting from np.ndarray."
         if cost.any_nonpositive_cs:
             raise TypeError("""SignomialPrograms need Posyomial objectives.
 
     The equivalent of a Signomial objective can be constructed by constraining
     a dummy variable z to be greater than the desired Signomial objective s
     (z >= s) and then minimizing that dummy variable.""")
-
-        self.cost = cost
-        self.constraints = constraints
-        self.posyconstraints = []
-        self.localposyconstraints = []
-        self.substitutions = substitutions if substitutions else {}
-
-        for constraint in self.constraints:
-            if substitutions:
-                constraint.substitutions.update(substitutions)
-            posy = False
-            if hasattr(constraint, "as_gpconstr"):
-                posy = constraint.as_gpconstr(None)
-                if posy:
-                    self.localposyconstraints.append(constraint)
-            if not posy and hasattr(constraint, "as_posyslt1"):
-                posy = constraint.as_posyslt1()
-                if posy:
-                    self.posyconstraints.append(constraint)
-                else:
-                    raise ValueError("%s is an invalid constraint for a"
-                                     " SignomialProgram" % constraint)
-
-        if not self.localposyconstraints:
-            raise ValueError("SignomialPrograms must contain at least one"
-                             " SignomialConstraint.")
+        obj = ConstraintSet.__new__(cls, constraints, substitutions)
+        obj.cost = cost
+        return obj
 
     def localsolve(self, solver=None, verbosity=1, x0=None, rel_tol=1e-4,
                    iteration_limit=50, *args, **kwargs):
@@ -133,32 +112,16 @@ class SignomialProgram(object):
             print("Solving took %i GP solves" % len(self.gps)
                   + " and %.3g seconds." % (time() - self.starttime))
 
-        constr_senss = result["sensitivities"]["constraints"]
-        # the approximated constraints are at the front of list
-        posyapproxs = gp.constraints[len(self.posyconstraints):]
-        for i, posyapprox in enumerate(posyapproxs):
-            constr = self.localposyconstraints[i]
-            pa_sens = constr_senss.pop(str(posyapprox))
-            var_senss = result["sensitivities"]["constants"]
-            constr_sens = constr.sens_from_gpconstr(posyapprox,
-                                                    pa_sens, var_senss)
-            result["sensitivities"]["constraints"][str(constr)] = constr_sens
-
         result["signomialstart"] = startpoint
+        constr_senss = result["sensitivities"]["constraints"]
+        var_senss = result["sensitivities"]["constants"]
+        self.sens_from_gpconstr(gp.constraints, constr_senss, var_senss)
         self.result = result  # NOTE: SIDE EFFECTS
         return result
 
     def step(self, x0=None, verbosity=1):
-        localposyconstraints = []
-        for constraint in self.localposyconstraints:
-            lpc = constraint.as_gpconstr(x0)
-            if not lpc:
-                raise ValueError("%s is an invalid constraint for a"
-                                 " SignomialProgram" % constraint)
-            localposyconstraints.append(lpc)
-        constraints = self.posyconstraints + localposyconstraints
-        return GeometricProgram(self.cost, constraints, self.substitutions,
-                                verbosity=verbosity)
+        return GeometricProgram(self.cost, self.as_gpconstr(x0),
+                                self.substitutions, verbosity=verbosity)
 
     def __repr__(self):
         return "gpkit.%s(\n%s)" % (self.__class__.__name__, str(self))
@@ -170,8 +133,7 @@ class SignomialProgram(object):
         return "\n".join(["  # minimize",
                           "    %s," % self.cost,
                           "[ # subject to"] +
-                         ["    %s," % constr
-                          for constr in self.constraints] +
+                         ["    %s," % constr for constr in self] +
                          [']'])
 
     def latex(self):

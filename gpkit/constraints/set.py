@@ -5,12 +5,11 @@ from ..small_classes import Numbers, HashVector, KeySet, KeyDict
 
 class ConstraintSet(NomialArray):
     substitutions = None
-
-    def __new__(cls, input_array, substitutions=None):
+    def __new__(cls, constraints, substitutions=None):
         "Constructor. Required for objects inheriting from np.ndarray."
         # Input array is an already formed ndarray instance
         # cast to be our class type
-        obj = np.asarray(input_array).view(cls)
+        obj = np.asarray(constraints).view(cls)
         obj.substitutions = KeyDict.from_constraintset_subs(obj, substitutions)
         return obj
 
@@ -25,40 +24,17 @@ class ConstraintSet(NomialArray):
         "Varkeys present in the constraints"
         return KeySet.from_constraintset(self)
 
-    def parse_constraints(self):
-        self.onlyposyconstrs, self.localposyconstrs = [], []
-        self.all_have_posy_rep = True
-        self.allposyconstrs = []
-        for constr in self.iter():
-            constr.substitutions.update(self.substitutions)
-            localposy = False
-            if hasattr(constr, "as_gpconstr"):
-                localposy = constr.as_gpconstr(None)
-                if localposy:
-                    self.localposyconstrs.append(constr)
-            if hasattr(constr, "as_posyslt1"):
-                self.allposyconstrs.append(constr)
-                if not localposy:
-                    self.onlyposyconstrs.append(constr)
-            elif localposy:
-                self.all_have_posy_rep = False
-            else:
-                raise ValueError("constraints must have either an"
-                                 "`as_gpconstr` method or an"
-                                 "`as_posyslt1` method, but %s has neither"
-                                 % constr)
-
     def as_posyslt1(self):
         "Returns list of posynomials which must be kept <= 1"
-        posylist, self.posymap = [], []
-        for constraint in self.iter():
+        posylist, posymap = [], []
+        for constraint in self:
             constraint.substitutions.update(self.substitutions)
-            posys = constraint.as_posyslt1()
-            self.posymap.append(len(posys))
+            posys, _ = constraint.as_posyslt1()
+            posymap.append(len(posys))
             posylist.extend(posys)
-        return posylist
+        return posylist, posymap
 
-    def sens_from_dual(self, p_senss, m_sensss):
+    def sens_from_dual(self, posymap, p_senss, m_sensss):
         """Computes constraint and variable sensitivities from dual solution
 
         Arguments
@@ -81,11 +57,12 @@ class ConstraintSet(NomialArray):
         constr_sens = {}
         var_senss = HashVector()
         offset = 0
-        for i, constr in enumerate(self.iter()):
-            n_posys = self.posymap[i]
+        for i, constr in enumerate(self):
+            n_posys = posymap[i]
             p_ss = p_senss[offset:offset+n_posys]
             m_sss = m_sensss[offset:offset+n_posys]
-            constr_sens[str(constr)], v_ss = constr.sens_from_dual(p_ss, m_sss)
+            constr_sens[str(constr)], v_ss = constr.sens_from_dual(posymap[i],
+                                                                   p_ss, m_sss)
             var_senss += v_ss
             offset += n_posys
 
@@ -95,18 +72,17 @@ class ConstraintSet(NomialArray):
         """Returns GPConstraint approximating this constraint at x0
 
         When x0 is none, may return a default guess."""
-        as_gpconstr = lambda c: c.as_gpconstr(x0)
-        cs = ConstraintSet(self.recurse(as_gpconstr))
+        cs = ConstraintSet([constr.as_gpconstr(x0) for constr in self])
         cs.substitutions.update(self.substitutions)
         return cs
 
-    def sens_from_gpconstr(self, posyapprox, posy_approx_sens, var_senss):
+    def sens_from_gpconstr(self, gpapprox, gp_sens, var_senss):
         """Computes sensitivities from GPConstraint approximation
 
         Arguments
         ---------
-        gpconstr : GPConstraint
-            Sensitivity of the GPConstraint returned by `self.as_gpconstr()`
+        gpapprox : GPConstraint
+            The GPConstraint returned by `self.as_gpconstr()`
 
         gpconstr_sens :
             Sensitivities created by `gpconstr.sens_from_dual`
@@ -120,13 +96,12 @@ class ConstraintSet(NomialArray):
         constraint_sens : dict
             The interesting and computable sensitivities of this constraint
         """
-        pass
-        # constr_sens = {}
-        # for i, lpc in enumerate(self):
-        #     pa = posyapprox[i]
-        #     p_a_s = posy_approx_sens[str(pa)]
-        #     constr_sens[str(lpc)] = lpc.sens_from_gpconstr(pa, p_a_s, var_senss)
-        # return constr_sens
+        constr_sens = {}
+        for i, c in enumerate(self):
+            gpa = gpapprox[i]
+            gp_s = gp_sens[str(gpa)]
+            constr_sens[str(c)] = c.sens_from_gpconstr(gpa, gp_s, var_senss)
+        return constr_sens
 
     def process_result(self, result):
         """Does arbitrary computation / manipulation of a program's result
@@ -142,7 +117,7 @@ class ConstraintSet(NomialArray):
 
         """
         processed = {}
-        for constraint in self.iter():
+        for constraint in self.iter_flat():
             if hasattr(constraint, "process_result"):
                 p = constraint.process_result(result)
                 if p:

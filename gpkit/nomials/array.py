@@ -25,13 +25,14 @@ def vec_recurse(element, function, *args, **kwargs):
         return function(element, *args, **kwargs)
 
 
-def array_constrain(func):
-    "Makes an array constraint out of an array of constraints."
+def array_constraint(symbol, func):
+    vecfunc = np.vectorize(func)
+
     def wrapped_func(self, other):
-        result, label = func(self, other)
+        result = vecfunc(self, other)
         left = self.key if hasattr(self, "key") else self
         right = other.key if hasattr(other, "key") else other
-        return ArrayConstraint(result, left, label, right)
+        return ArrayConstraint(result, left, symbol, right)
     return wrapped_func
 
 
@@ -111,11 +112,11 @@ class NomialArray(np.ndarray):
 
     def __nonzero__(self):
         "Allows the use of NomialArrays as truth elements."
-        return all(bool(p) for p in self)
+        return all(bool(p) for p in self.iter_flat())
 
     def __bool__(self):
         "Allows the use of NomialArrays as truth elements in python3."
-        return all(bool(p) for p in self)
+        return all(bool(p) for p in self.iter_flat())
 
     @property
     def c(self):
@@ -132,36 +133,28 @@ class NomialArray(np.ndarray):
         "Apply a function to each terminal constraint, returning the array"
         return vec_recurse(self, function, *args)
 
-    def iter(self):
+    def iter_flat(self):
         "Iterate through each terminal constraint"
         it = np.nditer(self, flags=['multi_index', 'refs_ok'])
         while not it.finished:
             i = it.multi_index
             item = self[i]
-            if hasattr(item, "iter_recurse"):
+            if hasattr(item, "iter"):
                 try:
-                    yield item.iter_recurse.next()
+                    yield item.iter.next()
                 except StopIteration:
                     pass
             else:
                 yield item
             it.iternext()
 
-    @array_constrain
-    def __eq__(self, other):
-        return self.recurse(eq, other), "="
+    __eq__ = array_constraint("=", eq)
+    __le__ = array_constraint("<=", le)
+    __ge__ = array_constraint(">=", ge)
 
     def __ne__(self, other):
         "Does type checking, then applies 'not ==' in a vectorized fashion."
         return not isinstance(other, self.__class__) or not all(self == other)
-
-    @array_constrain
-    def __le__(self, other):
-        return self.recurse(le, other), "<="
-
-    @array_constrain
-    def __ge__(self, other):
-        return self.recurse(ge, other), ">="
 
     def outer(self, other):
         "Returns the array and argument's outer product."
@@ -174,7 +167,7 @@ class NomialArray(np.ndarray):
     @property
     def units(self):
         units = None
-        for el in self.iter():
+        for el in self.iter_flat():
             if isinstance(el, Numbers):
                 if units and not (el == 0 or np.isnan(el)):
                     raise DimensionalityError("elements of a NomialArray"
