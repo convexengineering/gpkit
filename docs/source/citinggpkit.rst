@@ -8,5 +8,5 @@ If you use GPkit, please cite it with the following bibtex::
           title={GPkit},
           howpublished={\url{https://github.com/hoburg/gpkit}},
           year={2015},
-          note={Version 0.3.4}
+          note={Version 0.4.0}
          }
