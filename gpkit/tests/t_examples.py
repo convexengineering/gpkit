@@ -1,39 +1,34 @@
+"""Unit testing of tests in docs/source/examples"""
 import unittest
-import numpy as np
 import sys
 import os
-import importlib
 
 from gpkit import settings
-
-FILE_DIR = os.path.dirname(os.path.realpath(__file__))
-EXAMPLE_DIR = os.path.abspath(FILE_DIR+'../../../docs/source/examples')
-SOLVERS = settings["installed_solvers"]
-IMPORTED_EXAMPLES = {}
+from gpkit.tests.helpers import generate_example_tests
 
 
 class TestExamples(unittest.TestCase):
+    """
+    To test a new example, add a function called `test_$EXAMPLENAME`, where
+    $EXAMPLENAME is the name of your example in docs/source/examples without
+    the file extension.
 
-    # To test a new example, add a function called `test_$EXAMPLENAME`, where
-    # $EXAMPLENAME is the name of your example in docs/source/examples without
-    # the file extension.
-    #
-    # This function should accept two arguments (e.g. 'self' and 'example').
-    # The imported example script will be passed to the second: anything that
-    # was a global variable (e.g, "sol") in the original script is available
-    # as an attribute (e.g., "example.sol")
-    #
-    # If you don't want to perform any checks on the example besides making
-    # sure it runs, just put "pass" as the function's body, e.g.:
-    #
-    #       def test_dummy_example(self, example):
-    #           pass
-    #
-    # But it's good practice to ensure the example's solution as well, e.g.:
-    #
-    #       def test_dummy_example(self, example):
-    #           self.assertAlmostEqual(example.sol["cost"], 3.121)
-    #
+    This function should accept two arguments (e.g. 'self' and 'example').
+    The imported example script will be passed to the second: anything that
+    was a global variable (e.g, "sol") in the original script is available
+    as an attribute (e.g., "example.sol")
+
+    If you don't want to perform any checks on the example besides making
+    sure it runs, just put "pass" as the function's body, e.g.:
+
+          def test_dummy_example(self, example):
+              pass
+
+    But it's good practice to ensure the example's solution as well, e.g.:
+
+          def test_dummy_example(self, example):
+              self.assertAlmostEqual(example.sol["cost"], 3.121)
+    """
 
     def test_simple_sp(self, example):
         pass
@@ -82,71 +77,11 @@ class TestExamples(unittest.TestCase):
             self.assertTrue(abs(1-sol_rat) < 1e-2)
 
 
-class NewDefaultSolver(object):
-    def __init__(self, solver):
-        self.solver = solver
+FILE_DIR = os.path.dirname(os.path.realpath(__file__))
+EXAMPLE_DIR = os.path.abspath(FILE_DIR + '../../../docs/source/examples')
+SOLVERS = settings["installed_solvers"]
+TESTS = [generate_example_tests(EXAMPLE_DIR, TestExamples, SOLVERS)]
 
-    def __enter__(self):
-        import gpkit
-        gpkit.settings["installed_solvers"] = [self.solver]
-
-    def __exit__(self, *args):
-        import gpkit
-        gpkit.settings["installed_solvers"] = SOLVERS
-
-
-class NullFile(object):
-    def write(self, string):
-        pass
-
-    def close(self):
-        pass
-
-
-class StdoutCaptured(object):
-    def __init__(self, logfilename=None):
-        self.logfilename = logfilename
-
-    def __enter__(self):
-        self.original_stdout = sys.stdout
-        if self.logfilename:
-            filepath = EXAMPLE_DIR+os.sep+"%s_output.txt" % self.logfilename
-            logfile = open(filepath, "w")
-        else:
-            logfile = NullFile()
-        sys.stdout = logfile
-
-    def __exit__(self, *args):
-        sys.stdout.close()
-        sys.stdout = self.original_stdout
-
-
-def new_test(name, solver):
-    def test(self):
-        with NewDefaultSolver(solver):
-            logfilename = name if name not in IMPORTED_EXAMPLES else None
-            with StdoutCaptured(logfilename):
-                if name not in IMPORTED_EXAMPLES:
-                    IMPORTED_EXAMPLES[name] = importlib.import_module(name)
-                else:
-                    reload(IMPORTED_EXAMPLES[name])
-            getattr(self, name)(IMPORTED_EXAMPLES[name])
-    return test
-
-
-TESTS = []
-if os.path.isdir(EXAMPLE_DIR):
-    sys.path.insert(0, EXAMPLE_DIR)
-    for fn in dir(TestExamples):
-        if fn[:5] == "test_":
-            name = fn[5:]
-            old_test = getattr(TestExamples, fn)
-            setattr(TestExamples, name, old_test)  # move to a non-test fn
-            delattr(TestExamples, fn)  # delete the old old_test
-            for solver in SOLVERS:
-                new_name = "test_%s_%s" % (name, solver)
-                setattr(TestExamples, new_name, new_test(name, solver))
-    TESTS.append(TestExamples)
 
 if __name__ == "__main__":
     from gpkit.tests.helpers import run_tests
