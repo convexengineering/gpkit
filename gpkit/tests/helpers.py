@@ -22,7 +22,7 @@ def generate_example_tests(path, testclass, solvers=None, newtest_fn=None):
     """
     import_dict = {}
     if newtest_fn is None:
-        newtest_fn = import_test_and_log_output
+        newtest_fn = new_test
     if solvers is None:
         import gpkit
         solvers = [gpkit.settings["installed_solvers"][0]]
@@ -36,22 +36,35 @@ def generate_example_tests(path, testclass, solvers=None, newtest_fn=None):
                 delattr(testclass, fn)  # delete the old old_test
                 for solver in solvers:
                     new_name = "test_%s_%s" % (name, solver)
-                    new_fn = newtest_fn(name, solver, path, import_dict)
+                    new_fn = newtest_fn(name, solver, import_dict, path)
                     setattr(testclass, new_name, new_fn)
         return testclass
 
 
-def import_test_and_log_output(name, solver, exampledir, import_dict):
+def new_test(name, solver, import_dict, path):
+    """logged_example_testcase with a NewDefaultSolver"""
     def test(self):
         with NewDefaultSolver(solver):
-            filepath = "".join([exampledir, os.sep,
-                                "%s_output.txt" % name])
-            with StdoutCaptured(logfilepath=filepath):
-                if name not in import_dict:
-                    import_dict[name] = importlib.import_module(name)
-                else:
-                    reload(import_dict[name])
-            getattr(self, name)(import_dict[name])
+            logged_example_testcase(name, import_dict, path)(self)
+    return test
+
+
+def logged_example_testcase(name, imported, path):
+    """Returns a method for attaching to a unittest.TestCase that imports
+    or reloads module 'name' and stores in imported[name].
+    Runs top-level code, which is typically a docs example, in the process.
+
+    Returns a method.
+    """
+    def test(self):
+        filepath = ("".join([path, os.sep, "%s_output.txt" % name])
+                    if name not in imported else None)
+        with StdoutCaptured(logfilepath=filepath):
+            if name not in imported:
+                imported[name] = importlib.import_module(name)
+            else:
+                reload(imported[name])
+        getattr(self, name)(imported[name])
     return test
 
 
