@@ -102,7 +102,7 @@ def logged_example_testcase(name,
     """Returns a method for attaching to a unittest.TestCase that imports
     or reloads module 'name' and stores in imported[name].
     Runs top-level code, which is typically a docs example, in the process.
-    
+
     Returns a method.
     """
     def test(self):
@@ -120,6 +120,7 @@ def logged_example_testcase(name,
 
 
 def new_test(name, solver):
+    """logged_example_testcase with a NewDefaultSolver"""
     def test(self):
         with NewDefaultSolver(solver):
             logged_example_testcase(name)(self)
@@ -139,6 +140,7 @@ if os.path.isdir(EXAMPLE_DIR):
                 new_name = "test_%s_%s" % (name, solver)
                 setattr(TestExamples, new_name, new_test(name, solver))
     TESTS.append(TestExamples)
+
 
 if __name__ == "__main__":
     from gpkit.tests.helpers import run_tests
