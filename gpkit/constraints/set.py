@@ -1,23 +1,61 @@
 import numpy as np
 from ..nomials.array import NomialArray
 from ..small_classes import Numbers, HashVector, KeySet, KeyDict
+from ..small_scripts import try_str_without
 
 
-class ConstraintSet(NomialArray):
-    substitutions = None
-    def __new__(cls, constraints, substitutions=None):
-        "Constructor. Required for objects inheriting from np.ndarray."
-        # Input array is an already formed ndarray instance
-        # cast to be our class type
-        obj = np.asarray(constraints).view(cls)
-        obj.substitutions = KeyDict.from_constraintset_subs(obj, substitutions)
+def constraintset_iterables(obj):
+    if hasattr(obj, "__iter__"):
+        return ConstraintSet(obj)
+    else:
         return obj
 
-    def __array_finalize__(self, obj):
-        "Finalizer. Required for objects inheriting from np.ndarray."
-        if obj is None:
-            return
-        self.substitutions = getattr(obj, 'substitutions', {})
+
+class ConstraintSet(list):
+    substitutions = None
+
+    def __init__(self, constraints, substitutions=None):
+        list.__init__(self, constraints)
+        self.recurse(constraintset_iterables)
+        self.substitutions = KeyDict.subs_from_constr(self, substitutions)
+
+    def str_without(self, excluded=[]):
+        return "[" + ", ".join([try_str_without(el, excluded)
+                                for el in self]) + "]"
+
+    def __str__(self):
+        "Returns list-like string, but with str(el) instead of repr(el)."
+        return self.str_without()
+
+    def __repr__(self):
+        return "gpkit.%s(%s)" % (self.__class__.__name__, self)
+
+    def latex(self, matwrap=True):
+        return ("\\begin{bmatrix}" +
+                " \\\\\n".join(el.latex(matwrap=False) for el in self) +
+                "\\end{bmatrix}")
+
+    def _repr_latex_(self):
+        return "$$"+self.latex()+"$$"
+
+    @property
+    def flat(self):
+        for constraint in self:
+            if isinstance(constraint, ConstraintSet):
+                try:
+                    yield constraint.flat.next()
+                except StopIteration:
+                    pass
+            else:
+                yield constraint
+
+    def recurse(self, function, *args, **kwargs):
+        "Apply a function to each terminal constraint"
+        for i, constraint in enumerate(self):
+            if isinstance(constraint, ConstraintSet):
+                constraint.recurse(function, *args, **kwargs)
+            else:
+                self[i] = function(constraint, *args, **kwargs)
 
     @property
     def varkeys(self):
@@ -26,15 +64,15 @@ class ConstraintSet(NomialArray):
 
     def as_posyslt1(self):
         "Returns list of posynomials which must be kept <= 1"
-        posylist, posymap = [], []
+        posylist, self.posymap = [], []
         for constraint in self:
             constraint.substitutions.update(self.substitutions)
-            posys, _ = constraint.as_posyslt1()
-            posymap.append(len(posys))
+            posys = constraint.as_posyslt1()
+            self.posymap.append(len(posys))
             posylist.extend(posys)
-        return posylist, posymap
+        return posylist
 
-    def sens_from_dual(self, posymap, p_senss, m_sensss):
+    def sens_from_dual(self, p_senss, m_sensss):
         """Computes constraint and variable sensitivities from dual solution
 
         Arguments
@@ -58,14 +96,12 @@ class ConstraintSet(NomialArray):
         var_senss = HashVector()
         offset = 0
         for i, constr in enumerate(self):
-            n_posys = posymap[i]
+            n_posys = self.posymap[i]
             p_ss = p_senss[offset:offset+n_posys]
             m_sss = m_sensss[offset:offset+n_posys]
-            constr_sens[str(constr)], v_ss = constr.sens_from_dual(posymap[i],
-                                                                   p_ss, m_sss)
+            constr_sens[str(constr)], v_ss = constr.sens_from_dual(p_ss, m_sss)
             var_senss += v_ss
             offset += n_posys
-
         return constr_sens, var_senss
 
     def as_gpconstr(self, x0):
@@ -117,7 +153,7 @@ class ConstraintSet(NomialArray):
 
         """
         processed = {}
-        for constraint in self.iter_flat():
+        for constraint in self:
             if hasattr(constraint, "process_result"):
                 p = constraint.process_result(result)
                 if p:

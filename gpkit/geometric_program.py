@@ -48,17 +48,15 @@ class GeometricProgram(NomialData):
         subbedcost = cost.value.sub(self.substitutions)
         self.posynomials = [subbedcost]
         self.constr_idxs = []
-        self.constr_posymaps = []
         for constraint in constraints:
             constraint.substitutions.update(self.substitutions)
-            constr_posys, constr_posymap = constraint.as_posyslt1()
+            constr_posys = constraint.as_posyslt1()
             if not all(constr_posys):
                 raise ValueError("%s is an invalid constraint for a"
                                  " GeometricProgram" % constraint)
             start_idx, ps_added = len(self.posynomials), len(constr_posys)
             self.constr_idxs.append(range(start_idx, start_idx + ps_added))
             self.posynomials.extend(constr_posys)
-            self.constr_posymaps.append(constr_posymap)
 
         ## Init NomialData to create self.exps, self.cs and so on
         super(GeometricProgram, self).init_from_nomials(self.posynomials)
@@ -167,7 +165,6 @@ class GeometricProgram(NomialData):
         result["freevariables"] = dict(zip(self.varlocs, np.exp(primal)))
         result["variables"] = dict(result["freevariables"])
 
-
         ## Get cost
         if "objective" in solver_out:
             result["cost"] = float(solver_out["objective"])
@@ -208,8 +205,7 @@ class GeometricProgram(NomialData):
             p_senss = [la[p_i] for p_i in posy_idxs]
             m_sensss = [[nu[i] for i in self.m_idxs[p_i]] for p_i in posy_idxs]
             constr_sens, p_var_senss = \
-                constr.sens_from_dual(self.constr_posymaps[c_i], p_senss,
-                                      m_sensss)
+                constr.sens_from_dual(p_senss, m_sensss)
             # ...then add to it the constant sensitivities of each constraint
             var_senss += p_var_senss
             # also, add each constraint's sensitivities to the results

@@ -35,9 +35,8 @@ class SignomialProgram(ConstraintSet):
                         ])
     >>> gp.solve()
     """
-    cost = None
 
-    def __new__(cls, cost, constraints, substitutions=None, verbosity=2):
+    def __init__(self, cost, constraints, substitutions=None, verbosity=2):
         "Constructor. Required for objects inheriting from np.ndarray."
         if cost.any_nonpositive_cs:
             raise TypeError("""SignomialPrograms need Posyomial objectives.
@@ -45,9 +44,8 @@ class SignomialProgram(ConstraintSet):
     The equivalent of a Signomial objective can be constructed by constraining
     a dummy variable z to be greater than the desired Signomial objective s
     (z >= s) and then minimizing that dummy variable.""")
-        obj = ConstraintSet.__new__(cls, constraints, substitutions)
-        obj.cost = cost
-        return obj
+        ConstraintSet.__init__(self, constraints, substitutions)
+        self.cost = cost
 
     def localsolve(self, solver=None, verbosity=1, x0=None, rel_tol=1e-4,
                    iteration_limit=50, *args, **kwargs):

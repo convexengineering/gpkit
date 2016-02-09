@@ -9,7 +9,7 @@
 """
 
 import numpy as np
-from operator import eq, le, ge
+from operator import eq, le, ge, xor
 from ..small_classes import Numbers
 from ..small_scripts import try_str_without
 from .. import units as ureg
@@ -81,8 +81,7 @@ class NomialArray(np.ndarray):
         return "$$"+self.latex()+"$$"
 
     def __hash__(self):
-        #TODO: speed this up
-        return hash(tuple(self.recurse(hash).tolist()))
+        return hash(reduce(xor, map(hash, self.flat), 0))
 
     def __new__(cls, input_array):
         "Constructor. Required for objects inheriting from np.ndarray."
@@ -112,11 +111,11 @@ class NomialArray(np.ndarray):
 
     def __nonzero__(self):
         "Allows the use of NomialArrays as truth elements."
-        return all(bool(p) for p in self.iter_flat())
+        return all(bool(p) for p in self.flat)
 
     def __bool__(self):
         "Allows the use of NomialArrays as truth elements in python3."
-        return all(bool(p) for p in self.iter_flat())
+        return all(bool(p) for p in self.flat)
 
     @property
     def c(self):
@@ -129,24 +128,9 @@ class NomialArray(np.ndarray):
         except TypeError:
             raise ValueError("only a nomialarray of numbers has a 'c'")
 
-    def recurse(self, function, *args):
+    def vectorize(self, function, *args, **kwargs):
         "Apply a function to each terminal constraint, returning the array"
-        return vec_recurse(self, function, *args)
-
-    def iter_flat(self):
-        "Iterate through each terminal constraint"
-        it = np.nditer(self, flags=['multi_index', 'refs_ok'])
-        while not it.finished:
-            i = it.multi_index
-            item = self[i]
-            if hasattr(item, "iter"):
-                try:
-                    yield item.iter.next()
-                except StopIteration:
-                    pass
-            else:
-                yield item
-            it.iternext()
+        return vec_recurse(self, function, *args, **kwargs)
 
     __eq__ = array_constraint("=", eq)
     __le__ = array_constraint("<=", le)
@@ -162,12 +146,12 @@ class NomialArray(np.ndarray):
 
     def sub(self, subs, val=None, require_positive=True):
         "Substitutes into the array"
-        return self.recurse(lambda nom: nom.sub(subs, val, require_positive))
+        return self.vectorize(lambda nom: nom.sub(subs, val, require_positive))
 
     @property
     def units(self):
         units = None
-        for el in self.iter_flat():
+        for el in self.flat:
             if isinstance(el, Numbers):
                 if units and not (el == 0 or np.isnan(el)):
                     raise DimensionalityError("elements of a NomialArray"
