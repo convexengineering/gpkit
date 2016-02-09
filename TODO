@@ -1,4 +1,0 @@
-TODO
-
-fix constraintset to NOT flatten the hierarchy when solving
-no longer allow False / None / True "constraints"
