@@ -2,15 +2,9 @@
 import unittest
 import sys
 import os
-import importlib
 
 from gpkit import settings
-from gpkit.tests.helpers import StdoutCaptured
-
-FILE_DIR = os.path.dirname(os.path.realpath(__file__))
-EXAMPLE_DIR = os.path.abspath(FILE_DIR + '../../../docs/source/examples')
-SOLVERS = settings["installed_solvers"]
-IMPORTED_EXAMPLES = {}
+from gpkit.tests.helpers import generate_example_tests
 
 
 class TestExamples(unittest.TestCase):
@@ -83,48 +77,10 @@ class TestExamples(unittest.TestCase):
             self.assertTrue(abs(1-sol_rat) < 1e-2)
 
 
-class NewDefaultSolver(object):
-    def __init__(self, solver):
-        self.solver = solver
-
-    def __enter__(self):
-        import gpkit
-        gpkit.settings["installed_solvers"] = [self.solver]
-
-    def __exit__(self, *args):
-        import gpkit
-        gpkit.settings["installed_solvers"] = SOLVERS
-
-
-def new_test(name, solver, exampledir=EXAMPLE_DIR):
-    def test(self):
-        with NewDefaultSolver(solver):
-            examplename = name if name not in IMPORTED_EXAMPLES else None
-            filepath = "".join([exampledir,
-                                os.sep,
-                                "%s_output.txt" % examplename])
-            with StdoutCaptured(logfilepath=filepath):
-                if name not in IMPORTED_EXAMPLES:
-                    IMPORTED_EXAMPLES[name] = importlib.import_module(name)
-                else:
-                    reload(IMPORTED_EXAMPLES[name])
-            getattr(self, name)(IMPORTED_EXAMPLES[name])
-    return test
-
-
-TESTS = []
-if os.path.isdir(EXAMPLE_DIR):
-    sys.path.insert(0, EXAMPLE_DIR)
-    for fn in dir(TestExamples):
-        if fn[:5] == "test_":
-            name = fn[5:]
-            old_test = getattr(TestExamples, fn)
-            setattr(TestExamples, name, old_test)  # move to a non-test fn
-            delattr(TestExamples, fn)  # delete the old old_test
-            for solver in SOLVERS:
-                new_name = "test_%s_%s" % (name, solver)
-                setattr(TestExamples, new_name, new_test(name, solver))
-    TESTS.append(TestExamples)
+FILE_DIR = os.path.dirname(os.path.realpath(__file__))
+EXAMPLE_DIR = os.path.abspath(FILE_DIR + '../../../docs/source/examples')
+SOLVERS = settings["installed_solvers"]
+TESTS = [generate_example_tests(EXAMPLE_DIR, TestExamples, SOLVERS)]
 
 if __name__ == "__main__":
     from gpkit.tests.helpers import run_tests

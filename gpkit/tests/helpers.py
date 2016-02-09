@@ -2,10 +2,61 @@
 import unittest
 import sys
 import os
+import importlib
+
+
+def generate_example_tests(path, testclass, solvers=None, newtest_fn=None):
+    """
+    Mutate TestCase class so it behaves as described in TestExamples docstring
+
+    Arguments
+    ---------
+    path : str
+        directory containing example modules to test
+    testclass : class
+        class that inherits from `unittest.TestCase`
+    newtest_fn : function
+        function that returns new tests. defaults to import_test_and_log_output
+    solvers : iterable
+        solvers to run for; or only for default if solvers is None
+    """
+    import_dict = {}
+    if newtest_fn is None:
+        newtest_fn = import_test_and_log_output
+    if solvers is None:
+        import gpkit
+        solvers = [gpkit.settings["installed_solvers"][0]]
+    if os.path.isdir(path):
+        sys.path.insert(0, path)
+        for fn in dir(testclass):
+            if fn[:5] == "test_":
+                name = fn[5:]
+                old_test = getattr(testclass, fn)
+                setattr(testclass, name, old_test)  # move to a non-test fn
+                delattr(testclass, fn)  # delete the old old_test
+                for solver in solvers:
+                    new_name = "test_%s_%s" % (name, solver)
+                    new_fn = newtest_fn(name, solver, path, import_dict)
+                    setattr(testclass, new_name, new_fn)
+        return testclass
+
+
+def import_test_and_log_output(name, solver, exampledir, import_dict):
+    def test(self):
+        with NewDefaultSolver(solver):
+            filepath = "".join([exampledir, os.sep,
+                                "%s_output.txt" % name])
+            with StdoutCaptured(logfilepath=filepath):
+                if name not in import_dict:
+                    import_dict[name] = importlib.import_module(name)
+                else:
+                    reload(import_dict[name])
+            getattr(self, name)(import_dict[name])
+    return test
 
 
 def run_tests(tests, xmloutput=None, verbosity=2):
-    """Default way to run tests, to be called in __main__ methods.
+    """Default way to run tests, to be used in __main__.
 
     Arguments
     ---------
@@ -34,6 +85,20 @@ class NullFile(object):
 
     def close(self):
         pass
+
+
+class NewDefaultSolver(object):
+    def __init__(self, solver):
+        self.solver = solver
+
+    def __enter__(self):
+        import gpkit
+        self.prev_solvers = gpkit.settings["installed_solvers"]
+        gpkit.settings["installed_solvers"] = [self.solver]
+
+    def __exit__(self, *args):
+        import gpkit
+        gpkit.settings["installed_solvers"] = self.prev_solvers
 
 
 class StdoutCaptured(object):
