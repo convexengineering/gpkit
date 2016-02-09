@@ -96,19 +96,33 @@ class NewDefaultSolver(object):
         gpkit.settings["installed_solvers"] = SOLVERS
 
 
-def new_test(name, solver, exampledir=EXAMPLE_DIR):
+def logged_example_testcase(name,
+                            imported=IMPORTED_EXAMPLES,
+                            exampledir=EXAMPLE_DIR):
+    """Returns a method for attaching to a unittest.TestCase that imports
+    or reloads module 'name' and stores in imported[name].
+    Runs top-level code, which is typically a docs example, in the process.
+    
+    Returns a method.
+    """
+    def test(self):
+        filepath = ("".join([exampledir,
+                             os.sep,
+                             "%s_output.txt" % name])
+                    if name not in imported else None)
+        with StdoutCaptured(logfilepath=filepath):
+            if name not in imported:
+                imported[name] = importlib.import_module(name)
+            else:
+                reload(imported[name])
+        getattr(self, name)(imported[name])
+    return test
+
+
+def new_test(name, solver):
     def test(self):
         with NewDefaultSolver(solver):
-            filepath = ("".join([exampledir,
-                                 os.sep,
-                                 "%s_output.txt" % name])
-                        if name not in IMPORTED_EXAMPLES else None)
-            with StdoutCaptured(logfilepath=filepath):
-                if name not in IMPORTED_EXAMPLES:
-                    IMPORTED_EXAMPLES[name] = importlib.import_module(name)
-                else:
-                    reload(IMPORTED_EXAMPLES[name])
-            getattr(self, name)(IMPORTED_EXAMPLES[name])
+            logged_example_testcase(name)(self)
     return test
 
 
