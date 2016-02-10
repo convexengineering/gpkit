@@ -3,7 +3,7 @@ A simple beam example with fixed geometry. Solves the discretized
 Euler-Bernoulli beam equations for a constant distributed load
 """
 import numpy as np
-from gpkit.shortcuts import *
+from gpkit.shortcuts import Var, Model
 
 
 class Beam(Model):
@@ -52,9 +52,8 @@ class Beam(Model):
 b = Beam(N=10, substitutions={"L": 6, "EI": 1.1e4, "q": 110*np.ones(10)})
 sol = b.solve(verbosity=1)
 L, EI, q = sol("L"), sol("EI"), sol("q")
-N = len(q)
 q = q[0]  # assume uniform loading for the check below
-x = np.linspace(0, L, N)  # position along beam
+x = np.linspace(0, L, len(q))  # position along beam
 w_gp = sol("w")  # deflection along beam
 w_exact = q/(24.*EI) * x**2 * (x**2 - 4*L*x + 6*L**2)  # analytic soln
 
