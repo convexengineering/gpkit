@@ -43,7 +43,7 @@ Mac OS X
 If your installation is not working, try the following:
   - Start iPython. Commands below that start with ``>>>`` should be run in iPython
   - If ``>>> import gpkit`` prints "Could not load settings file.", then:
-      - ``>>> import os; os.chdir(os.path.dirname(gpkit.__file__)))``
+      - ``>>> import os; os.chdir(os.path.dirname(gpkit.__file__))``
       - ``>>> del gpkit``
       - ``>>> import build; build.build_gpkit()``
       - Exit iPython
@@ -83,7 +83,7 @@ Linux
 If your installation is not working, try the following:
   - Start iPython. Commands below that start with ``>>>`` should be run in iPython
   - If ``>>> import gpkit`` prints "Could not load settings file.", then:
-      - ``>>> import os; os.chdir(os.path.dirname(gpkit.__file__)))``
+      - ``>>> import os; os.chdir(os.path.dirname(gpkit.__file__))``
       - ``>>> del gpkit``
       - ``>>> import build; build.build_gpkit()``
       - Exit iPython
@@ -130,7 +130,7 @@ Windows
 If your installation is not working, try the following:
   - Start iPython. Commands below that start with ``>>>`` should be run in iPython
   - If ``>>> import gpkit`` prints "Could not load settings file.", then:
-      - ``>>> import os; os.chdir(os.path.dirname(gpkit.__file__)))``
+      - ``>>> import os; os.chdir(os.path.dirname(gpkit.__file__))``
       - ``>>> del gpkit``
       - ``>>> import build; build.build_gpkit()``
       - Exit iPython
