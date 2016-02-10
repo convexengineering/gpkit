@@ -1,7 +1,7 @@
 Installation Instructions
 *************************
 
-If you encounter any bugs during installation, please email ``gpkit`` at ``mit.edu``.
+If you encounter any bugs during installation, please email ``gpkit@mit.edu``.
 
 Mac OS X
 ========
@@ -34,9 +34,22 @@ Mac OS X
 3. Install GPkit
 ++++++++++++++++
   - Run ``pip install gpkit`` at the command line.
+  - Run ``pip install pint`` for units support (recommended)
   - Run ``pip install ipywidgets`` for interactive control of models (optional)
   - Run ``python -c "import gpkit.tests; gpkit.tests.run()"``
-  - If you want units support, install pint with ``pip install pint``.
+
+
+4. Debug Installation
++++++++++++++++++++++
+- If your installation is not working, try the following:
+  1. start iPython. Commands below that start with `>>>` should be run in iPython
+  2. if `>>> import gpkit` results in a "Could not load settings file." message
+      1. `>>> import os; os.chdir(os.path.dirname(gpkit.__file__)))`
+      2. `>>> del gpkit`
+      4. `>>> import build; build.build_gpkit()`
+      5. Exit iPython
+      6. Run ``python -c "import gpkit.tests; gpkit.tests.run()"``
+      7. If any tests fail, email ``gpkit@mit.edu``.
 
 
 
@@ -62,10 +75,21 @@ Linux
 ++++++++++++++++
   - _Optional:_ to install gpkit into an isolated python environment, install virtualenv, run ``virtualenv $DESTINATION_DIR`` then activate it with ``source $DESTINATION_DIR/bin/activate``.
   - Run ``pip install gpkit`` at the command line.
+  - Run ``pip install pint`` for units support (recommended)
   - Run ``pip install ipywidgets`` for interactive control of models (optional)
   - Run ``python -c "import gpkit.tests; gpkit.tests.run()"``
-  - If you want units support, install pint with ``pip install pint``.
-  - You may find iPython Notebook to be useful modeling environment.
+
+4. Debug Installation
++++++++++++++++++++++
+- If your installation is not working, try the following:
+    1. start iPython. Commands below that start with `>>>` should be run in iPython
+    2. if `>>> import gpkit` results in a "Could not load settings file." message
+        1. `>>> import os; os.chdir(os.path.dirname(gpkit.__file__)))`
+        2. `>>> del gpkit`
+        4. `>>> import build; build.build_gpkit()`
+        5. Exit iPython
+        6. Run ``python -c "import gpkit.tests; gpkit.tests.run()"``
+        7. If any tests fail, email ``gpkit@mit.edu``.
 
 
 
@@ -97,10 +121,22 @@ Windows
 3. Install GPkit
 ++++++++++++++++
   - Run ``pip install gpkit`` at an Anaconda Command Prompt.
+  - Run ``pip install pint`` for units support (recommended)
   - Run ``pip install ipywidgets`` for interactive control of models (optional)
-  - Run ``python -c "import gpkit.tests; gpkit.tests.run()"``
-      - If attempting to run the tests results in ``ValueError: Unknown solver ''.`` and ``python -c "import gpkit"`` prints "Could not find settings file", then run ``python -c "import gpkit.build; gpkit.build.build_gpkit()"``, to look for and install solvers. After doing so (it should say which solvers have been found), run     ``python -c "import gpkit.tests; gpkit.tests.run()"`` again.
   - If you want units support, install pint with ``pip install pint``.
+
+
+4. Debug Installation
++++++++++++++++++++++
+  - If your installation is not working, try the following:
+      1. start iPython. Commands below that start with `>>>` should be run in iPython
+      2. if `>>> import gpkit` results in a "Could not load settings file." message
+          1. `>>> import os; os.chdir(os.path.dirname(gpkit.__file__)))`
+          2. `>>> del gpkit`
+          4. `>>> import build; build.build_gpkit()`
+          5. Exit iPython
+          6. Run ``python -c "import gpkit.tests; gpkit.tests.run()"``
+          7. If any tests fail, email ``gpkit@mit.edu``.
 
 
 Updating GPkit between releases
