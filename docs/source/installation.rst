@@ -123,7 +123,6 @@ Windows
   - Run ``pip install gpkit`` at an Anaconda Command Prompt.
   - Run ``pip install pint`` for units support (recommended)
   - Run ``pip install ipywidgets`` for interactive control of models (optional)
-  - If you want units support, install pint with ``pip install pint``.
 
 
 4. Debug Installation
