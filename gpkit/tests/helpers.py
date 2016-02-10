@@ -5,7 +5,7 @@ import os
 import importlib
 
 
-def generate_example_tests(path, testclass, solvers=None, newtest_fn=None):
+def generate_example_tests(path, testclasses, solvers=None, newtest_fn=None):
     """
     Mutate TestCase class so it behaves as described in TestExamples docstring
 
@@ -26,19 +26,22 @@ def generate_example_tests(path, testclass, solvers=None, newtest_fn=None):
     if solvers is None:
         import gpkit
         solvers = [gpkit.settings["installed_solvers"][0]]
-    if os.path.isdir(path):
-        sys.path.insert(0, path)
-        for fn in dir(testclass):
-            if fn[:5] == "test_":
-                name = fn[5:]
-                old_test = getattr(testclass, fn)
-                setattr(testclass, name, old_test)  # move to a non-test fn
-                delattr(testclass, fn)  # delete the old old_test
-                for solver in solvers:
-                    new_name = "test_%s_%s" % (name, solver)
-                    new_fn = newtest_fn(name, solver, import_dict, path)
-                    setattr(testclass, new_name, new_fn)
-        return testclass
+    tests = []
+    for testclass in testclasses:
+        if os.path.isdir(path):
+            sys.path.insert(0, path)
+            for fn in dir(testclass):
+                if fn[:5] == "test_":
+                    name = fn[5:]
+                    old_test = getattr(testclass, fn)
+                    setattr(testclass, name, old_test)  # move to a non-test fn
+                    delattr(testclass, fn)  # delete the old old_test
+                    for solver in solvers:
+                        new_name = "test_%s_%s" % (name, solver)
+                        new_fn = newtest_fn(name, solver, import_dict, path)
+                        setattr(testclass, new_name, new_fn)
+            tests.append(testclass)
+    return tests
 
 
 def new_test(name, solver, import_dict, path):
