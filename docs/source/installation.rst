@@ -23,6 +23,7 @@ Mac OS X
       - Read the `official instructions and requirements <http://cvxopt.org/install/index.html#standard-installation>`_
       - In the Terminal, navigate to the ``cvxopt`` folder
       - Run ``python setup.py install``
+      - If you get an error about a missing ``xcrun``, then run ``xcode -select --install`` at a terminal. This will update xcode command line tools. Then re-run ``python setup.py install``
 
   - Download `MOSEK <http://mosek.com/resources/downloads>`_, then:
       - Move the ``mosek`` folder to your home directory
