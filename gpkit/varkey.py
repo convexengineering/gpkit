@@ -23,7 +23,7 @@ class VarKey(object):
     VarKey with the given name and descr.
     """
     new_unnamed_id = Counter()
-    subscripts = ["model", "idx"]
+    subscripts = ["models", "idx"]
     eq_ignores = frozenset(["units", "value"])
     # ignore value in ==. Also skip units, since pints is weird and the unitstr
     #    will be compared anyway
@@ -94,7 +94,7 @@ class VarKey(object):
 
     def latex(self):
         string = self.name
-        for subscript in ["idx", "model"]:
+        for subscript in self.subscripts:
             if subscript in self.descr:
                 string = "{%s}_{%s}" % (string, self.descr[subscript])
                 if subscript == "idx":

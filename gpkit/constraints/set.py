@@ -1,19 +1,17 @@
 import numpy as np
 from ..nomials.array import NomialArray
-from ..small_classes import Numbers, HashVector, KeySet, KeyDict
+from ..small_classes import HashVector, KeySet, KeyDict
 from ..small_scripts import try_str_without
 
 
 def constraintset_iterables(obj):
-    if hasattr(obj, "__iter__"):
+    if hasattr(obj, "__iter__") and not isinstance(obj, ConstraintSet):
         return ConstraintSet(obj)
     else:
         return obj
 
 
 class ConstraintSet(list):
-    substitutions = None
-
     def __init__(self, constraints, substitutions=None):
         list.__init__(self, constraints)
         self.recurse(constraintset_iterables)
@@ -30,9 +28,9 @@ class ConstraintSet(list):
     def __repr__(self):
         return "gpkit.%s(%s)" % (self.__class__.__name__, self)
 
-    def latex(self, matwrap=True):
+    def latex(self):
         return ("\\begin{bmatrix}" +
-                " \\\\\n".join(el.latex(matwrap=False) for el in self) +
+                " \\\\\n".join(el.latex() for el in self) +
                 "\\end{bmatrix}")
 
     def _repr_latex_(self):
@@ -40,12 +38,13 @@ class ConstraintSet(list):
 
     @property
     def flat(self):
-        for constraint in self:
+        counter = 0
+        while counter < len(self):
+            constraint = self[counter]
+            counter += 1
             if isinstance(constraint, ConstraintSet):
-                try:
-                    yield constraint.flat.next()
-                except StopIteration:
-                    pass
+                for constr in constraint.flat:
+                    yield constr
             else:
                 yield constraint
 
@@ -56,6 +55,9 @@ class ConstraintSet(list):
                 constraint.recurse(function, *args, **kwargs)
             else:
                 self[i] = function(constraint, *args, **kwargs)
+
+    def sub(self, subs, value=None):
+        self.recurse(lambda c: c.sub(subs, value))
 
     @property
     def varkeys(self):

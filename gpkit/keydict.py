@@ -116,6 +116,12 @@ class KeyDict(dict):
         keyset = KeySet.from_constraintset(constraintset)
         return cls.with_keys(keyset, iter_subs(substitutions, constraintset))
 
+    @classmethod
+    def subs_from_constrbase(cls, constraintbase, substitutions, model, num):
+        "Collapses constraint substitutions into a single KeyDict"
+        keyset = KeySet.from_constraintbase(constraintbase, model, num)
+        return cls.with_keys(keyset, iter_subs(substitutions, constraintbase))
+
     def __contains__(self, key):
         "In a winding way, figures out if a key is in the KeyDict"
         if dict.__contains__(self, key):
@@ -243,6 +249,19 @@ class KeySet(KeyDict):
             if hasattr(constraint, "varkeys"):
                 #TODO: all constraints should have varkeys
                 out.update(constraint.varkeys)
+        return out
+
+    @classmethod
+    def from_constraintbase(cls, constraintbase, model, num):
+        out = cls()
+        for constraint in constraintbase.flat:
+            for k, v in dict(constraint.varkeys).items():
+                models = k.descr.get("models", [])
+                modelnums = k.descr.get("modelnums", [])
+                if not models or models[-1] != model or modelnums[-1] != num:
+                    k.descr["models"] = models + [model]
+                    k.descr["modelnums"] = modelnums + [num]
+                out[k] = v
         return out
 
     def map(self, iterable):

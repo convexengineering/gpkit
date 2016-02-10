@@ -108,6 +108,8 @@ class SignomialsEnabled(object):
 
 from .nomials import *
 from .constraints import *
+from .constraints.base import ConstraintBase
+from .constraints.link import LinkConstraint
 from .geometric_program import GeometricProgram
 from .signomial_program import SignomialProgram
 from .varkey import VarKey
