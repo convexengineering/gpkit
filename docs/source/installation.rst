@@ -41,14 +41,14 @@ Mac OS X
 4. Debug Installation
 +++++++++++++++++++++
 If your installation is not working, try the following:
-  1. start iPython. Commands below that start with `>>>` should be run in iPython
-  2. If ``>>> import gpkit`` results in a "Could not load settings file." message
-      1. ``>>> import os; os.chdir(os.path.dirname(gpkit.__file__)))``
-      2. ``>>> del gpkit``
-      3. ``>>> import build; build.build_gpkit()``
-      4. Exit iPython
-      5. Run ``python -c "import gpkit.tests; gpkit.tests.run()"``
-      6. If any tests fail, email ``gpkit@mit.edu``.
+  - Start iPython. Commands below that start with ``>>>`` should be run in iPython
+  - If ``>>> import gpkit`` prints "Could not load settings file.", then:
+      - ``>>> import os; os.chdir(os.path.dirname(gpkit.__file__)))``
+      - ``>>> del gpkit``
+      - ``>>> import build; build.build_gpkit()``
+      - Exit iPython
+      - Run ``python -c "import gpkit.tests; gpkit.tests.run()"``
+      - If any tests fail, email ``gpkit@mit.edu``.
 
 
 
@@ -81,14 +81,14 @@ Linux
 4. Debug Installation
 +++++++++++++++++++++
 If your installation is not working, try the following:
-  1. start iPython. Commands below that start with `>>>` should be run in iPython
-  2. If ``>>> import gpkit`` results in a "Could not load settings file." message
-      1. ``>>> import os; os.chdir(os.path.dirname(gpkit.__file__)))``
-      2. ``>>> del gpkit``
-      3. ``>>> import build; build.build_gpkit()``
-      4. Exit iPython
-      5. Run ``python -c "import gpkit.tests; gpkit.tests.run()"``
-      6. If any tests fail, email ``gpkit@mit.edu``.
+  - Start iPython. Commands below that start with ``>>>`` should be run in iPython
+  - If ``>>> import gpkit`` prints "Could not load settings file.", then:
+      - ``>>> import os; os.chdir(os.path.dirname(gpkit.__file__)))``
+      - ``>>> del gpkit``
+      - ``>>> import build; build.build_gpkit()``
+      - Exit iPython
+      - Run ``python -c "import gpkit.tests; gpkit.tests.run()"``
+      - If any tests fail, email ``gpkit@mit.edu``.
 
 
 
@@ -128,14 +128,14 @@ Windows
 4. Debug Installation
 +++++++++++++++++++++
 If your installation is not working, try the following:
-  1. start iPython. Commands below that start with `>>>` should be run in iPython
-  2. If ``>>> import gpkit`` results in a "Could not load settings file." message
-      1. ``>>> import os; os.chdir(os.path.dirname(gpkit.__file__)))``
-      2. ``>>> del gpkit``
-      3. ``>>> import build; build.build_gpkit()``
-      4. Exit iPython
-      5. Run ``python -c "import gpkit.tests; gpkit.tests.run()"``
-      6. If any tests fail, email ``gpkit@mit.edu``.
+  - Start iPython. Commands below that start with ``>>>`` should be run in iPython
+  - If ``>>> import gpkit`` prints "Could not load settings file.", then:
+      - ``>>> import os; os.chdir(os.path.dirname(gpkit.__file__)))``
+      - ``>>> del gpkit``
+      - ``>>> import build; build.build_gpkit()``
+      - Exit iPython
+      - Run ``python -c "import gpkit.tests; gpkit.tests.run()"``
+      - If any tests fail, email ``gpkit@mit.edu``.
 
 
 Updating GPkit between releases
