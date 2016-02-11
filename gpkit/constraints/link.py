@@ -18,8 +18,13 @@ class LinkConstraint(ConstraintSet):
         for name in linkable:
             vks = self.varkeys[name]
             descr = dict(vks[0].descr)
+            value = descr.pop("value", None)
+            for vk in vks[1:]:
+                value = self.substitutions.pop(vk, value)
             descr.pop("models", None)
             descr.pop("modelnums", None)
             newvk = VarKey(**descr)
+            if value:
+                self.substitutions[newvk] = value
             self.linked.update(dict(zip(vks, len(vks)*[newvk])))
         self.sub(self.linked)

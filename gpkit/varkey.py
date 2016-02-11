@@ -62,7 +62,7 @@ class VarKey(object):
             else:
                 raise ValueError("units must be either a string"
                                  " or a Quantity from gpkit.units.")
-        self._hashvalue = hash(self.str_without("model"))  # HACK
+        self._hashvalue = hash(self.name)  # HACK
         self.key = self
         self.descr["unitstr"] = self.make_unitstr()
 
