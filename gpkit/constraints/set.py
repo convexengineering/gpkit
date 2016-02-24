@@ -56,6 +56,17 @@ class ConstraintSet(list):
             else:
                 self[i] = function(constraint, *args, **kwargs)
 
+    def update_up(self, d, field):
+        terminal = []
+        for i, constraint in enumerate(self):
+            if isinstance(constraint, ConstraintSet):
+                constraint.update_up(d, field)
+            else:
+                terminal.append(constraint)
+        for constraint in terminal + [self]:
+            if hasattr(constraint, field):
+                d.update(getattr(constraint, field))
+
     def sub(self, subs, value=None):
         self.recurse(lambda c: c.sub(subs, value))
 
