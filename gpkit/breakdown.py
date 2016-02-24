@@ -1,9 +1,8 @@
 #model to make graphical breakdowns of weights, etc.
 #takes input as a dict, variable arguments provided in a list
 
-import numpy as np
-from gpkit import units
 from gpkit.shortcuts import *
+import numpy.testing as npt
 
 class Breakdown(Model):
 	def __init__(self, input):
@@ -13,15 +12,12 @@ class Breakdown(Model):
 		#call recursive function to create gp constraints
 		total=self.recurse(input)
 
-		print self.constr
+		self.sol=self.solve_method()
 
-		sol=self.solve_method()
-		#varaibles to print to verify answers of test case
-		"""print sol('w2')
-		print sol('w')
-		print sol('w1')"""
-
-	
+        
+        def getSolution(self):
+                return self.sol
+            
 	def solve_method(self):
 		m=Model(self.make_objective(),self.make_constraints())
 		return m.solve(verbosity=0)
@@ -83,16 +79,22 @@ class Breakdown(Model):
 		#return the first variable that is created, this is what should be minimized
 		return self.varlist[0]
 	
-
-
-#NOT SURE THESE WORK FOR THIS CLASS...
 	def test(self):
-		_=self.solve()
+            npt.assert_almost_equal(self.sol('w'),15, decimal=5)
+            npt.assert_almost_equal(self.sol('w1'),11, decimal=5)
+            npt.assert_almost_equal(self.sol('w2'),3, decimal=5)
+            npt.assert_almost_equal(self.sol('w3'),1, decimal=5)
+            npt.assert_almost_equal(self.sol('w11'),3, decimal=5)
+            npt.assert_almost_equal(self.sol('w12'),8, decimal=5)
+            npt.assert_almost_equal(self.sol('w121'),2, decimal=5)
+            npt.assert_almost_equal(self.sol('w122'),6, decimal=5)
+            npt.assert_almost_equal(self.sol('w21'),1, decimal=5)
+            npt.assert_almost_equal(self.sol('w22'),2, decimal=5)
 		
 if __name__=="__main__":
-	test={'w':{'w1':{'w5':[3,"-","test"],'w6':3},'w2':{'w3':[1,"-"],'w4':2},'w7':1}}
-	#test=collections.OrderedDict([('w',1)])
-	Breakdown.Breakdown(test)
+        test={'w':{'w1':{'w11':[3],'w12':{'w121':[2],'w122':[6]}},'w2':{'w21':[1],'w22':[2]},'w3':[1]}}
+	bd=Breakdown(test)
+        bd.test()
 	
 		
 		
