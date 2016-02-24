@@ -5,6 +5,7 @@ from gpkit import (Model, Monomial, settings, VectorVariable, Variable,
                    SignomialsEnabled, ArrayVariable, SignomialEquality)
 from gpkit.small_classes import CootMatrix
 from gpkit.feasibility import feasibility_model
+from gpkit import breakdown
 
 NDIGS = {"cvxopt": 5, "mosek": 7, "mosek_cli": 5}
 # name: decimal places of accuracy
@@ -405,6 +406,23 @@ class TestSP(unittest.TestCase):
         first_gp_constr_posy = m.program.gps[0].constraints[0].as_posyslt1()[0]
         self.assertEqual(first_gp_constr_posy.exp[x.key], -1./3)
 
+    def test_breakdown(self):
+        input={'w':{'w1':{'w11':[3,"N","test"],'w12':{'w121':[2,"N"],'w122':[6,"N"]}},'w2':{'w21':[1,"N"],'w22':[2,"N"]},'w3':[1,"N"]}}
+        
+        bd=breakdown.Breakdown(input)
+        sol=bd.getSolution()
+
+        self.assertAlmostEqual(sol('w')-15,0,5)
+        self.assertAlmostEqual(sol('w1')-11,0,5)
+        self.assertAlmostEqual(sol('w2')-3,0,5)
+        self.assertAlmostEqual(sol('w3')-1,0,5)
+        self.assertAlmostEqual(sol('w11')-3,0,5)
+        self.assertAlmostEqual(sol('w12')-8,0,5)
+        self.assertAlmostEqual(sol('w121')-2,0,5)
+        self.assertAlmostEqual(sol('w122')-6,0,5)
+        self.assertAlmostEqual(sol('w21')-1,0,5)
+        self.assertAlmostEqual(sol('w22')-2,0,5)
+        
 
 class TestModelSolverSpecific(unittest.TestCase):
     """test cases run only for specific solvers"""
