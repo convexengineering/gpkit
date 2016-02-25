@@ -41,6 +41,7 @@ class BarChart(object):
         self.updates += 1
 
     def create_jsobj(self, data):
+        """create and display the javascript object for this chart"""
         labels = ", ".join(['"%s"' % vn for vn in self.varnames])
         datarray = ", ".join([str(data[varname]) for varname in self.varnames])
         js_init = Template("""
@@ -56,11 +57,7 @@ class BarChart(object):
                 }]}
         var ctx = document.getElementById("$name").getContext("2d");
         window.$name = new Chart(ctx).Bar(data,
-                                          {animationSteps: 1,
-                                           scaleOverride: true,
-                                           scaleStartValue: 0,
-                                           scaleSteps: 10,
-                                           scaleStepWidth: 0.4}
-                                           );
+                                          {animationSteps: 1}
+                                          );
         """).substitute(name=self.name, labels=labels, datarray=datarray)
         display(Javascript(js_init))
