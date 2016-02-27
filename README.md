@@ -7,6 +7,6 @@ geometric programming models,
 abstracting away the backend solver.
 Supported solvers are
 [MOSEK](http://mosek.com)
-and [CVXopt](http://cvxopt.org/).
+and [CVXOPT](http://cvxopt.org/).
 
 [![Build Status](https://acdl.mit.edu/csi/buildStatus/icon?job=gpkit_Push)](https://acdl.mit.edu/csi/job/gpkit_Push/)
