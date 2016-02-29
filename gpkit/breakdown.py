@@ -44,15 +44,7 @@ class Breakdown(Model):
                 self.constr.append([var, variables])
             elif isinstance(input_dict[order[i]], list):
                 #need to create a var of name dict entry
-                if len(input_dict[order[i]])==1:
-                    var = Variable(order[i],input_dict[order[i]][0])
-                elif len(input_dict[order[i]])==2:
-                    var = Variable(order[i],input_dict[order[i]][0],input_dict[order[i]][1])
-                elif len(input_dict[order[i]])==3:
-                    var = Variable(order[i],input_dict[order[i]][0],input_dict[order[i]][1],input_dict[order[i]][1])
-                elif len(input_dict[order[i]])==4:
-                    var = Variable(order[i],input_dict[order[i]][1],input_dict[order[i]][2],input_dict[order[i]][3],input_dict[order[i]][4])
-
+                var = Variable(order[i], *input_dict[order[i]])
                 self.varlist.append(var)
                 hold.append(var)
             else:
