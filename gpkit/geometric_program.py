@@ -1,10 +1,9 @@
 """Implement the GeometricProgram class"""
-import numpy as np
-
 import sys
 from time import time
 
-from .variables import Variable, VectorVariable
+import numpy as np
+
 from .small_classes import CootMatrix
 from .nomial_data import NomialData
 from .small_classes import SolverLog
@@ -30,7 +29,7 @@ class GeometricProgram(NomialData):
     Attributes with side effects
     ----------------------------
     `solver_out` and `solver_log` are set during a solve
-    `result` is set at the end of a solve
+    `result` is set at the end of a solve if solution status is optimal
 
     Examples
     --------
@@ -73,6 +72,9 @@ class GeometricProgram(NomialData):
             for var, bound in sorted(self.missingbounds.items()):
                 print("%s has no %s bound" % (var, bound))
 
+        # initialize attributes modified by internal methods
+        self.result = None
+
     def solve(self, solver=None, verbosity=1, *args, **kwargs):
         """Solves a GeometricProgram and returns the solution.
 
@@ -103,14 +105,16 @@ class GeometricProgram(NomialData):
                 posynomials : array of floats
                     Each posynomials's dual variable value at the solution.
         """
-        if solver is None:
+        def _default_solver():
             from . import settings
             if settings['installed_solvers']:
-                solver = settings['installed_solvers'][0]
+                return settings['installed_solvers'][0]
             else:
                 raise ValueError("No solver was given; perhaps gpkit was not"
                                  " properly installed, or found no solvers"
                                  " during the installation process.")
+        if solver is None:
+            solver = _default_solver()
 
         if solver == 'cvxopt':
             from ._cvxopt import cvxoptimize_fn
@@ -167,9 +171,9 @@ class GeometricProgram(NomialData):
                    ((time() - tic) / soltime * 100))
             tic = time()
 
-        primal = np.ravel(solver_out['primal'])
+        np.ravel(solver_out['primal'])
         self.check_solution(result["cost"],
-                            primal,
+                            np.ravel(solver_out['primal']),
                             nu=result["sensitivities"]["monomials"],
                             la=result["sensitivities"]["posynomials"])
 
