@@ -1,4 +1,4 @@
-"""Tests for GP and SP classes"""
+"""Tests for GP, SP, and Breakdown classes"""
 import math
 import unittest
 from gpkit import (Model, Monomial, settings, VectorVariable, Variable,
@@ -354,11 +354,19 @@ class TestSP(unittest.TestCase):
         first_gp_constr_posy = m.program.gps[0].constraints[0].as_posyslt1()[0]
         self.assertEqual(first_gp_constr_posy.exp[x.key], -1./3)
 
+    
+
+class TestBreakdown(unittest.TestCase):
+
+    """test case for Breakdown class -- gets run for each installed solver"""
+    name = "TestBreakdown_"
+    solver = None
+    ndig = None
     def test_breakdown(self):
         input={'w':{'w1':{'w11':[3,"N","test"],'w12':{'w121':[2,"N"],'w122':[6,"N"]}},'w2':{'w21':[1,"N"],'w22':[2,"N"]},'w3':[1,"N"]}}
         
         bd=breakdown.Breakdown(input)
-        sol=bd.getSolution()
+        sol=bd.solve_method()
 
         self.assertAlmostEqual(sol('w')-15,0,5)
         self.assertAlmostEqual(sol('w1')-11,0,5)
@@ -372,7 +380,7 @@ class TestSP(unittest.TestCase):
         self.assertAlmostEqual(sol('w22')-2,0,5)
         
 
-TEST_CASES = [TestGP, TestSP]
+TEST_CASES = [TestGP, TestSP, TestBreakdown]
 
 TESTS = []
 for testcase in TEST_CASES:
@@ -387,4 +395,5 @@ for testcase in TEST_CASES:
 if __name__ == "__main__":
     # pylint: disable=wrong-import-position
     from gpkit.tests.helpers import run_tests
+    print TESTS
     run_tests(TESTS)

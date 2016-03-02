@@ -2,29 +2,37 @@
 import numpy.testing as npt
 from gpkit import Model, Variable
 
-
 class Breakdown(Model):
+    """
+    model to make graphical breakdowns of weights, etc.
+    takes input as a dict, variable arguments provided in a list
+    """
     def __init__(self, input_dict):
         """
-        model to make graphical breakdowns of weights, etc.
-        takes input as a dict, variable arguments provided in a list
+        class constructor - initialize all global variables, generate gpkit Vars
         """
         #create the list of variables to make constraints out of
         self.constr = []
         self.varlist = []
         #call recursive function to create gp constraints
-        total = self.recurse(input_dict)
+        self.recurse(input_dict)
+        #initialize sol for stability purposes
+        self.sol = None
 
-        self.sol = self.solve_method()
-
-    def getSolution(self):
-        return self.sol
 
     def solve_method(self):
-        m = Model(self.make_objective(), self.make_constraints())
-        return m.solve(verbosity=0)
+        """
+        method constructs gp constraints and objective, solves the model to
+        determine the value of each weight
+        """
+        model = Model(self.make_objective(), self.make_constraints())
+        self.sol = model.solve(verbosity=0)
+        return self.sol
 
     def recurse(self, input_dict):
+        """
+        recursive function to generate gpkit Vars for each input weight
+        """
         order = input_dict.keys()
         i = 0
         hold = []
@@ -55,8 +63,10 @@ class Breakdown(Model):
             i = i+1
         return hold
 
-    #method to generate the gp constraints
     def make_constraints(self):
+        """
+        method to generate gp constraints out of previously created Vars
+        """
         i = 0
         constraints = []
         while i < len(self.constr):
@@ -70,10 +80,15 @@ class Breakdown(Model):
         return constraints
 
     def make_objective(self):
-        #return the first variable that is created, this is what should be minimized
+        """
+        return the first variable that is created, this is what should be minimized
+        """
         return self.varlist[0]
 
     def test(self):
+        """
+        test method
+        """
         npt.assert_almost_equal(self.sol('w'), 15, decimal=5)
         npt.assert_almost_equal(self.sol('w1'), 11, decimal=5)
         npt.assert_almost_equal(self.sol('w2'), 3, decimal=5)
@@ -89,4 +104,5 @@ if __name__ == "__main__":
     TEST = {'w': {'w1': {'w11':[3], 'w12':{'w121':[2], 'w122':[6]}},
                   'w2': {'w21':[1], 'w22':[2]}, 'w3':[1]}}
     BD = Breakdown(TEST)
+    BD.solve_method()
     BD.test()
