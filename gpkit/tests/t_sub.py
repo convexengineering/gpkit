@@ -112,10 +112,11 @@ class TestNomialSubs(unittest.TestCase):
             self.assertTrue(isinstance(subbed, Signomial))
             self.assertEqual(subbed, 2*x - y - D)
 
-
 class TestGPSubs(unittest.TestCase):
+    """Test substitution for Model and GP objects"""
 
     def test_vector_sweep(self):
+        """Test sweep involving VectorVariables"""
         x = Variable("x")
         y = VectorVariable(2, "y")
         m = Model(x, [x >= y.prod()])

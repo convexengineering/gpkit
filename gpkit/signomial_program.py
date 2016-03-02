@@ -160,8 +160,9 @@ class SignomialProgram(object):
             sp_inits = {vk: vk.descr["sp_init"] for vk in self.negvarkeys
                         if "sp_init" in vk.descr}
             x0.update(sp_inits)
-            # HACK: initial guess for negative variables
-            x0.update({var: 1 for var in self.negvarkeys if var not in x0})
+        # HACK: initial guess for negative variables
+        x0.update({var: 1 for var in self.negvarkeys if var not in x0})
+
         posy_approxs = []
         for p, n in zip(self.posynomials, self.negynomials):
             if n is 0:
