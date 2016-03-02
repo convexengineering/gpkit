@@ -1,19 +1,19 @@
 """Interacive tools that use http://www.chartjs.org/"""
-from IPython.display import HTML, display, Javascript
-from gpkit.small_classes import Counter
 from string import Template
+from itertools import count
+from IPython.display import HTML, display, Javascript
 
 
-CHARTJSSRC = ("""<script src="https://cdnjs.cloudflare.com/ajax/libs/"""
-              """Chart.js/1.0.2/Chart.min.js" />""")
+CHARTJSSRC = ("<script src='https://cdnjs.cloudflare.com/ajax/libs/"
+              "Chart.js/1.0.2/Chart.min.js' />")
 
 
 class BarChart(object):
-    """See init"""
+    "See init"
 
-    new_unnamed_id = Counter()
+    new_unnamed_id = count().next
 
-    def __init__(self, varnames, options=None):
+    def __init__(self, varnames):  # ,options=None
         """A Python object representing a Chart.js chart
         Can be interacted with as a GPkit widget in Ipython notebook
         """
@@ -25,10 +25,12 @@ class BarChart(object):
         self.updates = 0
 
     def get_canvas(self):
-        c = """<canvas id="%s" width="%s" height="%s"></canvas>"""
-        return HTML(c % (self.name, 300, 300))
+        "Get the HTML for displaying the chart canvas"
+        cstr = "<canvas id='%s' width='%s' height='%s'></canvas>"
+        return HTML(cstr % (self.name, 300, 300))
 
     def update(self, solution):
+        "Update the chart based upon a new solution"
         valuedict = solution["variables"]
         if self.updates == 0:  # first update
             self.create_jsobj(valuedict)
@@ -41,7 +43,7 @@ class BarChart(object):
         self.updates += 1
 
     def create_jsobj(self, data):
-        """create and display the javascript object for this chart"""
+        "Create and display the javascript object for this chart"
         labels = ", ".join(['"%s"' % vn for vn in self.varnames])
         datarray = ", ".join([str(data[varname]) for varname in self.varnames])
         js_init = Template("""
