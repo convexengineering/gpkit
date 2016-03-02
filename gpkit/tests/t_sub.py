@@ -112,15 +112,6 @@ class TestNomialSubs(unittest.TestCase):
             self.assertTrue(isinstance(subbed, Signomial))
             self.assertEqual(subbed, 2*x - y - D)
 
-    def test_partial_sub_signomial(self):
-        """Test SP partial x0 initialization"""
-        x = Variable('x')
-        y = Variable('y')
-        with SignomialsEnabled():
-            m = Model(x, [x + y >= 1, y <= 0.5])
-        m.localsolve(x0={x: 0.5}, verbosity=0)
-        self.assertEqual(m.program.gps[0].constraints[0].exp[x], -1./3)
-
 class TestGPSubs(unittest.TestCase):
     """Test substitution for Model and GP objects"""
 
