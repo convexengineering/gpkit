@@ -148,9 +148,41 @@ class GeometricProgram(NomialData):
             print("Solving took %.3g seconds." % (soltime,))
             tic = time()
 
-        result = {}
-        # confirm lengths before calling zip
+        if solver_out.get("status", None) not in ["optimal", "OPTIMAL"]:
+            raise RuntimeWarning(
+                "final status of solver '%s' was '%s', not 'optimal'."
+                "\n\nThe infeasible solve's result is stored in"
+                " model.program.solver_out. A result dict can be generated "
+                " via program._compile_result(program.solver_out)."
+                " If the problem was Primal Infeasible, you can generate a"
+                " feasibility-finding relaxation with model.feasibility()." %
+                (solver, solver_out.get("status", None)))
+
+        result = self._compile_result(solver_out)
+
+        self.result = result  # NOTE: SIDE EFFECTS
+
+        if verbosity > 1:
+            print ("result packing took %.2g%% of solve time" %
+                   ((time() - tic) / soltime * 100))
+            tic = time()
+
         primal = np.ravel(solver_out['primal'])
+        self.check_solution(result["cost"],
+                            primal,
+                            nu=result["sensitivities"]["monomials"],
+                            la=result["sensitivities"]["posynomials"])
+
+        if verbosity > 1:
+            print ("solution checking took %.2g%% of solve time" %
+                   ((time() - tic) / soltime * 100))
+        return result
+
+    def _compile_result(self, solver_out):
+        """Compile result dict for returning in solve() from solver ouput"""
+        result = {}
+        primal = np.ravel(solver_out['primal'])
+        # confirm lengths before calling zip
         assert len(self.varlocs) == len(primal)
         result["variables"] = dict(zip(self.varlocs,
                                        np.exp(primal)))
@@ -159,7 +191,6 @@ class GeometricProgram(NomialData):
         else:
             result["cost"] = self.cost.subsummag(result["variables"])
 
-        result["sensitivities"] = {}
         if "nu" in solver_out:
             nu = np.ravel(solver_out["nu"])
             la = np.array([sum(nu[self.p_idxs == i])
@@ -176,34 +207,9 @@ class GeometricProgram(NomialData):
                             for p_i, m_is in enumerate(m_iss)])
         else:
             raise RuntimeWarning("The dual solution was not returned.")
+        result["sensitivities"] = {}
         result["sensitivities"]["monomials"] = nu
         result["sensitivities"]["posynomials"] = la
-
-        self.result = result  # NOTE: SIDE EFFECTS
-
-        if verbosity > 1:
-            print ("result packing took %.2g%% of solve time" %
-                   ((time() - tic) / soltime * 100))
-            tic = time()
-
-        if solver_out.get("status", None) not in ["optimal", "OPTIMAL"]:
-            raise RuntimeWarning("final status of solver '%s' was '%s', "
-                                 "not 'optimal'." %
-                                 (solver, solver_out.get("status", None)) +
-                                 "\n\nThe infeasible solve's result is stored"
-                                 " in the 'result' attribute"
-                                 " (model.program.result)"
-                                 " and its raw output in 'solver_out'."
-                                 " If the problem was Primal Infeasible,"
-                                 " you can generate a feasibility-finding"
-                                 " relaxation of your Model with"
-                                 " model.feasibility().")
-
-        self.check_solution(result["cost"], primal, nu, la)
-
-        if verbosity > 1:
-            print ("solution checking took %.2g%% of solve time" %
-                   ((time() - tic) / soltime * 100))
         return result
 
     def check_solution(self, cost, primal, nu, la, tol=1e-5):
