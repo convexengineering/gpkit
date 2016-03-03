@@ -365,7 +365,7 @@ class TestBreakdown(unittest.TestCase):
     def test_breakdown(self):
         input={'w':{'w1':{'w11':[3,"N","test"],'w12':{'w121':[2,"N"],'w122':[6,"N"]}},'w2':{'w21':[1,"N"],'w22':[2,"N"]},'w3':[1,"N"]}}
         
-        bd=breakdown.Breakdown(input)
+        bd=breakdown.Breakdown(input,"N")
         sol=bd.solve_method()
 
         self.assertAlmostEqual(sol('w')-15,0,5)
