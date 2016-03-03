@@ -5,15 +5,19 @@ from gpkit import Model, Variable
 class Breakdown(Model):
     """
     model to make graphical breakdowns of weights, etc.
-    takes input as a dict, variable arguments provided in a list
+    takes input as a dict, variable arguments provided in a list. Also takes the
+    chosen units in a string as a constructor argument. To run without units input
+    None for varstring
     """
-    def __init__(self, input_dict):
+    def __init__(self, input_dict,varstring):
         """
         class constructor - initialize all global variables, generate gpkit Vars
         """
         #create the list of variables to make constraints out of
         self.constr = []
         self.varlist = []
+        #initialize varstring
+        self.varstring=varstring
         #call recursive function to create gp constraints
         self.recurse(input_dict)
         #initialize sol for stability purposes
@@ -39,7 +43,7 @@ class Breakdown(Model):
         while i < len(order):
             if isinstance(input_dict[order[i]], dict):
                 #create the variable
-                var = Variable(order[i], None)
+                var = Variable(order[i], self.varstring)
                 self.varlist.append(var)
                 #need to recurse again
                 variables = self.recurse(input_dict[order[i]])
@@ -101,8 +105,8 @@ class Breakdown(Model):
         npt.assert_almost_equal(self.sol('w22'), 2, decimal=5)
 
 if __name__ == "__main__":
-    TEST = {'w': {'w1': {'w11':[3], 'w12':{'w121':[2], 'w122':[6]}},
-                  'w2': {'w21':[1], 'w22':[2]}, 'w3':[1]}}
-    BD = Breakdown(TEST)
+    TEST = {'w': {'w1': {'w11':[3,"N"], 'w12':{'w121':[2,"N"], 'w122':[6,"N"]}},
+                  'w2': {'w21':[1,"N"], 'w22':[2,"N"]}, 'w3':[1,"N"]}}
+    BD = Breakdown(TEST, "N")
     BD.solve_method()
     BD.test()
