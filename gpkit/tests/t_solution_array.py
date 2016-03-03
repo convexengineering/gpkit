@@ -17,6 +17,15 @@ class TestSolutionArray(unittest.TestCase):
         self.assertTrue(isinstance(sol(A), float))
         self.assertAlmostEqual(sol(A), 1.0, 10)
 
+    def test_call_units(self):
+        # test from issue541
+        x = Variable("x", 10, "ft")
+        y = Variable("y", "m")
+        m = Model(y, [y >= x])
+        sol = m.solve(verbosity=0)
+        self.assertAlmostEqual(sol("y")/sol("x"), 1.0)
+        self.assertAlmostEqual(sol(x)/sol(y), 1.0)
+
     def test_call_vector(self):
         n = 5
         x = VectorVariable(n, 'x')
