@@ -7,6 +7,9 @@ WORKSPACE=$(git rev-parse --show-toplevel)
 # Using python with the pylint script will always work properly in a virtualenv
 PYLINT=`which pylint`
 
+# Add gpkit to the python path so that pylint can import gpkit when analyzing the examples directory
+export PYTHONPATH=$PYTHONPATH:$WORKSPACE/gpkit/
+
 python $PYLINT --rcfile=$WORKSPACE/.pylintrc $@ $WORKSPACE/gpkit/
 
 python $PYLINT --rcfile=$WORKSPACE/.pylintrc --disable=invalid-name,too-many-locals $@ $WORKSPACE/docs/source/examples/*.py
