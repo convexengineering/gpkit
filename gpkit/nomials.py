@@ -151,7 +151,7 @@ class Signomial(NomialData):
         Signomial (or Posynomial or Monomial)
         """
         deriv = super(Signomial, self).diff(wrt)
-        return Signomial(exps=deriv.exps, cs=deriv.cs)
+        return Signomial(exps=deriv.exps, cs=deriv.cs, require_positive=False)
 
     def mono_approximation(self, x_0):
         """Monomial approximation about a point x_0
