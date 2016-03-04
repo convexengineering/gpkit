@@ -1,7 +1,7 @@
 """Miscellaneous small classes"""
-import numpy as np
 from collections import namedtuple as nt
-from . import units
+import numpy as np
+from . import units as gpkitunits
 
 try:
     isinstance("", basestring)
@@ -9,7 +9,7 @@ try:
 except NameError:
     Strings = (str,)
 
-Quantity = units.Quantity
+Quantity = gpkitunits.Quantity
 Numbers = (int, float, np.number, Quantity)
 
 PosyTuple = nt('PosyTuple', ['exps', 'cs', 'varlocs', 'substitutions'])
