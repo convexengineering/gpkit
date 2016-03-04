@@ -26,6 +26,20 @@ UNITDEF_PATH = os_sep.join([os_path_dirname(__file__), "gpkit_units.txt"])
 SETTINGS_PATH = os_sep.join([os_path_dirname(__file__), "env", "settings"])
 
 
+def mdparse(filename):
+    with open(filename) as f:
+        python_lines = []
+        in_block = False
+        for line in f:
+            if line == "```python\n":
+                in_block = True
+            elif line == "```\n":
+                in_block = False
+            elif in_block:
+                python_lines.append(line)
+        exec("\n".join(python_lines))
+
+
 def enable_units(path=UNITDEF_PATH):
     """Enables units support in a particular instance of GPkit.
 
