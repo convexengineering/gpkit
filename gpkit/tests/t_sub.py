@@ -1,6 +1,7 @@
 """Test substitution capability across gpkit"""
 import unittest
 import numpy as np
+import gpkit
 from gpkit import SignomialsEnabled
 from gpkit import Variable, VectorVariable, Model, Signomial
 from gpkit.small_scripts import mag
@@ -147,7 +148,7 @@ class TestGPSubs(unittest.TestCase):
         sol = m.solve(verbosity=0)
         solv = sol['variables']
         a = solv["xi"]
-        b = xi_dist
+        b = xi_dist*gpkit.units.N
         self.assertTrue(all(abs(a-b)/(a+b) < 1e-7))
 
     def test_model_composition_units(self):

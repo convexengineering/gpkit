@@ -137,16 +137,23 @@ def index_dict(idx, i, o):
     return o
 
 
-def enray_dict(i, o):
+def enray_dict(i, o, unitless=False):
     "Recursively turns lists into numpy arrays."
     for k, v in i.items():
         if isinstance(v, dict):
-            o[k] = enray_dict(v, {})
+            if k == "sensitivities":
+                unitless = True
+            o[k] = enray_dict(v, {}, unitless)
         else:
-            if len(v) == 1:
-                o[k] = np.array(v[0])
+            if (not unitless and hasattr(k, "units")
+                    and isinstance(k.units, Quantity)):
+                units = k.units
             else:
-                o[k] = np.array(v)
+                units = 1
+            if len(v) == 1:
+                o[k] = np.array(v[0]) * units
+            else:
+                o[k] = np.array(v) * units
     # assert set(i.keys()) == set(o.keys())  # keys change with swept varkeys
     return o
 

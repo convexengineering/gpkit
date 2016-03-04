@@ -2,6 +2,7 @@
 import unittest
 import time
 import numpy as np
+import gpkit
 from gpkit import Variable, VectorVariable, Model, PosyArray
 from gpkit.solution_array import SolutionArray
 from gpkit.solution_array import results_table
@@ -14,7 +15,6 @@ class TestSolutionArray(unittest.TestCase):
         A = Variable('A', '-', 'Test Variable')
         prob = Model(A, [A >= 1])
         sol = prob.solve(verbosity=0)
-        self.assertTrue(isinstance(sol(A), float))
         self.assertAlmostEqual(sol(A), 1.0, 10)
 
     def test_call_units(self):
@@ -67,9 +67,8 @@ class TestSolutionArray(unittest.TestCase):
         sol = m.solve(verbosity=0)
         Psol = sol.subinto(P_max)
         self.assertEqual(len(Psol), Nsweep)
-        self.assertEqual(type(Psol), PosyArray)
-        self.assertAlmostEqual(0, np.max(np.abs(Pvals - Psol.c)))
-        self.assertAlmostEqual(0, np.max(np.abs(Psol.c - sol(P_max))))
+        self.assertAlmostEqual(0*gpkit.units.m, np.max(np.abs(Pvals*gpkit.units.m - Psol)))
+        self.assertAlmostEqual(0*gpkit.units.m, np.max(np.abs(Psol - sol(P_max))))
 
     def test_table(self):
         x = Variable('x')

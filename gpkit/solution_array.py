@@ -64,12 +64,19 @@ class SolutionArray(DictOfLists):
         return out[0] if len(out) == 1 else out
 
     def __call__(self, p):
-        return mag(self.subinto(p).c)
+        p_subbed = self.subinto(p)
+        if hasattr(p_subbed, "exp") and not p_subbed.exp:
+            # it's a constant monomial
+            return p_subbed.c
+        elif hasattr(p_subbed, "c"):
+            # it's a posyarray, which'll throw an error if non-constant...
+            return p_subbed.c
+        return p_subbed
 
     def subinto(self, p):
         "Returns PosyArray of each solution substituted into p."
         if p in self["variables"]:
-            return PosyArray(self["variables"][p])
+            return self["variables"][p]
         elif len(self) > 1:
             return PosyArray([self.atindex(i).subinto(p)
                               for i in range(len(self))])
@@ -102,7 +109,7 @@ class SolutionArray(DictOfLists):
               fixedcols=True, latex=False,
               included_models=None, excluded_models=None):
         """A table representation of this SolutionArray
-        
+
         Arguments
         ---------
         tables: Iterable
@@ -195,8 +202,9 @@ def results_table(data, title, minval=0, printunits=True, fixedcols=True,
     decorated = []
     models = set()
     for i, (k, v) in enumerate(data.items()):
-        notnan = ~np.isnan([v])
-        if np.any(notnan) and np.max(np.abs(np.array([v])[notnan])) >= minval:
+        v_ = mag(v)
+        notnan = ~np.isnan([v_])
+        if np.any(notnan) and np.max(np.abs(np.array([v_])[notnan])) >= minval:
             b = isinstance(v, Iterable) and bool(v.shape)
             model = k.descr.get("model", "")
             models.add(model)
@@ -231,11 +239,11 @@ def results_table(data, title, minval=0, printunits=True, fixedcols=True,
         label = var.descr.get('label', '')
         units = unitstr(var, into=" [%s] ", dimless="") if printunits else ""
         if isvector:
-            vals = [vecfmt % v for v in val.flatten()[:4]]
+            vals = [vecfmt % v for v in mag(val).flatten()[:4]]
             ellipsis = " ..." if len(val) > 4 else ""
             valstr = "[ %s%s ] " % ("  ".join(vals), ellipsis)
         else:
-            valstr = valfmt % val
+            valstr = valfmt % mag(val)
         valstr = valstr.replace("nan", " - ")
         if not latex:
             lines.append([varstr, valstr, units, label])
