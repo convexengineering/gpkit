@@ -28,16 +28,26 @@ SETTINGS_PATH = os_sep.join([os_path_dirname(__file__), "env", "settings"])
 
 def mdparse(filename):
     with open(filename) as f:
-        python_lines = []
+        lines = []
         in_block = False
         for line in f:
+            content = "\n"
             if line == "```python\n":
                 in_block = True
-            elif line == "```\n":
+            elif in_block and line == "```\n":
                 in_block = False
             elif in_block:
-                python_lines.append(line)
-        return "".join(python_lines)
+                content = line
+            elif line != "\n":
+                content = "# " + line
+            lines.append(content)
+        return "".join(lines)
+
+
+def mdmake(filename):
+    with open(filename+".py", "w") as f:
+        f.write(mdparse(filename))
+    return open(filename+".py")
 
 
 def enable_units(path=UNITDEF_PATH):
