@@ -26,27 +26,51 @@ UNITDEF_PATH = os_sep.join([os_path_dirname(__file__), "pint", "units.txt"])
 SETTINGS_PATH = os_sep.join([os_path_dirname(__file__), "env", "settings"])
 
 
-def mdparse(filename):
+def mdparse(filename, return_tex=False):
     with open(filename) as f:
-        lines = []
-        in_block = False
+        py_lines = []
+        texmd_lines = []
+        block_idx = 0
+        in_replaced_block = False
         for line in f:
-            content = "\n"
-            if line == "```python\n":
-                in_block = True
-            elif in_block and line == "```\n":
-                in_block = False
-            elif in_block:
-                content = line
-            elif line != "\n":
-                content = "# " + line
-            lines.append(content)
-        return "".join(lines)
+            line = line[:-1]  # remove newline
+            texmd_content = line if not in_replaced_block else ""
+            texmd_lines.append(texmd_content)
+            py_content = ""
+            if line == "```python":
+                block_idx = 1
+            elif block_idx and line == "```":
+                block_idx = 0
+                if in_replaced_block:
+                    texmd_lines[-1] = ""  # remove the ``` line
+                in_replaced_block = False
+            elif block_idx:
+                py_content = line
+                block_idx += 1
+                if block_idx == 2:
+                    # parsing first line of code block
+                    if line[:8] == "#inPDF: ":
+                        texmd_lines[-2] = ""  # remove the ```python line
+                        texmd_lines[-1] = ""  # remove the #inPDF line
+                        in_replaced_block = True
+                        if line[8:21] == "replace with ":
+                            texmd_lines.append("\\input{%s}" % line[21:])
+            elif line:
+                py_content = "# " + line
+            py_lines.append(py_content)
+        if not return_tex:
+            return "\n".join(py_lines)
+        else:
+            return "\n".join(py_lines), "\n".join(texmd_lines)
 
 
-def mdmake(filename):
+def mdmake(filename, make_tex=True):
+    mdpy, texmd = mdparse(filename, return_tex=True)
     with open(filename+".py", "w") as f:
-        f.write(mdparse(filename))
+        f.write(mdpy)
+    if make_tex:
+        with open(filename+".tex.md", "w") as f:
+            f.write(texmd)
     return open(filename+".py")
 
 
