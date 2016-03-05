@@ -37,7 +37,7 @@ def mdparse(filename):
                 in_block = False
             elif in_block:
                 python_lines.append(line)
-        exec("\n".join(python_lines))
+        return "".join(python_lines)
 
 
 def enable_units(path=UNITDEF_PATH):
