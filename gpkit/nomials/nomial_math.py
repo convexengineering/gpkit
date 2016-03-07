@@ -131,7 +131,7 @@ class Signomial(Nomial):
         Signomial (or Posynomial or Monomial)
         """
         deriv = super(Signomial, self).diff(wrt)
-        return Signomial(exps=deriv.exps, cs=deriv.cs)
+        return Signomial(exps=deriv.exps, cs=deriv.cs, require_positive=False)
 
     def posy_negy(self):
         """Get the positive and negative parts, both as Posynomials
@@ -624,9 +624,9 @@ class SignomialInequality(ScalarSingleEquationConstraint):
                         if "sp_init" in vk.descr}
             x0.update(sp_inits)
             # HACK: initial guess for negative variables
-            x0.update({var: 1 for var in negy.varlocs if var not in x0})
         else:
             x0 = dict(x0)
+        x0.update({var: 1 for var in negy.varlocs if var not in x0})
         x0.update(self.substitutions)
         pc = PosynomialInequality(posy, "<=", negy.mono_lower_bound(x0))
         pc.substitutions = self.substitutions

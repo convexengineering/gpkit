@@ -189,6 +189,7 @@ if units:
 
 
 def load_settings(path=SETTINGS_PATH):
+    """Load the settings file at SETTINGS_PATH; return settings dict"""
     try:
         with open(path) as settingsfile:
             lines = [line[:-1].split(" : ") for line in settingsfile
@@ -202,6 +203,7 @@ def load_settings(path=SETTINGS_PATH):
     except IOError:
         print("Could not load settings file.")
         settings_ = {"installed_solvers": [""]}
+    settings_["default_solver"] = settings_["installed_solvers"][0]
+    settings_["latex_modelname"] = True
     return settings_
-settings = load_settings()
-settings["latex_modelname"] = True
+settings = load_settings()  # pylint: disable=invalid-name

@@ -1,39 +1,42 @@
 """Script for running all gpkit unit tests"""
-from gpkit.tests.helpers import run_tests
-TESTS = []
-
-from gpkit.tests import t_tools
-TESTS += t_tools.TESTS
-
-from gpkit.tests import t_sub
-TESTS += t_sub.TESTS
-
-from gpkit.tests import t_vars
-TESTS += t_vars.TESTS
-
-from gpkit.tests import t_nomials
-TESTS += t_nomials.TESTS
-
-from gpkit.tests import t_constraints
-TESTS += t_constraints.TESTS
-
-from gpkit.tests import t_posy_array
-TESTS += t_posy_array.TESTS
-
-from gpkit.tests import t_model
-TESTS += t_model.TESTS
-
-from gpkit.tests import t_solution_array
-TESTS += t_solution_array.TESTS
-
-from gpkit.tests import t_small
-TESTS += t_small.TESTS
-
-from gpkit.tests import t_examples
-TESTS += t_examples.TESTS
-
-
 import gpkit
+from gpkit.tests.helpers import run_tests
+
+
+def import_tests():
+    tests = []
+
+    from gpkit.tests import t_tools
+    tests += t_tools.TESTS
+
+    from gpkit.tests import t_sub
+    tests += t_sub.TESTS
+
+    from gpkit.tests import t_vars
+    tests += t_vars.TESTS
+
+    from gpkit.tests import t_nomials
+    tests += t_nomials.TESTS
+
+    from gpkit.tests import t_constraints
+    tests += t_constraints.TESTS
+
+    from gpkit.tests import t_posy_array
+    tests += t_posy_array.TESTS
+
+    from gpkit.tests import t_model
+    tests += t_model.TESTS
+
+    from gpkit.tests import t_solution_array
+    tests += t_solution_array.TESTS
+
+    from gpkit.tests import t_small
+    tests += t_small.TESTS
+
+    from gpkit.tests import t_examples
+    tests += t_examples.TESTS
+
+    return tests
 
 
 def run(xmloutput=False):
@@ -44,18 +47,19 @@ def run(xmloutput=False):
     xmloutput: bool
         If true, generate xml output files for continuous integration
     """
+    tests = import_tests()
     if xmloutput:
-        run_tests(TESTS, xmloutput='test_reports')
+        run_tests(tests, xmloutput='test_reports')
     else:
-        run_tests(TESTS)
+        run_tests(tests)
     print("\n##################################"
           "####################################")
     print("Running with units disabled:")
     gpkit.disable_units()
     if xmloutput:
-        run_tests(TESTS, xmloutput='test_reports_nounits')
+        run_tests(tests, xmloutput='test_reports_nounits')
     else:
-        run_tests(TESTS, verbosity=1)
+        run_tests(tests, verbosity=1)
 
 if __name__ == '__main__':
     run()

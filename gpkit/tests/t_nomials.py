@@ -184,11 +184,11 @@ class TestMonomial(unittest.TestCase):
         # have had issues where Quantity.__mul__ causes wrong return type
         m = 1.2 * units.ft * Variable('x')**2
         self.assertTrue(isinstance(m, Monomial))
-        self.assertEqual(m.units, units.ft)
+        self.assertEqual(m.units, 1*units.ft)
         # also multiply at the end, though this has not been a problem
         m = 0.5 * Variable('x')**2 * units.kg
         self.assertTrue(isinstance(m, Monomial))
-        self.assertEqual(m.units, units.kg)
+        self.assertEqual(m.units, 1*units.kg)
 
 
 class TestSignomial(unittest.TestCase):
@@ -323,6 +323,11 @@ class TestPosynomial(unittest.TestCase):
         x = Variable('x', units='ft')
         d = (3*x**2).diff(x)
         self.assertEqual(d, 6*x)
+        # test negative exponent
+        d = (1 + 1/y).diff(y)
+        with SignomialsEnabled():
+            expected = -y**-2
+        self.assertEqual(d, expected)
 
     def test_mono_lower_bound(self):
         "Test monomial approximation"

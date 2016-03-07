@@ -94,6 +94,8 @@ class Model(object):
                                 " or a tuple of (cost, constraints,"
                                 " substitutions).")
 
+        if hasattr(cost, "__len__"):
+            raise TypeError("cost must be scalar.")
         self.cost = Signomial(cost) if cost else Monomial(1)
         self.constraints = list(constraints) if constraints else []
         subs = self.cost.values

@@ -334,6 +334,16 @@ class TestSP(unittest.TestCase):
             with self.assertRaises(TypeError):
                 sol = m.localsolve(verbosity=0)
 
+    def test_partial_sub_signomial(self):
+        """Test SP partial x0 initialization"""
+        x = Variable('x')
+        y = Variable('y')
+        with SignomialsEnabled():
+            m = Model(x, [x + y >= 1, y <= 0.5])
+        m.localsolve(x0={x: 0.5}, verbosity=0)
+        first_gp_constr_posy = m.program.gps[0].constraints[0].as_posyslt1()[0]
+        self.assertEqual(first_gp_constr_posy.exp[x.key], -1./3)
+
 
 TEST_CASES = [TestGP, TestSP]
 

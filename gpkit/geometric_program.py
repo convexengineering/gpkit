@@ -26,7 +26,7 @@ class GeometricProgram(NomialData):
     Attributes with side effects
     ----------------------------
     `solver_out` and `solver_log` are set during a solve
-    `result` is set at the end of a solve
+    `result` is set at the end of a solve if solution status is optimal
 
     Examples
     --------
@@ -81,6 +81,9 @@ class GeometricProgram(NomialData):
             for var, bound in sorted(self.missingbounds.items()):
                 print("%s has no %s bound" % (var, bound))
 
+        # initialize attributes modified by internal methods
+        self.result = None
+
     def solve(self, solver=None, verbosity=1, *args, **kwargs):
         """Solves a GeometricProgram and returns the solution.
 
@@ -111,32 +114,37 @@ class GeometricProgram(NomialData):
                 posynomials : array of floats
                     Each posynomials's dual variable value at the solution.
         """
-        if solver is None:
-            from . import settings
-            if settings["installed_solvers"]:
-                solver = settings["installed_solvers"][0]
-            else:
-                raise ValueError("No solver was given; perhaps gpkit was not"
-                                 " properly installed, or found no solvers"
-                                 " during the installation process.")
+        def _get_solver(solver):
+            """Get the solverfn and solvername associated with solver"""
+            if solver is None:
+                from . import settings
+                solver = settings.get("default_solver", None)
+                if not solver:
+                    raise ValueError(
+                        "No solver was given; perhaps gpkit was not properly"
+                        " installed, or found no solvers during the"
+                        " installation process.")
 
-        if solver == "cvxopt":
-            from ._cvxopt import cvxoptimize_fn
-            solverfn = cvxoptimize_fn(*args, **kwargs)
-        elif solver == "mosek_cli":
-            from ._mosek import cli_expopt
-            solverfn = cli_expopt.imize_fn(*args, **kwargs)
-        elif solver == "mosek":
-            from ._mosek import expopt
-            solverfn = expopt.imize
-        elif hasattr(solver, "__call__"):
-            solverfn = solver
-            solver = solver.__name__
-        else:
-            raise ValueError("Unknown solver '%s'." % solver)
+            if solver == "cvxopt":
+                from ._cvxopt import cvxoptimize_fn
+                solverfn = cvxoptimize_fn(*args, **kwargs)
+            elif solver == "mosek_cli":
+                from ._mosek import cli_expopt
+                solverfn = cli_expopt.imize_fn(*args, **kwargs)
+            elif solver == "mosek":
+                from ._mosek import expopt
+                solverfn = expopt.imize
+            elif hasattr(solver, "__call__"):
+                solverfn = solver
+                solver = solver.__name__
+            else:
+                raise ValueError("Unknown solver '%s'." % solver)
+            return solverfn, solver
+
+        solverfn, solvername = _get_solver(solver)
 
         if verbosity > 0:
-            print("Using solver '%s'" % solver)
+            print("Using solver '%s'" % solvername)
             print("Solving for %i variables." % len(self.varlocs))
             tic = time()
 
@@ -157,10 +165,57 @@ class GeometricProgram(NomialData):
             print("Solving took %.3g seconds." % (soltime,))
             tic = time()
 
-        ### Generate program result
+        if solver_out.get("status", None) not in ["optimal", "OPTIMAL"]:
+            raise RuntimeWarning(
+                "final status of solver '%s' was '%s', not 'optimal'."
+                "\n\nThe infeasible solve's result is stored in"
+                " model.program.solver_out. A result dict can be generated "
+                " via program._compile_result(program.solver_out)."
+                " If the problem was Primal Infeasible, you can generate a"
+                " feasibility-finding relaxation with model.feasibility()." %
+                (solvername, solver_out.get("status", None)))
+
+        result = self._compile_result(solver_out)
+
+        self.result = result  # NOTE: SIDE EFFECTS
+
+        if verbosity > 1:
+            print ("result packing took %.2g%% of solve time" %
+                   ((time() - tic) / soltime * 100))
+            tic = time()
+
+        self.check_solution(result["cost"],
+                            np.ravel(solver_out['primal']),
+                            nu=result["sensitivities"]["nu"],
+                            la=result["sensitivities"]["lambda"])
+
+        if verbosity > 1:
+            print ("solution checking took %.2g%% of solve time" %
+                   ((time() - tic) / soltime * 100))
+        return result
+
+    def _compile_result(self, solver_out):
+        """Creates a result dict (as returned by solve() from solver output
+
+        This internal method is called from within the solve() method, unless
+        solver_out["status"] is not "optimal", in which case a RuntimeWarning
+        is raised prior to this method being called. In that case, users
+        may use this method to attempt to create a results dict from the
+        output of the failed solve.
+
+        Arguments
+        ---------
+        solver_out: dict
+            dict in format returned by solverfn within GeometricProgram.solve
+
+        Returns
+        -------
+        result: dict
+            dict in format returned by GeometricProgram.solve()
+        """
         result = {}
-        # confirm lengths before calling zip
         primal = np.ravel(solver_out['primal'])
+        # confirm lengths before calling zip
         assert len(self.varlocs) == len(primal)
         result["freevariables"] = dict(zip(self.varlocs, np.exp(primal)))
         result["variables"] = dict(result["freevariables"])
@@ -193,7 +248,7 @@ class GeometricProgram(NomialData):
             raise RuntimeWarning("The dual solution was not returned.")
 
         ## Get sensitivities
-        result["sensitivities"] = {"constraints": {}}
+        result["sensitivities"] = {"constraints": {}, "nu": nu, "lambda": la}
         # initialize the var_senss dict with the cost's constants...
         var_senss = {var: sum([self.cost.exps[i][var]*nu[i] for i in locs])
                      for (var, locs) in self.cost.varlocs.items()
@@ -226,32 +281,6 @@ class GeometricProgram(NomialData):
             if hasattr(constraint, "process_result"):
                 constraint.process_result(result)
 
-        ### Program result generated
-        self.result = result  # NOTE: SIDE EFFECTS
-
-        if verbosity > 1:
-            print("result packing took %.2g%% of solve time" %
-                  ((time() - tic) / soltime * 100))
-            tic = time()
-
-        if solver_out.get("status", None) not in ["optimal", "OPTIMAL"]:
-            raise RuntimeWarning("final status of solver '%s' was '%s', "
-                                 "not 'optimal'." %
-                                 (solver, solver_out.get("status", None)) +
-                                 "\n\nThe infeasible solve's result is stored"
-                                 " in the 'result' attribute"
-                                 " (model.program.result)"
-                                 " and its raw output in 'solver_out'."
-                                 " If the problem was Primal Infeasible,"
-                                 " you can generate a feasibility-finding"
-                                 " relaxation of your Model with"
-                                 " model.feasibility().")
-
-        self.check_solution(result["cost"], primal, nu, la)
-
-        if verbosity > 1:
-            print("solution checking took %.2g%% of solve time" %
-                  ((time() - tic) / soltime * 100))
         return result
 
     def check_solution(self, cost, primal, nu, la, tol=1e-5):
@@ -295,9 +324,14 @@ class GeometricProgram(NomialData):
             raise RuntimeWarning("Dual variables associated with objective"
                                  " sum to %s, not 1" % nu0.sum())
         if any(nu < 0):
-            raise RuntimeWarning("Dual solution has negative entries")
-        nuA = A.T.dot(nu)
-        if any(np.abs(nuA) > tol):
+            if all(nu > tol/1000.):  # HACK, see issue 528
+                print("Allowing negative dual variable(s) as small as "
+                      "%s." % min(nu))
+            else:
+                raise RuntimeWarning("Dual solution has negative entries as"
+                                     "small as %s." % min(nu))
+        ATnu = A.T.dot(nu)
+        if any(np.abs(ATnu) > tol):
             raise RuntimeWarning("sum of nu^T * A did not vanish")
         b = np.log(self.cs)
         dual_cost = sum(nu[mi].dot(b[mi]) -
