@@ -105,34 +105,37 @@ class GeometricProgram(NomialData):
                 posynomials : array of floats
                     Each posynomials's dual variable value at the solution.
         """
-        def _default_solver():
-            from . import settings
-            if settings['installed_solvers']:
-                return settings['installed_solvers'][0]
-            else:
-                raise ValueError("No solver was given; perhaps gpkit was not"
-                                 " properly installed, or found no solvers"
-                                 " during the installation process.")
-        if solver is None:
-            solver = _default_solver()
+        def _get_solver(solver):
+            """Get the solverfn and solvername associated with solver"""
+            if solver is None:
+                from . import settings
+                solver = settings.get("default_solver", None)
+                if not solver:
+                    raise ValueError(
+                        "No solver was given; perhaps gpkit was not properly"
+                        " installed, or found no solvers during the"
+                        " installation process.")
 
-        if solver == 'cvxopt':
-            from ._cvxopt import cvxoptimize_fn
-            solverfn = cvxoptimize_fn(*args, **kwargs)
-        elif solver == "mosek_cli":
-            from ._mosek import cli_expopt
-            solverfn = cli_expopt.imize_fn(*args, **kwargs)
-        elif solver == "mosek":
-            from ._mosek import expopt
-            solverfn = expopt.imize
-        elif hasattr(solver, "__call__"):
-            solverfn = solver
-            solver = solver.__name__
-        else:
-            raise ValueError("Unknown solver '%s'." % solver)
+            if solver == "cvxopt":
+                from ._cvxopt import cvxoptimize_fn
+                solverfn = cvxoptimize_fn(*args, **kwargs)
+            elif solver == "mosek_cli":
+                from ._mosek import cli_expopt
+                solverfn = cli_expopt.imize_fn(*args, **kwargs)
+            elif solver == "mosek":
+                from ._mosek import expopt
+                solverfn = expopt.imize
+            elif hasattr(solver, "__call__"):
+                solverfn = solver
+                solver = solver.__name__
+            else:
+                raise ValueError("Unknown solver '%s'." % solver)
+            return solverfn, solver
+
+        solverfn, solvername = _get_solver(solver)
 
         if verbosity > 0:
-            print("Using solver '%s'" % solver)
+            print("Using solver '%s'" % solvername)
             print("Solving for %i variables." % len(self.varlocs))
             tic = time()
 
@@ -160,7 +163,7 @@ class GeometricProgram(NomialData):
                 " via program._compile_result(program.solver_out)."
                 " If the problem was Primal Infeasible, you can generate a"
                 " feasibility-finding relaxation with model.feasibility()." %
-                (solver, solver_out.get("status", None)))
+                (solvername, solver_out.get("status", None)))
 
         result = self._compile_result(solver_out)
 
