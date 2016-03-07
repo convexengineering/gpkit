@@ -86,10 +86,10 @@ class DictOfLists(dict):
     def append(self, sol):
         "Appends a dict (of dicts) of lists to all held lists."
         if not hasattr(self, 'initialized'):
-            enlist_dict(sol, self)
+            _enlist_dict(sol, self)
             self.initialized = True
         else:
-            append_dict(sol, self)
+            _append_dict(sol, self)
 
     def atindex(self, i):
         "Indexes into each list independently."
@@ -97,25 +97,25 @@ class DictOfLists(dict):
 
     def to_united_array(self, unitless_keys=[], united=False):
         "Converts all lists into array, potentially grabbing units from keys."
-        enray_and_unit_dict(self, self, unitless_keys, united)
+        _enray_and_unit_dict(self, self, unitless_keys, united)
 
 
-def enlist_dict(i, o):
+def _enlist_dict(i, o):
     "Recursviely copies dict i into o, placing non-dict items into lists."
     for k, v in i.items():
         if isinstance(v, dict):
-            o[k] = enlist_dict(v, {})
+            o[k] = _enlist_dict(v, {})
         else:
             o[k] = [v]
     assert set(i.keys()) == set(o.keys())
     return o
 
 
-def append_dict(i, o):
+def _append_dict(i, o):
     "Recursviely travels dict o and appends items found in i."
     for k, v in i.items():
         if isinstance(v, dict):
-            o[k] = append_dict(v, o[k])
+            o[k] = _append_dict(v, o[k])
         else:
             o[k].append(v)
     # assert set(i.keys()) == set(o.keys())  # keys change with swept varkeys
@@ -136,13 +136,13 @@ def index_dict(idx, i, o):
     return o
 
 
-def enray_and_unit_dict(i, o, unitless_keys=[], united=False):
+def _enray_and_unit_dict(i, o, unitless_keys=[], united=False):
     "Recursively turns lists into numpy arrays."
     for k, v in i.items():
         if isinstance(v, dict):
             if k in unitless_keys:
                 united = False
-            o[k] = enray_and_unit_dict(v, {}, unitless_keys, united)
+            o[k] = _enray_and_unit_dict(v, {}, unitless_keys, united)
         else:
             if len(v) == 1:
                 v = v[0]
