@@ -3,7 +3,9 @@ A simple beam example with fixed geometry. Solves the discretized
 Euler-Bernoulli beam equations for a constant distributed load
 """
 import numpy as np
+import gpkit
 from gpkit.shortcuts import Var, Vec, Model
+from gpkit.small_scripts import mag
 
 
 class Beam(Model):
@@ -51,13 +53,14 @@ class Beam(Model):
 
 b = Beam(N=10, substitutions={"L": 6, "EI": 1.1e4, "q": 110*np.ones(10)})
 sol = b.solve(verbosity=1)
-L, EI, q = sol("L"), sol("EI"), sol("q")
-x = np.linspace(0, L, len(q))  # position along beam
-q = q[0]  # assume uniform loading for the check below
 w_gp = sol("w")  # deflection along beam
+
+L, EI, q = sol("L"), sol("EI"), sol("q")
+x = np.linspace(0, mag(L), len(q))*gpkit.units.m  # position along beam
+q = q[0]  # assume uniform loading for the check below
 w_exact = q/(24.*EI) * x**2 * (x**2 - 4*L*x + 6*L**2)  # analytic soln
 
-assert max(abs(w_gp - w_exact)) <= 1e-2
+assert max(abs(w_gp - w_exact)) <= 1e-2*gpkit.units.m
 
 PLOT = False
 if PLOT:
