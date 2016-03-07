@@ -158,4 +158,4 @@ def load_settings(path=SETTINGS_PATH):
     settings_["default_solver"] = settings_["installed_solvers"][0]
     settings_["latex_modelname"] = True
     return settings_
-settings = load_settings()
+settings = load_settings()  # pylint: disable=invalid-name
