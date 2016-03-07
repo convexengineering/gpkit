@@ -36,7 +36,7 @@ Mac OS X
 ++++++++++++++++
   - Run ``pip install gpkit`` at the command line.
   - Run ``pip install pint`` for units support (recommended)
-  - Run ``pip install ipywidgets`` for interactive control of models (optional)
+  - Run ``pip install ipywidgets`` for interactive control of models (recommended)
   - Run ``python -c "import gpkit.tests; gpkit.tests.run()"``
 
 4. Debug Installation
@@ -76,7 +76,7 @@ Linux
   - *Optional:* to install gpkit into an isolated python environment, install virtualenv, run ``virtualenv $DESTINATION_DIR`` then activate it with ``source $DESTINATION_DIR/bin/activate``.
   - Run ``pip install gpkit`` at the command line.
   - Run ``pip install pint`` for units support (recommended)
-  - Run ``pip install ipywidgets`` for interactive control of models (optional)
+  - Run ``pip install ipywidgets`` for interactive control of models (recommended)
   - Run ``python -c "import gpkit.tests; gpkit.tests.run()"``
 
 4. Debug Installation
@@ -122,7 +122,7 @@ Windows
 ++++++++++++++++
   - Run ``pip install gpkit`` at an Anaconda Command Prompt.
   - Run ``pip install pint`` for units support (recommended)
-  - Run ``pip install ipywidgets`` for interactive control of models (optional)
+  - Run ``pip install ipywidgets`` for interactive control of models (recommended)
 
 
 4. Debug Installation
