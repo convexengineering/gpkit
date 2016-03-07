@@ -5,6 +5,7 @@ Euler-Bernoulli beam equations for a constant distributed load
 import numpy as np
 import gpkit
 from gpkit.shortcuts import Var, Vec, Model
+from gpkit.small_scripts import mag
 
 
 class Beam(Model):
@@ -55,7 +56,7 @@ sol = b.solve(verbosity=1)
 w_gp = sol("w")  # deflection along beam
 
 L, EI, q = sol("L"), sol("EI"), sol("q")
-x = np.linspace(0, L, len(q))*gpkit.units.m  # position along beam
+x = np.linspace(0, mag(L), len(q))*gpkit.units.m  # position along beam
 q = q[0]  # assume uniform loading for the check below
 w_exact = q/(24.*EI) * x**2 * (x**2 - 4*L*x + 6*L**2)  # analytic soln
 
