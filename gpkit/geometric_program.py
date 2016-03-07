@@ -183,7 +183,24 @@ class GeometricProgram(NomialData):
         return result
 
     def _compile_result(self, solver_out):
-        """Compile result dict for returning in solve() from solver ouput"""
+        """Creates a result dict (as returned by solve() from solver output
+
+        This internal method is called from within the solve() method, unless
+        solver_out["status"] is not "optimal", in which case a RuntimeWarning
+        is raised prior to this method being called. In that case, users
+        may use this method to attempt to create a results dict from the
+        output of the failed solve.
+
+        Arguments
+        ---------
+        solver_out: dict
+            dict in format returned by solverfn within GeometricProgram.solve
+
+        Returns
+        -------
+        result: dict
+            dict in format returned by GeometricProgram.solve()
+        """
         result = {}
         primal = np.ravel(solver_out['primal'])
         # confirm lengths before calling zip
