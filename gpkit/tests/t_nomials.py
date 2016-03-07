@@ -319,6 +319,11 @@ class TestPosynomial(unittest.TestCase):
         x = Variable('x', units='ft')
         d = (3*x**2).diff(x)
         self.assertEqual(d, 6*x)
+        # test negative exponent
+        d = (1 + 1/y).diff(y)
+        with SignomialsEnabled():
+            expected = -y**-2
+        self.assertEqual(d, expected)
 
     def test_mono_lower_bound(self):
         "Test monomial approximation"
