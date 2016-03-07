@@ -95,54 +95,55 @@ class DictOfLists(dict):
         "Indexes into each list independently."
         return self.__class__(index_dict(i, self, {}))
 
-    def to_united_array(self, unitless_keys=[], united=False):
+    def to_united_array(self, unitless_keys=(), united=False):
         "Converts all lists into array, potentially grabbing units from keys."
         _enray_and_unit_dict(self, self, unitless_keys, united)
 
 
-def _enlist_dict(i, o):
-    "Recursviely copies dict i into o, placing non-dict items into lists."
-    for k, v in i.items():
+def _enlist_dict(d_in, d_out):
+    """Recursviely copies dict d_in into d_out,
+    placing non-dict items into lists."""
+    for k, v in d_in.items():
         if isinstance(v, dict):
-            o[k] = _enlist_dict(v, {})
+            d_out[k] = _enlist_dict(v, {})
         else:
-            o[k] = [v]
-    assert set(i.keys()) == set(o.keys())
-    return o
+            d_out[k] = [v]
+    assert set(d_in.keys()) == set(d_out.keys())
+    return d_out
 
 
-def _append_dict(i, o):
-    "Recursviely travels dict o and appends items found in i."
-    for k, v in i.items():
+def _append_dict(d_in, d_out):
+    "Recursviely travels dict d_out and appends items found in d_in."
+    for k, v in d_in.items():
         if isinstance(v, dict):
-            o[k] = _append_dict(v, o[k])
+            d_out[k] = _append_dict(v, d_out[k])
         else:
-            o[k].append(v)
+            d_out[k].append(v)
     # assert set(i.keys()) == set(o.keys())  # keys change with swept varkeys
-    return o
+    return d_out
 
 
-def index_dict(idx, i, o):
-    "Recursviely travels dict i, placing items at idx into dict o."
-    for k, v in i.items():
+def index_dict(idx, d_in, d_out):
+    "Recursviely travels dict d_in, placing items at idx into dict d_out."
+    for k, v in d_in.items():
         if isinstance(v, dict):
-            o[k] = index_dict(idx, v, {})
+            d_out[k] = index_dict(idx, v, {})
         else:
             try:
-                o[k] = v[idx]
+                d_out[k] = v[idx]
             except IndexError:  # if not an array, return as is
-                o[k] = v
+                d_out[k] = v
     # assert set(i.keys()) == set(o.keys())  # keys change with swept varkeys
-    return o
+    return d_out
 
 
-def _enray_and_unit_dict(i, o, unitless_keys=[], united=False):
+def _enray_and_unit_dict(d_in, d_out, unitless_keys=(), united=False):
     "Recursively turns lists into numpy arrays."
-    for k, v in i.items():
+    for k, v in d_in.items():
         if isinstance(v, dict):
             if k in unitless_keys:
                 united = False
-            o[k] = _enray_and_unit_dict(v, {}, unitless_keys, united)
+            d_out[k] = _enray_and_unit_dict(v, {}, unitless_keys, united)
         else:
             if len(v) == 1:
                 v = v[0]
@@ -150,9 +151,9 @@ def _enray_and_unit_dict(i, o, unitless_keys=[], united=False):
             if (united and hasattr(k, "units")
                     and isinstance(k.units, Quantity)):
                 v = v*k.units
-            o[k] = v
+            d_out[k] = v
     # assert set(i.keys()) == set(o.keys())  # keys change with swept varkeys
-    return o
+    return d_out
 
 
 class HashVector(dict):
