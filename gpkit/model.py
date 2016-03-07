@@ -502,7 +502,7 @@ class Model(object):
             result = solvefn(*args, **kwargs)
             solution.append(parse_result(result, constants, beforesubs))
         solution.program = self.program
-        solution.toarray()
+        solution.to_united_array(unitless_keys=["sensitivities"], united=True)
         solution["localmodel"] = PosyArray(solution["localmodel"])
         self.solution = solution  # NOTE: SIDE EFFECTS
         if verbosity > 0:

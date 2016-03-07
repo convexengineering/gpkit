@@ -95,10 +95,9 @@ class DictOfLists(dict):
         "Indexes into each list independently."
         return self.__class__(index_dict(i, self, {}))
 
-    def toarray(self, shape=None):
-        "Converts all lists into arrays."
-        if shape is None:
-            enray_dict(self, self)
+    def to_united_array(self, unitless_keys=[], united=False):
+        "Converts all lists into array, potentially grabbing units from keys."
+        enray_and_unit_dict(self, self, unitless_keys, united)
 
 
 def enlist_dict(i, o):
@@ -137,23 +136,21 @@ def index_dict(idx, i, o):
     return o
 
 
-def enray_dict(i, o, unitless=False):
+def enray_and_unit_dict(i, o, unitless_keys=[], united=False):
     "Recursively turns lists into numpy arrays."
     for k, v in i.items():
         if isinstance(v, dict):
-            if k == "sensitivities":
-                unitless = True
-            o[k] = enray_dict(v, {}, unitless)
+            if k in unitless_keys:
+                united = False
+            o[k] = enray_and_unit_dict(v, {}, unitless_keys, united)
         else:
-            if (not unitless and hasattr(k, "units")
-                    and isinstance(k.units, Quantity)):
-                units = k.units
-            else:
-                units = 1
             if len(v) == 1:
-                o[k] = np.array(v[0]) * units
-            else:
-                o[k] = np.array(v) * units
+                v = v[0]
+            v = np.array(v)
+            if (united and hasattr(k, "units")
+                    and isinstance(k.units, Quantity)):
+                v = v*k.units
+            o[k] = v
     # assert set(i.keys()) == set(o.keys())  # keys change with swept varkeys
     return o
 
