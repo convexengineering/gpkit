@@ -247,7 +247,12 @@ class GeometricProgram(NomialData):
             raise RuntimeWarning("Dual variables associated with objective"
                                  " sum to %s, not 1" % nu0.sum())
         if any(nu < 0):
-            raise RuntimeWarning("Dual solution has negative entries")
+            if all(nu > tol/1000.):  # HACK, see issue 528
+                print("Allowing negative dual variable(s) as small as "
+                      "%s." % min(nu))
+            else:
+                raise RuntimeWarning("Dual solution has negative entries as"
+                                     "small as %s." % min(nu))
         nuA = A.T.dot(nu)
         if any(np.abs(nuA) > tol):
             raise RuntimeWarning("sum of nu^T * A did not vanish")
