@@ -253,8 +253,8 @@ class GeometricProgram(NomialData):
             else:
                 raise RuntimeWarning("Dual solution has negative entries as"
                                      "small as %s." % min(nu))
-        nuA = A.T.dot(nu)
-        if any(np.abs(nuA) > tol):
+        ATnu = A.T.dot(nu)
+        if any(np.abs(ATnu) > tol):
             raise RuntimeWarning("sum of nu^T * A did not vanish")
         b = np.log(self.cs)
         dual_cost = sum(nu[mi].dot(b[mi]) -
