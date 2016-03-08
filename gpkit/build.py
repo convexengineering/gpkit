@@ -197,7 +197,7 @@ class Mosek(SolverBackend):
 
         lib_dir = replacedir(pathjoin("gpkit", "_mosek", "lib"))
         if "GPKITBUILD" in os.environ:
-            solib_dir = os.environ["GPKITBUILD"]
+            solib_dir = replacedir(os.environ["GPKITBUILD"])
         else:
             solib_dir = replacedir(pathjoin(os.path.expanduser("~"), ".gpkit"))
         f = open(pathjoin(lib_dir, "__init__.py"), 'w')
