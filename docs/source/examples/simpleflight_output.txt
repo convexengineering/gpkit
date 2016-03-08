@@ -57,23 +57,24 @@ SWEEP
 
 Cost
 ----
- [ 315       361       ] [N] 
+ [ 338       294       396       326       ] [N] 
 
 Sweep Variables
 ---------------
-V : [ 45        55       ]  [m/s] cruising speed
+      V : [ 45        45        55        55       ]  [m/s] cruising speed
+V_{min} : [ 20        25        20        25       ]  [m/s] takeoff speed 
 
 Free Variables
 --------------
-  A : [ 7.26      5.71     ]         aspect ratio             
-C_D : [ 0.0164    0.0136   ]         Drag coefficient of wing 
-C_L : [ 0.359     0.24     ]         Lift coefficent of wing  
-C_f : [ 0.00345   0.00326  ]         skin friction coefficient
-  D : [ 315       361      ]  [N]    total drag force         
- Re : [ 4.53e+06  6.01e+06 ]         Reynold's number         
-  S : [ 15.4      14.3     ]  [m**2] total wing area          
-  W : [ 6.87e+03  6.39e+03 ]  [N]    total aircraft weight    
-W_w : [ 1.93e+03  1.45e+03 ]  [N]    wing weight              
+  A : [ 6.2       8.84      4.77      7.16     ]         aspect ratio             
+C_D : [ 0.0146    0.0196    0.0123    0.0157   ]         Drag coefficient of wing 
+C_L : [ 0.296     0.463     0.198     0.31     ]         Lift coefficent of wing  
+C_f : [ 0.00333   0.00361   0.00314   0.00342  ]         skin friction coefficient
+  D : [ 338       294       396       326      ]  [N]    total drag force         
+ Re : [ 5.38e+06  3.63e+06  7.24e+06  4.75e+06 ]         Reynold's number         
+  S : [ 18.6      12.1      17.3      11.2     ]  [m**2] total wing area          
+  W : [ 6.85e+03  6.97e+03  6.4e+03   6.44e+03 ]  [N]    total aircraft weight    
+W_w : [ 1.91e+03  2.03e+03  1.46e+03  1.5e+03  ]  [N]    wing weight              
 
 Constants
 ---------
@@ -81,7 +82,6 @@ Constants
 (\frac{S}{S_{wet}}) : 2.05                wetted area ratio               
           C_{L,max} : 1.5                 max CL with flaps down          
             N_{ult} : 3.8                 ultimate load factor            
-            V_{min} : 22        [m/s]     takeoff speed                   
                 W_0 : 4940      [N]       aircraft weight excluding wing  
      W_{W_{coeff1}} : 8.71e-05  [1/m]     Wing Weight Coefficent 1        
      W_{W_{coeff2}} : 45.24     [Pa]      Wing Weight Coefficent 2        
@@ -94,19 +94,19 @@ Constants
 
 Sensitivities
 -------------
-                W_0 : [ 0.929     0.844    ] aircraft weight excluding wing  
-                  V : [ 0.453     0.886    ] cruising speed                  
-                  k : [ 0.517     0.591    ] form factor                     
-(\frac{S}{S_{wet}}) : [ 0.517     0.591    ] wetted area ratio               
-     W_{W_{coeff1}} : [ 0.206     0.127    ] Wing Weight Coefficent 1        
-            N_{ult} : [ 0.206     0.127    ] ultimate load factor            
-             (CDA0) : [ 0.123     0.16     ] fuselage drag area              
-                \mu : [ 0.103     0.118    ] viscosity of air                
-     W_{W_{coeff2}} : [ 0.116     0.102    ] Wing Weight Coefficent 2        
-               \rho : [ -0.148    -0.065   ] density of air                  
-               \tau : [ -0.206    -0.127   ] airfoil thickness to chord ratio
-                  e : [ -0.361    -0.249   ] Oswald efficiency factor        
-                \pi : [ -0.361    -0.249   ] half of the circle constant     
-          C_{L,max} : [ -0.324    -0.449   ] max CL with flaps down          
-            V_{min} : [ -0.647    -0.898   ] takeoff speed                   
+                W_0 : [ 0.919     0.947     0.845     0.847    ] aircraft weight excluding wing  
+                  V : [ 0.589     0.249     0.975     0.746    ] cruising speed                  
+                  k : [ 0.561     0.454     0.63      0.536    ] form factor                     
+(\frac{S}{S_{wet}}) : [ 0.561     0.454     0.63      0.536    ] wetted area ratio               
+     W_{W_{coeff1}} : [ 0.179     0.247     0.108     0.155    ] Wing Weight Coefficent 1        
+            N_{ult} : [ 0.179     0.247     0.108     0.155    ] ultimate load factor            
+             (CDA0) : [ 0.114     0.131     0.146     0.177    ] fuselage drag area              
+     W_{W_{coeff2}} : [ 0.141     0.0911    0.126     0.0787   ] Wing Weight Coefficent 2        
+                \mu : [ 0.112     0.0907    0.126     0.107    ] viscosity of air                
+               \rho : [ -0.172    -0.129    -0.097    -0.0331  ] density of air                  
+               \tau : [ -0.179    -0.247    -0.108    -0.155   ] airfoil thickness to chord ratio
+                  e : [ -0.325    -0.415    -0.225    -0.287   ] Oswald efficiency factor        
+                \pi : [ -0.325    -0.415    -0.225    -0.287   ] half of the circle constant     
+          C_{L,max} : [ -0.411    -0.207    -0.521    -0.353   ] max CL with flaps down          
+            V_{min} : [ -0.822    -0.415    -1.04     -0.705   ] takeoff speed                   
 
