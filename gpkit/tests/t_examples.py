@@ -5,6 +5,7 @@ import os
 
 from gpkit import settings
 from gpkit.tests.helpers import generate_example_tests
+from gpkit.small_scripts import mag
 
 
 class TestExamples(unittest.TestCase):
@@ -70,7 +71,7 @@ class TestExamples(unittest.TestCase):
                         "W_0": 1.0107,
                         r"\rho": -0.2275}
         for key in freevarcheck:
-            sol_rat = sol["variables"][key]/freevarcheck[key]
+            sol_rat = mag(sol["variables"][key])/freevarcheck[key]
             self.assertTrue(abs(1-sol_rat) < 1e-2)
         for key in consenscheck:
             sol_rat = sol["sensitivities"]["constants"][key]/consenscheck[key]

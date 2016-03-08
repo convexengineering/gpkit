@@ -446,8 +446,8 @@ class Model(object):
             # add localmodel here
             solution.append(result)
         solution.program = self.program
-        solution.toarray()
-        # solution["localmodel"] = NomialArray(solution["localmodel"])
+        solution.to_united_array(unitless_keys=["sensitivities"], united=True)
+        #solution["localmodel"] = NomialArray(solution["localmodel"])
         self.solution = solution  # NOTE: SIDE EFFECTS
         if verbosity > 0:
             print(solution.table())

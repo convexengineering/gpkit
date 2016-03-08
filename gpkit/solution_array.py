@@ -62,20 +62,27 @@ class SolutionArray(DictOfLists):
         return out[0] if len(out) == 1 else out
 
     def __call__(self, p):
-        return mag(self.subinto(p).c)
+        p_subbed = self.subinto(p)
+        if hasattr(p_subbed, "exp") and not p_subbed.exp:
+            # it's a constant monomial
+            return p_subbed.c
+        elif hasattr(p_subbed, "c"):
+            # it's a posyarray, which'll throw an error if non-constant...
+            return p_subbed.c
+        return p_subbed
 
-    def subinto(self, p):
-        "Returns NomialArray of each solution substituted into p."
-        if p in self["variables"]:
-            return NomialArray(self["variables"][p])
+    def subinto(self, posy):
+        "Returns NomialArray of each solution substituted into posy."
+        if posy in self["variables"]:
+            return self["variables"][posy]
         elif len(self) > 1:
-            return NomialArray([self.atindex(i).subinto(p)
+            return NomialArray([self.atindex(i).subinto(posy)
                               for i in range(len(self))])
         else:
-            return p.sub(self["variables"])
+            return posy.sub(self["variables"])
 
-    def sens(self, p):
-        """Returns array of each solution's sensitivity substituted into p
+    def sens(self, nomial):
+        """Returns array of each solution's sensitivity substituted into nomial
 
         Note: this does not return monomial sensitivities if you pass it a
         signomial; it returns each variable's sensitivity substituted in for it
@@ -83,22 +90,21 @@ class SolutionArray(DictOfLists):
 
         Returns scalar, unitless values.
         """
-        if p in self["variables"]["sensitivities"]:
-            return NomialArray(self["variables"]["sensitivities"][p])
+        if nomial in self["variables"]["sensitivities"]:
+            return NomialArray(self["variables"]["sensitivities"][nomial])
         elif len(self) > 1:
-            return NomialArray([self.atindex(i).subinto(p)
-                              for i in range(len(self))])
+            return NomialArray([self.atindex(i).subinto(nomial)
+                                for i in range(len(self))])
         else:
-            subbed = p.sub(self["variables"]["sensitivities"],
-                           require_positive=False)
+            subbed = nomial.sub(self["variables"]["sensitivities"],
+                                require_positive=False)
             assert isinstance(subbed, Monomial)
             assert not subbed.exp
             return mag(subbed.c)
 
     def table(self, tables=("cost", "sweepvariables", "freevariables",
                             "constants", "sensitivities"),
-              fixedcols=True, latex=False,
-              included_models=None, excluded_models=None):
+              **kwargs):
         """A table representation of this SolutionArray
 
         Arguments
@@ -140,19 +146,12 @@ class SolutionArray(DictOfLists):
                 continue
             elif table == "sensitivities":
                 strs += results_table(subdict["constants"], table_title,
-                                      fixedcols=fixedcols,
-                                      included_models=included_models,
-                                      excluded_models=excluded_models,
                                       minval=1e-2,
                                       sortbyvals=True,
                                       printunits=False,
-                                      latex=latex)
+                                      **kwargs)
             else:
-                strs += results_table(subdict, table_title,
-                                      fixedcols=fixedcols,
-                                      included_models=included_models,
-                                      excluded_models=excluded_models,
-                                      latex=latex)
+                strs += results_table(subdict, table_title, **kwargs)
         return "\n".join(strs)
 
 
@@ -193,8 +192,9 @@ def results_table(data, title, minval=0, printunits=True, fixedcols=True,
     decorated = []
     models = set()
     for i, (k, v) in enumerate(data.items()):
-        notnan = ~np.isnan([v])
-        if np.any(notnan) and np.max(np.abs(np.array([v])[notnan])) >= minval:
+        v_ = mag(v)
+        notnan = ~np.isnan([v_])
+        if np.any(notnan) and np.max(np.abs(np.array([v_])[notnan])) >= minval:
             b = isinstance(v, Iterable) and bool(v.shape)
             model = k.descr.get("model", "")
             models.add(model)
@@ -225,16 +225,17 @@ def results_table(data, title, minval=0, printunits=True, fixedcols=True,
                 if not latex:
                     lines.append([model+" | ", "", "", ""])
                 else:
-                    lines.append(["\multicolumn{3}{l}{\\textbf{" + model + "}} \\\\"])
+                    lines.append([r"\multicolumn{3}{l}{\textbf{" +
+                                  model + r"}} \\"])
             oldmodel = model
         label = var.descr.get('label', '')
         units = unitstr(var, into=" [%s] ", dimless="") if printunits else ""
         if isvector:
-            vals = [vecfmt % v for v in val.flatten()[:4]]
+            vals = [vecfmt % v for v in mag(val).flatten()[:4]]
             ellipsis = " ..." if len(val) > 4 else ""
             valstr = "[ %s%s ] " % ("  ".join(vals), ellipsis)
         else:
-            valstr = valfmt % val
+            valstr = valfmt % mag(val)
         valstr = valstr.replace("nan", " - ")
         if not latex:
             lines.append([varstr, valstr, units, label])

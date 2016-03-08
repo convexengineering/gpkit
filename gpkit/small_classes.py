@@ -1,7 +1,7 @@
 """Miscellaneous small classes"""
 import numpy as np
 from collections import namedtuple, defaultdict
-from . import units
+from . import units as gpkitunits
 
 try:
     isinstance("", basestring)
@@ -9,7 +9,7 @@ try:
 except NameError:
     Strings = (str,)
 
-Quantity = units.Quantity
+Quantity = gpkitunits.Quantity
 Numbers = (int, float, np.number, Quantity)
 
 from .keydict import KeyDict, KeySet
@@ -86,76 +86,77 @@ class DictOfLists(dict):
     def append(self, sol):
         "Appends a dict (of dicts) of lists to all held lists."
         if not hasattr(self, 'initialized'):
-            enlist_dict(sol, self)
+            _enlist_dict(sol, self)
             self.initialized = True
         else:
-            append_dict(sol, self)
+            _append_dict(sol, self)
 
     def atindex(self, i):
         "Indexes into each list independently."
-        return self.__class__(index_dict(i, self, {}))
+        return self.__class__(index_dict(i, self, v.__class__()))
 
-    def toarray(self, shape=None):
-        "Converts all lists into arrays."
-        if shape is None:
-            enray_dict(self, self)
+    def to_united_array(self, unitless_keys=(), united=False):
+        "Converts all lists into array, potentially grabbing units from keys."
+        _enray_and_unit_dict(self, self, unitless_keys, united)
 
 
-def enlist_dict(i, o):
-    "Recursviely copies dict i into o, placing non-dict items into lists."
-    for k, v in i.items():
+def _enlist_dict(d_in, d_out):
+    """Recursviely copies dict d_in into d_out,
+    placing non-dict items into lists."""
+    for k, v in d_in.items():
         if isinstance(v, dict):
-            o[k] = enlist_dict(v, v.__class__())
+            d_out[k] = _enlist_dict(v, v.__class__())
         else:
-            if isinstance(v, np.ndarray) and v.size == 1:
-                v = v.flatten()[0]
-            o[k] = [v]
-    assert set(i.keys()) == set(o.keys())
-    return o
+            d_out[k] = [v]
+    assert set(d_in.keys()) == set(d_out.keys())
+    return d_out
 
 
-def append_dict(i, o):
-    "Recursively travels dict o and appends items found in i."
-    for k, v in i.items():
+def _append_dict(d_in, d_out):
+    "Recursviely travels dict d_out and appends items found in d_in."
+    for k, v in d_in.items():
         if isinstance(v, dict):
-            o[k] = append_dict(v, o[k])
+            d_out[k] = _append_dict(v, d_out[k])
         else:
-            if isinstance(v, np.ndarray) and v.size == 1:
-                v = v.flatten()[0]
-            o[k].append(v)
             # consider apennding nan / nanvector for new / missed keys
+            d_out[k].append(v)
     # assert set(i.keys()) == set(o.keys())  # keys change with swept varkeys
-    return o
+    return d_out
 
 
-def index_dict(idx, i, o):
-    "Recursviely travels dict i, placing items at idx into dict o."
-    for k, v in i.items():
+def index_dict(idx, d_in, d_out):
+    "Recursviely travels dict d_in, placing items at idx into dict d_out."
+    for k, v in d_in.items():
         if isinstance(v, dict):
-            o[k] = index_dict(idx, v, v.__class__())
+            d_out[k] = index_dict(idx, v, v.__class__())
         else:
             try:
-                o[k] = v[idx]
+                d_out[k] = v[idx]
             except IndexError:  # if not an array, return as is
-                o[k] = v
-                # consider apennding nan / nanvector for new / missed keys
+                d_out[k] = v
     # assert set(i.keys()) == set(o.keys())  # keys change with swept varkeys
-    return o
+    return d_out
 
 
-def enray_dict(i, o):
+def _enray_and_unit_dict(d_in, d_out, unitless_keys=(), united=False):
     "Recursively turns lists into numpy arrays."
-    for k, v in i.items():
+    for k, v in d_in.items():
         if isinstance(v, dict):
-            o[k] = enray_dict(v, v.__class__())
+            if k in unitless_keys:
+                united = False
+            d_out[k] = _enray_and_unit_dict(v, v.__class__(),
+                                            unitless_keys, united)
         else:
             if len(v) == 1:
-                o[k] = v[0]
-            else:
-                o[k] = np.array(v)
-                # consider apennding nan / nanvector for new / missed keys
+                v = v[0]
+            v = np.array(v)
+            if (united and hasattr(k, "units")
+                    and isinstance(k.units, Quantity)):
+                v = v*k.units
+            d_out[k] = v
     # assert set(i.keys()) == set(o.keys())  # keys change with swept varkeys
-    return o
+    return d_out
+
 
 class HashVector(dict):
     """A simple, sparse, string-indexed vector. Inherits from dict.

@@ -4,6 +4,7 @@ import time
 import numpy as np
 from gpkit import Variable, VectorVariable, Model, NomialArray
 from gpkit.solution_array import SolutionArray
+import gpkit
 from gpkit.solution_array import results_table
 from gpkit.varkey import VarKey
 
@@ -14,8 +15,16 @@ class TestSolutionArray(unittest.TestCase):
         A = Variable('A', '-', 'Test Variable')
         prob = Model(A, [A >= 1])
         sol = prob.solve(verbosity=0)
-        self.assertTrue(isinstance(sol(A), float))
         self.assertAlmostEqual(sol(A), 1.0, 10)
+
+    def test_call_units(self):
+        # test from issue541
+        x = Variable("x", 10, "ft")
+        y = Variable("y", "m")
+        m = Model(y, [y >= x])
+        sol = m.solve(verbosity=0)
+        self.assertAlmostEqual(sol("y")/sol("x"), 1.0)
+        self.assertAlmostEqual(sol(x)/sol(y), 1.0)
 
     def test_call_vector(self):
         n = 5
@@ -37,7 +46,7 @@ class TestSolutionArray(unittest.TestCase):
         z4 = VectorVariable(N, 'z4', 'm')
         L = Variable('L', 5, 'm')
         prob = Model(sum(x),
-                  [x >= y, y >= z1, z1 >= z2, z2 >= z3, z3 >= z4, z4 >= L])
+                     [x >= y, y >= z1, z1 >= z2, z2 >= z3, z3 >= z4, z4 >= L])
         sol = prob.solve(verbosity=0)
         t1 = time.time()
         _ = sol(z1)
@@ -58,9 +67,10 @@ class TestSolutionArray(unittest.TestCase):
         sol = m.solve(verbosity=0)
         Psol = sol.subinto(P_max)
         self.assertEqual(len(Psol), Nsweep)
-        self.assertEqual(type(Psol), NomialArray)
-        self.assertAlmostEqual(0, np.max(np.abs(Pvals - Psol.c)))
-        self.assertAlmostEqual(0, np.max(np.abs(Psol.c - sol(P_max))))
+        self.assertAlmostEqual(0*gpkit.units.m,
+                               np.max(np.abs(Pvals*gpkit.units.m - Psol)))
+        self.assertAlmostEqual(0*gpkit.units.m,
+                               np.max(np.abs(Psol - sol(P_max))))
 
     def test_table(self):
         x = Variable('x')
