@@ -48,7 +48,3 @@ gpkit/tests/t_sub.py
 gpkit/tests/t_tools.py
 gpkit/tests/t_vars.py
 gpkit/tests/run_tests.py
-gpkit/models/__init__.py
-gpkit/models/beam.py
-gpkit/models/troposhere.py
-gpkit/models/troposhere_sp.py

@@ -35,7 +35,6 @@ Mac OS X
 3. Install GPkit
 ++++++++++++++++
   - Run ``pip install gpkit`` at the command line.
-  - Run ``pip install pint`` for units support (recommended)
   - Run ``pip install ipywidgets`` for interactive control of models (recommended)
   - Run ``python -c "import gpkit.tests; gpkit.tests.run()"``
 
@@ -75,7 +74,6 @@ Linux
 ++++++++++++++++
   - *Optional:* to install gpkit into an isolated python environment, install virtualenv, run ``virtualenv $DESTINATION_DIR`` then activate it with ``source $DESTINATION_DIR/bin/activate``.
   - Run ``pip install gpkit`` at the command line.
-  - Run ``pip install pint`` for units support (recommended)
   - Run ``pip install ipywidgets`` for interactive control of models (recommended)
   - Run ``python -c "import gpkit.tests; gpkit.tests.run()"``
 
@@ -101,7 +99,7 @@ Windows
 ++++++++++++++++++++++++++++++
   - Install the Python 2.7 version of `Python (x,y) <https://python-xy.github.io/downloads.html>`_.
       - Python (x,y) recommends removing any previous installations of Python before installation.
-      - Make sure to check the cvxopt checkbox under "Choose components" during installation.
+      - Make sure to check the cvxopt and pint boxes under "Choose components" during installation.
 
 
 2. (optional) Install the MOSEK GP solver
@@ -121,7 +119,6 @@ Windows
 3. Install GPkit
 ++++++++++++++++
   - Run ``pip install gpkit`` at an Anaconda Command Prompt.
-  - Run ``pip install pint`` for units support (recommended)
   - Run ``pip install ipywidgets`` for interactive control of models (recommended)
 
 
