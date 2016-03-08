@@ -116,6 +116,15 @@ class Model(object):
                         processed_keys.add(k)
                         model = name + k.descr.get("model", "")
                         k.descr["model"] = model
+                sigs = [c.sigy_lt0_rep] if hasattr(c, "sigy_lt0_rep") else c.as_posyslt1()
+                for p in sigs:
+                    for exp in p.exps:
+                        for k in exp:
+                            if k not in processed_keys:
+                                processed_keys.add(k)
+                                model = name + k.descr.pop("model", "")
+                                k.descr["model"] = model
+
             for k, v in self.substitutions.items():
                 # doesn't work for Var / Vec substitution yet
                 if k not in processed_keys:
