@@ -203,7 +203,8 @@ class Model(object):
     @property
     def allsubs(self):
         newsubs = KeyDict.subs_from_constraints(self.varkeys, self.constraints)
-        self.substitutions.update(newsubs)
+        newsubs.update(self.substitutions)
+        self.substitutions = newsubs
         return self.substitutions
 
     @property
@@ -371,7 +372,6 @@ class Model(object):
         #         print("A zero-substitution triggered the zeroing of lower-"
         #               "unbounded variables to maintain solver compatibility.")
         #     self.zero_lower_unbounded_variables()
-
         constants, sweep, linkedsweep = parse_subs(self.varkeys, self.allsubs)
         solution = SolutionArray()
         kwargs.update({"solver": solver})
