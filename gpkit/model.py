@@ -295,12 +295,13 @@ class Model(object):
             return self._solve("gp", solver, verbosity, skipsweepfailures,
                                *args, **kwargs)
         except ValueError as err:
-            if err.message == ("GeometricPrograms cannot contain Signomials"):
+            if err.message == ("GeometricPrograms cannot contain"
+                               "SignomialInequalities."):
                 raise ValueError("""Signomials remained after substitution.
 
     'Model.solve()' can only be called on Models without Signomials, because
-    only those Models guarantee a global solution. Models with Signomials
-    have only local solutions, and are solved with 'Model.localsolve()'.""")
+    only those Models guarantee a global solution. Models with Signomials have
+    only local solutions, and should be solved with 'Model.localsolve()'.""")
             raise
 
     def localsolve(self, solver=None, verbosity=2, skipsweepfailures=False,

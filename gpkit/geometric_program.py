@@ -50,7 +50,14 @@ class GeometricProgram(NomialData):
         self.constr_idxs = []
         for constraint in constraints:
             constraint.substitutions.update(self.substitutions)
-            constr_posys = constraint.as_posyslt1()
+            try:
+                constr_posys = constraint.as_posyslt1()
+            except TypeError as err:
+                if err.message == ("SignomialInequality could not simplify to"
+                                   "a PosynomialInequality"):
+                    raise ValueError("GeometricPrograms cannot contain"
+                                     "SignomialInequalities.")
+                raise
             if not all(constr_posys):
                 raise ValueError("%s is an invalid constraint for a"
                                  " GeometricProgram" % constraint)
