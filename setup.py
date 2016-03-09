@@ -55,7 +55,7 @@ setup(
     install_requires=["numpy", "scipy", "pint"],
     version="0.3.6.0",
     packages=["gpkit", "gpkit._mosek", "gpkit.tests", "gpkit.interactive",
-              "gpkit.models", "gpkit.nomials", "gpkit.constraints"],
+              "gpkit.nomials", "gpkit.constraints"],
     package_data={"gpkit": ["pint/*", "env/*"],
                   "gpkit._mosek": ["lib/*"]},
     license=LICENSE,
