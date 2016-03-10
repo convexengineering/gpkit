@@ -38,7 +38,7 @@ class ConstraintSet(list):
             excluded.append("cost")
             if hasattr(self, "cost"):
                 lines = ["  # minimize",
-                         "        %s" % self.cost,
+                         "        %s" % self.cost.str_without(excluded),
                          "  # subject to"]
             else:
                 lines = [""]  # start with a newline
@@ -65,7 +65,7 @@ class ConstraintSet(list):
             lines = ["\\begin{array}[ll]", "\\text{}"]
             if hasattr(self, "cost"):
                 lines.extend(["\\text{minimize}",
-                              "    & %s \\\\" % self.cost.latex(),
+                              "    & %s \\\\" % self.cost.latex(excluded),
                               "\\text{subject to}"])
         for constraint in self:
             if hasattr(constraint, "_subconstr_latex"):

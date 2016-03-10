@@ -1,6 +1,7 @@
 "Implements SingleEquationConstraint"
 from operator import le, ge, eq
 from ..small_scripts import try_str_without
+from ..repr_conventions import _str, _repr, _repr_latex_
 
 
 class SingleEquationConstraint(object):
@@ -8,13 +9,13 @@ class SingleEquationConstraint(object):
     latex_opers = {"<=": "\\leq", ">=": "\\geq", "=": "="}
     func_opers = {"<=": le, ">=": ge, "=": eq}
 
-    def __repr__(self):
-        return "gpkit.%s(%s)" % (self.__class__.__name__, self)
+    __str__ = _str
+    __repr__ = _repr
+    _repr_latex_ = _repr_latex_
 
-    def __str__(self):
-        return self.str_without(["units"])
-
-    def str_without(self, excluded=[]):
+    def str_without(self, excluded=None):
+        if excluded is None:
+            excluded = ["units"]
         return "%s %s %s" % (try_str_without(self.left, excluded),
                              self.oper,
                              try_str_without(self.right, excluded))
