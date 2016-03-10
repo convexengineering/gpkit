@@ -64,7 +64,6 @@ def composite_objective(*objectives, **kwargs):
         objective += ws[i]*w_s[:i].prod()*w_s[i+1:].prod()*obj/normalization[i]
     return objective
 
-
 def mdparse(filename, return_tex=False):
     "Parse markdown file, returning as strings python and (optionally) .tex.md"
     with open(filename) as f:
@@ -102,6 +101,35 @@ def mdparse(filename, return_tex=False):
             return "\n".join(py_lines)
         else:
             return "\n".join(py_lines), "\n".join(texmd_lines)
+
+def bound_all_variables(model, eps=1e-30, lower=None, upper=None):
+    lb = lower if lower else eps
+    ub = upper if upper else 1/eps
+    constraints = [[Variable(**varkey.descr) <= ub,
+                    Variable(**varkey.descr) >= lb]
+                   for varkey in model.gp().varlocs]
+    constraints.extend(model.constraints)
+    return model.__class__(model.cost, constraints, model.substitutions)
+
+
+def determine_unbounded_variables(model, solver=None, verbosity=0,
+                                  eps=1e-30, lower=None, upper=None,
+                                  *args, **kwargs):
+    m = bound_all_variables(model, eps, lower, upper)
+    sol = m.solve(solver, verbosity, *args, **kwargs)
+    nu = sol["sensitivities"]["posynomials"][1:]
+    out = {"upper unbounded": [], "lower unbounded": []}
+    for i, varkey in enumerate(model.gp().varlocs):
+        sens_ratio = nu[2*i]/nu[2*(i-1)]
+        if sens_ratio >= 2:
+            out["upper unbounded"].append(varkey)
+        elif sens_ratio <= 0.5:
+            out["lower unbounded"].append(varkey)
+        elif abs(np.log(sol["variables"][varkey])) >= -np.log(eps)/2:
+                raise AttributeError("%s appears to have hit a boundary"
+                                     " but it's not showing up in the"
+                                     " sensitivities." % str(varkey))
+    return out
 
 
 def mdmake(filename, make_tex=True):

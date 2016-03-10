@@ -396,7 +396,7 @@ class TestSP(unittest.TestCase):
                 _ = m.localsolve(verbosity=0)
 
     def test_partial_sub_signomial(self):
-        """Test SP partial x0 initialization"""
+        "Test SP partial x0 initialization"
         x = Variable('x')
         y = Variable('y')
         with SignomialsEnabled():
@@ -404,6 +404,17 @@ class TestSP(unittest.TestCase):
         m.localsolve(x0={x: 0.5}, verbosity=0)
         first_gp_constr_posy = m.program.gps[0].constraints[0].as_posyslt1()[0]
         self.assertEqual(first_gp_constr_posy.exp[x.key], -1./3)
+
+    def test_unbounded_debugging(self):
+        "Test nearly-dual-feasible problems"
+        from gpkit.tools import determine_unbounded_variables
+        x = Variable("x")
+        y = Variable("y")
+        m = Model(x*y, [x*y**1.000001 >= 12])
+        self.assertRaises((RuntimeWarning, ValueError), m.solve, verbosity=0)
+        bounds = determine_unbounded_variables(m)
+        self.assertEqual(bounds, {"upper unbounded": [y.key],
+                                  "lower unbounded": [x.key]})
 
 
 class TestModelSolverSpecific(unittest.TestCase):
