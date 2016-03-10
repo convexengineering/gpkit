@@ -13,6 +13,7 @@ from operator import eq, le, ge, xor
 from ..small_classes import Numbers
 from ..small_scripts import try_str_without
 from ..constraints.array import ArrayConstraint
+from ..repr_conventions import _str, _repr, _repr_latex_
 from .. import units as ureg
 from .. import DimensionalityError
 Quantity = ureg.Quantity
@@ -46,19 +47,16 @@ class NomialArray(np.ndarray):
     >>> px = gpkit.NomialArray([1, x, x**2])
     """
 
+    __str__ = _str
+    __repr__ = _repr
+    _repr_latex_ = _repr_latex_
+
     def str_without(self, excluded=[]):
         if self.shape:
             return "[" + ", ".join([try_str_without(el, excluded)
                                     for el in self]) + "]"
         else:
             return str(self.flatten()[0])  # TODO THIS IS WEIRD
-
-    def __str__(self):
-        "Returns list-like string, but with str(el) instead of repr(el)."
-        return self.str_without()
-
-    def __repr__(self):
-        return "gpkit.%s(%s)" % (self.__class__.__name__, self)
 
     def latex(self, matwrap=True):
         "Returns 1D latex list of contents."
@@ -74,9 +72,6 @@ class NomialArray(np.ndarray):
                     "\\end{bmatrix}")
         else:
             return None
-
-    def _repr_latex_(self):
-        return "$$"+self.latex()+"$$"
 
     def __hash__(self):
         return hash(reduce(xor, map(hash, self.flat), 0))

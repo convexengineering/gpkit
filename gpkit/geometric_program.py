@@ -359,9 +359,6 @@ class GeometricProgram(NomialData):
                           for constr in self.constraints] +
                          [']'])
 
-    def __repr__(self):
-        return "gpkit.%s(\n%s)" % (self.__class__.__name__, str(self))
-
     def latex(self):
         "LaTeX representation of a GeometricProgram."
         #TODO: should this print posynomials <= 1? Substitutions?
@@ -373,9 +370,6 @@ class GeometricProgram(NomialData):
                          ["    & %s \\\\" % constr.latex()
                           for constr in self.constraints] +
                          ["\\end{array}"])
-
-    def _repr_latex_(self):
-        return "$$"+self.latex()+"$$"
 
 
 def genA(exps, varlocs):

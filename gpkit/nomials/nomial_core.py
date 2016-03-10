@@ -3,10 +3,15 @@ from .data import NomialData
 from ..small_classes import Numbers
 from ..small_scripts import latex_num
 from ..small_scripts import mag, unitstr
+from ..repr_conventions import _str, _repr, _repr_latex_
 
 
 class Nomial(NomialData):
     "Shared non-mathematical properties of all nomials"
+
+    __str__ = _str
+    __repr__ = _repr
+    _repr_latex_ = _repr_latex_
 
     def str_without(self, excluded=[]):
         mstrs = []
@@ -29,12 +34,6 @@ class Nomial(NomialData):
         showunits = "units" not in excluded
         units = unitstr(self.units, " [%s]") if showunits else ""
         return " + ".join(sorted(mstrs)) + units
-
-    def __str__(self):
-        return self.str_without()
-
-    def __repr__(self):
-        return "gpkit.%s(%s)" % (self.__class__.__name__, str(self))
 
     def latex(self, showunits=True):
         "For pretty printing with Sympy"
@@ -78,9 +77,6 @@ class Nomial(NomialData):
         units = unitstr(self.units, r"\mathrm{~\left[ %s \right]}", "L~")
         units_tf = units.replace("frac", "tfrac").replace(r"\cdot", r"\cdot ")
         return " + ".join(sorted(mstrs)) + units_tf
-
-    def _repr_latex_(self):
-        return "$$"+self.latex()+"$$"
 
     __hash__ = NomialData.__hash__  # required by Python 3
 

@@ -1,6 +1,7 @@
 "Implements ConstraintSet"
 from ..small_classes import HashVector, KeySet, KeyDict
 from ..small_scripts import try_str_without
+from ..repr_conventions import _str, _repr, _repr_latex_
 
 
 class ConstraintSet(list):
@@ -22,24 +23,18 @@ class ConstraintSet(list):
         self.substitutions = KeyDict.with_keys(self.varkeys,
                                                self._iter_subs(subs))
 
+    __str__ = _str
+    __repr__ = _repr
+    _repr_latex_ = _repr_latex_
+
     def str_without(self, excluded=[]):
         return "[" + ", ".join([try_str_without(el, excluded)
                                 for el in self]) + "]"
-
-    def __str__(self):
-        "Returns list-like string, but with str(el) instead of repr(el)."
-        return self.str_without()
-
-    def __repr__(self):
-        return "gpkit.%s(%s)" % (self.__class__.__name__, self)
 
     def latex(self):
         return ("\\begin{bmatrix}" +
                 " \\\\\n".join(el.latex() for el in self) +
                 "\\end{bmatrix}")
-
-    def _repr_latex_(self):
-        return "$$"+self.latex()+"$$"
 
     def flat(self, constraintsets=True):
         "Yields contained constraints, optionally including constraintsets."
