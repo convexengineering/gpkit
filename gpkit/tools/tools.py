@@ -103,29 +103,40 @@ def mdparse(filename, return_tex=False):
             return "\n".join(py_lines), "\n".join(texmd_lines)
 
 def bound_all_variables(model, eps=1e-30, lower=None, upper=None):
+    "Returns model with additional constraints bounding all free variables"
     lb = lower if lower else eps
     ub = upper if upper else 1/eps
+    varkeys = model.gp().varlocs.keys()
+    # TODO: set(model.varkeys.values()) - set(model.substitutions)?
     constraints = [[Variable(**varkey.descr) <= ub,
                     Variable(**varkey.descr) >= lb]
-                   for varkey in model.gp().varlocs]
+                   for varkey in varkeys]
     constraints.extend(model.constraints)
-    return model.__class__(model.cost, constraints, model.substitutions)
+    m = model.__class__(model.cost, constraints, model.substitutions)
+    m.bound_all = {"lb": lb, "ub": ub, "varkeys": varkeys}
+    return m
 
 
 def determine_unbounded_variables(model, solver=None, verbosity=0,
                                   eps=1e-30, lower=None, upper=None,
                                   *args, **kwargs):
+    "Returns labeled dictionary of unbounded variables."
     m = bound_all_variables(model, eps, lower, upper)
     sol = m.solve(solver, verbosity, *args, **kwargs)
-    nu = sol["sensitivities"]["posynomials"][1:]
+    lam = sol["sensitivities"]["posynomials"][1:]
     out = {"upper unbounded": [], "lower unbounded": []}
-    for i, varkey in enumerate(model.gp().varlocs):
-        sens_ratio = nu[2*i]/nu[2*(i-1)]
-        if sens_ratio >= 2:
+    for i, varkey in enumerate(m.bound_all["varkeys"]):
+        sens_ratio = lam[2*i]/lam[2*i+1]
+        if sens_ratio >= 2:  # arbitrary threshold
             out["upper unbounded"].append(varkey)
-        elif sens_ratio <= 0.5:
+        elif sens_ratio <= 0.5:  # arbitrary threshold
             out["lower unbounded"].append(varkey)
-        elif abs(np.log(sol["variables"][varkey])) >= -np.log(eps)/2:
+        else:
+            value = sol["variables"][varkey]
+            distance_below = np.log(value/m.bound_all["lb"])
+            distance_above = np.log(m.bound_all["ub"]/value)
+            if distance_below <= 3 or distance_above <= 3:
+                # if we're within ~10x of a boundary (arbitrary threshold)
                 raise AttributeError("%s appears to have hit a boundary"
                                      " but it's not showing up in the"
                                      " sensitivities." % str(varkey))
