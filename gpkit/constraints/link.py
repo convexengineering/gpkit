@@ -5,8 +5,19 @@ from .. import SignomialsEnabled
 
 
 class LinkConstraint(ConstraintSet):
-    "A ConstraintSet which links the variables of its constraints"
+    """A ConstraintSet that links duplicate variables in its constraints
 
+    Variables with the same name are linked
+
+    Arguments
+    ---------
+    constraints: iterable
+        valid argument to ConstraintSet
+    include_only: set
+        whitelist of variable names to include
+    exclude: set
+        blacklist of variable names, supercedes include_only
+    """
     def __init__(self, constraints, include_only=None, exclude=None):
         ConstraintSet.__init__(self, constraints)
         varkeys = self.varkeys

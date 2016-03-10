@@ -9,7 +9,7 @@ from .prog_factories import _progify_fctry, _solve_fctry
 
 class Model(ConstraintBase):
     "A ConstraintSet for convenient solving and setup"
-    def __init__(self, cost=None, constraints=[], substitutions=None,
+    def __init__(self, cost=None, constraints=None, substitutions=None,
                  *args, **kwargs):
         if hasattr(self, "setup"):
             args = [arg for arg in [cost, constraints] if arg] + list(args)
@@ -73,14 +73,14 @@ class Model(ConstraintBase):
         **solvekwargs
             kwargs which get passed to the solve()/localsolve() method.
         """
-        from .interactive.widgets import modelinteract
+        from ..interactive.widgets import modelinteract
         return modelinteract(self, ranges, fn_of_sol, **solvekwargs)
 
     def controlpanel(self, *args, **kwargs):
         """Easy model control in IPython / Jupyter
 
-        Like interact(), but with the ability to control sliders and their ranges
-        live. args and kwargs are passed on to interact()
+        Like interact(), but with the ability to control sliders and their
+        ranges live. args and kwargs are passed on to interact()
         """
-        from .interactive.widgets import modelcontrolpanel
+        from ..interactive.widgets import modelcontrolpanel
         return modelcontrolpanel(self, *args, **kwargs)
