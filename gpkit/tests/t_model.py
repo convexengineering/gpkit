@@ -1,10 +1,8 @@
 """Tests for GP and SP classes"""
 import math
 import unittest
-import numpy as np
 from gpkit import (Model, Monomial, settings, VectorVariable, Variable,
                    SignomialsEnabled, ArrayVariable)
-from gpkit.geometric_program import GeometricProgram
 from gpkit.small_classes import CootMatrix
 from gpkit.feasibility import feasibility_model
 

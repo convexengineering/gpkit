@@ -1,6 +1,6 @@
 """Miscellaneous small classes"""
 import numpy as np
-from collections import namedtuple, defaultdict
+from collections import namedtuple
 from . import units as gpkitunits
 
 try:
@@ -11,9 +11,6 @@ except NameError:
 
 Quantity = gpkitunits.Quantity
 Numbers = (int, float, np.number, Quantity)
-
-from .keydict import KeyDict, KeySet
-
 CootMatrixTuple = namedtuple('CootMatrix', ['row', 'col', 'data'])
 
 

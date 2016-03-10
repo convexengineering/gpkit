@@ -1,6 +1,5 @@
 """Unit testing of tests in docs/source/examples"""
 import unittest
-import sys
 import os
 
 from gpkit import settings

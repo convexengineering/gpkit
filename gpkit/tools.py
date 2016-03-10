@@ -1,6 +1,5 @@
 """Non-application-specific convenience methods for GPkit"""
 import numpy as np
-from collections import Iterable
 from .nomials import Variable, VectorVariable
 from .nomials import NomialArray
 

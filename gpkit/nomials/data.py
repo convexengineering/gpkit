@@ -1,13 +1,10 @@
 """Machinery for exps, cs, varlocs data -- common to nomials and programs"""
 import numpy as np
-
 from collections import defaultdict
-
 from functools import reduce as functools_reduce
 from operator import add
-
-from ..varkey import VarKey
-from ..small_classes import HashVector, Quantity, KeySet, KeyDict
+from ..small_classes import HashVector, Quantity
+from ..keydict import KeySet, KeyDict
 from ..small_scripts import mag
 
 

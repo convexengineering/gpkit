@@ -5,9 +5,9 @@ import numpy as np
 from collections import defaultdict, Iterable
 from .nomial_math import Monomial
 from ..small_classes import Numbers, Strings, Quantity
-from ..small_classes import HashVector, KeyDict
+from ..small_classes import HashVector
 from ..varkey import VarKey
-from ..small_scripts import is_sweepvar, veckeyed
+from ..small_scripts import is_sweepvar
 from ..small_scripts import mag
 from .. import DimensionalityError
 

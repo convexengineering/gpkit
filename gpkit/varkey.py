@@ -1,10 +1,7 @@
 """Defines the VarKey class"""
-import numpy as np
-
 from .small_classes import Strings, Quantity
 from .small_classes import Counter
-
-from .small_scripts import isequal, mag, unitstr
+from .small_scripts import mag, unitstr
 
 
 class VarKey(object):

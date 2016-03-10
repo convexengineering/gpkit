@@ -5,7 +5,8 @@ from .array import NomialArray
 from .nomial_core import Nomial
 from ..constraints import SingleEquationConstraint
 from ..small_classes import Strings, Numbers, Quantity
-from ..small_classes import HashVector, KeySet
+from ..small_classes import HashVector
+from ..keydict import KeySet
 from ..varkey import VarKey
 from ..small_scripts import mag, listify
 from .. import units as ureg

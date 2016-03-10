@@ -1,7 +1,6 @@
 """Plotting methods"""
 import matplotlib.pyplot as plt
 from matplotlib.mlab import griddata
-from matplotlib.colors import LinearSegmentedColormap
 import numpy as np
 from ..nomials import VarKey
 from ..small_scripts import unitstr

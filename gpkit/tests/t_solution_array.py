@@ -2,8 +2,7 @@
 import unittest
 import time
 import numpy as np
-from gpkit import Variable, VectorVariable, Model, NomialArray
-from gpkit.solution_array import SolutionArray
+from gpkit import Variable, VectorVariable, Model
 import gpkit
 from gpkit.solution_array import results_table
 from gpkit.varkey import VarKey

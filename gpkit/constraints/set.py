@@ -1,5 +1,6 @@
 "Implements ConstraintSet"
-from ..small_classes import HashVector, KeySet, KeyDict
+from ..small_classes import HashVector
+from ..keydict import KeySet, KeyDict
 from ..small_scripts import try_str_without
 from ..repr_conventions import _str, _repr, _repr_latex_
 

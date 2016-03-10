@@ -1,5 +1,4 @@
 import numpy as np
-from gpkit import Monomial
 from gpkit.small_scripts import mag, latex_num
 from gpkit.nomials import MonoEQConstraint
 

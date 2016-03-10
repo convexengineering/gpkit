@@ -1,15 +1,9 @@
 """Defines SolutionArray class"""
 import numpy as np
 from collections import Iterable
-from functools import reduce as functools_reduce
-from operator import mul
-from .nomials import NomialArray
-from .nomials import Monomial
-from .varkey import VarKey
-from .small_classes import Strings, Quantity
-from .small_classes import DictOfLists
-from .small_scripts import unitstr
-from .small_scripts import mag
+from .nomials import NomialArray, Monomial
+from .small_classes import Strings, DictOfLists
+from .small_scripts import unitstr, mag
 
 
 class SolutionArray(DictOfLists):
