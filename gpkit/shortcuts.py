@@ -1,6 +1,6 @@
 from .nomials import Variable
 from .nomials import ArrayVariable
-from .model import Model
+from . import Model
 
 Var = Variable
 Vec = ArrayVariable

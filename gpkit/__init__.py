@@ -161,7 +161,7 @@ from .constraints.link import LinkConstraint
 from .geometric_program import GeometricProgram
 from .signomial_program import SignomialProgram
 from .varkey import VarKey
-from .model import Model
+from .constraints.model import Model
 
 if units:
     def _subvert_pint():

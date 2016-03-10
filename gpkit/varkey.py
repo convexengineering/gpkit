@@ -73,7 +73,10 @@ class VarKey(object):
         string = self.name
         for subscript in self.subscripts:
             if subscript in self.descr and subscript not in excluded_fields:
-                string += "_" + str(self.descr[subscript])
+                substring = self.descr[subscript]
+                if subscript == "models":
+                    substring = ", ".join(substring)
+                string += "_%s" % (substring,)
         if self.shape and not self.idx:
             string = "\\vec{%s}" % string  # add vector arrow for veckeys
         return string

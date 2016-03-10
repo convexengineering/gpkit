@@ -196,9 +196,9 @@ def results_table(data, title, minval=0, printunits=True, fixedcols=True,
         notnan = ~np.isnan([v_])
         if np.any(notnan) and np.max(np.abs(np.array([v_])[notnan])) >= minval:
             b = isinstance(v, Iterable) and bool(v.shape)
-            model = k.descr.get("model", "")
+            model = ", ".join(k.descr.get("models", ""))
             models.add(model)
-            s = k.str_without("model")
+            s = k.str_without("models")
             if not sortbyvals:
                 decorated.append((model, b, (varfmt % s), i, k, v))
             else:

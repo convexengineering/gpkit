@@ -5,16 +5,6 @@ from .small_classes import Numbers, Strings
 from .small_scripts import is_sweepvar, veckeyed
 
 
-def iter_subs(substitutions, constraintset):
-    if substitutions:
-        yield substitutions
-    for constraint in constraintset.flat:
-        if hasattr(constraint, "substitutions"):
-            dictionary = constraint.substitutions
-            constraint.substitutions = {}
-            yield dictionary
-
-
 class KeyDict(dict):
     """KeyDicts allow storing and accessing the same value with multiple keys
 
@@ -97,25 +87,6 @@ class KeyDict(dict):
                             out[key] = val_i
         return out
 
-    # TODO: remove this
-    @classmethod
-    def subs_from_constraints(cls, keyset, constraints, substitutions=None):
-        "Collapses constraint substitutions into a single KeyDict"
-        substitutions = substitutions if substitutions else {}
-        constraintsubs = []
-        for constraint in constraints:
-            if hasattr(constraint, "substitutions"):
-                constraintsubs.append(constraint.substitutions)
-                constraint.substitutions = {}
-        sublist = constraintsubs + [substitutions]
-        return cls.with_keys(keyset, sublist)
-
-    @classmethod
-    def subs_from_constr(cls, constraintset, substitutions=None):
-        "Collapses constraint substitutions into a single KeyDict"
-        keyset = KeySet.from_constraintset(constraintset)
-        return cls.with_keys(keyset, iter_subs(substitutions, constraintset))
-
     def __contains__(self, key):
         "In a winding way, figures out if a key is in the KeyDict"
         if dict.__contains__(self, key):
@@ -127,8 +98,9 @@ class KeyDict(dict):
                 if any(k in self for k in self.getkeys(key)):
                     return True
             elif self.is_index_into_vector(key.key):
-                if dict.__contains__(self, veckeyed(key.key)):
-                    return True
+                vk = veckeyed(key.key)
+                if dict.__contains__(self, vk):
+                    return not bool(np.isnan(self.__dgi(vk)[key.key.idx]))
         elif key in self.keystrs():
             return True
 
@@ -215,11 +187,18 @@ class KeyDict(dict):
 
     def __delitem__(self, key):
         "Overloads del [] to work with all keys"
+        deletion = False
         for key in self.getkeys(key):
-            if key in self:
+            if dict.__contains__(self, key):
                 dict.__delitem__(self, key)
+                deletion = True
             elif "shape" in key.descr and "idx" in key.descr:
                 self.__dgi(veckeyed(key))[key.descr["idx"]] = np.nan
+                if np.isnan(self.__dgi(veckeyed(key))).all():
+                    dict.__delitem__(self, veckeyed(key))
+                deletion = True
+        if not deletion:
+            raise KeyError("key %s not found." % key)
 
 
 class KeySet(KeyDict):
@@ -235,16 +214,6 @@ class KeySet(KeyDict):
     def __setitem__(self, key, value):
         "Assigns the key itself every time."
         KeyDict.__setitem__(self, key, key)
-
-    @classmethod
-    def from_constraintset(cls, constraintset):
-        out = cls()
-        def vk_update(constraint):
-            if hasattr(constraint, "varkeys"):
-                out.update(constraint.varkeys)
-            return constraint
-        constraintset.recurse(vk_update)
-        return out
 
     def map(self, iterable):
         "Given a list of keys, returns a list of VarKeys"

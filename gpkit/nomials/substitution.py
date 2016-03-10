@@ -21,7 +21,7 @@ def parse_subs(varkeys, substitutions):
             if sweepsub:
                 _, sub = sub  # _ catches the "sweep" marker
         for key in keys:
-            if not key.shape or not hasattr(sub, "__len__"):
+            if not key.shape or not isinstance(sub, Iterable):
                 value = sub
             else:
                 sub = np.array(sub) if not hasattr(sub, "shape") else sub

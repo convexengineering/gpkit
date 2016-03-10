@@ -45,7 +45,7 @@ class GeometricProgram(NomialData):
         self.substitutions = substitutions if substitutions else {}
 
         ## Create list of substituted posynomials <= 1
-        subbedcost = cost.value.sub(self.substitutions)
+        subbedcost = cost.sub(self.substitutions).value
         self.posynomials = [subbedcost]
         self.constr_idxs = []
         for constraint in constraints:
@@ -224,15 +224,15 @@ class GeometricProgram(NomialData):
         primal = np.ravel(solver_out['primal'])
         # confirm lengths before calling zip
         assert len(self.varlocs) == len(primal)
-        result["freevariables"] = dict(zip(self.varlocs, np.exp(primal)))
-        result["variables"] = dict(result["freevariables"])
+        result["freevariables"] = KeyDict(zip(self.varlocs, np.exp(primal)))
 
         ## Get cost
         if "objective" in solver_out:
             result["cost"] = float(solver_out["objective"])
         else:
             # use self.posynomials[0] because the cost may have had constants
-            result["cost"] = self.posynomials[0].subsummag(result["variables"])
+            freev = result["freevariables"]
+            result["cost"] = self.posynomials[0].subsummag(freev)
 
         ## Get full dual solution
         if "nu" in solver_out:
@@ -275,12 +275,12 @@ class GeometricProgram(NomialData):
         result["sensitivities"]["constants"] = KeyDict(var_senss)
 
         ## Get constants
-        result["constants"] = {}
-        for constraint in self.constraints:
-            for dictionary in [result["constants"], result["variables"]]:
-                dictionary.update(constraint.substitutions)
+        result["constants"] = KeyDict()
+        for constraint in self.constraints:  # change to self.substitutions...
+            result["constants"].update(constraint.substitutions)
+        result["variables"] = KeyDict(result["freevariables"])
+        result["variables"].update(result["constants"])
         for key in ["freevariables", "variables", "constants"]:
-            result[key] = KeyDict(result[key])
             result[key].bake()
 
         ## Let constraints process the results

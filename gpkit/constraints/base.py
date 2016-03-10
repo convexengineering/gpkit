@@ -1,31 +1,45 @@
-from collections import defaultdict
+from collections import defaultdict, Iterable
 from . import ConstraintSet
 from ..varkey import VarKey
-from ..nomials import Variable
+from ..nomials import Variable, Signomial
+from .. import SignomialsEnabled
 
 
 class ConstraintBase(ConstraintSet):
     modelnums = defaultdict(int)
 
-    def __init__(self, *args, **kwargs):
-        constraints = self.setup(*args, **kwargs)
-        ConstraintSet.__init__(self, constraints)
+    def __init__(self,  substitutions=None, *args, **kwargs):
         name = kwargs.pop("name", self.__class__.__name__)
+        constraints = self.setup(*args, **kwargs)
+        if hasattr(constraints, "cost"):
+            self.cost = constraints.cost
+        elif isinstance(constraints[0], Signomial):
+            self.cost = constraints[0]
+            constraints = constraints[1:]
+        if isinstance(constraints[-1], dict):
+            substitutions = constraints[-1]
+            constraints = constraints[:-1]
+        if len(constraints) == 1 and isinstance(constraints[0], Iterable):
+            constraints = constraints[0]
+        ConstraintSet.__init__(self, constraints, substitutions)
+        self._add_models_tovars(name)
+
+    def _add_models_tovars(self, name):
         num = ConstraintBase.modelnums[name]
         self.num = num
         ConstraintBase.modelnums[name] += 1
         add_model_subs = {}
         for vk in self.varkeys:
             descr = dict(vk.descr)
-            models = descr.pop("models", [])
-            modelnums = descr.pop("modelnums", [])
-            descr["models"] = models + [name]
-            descr["modelnums"] = models + [name]
+            descr["models"] = descr.pop("models", []) + [name]
+            descr["modelnums"] = descr.pop("modelnums", []) + [num]
             newvk = VarKey(**descr)
             add_model_subs[vk] = newvk
             if vk in self.substitutions:
-                self.substitutions[newvk] = self.substitutions.pop(vk)
-        self.sub(add_model_subs)
+                self.substitutions[newvk] = self.substitutions[vk]
+                del self.substitutions[vk]
+        with SignomialsEnabled():  # since we're just substituting varkeys.
+            self.sub(add_model_subs)
 
     def __getitem__(self, key):
         if isinstance(key, int):

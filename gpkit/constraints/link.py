@@ -1,5 +1,6 @@
 from . import ConstraintSet
 from ..varkey import VarKey
+from .. import SignomialsEnabled
 
 
 class LinkConstraint(ConstraintSet):
@@ -27,4 +28,5 @@ class LinkConstraint(ConstraintSet):
             if value:
                 self.substitutions[newvk] = value
             self.linked.update(dict(zip(vks, len(vks)*[newvk])))
-        self.sub(self.linked)
+        with SignomialsEnabled():  # since we're just substituting varkeys.
+            self.sub(self.linked)

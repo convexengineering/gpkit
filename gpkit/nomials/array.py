@@ -19,10 +19,7 @@ Quantity = ureg.Quantity
 
 @np.vectorize
 def vec_recurse(element, function, *args, **kwargs):
-    if hasattr(element, "recurse"):
-        return element.recurse(function, *args, **kwargs)
-    else:
-        return function(element, *args, **kwargs)
+    return function(element, *args, **kwargs)
 
 
 def array_constraint(symbol, func):

@@ -4,18 +4,23 @@ from ..small_classes import HashVector, KeySet, KeyDict
 from ..small_scripts import try_str_without
 
 
-def constraintset_iterables(obj):
-    if hasattr(obj, "__iter__") and not isinstance(obj, ConstraintSet):
-        return ConstraintSet(obj)
-    else:
-        return obj
-
-
 class ConstraintSet(list):
     def __init__(self, constraints, substitutions=None):
         list.__init__(self, constraints)
-        self.recurse(constraintset_iterables)
-        self.substitutions = KeyDict.subs_from_constr(self, substitutions)
+        subs = substitutions if substitutions else {}
+        if hasattr(self, "cost"):
+            subs.update(self.cost.values)
+        if not isinstance(constraints, ConstraintSet):
+            # constraintsetify everything
+            for i, constraint in enumerate(self):
+                if (hasattr(constraint, "__iter__") and
+                        not isinstance(constraint, ConstraintSet)):
+                    self[i] = ConstraintSet(constraint)
+        else:
+            # grab the substitutions dict from the top constraintset
+            subs.update(constraints.substitutions)
+        self.substitutions = KeyDict.with_keys(self.varkeys,
+                                               self._iter_subs(subs))
 
     def str_without(self, excluded=[]):
         return "[" + ", ".join([try_str_without(el, excluded)
@@ -36,49 +41,40 @@ class ConstraintSet(list):
     def _repr_latex_(self):
         return "$$"+self.latex()+"$$"
 
-    @property
-    def flat(self):
-        counter = 0
-        while counter < len(self):
-            constraint = self[counter]
-            counter += 1
-            if isinstance(constraint, ConstraintSet):
-                for constr in constraint.flat:
-                    yield constr
-            else:
+    def flat(self, constraintsets=True):
+        for constraint in self:
+            if not isinstance(constraint, ConstraintSet):
                 yield constraint
-
-    def recurse(self, function, *args, **kwargs):
-        "Apply a function to each terminal constraint"
-        for i, constraint in enumerate(self):
-            if isinstance(constraint, ConstraintSet):
-                constraint.recurse(function, *args, **kwargs)
             else:
-                self[i] = function(constraint, *args, **kwargs)
-
-    def update_up(self, d, field):
-        terminal = []
-        for i, constraint in enumerate(self):
-            if isinstance(constraint, ConstraintSet):
-                constraint.update_up(d, field)
-            else:
-                terminal.append(constraint)
-        for constraint in terminal + [self]:
-            if hasattr(constraint, field):
-                d.update(getattr(constraint, field))
+                if constraintsets:
+                    yield constraint
+                subgenerator = constraint.flat(constraintsets)
+                for yielded_constraint in subgenerator:
+                    yield yielded_constraint
 
     def sub(self, subs, value=None):
-        self.recurse(lambda c: c.sub(subs, value))
+        if hasattr(self, "cost"):
+            self.cost = self.cost.sub(subs, value)
+        for i, constraint in enumerate(self):
+            self[i] = constraint.sub(subs, value)
+        return self
 
     @property
     def varkeys(self):
         "Varkeys present in the constraints"
-        return KeySet.from_constraintset(self)
+        out = KeySet()
+        if hasattr(self, "cost"):
+            out.update(self.cost.varkeys)
+        for constraint in self:
+            if hasattr(constraint, "varkeys"):
+                out.update(constraint.varkeys)
+        return out
 
     def as_posyslt1(self):
         "Returns list of posynomials which must be kept <= 1"
         posylist, self.posymap = [], []
         for constraint in self:
+            constraint.substitutions = KeyDict()
             constraint.substitutions.update(self.substitutions)
             posys = constraint.as_posyslt1()
             self.posymap.append(len(posys))
@@ -172,3 +168,11 @@ class ConstraintSet(list):
                 if p:
                     processed.update(p)
         return processed
+
+    def _iter_subs(self, substitutions):
+        for constraint in self.flat():
+            if hasattr(constraint, "substitutions"):
+                subs = constraint.substitutions
+                constraint.substitutions = {}
+                yield subs
+        yield substitutions
