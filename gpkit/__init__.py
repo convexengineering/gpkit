@@ -14,15 +14,18 @@
     settings : dict
         Contains settings loaded from ``./env/settings``
 """
+from os import sep as os_sep
+from os.path import dirname as os_path_dirname
+UNITDEF_PATH = os_sep.join([os_path_dirname(__file__), "pint", "units.txt"])
+SETTINGS_PATH = os_sep.join([os_path_dirname(__file__), "env", "settings"])
 
 __version__ = "0.4.0"
 UNIT_REGISTRY = None
 SIGNOMIALS_ENABLED = False
 
-from os import sep as os_sep
-from os.path import dirname as os_path_dirname
-UNITDEF_PATH = os_sep.join([os_path_dirname(__file__), "pint", "units.txt"])
-SETTINGS_PATH = os_sep.join([os_path_dirname(__file__), "env", "settings"])
+# global variable initializations
+DimensionalityError = ValueError
+units = None
 
 
 def enable_units(path=UNITDEF_PATH):
@@ -32,6 +35,7 @@ def enable_units(path=UNITDEF_PATH):
     before.
 
     If gpkit is imported multiple times, this needs to be run each time."""
+    # pylint: disable=invalid-name,global-statement
     global units, DimensionalityError, UNIT_REGISTRY
     try:
         import pint
@@ -61,11 +65,13 @@ def disable_units():
         from gpkit import disable_units
         disable_units()
     """
-    global units, DimensionalityError
+    global units  # pylint: disable=global-statement
 
     class DummyUnits(object):
         "Dummy class to replace missing pint"
+        # pylint: disable=too-few-public-methods
         class Quantity(object):
+            "Dummy Quantity instead of pint"
             pass
 
         def __nonzero__(self):
@@ -78,7 +84,6 @@ def disable_units():
             return 1
 
     units = DummyUnits()
-    DimensionalityError = ValueError
 
 enable_units()
 
@@ -95,7 +100,8 @@ class SignomialsEnabled(object):
     >>>     constraints = [x >= 1-y]
     >>> gpkit.Model(x, constraints).localsolve()
     """
-
+    # pylint: disable=global-statement
+    # pylint: disable=too-few-public-methods
     def __enter__(self):
         global SIGNOMIALS_ENABLED
         SIGNOMIALS_ENABLED = True
@@ -105,6 +111,7 @@ class SignomialsEnabled(object):
         SIGNOMIALS_ENABLED = False
 
 
+# pylint: disable=wrong-import-position
 from .varkey import VarKey
 from .nomials import NomialArray
 from .nomials import Monomial, Posynomial, Signomial
@@ -121,6 +128,9 @@ if units:
         Quantity objects, let the gpkit implementations determine what to do
         """
         def skip_if_gpkit_objects(fallback, objects=(NomialArray, Signomial)):
+            """Returned method calls self.fallback(other) if other is
+            not in objects, and otherwise returns NotImplemented.
+            """
             def _newfn(self, other):
                 if isinstance(other, objects):
                     return NotImplemented
