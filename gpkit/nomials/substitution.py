@@ -135,36 +135,27 @@ def substitution(nomial, substitutions, val=None):
                 sub = VarKey(name=sub, **descr)
                 exps_[i] += HashVector({sub: x})
                 varlocs_[sub].append(i)
-            elif isinstance(sub, VarKey):
-                sub = VarKey(sub)
+            elif isinstance(sub, (VarKey, Monomial)):
                 if isinstance(var.units, Quantity):
                     try:
                         new_units = sub.units/var.units
                         cs_[i] *= new_units.to('dimensionless')
                     except DimensionalityError:
-                        raise ValueError("units of the substituted variable"
+                        raise ValueError("units of the substituted %s"
                                          " '%s' [%s] are not compatible with"
                                          " those of the original '%s' [%s]." %
-                                         (sub, sub.units.units,
-                                          var, var.units.units))
-                exps_[i] += HashVector({sub: x})
-                varlocs_[sub].append(i)
-            elif isinstance(sub, Monomial):
-                if isinstance(var.units, Quantity):
-                    try:
-                        new_units = sub.units/var.units
-                        cs_[i] *= new_units.to('dimensionless')
-                    except DimensionalityError:
-                        raise ValueError("units of the substituted monomial"
-                                         " '%s' [%s] are not compatible with"
-                                         " those of the original '%s' [%s]." %
-                                         (sub.str_without(["units"]),
+                                         (type(sub),
+                                          sub.str_without(["units"]),
                                           sub.units.units,
                                           var, var.units.units))
-                exps_[i] += x*sub.exp
-                cs_[i] *= mag(sub.c)**x
-                for subvar in sub.exp:
-                    varlocs_[subvar].append(i)
+                if isinstance(sub, VarKey):
+                    exps_[i] += HashVector({sub: x})
+                    varlocs_[sub].append(i)
+                else:
+                    exps_[i] += x*sub.exp
+                    cs_[i] *= mag(sub.c)**x
+                    for subvar in sub.exp:
+                        varlocs_[subvar].append(i)
             else:
                 raise TypeError("could not substitute with value"
                                 " of type '%s'" % type(sub))
