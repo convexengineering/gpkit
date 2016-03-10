@@ -1,6 +1,5 @@
 """Implement the SignomialProgram class"""
 from time import time
-import numpy as np
 from ..geometric_program import GeometricProgram
 from ..feasibility import feasibility_model
 from .set import ConstraintSet
@@ -46,9 +45,11 @@ class SignomialProgram(ConstraintSet):
     (z >= s) and then minimizing that dummy variable.""")
         ConstraintSet.__init__(self, constraints, substitutions)
         self.cost = cost
+        self.gps = []
+        self.result = None
 
     def localsolve(self, solver=None, verbosity=1, x0=None, rel_tol=1e-4,
-                   iteration_limit=50, *args, **kwargs):
+                   iteration_limit=50, **kwargs):
         """Locally solves a SignomialProgram and returns the solution.
 
         Arguments
@@ -80,7 +81,7 @@ class SignomialProgram(ConstraintSet):
         startpoint = x0 if x0 else {}
         if verbosity > 0:
             print("Beginning signomial solve.")
-            self.starttime = time()
+            starttime = time()
         self.gps = []  # NOTE: SIDE EFFECTS
         prevcost, cost, rel_improvement = None, None, None
         while rel_improvement is None or rel_improvement > rel_tol:
@@ -90,10 +91,10 @@ class SignomialProgram(ConstraintSet):
     The last result is available in Model.program.gps[-1].result. If the gps
     appear to be converging, you may wish to increase the iteration limit by
     calling .localsolve(..., iteration_limit=NEWLIMIT).""" % len(self.gps))
-            gp = self.step(x0, verbosity=verbosity-1)
+            gp = self.gp(x0, verbosity=verbosity-1)
             self.gps.append(gp)  # NOTE: SIDE EFFECTS
             try:
-                result = gp.solve(solver, verbosity-1, *args, **kwargs)
+                result = gp.solve(solver, verbosity-1, **kwargs)
             except (RuntimeWarning, ValueError):
                 nearest_feasible = feasibility_model(gp, "max")
                 self.gps.append(nearest_feasible)
@@ -108,16 +109,16 @@ class SignomialProgram(ConstraintSet):
         # solved successfully!
         if verbosity > 0:
             print("Solving took %i GP solves" % len(self.gps)
-                  + " and %.3g seconds." % (time() - self.starttime))
+                  + " and %.3g seconds." % (time() - starttime))
 
         result["signomialstart"] = startpoint
-        constr_senss = result["sensitivities"]["constraints"]
-        var_senss = result["sensitivities"]["constants"]
-        self.sens_from_gpconstr(gp.constraints, constr_senss, var_senss)
+        self.sens_from_gpconstr(gp.constraints,
+                                result["sensitivities"]["constraints"],
+                                result["sensitivities"]["constants"])
         self.result = result  # NOTE: SIDE EFFECTS
         return result
 
-    def step(self, x0=None, verbosity=1):
+    def gp(self, x0=None, verbosity=1):
         return GeometricProgram(self.cost, self.as_gpconstr(x0),
                                 self.substitutions, verbosity=verbosity)
 
@@ -134,24 +135,24 @@ class SignomialProgram(ConstraintSet):
                          ["    %s," % constr for constr in self] +
                          [']'])
 
-    def latex(self):
-        """LaTeX representation of a SignomialProgram.
-
-        Contains all of its parameters."""
-        posy_neg = []
-        for p, n in zip(self.posynomials, self.negynomials[1:]):
-            try:
-                posy_neg.append((p.latex(), n.latex()))
-            except:
-                posy_neg.append((p.latex(), str(n)))
-        return "\n".join(["\\begin{array}[ll]",
-                          "\\text{}",
-                          "\\text{minimize}",
-                          "    & %s \\\\" % self.cost.latex(),
-                          "\\text{subject to}"] +
-                         ["    & %s \\\\" % constr
-                          for constr in self.constraints] +
-                         ["\\end{array}"])
-
-    def _repr_latex_(self):
-        return "$$"+self.latex()+"$$"
+    # def latex(self):
+    #     """LaTeX representation of a SignomialProgram.
+    #
+    #     Contains all of its parameters."""
+    #     posy_neg = []
+    #     for p, n in zip(self.posynomials, self.negynomials[1:]):
+    #         try:
+    #             posy_neg.append((p.latex(), n.latex()))
+    #         except:
+    #             posy_neg.append((p.latex(), str(n)))
+    #     return "\n".join(["\\begin{array}[ll]",
+    #                       "\\text{}",
+    #                       "\\text{minimize}",
+    #                       "    & %s \\\\" % self.cost.latex(),
+    #                       "\\text{subject to}"] +
+    #                      ["    & %s \\\\" % constr
+    #                       for constr in self.constraints] +
+    #                      ["\\end{array}"])
+    #
+    # def _repr_latex_(self):
+    #     return "$$"+self.latex()+"$$"
