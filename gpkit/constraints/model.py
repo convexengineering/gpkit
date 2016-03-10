@@ -1,14 +1,14 @@
+"Implements Model"
 from .base import ConstraintBase
 from .set import ConstraintSet
 from ..geometric_program import GeometricProgram
-from ..signomial_program import SignomialProgram
-from ..nomials import Monomial
+from .signomial_program import SignomialProgram
 from .link import LinkConstraint
 from .prog_factories import _progify_fctry, _solve_fctry
 
 
 class Model(ConstraintBase):
-
+    "A ConstraintSet for convenient solving and setup"
     def __init__(self, cost=None, constraints=[], substitutions=None,
                  *args, **kwargs):
         if hasattr(self, "setup"):
@@ -27,8 +27,9 @@ class Model(ConstraintBase):
         if "name" in kwargs:
             self._add_models_tovars(kwargs["name"])
 
-    def link(self, other, *args, **kwargs):
-        lc = LinkConstraint([self, other], *args, **kwargs)
+    def link(self, other, include_only=None, exclude=None):
+        "Connects this model with a set of constraints"
+        lc = LinkConstraint([self, other], include_only, exclude)
         cost = self.cost.sub(lc.linked)
         return Model(cost, lc, lc.substitutions)
 

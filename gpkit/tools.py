@@ -31,6 +31,7 @@ def te_exp_minus1(posy, nterm):
 
 
 def composite_objective(*objectives, **kwargs):
+    "Creates a cost function that sweeps between multiple objectives."
     objectives = list(objectives)
     n = len(objectives)
     if "k" in kwargs:
@@ -65,6 +66,7 @@ def composite_objective(*objectives, **kwargs):
 
 
 def mdparse(filename, return_tex=False):
+    "Parse markdown file, returning as strings python and (optionally) .tex.md"
     with open(filename) as f:
         py_lines = []
         texmd_lines = []
@@ -103,6 +105,7 @@ def mdparse(filename, return_tex=False):
 
 
 def mdmake(filename, make_tex=True):
+    "Make a python file and (optional) a pandoc-ready .tex.md file"
     mdpy, texmd = mdparse(filename, return_tex=True)
     with open(filename+".py", "w") as f:
         f.write(mdpy)

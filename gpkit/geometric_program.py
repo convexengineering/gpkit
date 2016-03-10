@@ -5,7 +5,6 @@ from time import time
 from .nomials import NomialData
 from .small_classes import CootMatrix, HashVector, KeyDict
 from .small_classes import SolverLog
-from .small_scripts import is_sweepvar
 
 
 class GeometricProgram(NomialData):
@@ -45,8 +44,7 @@ class GeometricProgram(NomialData):
         self.substitutions = substitutions if substitutions else {}
 
         ## Create list of substituted posynomials <= 1
-        subbedcost = cost.sub(self.substitutions).value
-        self.posynomials = [subbedcost]
+        self.posynomials = [cost.sub(self.substitutions).value]
         self.constr_idxs = []
         for constraint in constraints:
             constraint.substitutions.update(self.substitutions)
@@ -56,7 +54,9 @@ class GeometricProgram(NomialData):
                 if err.message == ("SignomialInequality could not simplify to"
                                    "a PosynomialInequality"):
                     raise ValueError("GeometricPrograms cannot contain"
-                                     "SignomialInequalities.")
+                                     " SignomialInequalities: try forming your"
+                                     " program as SignomialProgram or calling"
+                                     " Model.localsolve().")
                 raise
             if not all(constr_posys):
                 raise ValueError("%s is an invalid constraint for a"
@@ -76,12 +76,11 @@ class GeometricProgram(NomialData):
         # p_idxs [i]: posynomial index of each monomial
         # m_idxs [i]: monomial indices of each posynomial
         p_idxs = []
-        m_idxs = []
+        self.m_idxs = []
         for i, p_len in enumerate(self.k):
-            m_idxs.append(list(range(len(p_idxs), len(p_idxs) + p_len)))
+            self.m_idxs.append(list(range(len(p_idxs), len(p_idxs) + p_len)))
             p_idxs += [i]*p_len
         self.p_idxs = np.array(p_idxs)
-        self.m_idxs = m_idxs
         # A [i, v]: sparse matrix of variable's powers in each monomial
         self.A, self.missingbounds = genA(self.exps, self.varlocs)
         if verbosity > 0:
@@ -90,6 +89,8 @@ class GeometricProgram(NomialData):
 
         # initialize attributes modified by internal methods
         self.result = None
+        self.solver_log = None
+        self.solver_out = None
 
     def solve(self, solver=None, verbosity=1, *args, **kwargs):
         """Solves a GeometricProgram and returns the solution.

@@ -1,10 +1,10 @@
-import numpy as np
-from ..nomials.array import NomialArray
+"Implements ConstraintSet"
 from ..small_classes import HashVector, KeySet, KeyDict
 from ..small_scripts import try_str_without
 
 
 class ConstraintSet(list):
+    "Recursive container for ConstraintSets and Inequalities"
     def __init__(self, constraints, substitutions=None):
         list.__init__(self, constraints)
         subs = substitutions if substitutions else {}
@@ -42,6 +42,7 @@ class ConstraintSet(list):
         return "$$"+self.latex()+"$$"
 
     def flat(self, constraintsets=True):
+        "Yields contained constraints, optionally including constraintsets."
         for constraint in self:
             if not isinstance(constraint, ConstraintSet):
                 yield constraint
@@ -53,6 +54,7 @@ class ConstraintSet(list):
                     yield yielded_constraint
 
     def sub(self, subs, value=None):
+        "Substitutes in place."
         if hasattr(self, "cost"):
             self.cost = self.cost.sub(subs, value)
         for i, constraint in enumerate(self):

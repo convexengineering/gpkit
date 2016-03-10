@@ -1,6 +1,6 @@
+"Implements KeyDict and KeySet classes"
 import numpy as np
 from collections import defaultdict
-from itertools import chain
 from .small_classes import Numbers, Strings
 from .small_scripts import is_sweepvar, veckeyed
 

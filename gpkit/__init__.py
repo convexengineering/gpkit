@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 """GP and SP Modeling Package
 
     For examples please see the examples folder.
@@ -106,14 +105,14 @@ class SignomialsEnabled(object):
         SIGNOMIALS_ENABLED = False
 
 
-from .nomials import *
-from .constraints import *
-from .constraints.base import ConstraintBase
-from .constraints.link import LinkConstraint
-from .geometric_program import GeometricProgram
-from .signomial_program import SignomialProgram
 from .varkey import VarKey
+from .nomials import NomialArray
+from .nomials import Monomial, Posynomial, Signomial
+from .nomials import Variable, VectorVariable, ArrayVariable
+from .geometric_program import GeometricProgram
+from .constraints.signomial_program import SignomialProgram
 from .constraints.model import Model
+from .constraints.link import LinkConstraint
 
 if units:
     def _subvert_pint():

@@ -1,3 +1,4 @@
+"Implements SingleEquationConstraint"
 from operator import le, ge, eq
 from ..small_scripts import try_str_without
 
@@ -25,6 +26,7 @@ class SingleEquationConstraint(object):
                               self.right.latex(showunits=showunits)))
 
     def sub(self, subs, value=None):
+        "Returns a substituted version of this constraint."
         if value:
             subs = {subs: value}
         subbed = self.func_opers[self.oper](self.left.sub(subs),
@@ -33,4 +35,5 @@ class SingleEquationConstraint(object):
         return subbed
 
     def process_result(self, result):
+        "Process solver results"
         pass

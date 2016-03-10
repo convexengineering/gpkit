@@ -1,17 +1,12 @@
-"""The shared non-mathematical backbone of all Nomials"""
-import numpy as np
+"The shared non-mathematical backbone of all Nomials"
 from .data import NomialData
-from .array import NomialArray
-from ..small_classes import Strings, Numbers, Quantity
-from ..small_classes import HashVector, KeySet
-from ..varkey import VarKey
+from ..small_classes import Numbers
 from ..small_scripts import latex_num
 from ..small_scripts import mag, unitstr
-from .. import units as ureg
-from .. import DimensionalityError
 
 
 class Nomial(NomialData):
+    "Shared non-mathematical properties of all nomials"
 
     def str_without(self, excluded=[]):
         mstrs = []

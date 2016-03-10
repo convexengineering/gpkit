@@ -12,6 +12,7 @@ import numpy as np
 from operator import eq, le, ge, xor
 from ..small_classes import Numbers
 from ..small_scripts import try_str_without
+from ..constraints.array import ArrayConstraint
 from .. import units as ureg
 from .. import DimensionalityError
 Quantity = ureg.Quantity
@@ -190,5 +191,3 @@ class NomialArray(np.ndarray):
     def right(self):
         "Returns (self[1], self[2] ... self[N], 0)"
         return self.padright(0)[1:]
-
-from ..constraints.array import ArrayConstraint

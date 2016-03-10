@@ -1,8 +1,11 @@
+"Scripts for generating, solving and sweeping programs"
 import numpy as np
+from time import time
 from ..nomials.substitution import parse_subs
 from ..solution_array import SolutionArray
 from ..keydict import KeyDict
 from ..varkey import VarKey
+from ..nomials import Monomial
 
 try:
     from ipyparallel import Client
@@ -11,16 +14,17 @@ try:
     POOL = CLIENT[:]
     POOL.use_dill()
     print("Using parallel execution of sweeps on %s clients" % len(CLIENT))
-except:
+except (ImportError, IOError, AssertionError):
     POOL = None
 
 
-def _progify_fctry(Program, return_attr=None):
+def _progify_fctry(program, return_attr=None):
+    "Generates function that returns a program() and optionally an attribute."
     def programify(self, verbosity=1, substitutions=None):
         if not substitutions:
             substitutions = self.substitutions
         cost = self.cost if getattr(self, "cost", None) else Monomial(1)
-        prog = Program(cost, self, substitutions, verbosity)
+        prog = program(cost, self, substitutions, verbosity)
         if return_attr:
             return prog, getattr(prog, return_attr)
         else:
@@ -29,6 +33,7 @@ def _progify_fctry(Program, return_attr=None):
 
 
 def _solve_fctry(genfunction):
+    "Generates function that solves/sweeps a program/solve pair."
     def solvefn(self, solver=None, verbosity=2, *args, **kwargs):
         constants, sweep, linkedsweep = parse_subs(self.varkeys,
                                                    self.substitutions)

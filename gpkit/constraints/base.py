@@ -1,14 +1,16 @@
+"Implements BaseConstraint"
 from collections import defaultdict, Iterable
-from . import ConstraintSet
+from .set import ConstraintSet
 from ..varkey import VarKey
 from ..nomials import Variable, Signomial
 from .. import SignomialsEnabled
 
 
 class ConstraintBase(ConstraintSet):
+    "A ConstraintSet for making named models with setup methods"
     modelnums = defaultdict(int)
 
-    def __init__(self,  substitutions=None, *args, **kwargs):
+    def __init__(self, substitutions=None, *args, **kwargs):
         name = kwargs.pop("name", self.__class__.__name__)
         constraints = self.setup(*args, **kwargs)
         if hasattr(constraints, "cost"):

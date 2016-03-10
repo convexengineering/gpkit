@@ -1,15 +1,18 @@
-from . import ConstraintSet
+"Implements LinkConstraint"
+from .set import ConstraintSet
 from ..varkey import VarKey
 from .. import SignomialsEnabled
 
 
 class LinkConstraint(ConstraintSet):
+    "A ConstraintSet which links the variables of its constraints"
+
     def __init__(self, constraints, include_only=None, exclude=None):
         ConstraintSet.__init__(self, constraints)
         varkeys = self.varkeys
         linkable = set()
-        for varkey in self.varkeys:
-            if len(self.varkeys[varkey.name]) > 1:
+        for varkey in varkeys:
+            if len(varkeys[varkey.name]) > 1:
                 linkable.add(varkey.name)
         if include_only:
             linkable &= set(include_only)
@@ -17,7 +20,7 @@ class LinkConstraint(ConstraintSet):
             linkable -= set(exclude)
         self.linked = {}
         for name in linkable:
-            vks = self.varkeys[name]
+            vks = varkeys[name]
             descr = dict(vks[0].descr)
             value = descr.pop("value", None)
             for vk in vks[1:]:
