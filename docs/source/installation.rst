@@ -107,9 +107,8 @@ You may need to rebuild GPkit if any of the following occur:
   - You see a ``Could not load settings file.`` message
   - You see a ``Could not load MOSEK library: ImportError('$HOME/.gpkit/expopt.so not found.`` error.
 To rebuild GPkit, do the following:
-  - Start ``ipython``
-  - Run the command ``import os; os.chdir(os.path.dirname(gpkit.__file__)); del gpkit; import build; build.build_gpkit()``
-  - Exit ipython
+  - Run ``pip uninstall gpkit``
+  - Run ``pip install --no-cache-dir --no-deps gpkit``
   - Run ``python -c "import gpkit.tests; gpkit.tests.run()"``
   - If any tests fail, email ``gpkit@mit.edu``.
 
