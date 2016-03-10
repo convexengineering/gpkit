@@ -108,7 +108,7 @@ def bound_all_variables(model, eps=1e-30, lower=None, upper=None):
     ub = upper if upper else 1/eps
     varkeys = model.gp().varlocs.keys()
     # TODO: set(model.varkeys.values()) - set(model.substitutions)?
-    constraints = [[Variable(**varkey.descr) <= ub,
+    constraints = [[ub >= Variable(**varkey.descr),
                     Variable(**varkey.descr) >= lb]
                    for varkey in varkeys]
     constraints.extend(model.constraints)
