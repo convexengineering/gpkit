@@ -53,9 +53,6 @@ class Model(ConstraintBase):
     solve = _solve_fctry(_progify_fctry(GeometricProgram, "solve"))
     localsolve = _solve_fctry(_progify_fctry(SignomialProgram, "localsolve"))
 
-    def _repr_latex_(self):
-        return "$$"+self.latex()+"$$"
-
     def interact(self, ranges=None, fn_of_sol=None, **solvekwargs):
         """Easy model interaction in IPython / Jupyter
 
