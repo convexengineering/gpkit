@@ -113,7 +113,7 @@ class SignomialsEnabled(object):
 
 # pylint: disable=wrong-import-position
 from .varkey import VarKey
-from .nomials import NomialArray
+from .nomials import Nomial, NomialArray
 from .nomials import Monomial, Posynomial, Signomial
 from .nomials import Variable, VectorVariable, ArrayVariable
 from .geometric_program import GeometricProgram
@@ -127,7 +127,7 @@ if units:
         When gpkit objects appear in mathematical operations with pint
         Quantity objects, let the gpkit implementations determine what to do
         """
-        def skip_if_gpkit_objects(fallback, objects=(NomialArray, Signomial)):
+        def skip_if_gpkit_objects(fallback, objects=(Nomial, NomialArray)):
             """Returned method calls self.fallback(other) if other is
             not in objects, and otherwise returns NotImplemented.
             """

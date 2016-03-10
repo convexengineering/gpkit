@@ -2,7 +2,7 @@
 from collections import defaultdict, Iterable
 from .set import ConstraintSet
 from ..varkey import VarKey
-from ..nomials import Variable, Signomial
+from ..nomials import Variable, Nomial
 from .. import SignomialsEnabled
 
 
@@ -15,7 +15,7 @@ class ConstraintBase(ConstraintSet):
         constraints = self.setup(*args, **kwargs)
         if hasattr(constraints, "cost"):
             self.cost = constraints.cost
-        elif isinstance(constraints[0], Signomial):
+        elif isinstance(constraints[0], Nomial):
             self.cost = constraints[0]
             constraints = constraints[1:]
         if isinstance(constraints[-1], dict):
