@@ -38,19 +38,6 @@ Mac OS X
   - Run ``pip install ipywidgets`` for interactive control of models (recommended)
   - Run ``python -c "import gpkit.tests; gpkit.tests.run()"``
 
-4. Debug Installation
-+++++++++++++++++++++
-If your installation is not working, try the following:
-  - Start iPython. Commands below that start with ``>>>`` should be run in iPython
-  - If ``>>> import gpkit`` prints "Could not load settings file.", then:
-      - ``>>> import os; os.chdir(os.path.dirname(gpkit.__file__))``
-      - ``>>> del gpkit``
-      - ``>>> import build; build.build_gpkit()``
-      - Exit iPython
-      - Run ``python -c "import gpkit.tests; gpkit.tests.run()"``
-      - If any tests fail, email ``gpkit@mit.edu``.
-
-
 
 Linux
 =====
@@ -76,19 +63,6 @@ Linux
   - Run ``pip install gpkit`` at the command line.
   - Run ``pip install ipywidgets`` for interactive control of models (recommended)
   - Run ``python -c "import gpkit.tests; gpkit.tests.run()"``
-
-4. Debug Installation
-+++++++++++++++++++++
-If your installation is not working, try the following:
-  - Start iPython. Commands below that start with ``>>>`` should be run in iPython
-  - If ``>>> import gpkit`` prints "Could not load settings file.", then:
-      - ``>>> import os; os.chdir(os.path.dirname(gpkit.__file__))``
-      - ``>>> del gpkit``
-      - ``>>> import build; build.build_gpkit()``
-      - Exit iPython
-      - Run ``python -c "import gpkit.tests; gpkit.tests.run()"``
-      - If any tests fail, email ``gpkit@mit.edu``.
-
 
 
 Windows
@@ -122,23 +96,24 @@ Windows
   - Run ``pip install ipywidgets`` for interactive control of models (recommended)
 
 
-4. Debug Installation
-+++++++++++++++++++++
-If your installation is not working, try the following:
-  - Start iPython. Commands below that start with ``>>>`` should be run in iPython
-  - If ``>>> import gpkit`` prints "Could not load settings file.", then:
-      - ``>>> import os; os.chdir(os.path.dirname(gpkit.__file__))``
-      - ``>>> del gpkit``
-      - ``>>> import build; build.build_gpkit()``
-      - Exit iPython
-      - Run ``python -c "import gpkit.tests; gpkit.tests.run()"``
-      - If any tests fail, email ``gpkit@mit.edu``.
+Debugging installation
+======================
+You may need to rebuild GPkit if any of the following occur:
+  - You install a new solver (mosek or cvxopt) after installing GPkit
+  - You delete the ``.gpkit`` folder from your home directory
+  - You see a ``Could not load settings file.`` message
+  - You see a ``Could not load MOSEK library: ImportError('$HOME/.gpkit/expopt.so not found.`` error.
+To rebuild GPkit, do the following:
+  - Run ``pip uninstall gpkit``
+  - Run ``pip install --no-cache-dir --no-deps gpkit``
+  - Run ``python -c "import gpkit.tests; gpkit.tests.run()"``
+  - If any tests fail, email ``gpkit@mit.edu``.
 
 
 Updating GPkit between releases
 ===============================
 
-Active developers may wish to install the `latest GPkit <http://github.com/hoburg/gpkit>` directly from the source code on Github. To do so,
+Active developers may wish to install the `latest GPkit <http://github.com/hoburg/gpkit>`_ directly from the source code on Github. To do so,
 
   - Run ``pip uninstall gpkit`` to uninstall your existing GPkit.
   - Run ``git clone https://github.com/hoburg/gpkit.git`` to clone the GPkit repository, or ``cd gpkit; git pull origin master; cd ..`` to update your existing repository.

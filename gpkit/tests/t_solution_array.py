@@ -9,6 +9,7 @@ from gpkit.varkey import VarKey
 
 
 class TestSolutionArray(unittest.TestCase):
+    """Unit tests for the SolutionArray class"""
 
     def test_call(self):
         A = Variable('A', '-', 'Test Variable')
@@ -49,7 +50,7 @@ class TestSolutionArray(unittest.TestCase):
         sol = prob.solve(verbosity=0)
         t1 = time.time()
         _ = sol(z1)
-        self.assertTrue(time.time() - t1 <= 0.05)
+        self.assertLess(time.time() - t1, 0.05)
 
     def test_subinto_sens(self):
         Nsweep = 20
