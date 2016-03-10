@@ -295,10 +295,8 @@ class TestPosynomial(unittest.TestCase):
         x = Monomial('x')
         y = Monomial('y')
         p = x**2 + 2*y*x + y**2
-        self.assertEqual((p <= 1).posylt1_rep
-, p)
-        self.assertEqual((p <= x).posylt1_rep
-, p/x)
+        self.assertEqual((p <= 1).posylt1_rep, p)
+        self.assertEqual((p <= x).posylt1_rep, p/x)
 
     def test_integer_division(self):
         "Make sure division by integer doesn't use Python integer division"

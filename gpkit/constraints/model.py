@@ -31,7 +31,7 @@ class Model(ConstraintBase):
         "Connects this model with a set of constraints"
         lc = LinkConstraint([self, other], include_only, exclude)
         cost = self.cost.sub(lc.linked)
-        return Model(cost, lc, lc.substitutions)
+        return Model(cost, [lc], lc.substitutions)
 
     def __and__(self, other):
         return self.link(other)

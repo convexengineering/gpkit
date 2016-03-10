@@ -18,7 +18,7 @@ class LinkConstraint(ConstraintSet):
             linkable &= set(include_only)
         if exclude:
             linkable -= set(exclude)
-        self.linked = {}
+        self.linked, self.reverselinks = {}, {}
         for name in linkable:
             vks = varkeys[name]
             descr = dict(vks[0].descr)
@@ -31,5 +31,16 @@ class LinkConstraint(ConstraintSet):
             if value:
                 self.substitutions[newvk] = value
             self.linked.update(dict(zip(vks, len(vks)*[newvk])))
+            self.reverselinks[newvk] = vks
         with SignomialsEnabled():  # since we're just substituting varkeys.
             self.sub(self.linked)
+
+    def process_result(self, result):
+        for k in ["constants", "variables", "freevariables", "sensitivities"]:
+            resultdict = result[k]
+            if k == "sensitivities":  # get ["sensitivities"]["constants"]
+                resultdict = resultdict["constants"]
+            for newvk, oldvks in self.reverselinks.items():
+                if newvk in resultdict:
+                    for vk in oldvks:
+                        resultdict[vk] = resultdict[newvk]
