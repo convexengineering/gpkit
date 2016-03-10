@@ -23,7 +23,7 @@ def _progify_fctry(program, return_attr=None):
     def programify(self, verbosity=1, substitutions=None):
         if not substitutions:
             substitutions = self.substitutions
-        cost = self.cost if getattr(self, "cost", Monomial(1))
+        cost = getattr(self, "cost", Monomial(1))
         prog = program(cost, self, substitutions, verbosity)
         if return_attr:
             return prog, getattr(prog, return_attr)
