@@ -59,17 +59,19 @@ class VarKey(object):
             else:
                 raise ValueError("units must be either a string"
                                  " or a Quantity from gpkit.units.")
-        self._hashvalue = hash(self.str_without("model", "models"))  # HACK
+        self._hashvalue = hash(str(self))
         self.key = self
         self.descr["unitstr"] = self.make_unitstr()
 
     def __repr__(self):
         return self.str_without()
 
-    def str_without(self, *excluded_fields):
+    def str_without(self, excluded=None):
+        if excluded is None:
+            excluded = []
         string = self.name
         for subscript in self.subscripts:
-            if subscript in self.descr and subscript not in excluded_fields:
+            if subscript in self.descr and subscript not in excluded:
                 substring = self.descr[subscript]
                 if subscript == "models":
                     substring = ", ".join(substring)
@@ -92,11 +94,16 @@ class VarKey(object):
         units_tf = units.replace("frac", "tfrac").replace(r"\cdot", r"\cdot ")
         return units_tf if units_tf != r"~\mathrm{-}" else ""
 
-    def latex(self):
+    def latex(self, excluded=None):
+        if excluded is None:
+            excluded = []
         string = self.name
         for subscript in self.subscripts:
-            if subscript in self.descr:
-                string = "{%s}_{%s}" % (string, self.descr[subscript])
+            if subscript in self.descr and subscript not in excluded:
+                substring = self.descr[subscript]
+                if subscript == "models":
+                    substring = ", ".join(substring)
+                string = "{%s}_{%s}" % (string, substring)
                 if subscript == "idx":
                     if len(self.descr["idx"]) == 1:
                         # drop the comma for 1-d vectors

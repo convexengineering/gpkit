@@ -19,11 +19,12 @@ class SingleEquationConstraint(object):
                              self.oper,
                              try_str_without(self.right, excluded))
 
-    def latex(self):
+    def latex(self, excluded=None):
+        if not excluded:
+            excluded = ["units"]  # previously bool(self.left.units)
         latex_oper = self.latex_opers[self.oper]
-        showunits = False  # previously bool(self.left.units)
-        return ("%s %s %s" % (self.left.latex(showunits=showunits), latex_oper,
-                              self.right.latex(showunits=showunits)))
+        return ("%s %s %s" % (self.left.latex(excluded), latex_oper,
+                              self.right.latex(excluded)))
 
     def sub(self, subs, value=None):
         "Returns a substituted version of this constraint."

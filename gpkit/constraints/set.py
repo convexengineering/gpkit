@@ -28,14 +28,65 @@ class ConstraintSet(list):
     __repr__ = _repr
     _repr_latex_ = _repr_latex_
 
-    def str_without(self, excluded=[]):
-        return "[" + ", ".join([try_str_without(el, excluded)
-                                for el in self]) + "]"
+    def str_without(self, excluded=None):
+        "String representation of a ConstraintSet."
+        if not excluded:
+            excluded = ["units"]
+        if "cost" in excluded:
+            lines = []  # start with nothing
+        else:
+            excluded.append("cost")
+            if hasattr(self, "cost"):
+                lines = ["  # minimize",
+                         "        %s" % self.cost,
+                         "  # subject to"]
+            else:
+                lines = [""]  # start with a newline
+        for constraint in self:
+            if hasattr(constraint, "_subconstr_str"):
+                cstr = constraint._subconstr_str(excluded)
+                if cstr is None:
+                    cstr = try_str_without(constraint, excluded)
+            else:
+                cstr = try_str_without(constraint, excluded)
+            if cstr[:8] != "        ":  # require indentation
+                cstr = "        " + cstr
+            lines.append(cstr)
+        return "\n".join(lines)
 
-    def latex(self):
-        return ("\\begin{bmatrix}" +
-                " \\\\\n".join(el.latex() for el in self) +
-                "\\end{bmatrix}")
+    def latex(self, excluded=None):
+        "LaTeX representation of a ConstraintSet."
+        if not excluded:
+            excluded = ["units"]
+        if "cost" in excluded:
+            lines = []  # start with nothing
+        else:
+            excluded.append("cost")
+            lines = ["\\begin{array}[ll]", "\\text{}"]
+            if hasattr(self, "cost"):
+                lines.extend(["\\text{minimize}",
+                              "    & %s \\\\" % self.cost.latex(),
+                              "\\text{subject to}"])
+        for constraint in self:
+            if hasattr(constraint, "_subconstr_latex"):
+                cstr = constraint._subconstr_latex(excluded)
+                if cstr is None:
+                    cstr = constraint.latex(excluded)
+            else:
+                cstr = constraint.latex(excluded)
+            if cstr[:6] != "    & ":  # require indentation
+                cstr = "    & " + cstr
+            lines.append(cstr)
+        lines.append("\\end{array}")
+        return "\n".join(lines)
+
+    def _subconstr_str(self, excluded=None):
+        "The collapsed appearance of a ConstraintSet"
+        pass
+
+    def _subconstr_tex(self, excluded=None):
+        "The collapsed appearance of a ConstraintSet"
+        pass
 
     def flat(self, constraintsets=True):
         "Yields contained constraints, optionally including constraintsets."

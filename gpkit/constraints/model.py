@@ -52,40 +52,6 @@ class Model(ConstraintBase):
     sp = _progify_fctry(SignomialProgram)
     solve = _solve_fctry(_progify_fctry(GeometricProgram, "solve"))
     localsolve = _solve_fctry(_progify_fctry(SignomialProgram, "localsolve"))
-    #
-    # def __repr__(self):
-    #     return "gpkit.%s(%s)" % (self.__class__.__name__, str(self))
-    #
-    # def __str__(self):
-    #     """String representation of a Model.
-    #     Contains all of its parameters."""
-    #     return "\n".join(["# minimize",
-    #                       "    %s," % self.cost,
-    #                       "[   # subject to"] +
-    #                      ["    %s," % constr
-    #                       for constr in self.constraints] +
-    #                      ['],',
-    #                       "    substitutions=%s" % self.allsubs])
-    #
-    # def latex(self, show_subs=True):
-    #     """LaTeX representation of a Model.
-    #     Contains all of its parameters."""
-    #     # TODO: print sweeps and linkedsweeps
-    #     latex_list = ["\\begin{array}{ll}",
-    #                   "\\text{}",
-    #                   "\\text{minimize}",
-    #                   "    & %s \\\\" % self.cost.latex(),
-    #                   "\\text{subject to}"]
-    #     latex_list += ["    & %s \\\\" % constr.latex()
-    #                    for constr in self.constraints]
-    #     if show_subs:
-    #         sub_latex = ["    & %s \gets %s%s \\\\" % (var.latex(),
-    #                                                     latex_num(val),
-    #                                                     var.unitstr)
-    #                      for var, val in self.allsubs.items()]
-    #         latex_list += ["\\text{substituting}"] + sorted(sub_latex)
-    #     latex_list += ["\\end{array}"]
-    #     return "\n".join(latex_list)
 
     def _repr_latex_(self):
         return "$$"+self.latex()+"$$"

@@ -28,7 +28,7 @@ class ConstraintBase(ConstraintSet):
 
     def _add_models_tovars(self, name):
         num = ConstraintBase.modelnums[name]
-        self.num = num
+        self.name, self.num = name, num
         ConstraintBase.modelnums[name] += 1
         add_model_subs = {}
         for vk in self.varkeys:
@@ -52,3 +52,13 @@ class ConstraintBase(ConstraintSet):
                 return variables[0]
             else:
                 return variables
+
+    def _subconstr_str(self, excluded=None):
+        "The collapsed appearance of a ConstraintSet"
+        if self.name:
+            return "%s_%s" % (self.name, self.num)
+
+    def _subconstr_tex(self, excluded=None):
+        "The collapsed appearance of a ConstraintSet"
+        if self.name:
+            return "%s_{%s}" % (self.name, self.num)

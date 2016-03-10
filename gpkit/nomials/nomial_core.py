@@ -13,13 +13,15 @@ class Nomial(NomialData):
     __repr__ = _repr
     _repr_latex_ = _repr_latex_
 
-    def str_without(self, excluded=[]):
+    def str_without(self, excluded=None):
+        if excluded is None:
+            excluded = []
         mstrs = []
         for c, exp in zip(self.cs, self.exps):
             varstrs = []
             for (var, x) in exp.items():
                 if x != 0:
-                    varstr = var.str_without(*excluded)
+                    varstr = var.str_without(excluded)
                     if x != 1:
                         varstr += "**%.2g" % x
                     varstrs.append(varstr)
@@ -35,16 +37,18 @@ class Nomial(NomialData):
         units = unitstr(self.units, " [%s]") if showunits else ""
         return " + ".join(sorted(mstrs)) + units
 
-    def latex(self, showunits=True):
+    def latex(self, excluded=None):
         "For pretty printing with Sympy"
+        if excluded is None:
+            excluded = []
         mstrs = []
         for c, exp in zip(self.cs, self.exps):
             pos_vars, neg_vars = [], []
             for var, x in exp.items():
                 if x > 0:
-                    pos_vars.append((var.latex(), x))
+                    pos_vars.append((var.latex(excluded), x))
                 elif x < 0:
-                    neg_vars.append((var.latex(), x))
+                    neg_vars.append((var.latex(excluded), x))
 
             pvarstrs = ['%s^{%.2g}' % (varl, x) if "%.2g" % x != "1" else varl
                         for (varl, x) in pos_vars]
@@ -71,7 +75,7 @@ class Nomial(NomialData):
             elif pos_vars and neg_vars:
                 mstrs.append("%s\\frac{%s}{%s}" % (cstr, pvarstr, nvarstr))
 
-        if not showunits:
+        if "units" in excluded:
             return " + ".join(sorted(mstrs))
 
         units = unitstr(self.units, r"\mathrm{~\left[ %s \right]}", "L~")
