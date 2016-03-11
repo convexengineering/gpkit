@@ -95,7 +95,7 @@ msg-template={path}:{line}: [{msg_id}({symbol}), {obj}] {msg}
 bad-functions=map,filter,input
 
 # Good variable names which should always be accepted, separated by a comma
-good-names=i,j,k,ex,Run,_,units
+good-names=i,j,k,_,units,gp,sp
 
 # Bad variable names which should always be refused, separated by a comma
 bad-names=foo,bar,baz,toto,tutu,tata
@@ -126,13 +126,13 @@ const-rgx=(([A-Z_][A-Z0-9_]*)|(__.*__))$
 const-name-hint=(([A-Z_][A-Z0-9_]*)|(__.*__))$
 
 # Regular expression matching correct attribute names
-attr-rgx=[a-z_][a-z0-9_]{2,30}|A|cs|c|gp|sp$
+attr-rgx=[a-z_][a-z0-9_]{2,30}|A|cs|c$
 
 # Naming hint for attribute names
 attr-name-hint=[a-z_][a-z0-9_]{2,30}$
 
 # Regular expression matching correct argument names
-argument-rgx=[a-z_][a-z0-9_]{2,30}$
+argument-rgx=[a-z_][a-z0-9_]{2,30}|x0|nu|la$
 
 # Naming hint for argument names
 argument-name-hint=[a-z_][a-z0-9_]{2,30}$
@@ -319,7 +319,7 @@ exclude-protected=_asdict,_fields,_replace,_source,_make
 [DESIGN]
 
 # Maximum number of arguments for function / method
-max-args=5
+max-args=6
 
 # Argument names that match this expression will be ignored. Default to name
 # with leading underscore

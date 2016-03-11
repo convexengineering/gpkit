@@ -1,3 +1,4 @@
+"""Module for assessing feasibility of GPs and SPs"""
 import numpy as np
 from .nomials import NomialArray
 from .nomials import Variable, VectorVariable
@@ -6,6 +7,7 @@ from .varkey import VarKey
 
 def feasibility_model(program, flavour="max", varname=None,
                       constants=None, signomials=None, programType=None):
+    # pylint:disable=too-many-locals
     """Returns a new GP for the closest feasible point of the current GP.
 
     Arguments
@@ -74,9 +76,8 @@ def feasibility_model(program, flavour="max", varname=None,
         constraints = [c.sub(rmvalue) for c in signomials]
         cost = slackb.prod()
         # cost function could also be .sum(); self.cost would break ties
-        for i in range(len(constvars)):
+        for i, (constvar, constvalue) in enumerate(constvars):
             slack = slackb[i]
-            constvar, constvalue = constvars[i], constvalues[i]
             if constvar.units:
                 constvalue *= constvar.units
             constraints += [slack >= 1,
