@@ -4,7 +4,7 @@ from __future__ import print_function
 import sys
 
 # custom build script
-if sys.argv[1] in ["build", "install"]:
+if sys.argv[1] in ["build", "install", "develop"]:
     from gpkit.build import build_gpkit
     build_gpkit()
 
