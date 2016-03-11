@@ -266,10 +266,10 @@ class GeometricProgram(NomialData):
         var_senss = HashVector(var_senss)
         for c_i, posy_idxs in enumerate(self.constr_idxs):
             constr = self.constraints[c_i]
-            p_senss = [la[p_i] for p_i in posy_idxs]
-            m_sensss = [[nu[i] for i in self.m_idxs[p_i]] for p_i in posy_idxs]
+            las = [la[p_i] for p_i in posy_idxs]
+            nus = [[nu[i] for i in self.m_idxs[p_i]] for p_i in posy_idxs]
             constr_sens, p_var_senss = \
-                constr.sens_from_dual(p_senss, m_sensss)
+                constr.sens_from_dual(las, nus)
             # ...then add to it the constant sensitivities of each constraint
             var_senss += p_var_senss
             # also, add each constraint's sensitivities to the results

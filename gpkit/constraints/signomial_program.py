@@ -121,16 +121,3 @@ class SignomialProgram(ConstraintSet):
     def gp(self, x0=None, verbosity=1):
         return GeometricProgram(self.cost, self.as_gpconstr(x0),
                                 self.substitutions, verbosity=verbosity)
-
-    def __repr__(self):
-        return "gpkit.%s(\n%s)" % (self.__class__.__name__, str(self))
-
-    def __str__(self):
-        """String representation of a SignomialProgram.
-
-        Contains all of its parameters."""
-        return "\n".join(["  # minimize",
-                          "    %s," % self.cost,
-                          "[ # subject to"] +
-                         ["    %s," % constr for constr in self] +
-                         [']'])

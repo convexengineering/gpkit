@@ -37,7 +37,8 @@ class ConstraintSet(list):
         else:
             excluded.append("cost")
             if hasattr(self, "cost"):
-                lines = ["  # minimize",
+                lines = ["",
+                         "  # minimize",
                          "        %s" % self.cost.str_without(excluded),
                          "  # subject to"]
             else:

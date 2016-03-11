@@ -512,28 +512,28 @@ class PosynomialInequality(ScalarSingleEquationConstraint):
             out.append(p)
         return out
 
-    def sens_from_dual(self, p_senss, m_sensss):
-        if not p_senss or not m_sensss:
+    def sens_from_dual(self, las, nus):
+        if not las or not nus:
             # as_posyslt1 created no inequalities
             return {}, {}
-        p_sens, = p_senss
-        m_senss, = m_sensss
+        la, = las
+        nu, = nus
         presub = self.posylt1_rep
-        constr_sens = {"overall": p_sens}
+        constr_sens = {"overall": la}
         if hasattr(self, "pmap"):
-            m_senss_ = np.zeros(len(presub.cs))
+            nu_ = np.zeros(len(presub.cs))
             counter = 0
             for i, mmap in enumerate(self.pmap):
                 for idx, percentage in mmap.items():
-                    m_senss_[idx] += percentage*m_senss[i]
-            m_senss = m_senss_
+                    nu_[idx] += percentage*nu[i]
+            nu = nu_
         # Monomial sensitivities
-        constr_sens[str(self.m_gt)] = p_sens
-        for i, mono_sens in enumerate(m_senss):
+        constr_sens[str(self.m_gt)] = la
+        for i, mono_sens in enumerate(nu):
             mono = Monomial(self.p_lt.exps[i], self.p_lt.cs[i])
             constr_sens[str(mono)] = mono_sens
         # Constant sensitivities
-        var_senss = {var: sum([presub.exps[i][var]*m_senss[i] for i in locs])
+        var_senss = {var: sum([presub.exps[i][var]*nu[i] for i in locs])
                      for (var, locs) in presub.varlocs.items()
                      if var in self.substitutions}
         return constr_sens, var_senss
@@ -566,13 +566,13 @@ class MonomialEquality(PosynomialInequality):
     def __bool__(self):
         return self.__nonzero__()
 
-    def sens_from_dual(self, p_senss, m_sensss):
-        left, right = p_senss
+    def sens_from_dual(self, las, nus):
+        left, right = las
         constr_sens = {str(self.left): left-right,
                        str(self.right): right-left}
         # Constant sensitivities
         var_senss = HashVector()
-        for i, m_s in enumerate(m_sensss):
+        for i, m_s in enumerate(nus):
             presub = self.posylt1_rep[i]
             var_sens = {var: sum([presub.exps[i][var]*m_s[i] for i in locs])
                         for (var, locs) in presub.varlocs.items()
