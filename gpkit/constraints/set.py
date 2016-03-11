@@ -23,6 +23,8 @@ class ConstraintSet(list):
             subs.update(constraints.substitutions)
         self.substitutions = KeyDict.with_keys(self.varkeys,
                                                self._iter_subs(subs))
+        # initializations for attributes used elsewhere
+        self.posymap = []
 
     __str__ = _str
     __repr__ = _repr
@@ -110,7 +112,7 @@ class ConstraintSet(list):
 
     @property
     def varkeys(self):
-        "Varkeys present in the constraints"
+        "return all Varkeys present in this ConstraintSet"
         out = KeySet()
         if hasattr(self, "cost"):
             out.update(self.cost.varkeys)

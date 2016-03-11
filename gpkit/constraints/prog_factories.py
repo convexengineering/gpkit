@@ -1,6 +1,6 @@
 "Scripts for generating, solving and sweeping programs"
-import numpy as np
 from time import time
+import numpy as np
 from ..nomials.substitution import parse_subs
 from ..solution_array import SolutionArray
 from ..keydict import KeyDict
@@ -21,6 +21,15 @@ except (ImportError, IOError, AssertionError):
 def _progify_fctry(program, return_attr=None):
     "Generates function that returns a program() and optionally an attribute."
     def programify(self, verbosity=1, substitutions=None):
+        """Return program version of self
+
+        Arguments
+        ---------
+        program: NomialData
+            Class to return, e.g. GeometricProgram or SignomialProgram
+        return_attr: string
+            attribute to return in addition to the program
+        """
         if not substitutions:
             substitutions = self.substitutions
         cost = getattr(self, "cost", Monomial(1))
@@ -35,6 +44,7 @@ def _progify_fctry(program, return_attr=None):
 def _solve_fctry(genfunction):
     "Generates function that solves/sweeps a program/solve pair."
     def solvefn(self, solver=None, verbosity=2, *args, **kwargs):
+        """Call solver and return result"""
         constants, sweep, linkedsweep = parse_subs(self.varkeys,
                                                    self.substitutions)
         solution = SolutionArray()
@@ -75,10 +85,7 @@ def _solve_fctry(genfunction):
                 except (RuntimeWarning, ValueError):
                     return program, None
 
-            if POOL:
-                mapfn = POOL.map_sync
-            else:
-                mapfn = map
+            mapfn = POOL.map_sync if POOL else map
 
             self.program = []
             for program, result in mapfn(solve_pass, range(N_passes)):

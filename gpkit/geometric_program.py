@@ -1,7 +1,7 @@
 """Implement the GeometricProgram class"""
-import numpy as np
 import sys
 from time import time
+import numpy as np
 from .nomials import NomialData
 from .small_classes import CootMatrix, HashVector
 from .keydict import KeyDict
@@ -9,6 +9,7 @@ from .small_classes import SolverLog
 
 
 class GeometricProgram(NomialData):
+    # pylint: disable=too-many-instance-attributes
     """Standard mathematical representation of a GP.
 
     Arguments
@@ -40,6 +41,7 @@ class GeometricProgram(NomialData):
     """
 
     def __init__(self, cost, constraints, substitutions=None, verbosity=1):
+        # pylint: disable=too-many-locals,super-init-not-called
         self.cost = cost
         self.constraints = constraints
         self.substitutions = substitutions if substitutions else {}
@@ -204,6 +206,7 @@ class GeometricProgram(NomialData):
         return result
 
     def _compile_result(self, solver_out):
+        # pylint: disable=too-many-locals
         """Creates a result dict (as returned by solve() from solver output
 
         This internal method is called from within the solve() method, unless
@@ -352,7 +355,7 @@ class GeometricProgram(NomialData):
 
     def __str__(self):
         "String representation of a GeometricProgram."
-        #TODO: should this print posynomials <= 1? Substitutions?
+        #todo: should this print posynomials <= 1? Substitutions?
         return "\n".join(["  # minimize",
                           "    %s," % self.cost,
                           "[ # subject to"] +
@@ -362,7 +365,7 @@ class GeometricProgram(NomialData):
 
     def latex(self):
         "LaTeX representation of a GeometricProgram."
-        #TODO: should this print posynomials <= 1? Substitutions?
+        #todo: should this print posynomials <= 1? Substitutions?
         return "\n".join(["\\begin{array}[ll]",
                           "\\text{}",
                           "\\text{minimize}",
@@ -374,6 +377,7 @@ class GeometricProgram(NomialData):
 
 
 def genA(exps, varlocs):
+    # pylint: disable=invalid-name
     """Generates A matrix from exps and varlocs
 
     Arguments

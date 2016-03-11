@@ -54,11 +54,11 @@ class ConstraintBase(ConstraintSet):
                 return variables
 
     def _subconstr_str(self, excluded=None):
-        "The collapsed appearance of a ConstraintSet"
+        "The collapsed appearance of a ConstraintBase"
         if self.name:
             return "%s_%s" % (self.name, self.num)
 
     def _subconstr_tex(self, excluded=None):
-        "The collapsed appearance of a ConstraintSet"
+        "The collapsed appearance of a ConstraintBase"
         if self.name:
             return "%s_{%s}" % (self.name, self.num)

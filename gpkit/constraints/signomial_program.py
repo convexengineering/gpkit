@@ -119,6 +119,7 @@ class SignomialProgram(ConstraintSet):
         return result
 
     def gp(self, x0=None, verbosity=1):
+        """Get a GP approximation of this SP at x0"""
         return GeometricProgram(self.cost, self.as_gpconstr(x0),
                                 self.substitutions, verbosity=verbosity)
 
