@@ -133,16 +133,16 @@ class ConstraintSet(list):
             posylist.extend(posys)
         return posylist
 
-    def sens_from_dual(self, p_senss, m_sensss):
+    def sens_from_dual(self, las, nus):
         """Computes constraint and variable sensitivities from dual solution
 
         Arguments
         ---------
-        p_senss : list
+        las : list
             Sensitivity of each posynomial returned by `self.as_posyslt1()`
 
-        m_sensss: list of lists
-            Each posynomial's monomial sensitivities
+        nus: list of lists
+             Each posynomial's monomial sensitivities
 
 
         Returns
@@ -158,9 +158,9 @@ class ConstraintSet(list):
         offset = 0
         for i, constr in enumerate(self):
             n_posys = self.posymap[i]
-            p_ss = p_senss[offset:offset+n_posys]
-            m_sss = m_sensss[offset:offset+n_posys]
-            constr_sens[str(constr)], v_ss = constr.sens_from_dual(p_ss, m_sss)
+            la = las[offset:offset+n_posys]
+            nu = nus[offset:offset+n_posys]
+            constr_sens[str(constr)], v_ss = constr.sens_from_dual(la, nu)
             var_senss += v_ss
             offset += n_posys
         return constr_sens, var_senss

@@ -513,12 +513,12 @@ class PosynomialInequality(ScalarSingleEquationConstraint):
             out.append(p)
         return out
 
-    def sens_from_dual(self, las, nus):
-        if not las or not nus:
+    def sens_from_dual(self, la, nu):
+        if not la or not nu:
             # as_posyslt1 created no inequalities
             return {}, {}
-        la, = las
-        nu, = nus
+        la, = la
+        nu, = nu
         presub = self.posylt1_rep
         constr_sens = {"overall": la}
         if hasattr(self, "pmap"):
