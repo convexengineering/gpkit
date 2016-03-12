@@ -7,7 +7,14 @@ from .. import SignomialsEnabled
 class LinkConstraint(ConstraintSet):
     """A ConstraintSet that links duplicate variables in its constraints
 
-    Variables with the same name are linked
+    VarKeys with the same `.str_without(["models"])` are linked.
+
+    The new linking varkey will have the same attributes as the first linked
+    varkey of that name, without any value, models, or modelnums.
+
+    If any of the constraints have a substitution for a linked varkey,
+    the linking varkey will have that substitution as well; if more than one
+    linked varkey has a substitution a ValueError will be raised.
 
     Arguments
     ---------
@@ -23,8 +30,9 @@ class LinkConstraint(ConstraintSet):
         varkeys = self.varkeys
         linkable = set()
         for varkey in varkeys:
-            if len(varkeys[varkey.name]) > 1:
-                linkable.add(varkey.name)
+            name_without_model = varkey.str_without(["models"])
+            if len(varkeys[name_without_model]) > 1:
+                linkable.add(name_without_model)
         if include_only:
             linkable &= set(include_only)
         if exclude:
@@ -42,7 +50,8 @@ class LinkConstraint(ConstraintSet):
                 if vk in self.substitutions:
                     if sub is None:
                         subbed_vk = vk
-                        sub = self.substitutions.pop(vk)
+                        sub = self.substitutions[vk]
+                        del self.substitutions[vk]
                         self.substitutions[newvk] = sub
                     else:
                         raise ValueError("substitution conflict: could not link"

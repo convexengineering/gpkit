@@ -1,6 +1,6 @@
 """Unit tests for Constraint, MonomialEquality and SignomialInequality"""
 import unittest
-from gpkit import Variable, SignomialsEnabled, Posynomial
+from gpkit import Variable, SignomialsEnabled, Posynomial, VectorVariable
 from gpkit.nomials import SignomialInequality, PosynomialInequality
 from gpkit.nomials import MonomialEquality
 from gpkit import LinkConstraint
@@ -17,6 +17,10 @@ class TestConstraint(unittest.TestCase):
         lc = LinkConstraint([x_fx1 >= 1, x_free >= 1])
         self.assertEqual(lc.substitutions["x"], 1)
         self.assertRaises(ValueError, LinkConstraint, [x_fx1 >= 1, x_fx2 >= 1])
+        vecx_free = VectorVariable(3, "x", models=["free"])
+        vecx_fixed = VectorVariable(3, "x", [1, 2, 3], models=["fixed"])
+        lc = LinkConstraint([vecx_free >= 1, vecx_fixed >= 1])
+        self.assertEqual(lc.substitutions["x"].tolist(), [1, 2, 3])
 
     def test_additive_scalar(self):
         """Make sure additive scalars simplify properly"""
