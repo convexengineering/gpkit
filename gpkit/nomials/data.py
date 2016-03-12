@@ -74,17 +74,6 @@ class NomialData(object):
     def __repr__(self):
         return "gpkit.%s(%s)" % (self.__class__.__name__, hash(self))
 
-    def sub(self, substitutions, val=None, require_positive=True):
-        """Substitutes into self"""
-        if hasattr(self, "nomials"):
-            subbed_nomials = [n.sub(substitutions, val, require_positive)
-                              for n in self.nomials]
-            nd = NomialData.fromnomials(subbed_nomials)
-        else:
-            _, exps, cs, _ = substitution(self, substitutions, val)
-            nd = NomialData(exps, cs)
-        return nd
-
     def diff(self, var):
         """Derivative of this with respect to a Variable
 

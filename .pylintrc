@@ -95,7 +95,7 @@ msg-template={path}:{line}: [{msg_id}({symbol}), {obj}] {msg}
 bad-functions=filter,input
 
 # Good variable names which should always be accepted, separated by a comma
-good-names=i,j,k,_,units,gp,sp,to
+good-names=i,j,k,_,units,gp,sp,to,A,c,cs
 
 # Bad variable names which should always be refused, separated by a comma
 bad-names=foo,bar,baz,toto,tutu,tata
@@ -126,7 +126,7 @@ const-rgx=(([A-Z_][A-Z0-9_]*)|(__.*__))|Quantity$
 const-name-hint=(([A-Z_][A-Z0-9_]*)|(__.*__))$
 
 # Regular expression matching correct attribute names
-attr-rgx=[a-z_][a-z0-9_]{2,30}|A|cs|c$
+attr-rgx=[a-z_][a-z0-9_]{2,30}$
 
 # Naming hint for attribute names
 attr-name-hint=[a-z_][a-z0-9_]{2,30}$
