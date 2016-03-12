@@ -198,7 +198,7 @@ class GeometricProgram(NomialData):
         self.check_solution(result["cost"],
                             np.ravel(solver_out['primal']),
                             nu=result["sensitivities"]["nu"],
-                            la=result["sensitivities"]["lambda"])
+                            la=result["sensitivities"]["la"])
 
         if verbosity > 1:
             print ("solution checking took %.2g%% of solve time" %
@@ -260,7 +260,7 @@ class GeometricProgram(NomialData):
             raise RuntimeWarning("The dual solution was not returned.")
 
         ## Get sensitivities
-        result["sensitivities"] = {"constraints": {}, "nu": nu, "lambda": la}
+        result["sensitivities"] = {"constraints": {}, "nu": nu, "la": la}
         # initialize the var_senss dict with the cost's constants...
         var_senss = {var: sum([self.cost.exps[i][var]*nu[i] for i in locs])
                      for (var, locs) in self.cost.varlocs.items()

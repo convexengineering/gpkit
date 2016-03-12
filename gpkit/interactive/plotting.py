@@ -122,7 +122,7 @@ def contour_array(model, xname, yname, znames, cellsize=(5, 5),
         row_idx = i/ncols  # 0, 0, 1, 1, 2, 2 for ncols = 2
         col_vector = axes[row_idx, :] if nrows > 1 else axes
         ax = (col_vector[(i-row_idx*ncols) % ncols]
-              if ncols > 1 else row_vector[0])
+              if ncols > 1 else col_vector[0])
         lablevels = [np.percentile(z_sol, 100*i/7.0) for i in range(8)]
         shortlevels = [(lablevels[4]-lablevels[3])/6.0 * j + lablevels[3]
                        for j in range(-32, 33)]

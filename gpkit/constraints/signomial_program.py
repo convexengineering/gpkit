@@ -36,6 +36,7 @@ class SignomialProgram(ConstraintSet):
     """
 
     def __init__(self, cost, constraints, substitutions=None, verbosity=2):
+        # pylint: disable=unused-argument
         "Constructor. Required for objects inheriting from np.ndarray."
         if cost.any_nonpositive_cs:
             raise TypeError("""SignomialPrograms need Posyomial objectives.
