@@ -15,9 +15,9 @@ class KeyDict(dict):
 
     ```
     kd = gpkit.keydict.KeyDict()
-    x = gpkit.Variable("x", model="test")
+    x = gpkit.Variable("x", models=["test"])
     kd[x] = 1
-    assert kd[x] == kd[x.key] == kd["x"] == kd["x_test"] == 1
+    assert kd[x] == kd[x.key] == kd["x"] == kd["x_test"] == kd["{x}_{test}"] == 1
     ```
 
     In addition, if collapse_arrays is True then VarKeys which have a `shape`
@@ -40,6 +40,9 @@ class KeyDict(dict):
     By default a KeyDict will regenerate the list of possible key strings
     for every usage; a KeyDict may instead be "baked" to have a fixed list of
     keystrings by calling the `bake()` method.
+
+    Note that if a item is set using a key that does not have a `.key`
+    attribute, that key can be set and accessed normally.
     """
     collapse_arrays = True
 
@@ -65,8 +68,9 @@ class KeyDict(dict):
             return self.baked_keystrs
         keystrs = defaultdict(set)
         for key in self.keys():
-            for keystr in key.allstrs:
-                keystrs[keystr].add(key)
+            if hasattr(key, "allstrs"):
+                for keystr in key.allstrs:
+                    keystrs[keystr].add(key)
         return keystrs
 
     @classmethod
@@ -108,7 +112,11 @@ class KeyDict(dict):
     def getkeys(self, key):
         "Gets all keys in self that are represented by a given key"
         if isinstance(key, Strings):
-            return self.keystrs()[key]
+            mapped_varkeys = self.keystrs()[key]
+            if mapped_varkeys:
+                return mapped_varkeys
+            else:
+                return set([key])
         elif hasattr(key, "key"):
             key = key.key
             if self.is_veckey_but_not_collapsed(key):
@@ -140,9 +148,11 @@ class KeyDict(dict):
         "True iff the key indexes into a collapsed array"
         if not self.collapse_arrays:
             return False
-        if "idx" not in key.descr:
+        if not hasattr(key, "key"):
             return False
-        if "shape" not in key.descr:
+        if "idx" not in key.key.descr:
+            return False
+        if "shape" not in key.key.descr:
             return False
         return True
 
