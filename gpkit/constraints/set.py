@@ -46,8 +46,8 @@ class ConstraintSet(list):
             else:
                 lines = [""]  # start with a newline
         for constraint in self:
-            if hasattr(constraint, "_subconstr_str"):
-                cstr = constraint._subconstr_str(excluded)
+            if hasattr(constraint, "subconstr_str"):
+                cstr = constraint.subconstr_str(excluded)
                 if cstr is None:
                     cstr = try_str_without(constraint, excluded)
             else:
@@ -71,8 +71,8 @@ class ConstraintSet(list):
                               "    & %s \\\\" % self.cost.latex(excluded),
                               "\\text{subject to}"])
         for constraint in self:
-            if hasattr(constraint, "_subconstr_latex"):
-                cstr = constraint._subconstr_latex(excluded)
+            if hasattr(constraint, "subconstr_latex"):
+                cstr = constraint.subconstr_latex(excluded)
                 if cstr is None:
                     cstr = constraint.latex(excluded)
             else:
@@ -83,11 +83,11 @@ class ConstraintSet(list):
         lines.append("\\end{array}")
         return "\n".join(lines)
 
-    def _subconstr_str(self, excluded=None):
+    def subconstr_str(self, excluded=None):
         "The collapsed appearance of a ConstraintSet"
         pass
 
-    def _subconstr_tex(self, excluded=None):
+    def subconstr_tex(self, excluded=None):
         "The collapsed appearance of a ConstraintSet"
         pass
 

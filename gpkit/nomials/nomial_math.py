@@ -101,7 +101,7 @@ class Signomial(Nomial):
                 cs = cs.to(units)
 
         # init NomialData to create self.exps, self.cs, and so on
-        super(Nomial, self).__init__(exps, cs, simplify=simplify)
+        super(Signomial, self).__init__(exps, cs, simplify=simplify)
 
         if self.any_nonpositive_cs:
             from .. import SIGNOMIALS_ENABLED
@@ -346,8 +346,6 @@ class Posynomial(Signomial):
         else:
             # fall back on other's __ge__
             return NotImplemented
-        """Support the / operator in Python 3.x"""
-        return self.__div__(other)
 
     # Posynomial.__ge__ falls back on Signomial.__ge__
 

@@ -32,12 +32,12 @@ class TestConstraint(unittest.TestCase):
         x = Variable('x')
         y = Variable('y')
         c = PosynomialInequality(x, ">=", y**2)
-        self.assertEqual(c.posylt1_rep, y**2/x)
+        self.assertEqual(c.as_posyslt1(), [y**2/x])
         self.assertEqual(c.left, x)
         self.assertEqual(c.right, y**2)
         self.assertTrue(">=" in str(c))
         c = PosynomialInequality(x, "<=", y**2)
-        self.assertEqual(c.posylt1_rep, x/y**2)
+        self.assertEqual(c.as_posyslt1(), [x/y**2])
         self.assertEqual(c.left, x)
         self.assertEqual(c.right, y**2)
         self.assertTrue("<=" in str(c))
@@ -47,13 +47,13 @@ class TestConstraint(unittest.TestCase):
         x = Variable('x')
         y = Variable('y')
         c = (y >= 1 + x**2)
-        self.assertEqual(c.posylt1_rep, 1/y + x**2/y)
+        self.assertEqual(c.as_posyslt1(), [1/y + x**2/y])
         self.assertEqual(c.left, y)
         self.assertEqual(c.right, 1 + x**2)
         self.assertTrue(">=" in str(c))
         # same constraint, switched operator direction
         c2 = (1 + x**2 <= y)  # same as c
-        self.assertEqual(c2.posylt1_rep, c.posylt1_rep)
+        self.assertEqual(c2.as_posyslt1(), c.as_posyslt1())
 
 
 class TestMonomialEquality(unittest.TestCase):
@@ -68,8 +68,8 @@ class TestMonomialEquality(unittest.TestCase):
         mec = (x == y**2)
         # __init__
         mec2 = MonomialEquality(x, "=", y**2)
-        self.assertTrue(mono in mec.posylt1_rep)
-        self.assertTrue(mono in mec2.posylt1_rep)
+        self.assertTrue(mono in mec.as_posyslt1())
+        self.assertTrue(mono in mec2.as_posyslt1())
 
     def test_inheritance(self):
         """Make sure MonomialEquality inherits from the right things"""
