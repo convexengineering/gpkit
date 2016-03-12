@@ -1,6 +1,6 @@
 """Defines SolutionArray class"""
-import numpy as np
 from collections import Iterable
+import numpy as np
 from .nomials import NomialArray, Monomial
 from .small_classes import Strings, DictOfLists
 from .small_scripts import unitstr, mag

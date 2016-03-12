@@ -86,6 +86,8 @@ class TestGP(unittest.TestCase):
                          t2 >= y])
         prob.zero_lower_unbounded_variables()
         sol = prob.solve(verbosity=0)
+        self.assertAlmostEqual(sol["cost"]/x.value, 1, self.ndig)
+        self.assertAlmostEqual(sol("t2"), 0, self.ndig)
 
     def test_mdd_example(self):
         Cl = Variable("Cl", 0.5, "-", "Lift Coefficient")

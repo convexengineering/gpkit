@@ -1,6 +1,6 @@
 "Implements KeyDict and KeySet classes"
-import numpy as np
 from collections import defaultdict
+import numpy as np
 from .small_classes import Numbers, Strings
 from .small_scripts import is_sweepvar, veckeyed
 
@@ -45,6 +45,7 @@ class KeyDict(dict):
 
     def __init__(self, *args, **kwargs):
         "Passes through to dict.__init__ via the `update()` method"
+        # pylint: disable=super-init-not-called
         self.baked_keystrs = None
         self.update(*args, **kwargs)
 

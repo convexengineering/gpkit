@@ -38,6 +38,7 @@ class Nomial(NomialData):
         return " + ".join(sorted(mstrs)) + units
 
     def latex(self, excluded=None):
+        # pylint: disable=too-many-locals
         "For pretty printing with Sympy"
         if excluded is None:
             excluded = []
@@ -100,9 +101,11 @@ class Nomial(NomialData):
         return p
 
     def prod(self):
+        "base case: Product of a Nomial is itself"
         return self
 
     def sum(self):
+        "base case: Sum of a Nomial is itself"
         return self
 
     def __ne__(self, other):

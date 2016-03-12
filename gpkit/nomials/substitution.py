@@ -1,8 +1,8 @@
 # -*- coding: utf-8 -*-
 "Module containing the substitution function"
 
-import numpy as np
 from collections import defaultdict, Iterable
+import numpy as np
 from .nomial_math import Monomial
 from ..small_classes import Numbers, Strings, Quantity
 from ..small_classes import HashVector
