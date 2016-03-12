@@ -10,8 +10,6 @@ class ConstraintSet(list):
     def __init__(self, constraints, substitutions=None):
         list.__init__(self, constraints)
         subs = substitutions if substitutions else {}
-        if hasattr(self, "cost"):
-            subs.update(self.cost.values)
         if not isinstance(constraints, ConstraintSet):
             # constraintsetify everything
             for i, constraint in enumerate(self):
@@ -34,17 +32,13 @@ class ConstraintSet(list):
         "String representation of a ConstraintSet."
         if not excluded:
             excluded = ["units"]
-        if "cost" in excluded:
-            lines = []  # start with nothing
-        else:
-            excluded.append("cost")
-            if hasattr(self, "cost"):
-                lines = ["",
-                         "  # minimize",
-                         "        %s" % self.cost.str_without(excluded),
-                         "  # subject to"]
-            else:
-                lines = [""]  # start with a newline
+        lines = []
+        if "root" not in excluded:
+            excluded.append("root")
+            lines.append("")
+            root_str = self.rootconstr_str(excluded)
+            if root_str:
+                lines.append(root_str)
         for constraint in self:
             cstr = constraint.subconstr_str(excluded)
             if cstr is None:
@@ -58,15 +52,13 @@ class ConstraintSet(list):
         "LaTeX representation of a ConstraintSet."
         if not excluded:
             excluded = ["units"]
-        if "cost" in excluded:
-            lines = []  # start with nothing
-        else:
-            excluded.append("cost")
-            lines = ["\\begin{array}[ll]", "\\text{}"]
-            if hasattr(self, "cost"):
-                lines.extend(["\\text{minimize}",
-                              "    & %s \\\\" % self.cost.latex(excluded),
-                              "\\text{subject to}"])
+        lines = []
+        if "root" not in excluded:
+            excluded.append("root")
+            lines.append("\\begin{array}[ll] \\text{}")
+            root_latex = self.rootconstr_latex(excluded)
+            if root_latex:
+                lines.append(root_latex)
         for constraint in self:
             cstr = constraint.subconstr_latex(excluded)
             if cstr is None:
@@ -76,6 +68,14 @@ class ConstraintSet(list):
             lines.append(cstr)
         lines.append("\\end{array}")
         return "\n".join(lines)
+
+    def rootconstr_str(self, excluded=None):
+        "The appearance of a ConstraintSet in addition to its contents"
+        pass
+
+    def rootconstr_tex(self, excluded=None):
+        "The appearance of a ConstraintSet in addition to its contents"
+        pass
 
     def subconstr_str(self, excluded=None):
         "The collapsed appearance of a ConstraintSet"
@@ -99,8 +99,6 @@ class ConstraintSet(list):
 
     def sub(self, subs, value=None):
         "Substitutes in place."
-        if hasattr(self, "cost"):
-            self.cost = self.cost.sub(subs, value)
         for i, constraint in enumerate(self):
             self[i] = constraint.sub(subs, value)
         return self
@@ -108,9 +106,12 @@ class ConstraintSet(list):
     @property
     def varkeys(self):
         "return all Varkeys present in this ConstraintSet"
-        out = KeySet()
-        if hasattr(self, "cost"):
-            out.update(self.cost.varkeys)
+        return self._varkeys()
+
+    def _varkeys(self, init_dict=None):
+        "return all Varkeys present in this ConstraintSet"
+        init_dict = {} if init_dict is None else init_dict
+        out = KeySet(init_dict)
         for constraint in self:
             if hasattr(constraint, "varkeys"):
                 out.update(constraint.varkeys)

@@ -8,7 +8,10 @@ from ..nomials import Variable
 class CostedConstraintSet(ConstraintSet):
     def __init__(self, cost, constraints, substitutions=None):
         self.cost = cost
-        ConstraintSet.__init__(self, constraints, substitutions)
+        subs = self.cost.values
+        if substitutions:
+            subs.update(substitutions)
+        ConstraintSet.__init__(self, constraints, subs)
 
     def __getitem__(self, key):
         if isinstance(key, int):
@@ -19,10 +22,33 @@ class CostedConstraintSet(ConstraintSet):
                 return variables[0]
             else:
                 return variables
+
+    def sub(self, subs, value=None):
+        "Substitutes in place."
+        self.cost = self.cost.sub(subs, value)
+        return ConstraintSet.sub(self, subs, value)
+
+    @property
+    def varkeys(self):
+        "return all Varkeys present in this ConstraintSet"
+        return ConstraintSet._varkeys(self, self.cost.varkeys)
+
     gp = _progify_fctry(GeometricProgram)
     sp = _progify_fctry(SignomialProgram)
     solve = _solve_fctry(_progify_fctry(GeometricProgram, "solve"))
     localsolve = _solve_fctry(_progify_fctry(SignomialProgram, "localsolve"))
+
+    def rootconstr_str(self, excluded=None):
+        "The appearance of a ConstraintSet in addition to its contents"
+        return "\n".join(["  # minimize",
+                          "        %s" % self.cost.str_without(excluded),
+                          "  # subject to"])
+
+    def rootconstr_latex(self, excluded=None):
+        "The appearance of a ConstraintSet in addition to its contents"
+        return "\n".join(["\\text{minimize}",
+                          "    & %s \\\\" % self.cost.latex(excluded),
+                          "\\text{subject to}"])
 
     def zero_lower_unbounded_variables(self):
         "Recursively substitutes 0 for variables that lack a lower bound"
