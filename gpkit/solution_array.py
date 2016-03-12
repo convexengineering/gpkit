@@ -244,6 +244,8 @@ def results_table(data, title, minval=0, printunits=True, fixedcols=True,
             elif latex == 3:  # no description
                 lines.append(["$", varstr, "$ & ", valstr, "& $ ",
                               units.replace('**', '^'), "$ \\\\"])
+            else:
+                raise ValueError("Unexpected latex option, %s." % latex)
     if not latex:
         if lines:
             maxlens = np.max([list(map(len, line)) for line in lines], axis=0)
