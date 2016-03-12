@@ -67,8 +67,6 @@ class NomialData(object):
         cs = np.hstack((mag(s.cs) for s in nomials))
         # nomials are already simplified, so simplify=False
         NomialData.__init__(self, exps, cs, simplify=False)
-        # pylint: disable=attribute-defined-outside-init
-        self.nomials = nomials  # TODO eliminate constructor-dependent state
         self.units = tuple(s.units for s in nomials)
 
     def __repr__(self):
