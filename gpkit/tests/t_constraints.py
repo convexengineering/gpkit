@@ -3,10 +3,20 @@ import unittest
 from gpkit import Variable, SignomialsEnabled, Posynomial
 from gpkit.nomials import SignomialInequality, PosynomialInequality
 from gpkit.nomials import MonomialEquality
+from gpkit import LinkConstraint
 
 
 class TestConstraint(unittest.TestCase):
     """Tests for Constraint class"""
+
+    def test_link_conflict(self):
+        "Check that substitution conflicts are flagged during linking."
+        x_fx1 = Variable("x", 1, models=["fixed1"])
+        x_free = Variable("x", models=["free"])
+        x_fx2 = Variable("x", 2, models=["fixed2"])
+        lc = LinkConstraint([x_fx1 >= 1, x_free >= 1])
+        self.assertEqual(lc.substitutions["x"], 1)
+        self.assertRaises(ValueError, LinkConstraint, [x_fx1 >= 1, x_fx2 >= 1])
 
     def test_additive_scalar(self):
         """Make sure additive scalars simplify properly"""
