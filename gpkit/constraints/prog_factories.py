@@ -5,7 +5,6 @@ from ..nomials.substitution import parse_subs
 from ..solution_array import SolutionArray
 from ..keydict import KeyDict
 from ..varkey import VarKey
-from ..nomials import Monomial
 
 try:
     from ipyparallel import Client
@@ -32,8 +31,7 @@ def _progify_fctry(program, return_attr=None):
         """
         if not substitutions:
             substitutions = self.substitutions
-        cost = getattr(self, "cost", Monomial(1))
-        prog = program(cost, self, substitutions, verbosity)
+        prog = program(self.cost, self, substitutions, verbosity)
         if return_attr:
             return prog, getattr(prog, return_attr)
         else:

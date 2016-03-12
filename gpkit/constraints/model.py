@@ -1,31 +1,29 @@
 "Implements Model"
-from .base import ConstraintBase
-from .set import ConstraintSet
-from ..geometric_program import GeometricProgram
-from .signomial_program import SignomialProgram
+from .costed import CostedConstraintSet
+from collections import defaultdict
+from ..varkey import VarKey
+from ..nomials import Monomial
 from .link import LinkConstraint
-from .prog_factories import _progify_fctry, _solve_fctry
+from .. import SignomialsEnabled
 
 
-class Model(ConstraintBase):
+class Model(CostedConstraintSet):
     "A ConstraintSet for convenient solving and setup"
-    def __init__(self, cost=None, constraints=None, substitutions=None,
-                 *args, **kwargs):
-        if hasattr(self, "setup"):
-            args = [arg for arg in [cost, constraints] if arg] + list(args)
-            ConstraintBase.__init__(self, substitutions, *args, **kwargs)
-        else:
-            ## Support the ConstraintSet interface
-            if not constraints:  # assume args were [constraints]
-                constraints, cost = cost, None
-            elif isinstance(constraints, dict):
-                # assume args were [constraints, substitutions]
-                constraints, substitutions, cost = cost, constraints, None
-            if cost:
-                self.cost = cost
-            ConstraintSet.__init__(self, constraints, substitutions)
-        if "name" in kwargs:
-            self._add_models_tovars(kwargs["name"])
+    _nums = defaultdict(int)
+    name = None
+    num = None
+
+    def __init__(self, cost=None, constraints=None, substitutions=None, name=None):
+        cost = cost if cost is not None else Monomial(1)
+        constraints = constraints if constraints is not None else []
+        CostedConstraintSet.__init__(self, cost, constraints, substitutions)
+        if self.__class__.__name__ != "Model" and not name:
+            name = self.__class__.__name__
+        if name:
+            self.name = name
+            self.num = Model._nums[name]
+            Model._nums[name] += 1
+            self._add_modelname_tovars(self.name, self.num)
 
     def link(self, other, include_only=None, exclude=None):
         "Connects this model with a set of constraints"
@@ -33,54 +31,26 @@ class Model(ConstraintBase):
         cost = self.cost.sub(lc.linked)
         return Model(cost, [lc], lc.substitutions)
 
-    def __and__(self, other):
-        return self.link(other)
+    def _add_modelname_tovars(self, name, num):
+        add_model_subs = {}
+        for vk in self.varkeys:
+            descr = dict(vk.descr)
+            descr["models"] = descr.pop("models", []) + [name]
+            descr["modelnums"] = descr.pop("modelnums", []) + [num]
+            newvk = VarKey(**descr)
+            add_model_subs[vk] = newvk
+            if vk in self.substitutions:
+                self.substitutions[newvk] = self.substitutions[vk]
+                del self.substitutions[vk]
+        with SignomialsEnabled():  # since we're just substituting varkeys.
+            self.sub(add_model_subs)
 
-    def __or__(self, other):
-        return Model(self.cost, [self, other])
+    def subconstr_str(self, excluded=None):
+        "The collapsed appearance of a ConstraintBase"
+        if self.name:
+            return "%s_%s" % (self.name, self.num)
 
-    def zero_lower_unbounded_variables(self):
-        "Recursively substitutes 0 for variables that lack a lower bound"
-        zeros = True
-        while zeros:
-            bounds = self.gp(verbosity=0).missingbounds
-            zeros = {var: 0 for var, bound in bounds.items()
-                     if bound == "lower"}
-            self.substitutions.update(zeros)
-
-    gp = _progify_fctry(GeometricProgram)
-    sp = _progify_fctry(SignomialProgram)
-    solve = _solve_fctry(_progify_fctry(GeometricProgram, "solve"))
-    localsolve = _solve_fctry(_progify_fctry(SignomialProgram, "localsolve"))
-
-    def interact(self, ranges=None, fn_of_sol=None, **solvekwargs):
-        """Easy model interaction in IPython / Jupyter
-
-        By default, this creates a model with sliders for every constant
-        which prints a new solution table whenever the sliders are changed.
-
-        Arguments
-        ---------
-        fn_of_sol : function
-            The function called with the solution after each solve that
-            displays the result. By default prints a table.
-
-        ranges : dictionary {str: Slider object or tuple}
-            Determines which sliders get created. Tuple values may contain
-            two or three floats: two correspond to (min, max), while three
-            correspond to (min, step, max)
-
-        **solvekwargs
-            kwargs which get passed to the solve()/localsolve() method.
-        """
-        from ..interactive.widgets import modelinteract
-        return modelinteract(self, ranges, fn_of_sol, **solvekwargs)
-
-    def controlpanel(self, *args, **kwargs):
-        """Easy model control in IPython / Jupyter
-
-        Like interact(), but with the ability to control sliders and their
-        ranges live. args and kwargs are passed on to interact()
-        """
-        from ..interactive.widgets import modelcontrolpanel
-        return modelcontrolpanel(self, *args, **kwargs)
+    def subconstr_tex(self, excluded=None):
+        "The collapsed appearance of a ConstraintBase"
+        if self.name:
+            return "%s_{%s}" % (self.name, self.num)

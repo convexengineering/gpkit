@@ -157,27 +157,26 @@ class TestGPSubs(unittest.TestCase):
 
     def test_model_composition_units(self):
         class Above(Model):
-            def setup(self):
+            def __init__(self):
                 x = Variable("x", "ft")
                 x_max = Variable("x_{max}", 1, "yard")
-                return 1/x, [x <= x_max]
+                Model.__init__(self, 1/x, [x <= x_max])
 
         class Below(Model):
-            def setup(self):
+            def __init__(self):
                 x = Variable("x", "m")
                 x_min = Variable("x_{min}", 1, "cm")
-                return x, [x >= x_min]
+                Model.__init__(self, x, [x >= x_min])
 
         a, b = Above(), Below()
         if not isinstance(a["x"].key.units, str):
             self.assertAlmostEqual(a.solve(verbosity=0)["cost"], 0.3333333)
             self.assertAlmostEqual(b.solve(verbosity=0)["cost"], 0.01)
-            concatm = a | b
-            concatm.cost = a.cost*b.cost
+            concatm = Model(a.cost*b.cost, [a, b])
             concat_cost = concatm.solve(verbosity=0)["cost"]
             self.assertAlmostEqual(concat_cost, 0.0109361)  # 1 cm/1 yd
         a1, b1 = Above(), Below()
-        m = a1 & b1
+        m = a1.link(b1)
         m.cost = m["x"]
         sol = m.solve(verbosity=0)
         if not isinstance(m["x"].key.units, str):
@@ -190,19 +189,15 @@ class TestGPSubs(unittest.TestCase):
 
     def test_model_recursion(self):
         class Top(Model):
-            def setup(self):
+            def __init__(self):
                 x = Variable('x')
                 y = Variable('y')
-                m = Model(x, [x >= y, y >= 1])
-                combined = m & Sub()
-                return combined
+                Model.__init__(self, x, Sub().link([x >= y, y >= 1]))
 
         class Sub(Model):
-            def setup(self):
+            def __init__(self):
                 y = Variable('y')
-                objective = y
-                constraints = [y >= 2]
-                return objective, constraints
+                Model.__init__(self, y,  [y >= 2])
 
         sol = Top().solve(verbosity=0)
         self.assertAlmostEqual(sol['cost'], 2)

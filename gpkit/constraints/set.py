@@ -46,11 +46,8 @@ class ConstraintSet(list):
             else:
                 lines = [""]  # start with a newline
         for constraint in self:
-            if hasattr(constraint, "subconstr_str"):
-                cstr = constraint.subconstr_str(excluded)
-                if cstr is None:
-                    cstr = try_str_without(constraint, excluded)
-            else:
+            cstr = constraint.subconstr_str(excluded)
+            if cstr is None:
                 cstr = try_str_without(constraint, excluded)
             if cstr[:8] != "        ":  # require indentation
                 cstr = "        " + cstr
@@ -71,11 +68,8 @@ class ConstraintSet(list):
                               "    & %s \\\\" % self.cost.latex(excluded),
                               "\\text{subject to}"])
         for constraint in self:
-            if hasattr(constraint, "subconstr_latex"):
-                cstr = constraint.subconstr_latex(excluded)
-                if cstr is None:
-                    cstr = constraint.latex(excluded)
-            else:
+            cstr = constraint.subconstr_latex(excluded)
+            if cstr is None:
                 cstr = constraint.latex(excluded)
             if cstr[:6] != "    & ":  # require indentation
                 cstr = "    & " + cstr

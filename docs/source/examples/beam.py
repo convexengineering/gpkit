@@ -22,7 +22,7 @@ class Beam(Model):
     q : float or N-vector of floats
         [N/m] Loading density: can be specified as constants or as an array.
     """
-    def setup(self, N=4):
+    def __init__(self, N=4, **kwargs):
         EI = Var("EI", 1e4, "N*m^2")
         dx = Var("dx", "m", "Length of an element")
         L = Var("L", 5, "m", "Overall beam length")
@@ -48,7 +48,9 @@ class Beam(Model):
         displ_eq = (w >= w.left + 0.5*dx*(th + th.left))
         displ_eq[0] = (w[0] >= w_base)
         # minimize tip displacement (the last w)
-        return w[-1], [shear_eq, moment_eq, theta_eq, displ_eq, L == (N-1)*dx]
+        Model.__init__(self, w[-1],
+                       [shear_eq, moment_eq, theta_eq, displ_eq,
+                        L == (N-1)*dx], **kwargs)
 
 
 b = Beam(N=6, substitutions={"L": 6, "EI": 1.1e4, "q": 110*np.ones(10)})

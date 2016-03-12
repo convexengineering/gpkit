@@ -24,6 +24,7 @@ def vec_recurse(element, function, *args, **kwargs):
 
 
 def array_constraint(symbol, func):
+    "Return function which creates constraints of the given operator."
     vecfunc = np.vectorize(func)
 
     def wrapped_func(self, other):

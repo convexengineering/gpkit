@@ -20,6 +20,14 @@ class SingleEquationConstraint(object):
                              self.oper,
                              try_str_without(self.right, excluded))
 
+    def subconstr_str(self, excluded):
+        "The collapsed string of a constraint"
+        pass
+
+    def subconstr_latex(self, excluded):
+        "The collapsed latex of a constraint"
+        pass
+
     def latex(self, excluded=None):
         if not excluded:
             excluded = ["units"]  # previously bool(self.left.units)

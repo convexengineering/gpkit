@@ -14,6 +14,7 @@ class Nomial(NomialData):
     _repr_latex_ = _repr_latex_
 
     def str_without(self, excluded=None):
+        "String representation excluding fields ('units', varkey attributes)"
         if excluded is None:
             excluded = []
         mstrs = []
