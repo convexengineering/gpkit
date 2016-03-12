@@ -4,6 +4,7 @@ from gpkit.tests.helpers import run_tests
 
 
 def import_tests():
+    """Get a list of all GPkit unit test TestCases"""
     tests = []
 
     from gpkit.tests import t_tools
@@ -35,6 +36,9 @@ def import_tests():
 
     from gpkit.tests import t_examples
     tests += t_examples.TESTS
+
+    from gpkit.tests import t_keydict
+    tests += t_keydict.TESTS
 
     return tests
 
