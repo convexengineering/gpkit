@@ -55,7 +55,7 @@ class NomialArray(np.ndarray):
             return "[" + ", ".join([try_str_without(el, excluded)
                                     for el in self]) + "]"
         else:
-            return str(self.flatten()[0])  # todo THIS IS WEIRD
+            return str(self.flatten()[0])  # TODO THIS IS WEIRD
 
     def latex(self, matwrap=True):
         "Returns 1D latex list of contents."

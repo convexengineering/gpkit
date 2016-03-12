@@ -68,7 +68,7 @@ class NomialData(object):
         # nomials are already simplified, so simplify=False
         NomialData.__init__(self, exps, cs, simplify=False)
         # pylint: disable=attribute-defined-outside-init
-        self.nomials = nomials  # todo eliminate constructor-dependent state
+        self.nomials = nomials  # TODO eliminate constructor-dependent state
         self.units = tuple(s.units for s in nomials)
 
     def __repr__(self):
