@@ -7,5 +7,5 @@ from .nomial_math import SignomialInequality
 from .variables import Variable, ArrayVariable
 
 # TEMPORARY SHORTCUTS
-VectorVariable = ArrayVariable
 from .data import NomialData
+VectorVariable = ArrayVariable

@@ -2,7 +2,7 @@
 import matplotlib.pyplot as plt
 from matplotlib.mlab import griddata
 import numpy as np
-from ..nomials import VarKey
+from .. import VarKey
 from ..small_scripts import unitstr
 
 
@@ -12,12 +12,17 @@ NEUTRAL_DARK = '#888888'
 NEUTRAL_LIGHT = '#aaaaaa'
 
 
-def contour_plot(ax, X, Y, Z, title, colors, shortlevels, lablevels):
+def contour_plot(ax, xdata, ydata, zdata,
+                 title, colors, shortlevels, lablevels):
+    # pylint: disable=too-many-arguments
+    """contour plot with GPkit defaults"""
     light, dark = colors
     fmt = '%.4g'
 
-    contf = ax.contour(X, Y, Z, levels=shortlevels, linewidths=0.5, colors=light)
-    cont = ax.contour(X, Y, Z, levels=lablevels, linewidths=1, colors=dark)
+    _ = ax.contour(xdata, ydata, zdata,
+                   levels=shortlevels, linewidths=0.5, colors=light)
+    cont = ax.contour(xdata, ydata, zdata,
+                      levels=lablevels, linewidths=1, colors=dark)
 
     plt.clabel(cont, fmt=fmt, colors=dark, fontsize=14)
     ax.set_title(title, color=dark, fontsize=14)
@@ -26,25 +31,36 @@ def contour_plot(ax, X, Y, Z, title, colors, shortlevels, lablevels):
     ax.grid(which='both', color=NEUTRAL_LIGHT)
 
 
-def contour_array(model, X, Y, Zs, cellsize=(5, 5),
+def contour_array(model, xname, yname, znames, cellsize=(5, 5),
                   nrows=None, ncols=None,
                   xticks=None, yticks=None, colors=None):
+    # pylint: disable=too-many-arguments
+    # pylint: disable=too-many-locals
+    # pylint: disable=too-many-statements
+    """Arrar of contour plots for variables in a solved model
 
+    Arguments
+    ---------
+    model: gpkit.Model
+    xname, yname: strings
+    znames: list of strings
+    """
     data = model.solution["variables"]
-    n = len(Zs)
+    n = len(znames)
     if nrows is None:
         nrows = (n+1)/2
     if ncols is None:
         ncols = 2 if n >= 2 else 1
     figsize = (cellsize[0]*ncols, cellsize[1]*nrows)
-    x_sweep = model.substitutions[model[str(X)].key][1]
-    y_sweep = model.substitutions[model[str(Y)].key][1]
+    x_sweep = model.substitutions[model[str(xname)].key][1]
+    y_sweep = model.substitutions[model[str(yname)].key][1]
     if xticks is None:
         xticks = x_sweep
     if yticks is None:
         yticks = y_sweep
 
     def get_label(var):
+        "Default axis label for var"
         var = model[str(var)].key
         label = var.name
         if "idx" in var.descr:
@@ -60,9 +76,9 @@ def contour_array(model, X, Y, Zs, cellsize=(5, 5),
             label += " %s" % var.descr["label"]
         return label, vals
 
-    xlabel, x_sol = get_label(X)
-    ylabel, y_sol = get_label(Y)
-    Z_lgs = [get_label(Z) for Z in Zs]
+    xlabel, x_sol = get_label(xname)
+    ylabel, y_sol = get_label(yname)
+    Z_lgs = [get_label(Z) for Z in znames]
 
     if colors is None:
         colors = LIGHT_COLORS[0], DARK_COLORS[0]
@@ -105,22 +121,24 @@ def contour_array(model, X, Y, Zs, cellsize=(5, 5),
         zlabel, z_sol = Z_lg
         row_idx = i/ncols  # 0, 0, 1, 1, 2, 2 for ncols = 2
         col_vector = axes[row_idx, :] if nrows > 1 else axes
-        ax = col_vector[(i-row_idx*ncols) % ncols] if ncols > 1 else row_vector[0]
+        ax = (col_vector[(i-row_idx*ncols) % ncols]
+              if ncols > 1 else row_vector[0])
         lablevels = [np.percentile(z_sol, 100*i/7.0) for i in range(8)]
         shortlevels = [(lablevels[4]-lablevels[3])/6.0 * j + lablevels[3]
                        for j in range(-32, 33)]
         Zgrid = griddata(x_sol, y_sol, z_sol, x_sweep, y_sweep, interp='linear')
-        contour_plot(ax, x_sweep, y_sweep, Zgrid, zlabel, colors, shortlevels, lablevels)
+        contour_plot(ax, x_sweep, y_sweep, Zgrid,
+                     zlabel, colors, shortlevels, lablevels)
 
     return fig, axes
 
 
-def frontier_surface_plot(data, xvar, yvar, zvars,
-                          colors=None, maxfigsize=(5,5), axsize=(5,5)):
-    pass
+# def frontier_surface_plot(data, xvar, yvar, zvars,
+#                           colors=None, maxfigsize=(5,5), axsize=(5,5)):
+#     pass
 
 
-def plot_frontiers(gp, Zs, x=1, y=3, figsize=(15,5)):
+def plot_frontiers(gp, znames, nrow=1, ncol=3, figsize=(15, 5)):
     "Helper function to plot 2d contour plots."
     sol = gp.solution
     data = dict(sol["variables"])
@@ -130,12 +148,13 @@ def plot_frontiers(gp, Zs, x=1, y=3, figsize=(15,5)):
         contour_array(data,
                       gp.sweep.keys()[0],
                       gp.sweep.keys()[1],
-                      Zs, x, y, figsize,
+                      znames, nrow, ncol, figsize,
                       xticks=gp.sweep.values()[0],
                       yticks=gp.sweep.values()[1])
 
 
 def _combine_nearby_ticks(ticks, lim, ntick=25):
+    # pylint: disable=too-many-locals
     """This function deals with overlapping labels in non-regularly-spaced
     plotting ticks. Nearby ticks are combined (averaged), and their labels
     are concatenated into a single label.
@@ -258,7 +277,7 @@ def plot_convergence(model):
     matplotlib.pyplot Figure
         Semilogy plot of variable values as functions of SP iteration #
     """
-    newDict = {}
+    newdict = {}
 
     fig, ax = plt.subplots()
 
@@ -266,8 +285,8 @@ def plot_convergence(model):
         a = np.array([])
         for j in range(len(model.program.gps)):
             a = np.append(a, model.program.gps[j].result['variables'][key])
-        newDict[key] = a
-        ax.semilogy(np.arange(len(newDict[key])), newDict[key], label=key.name)
+        newdict[key] = a
+        ax.semilogy(np.arange(len(newdict[key])), newdict[key], label=key.name)
 
     box = ax.get_position()
     ax.set_position([box.x0, box.y0, box.width * 0.8, box.height])

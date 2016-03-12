@@ -1,5 +1,6 @@
-import numpy as np
+"Implement Variable and ArrayVariable classes"
 from collections import Iterable
+import numpy as np
 from .data import NomialData
 from .array import NomialArray
 from .nomial_math import Monomial
@@ -9,31 +10,31 @@ from ..small_scripts import is_sweepvar
 
 
 class Variable(Monomial):
+    """A described singlet Monomial.
+
+    Arguments
+    ---------
+    *args : list
+        may contain "name" (Strings)
+                    "value" (Numbers + Quantity) or (Iterable) for a sweep
+                    "units" (Strings + Quantity)
+             and/or "label" (Strings)
+    **descr : dict
+        VarKey description
+
+    Returns
+    -------
+    Monomials containing a VarKey with the name '$name',
+    where $name is the vector's name and i is the VarKey's index.
+    """
     def __init__(self, *args, **descr):
-        """A described singlet Monomial.
-
-        Arguments
-        ---------
-        *args : list
-            may contain "name" (Strings)
-                        "value" (Numbers + Quantity) or (Iterable) for a sweep
-                        "units" (Strings + Quantity)
-                 and/or "label" (Strings)
-        **descr : dict
-            VarKey description
-
-        Returns
-        -------
-        Monomials containing a VarKey with the name '$name',
-        where $name is the vector's name and i is the VarKey's index.
-        """
         for arg in args:
             if isinstance(arg, Strings) and "name" not in descr:
                 descr["name"] = arg
             elif isinstance(arg, Numbers) and "value" not in descr:
                 descr["value"] = arg
             elif (((isinstance(arg, Iterable) and not isinstance(arg, Strings))
-                  or hasattr(arg, "__call__")) and "value" not in descr):
+                   or hasattr(arg, "__call__")) and "value" not in descr):
                 if is_sweepvar(arg):
                     descr["value"] = arg
                 else:
@@ -55,6 +56,7 @@ class Variable(Monomial):
 
     @property
     def descr(self):
+        "a Variable's descr is derived from its VarKey."
         return self.key.descr
 
     def sub(self, *args, **kwargs):
@@ -94,6 +96,7 @@ class ArrayVariable(NomialArray):
     """
 
     def __new__(cls, shape, *args, **descr):
+        # pylint: disable=too-many-branches
         cls = NomialArray
 
         if "idx" in descr:

@@ -1,6 +1,6 @@
 """Miscellaneous small classes"""
-import numpy as np
 from collections import namedtuple
+import numpy as np
 from . import units as gpkitunits
 
 try:

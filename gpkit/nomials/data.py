@@ -1,8 +1,8 @@
 """Machinery for exps, cs, varlocs data -- common to nomials and programs"""
-import numpy as np
 from collections import defaultdict
 from functools import reduce as functools_reduce
 from operator import add
+import numpy as np
 from ..small_classes import HashVector, Quantity
 from ..keydict import KeySet, KeyDict
 from ..small_scripts import mag
@@ -16,6 +16,7 @@ class NomialData(object):
     varlocs: {VarKey: list} (terms each variable appears in)
     units: pint.UnitsContainer
     """
+    # pylint: disable=too-many-instance-attributes
     def __init__(self, exps=None, cs=None, simplify=True):
         if exps is None and cs is None:
             # pass through for classmethods to get a NomialData object,
@@ -38,7 +39,7 @@ class NomialData(object):
                                if "value" in vk.descr})
 
         if isinstance(self.cs, Quantity):
-            self.units = Quantity(1, self.cs.units)
+            self.units = Quantity(1, self.cs.units) #pylint: disable=no-member
         else:
             self.units = None
 
@@ -66,13 +67,15 @@ class NomialData(object):
         cs = np.hstack((mag(s.cs) for s in nomials))
         # nomials are already simplified, so simplify=False
         NomialData.__init__(self, exps, cs, simplify=False)
-        self.nomials = nomials  # TODO eliminate constructor-dependent state
+        # pylint: disable=attribute-defined-outside-init
+        self.nomials = nomials  # todo eliminate constructor-dependent state
         self.units = tuple(s.units for s in nomials)
 
     def __repr__(self):
         return "gpkit.%s(%s)" % (self.__class__.__name__, hash(self))
 
     def sub(self, substitutions, val=None, require_positive=True):
+        """Substitutes into self"""
         if hasattr(self, "nomials"):
             subbed_nomials = [n.sub(substitutions, val, require_positive)
                               for n in self.nomials]

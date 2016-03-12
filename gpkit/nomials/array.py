@@ -7,9 +7,8 @@
     >>> px = gpkit.NomialArray([1, x, x**2])
 
 """
-
-import numpy as np
 from operator import eq, le, ge, xor
+import numpy as np
 from ..small_classes import Numbers
 from ..small_scripts import try_str_without
 from ..constraints.array import ArrayConstraint
@@ -56,7 +55,7 @@ class NomialArray(np.ndarray):
             return "[" + ", ".join([try_str_without(el, excluded)
                                     for el in self]) + "]"
         else:
-            return str(self.flatten()[0])  # TODO THIS IS WEIRD
+            return str(self.flatten()[0])  # todo THIS IS WEIRD
 
     def latex(self, matwrap=True):
         "Returns 1D latex list of contents."
@@ -112,6 +111,7 @@ class NomialArray(np.ndarray):
 
     @property
     def c(self):
+        """The coefficient vector in the GP input data sense"""
         try:
             floatarray = np.array(self, dtype='float')
             if not floatarray.shape:
@@ -143,6 +143,7 @@ class NomialArray(np.ndarray):
 
     @property
     def units(self):
+        """units must have same dimensions across the entire nomial array"""
         units = None
         for el in self.flat:
             if isinstance(el, Numbers):
@@ -166,7 +167,7 @@ class NomialArray(np.ndarray):
         if self.ndim != 1:
             raise NotImplementedError("unimplemented for ndim=%s" % self.ndim)
         padded = NomialArray(np.hstack((padding, self)))
-        padded.units  # check that the units are consistent
+        _ = padded.units  # check that the units are consistent
         return padded
 
     def padright(self, padding):
@@ -174,7 +175,7 @@ class NomialArray(np.ndarray):
         if self.ndim != 1:
             raise NotImplementedError("unimplemented for ndim=%s" % self.ndim)
         padded = NomialArray(np.hstack((self, padding)))
-        padded.units  # check that the units are consistent
+        _ = padded.units  # check that the units are consistent
         return padded
 
     @property

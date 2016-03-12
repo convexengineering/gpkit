@@ -33,6 +33,8 @@ class Signomial(Nomial):
     """
     def __init__(self, exps=None, cs=1, require_positive=True, simplify=True,
                  **descr):
+        # pylint: disable=too-many-statements
+        # pylint: disable=too-many-branches
         # this is somewhat deprecated, used for Variables and subbing Monomials
         units = descr.get("units", None)
         # If cs has units, then they will override this setting.
@@ -85,8 +87,8 @@ class Signomial(Nomial):
                     except DimensionalityError:
                         raise ValueError("cannot add monomials of"
                                          " different units together")
-                for i in range(len(exps)):
-                    exps_[i] = HashVector(exps[i])
+                for i, k in enumerate(exps):
+                    exps_[i] = HashVector(k)
                     for key in exps_[i]:
                         if isinstance(key, Strings+(Monomial,)):
                             exps_[i][VarKey(key)] = exps_[i].pop(key)
@@ -117,6 +119,7 @@ class Signomial(Nomial):
             self.c = self.cs[0]
 
     def to(self, arg):
+        "Convert to in the pint units sense"
         return Signomial(self.exps, self.cs.to(arg).tolist())
 
     def diff(self, wrt):
@@ -294,13 +297,13 @@ class Signomial(Nomial):
         else:
             return NotImplemented
 
-    def __pow__(self, x):
-        if isinstance(x, int):
-            if x >= 0:
+    def __pow__(self, expo):
+        if isinstance(expo, int):
+            if expo >= 0:
                 p = Monomial({}, 1)
-                while x > 0:
+                while expo > 0:
                     p *= self
-                    x -= 1
+                    expo -= 1
                 return p
             else:
                 raise ValueError("Signomials are only closed under"
@@ -421,8 +424,8 @@ class Monomial(Posynomial):
 
 class ScalarSingleEquationConstraint(SingleEquationConstraint):
 
+    "As the original class, but casts arguments to Signomial"
     def __init__(self, left, oper, right):
-        "As the original class, but casts arguments to Signomial"
         self.left = Signomial(left)
         self.oper = oper
         self.right = Signomial(right)
@@ -537,6 +540,7 @@ class PosynomialInequality(ScalarSingleEquationConstraint):
         return constr_sens, var_senss
 
     def as_gpconstr(self, x0):
+        "GP version of a Posynomial constraint is itself"
         return self
 
     def sens_from_gpconstr(self, posyapprox, pa_sens, var_senss):

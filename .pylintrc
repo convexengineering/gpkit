@@ -92,10 +92,10 @@ msg-template={path}:{line}: [{msg_id}({symbol}), {obj}] {msg}
 [BASIC]
 
 # List of builtins function names that should not be used, separated by a comma
-bad-functions=map,filter,input
+bad-functions=filter,input
 
 # Good variable names which should always be accepted, separated by a comma
-good-names=i,j,k,_,units,gp,sp
+good-names=i,j,k,_,units,gp,sp,to
 
 # Bad variable names which should always be refused, separated by a comma
 bad-names=foo,bar,baz,toto,tutu,tata
@@ -120,7 +120,7 @@ variable-rgx=[a-zA-Z_]{1,2}[a-z0-9_]{0,30}$
 variable-name-hint=[a-z_][a-z0-9_]{2,30}$
 
 # Regular expression matching correct constant names
-const-rgx=(([A-Z_][A-Z0-9_]*)|(__.*__))$
+const-rgx=(([A-Z_][A-Z0-9_]*)|(__.*__))|Quantity$
 
 # Naming hint for constant names
 const-name-hint=(([A-Z_][A-Z0-9_]*)|(__.*__))$
@@ -132,7 +132,7 @@ attr-rgx=[a-z_][a-z0-9_]{2,30}|A|cs|c$
 attr-name-hint=[a-z_][a-z0-9_]{2,30}$
 
 # Regular expression matching correct argument names
-argument-rgx=[a-z_][a-z0-9_]{2,30}|x0|nu|la$
+argument-rgx=[a-z_][a-z0-9_]{2,30}|x0|nu|la|ax$
 
 # Naming hint for argument names
 argument-name-hint=[a-z_][a-z0-9_]{2,30}$
