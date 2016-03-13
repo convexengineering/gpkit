@@ -40,9 +40,32 @@ def _progify_fctry(program, return_attr=None):
 
 
 def _solve_fctry(genfunction):
-    "Generates function that solves/sweeps a program/solve pair."
-    def solvefn(self, solver=None, verbosity=2, *args, **kwargs):
-        """Call solver and return result"""
+    "Returns function for making/solving/sweeping a program."
+    def solvefn(self, solver=None, verbosity=2, skipsweepfailures=False,
+                *args, **kwargs):
+        """Forms a mathematical program and attempts to solve it.
+
+         Arguments
+         ---------
+         solver : string or function (optional)
+             If None, uses the default solver found in installation.
+         verbosity : int (optional)
+             If greater than 0 prints runtime messages.
+             Is decremented by one and then passed to programs.
+         skipsweepfailures : bool (optional)
+             If True, when a solve errors during a sweep, skip it.
+         *args, **kwargs : Passed to solver
+
+         Returns
+         -------
+         sol : SolutionArray
+             See the SolutionArray documentation for details.
+
+         Raises
+         ------
+         ValueError if the program is invalid.
+         RuntimeWarning if an error occurs in solving or parsing the solution.
+         """
         constants, sweep, linkedsweep = parse_subs(self.varkeys,
                                                    self.substitutions)
         solution = SolutionArray()
@@ -90,7 +113,7 @@ def _solve_fctry(genfunction):
                 self.program.append(program)  # NOTE: SIDE EFFECTS
                 if result:  # solve succeeded
                     solution.append(result)
-                elif not kwargs.get("skipsweepfailures"):
+                elif not skipsweepfailures:
                     raise RuntimeWarning("solve failed during sweep; program"
                                          " has been saved to m.program[-1]."
                                          " To ignore such failures, solve with"

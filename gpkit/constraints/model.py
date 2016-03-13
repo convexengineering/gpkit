@@ -3,12 +3,40 @@ from collections import defaultdict
 from .costed import CostedConstraintSet
 from ..varkey import VarKey
 from ..nomials import Monomial
+from .prog_factories import _progify_fctry, _solve_fctry
+from ..geometric_program import GeometricProgram
+from .signomial_program import SignomialProgram
 from .link import LinkConstraint
 from .. import SignomialsEnabled
 
 
 class Model(CostedConstraintSet):
-    "A ConstraintSet for convenient solving and setup"
+    """Symbolic representation of an optimization problem.
+
+    The Model class is used both directly to create models with constants and
+    sweeps, and indirectly inherited to create custom model classes.
+
+    Arguments
+    ---------
+    cost : Posynomial (optional)
+        Defaults to `Monomial(1)`.
+
+    constraints : ConstraintSet or list of constraints (optional)
+        Defaults to an empty list.
+
+    substitutions : dict (optional)
+        This dictionary will be substituted into the problem before solving,
+        and also allows the declaration of sweeps and linked sweeps.
+
+    name : str (optional)
+        Allows "naming" a model in a way similar to inherited instances,
+        and overrides the inherited name if there is one.
+
+    Attributes with side effects
+    ----------------------------
+    `program` is set during a solve
+    `solution` is set at the end of a solve
+    """
     _nums = defaultdict(int)
     name = None
     num = None
@@ -32,6 +60,11 @@ class Model(CostedConstraintSet):
             self.num = Model._nums[name]
             Model._nums[name] += 1
             self._add_modelname_tovars(self.name, self.num)
+
+    gp = _progify_fctry(GeometricProgram)
+    sp = _progify_fctry(SignomialProgram)
+    solve = _solve_fctry(_progify_fctry(GeometricProgram, "solve"))
+    localsolve = _solve_fctry(_progify_fctry(SignomialProgram, "localsolve"))
 
     def link(self, other, include_only=None, exclude=None):
         "Connects this model with a set of constraints"

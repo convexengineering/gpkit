@@ -20,6 +20,7 @@ Quantity = ureg.Quantity
 
 @np.vectorize
 def vec_recurse(element, function, *args, **kwargs):
+    "Vectorizes function with particular args and kwargs"
     return function(element, *args, **kwargs)
 
 

@@ -1,8 +1,5 @@
 "Implement CostedConstraintSet"
 from .set import ConstraintSet
-from .prog_factories import _progify_fctry, _solve_fctry
-from ..geometric_program import GeometricProgram
-from .signomial_program import SignomialProgram
 from ..nomials import Variable
 
 
@@ -42,11 +39,6 @@ class CostedConstraintSet(ConstraintSet):
     def varkeys(self):
         "return all Varkeys present in this ConstraintSet"
         return ConstraintSet._varkeys(self, self.cost.varkeys)
-
-    gp = _progify_fctry(GeometricProgram)
-    sp = _progify_fctry(SignomialProgram)
-    solve = _solve_fctry(_progify_fctry(GeometricProgram, "solve"))
-    localsolve = _solve_fctry(_progify_fctry(SignomialProgram, "localsolve"))
 
     def rootconstr_str(self, excluded=None):
         "The appearance of a ConstraintSet in addition to its contents"

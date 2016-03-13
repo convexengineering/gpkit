@@ -610,8 +610,8 @@ class SignomialInequality(ScalarSingleEquationConstraint):
         s = self.sigy_lt0_rep.sub(self.substitutions, require_positive=False)
         posy, negy = s.posy_negy()
         if len(negy.cs) != 1:
-            raise TypeError("SignomialInequality could not simplify to"
-                            "a PosynomialInequality")
+            raise ValueError("SignomialInequality could not simplify to"
+                             " a PosynomialInequality")
         else:
             self.__class__ = PosynomialInequality
             self.__init__(posy, "<=", negy)

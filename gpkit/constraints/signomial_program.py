@@ -2,10 +2,10 @@
 from time import time
 from ..geometric_program import GeometricProgram
 from ..feasibility import feasibility_model
-from .set import ConstraintSet
+from .costed import CostedConstraintSet
 
 
-class SignomialProgram(ConstraintSet):
+class SignomialProgram(CostedConstraintSet):
     """Prepares a collection of signomials for a SP solve.
 
     Arguments
@@ -44,8 +44,18 @@ class SignomialProgram(ConstraintSet):
     The equivalent of a Signomial objective can be constructed by constraining
     a dummy variable z to be greater than the desired Signomial objective s
     (z >= s) and then minimizing that dummy variable.""")
-        ConstraintSet.__init__(self, constraints, substitutions)
-        self.cost = cost
+        CostedConstraintSet.__init__(self, cost, constraints, substitutions)
+        try:
+            posys = self.as_posyslt1()  # should raise an error
+            # TODO: is there a faster way to check?
+        except ValueError:
+            pass
+        else:  # this is a GP
+            raise ValueError("""No Signomials remained after substitution.
+
+    SignomialPrograms should only be created with Models containing Signomial
+    Constraints, since Models without Signomials have global solutions and can
+    be solved with 'Model.solve()'.""")
         self.gps = []
         self.result = None
 
