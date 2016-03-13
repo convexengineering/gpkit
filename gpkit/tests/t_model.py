@@ -330,7 +330,7 @@ class TestSP(unittest.TestCase):
             x = Variable('x')
             y = Variable('y')
             J = 0.01*((x - 1)**2 + (y - 1)**2) + (x*y - 1)**2
-            m = Model(J, [J >= 1])
+            m = Model(J)
             with self.assertRaises(TypeError):
                 sol = m.localsolve(verbosity=0)
 
