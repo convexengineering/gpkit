@@ -12,6 +12,7 @@ def try_str_without(item, excluded):
 
 
 def veckeyed(key):
+    "Return a veckey version of a VarKey"
     vecdescr = dict(key.descr)
     del vecdescr["idx"]
     vecdescr.pop("value", None)
@@ -19,6 +20,7 @@ def veckeyed(key):
 
 
 def listify(l):
+    "Make sure an item is in a list"
     if isinstance(l, Iterable):
         return list(l)
     else:
@@ -26,6 +28,7 @@ def listify(l):
 
 
 def isequal(a, b):
+    "Determine if two elements are equal, recursing through Iterables"
     if (isinstance(a, Iterable) and
             not isinstance(a, Strings+(tuple, list, dict))):
         for i, a_i in enumerate(a):
