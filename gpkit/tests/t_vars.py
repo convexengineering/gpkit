@@ -1,7 +1,7 @@
 """Test VarKey, Variable, VectorVariable, and ArrayVariable classes"""
 import unittest
 import numpy as np
-from gpkit import (Monomial, NomialArray, Variable, VarKey,
+from gpkit import (Monomial, NomialArray, Variable, VarKey, units,
                    VectorVariable, ArrayVariable)
 
 
@@ -128,6 +128,12 @@ class TestVectorVariable(unittest.TestCase):
         N = 20
         x_arr = np.arange(0, 5., 5./N) + 1e-6
         x = VectorVariable(N, 'x', x_arr, 'm', "Beam Location")
+
+    def test_constraint_creation_units(self):
+        v = VectorVariable(2, "v", "m/s")
+        vmin = 40*units("ft/s")
+        c = (v >= vmin)
+        self.assertTrue(c.right.units)
 
 
 class TestArrayVariable(unittest.TestCase):
