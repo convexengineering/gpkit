@@ -1,3 +1,4 @@
+"Interactive GPkit widgets for iPython notebook"
 import ipywidgets as widgets
 from traitlets import link
 from ..small_scripts import is_sweepvar
@@ -26,7 +27,7 @@ def modelinteract(model, ranges=None, fn_of_sol=None, **solvekwargs):
     """
     if ranges is None:
         ranges = {}
-        for k, v in model.allsubs.items():
+        for k, v in model.substitutions.items():
             if is_sweepvar(v) or isinstance(v, Numbers):
                 if is_sweepvar(v):
                     # By default, sweep variables become sliders, so we
@@ -55,10 +56,9 @@ def modelinteract(model, ranges=None, fn_of_sol=None, **solvekwargs):
             print solution.table(tables)
 
     solvekwargs["verbosity"] = 0
-    modelvarkeys = model.varkeys
 
     def resolve(**subs):
-        subs = {modelvarkeys[k]: v for k, v in subs.items()}
+        "This method gets called each time the user changes something"
         model.substitutions.update(subs)
         try:
             try:
