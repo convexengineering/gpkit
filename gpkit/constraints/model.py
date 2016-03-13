@@ -20,8 +20,8 @@ class Model(CostedConstraintSet):
             raise RuntimeWarning(
                 "setup methods are no longer used in GPkit. "
                 "To initialize a model, rename your setup method as "
-                "__init__(self, **kwargs) and have it call"
-                "Model.__init__(cost, constraints, **kwargs) at the end.")
+                "__init__(self, **kwargs) and have it call "
+                "Model.__init__(self, cost, constraints, **kwargs) at the end.")
         cost = cost if cost is not None else Monomial(1)
         constraints = constraints if constraints is not None else []
         CostedConstraintSet.__init__(self, cost, constraints, substitutions)
