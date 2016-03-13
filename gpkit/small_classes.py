@@ -90,7 +90,7 @@ class DictOfLists(dict):
 
     def atindex(self, i):
         "Indexes into each list independently."
-        return self.__class__(index_dict(i, self, v.__class__()))
+        return self.__class__(index_dict(i, self, self.__class__()))
 
     def to_united_array(self, unitless_keys=(), united=False):
         "Converts all lists into array, potentially grabbing units from keys."
