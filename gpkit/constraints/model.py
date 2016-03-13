@@ -15,6 +15,13 @@ class Model(CostedConstraintSet):
 
     def __init__(self, cost=None, constraints=None,
                  substitutions=None, name=None):
+        if hasattr(self, "setup"):
+            # temporarily fail gracefully for backwards compatibility
+            raise RuntimeWarning(
+                "setup methods are no longer used in GPkit. "
+                "To initialize a model, rename your setup method as "
+                "__init__(self, **kwargs) and have it call"
+                "Model.__init__(cost, constraints, **kwargs) at the end.")
         cost = cost if cost is not None else Monomial(1)
         constraints = constraints if constraints is not None else []
         CostedConstraintSet.__init__(self, cost, constraints, substitutions)
