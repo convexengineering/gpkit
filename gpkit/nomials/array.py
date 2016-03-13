@@ -28,7 +28,11 @@ def array_constraint(symbol, func):
     vecfunc = np.vectorize(func)
 
     def wrapped_func(self, other):
-        result = vecfunc(self, other)
+        if isinstance(other, Quantity):
+            veccable_other = np.array([other], dtype=object)
+        else:
+            veccable_other = other
+        result = vecfunc(self, veccable_other)
         left = self.key if hasattr(self, "key") else self
         right = other.key if hasattr(other, "key") else other
         return ArrayConstraint(result, left, symbol, right)

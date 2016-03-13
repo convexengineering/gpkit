@@ -83,6 +83,9 @@ def disable_units():
         def __getattr__(self, attr):
             return 1
 
+        def __call__(self, arg):
+            return 1
+
     units = DummyUnits()
 
 enable_units()

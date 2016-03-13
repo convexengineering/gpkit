@@ -1,8 +1,9 @@
 """Test VarKey, Variable, VectorVariable, and ArrayVariable classes"""
 import unittest
 import numpy as np
-from gpkit import (Monomial, NomialArray, Variable, VarKey, units,
+from gpkit import (Monomial, NomialArray, Variable, VarKey,
                    VectorVariable, ArrayVariable)
+import gpkit
 
 
 class TestVarKey(unittest.TestCase):
@@ -131,9 +132,14 @@ class TestVectorVariable(unittest.TestCase):
 
     def test_constraint_creation_units(self):
         v = VectorVariable(2, "v", "m/s")
-        vmin = 40*units("ft/s")
-        c = (v >= vmin)
-        self.assertTrue(c.right.units)
+        c = (v >= 40*gpkit.units("ft/s"))
+        c2 = (v >= [20, 30]*gpkit.units("ft/s"))
+        if gpkit.units:
+            self.assertTrue(c.right.units)
+            self.assertTrue(c2.right.units)
+        else:
+            self.assertEqual(type(c.right), int)
+            self.assertEqual(type(c2.right), list)
 
 
 class TestArrayVariable(unittest.TestCase):
