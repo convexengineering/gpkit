@@ -56,7 +56,7 @@ class ConstraintSet(list):
         if "root" not in excluded:
             excluded.append("root")
             lines.append("\\begin{array}[ll] \\text{}")
-            root_latex = self.rootconstr_latex(excluded)
+            root_latex = self.rootconstr_tex(excluded)
             if root_latex:
                 lines.append(root_latex)
         for constraint in self:

@@ -4,6 +4,7 @@ from gpkit import Variable, SignomialsEnabled, Posynomial, VectorVariable
 from gpkit.nomials import SignomialInequality, PosynomialInequality
 from gpkit.nomials import MonomialEquality
 from gpkit import LinkConstraint
+from gpkit.tests.helpers import run_tests
 
 
 class TestConstraint(unittest.TestCase):
@@ -123,5 +124,4 @@ class TestSignomialInequality(unittest.TestCase):
 TESTS = [TestConstraint, TestMonomialEquality, TestSignomialInequality]
 
 if __name__ == '__main__':
-    from gpkit.tests.helpers import run_tests
     run_tests(TESTS)

@@ -1,6 +1,6 @@
 "Implements Model"
-from .costed import CostedConstraintSet
 from collections import defaultdict
+from .costed import CostedConstraintSet
 from ..varkey import VarKey
 from ..nomials import Monomial
 from .link import LinkConstraint
@@ -13,7 +13,8 @@ class Model(CostedConstraintSet):
     name = None
     num = None
 
-    def __init__(self, cost=None, constraints=None, substitutions=None, name=None):
+    def __init__(self, cost=None, constraints=None,
+                 substitutions=None, name=None):
         cost = cost if cost is not None else Monomial(1)
         constraints = constraints if constraints is not None else []
         CostedConstraintSet.__init__(self, cost, constraints, substitutions)

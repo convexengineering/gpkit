@@ -202,7 +202,8 @@ class HashVector(dict):
         If the other object inherits from dict, multiplication is element-wise
         and their key's intersection will form the new keys."""
         if isinstance(other, Numbers):
-            return self.__class__({key: val*other for (key, val) in self.items()})
+            return self.__class__({key: val*other
+                                   for (key, val) in self.items()})
         elif isinstance(other, dict):
             keys = set(self).intersection(other)
             return self.__class__({key: self[key] * other[key] for key in keys})
@@ -216,7 +217,7 @@ class HashVector(dict):
         and their key's union will form the new keys."""
         if isinstance(other, Numbers):
             return self.__class__({key: val+other
-                               for (key, val) in self.items()})
+                                   for (key, val) in self.items()})
         elif isinstance(other, dict):
             keys = set(self).union(other)
             sums = {key: self.get(key, 0) + other.get(key, 0) for key in keys}
@@ -224,6 +225,7 @@ class HashVector(dict):
         else:
             return NotImplemented
 
+    # pylint: disable=multiple-statements
     def __sub__(self, other): return self + -other
     def __rsub__(self, other): return other + -self
     def __radd__(self, other): return self + other

@@ -71,7 +71,7 @@ class SolutionArray(DictOfLists):
             return self["variables"][posy]
         elif len(self) > 1:
             return NomialArray([self.atindex(i).subinto(posy)
-                              for i in range(len(self))])
+                                for i in range(len(self))])
         else:
             return posy.sub(self["variables"])
 
@@ -268,6 +268,7 @@ def results_table(data, title, minval=0, printunits=True, fixedcols=True,
                  [''.join(l) for l in lines] + ["\\bottomrule"] + ["\\end{longtable}}"] + [""])
     elif latex == 3:
         lines = (["{\\footnotesize"] + ["\\begin{longtable}{lll}"] +
-                 ["\\toprule"] + [title + " & Value & Units \\\\"] + ["\\midrule"] +
-                 [''.join(l) for l in lines] + ["\\bottomrule"] + ["\\end{longtable}}"] + [""])
+                 ["\\toprule"] + [title + " & Value & Units \\\\"] + 
+                 ["\\midrule"] + [''.join(l) for l in lines] + 
+                 ["\\bottomrule"] + ["\\end{longtable}}"] + [""])
     return lines

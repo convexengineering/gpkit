@@ -1,3 +1,4 @@
+"Implement CostedConstraintSet"
 from .set import ConstraintSet
 from .prog_factories import _progify_fctry, _solve_fctry
 from ..geometric_program import GeometricProgram
@@ -6,6 +7,15 @@ from ..nomials import Variable
 
 
 class CostedConstraintSet(ConstraintSet):
+    """
+    A ConstraintSet with a cost
+
+    Arguments
+    ---------
+    cost: gpkit.Posynomial
+    constraints: Iterable
+    substitutions: dict
+    """
     def __init__(self, cost, constraints, substitutions=None):
         self.cost = cost
         subs = self.cost.values

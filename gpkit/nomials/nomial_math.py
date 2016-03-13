@@ -423,12 +423,10 @@ class Monomial(Posynomial):
 
 
 class ScalarSingleEquationConstraint(SingleEquationConstraint):
-
     "As the original class, but casts arguments to Signomial"
     def __init__(self, left, oper, right):
-        self.left = Signomial(left)
-        self.oper = oper
-        self.right = Signomial(right)
+        super(ScalarSingleEquationConstraint,
+              self).__init__(Signomial(left), oper, Signomial(right))
         self.varkeys = KeySet(self.left.varkeys)
         self.varkeys.update(self.right.varkeys)
 

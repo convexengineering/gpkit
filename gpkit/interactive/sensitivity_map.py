@@ -1,6 +1,6 @@
 import numpy as np
 from gpkit.small_scripts import mag, latex_num
-from gpkit.nomials import MonoEQConstraint
+from gpkit.nomials import MonomialEquality
 
 
 BLUE = np.array([16, 131, 246])/255.0
@@ -144,7 +144,7 @@ class SensitivityMap(object):
                 right = signomial_print(constr.right, sol, colorfn, paintby)
                 constr_tex = "    & %s \\\\" % (left + constr.oper_l + right)
             else:
-                if isinstance(constr, MonoEQConstraint):
+                if isinstance(constr, MonomialEquality):
                     constrs = [constr.leq, constr.geq]
                 else:
                     constrs = [constr]

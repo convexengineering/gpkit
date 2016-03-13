@@ -6,6 +6,7 @@ from ..repr_conventions import _str, _repr, _repr_latex_
 
 class SingleEquationConstraint(object):
     "Constraint expressible in a single equation."
+
     latex_opers = {"<=": "\\leq", ">=": "\\geq", "=": "="}
     func_opers = {"<=": le, ">=": ge, "=": eq}
 
@@ -13,7 +14,14 @@ class SingleEquationConstraint(object):
     __repr__ = _repr
     _repr_latex_ = _repr_latex_
 
+    def __init__(self, left, oper, right):
+        self.left = left
+        self.oper = oper
+        self.right = right
+        self.substitutions = {}
+
     def str_without(self, excluded=None):
+        "String representation without attributes in excluded list"
         if excluded is None:
             excluded = ["units"]
         return "%s %s %s" % (try_str_without(self.left, excluded),
@@ -29,6 +37,7 @@ class SingleEquationConstraint(object):
         pass
 
     def latex(self, excluded=None):
+        "Latex representation without attributes in excluded list"
         if not excluded:
             excluded = ["units"]  # previously bool(self.left.units)
         latex_oper = self.latex_opers[self.oper]

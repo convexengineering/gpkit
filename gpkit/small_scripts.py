@@ -3,11 +3,12 @@ from collections import Iterable
 from .small_classes import Strings, Quantity
 
 
-def try_str_without(el, excluded):
-    if hasattr(el, "str_without"):
-        return el.str_without(excluded)
+def try_str_without(item, excluded):
+    "Try to call item.str_without(excluded); fall back to str(item)"
+    if hasattr(item, "str_without"):
+        return item.str_without(excluded)
     else:
-        return str(el)
+        return str(item)
 
 
 def veckeyed(key):
