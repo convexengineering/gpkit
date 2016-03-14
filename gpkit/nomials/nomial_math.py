@@ -498,12 +498,6 @@ class PosynomialInequality(ScalarSingleEquationConstraint):
 
         out = []
         for posy in posys:
-            if hasattr(self, "m_gt"):
-                m_gt = self.m_gt.sub(self.substitutions,
-                                     require_positive=False)
-                if m_gt.c == 0:
-                    return []
-
             _, exps, cs, _ = substitution(posy, self.substitutions)
             # remove any cs that are just nans and/or 0s
             nans = np.isnan(cs)
