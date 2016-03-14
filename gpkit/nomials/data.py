@@ -34,7 +34,7 @@ class NomialData(object):
                     varlocs[var] = []
                 varlocs[var].append(i)
         self.varlocs = varlocs
-        self.varkeys = KeySet(self.varlocs)
+        self.varkeys = KeySet(self.varlocs)  # TODO: don't need a full KeySet
         self.values = KeyDict({vk: vk.descr["value"] for vk in self.varkeys
                                if "value" in vk.descr})
 
@@ -138,6 +138,17 @@ def simplify_exps_and_cs(exps, cs, return_map=False):
     matches = defaultdict(float)
     if return_map:
         expmap = defaultdict(dict)
+    if isinstance(cs, Quantity):
+        units = cs.units
+        cs = cs.magnitude
+    elif isinstance(cs[0], Quantity):
+        units = cs[0].units
+        if len(cs) == 1:
+            cs = [cs[0].magnitude]
+        else:
+            cs = [c.to(units).magnitude for c in cs]
+    else:
+        units = None
     for i, exp in enumerate(exps):
         exp = HashVector({var: x for (var, x) in exp.items() if x != 0})
         matches[exp] += cs[i]
@@ -151,9 +162,8 @@ def simplify_exps_and_cs(exps, cs, return_map=False):
 
     exps_ = tuple(matches.keys())
     cs_ = list(matches.values())
-    if isinstance(cs_[0], Quantity):
-        units = Quantity(1, cs_[0].units)
-        cs_ = [c.to(units).magnitude for c in cs_] * units
+    if units:
+        cs_ = cs_*units
     else:
         cs_ = np.array(cs_, dtype='float')
 

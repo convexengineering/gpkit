@@ -121,8 +121,7 @@ class ConstraintSet(list):
         "Returns list of posynomials which must be kept <= 1"
         posylist, self.posymap = [], []
         for constraint in self:
-            constraint.substitutions = KeyDict()
-            constraint.substitutions.update(self.substitutions)
+            constraint.substitutions = KeyDict(self.substitutions)
             posys = constraint.as_posyslt1()
             self.posymap.append(len(posys))
             posylist.extend(posys)

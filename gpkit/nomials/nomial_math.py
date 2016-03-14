@@ -118,9 +118,9 @@ class Signomial(Nomial):
             self.exp = self.exps[0]
             self.c = self.cs[0]
 
-    def to(self, arg):
+    def convert_to(self, arg):
         "Convert to in the pint units sense"
-        return Signomial(self.exps, self.cs.to(arg).tolist())
+        self.cs = self.cs.to(arg)
 
     def diff(self, wrt):
         """Derivative of this with respect to a Variable
@@ -437,6 +437,7 @@ class PosynomialInequality(ScalarSingleEquationConstraint):
     Usually initialized via operator overloading, e.g. cc = (y**2 >= 1 + x)
     """
 
+    # @profile
     def __init__(self, left, oper, right):
         ScalarSingleEquationConstraint.__init__(self, left, oper, right)
         if self.oper == "<=":
@@ -447,11 +448,17 @@ class PosynomialInequality(ScalarSingleEquationConstraint):
             raise ValueError("operator %s is not supported by Posynomial"
                              "Constraint." % self.oper)
 
-        p = p_lt / m_gt
+        self.p_lt, self.m_gt = p_lt, m_gt
+        self.substitutions = dict(p_lt.values)
+        self.substitutions.update(m_gt.values)
+        self._unsubbed = None
+
+    def _gen_unsubbed(self):
+        p = self.p_lt / self.m_gt
 
         if isinstance(p.cs, Quantity):
             try:
-                p = p.to('dimensionless')
+                p.convert_to('dimensionless')
             except DimensionalityError:
                 raise ValueError("constraints must have the same units"
                                  " on both sides: '%s' and '%s' can not"
@@ -468,12 +475,11 @@ class PosynomialInequality(ScalarSingleEquationConstraint):
                 elif p.cs[i] > 1:
                     raise ValueError("infeasible constraint:"
                                      " constant term too large.")
-        self.p_lt, self.m_gt = p_lt, m_gt
-        self.posylt1_rep = p
-        self.substitutions = p.values
+        self._unsubbed = [p]
 
     def as_posyslt1(self):
-        posys = listify(self.posylt1_rep)
+        self._gen_unsubbed()
+        posys = self._unsubbed
         if not self.substitutions:
             # just return the pre-generated posynomial representation
             return posys
@@ -517,7 +523,7 @@ class PosynomialInequality(ScalarSingleEquationConstraint):
             return {}, {}
         la, = la
         nu, = nu
-        presub = self.posylt1_rep
+        presub, = self._unsubbed
         constr_sens = {"overall": la}
         if hasattr(self, "pmap"):
             nu_ = np.zeros(len(presub.cs))
@@ -554,14 +560,18 @@ class MonomialEquality(PosynomialInequality):
         if self.oper is not "=":
             raise ValueError("operator %s is not supported by"
                              " MonomialEquality." % self.oper)
-        self.posylt1_rep = [self.left/self.right, self.right/self.left]
-        self.substitutions = self.posylt1_rep[0].values
+        self.substitutions = dict(self.left.values)
+        self.substitutions.update(self.right.values)
+        self._unsubbed = None
+
+    def _gen_unsubbed(self):
+        self._unsubbed = [self.left/self.right, self.right/self.left]
 
     def __nonzero__(self):
         # a constraint not guaranteed to be satisfied
         # evaluates as "False"
-        return bool(mag(self.posylt1_rep[0].c) == 1.0
-                    and self.posylt1_rep[0].exp == {})
+        return bool(self.left.c == self.right.c
+                    and self.left.exp == self.right.exp)
 
     def __bool__(self):
         return self.__nonzero__()
@@ -573,7 +583,7 @@ class MonomialEquality(PosynomialInequality):
         # Constant sensitivities
         var_senss = HashVector()
         for i, m_s in enumerate(nus):
-            presub = self.posylt1_rep[i]
+            presub = self._unsubbed[i]
             var_sens = {var: sum([presub.exps[i][var]*m_s[i] for i in locs])
                         for (var, locs) in presub.varlocs.items()
                         if var in self.substitutions}
@@ -615,7 +625,8 @@ class SignomialInequality(ScalarSingleEquationConstraint):
         else:
             self.__class__ = PosynomialInequality
             self.__init__(posy, "<=", negy)
-            return [posy/negy]
+            self._gen_unsubbed()
+            return self._unsubbed
 
     def as_gpconstr(self, x0):
         posy, negy = self.sigy_lt0_rep.posy_negy()

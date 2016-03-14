@@ -14,52 +14,67 @@ from .. import DimensionalityError
 
 def parse_subs(varkeys, substitutions):
     constants, sweep, linkedsweep = {}, {}, {}
-    for var, sub in substitutions.items():
-        if getattr(var, "key", var) not in varkeys.keymap:
-            continue  # fast check above for whether there will be any keys
-        keys = varkeys[var]
-        sweepsub = is_sweepvar(sub)
-        if sweepsub:
-            _, sub = sub  # _ catches the "sweep" marker
-        for key in keys:
-            if not key.shape or not isinstance(sub, Iterable):
-                value = sub
-            else:
-                sub = np.array(sub) if not hasattr(sub, "shape") else sub
-                if key.shape == sub.shape:
-                    value = sub[key.idx]
-                    if is_sweepvar(value):
-                        _, value = value
-                        sweepsub = True
-                elif sweepsub:
-                    try:
-                        np.broadcast(sub, np.empty(key.shape))
-                    except ValueError:
-                        raise ValueError("cannot sweep variable %s of shape %s"
-                                         " with array of shape %s; array shape"
-                                         " must either be %s or %s" %
-                                         (key.str_without("model"), key.shape,
-                                          sub.shape,
-                                          key.shape, ("N",)+key.shape))
-                    idx = (slice(None),)+key.descr["idx"]
-                    value = sub[idx]
-                else:
-                    raise ValueError("cannot substitute array of shape %s for"
-                                     " variable %s of shape %s." %
-                                     (sub.shape, key.str_without("model"),
-                                      key.shape))
-            if not sweepsub:
-                try:
-                    assert np.isnan(value)
-                except:
-                    constants[key] = value
-            elif not hasattr(value, "__call__"):
-                sweep[key] = value
-            else:
-                linkedsweep[key] = value
-
+    if hasattr(substitutions, "keymap"):
+        keys_added = set()
+        for var in varkeys.keymap:
+            if var in substitutions.keymap:
+                keys = substitutions.keymap[var]
+                if len(keys) == 1:
+                    key, = keys
+                    if key not in keys_added:
+                        keys_added.add(key)
+                        sub = dict.__getitem__(substitutions, key)
+                        keys = varkeys.keymap[var]
+                        append_sub(sub, keys, constants, sweep, linkedsweep)
+    else:
+        for var in substitutions:
+            key = getattr(var, "key", var)
+            if key in varkeys.keymap:
+                sub, keys = substitutions[var], varkeys.keymap[key]
+                append_sub(sub, keys, constants, sweep, linkedsweep)
     return constants, sweep, linkedsweep
 
+
+def append_sub(sub, keys, constants, sweep, linkedsweep):
+    sweepsub = is_sweepvar(sub)
+    if sweepsub:
+        _, sub = sub  # _ catches the "sweep" marker
+    for key in keys:
+        if not key.shape or not isinstance(sub, Iterable):
+            value = sub
+        else:
+            sub = np.array(sub) if not hasattr(sub, "shape") else sub
+            if key.shape == sub.shape:
+                value = sub[key.idx]
+                if is_sweepvar(value):
+                    _, value = value
+                    sweepsub = True
+            elif sweepsub:
+                try:
+                    np.broadcast(sub, np.empty(key.shape))
+                except ValueError:
+                    raise ValueError("cannot sweep variable %s of shape %s"
+                                     " with array of shape %s; array shape"
+                                     " must either be %s or %s" %
+                                     (key.str_without("model"), key.shape,
+                                      sub.shape,
+                                      key.shape, ("N",)+key.shape))
+                idx = (slice(None),)+key.descr["idx"]
+                value = sub[idx]
+            else:
+                raise ValueError("cannot substitute array of shape %s for"
+                                 " variable %s of shape %s." %
+                                 (sub.shape, key.str_without("model"),
+                                  key.shape))
+        if not sweepsub:
+            try:
+                assert np.isnan(value)
+            except:
+                constants[key] = value
+        elif not hasattr(value, "__call__"):
+            sweep[key] = value
+        else:
+            linkedsweep[key] = value
 
 
 def substitution(nomial, substitutions, val=None):
@@ -115,7 +130,10 @@ def substitution(nomial, substitutions, val=None):
                 del varlocs_[var]
             if isinstance(sub, Numbers):
                 if sub != 0:
-                    cs_[i] *= sub**x
+                    if nomial.units:
+                        cs_.magnitude[i] *= sub**x
+                    else:
+                        cs_[i] *= sub**x
                 else:  # frickin' pints bug. let's reimplement pow()
                     if x > 0:
                         mag(cs_)[i] = 0.0
