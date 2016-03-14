@@ -86,7 +86,7 @@ class Model(CostedConstraintSet):
                 del self.substitutions[vk]
         self.substitutions.regen_keymap()
         with SignomialsEnabled():  # since we're just substituting varkeys.
-            self.sub(add_model_subs)
+            self.subinplace(add_model_subs)
 
     def subconstr_str(self, excluded=None):
         "The collapsed appearance of a ConstraintBase"

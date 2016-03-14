@@ -30,15 +30,15 @@ class CostedConstraintSet(ConstraintSet):
             else:
                 return variables
 
-    def sub(self, subs, value=None):
+    def subinplace(self, subs, value=None):
         "Substitutes in place."
         self.cost = self.cost.sub(subs, value)
-        return ConstraintSet.sub(self, subs, value)
+        ConstraintSet.subinplace(self, subs, value)
 
     @property
     def varkeys(self):
         "return all Varkeys present in this ConstraintSet"
-        return ConstraintSet._varkeys(self, self.cost.varkeys)
+        return ConstraintSet._varkeys(self, self.cost.varlocs)
 
     def rootconstr_str(self, excluded=None):
         "The appearance of a ConstraintSet in addition to its contents"

@@ -34,10 +34,7 @@ class NomialData(object):
                     varlocs[var] = []
                 varlocs[var].append(i)
         self.varlocs = varlocs
-        self.varkeys = KeySet(self.varlocs)  # TODO: don't need a full KeySet
-        self.values = KeyDict({vk: vk.descr["value"] for vk in self.varkeys
-                               if "value" in vk.descr})
-
+        self._varkeys, self._values = None, None
         if isinstance(self.cs, Quantity):
             self.units = Quantity(1, self.cs.units) #pylint: disable=no-member
         else:
@@ -58,6 +55,19 @@ class NomialData(object):
         nd = cls()  # use pass-through version of __init__
         nd.init_from_nomials(nomials)
         return nd
+
+    @property
+    def varkeys(self):
+        if not self._varkeys:
+            self._varkeys = KeySet(self.varlocs)
+        return self._varkeys
+
+    @property
+    def values(self):
+        if not self._values:
+            self._values = KeyDict({k: k.descr["value"] for k in self.varlocs
+                                    if "value" in k.descr})
+        return self._values
 
     def init_from_nomials(self, nomials):
         """Way to initialize from nomials. Calls __init__.

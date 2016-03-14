@@ -46,10 +46,8 @@ class SingleEquationConstraint(object):
 
     def sub(self, subs, value=None):
         "Returns a substituted version of this constraint."
-        if value:
-            subs = {subs: value}
-        subbed = self.func_opers[self.oper](self.left.sub(subs),
-                                            self.right.sub(subs))
+        subbed = self.func_opers[self.oper](self.left.sub(subs, value),
+                                            self.right.sub(subs, value))
         subbed.substitutions = self.substitutions
         return subbed
 

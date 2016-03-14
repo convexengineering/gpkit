@@ -175,7 +175,7 @@ class Signomial(Nomial):
             for i, exp in enumerate(self.exps):
                 if exp == {}:
                     return Monomial({}, self.cs[i])
-        x0, _, _ = parse_subs(self.varkeys, x0)
+        x0, _, _ = parse_subs(self.varkeys, x0)  # use only varkey keys
         exp = HashVector()
         psub = self.sub(x0)
         if psub.varlocs:
@@ -214,6 +214,11 @@ class Signomial(Nomial):
         """
         _, exps, cs, _ = substitution(self, substitutions, val)
         return Signomial(exps, cs, require_positive=require_positive)
+
+    def subinplace(self, substitutions, value=None):
+        "Substitutes in place."
+        _, exps, cs, _ = substitution(self, substitutions, value)
+        super(Signomial, self).__init__(exps, cs)
 
     def subsummag(self, substitutions, val=None):
         "Returns the sum of the magnitudes of the substituted Nomial."
@@ -427,8 +432,8 @@ class ScalarSingleEquationConstraint(SingleEquationConstraint):
     def __init__(self, left, oper, right):
         super(ScalarSingleEquationConstraint,
               self).__init__(Signomial(left), oper, Signomial(right))
-        self.varkeys = KeySet(self.left.varkeys)
-        self.varkeys.update(self.right.varkeys)
+        self.varkeys = KeySet(self.left.varlocs)
+        self.varkeys.update(self.right.varlocs)
 
 
 class PosynomialInequality(ScalarSingleEquationConstraint):
@@ -451,8 +456,15 @@ class PosynomialInequality(ScalarSingleEquationConstraint):
         self.p_lt, self.m_gt = p_lt, m_gt
         self.substitutions = dict(p_lt.values)
         self.substitutions.update(m_gt.values)
-        self._unsubbed = None
-        self._gen_unsubbed()
+        self._unsubbed = self._gen_unsubbed()
+        self.posys = [self.left, self.right, self.p_lt, self.m_gt]
+        self.posys.extend(self._unsubbed)
+
+    def subinplace(self, substitutions, value=None):
+        for posy in self.posys:
+            posy.subinplace(substitutions, value)
+        self.varkeys = KeySet(self.left.varlocs)
+        self.varkeys.update(self.right.varlocs)
 
     def _gen_unsubbed(self):
         p = self.p_lt / self.m_gt
@@ -476,10 +488,9 @@ class PosynomialInequality(ScalarSingleEquationConstraint):
                 elif p.cs[i] > 1:
                     raise ValueError("infeasible constraint:"
                                      " constant term too large.")
-        self._unsubbed = [p]
+        return [p]
 
     def as_posyslt1(self):
-        # self._gen_unsubbed()
         posys = self._unsubbed
         if not self.substitutions:
             # just return the pre-generated posynomial representation
@@ -563,11 +574,12 @@ class MonomialEquality(PosynomialInequality):
                              " MonomialEquality." % self.oper)
         self.substitutions = dict(self.left.values)
         self.substitutions.update(self.right.values)
-        self._unsubbed = None
-        self._gen_unsubbed()
+        self._unsubbed = self._gen_unsubbed()
+        self.posys = [self.left, self.right]
+        self.posys.extend(self._unsubbed)
 
     def _gen_unsubbed(self):
-        self._unsubbed = [self.left/self.right, self.right/self.left]
+        return [self.left/self.right, self.right/self.left]
 
     def __nonzero__(self):
         # a constraint not guaranteed to be satisfied
@@ -627,20 +639,13 @@ class SignomialInequality(ScalarSingleEquationConstraint):
         else:
             self.__class__ = PosynomialInequality
             self.__init__(posy, "<=", negy)
-            # self._gen_unsubbed()
             return self._unsubbed
 
     def as_gpconstr(self, x0):
         posy, negy = self.sigy_lt0_rep.posy_negy()
         if x0 is None:
-            x0, _, _ = parse_subs(negy.varkeys, {})
-             # TODO: don't all the equivalencies collide by now?
-            sp_inits = {vk: vk.descr["sp_init"] for vk in negy.varlocs
-                        if "sp_init" in vk.descr}
-            x0.update(sp_inits)
-            # HACK: initial guess for negative variables
-        else:
-            x0 = dict(x0)
+            x0 = {vk: vk.descr["sp_init"] for vk in negy.varlocs
+                  if "sp_init" in vk.descr}
         x0.update({var: 1 for var in negy.varlocs if var not in x0})
         x0.update(self.substitutions)
         pc = PosynomialInequality(posy, "<=", negy.mono_lower_bound(x0))
