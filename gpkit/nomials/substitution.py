@@ -170,7 +170,7 @@ def substitution(nomial, substitutions, val=None):
                                               sub.units.units,
                                               var, var.units.units))
                 if isinstance(sub, VarKey):
-                    exps_[i] += HashVector({sub: x})
+                    exps_[i][sub] = x + exps_[i].get(x, 0)
                     varlocs_[sub].append(i)
                 else:
                     exps_[i] += x*sub.exp

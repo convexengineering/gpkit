@@ -55,17 +55,17 @@ class VarKey(object):
                 units = units.replace("-", "dimensionless")
                 self.descr["units"] = Quantity(1.0, units)
             elif isinstance(units, Quantity):
-                self.descr["units"] = Quantity(1.0, units.units)
+                self.descr["units"] = units
             else:
                 raise ValueError("units must be either a string"
                                  " or a Quantity from gpkit.units.")
         self._hashvalue = hash(str(self))
         self.key = self
-        self.keys = self.allstrs
-        self.keys.add(self)
+        self.keys = set([self, self.name, str(self), self.latex(),
+                         self.str_without("models")])
         if "idx" in self.descr:
             self.keys.add(veckeyed(self))
-        self.descr["unitstr"] = self.make_unitstr()
+        self.descr["unitstr"] = self.make_unitstr()  # annoyingly slow
 
     def __repr__(self):
         return self.str_without()
@@ -83,12 +83,6 @@ class VarKey(object):
         if self.shape and not self.idx:
             string = "\\vec{%s}" % string  # add vector arrow for veckeys
         return string
-
-    @property
-    def allstrs(self):
-        strings = set([str(self), self.name, self.latex()])
-        strings.update(self.str_without(ss) for ss in self.subscripts)
-        return strings
 
     def __getattr__(self, attr):
         return self.descr.get(attr, None)
