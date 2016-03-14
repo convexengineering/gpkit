@@ -163,7 +163,7 @@ def simplify_exps_and_cs(exps, cs, return_map=False):
     exps_ = tuple(matches.keys())
     cs_ = list(matches.values())
     if units:
-        cs_ = cs_*units
+        cs_ = Quantity(cs_, units)
     else:
         cs_ = np.array(cs_, dtype='float')
 

@@ -48,14 +48,14 @@ class VarKey(object):
             value = self.descr["value"]
             if isinstance(value, Quantity):
                 self.descr["value"] = value.magnitude
-                self.descr["units"] = 1*value.units
+                self.descr["units"] = Quantity(1.0, value.units)
         if ureg and "units" in self.descr:
             units = self.descr["units"]
             if isinstance(units, Strings):
                 units = units.replace("-", "dimensionless")
                 self.descr["units"] = Quantity(1.0, units)
             elif isinstance(units, Quantity):
-                self.descr["units"] = 1*units.units
+                self.descr["units"] = Quantity(1.0, units.units)
             else:
                 raise ValueError("units must be either a string"
                                  " or a Quantity from gpkit.units.")
