@@ -1,7 +1,7 @@
 """Defines the VarKey class"""
 from .small_classes import Strings, Quantity
 from .small_classes import Counter
-from .small_scripts import mag, unitstr
+from .small_scripts import mag, unitstr, veckeyed
 
 
 class VarKey(object):
@@ -61,6 +61,10 @@ class VarKey(object):
                                  " or a Quantity from gpkit.units.")
         self._hashvalue = hash(str(self))
         self.key = self
+        self.keys = self.allstrs
+        self.keys.add(self)
+        if "idx" in self.descr:
+            self.keys.add(veckeyed(self))
         self.descr["unitstr"] = self.make_unitstr()
 
     def __repr__(self):

@@ -180,7 +180,8 @@ class TestGPSubs(unittest.TestCase):
         m.cost = m["x"]
         sol = m.solve(verbosity=0)
         if not isinstance(m["x"].key.units, str):
-            self.assertAlmostEqual(sol["cost"], 0.032808399)  # 1 cm/1 ft
+            expected = (1*gpkit.units.cm/(1*m.cost.units)).to("dimensionless")
+            self.assertAlmostEqual(sol["cost"], expected)  # 1 cm/(1 ft or 1 m)
         self.assertIn(m["x"], sol["variables"])
         self.assertIn(a1["x"], sol["variables"])
         self.assertIn(b1["x"], sol["variables"])

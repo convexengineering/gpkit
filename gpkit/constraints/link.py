@@ -40,11 +40,6 @@ class LinkConstraint(ConstraintSet):
         self.linked, self.reverselinks = {}, {}
         for name in linkable:
             vks = varkeys[name]
-            descr = dict(vks[0].descr)
-            descr.pop("value", None)
-            descr.pop("models", None)
-            descr.pop("modelnums", None)
-            newvk = VarKey(**descr)
             sub, subbed_vk = None, None
             for vk in vks:
                 if vk in self.substitutions:
@@ -52,13 +47,20 @@ class LinkConstraint(ConstraintSet):
                         subbed_vk = vk
                         sub = self.substitutions[vk]
                         del self.substitutions[vk]
-                        self.substitutions[newvk] = sub
+                        self.substitutions.regen_keymap()
                     else:
-                        raise ValueError("substitution conflict: could not link"
-                                         " %s because %s was set to %s but"
+                        raise ValueError("substitution conflict: could not"
+                                         " link because %s was set to %s but"
                                          " %s was set to %s" % (
-                                             newvk, subbed_vk, sub,
+                                             subbed_vk, sub,
                                              vk, self.substitutions[vk]))
+            descr = dict(vk.descr)
+            descr.pop("value", None)
+            descr.pop("models", None)
+            descr.pop("modelnums", None)
+            newvk = VarKey(**descr)
+            if sub:
+                self.substitutions[newvk] = sub
             self.linked.update(dict(zip(vks, len(vks)*[newvk])))
             self.reverselinks[newvk] = vks
         with SignomialsEnabled():  # since we're just substituting varkeys.

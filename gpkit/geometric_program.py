@@ -285,8 +285,6 @@ class GeometricProgram(NomialData):
             result["constants"].update(constraint.substitutions)
         result["variables"] = KeyDict(result["freevariables"])
         result["variables"].update(result["constants"])
-        for key in ["freevariables", "variables", "constants"]:
-            result[key].bake()
 
         ## Let constraints process the results
         for constraint in self.constraints:

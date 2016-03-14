@@ -15,11 +15,12 @@ from .. import DimensionalityError
 def parse_subs(varkeys, substitutions):
     constants, sweep, linkedsweep = {}, {}, {}
     for var, sub in substitutions.items():
+        if getattr(var, "key", var) not in varkeys.keymap:
+            continue  # fast check above for whether there will be any keys
         keys = varkeys[var]
-        if keys:
-            sweepsub = is_sweepvar(sub)
-            if sweepsub:
-                _, sub = sub  # _ catches the "sweep" marker
+        sweepsub = is_sweepvar(sub)
+        if sweepsub:
+            _, sub = sub  # _ catches the "sweep" marker
         for key in keys:
             if not key.shape or not isinstance(sub, Iterable):
                 value = sub
@@ -58,6 +59,7 @@ def parse_subs(varkeys, substitutions):
                 linkedsweep[key] = value
 
     return constants, sweep, linkedsweep
+
 
 
 def substitution(nomial, substitutions, val=None):
@@ -137,17 +139,18 @@ def substitution(nomial, substitutions, val=None):
                 varlocs_[sub].append(i)
             elif isinstance(sub, (VarKey, Monomial)):
                 if isinstance(var.units, Quantity):
-                    try:
-                        new_units = sub.units/var.units
-                        cs_[i] *= new_units.to('dimensionless')
-                    except DimensionalityError:
-                        raise ValueError("units of the substituted %s"
-                                         " '%s' [%s] are not compatible with"
-                                         " those of the original '%s' [%s]." %
-                                         (type(sub),
-                                          sub.str_without(["units"]),
-                                          sub.units.units,
-                                          var, var.units.units))
+                    if sub.units != var.units:
+                        try:
+                            cs_[i] *= (sub.units/var.units).to('dimensionless')
+                        except DimensionalityError:
+                            raise ValueError("units of the substituted %s '%s'"
+                                             " [%s] are not compatible with"
+                                             " those of the original '%s'"
+                                             " [%s]." %
+                                             (type(sub),
+                                              sub.str_without(["units"]),
+                                              sub.units.units,
+                                              var, var.units.units))
                 if isinstance(sub, VarKey):
                     exps_[i] += HashVector({sub: x})
                     varlocs_[sub].append(i)

@@ -43,7 +43,7 @@ class KeyDict(dict):
     def __init__(self, *args, **kwargs):
         "Passes through to dict.__init__ via the `update()` method"
         # pylint: disable=super-init-not-called
-        self.baked_keystrs = None
+        self.keymap = defaultdict(set)
         self.update(*args, **kwargs)
 
     def update(self, *args, **kwargs):
@@ -51,21 +51,15 @@ class KeyDict(dict):
         for k, v in dict(*args, **kwargs).items():
             self[k] = v
 
-    def bake(self):
-        "Permanently sets the keystrs of a KeyDict"
-        self.baked_keystrs = None
-        self.baked_keystrs = self.keystrs()
-
-    def keystrs(self):
-        "Generates the strings that may be used as keys for a KeyDict"
-        if self.baked_keystrs:
-            return self.baked_keystrs
-        keystrs = defaultdict(set)
-        for key in self.keys():
-            if hasattr(key, "allstrs"):
-                for keystr in key.allstrs:
-                    keystrs[keystr].add(key)
-        return keystrs
+    def parse_and_index(self, key):
+        "Returns key if key had one, and veckey/idx for indexed veckeys."
+        key = getattr(key, "key", key)
+        idx = None
+        if self.collapse_arrays:
+            idx = getattr(key, "idx", None)
+            if idx:
+                key = veckeyed(key)
+        return key, idx
 
     @classmethod
     def with_keys(cls, keyset, dictionaries):
@@ -88,122 +82,73 @@ class KeyDict(dict):
 
     def __contains__(self, key):
         "In a winding way, figures out if a key is in the KeyDict"
+        key, idx = self.parse_and_index(key)
         if dict.__contains__(self, key):
+            if idx:
+                return not np.isnan(dict.__getitem__(self, key)[idx])
             return True
-        elif hasattr(key, "key"):
-            if dict.__contains__(self, key.key):
-                return True
-            elif self.is_veckey_but_not_collapsed(key):
-                if any(k in self for k in self.getkeys(key)):
-                    return True
-            elif self.is_index_into_vector(key.key):
-                vk = veckeyed(key.key)
-                if dict.__contains__(self, vk):
-                    return not bool(np.isnan(self.__dgi(vk)[key.key.idx]))
-        elif key in self.keystrs():
+        elif key in self.keymap:
             return True
+        else:
+            return False
 
-    def getkeys(self, key):
-        "Gets all keys in self that are represented by a given key"
-        if isinstance(key, Strings):
-            mapped_varkeys = self.keystrs()[key]
-            if mapped_varkeys:
-                return mapped_varkeys
-            else:
-                return set([key])
-        elif hasattr(key, "key"):
-            key = key.key
-            if self.is_veckey_but_not_collapsed(key):
-                keys = set()
-                array = np.empty(key.descr["shape"])
-                it = np.nditer(array, flags=['multi_index', 'refs_ok'])
-                while not it.finished:
-                    i = it.multi_index
-                    it.iternext()
-                    idx_key = key.__class__(idx=i, **key.descr)
-                    keys.add(idx_key)
-                return keys
-            else:
-                return set([key])
-        raise ValueError("%s %s is an invalid key for a KeyDict."
-                         % (key, type(key)))
-
-    def is_veckey_but_not_collapsed(self, key):
-        "True iff the key is a veckey and this KeyDict doesn't collapse arrays"
-        if "shape" not in key.descr:
-            return False
-        if "idx" in key.descr:
-            return False
-        if self.collapse_arrays:
-            return False
-        return True
-
-    def is_index_into_vector(self, key):
-        "True iff the key indexes into a collapsed array"
-        if not self.collapse_arrays:
-            return False
-        if not hasattr(key, "key"):
-            return False
-        if "idx" not in key.key.descr:
-            return False
-        if "shape" not in key.key.descr:
-            return False
-        return True
-
-    def __dgi(self, key):
-        "Shortcut for calling dict.__getitem__"
-        return dict.__getitem__(self, key)
+    def regen_keymap(self):
+        self.keymap = defaultdict(set)
+        for key in self:
+            self.keymap[key].add(key)
+            if hasattr(key, "keys"):
+                for mapkey in key.keys:
+                    self.keymap[mapkey].add(key)
 
     def __getitem__(self, key):
         "Overloads __getitem__ and [] access to work with all keys"
-        keys = self.getkeys(key)
-        if len(keys) > 1:
-            out = KeyDict()
-            out.collapse_arrays = self.collapse_arrays
-            for key in keys:
-                if self.is_index_into_vector(key):
-                    out[key] = self.__dgi(veckeyed(key))[key.descr["idx"]]
-                else:
-                    out[key] = self.__dgi(key)
-        elif keys:
-            key, = keys
-            if self.is_index_into_vector(key):
-                out = self.__dgi(veckeyed(key))[key.descr["idx"]]
-            else:
-                out = self.__dgi(key)
-        else:
+        key, idx = self.parse_and_index(key)
+        keys = self.keymap[key]
+        if not keys:
             raise KeyError("%s was not found." % key)
-        return out
+        values = []
+        for key in keys:
+            got = dict.__getitem__(self, key)
+            if idx:
+                got = got[idx]
+            values.append(got)
+        if len(values) == 1:
+            return values[0]
+        else:
+            return KeyDict(zip(keys, values))
 
     def __setitem__(self, key, value):
         "Overloads __setitem__ and []= to work with all keys"
-        for key in self.getkeys(key):
-            if self.is_index_into_vector(key):
-                veckey = veckeyed(key)
-                if veckey not in self:
-                    kwargs = {}
-                    if not isinstance(value, Numbers):
-                        kwargs["dtype"] = "object"
-                    emptyvec = np.full(key.descr["shape"], np.nan, **kwargs)
-                    dict.__setitem__(self, veckey, emptyvec)
-                self.__dgi(veckey)[key.descr["idx"]] = value
+        key, idx = self.parse_and_index(key)
+        if key not in self.keymap:
+            self.keymap[key].add(key)
+            if hasattr(key, "keys"):
+                for mapkey in key.keys:
+                    self.keymap[mapkey].add(key)
+            if idx:
+                number_array = isinstance(value, Numbers)
+                kwargs = {} if number_array else {"dtype": "object"}
+                emptyvec = np.full(key.descr["shape"], np.nan, **kwargs)
+                dict.__setitem__(self, key, emptyvec)
+        for key in self.keymap[key]:
+            if idx:
+                dict.__getitem__(self, key)[idx] = value
             else:
                 dict.__setitem__(self, key, value)
 
     def __delitem__(self, key):
         "Overloads del [] to work with all keys"
-        deletion = False
-        for key in self.getkeys(key):
-            if dict.__contains__(self, key):
-                dict.__delitem__(self, key)
-                deletion = True
-            elif "shape" in key.descr and "idx" in key.descr:
-                self.__dgi(veckeyed(key))[key.descr["idx"]] = np.nan
-                if np.isnan(self.__dgi(veckeyed(key))).all():
-                    dict.__delitem__(self, veckeyed(key))
-                deletion = True
-        if not deletion:
+        key, idx = self.parse_and_index(key)
+        keys = self.keymap[key]
+        if not keys:
             raise KeyError("key %s not found." % key)
+        for key in keys:
+            if idx:
+                dict.__getitem__(self, key)[idx] = np.nan
+                if np.isnan(dict.__getitem__(self, key)).all():
+                    dict.__delitem__(self, key)
+            else:
+                dict.__delitem__(self, key)
 
 
 class KeySet(KeyDict):
@@ -211,14 +156,13 @@ class KeySet(KeyDict):
     collapse_arrays = False
 
     def __getitem__(self, key):
-        "Given a key, returns a list of VarKeys"
-        if key not in self:
-            return []
-        return [k for k in self.getkeys(key) if k in self]
+        "Gets the keys corresponding to a particular key."
+        key, _ = self.parse_and_index(key)
+        return self.keymap[key]
 
     def __setitem__(self, key, value):
         "Assigns the key itself every time."
-        KeyDict.__setitem__(self, key, key)
+        KeyDict.__setitem__(self, key, None)
 
     def map(self, iterable):
         "Given a list of keys, returns a list of VarKeys"
