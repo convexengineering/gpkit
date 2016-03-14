@@ -452,6 +452,7 @@ class PosynomialInequality(ScalarSingleEquationConstraint):
         self.substitutions = dict(p_lt.values)
         self.substitutions.update(m_gt.values)
         self._unsubbed = None
+        self._gen_unsubbed()
 
     def _gen_unsubbed(self):
         p = self.p_lt / self.m_gt
@@ -478,7 +479,7 @@ class PosynomialInequality(ScalarSingleEquationConstraint):
         self._unsubbed = [p]
 
     def as_posyslt1(self):
-        self._gen_unsubbed()
+        # self._gen_unsubbed()
         posys = self._unsubbed
         if not self.substitutions:
             # just return the pre-generated posynomial representation
@@ -563,6 +564,7 @@ class MonomialEquality(PosynomialInequality):
         self.substitutions = dict(self.left.values)
         self.substitutions.update(self.right.values)
         self._unsubbed = None
+        self._gen_unsubbed()
 
     def _gen_unsubbed(self):
         self._unsubbed = [self.left/self.right, self.right/self.left]
@@ -625,7 +627,7 @@ class SignomialInequality(ScalarSingleEquationConstraint):
         else:
             self.__class__ = PosynomialInequality
             self.__init__(posy, "<=", negy)
-            self._gen_unsubbed()
+            # self._gen_unsubbed()
             return self._unsubbed
 
     def as_gpconstr(self, x0):

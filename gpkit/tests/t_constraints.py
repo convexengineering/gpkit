@@ -39,7 +39,7 @@ class TestConstraint(unittest.TestCase):
 
         def constr():
             """method that should raise a ValueError"""
-            return (1 >= 5*x + 1.1).as_posyslt1()
+            return (1 >= 5*x + 1.1)
         self.assertRaises(ValueError, constr)
 
     def test_init(self):
@@ -101,7 +101,7 @@ class TestMonomialEquality(unittest.TestCase):
 
         def constr():
             """method that should raise a TypeError"""
-            MonomialEquality(x*y, "=", x+y).as_posyslt1()
+            MonomialEquality(x*y, "=", x+y)
         self.assertRaises(TypeError, constr)
 
     def test_str(self):
