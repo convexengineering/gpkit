@@ -19,16 +19,17 @@ def veckeyed(key):
     return key.__class__(**vecdescr)
 
 
-def listify(l):
+def listify(item):
     "Make sure an item is in a list"
-    if isinstance(l, Iterable):
-        return list(l)
+    if isinstance(item, Iterable):
+        return list(item)
     else:
-        return [l]
+        return [item]
 
 
 def isequal(a, b):
     "Determine if two elements are equal, recursing through Iterables"
+    # pylint: disable=invalid-name
     if (isinstance(a, Iterable) and
             not isinstance(a, Strings+(tuple, list, dict))):
         for i, a_i in enumerate(a):

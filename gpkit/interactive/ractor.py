@@ -1,13 +1,14 @@
 "Implements Ractor-based interactive CADtoons"
-import numpy as np
-from ..solution_array import SolutionArray
 from string import Template
 import itertools
+import numpy as np
 
 try:
     from IPython.display import display, HTML
 except ImportError:
     pass
+
+from ..solution_array import SolutionArray
 
 
 def showcadtoon(title, css=""):
@@ -17,8 +18,8 @@ def showcadtoon(title, css=""):
         display(HTML(f.read() + css))
 
 
-def ractorpy(m, update_py, ranges, constraint_js="",
-             showtables=["cost", "sensitivities"]):
+def ractorpy(model, update_py, ranges, constraint_js="",
+             showtables=("cost", "sensitivities")):
     "Creates interactive iPython widget for controlling a CADtoon"
     def ractivefn(sol):
         "Function to be run whenever a slider is moved."
@@ -26,13 +27,13 @@ def ractorpy(m, update_py, ranges, constraint_js="",
         display(HTML(live))
         if showtables:
             print sol.table(showtables)
-    return m.interact(ranges, ractivefn)
+    return model.interact(ranges, ractivefn)
 
 
 new_jswidget_id = itertools.count().next
 
 
-def ractorjs(title, m, update_py, ranges, constraint_js=""):
+def ractorjs(title, model, update_py, ranges, constraint_js=""):
     "Creates Javascript/HTML for CADtoon interaction without installing GPkit."
     widget_id = "jswidget_"+str(new_jswidget_id())
     display(HTML("<script id='%s-after' type='text/throwaway'>%s</script>" %
@@ -51,7 +52,7 @@ def ractorjs(title, m, update_py, ranges, constraint_js=""):
     lengths = []
     bases = []
 
-    varkeys = m.beforesubs.varlocs.keys()
+    varkeys = model.beforesubs.varlocs.keys()
 
     for var, values in ranges.items():
         mini, maxi, step = values
@@ -80,8 +81,8 @@ def ractorjs(title, m, update_py, ranges, constraint_js=""):
 
     evalarray = [""]*np.prod(lengths)
 
-    m.substitutions.update(subs)
-    sol = m.solve(verbosity=0, skipsweepfailures=True)
+    model.substitutions.update(subs)
+    sol = model.solve(verbosity=0, skipsweepfailures=True)
     for j in range(len(sol)):
         solj = sol.atindex(j)
         soljv = solj["variables"]

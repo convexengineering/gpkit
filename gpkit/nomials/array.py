@@ -57,7 +57,7 @@ class NomialArray(np.ndarray):
     __repr__ = _repr
     _repr_latex_ = _repr_latex_
 
-    def str_without(self, excluded=[]):
+    def str_without(self, excluded=()):
         "Returns string without certain fields (such as 'models')."
         if self.shape:
             return "[" + ", ".join([try_str_without(el, excluded)

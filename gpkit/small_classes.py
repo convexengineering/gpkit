@@ -17,6 +17,8 @@ CootMatrixTuple = namedtuple('CootMatrix', ['row', 'col', 'data'])
 def matrix_converter(name):
     "Generates conversion function."
     def to_(self):
+        # pylint: disable=unused-variable
+        # used in tocoo, tocsc, etc below
         "Converts to another type of matrix."
         return getattr(self.tocsr(), "to"+name)()
 
@@ -30,7 +32,7 @@ class CootMatrix(CootMatrixTuple):
         if row < 0 or col < 0:
             raise ValueError("Only positive indices allowed")
         if not self.shape:
-            self.shape = [row + 1,  col + 1]
+            self.shape = [row + 1, col + 1]
         elif row >= self.shape[0]:
             self.shape[0] = row + 1
         elif col >= self.shape[1]:
@@ -196,7 +198,8 @@ class HashVector(dict):
     def __pow__(self, other):
         "Accepts scalars. Return Hashvector with each value put to a power."
         if isinstance(other, Numbers):
-            return self.__class__({key: val**other for (key, val) in self.items()})
+            return self.__class__({key: val**other
+                                   for (key, val) in self.items()})
         else:
             return NotImplemented
 

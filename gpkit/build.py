@@ -7,15 +7,15 @@ import shutil
 import subprocess
 import glob
 
-logstr = ""
+LOGSTR = ""
 settings = {}
 
 
 def log(*args):
     "Print a line and append it to the log string."
-    global logstr
+    global LOGSTR
     print(*args)
-    logstr += " ".join(args) + "\n"
+    LOGSTR += " ".join(args) + "\n"
 
 
 def pathjoin(*args):
@@ -90,7 +90,7 @@ class SolverBackend(object):
             log("# Did not find", self.name)
 
 
-class Mosek_CLI(SolverBackend):
+class MosekCLI(SolverBackend):
     "MOSEK command line interface finder."
     name = "mosek_cli"
 
@@ -271,7 +271,7 @@ def build_gpkit():
     log("Started building gpkit...\n")
 
     log("Attempting to find and build solvers:\n")
-    solvers = [CVXopt(), Mosek(), Mosek_CLI()]
+    solvers = [CVXopt(), Mosek(), MosekCLI()]
     installed_solvers = [solver.name
                          for solver in solvers
                          if solver.installed]
@@ -297,7 +297,7 @@ def build_gpkit():
         f.write("\n")
 
     with open("gpkit/build.log", "w") as file:
-        file.write(logstr)
+        file.write(LOGSTR)
 
     #call("ls")
     #call("echo \\# gpkit")

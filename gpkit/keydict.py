@@ -1,8 +1,8 @@
 "Implements KeyDict and KeySet classes"
 from collections import defaultdict
 import numpy as np
-from .small_classes import Numbers, Strings
-from .small_scripts import is_sweepvar, veckeyed
+from .small_classes import Numbers
+from .small_scripts import is_sweepvar
 
 
 class KeyDict(dict):

@@ -8,7 +8,7 @@ from ..small_classes import Strings, Numbers, Quantity
 from ..small_classes import HashVector
 from ..keydict import KeySet
 from ..varkey import VarKey
-from ..small_scripts import mag, listify
+from ..small_scripts import mag
 from .. import units as ureg
 from .. import DimensionalityError
 
@@ -541,7 +541,6 @@ class PosynomialInequality(ScalarSingleEquationConstraint):
         constr_sens = {"overall": la}
         if hasattr(self, "pmap"):
             nu_ = np.zeros(len(presub.cs))
-            counter = 0
             for i, mmap in enumerate(self.pmap):
                 for idx, percentage in mmap.items():
                     nu_[idx] += percentage*nu[i]
