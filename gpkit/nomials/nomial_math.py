@@ -61,7 +61,7 @@ class Signomial(Nomial):
                 raise TypeError("could not make Monomial with %s" % type(exps))
             #simplify = False #TODO: this shouldn't require simplification
             cs = [cs]
-            exps = [HashVector(exp)]
+            exps = [HashVector(exp)]  # pylint: disable=redefined-variable-type
         elif isinstance(exps, Nomial):
             simplify = False
             cs = exps.cs  # pylint: disable=no-member
@@ -460,7 +460,7 @@ class PosynomialInequality(ScalarSingleEquationConstraint):
                 raise ValueError("constraints must have the same units"
                                  " on both sides: '%s' and '%s' can not"
                                  " be converted into each other."
-                                 "" % (p_lt.units, m_gt.units))
+                                 "" % (self.p_lt.units, self.m_gt.units))
 
         for i, exp in enumerate(p.exps):
             if not exp:
@@ -500,7 +500,7 @@ class PosynomialInequality(ScalarSingleEquationConstraint):
             #  percentage of the simplified  monomial's coefficient that came
             #  from that particular parent.
 
-            self.pmap = pmap
+            self.pmap = pmap  # pylint: disable=attribute-defined-outside-init
             p = Posynomial(exps, cs, simplify=False)
             if p.any_nonpositive_cs:
                 raise RuntimeWarning("PosynomialInequality %s became Signomial"
@@ -548,7 +548,9 @@ class PosynomialInequality(ScalarSingleEquationConstraint):
 class MonomialEquality(PosynomialInequality):
     "A Constraint of the form Monomial == Monomial."
 
+    # pylint: disable=super-init-not-called
     def __init__(self, left, oper, right):
+        # pylint: disable=non-parent-init-called
         ScalarSingleEquationConstraint.__init__(self, left, oper, right)
         if self.oper is not "=":
             raise ValueError("operator %s is not supported by"
@@ -648,4 +650,5 @@ class SignomialInequality(ScalarSingleEquationConstraint):
         constr_sens["posyapprox"] = pa_sens
         return constr_sens
 
+# pylint: disable=wrong-import-position
 from .substitution import substitution, parse_subs

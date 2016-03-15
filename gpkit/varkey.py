@@ -1,6 +1,6 @@
 """Defines the VarKey class"""
-from .small_classes import Strings, Quantity
 from itertools import count
+from .small_classes import Strings, Quantity
 from .small_scripts import mag, unitstr, veckeyed
 
 

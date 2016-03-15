@@ -126,6 +126,7 @@ class SolutionArray(DictOfLists):
                     costs = ["%-8.3g" % c for c in subdict[:4]]
                     strs += [" [ %s %s ]" % ("  ".join(costs),
                                              "..." if len(self) > 4 else "")]
+                    # pylint: disable=unsubscriptable-object
                     cost_units = self.program[0].cost.units
                 else:
                     strs += [" %-.4g" % subdict]
@@ -145,7 +146,8 @@ class SolutionArray(DictOfLists):
         return "\n".join(strs)
 
 
-# pylint: disable=too-many-locals
+# pylint: disable=too-many-statements,too-many-arguments
+# pylint: disable=too-many-branches,too-many-locals
 def results_table(data, title, minval=0, printunits=True, fixedcols=True,
                   varfmt="%s : ", valfmt="%-.4g ", vecfmt="%-8.3g",
                   included_models=None, excluded_models=None, latex=False,
@@ -257,12 +259,17 @@ def results_table(data, title, minval=0, printunits=True, fixedcols=True,
         lines = [title] + ["-"*len(title)] + [''.join(l) for l in lines] + [""]
     elif latex == 1:
         lines = (["{\\footnotesize"] + ["\\begin{longtable}{llll}"] +
-                 ["\\toprule"] + [title + " & Value & Units & Description \\\\"] + ["\\midrule"] +
-                 [''.join(l) for l in lines] + ["\\bottomrule"] + ["\\end{longtable}}"] + [""])
+                 ["\\toprule"] +
+                 [title + " & Value & Units & Description \\\\"] +
+                 ["\\midrule"] +
+                 [''.join(l) for l in lines] + ["\\bottomrule"] +
+                 ["\\end{longtable}}"] + [""])
     elif latex == 2:
         lines = (["{\\footnotesize"] + ["\\begin{longtable}{lll}"] +
-                 ["\\toprule"] + [title + " & Units & Description \\\\"] + ["\\midrule"] +
-                 [''.join(l) for l in lines] + ["\\bottomrule"] + ["\\end{longtable}}"] + [""])
+                 ["\\toprule"] + [title + " & Units & Description \\\\"] +
+                 ["\\midrule"] +
+                 [''.join(l) for l in lines] + ["\\bottomrule"] +
+                 ["\\end{longtable}}"] + [""])
     elif latex == 3:
         lines = (["{\\footnotesize"] + ["\\begin{longtable}{lll}"] +
                  ["\\toprule"] + [title + " & Value & Units \\\\"] +

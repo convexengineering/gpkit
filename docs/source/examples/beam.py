@@ -69,7 +69,7 @@ PLOT = False
 if PLOT:
     import matplotlib.pyplot as plt
     x_exact = np.linspace(0, L, 1000)
-    w_exact = P/(24.*EI) * x_exact**2 * (x_exact**2 - 4*L*x_exact + 6*L**2)
+    w_exact = q/(24.*EI) * x_exact**2 * (x_exact**2 - 4*L*x_exact + 6*L**2)
     plt.plot(x, w_gp, color='red', linestyle='solid', marker='^',
              markersize=8)
     plt.plot(x_exact, w_exact, color='blue', linestyle='dashed')

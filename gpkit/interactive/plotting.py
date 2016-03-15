@@ -1,7 +1,7 @@
 """Plotting methods"""
+import numpy as np
 import matplotlib.pyplot as plt
 from matplotlib.mlab import griddata
-import numpy as np
 from .. import VarKey
 from ..small_scripts import unitstr
 

@@ -60,7 +60,7 @@ class CootMatrix(CootMatrixTuple):
 class SolverLog(list):
     "Adds a `write` method to list so it's file-like and can replace stdout."
     def __init__(self, verbosity=0, output=None, *args, **kwargs):
-        super(list, self).__init__(*args, **kwargs)
+        list.__init__(self, *args, **kwargs)
         self.verbosity = verbosity
         self.output = output
 

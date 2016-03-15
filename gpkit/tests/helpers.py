@@ -111,6 +111,7 @@ class NewDefaultSolver(object):
     "Creates an environment with a different default solver"
     def __init__(self, solver):
         self.solver = solver
+        self.prev_solvers = None
 
     def __enter__(self):
         "Change default solver."

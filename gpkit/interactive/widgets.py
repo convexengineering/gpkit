@@ -51,6 +51,7 @@ def modelinteract(model, ranges=None, fn_of_sol=None, **solvekwargs):
                 ranges[str(k)] = floatslider
 
     if fn_of_sol is None:
+        # pylint: disable=function-redefined
         def fn_of_sol(solution):
             "Display function to run when a slider is moved."
             tables = ["cost", "freevariables", "sensitivities"]

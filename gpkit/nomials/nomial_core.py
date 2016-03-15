@@ -26,8 +26,8 @@ def fast_monomial_str(exp, c):
 
 class Nomial(NomialData):
     "Shared non-mathematical properties of all nomials"
-    __div__ = None  # pylint: disable=not-callable
-    sub = None      # pylint: disable=not-callable
+    __div__ = None
+    sub = None
     c = None
 
     __str__ = _str
@@ -118,7 +118,7 @@ class Nomial(NomialData):
         float, if no symbolic variables remain after substitution
         (Monomial, Posynomial, or Nomial), otherwise.
         """
-        p = self.sub(self.values)
+        p = self.sub(self.values)  # pylint: disable=not-callable
         if len(p.exps) == 1:
             if not p.exp:
                 return p.c
@@ -146,6 +146,7 @@ class Nomial(NomialData):
         Signomial (or Posynomial or Monomial)
         """
         deriv = super(Nomial, self).diff(wrt)
+        # pylint: disable=unexpected-keyword-arg
         return self.__class__(deriv.exps, deriv.cs, require_positive=False)
 
     def prod(self):
@@ -185,4 +186,4 @@ class Nomial(NomialData):
 
     def __truediv__(self, other):
         """Support the / operator in Python 3.x"""
-        return self.__div__(other)
+        return self.__div__(other)   # pylint: disable=not-callable

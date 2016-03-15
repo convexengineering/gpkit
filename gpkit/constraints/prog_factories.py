@@ -72,7 +72,7 @@ def _solve_fctry(genfunction):
 
         # NOTE: SIDE EFFECTS: self.program is set below
         if sweep:
-            run_sweep(genfunction, self, solution,
+            run_sweep(genfunction, self, solution, skipsweepfailures,
                       constants, sweep, linkedsweep,
                       solver, verbosity-1, *args, **kwargs)
         else:
@@ -88,8 +88,8 @@ def _solve_fctry(genfunction):
     return solvefn
 
 
-# pylint: disable=too-many-locals
-def run_sweep(genfunction, self, solution,
+# pylint: disable=too-many-locals,too-many-arguments
+def run_sweep(genfunction, self, solution, skipsweepfailures,
               constants, sweep, linkedsweep,
               solver, verbosity, *args, **kwargs):
     "Runs through a sweep."

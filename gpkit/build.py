@@ -74,19 +74,19 @@ class SolverBackend(object):
     "Inheritable class for finding solvers. Logs."
     installed = False
     name = None
-    look = None   # pylint: disable=not-callable
-    build = None  # pylint: disable=not-callable
+    look = None
+    build = None
 
     def __init__(self):
         log("# Looking for", self.name)
-        location = self.look()
+        location = self.look()  # pylint: disable=not-callable
         if location is not None:
             log("# Found %s %s" % (self.name, location))
             if not self.build:
                 self.installed = True
             else:
                 log("#\n# Building %s..." % self.name)
-                self.installed = self.build()
+                self.installed = self.build()  # pylint: disable=not-callable
                 status = "Done" if self.installed else "Failed"
                 log("# %s building %s" % (status, self.name))
         else:
@@ -299,8 +299,8 @@ def build_gpkit():
             f.write("%s : %s\n" % (setting, value))
         f.write("\n")
 
-    with open("gpkit/build.log", "w") as file:
-        file.write(LOGSTR)
+    with open("gpkit/build.log", "w") as f:
+        f.write(LOGSTR)
 
     #call("ls")
     #call("echo \\# gpkit")

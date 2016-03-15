@@ -53,7 +53,9 @@ class LinkConstraint(ConstraintSet):
                                          " %s was set to %s" % (
                                              subbed_vk, sub,
                                              vk, self.substitutions[vk]))
-            descr = dict(vk.descr)
+            # vks is a set, so it's convenient to use the loop variable here
+            # since we've already verified above that vks is not null
+            descr = dict(vk.descr)  # pylint: disable=undefined-loop-variable
             descr.pop("value", None)
             descr.pop("models", None)
             descr.pop("modelnums", None)

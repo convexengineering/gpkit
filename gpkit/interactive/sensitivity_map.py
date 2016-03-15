@@ -160,7 +160,7 @@ class SensitivityMap(object):
                 constr_texs = []
                 for constr in constrs:
                     # TODO: not the right way to check if Signomial
-                    rhs = "\leq 0" if constr.any_nonpositive_cs else "\leq 1"
+                    rhs = "\\leq 0" if constr.any_nonpositive_cs else "\\leq 1"
                     if self.paintby == "monomials":
                         tex, idx = signomial_print(constr, sol, colorfn,
                                                    paintby, idx)

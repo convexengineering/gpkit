@@ -24,7 +24,9 @@ class TestVarKey(unittest.TestCase):
         self.assertEqual(x.name, 'x')
         x = VarKey(name='x')
         self.assertEqual(x.name, 'x')
+        # pylint: disable=redundant-keyword-arg
         self.assertRaises(TypeError, lambda: VarKey('x', name='y'))
+        # pylint: disable=redundant-keyword-arg
         self.assertRaises(TypeError, lambda: VarKey(x, name='y'))
 
     def test_eq_neq(self):
