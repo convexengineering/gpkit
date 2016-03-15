@@ -41,6 +41,8 @@ class Model(CostedConstraintSet):
     _nums = defaultdict(int)
     name = None
     num = None
+    program = None
+    solution = None
 
     def __init__(self, cost=None, constraints=None,
                  substitutions=None, name=None):
@@ -77,6 +79,7 @@ class Model(CostedConstraintSet):
         "Recursively substitutes 0 for variables that lack a lower bound"
         zeros = True
         while zeros:
+            # pylint: disable=no-member
             bounds = self.gp(verbosity=0).missingbounds
             zeros = {var: 0 for var, bound in bounds.items()
                      if bound == "lower"}

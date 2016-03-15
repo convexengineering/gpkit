@@ -26,6 +26,9 @@ def fast_monomial_str(exp, c):
 
 class Nomial(NomialData):
     "Shared non-mathematical properties of all nomials"
+    sub = None
+    c = None
+    __div__ = None
 
     __str__ = _str
     __repr__ = _repr
@@ -120,6 +123,30 @@ class Nomial(NomialData):
             if not p.exp:
                 return p.c
         return p
+
+    def to(self, arg):
+        "Create new Signomial converted to new units"
+         # pylint: disable=no-member
+        return self.__class__(self.exps, self.cs.to(arg).tolist())
+
+    def convert_to(self, arg):
+        "Convert this signomial to new units"
+        self.cs = self.cs.to(arg)   # pylint: disable=no-member
+
+    def diff(self, wrt):
+        """Derivative of this with respect to a Variable
+
+        Arguments
+        ---------
+        wrt (Variable):
+        Variable to take derivative with respect to
+
+        Returns
+        -------
+        Signomial (or Posynomial or Monomial)
+        """
+        deriv = super(Nomial, self).diff(wrt)
+        return self.__class__(deriv.exps, deriv.cs, require_positive=False)
 
     def prod(self):
         "base case: Product of a Nomial is itself"

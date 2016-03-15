@@ -36,8 +36,8 @@ class SolutionArray(DictOfLists):
     >>> senss = [sol.sens(x_min), sol.sens(x_min)]
     >>> senss.append(sol["sensitivities"]["variables"]["x_{min}"])
     >>> assert all(np.array(senss) == 1)
-
     """
+    program = None
     table_titles = {"cost": "Cost",
                     "sweepvariables": "Sweep Variables",
                     "freevariables": "Free Variables",

@@ -73,13 +73,16 @@ def diff(filename, diff_dict):
 class SolverBackend(object):
     "Inheritable class for finding solvers. Logs."
     installed = False
+    name = None
+    look = None
+    build = None
 
     def __init__(self):
         log("# Looking for", self.name)
         location = self.look()
         if location is not None:
             log("# Found %s %s" % (self.name, location))
-            if not hasattr(self, 'build'):
+            if not self.build:
                 self.installed = True
             else:
                 log("#\n# Building %s..." % self.name)

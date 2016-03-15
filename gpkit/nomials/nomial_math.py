@@ -46,7 +46,7 @@ class Signomial(Nomial):
             # building a Monomial
             if isinstance(exps, VarKey):
                 exp = {exps: 1}
-                units = exps.units
+                units = exps.units  # pylint: disable=no-member
             elif exps is None or isinstance(exps, Strings):
                 vk = VarKey(**descr) if exps is None else VarKey(exps, **descr)
                 descr = vk.descr
@@ -64,8 +64,8 @@ class Signomial(Nomial):
             exps = [HashVector(exp)]
         elif isinstance(exps, Nomial):
             simplify = False
-            cs = exps.cs
-            exps = exps.exps
+            cs = exps.cs  # pylint: disable=no-member
+            exps = exps.exps  # pylint: disable=no-member
         else:
             try:
                 # test for presence of length and identical lengths
@@ -109,6 +109,7 @@ class Signomial(Nomial):
             from .. import SIGNOMIALS_ENABLED
             if require_positive and not SIGNOMIALS_ENABLED:
                 raise ValueError("each c must be positive.")
+            self.__class__ = Signomial
         else:
             self.__class__ = Posynomial
 
@@ -117,29 +118,6 @@ class Signomial(Nomial):
                 self.__class__ = Monomial
             self.exp = self.exps[0]
             self.c = self.cs[0]
-
-    def to(self, arg):
-        "Create new Signomial converted to new units"
-        return Signomial(self.exps, self.cs.to(arg).tolist())
-
-    def convert_to(self, arg):
-        "Convert this signomial to new units"
-        self.cs = self.cs.to(arg)
-
-    def diff(self, wrt):
-        """Derivative of this with respect to a Variable
-
-        Arguments
-        ---------
-        wrt (Variable):
-        Variable to take derivative with respect to
-
-        Returns
-        -------
-        Signomial (or Posynomial or Monomial)
-        """
-        deriv = super(Signomial, self).diff(wrt)
-        return Signomial(exps=deriv.exps, cs=deriv.cs, require_positive=False)
 
     def posy_negy(self):
         """Get the positive and negative parts, both as Posynomials
@@ -253,11 +231,12 @@ class Signomial(Nomial):
             if other == 0:
                 return Signomial(self.exps, self.cs)
             else:
-                return Signomial(self.exps + ({},),
-                                 self.cs.tolist() + [other])
+                cs = self.cs.tolist() + [other]  # pylint: disable=no-member
+                return Signomial(self.exps + ({},), cs)
         elif isinstance(other, Signomial):
-            return Signomial(self.exps + other.exps,
-                             self.cs.tolist() + other.cs.tolist())
+             # pylint: disable=no-member
+            cs = self.cs.tolist() + other.cs.tolist()
+            return Signomial(self.exps + other.exps, cs)
         elif isinstance(other, NomialArray):
             return np.array(self)+other
         else:
@@ -643,7 +622,7 @@ class SignomialInequality(ScalarSingleEquationConstraint):
         else:
             self.__class__ = PosynomialInequality
             self.__init__(posy, "<=", negy)
-            return self._unsubbed
+            return self._unsubbed   # pylint: disable=no-member
 
     def as_gpconstr(self, x0):
         "Returns GP apprimxation of an SP constraint at x0"
