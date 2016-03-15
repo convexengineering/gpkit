@@ -3,8 +3,7 @@ A simple beam example with fixed geometry. Solves the discretized
 Euler-Bernoulli beam equations for a constant distributed load
 """
 import numpy as np
-import gpkit
-from gpkit.shortcuts import Var, Vec, Model
+from gpkit import Variable, VectorVariable, Model, units
 from gpkit.small_scripts import mag
 
 
@@ -23,18 +22,19 @@ class Beam(Model):
         [N/m] Loading density: can be specified as constants or as an array.
     """
     def __init__(self, N=4, **kwargs):
-        EI = Var("EI", 1e4, "N*m^2")
-        dx = Var("dx", "m", "Length of an element")
-        L = Var("L", 5, "m", "Overall beam length")
-        q = Vec(N, "q", 100*np.ones(N), "N/m", "Distributed load at each point")
-        V = Vec(N, "V", "N", "Internal shear")
-        V_tip = Var("V_{tip}", 0, "N", "Tip loading")
-        M = Vec(N, "M", "N*m", "Internal moment")
-        M_tip = Var("M_{tip}", 0, "N*m", "Tip moment")
-        th = Vec(N, "\\theta", "-", "Slope")
-        th_base = Var("\\theta_{base}", 0, "-", "Base angle")
-        w = Vec(N, "w", "m", "Displacement")
-        w_base = Var("w_{base}", 0, "m", "Base deflection")
+        EI = Variable("EI", 1e4, "N*m^2")
+        dx = Variable("dx", "m", "Length of an element")
+        L = Variable("L", 5, "m", "Overall beam length")
+        q = VectorVariable(N, "q", 100*np.ones(N), "N/m",
+                           "Distributed load at each point")
+        V = VectorVariable(N, "V", "N", "Internal shear")
+        V_tip = Variable("V_{tip}", 0, "N", "Tip loading")
+        M = VectorVariable(N, "M", "N*m", "Internal moment")
+        M_tip = Variable("M_{tip}", 0, "N*m", "Tip moment")
+        th = VectorVariable(N, "\\theta", "-", "Slope")
+        th_base = Variable("\\theta_{base}", 0, "-", "Base angle")
+        w = VectorVariable(N, "w", "m", "Displacement")
+        w_base = Variable("w_{base}", 0, "m", "Base deflection")
         # below: trapezoidal integration to form a piecewise-linear
         #        approximation of loading, shear, and so on
         # shear and moment increase from tip to base (left > right)
@@ -59,11 +59,11 @@ sol = b.solve(verbosity=1)
 w_gp = sol("w")  # deflection along beam
 
 L, EI, q = sol("L"), sol("EI"), sol("q")
-x = np.linspace(0, mag(L), len(q))*gpkit.units.m  # position along beam
+x = np.linspace(0, mag(L), len(q))*units.m  # position along beam
 q = q[0]  # assume uniform loading for the check below
 w_exact = q/(24.*EI) * x**2 * (x**2 - 4*L*x + 6*L**2)  # analytic soln
 
-assert max(abs(w_gp - w_exact)) <= 1e-2*gpkit.units.m
+assert max(abs(w_gp - w_exact)) <= 1e-2*units.m
 
 PLOT = False
 if PLOT:
