@@ -58,7 +58,7 @@ class KeyDict(dict):
         if self.collapse_arrays:
             idx = getattr(key, "idx", None)
             if idx:
-                key = veckeyed(key)
+                key = key.veckey
         return key, idx
 
     @classmethod

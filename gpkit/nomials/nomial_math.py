@@ -2,7 +2,7 @@
 import numpy as np
 from .data import simplify_exps_and_cs
 from .array import NomialArray
-from .nomial_core import Nomial
+from .nomial_core import Nomial, fast_monomial_str
 from ..constraints import SingleEquationConstraint
 from ..small_classes import Strings, Numbers, Quantity
 from ..small_classes import HashVector
@@ -545,8 +545,8 @@ class PosynomialInequality(ScalarSingleEquationConstraint):
         # Monomial sensitivities
         constr_sens[str(self.m_gt)] = la
         for i, mono_sens in enumerate(nu):
-            mono = Monomial(self.p_lt.exps[i], self.p_lt.cs[i])
-            constr_sens[str(mono)] = mono_sens
+            mono_str = fast_monomial_str(self.p_lt.exps[i], self.p_lt.cs[i])
+            constr_sens[mono_str] = mono_sens
         # Constant sensitivities
         var_senss = {var: sum([presub.exps[i][var]*nu[i] for i in locs])
                      for (var, locs) in presub.varlocs.items()

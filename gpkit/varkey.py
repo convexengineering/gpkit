@@ -59,12 +59,14 @@ class VarKey(object):
             else:
                 raise ValueError("units must be either a string"
                                  " or a Quantity from gpkit.units.")
-        self._hashvalue = hash(str(self))
+        selfstr = str(self)
+        self._hashvalue = hash(selfstr)
         self.key = self
-        self.keys = set([self, self.name, str(self), self.latex(),
+        self.keys = set([self, self.name, selfstr, self.latex(),
                          self.str_without("models")])
         if "idx" in self.descr:
-            self.keys.add(veckeyed(self))
+            self.veckey = veckeyed(self)
+            self.keys.add(self.veckey)
         self.descr["unitrepr"] = repr(self.units)
         self._unitstr = None
 
