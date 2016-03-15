@@ -64,6 +64,7 @@ def composite_objective(*objectives, **kwargs):
         objective += ws[i]*w_s[:i].prod()*w_s[i+1:].prod()*obj/normalization[i]
     return objective
 
+
 def mdparse(filename, return_tex=False):
     "Parse markdown file, returning as strings python and (optionally) .tex.md"
     with open(filename) as f:
@@ -102,6 +103,18 @@ def mdparse(filename, return_tex=False):
         else:
             return "\n".join(py_lines), "\n".join(texmd_lines)
 
+
+def mdmake(filename, make_tex=True):
+    "Make a python file and (optional) a pandoc-ready .tex.md file"
+    mdpy, texmd = mdparse(filename, return_tex=True)
+    with open(filename+".py", "w") as f:
+        f.write(mdpy)
+    if make_tex:
+        with open(filename+".tex.md", "w") as f:
+            f.write(texmd)
+    return open(filename+".py")
+
+
 def bound_all_variables(model, eps=1e-30, lower=None, upper=None):
     "Returns model with additional constraints bounding all free variables"
     lb = lower if lower else eps
@@ -117,12 +130,12 @@ def bound_all_variables(model, eps=1e-30, lower=None, upper=None):
     return m
 
 
+# pylint: disable=too-many-locals
 def determine_unbounded_variables(model, solver=None, verbosity=0,
-                                  eps=1e-30, lower=None, upper=None,
-                                  *args, **kwargs):
+                                  eps=1e-30, lower=None, upper=None, **kwargs):
     "Returns labeled dictionary of unbounded variables."
     m = bound_all_variables(model, eps, lower, upper)
-    sol = m.solve(solver, verbosity, *args, **kwargs)
+    sol = m.solve(solver, verbosity, **kwargs)
     lam = sol["sensitivities"]["posynomials"][1:]
     out = {"upper unbounded": [], "lower unbounded": []}
     for i, varkey in enumerate(m.bound_all["varkeys"]):
@@ -139,16 +152,5 @@ def determine_unbounded_variables(model, solver=None, verbosity=0,
                 # if we're within ~10x of a boundary (arbitrary threshold)
                 raise AttributeError("%s appears to have hit a boundary"
                                      " but it's not showing up in the"
-                                     " sensitivities." % str(varkey))
+                                     " sensitivities." % varkey)
     return out
-
-
-def mdmake(filename, make_tex=True):
-    "Make a python file and (optional) a pandoc-ready .tex.md file"
-    mdpy, texmd = mdparse(filename, return_tex=True)
-    with open(filename+".py", "w") as f:
-        f.write(mdpy)
-    if make_tex:
-        with open(filename+".tex.md", "w") as f:
-            f.write(texmd)
-    return open(filename+".py")
