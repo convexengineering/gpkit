@@ -418,6 +418,13 @@ class ScalarSingleEquationConstraint(SingleEquationConstraint):
         self.varkeys = KeySet(self.left.varlocs)
         self.varkeys.update(self.right.varlocs)
 
+    def subinplace(self, substitutions, value=None):
+        "Modifies the constraint in place with substitutions."
+        for nomial in self.nomials:
+            nomial.subinplace(substitutions, value)
+        self.varkeys = KeySet(self.left.varlocs)
+        self.varkeys.update(self.right.varlocs)
+
 
 class PosynomialInequality(ScalarSingleEquationConstraint):
     """A constraint of the general form monomial >= posynomial
@@ -439,15 +446,8 @@ class PosynomialInequality(ScalarSingleEquationConstraint):
         self.substitutions = dict(p_lt.values)
         self.substitutions.update(m_gt.values)
         self._unsubbed = self._gen_unsubbed()
-        self.posys = [self.left, self.right, self.p_lt, self.m_gt]
-        self.posys.extend(self._unsubbed)
-
-    def subinplace(self, substitutions, value=None):
-        "Modifies the constraint in place with substitutions."
-        for posy in self.posys:
-            posy.subinplace(substitutions, value)
-        self.varkeys = KeySet(self.left.varlocs)
-        self.varkeys.update(self.right.varlocs)
+        self.nomials = [self.left, self.right, self.p_lt, self.m_gt]
+        self.nomials.extend(self._unsubbed)
 
     def _gen_unsubbed(self):
         "Returns the unsubstituted posys <= 1."
@@ -558,8 +558,8 @@ class MonomialEquality(PosynomialInequality):
         self.substitutions = dict(self.left.values)
         self.substitutions.update(self.right.values)
         self._unsubbed = self._gen_unsubbed()
-        self.posys = [self.left, self.right]
-        self.posys.extend(self._unsubbed)
+        self.nomials = [self.left, self.right]
+        self.nomials.extend(self._unsubbed)
 
     def _gen_unsubbed(self):
         "Returns the unsubstituted posys <= 1."
@@ -611,13 +611,15 @@ class SignomialInequality(ScalarSingleEquationConstraint):
         else:
             raise ValueError("operator %s is not supported by Signomial"
                              "Constraint." % self.oper)
-        self.sigy_lt0_rep = plt - pgt
-        self.substitutions = self.sigy_lt0_rep.values
-        self.units = self.sigy_lt0_rep.units
+        self.nomials = [self.left, self.right]
+        self._unsubbed = plt - pgt
+        self.nomials.append(self._unsubbed)
+        self.substitutions = dict(self.left.values)
+        self.substitutions.update(self.right.values)
 
     def as_posyslt1(self):
         "Returns the posys <= 1 representation of this constraint."
-        s = self.sigy_lt0_rep.sub(self.substitutions, require_positive=False)
+        s = self._unsubbed.sub(self.substitutions, require_positive=False)
         posy, negy = s.posy_negy()
         if len(negy.cs) != 1:
             raise ValueError("SignomialInequality could not simplify to"
@@ -629,7 +631,7 @@ class SignomialInequality(ScalarSingleEquationConstraint):
 
     def as_gpconstr(self, x0):
         "Returns GP apprimxation of an SP constraint at x0"
-        posy, negy = self.sigy_lt0_rep.posy_negy()
+        posy, negy = self._unsubbed.posy_negy()
         if x0 is None:
             x0 = {vk: vk.descr["sp_init"] for vk in negy.varlocs
                   if "sp_init" in vk.descr}
@@ -644,7 +646,7 @@ class SignomialInequality(ScalarSingleEquationConstraint):
         "Returns sensitivities as parsed from an approximating GP constraint."
         constr_sens = dict(pa_sens)
         del constr_sens[str(posyapprox.m_gt)]
-        _, negy = self.sigy_lt0_rep.posy_negy()
+        _, negy = self._unsubbed.posy_negy()
         constr_sens[str(negy)] = pa_sens["overall"]
         pa_sens[str(posyapprox)] = pa_sens.pop("overall")
         constr_sens["posyapprox"] = pa_sens
