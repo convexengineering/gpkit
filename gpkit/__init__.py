@@ -69,7 +69,6 @@ def disable_units():
 
     class DummyUnits(object):
         "Dummy class to replace missing pint"
-        # pylint: disable=too-few-public-methods
         class Quantity(object):
             "Dummy Quantity instead of pint"
             pass
@@ -104,7 +103,6 @@ class SignomialsEnabled(object):
     >>> gpkit.Model(x, constraints).localsolve()
     """
     # pylint: disable=global-statement
-    # pylint: disable=too-few-public-methods
     def __enter__(self):
         global SIGNOMIALS_ENABLED
         SIGNOMIALS_ENABLED = True
@@ -170,4 +168,4 @@ def load_settings(path=SETTINGS_PATH):
     settings_["default_solver"] = settings_["installed_solvers"][0]
     settings_["latex_modelname"] = True
     return settings_
-settings = load_settings()  # pylint: disable=invalid-name
+settings = load_settings()
