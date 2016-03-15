@@ -124,8 +124,7 @@ def bound_all_variables(model, eps=1e-30, lower=None, upper=None):
     constraints = [[ub >= Variable(**varkey.descr),
                     Variable(**varkey.descr) >= lb]
                    for varkey in varkeys]
-    constraints.extend(model.constraints)
-    m = model.__class__(model.cost, constraints, model.substitutions)
+    m = model.__class__(model.cost, [constraints, model], model.substitutions)
     m.bound_all = {"lb": lb, "ub": ub, "varkeys": varkeys}
     return m
 
@@ -136,7 +135,7 @@ def determine_unbounded_variables(model, solver=None, verbosity=0,
     "Returns labeled dictionary of unbounded variables."
     m = bound_all_variables(model, eps, lower, upper)
     sol = m.solve(solver, verbosity, **kwargs)
-    lam = sol["sensitivities"]["posynomials"][1:]
+    lam = sol["sensitivities"]["la"][1:]
     out = {"upper unbounded": [], "lower unbounded": []}
     for i, varkey in enumerate(m.bound_all["varkeys"]):
         sens_ratio = lam[2*i]/lam[2*i+1]
