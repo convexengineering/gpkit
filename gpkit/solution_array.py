@@ -145,6 +145,7 @@ class SolutionArray(DictOfLists):
         return "\n".join(strs)
 
 
+# pylint: disable=too-many-locals
 def results_table(data, title, minval=0, printunits=True, fixedcols=True,
                   varfmt="%s : ", valfmt="%-.4g ", vecfmt="%-8.3g",
                   included_models=None, excluded_models=None, latex=False,

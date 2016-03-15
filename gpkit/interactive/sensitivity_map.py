@@ -25,6 +25,7 @@ def colorfn_gen(scale, power=0.66):
     return colorfn
 
 
+# pylint: disable=too-many-locals
 def signomial_print(sig, sol, colorfn, paintby="variables", idx=None):
     "For pretty printing with Sympy"
     mstrs = []
@@ -134,6 +135,7 @@ class SensitivityMap(object):
                          self.constraint_latex_list(paintby) +
                          ["\\end{array}"])
 
+    # pylint: disable=too-many-locals
     def constraint_latex_list(self, paintby):
         "Generates LaTeX for constraints."
         constraint_latex_list = []

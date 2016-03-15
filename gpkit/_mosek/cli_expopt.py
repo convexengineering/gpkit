@@ -95,16 +95,13 @@ def imize_fn(path=None, clearfiles=True):
             f.write("\n*p_idxs\n")
             f.writelines(["%d\n" % x for x in p_idxs])
 
-            t_j_Atj = zip(A.row, A.col, A.data)
-
             f.write("\n*t j A_tj\n")
             f.writelines(["%d %d %.20e\n" % tuple(x)
-                          for x in t_j_Atj])
+                          for x in zip(A.row, A.col, A.data)])
 
-        log = check_output(["mskexpopt", filename])
-        for logline in log.split(b"\n"):
+        # run mskexpopt and print stdout
+        for logline in check_output(["mskexpopt", filename]).split(b"\n"):
             print(logline)
-
         with open(filename+".sol") as f:
             assert_line(f, "PROBLEM STATUS      : PRIMAL_AND_DUAL_FEASIBLE\n")
             assert_line(f, "SOLUTION STATUS     : OPTIMAL\n")

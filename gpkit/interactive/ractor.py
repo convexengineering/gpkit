@@ -33,6 +33,7 @@ def ractorpy(model, update_py, ranges, constraint_js="",
 JSWIDGET_ID = itertools.count().next
 
 
+# pylint: disable=too-many-locals
 def ractorjs(title, model, update_py, ranges, constraint_js=""):
     "Creates Javascript/HTML for CADtoon interaction without installing GPkit."
     widget_id = "jswidget_"+str(JSWIDGET_ID())

@@ -119,7 +119,7 @@ def printcb(void, msg):  # pylint: disable=unused-argument
     return 0
 
 
-# pylint: disable=unused-argument
+# pylint: disable=unused-argument,too-many-locals
 def imize(c, A, p_idxs, *args, **kwargs):
     """Interface to the MOSEK EXPOPT solver via C
 
