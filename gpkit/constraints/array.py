@@ -3,17 +3,17 @@ from .set import ConstraintSet
 from .single_equation import SingleEquationConstraint
 
 
-class ArrayConstraint(ConstraintSet, SingleEquationConstraint):
+class ArrayConstraint(SingleEquationConstraint, ConstraintSet):
     """A ConstraintSet for prettier array-constraint printing.
 
-    ArrayConstraint inherits its `sub` method from ConstrainSet,
+    ArrayConstraint gets its `sub` method from ConstrainSet,
     and so left and right are only used for printing.
 
     When created by NomialArray left and right are likely to be
     be either NomialArrays or Varkeys of VectorVariables.
     """
     def __init__(self, constraints, left, oper, right):
-        super(ArrayConstraint, self).__init__(constraints)
-        self.left = left
-        self.oper = oper
-        self.right = right
+        SingleEquationConstraint.__init__(self, left, oper, right)
+        ConstraintSet.__init__(self, constraints)
+
+    subinplace = ConstraintSet.subinplace

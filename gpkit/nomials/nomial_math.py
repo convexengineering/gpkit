@@ -411,7 +411,7 @@ class Monomial(Posynomial):
 
 
 class ScalarSingleEquationConstraint(SingleEquationConstraint):
-    "As the original class, but casts arguments to Signomial"
+    "A SingleEquationConstraint with scalar left and right sides."
     def __init__(self, left, oper, right):
         super(ScalarSingleEquationConstraint,
               self).__init__(Signomial(left), oper, Signomial(right))
