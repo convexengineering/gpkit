@@ -30,11 +30,11 @@ class TestVarKey(unittest.TestCase):
     def test_eq_neq(self):
         """Test boolean equality operators"""
         # no args
-        x1 = VarKey()
-        x2 = VarKey()
-        self.assertTrue(x1 != x2)
-        self.assertFalse(x1 == x2)
-        self.assertEqual(x1, x1)
+        vk1 = VarKey()
+        vk2 = VarKey()
+        self.assertTrue(vk1 != vk2)
+        self.assertFalse(vk1 == vk2)
+        self.assertEqual(vk1, vk1)
         V = VarKey('V')
         vel = VarKey('V')
         self.assertTrue(V == vel)

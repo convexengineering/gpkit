@@ -17,7 +17,7 @@ class TestMathModels(unittest.TestCase):
         m = Model(obj, eqns)
         sol = m.solve(verbosity=0)
         a = sol["cost"]
-        b = np.array([1.58856898, 2.6410391,  3.69348122, 4.74591386])
+        b = np.array([1.58856898, 2.6410391, 3.69348122, 4.74591386])
         self.assertTrue((abs(a-b)/(a+b+1e-7) < 1e-7).all())
 
     def test_te_exp_minus1(self):

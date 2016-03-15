@@ -98,7 +98,7 @@ class TestGP(unittest.TestCase):
         sol1 = m1.solve(solver=self.solver, verbosity=0)
         sol2 = m2.solve(solver=self.solver, verbosity=0)
         sol3 = m3.solve(solver=self.solver, verbosity=0)
-        gp1, gp2, gp3 = [m.program for m in [m1, m2, m3]]
+        gp1, gp2, gp3 = [getattr(m, "program") for m in [m1, m2, m3]]
         self.assertEqual(gp1.A, CootMatrix(row=[0, 1, 2],
                                            col=[0, 0, 0],
                                            data=[-1, 1, -1]))
@@ -122,7 +122,7 @@ class TestGP(unittest.TestCase):
         x = Variable('x')
         m = Model(1/x, [1 >= 5*x + 0.5, 1 >= 10*x])
         m.solve(verbosity=0)
-        gp = m.program
+        gp = getattr(m, "program")  # created by solve()
         self.assertEqual(gp.cs[1], gp.cs[2])
         self.assertEqual(gp.A.data[1], gp.A.data[2])
 
@@ -170,9 +170,9 @@ class TestGP(unittest.TestCase):
         m = Model(x, [x**2 >= 1, x <= 0.5])
         self.assertRaises(RuntimeWarning, m.solve, verbosity=0)
         fm = feasibility_model(m.gp(), "max")
-        sol1 = fm.solve(verbosity=0)
+        sol1 = getattr(fm, "solve")(verbosity=0)
         fm = feasibility_model(m.gp(), "product")
-        sol2 = fm.solve(verbosity=0)
+        sol2 = getattr(fm, "solve")(verbosity=0)
         self.assertTrue(sol1["cost"] >= 1)
         self.assertTrue(sol2["cost"] >= 1)
 

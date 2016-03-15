@@ -22,8 +22,8 @@ def import_tests():
     from gpkit.tests import t_constraints
     tests += t_constraints.TESTS
 
-    from gpkit.tests import t_posy_array
-    tests += t_posy_array.TESTS
+    from gpkit.tests import t_nomial_array
+    tests += t_nomial_array.TESTS
 
     from gpkit.tests import t_model
     tests += t_model.TESTS

@@ -5,6 +5,7 @@ import gpkit
 from gpkit import SignomialsEnabled
 from gpkit import Variable, VectorVariable, Model, Signomial
 from gpkit.small_scripts import mag
+from gpkit.tests.helpers import run_tests
 
 
 class TestNomialSubs(unittest.TestCase):
@@ -51,7 +52,7 @@ class TestNomialSubs(unittest.TestCase):
         for x_ in ["x", xvk, x]:
             for y_ in ["y", yvk, y]:
                 if not isinstance(y_, str) and units_exist:
-                    expected = 1000
+                    expected = 1000.0
                 else:
                     expected = 1.0
                 self.assertAlmostEqual(expected, mag(x.sub(x_, y_).c))
@@ -75,9 +76,9 @@ class TestNomialSubs(unittest.TestCase):
         self.assertTrue(all(p.sub({x: 1, y: 2, "z": [1, 2]}) ==
                             z.sub(z, [2, 4])))
 
-        x = VectorVariable(3, "x", "m")
-        xs = x[:2].sum()
-        for x_ in ["x", x]:
+        xvec = VectorVariable(3, "x", "m")
+        xs = xvec[:2].sum()
+        for x_ in ["x", xvec]:
             self.assertAlmostEqual(mag(xs.sub(x_, [1, 2, 3]).c), 3.0)
 
     def test_variable(self):
@@ -95,8 +96,8 @@ class TestNomialSubs(unittest.TestCase):
         self.assertEqual(x.sub({x: 3}), 3)
         self.assertEqual(x.sub({x: y}), y)
         # and for vectors
-        x = VectorVariable(3, 'x')
-        self.assertEqual(x[1].sub(3), 3)
+        xvec = VectorVariable(3, 'x')
+        self.assertEqual(xvec[1].sub(3), 3)
 
     def test_signomial(self):
         """Test Signomial substitution"""
@@ -139,9 +140,8 @@ class TestGPSubs(unittest.TestCase):
         N = 6
         Weight = 50000
         xi_dist = 6*Weight/float(N)*(
-                    (np.array(range(1, N+1)) - .5/float(N))/float(N) -
-                    (np.array(range(1, N+1)) - .5/float(N))**2/float(N)**2
-                                    )
+            (np.array(range(1, N+1)) - .5/float(N))/float(N) -
+            (np.array(range(1, N+1)) - .5/float(N))**2/float(N)**2)
 
         xi = VectorVariable(N, "xi", xi_dist, "N", "Constant Thrust per Bin")
         P = Variable("P", "N", "Total Power")
@@ -157,12 +157,14 @@ class TestGPSubs(unittest.TestCase):
 
     def test_model_composition_units(self):
         class Above(Model):
+            "A simple upper bound on x"
             def __init__(self):
                 x = Variable("x", "ft")
                 x_max = Variable("x_{max}", 1, "yard")
                 Model.__init__(self, 1/x, [x <= x_max])
 
         class Below(Model):
+            "A simple lower bound on x"
             def __init__(self):
                 x = Variable("x", "m")
                 x_min = Variable("x_{min}", 1, "cm")
@@ -190,15 +192,17 @@ class TestGPSubs(unittest.TestCase):
 
     def test_model_recursion(self):
         class Top(Model):
+            "Some high level model"
             def __init__(self):
                 x = Variable('x')
                 y = Variable('y')
                 Model.__init__(self, x, Sub().link([x >= y, y >= 1]))
 
         class Sub(Model):
+            "A simple sub model"
             def __init__(self):
                 y = Variable('y')
-                Model.__init__(self, y,  [y >= 2])
+                Model.__init__(self, y, [y >= 2])
 
         sol = Top().solve(verbosity=0)
         self.assertAlmostEqual(sol['cost'], 2)
@@ -207,5 +211,4 @@ class TestGPSubs(unittest.TestCase):
 TESTS = [TestNomialSubs, TestGPSubs]
 
 if __name__ == '__main__':
-    from gpkit.tests.helpers import run_tests
     run_tests(TESTS)

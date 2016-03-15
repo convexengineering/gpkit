@@ -26,8 +26,8 @@ class TestNomialArray(unittest.TestCase):
         p = x_0**2 + x_1**2 + x_2**2
         self.assertEqual(x.dot(x), p)
         m = NomialArray([[x_0**2, x_0*x_1, x_0*x_2],
-                       [x_0*x_1, x_1**2, x_1*x_2],
-                       [x_0*x_2, x_1*x_2, x_2**2]])
+                         [x_0*x_1, x_1**2, x_1*x_2],
+                         [x_0*x_2, x_1*x_2, x_2**2]])
         self.assertEqual(x.outer(x), m)
 
     def test_elementwise_mult(self):
@@ -65,7 +65,6 @@ class TestNomialArray(unittest.TestCase):
     def test_substition(self):
         x = VectorVariable(3, 'x', label='dummy variable')
         c = {x: [1, 2, 3]}
-        s = NomialArray([1, 2, 3])
         self.assertEqual(x.sub(c), [Monomial({}, e) for e in [1, 2, 3]])
         p = x**2
         self.assertEqual(p.sub(c), [Monomial({}, e) for e in [1, 4, 9]])
