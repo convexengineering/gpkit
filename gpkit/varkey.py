@@ -1,6 +1,6 @@
 """Defines the VarKey class"""
 from .small_classes import Strings, Quantity
-from .small_classes import Counter
+from itertools import count
 from .small_scripts import mag, unitstr, veckeyed
 
 
@@ -19,7 +19,7 @@ class VarKey(object):
     -------
     VarKey with the given name and descr.
     """
-    new_unnamed_id = Counter()
+    new_unnamed_id = count().next
     subscripts = ["models", "idx"]
     eq_ignores = frozenset(["units", "value"])
     # ignore value in ==. Also skip units, since pints is weird and the unitstr

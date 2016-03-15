@@ -52,15 +52,6 @@ class CostedConstraintSet(ConstraintSet):
                           "    & %s \\\\" % self.cost.latex(excluded),
                           "\\text{subject to}"])
 
-    def zero_lower_unbounded_variables(self):
-        "Recursively substitutes 0 for variables that lack a lower bound"
-        zeros = True
-        while zeros:
-            bounds = self.gp(verbosity=0).missingbounds
-            zeros = {var: 0 for var, bound in bounds.items()
-                     if bound == "lower"}
-            self.substitutions.update(zeros)
-
     def interact(self, ranges=None, fn_of_sol=None, **solvekwargs):
         """Easy model interaction in IPython / Jupyter
 

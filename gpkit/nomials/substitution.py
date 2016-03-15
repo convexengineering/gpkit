@@ -65,7 +65,7 @@ def append_sub(sub, keys, constants, sweep, linkedsweep):
         if not sweepsub:
             try:
                 assert np.isnan(value)
-            except:
+            except (AssertionError, TypeError, ValueError):
                 constants[key] = value
         elif not hasattr(value, "__call__"):
             sweep[key] = value

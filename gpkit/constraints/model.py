@@ -73,6 +73,15 @@ class Model(CostedConstraintSet):
         cost = self.cost.sub(lc.linked)
         return Model(cost, [lc], lc.substitutions)
 
+    def zero_lower_unbounded_variables(self):
+        "Recursively substitutes 0 for variables that lack a lower bound"
+        zeros = True
+        while zeros:
+            bounds = self.gp(verbosity=0).missingbounds
+            zeros = {var: 0 for var, bound in bounds.items()
+                     if bound == "lower"}
+            self.substitutions.update(zeros)
+
     def _add_modelname_tovars(self, name, num):
         add_model_subs = KeyDict()
         for vk in self.varkeys:

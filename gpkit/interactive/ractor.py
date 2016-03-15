@@ -30,12 +30,12 @@ def ractorpy(model, update_py, ranges, constraint_js="",
     return model.interact(ranges, ractivefn)
 
 
-new_jswidget_id = itertools.count().next
+JSWIDGET_ID = itertools.count().next
 
 
 def ractorjs(title, model, update_py, ranges, constraint_js=""):
     "Creates Javascript/HTML for CADtoon interaction without installing GPkit."
-    widget_id = "jswidget_"+str(new_jswidget_id())
+    widget_id = "jswidget_"+str(JSWIDGET_ID())
     display(HTML("<script id='%s-after' type='text/throwaway'>%s</script>" %
                  (widget_id, constraint_js)))
     display(HTML("<script>var %s = {storage: [], n:%i, ranges: {}, after: document.getElementById('%s-after').innerHTML, bases: [1] }</script>" % (widget_id, len(ranges), widget_id)))

@@ -51,15 +51,15 @@ class SolutionArray(DictOfLists):
         except TypeError:
             return 1
 
-    def __call__(self, p):
-        p_subbed = self.subinto(p)
-        if hasattr(p_subbed, "exp") and not p_subbed.exp:
+    def __call__(self, posy):
+        posy_subbed = self.subinto(posy)
+        if hasattr(posy_subbed, "exp") and not posy_subbed.exp:
             # it's a constant monomial
-            return p_subbed.c
-        elif hasattr(p_subbed, "c"):
-            # it's a posyarray, which'll throw an error if non-constant...
-            return p_subbed.c
-        return p_subbed
+            return posy_subbed.c
+        elif hasattr(posy_subbed, "c"):
+            # it's a posyosyarray, which'll throw an error if non-constant...
+            return posy_subbed.c
+        return posy_subbed
 
     def subinto(self, posy):
         "Returns NomialArray of each solution substituted into posy."

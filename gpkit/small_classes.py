@@ -57,17 +57,6 @@ class CootMatrix(CootMatrixTuple):
         return self.tocsr().dot(arg)
 
 
-class Counter(object):
-    "Class for simply incrementing."
-    def __init__(self):
-        self.count = -1
-
-    def __call__(self):
-        "Increments and returns count."
-        self.count += 1
-        return self.count
-
-
 class SolverLog(list):
     "Adds a `write` method to list so it's file-like and can replace stdout."
     def __init__(self, verbosity=0, output=None, *args, **kwargs):
