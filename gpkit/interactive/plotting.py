@@ -3,7 +3,7 @@ import numpy as np
 import matplotlib.pyplot as plt
 from matplotlib.mlab import griddata
 from .. import VarKey
-from ..small_scripts import unitstr
+from ..small_scripts import unitstr, mag
 
 
 LIGHT_COLORS = ['#80cdc1']
@@ -61,7 +61,7 @@ def contour_array(model, xname, yname, znames, cellsize=(5, 5),
 
     def get_label(var):
         "Default axis label for var"
-        var = model[str(var)].key
+        var, = model.varkeys[var]
         label = var.name
         if "idx" in var.descr:
             idx = var.descr.pop("idx", None)
@@ -74,7 +74,7 @@ def contour_array(model, xname, yname, znames, cellsize=(5, 5),
             label += unitstr(var.units, " [%s] ")
         if "label" in var.descr:
             label += " %s" % var.descr["label"]
-        return label, vals
+        return label, mag(vals)
 
     xlabel, x_sol = get_label(xname)
     ylabel, y_sol = get_label(yname)
@@ -98,21 +98,21 @@ def contour_array(model, xname, yname, znames, cellsize=(5, 5),
     for ax in xlabeledaxes:
         ax.set_xlabel(xlabel, color=NEUTRAL_DARK)
         ax.set_xlim((x_sol.min(), x_sol.max()))
-        if xticks is not None:
+        if isinstance(xticks, type(None)):
             ax.set_xticks(xticks, minor=True)
             m = len(xticks)
             major_xticks = [xticks[i] for i in (0, 1*m/4, 2*m/4, 3*m/4, m-1)]
-            major_ticklabels = ["%.2g" % x for x in major_xticks]
+            major_ticklabels = ["%.3g" % x for x in major_xticks]
             ax.set_xticks(major_xticks)
             ax.set_xticklabels(major_ticklabels)
     for ax in ylabeledaxes:
         ax.set_ylabel(ylabel, color=NEUTRAL_DARK)
         ax.set_ylim((y_sol.min(), y_sol.max()))
-        if yticks is not None:
+        if isinstance(yticks, type(None)):
             ax.set_yticks(yticks, minor=True)
             m = len(yticks)
             major_yticks = [yticks[i] for i in (0, 1*m/4, 2*m/4, 3*m/4, m-1)]
-            major_ticklabels = ["%.2g" % y for y in major_yticks]
+            major_ticklabels = ["%.3g" % y for y in major_yticks]
             ax.set_yticks(major_yticks)
             ax.set_yticklabels(major_ticklabels)
     fig.tight_layout(h_pad=3)

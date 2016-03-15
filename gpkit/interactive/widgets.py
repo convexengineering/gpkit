@@ -42,7 +42,7 @@ def modelinteract(model, ranges=None, fn_of_sol=None, **solvekwargs):
                     vmin = min(vmin, min(sweep))
                     vmax = max(vmax, min(sweep))
                 vstep = (vmax-vmin)/24.0
-                varkey_latex = "$"+k.latex()+"$"
+                varkey_latex = "$"+k.latex(excluded=["models"])+"$"
                 floatslider = widgets.FloatSlider(min=vmin, max=vmax,
                                                   step=vstep, value=v,
                                                   description=varkey_latex)
@@ -97,7 +97,7 @@ def modelcontrolpanel(model, *args, **kwargs):
     sliderboxes = []
     for sl in sliders.children:
         cb = widgets.Checkbox(value=True)
-        unit_latex = sl.varkey.unitstr
+        unit_latex = sl.varkey.unitstr()
         if unit_latex:
             unit_latex = "$\scriptsize"+unit_latex+"$"
         units = widgets.Latex(value=unit_latex)
