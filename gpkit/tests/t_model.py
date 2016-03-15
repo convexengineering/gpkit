@@ -106,15 +106,9 @@ class TestGP(unittest.TestCase):
         self.assertEqual(gp2.A, CootMatrix(row=[0, 1],
                                            col=[0, 0],
                                            data=[-1, 1]))
-        # order of variables within a posynomial is not stable
-        #   (though monomial order is)
-        equiv1 = gp3.A == CootMatrix(row=[0, 2, 3, 2],
-                                     col=[0, 0, 0, 0],
-                                     data=[-1, 1, -1, 0])
-        equiv2 = gp3.A == CootMatrix(row=[0, 1, 3, 2],
-                                     col=[0, 0, 0, 0],
-                                     data=[-1, 1, -1, 0])
-        self.assertTrue(equiv1 or equiv2)
+        self.assertEqual(gp3.A, CootMatrix(row=[0, 1, 2],
+                                           col=[0, 0, 0],
+                                           data=[-1, 1, -1]))
         self.assertAlmostEqual(sol1(Mdd), sol2(Mdd))
         self.assertAlmostEqual(sol1(Mdd), sol3(Mdd))
         self.assertAlmostEqual(sol2(Mdd), sol3(Mdd))
