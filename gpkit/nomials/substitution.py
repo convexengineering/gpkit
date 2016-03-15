@@ -15,17 +15,11 @@ from .. import DimensionalityError
 def parse_subs(varkeys, substitutions):
     constants, sweep, linkedsweep = {}, {}, {}
     if hasattr(substitutions, "keymap"):
-        keys_added = set()
         for var in varkeys.keymap:
-            if var in substitutions.keymap:
-                keys = substitutions.keymap[var]
-                if len(keys) == 1:
-                    key, = keys
-                    if key not in keys_added:
-                        keys_added.add(key)
-                        sub = dict.__getitem__(substitutions, key)
-                        keys = varkeys.keymap[var]
-                        append_sub(sub, keys, constants, sweep, linkedsweep)
+            if dict.__contains__(substitutions, var):
+                sub = dict.__getitem__(substitutions, var)
+                keys = varkeys.keymap[var]
+                append_sub(sub, keys, constants, sweep, linkedsweep)
     else:
         for var in substitutions:
             key = getattr(var, "key", var)

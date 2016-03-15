@@ -280,9 +280,7 @@ class GeometricProgram(NomialData):
         result["sensitivities"]["constants"] = KeyDict(var_senss)
 
         ## Get constants
-        result["constants"] = KeyDict()
-        for constraint in self.constraints:  # change to self.substitutions...
-            result["constants"].update(constraint.substitutions)
+        result["constants"] = KeyDict(self.substitutions)
         result["variables"] = KeyDict(result["freevariables"])
         result["variables"].update(result["constants"])
 
