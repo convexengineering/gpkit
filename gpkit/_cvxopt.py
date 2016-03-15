@@ -8,6 +8,7 @@ def cvxoptimize_fn(options=None):
         solvers.options.update(options)
     gpsolver = solvers.gp
 
+    # pylint: disable=unused-argument
     def cvxoptimize(c, A, k, *args, **kwargs):
         """Interface to the CVXOPT solver
 

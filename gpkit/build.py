@@ -74,8 +74,8 @@ class SolverBackend(object):
     "Inheritable class for finding solvers. Logs."
     installed = False
     name = None
-    look = None
-    build = None
+    look = None   # pylint: disable=not-callable
+    build = None  # pylint: disable=not-callable
 
     def __init__(self):
         log("# Looking for", self.name)

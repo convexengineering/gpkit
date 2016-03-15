@@ -425,7 +425,6 @@ class PosynomialInequality(ScalarSingleEquationConstraint):
     Usually initialized via operator overloading, e.g. cc = (y**2 >= 1 + x)
     """
 
-    # @profile
     def __init__(self, left, oper, right):
         ScalarSingleEquationConstraint.__init__(self, left, oper, right)
         if self.oper == "<=":
@@ -535,10 +534,12 @@ class PosynomialInequality(ScalarSingleEquationConstraint):
                      if var in self.substitutions}
         return constr_sens, var_senss
 
+    # pylint: disable=unused-argument
     def as_gpconstr(self, x0):
         "GP version of a Posynomial constraint is itself"
         return self
 
+    # pylint: disable=unused-argument
     def sens_from_gpconstr(self, posyapprox, pa_sens, var_senss):
         "Returns sensitivities as parsed from an approximating GP constraint."
         return pa_sens
@@ -636,6 +637,7 @@ class SignomialInequality(ScalarSingleEquationConstraint):
         pc.substitutions = self.substitutions
         return pc
 
+    # pylint: disable=unused-argument
     def sens_from_gpconstr(self, posyapprox, pa_sens, var_senss):
         "Returns sensitivities as parsed from an approximating GP constraint."
         constr_sens = dict(pa_sens)

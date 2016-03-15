@@ -16,11 +16,11 @@ CootMatrixTuple = namedtuple('CootMatrix', ['row', 'col', 'data'])
 
 def matrix_converter(name):
     "Generates conversion function."
-    def to_(self):
-        # pylint: disable=unused-variable
-        # used in tocoo, tocsc, etc below
+    def to_(self):  # used in tocoo, tocsc, etc below
         "Converts to another type of matrix."
+        # pylint: disable=unused-variable
         return getattr(self.tocsr(), "to"+name)()
+    return to_
 
 
 class CootMatrix(CootMatrixTuple):

@@ -42,6 +42,7 @@ def imize_fn(path=None, clearfiles=True):
     os.environ['PATH'] = (os.environ['PATH'] + ':%s' %
                           settings["mosek_bin_dir"])
 
+    # pylint: disable=unused-argument
     def imize(c, A, p_idxs, *args, **kwargs):
         """Interface to the MOSEK "mskexpopt" command line solver
 

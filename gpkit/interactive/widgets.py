@@ -144,6 +144,7 @@ def create_settings(box):
 
     def slider_link(obj, attr):
         "Function to link one object to an attr of the slider."
+        # pylint: disable=unused-argument
         def link_fn(name, new_value):
             "How to update the object's value given min/max on the slider. "
             if new_value >= slider.max:

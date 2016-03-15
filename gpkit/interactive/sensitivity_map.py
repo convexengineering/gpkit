@@ -134,7 +134,7 @@ class SensitivityMap(object):
                          self.constraint_latex_list(paintby) +
                          ["\\end{array}"])
 
-    def constraint_latex_list(self, paintby, scale=None):
+    def constraint_latex_list(self, paintby):
         "Generates LaTeX for constraints."
         constraint_latex_list = []
         sol = self.solution
@@ -161,7 +161,7 @@ class SensitivityMap(object):
                     rhs = "\leq 0" if constr.any_nonpositive_cs else "\leq 1"
                     if self.paintby == "monomials":
                         tex, idx = signomial_print(constr, sol, colorfn,
-                                                        paintby, idx)
+                                                   paintby, idx)
                     elif self.paintby == "posynomials":
                         color = colorfn(senss[i])
                         tex = signomial_print(constr, None, None, paintby)

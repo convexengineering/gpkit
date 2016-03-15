@@ -26,9 +26,9 @@ def fast_monomial_str(exp, c):
 
 class Nomial(NomialData):
     "Shared non-mathematical properties of all nomials"
-    sub = None
+    __div__ = None  # pylint: disable=not-callable
+    sub = None      # pylint: disable=not-callable
     c = None
-    __div__ = None
 
     __str__ = _str
     __repr__ = _repr
