@@ -169,11 +169,11 @@ class TestGPSubs(unittest.TestCase):
                 Model.__init__(self, x, [x >= x_min])
 
         a, b = Above(), Below()
+        concatm = Model(a.cost*b.cost, [a, b])
+        concat_cost = concatm.solve(verbosity=0)["cost"]
         if not isinstance(a["x"].key.units, str):
             self.assertAlmostEqual(a.solve(verbosity=0)["cost"], 0.3333333)
             self.assertAlmostEqual(b.solve(verbosity=0)["cost"], 0.01)
-            concatm = Model(a.cost*b.cost, [a, b])
-            concat_cost = concatm.solve(verbosity=0)["cost"]
             self.assertAlmostEqual(concat_cost, 0.0109361)  # 1 cm/1 yd
         a1, b1 = Above(), Below()
         m = a1.link(b1)

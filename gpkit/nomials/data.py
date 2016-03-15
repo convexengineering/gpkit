@@ -34,10 +34,7 @@ class NomialData(object):
                     varlocs[var] = []
                 varlocs[var].append(i)
         self.varlocs = varlocs
-        self.varkeys = KeySet(self.varlocs)
-        self.values = KeyDict({vk: vk.descr["value"] for vk in self.varkeys
-                               if "value" in vk.descr})
-
+        self._varkeys, self._values = None, None
         if isinstance(self.cs, Quantity):
             self.units = Quantity(1, self.cs.units) #pylint: disable=no-member
         else:
@@ -58,6 +55,19 @@ class NomialData(object):
         nd = cls()  # use pass-through version of __init__
         nd.init_from_nomials(nomials)
         return nd
+
+    @property
+    def varkeys(self):
+        if not self._varkeys:
+            self._varkeys = KeySet(self.varlocs)
+        return self._varkeys
+
+    @property
+    def values(self):
+        if not self._values:
+            self._values = KeyDict({k: k.descr["value"] for k in self.varlocs
+                                    if "value" in k.descr})
+        return self._values
 
     def init_from_nomials(self, nomials):
         """Way to initialize from nomials. Calls __init__.
@@ -138,6 +148,17 @@ def simplify_exps_and_cs(exps, cs, return_map=False):
     matches = defaultdict(float)
     if return_map:
         expmap = defaultdict(dict)
+    if isinstance(cs, Quantity):
+        units = cs.units
+        cs = cs.magnitude
+    elif isinstance(cs[0], Quantity):
+        units = cs[0].units
+        if len(cs) == 1:
+            cs = [cs[0].magnitude]
+        else:
+            cs = [c.to(units).magnitude for c in cs]
+    else:
+        units = None
     for i, exp in enumerate(exps):
         exp = HashVector({var: x for (var, x) in exp.items() if x != 0})
         matches[exp] += cs[i]
@@ -151,9 +172,8 @@ def simplify_exps_and_cs(exps, cs, return_map=False):
 
     exps_ = tuple(matches.keys())
     cs_ = list(matches.values())
-    if isinstance(cs_[0], Quantity):
-        units = Quantity(1, cs_[0].units)
-        cs_ = [c.to(units).magnitude for c in cs_] * units
+    if units:
+        cs_ = Quantity(cs_, units)
     else:
         cs_ = np.array(cs_, dtype='float')
 

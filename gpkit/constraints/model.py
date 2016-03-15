@@ -7,6 +7,7 @@ from .prog_factories import _progify_fctry, _solve_fctry
 from ..geometric_program import GeometricProgram
 from .signomial_program import SignomialProgram
 from .link import LinkConstraint
+from ..keydict import KeyDict
 from .. import SignomialsEnabled
 
 
@@ -73,7 +74,7 @@ class Model(CostedConstraintSet):
         return Model(cost, [lc], lc.substitutions)
 
     def _add_modelname_tovars(self, name, num):
-        add_model_subs = {}
+        add_model_subs = KeyDict()
         for vk in self.varkeys:
             descr = dict(vk.descr)
             descr["models"] = descr.pop("models", []) + [name]
@@ -85,7 +86,7 @@ class Model(CostedConstraintSet):
                 del self.substitutions[vk]
         self.substitutions.regen_keymap()
         with SignomialsEnabled():  # since we're just substituting varkeys.
-            self.sub(add_model_subs)
+            self.subinplace(add_model_subs)
 
     def subconstr_str(self, excluded=None):
         "The collapsed appearance of a ConstraintBase"

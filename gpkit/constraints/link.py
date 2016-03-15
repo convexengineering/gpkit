@@ -64,7 +64,7 @@ class LinkConstraint(ConstraintSet):
             self.linked.update(dict(zip(vks, len(vks)*[newvk])))
             self.reverselinks[newvk] = vks
         with SignomialsEnabled():  # since we're just substituting varkeys.
-            self.sub(self.linked)
+            self.subinplace(self.linked)
 
     def process_result(self, result):
         for k in ["constants", "variables", "freevariables", "sensitivities"]:

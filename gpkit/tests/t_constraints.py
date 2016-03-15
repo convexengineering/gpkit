@@ -30,8 +30,10 @@ class TestConstraint(unittest.TestCase):
         c2 = 1 >= 5*x + 0.5
         self.assertEqual(type(c1), PosynomialInequality)
         self.assertEqual(type(c2), PosynomialInequality)
-        self.assertEqual(c1.posylt1_rep.cs, c2.posylt1_rep.cs)
-        self.assertEqual(c1.posylt1_rep.exps, c2.posylt1_rep.exps)
+        c1posy, = c1.as_posyslt1()
+        c2posy, = c2.as_posyslt1()
+        self.assertEqual(c1posy.cs, c2posy.cs)
+        self.assertEqual(c1posy.exps, c2posy.exps)
 
     def test_additive_scalar_gt1(self):
         """1 can't be greater than (1 + something positive)"""
@@ -98,8 +100,11 @@ class TestMonomialEquality(unittest.TestCase):
         """Try to initialize a MonomialEquality with non-monomial args"""
         x = Variable('x')
         y = Variable('y')
-        # try to initialize a Posynomial Equality constraint
-        self.assertRaises(TypeError, MonomialEquality, x*y, "=", x + y)
+
+        def constr():
+            """method that should raise a TypeError"""
+            MonomialEquality(x*y, "=", x+y)
+        self.assertRaises(TypeError, constr)
 
     def test_str(self):
         "Test that MonomialEquality.__str__ returns a string"
