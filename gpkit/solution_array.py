@@ -51,10 +51,6 @@ class SolutionArray(DictOfLists):
         except TypeError:
             return 1
 
-    def getvars(self, *args):
-        out = [self["variables"][arg] for arg in args]
-        return out[0] if len(out) == 1 else out
-
     def __call__(self, p):
         p_subbed = self.subinto(p)
         if hasattr(p_subbed, "exp") and not p_subbed.exp:
@@ -268,7 +264,7 @@ def results_table(data, title, minval=0, printunits=True, fixedcols=True,
                  [''.join(l) for l in lines] + ["\\bottomrule"] + ["\\end{longtable}}"] + [""])
     elif latex == 3:
         lines = (["{\\footnotesize"] + ["\\begin{longtable}{lll}"] +
-                 ["\\toprule"] + [title + " & Value & Units \\\\"] + 
-                 ["\\midrule"] + [''.join(l) for l in lines] + 
+                 ["\\toprule"] + [title + " & Value & Units \\\\"] +
+                 ["\\midrule"] + [''.join(l) for l in lines] +
                  ["\\bottomrule"] + ["\\end{longtable}}"] + [""])
     return lines

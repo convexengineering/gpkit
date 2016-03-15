@@ -52,6 +52,7 @@ def modelinteract(model, ranges=None, fn_of_sol=None, **solvekwargs):
 
     if fn_of_sol is None:
         def fn_of_sol(solution):
+            "Display function to run when a slider is moved."
             tables = ["cost", "freevariables", "sensitivities"]
             print solution.table(tables)
 
@@ -142,7 +143,9 @@ def create_settings(box):
     link((box, 'visible'), (enable, 'value'))
 
     def slider_link(obj, attr):
+        "Function to link one object to an attr of the slider."
         def link_fn(name, new_value):
+            "How to update the object's value given min/max on the slider. "
             if new_value >= slider.max:
                 slider.max = new_value
             # if any value is greater than the max, the max slides up

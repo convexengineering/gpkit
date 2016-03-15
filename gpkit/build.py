@@ -1,3 +1,4 @@
+"Finds solvers, sets gpkit settings, and builds gpkit"
 from __future__ import print_function
 
 import os
@@ -11,16 +12,19 @@ settings = {}
 
 
 def log(*args):
+    "Print a line and append it to the log string."
     global logstr
     print(*args)
     logstr += " ".join(args) + "\n"
 
 
 def pathjoin(*args):
+    "Join paths, collating multiple arguments."
     return os.sep.join(args)
 
 
 def isfile(path):
+    "Returns true if there's a file at $path. Logs."
     if os.path.isfile(path):
         log("#     Found %s" % path)
         return True
@@ -30,6 +34,7 @@ def isfile(path):
 
 
 def replacedir(path):
+    "Replaces directory at $path. Logs."
     log("#     Replacing directory", path)
     if os.path.isdir(path):
         shutil.rmtree(path)
@@ -38,6 +43,7 @@ def replacedir(path):
 
 
 def call(cmd):
+    "Calls subprocess. Logs."
     log("#     Calling '%s'" % cmd)
     log("##")
     log("### CALL BEGINS")
@@ -48,6 +54,7 @@ def call(cmd):
 
 
 def diff(filename, diff_dict):
+    "Applies a simple diff to a file. Logs."
     with open(filename, "r") as a:
         with open(filename+".new", "w") as b:
             for line_number, line in enumerate(a):
@@ -64,6 +71,7 @@ def diff(filename, diff_dict):
 
 
 class SolverBackend(object):
+    "Inheritable class for finding solvers. Logs."
     installed = False
 
     def __init__(self):
@@ -80,13 +88,14 @@ class SolverBackend(object):
                 log("# %s building %s" % (status, self.name))
         else:
             log("# Did not find", self.name)
-        log
 
 
 class Mosek_CLI(SolverBackend):
+    "MOSEK command line interface finder."
     name = "mosek_cli"
 
     def look(self):
+        "Attempts to run mskexpopt."
         try:
             log("#   Trying to run mskexpopt...")
             if call("mskexpopt") in (1052, 28):  # 28 for MacOSX
@@ -96,9 +105,11 @@ class Mosek_CLI(SolverBackend):
 
 
 class CVXopt(SolverBackend):
+    "CVXopt finder."
     name = "cvxopt"
 
     def look(self):
+        "Attempts to import mskexpopt."
         try:
             log("#   Trying to import cvxopt...")
             import cvxopt
@@ -108,6 +119,7 @@ class CVXopt(SolverBackend):
 
 
 class Mosek(SolverBackend):
+    "MOSEK finder and builder."
     name = "mosek"
 
     # Some of the expopt code leaks log(statements onto stdout,)
@@ -130,6 +142,7 @@ class Mosek(SolverBackend):
     }
 
     def look(self):
+        "Looks in default install locations for latest mosek version."
         if sys.platform == "win32":
             self.dir = "C:\\Program Files\\Mosek"
             self.platform = "win64x86"
@@ -189,6 +202,7 @@ class Mosek(SolverBackend):
         return "version %s, installed to %s" % (self.version, self.dir)
 
     def build(self):
+        "Builds a dynamic library to GPKITBUILD or $HOME/.gpkit"
         try:
             import ctypesgencore
         except ImportError:
@@ -246,6 +260,7 @@ class Mosek(SolverBackend):
 
 
 def build_gpkit():
+    "Builds GPkit"
     global settings
 
     if isfile("__init__.py"):

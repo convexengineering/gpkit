@@ -84,7 +84,6 @@ class Model(CostedConstraintSet):
             if vk in self.substitutions:
                 self.substitutions[newvk] = self.substitutions[vk]
                 del self.substitutions[vk]
-        self.substitutions.regen_keymap()
         with SignomialsEnabled():  # since we're just substituting varkeys.
             self.subinplace(add_model_subs)
 

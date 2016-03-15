@@ -7,6 +7,7 @@ from ..repr_conventions import _str, _repr, _repr_latex_
 
 
 def fast_monomial_str(exp, c):
+    "Quickly generates a unitless monomial string."
     varstrs = []
     for (var, x) in exp.items():
         if x != 0:

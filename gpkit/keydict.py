@@ -92,14 +92,6 @@ class KeyDict(dict):
         else:
             return False
 
-    def regen_keymap(self):
-        self.keymap = defaultdict(set)
-        for key in self:
-            self.keymap[key].add(key)
-            if hasattr(key, "keys"):
-                for mapkey in key.keys:
-                    self.keymap[mapkey].add(key)
-
     def __getitem__(self, key):
         "Overloads __getitem__ and [] access to work with all keys"
         key, idx = self.parse_and_index(key)
@@ -142,13 +134,19 @@ class KeyDict(dict):
         keys = self.keymap[key]
         if not keys:
             raise KeyError("key %s not found." % key)
-        for key in keys:
+        for key in list(keys):
+            delete = True
             if idx:
                 dict.__getitem__(self, key)[idx] = np.nan
-                if np.isnan(dict.__getitem__(self, key)).all():
-                    dict.__delitem__(self, key)
-            else:
+                if np.isfinite(dict.__getitem__(self, key)).any():
+                    delete = False
+            if delete:
                 dict.__delitem__(self, key)
+                if hasattr(key, "keys"):
+                    for mappedkey in key.keys:
+                        self.keymap[mappedkey].remove(key)
+                        if not self.keymap[mappedkey]:
+                            del self.keymap[mappedkey]
 
 
 class KeySet(KeyDict):

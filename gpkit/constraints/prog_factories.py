@@ -91,6 +91,7 @@ def _solve_fctry(genfunction):
                 tic = time()
 
             def solve_pass(i):
+                "Solves one pass of a sweep."
                 this_pass = {var: sweep_vect[i]
                              for (var, sweep_vect) in sweep_vects.items()}
                 linked = {var: fn(*[this_pass[VarKey(v)]

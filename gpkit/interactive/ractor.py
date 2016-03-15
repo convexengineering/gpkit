@@ -1,3 +1,4 @@
+"Implements Ractor-based interactive CADtoons"
 import numpy as np
 from ..solution_array import SolutionArray
 from string import Template
@@ -10,6 +11,7 @@ except ImportError:
 
 
 def showcadtoon(title, css=""):
+    "Displays cadtoon as iPython HTML"
     with open("%s.gpkit" % title, 'r') as f:
         css = "<style> #ractivecontainer { %s } </style>" % css
         display(HTML(f.read() + css))
@@ -17,7 +19,9 @@ def showcadtoon(title, css=""):
 
 def ractorpy(m, update_py, ranges, constraint_js="",
              showtables=["cost", "sensitivities"]):
+    "Creates interactive iPython widget for controlling a CADtoon"
     def ractivefn(sol):
+        "Function to be run whenever a slider is moved."
         live = "<script>" + update_py(sol) + "\n" + constraint_js + "</script>"
         display(HTML(live))
         if showtables:
@@ -29,6 +33,7 @@ new_jswidget_id = itertools.count().next
 
 
 def ractorjs(title, m, update_py, ranges, constraint_js=""):
+    "Creates Javascript/HTML for CADtoon interaction without installing GPkit."
     widget_id = "jswidget_"+str(new_jswidget_id())
     display(HTML("<script id='%s-after' type='text/throwaway'>%s</script>" %
                  (widget_id, constraint_js)))

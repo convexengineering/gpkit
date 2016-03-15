@@ -13,6 +13,7 @@ from .. import DimensionalityError
 
 
 def parse_subs(varkeys, substitutions):
+    "Seperates subs into constants, sweeps linkedsweeps actually present."
     constants, sweep, linkedsweep = {}, {}, {}
     if hasattr(substitutions, "keymap"):
         for var in varkeys.keymap:
@@ -30,6 +31,7 @@ def parse_subs(varkeys, substitutions):
 
 
 def append_sub(sub, keys, constants, sweep, linkedsweep):
+    "Appends sub to constants, sweep, or linkedsweep."
     sweepsub = is_sweepvar(sub)
     if sweepsub:
         _, sub = sub  # _ catches the "sweep" marker

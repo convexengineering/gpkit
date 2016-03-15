@@ -58,12 +58,14 @@ class NomialData(object):
 
     @property
     def varkeys(self):
+        "The NomialData's varkeys, created when necessary for a substitution."
         if not self._varkeys:
             self._varkeys = KeySet(self.varlocs)
         return self._varkeys
 
     @property
     def values(self):
+        "The NomialData's values, created when necessary."
         if not self._values:
             self._values = KeyDict({k: k.descr["value"] for k in self.varlocs
                                     if "value" in k.descr})

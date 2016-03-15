@@ -48,6 +48,7 @@ def mag(c):
 
 
 def unitstr(units, into="%s", options="~", dimless='-'):
+    "Returns the unitstr of a given object."
     if hasattr(units, "descr"):
         if isinstance(units.descr, dict):
             units = units.descr.get("units", dimless)
@@ -82,6 +83,7 @@ def invalid_types_for_oper(oper, a, b):
 
 
 def latex_num(c):
+    "Returns latex string of numbers, potentially using exponential notation."
     cstr = "%.4g" % c
     if 'e' in cstr:
         idx = cstr.index('e')

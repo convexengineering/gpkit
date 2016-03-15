@@ -465,12 +465,14 @@ class PosynomialInequality(ScalarSingleEquationConstraint):
         self.posys.extend(self._unsubbed)
 
     def subinplace(self, substitutions, value=None):
+        "Modifies the constraint in place with substitutions."
         for posy in self.posys:
             posy.subinplace(substitutions, value)
         self.varkeys = KeySet(self.left.varlocs)
         self.varkeys.update(self.right.varlocs)
 
     def _gen_unsubbed(self):
+        "Returns the unsubstituted posys <= 1."
         p = self.p_lt / self.m_gt
 
         if isinstance(p.cs, Quantity):
@@ -495,6 +497,7 @@ class PosynomialInequality(ScalarSingleEquationConstraint):
         return [p]
 
     def as_posyslt1(self):
+        "Returns the posys <= 1 representation of this constraint."
         posys = self._unsubbed
         if not self.substitutions:
             # just return the pre-generated posynomial representation
@@ -528,6 +531,7 @@ class PosynomialInequality(ScalarSingleEquationConstraint):
         return out
 
     def sens_from_dual(self, la, nu):
+        "Returns the variable/constraint sensitivities from lambda/nu"
         if not la or not nu:
             # as_posyslt1 created no inequalities
             return {}, {}
@@ -558,12 +562,12 @@ class PosynomialInequality(ScalarSingleEquationConstraint):
         return self
 
     def sens_from_gpconstr(self, posyapprox, pa_sens, var_senss):
+        "Returns sensitivities as parsed from an approximating GP constraint."
         return pa_sens
 
 
 class MonomialEquality(PosynomialInequality):
-    """A Constraint of the form Monomial == Monomial.
-    """
+    "A Constraint of the form Monomial == Monomial."
 
     def __init__(self, left, oper, right):
         ScalarSingleEquationConstraint.__init__(self, left, oper, right)
@@ -577,24 +581,26 @@ class MonomialEquality(PosynomialInequality):
         self.posys.extend(self._unsubbed)
 
     def _gen_unsubbed(self):
+        "Returns the unsubstituted posys <= 1."
         return [self.left/self.right, self.right/self.left]
 
     def __nonzero__(self):
-        # a constraint not guaranteed to be satisfied
-        # evaluates as "False"
+        'A constraint not guaranteed to be satisfied  evaluates as "False".'
         return bool(self.left.c == self.right.c
                     and self.left.exp == self.right.exp)
 
     def __bool__(self):
+        'A constraint not guaranteed to be satisfied  evaluates as "False".'
         return self.__nonzero__()
 
-    def sens_from_dual(self, las, nus):
-        left, right = las
+    def sens_from_dual(self, la, nu):
+        "Returns the variable/constraint sensitivities from lambda/nu"
+        left, right = la
         constr_sens = {str(self.left): left-right,
                        str(self.right): right-left}
         # Constant sensitivities
         var_senss = HashVector()
-        for i, m_s in enumerate(nus):
+        for i, m_s in enumerate(nu):
             presub = self._unsubbed[i]
             var_sens = {var: sum([presub.exps[i][var]*m_s[i] for i in locs])
                         for (var, locs) in presub.varlocs.items()
@@ -629,6 +635,7 @@ class SignomialInequality(ScalarSingleEquationConstraint):
         self.units = self.sigy_lt0_rep.units
 
     def as_posyslt1(self):
+        "Returns the posys <= 1 representation of this constraint."
         s = self.sigy_lt0_rep.sub(self.substitutions, require_positive=False)
         posy, negy = s.posy_negy()
         if len(negy.cs) != 1:
@@ -640,6 +647,7 @@ class SignomialInequality(ScalarSingleEquationConstraint):
             return self._unsubbed
 
     def as_gpconstr(self, x0):
+        "Returns GP apprimxation of an SP constraint at x0"
         posy, negy = self.sigy_lt0_rep.posy_negy()
         if x0 is None:
             x0 = {vk: vk.descr["sp_init"] for vk in negy.varlocs
@@ -651,6 +659,7 @@ class SignomialInequality(ScalarSingleEquationConstraint):
         return pc
 
     def sens_from_gpconstr(self, posyapprox, pa_sens, var_senss):
+        "Returns sensitivities as parsed from an approximating GP constraint."
         constr_sens = dict(pa_sens)
         del constr_sens[str(posyapprox.m_gt)]
         _, negy = self.sigy_lt0_rep.posy_negy()

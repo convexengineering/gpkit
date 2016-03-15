@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 """Module for using the MOSEK EXPOPT command line interface
 
     Example
@@ -17,6 +16,7 @@ from .. import settings
 
 
 def error_remove_read_only(func, path, exc):
+    "If we can't remove a file/directory, change permissions and try again."
     excvalue = exc[1]
     if func in (os.rmdir, os.remove) and excvalue.errno == errno.EACCES:
         # change the file to be readable,writable,executable: 0777
@@ -131,6 +131,7 @@ def imize_fn(path=None, clearfiles=True):
 
 
 def assert_line(fil, expected):
+    "Asserts that a file's next line is as expected."
     received = fil.readline()
     if tuple(expected[:-1].split()) != tuple(received[:-1].split()):
         errstr = repr(expected)+" is not the same as "+repr(received)
@@ -138,6 +139,7 @@ def assert_line(fil, expected):
 
 
 def read_vals(fil):
+    "Read numeric values until a blank line occurs."
     vals = []
     line = fil.readline()
     while line not in ["", "\n"]:

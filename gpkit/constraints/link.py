@@ -47,7 +47,6 @@ class LinkConstraint(ConstraintSet):
                         subbed_vk = vk
                         sub = self.substitutions[vk]
                         del self.substitutions[vk]
-                        self.substitutions.regen_keymap()
                     else:
                         raise ValueError("substitution conflict: could not"
                                          " link because %s was set to %s but"

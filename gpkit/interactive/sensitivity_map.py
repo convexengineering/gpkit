@@ -1,3 +1,4 @@
+"Implements heatmapped equations to highlight sensitivities."
 import numpy as np
 from gpkit.small_scripts import mag, latex_num
 from gpkit.nomials import MonomialEquality
@@ -9,9 +10,11 @@ GRAY = 0.7*np.ones(3)
 
 
 def colorfn_gen(scale, power=0.66):
+    "Generates color gradient of a given power law."
     scale = float(scale)
 
     def colorfn(senss):
+        "Turns sensitivities into color along a power-law gradient."
         if senss < 0:
             senss = -senss
             color = BLUE
@@ -105,6 +108,7 @@ class SensitivityMap(object):
 
     @property
     def solution(self):
+        "Gets solution, indexing into a sweep if necessary."
         if not hasattr(self.model, "solution"):
             self.model.solve()
         if len(self.model.solution) > 1:
@@ -113,10 +117,12 @@ class SensitivityMap(object):
             return self.model.solution
 
     def _repr_latex_(self):
+        "iPython LaTeX representation."
         return "$$\\require{color}\n"+self.latex+"\n$$"
 
     @property
     def latex(self, paintby=None):
+        "LaTeX representation."
         if not paintby:
             paintby = self.paintby
         return "\n".join(["\\color[gray]{%.2f}" % GRAY[0],
@@ -129,6 +135,7 @@ class SensitivityMap(object):
                          ["\\end{array}"])
 
     def constraint_latex_list(self, paintby, scale=None):
+        "Generates LaTeX for constraints."
         constraint_latex_list = []
         sol = self.solution
         if self.paintby == "variables":

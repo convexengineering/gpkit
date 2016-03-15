@@ -14,62 +14,67 @@ Numbers = (int, float, np.number, Quantity)
 CootMatrixTuple = namedtuple('CootMatrix', ['row', 'col', 'data'])
 
 
+def matrix_converter(name):
+    "Generates conversion function."
+    def to_(self):
+        "Converts to another type of matrix."
+        return getattr(self.tocsr(), "to"+name)()
+
+
 class CootMatrix(CootMatrixTuple):
     "A very simple sparse matrix representation."
-    shape = (None, None)
+    shape = None
 
     def append(self, row, col, data):
+        "Appends entry to matrix."
         if row < 0 or col < 0:
             raise ValueError("Only positive indices allowed")
+        if not self.shape:
+            self.shape = [row + 1,  col + 1]
+        elif row >= self.shape[0]:
+            self.shape[0] = row + 1
+        elif col >= self.shape[1]:
+            self.shape[1] = col + 1
         self.row.append(row)
         self.col.append(col)
         self.data.append(data)
 
-    def update_shape(self):
-        self.shape = (max(self.row)+1, max(self.col)+1)
-
-    def tocoo(self):
-        return self.tocsr().tocoo()
-
-    def todense(self):
-        return self.tocsr().todense()
+    tocoo = matrix_converter("coo")
+    tocsc = matrix_converter("csc")
+    todia = matrix_converter("dia")
+    todok = matrix_converter("dok")
+    todense = matrix_converter("dense")
 
     def tocsr(self):
         "Converts to a Scipy sparse csr_matrix"
         from scipy.sparse import csr_matrix
         return csr_matrix((self.data, (self.row, self.col)))
 
-    def tocsc(self):
-        return self.tocsr().tocsc()
-
-    def todok(self):
-        return self.tocsr().todok()
-
-    def todia(self):
-        return self.tocsr().todia()
-
     def dot(self, arg):
+        "Returns dot product with arg."
         return self.tocsr().dot(arg)
 
 
 class Counter(object):
+    "Class for simply incrementing."
     def __init__(self):
         self.count = -1
 
     def __call__(self):
+        "Increments and returns count."
         self.count += 1
         return self.count
 
 
 class SolverLog(list):
     "Adds a `write` method to list so it's file-like and can replace stdout."
-
     def __init__(self, verbosity=0, output=None, *args, **kwargs):
         super(list, self).__init__(*args, **kwargs)
         self.verbosity = verbosity
         self.output = output
 
     def write(self, writ):
+        "Append and potentially write the new line."
         if writ != "\n":
             writ = writ.rstrip("\n")
             self.append(writ)
@@ -98,8 +103,7 @@ class DictOfLists(dict):
 
 
 def _enlist_dict(d_in, d_out):
-    """Recursviely copies dict d_in into d_out,
-    placing non-dict items into lists."""
+    "Recursviely copies d_in into d_out, placing non-dict items into lists."
     for k, v in d_in.items():
         if isinstance(v, dict):
             d_out[k] = _enlist_dict(v, v.__class__())

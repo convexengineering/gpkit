@@ -1,3 +1,4 @@
+"Minimizes airplane drag for a simple drag and structure model."
 import numpy as np
 from gpkit.shortcuts import *
 

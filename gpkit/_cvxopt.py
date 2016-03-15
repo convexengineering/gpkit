@@ -1,7 +1,9 @@
+"Implements the GPkit interface to CVXOPT"
 from cvxopt import solvers, spmatrix, matrix, log
 
 
 def cvxoptimize_fn(options=None):
+    "Return a cvxopt solve function for a particular set of options."
     if options:
         solvers.options.update(options)
     gpsolver = solvers.gp

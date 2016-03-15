@@ -29,6 +29,7 @@ def array_constraint(symbol, func):
     vecfunc = np.vectorize(func)
 
     def wrapped_func(self, other):
+        "Creates array constraint from vectorized operator."
         if isinstance(other, Quantity):
             veccable_other = np.array([other], dtype=object)
         else:
@@ -57,6 +58,7 @@ class NomialArray(np.ndarray):
     _repr_latex_ = _repr_latex_
 
     def str_without(self, excluded=[]):
+        "Returns string without certain fields (such as 'models')."
         if self.shape:
             return "[" + ", ".join([try_str_without(el, excluded)
                                     for el in self]) + "]"

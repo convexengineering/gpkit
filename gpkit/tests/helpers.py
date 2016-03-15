@@ -47,6 +47,7 @@ def generate_example_tests(path, testclasses, solvers=None, newtest_fn=None):
 def new_test(name, solver, import_dict, path):
     """logged_example_testcase with a NewDefaultSolver"""
     def test(self):
+        "Tests and logs stdout with a different default solver."
         with NewDefaultSolver(solver):
             logged_example_testcase(name, import_dict, path)(self)
     return test
@@ -60,6 +61,7 @@ def logged_example_testcase(name, imported, path):
     Returns a method.
     """
     def test(self):
+        "Tests and logs stdout."
         filepath = ("".join([path, os.sep, "%s_output.txt" % name])
                     if name not in imported else None)
         with StdoutCaptured(logfilepath=filepath):
@@ -95,24 +97,29 @@ def run_tests(tests, xmloutput=None, verbosity=2):
 
 
 class NullFile(object):
-    """A fake file interface that does nothing"""
+    "A fake file interface that does nothing"
     def write(self, string):
+        "Do not write, do not pass go."
         pass
 
     def close(self):
+        "Having not written, cease."
         pass
 
 
 class NewDefaultSolver(object):
+    "Creates an environment with a different default solver"
     def __init__(self, solver):
         self.solver = solver
 
     def __enter__(self):
+        "Change default solver."
         import gpkit
         self.prev_solvers = gpkit.settings["installed_solvers"]
         gpkit.settings["installed_solvers"] = [self.solver]
 
     def __exit__(self, *args):
+        "Reset default solver."
         import gpkit
         gpkit.settings["installed_solvers"] = self.prev_solvers
 
@@ -124,11 +131,13 @@ class StdoutCaptured(object):
         self.original_stdout = None
 
     def __enter__(self):
+        "Capture stdout"
         self.original_stdout = sys.stdout
         logfile = (open(self.logfilepath, "w") if self.logfilepath
                    else NullFile())
         sys.stdout = logfile
 
     def __exit__(self, *args):
+        "Return stdout"
         sys.stdout.close()
         sys.stdout = self.original_stdout

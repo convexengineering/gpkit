@@ -421,6 +421,4 @@ def genA(exps, varlocs):
         if not exp:
             A.append(i, 0, 0)
 
-    A.update_shape()
-
     return A, missingbounds

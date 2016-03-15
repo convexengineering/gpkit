@@ -74,6 +74,7 @@ class VarKey(object):
         return self.str_without()
 
     def str_without(self, excluded=None):
+        "Returns string without certain fields (such as 'models')."
         if excluded is None:
             excluded = []
         string = self.name
@@ -90,15 +91,14 @@ class VarKey(object):
     def __getattr__(self, attr):
         return self.descr.get(attr, None)
 
-    @property
     def unitstr(self):
-        if not self._unitstr:
-            us = unitstr(self.units, r"~\mathrm{%s}", "L~")
-            utf = us.replace("frac", "tfrac").replace(r"\cdot", r"\cdot ")
-            self._unitstr = utf if utf != r"~\mathrm{-}" else ""
-        return self._unitstr
+        "Returns latex unitstr"
+        us = unitstr(self.units, r"~\mathrm{%s}", "L~")
+        utf = us.replace("frac", "tfrac").replace(r"\cdot", r"\cdot ")
+        return utf if utf != r"~\mathrm{-}" else ""
 
     def latex(self, excluded=None):
+        "Returns latex representation."
         if excluded is None:
             excluded = []
         string = self.name
