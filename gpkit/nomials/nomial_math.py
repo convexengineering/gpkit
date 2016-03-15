@@ -428,6 +428,23 @@ class ScalarSingleEquationConstraint(SingleEquationConstraint):
         self.varkeys.update(self.right.varlocs)
 
 
+def simplify_posy_ineq(exps, cs):
+    "Simplify a posy <= 1 posynomial by moving constants to the right side."
+    coeff = 1.0
+    count = 0
+    exps_ = list(exps)
+    for i, exp in enumerate(exps):
+        if not exp:
+            coeff -= mag(cs[i-count])
+            cs = np.hstack((cs[:i-count], cs[i+1-count:]))
+            exps_.pop(i-count)
+            count += 1
+            if coeff <= 0:
+                raise ValueError("infeasible constraint:"
+                                 " constant term too large.")
+    return tuple(exps_), cs/coeff
+
+
 class PosynomialInequality(ScalarSingleEquationConstraint):
     """A constraint of the general form monomial >= posynomial
     Stored in the posylt1_rep attribute as a single Posynomial (self <= 1)
@@ -464,16 +481,7 @@ class PosynomialInequality(ScalarSingleEquationConstraint):
                                  " be converted into each other."
                                  "" % (self.p_lt.units, self.m_gt.units))
 
-        for i, exp in enumerate(p.exps):
-            if not exp:
-                if p.cs[i] < 1:
-                    coeff = float(1 - p.cs[i])
-                    p.cs = np.hstack((p.cs[:i], p.cs[i+1:]))
-                    p.exps = p.exps[:i] + p.exps[i+1:]
-                    p = p/coeff
-                elif p.cs[i] > 1:
-                    raise ValueError("infeasible constraint:"
-                                     " constant term too large.")
+        p.exps, p.cs = simplify_posy_ineq(p.exps, p.cs)
         return [p]
 
     def as_posyslt1(self):
@@ -491,6 +499,7 @@ class PosynomialInequality(ScalarSingleEquationConstraint):
             if np.all(nans) or np.all(cs[~nans] == 0):
                 return []  # skip nan'd or 0'd constraint
 
+            exps, cs = simplify_posy_ineq(exps, cs)
             exps, cs, pmap = simplify_exps_and_cs(exps, cs, return_map=True)
 
             #  The monomial sensitivities from the GP/SP are in terms of this
