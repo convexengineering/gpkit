@@ -82,7 +82,7 @@ def _solve_fctry(genfunction):
         solution.program = self.program
         solution.to_united_array(unitless_keys=["sensitivities"], united=True)
         self.solution = solution  # NOTE: SIDE EFFECTS
-        if verbosity:
+        if verbosity > 0:
             print(solution.table())
         return solution
     return solvefn
@@ -102,7 +102,7 @@ def run_sweep(genfunction, self, solution, skipsweepfailures,
     sweep_vects = {var: grid.reshape(N_passes)
                    for (var, grid) in zip(sweep, sweep_grids)}
 
-    if verbosity:
+    if verbosity > 0:
         print("Solving over %i passes." % N_passes)
         tic = time()
 
@@ -147,6 +147,6 @@ def run_sweep(genfunction, self, solution, skipsweepfailures,
     if not solution["constants"]:
         del solution["constants"]
 
-    if verbosity:
+    if verbosity > 0:
         soltime = time() - tic
         print("Sweeping took %.3g seconds." % (soltime,))

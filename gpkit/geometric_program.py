@@ -86,7 +86,7 @@ class GeometricProgram(NomialData):
         self.p_idxs = np.array(p_idxs)
         # A [i, v]: sparse matrix of variable's powers in each monomial
         self.A, self.missingbounds = genA(self.exps, self.varlocs)
-        if verbosity:
+        if verbosity > 0:
             for var, bound in sorted(self.missingbounds.items()):
                 print("%s has no %s bound" % (var, bound))
 
@@ -154,7 +154,7 @@ class GeometricProgram(NomialData):
 
         solverfn, solvername = _get_solver(solver)
 
-        if verbosity:
+        if verbosity > 0:
             print("Using solver '%s'" % solvername)
             print("Solving for %i variables." % len(self.varlocs))
             tic = time()
@@ -171,7 +171,7 @@ class GeometricProgram(NomialData):
             sys.stdout = original_stdout
          # STDOUT HAS BEEN RETURNED. ENDING SIDE EFFECTS.
 
-        if verbosity:
+        if verbosity > 0:
             soltime = time() - tic
             print("Solving took %.3g seconds." % (soltime,))
             tic = time()

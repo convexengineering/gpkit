@@ -90,7 +90,7 @@ class SignomialProgram(CostedConstraintSet):
             A dictionary containing the translated solver result.
         """
         startpoint = x0 if x0 else {}
-        if verbosity:
+        if verbosity > 0:
             print("Beginning signomial solve.")
             starttime = time()
         self.gps = []  # NOTE: SIDE EFFECTS
@@ -118,7 +118,7 @@ class SignomialProgram(CostedConstraintSet):
             else:
                 rel_improvement = None
         # solved successfully!
-        if verbosity:
+        if verbosity > 0:
             print("Solving took %i GP solves" % len(self.gps)
                   + " and %.3g seconds." % (time() - starttime))
 
