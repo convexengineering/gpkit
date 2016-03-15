@@ -65,7 +65,8 @@ class VarKey(object):
                          self.str_without("models")])
         if "idx" in self.descr:
             self.keys.add(veckeyed(self))
-        self.descr["unitstr"] = self.make_unitstr()  # annoyingly slow
+        self.descr["unitrepr"] = repr(self.units)
+        self._unitstr = None
 
     def __repr__(self):
         return self.str_without()
@@ -87,10 +88,13 @@ class VarKey(object):
     def __getattr__(self, attr):
         return self.descr.get(attr, None)
 
-    def make_unitstr(self):
-        units = unitstr(self.units, r"~\mathrm{%s}", "L~")
-        units_tf = units.replace("frac", "tfrac").replace(r"\cdot", r"\cdot ")
-        return units_tf if units_tf != r"~\mathrm{-}" else ""
+    @property
+    def unitstr(self):
+        if not self._unitstr:
+            us = unitstr(self.units, r"~\mathrm{%s}", "L~")
+            utf = us.replace("frac", "tfrac").replace(r"\cdot", r"\cdot ")
+            self._unitstr = utf if utf != r"~\mathrm{-}" else ""
+        return self._unitstr
 
     def latex(self, excluded=None):
         if excluded is None:
