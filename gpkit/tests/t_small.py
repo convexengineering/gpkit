@@ -1,7 +1,7 @@
 """Tests for small_classes.py and small_scripts.py"""
 import unittest
-import numpy as np
 from gpkit.small_classes import HashVector
+
 
 class TestHashVector(unittest.TestCase):
     """TestCase for the HashVector class"""

@@ -1,12 +1,13 @@
+"""Module for assessing feasibility of GPs and SPs"""
 import numpy as np
-
-from .variables import Variable, VectorVariable
+from .nomials import NomialArray
+from .nomials import Variable, VectorVariable
 from .varkey import VarKey
-from .posyarray import PosyArray
 
 
 def feasibility_model(program, flavour="max", varname=None,
                       constants=None, signomials=None, programType=None):
+    # pylint:disable=too-many-locals
     """Returns a new GP for the closest feasible point of the current GP.
 
     Arguments
@@ -39,28 +40,27 @@ def feasibility_model(program, flavour="max", varname=None,
     """
 
     cost = program.cost
-    constraints = program.constraints
+    posynomials = program.posynomials
     if not programType:
         programType = program.__class__
 
     if flavour == "max":
         slackvar = Variable(varname)
-        cost = slackvar
-        constraints = ([1/slackvar] +  # slackvar > 1
-                       [constraint/slackvar  # constraint <= sv
-                        for constraint in constraints])
-        prog = programType(cost, constraints)
+        posynomials = ([slackvar >= 1] +
+                       [posy <= slackvar
+                        for posy in posynomials[1:]])
+        prog = programType(slackvar, posynomials)
 
     elif flavour == "product":
-        slackvars = VectorVariable(len(constraints), varname)
+        slackvars = VectorVariable(len(posynomials), varname)
         cost = np.sum(slackvars)
-        constraints = ((1/slackvars).tolist() +  # slackvars > 1
-                       [constraint/slackvars[i]  # constraint <= sv
-                        for i, constraint in enumerate(constraints)])
-        prog = programType(cost, constraints)
+        posynomials = (slackvars >= 1,
+                       posynomials <= slackvars)
+        prog = programType(cost, posynomials)
         prog.slackvars = slackvars
 
     elif flavour == "constants":
+        constraints = program.constraints
         slackb = VectorVariable(len(constants), units="-")
         constvarkeys, constvars, rmvalue, addvalue = [], [], {}, {}
         for vk in constants.keys():
@@ -71,14 +71,13 @@ def feasibility_model(program, flavour="max", varname=None,
             addvalue[vk_] = vk
             constvarkeys.append(vk_)
             constvars.append(Variable(**descr))
-        constvars = PosyArray(constvars)
-        constvalues = PosyArray(constants.values())
+        constvars = NomialArray(constvars)
+        constvalues = NomialArray(constants.values())
         constraints = [c.sub(rmvalue) for c in signomials]
         cost = slackb.prod()
         # cost function could also be .sum(); self.cost would break ties
-        for i in range(len(constvars)):
+        for i, (constvar, constvalue) in enumerate(constvars):
             slack = slackb[i]
-            constvar, constvalue = constvars[i], constvalues[i]
             if constvar.units:
                 constvalue *= constvar.units
             constraints += [slack >= 1,

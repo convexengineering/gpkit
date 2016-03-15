@@ -8,7 +8,7 @@ If your Model doesn't solve, you can automatically find the nearest feasible ver
 
 .. code-block:: python
 
-    from gpkit import Variable, Model, PosyArray
+    from gpkit import Variable, Model, NomialArray
     x = Variable("x")
     x_min = Variable("x_min", 2)
     x_max = Variable("x_max", 1)
@@ -17,12 +17,12 @@ If your Model doesn't solve, you can automatically find the nearest feasible ver
     feas = m.feasibility()
 
     # USING OVERALL
-    m.constraints = PosyArray(m.signomials)/feas["overall"]
+    m.constraints = NomialArray(m.signomials)/feas["overall"]
     m.solve()
 
     # USING CONSTRAINTS
     m = Model(x, [x <= x_max, x >= x_min])
-    m.constraints = PosyArray(m.signomials)/feas["constraints"]
+    m.constraints = NomialArray(m.signomials)/feas["constraints"]
     m.solve()
 
     # USING CONSTANTS
@@ -83,10 +83,10 @@ Substitutions
 
 Substitutions are a general-purpose way to change every instance of one variable into either a number or another variable.
 
-Substituting into Posynomials, PosyArrays, and GPs
+Substituting into Posynomials, NomialArrays, and GPs
 -----------------------------------------------------
 
-The examples below all use Posynomials and PosyArrays, but the syntax is identical for GPs (except when it comes to sweep variables).
+The examples below all use Posynomials and NomialArrays, but the syntax is identical for GPs (except when it comes to sweep variables).
 
 .. code-block:: python
 
@@ -114,7 +114,7 @@ Substituting multiple values
     assert all(p.sub({x: 1, "y": 2}) == 2*z)
     assert all(p.sub({x: 1, y: 2, "z": [1, 2]}) == z.sub(z, [2, 4]))
 
-To substitute in multiple variables, pass them in as a dictionary where the keys are what will be replaced and values are what it will be replaced with. Note that you can also substitute for VectorVariables by their name or by their PosyArray.
+To substitute in multiple variables, pass them in as a dictionary where the keys are what will be replaced and values are what it will be replaced with. Note that you can also substitute for VectorVariables by their name or by their NomialArray.
 
 Substituting with nonnumeric values
 -----------------------------------
@@ -156,7 +156,7 @@ Fixed Variables
 
 When a Model is created, any fixed Variables are used to form a dictionary: ``{var: var.descr["value"] for var in self.varlocs if "value" in var.descr}``. This dictionary in then substituted into the Model's cost and constraints before the ``substitutions`` argument is (and hence values are supplanted by any later substitutions).
 
-``solution.subinto(p)`` will substitute the solution(s) for variables into the posynomial ``p``, returning a PosyArray. For a non-swept solution, this is equivalent to ``p.sub(solution["variables"])``.
+``solution.subinto(p)`` will substitute the solution(s) for variables into the posynomial ``p``, returning a NomialArray. For a non-swept solution, this is equivalent to ``p.sub(solution["variables"])``.
 
 You can also substitute by just calling the solution, i.e. ``solution(p)``. This returns a numpy array of just the coefficients (``c``) of the posynomial after substitution, and will raise a` ``ValueError``` if some of the variables in ``p`` were not found in ``solution``.
 

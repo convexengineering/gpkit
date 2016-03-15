@@ -8,34 +8,35 @@ from gpkit import units, SignomialsEnabled
 class TestMonomial(unittest.TestCase):
     """TestCase for the Monomial class"""
 
-    def setUp(self):
-        pass
-
     def test_init(self):
         "Test multiple ways to create a Monomial"
         m = Monomial({'x': 2, 'y': -1}, 5)
         m2 = Monomial({'x': 2, 'y': -1}, 5)
-        self.assertEqual(m.varlocs, {'x': [0], 'y': [0]})
-        self.assertEqual(m.exp, {'x': 2, 'y': -1})
+        x, y = m.varkeys.map("x y".split())
+        self.assertEqual(m.varlocs, {x: [0], y: [0]})
+        self.assertEqual(m.exp, {x: 2, y: -1})
         self.assertEqual(m.c, 5)
         self.assertEqual(m, m2)
 
         # default c and a
         m = Monomial('x')
-        self.assertEqual(m.varlocs, {'x': [0]})
-        self.assertEqual(m.exp, {'x': 1})
+        x = m.varkeys.map("x")
+        self.assertEqual(m.varlocs, {x: [0]})
+        self.assertEqual(m.exp, {x: 1})
         self.assertEqual(m.c, 1)
 
         # single (string) var with non-default c
         m = Monomial('tau', .1)
-        self.assertEqual(m.varlocs, {'tau': [0]})
-        self.assertEqual(m.exp, {'tau': 1})
+        tau = m.varkeys.map(["tau"])
+        self.assertEqual(m.varlocs, {tau: [0]})
+        self.assertEqual(m.exp, {tau: 1})
         self.assertEqual(m.c, .1)
 
         # variable names not compatible with python namespaces
         crazy_varstr = 'what the !!!/$**?'
         m = Monomial({'x': 1, crazy_varstr: .5}, 25)
-        self.assertTrue(crazy_varstr in m.exp)
+        crazy_varkey = m.varkeys.map([crazy_varstr])
+        self.assertTrue(crazy_varkey in m.exp)
 
         # non-positive c raises
         self.assertRaises(ValueError, Monomial, 'x', -2)
@@ -93,8 +94,7 @@ class TestMonomial(unittest.TestCase):
         self.assertFalse(x != x)
 
         x = Monomial({}, 1)
-        y = 1
-        self.assertEqual(x, y)
+        self.assertEqual(x, 1)
         self.assertEqual(x, Monomial({}))
 
         # several vars
@@ -239,13 +239,14 @@ class TestPosynomial(unittest.TestCase):
         p = Posynomial(({'m': 1, 'v': 2},
                         {'m': 1, 'g': 1, 'h': 1}),
                        (0.5, 1))
+        m, g, h, v = p.varkeys.map("m g h v".split())
         self.assertTrue(all(isinstance(x, float) for x in p.cs))
         self.assertEqual(len(p.exps), 2)
-        self.assertEqual(set(p.varlocs), set(('m', 'g', 'h', 'v')))
-        self.assertEqual(p.varlocs['g'], p.varlocs['h'])
-        self.assertNotEqual(p.varlocs['g'], p.varlocs['v'])
-        self.assertEqual(len(p.varlocs['m']), 2)
-        self.assertTrue(all(len(p.varlocs[key]) == 1 for key in 'ghv'))
+        self.assertEqual(set(p.varlocs), set([m, g, h, v]))
+        self.assertEqual(p.varlocs[g], p.varlocs[h])
+        self.assertNotEqual(p.varlocs[g], p.varlocs[v])
+        self.assertEqual(len(p.varlocs[m]), 2)
+        self.assertTrue(all(len(p.varlocs[key]) == 1 for key in [g, h, v]))
 
     def test_eq(self):
         """Test Posynomial __eq__"""
@@ -258,6 +259,16 @@ class TestPosynomial(unittest.TestCase):
         x = Variable('x', value=3)
         y = Variable('y', value=2)
         self.assertEqual((1 + x**2).value, (4 + y + y**2).value)
+
+    def test_eq_units(self):
+        p1 = Variable('x') + Variable('y')
+        p2 = Variable('x') + Variable('y')
+        p1u = Variable('x', units="m") + Variable('y', units="m")
+        p2u = Variable('x', units="m") + Variable('y', units="m")
+        self.assertEqual(p1, p2)
+        self.assertEqual(p1u, p2u)
+        self.assertFalse(p1 == p1u)
+        self.assertNotEqual(p1, p1u)
 
 
     def test_simplification(self):
@@ -293,8 +304,8 @@ class TestPosynomial(unittest.TestCase):
         x = Monomial('x')
         y = Monomial('y')
         p = x**2 + 2*y*x + y**2
-        self.assertEqual(p <= 1, p)
-        self.assertEqual(p <= x, p/x)
+        self.assertEqual((p <= 1).as_posyslt1(), [p])
+        self.assertEqual((p <= x).as_posyslt1(), [p/x])
 
     def test_integer_division(self):
         "Make sure division by integer doesn't use Python integer division"
@@ -331,6 +342,9 @@ class TestPosynomial(unittest.TestCase):
         y = Variable('y')
         p = y**2 + 1
         self.assertRaises(TypeError, lambda: y.mono_lower_bound({y: 1}))
+        # TODO: remove pylint warning below after Nomials refactor
+        # pylint is confused because it thinks p is a Signomial
+        # pylint: disable=no-member
         self.assertEqual(p.mono_lower_bound({y: 1}), 2*y)
         self.assertEqual(p.mono_lower_bound({y: 0}), 1)
         self.assertEqual((x*y**2 + 1).mono_lower_bound({y: 1, x: 1}),
@@ -341,18 +355,6 @@ class TestPosynomial(unittest.TestCase):
         p = (d*h**2 + h*d**2)
         m = p.mono_lower_bound({d: 1, h: 1})
         self.assertEqual(m, 2*(d*h)**1.5)
-
-
-    def test_eq(self):
-        """Test equality and inequality"""
-        p1 = Variable('x') + Variable('y')
-        p2 = Variable('x') + Variable('y')
-        p1u = Variable('x', units="m") + Variable('y', units="m")
-        p2u = Variable('x', units="m") + Variable('y', units="m")
-        self.assertEqual(p1, p2)
-        self.assertEqual(p1u, p2u)
-        self.assertFalse(p1 == p1u)
-        self.assertNotEqual(p1, p1u)
 
 # test substitution
 

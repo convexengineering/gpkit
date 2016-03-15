@@ -48,7 +48,7 @@ radian = [] = rad
 bit = []
 count = []
 
-@import gpkit_constants.txt
+@import constants.txt
 
 # acceleration
 [acceleration] = [length] / [time] ** 2
@@ -308,7 +308,7 @@ fluid_dram = floz / 8 = fldr = fluidram
 firkin = barrel / 4
 
 # GPkit units
-@import gpkit_usd_cpi.txt
+@import usd_cpi.txt
 
 # contexts
 @context(n=1) spectroscopy = sp

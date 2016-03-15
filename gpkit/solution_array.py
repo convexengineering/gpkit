@@ -1,17 +1,9 @@
 """Defines SolutionArray class"""
 from collections import Iterable
-from functools import reduce as functools_reduce
-from operator import mul
-
 import numpy as np
-
-from .posyarray import PosyArray
-from .nomials import Monomial
-from .varkey import VarKey
-from .small_classes import Strings, Quantity
-from .small_classes import DictOfLists
-from .small_scripts import unitstr
-from .small_scripts import mag
+from .nomials import NomialArray, Monomial
+from .small_classes import Strings, DictOfLists
+from .small_scripts import unitstr, mag
 
 
 class SolutionArray(DictOfLists):
@@ -25,7 +17,7 @@ class SolutionArray(DictOfLists):
         monomials : array
         posynomials : array
         variables: dict of arrays
-    localmodels : PosyArray
+    localmodels : NomialArray
         Local power-law fits (small sensitivities are cut off)
 
     Example
@@ -44,8 +36,8 @@ class SolutionArray(DictOfLists):
     >>> senss = [sol.sens(x_min), sol.sens(x_min)]
     >>> senss.append(sol["sensitivities"]["variables"]["x_{min}"])
     >>> assert all(np.array(senss) == 1)
-
     """
+    program = None
     table_titles = {"cost": "Cost",
                     "sweepvariables": "Sweep Variables",
                     "freevariables": "Free Variables",
@@ -59,27 +51,23 @@ class SolutionArray(DictOfLists):
         except TypeError:
             return 1
 
-    def getvars(self, *args):
-        out = [self["variables"][arg] for arg in args]
-        return out[0] if len(out) == 1 else out
-
-    def __call__(self, p):
-        p_subbed = self.subinto(p)
-        if hasattr(p_subbed, "exp") and not p_subbed.exp:
+    def __call__(self, posy):
+        posy_subbed = self.subinto(posy)
+        if hasattr(posy_subbed, "exp") and not posy_subbed.exp:
             # it's a constant monomial
-            return p_subbed.c
-        elif hasattr(p_subbed, "c"):
-            # it's a posyarray, which'll throw an error if non-constant...
-            return p_subbed.c
-        return p_subbed
+            return posy_subbed.c
+        elif hasattr(posy_subbed, "c"):
+            # it's a posyosyarray, which'll throw an error if non-constant...
+            return posy_subbed.c
+        return posy_subbed
 
     def subinto(self, posy):
-        "Returns PosyArray of each solution substituted into posy."
+        "Returns NomialArray of each solution substituted into posy."
         if posy in self["variables"]:
             return self["variables"][posy]
         elif len(self) > 1:
-            return PosyArray([self.atindex(i).subinto(posy)
-                              for i in range(len(self))])
+            return NomialArray([self.atindex(i).subinto(posy)
+                                for i in range(len(self))])
         else:
             return posy.sub(self["variables"])
 
@@ -93,10 +81,10 @@ class SolutionArray(DictOfLists):
         Returns scalar, unitless values.
         """
         if nomial in self["variables"]["sensitivities"]:
-            return PosyArray(self["variables"]["sensitivities"][nomial])
+            return NomialArray(self["variables"]["sensitivities"][nomial])
         elif len(self) > 1:
-            return PosyArray([self.atindex(i).subinto(nomial)
-                              for i in range(len(self))])
+            return NomialArray([self.atindex(i).subinto(nomial)
+                                for i in range(len(self))])
         else:
             subbed = nomial.sub(self["variables"]["sensitivities"],
                                 require_positive=False)
@@ -138,6 +126,7 @@ class SolutionArray(DictOfLists):
                     costs = ["%-8.3g" % c for c in subdict[:4]]
                     strs += [" [ %s %s ]" % ("  ".join(costs),
                                              "..." if len(self) > 4 else "")]
+                    # pylint: disable=unsubscriptable-object
                     cost_units = self.program[0].cost.units
                 else:
                     strs += [" %-.4g" % subdict]
@@ -147,7 +136,7 @@ class SolutionArray(DictOfLists):
             elif not subdict:
                 continue
             elif table == "sensitivities":
-                strs += results_table(subdict["variables"], table_title,
+                strs += results_table(subdict["constants"], table_title,
                                       minval=1e-2,
                                       sortbyvals=True,
                                       printunits=False,
@@ -157,6 +146,8 @@ class SolutionArray(DictOfLists):
         return "\n".join(strs)
 
 
+# pylint: disable=too-many-statements,too-many-arguments
+# pylint: disable=too-many-branches,too-many-locals
 def results_table(data, title, minval=0, printunits=True, fixedcols=True,
                   varfmt="%s : ", valfmt="%-.4g ", vecfmt="%-8.3g",
                   included_models=None, excluded_models=None, latex=False,
@@ -198,12 +189,13 @@ def results_table(data, title, minval=0, printunits=True, fixedcols=True,
         notnan = ~np.isnan([v_])
         if np.any(notnan) and np.max(np.abs(np.array([v_])[notnan])) >= minval:
             b = isinstance(v, Iterable) and bool(v.shape)
-            model = k.descr.get("model", "")
+            model = ", ".join(k.descr.get("models", ""))
             models.add(model)
+            s = k.str_without("models")
             if not sortbyvals:
-                decorated.append((model, b, (varfmt % k.nomstr), i, k, v))
+                decorated.append((model, b, (varfmt % s), i, k, v))
             else:
-                decorated.append((model, np.mean(v), b, (varfmt % k.nomstr), i, k, v))
+                decorated.append((model, np.mean(v), b, (varfmt % s), i, k, v))
     if included_models:
         included_models = set(included_models)
         included_models.add("")
@@ -242,15 +234,17 @@ def results_table(data, title, minval=0, printunits=True, fixedcols=True,
             lines.append([varstr, valstr, units, label])
         else:
             varstr = varstr.replace(" : ", "")
-            if latex == 1: # normal results table
+            if latex == 1:  # normal results table
                 lines.append(["$", varstr, "$ & ", valstr, "& $ ",
                               units.replace('**', '^'), "$ & ", label, " \\\\"])
-            elif latex == 2: # no values
+            elif latex == 2:  # no values
                 lines.append(["$", varstr, "$ & $ ",
                               units.replace('**', '^'), "$ & ", label, " \\\\"])
-            elif latex == 3: # no description
+            elif latex == 3:  # no description
                 lines.append(["$", varstr, "$ & ", valstr, "& $ ",
                               units.replace('**', '^'), "$ \\\\"])
+            else:
+                raise ValueError("Unexpected latex option, %s." % latex)
     if not latex:
         if lines:
             maxlens = np.max([list(map(len, line)) for line in lines], axis=0)
@@ -265,115 +259,20 @@ def results_table(data, title, minval=0, printunits=True, fixedcols=True,
         lines = [title] + ["-"*len(title)] + [''.join(l) for l in lines] + [""]
     elif latex == 1:
         lines = (["{\\footnotesize"] + ["\\begin{longtable}{llll}"] +
-                 ["\\toprule"] + [title + " & Value & Units & Description \\\\"] + ["\\midrule"] +
-                 [''.join(l) for l in lines] + ["\\bottomrule"] + ["\\end{longtable}}"] + [""])
+                 ["\\toprule"] +
+                 [title + " & Value & Units & Description \\\\"] +
+                 ["\\midrule"] +
+                 [''.join(l) for l in lines] + ["\\bottomrule"] +
+                 ["\\end{longtable}}"] + [""])
     elif latex == 2:
         lines = (["{\\footnotesize"] + ["\\begin{longtable}{lll}"] +
-                 ["\\toprule"] + [title + " & Units & Description \\\\"] + ["\\midrule"] +
-                 [''.join(l) for l in lines] + ["\\bottomrule"] + ["\\end{longtable}}"] + [""])
+                 ["\\toprule"] + [title + " & Units & Description \\\\"] +
+                 ["\\midrule"] +
+                 [''.join(l) for l in lines] + ["\\bottomrule"] +
+                 ["\\end{longtable}}"] + [""])
     elif latex == 3:
         lines = (["{\\footnotesize"] + ["\\begin{longtable}{lll}"] +
-                 ["\\toprule"] + [title + " & Value & Units \\\\"] + ["\\midrule"] +
-                 [''.join(l) for l in lines] + ["\\bottomrule"] + ["\\end{longtable}}"] + [""])
+                 ["\\toprule"] + [title + " & Value & Units \\\\"] +
+                 ["\\midrule"] + [''.join(l) for l in lines] +
+                 ["\\bottomrule"] + ["\\end{longtable}}"] + [""])
     return lines
-
-
-def parse_result(result, constants, beforesubs, sweep={}, linkedsweep={},
-                 freevar_sensitivity_tolerance=1e-4,
-                 localmodel_sensitivity_requirement=0.1):
-    "Parses a GP-like result dict into a SolutionArray-like dict."
-    cost = result["cost"]
-    freevariables = dict(result["variables"])
-    sweepvariables = {var: val for var, val in constants.items()
-                      if var in sweep or var in linkedsweep}
-    constants = {var: val for var, val in constants.items()
-                 if var not in sweepvariables}
-    variables = dict(freevariables)
-    variables.update(constants)
-    variables.update(sweepvariables)
-    sensitivities = dict(result["sensitivities"])
-
-    # Remap monomials after substitution and simplification.
-    #  The monomial sensitivities from the GP/SP are in terms of this
-    #  smaller post-substitution list of monomials, so we need to map that
-    #  back to the pre-substitution list.
-    #
-    #  Each "smap" is a list of HashVectors (mmaps),
-    #    whose keys are monomial indexes pre-substitution,
-    #    and whose values are the percentage of the simplified monomial's
-    #    coefficient that came from that particular parent
-    nu = result["sensitivities"]["monomials"]
-    # HACK: simplified solves need a mutated beforesubs, as created in Model
-    if hasattr(beforesubs, "smaps"):
-        nu_ = np.zeros(len(beforesubs.cs))
-        little_counter, big_counter = 0, 0
-        for j, smap in enumerate(beforesubs.smaps):
-            for i, mmap in enumerate(smap):
-                for idx, percentage in mmap.items():
-                    nu_[idx + big_counter] += percentage*nu[i + little_counter]
-            little_counter += len(smap)
-            big_counter += len(beforesubs.signomials[j].cs)
-    sensitivities["monomials"] = nu_
-
-    sens_vars = {var: sum([beforesubs.exps[i][var]*nu_[i] for i in locs])
-                 for (var, locs) in beforesubs.varlocs.items()}
-    sensitivities["variables"] = sens_vars
-
-    # free-variable sensitivities must be <= some epsilon
-    for var, S in sensitivities["variables"].items():
-        if var in freevariables and abs(S) > freevar_sensitivity_tolerance:
-            raise ValueError("free variable too sensitive: S_{%s} = "
-                             "%0.2e" % (var, S))
-
-    localexp = {var: S for (var, S) in sens_vars.items()
-                if abs(S) >= localmodel_sensitivity_requirement}
-    localcs = (variables[var]**-S for (var, S) in localexp.items())
-    localc = functools_reduce(mul, localcs, cost)
-    localmodel = Monomial(localexp, localc)
-
-    # vectorvar substitution
-    veckeys = set()
-    for var in beforesubs.varlocs:
-        if "idx" in var.descr and "shape" in var.descr:
-            descr = dict(var.descr)
-            idx = descr.pop("idx")
-            if "value" in descr:
-                descr.pop("value")
-            if "units" in descr:
-                units = descr.pop("units")
-                veckey = VarKey(**descr)
-                veckey.descr["units"] = units
-            else:
-                veckey = VarKey(**descr)
-            veckeys.add(veckey)
-
-            for vardict in [variables, sensitivities["variables"],
-                            constants, sweepvariables, freevariables]:
-                if var in vardict:
-                    if veckey in vardict:
-                        vardict[veckey][idx] = vardict[var]
-                    else:
-                        vardict[veckey] = np.full(var.descr["shape"], np.nan)
-                        vardict[veckey][idx] = vardict[var]
-
-                    del vardict[var]
-
-    if hasattr(beforesubs, "varkeysubs"):
-        for origvk, subvk in beforesubs.varkeysubs.items():
-            for data in [constants, sweepvariables, freevariables, variables,
-                         sensitivities["variables"]]:
-                if subvk in data:
-                    qty = isinstance(origvk.units, Quantity)
-                    if data is sensitivities["variables"] or not qty:
-                        data[origvk] = data[subvk]
-                    else:
-                        scale = (subvk.units/origvk.units).to("dimensionless")
-                        data[origvk] = data[subvk] * scale
-
-    return dict(cost=cost,
-                constants=constants,
-                sweepvariables=sweepvariables,
-                freevariables=freevariables,
-                variables=variables,
-                sensitivities=sensitivities,
-                localmodel=localmodel)

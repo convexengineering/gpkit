@@ -1,33 +1,37 @@
+"Minimizes airplane drag for a simple drag and structure model."
 import numpy as np
-from gpkit.shortcuts import *
+from gpkit import Variable, Model
+
 
 # Constants
-k = Var("k", 1.2, "-", "form factor")
-e = Var("e", 0.95, "-", "Oswald efficiency factor")
-mu = Var("\\mu", 1.78e-5, "kg/m/s", "viscosity of air")
-pi = Var("\\pi", np.pi, "-", "half of the circle constant")
-rho = Var("\\rho", 1.23, "kg/m^3", "density of air")
-tau = Var("\\tau", 0.12, "-", "airfoil thickness to chord ratio")
-N_ult = Var("N_{ult}", 3.8, "-", "ultimate load factor")
-V_min = Var("V_{min}", 22, "m/s", "takeoff speed")
-C_Lmax = Var("C_{L,max}", 1.5, "-", "max CL with flaps down")
-S_wetratio = Var("(\\frac{S}{S_{wet}})", 2.05, "-", "wetted area ratio")
-W_W_coeff1 = Var("W_{W_{coeff1}}", 8.71e-5, "1/m", "Wing Weight Coefficent 1")
-W_W_coeff2 = Var("W_{W_{coeff2}}", 45.24, "Pa", "Wing Weight Coefficent 2")
-CDA0 = Var("(CDA0)", 0.031, "m^2", "fuselage drag area")
-W_0 = Var("W_0", 4940.0, "N", "aircraft weight excluding wing")
+k = Variable("k", 1.2, "-", "form factor")
+e = Variable("e", 0.95, "-", "Oswald efficiency factor")
+mu = Variable("\\mu", 1.78e-5, "kg/m/s", "viscosity of air")
+pi = Variable("\\pi", np.pi, "-", "half of the circle constant")
+rho = Variable("\\rho", 1.23, "kg/m^3", "density of air")
+tau = Variable("\\tau", 0.12, "-", "airfoil thickness to chord ratio")
+N_ult = Variable("N_{ult}", 3.8, "-", "ultimate load factor")
+V_min = Variable("V_{min}", 22, "m/s", "takeoff speed")
+C_Lmax = Variable("C_{L,max}", 1.5, "-", "max CL with flaps down")
+S_wetratio = Variable("(\\frac{S}{S_{wet}})", 2.05, "-", "wetted area ratio")
+W_W_coeff1 = Variable("W_{W_{coeff1}}", 8.71e-5, "1/m",
+                      "Wing Weight Coefficent 1")
+W_W_coeff2 = Variable("W_{W_{coeff2}}", 45.24, "Pa",
+                      "Wing Weight Coefficent 2")
+CDA0 = Variable("(CDA0)", 0.031, "m^2", "fuselage drag area")
+W_0 = Variable("W_0", 4940.0, "N", "aircraft weight excluding wing")
 
 # Free Variables
-D = Var("D", "N", "total drag force")
-A = Var("A", "-", "aspect ratio")
-S = Var("S", "m^2", "total wing area")
-V = Var("V", "m/s", "cruising speed")
-W = Var("W", "N", "total aircraft weight")
-Re = Var("Re", "-", "Reynold's number")
-C_D = Var("C_D", "-", "Drag coefficient of wing")
-C_L = Var("C_L", "-", "Lift coefficent of wing")
-C_f = Var("C_f", "-", "skin friction coefficient")
-W_w = Var("W_w", "N", "wing weight")
+D = Variable("D", "N", "total drag force")
+A = Variable("A", "-", "aspect ratio")
+S = Variable("S", "m^2", "total wing area")
+V = Variable("V", "m/s", "cruising speed")
+W = Variable("W", "N", "total aircraft weight")
+Re = Variable("Re", "-", "Reynold's number")
+C_D = Variable("C_D", "-", "Drag coefficient of wing")
+C_L = Variable("C_L", "-", "Lift coefficent of wing")
+C_f = Variable("C_f", "-", "skin friction coefficient")
+W_w = Variable("W_w", "N", "wing weight")
 
 constraints = []
 

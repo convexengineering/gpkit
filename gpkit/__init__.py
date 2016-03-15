@@ -1,5 +1,4 @@
-# -*- coding: utf-8 -*-
-"""Lightweight GP Modeling Package
+"""GP and SP Modeling Package
 
     For examples please see the examples folder.
 
@@ -15,15 +14,18 @@
     settings : dict
         Contains settings loaded from ``./env/settings``
 """
+from os import sep as os_sep
+from os.path import dirname as os_path_dirname
+UNITDEF_PATH = os_sep.join([os_path_dirname(__file__), "pint", "units.txt"])
+SETTINGS_PATH = os_sep.join([os_path_dirname(__file__), "env", "settings"])
 
-__version__ = "0.3.4"
+__version__ = "0.4.0"
 UNIT_REGISTRY = None
 SIGNOMIALS_ENABLED = False
 
-from os import sep as os_sep
-from os.path import dirname as os_path_dirname
-UNITDEF_PATH = os_sep.join([os_path_dirname(__file__), "gpkit_units.txt"])
-SETTINGS_PATH = os_sep.join([os_path_dirname(__file__), "env", "settings"])
+# global variable initializations
+DimensionalityError = ValueError
+units = None
 
 
 def enable_units(path=UNITDEF_PATH):
@@ -33,6 +35,7 @@ def enable_units(path=UNITDEF_PATH):
     before.
 
     If gpkit is imported multiple times, this needs to be run each time."""
+    # pylint: disable=invalid-name,global-statement
     global units, DimensionalityError, UNIT_REGISTRY
     try:
         import pint
@@ -62,11 +65,13 @@ def disable_units():
         from gpkit import disable_units
         disable_units()
     """
-    global units, DimensionalityError
+    global units  # pylint: disable=global-statement
 
     class DummyUnits(object):
         "Dummy class to replace missing pint"
+        # pylint: disable=too-few-public-methods
         class Quantity(object):
+            "Dummy Quantity instead of pint"
             pass
 
         def __nonzero__(self):
@@ -78,8 +83,10 @@ def disable_units():
         def __getattr__(self, attr):
             return 1
 
+        def __call__(self, arg):
+            return 1
+
     units = DummyUnits()
-    DimensionalityError = ValueError
 
 enable_units()
 
@@ -96,7 +103,8 @@ class SignomialsEnabled(object):
     >>>     constraints = [x >= 1-y]
     >>> gpkit.Model(x, constraints).localsolve()
     """
-
+    # pylint: disable=global-statement
+    # pylint: disable=too-few-public-methods
     def __enter__(self):
         global SIGNOMIALS_ENABLED
         SIGNOMIALS_ENABLED = True
@@ -106,14 +114,15 @@ class SignomialsEnabled(object):
         SIGNOMIALS_ENABLED = False
 
 
-from .nomials import Monomial, Posynomial, Signomial
-from .variables import Variable, VectorVariable, ArrayVariable
-from .geometric_program import GeometricProgram
-from .signomial_program import SignomialProgram
+# pylint: disable=wrong-import-position
 from .varkey import VarKey
-from .posyarray import PosyArray
-from .model import Model
-from .shortcuts import GP, SP
+from .nomials import Nomial, NomialArray
+from .nomials import Monomial, Posynomial, Signomial
+from .nomials import Variable, VectorVariable, ArrayVariable
+from .geometric_program import GeometricProgram
+from .constraints.signomial_program import SignomialProgram
+from .constraints.model import Model
+from .constraints.link import LinkConstraint
 
 if units:
     def _subvert_pint():
@@ -121,7 +130,10 @@ if units:
         When gpkit objects appear in mathematical operations with pint
         Quantity objects, let the gpkit implementations determine what to do
         """
-        def skip_if_gpkit_objects(fallback, objects=(PosyArray, Signomial)):
+        def skip_if_gpkit_objects(fallback, objects=(Nomial, NomialArray)):
+            """Returned method calls self.fallback(other) if other is
+            not in objects, and otherwise returns NotImplemented.
+            """
             def _newfn(self, other):
                 if isinstance(other, objects):
                     return NotImplemented
@@ -139,7 +151,7 @@ if units:
 
     _subvert_pint()
 
-# Load settings
+
 def load_settings(path=SETTINGS_PATH):
     """Load the settings file at SETTINGS_PATH; return settings dict"""
     try:
@@ -149,7 +161,7 @@ def load_settings(path=SETTINGS_PATH):
             settings_ = {name: value.split(", ") for name, value in lines}
             for name, value in settings_.items():
                 # hack to flatten 1-element lists,
-                # unlesss they're the solver list
+                # unless they're the solver list
                 if len(value) == 1 and name != "installed_solvers":
                     settings_[name] = value[0]
     except IOError:

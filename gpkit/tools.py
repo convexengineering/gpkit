@@ -1,10 +1,7 @@
 """Non-application-specific convenience methods for GPkit"""
 import numpy as np
-
-from collections import Iterable
-
-from .variables import Variable, VectorVariable
-from .posyarray import PosyArray
+from .nomials import Variable, VectorVariable
+from .nomials import NomialArray
 
 
 def te_exp_minus1(posy, nterm):
@@ -33,18 +30,20 @@ def te_exp_minus1(posy, nterm):
 
 
 def composite_objective(*objectives, **kwargs):
+    "Creates a cost function that sweeps between multiple objectives."
     objectives = list(objectives)
     n = len(objectives)
     if "k" in kwargs:
         k = kwargs["k"]
     else:
-        k = 10
+        k = 4
     if "sweep" in kwargs:
         sweeps = [kwargs["sweep"]]*(n-1)
     elif "sweeps" in kwargs:
         sweeps = kwargs["sweeps"]
     else:
-        sweeps = [np.linspace(0, 1, k)]*(n-1)
+        kf = 1/float(k)
+        sweeps = [np.linspace(kf, 1-kf, k)]*(n-1)
     if "normsub" in kwargs:
         normalization = [p.sub(kwargs["normsub"]) for p in objectives]
     else:
@@ -58,47 +57,58 @@ def composite_objective(*objectives, **kwargs):
         del descr["value"]
         descr["name"] = "v_{CO}"
         w_s.append(Variable(value=('sweep', lambda x: 1-x), args=[w], **descr))
-    w_s = normalization[-1]*PosyArray(w_s)*objectives[-1]
+    w_s = normalization[-1]*NomialArray(w_s)*objectives[-1]
     objective = w_s.prod()
     for i, obj in enumerate(objectives[:-1]):
         objective += ws[i]*w_s[:i].prod()*w_s[i+1:].prod()*obj/normalization[i]
     return objective
 
 
-def link(gps, varids):
-    if not isinstance(gps, Iterable):
-        gps = [gps]
-    if not isinstance(varids, Iterable):
-        varids = [varids]
-
-    if isinstance(varids, dict):
-        subs = {getvarstr(k): getvarkey(v) for k, v in varids.items()}
-    else:
-        subs = {getvarstr(v): getvarkey(v) for v in varids}
-
-    for gp in gps:
-        gp.sub(subs)
-
-    gppile = gps[0]
-    for gp in gps[1:]:
-        gppile += gp
-    return gppile
-
-
-def getvarkey(var):
-    if isinstance(var, str):
-        return gps[0].varkeys[var]
-    else:
-        # assume is VarKey or Monomial
-        return var
-
-
-def getvarstr(var):
-    if isinstance(var, str):
-        return var
-    else:
-        # assume is VarKey or Monomial
-        if hasattr(var, "_cmpstr"):
-            return var._cmpstr
+def mdparse(filename, return_tex=False):
+    "Parse markdown file, returning as strings python and (optionally) .tex.md"
+    with open(filename) as f:
+        py_lines = []
+        texmd_lines = []
+        block_idx = 0
+        in_replaced_block = False
+        for line in f:
+            line = line[:-1]  # remove newline
+            texmd_content = line if not in_replaced_block else ""
+            texmd_lines.append(texmd_content)
+            py_content = ""
+            if line == "```python":
+                block_idx = 1
+            elif block_idx and line == "```":
+                block_idx = 0
+                if in_replaced_block:
+                    texmd_lines[-1] = ""  # remove the ``` line
+                in_replaced_block = False
+            elif block_idx:
+                py_content = line
+                block_idx += 1
+                if block_idx == 2:
+                    # parsing first line of code block
+                    if line[:8] == "#inPDF: ":
+                        texmd_lines[-2] = ""  # remove the ```python line
+                        texmd_lines[-1] = ""  # remove the #inPDF line
+                        in_replaced_block = True
+                        if line[8:21] == "replace with ":
+                            texmd_lines.append("\\input{%s}" % line[21:])
+            elif line:
+                py_content = "# " + line
+            py_lines.append(py_content)
+        if not return_tex:
+            return "\n".join(py_lines)
         else:
-            return list(var.exp)[0]._cmpstr
+            return "\n".join(py_lines), "\n".join(texmd_lines)
+
+
+def mdmake(filename, make_tex=True):
+    "Make a python file and (optional) a pandoc-ready .tex.md file"
+    mdpy, texmd = mdparse(filename, return_tex=True)
+    with open(filename+".py", "w") as f:
+        f.write(mdpy)
+    if make_tex:
+        with open(filename+".tex.md", "w") as f:
+            f.write(texmd)
+    return open(filename+".py")

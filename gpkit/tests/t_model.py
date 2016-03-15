@@ -1,10 +1,8 @@
 """Tests for GP and SP classes"""
 import math
 import unittest
-import numpy as np
 from gpkit import (Model, Monomial, settings, VectorVariable, Variable,
                    SignomialsEnabled, ArrayVariable)
-from gpkit.geometric_program import GeometricProgram
 from gpkit.small_classes import CootMatrix
 from gpkit.feasibility import feasibility_model
 
@@ -86,7 +84,10 @@ class TestGP(unittest.TestCase):
         prob = Model(z, [z >= x + t1,
                          t1 >= t2,
                          t2 >= y])
+        prob.zero_lower_unbounded_variables()
         sol = prob.solve(verbosity=0)
+        self.assertAlmostEqual(sol["cost"]/x.value, 1, self.ndig)
+        self.assertAlmostEqual(sol("t2"), 0, self.ndig)
 
     def test_mdd_example(self):
         Cl = Variable("Cl", 0.5, "-", "Lift Coefficient")
@@ -97,6 +98,7 @@ class TestGP(unittest.TestCase):
         sol1 = m1.solve(solver=self.solver, verbosity=0)
         sol2 = m2.solve(solver=self.solver, verbosity=0)
         sol3 = m3.solve(solver=self.solver, verbosity=0)
+        # pylint: disable=no-member
         gp1, gp2, gp3 = [m.program for m in [m1, m2, m3]]
         self.assertEqual(gp1.A, CootMatrix(row=[0, 1, 2],
                                            col=[0, 0, 0],
@@ -121,7 +123,8 @@ class TestGP(unittest.TestCase):
         x = Variable('x')
         m = Model(1/x, [1 >= 5*x + 0.5, 1 >= 10*x])
         m.solve(verbosity=0)
-        gp = m.program
+        # pylint: disable=no-member
+        gp = m.program  # created by solve()
         self.assertEqual(gp.cs[1], gp.cs[2])
         self.assertEqual(gp.A.data[1], gp.A.data[2])
 
@@ -168,9 +171,10 @@ class TestGP(unittest.TestCase):
         x = Variable('x')
         m = Model(x, [x**2 >= 1, x <= 0.5])
         self.assertRaises(RuntimeWarning, m.solve, verbosity=0)
-        fm = feasibility_model(m, "max")
+        fm = feasibility_model(m.gp(), "max")
+        # pylint: disable=no-member
         sol1 = fm.solve(verbosity=0)
-        fm = feasibility_model(m, "product")
+        fm = feasibility_model(m.gp(), "product")
         sol2 = fm.solve(verbosity=0)
         self.assertTrue(sol1["cost"] >= 1)
         self.assertTrue(sol2["cost"] >= 1)
@@ -182,34 +186,13 @@ class TestGP(unittest.TestCase):
         sol = prob.solve(verbosity=0)
         self.assertAlmostEqual(sol["cost"], 1/3.5, self.ndig)
 
-    def test_check_result(self):
-        """issue 361"""
-        N = 5
-        L = 5.
-        dx = L/(N-1)
-        EI = Variable("EI",10)
-        p = VectorVariable(N, "p")
-        p = p.sub(p, 100*np.ones(N))
-        V  = VectorVariable(N, "V")
-        M  = VectorVariable(N, "M")
-        th = VectorVariable(N, "th")
-        w  = VectorVariable(N, "w")
-        eps = 1E-6
-        substitutions = {var: eps for var in [V[-1], M[-1], th[0], w[0]]}
-        objective = w[-1]
-        constraints = [EI*V.left[1:N]     >= EI*V[1:N]    + 0.5*dx*p.left[1:N]     + 0.5*dx*p[1:N],
-                       EI*M.left[1:N]     >= EI*M[1:N]    + 0.5*dx*V.left[1:N]     + 0.5*dx*V[1:N],
-                       EI*th.right[0:N-1] >= EI*th[0:N-1] + 0.5*dx*M.right[0:N-1]  + 0.5*dx*M[0:N-1],
-                       EI*w.right[0:N-1]  >= EI*w[0:N-1]  + 0.5*dx*th.right[0:N-1] + 0.5*dx*th[0:N-1]]
-        m = Model(objective, constraints, substitutions)
-        sol = m.solve(verbosity=0)
-
     def test_exps_is_tuple(self):
         """issue 407"""
         x = Variable('x')
         m = Model(x, [x >= 1])
         m.solve(verbosity=0)
         self.assertEqual(type(m.program.cost.exps), tuple)
+
 
 class TestSP(unittest.TestCase):
     """test case for SP class -- gets run for each installed solver"""
@@ -361,7 +344,8 @@ class TestSP(unittest.TestCase):
         with SignomialsEnabled():
             m = Model(x, [x + y >= 1, y <= 0.5])
         m.localsolve(x0={x: 0.5}, verbosity=0)
-        self.assertEqual(m.program.gps[0].constraints[0].exp[x], -1./3)
+        first_gp_constr_posy = m.program.gps[0].constraints[0].as_posyslt1()[0]
+        self.assertEqual(first_gp_constr_posy.exp[x.key], -1./3)
 
 
 TEST_CASES = [TestGP, TestSP]

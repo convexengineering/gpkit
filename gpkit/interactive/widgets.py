@@ -1,3 +1,4 @@
+"Interactive GPkit widgets for iPython notebook"
 import ipywidgets as widgets
 from traitlets import link
 from ..small_scripts import is_sweepvar
@@ -26,7 +27,7 @@ def modelinteract(model, ranges=None, fn_of_sol=None, **solvekwargs):
     """
     if ranges is None:
         ranges = {}
-        for k, v in model.allsubs.items():
+        for k, v in model.substitutions.items():
             if is_sweepvar(v) or isinstance(v, Numbers):
                 if is_sweepvar(v):
                     # By default, sweep variables become sliders, so we
@@ -41,7 +42,7 @@ def modelinteract(model, ranges=None, fn_of_sol=None, **solvekwargs):
                     vmin = min(vmin, min(sweep))
                     vmax = max(vmax, min(sweep))
                 vstep = (vmax-vmin)/24.0
-                varkey_latex = "$"+k.latex()+"$"
+                varkey_latex = "$"+k.latex(excluded=["models"])+"$"
                 floatslider = widgets.FloatSlider(min=vmin, max=vmax,
                                                   step=vstep, value=v,
                                                   description=varkey_latex)
@@ -50,15 +51,16 @@ def modelinteract(model, ranges=None, fn_of_sol=None, **solvekwargs):
                 ranges[str(k)] = floatslider
 
     if fn_of_sol is None:
+        # pylint: disable=function-redefined
         def fn_of_sol(solution):
+            "Display function to run when a slider is moved."
             tables = ["cost", "freevariables", "sensitivities"]
             print solution.table(tables)
 
     solvekwargs["verbosity"] = 0
-    modelvarkeys = model.varkeys
 
     def resolve(**subs):
-        subs = {modelvarkeys[k]: v for k, v in subs.items()}
+        "This method gets called each time the user changes something"
         model.substitutions.update(subs)
         try:
             try:
@@ -95,7 +97,7 @@ def modelcontrolpanel(model, *args, **kwargs):
     sliderboxes = []
     for sl in sliders.children:
         cb = widgets.Checkbox(value=True)
-        unit_latex = sl.varkey.unitstr
+        unit_latex = sl.varkey.unitstr()
         if unit_latex:
             unit_latex = "$\scriptsize"+unit_latex+"$"
         units = widgets.Latex(value=unit_latex)
@@ -142,7 +144,10 @@ def create_settings(box):
     link((box, 'visible'), (enable, 'value'))
 
     def slider_link(obj, attr):
+        "Function to link one object to an attr of the slider."
+        # pylint: disable=unused-argument
         def link_fn(name, new_value):
+            "How to update the object's value given min/max on the slider. "
             if new_value >= slider.max:
                 slider.max = new_value
             # if any value is greater than the max, the max slides up

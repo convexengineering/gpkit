@@ -1,40 +1,40 @@
-import numpy as np
+"Implement Variable and ArrayVariable classes"
 from collections import Iterable
-
-from .varkey import VarKey
-from .nomials import Monomial
-from .nomial_data import NomialData
-from .posyarray import PosyArray
-from .small_classes import Strings, Numbers, Quantity
-from .small_scripts import is_sweepvar
+import numpy as np
+from .data import NomialData
+from .array import NomialArray
+from .nomial_math import Monomial
+from ..varkey import VarKey
+from ..small_classes import Strings, Numbers, Quantity
+from ..small_scripts import is_sweepvar
 
 
 class Variable(Monomial):
+    """A described singlet Monomial.
+
+    Arguments
+    ---------
+    *args : list
+        may contain "name" (Strings)
+                    "value" (Numbers + Quantity) or (Iterable) for a sweep
+                    "units" (Strings + Quantity)
+             and/or "label" (Strings)
+    **descr : dict
+        VarKey description
+
+    Returns
+    -------
+    Monomials containing a VarKey with the name '$name',
+    where $name is the vector's name and i is the VarKey's index.
+    """
     def __init__(self, *args, **descr):
-        """A described singlet Monomial.
-
-        Arguments
-        ---------
-        *args : list
-            may contain "name" (Strings)
-                        "value" (Numbers + Quantity) or (Iterable) for a sweep
-                        "units" (Strings + Quantity)
-                 and/or "label" (Strings)
-        **descr : dict
-            VarKey description
-
-        Returns
-        -------
-        Monomials containing a VarKey with the name '$name',
-        where $name is the vector's name and i is the VarKey's index.
-        """
         for arg in args:
             if isinstance(arg, Strings) and "name" not in descr:
                 descr["name"] = arg
             elif isinstance(arg, Numbers) and "value" not in descr:
                 descr["value"] = arg
             elif (((isinstance(arg, Iterable) and not isinstance(arg, Strings))
-                  or hasattr(arg, "__call__")) and "value" not in descr):
+                   or hasattr(arg, "__call__")) and "value" not in descr):
                 if is_sweepvar(arg):
                     descr["value"] = arg
                 else:
@@ -46,7 +46,6 @@ class Variable(Monomial):
 
         Monomial.__init__(self, **descr)
         self.__class__ = Variable
-        self._hashvalue = hash(VarKey(**descr))
 
     __hash__ = NomialData.__hash__
 
@@ -57,6 +56,7 @@ class Variable(Monomial):
 
     @property
     def descr(self):
+        "a Variable's descr is derived from its VarKey."
         return self.key.descr
 
     def sub(self, *args, **kwargs):
@@ -74,7 +74,7 @@ class Variable(Monomial):
         return super(Variable, self).sub(*args, **kwargs)
 
 
-class VectorVariable(PosyArray):
+class ArrayVariable(NomialArray):
     """A described vector of singlet Monomials.
 
     Arguments
@@ -91,12 +91,13 @@ class VectorVariable(PosyArray):
 
     Returns
     -------
-    PosyArray of Monomials, each containing a VarKey with name '$name_{i}',
+    NomialArray of Monomials, each containing a VarKey with name '$name_{i}',
     where $name is the vector's name and i is the VarKey's index.
     """
 
     def __new__(cls, shape, *args, **descr):
-        cls = PosyArray
+        # pylint: disable=too-many-branches
+        cls = NomialArray
 
         if "idx" in descr:
             raise KeyError("the description field 'idx' is reserved")
@@ -157,9 +158,5 @@ class VectorVariable(PosyArray):
         obj.descr = descr
         obj.descr.pop("idx", None)
         obj.key = VarKey(**obj.descr)
-        obj._hashvalue = hash(VarKey(**obj.descr))
 
         return obj
-
-
-ArrayVariable = VectorVariable

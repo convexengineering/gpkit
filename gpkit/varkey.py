@@ -1,11 +1,7 @@
 """Defines the VarKey class"""
-import numpy as np
-
-from .posyarray import PosyArray
+from itertools import count
 from .small_classes import Strings, Quantity
-from .small_classes import Counter
-
-from .small_scripts import isequal, mag, unitstr
+from .small_scripts import mag, unitstr, veckeyed
 
 
 class VarKey(object):
@@ -23,7 +19,11 @@ class VarKey(object):
     -------
     VarKey with the given name and descr.
     """
-    new_unnamed_id = Counter()
+    new_unnamed_id = count().next
+    subscripts = ["models", "idx"]
+    eq_ignores = frozenset(["units", "value"])
+    # ignore value in ==. Also skip units, since pints is weird and the unitstr
+    #    will be compared anyway
 
     def __init__(self, name=None, **kwargs):
         self.descr = kwargs
@@ -48,59 +48,73 @@ class VarKey(object):
             value = self.descr["value"]
             if isinstance(value, Quantity):
                 self.descr["value"] = value.magnitude
-                self.descr["units"] = value/value.magnitude
+                self.descr["units"] = Quantity(1.0, value.units)
         if ureg and "units" in self.descr:
             units = self.descr["units"]
             if isinstance(units, Strings):
                 units = units.replace("-", "dimensionless")
                 self.descr["units"] = Quantity(1.0, units)
             elif isinstance(units, Quantity):
-                self.descr["units"] = units/units.magnitude
+                self.descr["units"] = units
             else:
                 raise ValueError("units must be either a string"
                                  " or a Quantity from gpkit.units.")
-        self._hashvalue = hash(self.nomstr)
+        selfstr = str(self)
+        self._hashvalue = hash(selfstr)
         self.key = self
+        self.keys = set([self, self.name, selfstr, self.latex(),
+                         self.str_without("models")])
+        if "idx" in self.descr:
+            self.veckey = veckeyed(self)
+            self.keys.add(self.veckey)
+        self.descr["unitrepr"] = repr(self.units)
+        self._unitstr = None
 
-    @property
-    def name(self):
-        "name of this VarKey"
-        return self.descr['name']
+    def __repr__(self):
+        return self.str_without()
 
-    @property
-    def nomstr(self):
-        "string representation of this VarKey without the modelname"
-        return self.__repr__(["idx"])
+    def str_without(self, excluded=None):
+        "Returns string without certain fields (such as 'models')."
+        if excluded is None:
+            excluded = []
+        string = self.name
+        for subscript in self.subscripts:
+            if subscript in self.descr and subscript not in excluded:
+                substring = self.descr[subscript]
+                if subscript == "models":
+                    substring = ", ".join(substring)
+                string += "_%s" % (substring,)
+        if self.shape and not self.idx:
+            string = "\\vec{%s}" % string  # add vector arrow for veckeys
+        return string
 
-    @property
-    def units(self):
-        """units of this VarKey"""
-        return self.descr.get("units", None)
+    def __getattr__(self, attr):
+        return self.descr.get(attr, None)
 
-    @property
     def unitstr(self):
-        units = unitstr(self.units, r"~\mathrm{%s}", "L~")
-        units_tf = units.replace("frac", "tfrac").replace(r"\cdot", r"\cdot ")
-        return units_tf if units_tf != r"~\mathrm{-}" else ""
+        "Returns latex unitstr"
+        us = unitstr(self.units, r"~\mathrm{%s}", "L~")
+        utf = us.replace("frac", "tfrac").replace(r"\cdot", r"\cdot ")
+        return utf if utf != r"~\mathrm{-}" else ""
 
-    def __repr__(self, subscripts=["model", "idx"]):
-        s = self.name
-        for subscript in subscripts:
-            if subscript in self.descr:
-                s = "%s_%s" % (s, self.descr[subscript])
-        return s
-
-    def latex(self):
-        s = self.name
-        from . import settings
-        subscripts = ["idx"]+(["model"] if settings["latex_modelname"] else [])
-        for subscript in subscripts:
-            if subscript in self.descr:
-                s = "{%s}_{%s}" % (s, self.descr[subscript])
+    def latex(self, excluded=None):
+        "Returns latex representation."
+        if excluded is None:
+            excluded = []
+        string = self.name
+        for subscript in self.subscripts:
+            if subscript in self.descr and subscript not in excluded:
+                substring = self.descr[subscript]
+                if subscript == "models":
+                    substring = ", ".join(substring)
+                string = "{%s}_{%s}" % (string, substring)
                 if subscript == "idx":
                     if len(self.descr["idx"]) == 1:
-                        s = s[:-3]+s[-2:]  # drop the comma for 1-d vectors
-        return s
+                        # drop the comma for 1-d vectors
+                        string = string[:-3]+string[-2:]
+        if self.shape and not self.idx:
+            string = "\\vec{%s}" % string  # add vector arrow for veckeys
+        return string
 
     def _repr_latex_(self):
         return "$$"+self.latex()+"$$"
@@ -109,43 +123,19 @@ class VarKey(object):
         return self._hashvalue
 
     def __eq__(self, other):
-        if isinstance(other, VarKey):
-            if set(self.descr.keys()) != set(other.descr.keys()):
-                return False
-            for key in self.descr:
-                if key == "units":
-                    try:
-                        if not self.descr["units"] == other.descr["units"]:
-                            d = self.descr["units"]/other.descr["units"]
-                            if str(d.units) != "dimensionless":
-                                if not abs(mag(d)-1.0) <= 1e-7:
-                                    return False
-                    except:
-                        return False
-                else:
-                    if not isequal(self.descr[key], other.descr[key]):
-                        return False
-            return True
-        elif isinstance(other, Strings):
-            return self.nomstr == other
-        elif hasattr(other, "key"):
-            return other.key == self
-        elif isinstance(other, PosyArray):
-            it = np.nditer(other, flags=['multi_index', 'refs_ok'])
-            while not it.finished:
-                i = it.multi_index
-                it.iternext()
-                p = other[i]
-                if not hasattr(p, "exp"):  # array contains non-Monomial
-                    return False
-                v = VarKey(list(p.exp)[0])
-                if v.descr.pop("idx", None) != i:
-                    return False
-                if v != self:
-                    return False
-            return True
-        else:
+        if not hasattr(other, "descr"):
             return False
+        if self.descr["name"] != other.descr["name"]:
+            return False
+        keyset = set(self.descr.keys())
+        keyset = keyset.symmetric_difference(other.descr.keys())
+        if keyset - self.eq_ignores:
+            return False
+        for key in self.descr:
+            if key not in self.eq_ignores:
+                if self.descr[key] != other.descr[key]:
+                    return False
+        return True
 
     def __ne__(self, other):
         return not self.__eq__(other)

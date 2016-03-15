@@ -1,3 +1,4 @@
+"Maximizes box volume given area and aspect ratio constraints."
 from gpkit import Variable, Model
 
 # Parameters

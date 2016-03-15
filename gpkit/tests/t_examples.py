@@ -1,6 +1,5 @@
 """Unit testing of tests in docs/source/examples"""
 import unittest
-import sys
 import os
 
 from gpkit import settings
@@ -74,7 +73,7 @@ class TestExamples(unittest.TestCase):
             sol_rat = mag(sol["variables"][key])/freevarcheck[key]
             self.assertTrue(abs(1-sol_rat) < 1e-2)
         for key in consenscheck:
-            sol_rat = sol["sensitivities"]["variables"][key]/consenscheck[key]
+            sol_rat = sol["sensitivities"]["constants"][key]/consenscheck[key]
             self.assertTrue(abs(1-sol_rat) < 1e-2)
 
 

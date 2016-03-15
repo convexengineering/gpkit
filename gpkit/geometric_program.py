@@ -1,17 +1,15 @@
 """Implement the GeometricProgram class"""
 import sys
 from time import time
-
 import numpy as np
-
-from .small_classes import CootMatrix
-from .nomial_data import NomialData
+from .nomials import NomialData
+from .small_classes import CootMatrix, HashVector
+from .keydict import KeyDict
 from .small_classes import SolverLog
-
-from .small_scripts import is_sweepvar
 
 
 class GeometricProgram(NomialData):
+    # pylint: disable=too-many-instance-attributes
     """Standard mathematical representation of a GP.
 
     Arguments
@@ -42,38 +40,60 @@ class GeometricProgram(NomialData):
     >>> gp.solve()
     """
 
-    def __init__(self, cost, constraints, verbosity=1):
+    def __init__(self, cost, constraints, substitutions=None, verbosity=1):
+        # pylint: disable=too-many-locals,super-init-not-called
         self.cost = cost
         self.constraints = constraints
-        self.posynomials = [cost] + list(constraints)
-        # init NomialData to create self.exps, self.cs, and so on
+        self.substitutions = substitutions if substitutions else {}
+
+        ## Create list of substituted posynomials <= 1
+        self.posynomials = [cost.sub(self.substitutions).value]
+        self.constr_idxs = []
+        for constraint in constraints:
+            constraint.substitutions.update(self.substitutions)
+            try:
+                constr_posys = constraint.as_posyslt1()
+            except TypeError as err:
+                if err.message == ("SignomialInequality could not simplify to"
+                                   "a PosynomialInequality"):
+                    raise ValueError("GeometricPrograms cannot contain"
+                                     " SignomialInequalities: try forming your"
+                                     " program as SignomialProgram or calling"
+                                     " Model.localsolve().")
+                raise
+            if not all(constr_posys):
+                raise ValueError("%s is an invalid constraint for a"
+                                 " GeometricProgram" % constraint)
+            start_idx, ps_added = len(self.posynomials), len(constr_posys)
+            self.constr_idxs.append(range(start_idx, start_idx + ps_added))
+            self.posynomials.extend(constr_posys)
+
+        ## Init NomialData to create self.exps, self.cs and so on
         super(GeometricProgram, self).init_from_nomials(self.posynomials)
         if self.any_nonpositive_cs:
             raise ValueError("GeometricPrograms cannot contain Signomials.")
-        unsubbed = [k for k, v in self.values.items() if not is_sweepvar(v)]
-        if unsubbed:
-            raise ValueError("GeometricPrograms do not handle substitution,"
-                             " but varkeys %s had a value." % unsubbed)
+
+        ## Generate various maps into the posy- and monomials
         # k [j]: number of monomials (columns of F) present in each constraint
         self.k = [len(p.cs) for p in self.posynomials]
         # p_idxs [i]: posynomial index of each monomial
         # m_idxs [i]: monomial indices of each posynomial
         p_idxs = []
-        m_idxs = []
+        self.m_idxs = []
         for i, p_len in enumerate(self.k):
-            m_idxs.append(list(range(len(p_idxs), len(p_idxs) + p_len)))
+            self.m_idxs.append(list(range(len(p_idxs), len(p_idxs) + p_len)))
             p_idxs += [i]*p_len
         self.p_idxs = np.array(p_idxs)
-        self.m_idxs = m_idxs
-
+        # A [i, v]: sparse matrix of variable's powers in each monomial
         self.A, self.missingbounds = genA(self.exps, self.varlocs)
-
         if verbosity > 0:
             for var, bound in sorted(self.missingbounds.items()):
                 print("%s has no %s bound" % (var, bound))
 
         # initialize attributes modified by internal methods
         self.result = None
+        self.solver_log = None
+        self.solver_out = None
 
     def solve(self, solver=None, verbosity=1, *args, **kwargs):
         """Solves a GeometricProgram and returns the solution.
@@ -139,16 +159,17 @@ class GeometricProgram(NomialData):
             print("Solving for %i variables." % len(self.varlocs))
             tic = time()
 
+        # NOTE: SIDE EFFECTS AS WE LOG SOLVER'S STDOUT AND OUTPUT
         original_stdout = sys.stdout
-        # NOTE: SIDE EFFECTS
         self.solver_log = SolverLog(verbosity-1, original_stdout)
         try:
-            sys.stdout = self.solver_log   # CAPTURING STDOUT
+            sys.stdout = self.solver_log   # CAPTURED
             solver_out = solverfn(c=self.cs, A=self.A, p_idxs=self.p_idxs,
                                   k=self.k, *args, **kwargs)
+            self.solver_out = solver_out
         finally:
-            sys.stdout = original_stdout   # RETURNING STDOUT
-        self.solver_out = solver_out   # END SIDE EFFECTS
+            sys.stdout = original_stdout
+         # STDOUT HAS BEEN RETURNED. ENDING SIDE EFFECTS.
 
         if verbosity > 0:
             soltime = time() - tic
@@ -174,11 +195,10 @@ class GeometricProgram(NomialData):
                    ((time() - tic) / soltime * 100))
             tic = time()
 
-        np.ravel(solver_out['primal'])
         self.check_solution(result["cost"],
                             np.ravel(solver_out['primal']),
-                            nu=result["sensitivities"]["monomials"],
-                            la=result["sensitivities"]["posynomials"])
+                            nu=result["sensitivities"]["nu"],
+                            la=result["sensitivities"]["la"])
 
         if verbosity > 1:
             print ("solution checking took %.2g%% of solve time" %
@@ -186,6 +206,7 @@ class GeometricProgram(NomialData):
         return result
 
     def _compile_result(self, solver_out):
+        # pylint: disable=too-many-locals
         """Creates a result dict (as returned by solve() from solver output
 
         This internal method is called from within the solve() method, unless
@@ -208,21 +229,27 @@ class GeometricProgram(NomialData):
         primal = np.ravel(solver_out['primal'])
         # confirm lengths before calling zip
         assert len(self.varlocs) == len(primal)
-        result["variables"] = dict(zip(self.varlocs,
-                                       np.exp(primal)))
+        result["freevariables"] = KeyDict(zip(self.varlocs, np.exp(primal)))
+
+        ## Get cost
         if "objective" in solver_out:
             result["cost"] = float(solver_out["objective"])
         else:
-            result["cost"] = self.cost.subsummag(result["variables"])
+            # use self.posynomials[0] because the cost may have had constants
+            freev = result["freevariables"]
+            result["cost"] = self.posynomials[0].subsummag(freev)
 
+        ## Get full dual solution
         if "nu" in solver_out:
+            # solver gave us monomial sensitivities, generate posynomial ones
             nu = np.ravel(solver_out["nu"])
             la = np.array([sum(nu[self.p_idxs == i])
                            for i in range(len(self.posynomials))])
         elif "la" in solver_out:
+            # solver gave us posynomial sensitivities, generate monomial ones
             la = np.ravel(solver_out["la"])
             if len(la) == len(self.posynomials) - 1:
-                # assume the cost's sensitivity has been dropped
+                # assume the solver dropped the cost's sensitivity (always 1.0)
                 la = np.hstack(([1.0], la))
             Ax = np.ravel(self.A.dot(solver_out['primal']))
             z = Ax + np.log(self.cs)
@@ -231,9 +258,37 @@ class GeometricProgram(NomialData):
                             for p_i, m_is in enumerate(m_iss)])
         else:
             raise RuntimeWarning("The dual solution was not returned.")
-        result["sensitivities"] = {}
-        result["sensitivities"]["monomials"] = nu
-        result["sensitivities"]["posynomials"] = la
+
+        ## Get sensitivities
+        result["sensitivities"] = {"constraints": {}, "nu": nu, "la": la}
+        # initialize the var_senss dict with the cost's constants...
+        var_senss = {var: sum([self.cost.exps[i][var]*nu[i] for i in locs])
+                     for (var, locs) in self.cost.varlocs.items()
+                     if (var in self.cost.varlocs
+                         and var not in self.posynomials[0].varlocs)}
+        var_senss = HashVector(var_senss)
+        for c_i, posy_idxs in enumerate(self.constr_idxs):
+            constr = self.constraints[c_i]
+            las = [la[p_i] for p_i in posy_idxs]
+            nus = [[nu[i] for i in self.m_idxs[p_i]] for p_i in posy_idxs]
+            constr_sens, p_var_senss = \
+                constr.sens_from_dual(las, nus)
+            # ...then add to it the constant sensitivities of each constraint
+            var_senss += p_var_senss
+            # also, add each constraint's sensitivities to the results
+            result["sensitivities"]["constraints"][str(constr)] = constr_sens
+        result["sensitivities"]["constants"] = KeyDict(var_senss)
+
+        ## Get constants
+        result["constants"] = KeyDict(self.substitutions)
+        result["variables"] = KeyDict(result["freevariables"])
+        result["variables"].update(result["constants"])
+
+        ## Let constraints process the results
+        for constraint in self.constraints:
+            if hasattr(constraint, "process_result"):
+                constraint.process_result(result)
+
         return result
 
     def check_solution(self, cost, primal, nu, la, tol=1e-5):
@@ -294,38 +349,31 @@ class GeometricProgram(NomialData):
             raise RuntimeWarning("Dual cost %s does not match primal"
                                  " cost %s" % (np.exp(dual_cost), cost))
 
-    def __repr__(self):
-        return "gpkit.%s(\n%s)" % (self.__class__.__name__, str(self))
-
     def __str__(self):
-        """String representation of a GeometricProgram.
-
-        Contains all of its parameters."""
+        "String representation of a GeometricProgram."
+        #TODO: should this print posynomials <= 1? Substitutions?
         return "\n".join(["  # minimize",
                           "    %s," % self.cost,
                           "[ # subject to"] +
-                         ["    %s <= 1," % constr
+                         ["    %s," % constr
                           for constr in self.constraints] +
                          [']'])
 
     def latex(self):
-        """LaTeX representation of a GeometricProgram.
-
-        Contains all of its parameters."""
+        "LaTeX representation of a GeometricProgram."
+        #TODO: should this print posynomials <= 1? Substitutions?
         return "\n".join(["\\begin{array}[ll]",
                           "\\text{}",
                           "\\text{minimize}",
                           "    & %s \\\\" % self.cost.latex(),
                           "\\text{subject to}"] +
-                         ["    & %s \\leq 1\\\\" % constr.latex()
+                         ["    & %s \\\\" % constr.latex()
                           for constr in self.constraints] +
                          ["\\end{array}"])
 
-    def _repr_latex_(self):
-        return "$$"+self.latex()+"$$"
-
 
 def genA(exps, varlocs):
+    # pylint: disable=invalid-name
     """Generates A matrix from exps and varlocs
 
     Arguments
@@ -372,7 +420,5 @@ def genA(exps, varlocs):
     for i, exp in enumerate(exps):
         if not exp:
             A.append(i, 0, 0)
-
-    A.update_shape()
 
     return A, missingbounds

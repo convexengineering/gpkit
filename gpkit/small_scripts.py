@@ -3,7 +3,33 @@ from collections import Iterable
 from .small_classes import Strings, Quantity
 
 
+def try_str_without(item, excluded):
+    "Try to call item.str_without(excluded); fall back to str(item)"
+    if hasattr(item, "str_without"):
+        return item.str_without(excluded)
+    else:
+        return str(item)
+
+
+def veckeyed(key):
+    "Return a veckey version of a VarKey"
+    vecdescr = dict(key.descr)
+    del vecdescr["idx"]
+    vecdescr.pop("value", None)
+    return key.__class__(**vecdescr)
+
+
+def listify(item):
+    "Make sure an item is in a list"
+    if isinstance(item, Iterable):
+        return list(item)
+    else:
+        return [item]
+
+
 def isequal(a, b):
+    "Determine if two elements are equal, recursing through Iterables"
+    # pylint: disable=invalid-name
     if (isinstance(a, Iterable) and
             not isinstance(a, Strings+(tuple, list, dict))):
         for i, a_i in enumerate(a):
@@ -23,6 +49,7 @@ def mag(c):
 
 
 def unitstr(units, into="%s", options="~", dimless='-'):
+    "Returns the unitstr of a given object."
     if hasattr(units, "descr"):
         if isinstance(units.descr, dict):
             units = units.descr.get("units", dimless)
@@ -57,6 +84,7 @@ def invalid_types_for_oper(oper, a, b):
 
 
 def latex_num(c):
+    "Returns latex string of numbers, potentially using exponential notation."
     cstr = "%.4g" % c
     if 'e' in cstr:
         idx = cstr.index('e')

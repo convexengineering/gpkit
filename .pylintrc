@@ -60,7 +60,8 @@ confidence=
 # no Warning level messages displayed, use"--disable=all --enable=classes
 # --disable=W"
 #disable=import-star-module-level,old-octal-literal,oct-method,print-statement,unpacking-in-except,parameter-unpacking,backtick,old-raise-syntax,old-ne-operator,long-suffix,dict-view-method,dict-iter-method,metaclass-assignment,next-method-called,raising-string,indexing-exception,raw_input-builtin,long-builtin,file-builtin,execfile-builtin,coerce-builtin,cmp-builtin,buffer-builtin,basestring-builtin,apply-builtin,filter-builtin-not-iterating,using-cmp-argument,useless-suppression,range-builtin-not-iterating,suppressed-message,no-absolute-import,old-division,cmp-method,reload-builtin,zip-builtin-not-iterating,intern-builtin,unichr-builtin,reduce-builtin,standarderror-builtin,unicode-builtin,xrange-builtin,coerce-method,delslice-method,getslice-method,setslice-method,input-builtin,round-builtin,hex-method,nonzero-method,map-builtin-not-iterating
-disable=superfluous-parens,locally-disabled
+
+disable=superfluous-parens,locally-disabled,misplaced-comparison-constant,too-few-public-methods,no-self-use
 
 [REPORTS]
 
@@ -92,10 +93,10 @@ msg-template={path}:{line}: [{msg_id}({symbol}), {obj}] {msg}
 [BASIC]
 
 # List of builtins function names that should not be used, separated by a comma
-bad-functions=map,filter,input
+bad-functions=filter,input
 
 # Good variable names which should always be accepted, separated by a comma
-good-names=i,j,k,ex,Run,_
+good-names=i,j,k,_,gp,sp,to,A,c,cs
 
 # Bad variable names which should always be refused, separated by a comma
 bad-names=foo,bar,baz,toto,tutu,tata
@@ -120,19 +121,19 @@ variable-rgx=[a-zA-Z_]{1,2}[a-z0-9_]{0,30}$
 variable-name-hint=[a-z_][a-z0-9_]{2,30}$
 
 # Regular expression matching correct constant names
-const-rgx=(([A-Z_][A-Z0-9_]*)|(__.*__))$
+const-rgx=(([A-Z_][A-Z0-9_]*)|(__.*__))|Quantity|settings|units$
 
 # Naming hint for constant names
 const-name-hint=(([A-Z_][A-Z0-9_]*)|(__.*__))$
 
 # Regular expression matching correct attribute names
-attr-rgx=[a-z_][a-z0-9_]{2,30}|A|cs|c$
+attr-rgx=[a-z_][a-z0-9_]{2,30}$
 
 # Naming hint for attribute names
 attr-name-hint=[a-z_][a-z0-9_]{2,30}$
 
 # Regular expression matching correct argument names
-argument-rgx=[a-z_][a-z0-9_]{2,30}$
+argument-rgx=[a-z_][a-z0-9_]{2,30}|x0|nu|la|ax$
 
 # Naming hint for argument names
 argument-name-hint=[a-z_][a-z0-9_]{2,30}$
@@ -319,7 +320,7 @@ exclude-protected=_asdict,_fields,_replace,_source,_make
 [DESIGN]
 
 # Maximum number of arguments for function / method
-max-args=5
+max-args=6
 
 # Argument names that match this expression will be ignored. Default to name
 # with leading underscore

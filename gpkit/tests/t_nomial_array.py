@@ -1,13 +1,13 @@
-"""Tests for PosyArray class"""
+"""Tests for NomialArray class"""
 import unittest
 import numpy as np
-from gpkit import Monomial, Posynomial, PosyArray, VectorVariable
+from gpkit import Monomial, Posynomial, NomialArray, VectorVariable
 import gpkit
 
 
-class TestPosyArray(unittest.TestCase):
-    """TestCase for the PosyArray class.
-    Also tests VectorVariable, since VectorVariable returns a PosyArray
+class TestNomialArray(unittest.TestCase):
+    """TestCase for the NomialArray class.
+    Also tests VectorVariable, since VectorVariable returns a NomialArray
     """
 
     def test_shape(self):
@@ -25,9 +25,9 @@ class TestPosyArray(unittest.TestCase):
         x_2 = Monomial('x', idx=(2,), shape=(3,), label='dummy variable')
         p = x_0**2 + x_1**2 + x_2**2
         self.assertEqual(x.dot(x), p)
-        m = PosyArray([[x_0**2, x_0*x_1, x_0*x_2],
-                       [x_0*x_1, x_1**2, x_1*x_2],
-                       [x_0*x_2, x_1*x_2, x_2**2]])
+        m = NomialArray([[x_0**2, x_0*x_1, x_0*x_2],
+                         [x_0*x_1, x_1**2, x_1*x_2],
+                         [x_0*x_2, x_1*x_2, x_2**2]])
         self.assertEqual(x.outer(x), m)
 
     def test_elementwise_mult(self):
@@ -37,20 +37,20 @@ class TestPosyArray(unittest.TestCase):
         x_1 = Monomial('x', idx=(1,), shape=(3,), label='dummy variable')
         x_2 = Monomial('x', idx=(2,), shape=(3,), label='dummy variable')
         # multiplication with numbers
-        v = PosyArray([2, 2, 3]).T
-        p = PosyArray([2*x_0, 2*x_1, 3*x_2]).T
+        v = NomialArray([2, 2, 3]).T
+        p = NomialArray([2*x_0, 2*x_1, 3*x_2]).T
         self.assertEqual(x*v, p)
         # division with numbers
-        p2 = PosyArray([x_0/2, x_1/2, x_2/3]).T
+        p2 = NomialArray([x_0/2, x_1/2, x_2/3]).T
         self.assertEqual(x/v, p2)
         # power
-        p3 = PosyArray([x_0**2, x_1**2, x_2**2]).T
+        p3 = NomialArray([x_0**2, x_1**2, x_2**2]).T
         self.assertEqual(x**2, p3)
         # multiplication with monomials
-        p = PosyArray([m*x_0, m*x_1, m*x_2]).T
+        p = NomialArray([m*x_0, m*x_1, m*x_2]).T
         self.assertEqual(x*m, p)
         # division with monomials
-        p2 = PosyArray([x_0/m, x_1/m, x_2/m]).T
+        p2 = NomialArray([x_0/m, x_1/m, x_2/m]).T
         self.assertEqual(x/m, p2)
 
     def test_constraint_gen(self):
@@ -58,18 +58,16 @@ class TestPosyArray(unittest.TestCase):
         x_0 = Monomial('x', idx=(0,), shape=(3,), label='dummy variable')
         x_1 = Monomial('x', idx=(1,), shape=(3,), label='dummy variable')
         x_2 = Monomial('x', idx=(2,), shape=(3,), label='dummy variable')
-        v = PosyArray([1, 2, 3]).T
+        v = NomialArray([1, 2, 3]).T
         p = [x_0, x_1/2, x_2/3]
-        self.assertEqual(x <= v, p)
+        self.assertEqual((x <= v).as_posyslt1(), p)
 
     def test_substition(self):
         x = VectorVariable(3, 'x', label='dummy variable')
         c = {x: [1, 2, 3]}
-        s = PosyArray([Monomial({}, e) for e in [1, 2, 3]])
-        self.assertEqual(x.sub(c), s)
+        self.assertEqual(x.sub(c), [Monomial({}, e) for e in [1, 2, 3]])
         p = x**2
-        s2 = PosyArray([Monomial({}, e) for e in [1, 4, 9]])
-        self.assertEqual(p.sub(c), s2)
+        self.assertEqual(p.sub(c), [Monomial({}, e) for e in [1, 4, 9]])
         d = p.sum()
         self.assertEqual(d.sub(c), Monomial({}, 14))
 
@@ -105,8 +103,8 @@ class TestPosyArray(unittest.TestCase):
         x = VectorVariable((2, 3), 'x')
         rowsum = x.sum(axis=1)
         colsum = x.sum(axis=0)
-        self.assertTrue(isinstance(rowsum, PosyArray))
-        self.assertTrue(isinstance(colsum, PosyArray))
+        self.assertTrue(isinstance(rowsum, NomialArray))
+        self.assertTrue(isinstance(colsum, NomialArray))
         self.assertEqual(rowsum[0], sum(x[0]))
         self.assertEqual(colsum[0], sum(x[:, 0]))
         self.assertEqual(len(rowsum), 2)
@@ -129,7 +127,7 @@ class TestPosyArray(unittest.TestCase):
         y = VectorVariable(3, 'y')
         self.assertEqual(np.outer(x, y), x.outer(y))
         self.assertEqual(np.outer(y, x), y.outer(x))
-        self.assertTrue(isinstance(x.outer(y), PosyArray))
+        self.assertTrue(isinstance(x.outer(y), NomialArray))
 
     def test_empty(self):
         x = VectorVariable(3, 'x')
@@ -143,7 +141,7 @@ class TestPosyArray(unittest.TestCase):
         self.assertEqual(empty_posy_array.ndim, 1)
 
 
-TESTS = [TestPosyArray]
+TESTS = [TestNomialArray]
 
 if __name__ == '__main__':
     from gpkit.tests.helpers import run_tests

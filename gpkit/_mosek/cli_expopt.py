@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 """Module for using the MOSEK EXPOPT command line interface
 
     Example
@@ -17,6 +16,7 @@ from .. import settings
 
 
 def error_remove_read_only(func, path, exc):
+    "If we can't remove a file/directory, change permissions and try again."
     excvalue = exc[1]
     if func in (os.rmdir, os.remove) and excvalue.errno == errno.EACCES:
         # change the file to be readable,writable,executable: 0777
@@ -42,6 +42,7 @@ def imize_fn(path=None, clearfiles=True):
     os.environ['PATH'] = (os.environ['PATH'] + ':%s' %
                           settings["mosek_bin_dir"])
 
+    # pylint: disable=unused-argument
     def imize(c, A, p_idxs, *args, **kwargs):
         """Interface to the MOSEK "mskexpopt" command line solver
 
@@ -94,16 +95,13 @@ def imize_fn(path=None, clearfiles=True):
             f.write("\n*p_idxs\n")
             f.writelines(["%d\n" % x for x in p_idxs])
 
-            t_j_Atj = zip(A.row, A.col, A.data)
-
             f.write("\n*t j A_tj\n")
             f.writelines(["%d %d %.20e\n" % tuple(x)
-                          for x in t_j_Atj])
+                          for x in zip(A.row, A.col, A.data)])
 
-        log = check_output(["mskexpopt", filename])
-        for logline in log.split(b"\n"):
+        # run mskexpopt and print stdout
+        for logline in check_output(["mskexpopt", filename]).split(b"\n"):
             print(logline)
-
         with open(filename+".sol") as f:
             assert_line(f, "PROBLEM STATUS      : PRIMAL_AND_DUAL_FEASIBLE\n")
             assert_line(f, "SOLUTION STATUS     : OPTIMAL\n")
@@ -131,6 +129,7 @@ def imize_fn(path=None, clearfiles=True):
 
 
 def assert_line(fil, expected):
+    "Asserts that a file's next line is as expected."
     received = fil.readline()
     if tuple(expected[:-1].split()) != tuple(received[:-1].split()):
         errstr = repr(expected)+" is not the same as "+repr(received)
@@ -138,6 +137,7 @@ def assert_line(fil, expected):
 
 
 def read_vals(fil):
+    "Read numeric values until a blank line occurs."
     vals = []
     line = fil.readline()
     while line not in ["", "\n"]:

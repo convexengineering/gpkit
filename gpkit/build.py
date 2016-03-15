@@ -1,3 +1,4 @@
+"Finds solvers, sets gpkit settings, and builds gpkit"
 from __future__ import print_function
 
 import os
@@ -6,21 +7,24 @@ import shutil
 import subprocess
 import glob
 
-logstr = ""
+LOGSTR = ""
 settings = {}
 
 
 def log(*args):
-    global logstr
+    "Print a line and append it to the log string."
+    global LOGSTR
     print(*args)
-    logstr += " ".join(args) + "\n"
+    LOGSTR += " ".join(args) + "\n"
 
 
 def pathjoin(*args):
+    "Join paths, collating multiple arguments."
     return os.sep.join(args)
 
 
 def isfile(path):
+    "Returns true if there's a file at $path. Logs."
     if os.path.isfile(path):
         log("#     Found %s" % path)
         return True
@@ -30,6 +34,7 @@ def isfile(path):
 
 
 def replacedir(path):
+    "Replaces directory at $path. Logs."
     log("#     Replacing directory", path)
     if os.path.isdir(path):
         shutil.rmtree(path)
@@ -38,6 +43,7 @@ def replacedir(path):
 
 
 def call(cmd):
+    "Calls subprocess. Logs."
     log("#     Calling '%s'" % cmd)
     log("##")
     log("### CALL BEGINS")
@@ -48,6 +54,7 @@ def call(cmd):
 
 
 def diff(filename, diff_dict):
+    "Applies a simple diff to a file. Logs."
     with open(filename, "r") as a:
         with open(filename+".new", "w") as b:
             for line_number, line in enumerate(a):
@@ -64,29 +71,34 @@ def diff(filename, diff_dict):
 
 
 class SolverBackend(object):
+    "Inheritable class for finding solvers. Logs."
     installed = False
+    name = None
+    look = None
+    build = None
 
     def __init__(self):
         log("# Looking for", self.name)
-        location = self.look()
+        location = self.look()  # pylint: disable=not-callable
         if location is not None:
             log("# Found %s %s" % (self.name, location))
-            if not hasattr(self, 'build'):
+            if not self.build:
                 self.installed = True
             else:
                 log("#\n# Building %s..." % self.name)
-                self.installed = self.build()
+                self.installed = self.build()  # pylint: disable=not-callable
                 status = "Done" if self.installed else "Failed"
                 log("# %s building %s" % (status, self.name))
         else:
             log("# Did not find", self.name)
-        log
 
 
-class Mosek_CLI(SolverBackend):
+class MosekCLI(SolverBackend):
+    "MOSEK command line interface finder."
     name = "mosek_cli"
 
     def look(self):
+        "Attempts to run mskexpopt."
         try:
             log("#   Trying to run mskexpopt...")
             if call("mskexpopt") in (1052, 28):  # 28 for MacOSX
@@ -96,9 +108,11 @@ class Mosek_CLI(SolverBackend):
 
 
 class CVXopt(SolverBackend):
+    "CVXopt finder."
     name = "cvxopt"
 
     def look(self):
+        "Attempts to import mskexpopt."
         try:
             log("#   Trying to import cvxopt...")
             import cvxopt
@@ -108,6 +122,7 @@ class CVXopt(SolverBackend):
 
 
 class Mosek(SolverBackend):
+    "MOSEK finder and builder."
     name = "mosek"
 
     # Some of the expopt code leaks log(statements onto stdout,)
@@ -130,6 +145,7 @@ class Mosek(SolverBackend):
     }
 
     def look(self):
+        "Looks in default install locations for latest mosek version."
         if sys.platform == "win32":
             self.dir = "C:\\Program Files\\Mosek"
             self.platform = "win64x86"
@@ -189,6 +205,7 @@ class Mosek(SolverBackend):
         return "version %s, installed to %s" % (self.version, self.dir)
 
     def build(self):
+        "Builds a dynamic library to GPKITBUILD or $HOME/.gpkit"
         try:
             import ctypesgencore
         except ImportError:
@@ -246,6 +263,7 @@ class Mosek(SolverBackend):
 
 
 def build_gpkit():
+    "Builds GPkit"
     global settings
 
     if isfile("__init__.py"):
@@ -256,7 +274,7 @@ def build_gpkit():
     log("Started building gpkit...\n")
 
     log("Attempting to find and build solvers:\n")
-    solvers = [CVXopt(), Mosek(), Mosek_CLI()]
+    solvers = [CVXopt(), Mosek(), MosekCLI()]
     installed_solvers = [solver.name
                          for solver in solvers
                          if solver.installed]
@@ -281,8 +299,8 @@ def build_gpkit():
             f.write("%s : %s\n" % (setting, value))
         f.write("\n")
 
-    with open("gpkit/build.log", "w") as file:
-        file.write(logstr)
+    with open("gpkit/build.log", "w") as f:
+        f.write(LOGSTR)
 
     #call("ls")
     #call("echo \\# gpkit")

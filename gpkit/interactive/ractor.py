@@ -1,35 +1,42 @@
-import numpy as np
-from ..solution_array import SolutionArray
+"Implements Ractor-based interactive CADtoons"
 from string import Template
 import itertools
+import numpy as np
 
 try:
     from IPython.display import display, HTML
 except ImportError:
     pass
 
+from ..solution_array import SolutionArray
+
 
 def showcadtoon(title, css=""):
+    "Displays cadtoon as iPython HTML"
     with open("%s.gpkit" % title, 'r') as f:
         css = "<style> #ractivecontainer { %s } </style>" % css
         display(HTML(f.read() + css))
 
 
-def ractorpy(m, update_py, ranges, constraint_js="",
-             showtables=["cost", "sensitivities"]):
+def ractorpy(model, update_py, ranges, constraint_js="",
+             showtables=("cost", "sensitivities")):
+    "Creates interactive iPython widget for controlling a CADtoon"
     def ractivefn(sol):
+        "Function to be run whenever a slider is moved."
         live = "<script>" + update_py(sol) + "\n" + constraint_js + "</script>"
         display(HTML(live))
         if showtables:
             print sol.table(showtables)
-    return m.interact(ranges, ractivefn)
+    return model.interact(ranges, ractivefn)
 
 
-new_jswidget_id = itertools.count().next
+JSWIDGET_ID = itertools.count().next
 
 
-def ractorjs(title, m, update_py, ranges, constraint_js=""):
-    widget_id = "jswidget_"+str(new_jswidget_id())
+# pylint: disable=too-many-locals
+def ractorjs(title, model, update_py, ranges, constraint_js=""):
+    "Creates Javascript/HTML for CADtoon interaction without installing GPkit."
+    widget_id = "jswidget_"+str(JSWIDGET_ID())
     display(HTML("<script id='%s-after' type='text/throwaway'>%s</script>" %
                  (widget_id, constraint_js)))
     display(HTML("<script>var %s = {storage: [], n:%i, ranges: {}, after: document.getElementById('%s-after').innerHTML, bases: [1] }</script>" % (widget_id, len(ranges), widget_id)))
@@ -46,7 +53,7 @@ def ractorjs(title, m, update_py, ranges, constraint_js=""):
     lengths = []
     bases = []
 
-    varkeys = m.beforesubs.varlocs.keys()
+    varkeys = model.beforesubs.varlocs.keys()
 
     for var, values in ranges.items():
         mini, maxi, step = values
@@ -75,8 +82,8 @@ def ractorjs(title, m, update_py, ranges, constraint_js=""):
 
     evalarray = [""]*np.prod(lengths)
 
-    m.substitutions.update(subs)
-    sol = m.solve(verbosity=0, skipsweepfailures=True)
+    model.substitutions.update(subs)
+    sol = model.solve(verbosity=0, skipsweepfailures=True)
     for j in range(len(sol)):
         solj = sol.atindex(j)
         soljv = solj["variables"]

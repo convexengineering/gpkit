@@ -96,7 +96,7 @@ def c_array(py_array, c_type):
 
 
 @MSK.streamfunc
-def printcb(void, msg):
+def printcb(void, msg):  # pylint: disable=unused-argument
     """Function to handle MOSEK's internal logging
 
     To enable printing to the python console, add a line like
@@ -119,6 +119,7 @@ def printcb(void, msg):
     return 0
 
 
+# pylint: disable=unused-argument,too-many-locals
 def imize(c, A, p_idxs, *args, **kwargs):
     """Interface to the MOSEK EXPOPT solver via C
 
