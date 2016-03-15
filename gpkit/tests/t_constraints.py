@@ -30,8 +30,10 @@ class TestConstraint(unittest.TestCase):
         c2 = 1 >= 5*x + 0.5
         self.assertEqual(type(c1), PosynomialInequality)
         self.assertEqual(type(c2), PosynomialInequality)
-        self.assertEqual(c1.as_posyslt1()[0].cs, c2.as_posyslt1()[0].cs)
-        self.assertEqual(c1.as_posyslt1()[0].exps, c2.as_posyslt1()[0].exps)
+        c1posy, = c1.as_posyslt1()
+        c2posy, = c2.as_posyslt1()
+        self.assertEqual(c1posy.cs, c2posy.cs)
+        self.assertEqual(c1posy.exps, c2posy.exps)
 
     def test_additive_scalar_gt1(self):
         """1 can't be greater than (1 + something positive)"""

@@ -118,8 +118,12 @@ class Signomial(Nomial):
             self.exp = self.exps[0]
             self.c = self.cs[0]
 
+    def to(self, arg):
+        "Create new Signomial converted to new units"
+        return Signomial(self.exps, self.cs.to(arg).tolist())
+
     def convert_to(self, arg):
-        "Convert to in the pint units sense"
+        "Convert this signomial to new units"
         self.cs = self.cs.to(arg)
 
     def diff(self, wrt):
