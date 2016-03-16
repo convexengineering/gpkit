@@ -106,15 +106,9 @@ class TestGP(unittest.TestCase):
         self.assertEqual(gp2.A, CootMatrix(row=[0, 1],
                                            col=[0, 0],
                                            data=[-1, 1]))
-        # order of variables within a posynomial is not stable
-        #   (though monomial order is)
-        equiv1 = gp3.A == CootMatrix(row=[0, 2, 3, 2],
-                                     col=[0, 0, 0, 0],
-                                     data=[-1, 1, -1, 0])
-        equiv2 = gp3.A == CootMatrix(row=[0, 1, 3, 2],
-                                     col=[0, 0, 0, 0],
-                                     data=[-1, 1, -1, 0])
-        self.assertTrue(equiv1 or equiv2)
+        self.assertEqual(gp3.A, CootMatrix(row=[0, 1, 2],
+                                           col=[0, 0, 0],
+                                           data=[-1, 1, -1]))
         self.assertAlmostEqual(sol1(Mdd), sol2(Mdd))
         self.assertAlmostEqual(sol1(Mdd), sol3(Mdd))
         self.assertAlmostEqual(sol2(Mdd), sol3(Mdd))
@@ -192,6 +186,18 @@ class TestGP(unittest.TestCase):
         m = Model(x, [x >= 1])
         m.solve(verbosity=0)
         self.assertEqual(type(m.program.cost.exps), tuple)
+
+    def test_posy_simplification(self):
+        "issue 525"
+        D = Variable('D')
+        mi = Variable('m_i')
+        V = Variable('V', 1)
+        m1 = Model(D + V, [V >= mi + 0.4])
+        m2 = Model(D + 1, [1 >= mi + 0.4])
+        gp1, gp2 = m1.gp(verbosity=0), m2.gp(verbosity=0)
+        # pylint: disable=no-member
+        self.assertEqual(gp1.A, gp2.A)
+        self.assertTrue((gp1.cs == gp2.cs).all())
 
 
 class TestSP(unittest.TestCase):
