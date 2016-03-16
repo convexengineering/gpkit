@@ -328,14 +328,14 @@ class TestSP(unittest.TestCase):
         self.assertAlmostEqual(sol['cost'], nonzero_adder, local_ndig)
         self.assertAlmostEqual(sol('x'), 0.987, 3)
 
-    def test_signomials_not_allowed_in_objective(self):
+    def test_sigs_not_allowed_in_cost(self):
         with SignomialsEnabled():
             x = Variable('x')
             y = Variable('y')
             J = 0.01*((x - 1)**2 + (y - 1)**2) + (x*y - 1)**2
             m = Model(J)
             with self.assertRaises(TypeError):
-                sol = m.localsolve(verbosity=0)
+                _ = m.localsolve(verbosity=0)
 
     def test_partial_sub_signomial(self):
         """Test SP partial x0 initialization"""
@@ -361,5 +361,6 @@ for testcase in TEST_CASES:
             TESTS.append(test)
 
 if __name__ == "__main__":
+    # pylint: disable=wrong-import-position
     from gpkit.tests.helpers import run_tests
     run_tests(TESTS)

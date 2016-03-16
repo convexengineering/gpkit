@@ -165,5 +165,6 @@ class TestArrayVariable(unittest.TestCase):
 TESTS = [TestVarKey, TestVariable, TestVectorVariable, TestArrayVariable]
 
 if __name__ == '__main__':
+    # pylint: disable=wrong-import-position
     from gpkit.tests.helpers import run_tests
     run_tests(TESTS)

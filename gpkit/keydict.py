@@ -29,10 +29,6 @@ class KeyDict(dict):
     arrays, and automatically de-indexed when a matching VarKey with a
     particular `idx` parameter is used as a key.
 
-    By default a KeyDict will regenerate the list of possible key strings
-    for every usage; a KeyDict may instead be "baked" to have a fixed list of
-    keystrings by calling the `bake()` method.
-
     Note that if a item is set using a key that does not have a `.key`
     attribute, that key can be set and accessed normally.
 
