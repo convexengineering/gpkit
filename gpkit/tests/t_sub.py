@@ -43,6 +43,19 @@ class TestNomialSubs(unittest.TestCase):
                                    1.0)
         self.assertEqual(x.sub("x", x), x)
 
+    def test_quantity_sub(self):
+        if gpkit.units:
+            x = Variable("x", 1, "cm")
+            y = Variable("y", 1)
+            self.assertEqual(x.sub(x, 1*gpkit.units.m).c.magnitude, 100)
+            # NOTE: uncomment the below if requiring Quantity substitutions
+            # self.assertRaises(ValueError, x.sub, x, 1)
+            self.assertRaises(ValueError, x.sub, x, 1*gpkit.units.N)
+            self.assertRaises(ValueError, y.sub, y, 1*gpkit.units.N)
+            v = gpkit.VectorVariable(3, "v", "cm")
+            subbed = v.sub(v, [1, 2, 3]*gpkit.units.m)
+            self.assertEqual([z.c.magnitude for z in subbed], [100, 200, 300])
+
     def test_scalar_units(self):
         x = Variable("x", "m")
         xvk = x.key

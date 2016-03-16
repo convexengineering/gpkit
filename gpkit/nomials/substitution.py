@@ -125,11 +125,27 @@ def substitution(nomial, substitutions, val=None):
             if len(varlocs_[var]) == 0:
                 del varlocs_[var]
             if isinstance(sub, Numbers):
+                if hasattr(sub, "units") and hasattr(sub, "to"):
+                    if sub.units != var.units:
+                        try:
+                            vu = getattr(var.units, "units", "dimensionless")
+                            sub = sub.to(vu)
+                        except DimensionalityError:
+                            raise ValueError("the units of '%s' are"
+                                             " not compatible with those of"
+                                             " those of the original '%s'"
+                                             " [%s]." % (sub, var, vu))
+                    sub = sub.magnitude
+                # NOTE: uncomment the below to require Quantity'd subs
+                # elif hasattr(var.units, "units"):
+                #     try:
+                #         sub /= var.units.to("dimensionless").magnitude
+                #     except DimensionalityError:
+                #         raise ValueError("cannot substitute the unitless '%s'"
+                #                          " into '%s' of units '%s'." %
+                #                          (sub, var, var.units.units))
                 if sub != 0:
-                    if nomial.units:
-                        cs_.magnitude[i] *= sub**x
-                    else:
-                        cs_[i] *= sub**x
+                    mag(cs_)[i] *= sub**x
                 else:  # frickin' pints bug. let's reimplement pow()
                     if x > 0:
                         mag(cs_)[i] = 0.0
