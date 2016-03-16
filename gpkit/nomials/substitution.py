@@ -128,7 +128,7 @@ def substitution(nomial, substitutions, val=None):
                 if hasattr(sub, "units") and hasattr(sub, "to"):
                     if sub.units != var.units:
                         try:
-                            vu = getattr(var.units, "units", var.units)
+                            vu = getattr(var.units, "units", "dimensionless")
                             sub = sub.to(vu)
                         except DimensionalityError:
                             raise ValueError("the units of '%s' are"
