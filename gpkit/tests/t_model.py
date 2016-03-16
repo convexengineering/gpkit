@@ -194,10 +194,10 @@ class TestGP(unittest.TestCase):
         V = Variable('V', 1)
         m1 = Model(D + V, [V >= mi + 0.4])
         m2 = Model(D + 1, [1 >= mi + 0.4])
-        m1.solve(verbosity=0)
-        m2.solve(verbosity=0)
-        self.assertEqual(m1.program.A, m2.program.A)
-        self.assertTrue((m1.program.cs == m2.program.cs).all())
+        gp1, gp2 = m1.gp(verbosity=0), m2.gp(verbosity=0)
+        # pylint: disable=no-member
+        self.assertEqual(gp1.A, gp2.A)
+        self.assertTrue((gp1.cs == gp2.cs).all())
 
 
 class TestSP(unittest.TestCase):
