@@ -83,5 +83,6 @@ SOLVERS = settings["installed_solvers"]
 TESTS = generate_example_tests(EXAMPLE_DIR, [TestExamples], SOLVERS)
 
 if __name__ == "__main__":
+    # pylint:disable=wrong-import-position
     from gpkit.tests.helpers import run_tests
     run_tests(TESTS)

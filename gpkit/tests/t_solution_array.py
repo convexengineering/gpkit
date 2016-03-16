@@ -95,5 +95,6 @@ class TestResultsTable(unittest.TestCase):
 TESTS = [TestSolutionArray, TestResultsTable]
 
 if __name__ == '__main__':
+    # pylint: disable=wrong-import-position
     from gpkit.tests.helpers import run_tests
     run_tests(TESTS)
