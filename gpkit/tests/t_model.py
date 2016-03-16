@@ -187,6 +187,18 @@ class TestGP(unittest.TestCase):
         m.solve(verbosity=0)
         self.assertEqual(type(m.program.cost.exps), tuple)
 
+    def test_posy_simplification(self):
+        "issue 525"
+        D = Variable('D')
+        mi = Variable('m_i')
+        V = Variable('V', 1)
+        m1 = Model(D + V, [V >= mi + 0.4])
+        m2 = Model(D + 1, [1 >= mi + 0.4])
+        m1.solve(verbosity=0)
+        m2.solve(verbosity=0)
+        self.assertEqual(m1.program.A, m2.program.A)
+        self.assertTrue((m1.program.cs == m2.program.cs).all())
+
 
 class TestSP(unittest.TestCase):
     """test case for SP class -- gets run for each installed solver"""

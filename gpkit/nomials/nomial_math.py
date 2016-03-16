@@ -431,17 +431,18 @@ class ScalarSingleEquationConstraint(SingleEquationConstraint):
 def simplify_posy_ineq(exps, cs):
     "Simplify a posy <= 1 posynomial by moving constants to the right side."
     coeff = 1.0
-    count = 0
-    exps_ = list(exps)
+    exps_ = []
+    nonzero_exp_ixs = []
     for i, exp in enumerate(exps):
-        if not exp:
-            coeff -= mag(cs[i-count])
-            cs = np.hstack((cs[:i-count], cs[i+1-count:]))
-            exps_.pop(i-count)
-            count += 1
-            if coeff <= 0:
-                raise ValueError("infeasible constraint:"
-                                 " constant term too large.")
+        if exp:
+            nonzero_exp_ixs.append(i)
+            exps_.append(exp)
+        else:
+            coeff -= mag(cs[i])
+    if len(exps_) < len(exps):
+        if coeff <= 0:
+            raise ValueError("infeasible constraint: constant term too large.")
+        cs = cs[nonzero_exp_ixs]
     return tuple(exps_), cs/coeff
 
 
