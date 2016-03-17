@@ -4,10 +4,10 @@ from ..nomials import PosynomialInequality, SignomialInequality
 
 class TightConstraintSet(ConstraintSet):
     """A constraint set for which the inequality constraints must be
-    satisfied tightly"""
+    satisfied with equality"""
 
     def process_result(self, result):
-        "Checks that all constraints are satisfied tightly"
+        "Checks that all constraints are satisfied with equality"
         ConstraintSet.process_result(self, result)
         variables = result["variables"]
         for constraint in self.flat():
