@@ -1,3 +1,4 @@
+"Implements tight constraint set"
 from .set import ConstraintSet
 from ..nomials import PosynomialInequality, SignomialInequality
 
@@ -6,7 +7,7 @@ class TightConstraintSet(ConstraintSet):
     satisfied tightly"""
 
     def process_result(self, result):
-        """Checks that all constraints are satisfied tightly"""
+        "Checks that all constraints are satisfied tightly"
         ConstraintSet.process_result(self, result)
         variables = result["variables"]
         for constraint in self.flat():
