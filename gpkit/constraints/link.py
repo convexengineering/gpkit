@@ -43,7 +43,7 @@ class LinkConstraint(ConstraintSet):
             sub, subbed_vk = None, None
             for vk in vks:
                 if vk in self.substitutions:
-                    if sub is None:
+                    if sub is None or sub == self.substitutions[vk]:
                         subbed_vk = vk
                         sub = self.substitutions[vk]
                         del self.substitutions[vk]
