@@ -126,14 +126,19 @@ class TestSignomialInequality(unittest.TestCase):
         self.assertTrue(isinstance(sc, SignomialInequality))
         self.assertFalse(isinstance(sc, Posynomial))
 
+
 class TestTightConstraintSet(unittest.TestCase):
     """Test tight constraint set"""
+
     def test_tight_constraint(self):
         x = Variable('x')
+        x_min = Variable('x_{min}', 2)
         m = Model(x, [TightConstraintSet([x >= 1]),
-                      x >= 2])
+                      x >= x_min])
         with self.assertRaises(ValueError):
             m.solve(verbosity=0)
+        m.substitutions[x_min] = 0.5
+        self.assertAlmostEqual(m.solve(verbosity=0)["cost"], 1)
 
 TESTS = [TestConstraint, TestMonomialEquality, TestSignomialInequality,
          TestTightConstraintSet]
