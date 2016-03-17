@@ -42,6 +42,17 @@ class TestGP(unittest.TestCase):
                                self.ndig)
         self.assertAlmostEqual(sol["cost"], 2*math.sqrt(2), self.ndig)
 
+    def test_cost_freeing(self):
+        "Test freeing a variable that's in the cost."
+        x = Variable("x", 1)
+        x_min = Variable("x_{min}", 2)
+        m = Model(x, [x >= x_min])
+        self.assertRaises((RuntimeWarning, ValueError), m.solve, verbosity=0)
+        del m.substitutions["x"]
+        self.assertAlmostEqual(m.solve(verbosity=0)["cost"], 2)
+        del m.substitutions["x_{min}"]
+        self.assertRaises((RuntimeWarning, ValueError), m.solve, verbosity=0)
+
     def test_simple_united_gp(self):
         R = Variable('R', units="nautical_miles")
         a0 = Variable('a0', 340.29, 'm/s')

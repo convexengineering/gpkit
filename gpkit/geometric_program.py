@@ -47,10 +47,10 @@ class GeometricProgram(NomialData):
         self.substitutions = substitutions if substitutions else {}
 
         ## Create list of substituted posynomials <= 1
-        self.posynomials = [cost.sub(self.substitutions).value]
+        self.posynomials = [cost.sub(self.substitutions)]
         self.constr_idxs = []
         for constraint in constraints:
-            constraint.substitutions.update(self.substitutions)
+            constraint.substitutions = self.substitutions
             try:
                 constr_posys = constraint.as_posyslt1()
             except TypeError as err:

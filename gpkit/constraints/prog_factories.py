@@ -31,7 +31,7 @@ def _progify_fctry(program, return_attr=None):
         """
         if not substitutions:
             substitutions = self.substitutions
-        prog = program(self.cost, self, substitutions, verbosity)
+        prog = program(self.cost, [self], substitutions, verbosity)
         if return_attr:
             return prog, getattr(prog, return_attr)
         else:
