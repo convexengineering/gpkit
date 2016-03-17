@@ -80,6 +80,12 @@ class TestNomialSubs(unittest.TestCase):
             # units are enabled
             self.assertAlmostEqual((x/y).value, 0.9144)
 
+    def test_unitless_monomial_sub(self):
+        "Tests that dimensionless and undimensioned subs can interact."
+        x = Variable("x", "-")
+        y = Variable("y")
+        self.assertEqual(x.sub(x, y), y)
+
     def test_vector(self):
         x = Variable("x")
         y = Variable("y")
@@ -126,6 +132,7 @@ class TestNomialSubs(unittest.TestCase):
             subbed = sc.sub({a: 2.0})
             self.assertTrue(isinstance(subbed, Signomial))
             self.assertEqual(subbed, 2*x - y - D)
+
 
 class TestGPSubs(unittest.TestCase):
     """Test substitution for Model and GP objects"""

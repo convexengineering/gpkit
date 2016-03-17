@@ -35,8 +35,8 @@ class NomialData(object):
                 varlocs[var].append(i)
         self.varlocs = varlocs
         self._varkeys, self._values = None, None
-        if isinstance(self.cs, Quantity):
-            self.units = Quantity(1, self.cs.units) #pylint: disable=no-member
+        if hasattr(self.cs, "units"):
+            self.units = Quantity(1, self.cs.units)  #pylint: disable=no-member
         else:
             self.units = None
 

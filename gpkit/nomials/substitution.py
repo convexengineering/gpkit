@@ -141,23 +141,21 @@ def substitution(nomial, substitutions, val=None):
                 #     try:
                 #         sub /= var.units.to("dimensionless").magnitude
                 #     except DimensionalityError:
-                #         raise ValueError("cannot substitute the unitless '%s'"
-                #                          " into '%s' of units '%s'." %
+                #         raise ValueError("cannot substitute the unitless"
+                #                          " '%s' into '%s' of units '%s'." %
                 #                          (sub, var, var.units.units))
                 if sub != 0:
                     mag(cs_)[i] *= sub**x
-                else:  # frickin' pints bug. let's reimplement pow()
-                    if x > 0:
-                        mag(cs_)[i] = 0.0
-                    elif x < 0:
-                        if mag(cs_[i]) > 0:
-                            mag(cs_)[i] = np.inf
-                        elif mag(cs_[i]) < 0:
-                            mag(cs_)[i] = -np.inf
-                        else:
-                            mag(cs_)[i] = np.nan
+                elif x > 0:  # HACK to prevent RuntimeWarnings
+                    mag(cs_)[i] = 0
+                elif x < 0:
+                    if mag(cs_[i]) > 0:
+                        mag(cs_)[i] = np.inf
+                    elif mag(cs_[i]) < 0:
+                        mag(cs_)[i] = -np.inf
                     else:
-                        mag(cs_)[i] = 1.0
+                        mag(cs_)[i] = np.nan
+                # if sub is 0 and x is 0, pass
             elif isinstance(sub, np.ndarray):
                 if not sub.shape:
                     cs_[i] *= sub.flatten()[0]**x
@@ -168,25 +166,28 @@ def substitution(nomial, substitutions, val=None):
                 exps_[i] += HashVector({sub: x})
                 varlocs_[sub].append(i)
             elif isinstance(sub, (VarKey, Monomial)):
-                if isinstance(var.units, Quantity):
-                    if sub.units != var.units:
-                        try:
-                            cs_[i] *= (sub.units/var.units).to('dimensionless')
-                        except DimensionalityError:
-                            raise ValueError("units of the substituted %s '%s'"
-                                             " [%s] are not compatible with"
-                                             " those of the original '%s'"
-                                             " [%s]." %
-                                             (type(sub),
-                                              sub.str_without(["units"]),
-                                              sub.units.units,
-                                              var, var.units.units))
+                if sub.units != var.units:
+                    try:
+                        if hasattr(sub.units, "to"):
+                            vu = getattr(var.units, "units", "dimensionless")
+                            mag(cs_)[i] *= mag(sub.units.to(vu))
+                        elif hasattr(var.units, "to"):
+                            units = sub.units if sub.units else "dimensionless"
+                            mag(cs_)[i] /= mag(var.units.to(units))
+                    except DimensionalityError:
+                        raise ValueError("units of the substituted %s '%s'"
+                                         " [%s] are not compatible with"
+                                         " those of the original '%s' [%s]." %
+                                         (type(sub),
+                                          sub.str_without(["units"]),
+                                          sub.units.units,
+                                          var, var.units.units))
                 if isinstance(sub, VarKey):
                     exps_[i][sub] = x + exps_[i].get(x, 0)
                     varlocs_[sub].append(i)
                 else:
                     exps_[i] += x*sub.exp
-                    cs_[i] *= mag(sub.c)**x
+                    mag(cs_)[i] *= mag(sub.c)**x
                     for subvar in sub.exp:
                         varlocs_[subvar].append(i)
             else:
