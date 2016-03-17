@@ -188,16 +188,16 @@ class Breakdown(Model):
         """
         test method
         """
-        npt.assert_almost_equal(self.sol('w'), 15, decimal=5)
-        npt.assert_almost_equal(self.sol('w1'), 11, decimal=5)
-        npt.assert_almost_equal(self.sol('w2'), 3, decimal=5)
-        npt.assert_almost_equal(self.sol('w3'), 1, decimal=5)
-        npt.assert_almost_equal(self.sol('w11'), 3, decimal=5)
-        npt.assert_almost_equal(self.sol('w12'), 8, decimal=5)
-        npt.assert_almost_equal(self.sol('w121'), 2, decimal=5)
-        npt.assert_almost_equal(self.sol('w122'), 6, decimal=5)
-        npt.assert_almost_equal(self.sol('w21'), 1, decimal=5)
-        npt.assert_almost_equal(self.sol('w22'), 2, decimal=5)
+        npt.assert_almost_equal(self.sol('w').magnitude, 15, decimal=5)
+        npt.assert_almost_equal(self.sol('w1').magnitude, 11, decimal=5)
+        npt.assert_almost_equal(self.sol('w2').magnitude, 3, decimal=5)
+        npt.assert_almost_equal(self.sol('w3').magnitude, 1, decimal=5)
+        npt.assert_almost_equal(self.sol('w11').magnitude, 3, decimal=5)
+        npt.assert_almost_equal(self.sol('w12').magnitude, 8, decimal=5)
+        npt.assert_almost_equal(self.sol('w121').magnitude, 2, decimal=5)
+        npt.assert_almost_equal(self.sol('w122').magnitude, 6, decimal=5)
+        npt.assert_almost_equal(self.sol('w21').magnitude, 1, decimal=5)
+        npt.assert_almost_equal(self.sol('w22').magnitude, 2, decimal=5)
 
 if __name__ == "__main__":
     TEST = {'w': {'w1': {'w11':[3, "N"], 'w12':{'w121':[2, "N"], 'w122':[6, "N"]}},
