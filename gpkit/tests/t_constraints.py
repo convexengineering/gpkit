@@ -3,7 +3,8 @@ import unittest
 from gpkit import Variable, SignomialsEnabled, Posynomial, VectorVariable
 from gpkit.nomials import SignomialInequality, PosynomialInequality
 from gpkit.nomials import MonomialEquality
-from gpkit import LinkConstraint
+from gpkit import LinkConstraint, Model
+from gpkit.constraints.tight import TightConstraintSet
 from gpkit.tests.helpers import run_tests
 
 
@@ -129,7 +130,21 @@ class TestSignomialInequality(unittest.TestCase):
         self.assertFalse(isinstance(sc, Posynomial))
 
 
-TESTS = [TestConstraint, TestMonomialEquality, TestSignomialInequality]
+class TestTightConstraintSet(unittest.TestCase):
+    """Test tight constraint set"""
+
+    def test_tight_constraint(self):
+        x = Variable('x')
+        x_min = Variable('x_{min}', 2)
+        m = Model(x, [TightConstraintSet([x >= 1]),
+                      x >= x_min])
+        with self.assertRaises(ValueError):
+            m.solve(verbosity=0)
+        m.substitutions[x_min] = 0.5
+        self.assertAlmostEqual(m.solve(verbosity=0)["cost"], 1)
+
+TESTS = [TestConstraint, TestMonomialEquality, TestSignomialInequality,
+         TestTightConstraintSet]
 
 if __name__ == '__main__':
     run_tests(TESTS)
