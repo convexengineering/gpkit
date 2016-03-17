@@ -1,8 +1,10 @@
 """Non-application-specific convenience methods for GPkit"""
+from collections import defaultdict
 import numpy as np
+from gpkit import Model
 from ..nomials import Variable, VectorVariable
 from ..nomials import NomialArray
-# pylint: disable=duplicate-code
+from ..small_scripts import mag
 
 
 def te_exp_minus1(posy, nterm):
@@ -119,13 +121,13 @@ def bound_all_variables(model, eps=1e-30, lower=None, upper=None):
     "Returns model with additional constraints bounding all free variables"
     lb = lower if lower else eps
     ub = upper if upper else 1/eps
-    varkeys = model.gp().varlocs.keys()
-    # TODO: set(model.varkeys.values()) - set(model.substitutions)?
-    constraints = [[ub >= Variable(**varkey.descr),
-                    Variable(**varkey.descr) >= lb]
-                   for varkey in varkeys]
-    m = model.__class__(model.cost, [constraints, model], model.substitutions)
-    m.bound_all = {"lb": lb, "ub": ub, "varkeys": varkeys}
+    constraints = []
+    for varkey in model.varkeys:
+        units = varkey.descr.get("units", 1)
+        constraints.append([ub*units >= Variable(**varkey.descr),
+                            Variable(**varkey.descr) >= lb*units])
+    m = Model(model.cost, [constraints, model], model.substitutions)
+    m.bound_all = {"lb": lb, "ub": ub, "varkeys": model.varkeys}
     return m
 
 
@@ -136,20 +138,24 @@ def determine_unbounded_variables(model, solver=None, verbosity=0,
     m = bound_all_variables(model, eps, lower, upper)
     sol = m.solve(solver, verbosity, **kwargs)
     lam = sol["sensitivities"]["la"][1:]
-    out = {"upper unbounded": [], "lower unbounded": []}
+    out = defaultdict(list)
     for i, varkey in enumerate(m.bound_all["varkeys"]):
         sens_ratio = lam[2*i]/lam[2*i+1]
         if sens_ratio >= 2:  # arbitrary threshold
-            out["upper unbounded"].append(varkey)
+            out["pushing up"].append(varkey)
         elif sens_ratio <= 0.5:  # arbitrary threshold
-            out["lower unbounded"].append(varkey)
+            out["pushing down"].append(varkey)
         else:
-            value = sol["variables"][varkey]
+            value = mag(sol["variables"][varkey])
             distance_below = np.log(value/m.bound_all["lb"])
             distance_above = np.log(m.bound_all["ub"]/value)
-            if distance_below <= 3 or distance_above <= 3:
-                # if we're within ~10x of a boundary (arbitrary threshold)
-                raise AttributeError("%s appears to have hit a boundary"
-                                     " but it's not showing up in the"
-                                     " sensitivities." % varkey)
+            if distance_below <= 3:
+                out["hit eps lower bound"].append(varkey)
+            elif distance_above <= 3:
+                out["hit 1/eps upper bound"].append(varkey)
+           #  if distance_below <= 3 or distance_above <= 3:
+           #      # if we're within ~10x of a boundary (arbitrary threshold)
+           #      raise AttributeError("%s appears to have hit a boundary"
+           #                           " but it's not showing up in the"
+           #                           " sensitivities." % varkey)
     return out

@@ -413,8 +413,8 @@ class TestSP(unittest.TestCase):
         m = Model(x*y, [x*y**1.000001 >= 12])
         self.assertRaises((RuntimeWarning, ValueError), m.solve, verbosity=0)
         bounds = determine_unbounded_variables(m)
-        self.assertEqual(bounds, {"upper unbounded": [y.key],
-                                  "lower unbounded": [x.key]})
+        self.assertEqual(bounds, {"pushing up": [y.key],
+                                  "pushing down": [x.key]})
 
 
 class TestModelSolverSpecific(unittest.TestCase):
