@@ -42,6 +42,9 @@ class GeometricProgram(NomialData):
 
     def __init__(self, cost, constraints, substitutions=None, verbosity=1):
         # pylint: disable=too-many-locals,super-init-not-called
+        # note: any substitutions in constraints are ignored -- overwritten
+        # by substitutions kwarg. This will be fixed when GeometricProgram
+        # inherits from ConstraintSet.
         self.cost = cost
         self.constraints = constraints
         self.substitutions = substitutions if substitutions else {}
