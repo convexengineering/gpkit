@@ -8,8 +8,7 @@ class Breakdown(Model):
     model to make graphical breakdowns of weights, etc.
     takes input as a dict, variable arguments provided in a list. Also takes the
     chosen units in a string as a constructor argument. To run without units input
-    None for varstring.
-    Default diagram width is 12cm, height is 20cm. Use set_diagramHeight and set_diagramWidth
+    None for varstring. Default diagram width is 12cm, height is 20cm. Use set_diagramHeight and set_diagramWidth
     to adjust these.
 
     To generate the diagrams you must have the package svgwrite installed. If you don't have,
@@ -21,7 +20,6 @@ class Breakdown(Model):
         """
         #call the model class constructor
         Model.__init__(self)
-        
         #define a variable to count number of "levels" in the dict, used for drawing
         self.levels = 0
         #create the list of variables to make constraints out of
@@ -109,14 +107,11 @@ class Breakdown(Model):
         """
         return self.varlist[0]
 
-    #move to interactive..make new file called svg.py
     def make_diagram(self):
         """
         method called to make the diagram - calls importsvgwrite from interactive to import
         svgwrite, calls all necessary follow on methods and sets importantvariables
         """
-        
-        self.import_svgwrite()
         from .interactive.svg import importsvgwrite
         from svgwrite import cm
         
@@ -148,20 +143,28 @@ class Breakdown(Model):
             totalheight = totalheight+height
             if isinstance(input_dict[order[i]], dict):
                 #compute new initcoord
-                newinitcoord = (initcoord[0]+self.elementlength, initcoord[1]+totalheight-height)
+                newinitcoord = (initcoord[0]+self.elementlength,
+                                initcoord[1]+totalheight-height)
                 #recurse again
-                self.dwgrecurse(input_dict[order[i]], newinitcoord, currentlevel)
+                self.dwgrecurse(input_dict[order[i]], newinitcoord,
+                                currentlevel)
             #make sure all lines end at the same place
             elif currentlevel != self.levels:
-                boundarylines = self.dwg.add(self.dwg.g(id='boundarylines', stroke='black'))
+                boundarylines = self.dwg.add(self.dwg.g(id='boundarylines',
+                                                        stroke='black'))
                 #top boudnary line
-                boundarylines.add(self.dwg.line(start=(currentcoord[0]*cm, currentcoord[1]*cm),
-                                end=((currentcoord[0]+(self.levels-currentlevel)*self.elementlength)
-                                *cm, currentcoord[1]*cm)))
+                boundarylines.add(self.dwg.line(
+                    start=(currentcoord[0]*cm, currentcoord[1]*cm),
+                    end=((currentcoord[0] +
+                          (self.levels-currentlevel)*self.elementlength)*cm,
+                         currentcoord[1]*cm)))
                 #bottom boundary line
-                boundarylines.add(self.dwg.line(start=((currentcoord[0]+self.elementlength)*cm,
-                                (currentcoord[1]+height)*cm), end=((currentcoord[0]+(self.levels-
-                                currentlevel)*self.elementlength)*cm, (currentcoord[1]+height)*cm)))
+                boundarylines.add(self.dwg.line(
+                    start=((currentcoord[0]+self.elementlength)*cm,
+                           (currentcoord[1]+height)*cm),
+                    end=((currentcoord[0] +
+                          (self.levels-currentlevel)*self.elementlength)*cm,
+                         (currentcoord[1]+height)*cm)))
             i = i+1
 
     def drawsegment(self, input_name, height, initcoord):
