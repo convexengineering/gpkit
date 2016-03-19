@@ -1,8 +1,7 @@
 """Define the Breakdown class"""
 import numpy.testing as npt
 from gpkit import Model, Variable
-import svgwrite
-from svgwrite import cm
+from gpkit import small_scripts
 
 class Breakdown(Model):
     """
@@ -12,11 +11,17 @@ class Breakdown(Model):
     None for varstring.
     Default diagram width is 12cm, height is 20cm. Use set_diagramHeight and set_diagramWidth
     to adjust these.
+
+    To generate the diagrams you must have the package svgwrite installed. If you don't have,
+    it can be installed in the terminal with the command pip install svgwrite
     """
     def __init__(self, input_dict, varstring):
         """
         class constructor - initialize all global variables, generate gpkit Vars
         """
+        #call the model class constructor
+        Model.__init__(self)
+        
         #define a variable to count number of "levels" in the dict, used for drawing
         self.levels = 0
         #create the list of variables to make constraints out of
@@ -104,11 +109,17 @@ class Breakdown(Model):
         """
         return self.varlist[0]
 
+    #move to interactive..make new file called svg.py
     def make_diagram(self):
         """
-        method called to make the diagram, calls all necessary follow on methods and sets important
-        variables
+        method called to make the diagram - calls importsvgwrite from interactive to import
+        svgwrite, calls all necessary follow on methods and sets importantvariables
         """
+        
+        self.import_svgwrite()
+        from .interactive.svg import importsvgwrite
+        from svgwrite import cm
+        
         #extract the total breakdown value for scaling purposes
         self.total = self.sol(self.input_dict.keys()[0])
         #depth of each breakdown level
@@ -120,8 +131,8 @@ class Breakdown(Model):
 
     def dwgrecurse(self, input_dict, initcoord, currentlevel):
         """
-        recursive function to divide widnow into seperate units to be drawn and calls the draw
-        function
+        #recursive function to divide widnow into seperate units to be drawn and calls the draw
+        #function
         """
         order = input_dict.keys()
         i = 0
@@ -155,7 +166,7 @@ class Breakdown(Model):
 
     def drawsegment(self, input_name, height, initcoord):
         """
-        function to draw each poriton of the diagram
+        #function to draw each poriton of the diagram
         """
         lines = self.dwg.add(self.dwg.g(id='lines', stroke='black'))
         #draw the top horizontal line
@@ -163,14 +174,16 @@ class Breakdown(Model):
                         self.elementlength)*cm, initcoord[1]*cm)))
         #draw the bottom horizontaal line
         lines.add(self.dwg.line(start=(initcoord[0]*cm, (initcoord[1]+height)*cm),
-                        end=((initcoord[0]+self.elementlength)*cm, (initcoord[1]+height)*cm)))
+                                end=((initcoord[0]+self.elementlength)*cm,
+                                     (initcoord[1]+height)*cm)))
         #draw the vertical line
-        lines.add(self.dwg.line(start=((initcoord[0])*cm, initcoord[1]*cm), end=(initcoord[0]*cm
-                        , (initcoord[1]+height)*cm)))
+        lines.add(self.dwg.line(start=((initcoord[0])*cm, initcoord[1]*cm),
+                                end=(initcoord[0]*cm, (initcoord[1]+height)*cm)))
         #adding in the breakdown namee
         writing = self.dwg.add(self.dwg.g(id='writing', stroke='black'))
-        writing.add(svgwrite.text.Text(input_name, insert=None, x=[(.5+initcoord[0])*cm], y=
-                    [(height/2+initcoord[1])*cm], dx=None, dy=None, rotate=None))
+        writing.add(svgwrite.text.Text(input_name, insert=None, x=[(.5+initcoord[0])*cm],
+                                       y=[(height/2+initcoord[1])*cm], dx=None,
+                                        dy=None, rotate=None))
 
     def set_diagram_width(self, sidelength):
         """
@@ -188,16 +201,18 @@ class Breakdown(Model):
         """
         test method
         """
-        npt.assert_almost_equal(self.sol('w').magnitude, 15, decimal=5)
-        npt.assert_almost_equal(self.sol('w1').magnitude, 11, decimal=5)
-        npt.assert_almost_equal(self.sol('w2').magnitude, 3, decimal=5)
-        npt.assert_almost_equal(self.sol('w3').magnitude, 1, decimal=5)
-        npt.assert_almost_equal(self.sol('w11').magnitude, 3, decimal=5)
-        npt.assert_almost_equal(self.sol('w12').magnitude, 8, decimal=5)
-        npt.assert_almost_equal(self.sol('w121').magnitude, 2, decimal=5)
-        npt.assert_almost_equal(self.sol('w122').magnitude, 6, decimal=5)
-        npt.assert_almost_equal(self.sol('w21').magnitude, 1, decimal=5)
-        npt.assert_almost_equal(self.sol('w22').magnitude, 2, decimal=5)
+        npt.assert_almost_equal(small_scripts.mag(self.sol('w')), 15, decimal=5)
+        npt.assert_almost_equal(small_scripts.mag(self.sol('w1')), 11, decimal=5)
+        npt.assert_almost_equal(small_scripts.mag(self.sol('w2')), 3, decimal=5)
+        npt.assert_almost_equal(small_scripts.mag(self.sol('w3')), 1, decimal=5)
+        npt.assert_almost_equal(small_scripts.mag(self.sol('w11')), 3, decimal=5)
+        npt.assert_almost_equal(small_scripts.mag(self.sol('w12')), 8, decimal=5)
+        npt.assert_almost_equal(small_scripts.mag(self.sol('w121')), 2, decimal=5)
+        npt.assert_almost_equal(small_scripts.mag(self.sol('w122')), 6, decimal=5)
+        npt.assert_almost_equal(small_scripts.mag(self.sol('w21')), 1, decimal=5)
+        npt.assert_almost_equal(small_scripts.mag(self.sol('w22')), 2, decimal=5)
+
+        self.make_diagram()
 
 if __name__ == "__main__":
     TEST = {'w': {'w1': {'w11':[3, "N"], 'w12':{'w121':[2, "N"], 'w122':[6, "N"]}},
