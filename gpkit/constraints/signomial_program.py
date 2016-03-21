@@ -57,7 +57,6 @@ class SignomialProgram(CostedConstraintSet):
     Constraints, since Models without Signomials have global solutions and can
     be solved with 'Model.solve()'.""")
         self.gps = []
-        self.constraints = constraints
         self.result = None
 
     def localsolve(self, solver=None, verbosity=1, x0=None, rel_tol=1e-4,
@@ -127,10 +126,7 @@ class SignomialProgram(CostedConstraintSet):
         self.sens_from_gpconstr(gp.constraints,
                                 result["sensitivities"]["constraints"],
                                 result["sensitivities"]["constants"])
-
-        for constraint in self.constraints:
-            if hasattr(constraint, "process_result"):
-                constraint.process_result(result)
+        self.process_result(result)
 
         self.result = result  # NOTE: SIDE EFFECTS
         return result
