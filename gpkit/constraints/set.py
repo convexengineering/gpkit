@@ -8,6 +8,8 @@ from ..repr_conventions import _str, _repr, _repr_latex_
 class ConstraintSet(list):
     "Recursive container for ConstraintSets and Inequalities"
     def __init__(self, constraints, substitutions=None):
+        if isinstance(constraints, ConstraintSet):
+            constraints = [constraints]
         list.__init__(self, constraints)
         subs = substitutions if substitutions else {}
         if not isinstance(constraints, ConstraintSet):

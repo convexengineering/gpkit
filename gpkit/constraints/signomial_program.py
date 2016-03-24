@@ -35,7 +35,8 @@ class SignomialProgram(CostedConstraintSet):
     >>> gp.solve()
     """
 
-    def __init__(self, cost, constraints, substitutions=None, verbosity=2):
+    def __init__(self, cost, constraints, substitutions=None, verbosity=2,
+                 require_signomial=True):
         # pylint: disable=unused-argument
         "Constructor. Required for objects inheriting from np.ndarray."
         if cost.any_nonpositive_cs:
@@ -45,13 +46,14 @@ class SignomialProgram(CostedConstraintSet):
     a dummy variable z to be greater than the desired Signomial objective s
     (z >= s) and then minimizing that dummy variable.""")
         CostedConstraintSet.__init__(self, cost, constraints, substitutions)
-        try:
-            _ = self.as_posyslt1()  # should raise an error
-            # TODO: is there a faster way to check?
-        except ValueError:
-            pass
-        else:  # this is a GP
-            raise ValueError("""No Signomials remained after substitution.
+        if require_signomial:
+            try:
+                _ = self.as_posyslt1()  # should raise an error
+                # TODO: is there a faster way to check?
+            except ValueError:
+                pass
+            else:  # this is a GP
+                raise ValueError("""No Signomials remained after substitution.
 
     SignomialPrograms should only be created with Models containing Signomial
     Constraints, since Models without Signomials have global solutions and can
