@@ -36,7 +36,7 @@ class SignomialProgram(CostedConstraintSet):
     """
 
     def __init__(self, cost, constraints, substitutions=None, verbosity=2,
-                 require_signomial=True):
+                 require_signomials=True):
         # pylint: disable=unused-argument
         "Constructor. Required for objects inheriting from np.ndarray."
         if cost.any_nonpositive_cs:
@@ -46,7 +46,7 @@ class SignomialProgram(CostedConstraintSet):
     a dummy variable z to be greater than the desired Signomial objective s
     (z >= s) and then minimizing that dummy variable.""")
         CostedConstraintSet.__init__(self, cost, constraints, substitutions)
-        if require_signomial:
+        if require_signomials:
             try:
                 _ = self.as_posyslt1()  # should raise an error
                 # TODO: is there a faster way to check?
