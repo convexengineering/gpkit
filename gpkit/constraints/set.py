@@ -55,10 +55,11 @@ class ConstraintSet(list):
         if not excluded:
             excluded = ["units"]
         lines = []
-        if "root" not in excluded:
+        root = "root" not in excluded
+        if root:
             excluded.append("root")
             lines.append("\\begin{array}[ll] \\text{}")
-            root_latex = self.rootconstr_tex(excluded)
+            root_latex = self.rootconstr_latex(excluded)
             if root_latex:
                 lines.append(root_latex)
         for constraint in self:
@@ -66,16 +67,17 @@ class ConstraintSet(list):
             if cstr is None:
                 cstr = constraint.latex(excluded)
             if cstr[:6] != "    & ":  # require indentation
-                cstr = "    & " + cstr
+                cstr = "    & " + cstr + " \\\\"
             lines.append(cstr)
-        lines.append("\\end{array}")
+        if root:
+            lines.append("\\end{array}")
         return "\n".join(lines)
 
     def rootconstr_str(self, excluded=None):
         "The appearance of a ConstraintSet in addition to its contents"
         pass
 
-    def rootconstr_tex(self, excluded=None):
+    def rootconstr_latex(self, excluded=None):
         "The appearance of a ConstraintSet in addition to its contents"
         pass
 
@@ -83,7 +85,7 @@ class ConstraintSet(list):
         "The collapsed appearance of a ConstraintSet"
         pass
 
-    def subconstr_tex(self, excluded=None):
+    def subconstr_latex(self, excluded=None):
         "The collapsed appearance of a ConstraintSet"
         pass
 
