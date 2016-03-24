@@ -54,8 +54,11 @@ def modelinteract(model, ranges=None, fn_of_sol=None, **solvekwargs):
         # pylint: disable=function-redefined
         def fn_of_sol(solution):
             "Display function to run when a slider is moved."
-            tables = ["cost", "freevariables", "sensitivities"]
-            print solution.table(tables)
+            if hasattr(solution, "table"):
+                tables = ["cost", "freevariables", "sensitivities"]
+                print solution.table(tables)
+            else:
+                print solution["variables"]
 
     solvekwargs["verbosity"] = 0
 
@@ -65,9 +68,9 @@ def modelinteract(model, ranges=None, fn_of_sol=None, **solvekwargs):
         try:
             try:
                 model.solve(**solvekwargs)
-            except ValueError:
+            except (AttributeError, ValueError):
                 model.localsolve(**solvekwargs)
-            fn_of_sol(model.solution)
+            fn_of_sol(getattr(model, "solution", model.result))
         except RuntimeWarning:
             raise
             # TODO: implement some nicer feasibility warning, like the below
