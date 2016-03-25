@@ -17,9 +17,9 @@ class TightConstraintSet(ConstraintSet):
         for constraint in self.flat():
             if isinstance(constraint, (PosynomialInequality,
                                        SignomialInequality)):
-                leftsubbed = constraint.left.sub(variables)
-                rightsubbed = constraint.right.sub(variables)
-                rel_diff = abs(1-(leftsubbed/rightsubbed).value)
+                leftsubbed = constraint.left.sub(variables).value
+                rightsubbed = constraint.right.sub(variables).value
+                rel_diff = abs(1 - leftsubbed/rightsubbed)
                 if rel_diff >= self.reltol:
                     raise ValueError("Tightness requirement not met"
                                      " for constraint %s because %s"
