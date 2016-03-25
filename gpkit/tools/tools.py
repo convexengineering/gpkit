@@ -140,7 +140,13 @@ def determine_unbounded_variables(model, solver=None, verbosity=0,
     lam = sol["sensitivities"]["la"][1:]
     out = defaultdict(list)
     for i, varkey in enumerate(m.bound_all["varkeys"]):
-        sens_ratio = lam[2*i]/lam[2*i+1]
+        lam_gt, lam_lt = lam[2*i], lam[2*i+1]
+        if lam_gt and lam_lt:  # to avoid divide-by-zero
+            sens_ratio = lam_gt/lam_lt
+        elif lam_gt:
+            sens_ratio = np.inf
+        else:
+            sens_ratio = 0.0
         if sens_ratio >= 2:  # arbitrary threshold
             out["pushing up"].append(varkey)
         elif sens_ratio <= 0.5:  # arbitrary threshold
