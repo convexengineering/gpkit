@@ -19,7 +19,7 @@ except (ImportError, IOError, AssertionError):
 
 def _progify_fctry(program, return_attr=None):
     "Generates function that returns a program() and optionally an attribute."
-    def programify(self, verbosity=1, substitutions=None):
+    def programify(self, verbosity=1, substitutions=None, **kwargs):
         """Return program version of self
 
         Arguments
@@ -31,7 +31,7 @@ def _progify_fctry(program, return_attr=None):
         """
         if not substitutions:
             substitutions = self.substitutions
-        prog = program(self.cost, [self], substitutions, verbosity)
+        prog = program(self.cost, self, substitutions, verbosity, **kwargs)
         if return_attr:
             return prog, getattr(prog, return_attr)
         else:
