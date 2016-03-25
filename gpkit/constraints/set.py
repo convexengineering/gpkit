@@ -20,7 +20,7 @@ class ConstraintSet(list):
                     self[i] = ConstraintSet(constraint)
         else:
             # grab the substitutions dict from the top constraintset
-            subs.update(constraints.substitutions)
+            subs.update(constraints.substitutions)  # pylint: disable=no-member
         self.substitutions = KeyDict.with_keys(self.varkeys,
                                                self._iter_subs(subs))
         # initializations for attributes used elsewhere

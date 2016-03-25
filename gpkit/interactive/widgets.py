@@ -70,7 +70,11 @@ def modelinteract(model, ranges=None, fn_of_sol=None, **solvekwargs):
                 model.solve(**solvekwargs)
             except (AttributeError, ValueError):
                 model.localsolve(**solvekwargs)
-            fn_of_sol(getattr(model, "solution", model.result))
+            if hasattr(model, "solution"):
+                sol = model.solution
+            else:
+                sol = model.result
+            fn_of_sol(sol)
         except RuntimeWarning:
             raise
             # TODO: implement some nicer feasibility warning, like the below
