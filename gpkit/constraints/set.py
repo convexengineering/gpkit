@@ -210,13 +210,9 @@ class ConstraintSet(list):
           - add values computed from solved variables
 
         """
-        processed = {}
         for constraint in self:
             if hasattr(constraint, "process_result"):
-                p = constraint.process_result(result)
-                if p:
-                    processed.update(p)
-        return processed
+                constraint.process_result(result)
 
     def _iter_subs(self, substitutions):
         for constraint in self.flat():
