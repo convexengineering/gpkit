@@ -2,6 +2,7 @@
 from string import Template
 from itertools import count
 from IPython.display import HTML, display, Javascript
+from gpkit.small_scripts import mag
 
 
 CHARTJSSRC = ("<script src='https://cdnjs.cloudflare.com/ajax/libs/"
@@ -45,7 +46,8 @@ class BarChart(object):
     def create_jsobj(self, data):
         "Create and display the javascript object for this chart"
         labels = ", ".join(['"%s"' % vn for vn in self.varnames])
-        datarray = ", ".join([str(data[varname]) for varname in self.varnames])
+        datarray = ", ".join([str(mag(data[varname]))
+                              for varname in self.varnames])
         js_init = Template("""
         var data = {
             labels: [$labels],
