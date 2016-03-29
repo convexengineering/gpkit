@@ -451,7 +451,7 @@ class PosynomialInequality(ScalarSingleEquationConstraint):
         self.nomials = [self.left, self.right, self.p_lt, self.m_gt]
         self.nomials.extend(self._unsubbed)
 
-    def simplify_posy_ineq(self, exps, cs):
+    def _simplify_posy_ineq(self, exps, cs):
         "Simplify a posy <= 1 by moving constants to the right side."
         coeff = 1.0
         exps_ = []
@@ -483,7 +483,7 @@ class PosynomialInequality(ScalarSingleEquationConstraint):
                                  " be converted into each other."
                                  "" % (self.p_lt.units, self.m_gt.units))
 
-        p.exps, p.cs = self.simplify_posy_ineq(p.exps, p.cs)
+        p.exps, p.cs = self._simplify_posy_ineq(p.exps, p.cs)
         return [p]
 
     def as_posyslt1(self):
@@ -501,7 +501,7 @@ class PosynomialInequality(ScalarSingleEquationConstraint):
             if np.all(nans) or np.all(cs[~nans] == 0):
                 return []  # skip nan'd or 0'd constraint
 
-            exps, cs = self.simplify_posy_ineq(exps, cs)
+            exps, cs = self._simplify_posy_ineq(exps, cs)
             exps, cs, pmap = simplify_exps_and_cs(exps, cs, return_map=True)
 
             #  The monomial sensitivities from the GP/SP are in terms of this
