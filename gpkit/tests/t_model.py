@@ -138,7 +138,7 @@ class TestGP(unittest.TestCase):
         k = Variable("k", 0)
         with SignomialsEnabled():
             constr = [L-5*k <= 10]
-        sol = Model(1/L, constr).solve(verbosity=0, solver=self.solver)
+        sol = Model(1/L, constr).solve(self.solver, verbosity=0)
         self.assertAlmostEqual(sol(L), 10, self.ndig)
         self.assertAlmostEqual(sol["cost"], 0.1, self.ndig)
 
@@ -205,7 +205,8 @@ class TestGP(unittest.TestCase):
         V = Variable('V', 1)
         m1 = Model(D + V, [V >= mi + 0.4])
         m2 = Model(D + 1, [1 >= mi + 0.4])
-        gp1, gp2 = m1.gp(verbosity=0), m2.gp(verbosity=0)
+        gp1 = m1.gp(verbosity=0)
+        gp2 = m2.gp(verbosity=0)
         # pylint: disable=no-member
         self.assertEqual(gp1.A, gp2.A)
         self.assertTrue((gp1.cs == gp2.cs).all())
@@ -217,16 +218,31 @@ class TestSP(unittest.TestCase):
     solver = None
     ndig = None
 
+    def test_sp_substitutions(self):
+        x = Variable('x')
+        y = Variable('y', 1)
+        z = Variable('z', 4)
+
+        with self.assertRaises(ValueError):
+            with SignomialsEnabled():
+                m = Model(x, [x + z >= y])
+                m.localsolve()
+
+        with SignomialsEnabled():
+            m = Model(x, [x + y >= z])
+        self.assertAlmostEqual(m.solve(self.solver, verbosity=0)["cost"], 3)
+
+
     def test_trivial_sp(self):
         x = Variable('x')
         y = Variable('y')
         with SignomialsEnabled():
             m = Model(x, [x >= 1-y, y <= 0.1])
-        sol = m.localsolve(verbosity=0, solver=self.solver)
+        sol = m.localsolve(self.solver, verbosity=0)
         self.assertAlmostEqual(sol["variables"]["x"], 0.9, self.ndig)
         with SignomialsEnabled():
             m = Model(x, [x+y >= 1, y <= 0.1])
-        sol = m.localsolve(verbosity=0, solver=self.solver)
+        sol = m.localsolve(self.solver, verbosity=0)
         self.assertAlmostEqual(sol["variables"]["x"], 0.9, self.ndig)
 
     def test_relaxation(self):
@@ -266,11 +282,11 @@ class TestSP(unittest.TestCase):
                     L*W >= A,
                     Obj >= a*(2*L + 2*W) + (1-a)*(12 * W**-1 * L**-3)]
         m = Model(Obj, eqns)
-        spsol = m.solve(verbosity=0, solver=self.solver)
+        spsol = m.solve(self.solver, verbosity=0)
         # now solve as GP
         eqns[-1] = (Obj >= a_val*(2*L + 2*W) + (1-a_val)*(12 * W**-1 * L**-3))
         m = Model(Obj, eqns)
-        gpsol = m.solve(verbosity=0, solver=self.solver)
+        gpsol = m.solve(self.solver, verbosity=0)
         self.assertAlmostEqual(spsol['cost'], gpsol['cost'])
 
     def test_trivial_sp2(self):

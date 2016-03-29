@@ -48,7 +48,7 @@ class SignomialProgram(CostedConstraintSet):
         try:
             _ = self.as_posyslt1()  # should raise an error
             # TODO: is there a faster way to check?
-        except ValueError:
+        except TypeError:
             pass
         else:  # this is a GP
             raise ValueError("""No Signomials remained after substitution.
