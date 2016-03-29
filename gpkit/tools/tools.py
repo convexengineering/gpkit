@@ -141,27 +141,15 @@ def determine_unbounded_variables(model, solver=None, verbosity=0,
     out = defaultdict(list)
     for i, varkey in enumerate(m.bound_all["varkeys"]):
         lam_gt, lam_lt = lam[2*i], lam[2*i+1]
-        if lam_gt and lam_lt:  # to avoid divide-by-zero
-            sens_ratio = lam_gt/lam_lt
-        elif lam_gt:
-            sens_ratio = np.inf
-        else:
-            sens_ratio = 0.0
-        if sens_ratio >= 2:  # arbitrary threshold
-            out["pushing up"].append(varkey)
-        elif sens_ratio <= 0.5:  # arbitrary threshold
-            out["pushing down"].append(varkey)
-        else:
-            value = mag(sol["variables"][varkey])
-            distance_below = np.log(value/m.bound_all["lb"])
-            distance_above = np.log(m.bound_all["ub"]/value)
-            if distance_below <= 3:
-                out["hit eps lower bound"].append(varkey)
-            elif distance_above <= 3:
-                out["hit 1/eps upper bound"].append(varkey)
-           #  if distance_below <= 3 or distance_above <= 3:
-           #      # if we're within ~10x of a boundary (arbitrary threshold)
-           #      raise AttributeError("%s appears to have hit a boundary"
-           #                           " but it's not showing up in the"
-           #                           " sensitivities." % varkey)
+        if abs(lam_gt) >= 1e-9:  # arbitrary threshold
+            out["sensitive to upper bound"].append(varkey)
+        if abs(lam_lt) >= 1e-9:  # arbitrary threshold
+            out["sensitive to lower bound"].append(varkey)
+        value = mag(sol["variables"][varkey])
+        distance_below = np.log(value/m.bound_all["lb"])
+        distance_above = np.log(m.bound_all["ub"]/value)
+        if distance_below <= 3:  # arbitrary threshold
+            out["value near lower bound"].append(varkey)
+        elif distance_above <= 3:  # arbitrary threshold
+            out["value near upper bound"].append(varkey)
     return out
