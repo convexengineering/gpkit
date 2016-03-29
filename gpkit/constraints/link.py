@@ -1,10 +1,10 @@
-"Implements LinkConstraint"
+"Implements LinkedConstraintSet"
 from .set import ConstraintSet
 from ..varkey import VarKey
 from .. import SignomialsEnabled
 
 
-class LinkConstraint(ConstraintSet):
+class LinkedConstraintSet(ConstraintSet):
     """A ConstraintSet that links duplicate variables in its constraints
 
     VarKeys with the same `.str_without(["models"])` are linked.
@@ -68,7 +68,7 @@ class LinkConstraint(ConstraintSet):
             self.subinplace(self.linked)
 
     def process_result(self, result):
-        super(LinkConstraint, self).process_result(result)
+        super(LinkedConstraintSet, self).process_result(result)
         for k in ["constants", "variables", "freevariables", "sensitivities"]:
             resultdict = result[k]
             if k == "sensitivities":  # get ["sensitivities"]["constants"]

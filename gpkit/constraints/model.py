@@ -6,7 +6,7 @@ from ..nomials import Monomial
 from .prog_factories import _progify_fctry, _solve_fctry
 from ..geometric_program import GeometricProgram
 from .signomial_program import SignomialProgram
-from .link import LinkConstraint
+from .link import LinkedConstraintSet
 from ..keydict import KeyDict
 from .. import SignomialsEnabled
 
@@ -71,7 +71,7 @@ class Model(CostedConstraintSet):
 
     def link(self, other, include_only=None, exclude=None):
         "Connects this model with a set of constraints"
-        lc = LinkConstraint([self, other], include_only, exclude)
+        lc = LinkedConstraintSet([self, other], include_only, exclude)
         cost = self.cost.sub(lc.linked)
         return Model(cost, [lc], lc.substitutions)
 
