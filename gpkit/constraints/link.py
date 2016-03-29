@@ -68,6 +68,7 @@ class LinkConstraint(ConstraintSet):
             self.subinplace(self.linked)
 
     def process_result(self, result):
+        super(LinkConstraint, self).process_result(result)
         for k in ["constants", "variables", "freevariables", "sensitivities"]:
             resultdict = result[k]
             if k == "sensitivities":  # get ["sensitivities"]["constants"]
