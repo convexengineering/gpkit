@@ -196,7 +196,7 @@ class GeometricProgram(NomialData):
                    ((time() - tic) / soltime * 100))
             tic = time()
 
-        self.check_solution(result["cost"], solver_out['primal'],
+        self.check_solution(self.result["cost"], solver_out['primal'],
                             nu=solver_out["nu"], la=solver_out["la"])
         if verbosity > 1:
             print ("solution checking took %.2g%% of solve time" %
@@ -205,9 +205,9 @@ class GeometricProgram(NomialData):
         ## Let constraints process the results
         for constraint in self.constraints:
             if hasattr(constraint, "process_result"):
-                constraint.process_result(result)
+                constraint.process_result(self.result)
 
-        return result
+        return self.result
 
     def _generate_nula(self, solver_out):
         solver_out["primal"] = np.ravel(solver_out['primal'])

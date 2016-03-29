@@ -3,7 +3,7 @@ import unittest
 from gpkit import Variable, SignomialsEnabled, Posynomial, VectorVariable
 from gpkit.nomials import SignomialInequality, PosynomialInequality
 from gpkit.nomials import MonomialEquality
-from gpkit import LinkConstraint, Model
+from gpkit import LinkedConstraintSet, Model
 from gpkit.constraints.tight import TightConstraintSet
 from gpkit.tests.helpers import run_tests
 
@@ -17,14 +17,15 @@ class TestConstraint(unittest.TestCase):
         x_fx1b = Variable("x", 1, models=["fixed1b"])
         x_free = Variable("x", models=["free"])
         x_fx2 = Variable("x", 2, models=["fixed2"])
-        lc = LinkConstraint([x_fx1 >= 1, x_fx1b >= 1])
+        lc = LinkedConstraintSet([x_fx1 >= 1, x_fx1b >= 1])
         self.assertEqual(lc.substitutions["x"], 1)
-        lc = LinkConstraint([x_fx1 >= 1, x_free >= 1])
+        lc = LinkedConstraintSet([x_fx1 >= 1, x_free >= 1])
         self.assertEqual(lc.substitutions["x"], 1)
-        self.assertRaises(ValueError, LinkConstraint, [x_fx1 >= 1, x_fx2 >= 1])
+        self.assertRaises(ValueError,
+                          LinkedConstraintSet, [x_fx1 >= 1, x_fx2 >= 1])
         vecx_free = VectorVariable(3, "x", models=["free"])
         vecx_fixed = VectorVariable(3, "x", [1, 2, 3], models=["fixed"])
-        lc = LinkConstraint([vecx_free >= 1, vecx_fixed >= 1])
+        lc = LinkedConstraintSet([vecx_free >= 1, vecx_fixed >= 1])
         self.assertEqual(lc.substitutions["x"].tolist(), [1, 2, 3])
 
     def test_additive_scalar(self):
