@@ -141,9 +141,9 @@ def determine_unbounded_variables(model, solver=None, verbosity=0,
     out = defaultdict(list)
     for i, varkey in enumerate(m.bound_all["varkeys"]):
         lam_gt, lam_lt = lam[2*i], lam[2*i+1]
-        if abs(lam_gt) >= 1e-9:  # arbitrary threshold
+        if abs(lam_gt) >= 1e-7:  # arbitrary threshold
             out["sensitive to upper bound"].append(varkey)
-        if abs(lam_lt) >= 1e-9:  # arbitrary threshold
+        if abs(lam_lt) >= 1e-7:  # arbitrary threshold
             out["sensitive to lower bound"].append(varkey)
         value = mag(sol["variables"][varkey])
         distance_below = np.log(value/m.bound_all["lb"])
