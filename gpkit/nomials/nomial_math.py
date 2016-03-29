@@ -463,11 +463,12 @@ class PosynomialInequality(ScalarSingleEquationConstraint):
             else:
                 coeff -= mag(cs[i])
         if len(exps_) < len(exps):
-            if coeff < 0:
+            if coeff > 0:
+                cs = cs[nonzero_exp_ixs]
+            elif coeff < 0:
                 raise ValueError("infeasible constraint: %s" % self)
             elif coeff == 0:
                 raise ValueError("tautological constraint: %s" % self)
-            cs = cs[nonzero_exp_ixs]
         return tuple(exps_), cs/coeff
 
     def _gen_unsubbed(self):
