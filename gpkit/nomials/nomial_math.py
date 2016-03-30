@@ -453,6 +453,13 @@ class PosynomialInequality(ScalarSingleEquationConstraint):
 
     def _simplify_posy_ineq(self, exps, cs):
         "Simplify a posy <= 1 by moving constants to the right side."
+        if len(exps) == 1:
+            if not exps[0]:
+                if cs[0] > 1:
+                    raise ValueError("infeasible constraint: %s" % self)
+            # for now, we allow tautological monomial constraints (cs[0] <= 1)
+            # because they allow models to impose requirements on variables
+            return exps, cs
         coeff = 1.0
         exps_ = []
         nonzero_exp_ixs = []
