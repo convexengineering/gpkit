@@ -56,6 +56,8 @@ def unitstr(units, into="%s", options="~", dimless='-'):
     if units and not isinstance(units, Strings):
         try:
             rawstr = ("{:%s}" % options).format(units)
+            if str(units.units) == "count":
+                rawstr = "1.0 count"
         except:
             rawstr = "1.0 " + str(units.units)
         units = "".join(rawstr.replace("dimensionless", dimless).split()[1:])
