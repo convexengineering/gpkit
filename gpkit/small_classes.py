@@ -139,15 +139,15 @@ def _enray_and_unit_dict(d_in, d_out, unitless_keys=(), united=False):
             d_out[k] = _enray_and_unit_dict(v, v.__class__(),
                                             unitless_keys, united)
         else:
-            if len(v) == 1:
-                v = v[0]
-            elif hasattr(v[0], "units"):
+            if hasattr(v[0], "units"):
                 v = [e.to(v[0].units).magnitude for e in v]*v[0].units
             else:
                 v = np.array(v)
                 if (united and hasattr(k, "units")
                         and isinstance(k.units, Quantity)):
                     v = v*k.units
+            if len(v) == 1:
+                v = v[0]
             d_out[k] = v
     # assert set(i.keys()) == set(o.keys())  # keys change with swept varkeys
     return d_out
