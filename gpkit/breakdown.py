@@ -2,8 +2,10 @@
 import numpy.testing as npt
 from gpkit import Model, Variable
 from gpkit import small_scripts
+import svgwrite
+from svgwrite import cm
 
-class Breakdown(Model):
+class Breakdown(object):
     """
     model to make graphical breakdowns of weights, etc.
     takes input as a dict, variable arguments provided in a list. Also takes the
@@ -18,8 +20,6 @@ class Breakdown(Model):
         """
         class constructor - initialize all global variables, generate gpkit Vars
         """
-        #call the model class constructor
-        Model.__init__(self)
         #define a variable to count number of "levels" in the dict, used for drawing
         self.levels = 0
         #create the list of variables to make constraints out of
@@ -50,9 +50,7 @@ class Breakdown(Model):
         return self.sol
 
     def recurse(self, input_dict):
-        """
-        recursive function to generate gpkit Vars for each input weight
-        """
+        "Recursive function to generate gpkit Vars for each input weight"
         order = input_dict.keys()
         i = 0
         hold = []
@@ -112,9 +110,6 @@ class Breakdown(Model):
         method called to make the diagram - calls importsvgwrite from interactive to import
         svgwrite, calls all necessary follow on methods and sets importantvariables
         """
-        from .interactive.svg import importsvgwrite
-        from svgwrite import cm
-        
         #extract the total breakdown value for scaling purposes
         self.total = self.sol(self.input_dict.keys()[0])
         #depth of each breakdown level
