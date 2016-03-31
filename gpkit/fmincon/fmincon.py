@@ -4,8 +4,10 @@ from test import test
 def fmincon(m):
     i = 1
     newdict = {}
+    newlist = []
     for key in m.varkeys:
         newdict[key] = 'x({0})'.format(i)
+        newlist += ['x_{0}: '.format(i) + key.str_without()]
         i += 1
 
     constraints = m.program.constraints
@@ -20,17 +22,28 @@ def fmincon(m):
                 cc = constraint.right - constraint.left
             elif constraint.oper == '=':
                 cc = constraint.right - constraint.left
-            fmccon += [cc.str_without()]
+            fmccon += [cc.str_without("units")]
 
-    with open('confuntest.m', 'w') as outfile:
-        outfile.write(
-                       "function [c, ceq] = confun(x)\n" + 
-                       "% Nonlinear inequality constraints\n" + 
-                       "c = [\n" + 
-                       "\n".join(fmccon) + 
-                       "    ];\n"
-                      )
-    return fmccon
+    with open('confun.m', 'w') as outfile:
+        outfile.write("function [c, ceq] = confun(x)\n" +
+                      "% Nonlinear inequality constraints\n" +
+                      "c = [\n" +
+                      "\n".join(fmccon) +
+                      "    ];\n"
+                     )
+
+    obj = m.cost
+    obj.subinplace(newdict)
+    fmcobj = obj.str_without("units")
+
+    with open('objfun.m', 'w') as outfile:
+        outfile.write("function f = objfun(x)\n" +
+                      "f = " + fmcobj + ";\n")
+
+    with open('lookup.txt', 'w') as outfile:
+        outfile.write("\n".join(newlist))
+
+    return fmcobj, fmccon
 
 if __name__ == '__main__':
     m = test()
