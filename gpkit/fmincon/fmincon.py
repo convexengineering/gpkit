@@ -43,6 +43,12 @@ def fmincon(m):
     with open('lookup.txt', 'w') as outfile:
         outfile.write("\n".join(newlist))
 
+    with open('main.m', 'w') as outfile:
+        outfile.write("x0 = ones({0},1);\n".format(i-1) +
+                      #"options = optimoptions(@fmincon,'Algorithm','sqp');\n" +
+                      "[x,fval] = ...\n" +
+                      "fmincon(@objfun,x0,[],[],[],[],[],[],@confun,options);")
+
     return fmcobj, fmccon
 
 if __name__ == '__main__':
