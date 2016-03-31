@@ -28,13 +28,14 @@ def fmincon(m):
         outfile.write("function [c, ceq] = confun(x)\n" +
                       "% Nonlinear inequality constraints\n" +
                       "c = [\n" +
-                      "\n".join(fmccon) +
-                      "    ];\n"
+                      "\n".join(fmccon).replace('**', '.^') +
+                      "    ];\n\n" +
+                      "ceq = [];"
                      )
 
     obj = m.cost
     obj.subinplace(newdict)
-    fmcobj = obj.str_without("units")
+    fmcobj = obj.str_without("units").replace('**', '.^')
 
     with open('objfun.m', 'w') as outfile:
         outfile.write("function f = objfun(x)\n" +
