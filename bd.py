@@ -3,11 +3,13 @@ from gpkit import Model
 from gpkit.constraints.breakdown import Breakdown
 from gpkit.small_scripts import mag
 
-TEST = {'w': {'w1': {'w11':[3, "N"], 'w12':{'w121':[2, "N"], 'w122':[6, "N"]}},
-                'w2': {'w21':[1, "N"], 'w22':[2, "N"]}, 'w3':[1, "N"]}}
+TEST ={'w': {'w1': {'w11':[3, "N"], 'w12':{'w121':[2, "N"], 'w122':[6, "N"]}},
+              'w2': {'w21':[1, "N"], 'w22':[2, "N"]}, 'w3':[1, "N"]}}
+              
+
 BD = Breakdown(TEST, "N")
 m = Model(BD.varlist[0], BD)
-sol = m.solve()
+sol = BD.solve_method()#m.solve()
 npt.assert_almost_equal(mag(sol('w')), 15, decimal=5)
 npt.assert_almost_equal(mag(sol('w1')), 11, decimal=5)
 npt.assert_almost_equal(mag(sol('w2')), 3, decimal=5)

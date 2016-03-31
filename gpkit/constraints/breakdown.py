@@ -1,7 +1,7 @@
 """Define the Breakdown class"""
 from .set import ConstraintSet
 from .. import Variable
-
+from gpkit import Model
 
 class Breakdown(ConstraintSet):
     """ConstraintSet of a summing tree. Can graph the breakdown of a solution.
@@ -31,7 +31,16 @@ class Breakdown(ConstraintSet):
         self.height = 20
 
         constraints = [1 >= sum(constr[1])/constr[0] for constr in self.constr]
+        self.constraints = constraints
         ConstraintSet.__init__(self, constraints)
+
+    def solve_method(self):
+        """
+        Mehtod to generate soln, faciliates unit testing
+        """
+        m = Model(self.varlist[0], self.constraints)
+        sol = m.solve()
+        return sol
 
     def recurse(self, input_dict):
         "Recursive function to generate gpkit Vars for each input weight"

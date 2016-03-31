@@ -1,6 +1,8 @@
 import svgwrite
 from svgwrite import cm
-
+"""
+Contains all svgwrite dependent methods
+"""
 
 def make_diagram(bd, sol):
     """
@@ -19,17 +21,15 @@ def make_diagram(bd, sol):
 
 def dwgrecurse(bd, input_dict, initcoord, currentlevel, sol):
     """
-    #recursive function to divide widnow into seperate units to be drawn and calls the draw
-    #function
+    recursive function to divide widnow into seperate units to be drawn and calls the draw
+    function
     """
     order = input_dict.keys()
     i = 0
     totalheight = 0
     currentlevel = currentlevel+1
     while i < len(order):
-        print input_dict
-        print currentlevel
-        height = ((bd.height/bd.total)*sol(order[i]))
+        height = int(round((((bd.height/bd.total)*sol(order[i])))))
         name = order[i]
         currentcoord = (initcoord[0], initcoord[1]+totalheight)
         drawsegment(bd, name, height, currentcoord)
@@ -38,13 +38,14 @@ def dwgrecurse(bd, input_dict, initcoord, currentlevel, sol):
             #compute new initcoord
             newinitcoord = (initcoord[0]+bd.elementlength,
                             initcoord[1]+totalheight-height)
+            #print initcoord[1]+height
             #recurse again
-            dwgrecurse(input_dict[order[i]], newinitcoord,
-                            currentlevel)
+            dwgrecurse(bd, input_dict[order[i]], newinitcoord,
+                       currentlevel, sol)
         #make sure all lines end at the same place
         elif currentlevel != bd.levels:
             boundarylines = bd.dwg.add(bd.dwg.g(id='boundarylines',
-                                                    stroke='black'))
+                                                stroke='black'))
             #top boudnary line
             boundarylines.add(bd.dwg.line(
                 start=(currentcoord[0]*cm, currentcoord[1]*cm),
@@ -67,17 +68,18 @@ def drawsegment(bd, input_name, height, initcoord):
     """
     lines = bd.dwg.add(bd.dwg.g(id='lines', stroke='black'))
     #draw the top horizontal line
-    lines.add(bd.dwg.line(start=(initcoord[0]*cm, initcoord[1]*cm), end=((initcoord[0]+
-                    bd.elementlength)*cm, initcoord[1]*cm)))
+    lines.add(bd.dwg.line(start=(initcoord[0]*cm, initcoord[1]*cm),
+                          end=((initcoord[0]+bd.elementlength)*cm, initcoord[1]*cm)))
     #draw the bottom horizontaal line
     lines.add(bd.dwg.line(start=(initcoord[0]*cm, (initcoord[1]+height)*cm),
-                            end=((initcoord[0]+bd.elementlength)*cm,
-                                 (initcoord[1]+height)*cm)))
+                          end=((initcoord[0]+bd.elementlength)*cm,
+                               (initcoord[1]+height)*cm)))
     #draw the vertical line
     lines.add(bd.dwg.line(start=((initcoord[0])*cm, initcoord[1]*cm),
-                            end=(initcoord[0]*cm, (initcoord[1]+height)*cm)))
+                          end=(initcoord[0]*cm, (initcoord[1]+height)*cm)))
     #adding in the breakdown namee
     writing = bd.dwg.add(bd.dwg.g(id='writing', stroke='black'))
-    writing.add(svgwrite.text.Text(input_name, insert=None, x=[(.5+initcoord[0])*cm],
-                                   y=[(height/2+initcoord[1])*cm], dx=None,
-                                    dy=None, rotate=None))
+    writing.add(svgwrite.text.Text(input_name,
+                                   insert=None, x=[(.5+initcoord[0])*cm],
+                                   y=[(float(height)/2+initcoord[1]+.125)*cm],
+                                   dx=None, dy=None, rotate=None))

@@ -8,6 +8,8 @@ from gpkit.constraints.tight import TightConstraintSet
 from gpkit.tests.helpers import run_tests
 import gpkit
 
+from gpkit.constraints import breakdown
+from gpkit.small_scripts import mag
 
 class TestConstraint(unittest.TestCase):
     """Tests for Constraint class"""
@@ -188,8 +190,32 @@ class TestTightConstraintSet(unittest.TestCase):
         m.substitutions[x_min] = 0.5
         self.assertAlmostEqual(m.localsolve(verbosity=0)["cost"], 0.5)
 
+class TestBreakdown(unittest.TestCase):
+    """test case for Breakdown class -- gets run for each installed solver"""
+    name = "TestBreakdown_"
+    solver = None
+    ndig = None
+    def test_breakdown(self):
+        """
+        Method to run unit tests on breakdown class
+        """
+        input = {'w':{'w1':{'w11':[3, "N", "test"], 'w12':{'w121':[2, "N"], 'w122':[6, "N"]}},
+                    'w2':{'w21':[1, "N"], 'w22':[2, "N"]}, 'w3':[1, "N"]}}
+        bd = breakdown.Breakdown(input,"N")
+        sol = bd.solve_method()
+        self.assertAlmostEqual(mag(sol('w'))-15, 0, 5)
+        self.assertAlmostEqual(mag(sol('w1'))-11, 0, 5)
+        self.assertAlmostEqual(mag(sol('w2'))-3, 0, 5)
+        self.assertAlmostEqual(mag(sol('w3'))-1, 0, 5)
+        self.assertAlmostEqual(mag(sol('w11'))-3, 0, 5)
+        self.assertAlmostEqual(mag(sol('w12'))-8, 0, 5)
+        self.assertAlmostEqual(mag(sol('w121'))-2, 0, 5)
+        self.assertAlmostEqual(mag(sol('w122'))-6, 0, 5)
+        self.assertAlmostEqual(mag(sol('w21'))-1, 0, 5)
+        self.assertAlmostEqual(mag(sol('w22'))-2, 0, 5)
+
 TESTS = [TestConstraint, TestMonomialEquality, TestSignomialInequality,
-         TestTightConstraintSet]
+         TestTightConstraintSet, TestBreakdown]
 
 if __name__ == '__main__':
     run_tests(TESTS)
