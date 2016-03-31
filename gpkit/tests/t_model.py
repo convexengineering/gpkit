@@ -5,7 +5,6 @@ from gpkit import (Model, Monomial, settings, VectorVariable, Variable,
                    SignomialsEnabled, ArrayVariable)
 from gpkit.small_classes import CootMatrix
 from gpkit.feasibility import feasibility_model
-from gpkit import breakdown
 
 NDIGS = {"cvxopt": 5, "mosek": 7, "mosek_cli": 5}
 # name: decimal places of accuracy
@@ -353,34 +352,9 @@ class TestSP(unittest.TestCase):
         m.localsolve(x0={x: 0.5}, verbosity=0)
         first_gp_constr_posy = m.program.gps[0].constraints[0].as_posyslt1()[0]
         self.assertEqual(first_gp_constr_posy.exp[x.key], -1./3)
-
-    
-
-class TestBreakdown(unittest.TestCase):
-
-    """test case for Breakdown class -- gets run for each installed solver"""
-    name = "TestBreakdown_"
-    solver = None
-    ndig = None
-    def test_breakdown(self):
-        input={'w':{'w1':{'w11':[3,"N","test"],'w12':{'w121':[2,"N"],'w122':[6,"N"]}},'w2':{'w21':[1,"N"],'w22':[2,"N"]},'w3':[1,"N"]}}
-        
-        bd=breakdown.Breakdown(input,"N")
-        sol=bd.solve_method()
-
-        self.assertAlmostEqual(sol('w')-15,0,5)
-        self.assertAlmostEqual(sol('w1')-11,0,5)
-        self.assertAlmostEqual(sol('w2')-3,0,5)
-        self.assertAlmostEqual(sol('w3')-1,0,5)
-        self.assertAlmostEqual(sol('w11')-3,0,5)
-        self.assertAlmostEqual(sol('w12')-8,0,5)
-        self.assertAlmostEqual(sol('w121')-2,0,5)
-        self.assertAlmostEqual(sol('w122')-6,0,5)
-        self.assertAlmostEqual(sol('w21')-1,0,5)
-        self.assertAlmostEqual(sol('w22')-2,0,5)
         
 
-TEST_CASES = [TestGP, TestSP, TestBreakdown]
+TEST_CASES = [TestGP, TestSP]
 
 TESTS = []
 for testcase in TEST_CASES:

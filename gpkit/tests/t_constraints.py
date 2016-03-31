@@ -4,8 +4,9 @@ from gpkit import Variable, SignomialsEnabled, Posynomial, VectorVariable
 from gpkit.nomials import SignomialInequality, PosynomialInequality
 from gpkit.nomials import MonomialEquality
 from gpkit import LinkConstraint
+from gpkit.constraints import breakdown
 from gpkit.tests.helpers import run_tests
-
+from gpkit.small_scripts import mag
 
 class TestConstraint(unittest.TestCase):
     """Tests for Constraint class"""
@@ -125,8 +126,31 @@ class TestSignomialInequality(unittest.TestCase):
         self.assertTrue(isinstance(sc, SignomialInequality))
         self.assertFalse(isinstance(sc, Posynomial))
 
+class TestBreakdown(unittest.TestCase):
+    """test case for Breakdown class -- gets run for each installed solver"""
+    name = "TestBreakdown_"
+    solver = None
+    ndig = None
+    def test_breakdown(self):
+        """
+        Method to run unit tests on breakdown class
+        """
+        input = {'w':{'w1':{'w11':[3, "N", "test"], 'w12':{'w121':[2, "N"], 'w122':[6, "N"]}},
+                    'w2':{'w21':[1, "N"], 'w22':[2, "N"]}, 'w3':[1, "N"]}}
+        bd = breakdown.Breakdown(input,"N")
+        sol = bd.solve_method()
+        self.assertAlmostEqual(mag(sol('w'))-15, 0, 5)
+        self.assertAlmostEqual(mag(sol('w1'))-11, 0, 5)
+        self.assertAlmostEqual(mag(sol('w2'))-3, 0, 5)
+        self.assertAlmostEqual(mag(sol('w3'))-1, 0, 5)
+        self.assertAlmostEqual(mag(sol('w11'))-3, 0, 5)
+        self.assertAlmostEqual(mag(sol('w12'))-8, 0, 5)
+        self.assertAlmostEqual(mag(sol('w121'))-2, 0, 5)
+        self.assertAlmostEqual(mag(sol('w122'))-6, 0, 5)
+        self.assertAlmostEqual(mag(sol('w21'))-1, 0, 5)
+        self.assertAlmostEqual(mag(sol('w22'))-2, 0, 5)
 
-TESTS = [TestConstraint, TestMonomialEquality, TestSignomialInequality]
+TESTS = [TestConstraint, TestMonomialEquality, TestSignomialInequality, TestBreakdown]
 
 if __name__ == '__main__':
     run_tests(TESTS)
