@@ -12,34 +12,39 @@ def fmincon(m):
 
     constraints = m.program.constraints
     constraints.subinplace(newdict)
-    fmccon = []
+    c = []
+    ceq = []
 
     with SignomialsEnabled():
         for constraint in constraints:
             if constraint.oper == '<=':
                 cc = constraint.left - constraint.right
+                c += [cc.str_without("units")]
             elif constraint.oper == '>=':
                 cc = constraint.right - constraint.left
+                c += [cc.str_without("units")]
             elif constraint.oper == '=':
                 cc = constraint.right - constraint.left
-            fmccon += [cc.str_without("units")]
+                ceq += [cc.str_without("units")]
 
     with open('confun.m', 'w') as outfile:
         outfile.write("function [c, ceq] = confun(x)\n" +
                       "% Nonlinear inequality constraints\n" +
-                      "c = [\n" +
-                      "\n".join(fmccon).replace('**', '.^') +
-                      "    ];\n\n" +
-                      "ceq = [];"
+                      "c = [\n    " +
+                      "\n    ".join(c).replace('**', '.^') +
+                      "\n    ];\n\n" +
+                      "ceq = [\n      " +
+                      "\n      ".join(ceq).replace('**', '.^') + 
+                      "\n      ];"
                      )
 
-    obj = m.cost
-    obj.subinplace(newdict)
-    fmcobj = obj.str_without("units").replace('**', '.^')
+    cost = m.cost
+    cost.subinplace(newdict)
+    obj = cost.str_without("units").replace('**', '.^')
 
     with open('objfun.m', 'w') as outfile:
         outfile.write("function f = objfun(x)\n" +
-                      "f = " + fmcobj + ";\n")
+                      "f = " + obj + ";\n")
 
     with open('lookup.txt', 'w') as outfile:
         outfile.write("\n".join(newlist))
@@ -50,8 +55,8 @@ def fmincon(m):
                       "[x,fval] = ...\n" +
                       "fmincon(@objfun,x0,[],[],[],[],[],[],@confun,options);")
 
-    return fmcobj, fmccon
+    return obj, c, ceq
 
 if __name__ == '__main__':
     m = test()
-    fmccon = fmincon(m)
+    obj, c, ceq = fmincon(m)
