@@ -1,7 +1,9 @@
+"A module to facilitate testing GPkit against fmincon"
 from gpkit import SignomialsEnabled
-from test import test
+from simpleflight import simpleflight
 
 def fmincon(m):
+    """A method for preparing fmincon input files to run a GPkit program"""
     i = 1
     newdict = {}
     newlist = []
@@ -60,5 +62,5 @@ def fmincon(m):
     return obj, c, ceq
 
 if __name__ == '__main__':
-    m = test()
+    m = simpleflight()
     obj, c, ceq = fmincon(m)
