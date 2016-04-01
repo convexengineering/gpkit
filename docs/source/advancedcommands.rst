@@ -233,3 +233,24 @@ Example Usage
 The ``normsub`` argument specifies an expected value for your solution to normalize the different :math:`g_i` (you can also do this by hand). The feasibility of the problem should not depend on the normalization, but the spacing of the sweep will.
 
 The ``sweep`` argument specifies what points between 0 and 1 you wish to sample the weights at. If you want different resolutions or spacings for different weights, the ``sweeps`` argument accepts a list of sweep arrays.
+
+
+Debugging
+=========
+
+Unbounded variables
+-------------------
+In some cases a solver will return ``unknown`` when a free variable is
+unbounded by the model. ``gpkit.tools.determine_unbounded_variables`` is a
+simple tool that attempts to detect unbounded variables by adding extremely
+large upper bounds and extremely small lower bounds to all variables in a model,
+resolving, and checking whether any variables slide off to the bounds.
+Mosek returns unknown when attempting to solve the following model:
+
+.. literalinclude:: examples/unbounded.py
+
+Upon viewing the output from ``determine_unbounded_variables``,
+
+.. literalinclude:: examples/unbounded_output.txt
+
+it becomes clear that ``A`` is unbounded below in the original model.
