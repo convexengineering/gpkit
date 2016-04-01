@@ -6,11 +6,13 @@ def fmincon(m):
     newdict = {}
     newlist = []
     for key in m.varkeys:
-        newdict[key] = 'x({0})'.format(i)
-        newlist += ['x_{0}: '.format(i) + key.str_without()]
-        i += 1
+        if key not in m.substitutions:
+            newdict[key] = 'x({0})'.format(i)
+            newlist += ['x_{0}: '.format(i) + key.str_without()]
+            i += 1
 
     constraints = m.program.constraints
+    constraints.subinplace(constraints.substitutions)
     constraints.subinplace(newdict)
     c = []
     ceq = []
