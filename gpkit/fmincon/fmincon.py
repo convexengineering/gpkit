@@ -55,9 +55,8 @@ def fmincon(m):
 
     with open('main.m', 'w') as outfile:
         outfile.write("x0 = ones({0},1);\n".format(i-1) +
-                      #"options = optimoptions(@fmincon,'Algorithm','sqp');\n" +
                       "[x,fval] = ...\n" +
-                      "fmincon(@objfun,x0,[],[],[],[],[],[],@confun,options);")
+                      "fmincon(@objfun,x0,[],[],[],[],[],[],@confun);")
 
     return obj, c, ceq
 
