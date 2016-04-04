@@ -1,6 +1,7 @@
 """Test substitution capability across gpkit"""
 import unittest
 import numpy as np
+import numpy.testing as npt
 import gpkit
 from gpkit import SignomialsEnabled
 from gpkit import Variable, VectorVariable, Model, Signomial
@@ -155,6 +156,19 @@ class TestGPSubs(unittest.TestCase):
         m = Model(x, [x >= y.prod()])
         m.substitutions.update({y: ('sweep', [[2, 3, 9], [5, 7, 11]])})
         self.assertRaises(ValueError, m.solve, verbosity=0)
+
+    def test_linked_sweep(self):
+        def night_hrs(day_hrs):
+            "twenty four minus day hours"
+            return 24 - day_hrs
+        t_day = Variable("t_{day}", "hours")
+        t_night = Variable("t_{night}", night_hrs, "hours", args=[t_day])
+        x = Variable("x", "hours")
+        m = Model(x, [x >= t_day, x >= t_night])
+        m.substitutions.update({t_day: ("sweep", [8, 12, 16])})
+        sol = m.solve(verbosity=0)
+        self.assertEqual(len(sol["cost"]), 3)
+        npt.assert_allclose(sol(t_day) + sol(t_night), 24)
 
     def test_vector_init(self):
         N = 6
