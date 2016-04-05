@@ -134,7 +134,7 @@ class TestSignomialInequality(unittest.TestCase):
 class TestTightConstraintSet(unittest.TestCase):
     """Test tight constraint set"""
 
-    def test_tight_constraint(self):
+    def test_gp(self):
         x = Variable('x')
         x_min = Variable('x_{min}', 2)
         m = Model(x, [TightConstraintSet([x >= 1]),
@@ -143,6 +143,18 @@ class TestTightConstraintSet(unittest.TestCase):
             m.solve(verbosity=0)
         m.substitutions[x_min] = 0.5
         self.assertAlmostEqual(m.solve(verbosity=0)["cost"], 1)
+
+    def test_sp(self):
+        x = Variable('x')
+        y = Variable('y')
+        with SignomialsEnabled():
+            sig_constraint = (x + y >= 0.1)
+        m = Model(x, [TightConstraintSet([x >= y]),
+                      x >= 2, y >= 1, sig_constraint])
+        with self.assertRaises(ValueError):
+            m.localsolve(verbosity=0)
+        m.pop(1)
+        self.assertAlmostEqual(m.localsolve(verbosity=0)["cost"], 1)
 
 TESTS = [TestConstraint, TestMonomialEquality, TestSignomialInequality,
          TestTightConstraintSet]
