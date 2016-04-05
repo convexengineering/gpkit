@@ -142,7 +142,8 @@ def _enray_and_unit_dict(d_in, d_out, unitless_keys=(), united=False):
             if hasattr(v[0], "units"):
                 # if the first element of the list alrady has units,
                 # ensure unit consistency across the entire list
-                v = [e.to(v[0].units).magnitude for e in v]*v[0].units
+                qty = Quantity(1, v[0].units)
+                v = [e.to(v[0].units).magnitude for e in v]*qty
             else:
                 v = np.array(v)
                 if (united and hasattr(k, "units")
