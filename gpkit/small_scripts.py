@@ -58,7 +58,7 @@ def unitstr(units, into="%s", options="~", dimless='-'):
             rawstr = ("{:%s}" % options).format(units)
             if str(units.units) == "count":
                 rawstr = "1.0 count"
-        except:
+        except ValueError:
             rawstr = "1.0 " + str(units.units)
         units = "".join(rawstr.replace("dimensionless", dimless).split()[1:])
     if units:
