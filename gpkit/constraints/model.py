@@ -104,7 +104,7 @@ class Model(CostedConstraintSet):
         if self.name:
             return "%s_%s" % (self.name, self.num)
 
-    def subconstr_tex(self, excluded=None):
+    def subconstr_latex(self, excluded=None):
         "The collapsed appearance of a ConstraintBase"
         if self.name:
             return "%s_{%s}" % (self.name, self.num)

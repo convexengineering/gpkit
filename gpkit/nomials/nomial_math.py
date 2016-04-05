@@ -428,24 +428,6 @@ class ScalarSingleEquationConstraint(SingleEquationConstraint):
         self.varkeys.update(self.right.varlocs)
 
 
-def simplify_posy_ineq(exps, cs):
-    "Simplify a posy <= 1 posynomial by moving constants to the right side."
-    coeff = 1.0
-    exps_ = []
-    nonzero_exp_ixs = []
-    for i, exp in enumerate(exps):
-        if exp:
-            nonzero_exp_ixs.append(i)
-            exps_.append(exp)
-        else:
-            coeff -= mag(cs[i])
-    if len(exps_) < len(exps):
-        if coeff <= 0:
-            raise ValueError("infeasible constraint: constant term too large.")
-        cs = cs[nonzero_exp_ixs]
-    return tuple(exps_), cs/coeff
-
-
 class PosynomialInequality(ScalarSingleEquationConstraint):
     """A constraint of the general form monomial >= posynomial
     Stored in the posylt1_rep attribute as a single Posynomial (self <= 1)
@@ -469,6 +451,33 @@ class PosynomialInequality(ScalarSingleEquationConstraint):
         self.nomials = [self.left, self.right, self.p_lt, self.m_gt]
         self.nomials.extend(self._unsubbed)
 
+    def _simplify_posy_ineq(self, exps, cs):
+        "Simplify a posy <= 1 by moving constants to the right side."
+        if len(exps) == 1:
+            if not exps[0]:
+                if cs[0] > 1:
+                    raise ValueError("infeasible constraint: %s" % self)
+            # for now, we allow tautological monomial constraints (cs[0] <= 1)
+            # because they allow models to impose requirements on variables
+            return exps, cs
+        coeff = 1.0
+        exps_ = []
+        nonzero_exp_ixs = []
+        for i, exp in enumerate(exps):
+            if exp:
+                nonzero_exp_ixs.append(i)
+                exps_.append(exp)
+            else:
+                coeff -= mag(cs[i])
+        if len(exps_) < len(exps):
+            if coeff > 0:
+                cs = cs[nonzero_exp_ixs]
+            elif coeff < 0:
+                raise ValueError("infeasible constraint: %s" % self)
+            elif coeff == 0:
+                raise ValueError("tautological constraint: %s" % self)
+        return tuple(exps_), cs/coeff
+
     def _gen_unsubbed(self):
         "Returns the unsubstituted posys <= 1."
         p = self.p_lt / self.m_gt
@@ -482,7 +491,7 @@ class PosynomialInequality(ScalarSingleEquationConstraint):
                                  " be converted into each other."
                                  "" % (self.p_lt.units, self.m_gt.units))
 
-        p.exps, p.cs = simplify_posy_ineq(p.exps, p.cs)
+        p.exps, p.cs = self._simplify_posy_ineq(p.exps, p.cs)
         return [p]
 
     def as_posyslt1(self):
@@ -500,7 +509,7 @@ class PosynomialInequality(ScalarSingleEquationConstraint):
             if np.all(nans) or np.all(cs[~nans] == 0):
                 return []  # skip nan'd or 0'd constraint
 
-            exps, cs = simplify_posy_ineq(exps, cs)
+            exps, cs = self._simplify_posy_ineq(exps, cs)
             exps, cs, pmap = simplify_exps_and_cs(exps, cs, return_map=True)
 
             #  The monomial sensitivities from the GP/SP are in terms of this
