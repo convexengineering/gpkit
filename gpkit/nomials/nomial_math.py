@@ -119,6 +119,22 @@ class Signomial(Nomial):
             self.exp = self.exps[0]
             self.c = self.cs[0]
 
+    def diff(self, wrt):
+        """Derivative of this with respect to a Variable
+
+        Arguments
+        ---------
+        wrt (Variable):
+        Variable to take derivative with respect to
+
+        Returns
+        -------
+        Signomial (or Posynomial or Monomial)
+        """
+        deriv = super(Signomial, self).diff(wrt)
+        # pylint: disable=unexpected-keyword-arg
+        return Signomial(deriv.exps, deriv.cs, require_positive=False)
+
     def posy_negy(self):
         """Get the positive and negative parts, both as Posynomials
 
