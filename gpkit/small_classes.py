@@ -86,7 +86,7 @@ class DictOfLists(dict):
 
     def atindex(self, i):
         "Indexes into each list independently."
-        return self.__class__(index_dict(i, self, self.__class__()))
+        return self.__class__(_index_dict(i, self, self.__class__()))
 
     def to_united_array(self, unitless_keys=(), united=False):
         "Converts all lists into array, potentially grabbing units from keys."
@@ -116,11 +116,11 @@ def _append_dict(d_in, d_out):
     return d_out
 
 
-def index_dict(idx, d_in, d_out):
+def _index_dict(idx, d_in, d_out):
     "Recursviely travels dict d_in, placing items at idx into dict d_out."
     for k, v in d_in.items():
         if isinstance(v, dict):
-            d_out[k] = index_dict(idx, v, v.__class__())
+            d_out[k] = _index_dict(idx, v, v.__class__())
         else:
             try:
                 d_out[k] = v[idx]
