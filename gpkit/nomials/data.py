@@ -96,7 +96,14 @@ class NomialData(object):
         -------
         NomialData
         """
-        var, = self.varkeys[var]
+        varset = self.varkeys[var]
+        if len(varset) == 0:
+            return self
+        elif len(varset) > 1:
+            raise ValueError("multiple variables %s found for key %s"
+                             % (list(varset), var))
+        else:
+            var, = varset
         exps, cs = [], []
         # var.units may be str if units disabled
         var_units = (var.units if var.units and not isinstance(var.units, str)

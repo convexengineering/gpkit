@@ -321,6 +321,8 @@ class TestPosynomial(unittest.TestCase):
         "Test differentiation (!!)"
         x = Variable('x')
         y = Variable('y')
+        self.assertEqual(x.diff(x), 1)
+        self.assertEqual(x.diff(y), x)
         self.assertEqual((y**2).diff(y), 2*y)
         self.assertEqual((x + y**2).diff(y), 2*y)
         self.assertEqual((x + y**2).diff('x'), 1)
