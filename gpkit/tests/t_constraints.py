@@ -3,9 +3,9 @@ import unittest
 from gpkit import Variable, SignomialsEnabled, Posynomial, VectorVariable
 from gpkit.nomials import SignomialInequality, PosynomialInequality
 from gpkit.nomials import MonomialEquality
-from gpkit import LinkConstraint
-from gpkit import Model
 from gpkit.constraints import breakdown
+from gpkit import LinkConstraint, Model
+from gpkit.constraints.tight import TightConstraintSet
 from gpkit.tests.helpers import run_tests
 from gpkit.small_scripts import mag
 import gpkit
@@ -17,8 +17,11 @@ class TestConstraint(unittest.TestCase):
     def test_link_conflict(self):
         "Check that substitution conflicts are flagged during linking."
         x_fx1 = Variable("x", 1, models=["fixed1"])
+        x_fx1b = Variable("x", 1, models=["fixed1b"])
         x_free = Variable("x", models=["free"])
         x_fx2 = Variable("x", 2, models=["fixed2"])
+        lc = LinkConstraint([x_fx1 >= 1, x_fx1b >= 1])
+        self.assertEqual(lc.substitutions["x"], 1)
         lc = LinkConstraint([x_fx1 >= 1, x_free >= 1])
         self.assertEqual(lc.substitutions["x"], 1)
         self.assertRaises(ValueError, LinkConstraint, [x_fx1 >= 1, x_fx2 >= 1])
@@ -161,7 +164,39 @@ class TestBreakdown(unittest.TestCase):
         self.assertAlmostEqual(mag(sol('w21')), 1, 5)
         self.assertAlmostEqual(mag(sol('w22')), w22value, 5)
 
-TESTS = [TestConstraint, TestMonomialEquality, TestSignomialInequality, TestBreakdown]
+
+class TestTightConstraintSet(unittest.TestCase):
+    """Test tight constraint set"""
+
+    def test_simple_gp(self):
+        """Tests tight constraint set with solve()"""
+        x = Variable('x')
+        x_min = Variable('x_{min}', 2)
+        m = Model(x, [TightConstraintSet([x >= 1]),
+                      x >= x_min])
+        with self.assertRaises(ValueError):
+            m.solve(verbosity=0)
+        m.substitutions[x_min] = 0.5
+        self.assertAlmostEqual(m.solve(verbosity=0)["cost"], 1)
+
+    def test_simple_sp(self):
+        """Tests tight constraint set with localsolve()"""
+        x = Variable('x')
+        y = Variable('y')
+        x_min = Variable('x_{min}', 2)
+        y_max = Variable('y_{max}', 0.5)
+        with SignomialsEnabled():
+            m = Model(x, [TightConstraintSet([x + y >= 1]),
+                          x >= x_min,
+                          y <= y_max])
+        with self.assertRaises(ValueError):
+            m.localsolve(verbosity=0)
+        m.substitutions[x_min] = 0.5
+        self.assertAlmostEqual(m.localsolve(verbosity=0)["cost"], 0.5)
+
+
+TESTS = [TestConstraint, TestMonomialEquality, TestSignomialInequality,
+         TestTightConstraintSet, TestBreakdown]
 
 if __name__ == '__main__':
     run_tests(TESTS)

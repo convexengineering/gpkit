@@ -35,7 +35,7 @@ class SignomialProgram(CostedConstraintSet):
     >>> gp.solve()
     """
 
-    def __init__(self, cost, constraints, substitutions=None, verbosity=2):
+    def __init__(self, cost, constraints, substitutions=None, verbosity=1):
         # pylint: disable=unused-argument
         "Constructor. Required for objects inheriting from np.ndarray."
         if cost.any_nonpositive_cs:
@@ -126,6 +126,8 @@ class SignomialProgram(CostedConstraintSet):
         self.sens_from_gpconstr(gp.constraints,
                                 result["sensitivities"]["constraints"],
                                 result["sensitivities"]["constants"])
+        self.process_result(result)
+
         self.result = result  # NOTE: SIDE EFFECTS
         return result
 

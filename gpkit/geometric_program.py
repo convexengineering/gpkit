@@ -42,15 +42,18 @@ class GeometricProgram(NomialData):
 
     def __init__(self, cost, constraints, substitutions=None, verbosity=1):
         # pylint: disable=too-many-locals,super-init-not-called
+        # note: any substitutions in constraints are ignored -- overwritten
+        # by substitutions kwarg. This will be fixed when GeometricProgram
+        # inherits from ConstraintSet.
         self.cost = cost
         self.constraints = constraints
         self.substitutions = substitutions if substitutions else {}
 
         ## Create list of substituted posynomials <= 1
-        self.posynomials = [cost.sub(self.substitutions).value]
+        self.posynomials = [cost.sub(self.substitutions)]
         self.constr_idxs = []
         for constraint in constraints:
-            constraint.substitutions.update(self.substitutions)
+            constraint.substitutions = self.substitutions
             try:
                 constr_posys = constraint.as_posyslt1()
             except TypeError as err:
@@ -280,7 +283,14 @@ class GeometricProgram(NomialData):
         result["sensitivities"]["constants"] = KeyDict(var_senss)
 
         ## Get constants
-        result["constants"] = KeyDict(self.substitutions)
+        const = {}
+        for k, v in self.substitutions.items():
+            if isinstance(k, str):
+                k, = self.constraints.varkeys[k]
+            else:
+                k = k.key
+            const[k] = v
+        result["constants"] = KeyDict(const)
         result["variables"] = KeyDict(result["freevariables"])
         result["variables"].update(result["constants"])
 
