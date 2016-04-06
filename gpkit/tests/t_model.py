@@ -1,4 +1,4 @@
-"""Tests for GP, SP, and Breakdown classes"""
+"""Tests for GP and SP classes"""
 import math
 import unittest
 from gpkit import (Model, Monomial, settings, VectorVariable, Variable,
@@ -404,7 +404,7 @@ class TestSP(unittest.TestCase):
         m.localsolve(x0={x: 0.5}, verbosity=0)
         first_gp_constr_posy = m.program.gps[0].constraints[0].as_posyslt1()[0]
         self.assertEqual(first_gp_constr_posy.exp[x.key], -1./3)
-        
+
 
 class TestModelSolverSpecific(unittest.TestCase):
     """test cases run only for specific solvers"""
@@ -450,5 +450,4 @@ for testcase in MULTI_SOLVER_TESTS:
 if __name__ == "__main__":
     # pylint: disable=wrong-import-position
     from gpkit.tests.helpers import run_tests
-    print TESTS
     run_tests(TESTS)
