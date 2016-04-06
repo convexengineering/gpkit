@@ -1,6 +1,8 @@
 """Tests for small_classes.py and small_scripts.py"""
 import unittest
 from gpkit.small_classes import HashVector
+from gpkit.small_scripts import unitstr
+import gpkit
 
 
 class TestHashVector(unittest.TestCase):
@@ -45,7 +47,19 @@ class TestHashVector(unittest.TestCase):
         self.assertEqual(a * b * c, HashVector())
         self.assertEqual(a * {'x': 6, 'k': 4}, HashVector(x=6))
 
-TESTS = [TestHashVector]
+class TestSmallScripts(unittest.TestCase):
+    """TestCase for gpkit.small_scripts"""
+    def test_unitstr(self):
+        x = gpkit.Variable("x", "ft")
+        # pint issue 356
+        self.assertEqual(unitstr(gpkit.Variable("n", "count")), "count")
+        self.assertEqual(unitstr(x), "ft")
+        self.assertEqual(unitstr(x.key), "ft")
+        self.assertEqual(unitstr(gpkit.Variable("y"), dimless="---"), "---")
+        self.assertEqual(unitstr(None, dimless="--"), "")
+
+
+TESTS = [TestHashVector, TestSmallScripts]
 
 
 if __name__ == '__main__':

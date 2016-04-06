@@ -138,6 +138,18 @@ class TestNomialSubs(unittest.TestCase):
 class TestGPSubs(unittest.TestCase):
     """Test substitution for Model and GP objects"""
 
+    def test_united_sub_sweep(self):
+        A = Variable("A", "USD")
+        h = Variable("h", "USD/count")
+        Q = Variable("Q", "count")
+        Y = Variable("Y", "USD")
+        m = Model(Y, [Y >= h*Q + A/Q])
+        m.substitutions.update({A: 500*gpkit.units("USD"),
+                                h: 35*gpkit.units("USD"),
+                                Q: ("sweep", [50, 100, 500])})
+        firstcost = m.solve(verbosity=0)["cost"][0]
+        self.assertAlmostEqual(firstcost, 1760, 3)
+
     def test_vector_sweep(self):
         """Test sweep involving VectorVariables"""
         x = Variable("x")

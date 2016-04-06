@@ -50,13 +50,15 @@ def mag(c):
 
 def unitstr(units, into="%s", options="~", dimless='-'):
     "Returns the unitstr of a given object."
-    if hasattr(units, "descr"):
-        if isinstance(units.descr, dict):
-            units = units.descr.get("units", dimless)
+    if hasattr(units, "descr") and hasattr(units.descr, "get"):
+        units = units.descr.get("units", dimless)
     if units and not isinstance(units, Strings):
         try:
             rawstr = ("{:%s}" % options).format(units)
-        except:
+            if str(units.units) == "count":
+            # TODO remove this conditional when pint issue 356 is resolved
+                rawstr = "1.0 count"
+        except ValueError:
             rawstr = "1.0 " + str(units.units)
         units = "".join(rawstr.replace("dimensionless", dimless).split()[1:])
     if units:
