@@ -127,7 +127,6 @@ class SignomialProgram(CostedConstraintSet):
                                 result["sensitivities"]["constraints"],
                                 result["sensitivities"]["constants"])
         self.process_result(result)
-
         self.result = result  # NOTE: SIDE EFFECTS
         return result
 

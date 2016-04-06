@@ -120,7 +120,7 @@ from .nomials import Variable, VectorVariable, ArrayVariable
 from .geometric_program import GeometricProgram
 from .constraints.signomial_program import SignomialProgram
 from .constraints.model import Model
-from .constraints.link import LinkConstraint
+from .constraints.linked import LinkedConstraintSet
 
 if units:
     def _subvert_pint():

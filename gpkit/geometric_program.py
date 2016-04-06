@@ -189,24 +189,49 @@ class GeometricProgram(NomialData):
                 " feasibility-finding relaxation with model.feasibility()." %
                 (solvername, solver_out.get("status", None)))
 
-        result = self._compile_result(solver_out)
-
-        self.result = result  # NOTE: SIDE EFFECTS
-
+        self._generate_nula(solver_out)
+        self.result = self._compile_result(solver_out)  # NOTE: SIDE EFFECTS
         if verbosity > 1:
             print ("result packing took %.2g%% of solve time" %
                    ((time() - tic) / soltime * 100))
             tic = time()
 
-        self.check_solution(result["cost"],
-                            np.ravel(solver_out['primal']),
-                            nu=result["sensitivities"]["nu"],
-                            la=result["sensitivities"]["la"])
-
+        self.check_solution(self.result["cost"], solver_out['primal'],
+                            nu=solver_out["nu"], la=solver_out["la"])
         if verbosity > 1:
             print ("solution checking took %.2g%% of solve time" %
                    ((time() - tic) / soltime * 100))
-        return result
+
+        ## Let constraints process the results
+        for constraint in self.constraints:
+            if hasattr(constraint, "process_result"):
+                constraint.process_result(self.result)
+
+        return self.result
+
+    def _generate_nula(self, solver_out):
+        solver_out["primal"] = np.ravel(solver_out['primal'])
+
+        ## Get full dual solution
+        if "nu" in solver_out:
+            # solver gave us monomial sensitivities, generate posynomial ones
+            nu = np.ravel(solver_out["nu"])
+            la = np.array([sum(nu[self.p_idxs == i])
+                           for i in range(len(self.posynomials))])
+        elif "la" in solver_out:
+            # solver gave us posynomial sensitivities, generate monomial ones
+            la = np.ravel(solver_out["la"])
+            if len(la) == len(self.posynomials) - 1:
+                # assume the solver dropped the cost's sensitivity (always 1.0)
+                la = np.hstack(([1.0], la))
+            Ax = np.ravel(self.A.dot(solver_out['primal']))
+            z = Ax + np.log(self.cs)
+            m_iss = [self.p_idxs == i for i in range(len(la))]
+            nu = np.hstack([la[p_i]*np.exp(z[m_is])/sum(np.exp(z[m_is]))
+                            for p_i, m_is in enumerate(m_iss)])
+        else:
+            raise RuntimeWarning("The dual solution was not returned.")
+        solver_out["nu"], solver_out["la"] = nu, la
 
     def _compile_result(self, solver_out):
         # pylint: disable=too-many-locals
@@ -228,11 +253,11 @@ class GeometricProgram(NomialData):
         result: dict
             dict in format returned by GeometricProgram.solve()
         """
-        result = {}
-        primal = np.ravel(solver_out['primal'])
+        primal = solver_out["primal"]
+        nu, la = solver_out["nu"], solver_out["la"]
         # confirm lengths before calling zip
         assert len(self.varlocs) == len(primal)
-        result["freevariables"] = KeyDict(zip(self.varlocs, np.exp(primal)))
+        result = {"freevariables": KeyDict(zip(self.varlocs, np.exp(primal)))}
 
         ## Get cost
         if "objective" in solver_out:
@@ -241,26 +266,6 @@ class GeometricProgram(NomialData):
             # use self.posynomials[0] because the cost may have had constants
             freev = result["freevariables"]
             result["cost"] = self.posynomials[0].subsummag(freev)
-
-        ## Get full dual solution
-        if "nu" in solver_out:
-            # solver gave us monomial sensitivities, generate posynomial ones
-            nu = np.ravel(solver_out["nu"])
-            la = np.array([sum(nu[self.p_idxs == i])
-                           for i in range(len(self.posynomials))])
-        elif "la" in solver_out:
-            # solver gave us posynomial sensitivities, generate monomial ones
-            la = np.ravel(solver_out["la"])
-            if len(la) == len(self.posynomials) - 1:
-                # assume the solver dropped the cost's sensitivity (always 1.0)
-                la = np.hstack(([1.0], la))
-            Ax = np.ravel(self.A.dot(solver_out['primal']))
-            z = Ax + np.log(self.cs)
-            m_iss = [self.p_idxs == i for i in range(len(la))]
-            nu = np.hstack([la[p_i]*np.exp(z[m_is])/sum(np.exp(z[m_is]))
-                            for p_i, m_is in enumerate(m_iss)])
-        else:
-            raise RuntimeWarning("The dual solution was not returned.")
 
         ## Get sensitivities
         result["sensitivities"] = {"constraints": {}, "nu": nu, "la": la}
@@ -293,11 +298,6 @@ class GeometricProgram(NomialData):
         result["constants"] = KeyDict(const)
         result["variables"] = KeyDict(result["freevariables"])
         result["variables"].update(result["constants"])
-
-        ## Let constraints process the results
-        for constraint in self.constraints:
-            if hasattr(constraint, "process_result"):
-                constraint.process_result(result)
 
         return result
 

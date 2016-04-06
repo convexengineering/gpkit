@@ -3,7 +3,7 @@ import unittest
 from gpkit import Variable, SignomialsEnabled, Posynomial, VectorVariable
 from gpkit.nomials import SignomialInequality, PosynomialInequality
 from gpkit.nomials import MonomialEquality
-from gpkit import LinkConstraint, Model
+from gpkit import LinkedConstraintSet, Model
 from gpkit.constraints.tight import TightConstraintSet
 from gpkit.tests.helpers import run_tests
 
@@ -17,14 +17,15 @@ class TestConstraint(unittest.TestCase):
         x_fx1b = Variable("x", 1, models=["fixed1b"])
         x_free = Variable("x", models=["free"])
         x_fx2 = Variable("x", 2, models=["fixed2"])
-        lc = LinkConstraint([x_fx1 >= 1, x_fx1b >= 1])
+        lc = LinkedConstraintSet([x_fx1 >= 1, x_fx1b >= 1])
         self.assertEqual(lc.substitutions["x"], 1)
-        lc = LinkConstraint([x_fx1 >= 1, x_free >= 1])
+        lc = LinkedConstraintSet([x_fx1 >= 1, x_free >= 1])
         self.assertEqual(lc.substitutions["x"], 1)
-        self.assertRaises(ValueError, LinkConstraint, [x_fx1 >= 1, x_fx2 >= 1])
+        self.assertRaises(ValueError,
+                          LinkedConstraintSet, [x_fx1 >= 1, x_fx2 >= 1])
         vecx_free = VectorVariable(3, "x", models=["free"])
         vecx_fixed = VectorVariable(3, "x", [1, 2, 3], models=["fixed"])
-        lc = LinkConstraint([vecx_free >= 1, vecx_fixed >= 1])
+        lc = LinkedConstraintSet([vecx_free >= 1, vecx_fixed >= 1])
         self.assertEqual(lc.substitutions["x"].tolist(), [1, 2, 3])
 
     def test_additive_scalar(self):
@@ -133,7 +134,7 @@ class TestSignomialInequality(unittest.TestCase):
 class TestTightConstraintSet(unittest.TestCase):
     """Test tight constraint set"""
 
-    def test_simple_gp(self):
+    def test_posyconstr_in_gp(self):
         """Tests tight constraint set with solve()"""
         x = Variable('x')
         x_min = Variable('x_{min}', 2)
@@ -144,7 +145,19 @@ class TestTightConstraintSet(unittest.TestCase):
         m.substitutions[x_min] = 0.5
         self.assertAlmostEqual(m.solve(verbosity=0)["cost"], 1)
 
-    def test_simple_sp(self):
+    def test_posyconstr_in_sp(self):
+        x = Variable('x')
+        y = Variable('y')
+        with SignomialsEnabled():
+            sig_constraint = (x + y >= 0.1)
+        m = Model(x, [TightConstraintSet([x >= y]),
+                      x >= 2, y >= 1, sig_constraint])
+        with self.assertRaises(ValueError):
+            m.localsolve(verbosity=0)
+        m.pop(1)
+        self.assertAlmostEqual(m.localsolve(verbosity=0)["cost"], 1)
+
+    def test_sigconstr_in_sp(self):
         """Tests tight constraint set with localsolve()"""
         x = Variable('x')
         y = Variable('y')
@@ -158,7 +171,6 @@ class TestTightConstraintSet(unittest.TestCase):
             m.localsolve(verbosity=0)
         m.substitutions[x_min] = 0.5
         self.assertAlmostEqual(m.localsolve(verbosity=0)["cost"], 0.5)
-
 
 TESTS = [TestConstraint, TestMonomialEquality, TestSignomialInequality,
          TestTightConstraintSet]
