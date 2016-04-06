@@ -4,15 +4,19 @@ from svgwrite import cm
 Contains all svgwrite dependent methods
 """
 
+# TODO: remove all calls to bd attributes
+
+
 def make_diagram(bd, sol):
     """
-    method called to make the diagram - calls importsvgwrite from interactive to import
-    svgwrite, calls all necessary follow on methods and sets importantvariables
+    method called to make the diagram - calls importsvgwrite from interactive
+    to import svgwrite, calls all necessary follow on methods and sets
+    important variables
     """
     #extract the total breakdown value for scaling purposes
     bd.total = sol(bd.input_dict.keys()[0])
     #depth of each breakdown level
-    bd.elementlength = (bd.sidelength/bd.levels)
+    bd.elementlength = (bd.sidelength/bd.depth)
     bd.dwg = svgwrite.Drawing(filename="breakdown.svg", debug=True)
     dwgrecurse(bd, bd.input_dict, (2, 2), -1, sol)
     #save the drawing at the conlusion of the recursive call
@@ -21,10 +25,10 @@ def make_diagram(bd, sol):
 
 def dwgrecurse(bd, input_dict, initcoord, currentlevel, sol):
     """
-    recursive function to divide widnow into seperate units to be drawn and calls the draw
-    function
+    recursive function to divide widnow into seperate units to be drawn and
+    calls the draw function
     """
-    order = input_dict.keys()
+    order = sorted(input_dict.keys())
     i = 0
     totalheight = 0
     currentlevel = currentlevel+1
@@ -43,21 +47,21 @@ def dwgrecurse(bd, input_dict, initcoord, currentlevel, sol):
             dwgrecurse(bd, input_dict[order[i]], newinitcoord,
                        currentlevel, sol)
         #make sure all lines end at the same place
-        elif currentlevel != bd.levels:
+        elif currentlevel != bd.depth:
             boundarylines = bd.dwg.add(bd.dwg.g(id='boundarylines',
                                                 stroke='black'))
             #top boudnary line
             boundarylines.add(bd.dwg.line(
                 start=(currentcoord[0]*cm, currentcoord[1]*cm),
                 end=((currentcoord[0] +
-                      (bd.levels-currentlevel)*bd.elementlength)*cm,
+                      (bd.depth-currentlevel)*bd.elementlength)*cm,
                      currentcoord[1]*cm)))
             #bottom boundary line
             boundarylines.add(bd.dwg.line(
                 start=((currentcoord[0]+bd.elementlength)*cm,
                        (currentcoord[1]+height)*cm),
                 end=((currentcoord[0] +
-                      (bd.levels-currentlevel)*bd.elementlength)*cm,
+                      (bd.depth-currentlevel)*bd.elementlength)*cm,
                      (currentcoord[1]+height)*cm)))
         i = i+1
 

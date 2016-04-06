@@ -5,11 +5,12 @@ from gpkit.nomials import SignomialInequality, PosynomialInequality
 from gpkit.nomials import MonomialEquality
 from gpkit import LinkedConstraintSet, Model
 from gpkit.constraints.tight import TightConstraintSet
+from gpkit.constraints import breakdown
 from gpkit.tests.helpers import run_tests
 import gpkit
 
-from gpkit.constraints import breakdown
 from gpkit.small_scripts import mag
+
 
 class TestConstraint(unittest.TestCase):
     """Tests for Constraint class"""
@@ -195,24 +196,31 @@ class TestBreakdown(unittest.TestCase):
     name = "TestBreakdown_"
     solver = None
     ndig = None
+
     def test_breakdown(self):
         """
         Method to run unit tests on breakdown class
         """
-        input = {'w':{'w1':{'w11':[3, "N", "test"], 'w12':{'w121':[2, "N"], 'w122':[6, "N"]}},
-                    'w2':{'w21':[1, "N"], 'w22':[2, "N"]}, 'w3':[1, "N"]}}
-        bd = breakdown.Breakdown(input,"N")
-        sol = bd.solve_method()
-        self.assertAlmostEqual(mag(sol('w'))-15, 0, 5)
-        self.assertAlmostEqual(mag(sol('w1'))-11, 0, 5)
-        self.assertAlmostEqual(mag(sol('w2'))-3, 0, 5)
-        self.assertAlmostEqual(mag(sol('w3'))-1, 0, 5)
-        self.assertAlmostEqual(mag(sol('w11'))-3, 0, 5)
-        self.assertAlmostEqual(mag(sol('w12'))-8, 0, 5)
-        self.assertAlmostEqual(mag(sol('w121'))-2, 0, 5)
-        self.assertAlmostEqual(mag(sol('w122'))-6, 0, 5)
-        self.assertAlmostEqual(mag(sol('w21'))-1, 0, 5)
-        self.assertAlmostEqual(mag(sol('w22'))-2, 0, 5)
+        w22value = 2 if not gpkit.units else 0.449617
+
+        TEST = {'w': {'w1': {'w11': [3, "N"],
+                             'w12': {'w121': [2, "N"], 'w122': [6, "N"]}},
+                'w2': {'w21': [1, "N"], 'w22': [w22value, "lbf"]},
+                'w3': [1, "N"]}}
+
+        bd = breakdown.Breakdown(TEST, "N")
+        m = Model(bd.root, bd)
+        sol = m.solve(verbosity=0)
+        self.assertAlmostEqual(mag(sol('w')), 15, 5)
+        self.assertAlmostEqual(mag(sol('w1')), 11, 5)
+        self.assertAlmostEqual(mag(sol('w2')), 3, 5)
+        self.assertAlmostEqual(mag(sol('w3')), 1, 5)
+        self.assertAlmostEqual(mag(sol('w11')), 3, 5)
+        self.assertAlmostEqual(mag(sol('w12')), 8, 5)
+        self.assertAlmostEqual(mag(sol('w121')), 2, 5)
+        self.assertAlmostEqual(mag(sol('w122')), 6, 5)
+        self.assertAlmostEqual(mag(sol('w21')), 1, 5)
+        self.assertAlmostEqual(mag(sol('w22')), w22value, 5)
 
 TESTS = [TestConstraint, TestMonomialEquality, TestSignomialInequality,
          TestTightConstraintSet, TestBreakdown]
