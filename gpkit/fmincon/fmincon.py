@@ -47,8 +47,12 @@ def fmincon(m):
     obj = cost.str_without("units").replace('**', '.^')
 
     with open('objfun.m', 'w') as outfile:
-        outfile.write("function f = objfun(x)\n" +
-                      "f = " + obj + ";\n")
+        outfile.write("function [f, gradf] = objfun(x)\n" +
+                      "f = " + obj + ";\n" +
+                      "if nargout > 1\n" +
+                      "    gradf  = [];\n" +
+                      "end"
+                      )
 
     with open('lookup.txt', 'w') as outfile:
         outfile.write("\n".join(newlist))
