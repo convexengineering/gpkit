@@ -658,13 +658,22 @@ class SignomialInequality(ScalarSingleEquationConstraint):
         "Returns the posys <= 1 representation of this constraint."
         s = self._unsubbed.sub(self.substitutions, require_positive=False)
         posy, negy = s.posy_negy()
-        if len(negy.cs) != 1:
-            raise ValueError("SignomialInequality could not simplify to"
-                             " a PosynomialInequality")
-        else:
+        if posy is 0:
+            raise ValueError("SignomialConstraint %s became the tautological"
+                             " constraint %s %s %s after substitution." %
+                             (self, posy, "<=", negy))
+        elif negy is 0:
+            raise ValueError("SignomialConstraint %s became the infeasible"
+                             " constraint %s %s %s after substitution." %
+                             (self, posy, "<=", negy))
+        elif not hasattr(negy, "cs") or len(negy.cs) == 1:
             self.__class__ = PosynomialInequality
             self.__init__(posy, "<=", negy)
             return self._unsubbed   # pylint: disable=no-member
+
+        else:
+            raise TypeError("SignomialInequality could not simplify to"
+                            " a PosynomialInequality")
 
     def as_gpconstr(self, x0):
         "Returns GP apprimxation of an SP constraint at x0"
