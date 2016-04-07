@@ -352,11 +352,11 @@ class GeometricProgram(NomialData):
                                  " sum to %s, not 1" % nu0.sum())
         if any(nu < 0):
             if all(nu > -tol/1000.):  # HACK, see issue 528
-                print("Allowing negative dual variable(s) as small as "
-                      "%s." % min(nu))
+                print("Allowing negative dual variable(s) as small as"
+                      " %s." % min(nu))
             else:
                 raise RuntimeWarning("Dual solution has negative entries as"
-                                     "small as %s." % min(nu))
+                                     " small as %s." % min(nu))
         ATnu = A.T.dot(nu)
         if any(np.abs(ATnu) > tol):
             raise RuntimeWarning("sum of nu^T * A did not vanish")
