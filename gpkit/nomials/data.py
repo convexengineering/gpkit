@@ -98,7 +98,7 @@ class NomialData(object):
         """
         varset = self.varkeys[var]
         if len(varset) == 0:
-            return self
+            return NomialData(exps=[{}], cs=[0], simplify=False)
         elif len(varset) > 1:
             raise ValueError("multiple variables %s found for key %s"
                              % (list(varset), var))
