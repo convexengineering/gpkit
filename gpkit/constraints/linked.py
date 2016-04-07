@@ -4,6 +4,11 @@ from ..varkey import VarKey
 from .. import SignomialsEnabled
 
 
+class SubstitutionConflictError(Exception):
+    "Raised when linked variables have differing values."
+    pass
+
+
 class LinkedConstraintSet(ConstraintSet):
     """A ConstraintSet that links duplicate variables in its constraints
 
@@ -25,6 +30,7 @@ class LinkedConstraintSet(ConstraintSet):
     exclude: set
         blacklist of variable names, supercedes include_only
     """
+    # pylint: disable=too-many-locals
     def __init__(self, constraints, include_only=None, exclude=None):
         ConstraintSet.__init__(self, constraints)
         varkeys = self.varkeys
@@ -48,11 +54,10 @@ class LinkedConstraintSet(ConstraintSet):
                         sub = self.substitutions[vk]
                         del self.substitutions[vk]
                     else:
-                        raise ValueError("substitution conflict: could not"
-                                         " link because %s was set to %s but"
-                                         " %s was set to %s" % (
-                                             subbed_vk, sub,
-                                             vk, self.substitutions[vk]))
+                        msg = ("could not link because %s was set to %s but"
+                               " %s was set to %s" % (subbed_vk, sub, vk,
+                                                      self.substitutions[vk]))
+                        raise SubstitutionConflictError(msg)
             # vks is a set, so it's convenient to use the loop variable here
             # since we've already verified above that vks is not null
             descr = dict(vk.descr)  # pylint: disable=undefined-loop-variable

@@ -3,6 +3,11 @@ from .set import ConstraintSet
 from ..nomials import PosynomialInequality, SignomialInequality
 
 
+class TightnessError(Exception):
+    "Raised when linked variables have differing values."
+    pass
+
+
 class TightConstraintSet(ConstraintSet):
     "ConstraintSet whose inequalities must result in an equality."
 
@@ -21,10 +26,10 @@ class TightConstraintSet(ConstraintSet):
                 rightsubbed = constraint.right.sub(variables).value
                 rel_diff = abs(1 - leftsubbed/rightsubbed)
                 if rel_diff >= self.reltol:
-                    raise ValueError("Tightness requirement not met"
-                                     " for constraint %s because %s"
-                                     " evaluated to %s but %s evaluated"
-                                     " to %s"
-                                     % (constraint,
-                                        constraint.left, leftsubbed,
-                                        constraint.right, rightsubbed))
+                    raise TightnessError("Tightness requirement not met"
+                                         " for constraint %s because %s"
+                                         " evaluated to %s but %s evaluated"
+                                         " to %s"
+                                         % (constraint,
+                                            constraint.left, leftsubbed,
+                                            constraint.right, rightsubbed))
