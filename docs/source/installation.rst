@@ -11,7 +11,7 @@ Mac OS X
   - Install the Python 2.7 version of `Anaconda <http://continuum.io/downloads>`_.
     - Check that Anaconda is installed: in a Terminal window, run ``python`` and check that the version string it prints while starting includes "Anaconda".
       - If it does not, check that the Anaconda location in ``.profile`` in your home directory (you can run ``vim ~/.profile`` to read it) corresponds to the location of your Anaconda folder; if it doesn't, move the Anaconda folder there, and check again in the ``python`` startup header.
-  - If you don't want to install Anaconda, you'll need gcc, pip, numpy, and scipy, and may find iPython Notebook useful as a modeling environment.
+  - If you don't want to install Anaconda, you'll need gcc, pip, numpy version 1.8 or newer and scipy, and may find iPython Notebook useful as a modeling environment.
   - If ``which gcc`` does not return anything, install the `Apple Command Line Tools <https://developer.apple.com/downloads/index.action?=command%20line%20tools>`_.
   - *Optional:* to install gpkit into an isolated python environment you can create a new conda virtual environment with ``conda create -n gpkit anaconda`` and activate it with ``source activate gpkit``.
 
