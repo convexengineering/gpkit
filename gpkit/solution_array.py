@@ -1,7 +1,7 @@
 """Defines SolutionArray class"""
 from collections import Iterable
 import numpy as np
-from .nomials import NomialArray, Monomial
+from .nomials import NomialArray
 from .small_classes import Strings, DictOfLists
 from .small_scripts import unitstr, mag
 
@@ -80,17 +80,7 @@ class SolutionArray(DictOfLists):
 
         Returns scalar, unitless values.
         """
-        if nomial in self["variables"]["sensitivities"]:
-            return NomialArray(self["variables"]["sensitivities"][nomial])
-        elif len(self) > 1:
-            return NomialArray([self.atindex(i).subinto(nomial)
-                                for i in range(len(self))])
-        else:
-            subbed = nomial.sub(self["variables"]["sensitivities"],
-                                require_positive=False)
-            assert isinstance(subbed, Monomial)
-            assert not subbed.exp
-            return mag(subbed.c)
+        return NomialArray(self["variables"]["sensitivities"][nomial])
 
     def table(self, tables=("cost", "sweepvariables", "freevariables",
                             "constants", "sensitivities"),
