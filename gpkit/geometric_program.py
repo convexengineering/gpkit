@@ -351,7 +351,7 @@ class GeometricProgram(NomialData):
             raise RuntimeWarning("Dual variables associated with objective"
                                  " sum to %s, not 1" % nu0.sum())
         if any(nu < 0):
-            if all(nu > tol/1000.):  # HACK, see issue 528
+            if all(nu > -tol/1000.):  # HACK, see issue 528
                 print("Allowing negative dual variable(s) as small as "
                       "%s." % min(nu))
             else:
