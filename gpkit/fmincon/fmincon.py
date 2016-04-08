@@ -9,6 +9,7 @@ def fmincon(m):
     i = 1
     newdict = {}
     newlist = []
+    original_varkeys = m.varkeys
     for key in m.varkeys:
         if key not in m.substitutions:
             newdict[key] = 'x({0})'.format(i)
@@ -35,6 +36,8 @@ def fmincon(m):
                 cc = constraint.right - constraint.left
                 ceq += [cc.str_without("units")]
 
+
+
     # Write the constraint function .m file
     with open('confun.m', 'w') as outfile:
         outfile.write("function [c, ceq] = confun(x)\n" +
@@ -49,10 +52,11 @@ def fmincon(m):
 
     # Differentiate the objective function w.r.t each variable
     objdiff = []
-    for key in newdict:
-        costdiff = cost.diff(key)
-        costdiff.subinplace(newdict)
-        objdiff += [costdiff.str_without("units").replace('**', '.^')]
+    for key in original_varkeys:
+        if key not in m.substitutions:
+            costdiff = cost.diff(key)
+            costdiff.subinplace(newdict)
+            objdiff += [costdiff.str_without("units").replace('**', '.^')]
 
     # Replace variables with x(i), make clean string using matlab power syntax
     cost.subinplace(newdict)
@@ -76,6 +80,8 @@ def fmincon(m):
     # Write the main .m file for running fmincon
     with open('main.m', 'w') as outfile:
         outfile.write("x0 = ones({0},1);\n".format(i-1) +
+                      "options = optimset('fmincon');\n" +
+                      "options.GradObj = 'on';\n" +
                       "[x,fval] = ...\n" +
                       "fmincon(@objfun,x0,[],[],[],[],[],[],@confun);")
 
