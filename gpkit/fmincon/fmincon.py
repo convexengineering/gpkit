@@ -106,6 +106,7 @@ def fmincon(m):
         outfile.write("x0 = ones({0},1);\n".format(i-1) +
                       "options = optimset('fmincon');\n" +
                       "options.GradObj = 'on';\n" +
+                      "options.GradConstr = 'on';\n" +
                       "[x,fval] = ...\n" +
                       "fmincon(@objfun,x0,[],[],[],[],[],[],@confun);")
 
