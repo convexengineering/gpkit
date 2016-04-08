@@ -48,11 +48,10 @@ def fmincon(m):
                     cdm += [cd.str_without("units").replace('**', '.^')]
             CDM.append(cdm)
 
-            for dcdxi in CDM:
-                if constraint.oper != '=':
-                    DC += [",...\n          ".join(dcdxi)]
-                else:
-                    DCeq += [",...\n            ".join(dcdxi)]
+            if constraint.oper != '=':
+                DC += [",...\n          ".join(cdm)]
+            else:
+                DCeq += [",...\n            ".join(cdm)]
 
     # Write the constraint function .m file
     with open('confun.m', 'w') as outfile:
@@ -67,10 +66,10 @@ def fmincon(m):
                       "if nargout > 2\n    " +
                       "DC = [\n          " +
                       ";\n          ".join(DC) +
-                      "\n         ];\n    " +
+                      "\n         ]';\n    " +
                       "DCeq = [\n            " +
                       ";\n            ".join(DCeq) +
-                      "\n           ];\n" +
+                      "\n           ]';\n" +
                       "end"
                      )
 
