@@ -1,6 +1,7 @@
 "A module to facilitate testing GPkit against fmincon"
 from gpkit import SignomialsEnabled
 from simpleflight import simpleflight
+import pprint
 
 def fmincon(m):
     """A method for preparing fmincon input files to run a GPkit program"""
@@ -24,6 +25,9 @@ def fmincon(m):
     # Make all constraints less than zero, return list of clean strings
     c = []
     ceq = []
+    CDM = []
+    DC = [] # gradient of inequality constraint j
+    DCeq = [] # gradient of equality constraint j
     with SignomialsEnabled():
         for constraint in constraints:
             if constraint.oper == '<=':
@@ -36,18 +40,38 @@ def fmincon(m):
                 cc = constraint.right - constraint.left
                 ceq += [cc.str_without("units")]
 
+            # Differentiate each constraint w.r.t each variable
+            cdm = []
+            for key in original_varkeys:
+                if key not in m.substitutions:
+                    cd = cc.diff(newdict[key])
+                    cdm += [cd.str_without("units").replace('**', '.^')]
+            CDM.append(cdm)
 
+            for dcdxi in CDM:
+                if constraint.oper != '=':
+                    DC += [",...\n          ".join(dcdxi)]
+                else:
+                    DCeq += [",...\n            ".join(dcdxi)]
 
     # Write the constraint function .m file
     with open('confun.m', 'w') as outfile:
-        outfile.write("function [c, ceq] = confun(x)\n" +
+        outfile.write("function [c, ceq, DC, DCeq] = confun(x)\n" +
                       "% Nonlinear inequality constraints\n" +
                       "c = [\n    " +
                       "\n    ".join(c).replace('**', '.^') +
                       "\n    ];\n\n" +
                       "ceq = [\n      " +
                       "\n      ".join(ceq).replace('**', '.^') + 
-                      "\n      ];"
+                      "\n      ];\n" +
+                      "if nargout > 2\n    " +
+                      "DC = [\n          " +
+                      ";\n          ".join(DC) +
+                      "\n         ];\n    " +
+                      "DCeq = [\n            " +
+                      ";\n            ".join(DCeq) +
+                      "\n           ];\n" +
+                      "end"
                      )
 
     # Differentiate the objective function w.r.t each variable
