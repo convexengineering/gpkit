@@ -2,7 +2,7 @@
 import numpy as np
 from gpkit import Variable, Model
 
-def simpleflight():
+def simpleflight(verbosity=0):
     # Constants
     k = Variable("k", 1.2, "-", "form factor")
     e = Variable("e", 0.95, "-", "Oswald efficiency factor")
@@ -55,8 +55,9 @@ def simpleflight():
                     W >= W_0 + W_w]
 
     m = Model(D, constraints)
-    m.solve(verbosity=0)
+    m.solve(verbosity=verbosity)
     return m
 
 if __name__ == '__main__':
-    m = test()
+    m = simpleflight(verbosity=1)
+
