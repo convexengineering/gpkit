@@ -4,7 +4,8 @@ from gpkit import Variable, SignomialsEnabled, Posynomial, VectorVariable
 from gpkit.nomials import SignomialInequality, PosynomialInequality
 from gpkit.nomials import MonomialEquality
 from gpkit import LinkedConstraintSet, Model
-from gpkit.constraints.tight import TightConstraintSet
+from gpkit.constraints.tight import TightConstraintSet, TightnessError
+from gpkit.constraints.linked import SubstitutionConflictError
 from gpkit.tests.helpers import run_tests
 
 
@@ -21,7 +22,7 @@ class TestConstraint(unittest.TestCase):
         self.assertEqual(lc.substitutions["x"], 1)
         lc = LinkedConstraintSet([x_fx1 >= 1, x_free >= 1])
         self.assertEqual(lc.substitutions["x"], 1)
-        self.assertRaises(ValueError,
+        self.assertRaises(SubstitutionConflictError,
                           LinkedConstraintSet, [x_fx1 >= 1, x_fx2 >= 1])
         vecx_free = VectorVariable(3, "x", models=["free"])
         vecx_fixed = VectorVariable(3, "x", [1, 2, 3], models=["fixed"])
@@ -140,7 +141,7 @@ class TestTightConstraintSet(unittest.TestCase):
         x_min = Variable('x_{min}', 2)
         m = Model(x, [TightConstraintSet([x >= 1]),
                       x >= x_min])
-        with self.assertRaises(ValueError):
+        with self.assertRaises(TightnessError):
             m.solve(verbosity=0)
         m.substitutions[x_min] = 0.5
         self.assertAlmostEqual(m.solve(verbosity=0)["cost"], 1)
@@ -152,7 +153,7 @@ class TestTightConstraintSet(unittest.TestCase):
             sig_constraint = (x + y >= 0.1)
         m = Model(x, [TightConstraintSet([x >= y]),
                       x >= 2, y >= 1, sig_constraint])
-        with self.assertRaises(ValueError):
+        with self.assertRaises(TightnessError):
             m.localsolve(verbosity=0)
         m.pop(1)
         self.assertAlmostEqual(m.localsolve(verbosity=0)["cost"], 1)
@@ -167,7 +168,7 @@ class TestTightConstraintSet(unittest.TestCase):
             m = Model(x, [TightConstraintSet([x + y >= 1]),
                           x >= x_min,
                           y <= y_max])
-        with self.assertRaises(ValueError):
+        with self.assertRaises(TightnessError):
             m.localsolve(verbosity=0)
         m.substitutions[x_min] = 0.5
         self.assertAlmostEqual(m.localsolve(verbosity=0)["cost"], 0.5)
