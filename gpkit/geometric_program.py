@@ -105,6 +105,7 @@ class GeometricProgram(NomialData):
         self.solver_log = None
         self.solver_out = None
 
+    # pylint: disable=too-many-statements
     def solve(self, solver=None, verbosity=1, *args, **kwargs):
         """Solves a GeometricProgram and returns the solution.
 
@@ -210,9 +211,12 @@ class GeometricProgram(NomialData):
                    ((time() - tic) / soltime * 100))
 
         ## Let constraints process the results
-        for constraint in self.constraints:
-            if hasattr(constraint, "process_result"):
-                constraint.process_result(self.result)
+        if hasattr(self.constraints, "process_result"):
+            self.constraints.process_result(self.result)
+        else:
+            for constraint in self.constraints:
+                if hasattr(constraint, "process_result"):
+                    constraint.process_result(self.result)
 
         return self.result
 
