@@ -4,85 +4,74 @@ from svgwrite import cm
 Contains all svgwrite dependent methods
 """
 
-# TODO: remove all calls to bd attributes
-
-
-def make_diagram(bd, sol):
+def make_diagram(sol, depth, filename, sidelength, height, input_dict):
     """
     method called to make the diagram - calls importsvgwrite from interactive
     to import svgwrite, calls all necessary follow on methods and sets
     important variables
     """
     #extract the total breakdown value for scaling purposes
-    bd.total = sol(bd.input_dict.keys()[0])
+    total = sol(input_dict.keys()[0])
     #depth of each breakdown level
-    bd.elementlength = (bd.sidelength/bd.depth)
-    bd.dwg = svgwrite.Drawing(filename="breakdown.svg", debug=True)
-    dwgrecurse(bd, bd.input_dict, (2, 2), -1, sol)
+    elementlength = (sidelength/depth)
+    dwg = svgwrite.Drawing(filename, debug=True)
+    dwgrecurse(input_dict, (2, 2), -1, sol, elementlength, height, total, depth, dwg)
     #save the drawing at the conlusion of the recursive call
-    bd.dwg.save()
+    dwg.save()
 
+    return dwg
 
-def dwgrecurse(bd, input_dict, initcoord, currentlevel, sol):
+def dwgrecurse(input_dict, initcoord, currentlevel, sol, elementlength, sheight, total, depth, dwg):
     """
     recursive function to divide widnow into seperate units to be drawn and
     calls the draw function
     """
-    order = sorted(input_dict.keys())
-    i = 0
     totalheight = 0
     currentlevel = currentlevel+1
-    while i < len(order):
-        height = int(round((((bd.height/bd.total)*sol(order[i])))))
-        name = order[i]
+    for key in sorted(input_dict):
+        height = int(round((((sheight/total)*sol(key)))))
         currentcoord = (initcoord[0], initcoord[1]+totalheight)
-        drawsegment(bd, name, height, currentcoord)
+        drawsegment(key, height, currentcoord, dwg, elementlength)
         totalheight = totalheight+height
-        if isinstance(input_dict[order[i]], dict):
+        if isinstance(input_dict[key], dict):
             #compute new initcoord
-            newinitcoord = (initcoord[0]+bd.elementlength,
+            newinitcoord = (initcoord[0]+elementlength,
                             initcoord[1]+totalheight-height)
-            #print initcoord[1]+height
             #recurse again
-            dwgrecurse(bd, input_dict[order[i]], newinitcoord,
-                       currentlevel, sol)
+            dwgrecurse(input_dict[key], newinitcoord,
+                       currentlevel, sol, elementlength, sheight, total, depth, dwg)
         #make sure all lines end at the same place
-        elif currentlevel != bd.depth:
-            boundarylines = bd.dwg.add(bd.dwg.g(id='boundarylines',
-                                                stroke='black'))
+        elif currentlevel != depth:
+            boundarylines = dwg.add(dwg.g(id='boundarylines',
+                                          stroke='black'))
             #top boudnary line
-            boundarylines.add(bd.dwg.line(
-                start=(currentcoord[0]*cm, currentcoord[1]*cm),
-                end=((currentcoord[0] +
-                      (bd.depth-currentlevel)*bd.elementlength)*cm,
-                     currentcoord[1]*cm)))
+            boundarylines.add(dwg.line(start=(currentcoord[0]*cm, currentcoord[1]*cm),
+                                       end=((currentcoord[0] +
+                                             (depth-currentlevel)*elementlength)*cm,
+                                            currentcoord[1]*cm)))
             #bottom boundary line
-            boundarylines.add(bd.dwg.line(
-                start=((currentcoord[0]+bd.elementlength)*cm,
-                       (currentcoord[1]+height)*cm),
-                end=((currentcoord[0] +
-                      (bd.depth-currentlevel)*bd.elementlength)*cm,
-                     (currentcoord[1]+height)*cm)))
-        i = i+1
+            boundarylines.add(dwg.line(start=((currentcoord[0]+elementlength)*cm,
+                                              (currentcoord[1]+height)*cm),
+                                       end=((currentcoord[0] +(depth-currentlevel)
+                                             *elementlength)*cm, (currentcoord[1]+height)*cm)))
 
-
-def drawsegment(bd, input_name, height, initcoord):
+def drawsegment(input_name, height, initcoord, dwg, elementlength):
     """
     #function to draw each poriton of the diagram
     """
-    lines = bd.dwg.add(bd.dwg.g(id='lines', stroke='black'))
+    lines = dwg.add(dwg.g(id='lines', stroke='black'))
     #draw the top horizontal line
-    lines.add(bd.dwg.line(start=(initcoord[0]*cm, initcoord[1]*cm),
-                          end=((initcoord[0]+bd.elementlength)*cm, initcoord[1]*cm)))
+    lines.add(dwg.line(start=(initcoord[0]*cm, initcoord[1]*cm),
+                       end=((initcoord[0]+elementlength)*cm, initcoord[1]*cm)))
     #draw the bottom horizontaal line
-    lines.add(bd.dwg.line(start=(initcoord[0]*cm, (initcoord[1]+height)*cm),
-                          end=((initcoord[0]+bd.elementlength)*cm,
-                               (initcoord[1]+height)*cm)))
+    lines.add(dwg.line(start=(initcoord[0]*cm, (initcoord[1]+height)*cm),
+                       end=((initcoord[0]+elementlength)*cm,
+                            (initcoord[1]+height)*cm)))
     #draw the vertical line
-    lines.add(bd.dwg.line(start=((initcoord[0])*cm, initcoord[1]*cm),
-                          end=(initcoord[0]*cm, (initcoord[1]+height)*cm)))
+    lines.add(dwg.line(start=((initcoord[0])*cm, initcoord[1]*cm),
+                       end=(initcoord[0]*cm, (initcoord[1]+height)*cm)))
     #adding in the breakdown namee
-    writing = bd.dwg.add(bd.dwg.g(id='writing', stroke='black'))
+    writing = dwg.add(dwg.g(id='writing', stroke='black'))
     writing.add(svgwrite.text.Text(input_name,
                                    insert=None, x=[(.5+initcoord[0])*cm],
                                    y=[(float(height)/2+initcoord[1]+.125)*cm],
