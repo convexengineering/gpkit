@@ -14,13 +14,12 @@ class Breakdown(ConstraintSet):
     filename: the name of the svg file produced, must end in .svg
 
     """
-    def __init__(self, input_dict, units, filename):
+    def __init__(self, input_dict, units):
         self.input_dict = input_dict
         self.depth = 0
         varlist, constraints = self._recurse(input_dict, units)
         self.root, = varlist
         ConstraintSet.__init__(self, constraints)
-        self.filename = filename
 
     def _recurse(self, input_dict, units):
         "Recursive function to generate gpkit Vars for each input weight"
@@ -44,10 +43,10 @@ class Breakdown(ConstraintSet):
             varlist.append(var)
         return varlist, constraints
 
-    def make_diagram(self, sol, sidelength=12, height=20):
+    def make_diagram(self, sol, filename, sidelength=12, height=20):
         """Make an SVG representation of the tree for a given solution.
         Default diagram width is 12cm, height is 20cm.
         """
         from ..interactive.svg import make_diagram
         # set defualt parameters for the drawing
-        make_diagram(sol, self.depth, self.filename, sidelength, height, self.input_dict)
+        make_diagram(sol, self.depth, filename, sidelength, height, self.input_dict)
