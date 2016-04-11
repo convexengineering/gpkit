@@ -28,17 +28,17 @@ def dwgrecurse(input_dict, initcoord, currentlevel, sol, elementlength, sheight,
     """
     totalheight = 0
     currentlevel = currentlevel+1
-    for key in sorted(input_dict):
+    for key, value in sorted(input_dict.items()):
         height = int(round((((sheight/total)*sol(key)))))
         currentcoord = (initcoord[0], initcoord[1]+totalheight)
         drawsegment(key, height, currentcoord, dwg, elementlength)
         totalheight = totalheight+height
-        if isinstance(input_dict[key], dict):
+        if isinstance(value, dict):
             #compute new initcoord
             newinitcoord = (initcoord[0]+elementlength,
                             initcoord[1]+totalheight-height)
             #recurse again
-            dwgrecurse(input_dict[key], newinitcoord,
+            dwgrecurse(value, newinitcoord,
                        currentlevel, sol, elementlength, sheight, total, depth, dwg)
         #make sure all lines end at the same place
         elif currentlevel != depth:
