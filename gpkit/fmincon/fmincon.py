@@ -1,7 +1,6 @@
 "A module to facilitate testing GPkit against fmincon"
 from gpkit import SignomialsEnabled
 from simpleflight import simpleflight
-import pprint
 
 def fmincon(m):
     """A method for preparing fmincon input files to run a GPkit program"""
