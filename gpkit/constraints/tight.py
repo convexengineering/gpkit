@@ -6,8 +6,10 @@ from ..nomials import PosynomialInequality, SignomialInequality
 class TightConstraintSet(ConstraintSet):
     "ConstraintSet whose inequalities must result in an equality."
 
-    def __init__(self, constraints, substitutions=None, reltol=1e-6):
+    def __init__(self, constraints, substitutions=None, reltol=1e-6,
+                 raiseerror=True):
         self.reltol = reltol
+        self.raiseerror = raiseerror
         super(TightConstraintSet, self).__init__(constraints, substitutions)
 
     def process_result(self, result):
@@ -21,10 +23,13 @@ class TightConstraintSet(ConstraintSet):
                 rightsubbed = constraint.right.sub(variables).value
                 rel_diff = abs(1 - leftsubbed/rightsubbed)
                 if rel_diff >= self.reltol:
-                    raise ValueError("Tightness requirement not met"
-                                     " for constraint %s because %s"
-                                     " evaluated to %s but %s evaluated"
-                                     " to %s"
-                                     % (constraint,
-                                        constraint.left, leftsubbed,
-                                        constraint.right, rightsubbed))
+                    if self.raiseerror == True:
+                        raise ValueError("Tightness requirement not met"
+                                         " for constraint %s because %s"
+                                         " evaluated to %s but %s evaluated"
+                                         " to %s"
+                                         % (constraint,
+                                            constraint.left, leftsubbed,
+                                            constraint.right, rightsubbed))
+                    else:
+                        print "Warning: %s is not tight" % constraint
