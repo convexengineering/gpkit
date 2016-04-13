@@ -100,14 +100,13 @@ class MosekCLI(SolverBackend):
 
     def look(self):
         "Attempts to run mskexpopt."
-        
+
         if sys.platform == "win32":
             ## does not work on 32-bit windows ##
             log("# Build script does not support mosek_cli"
                 " your architecture (%s)" % platform.architecture()[0])
             return
 
-        
         try:
             log("#   Trying to run mskexpopt...")
             if call("mskexpopt") in (1052, 28):  # 28 for MacOSX
@@ -139,17 +138,17 @@ class Mosek(SolverBackend):
     patches = {
         'dgopt.c': {
             # line 683:
-            '          printf("Number of Hessian non-zeros: %d\\n",nlh[0]->numhesnz);':
-            '          MSK_echotask(task,MSK_STREAM_MSG,"Number of Hessian non-zeros: %d\\n",nlh[0]->numhesnz);',
+            '          printf("Number of Hessian non-zeros: %d\\n",nlh[0]->numhesnz);':                           # pylint: disable=line-too-long
+            '          MSK_echotask(task,MSK_STREAM_MSG,"Number of Hessian non-zeros: %d\\n",nlh[0]->numhesnz);', # pylint: disable=line-too-long
         },
         'expopt.c': {
             # line 1115:
-            '    printf ("solsta = %d, prosta = %d\\n", (int)*solsta,(int)*prosta);':
-            '    MSK_echotask(expopttask,MSK_STREAM_MSG, "solsta = %d, prosta = %d\\n", (int)*solsta,(int)*prosta);',
-            """      printf("Warning: The variable with index '%d' has only positive coefficients akj.\\n The problem is possibly ill-posed.\\n.\\n",i);      """:
-            """      MSK_echotask(expopttask,MSK_STREAM_MSG, "Warning: The variable with index '%d' has only positive coefficients akj.\\n The problem is possibly ill-posed.\\n.\\n",i);""",
-            """      printf("Warning: The variable with index '%d' has only negative coefficients akj.\\n The problem is possibly ill-posed.\\n",i);      """:
-            """      MSK_echotask(expopttask,MSK_STREAM_MSG, "Warning: The variable with index '%d' has only negative coefficients akj.\\n The problem is possibly ill-posed.\\n",i);""",
+            '    printf ("solsta = %d, prosta = %d\\n", (int)*solsta,(int)*prosta);':                                                                              # pylint: disable=line-too-long
+            '    MSK_echotask(expopttask,MSK_STREAM_MSG, "solsta = %d, prosta = %d\\n", (int)*solsta,(int)*prosta);',                                              # pylint: disable=line-too-long
+            """      printf("Warning: The variable with index '%d' has only positive coefficients akj.\\n The problem is possibly ill-posed.\\n.\\n",i);      """: # pylint: disable=line-too-long
+            """      MSK_echotask(expopttask,MSK_STREAM_MSG, "Warning: The variable with index '%d' has only positive coefficients akj.\\n The problem is possibly ill-posed.\\n.\\n",i);""", # pylint: disable=line-too-long
+            """      printf("Warning: The variable with index '%d' has only negative coefficients akj.\\n The problem is possibly ill-posed.\\n",i);      """: # pylint: disable=line-too-long
+            """      MSK_echotask(expopttask,MSK_STREAM_MSG, "Warning: The variable with index '%d' has only negative coefficients akj.\\n The problem is possibly ill-posed.\\n",i);""", # pylint: disable=line-too-long
         }
     }
 
@@ -257,7 +256,7 @@ class Mosek(SolverBackend):
                                 '   "' + self.lib_path + '"' +
                                 " -o " + pathjoin(solib_dir, "expopt.so"))
         if sys.platform == "darwin":
-            link_library = call("install_name_tool -change @loader_path/libmosek64.7.1.dylib "
+            link_library = call("install_name_tool -change @loader_path/libmosek64.7.1.dylib " # pylint: disable=line-too-long
                                 + self.lib_path + " "
                                 + pathjoin(solib_dir, "expopt.so"))
         if built_expopt_lib != 0:
@@ -266,7 +265,7 @@ class Mosek(SolverBackend):
         log("#\n#   Building Python bindings for expopt and Mosek...")
         # mosek_h_path = pathjoin(lib_dir, "mosek_h.py")
         built_expopt_h = call("python gpkit/modified_ctypesgen.py -a" +
-                              " -l "+pathjoin(solib_dir, "expopt.so").replace("\\", "/") +
+                              " -l " + pathjoin(solib_dir, "expopt.so").replace("\\", "/") +  # pylint: disable=line-too-long
                               ' -l "' + self.lib_path.replace("\\", "/") + '"' +
                               # ' -o "' + mosek_h_path.replace("\\", "/") + '"'+
                               " -o "+pathjoin(lib_dir, "expopt_h.py") +
