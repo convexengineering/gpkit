@@ -6,6 +6,7 @@ import sys
 import shutil
 import subprocess
 import glob
+import platform
 
 LOGSTR = ""
 settings = {}
@@ -147,14 +148,19 @@ class Mosek(SolverBackend):
     def look(self):
         "Looks in default install locations for latest mosek version."
         if sys.platform == "win32":
-            self.dir = "C:\\Program Files\\Mosek"
-            self.platform = "win64x86"
-            self.libpattern = "mosek64_?_?.dll"
-            self.flags = "-Wl,--export-all-symbols,-R"
+            if platform.architecture()[0] == '64bit':
+                self.dir = "C:\\Program Files\\Mosek"
+                self.platform = "win64x86"
+                self.libpattern = "mosek64_?_?.dll"
+                self.flags = "-Wl,--export-all-symbols,-R"
             ## below is for 32-bit windows ##
-            # self.dir = "C:\\Program Files (x86)\\Mosek"
-            # self.platform = "win32x86"
-            # self.libpattern = "mosek?_?.dll"
+            elif platform.architecture()[0] == '32bit':
+                self.dir = "C:\\Program Files (x86)\\Mosek"
+                self.platform = "win32x86"
+                self.libpattern = "mosek?_?.dll"
+            else:
+                log("# Build script does not support"
+                    " your architecture (%s)" % platform.architecture()[0])
         elif sys.platform == "darwin":
             self.dir = pathjoin(os.path.expanduser("~"), "mosek")
             self.platform = "osx64x86"
@@ -200,7 +206,7 @@ class Mosek(SolverBackend):
 
         global settings
         settings["mosek_bin_dir"] = self.bin_dir
-        os.environ['PATH'] = os.environ['PATH']+'%s' % (os.pathsep + self.bin_dir)
+        os.environ['PATH'] = os.environ['PATH'] + os.pathsep + self.bin_dir
 
         return "version %s, installed to %s" % (self.version, self.dir)
 
