@@ -88,6 +88,15 @@ class Mosek_CLI(SolverBackend):
     name = "mosek_cli"
 
     def look(self):
+        "Attempts to run mskexpopt."
+        
+        if sys.platform == "win32":
+            ## does not work on 32-bit windows ##
+            log("# Build script does not support mosek_cli"
+                " your architecture (%s)" % platform.architecture()[0])
+            return
+
+        
         try:
             log("#   Trying to run mskexpopt...")
             if call("mskexpopt") in (1052, 28):  # 28 for MacOSX
@@ -138,13 +147,15 @@ class Mosek(SolverBackend):
                 self.libpattern = "mosek64_?_?.dll"
                 self.flags = "-Wl,--export-all-symbols,-R"
             ## below is for 32-bit windows ##
-            elif platform.architecture()[0] == '32bit':
-                self.dir = "C:\\Program Files (x86)\\Mosek"
-                self.platform = "win32x86"
-                self.libpattern = "mosek?_?.dll"
+            #elif platform.architecture()[0] == '32bit':
+            #    self.dir = "C:\\Program Files (x86)\\Mosek"
+            #    self.platform = "win32x86"
+            #    self.libpattern = "mosek?_?.dll"
+            #    self.flags = "-Wl,--export-all-symbols,-R"
             else:
-                log("# Build script does not support"
+                log("# Build script does not support mosek"
                     " your architecture (%s)" % platform.architecture()[0])
+                return
         elif sys.platform == "darwin":
             self.dir = pathjoin(os.path.expanduser("~"), "mosek")
             self.platform = "osx64x86"
