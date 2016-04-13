@@ -259,6 +259,8 @@ class Mosek(SolverBackend):
             link_library = call("install_name_tool -change @loader_path/libmosek64.7.1.dylib " # pylint: disable=line-too-long
                                 + self.lib_path + " "
                                 + pathjoin(solib_dir, "expopt.so"))
+            if link_library != 0: return False
+
         if built_expopt_lib != 0:
             return False
 
