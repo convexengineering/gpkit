@@ -161,6 +161,10 @@ class Mosek(SolverBackend):
                 self.libpattern = "mosek64_?_?.dll"
                 self.flags = "-Wl,--export-all-symbols,-R"
             ## below is for 32-bit windows ##
+            ## TODO: for unknown reasons neither command line tools or 
+            ##       mosek expopt.so works for 32-bit windows
+            ##       someone should look into this if 32-bit windows 
+            ##       is really really really needed
             #elif platform.architecture()[0] == '32bit':
             #    self.dir = "C:\\Program Files (x86)\\Mosek"
             #    self.platform = "win32x86"
