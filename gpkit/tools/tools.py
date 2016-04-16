@@ -73,6 +73,51 @@ def te_secant(x, nterm):
         res +=  E2n[i-1]/ factorial_denom * x**(2*i)
     return res
 
+def te_tangent(x, nterm):
+    """Taylor expansion of tangent(x).
+
+    Arguments
+    ---------
+    x : gpkit.monomial
+      Variable or expression argument
+    nterm : int
+        Number of terms in resulting Taylor expansion
+
+    Returns
+    -------
+    gpkit.Posynomial
+        Taylor expansion of tangent(x), carried to nterm terms
+    """
+    if nterm < 1:
+        raise ValueError("Unexpected number of terms, nterm=%s" % nterm)
+
+    if nterm > 15:
+        raise ValueError("Tangent expansion not implemented above 15 terms")
+
+    # The first 15 Bernoulli Numbers
+    B2n = np.asarray([  1/6.,
+                        -1/30.,
+                        1/42.,
+                        -1/30.,
+                        5/66.,
+                        -691/2730.,
+                        7/6.,
+                        -3617/510.,
+                        43867/798.,
+                        -174611/330.,
+                        854513/138.,
+                        -236364091/2730.,
+                        8553103/6.,
+                        -23749461029/870.,
+                        8615841276005/14322. ])
+
+    res = 0
+    factorial_denom = 1
+    for i in range(1, nterm + 1):
+        factorial_denom *= ((2*i)*(2*i-1))
+        res +=  (-1)**(i-1) * 2**(2*i) * (2**(2*i) - 1) * B2n[i-1] / factorial_denom * x**(2*i-1)
+    return res
+
 def composite_objective(*objectives, **kwargs):
     "Creates a cost function that sweeps between multiple objectives."
     objectives = list(objectives)
