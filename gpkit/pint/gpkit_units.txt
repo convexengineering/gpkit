@@ -1,4 +1,0 @@
-# Default GPkit units definition file
-
-@import pint_default_en.txt
-@import usd_cpi.txt
