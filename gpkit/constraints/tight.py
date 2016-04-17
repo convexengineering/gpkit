@@ -23,13 +23,11 @@ class TightConstraintSet(ConstraintSet):
                 rightsubbed = constraint.right.sub(variables).value
                 rel_diff = abs(1 - leftsubbed/rightsubbed)
                 if rel_diff >= self.reltol:
-                    if self.raiseerror is True:
-                        raise ValueError("Tightness requirement not met"
-                                         " for constraint %s because %s"
-                                         " evaluated to %s but %s evaluated"
-                                         " to %s"
-                                         % (constraint,
-                                            constraint.left, leftsubbed,
-                                            constraint.right, rightsubbed))
+                    msg = ("Tightness requirement not met for constraint %s "
+                           "because %s evaluated to %s but %s evaluated to %s" %
+                           (constraint, constraint.left, leftsubbed,
+                            constraint.right, rightsubbed))
+                    if self.raiseerror:
+                        raise ValueError(msg)
                     else:
-                        print "Warning: %s is not tight" % constraint
+                        print "Warning: %s" % msg
