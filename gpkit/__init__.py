@@ -16,7 +16,8 @@
 """
 from os import sep as os_sep
 from os.path import dirname as os_path_dirname
-UNITDEF_PATH = os_sep.join([os_path_dirname(__file__), "pint", "units.txt"])
+UNITDEF_PATH = os_sep.join([os_path_dirname(__file__),
+                            "pint", "gpkit_units.txt"])
 SETTINGS_PATH = os_sep.join([os_path_dirname(__file__), "env", "settings"])
 
 __version__ = "0.4.0"

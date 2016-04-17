@@ -2,7 +2,6 @@
 # Based on the International System of Units
 # Language: english
 # :copyright: 2013 by Pint Authors, see AUTHORS for more details.
-# Modified 2015 by GPkit authors
 
 # decimal prefixes
 yocto- = 1e-24 = y-
@@ -306,9 +305,6 @@ teaspoon = tablespoon / 3 = tsp
 peck = bushel / 4 = pk
 fluid_dram = floz / 8 = fldr = fluidram
 firkin = barrel / 4
-
-# GPkit units
-@import usd_cpi.txt
 
 # contexts
 @context(n=1) spectroscopy = sp
