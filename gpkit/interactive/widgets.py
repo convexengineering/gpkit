@@ -68,7 +68,8 @@ def modelinteract(model, ranges=None, fn_of_sol=None, **solvekwargs):
         try:
             try:
                 model.solve(**solvekwargs)
-            except (AttributeError, ValueError):
+            except (AttributeError, TypeError):
+                # TypeError raised by as_posyslt1 in non-GP-compatible models
                 model.localsolve(**solvekwargs)
             if hasattr(model, "solution"):
                 sol = model.solution
