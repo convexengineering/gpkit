@@ -502,10 +502,9 @@ class PosynomialInequality(ScalarSingleEquationConstraint):
             try:
                 p.convert_to('dimensionless')
             except DimensionalityError:
-                raise ValueError("constraints must have the same units"
-                                 " on both sides: '%s' and '%s' can not"
-                                 " be converted into each other."
-                                 "" % (self.p_lt.units, self.m_gt.units))
+                raise ValueError("unit mismatch: units of %s cannot "
+                                 "be converted to units of %s" %
+                                 (self.p_lt, self.m_gt))
 
         p.exps, p.cs = self._simplify_posy_ineq(p.exps, p.cs)
         return [p]
