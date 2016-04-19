@@ -26,6 +26,17 @@ class ConstraintSet(list):
         # initializations for attributes used elsewhere
         self.posymap = []
 
+    def __getitem__(self, key):
+        if isinstance(key, int):
+            return list.__getitem__(self, key)
+        else:
+            from ..nomials import Variable
+            variables = [Variable(**key.descr) for key in self.varkeys[key]]
+            if len(variables) == 1:
+                return variables[0]
+            else:
+                return variables
+
     __str__ = _str
     __repr__ = _repr
     _repr_latex_ = _repr_latex_
