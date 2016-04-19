@@ -105,8 +105,10 @@ def fmincon(m):
                       "options.MaxIter = Inf;\n" +
                       "options.GradObj = 'on';\n" +
                       "options.GradConstr = 'on';\n" +
+                      "tic;\n" +
                       "[x,fval] = ...\n" +
-                      "fmincon(@objfun,x0,[],[],[],[],[],[],@confun,options);")
+                      "fmincon(@objfun,x0,[],[],[],[],[],[],@confun,options);\n" +
+                      "toc;")
 
     return obj, c, ceq
 
