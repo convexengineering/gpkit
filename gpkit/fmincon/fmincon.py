@@ -17,7 +17,7 @@ def fmincon(m):
             i += 1
 
     cost = m.cost # needs to be before subinplace()
-    constraints = m.program.constraints
+    constraints = m
     constraints.subinplace(constraints.substitutions)
     constraints.subinplace(newdict)
 
@@ -103,10 +103,12 @@ def fmincon(m):
     with open('main.m', 'w') as outfile:
         outfile.write("x0 = ones({0},1);\n".format(i-1) +
                       "options = optimset('fmincon');\n" +
+                      "options.MaxFunEvals = Inf;\n" +
+                      "options.MaxIter = Inf;\n" +
                       "options.GradObj = 'on';\n" +
                       "options.GradConstr = 'on';\n" +
                       "[x,fval] = ...\n" +
-                      "fmincon(@objfun,x0,[],[],[],[],[],[],@confun);")
+                      "fmincon(@objfun,x0,[],[],[],[],[],[],@confun,options);")
 
     return obj, c, ceq
 
