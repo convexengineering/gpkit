@@ -129,11 +129,6 @@ You may need to rebuild GPkit if any of the following occur:
   - You see ``Could not load MOSEK library: ImportError('$HOME/.gpkit/expopt.so not found.')``
 To rebuild GPkit, do the following:
   - Run ``pip uninstall gpkit``
-  - The next step is platform-specific:
-     + **Linux:** ``find ~/.cache/pip/wheels/ -name "gpkit" -delete``
-     + **OS X:** ``find ~/Library/Caches/pip/wheels -name "gpkit" -delete``
-     + **Windows:** in ``C:\Users(your_user_name)\AppData\Local\pip\cache\wheels``, search for gpkit and delete any files with the name ``gpkit*.whl``
-
   - Run ``pip install --no-cache-dir --no-deps gpkit``
   - Run ``python -c "import gpkit.tests; gpkit.tests.run()"``
   - If any tests fail, email ``gpkit@mit.edu``
