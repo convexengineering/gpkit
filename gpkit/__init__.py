@@ -119,6 +119,7 @@ from .nomials import Monomial, Posynomial, Signomial
 from .nomials import Variable, VectorVariable, ArrayVariable
 from .geometric_program import GeometricProgram
 from .constraints.signomial_program import SignomialProgram
+from .constraints.set import ConstraintSet
 from .constraints.model import Model
 from .constraints.linked import LinkedConstraintSet
 

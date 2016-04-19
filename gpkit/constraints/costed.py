@@ -1,6 +1,5 @@
 "Implement CostedConstraintSet"
 from .set import ConstraintSet
-from ..nomials import Variable
 
 
 class CostedConstraintSet(ConstraintSet):
@@ -19,16 +18,6 @@ class CostedConstraintSet(ConstraintSet):
         if substitutions:
             subs.update(substitutions)
         ConstraintSet.__init__(self, constraints, subs)
-
-    def __getitem__(self, key):
-        if isinstance(key, int):
-            return list.__getitem__(self, key)
-        else:
-            variables = [Variable(**key.descr) for key in self.varkeys[key]]
-            if len(variables) == 1:
-                return variables[0]
-            else:
-                return variables
 
     def subinplace(self, subs, value=None):
         "Substitutes in place."
