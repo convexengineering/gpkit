@@ -22,11 +22,10 @@ def fmincon(m):
     constraints.subinplace(newdict)
 
     # Make all constraints less than zero, return list of clean strings
-    c = []
-    ceq = []
-    CDM = []
-    DC = [] # gradient of inequality constraint j
-    DCeq = [] # gradient of equality constraint j
+    c = [] # inequality constraints
+    ceq = [] # equality constraints
+    DC = [] # gradients of inequality constraints
+    DCeq = [] # gradients of equality constraints
     with SignomialsEnabled():
         for constraint in constraints:
             if constraint.oper == '<=':
@@ -45,7 +44,6 @@ def fmincon(m):
                 if key not in m.substitutions:
                     cd = cc.diff(newdict[key])
                     cdm += [cd.str_without("units").replace('**', '.^')]
-            CDM.append(cdm)
 
             if constraint.oper != '=':
                 DC += [",...\n          ".join(cdm)]
