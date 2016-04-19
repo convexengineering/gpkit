@@ -3,7 +3,6 @@
 
 from collections import defaultdict, Iterable
 import numpy as np
-from .nomial_math import Monomial
 from ..small_classes import Numbers, Strings, Quantity
 from ..small_classes import HashVector
 from ..varkey import VarKey
@@ -165,7 +164,8 @@ def substitution(nomial, substitutions, val=None):
                 sub = VarKey(name=sub, **descr)
                 exps_[i] += HashVector({sub: x})
                 varlocs_[sub].append(i)
-            elif isinstance(sub, (VarKey, Monomial)):
+            elif (isinstance(sub, VarKey)
+                  or (hasattr(sub, "exp") and hasattr(sub, "c"))):
                 if sub.units != var.units:
                     try:
                         if hasattr(sub.units, "to"):

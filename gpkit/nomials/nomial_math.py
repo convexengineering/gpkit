@@ -3,6 +3,7 @@ import numpy as np
 from .data import simplify_exps_and_cs
 from .array import NomialArray
 from .nomial_core import Nomial, fast_monomial_str
+from .substitution import substitution, parse_subs
 from ..constraints import SingleEquationConstraint
 from ..small_classes import Strings, Numbers, Quantity
 from ..small_classes import HashVector
@@ -696,6 +697,3 @@ class SignomialInequality(ScalarSingleEquationConstraint):
         pa_sens[str(posyapprox)] = pa_sens.pop("overall")
         constr_sens["posyapprox"] = pa_sens
         return constr_sens
-
-# pylint: disable=wrong-import-position
-from .substitution import substitution, parse_subs
