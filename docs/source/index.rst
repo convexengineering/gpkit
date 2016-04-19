@@ -17,8 +17,8 @@ Table of contents
        gpkit101
        installation
        gettingstarted
-       basiccommands
        advancedcommands
+       signomialprogramming
        examples
        glossary
        citinggpkit
