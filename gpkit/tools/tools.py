@@ -1,7 +1,7 @@
 """Non-application-specific convenience methods for GPkit"""
 import numpy as np
-from .nomials import Variable, VectorVariable
-from .nomials import NomialArray
+from ..nomials import Variable, VectorVariable
+from ..nomials import NomialArray
 
 
 def te_exp_minus1(posy, nterm):

@@ -2,7 +2,7 @@
 from gpkit import SignomialsEnabled
 from simpleflight import simpleflight
 
-def fmincon(m):
+def generate_mfiles(m):
     """A method for preparing fmincon input files to run a GPkit program"""
 
     # Create a new dictionary mapping variables to x(i)'s for use w/ fmincon
@@ -115,4 +115,4 @@ def fmincon(m):
 
 if __name__ == '__main__':
     m = simpleflight()
-    obj, c, ceq = fmincon(m)
+    obj, c, ceq = generate_mfiles(m)
