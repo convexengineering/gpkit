@@ -130,6 +130,15 @@ class TestSignomialInequality(unittest.TestCase):
         self.assertTrue(isinstance(sc, SignomialInequality))
         self.assertFalse(isinstance(sc, Posynomial))
 
+    def test_posyslt1(self):
+        x = Variable("x")
+        y = Variable("y")
+        with SignomialsEnabled():
+            sc = (x + y >= x*y)
+        # make sure that the error type doesn't change on our users
+        with self.assertRaises(TypeError):
+            _ = sc.as_posyslt1()
+
 
 class TestTightConstraintSet(unittest.TestCase):
     """Test tight constraint set"""
