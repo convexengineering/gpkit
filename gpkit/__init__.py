@@ -16,7 +16,6 @@
 """
 from os import sep as os_sep
 from os.path import dirname as os_path_dirname
-UNITDEF_PATH = os_sep.join([os_path_dirname(__file__), "pint", "units.txt"])
 SETTINGS_PATH = os_sep.join([os_path_dirname(__file__), "env", "settings"])
 
 __version__ = "0.4.0"
@@ -28,7 +27,7 @@ DimensionalityError = ValueError
 units = None
 
 
-def enable_units(path=UNITDEF_PATH):
+def enable_units(path=None):
     """Enables units support in a particular instance of GPkit.
 
     Posynomials created after calling this are incompatible with those created
@@ -39,8 +38,13 @@ def enable_units(path=UNITDEF_PATH):
     global units, DimensionalityError, UNIT_REGISTRY
     try:
         import pint
-        if UNIT_REGISTRY is None:
+        if path:
+            # let user load their own unit definitions
             UNIT_REGISTRY = pint.UnitRegistry(path)
+        if UNIT_REGISTRY is None:
+            UNIT_REGISTRY = pint.UnitRegistry() # use pint default
+            path = os_sep.join([os_path_dirname(__file__), "pint"])
+            UNIT_REGISTRY.load_definitions(os_sep.join([path, "usd_cpi.txt"]))
         units = UNIT_REGISTRY
         DimensionalityError = pint.DimensionalityError
     except ImportError:
