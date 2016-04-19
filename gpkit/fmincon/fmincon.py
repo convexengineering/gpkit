@@ -101,6 +101,7 @@ def fmincon(m):
     with open('main.m', 'w') as outfile:
         outfile.write("x0 = ones({0},1);\n".format(i-1) +
                       "options = optimset('fmincon');\n" +
+                      "options.Algorithm = 'interior-point';\n" +
                       "options.MaxFunEvals = Inf;\n" +
                       "options.MaxIter = Inf;\n" +
                       "options.GradObj = 'on';\n" +
