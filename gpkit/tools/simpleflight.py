@@ -1,8 +1,10 @@
 "Minimizes airplane drag for a simple drag and structure model."
 import numpy as np
 from gpkit import Variable, Model
+# pylint: disable=invalid-name,too-many-locals
 
 def simpleflight(verbosity=0):
+    """Simple flight model"""
     # Constants
     k = Variable("k", 1.2, "-", "form factor")
     e = Variable("e", 0.95, "-", "Oswald efficiency factor")
@@ -13,7 +15,8 @@ def simpleflight(verbosity=0):
     N_ult = Variable("N_{ult}", 3.8, "-", "ultimate load factor")
     V_min = Variable("V_{min}", 22, "m/s", "takeoff speed")
     C_Lmax = Variable("C_{L,max}", 1.5, "-", "max CL with flaps down")
-    S_wetratio = Variable("(\\frac{S}{S_{wet}})", 2.05, "-", "wetted area ratio")
+    S_wetratio = Variable("(\\frac{S}{S_{wet}})", 2.05, "-",
+                          "wetted area ratio")
     W_W_coeff1 = Variable("W_{W_{coeff1}}", 8.71e-5, "1/m",
                           "Wing Weight Coefficent 1")
     W_W_coeff2 = Variable("W_{W_{coeff2}}", 45.24, "Pa",
@@ -57,7 +60,3 @@ def simpleflight(verbosity=0):
     m = Model(D, constraints)
     m.solve(verbosity=verbosity)
     return m
-
-if __name__ == '__main__':
-    m = simpleflight(verbosity=1)
-

@@ -1,6 +1,8 @@
 "A module to facilitate testing GPkit against fmincon"
 from gpkit import SignomialsEnabled
-from simpleflight import simpleflight
+from gpkit.tools.simpleflight import simpleflight
+# pylint: disable=redefined-outer-name,invalid-name
+# pylint: disable=too-many-statements,too-many-locals
 
 def generate_mfiles(m, writefiles=True):
     """A method for preparing fmincon input files to run a GPkit program"""
