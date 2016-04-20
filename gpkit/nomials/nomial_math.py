@@ -474,8 +474,10 @@ class PosynomialInequality(ScalarSingleEquationConstraint):
             if not exps[0]:
                 if cs[0] > 1:
                     raise ValueError("infeasible constraint: %s" % self)
-            # for now, we allow tautological monomial constraints (cs[0] <= 1)
-            # because they allow models to impose requirements on variables
+                else:
+                    # allow tautological monomial constraints (cs[0] <= 1)
+                    # because they allow models to impose requirements
+                    return (), np.array([])
             return exps, cs
         coeff = 1.0
         exps_ = []
@@ -523,9 +525,11 @@ class PosynomialInequality(ScalarSingleEquationConstraint):
             # remove any cs that are just nans and/or 0s
             nans = np.isnan(cs)
             if np.all(nans) or np.all(cs[~nans] == 0):
-                return []  # skip nan'd or 0'd constraint
+                continue  # skip nan'd or 0'd constraint
 
             exps, cs = self._simplify_posy_ineq(exps, cs)
+            if not exps and not cs:  # tautological constraint
+                continue
             exps, cs, pmap = simplify_exps_and_cs(exps, cs, return_map=True)
 
             #  The monomial sensitivities from the GP/SP are in terms of this
