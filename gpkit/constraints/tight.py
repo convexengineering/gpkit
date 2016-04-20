@@ -7,7 +7,7 @@ class TightConstraintSet(ConstraintSet):
     "ConstraintSet whose inequalities must result in an equality."
 
     def __init__(self, constraints, substitutions=None, reltol=1e-6,
-                 raiseerror=True):
+                 raiseerror=False):
         self.reltol = reltol
         self.raiseerror = raiseerror
         super(TightConstraintSet, self).__init__(constraints, substitutions)
