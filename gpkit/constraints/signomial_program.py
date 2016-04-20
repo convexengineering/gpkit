@@ -109,7 +109,7 @@ class SignomialProgram(CostedConstraintSet):
             except (RuntimeWarning, ValueError):
                 nearest_feasible = feasibility_model(gp, "max")
                 self.gps.append(nearest_feasible)
-                result = nearest_feasible.solve(verbosity=verbosity-1)
+                result = nearest_feasible.solve(solver, verbosity=verbosity-1)
                 result["cost"] = None
             x0 = result["variables"]
             prevcost, cost = cost, result["cost"]
