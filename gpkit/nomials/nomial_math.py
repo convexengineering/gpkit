@@ -71,7 +71,9 @@ class Signomial(Nomial):
             try:
                 # test for presence of length and identical lengths
                 assert len(cs) == len(exps)
-                exps_ = list(range(len(exps)))
+            except AssertionError:
+                raise TypeError("cs and exps must have the same length.")
+            if not isinstance(cs, Quantity):
                 if not all(isinstance(c, Quantity) for c in cs):
                     try:
                         cs = np.array(cs, dtype='float')
@@ -88,16 +90,22 @@ class Signomial(Nomial):
                     except DimensionalityError:
                         raise ValueError("cannot add monomials of"
                                          " different units together")
-                for i, k in enumerate(exps):
-                    exps_[i] = HashVector(k)
-                    for key in exps_[i]:
-                        if isinstance(key, Strings+(Monomial,)):
-                            exps_[i][VarKey(key)] = exps_[i].pop(key)
-                exps = tuple(exps_)
-            except AssertionError:
-                raise TypeError("cs and exps must have the same length.")
+            else:
+                try:
+                    cs.ito("dimensionless")
+                except DimensionalityError:
+                    pass
+            exps_ = list(range(len(exps)))
+            for i, k in enumerate(exps):
+                exps_[i] = HashVector(k)
+                for key in exps_[i]:
+                    if isinstance(key, Strings+(Monomial,)):
+                        exps_[i][VarKey(key)] = exps_[i].pop(key)
+            exps = tuple(exps_)
+            if len(set(exps)) == len(exps):
+                simplify = False
 
-        if isinstance(units, Quantity):
+        if units and isinstance(units, Quantity):
             if not isinstance(cs, Quantity):
                 cs = cs*units
             else:
@@ -184,7 +192,8 @@ class Signomial(Nomial):
         p0 = psub.value  # includes any units
         m0 = 1
         for vk in self.varlocs:
-            e = mag(x0[vk]*self.diff(vk).sub(x0, require_positive=False).c/p0)
+            diff = self.diff(vk)
+            e = mag(x0[vk]*diff.sub(x0, require_positive=False).c/p0)
             exp[vk] = e
             m0 *= (x0[vk])**e
         return Monomial(exp, p0/mag(m0))
@@ -565,7 +574,7 @@ class PosynomialInequality(ScalarSingleEquationConstraint):
                     nu_[idx] += percentage*nu[i]
             nu = nu_
         # Monomial sensitivities
-        constr_sens[str(self.m_gt)] = la
+        constr_sens[self.m_gt] = la
         for i, mono_sens in enumerate(nu):
             mono_str = fast_monomial_str(self.p_lt.exps[i], self.p_lt.cs[i])
             constr_sens[mono_str] = mono_sens
@@ -618,8 +627,8 @@ class MonomialEquality(PosynomialInequality):
     def sens_from_dual(self, la, nu):
         "Returns the variable/constraint sensitivities from lambda/nu"
         left, right = la
-        constr_sens = {str(self.left): left-right,
-                       str(self.right): right-left}
+        constr_sens = {self.left: left-right,
+                       self.right: right-left}
         # Constant sensitivities
         var_senss = HashVector()
         for i, m_s in enumerate(nu):
@@ -680,14 +689,15 @@ class SignomialInequality(ScalarSingleEquationConstraint):
                             " a PosynomialInequality")
 
     def as_gpconstr(self, x0):
-        "Returns GP apprimxation of an SP constraint at x0"
+        "Returns GP approximation of an SP constraint at x0"
         posy, negy = self._unsubbed.posy_negy()
         if x0 is None:
             x0 = {vk: vk.descr["sp_init"] for vk in negy.varlocs
                   if "sp_init" in vk.descr}
         x0.update({var: 1 for var in negy.varlocs if var not in x0})
         x0.update(self.substitutions)
-        pc = PosynomialInequality(posy, "<=", negy.mono_lower_bound(x0))
+        nmlb = negy.mono_lower_bound(x0)
+        pc = PosynomialInequality(posy, "<=", nmlb)
         pc.substitutions = self.substitutions
         return pc
 
@@ -695,7 +705,7 @@ class SignomialInequality(ScalarSingleEquationConstraint):
     def sens_from_gpconstr(self, posyapprox, pa_sens, var_senss):
         "Returns sensitivities as parsed from an approximating GP constraint."
         constr_sens = dict(pa_sens)
-        del constr_sens[str(posyapprox.m_gt)]
+        del constr_sens[posyapprox.m_gt]
         _, negy = self._unsubbed.posy_negy()
         constr_sens[str(negy)] = pa_sens["overall"]
         pa_sens[str(posyapprox)] = pa_sens.pop("overall")
