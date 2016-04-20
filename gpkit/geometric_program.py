@@ -385,7 +385,7 @@ class GeometricProgram(NomialData):
     def latex(self):
         "LaTeX representation of a GeometricProgram."
         #TODO: should this print posynomials <= 1? Substitutions?
-        return "\n".join(["\\begin{array}[ll]",
+        return "\n".join(["\\begin{array}{ll}",
                           "\\text{}",
                           "\\text{minimize}",
                           "    & %s \\\\" % self.cost.latex(),
