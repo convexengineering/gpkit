@@ -476,7 +476,7 @@ class PosynomialInequality(ScalarSingleEquationConstraint):
                 else:
                     # allow tautological monomial constraints (cs[0] <= 1)
                     # because they allow models to impose requirements
-                    return [], []
+                    return (), np.array([])
             return exps, cs
         coeff = 1.0
         exps_ = []
