@@ -15,13 +15,13 @@ class NomialMap(HashVector):
         else:
             self.units = None
 
-    def _simplify(self, just_zero_monomials=False):
+    def _remove_zeros(self, just_monomials=False):
         posynomial = (len(self) > 1)
         for key in self.keys():
             value = self[key]
             if posynomial and value == 0:
                 del self[key]
-            elif not just_zero_monomials:
+            elif not just_monomials:
                 zeroes = set(vk for vk, exp in key.items() if exp == 0)
                 if zeroes:
                     del self[key]
@@ -36,55 +36,73 @@ class NomialMap(HashVector):
         nm.units = units
         return nm
 
-    def copy(self):
-        cp = self.__class__({HashVector(k.copy()): v for k, v in self.items()})
-        cp.units = self.units
-        return cp
-
-    def sub(self, substitutions, val):
-        cp = self.copy()
+    def sub(self, substitutions, val=None, mmap=False):
         if val is not None:
             substitutions = {substitutions: val}
 
+        cp = NomialMap()
+        cp.units = self.units
+        expmap = {}
         varlocs = defaultdict(set)
-        for exp in cp:
-            for vk in exp:
-                varlocs[vk].add(exp)
+        for exp, c in self.items():
+            new_exp = HashVector(exp)
+            expmap[exp] = new_exp
+            cp[new_exp] = c
+            for vk in new_exp:
+                varlocs[vk].add((exp, new_exp))
+
         varkeys = KeySet(varlocs)
         substitutions, _, _ = parse_subs(varkeys, substitutions)
 
-        exps_touched = set()
+        cs_map = {}
         for vk, exps in varlocs.items():
             if vk in substitutions:
+                m_exp = []
                 value = substitutions[vk]
                 if isinstance(value, Strings):
                     descr = dict(vk.descr)
                     del descr["name"]
                     value = VarKey(name=value, **descr)
                 if hasattr(value, "hmap"):
+                    m_exp, = value.hmap.keys()
                     value = value.hmap
-                if hasattr(value, "to") and value.to:
+                    # TODO: can't-sub-posynomials error here
+                if hasattr(value, "to"):
                     if not vk.units or isinstance(vk.units, Strings):
                         vk.units = ureg.dimensionless
                     value = mag(value.to(vk.units))
-                for exp in exps:
+                if m_exp:
+                    value, = value.values()
+                for o_exp, exp in exps:
                     x = exp.pop(vk)
-                    if isinstance(value, NomialMap):
-                        m_exp, = value.keys()
-                        m_c, = value.values()
-                        old_c = cp.pop(exp)
-                        exp += m_exp*x
-                        cp[exp] = old_c * m_c**x
+                    powval = value**x if value != 0 or x >= 0 else np.inf
+                    cs_map[o_exp] = cs_map.get(o_exp, self[o_exp]) * powval
+                    if exp in cp:
+                        c = cp.pop(exp)
+                        for key in m_exp:
+                            exp[key] = m_exp[key]*x + exp.get(key, 0)
+                        exp._hashvalue = None
+                        cp[exp] = c * powval + cp.get(exp, 0)
                     else:
-                        cp[exp] *= value**x
-                    exps_touched.add(exp)
-        for exp in exps_touched:
-            # pmap here
-            value = cp.pop(exp)
-            exp._hashvalue = None
-            cp[exp] = value + cp.get(exp, 0)
+                        exp._hashvalue = None
 
-        return cp
+        cp._remove_zeros()
+
+        if not mmap:
+            return cp
+
+        m_from_ms = defaultdict(dict)
+        pmap = [{} for _ in cp]
+        selfexps = self.keys()
+        cpexps = cp.keys()
+        for self_exp, cp_exp in expmap.items():
+            total_c = cp.get(cp_exp, None)
+            if total_c:
+                fraction = cs_map.get(self_exp, self[self_exp])/total_c
+                m_from_ms[cp_exp][self_exp] = fraction
+                pmap[cpexps.index(cp_exp)][selfexps.index(self_exp)] = fraction
+
+        return cp, pmap, m_from_ms
 
     def __add__(self, other):
         units = self.units
@@ -103,7 +121,7 @@ class NomialMap(HashVector):
 
         hmap = HashVector.__add__(self, other)
         hmap.set_units(units)
-        hmap._simplify(just_zero_monomials=True)
+        hmap._remove_zeros(just_monomials=True)
         return hmap
 
     @classmethod
@@ -138,7 +156,7 @@ class NomialMap(HashVector):
 
         nm = cls(matches)
         nm.set_units(units)
-        nm._simplify()
+        nm._remove_zeros()
         exps_ = tuple(nm.keys())
         cs_ = list(nm.values())
 

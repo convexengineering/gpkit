@@ -179,6 +179,7 @@ class HashVector(dict):
     def __hash__(self):
         "Allows HashVectors to be used as dictionary keys."
         if self._hashvalue is None:
+             # TODO: why does sorted break this
             self._hashvalue = hash(tuple(self.items()))
         return self._hashvalue
 

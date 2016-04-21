@@ -27,7 +27,7 @@ class CostedConstraintSet(ConstraintSet):
     @property
     def varkeys(self):
         "return all Varkeys present in this ConstraintSet"
-        return ConstraintSet._varkeys(self, self.cost.varlocs)
+        return ConstraintSet._varkeys(self, self.cost.vks)
 
     def rootconstr_str(self, excluded=None):
         "The appearance of a ConstraintSet in addition to its contents"

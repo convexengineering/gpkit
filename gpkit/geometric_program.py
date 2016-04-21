@@ -283,8 +283,8 @@ class GeometricProgram(NomialData):
         # initialize the var_senss dict with the cost's constants...
         var_senss = {var: sum([self.cost.exps[i][var]*nu[i] for i in locs])
                      for (var, locs) in self.cost.varlocs.items()
-                     if (var in self.cost.varlocs
-                         and var not in self.posynomials[0].varlocs)}
+                     if (var in self.cost.vks
+                         and var not in self.posynomials[0].vks)}
         var_senss = HashVector(var_senss)
         for c_i, posy_idxs in enumerate(self.constr_idxs):
             constr = self.constraints[c_i]
