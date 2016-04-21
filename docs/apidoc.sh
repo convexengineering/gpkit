@@ -1,1 +1,1 @@
-sphinx-apidoc ../gpkit -o docs/source/autodoc
+sphinx-apidoc ../gpkit -o source/autodoc
