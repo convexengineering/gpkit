@@ -1,6 +1,6 @@
 Using solver 'cvxopt'
 Solving for 2 variables.
-Solving took 0.00473 seconds.
+Solving took 0.00447 seconds.
 
 Cost
 ----
@@ -13,3 +13,4 @@ y : 0.7854
 
 Sensitivities
 -------------
+

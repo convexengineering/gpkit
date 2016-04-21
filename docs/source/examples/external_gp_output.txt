@@ -1,5 +1,5 @@
 Beginning signomial solve.
-Solving took 3 GP solves and 0.0191 seconds.
+Solving took 3 GP solves and 0.0183 seconds.
 
 Cost
 ----
@@ -12,3 +12,4 @@ y : 0.7071
 
 Sensitivities
 -------------
+

@@ -49,7 +49,7 @@ This problem is not GP compatible due to the sin(x) constraint.  One approach mi
 
 .. literalinclude:: examples/sin_approx_example.py
 
-.. literalinclude:: examples/sin_approx_example_out.txt
+.. literalinclude:: examples/sin_approx_example_output.txt
 
 However, we can do better by utilizing some built in functionality of GPkit.  Assume we have some external code which is capable of evaluating our incompatible function:
 
@@ -61,9 +61,9 @@ Now, we can write a class that will in essence replace the incompatible constrai
 
 and replace the incompatible constraint in our GP:
 
-.. literalinclude:: examples/external_GP.py
+.. literalinclude:: examples/external_gp.py
 
-.. literalinclude:: examples/external_GP_out.txt
+.. literalinclude:: examples/external_gp_output.txt
 
 which is the expected result.  This method has been generalized to much larger scale problems, including calling XFOIL and AVL.
 
