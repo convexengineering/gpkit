@@ -4,9 +4,11 @@ Geometric Programming 101
 What is a GP?
 =============
 
-A Geometric Program (GP) is a special type of constrained non-linear optimization problem.
+A Geometric Program (GP) is a type constrained non-linear optimization problem.
 
-A GP is made up of special types of functions called *monomials* and *posynomials*. In the context of GP, a monomial is defined as:
+A GP consists of an objective and set of inequalities of a particular form, which define the solution for a set of variables which have strictly positive values (that is, they can't be zero).
+
+GP objectives and inequalities are formed out of *monomials* and *posynomials*. In the context of GP, a monomial is defined as:
 
 .. math::
 
@@ -15,7 +17,7 @@ A GP is made up of special types of functions called *monomials* and *posynomial
 where :math:`c` is a positive constant, :math:`x_{1..n}` are decision variables, and :math:`a_{1..n}` are real exponents.  For example, taking :math:`x`, :math:`y` and :math:`z` to be positive variables, the expressions
 
 .. math::
-  
+
    7x \qquad   4xy^2z  \qquad  \frac{2x}{y^2z^{0.3}}  \qquad  \sqrt{2xy}
 
 are all monomials.  Building on this, a posynomial is defined as a sum of monomials:
@@ -35,7 +37,7 @@ Alternatively, monomials can be defined as the subset of posynomials having only
 Using :math:`f_i` to represent a monomial and :math:`g_i` to represent a posynomial,
 a GP in standard form is written as:
 
-.. math:: \begin{array}[lll]\text{}
+.. math:: \begin{array}{lll}\text{}
     \text{minimize} & g_0(x) & \\
     \text{subject to} & f_i(x) = 1, & i = 1,....,m \\
                       & g_i(x) \leq 1, & i = 1,....,n
@@ -43,7 +45,7 @@ a GP in standard form is written as:
 
 Boyd et. al. give the following example of a GP in standard form:
 
-.. math:: \begin{array}[llll]\text{}
+.. math:: \begin{array}{llll}\text{}
     \text{minimize} & x^{-1}y^{-1/2}z^{-1} + 2.3xz + 4xyz \\
     \text{subject to} & (1/3)x^{-2}y^{-2} + (4/3)y^{1/2}z^{-1} \leq 1 \\
                       & x + 2y + 3z \leq 1 \\
@@ -59,14 +61,14 @@ Geometric programs have several powerful properties:
     #. If there exists an optimal solution to a GP, it is guaranteed to be **globally optimal**.
     #. Modern GP solvers require **no initial guesses** or tuning of solver parameters.
 
-These properties arise because GPs become *convex optimization problems* via a logarithmic transformation. In addition to their mathematical benefits, recent research has shown that many **practical problems** can be formulated as GPs or closely approximated as GPs.
+These properties arise because GPs become *convex optimization problems* via a logarithmic transformation. In addition to their mathematical benefits, recent research has shown that many practical problems can be formulated as GPs or closely approximated as GPs.
 
 
 What are Signomials / Signomial Programs?
 =========================================
 
 When the coefficients in a posynomial are allowed to be negative (but the variables stay strictly positive), that is called a Signomial.
-A Signomial Program has signomial constraints, and while they cannot be solved as quickly or to global optima, because they build on the structure of a GP they can be solved more quickly than a generic nonlinear program. More information on Signomial Programs can be found under "Advanced Commands".
+A Signomial Program has signomial constraints, and while they cannot be solved as quickly or to global optima, because they build on the structure of a GP they can be solved more quickly than a generic nonlinear program. More information on Signomial Programs can be found under `Advanced Commands`_.
 
 
 Where can I learn more?
@@ -76,4 +78,4 @@ To learn more about GPs, refer to the following resources:
 
     * `A tutorial on geometric programming <http://stanford.edu/~boyd/papers/pdf/gp_tutorial.pdf>`_, by S. Boyd, S.J. Kim, L. Vandenberghe, and A. Hassibi.
     * `Convex optimization <http://stanford.edu/~boyd/cvxbook/>`_, by S. Boyd and L. Vandenberghe.
-.. * `Geometric Programming for Aircraft Design Optimization <http://web.mit.edu/~whoburg/www/papers/hoburgabbeel2014.pdf>`_, Hoburg, Abbeel 2014
+    * `Geometric Programming for Aircraft Design Optimization <http://web.mit.edu/~whoburg/www/papers/hoburgabbeel2014.pdf>`_, Hoburg, Abbeel 2014
