@@ -234,15 +234,21 @@ def results_table(data, title, minval=0, printunits=True, fixedcols=True,
             lines.append([varstr, valstr, units, label])
         else:
             varstr = varstr.replace(" : ", "")
+            repdict = {'**': '^',
+                       ' [': ' \\mathrm{\\left[',
+                       '] ': '\\right]} '}
+            latexunits = units
+            for old, new in repdict.items():
+                latexunits = latexunits.replace(old, new)
             if latex == 1:  # normal results table
-                lines.append(["$", varstr, "$ & ", valstr, "& $ ",
-                              units.replace('**', '^'), "$ & ", label, " \\\\"])
+                lines.append(["$", varstr, "$ & ", valstr, "& $",
+                              latexunits, "$ & ", label, " \\\\"])
             elif latex == 2:  # no values
-                lines.append(["$", varstr, "$ & $ ",
-                              units.replace('**', '^'), "$ & ", label, " \\\\"])
+                lines.append(["$", varstr, "$ & $ \\mathrm{",
+                              latexunits, "$ & ", label, " \\\\"])
             elif latex == 3:  # no description
-                lines.append(["$", varstr, "$ & ", valstr, "& $ ",
-                              units.replace('**', '^'), "$ \\\\"])
+                lines.append(["$", varstr, "$ & ", valstr, "& $ \\mathrm{",
+                              latexunits, "$ \\\\"])
             else:
                 raise ValueError("Unexpected latex option, %s." % latex)
     if not latex:
