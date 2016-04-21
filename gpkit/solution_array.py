@@ -234,12 +234,7 @@ def results_table(data, title, minval=0, printunits=True, fixedcols=True,
             lines.append([varstr, valstr, units, label])
         else:
             varstr = varstr.replace(" : ", "")
-            repdict = {'**': '^',
-                       ' [': ' \\mathrm{\\left[',
-                       '] ': '\\right]} '}
-            latexunits = units
-            for old, new in repdict.items():
-                latexunits = latexunits.replace(old, new)
+            latexunits = ('[' + var.unitstr() + ']').replace('[]','[-]')
             if latex == 1:  # normal results table
                 lines.append(["$", varstr, "$ & ", valstr, "& $",
                               latexunits, "$ & ", label, " \\\\"])
@@ -264,20 +259,20 @@ def results_table(data, title, minval=0, printunits=True, fixedcols=True,
                  for line in lines]
         lines = [title] + ["-"*len(title)] + [''.join(l) for l in lines] + [""]
     elif latex == 1:
-        lines = (["{\\footnotesize"] + ["\\begin{longtable}{llll}"] +
+        lines = (["{\\footnotesize"] + ["\\begin{longtable}{llcl}"] +
                  ["\\toprule"] +
                  [title + " & Value & Units & Description \\\\"] +
                  ["\\midrule"] +
                  [''.join(l) for l in lines] + ["\\bottomrule"] +
                  ["\\end{longtable}}"] + [""])
     elif latex == 2:
-        lines = (["{\\footnotesize"] + ["\\begin{longtable}{lll}"] +
+        lines = (["{\\footnotesize"] + ["\\begin{longtable}{lcl}"] +
                  ["\\toprule"] + [title + " & Units & Description \\\\"] +
                  ["\\midrule"] +
                  [''.join(l) for l in lines] + ["\\bottomrule"] +
                  ["\\end{longtable}}"] + [""])
     elif latex == 3:
-        lines = (["{\\footnotesize"] + ["\\begin{longtable}{lll}"] +
+        lines = (["{\\footnotesize"] + ["\\begin{longtable}{llc}"] +
                  ["\\toprule"] + [title + " & Value & Units \\\\"] +
                  ["\\midrule"] + [''.join(l) for l in lines] +
                  ["\\bottomrule"] + ["\\end{longtable}}"] + [""])
