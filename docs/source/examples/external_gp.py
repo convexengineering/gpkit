@@ -15,4 +15,4 @@ constraints = [External_Constraint(x, y),
               ]
 
 m = Model(objective, constraints)
-sol = m.localsolve()
+sol = m.localsolve(verbosity=1)

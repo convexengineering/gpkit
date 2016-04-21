@@ -14,4 +14,4 @@ constraints = [y >= x,
               ]
 
 m = Model(objective, constraints)
-sol = m.solve()
+sol = m.solve(verbosity=1)
