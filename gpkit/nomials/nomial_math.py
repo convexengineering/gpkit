@@ -13,6 +13,8 @@ from ..small_scripts import mag
 from .. import units as ureg
 from .. import DimensionalityError
 
+from .data import NomialMap
+
 
 class Signomial(Nomial):
     """A representation of a Signomial.
@@ -32,79 +34,47 @@ class Signomial(Nomial):
         Posynomial (if the input has only positive cs)
         Monomial   (if the input has one term and only positive cs)
     """
-    def __init__(self, exps=None, cs=1, require_positive=True, simplify=True,
+    def __init__(self, exps=None, cs=1, require_positive=True, hmap=None,
                  **descr):
         # pylint: disable=too-many-statements
         # pylint: disable=too-many-branches
-        # this is somewhat deprecated, used for Variables and subbing Monomials
-        units = descr.get("units", None)
-        # If cs has units, then they will override this setting.
-        if isinstance(exps, Numbers):
-            cs = exps
-            exps = {}
-        if (isinstance(cs, Numbers) and
-                (exps is None or isinstance(exps, Strings + (VarKey, dict)))):
-            # building a Monomial
-            if isinstance(exps, VarKey):
-                exp = {exps: 1}
-                units = exps.units  # pylint: disable=no-member
-            elif exps is None or isinstance(exps, Strings):
-                vk = VarKey(**descr) if exps is None else VarKey(exps, **descr)
-                descr = vk.descr
-                units = vk.units
-                exp = {vk: 1}
-            elif isinstance(exps, dict):
-                exp = dict(exps)
-                for key in exps:
-                    if isinstance(key, Strings):
-                        exp[VarKey(key)] = exp.pop(key)
-            else:
-                raise TypeError("could not make Monomial with %s" % type(exps))
-            #simplify = False #TODO: this shouldn't require simplification
-            cs = [cs]
-            exps = [HashVector(exp)]  # pylint: disable=redefined-variable-type
-        elif isinstance(exps, Nomial):
-            simplify = False
-            cs = exps.cs  # pylint: disable=no-member
-            exps = exps.exps  # pylint: disable=no-member
-        else:
-            try:
-                # test for presence of length and identical lengths
-                assert len(cs) == len(exps)
-                exps_ = list(range(len(exps)))
-                if not all(isinstance(c, Quantity) for c in cs):
-                    try:
-                        cs = np.array(cs, dtype='float')
-                    except ValueError:
-                        raise ValueError("cannot add dimensioned and"
-                                         " dimensionless monomials together.")
-                else:
-                    units = Quantity(1, cs[0].units)
-                    if units.dimensionless:
-                        cs = [c * ureg.dimensionless for c in cs]
-                        units = ureg.dimensionless
-                    try:
-                        cs = [c.to(units).magnitude for c in cs] * units
-                    except DimensionalityError:
-                        raise ValueError("cannot add monomials of"
-                                         " different units together")
-                for i, k in enumerate(exps):
-                    exps_[i] = HashVector(k)
-                    for key in exps_[i]:
-                        if isinstance(key, Strings+(Monomial,)):
-                            exps_[i][VarKey(key)] = exps_[i].pop(key)
-                exps = tuple(exps_)
-            except AssertionError:
-                raise TypeError("cs and exps must have the same length.")
 
-        if isinstance(units, Quantity):
-            if not isinstance(cs, Quantity):
-                cs = cs*units
-            else:
-                cs = cs.to(units)
+        if not hmap:
+            if isinstance(cs, Numbers):
+                if exps is None or isinstance(exps, Strings):
+                    if exps is None:
+                        exps = VarKey(**descr)
+                    else:
+                        exps = VarKey(exps, **descr)
+                elif isinstance(exps, dict):
+                    exp = HashVector(exps)
+                    for key in exps:
+                        if isinstance(key, Strings):
+                            exp[VarKey(key)] = exp.pop(key)
+                    hmap = NomialMap({exp: mag(cs)})
+                    hmap.set_units(cs)
+                    hmap._simplify()
+            if hasattr(exps, "hmap"):
+                hmap = exps.hmap  # should this be NomialMap(exps.hmap.copy())?
+                hmap.units = exps.hmap.units
+                if not cs is 1:
+                    raise ValueError("Nomial and cs cannot be input together.")
+            elif isinstance(exps, Numbers):
+                hmap = NomialMap([(HashVector(), mag(exps))])
+                hmap.set_units(exps)
 
-        # init NomialData to create self.exps, self.cs, and so on
-        super(Signomial, self).__init__(exps, cs, simplify=simplify)
+        if not hmap:
+            hmap = NomialMap()
+            hmap.set_units(cs[0])
+            for i, exp in enumerate(exps):
+                if isinstance(exp, Strings):
+                    exp = VarKey(exp)
+                exp = HashVector(exp)
+                c = mag(cs[i].to(hmap.units)) if hmap.units else cs[i]
+                hmap[exp] = c + hmap.get(exp, 0)
+            hmap._simplify()
+
+        super(Signomial, self).__init__(hmap=hmap)
 
         if self.any_nonpositive_cs:
             from .. import SIGNOMIALS_ENABLED
@@ -114,11 +84,12 @@ class Signomial(Nomial):
         else:
             self.__class__ = Posynomial
 
-        if len(self.exps) == 1:
+        if len(self.hmap) == 1:
             if self.__class__ is Posynomial:
                 self.__class__ = Monomial
-            self.exp = self.exps[0]
-            self.c = self.cs[0]
+            self.exp, self.c = self.hmap.items()[0]
+            if self.hmap.units:
+                self.c = Quantity(self.c, self.hmap.units)
 
     def diff(self, wrt):
         """Derivative of this with respect to a Variable
@@ -244,18 +215,21 @@ class Signomial(Nomial):
 
     # posynomial arithmetic
     def __add__(self, other):
-        if isinstance(other, Numbers):
-            if other == 0:
-                return Signomial(self.exps, self.cs)
-            else:
-                cs = self.cs.tolist() + [other]  # pylint: disable=no-member
-                return Signomial(self.exps + ({},), cs)
-        elif isinstance(other, Signomial):
-             # pylint: disable=no-member
-            cs = self.cs.tolist() + other.cs.tolist()
-            return Signomial(self.exps + other.exps, cs)
-        elif isinstance(other, NomialArray):
+        if isinstance(other, NomialArray):
             return np.array(self)+other
+
+        other_hmap = None
+        if isinstance(other, Numbers):
+            if not other:
+                return Signomial(hmap=self.hmap)
+            else:
+                other_hmap = NomialMap({HashVector(): other})
+                other_hmap.set_units(other)
+        elif hasattr(other, "hmap"):
+            other_hmap = other.hmap
+
+        if other_hmap:
+            return Signomial(hmap=self.hmap + other_hmap)
         else:
             return NotImplemented
 
@@ -263,38 +237,44 @@ class Signomial(Nomial):
         return self + other
 
     def __mul__(self, other):
+        if isinstance(other, NomialArray):
+            return np.array(self)*other
+
         if isinstance(other, Numbers):
             if not other:
                 # assume other is multiplicative zero
                 return other
-            return Signomial(self.exps, other*self.cs)
+            hmap = mag(other)*self.hmap
+            hmap.units = self.hmap.units
+            if isinstance(other, Quantity):
+                if hmap.units:
+                    hmap.set_units(hmap.units*other)
+                else:
+                    hmap.set_units(other)
+            return Signomial(hmap=hmap)
         elif isinstance(other, Signomial):
-            C = np.outer(self.cs, other.cs)
-            if isinstance(self.cs, Quantity) or isinstance(other.cs, Quantity):
-                if not isinstance(self.cs, Quantity):
-                    sunits = ureg.dimensionless
-                else:
-                    sunits = Quantity(1, self.cs[0].units)
-                if not isinstance(other.cs, Quantity):
-                    ounits = ureg.dimensionless
-                else:
-                    ounits = Quantity(1, other.cs[0].units)
-                # HACK: fix for pint not working with np.outer
-                C = C * sunits * ounits
-            Exps = np.empty((len(self.exps), len(other.exps)), dtype="object")
-            for i, exp_s in enumerate(self.exps):
-                for j, exp_o in enumerate(other.exps):
-                    Exps[i, j] = exp_s + exp_o
-            return Signomial(Exps.flatten(), C.flatten())
-        elif isinstance(other, NomialArray):
-            return np.array(self)*other
+            hmap = NomialMap()
+            if not (self.hmap.units or other.hmap.units):
+                hmap.units = None
+            elif not self.hmap.units:
+                hmap.units = other.hmap.units
+            elif not other.hmap.units:
+                hmap.units = self.hmap.units
+            else:
+                hmap.units = self.hmap.units*other.hmap.units
+            for exp_s, c_s in self.hmap.items():
+                for exp_o, c_o in other.hmap.items():
+                    exp = exp_s + exp_o
+                    hmap[exp] = c_s*c_o + hmap.get(exp, 0)
+            hmap._simplify()
+            return Signomial(hmap=hmap)
         else:
             return NotImplemented
 
     def __div__(self, other):
         """Support the / operator in Python 2.x"""
         if isinstance(other, Numbers):
-            return Signomial(self.exps, self.cs/other)
+            return self*other**-1
         elif isinstance(other, Monomial):
             return other.__rdiv__(self)
         elif isinstance(other, NomialArray):
@@ -503,13 +483,14 @@ class PosynomialInequality(ScalarSingleEquationConstraint):
 
         if isinstance(p.cs, Quantity):
             try:
-                p.convert_to('dimensionless')
+                p = p.to(ureg.dimensionless)
             except DimensionalityError:
                 raise ValueError("unit mismatch: units of %s cannot "
                                  "be converted to units of %s" %
                                  (self.p_lt, self.m_gt))
 
-        p.exps, p.cs = self._simplify_posy_ineq(p.exps, p.cs)
+        exps, cs = self._simplify_posy_ineq(p.exps, p.cs)
+        p = Posynomial(exps, cs)
         return [p]
 
     def as_posyslt1(self):

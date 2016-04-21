@@ -1,7 +1,8 @@
 """Defines the VarKey class"""
 from itertools import count
-from .small_classes import Strings, Quantity
+from .small_classes import Strings, Quantity, HashVector
 from .small_scripts import mag, unitstr, veckeyed
+from .nomial_map import NomialMap
 
 
 class VarKey(object):
@@ -30,13 +31,6 @@ class VarKey(object):
         # Python arg handling guarantees 'name' won't appear in kwargs
         if isinstance(name, VarKey):
             self.descr.update(name.descr)
-        elif hasattr(name, "c") and hasattr(name, "exp"):
-            if mag(name.c) == 1 and len(name.exp) == 1:
-                var = list(name.exp)[0]
-                self.descr.update(var.descr)
-            else:
-                raise TypeError("variables can only be formed from monomials"
-                                " with a c of 1 and a single variable")
         else:
             if name is None:
                 name = "\\fbox{%s}" % VarKey.new_unnamed_id()
@@ -69,6 +63,8 @@ class VarKey(object):
             self.keys.add(self.veckey)
         self.descr["unitrepr"] = repr(self.units)
         self._unitstr = None
+        self.hmap = NomialMap({HashVector({self: 1}): 1.0})
+        self.hmap.units = self.units if ureg else None
 
     def __repr__(self):
         return self.str_without()

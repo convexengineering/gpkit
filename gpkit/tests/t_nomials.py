@@ -26,7 +26,7 @@ class TestMonomial(unittest.TestCase):
         self.assertEqual(m.c, 1)
 
         # single (string) var with non-default c
-        m = Monomial('tau', .1)
+        m = 0.1*Variable('tau')
         tau = m.varkeys.map(["tau"])
         self.assertEqual(m.varlocs, {tau: [0]})
         self.assertEqual(m.exp, {tau: 1})
@@ -65,14 +65,15 @@ class TestMonomial(unittest.TestCase):
 
     def test_latex(self):
         "Test latex string creation"
+        x = Variable("x")
         m = Monomial({'x': 2, 'y': -1}, 5).latex()
         self.assertEqual(type(m), str)
-        self.assertEqual(Monomial('x', 5).latex(), '5x')
+        self.assertEqual((5*x).latex(), '5x')
 
     def test_str_with_units(self):
         "Make sure __str__() works when units are involved"
-        S = Monomial('S', units='m^2')
-        rho = Monomial('rho', units='kg/m^3')
+        S = Variable('S', units='m^2')
+        rho = Variable('rho', units='kg/m^3')
         x = rho*S
         xstr = str(x)
         self.assertEqual(type(xstr), str)
@@ -224,9 +225,9 @@ class TestPosynomial(unittest.TestCase):
         x = Monomial('x')
         y = Monomial('y')
         ms = [Monomial({'x': 1, 'y': 2}, 3.14),
-              Monomial('y', 0.5),
+              0.5*Monomial('y'),
               Monomial({'x': 3, 'y': 1}, 6),
-              Monomial({}, 2)]
+              Monomial(2)]
         exps, cs = [], []
         for m in ms:
             cs += m.cs.tolist()

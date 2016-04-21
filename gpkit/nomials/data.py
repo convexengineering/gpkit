@@ -6,6 +6,7 @@ import numpy as np
 from ..small_classes import HashVector, Quantity
 from ..keydict import KeySet, KeyDict
 from ..small_scripts import mag
+from ..nomial_map import NomialMap
 
 
 class NomialData(object):
@@ -17,30 +18,43 @@ class NomialData(object):
     units: pint.UnitsContainer
     """
     # pylint: disable=too-many-instance-attributes
-    def __init__(self, exps=None, cs=None, simplify=True):
-        if exps is None and cs is None:
+    def __init__(self, exps=None, cs=None, hmap=None):
+        if not (exps or cs or hmap):
             # pass through for classmethods to get a NomialData object,
             # which they will then call __init__ on
             return
-        if simplify:
-            exps, cs = simplify_exps_and_cs(exps, cs)
-        self.exps, self.cs = exps, cs
-        self.any_nonpositive_cs = any(mag(c) <= 0 for c in self.cs)
-
-        varlocs = {}
-        for i, exp in enumerate(exps):
-            for var in exp:
-                if var not in varlocs:
-                    varlocs[var] = []
-                varlocs[var].append(i)
-        self.varlocs = varlocs
-        self._varkeys, self._values = None, None
-        if hasattr(self.cs, "units"):
-            self.units = Quantity(1, self.cs.units)  #pylint: disable=no-member
+        if hmap:
+            self.hmap = hmap
         else:
-            self.units = None
+            # only used in Signomial.subinplace
+            self.hmap, exps, cs = NomialMap.simplify_exps_and_cs(exps, cs)
+            self._exps, self._cs = exps, cs
+
+        self.varlocs = {}
+        for i, exp in enumerate(self.exps):
+            for var in exp:
+                if var not in self.varlocs:
+                    self.varlocs[var] = []
+                self.varlocs[var].append(i)
 
         self._hashvalue = None
+        self._varkeys, self._values = None, None
+        self.units = self.hmap.units
+        self.any_nonpositive_cs = any(c <= 0 for c in self.hmap.values())
+
+    @property
+    def exps(self):
+        if not hasattr(self, "_exps"):
+            self._exps = tuple(self.hmap.keys())
+        return self._exps
+
+    @property
+    def cs(self):
+        if not hasattr(self, "_cs"):
+            self._cs = np.array(self.hmap.values())
+            if self.hmap.units:
+                self._cs = self._cs*self.hmap.units
+        return self._cs
 
     def __hash__(self):
         if self._hashvalue is None:
@@ -78,7 +92,10 @@ class NomialData(object):
         exps = functools_reduce(add, (tuple(s.exps) for s in nomials))
         cs = np.hstack((mag(s.cs) for s in nomials))
         # nomials are already simplified, so simplify=False
-        NomialData.__init__(self, exps, cs, simplify=False)
+        self._exps = exps
+        self._cs = cs
+        hmap = NomialMap.from_exps_and_cs(exps, cs)
+        NomialData.__init__(self, hmap=hmap)
         self.units = tuple(s.units for s in nomials)
 
     def __repr__(self):
@@ -97,26 +114,28 @@ class NomialData(object):
         NomialData
         """
         varset = self.varkeys[var]
-        if len(varset) == 0:
-            return NomialData(exps=[{}], cs=[0], simplify=False)
-        elif len(varset) > 1:
+        units = self.units/var.units if self.units else None
+        if len(varset) > 1:
             raise ValueError("multiple variables %s found for key %s"
                              % (list(varset), var))
+        elif len(varset) == 0:
+            hmap = NomialMap({HashVector(): 0})
         else:
             var, = varset
-        exps, cs = [], []
-        # var.units may be str if units disabled
-        var_units = (var.units if var.units and not isinstance(var.units, str)
-                     else 1)
-        for i, exp in enumerate(self.exps):
-            exp = HashVector(exp)   # copy -- exp is mutated below
-            e = exp.get(var, 0)
-            if var in exp:
-                exp[var] -= 1
-            exps.append(exp)
-            cs.append(e*self.cs[i] / var_units)
-        # don't simplify to keep length same as self
-        return NomialData(exps=exps, cs=cs, simplify=False)
+            exps, cs = [], []
+            # var.units may be str if units disabled
+            csmag = mag(self.cs)
+            for i, exp in enumerate(self.exps):
+                exp = HashVector(exp)   # copy -- exp is mutated below
+                e = exp.get(var, 0)
+                if var in exp:
+                    exp[var] -= 1
+                exps.append(exp)
+                cs.append(e*csmag[i])
+            # don't simplify to keep length same as self
+            hmap = NomialMap.from_exps_and_cs(exps, cs)
+        hmap.set_units(units)
+        return NomialData(hmap=hmap)
 
     def __eq__(self, other):
         """Equality test"""

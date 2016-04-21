@@ -110,7 +110,7 @@ def run_sweep(genfunction, self, solution, skipsweepfailures,
         "Solves one pass of a sweep."
         this_pass = {var: sweep_vect[i]
                      for (var, sweep_vect) in sweep_vects.items()}
-        linked = {var: fn(*[this_pass[VarKey(v)]
+        linked = {var: fn(*[this_pass[VarKey(v.key)]
                             for v in var.descr["args"]])
                   for var, fn in linkedsweep.items()}
         this_pass.update(linked)

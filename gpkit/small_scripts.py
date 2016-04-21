@@ -55,7 +55,7 @@ def unitstr(units, into="%s", options="~", dimless='-'):
     if units and not isinstance(units, Strings):
         try:
             rawstr = ("{:%s}" % options).format(units)
-            if str(units.units) == "count":
+            if str(units)[-5:] == "count":
             # TODO remove this conditional when pint issue 356 is resolved
                 rawstr = "1.0 count"
         except ValueError:
