@@ -122,6 +122,7 @@ class SolutionArray(DictOfLists):
             table_title = self.table_titles[table]
             if table == "cost":
                 if latex:
+                    # TODO should probably print a small latex cost table here
                     continue
                 strs += ["\n%s\n----" % table_title]
                 if len(self) > 1:
@@ -148,12 +149,12 @@ class SolutionArray(DictOfLists):
                 strs += results_table(subdict, table_title,
                                       latex=latex, **kwargs)
         if latex:
-            preamble = (["\\documentclass[12pt]{article}"] +
-                        ["\\usepackage{booktabs}"] +
-                        ["\\usepackage{longtable}"] +
-                        ["\\usepackage{amsmath}"] +
-                        ["\\begin{document}\n"])
-            strs = preamble + strs + ["\\end{document}"]
+            preamble = "\n".join(("% \\documentclass[12pt]{article}",
+                                  "% \\usepackage{booktabs}",
+                                  "% \\usepackage{longtable}",
+                                  "% \\usepackage{amsmath}",
+                                  "% \\begin{document}\n"))
+            strs = [preamble] + strs + ["% \\end{document}"]
         return "\n".join(strs)
 
 
