@@ -53,6 +53,7 @@ class GeometricProgram(NomialData):
         self.posynomials = [cost.sub(self.substitutions)]
         self.constr_idxs = []
         self.unusedsubkeys = set()
+        # TODO: speed up the below before uncommenting
         # self.unusedsubkeys = set(key for key in self.substitutions
         #                          if (key not in constraints.varkeys
         #                              and key not in self.cost.varkeys))
