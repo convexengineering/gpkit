@@ -53,8 +53,8 @@ class Model(CostedConstraintSet):
                 "To initialize a model, rename your setup method as "
                 "__init__(self, **kwargs) and have it call "
                 "Model.__init__(self, cost, constraints, **kwargs) at the end.")
-        cost = cost if cost is not None else Monomial(1)
-        constraints = constraints if constraints is not None else []
+        cost = cost if cost else Monomial(1)
+        constraints = constraints if constraints else []
         CostedConstraintSet.__init__(self, cost, constraints, substitutions)
         if self.__class__.__name__ != "Model" and not name:
             name = self.__class__.__name__
@@ -73,7 +73,7 @@ class Model(CostedConstraintSet):
         "Connects this model with a set of constraints"
         lc = LinkedConstraintSet([self, other], include_only, exclude)
         cost = self.cost.sub(lc.linked)
-        return Model(cost, [lc], lc.substitutions)
+        return Model(cost, lc, lc.substitutions)
 
     def zero_lower_unbounded_variables(self):
         "Recursively substitutes 0 for variables that lack a lower bound"

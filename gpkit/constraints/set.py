@@ -7,7 +7,7 @@ from ..repr_conventions import _str, _repr, _repr_latex_
 
 class ConstraintSet(list):
     "Recursive container for ConstraintSets and Inequalities"
-    def __init__(self, constraints, substitutions=None):
+    def __init__(self, constraints, substitutions=None, recursesubs=True):
         if isinstance(constraints, ConstraintSet):
             constraints = [constraints]
         list.__init__(self, constraints)
@@ -21,8 +21,11 @@ class ConstraintSet(list):
         else:
             # grab the substitutions dict from the top constraintset
             subs.update(constraints.substitutions)  # pylint: disable=no-member
-        self.substitutions = KeyDict.with_keys(self.varkeys,
-                                               self._iter_subs(subs))
+        if recursesubs:
+            self.substitutions = KeyDict.with_keys(self.varkeys,
+                                                   self._iter_subs(subs))
+        else:
+            self.substitutions = subs
         # initializations for attributes used elsewhere
         self.posymap = []
 
@@ -69,7 +72,7 @@ class ConstraintSet(list):
         root = "root" not in excluded
         if root:
             excluded.append("root")
-            lines.append("\\begin{array}{ll} \\text{}")
+            lines.append("\\begin{array}[ll] \\text{}")
             root_latex = self.rootconstr_latex(excluded)
             if root_latex:
                 lines.append(root_latex)
@@ -177,9 +180,9 @@ class ConstraintSet(list):
         """Returns GPConstraint approximating this constraint at x0
 
         When x0 is none, may return a default guess."""
-        cs = ConstraintSet([constr.as_gpconstr(x0) for constr in self])
-        cs.substitutions.update(self.substitutions)
-        return cs
+        gpconstrs = [constr.as_gpconstr(x0) for constr in self]
+        return ConstraintSet(gpconstrs,
+                             self.substitutions, recursesubs=False)
 
     def sens_from_gpconstr(self, gpapprox, gp_sens, var_senss):
         """Computes sensitivities from GPConstraint approximation
