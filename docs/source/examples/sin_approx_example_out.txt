@@ -1,0 +1,15 @@
+Using solver 'cvxopt'
+Solving for 2 variables.
+Solving took 0.00473 seconds.
+
+Cost
+----
+ 0.7854
+
+Free Variables
+--------------
+x : 0.7854 
+y : 0.7854 
+
+Sensitivities
+-------------

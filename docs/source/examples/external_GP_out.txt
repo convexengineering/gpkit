@@ -1,0 +1,14 @@
+Beginning signomial solve.
+Solving took 3 GP solves and 0.0191 seconds.
+
+Cost
+----
+ 0.7071
+
+Free Variables
+--------------
+x : 0.7854 
+y : 0.7071 
+
+Sensitivities
+-------------
