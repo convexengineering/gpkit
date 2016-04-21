@@ -147,7 +147,7 @@ class TestTightConstraintSet(unittest.TestCase):
         """Tests tight constraint set with solve()"""
         x = Variable('x')
         x_min = Variable('x_{min}', 2)
-        m = Model(x, [TightConstraintSet([x >= 1]),
+        m = Model(x, [TightConstraintSet([x >= 1], raiseerror=True),
                       x >= x_min])
         with self.assertRaises(ValueError):
             m.solve(verbosity=0)
@@ -159,7 +159,7 @@ class TestTightConstraintSet(unittest.TestCase):
         y = Variable('y')
         with SignomialsEnabled():
             sig_constraint = (x + y >= 0.1)
-        m = Model(x, [TightConstraintSet([x >= y]),
+        m = Model(x, [TightConstraintSet([x >= y], raiseerror=True),
                       x >= 2, y >= 1, sig_constraint])
         with self.assertRaises(ValueError):
             m.localsolve(verbosity=0)
@@ -173,7 +173,7 @@ class TestTightConstraintSet(unittest.TestCase):
         x_min = Variable('x_{min}', 2)
         y_max = Variable('y_{max}', 0.5)
         with SignomialsEnabled():
-            m = Model(x, [TightConstraintSet([x + y >= 1]),
+            m = Model(x, [TightConstraintSet([x + y >= 1], raiseerror=True),
                           x >= x_min,
                           y <= y_max])
         with self.assertRaises(ValueError):
