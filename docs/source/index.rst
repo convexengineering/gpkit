@@ -20,7 +20,7 @@ Table of contents
        advancedcommands
        signomialprogramming
        examples
-       glossary
+       autodoc/gpkit
        citinggpkit
        acknowledgements
        releasenotes

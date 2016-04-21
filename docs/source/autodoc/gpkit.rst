@@ -3,27 +3,83 @@ Glossary
 
 *For an alphabetical listing of all commands, check out the* :ref:`genindex`
 
-The GPkit Package
-=================
-
-.. automodule:: gpkit
-    :members:
-    :show-inheritance:
+gpkit package
+=============
 
 Subpackages
-==============
+-----------
 
 .. toctree::
 
-    autodoc/gpkit.interactive
+    gpkit.constraints
+    gpkit.interactive
+    gpkit.nomials
+    gpkit.tests
+    gpkit.tools
 
 Submodules
-=============
+----------
 
-gpkit.model
+gpkit.build module
 ------------------
 
-.. automodule:: gpkit.model
+.. automodule:: gpkit.build
+    :members:
+    :undoc-members:
+    :show-inheritance:
+
+gpkit.feasibility module
+------------------------
+
+.. automodule:: gpkit.feasibility
+    :members:
+    :undoc-members:
+    :show-inheritance:
+
+gpkit.geometric_program module
+------------------------------
+
+.. automodule:: gpkit.geometric_program
+    :members:
+    :undoc-members:
+    :show-inheritance:
+
+gpkit.keydict module
+--------------------
+
+.. automodule:: gpkit.keydict
+    :members:
+    :undoc-members:
+    :show-inheritance:
+
+gpkit.modified_ctypesgen module
+-------------------------------
+
+.. automodule:: gpkit.modified_ctypesgen
+    :members:
+    :undoc-members:
+    :show-inheritance:
+
+gpkit.repr_conventions module
+-----------------------------
+
+.. automodule:: gpkit.repr_conventions
+    :members:
+    :undoc-members:
+    :show-inheritance:
+
+gpkit.small_classes module
+--------------------------
+
+.. automodule:: gpkit.small_classes
+    :members:
+    :undoc-members:
+    :show-inheritance:
+
+gpkit.small_scripts module
+--------------------------
+
+.. automodule:: gpkit.small_scripts
     :members:
     :undoc-members:
     :show-inheritance:
@@ -36,82 +92,19 @@ gpkit.solution_array module
     :undoc-members:
     :show-inheritance:
 
-gpkit.geometric_program
-------------------------------
-
-.. automodule:: gpkit.geometric_program
-    :members:
-    :undoc-members:
-    :show-inheritance:
-
-gpkit.signomial_program
-------------------------------
-
-.. automodule:: gpkit.signomial_program
-    :members:
-    :undoc-members:
-    :show-inheritance:
-
-gpkit.nomials
---------------------
-
-.. automodule:: gpkit.nomials
-    :members:
-    :undoc-members:
-    :show-inheritance:
-
-gpkit.nomialarray
-----------------------
-
-.. automodule:: gpkit.nomialarray
-    :members:
-    :undoc-members:
-    :show-inheritance:
-
-gpkit.small_classes
---------------------------
-
-.. automodule:: gpkit.small_classes
-    :members:
-    :undoc-members:
-    :show-inheritance:
-
-gpkit.small_scripts
---------------------------
-
-.. automodule:: gpkit.small_scripts
-    :members:
-    :undoc-members:
-    :show-inheritance:
-
-gpkit.substitution
--------------------------
-
-.. automodule:: gpkit.substitution
-    :members:
-    :undoc-members:
-    :show-inheritance:
-
-gpkit.tools module
-------------------
-
-.. automodule:: gpkit.tools
-    :members:
-    :undoc-members:
-    :show-inheritance:
-
-gpkit.variables module
-----------------------
-
-.. automodule:: gpkit.variables
-    :members:
-    :undoc-members:
-    :show-inheritance:
-
 gpkit.varkey module
 -------------------
 
 .. automodule:: gpkit.varkey
+    :members:
+    :undoc-members:
+    :show-inheritance:
+
+
+Module contents
+---------------
+
+.. automodule:: gpkit
     :members:
     :undoc-members:
     :show-inheritance:
