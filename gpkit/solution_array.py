@@ -94,7 +94,7 @@ class SolutionArray(DictOfLists):
 
     def table(self, tables=("cost", "sweepvariables", "freevariables",
                             "constants", "sensitivities"),
-              **kwargs):
+              latex=False, **kwargs):
         """A table representation of this SolutionArray
 
         Arguments
@@ -121,6 +121,8 @@ class SolutionArray(DictOfLists):
             subdict = self.get(table, None)
             table_title = self.table_titles[table]
             if table == "cost":
+                if latex:
+                    continue
                 strs += ["\n%s\n----" % table_title]
                 if len(self) > 1:
                     costs = ["%-8.3g" % c for c in subdict[:4]]
@@ -140,9 +142,18 @@ class SolutionArray(DictOfLists):
                                       minval=1e-2,
                                       sortbyvals=True,
                                       printunits=False,
+                                      latex=latex,
                                       **kwargs)
             else:
-                strs += results_table(subdict, table_title, **kwargs)
+                strs += results_table(subdict, table_title,
+                                      latex=latex, **kwargs)
+        if latex:
+            preamble = (["\\documentclass[12pt]{article}"] +
+                        ["\\usepackage{booktabs}"] +
+                        ["\\usepackage{longtable}"] +
+                        ["\\usepackage{amsmath}"] +
+                        ["\\begin{document}\n"])
+            strs = preamble + strs + ["\\end{document}"]
         return "\n".join(strs)
 
 
@@ -234,7 +245,7 @@ def results_table(data, title, minval=0, printunits=True, fixedcols=True,
             lines.append([varstr, valstr, units, label])
         else:
             varstr = varstr.replace(" : ", "")
-            latexunits = ('[' + var.unitstr() + ']').replace('[]','[-]')
+            latexunits = ('[' + var.unitstr() + ']').replace('[]', '[-]')
             if latex == 1:  # normal results table
                 lines.append(["$", varstr, "$ & ", valstr, "& $",
                               latexunits, "$ & ", label, " \\\\"])
