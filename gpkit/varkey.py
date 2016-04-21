@@ -2,7 +2,6 @@
 from itertools import count
 from .small_classes import Strings, Quantity, HashVector
 from .small_scripts import mag, unitstr, veckeyed
-from .nomial_map import NomialMap
 
 
 class VarKey(object):
@@ -135,3 +134,5 @@ class VarKey(object):
 
     def __ne__(self, other):
         return not self.__eq__(other)
+
+from .nomial_map import NomialMap

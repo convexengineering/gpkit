@@ -166,7 +166,7 @@ class Signomial(Nomial):
         Usage
         -----
         3 == (x**2 + y).sub({'x': 1, y: 2})
-        3 == (x).gp.sub(x, 3)
+        3 == (x).gp.sub(x, 3)substitution
 
         Arguments
         ---------
@@ -182,8 +182,8 @@ class Signomial(Nomial):
         -------
         Returns substituted nomial.
         """
-        _, exps, cs, _ = substitution(self, substitutions, val)
-        return Signomial(exps, cs, require_positive=require_positive)
+        hmap = self.hmap.sub(substitutions, val)
+        return Signomial(hmap=hmap, require_positive=require_positive)
 
     def subinplace(self, substitutions, value=None):
         "Substitutes in place."
@@ -192,13 +192,14 @@ class Signomial(Nomial):
 
     def subsummag(self, substitutions, val=None):
         "Returns the sum of the magnitudes of the substituted Nomial."
-        _, exps, cs, _ = substitution(self, substitutions, val)
+        hmap = self.hmap.sub(substitutions, val)
+        exps = hmap.keys()
         if any(exps):
             keys = set()
             for exp in exps:
                 keys.update(exp)
             raise ValueError("could not substitute for %s" % keys)
-        return mag(cs).sum()
+        return sum(hmap.values())
 
     def __le__(self, other):
         if isinstance(other, NomialArray):

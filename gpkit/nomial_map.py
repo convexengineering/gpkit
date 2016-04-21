@@ -1,19 +1,13 @@
 import numpy as np
-from collections import defaultdict
-from .small_classes import HashVector, Numbers, Quantity
+from collections import defaultdict, Iterable
+from .small_classes import HashVector, Numbers, Quantity, Strings
+from .keydict import KeySet
 from . import units as ureg
-from .small_scripts import mag
+from .small_scripts import mag, is_sweepvar
+from .varkey import VarKey
 
 
 class NomialMap(HashVector):
-
-    def __init__(self, *args, **kwargs):
-        super(NomialMap, self).__init__(*args, **kwargs)
-        self.varlocs = defaultdict(set)
-        for exp in self:
-            for vk in exp:
-                self.varlocs[vk].add(exp)
-        # self._simplify()
 
     def set_units(self, united_thing):
         if hasattr(united_thing, "units"):
@@ -42,38 +36,55 @@ class NomialMap(HashVector):
         nm.units = units
         return nm
 
-    def sub(self, substitutions):
+    def copy(self):
+        cp = self.__class__({HashVector(k.copy()): v for k, v in self.items()})
+        cp.units = self.units
+        return cp
+
+    def sub(self, substitutions, val):
+        cp = self.copy()
+        if val is not None:
+            substitutions = {substitutions: val}
+
+        varlocs = defaultdict(set)
+        for exp in cp:
+            for vk in exp:
+                varlocs[vk].add(exp)
+        varkeys = KeySet(varlocs)
+        substitutions, _, _ = parse_subs(varkeys, substitutions)
+
         exps_touched = set()
-        for vk, exps in self.varlocs.items():
+        for vk, exps in varlocs.items():
             if vk in substitutions:
                 value = substitutions[vk]
-                if hasattr(value, "key"):
-                    self.hmap = NomialMap({HashVector({value.key: 1}): 1.0})
-                    self.hmap.units = value.key.units if ureg else None
+                if isinstance(value, Strings):
+                    descr = dict(vk.descr)
+                    del descr["name"]
+                    value = VarKey(name=value, **descr)
                 if hasattr(value, "hmap"):
-                    assert len(value.hmap) == 1
                     value = value.hmap
-                    monomial_sub = True
-                if hasattr(value, "to"):
-                    if not vk.units:
-                        self.units = "dimensionless"
+                if hasattr(value, "to") and value.to:
+                    if not vk.units or isinstance(vk.units, Strings):
+                        vk.units = ureg.dimensionless
                     value = mag(value.to(vk.units))
                 for exp in exps:
                     x = exp.pop(vk)
-                    if monomial_sub:
-                        m_c, = value.values()
+                    if isinstance(value, NomialMap):
                         m_exp, = value.keys()
-                        old_c = self.pop(exp)
+                        m_c, = value.values()
+                        old_c = cp.pop(exp)
                         exp += m_exp*x
-                        self[exp] = old_c * m_c**x
+                        cp[exp] = old_c * m_c**x
                     else:
-                        self[exp] *= value**x
+                        cp[exp] *= value**x
                     exps_touched.add(exp)
         for exp in exps_touched:
             # pmap here
-            value = self.pop(exp)
+            value = cp.pop(exp)
             exp._hashvalue = None
-            self[exp] = value + self.get(exp, 0)
+            cp[exp] = value + cp.get(exp, 0)
+
+        return cp
 
     def __add__(self, other):
         units = self.units
@@ -136,3 +147,64 @@ class NomialMap(HashVector):
             cs_ = cs_*units
 
         return nm, exps_, cs_
+
+
+def parse_subs(varkeys, substitutions):
+    "Seperates subs into constants, sweeps linkedsweeps actually present."
+    constants, sweep, linkedsweep = {}, {}, {}
+    if hasattr(substitutions, "keymap"):
+        for var in varkeys.keymap:
+            if dict.__contains__(substitutions, var):
+                sub = dict.__getitem__(substitutions, var)
+                keys = varkeys.keymap[var]
+                append_sub(sub, keys, constants, sweep, linkedsweep)
+    else:
+        for var in substitutions:
+            key = getattr(var, "key", var)
+            if key in varkeys.keymap:
+                sub, keys = substitutions[var], varkeys.keymap[key]
+                append_sub(sub, keys, constants, sweep, linkedsweep)
+    return constants, sweep, linkedsweep
+
+
+def append_sub(sub, keys, constants, sweep, linkedsweep):
+    "Appends sub to constants, sweep, or linkedsweep."
+    sweepsub = is_sweepvar(sub)
+    if sweepsub:
+        _, sub = sub  # _ catches the "sweep" marker
+    for key in keys:
+        if not key.shape or not isinstance(sub, Iterable):
+            value = sub
+        else:
+            sub = np.array(sub) if not hasattr(sub, "shape") else sub
+            if key.shape == sub.shape:
+                value = sub[key.idx]
+                if is_sweepvar(value):
+                    _, value = value
+                    sweepsub = True
+            elif sweepsub:
+                try:
+                    np.broadcast(sub, np.empty(key.shape))
+                except ValueError:
+                    raise ValueError("cannot sweep variable %s of shape %s"
+                                     " with array of shape %s; array shape"
+                                     " must either be %s or %s" %
+                                     (key.str_without("model"), key.shape,
+                                      sub.shape,
+                                      key.shape, ("N",)+key.shape))
+                idx = (slice(None),)+key.descr["idx"]
+                value = sub[idx]
+            else:
+                raise ValueError("cannot substitute array of shape %s for"
+                                 " variable %s of shape %s." %
+                                 (sub.shape, key.str_without("model"),
+                                  key.shape))
+        if not sweepsub:
+            try:
+                assert np.isnan(value)
+            except (AssertionError, TypeError, ValueError):
+                constants[key] = value
+        elif not hasattr(value, "__call__"):
+            sweep[key] = value
+        else:
+            linkedsweep[key] = value

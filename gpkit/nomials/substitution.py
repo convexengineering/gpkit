@@ -166,7 +166,7 @@ def substitution(nomial, substitutions, val=None):
                 varlocs_[sub].append(i)
             elif (isinstance(sub, VarKey)
                   or (hasattr(sub, "exp") and hasattr(sub, "c"))):
-                if sub.units != var.units:
+                if sub.units != var.units and not isinstance(sub.units, Strings):
                     try:
                         if hasattr(sub.units, "to"):
                             vu = getattr(var.units, "units", "dimensionless")
