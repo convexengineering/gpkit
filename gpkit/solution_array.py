@@ -246,16 +246,15 @@ def results_table(data, title, minval=0, printunits=True, fixedcols=True,
             lines.append([varstr, valstr, units, label])
         else:
             varstr = varstr.replace(" : ", "")
-            latexunits = ('[' + var.unitstr() + ']').replace('[]', '[-]')
             if latex == 1:  # normal results table
                 lines.append(["$", varstr, "$ & ", valstr, "& $",
-                              latexunits, "$ & ", label, " \\\\"])
+                              var.unitstr(), "$ & ", label, " \\\\"])
             elif latex == 2:  # no values
-                lines.append(["$", varstr, "$ & $ \\mathrm{",
-                              latexunits, "$ & ", label, " \\\\"])
+                lines.append(["$", varstr, "$ & $ ",
+                              var.unitstr(), "$ & ", label, " \\\\"])
             elif latex == 3:  # no description
-                lines.append(["$", varstr, "$ & ", valstr, "& $ \\mathrm{",
-                              latexunits, "$ \\\\"])
+                lines.append(["$", varstr, "$ & ", valstr, "& $ ",
+                              var.unitstr(), "$ \\\\"])
             else:
                 raise ValueError("Unexpected latex option, %s." % latex)
     if not latex:
