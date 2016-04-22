@@ -1,15 +1,15 @@
-"Can be found in gpkit/docs/source/examples/external_gp.py"
+"Can be found in gpkit/docs/source/examples/external_sp.py"
 
 import numpy as np
 from gpkit import Variable, Model
-from external_class import External_Constraint
+from external_constraint import ExternalConstraint
 
 x = Variable("x")
 y = Variable("y")
 
 objective = y
 
-constraints = [External_Constraint(x, y),
+constraints = [ExternalConstraint(x, y),
                x <= np.pi/2.,
                x >= np.pi/4.,
               ]

@@ -37,9 +37,9 @@ If you wish to start the local optimization at a particular point :math:`x_k`, h
 
 Calling to External Codes
 =========================
-For some applications, it is useful to be able to call external codes which may not be GP compatible.  Imagine we wished to solve the following optimization problem:
+For some applications, it is useful to call external codes which may not be GP compatible.  Imagine we wished to solve the following optimization problem:
 
-.. math:: \begin{array}[lll]\text{}
+.. math:: \begin{array}{lll}\text{}
     \text{minimize} & y & \\
     \text{subject to} & y \geq \sin(x) \\
                       & \frac{\pi}{4} \leq x \leq \frac{\pi}{2}
@@ -51,11 +51,11 @@ This problem is not GP compatible due to the sin(x) constraint.  One approach mi
 
 .. literalinclude:: examples/sin_approx_example_output.txt
 
-However, we can do better by utilizing some built in functionality of GPkit.  Assume we have some external code which is capable of evaluating our incompatible function:
+We can do better, however, by utilizing some built in functionality of GPkit.  Assume we have some external code which is capable of evaluating our incompatible function:
 
 .. literalinclude:: examples/external_function.py
 
-Now, we can write a class that will in essence replace the incompatible constraint:
+Now, we can create a ConstraintSet that allows GPkit to treat the incompatible constraint as though it were a signomial programming constraint:
 
 .. literalinclude:: examples/external_class.py
 
@@ -65,7 +65,4 @@ and replace the incompatible constraint in our GP:
 
 .. literalinclude:: examples/external_gp_output.txt
 
-which is the expected result.  This method has been generalized to much larger scale problems, including calling XFOIL and AVL.
-
-
-
+which is the expected result.  This method has been generalized to larger problems, such as calling XFOIL and AVL.
