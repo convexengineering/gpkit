@@ -57,12 +57,12 @@ We can do better, however, by utilizing some built in functionality of GPkit.  A
 
 Now, we can create a ConstraintSet that allows GPkit to treat the incompatible constraint as though it were a signomial programming constraint:
 
-.. literalinclude:: examples/external_class.py
+.. literalinclude:: examples/external_constraint.py
 
 and replace the incompatible constraint in our GP:
 
-.. literalinclude:: examples/external_gp.py
+.. literalinclude:: examples/external_sp.py
 
-.. literalinclude:: examples/external_gp_output.txt
+.. literalinclude:: examples/external_sp_output.txt
 
 which is the expected result.  This method has been generalized to larger problems, such as calling XFOIL and AVL.
