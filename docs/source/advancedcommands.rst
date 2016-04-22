@@ -131,25 +131,27 @@ When a Model is created, any fixed Variables are used to form a dictionary: ``{v
 
 You can also substitute by just calling the solution, i.e. ``solution(p)``. This returns a numpy array of just the coefficients (``c``) of the posynomial after substitution, and will raise a` ``ValueError``` if some of the variables in ``p`` were not found in ``solution``.
 
-.. _Sweeps:
-
 Freeing Fixed Variables
 -----------------------
 
-After solving a model, it may be useful to "free" a variable and resolve.  This can be done using the command, ``del m.substitutions["x"]``, where ``m`` is a Model.  An example of how to do this is shown below. In this example, ``y`` is a fixed variable with value equal to 3.  When this variable is "freed", the value of the substitution, ``y``, in the model will be deleted and when solved will acquire the optimal value of 1. 
+After creating a Model, it may be useful to "free" a fixed variable and resolve.  This can be done using the command ``del m.substitutions["x"]``, where ``m`` is a Model.  An example of how to do this is shown below.
 
 .. code-block:: python
 
     from gpkit import Variable, Model
     x = Variable("x")
-    y = Variable("y", 3)
-    m = Model(x, [x >= 1+y, y >= 1])
-    m.solve()
+    y = Variable("y", 3)  # fix value to 3
+    m = Model(x, [x >= 1 + y, y >= 1])
+    _ = m.solve()  # optimal cost is 4; y appears in Constants
 
     del m.substitutions["y"]
-    _ = m.solve()
+    _ = m.solve()  # optimal cost is 2; y appears in Free Variables
 
-Please note that the ``y.value``, will still be 3.  In other words, after deleted ``y`` in the model, it will solve as if ``y`` is a free variable. If the variable, ``y``, is used in a seperate model, it will still carry the value of 3.  
+Note that ``del m.substitutions["y"]`` affects ``m`` but not ``y.key``.
+``y.value`` will still be 3, and if ``y`` is used in a new model,
+it will still carry the value of 3.
+
+.. _Sweeps:
 
 Sweeps
 ======
