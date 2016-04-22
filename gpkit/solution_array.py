@@ -245,16 +245,13 @@ def results_table(data, title, minval=0, printunits=True, fixedcols=True,
         if not latex:
             lines.append([varstr, valstr, units, label])
         else:
-            varstr = varstr.replace(" : ", "")
+            varstr = "$%s$" % varstr.replace(" : ", "")
             if latex == 1:  # normal results table
-                lines.append(["$", varstr, "$ & ", valstr, "& $",
-                              var.unitstr(), "$ & ", label, " \\\\"])
+                lines.append([varstr, valstr, "$%s$" % var.unitstr(), label])
             elif latex == 2:  # no values
-                lines.append(["$", varstr, "$ & $ ",
-                              var.unitstr(), "$ & ", label, " \\\\"])
+                lines.append([varstr, "$%s$" % var.unitstr(), label])
             elif latex == 3:  # no description
-                lines.append(["$", varstr, "$ & ", valstr, "& $ ",
-                              var.unitstr(), "$ \\\\"])
+                lines.append(varstr, valstr, "$%s$" % var.unitstr())
             else:
                 raise ValueError("Unexpected latex option, %s." % latex)
     if not latex:
@@ -274,17 +271,17 @@ def results_table(data, title, minval=0, printunits=True, fixedcols=True,
                  ["\\toprule"] +
                  [title + " & Value & Units & Description \\\\"] +
                  ["\\midrule"] +
-                 [''.join(l) for l in lines] + ["\\bottomrule"] +
+                 [" & ".join(l) + " \\\\" for l in lines] + ["\\bottomrule"] +
                  ["\\end{longtable}}"] + [""])
     elif latex == 2:
         lines = (["{\\footnotesize"] + ["\\begin{longtable}{lcl}"] +
                  ["\\toprule"] + [title + " & Units & Description \\\\"] +
                  ["\\midrule"] +
-                 [''.join(l) for l in lines] + ["\\bottomrule"] +
+                 [" & ".join(l) for l in lines] + ["\\bottomrule"] +
                  ["\\end{longtable}}"] + [""])
     elif latex == 3:
         lines = (["{\\footnotesize"] + ["\\begin{longtable}{llc}"] +
                  ["\\toprule"] + [title + " & Value & Units \\\\"] +
-                 ["\\midrule"] + [''.join(l) for l in lines] +
+                 ["\\midrule"] + [" & ".join(l) for l in lines] +
                  ["\\bottomrule"] + ["\\end{longtable}}"] + [""])
     return lines
