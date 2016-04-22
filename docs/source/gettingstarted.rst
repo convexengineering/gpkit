@@ -1,7 +1,7 @@
 Getting Started
 ***************
 
-GPkit is a Python package, so we assume basic familiarity with Python: if you"re new to Python we reccomend you take a look at `Learn Python <http://www.learnpython.org>`_.
+GPkit is a Python package, so we assume basic familiarity with Python: if you're new to Python we recommend you take a look at `Learn Python <http://www.learnpython.org>`_.
 
 Alright: `install GPkit <installation.html>`_ and import away.
 
@@ -12,18 +12,18 @@ Alright: `install GPkit <installation.html>`_ and import away.
 
 Declaring Variables
 ===================
-Instances of the ``Variable`` class represent scalar free variables. They store a key (i.e. name) used to look up the Variable in dictionaries, and optionally units, a description, and a value (if the Variable is to be held constant).
+Instances of the ``Variable`` class represent scalar variables. They store a key (i.e. name) used to look up the Variable in dictionaries, and optionally units, a description, and a value (if the Variable is to be held constant).
 
 
 Free Variables
-------------------
+--------------
 .. code-block:: python
 
     # Declare a variable, x
     x = Variable("x")
 
     # Declare a variable, y, with units of meters
-    y = Variable("y","m")
+    y = Variable("y", "m")
 
     # Declare a variable, z, with units of meters, and a description
     z = Variable("z", "m", "A variable called z with units of meters")
@@ -118,7 +118,9 @@ By convention, the objective is the function to be *minimized*. If you wish to *
 
 
 Solving the Model
-==============
+=================
+
+.. move example solve printouts (below) up to here
 
 When solving the model you can change the level of information that gets printed to the screen with the ``verbosity`` setting. A verbosity of 1 (the default) prints warnings and the solution; a verbosity of 2 prints solve time, a verbosity of 3 prints solver output, and a verbosity of 0 prints nothing.
 
@@ -130,7 +132,7 @@ When solving the model you can change the level of information that gets printed
 Printing Results
 ================
 
-Here we can manually print the solution table, with the same result as if the verbosity argument had been left blank above.
+We can also manually print the solution table, with the same result as if the verbosity argument had been left blank above.
 
 .. code-block:: python
 
@@ -164,12 +166,15 @@ Here we can manually print the solution table, with the same result as if the ve
 
     The x dimension is 0.577351209028 meter.
 
+.. refactor this section; explain what can be done with a SolutionArray
+.. e.g. table(), __call__, ["variables"], etc.
+
 Sensitivities and dual variables
 ================================
 
 When a GP is solved, the solver returns not just the optimal value for the problem’s variables (known as the "primal solution") but also, as a side effect of the solving process, the effect that scaling the :math:`\leq 1` of each canonical constraint would have on the overall objective (called the "dual solution", "shadow prices", or "posynomial sensitivities").
 
-From the dual solution we can compute the sensitivities for every fixed variable in the problem, which is often incredibly useful for seeing which of your constraints are most crucial, thus prioritizing your confirmation and remodeling of your assumptions.
+From the dual solution we can compute the sensitivities for every fixed variable in the problem, which is often useful for seeing which of your constraints are most crucial, thus prioritizing your confirmation and remodeling of your assumptions.
 
 Using variable sensitivities
 ----------------------------

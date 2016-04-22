@@ -4,9 +4,8 @@ Geometric Programming 101
 What is a GP?
 =============
 
-A Geometric Program (GP) is a type constrained non-linear optimization problem.
-
-A GP consists of an objective and set of inequalities of a particular form, which define the solution for a set of variables which have strictly positive values (that is, they can't be zero).
+A Geometric Program (GP) is a type of non-linear optimization problem whose objective and constraints have a particular form.
+The decision variables in a GP must have strictly positive values (that is, they can't be zero).
 
 GP objectives and inequalities are formed out of *monomials* and *posynomials*. In the context of GP, a monomial is defined as:
 
