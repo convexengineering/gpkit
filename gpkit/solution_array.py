@@ -57,7 +57,7 @@ class SolutionArray(DictOfLists):
             # it's a constant monomial
             return posy_subbed.c
         elif hasattr(posy_subbed, "c"):
-            # it's a posyosyarray, which'll throw an error if non-constant...
+            # it's a posyarray, which'll throw an error if non-constant...
             return posy_subbed.c
         return posy_subbed
 
@@ -94,7 +94,7 @@ class SolutionArray(DictOfLists):
 
     def table(self, tables=("cost", "sweepvariables", "freevariables",
                             "constants", "sensitivities"),
-              **kwargs):
+              latex=False, **kwargs):
         """A table representation of this SolutionArray
 
         Arguments
@@ -121,6 +121,9 @@ class SolutionArray(DictOfLists):
             subdict = self.get(table, None)
             table_title = self.table_titles[table]
             if table == "cost":
+                if latex:
+                    # TODO should probably print a small latex cost table here
+                    continue
                 strs += ["\n%s\n----" % table_title]
                 if len(self) > 1:
                     costs = ["%-8.3g" % c for c in subdict[:4]]
@@ -140,9 +143,18 @@ class SolutionArray(DictOfLists):
                                       minval=1e-2,
                                       sortbyvals=True,
                                       printunits=False,
+                                      latex=latex,
                                       **kwargs)
             else:
-                strs += results_table(subdict, table_title, **kwargs)
+                strs += results_table(subdict, table_title,
+                                      latex=latex, **kwargs)
+        if latex:
+            preamble = "\n".join(("% \\documentclass[12pt]{article}",
+                                  "% \\usepackage{booktabs}",
+                                  "% \\usepackage{longtable}",
+                                  "% \\usepackage{amsmath}",
+                                  "% \\begin{document}\n"))
+            strs = [preamble] + strs + ["% \\end{document}"]
         return "\n".join(strs)
 
 
@@ -233,16 +245,16 @@ def results_table(data, title, minval=0, printunits=True, fixedcols=True,
         if not latex:
             lines.append([varstr, valstr, units, label])
         else:
-            varstr = varstr.replace(" : ", "")
+            varstr = "$%s$" % varstr.replace(" : ", "")
             if latex == 1:  # normal results table
-                lines.append(["$", varstr, "$ & ", valstr, "& $ ",
-                              units.replace('**', '^'), "$ & ", label, " \\\\"])
+                lines.append([varstr, valstr, "$%s$" % var.unitstr(), label])
+                coltitles = [title, "Value", "Units", "Description"]
             elif latex == 2:  # no values
-                lines.append(["$", varstr, "$ & $ ",
-                              units.replace('**', '^'), "$ & ", label, " \\\\"])
+                lines.append([varstr, "$%s$" % var.unitstr(), label])
+                coltitles = [title, "Units", "Description"]
             elif latex == 3:  # no description
-                lines.append(["$", varstr, "$ & ", valstr, "& $ ",
-                              units.replace('**', '^'), "$ \\\\"])
+                lines.append(varstr, valstr, "$%s$" % var.unitstr())
+                coltitles = [title, "Value", "Units"]
             else:
                 raise ValueError("Unexpected latex option, %s." % latex)
     if not latex:
@@ -257,22 +269,12 @@ def results_table(data, title, minval=0, printunits=True, fixedcols=True,
         lines = [[fmt.format(s) for fmt, s in zip(fmts, line)]
                  for line in lines]
         lines = [title] + ["-"*len(title)] + [''.join(l) for l in lines] + [""]
-    elif latex == 1:
-        lines = (["{\\footnotesize"] + ["\\begin{longtable}{llll}"] +
-                 ["\\toprule"] +
-                 [title + " & Value & Units & Description \\\\"] +
-                 ["\\midrule"] +
-                 [''.join(l) for l in lines] + ["\\bottomrule"] +
-                 ["\\end{longtable}}"] + [""])
-    elif latex == 2:
-        lines = (["{\\footnotesize"] + ["\\begin{longtable}{lll}"] +
-                 ["\\toprule"] + [title + " & Units & Description \\\\"] +
-                 ["\\midrule"] +
-                 [''.join(l) for l in lines] + ["\\bottomrule"] +
-                 ["\\end{longtable}}"] + [""])
-    elif latex == 3:
-        lines = (["{\\footnotesize"] + ["\\begin{longtable}{lll}"] +
-                 ["\\toprule"] + [title + " & Value & Units \\\\"] +
-                 ["\\midrule"] + [''.join(l) for l in lines] +
-                 ["\\bottomrule"] + ["\\end{longtable}}"] + [""])
+    else:
+        colfmt = {1: "llcl", 2: "lcl", 3: "llc"}
+        lines = (["\n".join(["{\\footnotesize",
+                             "\\begin{longtable}{%s}" % colfmt[latex],
+                             "\\toprule",
+                             " & ".join(coltitles) + " \\\\ \\midrule"])] +
+                 [" & ".join(l) + " \\\\" for l in lines] +
+                 ["\n".join(["\\bottomrule", "\\end{longtable}}", ""])])
     return lines
