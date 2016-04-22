@@ -34,3 +34,35 @@ Example Usage
 When using the ``localsolve`` method, the ``reltol`` argument specifies the relative tolerance of the solver: that is, by what percent does the solution have to improve between iterations? If any iteration improves less than that amount, the solver stops and returns its value.
 
 If you wish to start the local optimization at a particular point :math:`x_k`, however, you may do so by putting that position (a dictionary formatted as you would a substitution) as the ``xk`` argument.
+
+Calling to External Codes
+=========================
+For some applications, it is useful to call external codes which may not be GP compatible.  Imagine we wished to solve the following optimization problem:
+
+.. math:: \begin{array}{lll}\text{}
+    \text{minimize} & y & \\
+    \text{subject to} & y \geq \sin(x) \\
+                      & \frac{\pi}{4} \leq x \leq \frac{\pi}{2}
+                      \end{array}
+
+This problem is not GP compatible due to the sin(x) constraint.  One approach might be to take the first term of the Taylor expansion of sin(x) and attempt to solve:
+
+.. literalinclude:: examples/sin_approx_example.py
+
+.. literalinclude:: examples/sin_approx_example_output.txt
+
+We can do better, however, by utilizing some built in functionality of GPkit.  Assume we have some external code which is capable of evaluating our incompatible function:
+
+.. literalinclude:: examples/external_function.py
+
+Now, we can create a ConstraintSet that allows GPkit to treat the incompatible constraint as though it were a signomial programming constraint:
+
+.. literalinclude:: examples/external_class.py
+
+and replace the incompatible constraint in our GP:
+
+.. literalinclude:: examples/external_gp.py
+
+.. literalinclude:: examples/external_gp_output.txt
+
+which is the expected result.  This method has been generalized to larger problems, such as calling XFOIL and AVL.
