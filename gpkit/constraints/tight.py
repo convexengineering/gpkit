@@ -1,6 +1,7 @@
 "Implements TightConstraintSet"
 from .set import ConstraintSet
 from ..nomials import PosynomialInequality, SignomialInequality
+from ..small_scripts import mag
 
 
 class TightConstraintSet(ConstraintSet):
@@ -28,7 +29,7 @@ class TightConstraintSet(ConstraintSet):
                            "the right hand side evaluated to %s "
                            "(Allowable error: %s%%, Actual error: %.2g%%)\n" %
                            (constraint, leftsubbed, rightsubbed,
-                            self.reltol*100, rel_diff.magnitude*100))
+                            self.reltol*100, mag(rel_diff)*100))
                     if self.raiseerror:
                         raise ValueError(msg)
                     else:
