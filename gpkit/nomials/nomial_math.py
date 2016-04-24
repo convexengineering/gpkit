@@ -656,7 +656,7 @@ class SignomialInequality(ScalarSingleEquationConstraint):
                             " a PosynomialInequality")
 
     def as_gpconstr(self, x0):
-        "Returns GP apprimxation of an SP constraint at x0"
+        "Returns GP approximation of an SP constraint at x0"
         posy, negy = self._unsubbed.posy_negy()
         if x0 is None:
             x0 = {vk: vk.descr["sp_init"] for vk in negy.vks
