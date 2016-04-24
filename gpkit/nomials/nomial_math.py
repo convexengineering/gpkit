@@ -463,14 +463,13 @@ class PosynomialInequality(ScalarSingleEquationConstraint):
         if HashVector() not in hmap:
             return hmap
         coeff = 1 - hmap[HashVector()]
-        if coeff < 0:
+        if coeff <= 0:
             raise ValueError("infeasible constraint: %s" % self)
-        elif coeff == 0:
-            if len(hmap) == 1:
-                # allow tautological monomial constraints (cs[0] <= 1)
-                # because they allow models to impose requirements
-                return hmap
-            raise ValueError("tautological constraint: %s" % self)
+        elif len(hmap) == 1:
+            # don't error on tautological constraints (coeff <= 1)
+            # because they allow models to impose requirements
+            # raise ValueError("tautological constraint: %s" % self)
+            return None
         scaled = hmap/coeff
         scaled.units = hmap.units
         del scaled[HashVector()]
@@ -478,19 +477,17 @@ class PosynomialInequality(ScalarSingleEquationConstraint):
 
     def _gen_unsubbed(self):
         "Returns the unsubstituted posys <= 1."
-        p = self.p_lt / self.m_gt
-
-        if isinstance(p.cs, Quantity):
+        hmap = (self.p_lt / self.m_gt).hmap
+        if hasattr(hmap, "units"):
             try:
-                p = p.to(ureg.dimensionless)
+                hmap = hmap.to(ureg.dimensionless)
+                hmap.units = None
             except DimensionalityError:
                 raise ValueError("unit mismatch: units of %s cannot "
                                  "be converted to units of %s" %
                                  (self.p_lt, self.m_gt))
-
-        hmap = self._simplify_posy_ineq(p.hmap)
-        p = Posynomial(hmap)
-        return [p]
+        hmap = self._simplify_posy_ineq(hmap)
+        return [Posynomial(hmap)]
 
     def as_posyslt1(self):
         "Returns the posys <= 1 representation of this constraint."
@@ -501,10 +498,21 @@ class PosynomialInequality(ScalarSingleEquationConstraint):
 
         out = []
         for posy in posys:
+            hmap = posy.hmap.sub(self.substitutions)
+            simp = self._simplify_posy_ineq(hmap)
+            if not simp:  # tautological constraint
+                continue
+            # pylint: disable=attribute-defined-outside-init
+            self.pmap, self.mfm = hmap.mmap(posy.hmap)
+            if simp is not hmap:
+                const_idx = hmap.keys().index(HashVector())
+                const_pmap = self.pmap.pop(const_idx)
+                for el in self.pmap:
+                    for key, value in const_pmap.items():
+                        el[key] = -value
+                hmap = simp
 
-            hmap, pmap, mfm = posy.hmap.sub(self.substitutions, mmap=True)
             allnan_or_zero = True
-
             for c in hmap.values():
                 if c != 0 and not np.isnan(c):
                     allnan_or_zero = False
@@ -512,11 +520,6 @@ class PosynomialInequality(ScalarSingleEquationConstraint):
             if allnan_or_zero:
                 continue  # skip nan'd or 0'd constraint
 
-            self.pmap = pmap  # pylint: disable=attribute-defined-outside-init
-            self.mfm = mfm
-            # hmap = self._simplify_posy_ineq2(hmap)
-            # if not exps and not cs:  # tautological constraint
-            #     continue
             p = Posynomial(hmap)
             if p.any_nonpositive_cs:
                 raise RuntimeWarning("PosynomialInequality %s became Signomial"

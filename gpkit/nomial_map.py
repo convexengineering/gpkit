@@ -42,71 +42,67 @@ class NomialMap(HashVector):
 
         cp = NomialMap()
         cp.units = self.units
-        expmap, csmap = {}, {}
+        cp.expmap, cp.csmap = {}, {}
         varlocs = defaultdict(set)
         for exp, c in self.items():
             new_exp = HashVector(exp)
-            expmap[exp] = new_exp
+            cp.expmap[exp] = new_exp
             cp[new_exp] = c
             for vk in new_exp:
                 varlocs[vk].add((exp, new_exp))
 
-        def returnfn():
-            if not mmap:
-                return cp
-            m_from_ms = defaultdict(dict)
-            pmap = [{} for _ in cp]
-            selfexps = self.keys()
-            cpexps = cp.keys()
-            for self_exp, cp_exp in expmap.items():
-                total_c = cp.get(cp_exp, None)
-                if total_c:
-                    fraction = csmap.get(self_exp, self[self_exp])/total_c
-                    m_from_ms[cp_exp][self_exp] = fraction
-                    self_idx = selfexps.index(self_exp)
-                    pmap[cpexps.index(cp_exp)][self_idx] = fraction
-            return cp, pmap, m_from_ms
-
         if not substitutions:
-            return returnfn()
-
-        varkeys = KeySet(varlocs)
-        fixed = parse_subs(varkeys, substitutions, sweeps=False)
+            return cp
+        fixed = parse_subs(KeySet(varlocs), substitutions, sweeps=False)
         if not fixed:
-            return returnfn()
+            return cp
 
         for vk in varlocs:
             if vk in fixed:
-                m_exp = []
-                exps, value = varlocs[vk], fixed[vk]
-                if isinstance(value, Strings):
+                expval = []
+                exps, cval = varlocs[vk], fixed[vk]
+                if isinstance(cval, Strings):
                     descr = dict(vk.descr)
                     del descr["name"]
-                    value = VarKey(name=value, **descr)
-                if hasattr(value, "hmap"):
-                    m_exp, = value.hmap.keys()
-                    value = value.hmap
+                    cval = VarKey(name=cval, **descr)
+                if hasattr(cval, "hmap"):
+                    expval, = cval.hmap.keys()
+                    cval = cval.hmap
                     # TODO: can't-sub-posynomials error here
-                if hasattr(value, "to"):
+                if hasattr(cval, "to"):
                     if not vk.units or isinstance(vk.units, Strings):
                         vk.units = ureg.dimensionless
-                    value = mag(value.to(vk.units))
-                if m_exp:
-                    value, = value.values()
+                    cval = mag(cval.to(vk.units))
+                if expval:
+                    cval, = cval.values()
                 for o_exp, exp in exps:
                     x = exp.pop(vk)
-                    powval = value**x if value != 0 or x >= 0 else np.inf
-                    csmap[o_exp] = csmap.get(o_exp, self[o_exp]) * powval
+                    powval = cval**x if cval != 0 or x >= 0 else np.inf
+                    cp.csmap[o_exp] = powval * cp.csmap.get(o_exp, self[o_exp])
                     if exp in cp:
                         c = cp.pop(exp)
-                        for key in m_exp:
-                            exp[key] = m_exp[key]*x + exp.get(key, 0)
+                        for key in expval:
+                            exp[key] = expval[key]*x + exp.get(key, 0)
                         exp._hashvalue = None
-                        cp[exp] = c * powval + cp.get(exp, 0)
+                        cp[exp] = powval * c + cp.get(exp, 0)
                     else:
                         exp._hashvalue = None
         cp._remove_zeros()
-        return returnfn()
+        return cp
+
+    def mmap(self, orig):
+        m_from_ms = defaultdict(dict)
+        pmap = [{} for _ in self]
+        origexps = orig.keys()
+        selfexps = self.keys()
+        for orig_exp, self_exp in self.expmap.items():
+            total_c = self.get(self_exp, None)
+            if total_c:
+                fraction = self.csmap.get(orig_exp, orig[orig_exp])/total_c
+                m_from_ms[self_exp][orig_exp] = fraction
+                orig_idx = origexps.index(orig_exp)
+                pmap[selfexps.index(self_exp)][orig_idx] = fraction
+        return pmap, m_from_ms
 
     def __add__(self, other):
         units = self.units
