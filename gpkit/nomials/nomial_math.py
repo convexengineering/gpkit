@@ -395,7 +395,10 @@ class Monomial(Posynomial):
         mons = Numbers + (Monomial,)
         if isinstance(other, mons):
             # if both are monomials, return a constraint
-            return MonomialEquality(self, "=", other)
+            try:
+                return MonomialEquality(self, "=", other)
+            except ValueError:
+                return False
         return super(Monomial, self).__eq__(other)
 
     # Monomial.__le__ falls back on Posynomial.__le__
@@ -454,7 +457,7 @@ class PosynomialInequality(ScalarSingleEquationConstraint):
         self.p_lt, self.m_gt = p_lt, m_gt
         self.substitutions = dict(p_lt.values)
         self.substitutions.update(m_gt.values)
-        self._unsubbed = self._gen_unsubbed()
+        self._unsubbed = self._gen_unsubbed(p_lt, m_gt)
         self.nomials = [self.left, self.right, self.p_lt, self.m_gt]
         self.nomials.extend(self._unsubbed)
 
@@ -463,21 +466,21 @@ class PosynomialInequality(ScalarSingleEquationConstraint):
         if HashVector() not in hmap:
             return hmap
         coeff = 1 - hmap[HashVector()]
-        if coeff <= 0:
-            raise ValueError("infeasible constraint: %s" % self)
-        elif len(hmap) == 1:
-            # don't error on tautological constraints (coeff <= 1)
+        if len(hmap) == 1 and coeff >= 0:
+            # don't error on tautological monomials (0 <= coeff)
             # because they allow models to impose requirements
             # raise ValueError("tautological constraint: %s" % self)
             return None
+        elif coeff <= 0:
+            raise ValueError("infeasible constraint: %s" % self)
         scaled = hmap/coeff
         scaled.units = hmap.units
         del scaled[HashVector()]
         return scaled
 
-    def _gen_unsubbed(self):
+    def _gen_unsubbed(self, p_lt, m_gt):
         "Returns the unsubstituted posys <= 1."
-        hmap = (self.p_lt / self.m_gt).hmap
+        hmap = (p_lt / m_gt).hmap
         if hasattr(hmap, "units"):
             try:
                 hmap = hmap.to(ureg.dimensionless)
@@ -485,7 +488,7 @@ class PosynomialInequality(ScalarSingleEquationConstraint):
             except DimensionalityError:
                 raise ValueError("unit mismatch: units of %s cannot "
                                  "be converted to units of %s" %
-                                 (self.p_lt, self.m_gt))
+                                 (p_lt, m_gt))
         hmap = self._simplify_posy_ineq(hmap)
         return [Posynomial(hmap)]
 
@@ -591,7 +594,10 @@ class MonomialEquality(PosynomialInequality):
 
     def _gen_unsubbed(self):
         "Returns the unsubstituted posys <= 1."
-        return [self.left/self.right, self.right/self.left]
+        unsubbed = PosynomialInequality._gen_unsubbed
+        l_over_r = unsubbed(self, self.left, self.right)
+        r_over_l = unsubbed(self, self.right, self.left)
+        return l_over_r + r_over_l
 
     def __nonzero__(self):
         'A constraint not guaranteed to be satisfied  evaluates as "False".'
