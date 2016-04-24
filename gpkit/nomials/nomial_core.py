@@ -28,7 +28,6 @@ class Nomial(NomialData):
     "Shared non-mathematical properties of all nomials"
     __div__ = None
     sub = None
-    c = None
 
     __str__ = _str
     __repr__ = _repr
@@ -39,7 +38,7 @@ class Nomial(NomialData):
         if excluded is None:
             excluded = []
         mstrs = []
-        for c, exp in zip(self.cs, self.exps):
+        for exp, c in self.hmap.items():
             varstrs = []
             for (var, x) in exp.items():
                 if x != 0:
@@ -48,7 +47,6 @@ class Nomial(NomialData):
                         varstr += "**%.2g" % x
                     varstrs.append(varstr)
             varstrs.sort()
-            c = mag(c)
             cstr = "%.3g" % c
             if cstr == "-1" and varstrs:
                 mstrs.append("-" + "*".join(varstrs))
@@ -67,7 +65,7 @@ class Nomial(NomialData):
         if excluded is None:
             excluded = []
         mstrs = []
-        for c, exp in zip(self.cs, self.exps):
+        for exp, c in self.hmap.items():
             pos_vars, neg_vars = [], []
             for var, x in exp.items():
                 if x > 0:
@@ -84,7 +82,6 @@ class Nomial(NomialData):
             nvarstrs.sort()
             pvarstr = ' '.join(pvarstrs)
             nvarstr = ' '.join(nvarstrs)
-            c = mag(c)
             cstr = "%.2g" % c
             if pos_vars and (cstr == "1" or cstr == "-1"):
                 cstr = cstr[:-1]
@@ -119,19 +116,15 @@ class Nomial(NomialData):
         (Monomial, Posynomial, or Nomial), otherwise.
         """
         p = self.sub(self.values)  # pylint: disable=not-callable
-        if len(p.exps) == 1:
-            if not p.exp:
+        if len(p.hmap) == 1:
+            if not p.vks:
                 return p.c
         return p
 
-    def to(self, arg):
+    def to(self, units):
         "Create new Signomial converted to new units"
          # pylint: disable=no-member
-        return self.__class__(self.exps, self.cs.to(arg).tolist())
-
-    def convert_to(self, arg):
-        "Convert this signomial to new units"
-        self.cs = self.cs.to(arg)   # pylint: disable=no-member
+        return self.__class__(self.hmap.to(units))
 
     def prod(self):
         "base case: Product of a Nomial is itself"
@@ -152,15 +145,15 @@ class Nomial(NomialData):
         bool
         """
         if isinstance(other, Numbers):
-            return (len(self.exps) == 1 and  # single term
-                    not self.exps[0] and     # constant
+            return (len(self.hmap) == 1 and  # single term
+                    not self.vks and         # constant
                     self.cs[0] == other)     # the right constant
         return super(Nomial, self).__eq__(other)
 
     def __float__(self):
-        if len(self.exps) == 1:
-            if not self.exps[0]:
-                return mag(self.c)
+        if len(self.hmap) == 1:
+            if not self.vks:
+                return float(self.cs[0])
         else:
             raise AttributeError("float() can only be called on"
                                  " monomials with no variable terms")

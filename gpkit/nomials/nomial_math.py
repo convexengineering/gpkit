@@ -32,12 +32,14 @@ class Signomial(Nomial):
         Posynomial (if the input has only positive cs)
         Monomial   (if the input has one term and only positive cs)
     """
-    def __init__(self, exps=None, cs=1, require_positive=True, hmap=None,
-                 **descr):
+    def __init__(self, exps=None, cs=1, require_positive=True, **descr):
         # pylint: disable=too-many-statements
         # pylint: disable=too-many-branches
 
-        if not hmap:
+        if isinstance(exps, NomialMap):
+            hmap = exps
+        else:
+            hmap = None
             if isinstance(cs, Numbers):
                 if exps is None:
                     exps = VarKey(**descr)
@@ -53,7 +55,6 @@ class Signomial(Nomial):
                     hmap._remove_zeros()
             if hasattr(exps, "hmap"):
                 hmap = exps.hmap  # should this be a copy?
-                hmap.units = exps.hmap.units
                 if not cs is 1:
                     raise ValueError("Nomial and cs cannot be input together.")
             elif isinstance(exps, Numbers):
@@ -70,7 +71,7 @@ class Signomial(Nomial):
                     hmap[exp] = c + hmap.get(exp, 0)
                 hmap._remove_zeros()
 
-        super(Signomial, self).__init__(hmap=hmap)
+        super(Signomial, self).__init__(hmap)
 
         if self.any_nonpositive_cs:
             from .. import SIGNOMIALS_ENABLED
@@ -83,9 +84,6 @@ class Signomial(Nomial):
         if len(self.hmap) == 1:
             if self.__class__ is Posynomial:
                 self.__class__ = Monomial
-            self.exp, self.c = self.hmap.items()[0]
-            if self.hmap.units:
-                self.c = Quantity(self.c, self.hmap.units)
 
     def diff(self, wrt):
         """Derivative of this with respect to a Variable
@@ -99,9 +97,7 @@ class Signomial(Nomial):
         -------
         Signomial (or Posynomial or Monomial)
         """
-        deriv = super(Signomial, self).diff(wrt)
-        # pylint: disable=unexpected-keyword-arg
-        return Signomial(deriv.exps, deriv.cs, require_positive=False)
+        return Signomial(Nomial.diff(self, wrt), require_positive=False)
 
     def posy_negy(self):
         """Get the positive and negative parts, both as Posynomials
@@ -111,19 +107,14 @@ class Signomial(Nomial):
         Posynomial, Posynomial:
             p_pos and p_neg in (self = p_pos - p_neg) decomposition,
         """
-        p_exp, p_cs, n_exp, n_cs = [], [], [], []
-        assert len(self.cs) == len(self.exps)   # assert before calling zip
-        for c, exp in zip(self.cs, self.exps):
-            if mag(c) > 0:
-                p_exp.append(exp)
-                p_cs.append(c)
-            elif mag(c) < 0:
-                n_exp.append(exp)
-                n_cs.append(-c)  # -c to keep posynomial
-            else:
-                raise ValueError("Unexpected c=%s in %s" % (c, self))
-        return (Posynomial(p_exp, p_cs) if p_cs else 0,
-                Posynomial(n_exp, n_cs) if n_cs else 0)
+        py, ny = NomialMap(), NomialMap()
+        py.units, ny.units = self.units, self.units
+        for exp, c in self.hmap.items():
+            if c > 0:
+                py[exp] = c
+            elif c < 0:
+                ny[exp] = -c  # -c to keep it a posynomial
+        return (Posynomial(py) if py else 0, Posynomial(ny) if ny else 0)
 
     def mono_approximation(self, x0):
         """Monomial approximation about a point x0
@@ -138,23 +129,25 @@ class Signomial(Nomial):
         Monomial (unless self(x0) < 0, in which case a Signomial is returned)
         """
         if not x0:
-            for i, exp in enumerate(self.exps):
-                if exp == {}:
-                    return Monomial({}, self.cs[i])
-        x0, _, _ = parse_subs(self.varkeys, x0)  # use only varkey keys
-        exp = HashVector()
+            return Monomial(HashVector(), self.hmap[HashVector()])
+        x0 = parse_subs(self.varkeys, x0, sweeps=False)  # use only varkey keys
         psub = self.sub(x0)
         if psub.vks:
             raise ValueError("Variables %s remained after substituting x0=%s"
                              % (list(psub.vks), x0)
                              + " into %s" % self)
-        p0 = psub.value  # includes any units
-        m0 = 1
+        c0, = psub.hmap.values()
+        exp = HashVector()
+        c = c0
         for vk in self.vks:
-            e = mag(x0[vk]*self.diff(vk).sub(x0, require_positive=False).c/p0)
+            val = mag(x0[vk])
+            diff = self.diff(vk).sub(x0, require_positive=False)
+            e = val*diff.hmap.values()[0]/c0
             exp[vk] = e
-            m0 *= (x0[vk])**e
-        return Monomial(exp, p0/mag(m0))
+            c /= val**e
+        if psub.hmap.units:
+            c *= psub.hmap.units
+        return Monomial(exp, c)
 
     def sub(self, substitutions, val=None, require_positive=True):
         """Returns a nomial with substitued values.
@@ -178,17 +171,14 @@ class Signomial(Nomial):
         -------
         Returns substituted nomial.
         """
-        hmap = self.hmap.sub(substitutions, val)
-        return Signomial(hmap=hmap, require_positive=require_positive)
+        return Signomial(self.hmap.sub(substitutions, val),
+                         require_positive=require_positive)
 
     def subinplace(self, substitutions, value=None):
         "Substitutes in place."
         hmap = self.hmap.sub(substitutions, value)
-        if hasattr(self, "_exps"):
-            del self._exps
-        if hasattr(self, "_cs"):
-            del self._cs
-        super(Signomial, self).__init__(hmap=hmap)
+        super(Signomial, self).__init__(hmap)
+        self._reset()
 
     def subsummag(self, substitutions, val=None):
         "Returns the sum of the magnitudes of the substituted Nomial."
@@ -222,7 +212,7 @@ class Signomial(Nomial):
         other_hmap = None
         if isinstance(other, Numbers):
             if not other:
-                return Signomial(hmap=self.hmap)
+                return Signomial(self.hmap)
             else:
                 other_hmap = NomialMap({HashVector(): other})
                 other_hmap.set_units(other)
@@ -230,7 +220,7 @@ class Signomial(Nomial):
             other_hmap = other.hmap
 
         if other_hmap:
-            return Signomial(hmap=self.hmap + other_hmap)
+            return Signomial(self.hmap + other_hmap)
         else:
             return NotImplemented
 
@@ -252,7 +242,7 @@ class Signomial(Nomial):
                     hmap.set_units(hmap.units*other)
                 else:
                     hmap.set_units(other)
-            return Signomial(hmap=hmap)
+            return Signomial(hmap)
         elif isinstance(other, Signomial):
             hmap = NomialMap()
             if not (self.hmap.units or other.hmap.units):
@@ -268,7 +258,7 @@ class Signomial(Nomial):
                     exp = exp_s + exp_o
                     hmap[exp] = c_s*c_o + hmap.get(exp, 0)
             hmap._remove_zeros()
-            return Signomial(hmap=hmap)
+            return Signomial(hmap)
         else:
             return NotImplemented
 
@@ -363,6 +353,19 @@ class Monomial(Posynomial):
           These will be deprecated in the future, replaced with a single
           __init__ syntax, same as Signomial.
     """
+
+    @property
+    def exp(self):
+        if not hasattr(self, "_exp"):
+            self._exp, = self.hmap.keys()
+        return self._exp
+
+    @property
+    def c(self):
+        if not hasattr(self, "_c"):
+            self._c, = self.cs
+        return self._c
+
     def __rdiv__(self, other):
         "Divide other by this Monomial"
         if isinstance(other, Numbers + (Signomial,)):
@@ -374,9 +377,15 @@ class Monomial(Posynomial):
         "__rdiv__ for python 3.x"
         return self.__rdiv__(other)
 
-    def __pow__(self, other):
-        if isinstance(other, Numbers):
-            return Monomial(self.exp*other, self.c**other)
+    def __pow__(self, x):
+        if isinstance(x, Numbers):
+            exp, c = self.hmap.items()[0]
+            exp = exp*x if x else HashVector()
+            hmap = NomialMap({exp: c**x})
+            hmap.units = self.hmap.units
+            if hmap.units:
+                hmap.units = hmap.units**x
+            return Monomial(hmap)
         else:
             return NotImplemented
 
@@ -449,7 +458,6 @@ class PosynomialInequality(ScalarSingleEquationConstraint):
         self.nomials = [self.left, self.right, self.p_lt, self.m_gt]
         self.nomials.extend(self._unsubbed)
 
-
     def _simplify_posy_ineq(self, hmap):
         "Simplify a posy <= 1 by moving constants to the right side."
         if HashVector() not in hmap:
@@ -457,11 +465,11 @@ class PosynomialInequality(ScalarSingleEquationConstraint):
         coeff = 1 - hmap[HashVector()]
         if coeff < 0:
             raise ValueError("infeasible constraint: %s" % self)
-        elif len(hmap) == 1:
-            # allow tautological monomial constraints (cs[0] <= 1)
-            # because they allow models to impose requirements
-            raise
         elif coeff == 0:
+            if len(hmap) == 1:
+                # allow tautological monomial constraints (cs[0] <= 1)
+                # because they allow models to impose requirements
+                return hmap
             raise ValueError("tautological constraint: %s" % self)
         scaled = hmap/coeff
         scaled.units = hmap.units
@@ -481,7 +489,7 @@ class PosynomialInequality(ScalarSingleEquationConstraint):
                                  (self.p_lt, self.m_gt))
 
         hmap = self._simplify_posy_ineq(p.hmap)
-        p = Posynomial(hmap=hmap)
+        p = Posynomial(hmap)
         return [p]
 
     def as_posyslt1(self):
@@ -509,7 +517,7 @@ class PosynomialInequality(ScalarSingleEquationConstraint):
             # hmap = self._simplify_posy_ineq2(hmap)
             # if not exps and not cs:  # tautological constraint
             #     continue
-            p = Posynomial(hmap=hmap)
+            p = Posynomial(hmap)
             if p.any_nonpositive_cs:
                 raise RuntimeWarning("PosynomialInequality %s became Signomial"
                                      " after substitution" % self)

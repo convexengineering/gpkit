@@ -42,7 +42,7 @@ class NomialMap(HashVector):
 
         cp = NomialMap()
         cp.units = self.units
-        expmap = {}
+        expmap, csmap = {}, {}
         varlocs = defaultdict(set)
         for exp, c in self.items():
             new_exp = HashVector(exp)
@@ -51,14 +51,34 @@ class NomialMap(HashVector):
             for vk in new_exp:
                 varlocs[vk].add((exp, new_exp))
 
-        varkeys = KeySet(varlocs)
-        substitutions, _, _ = parse_subs(varkeys, substitutions)
+        def returnfn():
+            if not mmap:
+                return cp
+            m_from_ms = defaultdict(dict)
+            pmap = [{} for _ in cp]
+            selfexps = self.keys()
+            cpexps = cp.keys()
+            for self_exp, cp_exp in expmap.items():
+                total_c = cp.get(cp_exp, None)
+                if total_c:
+                    fraction = csmap.get(self_exp, self[self_exp])/total_c
+                    m_from_ms[cp_exp][self_exp] = fraction
+                    self_idx = selfexps.index(self_exp)
+                    pmap[cpexps.index(cp_exp)][self_idx] = fraction
+            return cp, pmap, m_from_ms
 
-        cs_map = {}
-        for vk, exps in varlocs.items():
-            if vk in substitutions:
+        if not substitutions:
+            return returnfn()
+
+        varkeys = KeySet(varlocs)
+        fixed = parse_subs(varkeys, substitutions, sweeps=False)
+        if not fixed:
+            return returnfn()
+
+        for vk in varlocs:
+            if vk in fixed:
                 m_exp = []
-                value = substitutions[vk]
+                exps, value = varlocs[vk], fixed[vk]
                 if isinstance(value, Strings):
                     descr = dict(vk.descr)
                     del descr["name"]
@@ -76,7 +96,7 @@ class NomialMap(HashVector):
                 for o_exp, exp in exps:
                     x = exp.pop(vk)
                     powval = value**x if value != 0 or x >= 0 else np.inf
-                    cs_map[o_exp] = cs_map.get(o_exp, self[o_exp]) * powval
+                    csmap[o_exp] = csmap.get(o_exp, self[o_exp]) * powval
                     if exp in cp:
                         c = cp.pop(exp)
                         for key in m_exp:
@@ -85,24 +105,8 @@ class NomialMap(HashVector):
                         cp[exp] = c * powval + cp.get(exp, 0)
                     else:
                         exp._hashvalue = None
-
         cp._remove_zeros()
-
-        if not mmap:
-            return cp
-
-        m_from_ms = defaultdict(dict)
-        pmap = [{} for _ in cp]
-        selfexps = self.keys()
-        cpexps = cp.keys()
-        for self_exp, cp_exp in expmap.items():
-            total_c = cp.get(cp_exp, None)
-            if total_c:
-                fraction = cs_map.get(self_exp, self[self_exp])/total_c
-                m_from_ms[cp_exp][self_exp] = fraction
-                pmap[cpexps.index(cp_exp)][selfexps.index(self_exp)] = fraction
-
-        return cp, pmap, m_from_ms
+        return returnfn()
 
     def __add__(self, other):
         units = self.units
@@ -135,41 +139,12 @@ class NomialMap(HashVector):
         nm.set_units(units)
         return nm
 
-    @classmethod
-    def simplify_exps_and_cs(cls, exps, cs):
-        if isinstance(cs, Quantity):
-            units = Quantity(1, cs.units)
-            cs = cs.magnitude
-        elif isinstance(cs[0], Quantity):
-            units = Quantity(1, cs[0].units)
-            if len(cs) == 1:
-                cs = [cs[0].magnitude]
-            else:
-                cs = [c.to(units).magnitude for c in cs]
-        else:
-            units = None
 
-        matches = defaultdict(float)
-        for i, exp in enumerate(exps):
-            exp = HashVector(exp)
-            matches[exp] += cs[i]
-
-        nm = cls(matches)
-        nm.set_units(units)
-        nm._remove_zeros()
-        exps_ = tuple(nm.keys())
-        cs_ = list(nm.values())
-
-        cs_ = np.array(nm.values())
-        if units:
-            cs_ = cs_*units
-
-        return nm, exps_, cs_
-
-
-def parse_subs(varkeys, substitutions):
+def parse_subs(varkeys, substitutions, sweeps=True):
     "Seperates subs into constants, sweeps linkedsweeps actually present."
-    constants, sweep, linkedsweep = {}, {}, {}
+    constants, sweep, linkedsweep = {}, None, None
+    if sweeps:
+        sweep, linkedsweep = {}, {}
     if hasattr(substitutions, "keymap"):
         for var in varkeys.keymap:
             if dict.__contains__(substitutions, var):
@@ -182,12 +157,17 @@ def parse_subs(varkeys, substitutions):
             if key in varkeys.keymap:
                 sub, keys = substitutions[var], varkeys.keymap[key]
                 append_sub(sub, keys, constants, sweep, linkedsweep)
-    return constants, sweep, linkedsweep
+    if sweeps:
+        return constants, sweep, linkedsweep
+    else:
+        return constants
 
 
-def append_sub(sub, keys, constants, sweep, linkedsweep):
+def append_sub(sub, keys, constants, sweep=None, linkedsweep=None):
     "Appends sub to constants, sweep, or linkedsweep."
     sweepsub = is_sweepvar(sub)
+    if sweepsub and sweep is None and linkedsweep is None:
+        return
     if sweepsub:
         _, sub = sub  # _ catches the "sweep" marker
     for key in keys:

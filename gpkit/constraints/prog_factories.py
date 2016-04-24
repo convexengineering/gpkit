@@ -1,7 +1,7 @@
 "Scripts for generating, solving and sweeping programs"
 from time import time
 import numpy as np
-from ..nomials.substitution import parse_subs
+from ..nomial_map import parse_subs
 from ..solution_array import SolutionArray
 from ..keydict import KeyDict
 from ..varkey import VarKey

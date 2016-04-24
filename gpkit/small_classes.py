@@ -222,8 +222,9 @@ class HashVector(dict):
             return self.__class__({key: val+other
                                    for (key, val) in self.items()})
         elif isinstance(other, dict):
-            keys = set(self).union(other)
-            sums = {key: self.get(key, 0) + other.get(key, 0) for key in keys}
+            sums = self.copy()
+            for key, value in other.items():
+                sums[key] = value + sums.get(key, 0)
             return self.__class__(sums)
         else:
             return NotImplemented
