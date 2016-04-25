@@ -1,13 +1,9 @@
 Getting Started
 ***************
 
-GPkit is a Python package. We assume basic familiarity with Python. If you are new to Python take a look at `Learn Python <http://www.learnpython.org>`_.
+GPkit is a Python package, so we assume basic familiarity with Python: if you're new to Python we recommend you take a look at `Learn Python <http://www.learnpython.org>`_.
 
-Of course, the first thing to do is `install GPkit <installation.html>`_ .
-
-Importing Modules
-=================
-The first thing to do when using GPkit is to import the classes and modules you will need. For example,
+Alright: `install GPkit <installation.html>`_ and import away.
 
 .. code-block:: python
 
@@ -16,23 +12,21 @@ The first thing to do when using GPkit is to import the classes and modules you 
 
 Declaring Variables
 ===================
-Instances of the ``Variable`` class represent scalar decision variables. They store a key (i.e. name) used to look up the Variable in dictionaries, and optionally units, a description, and a value (if the Variable is to be held constant).
+Instances of the ``Variable`` class represent scalar variables. They store a key (i.e. name) used to look up the Variable in dictionaries, and optionally units, a description, and a value (if the Variable is to be held constant).
 
 
-Decision Variables
-------------------
+Free Variables
+--------------
 .. code-block:: python
 
     # Declare a variable, x
-    x = Variable('x')
+    x = Variable("x")
 
     # Declare a variable, y, with units of meters
-    y = Variable('y','m')
+    y = Variable("y", "m")
 
     # Declare a variable, z, with units of meters, and a description
-    z = Variable('z', 'm', 'A variable called z with units of meters')
-
-Note: make sure you have imported the class ``Variable`` beforehand.
+    z = Variable("z", "m", "A variable called z with units of meters")
 
 Fixed Variables
 ---------------
@@ -41,16 +35,15 @@ To declare a variable with a constant value, use the ``Variable`` class, as abov
 .. code-block:: python
 
     # Declare \rho equal to 1.225 kg/m^3.
-    # NOTE: starting a Python string with 'r' makes the backslashes literal,
-    #       which is useful for LaTeX strings.
-    rho = Variable(r'\rho', 1.225, 'kg/m^3', 'Density of air at sea level')
+    # NOTE: write a literal backslash by preceding it with another backslash
+    rho = Variable("\\rho", 1.225, "kg/m^3", "Density of air at sea level")
 
-In the example above, the key name ``r'\rho'`` is for LaTeX printing (described later). The unit and description arguments are optional.
+In the example above, the key name ``"\\rho"`` is for LaTeX printing (described later). The unit and description arguments are optional.
 
 .. code-block:: python
 
     #Declare pi equal to 3.14
-    pi = Variable(r'\pi', 3.14)
+    pi = Variable("\\pi", 3.14)
 
 
 
@@ -62,37 +55,39 @@ All other inputs follow those of the ``Variable`` class.
 
 .. code-block:: python
 
-    # Declare a 3-element vector variable 'x' with units of 'm'
-    x = VectorVariable(3, "x", "m", "3-D Position")
+    # Declare a 3-element vector variable "x" with units of "m"
+    x = VectorVariable(3, "x", "m", "Cube corner coordinates")
+    x_min = VectorVariable(3, "x", [1, 2, 3], "m", "Cube corner minimum")
 
 
 Creating Monomials and Posynomials
 ==================================
 
 Monomial and posynomial expressions can be created using mathematical operations on variables.
-This is implemented under-the-hood using operator overloading in Python.
 
 .. code-block:: python
 
     # create a Monomial term xy^2/z
-    x = Variable('x')
-    y = Variable('y')
-    z = Variable('z')
+    x = Variable("x")
+    y = Variable("y")
+    z = Variable("z")
     m = x * y**2 / z
     type(m)  # gpkit.nomials.Monomial
 
 .. code-block:: python
 
     # create a Posynomial expression x + xy^2
-    x = Variable('x')
-    y = Variable('y')
+    x = Variable("x")
+    y = Variable("y")
     p = x + x * y**2
     type(p)  # gpkit.nomials.Posynomial
 
 Declaring Constraints
 =====================
 
-``Constraint`` objects represent constraints of the form ``Monomial >= Posynomial``  or ``Monomial == Monomial`` (which are the forms required for Model-compatibility).
+.. Introduce ConstraintSets here
+
+``Constraint`` objects represent constraints of the form ``Monomial >= Posynomial``  or ``Monomial == Monomial`` (which are the forms required for GP-compatibility).
 
 Note that constraints must be formed using ``<=``, ``>=``, or ``==`` operators, not ``<`` or ``>``.
 
@@ -100,61 +95,86 @@ Note that constraints must be formed using ``<=``, ``>=``, or ``==`` operators, 
 
     # consider a block with dimensions x, y, z less than 1
     # constrain surface area less than 1.0 m^2
-    x = Variable('x', 'm')
-    y = Variable('y', 'm')
-    z = Variable('z', 'm')
-    S = Variable('S', 1.0, 'm^2')
+    x = Variable("x", "m")
+    y = Variable("y", "m")
+    z = Variable("z", "m")
+    S = Variable("S", 1.0, "m^2")
     c = (2*x*y + 2*x*z + 2*y*z <= S)
-    type(c)  # gpkit.nomials.Constraint
-
-
-Declaring Objective Functions
-=============================
-To declare an objective function, assign a Posynomial (or Monomial) to a variable name, such as ``objective``.
-
-.. code-block:: python
-
-    objective = 1/(x*y*z)
-
-By convention, the objective is the function to be *minimized*. If you wish to *maximize* a function, take its reciprocal. For example, the code above creates an objective which, when minimized, will maximize ``x*y*z``.
-
+    type(c)  # gpkit.nomials.PosynomialInequality
 
 Formulating a Model
 ================
 
-The ``Model`` class represents an optimization problem. To create one, pass an objective and list of Constraints:
+The ``Model`` class represents an optimization problem. To create one, pass an objective and list of Constraints.
+
+By convention, the objective is the function to be *minimized*. If you wish to *maximize* a function, take its reciprocal. For example, the code below creates an objective which, when minimized, will maximize ``x*y*z``.
 
 .. code-block:: python
 
     objective = 1/(x*y*z)
     constraints = [2*x*y + 2*x*z + 2*y*z <= S,
                    x >= 2*y]
-    gp = Model(objective, constraints)
+    m = Model(objective, constraints)
 
 
 Solving the Model
-==============
+=================
+
+.. move example solve printouts (below) up to here
+
+When solving the model you can change the level of information that gets printed to the screen with the ``verbosity`` setting. A verbosity of 1 (the default) prints warnings and the solution; a verbosity of 2 prints solve time, a verbosity of 3 prints solver output, and a verbosity of 0 prints nothing.
 
 .. code-block:: python
 
-    sol = gp.solve()
+    sol = m.solve(verbosity=0)
 
 
 Printing Results
 ================
 
+We can also manually print the solution table, with the same result as if the verbosity argument had been left blank above.
+
 .. code-block:: python
 
     print sol.table()
+
+::
+
+    Cost
+    ----
+     15.59 [1/m**3]
+
+    Free Variables
+    --------------
+    x : 0.5774  [m]
+    y : 0.2887  [m]
+    z : 0.3849  [m]
+
+    Constants
+    ---------
+    S : 1  [m**2]
+
+    Sensitivities
+    -------------
+    S : -1.5
 
 .. code-block:: python
 
     print "The x dimension is %s." % (sol(x))
 
+::
+
+    The x dimension is 0.577351209028 meter.
+
+.. refactor this section; explain what can be done with a SolutionArray
+.. e.g. table(), __call__, ["variables"], etc.
+
 Sensitivities and dual variables
 ================================
 
-When a GP is solved, the solver returns not just the optimal value for the problem’s variables (known as the "primal solution") but also, as a side effect of the solving process, the effect that scaling the less-than side of each constraint would have on the overall objective (called the "dual solution", "shadow prices", or "posynomial sensitivities").
+When a GP is solved, the solver returns not just the optimal value for the problem’s variables (known as the "primal solution") but also, as a side effect of the solving process, the effect that scaling the :math:`\leq 1` of each canonical constraint would have on the overall objective (called the "dual solution", "shadow prices", or "posynomial sensitivities").
+
+From the dual solution we can compute the sensitivities for every fixed variable in the problem, which is often useful for seeing which of your constraints are most crucial, thus prioritizing your confirmation and remodeling of your assumptions.
 
 Using variable sensitivities
 ----------------------------
@@ -178,3 +198,5 @@ These sensitivities are actually log derivatives (:math:`\frac{d \mathrm{log}(y)
     x_squared_min = gpkit.Variable("x^2_{min}", 2)
     sol = gpkit.Model(x, [x_squared_min <= x**2]).solve()
     assert sol.sens(x_squared_min) == 2
+
+.. add a plot of a monomial approximation vs a tangent approximation

@@ -4,7 +4,7 @@ Signomial Programming
 Signomial programming finds a local solution to a problem of the form:
 
 
-.. math:: \begin{array}[lll]\text{}
+.. math:: \begin{array}{lll}\text{}
     \text{minimize} & g_0(x) & \\
     \text{subject to} & f_i(x) = 1, & i = 1,....,m \\
                       & g_i(x) - h_i(x) \leq 1, & i = 1,....,n
@@ -14,7 +14,7 @@ where each :math:`f` is monomial while each :math:`g` and :math:`h` is a posynom
 
 This requires multiple solutions of geometric programs, and so will take longer to solve than an equivalent geometric programming formulation.
 
-The specification of the signomial problem affects its solve time in a nuanced way: ``gpkit.SP(x, [x >= 0.1, x+y >= 1, y <= 0.1]).localsolve()`` takes about four times as many iterations to solve as ``gpkit.SP(x, [x >= 1-y, y <= 0.1]).localsolve()``, despite the two formulations being arithmetically equivalent.
+The specification of a signomial problem can affect its solve time in a nuanced way: ``gpkit.SP(x, [x >= 0.1, x+y >= 1, y <= 0.1]).localsolve()`` takes about twice as long to solve with cvxopt as ``gpkit.SP(x, [x >= 1-y, y <= 0.1]).localsolve()``, despite the two formulations being arithmetically equivalent and taking the same number of iterations.
 
 In general, when given the choice of which variables to include in the positive-posynomial / :math:`g` side of the constraint, the modeler should:
 
@@ -66,3 +66,7 @@ and replace the incompatible constraint in our GP:
 .. literalinclude:: examples/external_sp_output.txt
 
 which is the expected result.  This method has been generalized to larger problems, such as calling XFOIL and AVL.
+=======
+If you wish to start the local optimization at a particular point :math:`x_0`, however, you may do so by putting that position (a dictionary formatted as you would a substitution) as the ``x0`` argument
+
+.. Mention sp_init varkey arg. Should that be x0 instead for consistency?
