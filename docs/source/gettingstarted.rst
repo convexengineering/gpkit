@@ -172,14 +172,14 @@ We can also manually print the solution table, with the same result as if the ve
 Sensitivities and dual variables
 ================================
 
-When a GP is solved, the solver returns not just the optimal value for the problem’s variables (known as the "primal solution") but also, as a side effect of the solving process, the effect that scaling the :math:`\leq 1` of each canonical constraint would have on the overall objective (called the "dual solution", "shadow prices", or "posynomial sensitivities").
+When a GP is solved, the solver returns not just the optimal value for the problem’s variables (known as the "primal solution") but also, as a side effect of the solving process, the effect that scaling the :math:`\leq 1` of each canonical constraint would have on the overall objective (the "dual solution").
 
-From the dual solution we can compute the sensitivities for every fixed variable in the problem, which is often useful for seeing which of your constraints are most crucial, thus prioritizing your confirmation and remodeling of your assumptions.
+From the dual solution GPkit computes the sensitivities for every fixed variable in the problem. This can be quite useful for seeing which constraints are most crucial, and prioritizing remodeling and assumption-checking.
 
 Using variable sensitivities
 ----------------------------
 
-GPkit uses this dual solution to compute the sensitivities of each variable, which can be accessed most easily using a SolutionArray’s ``sens()`` method, as in this example:
+Fixed variable sensitivities can be accessed most easily using a SolutionArray’s ``sens()`` method, as in this example:
 
 .. code-block:: python
 
