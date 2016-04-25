@@ -66,7 +66,7 @@ and replace the incompatible constraint in our GP:
 .. literalinclude:: examples/external_sp_output.txt
 
 which is the expected result.  This method has been generalized to larger problems, such as calling XFOIL and AVL.
-=======
+
 If you wish to start the local optimization at a particular point :math:`x_0`, however, you may do so by putting that position (a dictionary formatted as you would a substitution) as the ``x0`` argument
 
 .. Mention sp_init varkey arg. Should that be x0 instead for consistency?
