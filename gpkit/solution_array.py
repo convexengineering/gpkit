@@ -253,7 +253,7 @@ def results_table(data, title, minval=0, printunits=True, fixedcols=True,
                 lines.append([varstr, "$%s$" % var.unitstr(), label])
                 coltitles = [title, "Units", "Description"]
             elif latex == 3:  # no description
-                lines.append(varstr, valstr, "$%s$" % var.unitstr())
+                lines.append([varstr, valstr, "$%s$" % var.unitstr()])
                 coltitles = [title, "Value", "Units"]
             else:
                 raise ValueError("Unexpected latex option, %s." % latex)
