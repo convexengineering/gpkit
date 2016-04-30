@@ -280,10 +280,10 @@ def plot_convergence(model):
     fig, ax = plt.subplots()
 
     a = np.array([])
-    for j in range(len(model.program.gps)):
-        a = np.append(a, model.program.gps[j].result['cost'])
-    ax.plot(np.arange(j+1), a, '-o')
+    for i in range(len(model.program.gps)):
+        a = np.append(a, model.program.gps[i].result['cost'])
+    ax.plot(np.arange(len(model.program.gps)), a, '-o')
     ax.set_xlabel('Iteration')
     ax.set_ylabel('Cost')
-    ax.set_xticks(range(0,j+1))
+    ax.set_xticks(range(0, len(model.program.gps)))
     return fig, ax
