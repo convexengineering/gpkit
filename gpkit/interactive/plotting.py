@@ -275,22 +275,15 @@ def plot_convergence(model):
     Returns
     -------
     matplotlib.pyplot Figure
-        Semilogy plot of variable values as functions of SP iteration #
+        Plot of cost as functions of SP iteration #
     """
-    newdict = {}
-
     fig, ax = plt.subplots()
 
-    for key in model.program.gps[0].result['variables']:
-        a = np.array([])
-        for j in range(len(model.program.gps)):
-            a = np.append(a, model.program.gps[j].result['variables'][key])
-        newdict[key] = a
-        ax.semilogy(np.arange(len(newdict[key])), newdict[key], label=key.name)
-
-    box = ax.get_position()
-    ax.set_position([box.x0, box.y0, box.width * 0.8, box.height])
-    ax.set_xlabel('Number of iterations')
-    ax.set_ylabel('Normalized variable values')
-    ax.legend(loc='center left', bbox_to_anchor=(1, 0.5))
-    return fig
+    a = np.array([])
+    for j in range(len(model.program.gps)):
+        a = np.append(a, model.program.gps[j].result['cost'])
+    ax.plot(np.arange(j+1), a, '-o')
+    ax.set_xlabel('Iteration')
+    ax.set_ylabel('Cost')
+    ax.set_xticks(range(0,j+1))
+    return fig, ax
