@@ -1,21 +1,23 @@
 "A module to facilitate testing GPkit against fmincon"
 from gpkit import SignomialsEnabled
 from gpkit.tools.simpleflight import simpleflight
+from gpkit.small_scripts import mag
+from math import log10, floor
 # pylint: disable=redefined-outer-name,invalid-name
 # pylint: disable=too-many-statements,too-many-locals
 
-def generate_mfiles(m, writefiles=True):
+def generate_mfiles(m, guesstype='order-of-magnitude', writefiles=True):
     """A method for preparing fmincon input files to run a GPkit program"""
 
     # Create a new dictionary mapping variables to x(i)'s for use w/ fmincon
     i = 1
     newdict = {}
-    newlist = []
+    lookup = []
     original_varkeys = m.varkeys
     for key in m.varkeys:
         if key not in m.substitutions:
             newdict[key] = 'x({0})'.format(i)
-            newlist += ['x_{0}: '.format(i) + key.str_without()]
+            lookup += ['x_{0}: '.format(i) + key.str_without()]
             i += 1
 
     cost = m.cost # needs to be before subinplace()
@@ -92,7 +94,8 @@ def generate_mfiles(m, writefiles=True):
                  "end")
 
     # String for main.m
-    mainfunstr = ("x0 = ones({0},1);\n".format(i-1) +
+    x0string = make_initial_guess(m, guesstype)
+    mainfunstr = (x0string +
                   "options = optimset('fmincon');\n" +
                   "options.Algorithm = 'interior-point';\n" +
                   "options.MaxFunEvals = Inf;\n" +
@@ -116,13 +119,38 @@ def generate_mfiles(m, writefiles=True):
 
         # Write a txt file for looking up original variable names
         with open('lookup.txt', 'w') as outfile:
-            outfile.write("\n".join(newlist))
+            outfile.write("\n".join(lookup))
 
         # Write the main .m file for running fmincon
         with open('main.m', 'w') as outfile:
             outfile.write(mainfunstr)
 
     return obj, c, ceq, DC, DCeq
+
+
+def make_initial_guess(m, guesstype='ones'):
+    try:
+        sol = m.solve(verbosity=0)
+    except:
+        sol = m.localsolve(verbosity=0)
+    if guesstype == "ones":
+        x0string = "x0 = ones({0},1);\n".format(len(sol['freevariables']))
+    else:
+        x0string = ["x0 = ["]
+        i = 1
+        for vk in sol['freevariables']:
+            xf = mag(sol['freevariables']['x({0})'.format(i)])
+            if guesstype == "almost-exact-solution":
+                x0 = round(xf, -int(floor(log10(abs(x))))) # rounds to 1sf
+            elif guesstype == "order-of-magnitude":
+                x0 = 10**round(floor(log10(xf)))
+            else:
+                raise Exception("Unexpected guess type")
+            x0string += [str(x0) + ", "]
+            i += 1
+        x0string += ["];\n"]
+
+    return "".join(x0string)
 
 if __name__ == '__main__':
     m = simpleflight()
