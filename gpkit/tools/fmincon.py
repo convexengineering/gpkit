@@ -18,8 +18,8 @@ def generate_mfiles(m, guesstype='order-of-magnitude', writefiles=True):
     for key in m.varkeys:
         if key not in m.substitutions:
             newdict[key] = 'x({0})'.format(i)
-            newlist += [key.str_without()]
-            lookup += ['x_{0}: '.format(i) + key.str_without()]
+            newlist += [key.str_without(["units", "models"])]
+            lookup += ['x_{0}: '.format(i) + key.str_without(["units", "models"])]
             i += 1
     x0string = make_initial_guess(m, newlist, guesstype)
 
@@ -37,13 +37,13 @@ def generate_mfiles(m, guesstype='order-of-magnitude', writefiles=True):
         for constraint in constraints:
             if constraint.oper == '<=':
                 cc = constraint.left - constraint.right
-                c += [cc.str_without("units")]
+                c += [cc.str_without(["units", "models"])]
             elif constraint.oper == '>=':
                 cc = constraint.right - constraint.left
-                c += [cc.str_without("units")]
+                c += [cc.str_without(["units", "models"])]
             elif constraint.oper == '=':
                 cc = constraint.right - constraint.left
-                ceq += [cc.str_without("units")]
+                ceq += [cc.str_without(["units", "models"])]
 
             # Differentiate each constraint w.r.t each variable
             cdm = []
@@ -81,11 +81,11 @@ def generate_mfiles(m, guesstype='order-of-magnitude', writefiles=True):
         if key not in m.substitutions:
             costdiff = cost.diff(key)
             costdiff.subinplace(newdict)
-            objdiff += [costdiff.str_without("units").replace('**', '.^')]
+            objdiff += [costdiff.str_without(["units", "models"]).replace('**', '.^')]
 
     # Replace variables with x(i), make clean string using matlab power syntax
     cost.subinplace(newdict)
-    obj = cost.str_without("units").replace('**', '.^')
+    obj = cost.str_without(["units", "models"]).replace('**', '.^')
 
     # String for the objective function .m file
     objfunstr = ("function [f, gradf] = objfun(x)\n" +
