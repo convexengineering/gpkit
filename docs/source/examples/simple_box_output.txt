@@ -5,9 +5,9 @@ Cost
 
 Free Variables
 --------------
-d : 8.17   [m] depth 
-h : 8.163  [m] height
-w : 4.081  [m] width 
+d : 8.166  [m] depth 
+h : 8.164  [m] height
+w : 4.082  [m] width 
 
 Constants
 ---------
