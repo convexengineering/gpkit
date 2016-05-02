@@ -3,7 +3,7 @@ from time import time
 from ..geometric_program import GeometricProgram
 from ..feasibility import feasibility_model
 from .costed import CostedConstraintSet
-
+import numpy as np
 
 class SignomialProgram(CostedConstraintSet):
     """Prepares a collection of signomials for a SP solve.
@@ -134,4 +134,11 @@ class SignomialProgram(CostedConstraintSet):
         """Get a GP approximation of this SP at x0"""
         gpconstr = self.as_gpconstr(x0)
         return GeometricProgram(self.cost, gpconstr,
+                                self.substitutions, verbosity=verbosity)
+
+    def xugp(self, x0=None, M=10, w=0, s=1, verbosity=1):
+        """Get a GP approximation of this SP at x0 using Xu's algorithm"""
+        
+        gpconstr = self.as_gpconstr(x0)
+        return GeometricProgram(cost, gpconstr,
                                 self.substitutions, verbosity=verbosity)
