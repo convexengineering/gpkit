@@ -210,6 +210,9 @@ class ConstraintSet(list):
           - add values computed from solved variables
 
         """
+
+	result["constr_viol"] = 0
+
         for constraint in self:
             if hasattr(constraint, "process_result"):
                 constraint.process_result(result)

@@ -734,17 +734,8 @@ class SignomialEqualityTriv(ScalarSingleEquationConstraint):
                 self.left <= _force_mono(self.right, x0)]
 
     # pylint: disable=unused-argument
-    def sens_from_gpconstr(self, posyapprox, pa_sens, var_senss):
-        "Returns sensitivities as parsed from an approximating GP constraint."
-        return 1000
-        # TODO do this right
-#         constr_sens = dict(pa_sens)
-#         del constr_sens[str(posyapprox.m_gt)]
-#         _, negy = self._unsubbed.posy_negy()
-#         constr_sens[str(negy)] = pa_sens["overall"]
-#         pa_sens[str(posyapprox)] = pa_sens.pop("overall")
-#         constr_sens["posyapprox"] = pa_sens
-#         return constr_sens
+    def sens_from_gpconstr(self, gp_approx, gp_senss, var_senss):
+        return gp_senss
 
 class SignomialEqualityTrivTrust(ScalarSingleEquationConstraint):
     """A constraint of the general form posynomial == posynomial (linearized only the necessary parts)
@@ -782,17 +773,8 @@ class SignomialEqualityTrivTrust(ScalarSingleEquationConstraint):
                 self.left <= _force_mono(self.right, x0)]
 
     # pylint: disable=unused-argument
-    def sens_from_gpconstr(self, posyapprox, pa_sens, var_senss):
-        "Returns sensitivities as parsed from an approximating GP constraint."
-        return 1000
-        # TODO do this right
-#         constr_sens = dict(pa_sens)
-#         del constr_sens[str(posyapprox.m_gt)]
-#         _, negy = self._unsubbed.posy_negy()
-#         constr_sens[str(negy)] = pa_sens["overall"]
-#         pa_sens[str(posyapprox)] = pa_sens.pop("overall")
-#         constr_sens["posyapprox"] = pa_sens
-#         return constr_sens
+    def sens_from_gpconstr(self, gp_approx, gp_senss, var_senss):
+        return gp_senss
 
 
 class SignomialEqualityLin(ScalarSingleEquationConstraint):
@@ -829,18 +811,21 @@ class SignomialEqualityLin(ScalarSingleEquationConstraint):
         return [_force_mono(self.left, x0) >= _force_mono(self.right, x0),
                 _force_mono(self.left, x0) <= _force_mono(self.right, x0)]
     
+    def process_result(self, result):
+        "Checks that all constraints are satisfied with equality"
+        variables = result["variables"]
+        leftsubbed = self.left.sub(variables).value
+        rightsubbed = self.right.sub(variables).value
+        rel_diff = abs(1 - leftsubbed/rightsubbed)
+	result["constr_viol"] = result["constr_viol"] + rel_diff
+	print rel_diff
+
+
+    
     # pylint: disable=unused-argument
-    def sens_from_gpconstr(self, posyapprox, pa_sens, var_senss):
-        "Returns sensitivities as parsed from an approximating GP constraint."
-        return 1000
-# TODO do this right
-#         constr_sens = dict(pa_sens)
-#         del constr_sens[str(posyapprox.m_gt)]
-#         _, negy = self._unsubbed.posy_negy()
-#         constr_sens[str(negy)] = pa_sens["overall"]
-#         pa_sens[str(posyapprox)] = pa_sens.pop("overall")
-#         constr_sens["posyapprox"] = pa_sens
-#         return constr_sens
+    def sens_from_gpconstr(self, gp_approx, gp_senss, var_senss):
+        return gp_senss
+
 
 class SignomialEqualityLinTrust(ScalarSingleEquationConstraint):
     """A constraint of the general form posynomial >= posynomial
@@ -855,7 +840,7 @@ class SignomialEqualityLinTrust(ScalarSingleEquationConstraint):
         from .. import SIGNOMIALS_ENABLED
         if not SIGNOMIALS_ENABLED:
             raise TypeError("Cannot initialize SignomialInequality"
-                            " outside of a SignomialsEnabled environment.")
+                            " outside of a Signomial`sEnabled environment.")
         self.nomials = [self.left, self.right]
         self.substitutions = dict(self.left.values)
         self.substitutions.update(self.right.values)
