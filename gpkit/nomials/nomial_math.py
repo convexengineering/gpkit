@@ -416,10 +416,10 @@ class Monomial(Posynomial):
         else:
             # fall back on other's __ge__
             return NotImplemented
-
-    def mono_approximation(self, x0):
-        raise TypeError("Monomial approximation of %s is unnecessary - "
-                        "it's already a Monomial." % str(self))
+    #
+    # def mono_approximation(self, x0):
+    #     raise TypeError("Monomial approximation of %s is unnecessary - "
+    #                     "it's already a Monomial." % str(self))
 
 
 #######################################################
@@ -541,7 +541,7 @@ class PosynomialInequality(ScalarSingleEquationConstraint):
             #  percentage of the simplified  monomial's coefficient that came
             #  from that particular parent.
 
-            self.pmap = pmap  # pylint: disable=attribute-defined-outside-init
+            # self.pmap = pmap  # pylint: disable=attribute-defined-outside-init
             p = Posynomial(exps, cs, simplify=False)
             if p.any_nonpositive_cs:
                 raise RuntimeWarning("PosynomialInequality %s became Signomial"

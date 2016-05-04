@@ -3,7 +3,7 @@ from time import time
 from ..geometric_program import GeometricProgram
 from ..feasibility import feasibility_model
 from .costed import CostedConstraintSet
-import numpy as np
+
 
 class SignomialProgram(CostedConstraintSet):
     """Prepares a collection of signomials for a SP solve.
@@ -106,7 +106,19 @@ class SignomialProgram(CostedConstraintSet):
             self.gps.append(gp)  # NOTE: SIDE EFFECTS
             try:
                 result = gp.solve(solver, verbosity-1, **kwargs)
+                for c in self.flat():
+                    if hasattr(c, "on_successfulsolve"):
+                        c.on_successfulsolve()
             except (RuntimeWarning, ValueError):
+
+                modified_on_failedsolve = False
+                for c in self.flat():
+                    if hasattr(c, "on_failedsolve"):
+                        c.on_failedsolve()
+                        modified_on_failedsolve = True
+                if modified_on_failedsolve:
+                    continue  # try solving again
+
                 nearest_feasible = feasibility_model(gp, "max")
                 self.gps.append(nearest_feasible)
                 result = nearest_feasible.solve(solver, verbosity=verbosity-1)
@@ -134,11 +146,4 @@ class SignomialProgram(CostedConstraintSet):
         """Get a GP approximation of this SP at x0"""
         gpconstr = self.as_gpconstr(x0)
         return GeometricProgram(self.cost, gpconstr,
-                                self.substitutions, verbosity=verbosity)
-
-    def xugp(self, x0=None, M=10, w=0, s=1, verbosity=1):
-        """Get a GP approximation of this SP at x0 using Xu's algorithm"""
-        
-        gpconstr = self.as_gpconstr(x0)
-        return GeometricProgram(cost, gpconstr,
                                 self.substitutions, verbosity=verbosity)

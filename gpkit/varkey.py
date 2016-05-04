@@ -19,7 +19,7 @@ class VarKey(object):
     -------
     VarKey with the given name and descr.
     """
-    new_unnamed_id = count().next
+    new_id = {}
     subscripts = ["models", "idx"]
     eq_ignores = frozenset(["units", "value"])
     # ignore value in ==. Also skip units, since pints is weird and the unitstr
@@ -38,8 +38,16 @@ class VarKey(object):
                 raise TypeError("variables can only be formed from monomials"
                                 " with a c of 1 and a single variable")
         else:
+            unique = kwargs.get("unique", False)
             if name is None:
-                name = "\\fbox{%s}" % VarKey.new_unnamed_id()
+                name = "\\fbox"
+                unique = True
+            elif unique:
+                name += "_"
+            if unique:
+                if name not in VarKey.new_id:
+                    VarKey.new_id[name] = count().next
+                name += "{%s}" % VarKey.new_id[name]()
             self.descr["name"] = str(name)
 
         from . import units as ureg  # update in case user has disabled units
