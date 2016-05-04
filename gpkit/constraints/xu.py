@@ -3,6 +3,7 @@ from ..nomials.nomial_math import SignomialInequality
 from ..nomials.variables import Variable
 from ..nomials.array import NomialArray
 from .costed import CostedConstraintSet
+from .. import SignomialsEnabled
 
 
 def weights_update(self):
@@ -27,7 +28,8 @@ class XuConstraintSet(CostedConstraintSet):
 
     def as_gpconstr(self, x0):
         gpconstrs = CostedConstraintSet.as_gpconstr(self, x0)
-        f0p, f0m = self.objective.sub(self.substitutions).posy_negy()
+        with SignomialsEnabled():
+            f0p, f0m = self.objective.sub(self.substitutions).posy_negy()
         return [self.cost >= self.xi0 + (self.w*self.s).sum(),
                 f0p + self.M <= (f0m + self.xi0).mono_lower_bound(x0),
                 gpconstrs]
@@ -51,7 +53,8 @@ class XuConstraint_K21(XuEqualityConstraint):
     where posy and negy+1 are both monomials"""
 
     def as_gpconstr(self, x0):
-        posy, negy = self._unsubbed.sub(self.substitutions).posy_negy()
+        with SignomialsEnabled():
+            posy, negy = self._unsubbed.sub(self.substitutions).posy_negy()
         # TODO: turn self into a MonomialEquality Constraint here
         return posy == negy
 
@@ -61,7 +64,8 @@ class XuConstraint_K22(XuEqualityConstraint):
     where posy is a posynomial and negy+1 is a monomial"""
 
     def as_gpconstr(self, x0):
-        posy, negy = self._unsubbed.sub(self.substitutions).posy_negy()
+        with SignomialsEnabled():
+            posy, negy = self._unsubbed.sub(self.substitutions).posy_negy()
         c1 = posy <= negy
         # s above 1 makes the approximated side easier
         c2 = negy <= self.s*posy.mono_lower_bound(x0)
@@ -74,7 +78,8 @@ class XuConstraint_K23(XuEqualityConstraint):
     where the posy is a monomial and negy+1 is a posynomial"""
 
     def as_gpconstr(self, x0):
-        posy, negy = self._unsubbed.sub(self.substitutions).posy_negy()
+        with SignomialsEnabled():
+            posy, negy = self._unsubbed.sub(self.substitutions).posy_negy()
         c1 = negy <= posy
         # s above 1 makes the approximated side easier
         c2 = posy <= self.s*negy.mono_lower_bound(x0)
@@ -86,7 +91,8 @@ class XuConstraint_K24(XuEqualityConstraint):
     """ A equality contraint which does not lie in K21, K22 or K23"""
 
     def as_gpconstr(self, x0):
-        self._unsubbed.sub(self.substitutions).posy_negy()
+        with SignomialsEnabled():
+            posy, negy = self._unsubbed.sub(self.substitutions).posy_negy()
         # s above 1 makes one of the approximated sides easier
         c1 = negy <= self.s*posy.mono_lower_bound(x0)
         c2 = posy <= negy.mono_lower_bound(x0)
