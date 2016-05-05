@@ -889,8 +889,6 @@ class SignomialEqualityLinTrust(ScalarSingleEquationConstraint):
 	bounding_constraints = [[self.trustregion <= Monomial(vk)/x0[vk],
 		                 Monomial(vk)/x0[vk] <= 1/self.trustregion] for vk in varkeys]
 	return [bounding_constraints, mleft == mright]
-        # return [_force_mono(self.left, x0) >= _force_mono(self.right, x0),
-        #         _force_mono(self.left, x0) <= _force_mono(self.right, x0)]
     
     def sens_from_gpconstr(self, gp_approx, gp_senss, var_senss):
 	return gp_senss
