@@ -139,6 +139,8 @@ class SolutionArray(DictOfLists):
             elif not subdict:
                 continue
             elif table == "sensitivities":
+                if not subdict["constants"]:
+                    continue
                 strs += results_table(subdict["constants"], table_title,
                                       minval=1e-2,
                                       sortbyvals=True,
