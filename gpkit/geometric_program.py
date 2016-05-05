@@ -52,13 +52,16 @@ class GeometricProgram(NomialData):
         ## Create list of substituted posynomials <= 1
         self.posynomials = [cost.sub(self.substitutions)]
         self.constr_idxs = []
-        self.unusedsubkeys = set(key for key in self.substitutions
-                                 if (key not in constraints.varkeys
-                                     and key not in self.cost.varkeys))
+        self.unusedsubkeys = set()
+        # TODO: speed up the below before uncommenting
+        # self.unusedsubkeys = set(key for key in self.substitutions
+        #                          if (key not in constraints.varkeys
+        #                              and key not in self.cost.varkeys))
         for key in self.unusedsubkeys:
             if verbosity > 0:
                 print ("Warning: %s has a substitution but was not found in"
                        " the cost or any constraints." % key)
+
         for constraint in constraints:
             constraint.substitutions = self.substitutions
             try:
@@ -385,7 +388,7 @@ class GeometricProgram(NomialData):
     def latex(self):
         "LaTeX representation of a GeometricProgram."
         #TODO: should this print posynomials <= 1? Substitutions?
-        return "\n".join(["\\begin{array}[ll]",
+        return "\n".join(["\\begin{array}{ll}",
                           "\\text{}",
                           "\\text{minimize}",
                           "    & %s \\\\" % self.cost.latex(),

@@ -3,6 +3,7 @@ import numpy as np
 from .data import simplify_exps_and_cs
 from .array import NomialArray
 from .nomial_core import Nomial, fast_monomial_str
+from .substitution import substitution, parse_subs
 from ..constraints import SingleEquationConstraint
 from ..small_classes import Strings, Numbers, Quantity
 from ..small_classes import HashVector
@@ -473,8 +474,10 @@ class PosynomialInequality(ScalarSingleEquationConstraint):
             if not exps[0]:
                 if cs[0] > 1:
                     raise ValueError("infeasible constraint: %s" % self)
-            # for now, we allow tautological monomial constraints (cs[0] <= 1)
-            # because they allow models to impose requirements on variables
+                else:
+                    # allow tautological monomial constraints (cs[0] <= 1)
+                    # because they allow models to impose requirements
+                    return (), np.array([])
             return exps, cs
         coeff = 1.0
         exps_ = []
@@ -502,10 +505,9 @@ class PosynomialInequality(ScalarSingleEquationConstraint):
             try:
                 p.convert_to('dimensionless')
             except DimensionalityError:
-                raise ValueError("constraints must have the same units"
-                                 " on both sides: '%s' and '%s' can not"
-                                 " be converted into each other."
-                                 "" % (self.p_lt.units, self.m_gt.units))
+                raise ValueError("unit mismatch: units of %s cannot "
+                                 "be converted to units of %s" %
+                                 (self.p_lt, self.m_gt))
 
         p.exps, p.cs = self._simplify_posy_ineq(p.exps, p.cs)
         return [p]
@@ -523,9 +525,11 @@ class PosynomialInequality(ScalarSingleEquationConstraint):
             # remove any cs that are just nans and/or 0s
             nans = np.isnan(cs)
             if np.all(nans) or np.all(cs[~nans] == 0):
-                return []  # skip nan'd or 0'd constraint
+                continue  # skip nan'd or 0'd constraint
 
             exps, cs = self._simplify_posy_ineq(exps, cs)
+            if not exps and not cs:  # tautological constraint
+                continue
             exps, cs, pmap = simplify_exps_and_cs(exps, cs, return_map=True)
 
             #  The monomial sensitivities from the GP/SP are in terms of this
@@ -676,7 +680,7 @@ class SignomialInequality(ScalarSingleEquationConstraint):
                             " a PosynomialInequality")
 
     def as_gpconstr(self, x0):
-        "Returns GP apprimxation of an SP constraint at x0"
+        "Returns GP approximation of an SP constraint at x0"
         posy, negy = self._unsubbed.posy_negy()
         if x0 is None:
             x0 = {vk: vk.descr["sp_init"] for vk in negy.varlocs
@@ -697,7 +701,6 @@ class SignomialInequality(ScalarSingleEquationConstraint):
         pa_sens[str(posyapprox)] = pa_sens.pop("overall")
         constr_sens["posyapprox"] = pa_sens
         return constr_sens
-
 
 class SignomialEqualityTriv(ScalarSingleEquationConstraint):
     """A constraint of the general form posynomial == posynomial (linearized only the necessary parts)
@@ -891,6 +894,4 @@ class SignomialEqualityLinTrust(ScalarSingleEquationConstraint):
     
     def sens_from_gpconstr(self, gp_approx, gp_senss, var_senss):
 	return gp_senss
-# pylint: disable=wrong-import-position
-from .substitution import substitution, parse_subs
 

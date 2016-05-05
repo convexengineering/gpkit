@@ -127,7 +127,7 @@ class SensitivityMap(object):
         if not paintby:
             paintby = self.paintby
         return "\n".join(["\\color[gray]{%.2f}" % GRAY[0],
-                          "\\begin{array}[ll]",
+                          "\\begin{array}{ll}",
                           "\\text{}",
                           "\\text{minimize}",
                           "    & %s \\\\" % self.costlatex,

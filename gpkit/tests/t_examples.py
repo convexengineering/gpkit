@@ -45,6 +45,12 @@ class TestExamples(unittest.TestCase):
     def test_water_tank(self, example):
         pass
 
+    def test_sin_approx_example(self, example):
+        pass
+
+    def test_external_sp(self, example):
+        pass
+
     def test_simpleflight(self, example):
         sol = example.sol
         freevarcheck = dict(A=8.46,
