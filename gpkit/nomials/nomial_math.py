@@ -733,6 +733,14 @@ class SignomialEqualityTriv(ScalarSingleEquationConstraint):
         return [_force_mono(self.left, x0) >= self.right,
                 self.left <= _force_mono(self.right, x0)]
 
+    def process_result(self, result):
+        "Checks that all constraints are satisfied with equality"
+        variables = result["variables"]
+        leftsubbed = self.left.sub(variables).value
+        rightsubbed = self.right.sub(variables).value
+        rel_diff = abs(rightsubbed - leftsubbed)
+        result["constr_viol"] = result.get("constr_viol", 0) + rel_diff
+
     # pylint: disable=unused-argument
     def sens_from_gpconstr(self, gp_approx, gp_senss, var_senss):
         return gp_senss
@@ -772,6 +780,14 @@ class SignomialEqualityTrivTrust(ScalarSingleEquationConstraint):
         return [_force_mono(self.left, x0) >= self.trustregion*self.right,
                 self.left <= _force_mono(self.right, x0)]
 
+    def process_result(self, result):
+        "Checks that all constraints are satisfied with equality"
+        variables = result["variables"]
+        leftsubbed = self.left.sub(variables).value
+        rightsubbed = self.right.sub(variables).value
+        rel_diff = abs(rightsubbed - leftsubbed)
+        result["constr_viol"] = result.get("constr_viol", 0) + rel_diff
+    
     # pylint: disable=unused-argument
     def sens_from_gpconstr(self, gp_approx, gp_senss, var_senss):
         return gp_senss
@@ -816,10 +832,8 @@ class SignomialEqualityLin(ScalarSingleEquationConstraint):
         variables = result["variables"]
         leftsubbed = self.left.sub(variables).value
         rightsubbed = self.right.sub(variables).value
-        rel_diff = abs(1 - leftsubbed/rightsubbed)
-	result["constr_viol"] = result["constr_viol"] + rel_diff
-	print rel_diff
-
+        rel_diff = abs(rightsubbed - leftsubbed)
+	result["constr_viol"] = result.get("constr_viol", 0) + rel_diff
 
     
     # pylint: disable=unused-argument
@@ -852,6 +866,14 @@ class SignomialEqualityLinTrust(ScalarSingleEquationConstraint):
         raise TypeError("SignomialEquality could not simplify to"
                         " a PosynomialInequality")
     
+    def process_result(self, result):
+        "Checks that all constraints are satisfied with equality"
+        variables = result["variables"]
+        leftsubbed = self.left.sub(variables).value
+        rightsubbed = self.right.sub(variables).value
+        rel_diff = abs(rightsubbed - leftsubbed)
+        result["constr_viol"] = result.get("constr_viol", 0) + rel_diff
+    
     def as_gpconstr(self, x0):
         "Returns GP apprimxation of an SP constraint at x0"
         #return self.left >= self.right
@@ -872,4 +894,3 @@ class SignomialEqualityLinTrust(ScalarSingleEquationConstraint):
 # pylint: disable=wrong-import-position
 from .substitution import substitution, parse_subs
 
-# this is a comment from bscohen1
