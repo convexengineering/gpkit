@@ -60,7 +60,7 @@ class SignomialProgram(CostedConstraintSet):
         self.result = None
 
     def localsolve(self, solver=None, verbosity=1, x0=None, rel_tol=1e-4,
-                   iteration_limit=50, **kwargs):
+                   iteration_limit=50, batch=0, **kwargs):
         """Locally solves a SignomialProgram and returns the solution.
 
         Arguments
@@ -97,11 +97,14 @@ class SignomialProgram(CostedConstraintSet):
         prevcost, cost, rel_improvement = None, None, None
         while rel_improvement is None or rel_improvement > rel_tol:
             if len(self.gps) > iteration_limit:
-                raise RuntimeWarning("""problem unsolved after %s iterations.
-
-    The last result is available in Model.program.gps[-1].result. If the gps
-    appear to be converging, you may wish to increase the iteration limit by
-    calling .localsolve(..., iteration_limit=NEWLIMIT).""" % len(self.gps))
+                if batch:
+                    rel_improvement = None
+                    break
+                else:
+                    raise RuntimeWarning("""problem unsolved after %s iterations.
+        The last result is available in Model.program.gps[-1].result. If the gps
+        appear to be converging, you may wish to increase the iteration limit by
+        calling .localsolve(..., iteration_limit=NEWLIMIT).""" % len(self.gps))
             gp = self.gp(x0, verbosity=verbosity-1)
             self.gps.append(gp)  # NOTE: SIDE EFFECTS
             try:
@@ -131,9 +134,15 @@ class SignomialProgram(CostedConstraintSet):
                 rel_improvement = None
         # solved successfully!
         if verbosity > 0:
-            print("Solving took %i GP solves" % len(self.gps)
+            self.soltime = (time()-starttime)
+            if len(self.gps) > iteration_limit:
+                print("Still not solved after %i GP solves" % len(self.gps)
+                  + " and %.3g seconds." % (time()-starttime) )
+                self.flag = 0                      
+            else:
+                print("Solving took %i GP solves" % len(self.gps)
                   + " and %.3g seconds." % (time() - starttime))
-
+                self.flag = 1
         result["signomialstart"] = startpoint
         self.sens_from_gpconstr(gp.constraints,
                                 result["sensitivities"]["constraints"],

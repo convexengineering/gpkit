@@ -47,6 +47,13 @@ class XuEqualityConstraint(SignomialInequality):
         SignomialInequality.__init__(self, left, "<=", right)
         self.s = Variable("s", unique=True)
 
+    def process_result(self, result):
+        "Checks that all constraints are satisfied with equality"
+        variables = result["variables"]
+        leftsubbed = self.left.sub(variables).value
+        rightsubbed = self.right.sub(variables).value
+        rel_diff = abs(rightsubbed - leftsubbed)
+        result["constr_viol"] = result.get("constr_viol", 0) + rel_diff
 
 class XuConstraint_K21(XuEqualityConstraint):
     """An equality constraint of the general form monomial = monomial
