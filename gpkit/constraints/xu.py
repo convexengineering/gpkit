@@ -34,8 +34,9 @@ class XuConstraintSet(CostedConstraintSet):
         self.w *= self.alpha
 
     def on_successfulsolve(self, result):
+        # normalize the cost by removing the value of unused slack variables
+        result["cost"] -= self.w.sum()
         self.w *= self.alpha
-        result["cost"] = result["variables"][self.xi0]
 
 
 XuConstraint_K11 = SignomialInequality
