@@ -111,7 +111,7 @@ class SignomialProgram(CostedConstraintSet):
                 result = gp.solve(solver, verbosity-1, **kwargs)
                 for c in self.flat():
                     if hasattr(c, "on_successfulsolve"):
-                        c.on_successfulsolve()
+                        c.on_successfulsolve(result)
             except (RuntimeWarning, ValueError):
 
                 modified_on_failedsolve = False
@@ -138,7 +138,7 @@ class SignomialProgram(CostedConstraintSet):
             if len(self.gps) > iteration_limit:
                 print("Still not solved after %i GP solves" % len(self.gps)
                   + " and %.3g seconds." % (time()-starttime) )
-                self.flag = 0                      
+                self.flag = 0
             else:
                 print("Solving took %i GP solves" % len(self.gps)
                   + " and %.3g seconds." % (time() - starttime))

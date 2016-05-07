@@ -6,10 +6,6 @@ from .costed import CostedConstraintSet
 from .. import SignomialsEnabled
 
 
-def weights_update(self):
-    self.w = self.alpha*self.w
-
-
 class XuConstraintSet(CostedConstraintSet):
     """ The objective function defined as y + sum of WiSi where Wi
         are the weights (defined apriori) and Si are the added
@@ -34,8 +30,12 @@ class XuConstraintSet(CostedConstraintSet):
                 f0p + self.M <= (f0m + self.xi0).mono_lower_bound(x0),
                 gpconstrs]
 
-    on_failedsolve = weights_update
-    on_successfulsolve = weights_update
+    def on_failedsolve(self):
+        self.w *= self.alpha
+
+    def on_successfulsolve(self, result):
+        self.w *= self.alpha
+        result["cost"] = result["variables"][self.xi0]
 
 
 XuConstraint_K11 = SignomialInequality
