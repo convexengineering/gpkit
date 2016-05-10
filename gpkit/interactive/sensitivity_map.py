@@ -26,15 +26,17 @@ def colorfn_gen(scale, power=0.66):
 
 
 # pylint: disable=too-many-locals
-def signomial_print(sig, sol, colorfn, paintby="variables", idx=None):
+def signomial_print(sig, sol, colorfn, paintby="constants", idx=None):
     "For pretty printing with Sympy"
     mstrs = []
     for c, exp in zip(sig.cs, sig.exps):
         pos_vars, neg_vars = [], []
         for var, x in exp.items():
-            varlatex = var._latex()
-            if paintby == "variables":
-                senss = sol["sensitivities"]["variables"][var]
+            varlatex = var.latex()
+            if paintby == "constants":
+                senss = (sol["sensitivities"]["constants"][var]
+                         if var in sol["sensitivities"]["constants"]
+                         else 0.0)
                 colorstr = colorfn(senss)
                 varlatex = "\\textcolor%s{%s}" % (colorstr, varlatex)
             if x > 0:
@@ -90,7 +92,7 @@ class SensitivityMap(object):
         The Model object that the Map will be based on
 
     paintby : string
-        The unit of colouring. Must be one of "variables", "monomials", or
+        The unit of colouring. Must be one of "constants", "monomials", or
         "posynomials".
 
     Usage
@@ -101,10 +103,9 @@ class SensitivityMap(object):
         display(SensitivityMap(m, paintby=key))
     """
 
-    def __init__(self, model, paintby="variables"):
+    def __init__(self, model, paintby="constants"):
         self.model = model
-        self.costlatex = model.cost._latex()
-        self.constraints = model.constraints
+        self.costlatex = model.cost.latex()
         self.paintby = paintby
 
     @property
@@ -140,18 +141,19 @@ class SensitivityMap(object):
         "Generates LaTeX for constraints."
         constraint_latex_list = []
         sol = self.solution
-        if self.paintby == "variables":
-            senss = abs(np.array(sol["sensitivities"]["variables"].values()))
+        if self.paintby == "constants":
+            senss = abs(np.array(sol["sensitivities"]["constants"].values()))
         else:
             idx = len(self.model.cost.exps) if paintby == "monomials" else 1
             senss = sol["sensitivities"][paintby][idx:]
         colorfn = colorfn_gen(max(senss))
 
-        for i, constr in enumerate(self.model.constraints):
-            if self.paintby == "variables":
+        for i, constr in enumerate(self.model):
+            if self.paintby == "constants":
                 left = signomial_print(constr.left, sol, colorfn, paintby)
                 right = signomial_print(constr.right, sol, colorfn, paintby)
-                constr_tex = "    & %s \\\\" % (left + constr.oper_l + right)
+                constr_tex = ("    & %s \\\\" %
+                              (left + constr.latex_opers[constr.oper] + right))
             else:
                 if isinstance(constr, MonomialEquality):
                     constrs = [constr.leq, constr.geq]
