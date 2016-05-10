@@ -136,6 +136,9 @@ def run_sweep(genfunction, self, solution, skipsweepfailures,
                                  " To ignore such failures, solve with"
                                  " skipsweepfailures=True.")
 
+    if not len(solution):
+        raise RuntimeWarning("no sweeps solved successfully.")
+
     solution["sweepvariables"] = KeyDict()
     ksweep, klinkedsweep = KeyDict(sweep), KeyDict(linkedsweep)
     for var, val in solution["constants"].items():

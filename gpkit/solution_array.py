@@ -50,6 +50,8 @@ class SolutionArray(DictOfLists):
             return len(self["cost"])
         except TypeError:
             return 1
+        except KeyError:
+            return 0
 
     def __call__(self, posy):
         posy_subbed = self.subinto(posy)
@@ -133,7 +135,12 @@ class SolutionArray(DictOfLists):
                     cost_units = self.program[0].cost.units
                 else:
                     strs += [" %-.4g" % subdict]
-                    cost_units = self.program.cost.units
+                    if hasattr(self.program, "cost"):
+                        cost_units = self.program.cost.units
+                    else:
+                        # we're in a skipsweepfailures that only solved once
+                        # pylint: disable=unsubscriptable-object
+                        cost_units = self.program[0].cost.units
                 strs[-1] += unitstr(cost_units, into=" [%s] ", dimless="")
                 strs += [""]
             elif not subdict:
