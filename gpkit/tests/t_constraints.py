@@ -6,7 +6,7 @@ from gpkit.nomials import MonomialEquality
 from gpkit import LinkedConstraintSet, Model
 from gpkit.constraints.tight import TightConstraintSet
 from gpkit.tests.helpers import run_tests
-
+import gpkit
 
 class TestConstraint(unittest.TestCase):
     """Tests for Constraint class"""
@@ -92,6 +92,13 @@ class TestMonomialEquality(unittest.TestCase):
         mec2 = MonomialEquality(x, "=", y**2)
         self.assertTrue(mono in mec.as_posyslt1())
         self.assertTrue(mono in mec2.as_posyslt1())
+        x = Variable("x", "ft")
+        y = Variable("y")
+        if gpkit.units:
+            with self.assertRaises(ValueError):
+                x == y
+            with self.assertRaises(ValueError):
+                y == x
 
     def test_inheritance(self):
         """Make sure MonomialEquality inherits from the right things"""

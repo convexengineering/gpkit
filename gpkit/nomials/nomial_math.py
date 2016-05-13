@@ -604,7 +604,16 @@ class MonomialEquality(PosynomialInequality):
 
     def _gen_unsubbed(self):
         "Returns the unsubstituted posys <= 1."
-        return [self.left/self.right, self.right/self.left]
+        l_lt_r, r_lt_l = self.left/self.right, self.right/self.left
+        if l_lt_r.units:
+            try:
+                l_lt_r.convert_to('dimensionless')
+                r_lt_l.convert_to('dimensionless')
+            except DimensionalityError:
+                raise ValueError("unit mismatch: units of %s cannot "
+                                 "be converted to units of %s" %
+                                 (self.left, self.right))
+        return [l_lt_r, r_lt_l]
 
     def __nonzero__(self):
         'A constraint not guaranteed to be satisfied  evaluates as "False".'
