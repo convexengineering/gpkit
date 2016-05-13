@@ -71,16 +71,9 @@ class SolutionArray(DictOfLists):
         else:
             return posy.sub(self["variables"])
 
-    def sens(self, nomial):
-        """Returns array of each solution's sensitivity substituted into nomial
-
-        Note: this does not return monomial sensitivities if you pass it a
-        signomial; it returns each variable's sensitivity substituted in for it
-        in that signomial.
-
-        Returns scalar, unitless values.
-        """
-        return NomialArray(self["variables"]["sensitivities"][nomial])
+    def sens(self, key):
+        "Returns sensitivity of the given variable (unitless)."
+        return NomialArray(self["variables"]["sensitivities"][key])
 
     def table(self, tables=("cost", "sweepvariables", "freevariables",
                             "constants", "sensitivities"),
