@@ -8,6 +8,7 @@ from gpkit.constraints.tight import TightConstraintSet
 from gpkit.tests.helpers import run_tests
 import gpkit
 
+
 class TestConstraint(unittest.TestCase):
     """Tests for Constraint class"""
 
@@ -96,10 +97,8 @@ class TestMonomialEquality(unittest.TestCase):
         x = Variable("x", "ft")
         y = Variable("y")
         if gpkit.units:
-            with self.assertRaises(ValueError):
-                meq = (x == y)
-            with self.assertRaises(ValueError):
-                meq = (y == x)
+            self.assertRaises(ValueError, MonomialEquality, x, "=", y)
+            self.assertRaises(ValueError, MonomialEquality, y, "=", x)
 
     def test_inheritance(self):
         """Make sure MonomialEquality inherits from the right things"""

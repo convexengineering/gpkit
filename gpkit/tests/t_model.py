@@ -42,6 +42,16 @@ class TestGP(unittest.TestCase):
                                self.ndig)
         self.assertAlmostEqual(sol["cost"], 2*math.sqrt(2), self.ndig)
 
+    def test_601(self):
+        # tautological monomials should solve but not pass to the solver
+        x = Variable("x")
+        y = Variable("y", 2)
+        m = Model(x,
+                  [x >= 1,
+                   y == 2])
+        m.solve(verbosity=0)
+        self.assertEqual(len(m.program.constraints), 2)
+
     def test_cost_freeing(self):
         "Test freeing a variable that's in the cost."
         x = Variable("x", 1)
