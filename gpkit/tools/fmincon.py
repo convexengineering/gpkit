@@ -6,8 +6,8 @@ from gpkit.small_scripts import mag
 # pylint: disable=redefined-outer-name,invalid-name
 # pylint: disable=too-many-statements,too-many-locals
 
-def generate_mfiles(m, algorithm='interior-point',
-                    guesstype='order-of-magnitude', writefiles=True):
+def generate_mfiles(m, algorithm='interior-point', guesstype='ones',
+                    gradobj='on', gradconstr='on', writefiles=True):
     """A method for preparing fmincon input files to run a GPkit program
 
     INPUTS:
@@ -18,11 +18,19 @@ def generate_mfiles(m, algorithm='interior-point',
                     'SQP': uses the sequential quadratic programming solver
 
         guesstype:  [string] The type of initial guess used
+                    'ones': One for each variable
                     'order-of-magnitude': The same order of magnitude as the GP
                                           or SP optimal solution
-                    'ones': One for each variable
                     'almost-exact-solution': The GP/SP optimal solution rounded
                                              to 1 significant figure
+
+        gradconstr: [string] Include analytical constraint gradients?
+                    'on': Yes
+                    'off': No
+
+        gradobj:    [string] Include analytical objective gradients?
+                    'on': Yes
+                    'off': No
 
         writefiles: [Boolean] whether or not to actually write the m files
     """
@@ -120,18 +128,23 @@ def generate_mfiles(m, algorithm='interior-point',
                   "options.Algorithm = '{0}';\n".format(algorithm) +
                   "options.MaxFunEvals = Inf;\n" +
                   "options.MaxIter = Inf;\n" +
-                  "options.GradObj = 'on';\n" +
-                  "options.GradConstr = 'on';\n" +
+                  "options.GradObj = '{0}';\n".format(gradobj) +
+                  "options.GradConstr = '{0}';\n".format(gradconstr) +
                   "tic;\n" +
                   "[x,fval] = ...\n" +
                   "fmincon(@objfun,x0,[],[],[],[],[],[],@confun,options);\n" +
-                  "toc;")
+                  "elapsed = toc;\n" +
+                  "fid = fopen('elapsed.txt', 'w');\n" +
+                  "fprintf(fid, '%.1f', elapsed);\n" +
+                  "fclose(fid);\n" +
+                  "fid = fopen('cost.txt', 'w');\n" +
+                  "fprintf(fid, '%.5g', fval);\n" +
+                  "fclose(fid);")
 
     if writefiles is True:
         # Write the constraint function .m file
         with open('confun.m', 'w') as outfile:
             outfile.write(confunstr)
-
 
         # Write the objective function .m file
         with open('objfun.m', 'w') as outfile:
