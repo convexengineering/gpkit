@@ -626,6 +626,9 @@ class MonomialEquality(PosynomialInequality):
 
     def sens_from_dual(self, la, nu):
         "Returns the variable/constraint sensitivities from lambda/nu"
+        if not la or not nu:
+            # as_posyslt1 created no inequalities
+            return {}, {}
         left, right = la
         constr_sens = {str(self.left): left-right,
                        str(self.right): right-left}
