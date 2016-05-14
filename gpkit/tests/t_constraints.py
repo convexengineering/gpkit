@@ -63,6 +63,7 @@ class TestConstraint(unittest.TestCase):
         self.assertEqual(c.left, x)
         self.assertEqual(c.right, y**2)
         self.assertTrue("<=" in str(c))
+        self.assertEqual(type((1 >= x).latex()), str)
 
     def test_oper_overload(self):
         """Test Constraint initialization by operator overloading"""
@@ -96,9 +97,9 @@ class TestMonomialEquality(unittest.TestCase):
         y = Variable("y")
         if gpkit.units:
             with self.assertRaises(ValueError):
-                x == y
+                meq = (x == y)
             with self.assertRaises(ValueError):
-                y == x
+                meq = (y == x)
 
     def test_inheritance(self):
         """Make sure MonomialEquality inherits from the right things"""

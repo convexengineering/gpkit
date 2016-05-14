@@ -160,7 +160,7 @@ class TestGP(unittest.TestCase):
         '''Issue 296'''
         x1 = Variable('x1')
         x2 = Variable('x2')
-        m = Model(1.+ x1 + x2, [x1 >= 1., x2 >= 1.])
+        m = Model(1. + x1 + x2, [x1 >= 1., x2 >= 1.])
         sol = m.solve(solver=self.solver, verbosity=0)
         self.assertAlmostEqual(sol["cost"], 3, self.ndig)
 
@@ -231,7 +231,6 @@ class TestSP(unittest.TestCase):
         with SignomialsEnabled():
             m = Model(x, [x + y >= z])
         self.assertAlmostEqual(m.solve(self.solver, verbosity=0)["cost"], 3)
-
 
     def test_trivial_sp(self):
         x = Variable('x')
