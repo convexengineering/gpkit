@@ -284,11 +284,11 @@ def plot_convergence(model):
     for n in range(len(model.program.gps)):
         try:
             cost = np.append(cost, model.program.gps[n].result['cost'])
-            it = np.append(it, n)
+            it = np.append(it, n+1)
         except TypeError:
             pass
     ax.plot(it, cost, '-o')
     ax.set_xlabel('Iteration')
     ax.set_ylabel('Cost')
-    ax.set_xticks(range(0, len(model.program.gps)))
+    ax.set_xticks(range(1, len(model.program.gps)+1))
     return fig, ax
