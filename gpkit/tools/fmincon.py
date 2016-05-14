@@ -6,8 +6,26 @@ from gpkit.small_scripts import mag
 # pylint: disable=redefined-outer-name,invalid-name
 # pylint: disable=too-many-statements,too-many-locals
 
-def generate_mfiles(m, guesstype='order-of-magnitude', writefiles=True):
-    """A method for preparing fmincon input files to run a GPkit program"""
+def generate_mfiles(m, algorithm='interior-point',
+                    guesstype='order-of-magnitude', writefiles=True):
+    """A method for preparing fmincon input files to run a GPkit program
+
+    INPUTS:
+        m:          [GPkit model] The model to replicate in fmincon
+
+        algorithm:  [string] Algorithm used by fmincon
+                    'interior-point': uses the interior point solver
+                    'SQP': uses the sequential quadratic programming solver
+
+        guesstype:  [string] The type of initial guess used
+                    'order-of-magnitude': The same order of magnitude as the GP
+                                          or SP optimal solution
+                    'ones': One for each variable
+                    'almost-exact-solution': The GP/SP optimal solution rounded
+                                             to 1 significant figure
+
+        writefiles: [Boolean] whether or not to actually write the m files
+    """
 
     # Create a new dictionary mapping variables to x(i)'s for use w/ fmincon
     i = 1
@@ -99,7 +117,7 @@ def generate_mfiles(m, guesstype='order-of-magnitude', writefiles=True):
     # String for main.m
     mainfunstr = (x0string +
                   "options = optimset('fmincon');\n" +
-                  "options.Algorithm = 'interior-point';\n" +
+                  "options.Algorithm = '{0}';\n".format(algorithm) +
                   "options.MaxFunEvals = Inf;\n" +
                   "options.MaxIter = Inf;\n" +
                   "options.GradObj = 'on';\n" +
