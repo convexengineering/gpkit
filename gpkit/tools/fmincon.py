@@ -19,8 +19,12 @@ def generate_mfiles(m, algorithm='interior-point', guesstype='ones',
 
         guesstype:  [string] The type of initial guess used
                     'ones': One for each variable
-                    'order-of-magnitude': The same order of magnitude as the GP
-                                          or SP optimal solution
+                    'order-of-magnitude-floor': The "log-floor" order of
+                                                magnitude of the GP/SP optimal
+                                                solution (i.e. O(99)=10)
+                    'order-of-magnitude-nearest': The "log-nearest" order of
+                                                  magnitude of the GP/SP optimal
+                                                  solution (i.e. O(42)=100)
                     'almost-exact-solution': The GP/SP optimal solution rounded
                                              to 1 significant figure
 
@@ -176,8 +180,10 @@ def make_initial_guess(m, newlist, guesstype='ones'):
             xf = mag(sol['freevariables'][vk])
             if guesstype == "almost-exact-solution":
                 x0 = round(xf, -int(floor(log10(abs(xf))))) # rounds to 1sf
-            elif guesstype == "order-of-magnitude":
-                x0 = 10**round(floor(log10(xf)))
+            elif guesstype == "order-of-magnitude-floor":
+                x0 = 10**floor(log10(xf))
+            elif guesstype == "order-of-magnitude-nearest":
+                x0 = 10**round((log10(xf))
             else:
                 raise Exception("Unexpected guess type")
             x0string += [str(x0) + ", "]
