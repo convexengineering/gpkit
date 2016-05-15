@@ -44,8 +44,8 @@ def generate_mfiles(m, algorithm='interior-point', guesstype='ones',
     for key in m.varkeys:
         if key not in m.substitutions:
             newdict[key] = 'x({0})'.format(i)
-            newlist += [key.str_without(["units", "models"])]
-            lookup += ['x_{0}: '.format(i) + key.str_without(["units", "models"])]
+            newlist += [key.str_without(["units"])]
+            lookup += ['x_{0}: '.format(i) + key.str_without(["units"])]
             i += 1
     x0string = make_initial_guess(m, newlist, guesstype)
 
