@@ -22,9 +22,9 @@ def generate_mfiles(m, algorithm='interior-point', guesstype='ones',
                     'order-of-magnitude-floor': The "log-floor" order of
                                                 magnitude of the GP/SP optimal
                                                 solution (i.e. O(99)=10)
-                    'order-of-magnitude-nearest': The "log-nearest" order of
-                                                  magnitude of the GP/SP optimal
-                                                  solution (i.e. O(42)=100)
+                    'order-of-magnitude-round': The "log-nearest" order of
+                                                magnitude of the GP/SP optimal
+                                                solution (i.e. O(42)=100)
                     'almost-exact-solution': The GP/SP optimal solution rounded
                                              to 1 significant figure
 
@@ -182,7 +182,7 @@ def make_initial_guess(m, newlist, guesstype='ones'):
                 x0 = round(xf, -int(floor(log10(abs(xf))))) # rounds to 1sf
             elif guesstype == "order-of-magnitude-floor":
                 x0 = 10**floor(log10(xf))
-            elif guesstype == "order-of-magnitude-nearest":
+            elif guesstype == "order-of-magnitude-round":
                 x0 = 10**round((log10(xf))
             else:
                 raise Exception("Unexpected guess type")
