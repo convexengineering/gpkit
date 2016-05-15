@@ -183,7 +183,7 @@ def make_initial_guess(m, newlist, guesstype='ones'):
             elif guesstype == "order-of-magnitude-floor":
                 x0 = 10**floor(log10(xf))
             elif guesstype == "order-of-magnitude-round":
-                x0 = 10**round((log10(xf))
+                x0 = 10**round(log10(xf))
             else:
                 raise Exception("Unexpected guess type")
             x0string += [str(x0) + ", "]
