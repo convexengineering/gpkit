@@ -1,7 +1,7 @@
 """Defines SolutionArray class"""
 from collections import Iterable
 import numpy as np
-from .nomials import NomialArray, Monomial
+from .nomials import NomialArray
 from .small_classes import Strings, DictOfLists
 from .small_scripts import unitstr, mag
 
@@ -71,26 +71,9 @@ class SolutionArray(DictOfLists):
         else:
             return posy.sub(self["variables"])
 
-    def sens(self, nomial):
-        """Returns array of each solution's sensitivity substituted into nomial
-
-        Note: this does not return monomial sensitivities if you pass it a
-        signomial; it returns each variable's sensitivity substituted in for it
-        in that signomial.
-
-        Returns scalar, unitless values.
-        """
-        if nomial in self["variables"]["sensitivities"]:
-            return NomialArray(self["variables"]["sensitivities"][nomial])
-        elif len(self) > 1:
-            return NomialArray([self.atindex(i).subinto(nomial)
-                                for i in range(len(self))])
-        else:
-            subbed = nomial.sub(self["variables"]["sensitivities"],
-                                require_positive=False)
-            assert isinstance(subbed, Monomial)
-            assert not subbed.exp
-            return mag(subbed.c)
+    def sens(self, key):
+        "Returns sensitivity of the given variable (unitless)."
+        return NomialArray(self["variables"]["sensitivities"][key])
 
     def table(self, tables=("cost", "sweepvariables", "freevariables",
                             "constants", "sensitivities"),
