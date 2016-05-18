@@ -216,7 +216,7 @@ def results_table(data, title, minval=0, printunits=True, fixedcols=True,
                     lines.append([model+" | ", "", "", ""])
                 else:
                     lines.append([r"\multicolumn{3}{l}{\textbf{" +
-                                  model + r"}} \\"])
+                                  model + r"}}"])
             oldmodel = model
         label = var.descr.get('label', '')
         units = unitstr(var, into=" [%s] ", dimless="") if printunits else ""
