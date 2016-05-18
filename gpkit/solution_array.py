@@ -50,6 +50,8 @@ class SolutionArray(DictOfLists):
             return len(self["cost"])
         except TypeError:
             return 1
+        except KeyError:
+            return 0
 
     def __call__(self, posy):
         posy_subbed = self.subinto(posy)
@@ -104,6 +106,7 @@ class SolutionArray(DictOfLists):
             subdict = self.get(table, None)
             table_title = self.table_titles[table]
             if table == "cost":
+                # pylint: disable=unsubscriptable-object
                 if latex:
                     # TODO should probably print a small latex cost table here
                     continue
@@ -112,11 +115,14 @@ class SolutionArray(DictOfLists):
                     costs = ["%-8.3g" % c for c in subdict[:4]]
                     strs += [" [ %s %s ]" % ("  ".join(costs),
                                              "..." if len(self) > 4 else "")]
-                    # pylint: disable=unsubscriptable-object
                     cost_units = self.program[0].cost.units
                 else:
                     strs += [" %-.4g" % subdict]
-                    cost_units = self.program.cost.units
+                    if hasattr(self.program, "cost"):
+                        cost_units = self.program.cost.units
+                    else:
+                        # we're in a skipsweepfailures that only solved once
+                        cost_units = self.program[0].cost.units
                 strs[-1] += unitstr(cost_units, into=" [%s] ", dimless="")
                 strs += [""]
             elif not subdict:

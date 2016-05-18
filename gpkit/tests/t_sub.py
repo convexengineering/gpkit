@@ -150,6 +150,19 @@ class TestGPSubs(unittest.TestCase):
         firstcost = m.solve(verbosity=0)["cost"][0]
         self.assertAlmostEqual(firstcost, 1760, 3)
 
+    def test_skipfailures(self):
+        x = Variable("x")
+        x_min = Variable("x_{min}", [1, 2])
+
+        m = Model(x, [x <= 1, x >= x_min])
+        sol = m.solve(verbosity=0, skipsweepfailures=True)
+        sol.table()
+        self.assertEqual(len(sol), 1)
+
+        m.substitutions[x_min][1][0] = 5
+        with self.assertRaises(RuntimeWarning):
+            sol = m.solve(verbosity=0, skipsweepfailures=True)
+
     def test_vector_sweep(self):
         """Test sweep involving VectorVariables"""
         x = Variable("x")
