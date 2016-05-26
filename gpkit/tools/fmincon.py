@@ -111,7 +111,8 @@ def generate_mfiles(m, algorithm='interior-point', guesstype='ones',
         if key not in m.substitutions:
             costdiff = cost.diff(key)
             costdiff.subinplace(newdict)
-            objdiff += [costdiff.str_without(["units", "models"]).replace('**', '.^')]
+            objdiff += [costdiff.str_without(["units", "models"]).replace('**',
+                                                                          '.^')]
 
     # Replace variables with x(i), make clean string using matlab power syntax
     cost.subinplace(newdict)
