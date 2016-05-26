@@ -231,16 +231,18 @@ def results_table(data, title, minval=0, printunits=True, fixedcols=True,
             lines.append([varstr, valstr, units, label])
         else:
             varstr = "$%s$" % varstr.replace(" : ", "")
-            unitstring = var.unitstr()
-            if not unitstring: unitstring = "-"
+            boxunit = var.unitstr()
+            if not boxunit:
+                boxunit = "-"
             if latex == 1:  # normal results table
-                lines.append([varstr, valstr, "$\\left[%s\\right]$" % unitstring, label])
+                lines.append([varstr, valstr, "$\\left[%s\\right]$" % boxunit,
+                              label])
                 coltitles = [title, "Value", "Units", "Description"]
             elif latex == 2:  # no values
-                lines.append([varstr, "$\\left[%s\\right]$" % unitstring, label])
+                lines.append([varstr, "$\\left[%s\\right]$" % boxunit, label])
                 coltitles = [title, "Units", "Description"]
             elif latex == 3:  # no description
-                lines.append([varstr, valstr, "$\\left[%s\\right]$" % unitstring])
+                lines.append([varstr, valstr, "$\\left[%s\\right]$" % boxunit])
                 coltitles = [title, "Value", "Units"]
             else:
                 raise ValueError("Unexpected latex option, %s." % latex)
