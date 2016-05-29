@@ -40,7 +40,7 @@ def cvxoptimize_fn():
         """
         g = log(matrix(c))
         F = spmatrix(A.data, A.row, A.col, tc='d')
-        solution = gpsolver(k, F, g)
+        solution = gpsolver(k, F, g, *args, **kwargs)
         return dict(status=solution['status'],
                     primal=solution['x'],
                     la=solution['znl'])
