@@ -390,10 +390,22 @@ class TestSP(unittest.TestCase):
         self.assertEqual(first_gp_constr_posy.exp[x.key], -1./3)
 
 
-TEST_CASES = [TestGP, TestSP]
+class TestModelSolverSpecific(unittest.TestCase):
+    """test cases run only for specific solvers"""
+    def test_cvxopt_kwargs(self):
+        if "cvxopt" not in settings["installed_solvers"]:
+            return
+        x = Variable("x")
+        m = Model(x, [x >= 12])
+        # make sure it's possible to pass the kktsolver option to cvxopt
+        sol = m.solve(solver="cvxopt", verbosity=0, kktsolver="ldl")
+        self.assertAlmostEqual(sol["cost"], 12., NDIGS["cvxopt"])
 
-TESTS = []
-for testcase in TEST_CASES:
+
+TESTS = [TestModelSolverSpecific]
+MULTI_SOLVER_TESTS = [TestGP, TestSP]
+
+for testcase in MULTI_SOLVER_TESTS:
     for solver in settings["installed_solvers"]:
         if solver:
             test = type(testcase.__name__+"_"+solver,
