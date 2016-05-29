@@ -2,10 +2,8 @@
 from cvxopt import solvers, spmatrix, matrix, log
 
 
-def cvxoptimize_fn(options=None):
-    "Return a cvxopt solve function for a particular set of options."
-    if options:
-        solvers.options.update(options)
+def cvxoptimize_fn():
+    "Return a cvxopt solve function"
     gpsolver = solvers.gp
 
     # pylint: disable=unused-argument
