@@ -261,4 +261,4 @@ def gp118(K, F, g, G=None, h=None, A=None, b=None, kktsolver=None, **kwargs):
         if z is None: return f, Df
         else: return f, Df, H
 
-    return cp(Fgp, G, h, dims, A, b, kktsolver = kktsolver, options = options)
+    return cp(Fgp, G, h, dims, A, b, kktsolver = kktsolver)
