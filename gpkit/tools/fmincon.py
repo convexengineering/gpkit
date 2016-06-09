@@ -3,15 +3,14 @@ from math import log10, floor
 from gpkit import SignomialsEnabled
 from gpkit.tools.simpleflight import simpleflight
 from gpkit.small_scripts import mag
-# pylint: disable=redefined-outer-name,invalid-name
 # pylint: disable=too-many-statements,too-many-locals
 
-def generate_mfiles(m, algorithm='interior-point', guesstype='ones',
+def generate_mfiles(model, algorithm='interior-point', guesstype='ones',
                     gradobj='on', gradconstr='on', writefiles=True):
     """A method for preparing fmincon input files to run a GPkit program
 
     INPUTS:
-        m:          [GPkit model] The model to replicate in fmincon
+        model       [GPkit model] The model to replicate in fmincon
 
         algorithm:  [string] Algorithm used by fmincon
                     'interior-point': uses the interior point solver
@@ -44,25 +43,25 @@ def generate_mfiles(m, algorithm='interior-point', guesstype='ones',
     newdict = {}
     lookup = []
     newlist = []
-    original_varkeys = m.varkeys
-    for key in m.varkeys:
-        if key not in m.substitutions:
+    original_varkeys = model.varkeys
+    for key in model.varkeys:
+        if key not in model.substitutions:
             newdict[key] = 'x({0})'.format(i)
             newlist += [key.str_without(["units"])]
             lookup += ['x_{0}: '.format(i) + key.str_without(["units"])]
             i += 1
-    x0string = make_initial_guess(m, newlist, guesstype)
+    x0string = make_initial_guess(model, newlist, guesstype)
 
-    cost = m.cost # needs to be before subinplace()
-    constraints = m
+    cost = model.cost # needs to be before subinplace()
+    constraints = model
     constraints.subinplace(constraints.substitutions)
     constraints.subinplace(newdict)
 
     # Make all constraints less than zero, return list of clean strings
     c = [] # inequality constraints
     ceq = [] # equality constraints
-    DC = [] # gradients of inequality constraints
-    DCeq = [] # gradients of equality constraints
+    dc = [] # gradients of inequality constraints
+    dceq = [] # gradients of equality constraints
     with SignomialsEnabled():
         for constraint in constraints:
             if constraint.oper == '<=':
@@ -78,14 +77,14 @@ def generate_mfiles(m, algorithm='interior-point', guesstype='ones',
             # Differentiate each constraint w.r.t each variable
             cdm = []
             for key in original_varkeys:
-                if key not in m.substitutions:
+                if key not in model.substitutions:
                     cd = cc.diff(newdict[key])
                     cdm += [cd.str_without("units").replace('**', '.^')]
 
             if constraint.oper != '=':
-                DC += [",...\n          ".join(cdm)]
+                dc += [",...\n          ".join(cdm)]
             else:
-                DCeq += [",...\n            ".join(cdm)]
+                dceq += [",...\n            ".join(cdm)]
 
     # String for the constraint function .m file
     confunstr = ("function [c, ceq, DC, DCeq] = confun(x)\n" +
@@ -98,17 +97,17 @@ def generate_mfiles(m, algorithm='interior-point', guesstype='ones',
                  "\n      ];\n" +
                  "if nargout > 2\n    " +
                  "DC = [\n          " +
-                 ";\n          ".join(DC) +
+                 ";\n          ".join(dc) +
                  "\n         ]';\n    " +
                  "DCeq = [\n            " +
-                 ";\n            ".join(DCeq) +
+                 ";\n            ".join(dceq) +
                  "\n           ]';\n" +
                  "end")
 
     # Differentiate the objective function w.r.t each variable
     objdiff = []
     for key in original_varkeys:
-        if key not in m.substitutions:
+        if key not in model.substitutions:
             costdiff = cost.diff(key)
             costdiff.subinplace(newdict)
             objdiff += [costdiff.str_without(["units", "models"]).replace('**',
@@ -146,7 +145,7 @@ def generate_mfiles(m, algorithm='interior-point', guesstype='ones',
                   "fprintf(fid, '%.5g', fval);\n" +
                   "fclose(fid);")
 
-    if writefiles is True:
+    if writefiles:
         # Write the constraint function .m file
         with open('confun.m', 'w') as outfile:
             outfile.write(confunstr)
@@ -163,15 +162,15 @@ def generate_mfiles(m, algorithm='interior-point', guesstype='ones',
         with open('main.m', 'w') as outfile:
             outfile.write(mainfunstr)
 
-    return obj, c, ceq, DC, DCeq
+    return obj, c, ceq, dc, dceq
 
 
-def make_initial_guess(m, newlist, guesstype='ones'):
+def make_initial_guess(model, newlist, guesstype='ones'):
     """Returns initial guess"""
     try:
-        sol = m.solve(verbosity=0)
+        sol = model.solve(verbosity=0)
     except TypeError:
-        sol = m.localsolve(verbosity=0)
+        sol = model.localsolve(verbosity=0)
     if guesstype == "ones":
         x0string = ["x0 = ones({0},1);\n".format(len(sol['freevariables']))]
     else:
@@ -194,5 +193,5 @@ def make_initial_guess(m, newlist, guesstype='ones'):
     return "".join(x0string)
 
 if __name__ == '__main__':
-    m = simpleflight()
-    obj, c, ceq, DC, DCeq = generate_mfiles(m)
+    SF = simpleflight()
+    OBJ, C, CEQ, DC, DCeq = generate_mfiles(SF)
