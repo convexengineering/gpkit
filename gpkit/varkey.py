@@ -31,7 +31,7 @@ class VarKey(object):
     VarKey with the given name and descr.
     """
     new_unnamed_id = Count().next
-    subscripts = ["models", "idx"]
+    subscripts = ("models", "idx")
     eq_ignores = frozenset(["units", "value"])
     # ignore value in ==. Also skip units, since pints is weird and the unitstr
     #    will be compared anyway
