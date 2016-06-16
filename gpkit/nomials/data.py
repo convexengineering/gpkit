@@ -46,7 +46,9 @@ class NomialData(object):
         if self._hashvalue is None:
             # confirm lengths before calling zip
             assert len(self.exps) == len(self.cs)
-            self._hashvalue = hash(tuple(zip(self.exps, self.cs)))
+            # identical pint.Quantity object instances have different hashes
+            self._hashvalue = hash(tuple(zip(self.exps, mag(self.cs)) +
+                                         [str(self.units)]))
         return self._hashvalue
 
     @classmethod
