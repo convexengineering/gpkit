@@ -122,15 +122,9 @@ class NomialData(object):
 
     def __eq__(self, other):
         """Equality test"""
-        if not all(hasattr(other, a) for a in ("exps", "cs", "units")):
+        if not all(hasattr(other, a) for a in ("exps", "cs")):
             return NotImplemented
-        if self.exps != other.exps:
-            return False
-        if not all(mag(self.cs) == mag(other.cs)):
-            return False
-        if self.units != other.units:
-            return False
-        return True
+        return self.exps == other.exps and all(self.cs == other.cs)
 
 
 def simplify_exps_and_cs(exps, cs, return_map=False):
@@ -183,10 +177,7 @@ def simplify_exps_and_cs(exps, cs, return_map=False):
 
     exps_ = tuple(matches.keys())
     cs_ = list(matches.values())
-    if units:
-        cs_ = Quantity(cs_, units)
-    else:
-        cs_ = np.array(cs_, dtype='float')
+    cs_ = Quantity(cs_, units) if units else np.array(cs_, dtype='float')
 
     if not return_map:
         return exps_, cs_
