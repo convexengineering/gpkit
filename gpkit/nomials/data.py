@@ -60,8 +60,8 @@ class NomialData(object):
         return self._cs
 
     def __hash__(self):
-        if not self._hashvalue:
-            self._hashvalue = hash(self.hmap)
+        if self._hashvalue is None:
+            self._hashvalue = hash(hash(self.hmap) + hash(str(self.hmap.units)))
         return self._hashvalue
 
     @classmethod

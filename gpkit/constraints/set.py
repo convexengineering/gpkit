@@ -5,6 +5,12 @@ from ..small_scripts import try_str_without
 from ..repr_conventions import _str, _repr, _repr_latex_
 
 
+def _var_sort_key(var):
+    "return thing to compare for Variable sorting"
+    k = var.key
+    return (k.str_without(["units", "idx"]), k.idx)
+
+
 class ConstraintSet(list):
     "Recursive container for ConstraintSets and Inequalities"
     def __init__(self, constraints, substitutions=None, recursesubs=True):
@@ -38,6 +44,7 @@ class ConstraintSet(list):
             if len(variables) == 1:
                 return variables[0]
             else:
+                variables.sort(key=_var_sort_key)
                 return variables
 
     __str__ = _str

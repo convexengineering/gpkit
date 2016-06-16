@@ -151,8 +151,8 @@ class GeometricProgram(NomialData):
                         " installation process.")
 
             if solver == "cvxopt":
-                from ._cvxopt import cvxoptimize_fn
-                solverfn = cvxoptimize_fn(*args, **kwargs)
+                from ._cvxopt import cvxoptimize
+                solverfn = cvxoptimize
             elif solver == "mosek_cli":
                 from ._mosek import cli_expopt
                 solverfn = cli_expopt.imize_fn(*args, **kwargs)

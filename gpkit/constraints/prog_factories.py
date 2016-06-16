@@ -136,14 +136,20 @@ def run_sweep(genfunction, self, solution, skipsweepfailures,
                                  " To ignore such failures, solve with"
                                  " skipsweepfailures=True.")
 
+    if not len(solution):
+        raise RuntimeWarning("no sweeps solved successfully.")
+
     solution["sweepvariables"] = KeyDict()
     ksweep, klinkedsweep = KeyDict(sweep), KeyDict(linkedsweep)
+    delvars = set()
     for var, val in solution["constants"].items():
         if var in ksweep or var in klinkedsweep:
             solution["sweepvariables"][var] = val
-            del solution["constants"][var]
+            delvars.add(var)
         else:
             solution["constants"][var] = [val[0]]
+    for var in delvars:
+        del solution["constants"][var]
     if not solution["constants"]:
         del solution["constants"]
 

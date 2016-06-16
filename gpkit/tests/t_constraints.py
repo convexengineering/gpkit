@@ -6,6 +6,7 @@ from gpkit.nomials import MonomialEquality
 from gpkit import LinkedConstraintSet, Model
 from gpkit.constraints.tight import TightConstraintSet
 from gpkit.tests.helpers import run_tests
+import gpkit
 
 
 class TestConstraint(unittest.TestCase):
@@ -63,6 +64,7 @@ class TestConstraint(unittest.TestCase):
         self.assertEqual(c.left, x)
         self.assertEqual(c.right, y**2)
         self.assertTrue("<=" in str(c))
+        self.assertEqual(type((1 >= x).latex()), str)
 
     def test_oper_overload(self):
         """Test Constraint initialization by operator overloading"""
@@ -92,6 +94,11 @@ class TestMonomialEquality(unittest.TestCase):
         mec2 = MonomialEquality(x, "=", y**2)
         self.assertTrue(mono in mec.as_posyslt1())
         self.assertTrue(mono in mec2.as_posyslt1())
+        x = Variable("x", "ft")
+        y = Variable("y")
+        if gpkit.units:
+            self.assertRaises(ValueError, MonomialEquality, x, "=", y)
+            self.assertRaises(ValueError, MonomialEquality, y, "=", x)
 
     def test_inheritance(self):
         """Make sure MonomialEquality inherits from the right things"""

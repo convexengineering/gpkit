@@ -42,6 +42,16 @@ class TestGP(unittest.TestCase):
                                self.ndig)
         self.assertAlmostEqual(sol["cost"], 2*math.sqrt(2), self.ndig)
 
+    def test_601(self):
+        # tautological monomials should solve but not pass to the solver
+        x = Variable("x")
+        y = Variable("y", 2)
+        m = Model(x,
+                  [x >= 1,
+                   y == 2])
+        m.solve(verbosity=0)
+        self.assertEqual(len(m.program.constraints), 2)
+
     def test_cost_freeing(self):
         "Test freeing a variable that's in the cost."
         x = Variable("x", 1)
@@ -160,7 +170,7 @@ class TestGP(unittest.TestCase):
         '''Issue 296'''
         x1 = Variable('x1')
         x2 = Variable('x2')
-        m = Model(1.+ x1 + x2, [x1 >= 1., x2 >= 1.])
+        m = Model(1. + x1 + x2, [x1 >= 1., x2 >= 1.])
         sol = m.solve(solver=self.solver, verbosity=0)
         self.assertAlmostEqual(sol["cost"], 3, self.ndig)
 
@@ -231,7 +241,6 @@ class TestSP(unittest.TestCase):
         with SignomialsEnabled():
             m = Model(x, [x + y >= z])
         self.assertAlmostEqual(m.solve(self.solver, verbosity=0)["cost"], 3)
-
 
     def test_trivial_sp(self):
         x = Variable('x')
@@ -381,10 +390,22 @@ class TestSP(unittest.TestCase):
         self.assertEqual(first_gp_constr_posy.exp[x.key], -1./3)
 
 
-TEST_CASES = [TestGP, TestSP]
+class TestModelSolverSpecific(unittest.TestCase):
+    """test cases run only for specific solvers"""
+    def test_cvxopt_kwargs(self):
+        if "cvxopt" not in settings["installed_solvers"]:
+            return
+        x = Variable("x")
+        m = Model(x, [x >= 12])
+        # make sure it's possible to pass the kktsolver option to cvxopt
+        sol = m.solve(solver="cvxopt", verbosity=0, kktsolver="ldl")
+        self.assertAlmostEqual(sol["cost"], 12., NDIGS["cvxopt"])
 
-TESTS = []
-for testcase in TEST_CASES:
+
+TESTS = [TestModelSolverSpecific]
+MULTI_SOLVER_TESTS = [TestGP, TestSP]
+
+for testcase in MULTI_SOLVER_TESTS:
     for solver in settings["installed_solvers"]:
         if solver:
             test = type(testcase.__name__+"_"+solver,

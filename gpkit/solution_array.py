@@ -1,7 +1,7 @@
 """Defines SolutionArray class"""
 from collections import Iterable
 import numpy as np
-from .nomials import NomialArray, Monomial
+from .nomials import NomialArray
 from .small_classes import Strings, DictOfLists
 from .small_scripts import unitstr, mag
 
@@ -50,6 +50,8 @@ class SolutionArray(DictOfLists):
             return len(self["cost"])
         except TypeError:
             return 1
+        except KeyError:
+            return 0
 
     def __call__(self, posy):
         posy_subbed = self.subinto(posy)
@@ -71,26 +73,9 @@ class SolutionArray(DictOfLists):
         else:
             return posy.sub(self["variables"])
 
-    def sens(self, nomial):
-        """Returns array of each solution's sensitivity substituted into nomial
-
-        Note: this does not return monomial sensitivities if you pass it a
-        signomial; it returns each variable's sensitivity substituted in for it
-        in that signomial.
-
-        Returns scalar, unitless values.
-        """
-        if nomial in self["variables"]["sensitivities"]:
-            return NomialArray(self["variables"]["sensitivities"][nomial])
-        elif len(self) > 1:
-            return NomialArray([self.atindex(i).subinto(nomial)
-                                for i in range(len(self))])
-        else:
-            subbed = nomial.sub(self["variables"]["sensitivities"],
-                                require_positive=False)
-            assert isinstance(subbed, Monomial)
-            assert not subbed.exp
-            return mag(subbed.c)
+    def sens(self, key):
+        "Returns sensitivity of the given variable (unitless)."
+        return NomialArray(self["variables"]["sensitivities"][key])
 
     def table(self, tables=("cost", "sweepvariables", "freevariables",
                             "constants", "sensitivities"),
@@ -121,6 +106,7 @@ class SolutionArray(DictOfLists):
             subdict = self.get(table, None)
             table_title = self.table_titles[table]
             if table == "cost":
+                # pylint: disable=unsubscriptable-object
                 if latex:
                     # TODO should probably print a small latex cost table here
                     continue
@@ -129,16 +115,21 @@ class SolutionArray(DictOfLists):
                     costs = ["%-8.3g" % c for c in subdict[:4]]
                     strs += [" [ %s %s ]" % ("  ".join(costs),
                                              "..." if len(self) > 4 else "")]
-                    # pylint: disable=unsubscriptable-object
                     cost_units = self.program[0].cost.units
                 else:
                     strs += [" %-.4g" % subdict]
-                    cost_units = self.program.cost.units
+                    if hasattr(self.program, "cost"):
+                        cost_units = self.program.cost.units
+                    else:
+                        # we're in a skipsweepfailures that only solved once
+                        cost_units = self.program[0].cost.units
                 strs[-1] += unitstr(cost_units, into=" [%s] ", dimless="")
                 strs += [""]
             elif not subdict:
                 continue
             elif table == "sensitivities":
+                if not subdict["constants"]:
+                    continue
                 strs += results_table(subdict["constants"], table_title,
                                       minval=1e-2,
                                       sortbyvals=True,
@@ -225,7 +216,7 @@ def results_table(data, title, minval=0, printunits=True, fixedcols=True,
             continue
         if model != oldmodel and len(models) > 1:
             if oldmodel is not None:
-                lines.append(["", "", "", ""])
+                lines.append(["", "", ""])
             if model is not "":
                 if not latex:
                     lines.append([model+" | ", "", "", ""])
@@ -253,7 +244,7 @@ def results_table(data, title, minval=0, printunits=True, fixedcols=True,
                 lines.append([varstr, "$%s$" % var.unitstr(), label])
                 coltitles = [title, "Units", "Description"]
             elif latex == 3:  # no description
-                lines.append(varstr, valstr, "$%s$" % var.unitstr())
+                lines.append([varstr, valstr, "$%s$" % var.unitstr()])
                 coltitles = [title, "Value", "Units"]
             else:
                 raise ValueError("Unexpected latex option, %s." % latex)

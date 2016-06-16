@@ -4,6 +4,18 @@ from .small_classes import Strings, Quantity, HashVector
 from .small_scripts import mag, unitstr, veckeyed
 
 
+class Count(object):
+    "Like python 2's itertools.count, for Python 3 compatibility."
+
+    def __init__(self):
+        self.count = -1
+
+    def next(self):
+        "Increment self.count and return it"
+        self.count += 1
+        return self.count
+
+
 class VarKey(object):
     """An object to correspond to each 'variable name'.
 
@@ -19,7 +31,7 @@ class VarKey(object):
     -------
     VarKey with the given name and descr.
     """
-    new_unnamed_id = count().next
+    new_unnamed_id = Count().next
     subscripts = ["models", "idx"]
     eq_ignores = frozenset(["units", "value"])
     # ignore value in ==. Also skip units, since pints is weird and the unitstr
