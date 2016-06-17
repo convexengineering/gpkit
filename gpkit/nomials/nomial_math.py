@@ -214,7 +214,7 @@ class Signomial(Nomial):
             if not other:
                 return Signomial(self.hmap)
             else:
-                other_hmap = NomialMap({HashVector(): other})
+                other_hmap = NomialMap({HashVector(): mag(other)})
                 other_hmap.set_units(other)
         elif hasattr(other, "hmap"):
             other_hmap = other.hmap

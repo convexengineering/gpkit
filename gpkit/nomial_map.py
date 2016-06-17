@@ -117,7 +117,7 @@ class NomialMap(HashVector):
         elif self.units != other.units:
             unit_conversion = (other.units/self.units).to(ureg.dimensionless)
         if unit_conversion:
-            other = unit_conversion*other
+            other = float(unit_conversion)*other
 
         hmap = HashVector.__add__(self, other)
         hmap.set_units(units)
