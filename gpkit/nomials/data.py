@@ -136,7 +136,7 @@ class NomialData(object):
 
     def __eq__(self, other):
         """Equality test"""
-        if not all(hasattr(other, a) for a in ("exps", "cs", "units")):
+        if not all(hasattr(other, a) for a in ("exps", "cs")):
             return NotImplemented
         if self.hmap != other.hmap:
             return False
