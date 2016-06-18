@@ -212,6 +212,7 @@ def _combine_nearby_ticks(ticks, lim, ntick):
     return [t for _, t, w, _, _ in decorated if w]
 
 
+# pylint: disable=too-many-locals
 def sensitivity_plot(gp, keys=None, xmax=1, yxmax=1, ntick=25, mins=0.0):
     """Plot percentage change in objective (cost) as variables change,
     using sensitivity information.
