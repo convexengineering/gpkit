@@ -52,7 +52,7 @@ class Model(CostedConstraintSet, NamedConstraintSet):
         constraints = constraints if constraints else []
         CostedConstraintSet.__init__(self, cost, constraints, substitutions)
          # TODO: call during ConstraintSet.__init__  when there's a collision?
-        self.add_modelname()
+        self.add_modelname(name)
 
     gp = _progify_fctry(GeometricProgram)
     sp = _progify_fctry(SignomialProgram)
