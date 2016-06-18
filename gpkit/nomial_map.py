@@ -75,16 +75,18 @@ class NomialMap(HashVector):
                     cval = mag(cval.to(vk.units))
                 if expval:
                     cval, = cval.values()
+                exps_covered = set()
                 for o_exp, exp in exps:
                     x = exp.pop(vk)
                     powval = cval**x if cval != 0 or x >= 0 else np.inf
                     cp.csmap[o_exp] = powval * cp.csmap.get(o_exp, self[o_exp])
-                    if exp in cp:
+                    if exp in cp and exp not in exps_covered:
                         c = cp.pop(exp)
                         for key in expval:
                             exp[key] = expval[key]*x + exp.get(key, 0)
                         exp._hashvalue = None
                         cp[exp] = powval * c + cp.get(exp, 0)
+                        exps_covered.add(exp)
                     else:
                         exp._hashvalue = None
         cp._remove_zeros()
