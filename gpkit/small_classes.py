@@ -176,11 +176,20 @@ class HashVector(dict):
         super(HashVector, self).__init__(*args, **kwargs)
         self._hashvalue = None
 
+    def __key(self):
+        return tuple(sorted(self.items(), key=(lambda x: (getattr(x[0], "descr", x[0]), x[1]))))
+
+    # def __eq__(self, other):
+    #     if hasattr(other, "__key"):
+    #         return self.__key() == other.__key()
+    #     elif hasattr(other, "items"):
+    #         return self.__key() == tuple(sorted(other.items()))
+
     def __hash__(self):
         "Allows HashVectors to be used as dictionary keys."
         if self._hashvalue is None:
              # TODO: why does sorted break this
-            self._hashvalue = hash(tuple(self.items()))
+            self._hashvalue = hash(self.__key())
         return self._hashvalue
 
     # temporarily disabling immutability
