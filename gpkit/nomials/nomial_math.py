@@ -12,7 +12,7 @@ from ..varkey import VarKey
 from ..small_scripts import mag
 from .. import units as ureg
 from .. import DimensionalityError
-
+from ..constraints.set import ConstraintSet
 
 class Signomial(Nomial):
     """A representation of a Signomial.
@@ -713,3 +713,195 @@ class SignomialInequality(ScalarSingleEquationConstraint):
         pa_sens[str(posyapprox)] = pa_sens.pop("overall")
         constr_sens["posyapprox"] = pa_sens
         return constr_sens
+
+class SignomialEqualityTriv(ScalarSingleEquationConstraint):
+    """A constraint of the general form posynomial == posynomial (linearized only the necessary parts)
+    Stored internally (exps, cs) as a single Signomial (0 >= self)
+    Usually initialized via operator overloading, e.g. cc = (y**2 >= 1 + x - y)
+    Additionally retains input format (lhs vs rhs) in self.left and self.right
+    Form is self.left >= self.right.
+    """
+
+    def __init__(self, left, right):
+        ScalarSingleEquationConstraint.__init__(self, left, "=", right)
+        from .. import SIGNOMIALS_ENABLED
+        if not SIGNOMIALS_ENABLED:
+            raise TypeError("Cannot initialize SignomialInequality"
+                            " outside of a SignomialsEnabled environment.")
+        self.nomials = [self.left, self.right]
+        self.substitutions = dict(self.left.values)
+        self.substitutions.update(self.right.values)
+         
+    def as_posyslt1(self):
+        "Returns the posys <= 1 representation of this constraint."
+        # todo deal with substitutions
+        raise TypeError("SignomialEquality could not simplify to"
+                        " a PosynomialInequality")
+
+    def as_gpconstr(self, x0):
+        "Returns GP apprimxation of an SP constraint at x0"
+        #return self.left >= self.right
+        def _force_mono(posy, x0):
+            if isinstance(posy, Monomial):
+                return posy
+            return posy.mono_lower_bound(x0)
+        return [_force_mono(self.left, x0) >= self.right,
+                self.left <= _force_mono(self.right, x0)]
+
+    def process_result(self, result):
+        "Checks that all constraints are satisfied with equality"
+        variables = result["variables"]
+        leftsubbed = self.left.sub(variables).value
+        rightsubbed = self.right.sub(variables).value
+        rel_diff = abs(rightsubbed - leftsubbed)
+        result["constr_viol"] = result.get("constr_viol", 0) + rel_diff
+
+    # pylint: disable=unused-argument
+    def sens_from_gpconstr(self, gp_approx, gp_senss, var_senss):
+        return gp_senss
+
+class SignomialEqualityTrivTrust(ScalarSingleEquationConstraint):
+    """A constraint of the general form posynomial == posynomial (linearized only the necessary parts)
+    Stored internally (exps, cs) as a single Signomial (0 >= self)
+    Usually initialized via operator overloading, e.g. cc = (y**2 >= 1 + x - y)
+    Additionally retains input format (lhs vs rhs) in self.left and self.right
+    Form is self.left >= self.right.
+    """
+
+    def __init__(self, left, right):
+        ScalarSingleEquationConstraint.__init__(self, left, "=", right)
+        from .. import SIGNOMIALS_ENABLED
+        if not SIGNOMIALS_ENABLED:
+            raise TypeError("Cannot initialize SignomialInequality"
+                            " outside of a SignomialsEnabled environment.")
+        self.nomials = [self.left, self.right]
+        self.substitutions = dict(self.left.values)
+        self.substitutions.update(self.right.values)
+	self.trustregion = 0.9
+         
+    def as_posyslt1(self):
+        "Returns the posys <= 1 representation of this constraint."
+        # todo deal with substitutions
+        raise TypeError("SignomialEquality could not simplify to"
+                        " a PosynomialInequality")
+
+    def as_gpconstr(self, x0):
+        "Returns GP apprimxation of an SP constraint at x0"
+        #return self.left >= self.right
+        def _force_mono(posy, x0):
+            if isinstance(posy, Monomial):
+                return posy
+            return posy.mono_lower_bound(x0)
+        return [_force_mono(self.left, x0) >= self.trustregion*self.right,
+                self.left <= _force_mono(self.right, x0)]
+
+    def process_result(self, result):
+        "Checks that all constraints are satisfied with equality"
+        variables = result["variables"]
+        leftsubbed = self.left.sub(variables).value
+        rightsubbed = self.right.sub(variables).value
+        rel_diff = abs(rightsubbed - leftsubbed)
+        result["constr_viol"] = result.get("constr_viol", 0) + rel_diff
+    
+    # pylint: disable=unused-argument
+    def sens_from_gpconstr(self, gp_approx, gp_senss, var_senss):
+        return gp_senss
+
+
+class SignomialEqualityLin(ScalarSingleEquationConstraint):
+    """A constraint of the general form posynomial == posynomial (fully linearized)
+        Stored internally (exps, cs) as a single Signomial (0 >= self)
+        Usually initialized via operator overloading, e.g. cc = (y**2 >= 1 + x - y)
+        Additionally retains input format (lhs vs rhs) in self.left and self.right
+        Form is self.left >= self.right.
+        """
+    
+    def __init__(self, left, right):
+        ScalarSingleEquationConstraint.__init__(self, left, "=", right)
+        from .. import SIGNOMIALS_ENABLED
+        if not SIGNOMIALS_ENABLED:
+            raise TypeError("Cannot initialize SignomialInequality"
+                            " outside of a SignomialsEnabled environment.")
+        self.nomials = [self.left, self.right]
+        self.substitutions = dict(self.left.values)
+        self.substitutions.update(self.right.values)
+    
+    def as_posyslt1(self):
+        "Returns the posys <= 1 representation of this constraint."
+        # todo deal with substitutions
+        raise TypeError("SignomialEquality could not simplify to"
+                        " a PosynomialInequality")
+    
+    def as_gpconstr(self, x0):
+        "Returns GP apprimxation of an SP constraint at x0"
+        #return self.left >= self.right
+        def _force_mono(posy, x0):
+            if isinstance(posy, Monomial):
+                return posy
+            return posy.mono_lower_bound(x0)
+        return [_force_mono(self.left, x0) >= _force_mono(self.right, x0),
+                _force_mono(self.left, x0) <= _force_mono(self.right, x0)]
+    
+    def process_result(self, result):
+        "Checks that all constraints are satisfied with equality"
+        variables = result["variables"]
+        leftsubbed = self.left.sub(variables).value
+        rightsubbed = self.right.sub(variables).value
+        rel_diff = abs(rightsubbed - leftsubbed)
+	result["constr_viol"] = result.get("constr_viol", 0) + rel_diff
+
+    
+    # pylint: disable=unused-argument
+    def sens_from_gpconstr(self, gp_approx, gp_senss, var_senss):
+        return gp_senss
+
+
+class SignomialEqualityLinTrust(ScalarSingleEquationConstraint):
+    """A constraint of the general form posynomial >= posynomial
+        Stored internally (exps, cs) as a single Signomial (0 >= self)
+        Usually initialized via operator overloading, e.g. cc = (y**2 >= 1 + x - y)
+        Additionally retains input format (lhs vs rhs) in self.left and self.right
+        Form is self.left >= self.right.
+        """
+    
+    def __init__(self, left, right):
+        ScalarSingleEquationConstraint.__init__(self, left, "=", right)
+        from .. import SIGNOMIALS_ENABLED
+        if not SIGNOMIALS_ENABLED:
+            raise TypeError("Cannot initialize SignomialInequality"
+                            " outside of a Signomial`sEnabled environment.")
+        self.nomials = [self.left, self.right]
+        self.substitutions = dict(self.left.values)
+        self.substitutions.update(self.right.values)
+	self.trustregion = 0.9
+    
+    def as_posyslt1(self):
+        "Returns the posys <= 1 representation of this constraint."
+        # todo deal with substitutions
+        raise TypeError("SignomialEquality could not simplify to"
+                        " a PosynomialInequality")
+    
+    def process_result(self, result):
+        "Checks that all constraints are satisfied with equality"
+        variables = result["variables"]
+        leftsubbed = self.left.sub(variables).value
+        rightsubbed = self.right.sub(variables).value
+        rel_diff = abs(rightsubbed - leftsubbed)
+        result["constr_viol"] = result.get("constr_viol", 0) + rel_diff
+    
+    def as_gpconstr(self, x0):
+        "Returns GP apprimxation of an SP constraint at x0"
+        #return self.left >= self.right
+        def _force_mono(posy):
+            if isinstance(posy, Monomial):
+                return posy
+            return posy.mono_lower_bound(x0)
+        mleft, mright = map(_force_mono, [self.left, self.right])
+	varkeys = set(mleft.varkeys).union(mright.varkeys)
+	bounding_constraints = [[self.trustregion <= Monomial(vk)/x0[vk],
+		                 Monomial(vk)/x0[vk] <= 1/self.trustregion] for vk in varkeys]
+	return [bounding_constraints, mleft == mright]
+    
+    def sens_from_gpconstr(self, gp_approx, gp_senss, var_senss):
+	return gp_senss
+
