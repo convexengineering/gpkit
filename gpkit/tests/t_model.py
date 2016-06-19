@@ -259,6 +259,10 @@ class TestSP(unittest.TestCase):
         y = Variable('y')
         with SignomialsEnabled():
             m = Model(x, [x >= 1-y, y <= 0.1])
+        with self.assertRaises(ValueError):
+            # solve should catch the TypeError raised by an SP constraints
+            # and raise its own ValueError instead
+            m.solve(verbosity=0)
         sol = m.localsolve(self.solver, verbosity=0)
         self.assertAlmostEqual(sol["variables"]["x"], 0.9, self.ndig)
         with SignomialsEnabled():
