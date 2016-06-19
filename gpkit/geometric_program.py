@@ -68,11 +68,11 @@ class GeometricProgram(NomialData):
                 constr_posys = constraint.as_posyslt1()
             except TypeError as err:
                 if err.message == ("SignomialInequality could not simplify to"
-                                   "a PosynomialInequality"):
+                                   " a PosynomialInequality"):
                     raise ValueError("GeometricPrograms cannot contain"
                                      " SignomialInequalities: try forming your"
                                      " program as SignomialProgram or calling"
-                                     " Model.localsolve().")
+                                     " .localsolve().")
                 raise
             if not all(constr_posys):
                 raise ValueError("%s is an invalid constraint for a"
