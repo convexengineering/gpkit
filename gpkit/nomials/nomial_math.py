@@ -713,3 +713,42 @@ class SignomialInequality(ScalarSingleEquationConstraint):
         pa_sens[str(posyapprox)] = pa_sens.pop("overall")
         constr_sens["posyapprox"] = pa_sens
         return constr_sens
+
+
+def _force_mono(posy, x0):
+    if isinstance(posy, Monomial):
+        return posy
+    return posy.mono_lower_bound(x0)
+
+
+class SignomialEquality(SignomialInequality):
+    "A constraint of the general form posynomial == posynomial"
+
+    def __init__(self, left, right):
+        SignomialInequality.__init__(self, left, "<=", right)
+        self.oper = "="
+
+    def as_posyslt1(self):
+        "Returns the posys <= 1 representation of this constraint."
+        # todo deal with substitutions
+        raise TypeError("SignomialEquality could not simplify to"
+                        " a PosynomialInequality")
+
+    def as_gpconstr(self, x0):
+        "Returns GP apprimxation of an SP constraint at x0"
+        sig = self._unsubbed
+        if x0 is None:
+            x0 = {vk: vk.descr["sp_init"] for vk in sig.varlocs
+                  if "sp_init" in vk.descr}
+        x0.update({var: 1 for var in sig.varlocs if var not in x0})
+        x0.update(self.substitutions)
+        posy, negy = sig.posy_negy()
+        mec = (_force_mono(posy, x0) == _force_mono(negy, x0))
+        mec.substitutions = self.substitutions
+        return mec
+
+    # pylint: disable=unused-argument
+    def sens_from_gpconstr(self, posyapprox, pa_sens, var_senss):
+        "Returns sensitivities as parsed from an approximating GP constraint."
+        constr_sens = dict(pa_sens)
+        return {"posyapprox": pa_sens}
