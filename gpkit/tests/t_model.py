@@ -49,10 +49,10 @@ class TestGP(unittest.TestCase):
         with SignomialsEnabled():
             m = Model(c, [c >= (x + 0.25)**2 + (y - 0.5)**2,
                           SignomialEquality(x**2 + x, y)])
-        m.localsolve(verbosity=0)
-        self.assertAlmostEqual(m.solution("x"), 0.1639472, self.ndig)
-        self.assertAlmostEqual(m.solution("y"), 0.1908254, self.ndig)
-        self.assertAlmostEqual(m.solution("c"), 0.2669448, self.ndig)
+        sol = m.localsolve(verbosity=0)
+        self.assertAlmostEqual(sol("x"), 0.1639472, self.ndig)
+        self.assertAlmostEqual(sol("y"), 0.1908254, self.ndig)
+        self.assertAlmostEqual(sol("c"), 0.2669448, self.ndig)
 
     def test_601(self):
         # tautological monomials should solve but not pass to the solver

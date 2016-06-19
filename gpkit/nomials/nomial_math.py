@@ -743,5 +743,4 @@ class SignomialEquality(SignomialInequality):
     # pylint: disable=unused-argument
     def sens_from_gpconstr(self, posyapprox, pa_sens, var_senss):
         "Returns sensitivities as parsed from an approximating GP constraint."
-        constr_sens = dict(pa_sens)
         return {"posyapprox": pa_sens}
