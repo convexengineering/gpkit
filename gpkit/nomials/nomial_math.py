@@ -418,8 +418,7 @@ class Monomial(Posynomial):
             return NotImplemented
 
     def mono_approximation(self, x0):
-        raise TypeError("Monomial approximation of %s is unnecessary - "
-                        "it's already a Monomial." % str(self))
+        return self
 
 
 #######################################################
@@ -715,12 +714,6 @@ class SignomialInequality(ScalarSingleEquationConstraint):
         return constr_sens
 
 
-def _force_mono(posy, x0):
-    if isinstance(posy, Monomial):
-        return posy
-    return posy.mono_lower_bound(x0)
-
-
 class SignomialEquality(SignomialInequality):
     "A constraint of the general form posynomial == posynomial"
 
@@ -743,7 +736,7 @@ class SignomialEquality(SignomialInequality):
         x0.update({var: 1 for var in sig.varlocs if var not in x0})
         x0.update(self.substitutions)
         posy, negy = sig.posy_negy()
-        mec = (_force_mono(posy, x0) == _force_mono(negy, x0))
+        mec = (posy.mono_lower_bound(x0) == negy.mono_lower_bound(x0))
         mec.substitutions = self.substitutions
         return mec
 

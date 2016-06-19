@@ -2,7 +2,7 @@
 import math
 import unittest
 from gpkit import (Model, Monomial, settings, VectorVariable, Variable,
-                   SignomialsEnabled, ArrayVariable)
+                   SignomialsEnabled, ArrayVariable, SignomialEquality)
 from gpkit.small_classes import CootMatrix
 from gpkit.feasibility import feasibility_model
 
@@ -41,6 +41,18 @@ class TestGP(unittest.TestCase):
                                2*math.sqrt(2),
                                self.ndig)
         self.assertAlmostEqual(sol["cost"], 2*math.sqrt(2), self.ndig)
+
+    def test_sigeq(self):
+        x = Variable("x")
+        y = Variable("y")
+        c = Variable("c")
+        with SignomialsEnabled():
+            m = Model(c, [c >= (x + 0.25)**2 + (y - 0.5)**2,
+                          SignomialEquality(x**2 + x, y)])
+        m.localsolve(verbosity=0)
+        self.assertAlmostEqual(m.solution("x"), 0.1639472, self.ndig)
+        self.assertAlmostEqual(m.solution("y"), 0.1908254, self.ndig)
+        self.assertAlmostEqual(m.solution("c"), 0.2669448, self.ndig)
 
     def test_601(self):
         # tautological monomials should solve but not pass to the solver
