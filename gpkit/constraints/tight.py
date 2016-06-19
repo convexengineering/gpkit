@@ -2,6 +2,7 @@
 from .set import ConstraintSet
 from ..nomials import PosynomialInequality, SignomialInequality
 from ..small_scripts import mag
+from .. import SignomialsEnabled
 
 
 class TightConstraintSet(ConstraintSet):
@@ -20,8 +21,11 @@ class TightConstraintSet(ConstraintSet):
         for constraint in self.flat():
             if isinstance(constraint, (PosynomialInequality,
                                        SignomialInequality)):
-                leftsubbed = constraint.left.sub(variables).value
-                rightsubbed = constraint.right.sub(variables).value
+                with SignomialsEnabled():
+                    leftsubbed = constraint.left.sub(variables).value
+                    rightsubbed = constraint.right.sub(variables).value
+                # note: funny things may happen if values are near 0
+                #       especially if they have different signs
                 rel_diff = abs(1 - leftsubbed/rightsubbed)
                 if rel_diff >= self.reltol:
                     msg = ("Constraint [%.30s...] is not tight because "
