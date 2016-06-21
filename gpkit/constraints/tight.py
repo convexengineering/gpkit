@@ -25,7 +25,8 @@ class TightConstraintSet(ConstraintSet):
                 rightsubbed = constraint.right.sub(variables).value
                 rel_diff = abs(1 - leftsubbed/rightsubbed)
             elif isinstance(constraint, SignomialInequality):
-                posy, negy = constraint._unsubbed.posy_negy()
+                siglt0, = constraint.unsubbed
+                posy, negy = siglt0.posy_negy()
                 posy = posy.sub(variables).value
                 negy = negy.sub(variables).value
                 rel_diff = abs(1-posy/negy)
