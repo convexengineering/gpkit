@@ -19,22 +19,28 @@ class TightConstraintSet(ConstraintSet):
         super(TightConstraintSet, self).process_result(result)
         variables = result["variables"]
         for constraint in self.flat():
-            if isinstance(constraint, (PosynomialInequality,
-                                       SignomialInequality)):
-                with SignomialsEnabled():
-                    leftsubbed = constraint.left.sub(variables).value
-                    rightsubbed = constraint.right.sub(variables).value
-                # note: funny things may happen if values are near 0
-                #       especially if they have different signs
+            rel_diff = 0
+            if isinstance(constraint, PosynomialInequality):
+                leftsubbed = constraint.left.sub(variables).value
+                rightsubbed = constraint.right.sub(variables).value
                 rel_diff = abs(1 - leftsubbed/rightsubbed)
+            elif isinstance(constraint, SignomialInequality):
+                posy, negy = constraint._unsubbed.posy_negy()
+                posy = posy.sub(variables).value
+                negy = negy.sub(variables).value
+                rel_diff = abs(1-posy/negy)
                 if rel_diff >= self.reltol:
-                    msg = ("Constraint [%.30s...] is not tight because "
-                           "the left hand side evaluated to %s but "
-                           "the right hand side evaluated to %s "
-                           "(Allowable error: %s%%, Actual error: %.2g%%)\n" %
-                           (constraint, leftsubbed, rightsubbed,
-                            self.reltol*100, mag(rel_diff)*100))
-                    if self.raiseerror:
-                        raise ValueError(msg)
-                    else:
-                        print "Warning: %s" % msg
+                    with SignomialsEnabled():
+                        leftsubbed = constraint.left.sub(variables).value
+                        rightsubbed = constraint.right.sub(variables).value
+            if rel_diff >= self.reltol:
+                msg = ("Constraint [%.30s...] is not tight because "
+                       "the left hand side evaluated to %s but "
+                       "the right hand side evaluated to %s "
+                       "(Allowable error: %s%%, Actual error: %.2g%%)\n" %
+                       (constraint, leftsubbed, rightsubbed,
+                        self.reltol*100, mag(rel_diff)*100))
+                if self.raiseerror:
+                    raise ValueError(msg)
+                else:
+                    print "Warning: %s" % msg
