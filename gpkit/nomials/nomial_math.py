@@ -418,8 +418,7 @@ class Monomial(Posynomial):
             return NotImplemented
 
     def mono_approximation(self, x0):
-        raise TypeError("Monomial approximation of %s is unnecessary - "
-                        "it's already a Monomial." % str(self))
+        return self
 
 
 #######################################################
@@ -464,9 +463,9 @@ class PosynomialInequality(ScalarSingleEquationConstraint):
         self.p_lt, self.m_gt = p_lt, m_gt
         self.substitutions = dict(p_lt.values)
         self.substitutions.update(m_gt.values)
-        self._unsubbed = self._gen_unsubbed()
+        self.unsubbed = self._gen_unsubbed()
         self.nomials = [self.left, self.right, self.p_lt, self.m_gt]
-        self.nomials.extend(self._unsubbed)
+        self.nomials.extend(self.unsubbed)
 
     def _simplify_posy_ineq(self, exps, cs):
         "Simplify a posy <= 1 by moving constants to the right side."
@@ -514,7 +513,7 @@ class PosynomialInequality(ScalarSingleEquationConstraint):
 
     def as_posyslt1(self):
         "Returns the posys <= 1 representation of this constraint."
-        posys = self._unsubbed
+        posys = self.unsubbed
         if not self.substitutions:
             # just return the pre-generated posynomial representation
             return posys
@@ -556,7 +555,7 @@ class PosynomialInequality(ScalarSingleEquationConstraint):
             return {}, {}
         la, = la
         nu, = nu
-        presub, = self._unsubbed
+        presub, = self.unsubbed
         constr_sens = {"overall": la}
         if hasattr(self, "pmap"):
             nu_ = np.zeros(len(presub.cs))
@@ -598,9 +597,9 @@ class MonomialEquality(PosynomialInequality):
                              " MonomialEquality." % self.oper)
         self.substitutions = dict(self.left.values)
         self.substitutions.update(self.right.values)
-        self._unsubbed = self._gen_unsubbed()
+        self.unsubbed = self._gen_unsubbed()
         self.nomials = [self.left, self.right]
-        self.nomials.extend(self._unsubbed)
+        self.nomials.extend(self.unsubbed)
 
     def _gen_unsubbed(self):
         "Returns the unsubstituted posys <= 1."
@@ -635,7 +634,7 @@ class MonomialEquality(PosynomialInequality):
         # Constant sensitivities
         var_senss = HashVector()
         for i, m_s in enumerate(nu):
-            presub = self._unsubbed[i]
+            presub = self.unsubbed[i]
             var_sens = {var: sum([presub.exps[i][var]*m_s[i] for i in locs])
                         for (var, locs) in presub.varlocs.items()
                         if var in self.substitutions}
@@ -665,15 +664,16 @@ class SignomialInequality(ScalarSingleEquationConstraint):
             raise ValueError("operator %s is not supported by Signomial"
                              "Constraint." % self.oper)
         self.nomials = [self.left, self.right]
-        self._unsubbed = plt - pgt
-        self.nomials.append(self._unsubbed)
+        self.unsubbed = [plt - pgt]
+        self.nomials.append(self.unsubbed)
         self.substitutions = dict(self.left.values)
         self.substitutions.update(self.right.values)
 
     def as_posyslt1(self):
         "Returns the posys <= 1 representation of this constraint."
-        s = self._unsubbed.sub(self.substitutions, require_positive=False)
-        posy, negy = s.posy_negy()
+        siglt0, = self.unsubbed
+        siglt0 = siglt0.sub(self.substitutions, require_positive=False)
+        posy, negy = siglt0.posy_negy()
         if posy is 0:
             raise ValueError("SignomialConstraint %s became the tautological"
                              " constraint %s %s %s after substitution." %
@@ -685,7 +685,7 @@ class SignomialInequality(ScalarSingleEquationConstraint):
         elif not hasattr(negy, "cs") or len(negy.cs) == 1:
             self.__class__ = PosynomialInequality
             self.__init__(posy, "<=", negy)
-            return self._unsubbed   # pylint: disable=no-member
+            return self.unsubbed   # pylint: disable=no-member
 
         else:
             raise TypeError("SignomialInequality could not simplify to"
@@ -693,7 +693,8 @@ class SignomialInequality(ScalarSingleEquationConstraint):
 
     def as_gpconstr(self, x0):
         "Returns GP approximation of an SP constraint at x0"
-        posy, negy = self._unsubbed.posy_negy()
+        siglt0, = self.unsubbed
+        posy, negy = siglt0.posy_negy()
         if x0 is None:
             x0 = {vk: vk.descr["sp_init"] for vk in negy.varlocs
                   if "sp_init" in vk.descr}
@@ -708,8 +709,41 @@ class SignomialInequality(ScalarSingleEquationConstraint):
         "Returns sensitivities as parsed from an approximating GP constraint."
         constr_sens = dict(pa_sens)
         del constr_sens[str(posyapprox.m_gt)]
-        _, negy = self._unsubbed.posy_negy()
+        siglt0, = self.unsubbed
+        _, negy = siglt0.posy_negy()
         constr_sens[str(negy)] = pa_sens["overall"]
         pa_sens[str(posyapprox)] = pa_sens.pop("overall")
         constr_sens["posyapprox"] = pa_sens
         return constr_sens
+
+
+class SignomialEquality(SignomialInequality):
+    "A constraint of the general form posynomial == posynomial"
+
+    def __init__(self, left, right):
+        SignomialInequality.__init__(self, left, "<=", right)
+        self.oper = "="
+
+    def as_posyslt1(self):
+        "Returns the posys <= 1 representation of this constraint."
+        # todo deal with substitutions
+        raise TypeError("SignomialEquality could not simplify to"
+                        " a PosynomialInequality")
+
+    def as_gpconstr(self, x0):
+        "Returns GP apprimxation of an SP constraint at x0"
+        siglt0, = self.unsubbed
+        if x0 is None:
+            x0 = {vk: vk.descr["sp_init"] for vk in siglt0.varlocs
+                  if "sp_init" in vk.descr}
+        x0.update({var: 1 for var in siglt0.varlocs if var not in x0})
+        x0.update(self.substitutions)
+        posy, negy = siglt0.posy_negy()
+        mec = (posy.mono_lower_bound(x0) == negy.mono_lower_bound(x0))
+        mec.substitutions = self.substitutions
+        return mec
+
+    # pylint: disable=unused-argument
+    def sens_from_gpconstr(self, posyapprox, pa_sens, var_senss):
+        "Returns sensitivities as parsed from an approximating GP constraint."
+        return {"posyapprox": pa_sens}
