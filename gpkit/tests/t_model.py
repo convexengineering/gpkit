@@ -374,14 +374,14 @@ class TestSP(unittest.TestCase):
                       "and variables failed")
         self.assertAlmostEqual(sol["cost"], 1, self.ndig)
 
-    def test_small_signomial(self):
+    def test_small_named_signomial(self):
         x = Variable('x')
         z = Variable('z')
         local_ndig = 4
         nonzero_adder = 0.1  # TODO: support reaching zero, issue #348
         with SignomialsEnabled():
             J = 0.01*(x - 1)**2 + nonzero_adder
-            m = Model(z, [z >= J])
+            m = Model(z, [z >= J], name="SmallSignomial")
         sol = m.localsolve(verbosity=0)
         self.assertAlmostEqual(sol['cost'], nonzero_adder, local_ndig)
         self.assertAlmostEqual(sol('x'), 0.987, 3)
