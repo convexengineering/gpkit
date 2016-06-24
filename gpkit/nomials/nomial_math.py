@@ -665,7 +665,7 @@ class SignomialInequality(ScalarSingleEquationConstraint):
                              "Constraint." % self.oper)
         self.nomials = [self.left, self.right]
         self.unsubbed = [plt - pgt]
-        self.nomials.append(self.unsubbed)
+        self.nomials.extend(self.unsubbed)
         self.substitutions = dict(self.left.values)
         self.substitutions.update(self.right.values)
 
