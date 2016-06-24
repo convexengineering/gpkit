@@ -122,12 +122,13 @@ def bound_all_variables(model, eps=1e-30, lower=None, upper=None):
     lb = lower if lower else eps
     ub = upper if upper else 1/eps
     constraints = []
-    for varkey in model.varkeys:
+    freevks = tuple(vk for vk in model.varkeys if "value" not in vk.descr)
+    for varkey in freevks:
         units = varkey.descr.get("units", 1)
         constraints.append([ub*units >= Variable(**varkey.descr),
                             Variable(**varkey.descr) >= lb*units])
     m = Model(model.cost, [constraints, model], model.substitutions)
-    m.bound_all = {"lb": lb, "ub": ub, "varkeys": model.varkeys}
+    m.bound_all = {"lb": lb, "ub": ub, "varkeys": freevks}
     return m
 
 
