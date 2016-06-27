@@ -1,4 +1,4 @@
-from gpkit import Variable, Model
+from gpkit import Variable, Model, settings
 from gpkit.tools import determine_unbounded_variables
 
 A = Variable("A")
@@ -16,5 +16,6 @@ m = Model(F, [F >= D + V**2,
               Fs <= mi,
              ])
 # sol = m.solve("mosek")  # returns UNKNOWN
-bounds = determine_unbounded_variables(m, "mosek")
-print bounds
+if "mosek" in settings["installed_solvers"]:
+    bounds = determine_unbounded_variables(m, "mosek")
+    print bounds
