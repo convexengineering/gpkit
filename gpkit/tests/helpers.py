@@ -25,7 +25,7 @@ def generate_example_tests(path, testclasses, solvers=None, newtest_fn=None):
         newtest_fn = new_test
     if solvers is None:
         import gpkit
-        solvers = [gpkit.settings["installed_solvers"][0]]
+        solvers = [gpkit.settings["default_solver"]]
     tests = []
     for testclass in testclasses:
         if os.path.isdir(path):
@@ -111,18 +111,18 @@ class NewDefaultSolver(object):
     "Creates an environment with a different default solver"
     def __init__(self, solver):
         self.solver = solver
-        self.prev_solvers = None
+        self.prev_default_solver = None
 
     def __enter__(self):
         "Change default solver."
         import gpkit
-        self.prev_solvers = gpkit.settings["installed_solvers"]
-        gpkit.settings["installed_solvers"] = [self.solver]
+        self.prev_default_solver = gpkit.settings["default_solver"]
+        gpkit.settings["default_solver"] = self.solver
 
     def __exit__(self, *args):
         "Reset default solver."
         import gpkit
-        gpkit.settings["installed_solvers"] = self.prev_solvers
+        gpkit.settings["default_solver"] = self.prev_default_solver
 
 
 class StdoutCaptured(object):
