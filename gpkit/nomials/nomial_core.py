@@ -23,6 +23,26 @@ def fast_monomial_str(exp, c):
         cstr = [cstr] if (cstr != "1" or not varstrs) else []
         return "*".join(cstr + varstrs)
 
+def monomial_strings(p_vars, n_vars, d_val):
+    """Returns the numerator, denominator, and
+    coefficient strings of a monomial separately
+    """
+    pvarstrings = ['%s^{%.2g}' % (varl, x) if "%.2g" % x != "1" else varl
+                   for (varl, x) in p_vars]
+    nvarstrings = ['%s^{%.2g}' % (varl, -x)
+                   if "%.2g" % -x != "1" else varl
+                   for (varl, x) in n_vars]
+    pvarstrings.sort()
+    nvarstrings.sort()
+    pvarstring = ' '.join(pvarstrings)
+    nvarstring = ' '.join(nvarstrings)
+    d_val = mag(d_val)
+    dstr = "%.2g" % d_val
+    if p_vars and (dstr == "1" or dstr == "-1"):
+        dstr = dstr[:-1]
+    else:
+        dstr = latex_num(d_val)
+    return (pvarstring, nvarstring, dstr)
 
 class Nomial(NomialData):
     "Shared non-mathematical properties of all nomials"
@@ -75,21 +95,7 @@ class Nomial(NomialData):
                 elif x < 0:
                     neg_vars.append((var.latex(excluded), x))
 
-            pvarstrs = ['%s^{%.2g}' % (varl, x) if "%.2g" % x != "1" else varl
-                        for (varl, x) in pos_vars]
-            nvarstrs = ['%s^{%.2g}' % (varl, -x)
-                        if "%.2g" % -x != "1" else varl
-                        for (varl, x) in neg_vars]
-            pvarstrs.sort()
-            nvarstrs.sort()
-            pvarstr = ' '.join(pvarstrs)
-            nvarstr = ' '.join(nvarstrs)
-            c = mag(c)
-            cstr = "%.2g" % c
-            if pos_vars and (cstr == "1" or cstr == "-1"):
-                cstr = cstr[:-1]
-            else:
-                cstr = latex_num(c)
+            pvarstr, nvarstr, cstr = monomial_strings(pos_vars, neg_vars, c)
 
             if not pos_vars and not neg_vars:
                 mstrs.append("%s" % cstr)
@@ -112,7 +118,6 @@ class Nomial(NomialData):
     @property
     def value(self):
         """Self, with values substituted for variables that have values
-
         Returns
         -------
         float, if no symbolic variables remain after substitution
@@ -146,7 +151,6 @@ class Nomial(NomialData):
 
     def __eq__(self, other):
         """Equality test
-
         Returns
         -------
         bool

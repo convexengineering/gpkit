@@ -1,7 +1,7 @@
 "Implements heatmapped equations to highlight sensitivities."
 import numpy as np
-from gpkit.small_scripts import mag, latex_num
 from gpkit.nomials import MonomialEquality
+from gpkit.nomials.nomial_core import monomial_strings
 
 
 BLUE = np.array([16, 131, 246])/255.0
@@ -44,21 +44,7 @@ def signomial_print(sig, sol, colorfn, paintby="constants", idx=None):
             elif x < 0:
                 neg_vars.append((varlatex, x))
 
-        pvarstrs = ['%s^{%.2g}' % (varl, x) if "%.2g" % x != "1" else varl
-                    for (varl, x) in pos_vars]
-        nvarstrs = ['%s^{%.2g}' % (varl, -x)
-                    if "%.2g" % -x != "1" else varl
-                    for (varl, x) in neg_vars]
-        pvarstrs.sort()
-        nvarstrs.sort()
-        pvarstr = ' '.join(pvarstrs)
-        nvarstr = ' '.join(nvarstrs)
-        c = mag(c)
-        cstr = "%.2g" % c
-        if pos_vars and (cstr == "1" or cstr == "-1"):
-            cstr = cstr[:-1]
-        else:
-            cstr = latex_num(c)
+        pvarstr, nvarstr, cstr = monomial_strings(pos_vars, neg_vars, c)
 
         if not pos_vars and not neg_vars:
             mstr = "%s" % cstr
