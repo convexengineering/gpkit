@@ -2,8 +2,8 @@
 import unittest
 import numpy as np
 from gpkit import Variable, VectorVariable, Model
-from gpkit.tools import (composite_objective,
-                         te_exp_minus1, te_secant, te_tangent)
+from gpkit.tools.tools import (composite_objective,
+                               te_exp_minus1, te_secant, te_tangent)
 from gpkit.tools.fmincon import generate_mfiles
 
 
