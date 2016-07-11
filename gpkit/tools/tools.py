@@ -115,7 +115,7 @@ def te_tangent(var, nterm):
     factorial_denom = 1
     for i in range(1, nterm + 1):
         factorial_denom *= ((2*i)*(2*i-1))
-        res += (-1**(i-1) * 2**(2*i) * (2**(2*i) - 1) *
+        res += ((-1)**(i-1) * 2**(2*i) * (2**(2*i) - 1) *
                 B2n[i-1] / factorial_denom * var**(2*i-1))
     return res
 
