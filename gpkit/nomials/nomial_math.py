@@ -731,7 +731,7 @@ class SignomialEquality(SignomialInequality):
                         " a PosynomialInequality")
 
     def as_gpconstr(self, x0):
-        "Returns GP apprimxation of an SP constraint at x0"
+        "Returns GP approximation of an SP constraint at x0"
         siglt0, = self.unsubbed
         if x0 is None:
             x0 = {vk: vk.descr["sp_init"] for vk in siglt0.varlocs
