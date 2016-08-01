@@ -29,15 +29,14 @@ class XuConstraintSet(CostedConstraintSet):
         return [self.cost >= self.xi0 + (self.w*self.s).sum(),
                 f0p + self.M <= (f0m + self.xi0).mono_lower_bound(x0),
                 gpconstrs]
-        
+
     def on_failedsolve(self):
-        self.w = self.w * self.alpha
-    
+        self.w *= self.alpha
+
     def on_successfulsolve(self, result):
-        # normalize the cost by removing the value of unsused slack variables
-        #result["cost"] = result["cost"] - (self.w*self.s).sum()
+        # normalize the cost by removing the value of unused slack variables
         result["cost"] -= self.w.sum()
-        self.w = self.w * self.alpha
+        self.w *= self.alpha
 
 XuConstraint_K11 = SignomialInequality
 XuConstraint_K12 = SignomialInequality
