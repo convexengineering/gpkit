@@ -89,6 +89,7 @@ class SignomialProgram(CostedConstraintSet):
         result : dict
             A dictionary containing the translated solver result.
         """
+        
         startpoint = x0 if x0 else {}
         if verbosity > 0:
             print("Beginning signomial solve.")
@@ -111,7 +112,7 @@ class SignomialProgram(CostedConstraintSet):
                 result = gp.solve(solver, verbosity-1, **kwargs)
                 for c in self.flat():
                     if hasattr(c, "on_successfulsolve"):
-                        c.on_successfulsolve()
+                        c.on_successfulsolve(result) 
             except (RuntimeWarning, ValueError):
 
                 modified_on_failedsolve = False
@@ -144,9 +145,9 @@ class SignomialProgram(CostedConstraintSet):
                   + " and %.3g seconds." % (time() - starttime))
                 self.flag = 1
         result["signomialstart"] = startpoint
-        self.sens_from_gpconstr(gp.constraints,
-                                result["sensitivities"]["constraints"],
-                                result["sensitivities"]["constants"])
+        #self.sens_from_gpconstr(gp.constraints,
+        #                        result["sensitivities"]["constraints"],
+        #                        result["sensitivities"]["constants"])
         self.process_result(result)
         self.result = result  # NOTE: SIDE EFFECTS
         return result

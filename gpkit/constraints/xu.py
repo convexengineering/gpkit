@@ -6,10 +6,6 @@ from .costed import CostedConstraintSet
 from .. import SignomialsEnabled
 
 
-def weights_update(self):
-    self.w = self.alpha*self.w
-
-
 class XuConstraintSet(CostedConstraintSet):
     """ The objective function defined as y + sum of WiSi where Wi
         are the weights (defined apriori) and Si are the added
@@ -33,10 +29,15 @@ class XuConstraintSet(CostedConstraintSet):
         return [self.cost >= self.xi0 + (self.w*self.s).sum(),
                 f0p + self.M <= (f0m + self.xi0).mono_lower_bound(x0),
                 gpconstrs]
-
-    on_failedsolve = weights_update
-    on_successfulsolve = weights_update
-
+        
+    def on_failedsolve(self):
+        self.w = self.w * self.alpha
+    
+    def on_successfulsolve(self, result):
+        # normalize the cost by removing the value of unsused slack variables
+        #result["cost"] = result["cost"] - (self.w*self.s).sum()
+        result["cost"] -= self.w.sum()
+        self.w = self.w * self.alpha
 
 XuConstraint_K11 = SignomialInequality
 XuConstraint_K12 = SignomialInequality
