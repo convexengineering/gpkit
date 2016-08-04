@@ -136,8 +136,8 @@ class ConstraintSet(list):
         for constraint in self:
             if hasattr(constraint, "varkeys"):
                 varkeys.update(constraint.varkeys)
-            # else:
-            #     print type(constraint) # getting numpy bools...
+        if hasattr(self, "unused_variables"):
+            varkeys.union(self.unused_variables)
         self.varkeys = varkeys
 
     def as_posyslt1(self):
