@@ -63,7 +63,8 @@ class VarKey(object):
         if ureg and "units" in self.descr:
             units = self.descr["units"]
             if isinstance(units, Strings):
-                units = units.replace("-", "dimensionless")
+                if units == "-":
+                    units = "dimensionless"
                 self.descr["units"] = Quantity(1.0, units)
             elif isinstance(units, Quantity):
                 self.descr["units"] = units
