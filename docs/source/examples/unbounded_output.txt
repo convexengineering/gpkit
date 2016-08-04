@@ -1,1 +1,0 @@
-defaultdict(<type 'list'>, {'value near lower bound': [A]})

@@ -407,13 +407,15 @@ class TestSP(unittest.TestCase):
 
     def test_unbounded_debugging(self):
         "Test nearly-dual-feasible problems"
-        from gpkit.tools import determine_unbounded_variables
+        from gpkit.tools import BoundedConstraintSet
         x = Variable("x")
         y = Variable("y")
         m = Model(x*y, [x*y**1.000001 >= 100])
         with self.assertRaises((RuntimeWarning, ValueError)):
             m.solve(self.solver, verbosity=0)
-        bounds = determine_unbounded_variables(m, self.solver)
+        m = Model(x*y, BoundedConstraintSet([x*y**1.000001 >= 100], verbosity=0))
+        sol = m.solve(self.solver, verbosity=0)
+        bounds = sol["boundedness"]
         self.assertEqual(bounds["sensitive to upper bound"], [y.key])
         self.assertEqual(bounds["sensitive to lower bound"], [x.key])
 

@@ -1,7 +1,7 @@
 """Non-application-specific convenience methods for GPkit"""
 from collections import defaultdict
 import numpy as np
-from gpkit import Model
+from .. import Model, ConstraintSet
 from ..nomials import Variable, VectorVariable
 from ..nomials import NomialArray
 from ..small_scripts import mag
@@ -117,40 +117,61 @@ def mdmake(filename, make_tex=True):
     return open(filename+".py")
 
 
-def bound_all_variables(model, eps=1e-30, lower=None, upper=None):
+def bound_all_variables(varkeys, lb, ub):
     "Returns model with additional constraints bounding all free variables"
-    lb = lower if lower else eps
-    ub = upper if upper else 1/eps
     constraints = []
-    freevks = tuple(vk for vk in model.varkeys if "value" not in vk.descr)
-    for varkey in freevks:
+    for varkey in varkeys:
         units = varkey.descr.get("units", 1)
         constraints.append([ub*units >= Variable(**varkey.descr),
                             Variable(**varkey.descr) >= lb*units])
-    m = Model(model.cost, [constraints, model], model.substitutions)
-    m.bound_all = {"lb": lb, "ub": ub, "varkeys": freevks}
-    return m
+    return constraints
 
 
-# pylint: disable=too-many-locals
-def determine_unbounded_variables(model, solver=None, verbosity=0,
-                                  eps=1e-30, lower=None, upper=None, **kwargs):
-    "Returns labeled dictionary of unbounded variables."
-    m = bound_all_variables(model, eps, lower, upper)
-    sol = m.solve(solver, verbosity, **kwargs)
-    lam = sol["sensitivities"]["la"][1:]
-    out = defaultdict(list)
-    for i, varkey in enumerate(m.bound_all["varkeys"]):
-        lam_gt, lam_lt = lam[2*i], lam[2*i+1]
-        if abs(lam_gt) >= 1e-7:  # arbitrary threshold
-            out["sensitive to upper bound"].append(varkey)
-        if abs(lam_lt) >= 1e-7:  # arbitrary threshold
-            out["sensitive to lower bound"].append(varkey)
-        value = mag(sol["variables"][varkey])
-        distance_below = np.log(value/m.bound_all["lb"])
-        distance_above = np.log(m.bound_all["ub"]/value)
-        if distance_below <= 3:  # arbitrary threshold
-            out["value near lower bound"].append(varkey)
-        elif distance_above <= 3:  # arbitrary threshold
-            out["value near upper bound"].append(varkey)
-    return out
+class BoundedConstraintSet(ConstraintSet):
+    "Bounds contained variables so as to ensure dual feasibility."
+
+    def __init__(self, constraints, substitutions=None, verbosity=1,
+                 eps=1e-30, lower=None, upper=None):
+        self.verbosity = verbosity
+        self.lb = lower if lower else eps
+        self.ub = upper if upper else 1/eps
+        constraints = ConstraintSet([constraints])
+        self.bounded_varkeys = tuple(vk for vk in constraints.varkeys
+                                     if "value" not in vk.descr)
+        bounding_constraints = bound_all_variables(self.bounded_varkeys,
+                                                   self.lb, self.ub)
+        constraints = [bounding_constraints, constraints]
+        super(BoundedConstraintSet, self).__init__(constraints, substitutions)
+
+    def sens_from_dual(self, las, nus):
+        "Return sensitivities while capturing the relevant lambdas"
+        self.bound_las = las[:2*len(self.bounded_varkeys)]
+        return super(BoundedConstraintSet, self).sens_from_dual(las, nus)
+
+    def process_result(self, result):
+        "Creates (and potentially prints) a dictionary of unbounded variables."
+        lam = self.bound_las
+        out = defaultdict(list)
+        for i, varkey in enumerate(self.bounded_varkeys):
+            lam_gt, lam_lt = lam[2*i], lam[2*i+1]
+            if abs(lam_gt) >= 1e-7:  # arbitrary threshold
+                out["sensitive to upper bound"].append(varkey)
+            if abs(lam_lt) >= 1e-7:  # arbitrary threshold
+                out["sensitive to lower bound"].append(varkey)
+            value = mag(result["variables"][varkey])
+            distance_below = np.log(value/self.lb)
+            distance_above = np.log(self.ub/value)
+            if distance_below <= 3:  # arbitrary threshold
+                out["value near lower bound"].append(varkey)
+            elif distance_above <= 3:  # arbitrary threshold
+                out["value near upper bound"].append(varkey)
+        if self.verbosity > 0:
+            if out:
+                print
+                print "UNBOUNDED VARIABLES"
+                for key, value in out.items():
+                    print "% 25s: %s" % (key, value)
+                print
+        if not "boundedness" in result:
+            result["boundedness"] = {}
+        result["boundedness"].update(out)

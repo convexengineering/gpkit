@@ -1,5 +1,5 @@
 from gpkit import Variable, Model, settings
-from gpkit.tools import determine_unbounded_variables
+from gpkit.tools import BoundedConstraintSet
 
 A = Variable("A")
 D = Variable("D")
@@ -10,12 +10,13 @@ Fs = Variable("Fs", 0.9)
 mb = Variable("m_b", 0.4)
 V = Variable("V", 300)
 
-m = Model(F, [F >= D + V**2,
-              D == V**2*A,
-              V >= mi + mb,
-              Fs <= mi,
-             ])
-# sol = m.solve("mosek")  # returns UNKNOWN
+constraints = [F >= D + V**2,
+               D == V**2*A,
+               V >= mi + mb,
+               Fs <= mi,
+               ]
+
+# Model(F, constraints).solve("mosek")  # returns UNKNOWN
 if "mosek" in settings["installed_solvers"]:
-    bounds = determine_unbounded_variables(m, "mosek")
-    print bounds
+    sol = Model(F, BoundedConstraintSet(constraints)).solve("mosek")
+    print sol["boundedness"]
