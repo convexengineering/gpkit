@@ -149,10 +149,14 @@ class KeySet(KeyDict):
     "KeySets are KeyDicts without values, serving only to filter and map keys"
     collapse_arrays = False
 
-    def add(self, *args):
-        "Adds all args to the keyset"
-        for arg in args:
-            self[arg] = None
+    def add(self, item):
+        "Adds an item to the keyset"
+        self[item] = None
+
+    def union(self, iterable):
+        "Adds an iterable to the keyset"
+        for item in iterable:
+            self.add(item)
 
     def __getitem__(self, key):
         "Gets the keys corresponding to a particular key."
