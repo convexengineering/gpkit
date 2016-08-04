@@ -42,6 +42,10 @@ class KeyDict(dict):
         self.keymap = defaultdict(set)
         self.update(*args, **kwargs)
 
+    def add(self, *args):
+        for arg in args:
+            self[arg] = None
+
     def update(self, *args, **kwargs):
         "Iterates through the dictionary created by args and kwargs"
         for k, v in dict(*args, **kwargs).items():
