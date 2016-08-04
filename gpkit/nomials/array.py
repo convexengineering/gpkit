@@ -145,9 +145,9 @@ class NomialArray(np.ndarray):
         "Returns the array and argument's outer product."
         return NomialArray(np.outer(self, other))
 
-    def sub(self, subs, val=None, require_positive=True):
+    def sub(self, subs, require_positive=True):
         "Substitutes into the array"
-        return self.vectorize(lambda nom: nom.sub(subs, val, require_positive))
+        return self.vectorize(lambda nom: nom.sub(subs, require_positive))
 
     @property
     def units(self):

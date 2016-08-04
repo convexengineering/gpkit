@@ -72,7 +72,10 @@ def append_sub(sub, keys, constants, sweep, linkedsweep):
             linkedsweep[key] = value
 
 
-def substitution(nomial, substitutions, val=None):
+def substitution(nomial, substitutions):
+    # pylint:disable=too-many-locals
+    # pylint:disable=too-many-branches
+    # pylint:disable=too-many-statements
     """Efficient substituton into a list of monomials.
 
         Arguments
@@ -99,10 +102,6 @@ def substitution(nomial, substitutions, val=None):
         subs_ : dict
             Substitutions to apply to the above.
     """
-
-    if val is not None:
-        substitutions = {substitutions: val}
-
     if not substitutions:
         return nomial.varlocs, nomial.exps, nomial.cs, substitutions
 
