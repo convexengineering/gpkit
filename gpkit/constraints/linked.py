@@ -66,6 +66,10 @@ class LinkedConstraintSet(ConstraintSet):
             self.reverselinks[newvk] = vks
         with SignomialsEnabled():  # since we're just substituting varkeys.
             self.subinplace(self.linked)
+        for constraint in self:
+            if hasattr(constraint, "update_varkeys"):
+                constraint.update_varkeys()
+        self.update_varkeys()
 
     def process_result(self, result):
         super(LinkedConstraintSet, self).process_result(result)

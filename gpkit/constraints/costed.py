@@ -24,10 +24,9 @@ class CostedConstraintSet(ConstraintSet):
         self.cost = self.cost.sub(subs)
         ConstraintSet.subinplace(self, subs)
 
-    @property
-    def varkeys(self):
+    def update_varkeys(self):
         "return all Varkeys present in this ConstraintSet"
-        return ConstraintSet._varkeys(self, self.cost.varlocs)
+        ConstraintSet.update_varkeys(self, self.cost.varlocs)
 
     def rootconstr_str(self, excluded=None):
         "The appearance of a ConstraintSet in addition to its contents"

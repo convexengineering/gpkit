@@ -28,6 +28,7 @@ class ConstraintSet(list):
             # grab the substitutions dict from the top constraintset
             subs.update(constraints.substitutions)  # pylint: disable=no-member
         if recursesubs:
+            self.update_varkeys()
             self.substitutions = KeyDict.with_keys(self.varkeys,
                                                    self._iter_subs(subs))
         else:
@@ -127,19 +128,14 @@ class ConstraintSet(list):
         for constraint in self:
             constraint.subinplace(subs)
 
-    @property
-    def varkeys(self):
-        "return all Varkeys present in this ConstraintSet"
-        return self._varkeys()
-
-    def _varkeys(self, init_dict=None):
-        "return all Varkeys present in this ConstraintSet"
-        init_dict = {} if init_dict is None else init_dict
-        out = KeySet(init_dict)
+    def update_varkeys(self, init_dict={}):
+        varkeys = KeySet(init_dict)
         for constraint in self:
             if hasattr(constraint, "varkeys"):
-                out.update(constraint.varkeys)
-        return out
+                varkeys.update(constraint.varkeys)
+            # else:
+            #     print type(constraint) # getting numpy bools...
+        self.varkeys = varkeys
 
     def as_posyslt1(self):
         "Returns list of posynomials which must be kept <= 1"
