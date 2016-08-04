@@ -25,7 +25,7 @@ class CostedConstraintSet(ConstraintSet):
         ConstraintSet.subinplace(self, subs)
 
     def reset_varkeys(self, init_dict=None):
-        "return all Varkeys present in this ConstraintSet"
+        "Resets varkeys to what is in the cost and constraints"
         costkeys = dict(self.cost.varlocs)
         if init_dict is not None:
             costkeys.update(init_dict)
