@@ -114,6 +114,11 @@ class TestVariable(unittest.TestCase):
         else:
             self.assertEqual(hash(x1), hash(xu))
 
+    def test_unit_parsing(self):
+        x = Variable("x", "s^0.5/m^0.5")
+        y = Variable("y", "(m/s)^-0.5")
+        self.assertEqual(x.units, y.units)
+
 
 class TestVectorVariable(unittest.TestCase):
     """TestCase for the VectorVariable class.
