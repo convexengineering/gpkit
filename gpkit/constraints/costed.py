@@ -19,10 +19,10 @@ class CostedConstraintSet(ConstraintSet):
             subs.update(substitutions)
         ConstraintSet.__init__(self, constraints, subs)
 
-    def subinplace(self, subs, value=None):
+    def subinplace(self, subs):
         "Substitutes in place."
-        self.cost = self.cost.sub(subs, value)
-        ConstraintSet.subinplace(self, subs, value)
+        self.cost = self.cost.sub(subs)
+        ConstraintSet.subinplace(self, subs)
 
     @property
     def varkeys(self):

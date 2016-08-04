@@ -189,7 +189,7 @@ class Signomial(Nomial):
             m0 *= (x0[vk])**e
         return Monomial(exp, p0/mag(m0))
 
-    def sub(self, substitutions, val=None, require_positive=True):
+    def sub(self, substitutions, require_positive=True):
         """Returns a nomial with substitued values.
 
         Usage
@@ -211,17 +211,17 @@ class Signomial(Nomial):
         -------
         Returns substituted nomial.
         """
-        _, exps, cs, _ = substitution(self, substitutions, val)
+        _, exps, cs, _ = substitution(self, substitutions)
         return Signomial(exps, cs, require_positive=require_positive)
 
-    def subinplace(self, substitutions, value=None):
+    def subinplace(self, substitutions):
         "Substitutes in place."
-        _, exps, cs, _ = substitution(self, substitutions, value)
+        _, exps, cs, _ = substitution(self, substitutions)
         super(Signomial, self).__init__(exps, cs)
 
-    def subsummag(self, substitutions, val=None):
+    def subsummag(self, substitutions):
         "Returns the sum of the magnitudes of the substituted Nomial."
-        _, exps, cs, _ = substitution(self, substitutions, val)
+        _, exps, cs, _ = substitution(self, substitutions)
         if any(exps):
             keys = set()
             for exp in exps:
@@ -436,10 +436,10 @@ class ScalarSingleEquationConstraint(SingleEquationConstraint):
         self.varkeys = KeySet(self.left.varlocs)
         self.varkeys.update(self.right.varlocs)
 
-    def subinplace(self, substitutions, value=None):
+    def subinplace(self, substitutions):
         "Modifies the constraint in place with substitutions."
         for nomial in self.nomials:
-            nomial.subinplace(substitutions, value)
+            nomial.subinplace(substitutions)
         self.varkeys = KeySet(self.left.varlocs)
         self.varkeys.update(self.right.varlocs)
 
