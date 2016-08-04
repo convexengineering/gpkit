@@ -48,7 +48,7 @@ class Beam(Model):
         displ_eq = (w >= w.left + 0.5*dx*(th + th.left))
         displ_eq[0] = (w[0] >= w_base)
         for constraint in [shear_eq, moment_eq, theta_eq, displ_eq]:
-            constraint.update_varkeys()
+            constraint.reset_varkeys()
         # minimize tip displacement (the last w)
         Model.__init__(self, w[-1],
                        [shear_eq, moment_eq, theta_eq, displ_eq,

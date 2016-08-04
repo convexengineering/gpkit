@@ -27,11 +27,10 @@ class LinkedConstraintSet(ConstraintSet):
     """
     def __init__(self, constraints, include_only=None, exclude=None):
         ConstraintSet.__init__(self, constraints)
-        varkeys = self.varkeys
         linkable = set()
-        for varkey in varkeys:
+        for varkey in self.varkeys:
             name_without_model = varkey.str_without(["models"])
-            if len(varkeys[name_without_model]) > 1:
+            if len(self.varkeys[name_without_model]) > 1:
                 linkable.add(name_without_model)
         if include_only:
             linkable &= set(include_only)
@@ -39,7 +38,7 @@ class LinkedConstraintSet(ConstraintSet):
             linkable -= set(exclude)
         self.linked, self.reverselinks = {}, {}
         for name in linkable:
-            vks = varkeys[name]
+            vks = self.varkeys[name]
             sub, subbed_vk = None, None
             for vk in vks:
                 if vk in self.substitutions:
@@ -67,9 +66,9 @@ class LinkedConstraintSet(ConstraintSet):
         with SignomialsEnabled():  # since we're just substituting varkeys.
             self.subinplace(self.linked)
         for constraint in self:
-            if hasattr(constraint, "update_varkeys"):
-                constraint.update_varkeys()
-        self.update_varkeys()
+            if hasattr(constraint, "reset_varkeys"):
+                constraint.reset_varkeys()
+        self.reset_varkeys()
 
     def process_result(self, result):
         super(LinkedConstraintSet, self).process_result(result)

@@ -42,10 +42,6 @@ class KeyDict(dict):
         self.keymap = defaultdict(set)
         self.update(*args, **kwargs)
 
-    def add(self, *args):
-        for arg in args:
-            self[arg] = None
-
     def update(self, *args, **kwargs):
         "Iterates through the dictionary created by args and kwargs"
         for k, v in dict(*args, **kwargs).items():
@@ -152,6 +148,11 @@ class KeyDict(dict):
 class KeySet(KeyDict):
     "KeySets are KeyDicts without values, serving only to filter and map keys"
     collapse_arrays = False
+
+    def add(self, *args):
+        "Adds all args to the keyset"
+        for arg in args:
+            self[arg] = None
 
     def __getitem__(self, key):
         "Gets the keys corresponding to a particular key."

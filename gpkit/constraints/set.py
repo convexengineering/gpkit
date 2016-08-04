@@ -28,7 +28,7 @@ class ConstraintSet(list):
             # grab the substitutions dict from the top constraintset
             subs.update(constraints.substitutions)  # pylint: disable=no-member
         if recursesubs:
-            self.update_varkeys()
+            self.reset_varkeys()
             self.substitutions = KeyDict.with_keys(self.varkeys,
                                                    self._iter_subs(subs))
         else:
@@ -128,8 +128,11 @@ class ConstraintSet(list):
         for constraint in self:
             constraint.subinplace(subs)
 
-    def update_varkeys(self, init_dict={}):
-        varkeys = KeySet(init_dict)
+    def reset_varkeys(self, init_dict=None):
+        "Goes through constraints and collects their varkeys."
+        varkeys = KeySet()
+        if not init_dict is None:
+            varkeys.update(init_dict)
         for constraint in self:
             if hasattr(constraint, "varkeys"):
                 varkeys.update(constraint.varkeys)

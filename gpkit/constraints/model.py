@@ -98,7 +98,7 @@ class Model(CostedConstraintSet):
                 del self.substitutions[vk]
         with SignomialsEnabled():  # since we're just substituting varkeys.
             self.subinplace(add_model_subs)
-        self.update_varkeys()
+        self.reset_varkeys()
 
     def subconstr_str(self, excluded=None):
         "The collapsed appearance of a ConstraintBase"
