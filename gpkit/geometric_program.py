@@ -8,6 +8,8 @@ from .keydict import KeyDict
 from .small_classes import SolverLog
 
 
+DEFAULT_SOLVER_KWARGS = {"cvxopt": {"kktsolver": "ldl"}}
+
 class GeometricProgram(NomialData):
     # pylint: disable=too-many-instance-attributes
     """Standard mathematical representation of a GP.
@@ -172,6 +174,10 @@ class GeometricProgram(NomialData):
             print("Using solver '%s'" % solvername)
             print("Solving for %i variables." % len(self.varlocs))
             tic = time()
+
+        default_kwargs = DEFAULT_SOLVER_KWARGS.get(solvername, {})
+        for k in default_kwargs:
+            kwargs.setdefault(k, default_kwargs[k])
 
         # NOTE: SIDE EFFECTS AS WE LOG SOLVER'S STDOUT AND OUTPUT
         original_stdout = sys.stdout
