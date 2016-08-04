@@ -73,6 +73,9 @@ def append_sub(sub, keys, constants, sweep, linkedsweep):
 
 
 def substitution(nomial, substitutions):
+    # pylint:disable=too-many-locals
+    # pylint:disable=too-many-branches
+    # pylint:disable=too-many-statements
     """Efficient substituton into a list of monomials.
 
         Arguments
