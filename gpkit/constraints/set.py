@@ -48,6 +48,10 @@ class ConstraintSet(list):
                 variables.sort(key=_var_sort_key)
                 return variables
 
+    def __setitem__(self, key, value):
+        list.__setitem__(self, key, value)
+        self.reset_varkeys()
+
     __str__ = _str
     __repr__ = _repr
     _repr_latex_ = _repr_latex_

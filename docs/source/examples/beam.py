@@ -40,17 +40,13 @@ class Beam(Model):
         # shear and moment increase from tip to base (left > right)
         shear_eq = (V >= V.right + 0.5*dx*(q + q.right))
         shear_eq[-1] = (V[-1] >= V_tip)  # tip boundary condition
-        shear_eq.varkeys.add(V_tip)
         moment_eq = (M >= M.right + 0.5*dx*(V + V.right))
         moment_eq[-1] = (M[-1] >= M_tip)
-        moment_eq.varkeys.add(M_tip)
         # slope and displacement increase from base to tip (right > left)
         theta_eq = (th >= th.left + 0.5*dx*(M + M.left)/EI)
         theta_eq[0] = (th[0] >= th_base)  # base boundary condition
-        theta_eq.varkeys.add(th_base)
         displ_eq = (w >= w.left + 0.5*dx*(th + th.left))
         displ_eq[0] = (w[0] >= w_base)
-        displ_eq.varkeys.add(w_base)
         # minimize tip displacement (the last w)
         Model.__init__(self, w[-1],
                        [shear_eq, moment_eq, theta_eq, displ_eq,

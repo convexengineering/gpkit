@@ -1,0 +1,33 @@
+
+Cost
+----
+ 1.62 [m] 
+
+Free Variables
+--------------
+          dx : 1.2                                             [m]   Length of an element
+     \vec{M} : [ 1.98e+03  1.27e+03  713       317      ... ]  [N*m] Internal moment     
+     \vec{V} : [ 660       528       396       264      ... ]  [N]   Internal shear      
+\vec{\theta} : [  -        0.177     0.285     0.341    ... ]        Slope               
+     \vec{w} : [  -        0.106     0.384     0.759    ... ]  [m]   Displacement        
+
+Constants
+---------
+           EI : 1.1e+04                                         [N*m**2]                               
+            L : 6                                               [m]      Overall beam length           
+      M_{tip} : 0                                               [N*m]    Tip moment                    
+      V_{tip} : 0                                               [N]      Tip loading                   
+\theta_{base} : 0                                                        Base angle                    
+     w_{base} : 0                                               [m]      Base deflection               
+      \vec{M} : [  -         -         -         -       ... ]  [N*m]    Internal moment               
+      \vec{V} : [  -         -         -         -       ... ]  [N]      Internal shear                
+ \vec{\theta} : [ 0          -         -         -       ... ]           Slope                         
+      \vec{q} : [ 110       110       110       110      ... ]  [N/m]    Distributed load at each point
+      \vec{w} : [ 0          -         -         -       ... ]  [m]      Displacement                  
+
+Sensitivities
+-------------
+      L : 4                                              Overall beam length           
+\vec{q} : [ 0.0072    0.0416    0.118     0.234    ... ] Distributed load at each point
+     EI : -1                                                                           
+
