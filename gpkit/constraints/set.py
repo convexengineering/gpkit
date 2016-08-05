@@ -5,6 +5,16 @@ from ..small_scripts import try_str_without
 from ..repr_conventions import _str, _repr, _repr_latex_
 
 
+def _sort_by_num_models(var):
+    "return integer for Variable sorting"
+    return len(v.key.models) if v.key.models else 0
+
+
+def _sort_by_name_and_idx(var):
+    "return tuplef for Variable sorting"
+    return (var.key.str_without(["units", "idx"]), var.key.idx)
+
+
 class ConstraintSet(list):
     "Recursive container for ConstraintSets and Inequalities"
     def __init__(self, constraints, substitutions=None, recursesubs=True):
@@ -38,11 +48,15 @@ class ConstraintSet(list):
             if len(variables) == 1:
                 return variables[0]
             else:
-                sortfn = lambda v: len(v.key.models) if v.key.models else 0
-                variables.sort(key=sortfn)
+                variables.sort(key=_sort_by_num_models)
                 variable = variables[0]
                 # note: doesn't work for vector variables
                 return variable
+
+    def variables_byname(self, key):
+        variables = [Variable(**key.descr) for key in self.varkeys[key]]
+        variables.sort(key=_sort_by_name_and_idx)
+        return variables
 
     __str__ = _str
     __repr__ = _repr
