@@ -47,6 +47,12 @@ class XuEqualityConstraint(SignomialInequality):
         SignomialInequality.__init__(self, left, "<=", right)
         self.s = Variable("s", unique=True)
 
+    def as_posyslt1(self):
+        "Returns the posys <= 1 representation of this constraint."
+        # todo deal with substitutions
+        raise TypeError("SignomialEquality could not simplify to"
+                         " a PosynomialInequality")
+
     def process_result(self, result):
         "Checks that all constraints are satisfied with equality"
         variables = result["variables"]
@@ -58,7 +64,13 @@ class XuEqualityConstraint(SignomialInequality):
 class XuConstraint_K21(XuEqualityConstraint):
     """An equality constraint of the general form monomial = monomial
     where posy and negy+1 are both monomials"""
-
+    
+    def as_posyslt1(self):
+        "Returns the posys <= 1 representation of this constraint."
+        # todo deal with substitutions
+        raise TypeError("SignomialEquality could not simplify to"
+                         " a PosynomialInequality")
+    
     def as_gpconstr(self, x0):
         with SignomialsEnabled():
             posy, negy = self._unsubbed.sub(self.substitutions).posy_negy()
@@ -69,6 +81,12 @@ class XuConstraint_K21(XuEqualityConstraint):
 class XuConstraint_K22(XuEqualityConstraint):
     """An equality constraint of the general form posynomial = monomial
     where posy is a posynomial and negy+1 is a monomial"""
+    
+    def as_posyslt1(self):
+        "Returns the posys <= 1 representation of this constraint."
+        # todo deal with substitutions
+        raise TypeError("SignomialEquality could not simplify to"
+                         " a PosynomialInequality")
 
     def as_gpconstr(self, x0):
         with SignomialsEnabled():
@@ -83,7 +101,12 @@ class XuConstraint_K22(XuEqualityConstraint):
 class XuConstraint_K23(XuEqualityConstraint):
     """An equality constraint of the general form monomial = posynomial
     where the posy is a monomial and negy+1 is a posynomial"""
-
+    
+    def as_posyslt1(self):
+        "Returns the posys <= 1 representation of this constraint."
+        # todo deal with substitutions
+        raise TypeError("SignomialEquality could not simplify to"
+                         " a PosynomialInequality")
     def as_gpconstr(self, x0):
         with SignomialsEnabled():
             posy, negy = self._unsubbed.sub(self.substitutions).posy_negy()
@@ -96,7 +119,13 @@ class XuConstraint_K23(XuEqualityConstraint):
 
 class XuConstraint_K24(XuEqualityConstraint):
     """ A equality contraint which does not lie in K21, K22 or K23"""
-
+    
+    def as_posyslt1(self):
+        "Returns the posys <= 1 representation of this constraint."
+        # todo deal with substitutions
+        raise TypeError("SignomialEquality could not simplify to"
+                        " a PosynomialInequality")
+    
     def as_gpconstr(self, x0):
         with SignomialsEnabled():
             posy, negy = self._unsubbed.sub(self.substitutions).posy_negy()
