@@ -2,7 +2,7 @@
 import numpy as np
 from .data import simplify_exps_and_cs
 from .array import NomialArray
-from .nomial_core import Nomial, fast_monomial_str
+from .nomial_core import Nomial
 from .substitution import substitution, parse_subs
 from ..constraints import SingleEquationConstraint
 from ..small_classes import Strings, Numbers, Quantity
@@ -552,11 +552,11 @@ class PosynomialInequality(ScalarSingleEquationConstraint):
         "Returns the variable/constraint sensitivities from lambda/nu"
         if not la or not nu:
             # as_posyslt1 created no inequalities
-            return {}, {}
+            return {}
         la, = la
         nu, = nu
         presub, = self.unsubbed
-        constr_sens = {"overall": la}
+        # constr_sens = {"overall": la}
         if hasattr(self, "pmap"):
             nu_ = np.zeros(len(presub.cs))
             for i, mmap in enumerate(self.pmap):
@@ -564,15 +564,15 @@ class PosynomialInequality(ScalarSingleEquationConstraint):
                     nu_[idx] += percentage*nu[i]
             nu = nu_
         # Monomial sensitivities
-        constr_sens[str(self.m_gt)] = la
-        for i, mono_sens in enumerate(nu):
-            mono_str = fast_monomial_str(self.p_lt.exps[i], self.p_lt.cs[i])
-            constr_sens[mono_str] = mono_sens
+        # constr_sens[str(self.m_gt)] = la
+        # for i, mono_sens in enumerate(nu):
+        #     mono_str = fast_monomial_str(self.p_lt.exps[i], self.p_lt.cs[i])
+        #     constr_sens[mono_str] = mono_sens
         # Constant sensitivities
         var_senss = {var: sum([presub.exps[i][var]*nu[i] for i in locs])
                      for (var, locs) in presub.varlocs.items()
                      if var in self.substitutions}
-        return constr_sens, var_senss
+        return var_senss
 
     # pylint: disable=unused-argument
     def as_gpconstr(self, x0):
@@ -627,10 +627,10 @@ class MonomialEquality(PosynomialInequality):
         "Returns the variable/constraint sensitivities from lambda/nu"
         if not la or not nu:
             # as_posyslt1 created no inequalities
-            return {}, {}
-        left, right = la
-        constr_sens = {str(self.left): left-right,
-                       str(self.right): right-left}
+            return {}
+        # left, right = la
+        # constr_sens = {str(self.left): left-right,
+        #                str(self.right): right-left}
         # Constant sensitivities
         var_senss = HashVector()
         for i, m_s in enumerate(nu):
@@ -639,7 +639,7 @@ class MonomialEquality(PosynomialInequality):
                         for (var, locs) in presub.varlocs.items()
                         if var in self.substitutions}
             var_senss += HashVector(var_sens)
-        return constr_sens, var_senss
+        return var_senss
 
 
 class SignomialInequality(ScalarSingleEquationConstraint):
@@ -704,18 +704,6 @@ class SignomialInequality(ScalarSingleEquationConstraint):
         pc.substitutions = self.substitutions
         return pc
 
-    # pylint: disable=unused-argument
-    def sens_from_gpconstr(self, posyapprox, pa_sens, var_senss):
-        "Returns sensitivities as parsed from an approximating GP constraint."
-        constr_sens = dict(pa_sens)
-        del constr_sens[str(posyapprox.m_gt)]
-        siglt0, = self.unsubbed
-        _, negy = siglt0.posy_negy()
-        constr_sens[str(negy)] = pa_sens["overall"]
-        pa_sens[str(posyapprox)] = pa_sens.pop("overall")
-        constr_sens["posyapprox"] = pa_sens
-        return constr_sens
-
 
 class SignomialEquality(SignomialInequality):
     "A constraint of the general form posynomial == posynomial"
@@ -742,8 +730,3 @@ class SignomialEquality(SignomialInequality):
         mec = (posy.mono_lower_bound(x0) == negy.mono_lower_bound(x0))
         mec.substitutions = self.substitutions
         return mec
-
-    # pylint: disable=unused-argument
-    def sens_from_gpconstr(self, posyapprox, pa_sens, var_senss):
-        "Returns sensitivities as parsed from an approximating GP constraint."
-        return {"posyapprox": pa_sens}

@@ -171,17 +171,17 @@ class ConstraintSet(list):
         var_senss : dict
             The variable sensitivities of this constraint
         """
-        constr_sens = {}
+        # constr_sens = {}
         var_senss = HashVector()
         offset = 0
         for i, constr in enumerate(self):
             n_posys = self.posymap[i]
             la = las[offset:offset+n_posys]
             nu = nus[offset:offset+n_posys]
-            constr_sens[str(constr)], v_ss = constr.sens_from_dual(la, nu)
+            v_ss = constr.sens_from_dual(la, nu)
             var_senss += v_ss
             offset += n_posys
-        return constr_sens, var_senss
+        return var_senss
 
     def as_gpconstr(self, x0):
         """Returns GPConstraint approximating this constraint at x0
@@ -190,33 +190,6 @@ class ConstraintSet(list):
         gpconstrs = [constr.as_gpconstr(x0) for constr in self]
         return ConstraintSet(gpconstrs,
                              self.substitutions, recursesubs=False)
-
-    def sens_from_gpconstr(self, gpapprox, gp_sens, var_senss):
-        """Computes sensitivities from GPConstraint approximation
-
-        Arguments
-        ---------
-        gpapprox : GPConstraint
-            The GPConstraint returned by `self.as_gpconstr()`
-
-        gpconstr_sens :
-            Sensitivities created by `gpconstr.sens_from_dual`
-
-        var_senss : dict
-            Variable sensitivities from last GP solve.
-
-
-        Returns
-        -------
-        constraint_sens : dict
-            The interesting and computable sensitivities of this constraint
-        """
-        constr_sens = {}
-        for i, c in enumerate(self):
-            gpa = gpapprox[i]
-            gp_s = gp_sens[str(gpa)]
-            constr_sens[str(c)] = c.sens_from_gpconstr(gpa, gp_s, var_senss)
-        return constr_sens
 
     def process_result(self, result):
         """Does arbitrary computation / manipulation of a program's result
