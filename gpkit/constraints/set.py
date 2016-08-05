@@ -131,6 +131,14 @@ class ConstraintSet(list):
         "Substitutes in place."
         for constraint in self:
             constraint.subinplace(subs)
+        if hasattr(self, "unused_variables"):
+            unused_vars = []
+            for var in self.unused_variables:
+                if var.key in subs:
+                    unused_vars.append(subs[var.key])
+                else:
+                    unused_vars.append(var.key)
+            self.unused_variables = unused_vars
 
     def reset_varkeys(self, init_dict=None):
         "Goes through constraints and collects their varkeys."

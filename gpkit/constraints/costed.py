@@ -22,14 +22,6 @@ class CostedConstraintSet(ConstraintSet):
     def subinplace(self, subs):
         "Substitutes in place."
         self.cost = self.cost.sub(subs)
-        if hasattr(self, "unused_variables"):
-            unused_vars = []
-            for var in self.unused_variables:
-                if var.key in subs:
-                    unused_vars.append(subs[var.key])
-                else:
-                    unused_vars.append(var.key)
-            self.unused_variables = unused_vars
         ConstraintSet.subinplace(self, subs)
 
     def reset_varkeys(self, init_dict=None):
