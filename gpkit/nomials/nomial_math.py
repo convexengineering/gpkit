@@ -2,7 +2,7 @@
 import numpy as np
 from .data import simplify_exps_and_cs
 from .array import NomialArray
-from .nomial_core import Nomial, fast_monomial_str
+from .nomial_core import Nomial
 from .substitution import substitution, parse_subs
 from ..constraints import SingleEquationConstraint
 from ..small_classes import Strings, Numbers, Quantity
