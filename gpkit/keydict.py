@@ -153,10 +153,14 @@ class KeySet(KeyDict):
         "Adds an item to the keyset"
         self[item] = None
 
-    def union(self, iterable):
-        "Adds an iterable to the keyset"
-        for item in iterable:
-            self.add(item)
+    def update(self, *args, **kwargs):
+        "Iterates through the dictionary created by args and kwargs"
+        if len(args) == 1:
+            for item in args[0]:
+                self.add(item)
+        else:
+            for k, v in dict(*args, **kwargs).items():
+                self[k] = v
 
     def __getitem__(self, key):
         "Gets the keys corresponding to a particular key."

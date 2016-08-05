@@ -135,13 +135,13 @@ class ConstraintSet(list):
     def reset_varkeys(self, init_dict=None):
         "Goes through constraints and collects their varkeys."
         varkeys = KeySet()
-        if not init_dict is None:
+        if init_dict is not None:
             varkeys.update(init_dict)
         for constraint in self:
             if hasattr(constraint, "varkeys"):
                 varkeys.update(constraint.varkeys)
         if hasattr(self, "unused_variables"):
-            varkeys.union(self.unused_variables)
+            varkeys.update(self.unused_variables)
         self.varkeys = varkeys
 
     def as_posyslt1(self):
