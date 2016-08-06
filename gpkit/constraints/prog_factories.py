@@ -1,10 +1,6 @@
 "Scripts for generating, solving and sweeping programs"
 from time import time
 import numpy as np
-from ..nomials.substitution import parse_subs
-from ..solution_array import SolutionArray
-from ..keydict import KeyDict
-from ..varkey import VarKey
 
 try:
     from ipyparallel import Client
@@ -15,6 +11,11 @@ try:
     print("Using parallel execution of sweeps on %s clients" % len(CLIENT))
 except (ImportError, IOError, AssertionError):
     POOL = None
+
+from ..nomials.substitution import parse_subs
+from ..solution_array import SolutionArray
+from ..keydict import KeyDict
+from ..varkey import VarKey
 
 
 def _progify_fctry(program, return_attr=None):

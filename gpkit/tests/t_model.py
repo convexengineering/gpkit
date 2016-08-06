@@ -418,7 +418,24 @@ class TestModelSolverSpecific(unittest.TestCase):
         self.assertAlmostEqual(sol["cost"], 12., NDIGS["cvxopt"])
 
 
-TESTS = [TestModelSolverSpecific]
+class Thing(Model):
+    "a thing, for model testing"
+    def __init__(self, n, **kwargs):
+        a = VectorVariable(n, "a", "g/m")
+        b = VectorVariable(n, "b", "m")
+        c = Variable("c", 17/4., "g")
+        Model.__init__(self, None, [a >= c/b], **kwargs)
+
+
+class TestModelNoSolve(unittest.TestCase):
+    """model tests that don't require a solver"""
+    def test_modelname_added(self):
+        t = Thing(2)
+        for vk in t.varkeys:
+            self.assertEqual(vk.models, ["Thing"])
+
+
+TESTS = [TestModelSolverSpecific, TestModelNoSolve]
 MULTI_SOLVER_TESTS = [TestGP, TestSP]
 
 for testcase in MULTI_SOLVER_TESTS:
