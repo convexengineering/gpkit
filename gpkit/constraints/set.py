@@ -139,6 +139,7 @@ class ConstraintSet(list):
                 else:
                     unused_vars.append(var.key)
             self.unused_variables = unused_vars
+        self.reset_varkeys()
 
     def reset_varkeys(self, init_dict=None):
         "Goes through constraints and collects their varkeys."
