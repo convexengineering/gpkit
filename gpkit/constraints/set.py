@@ -7,7 +7,8 @@ from ..repr_conventions import _str, _repr, _repr_latex_
 
 def _sort_by_num_models(var):
     "return integer for Variable sorting"
-    return len(v.key.models) if v.key.models else 0
+    mods = var.key.models
+    return len(mods) if mods else 0
 
 
 def _sort_by_name_and_idx(var):
@@ -54,6 +55,8 @@ class ConstraintSet(list):
                 return variable
 
     def variables_byname(self, key):
+        "Get all variables with a given name"
+        from ..nomials import Variable
         variables = [Variable(**key.descr) for key in self.varkeys[key]]
         variables.sort(key=_sort_by_name_and_idx)
         return variables
