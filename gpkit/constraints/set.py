@@ -18,6 +18,7 @@ class ConstraintSet(list):
             constraints = [constraints]
         list.__init__(self, constraints)
         subs = substitutions if substitutions else {}
+        self.unused_variables = None
         if not isinstance(constraints, ConstraintSet):
             # constraintsetify everything
             for i, constraint in enumerate(self):
@@ -131,7 +132,7 @@ class ConstraintSet(list):
         "Substitutes in place."
         for constraint in self:
             constraint.subinplace(subs)
-        if hasattr(self, "unused_variables"):
+        if self.unused_variables is not None:
             unused_vars = []
             for var in self.unused_variables:
                 if var.key in subs:
@@ -149,7 +150,7 @@ class ConstraintSet(list):
         for constraint in self:
             if hasattr(constraint, "varkeys"):
                 varkeys.update(constraint.varkeys)
-        if hasattr(self, "unused_variables"):
+        if self.unused_variables is not None:
             varkeys.update(self.unused_variables)
         self.varkeys = varkeys
 
