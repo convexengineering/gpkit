@@ -77,6 +77,8 @@ class TestGP(unittest.TestCase):
 
     def test_simple_united_gp(self):
         R = Variable('R', units="nautical_miles")
+        if not R.units:
+            return
         a0 = Variable('a0', 340.29, 'm/s')
         theta = Variable(r'\theta', 0.7598)
         t = Variable('t', 10, 'hr')
@@ -84,12 +86,14 @@ class TestGP(unittest.TestCase):
         T_reserve = Variable('T_{reserve}', 45, 'min')
         M = VectorVariable(2, 'M')
 
-        if R.units:
-            prob = Model(1/R,
-                         [t >= sum(R/a0/M/theta**0.5) + T_loiter + T_reserve,
-                          M <= 0.76])
-            sol = prob.solve(verbosity=0)
-            self.assertAlmostEqual(sol["cost"], 0.0005532, self.ndig)
+        prob = Model(1/R,
+                     [t >= sum(R/a0/M/theta**0.5) + T_loiter + T_reserve,
+                      M <= 0.76])
+        sol = prob.solve(verbosity=0)
+        self.assertAlmostEqual(sol["cost"], 0.0005532/R.units, self.ndig)
+        self.assertEqual(sol["constants"]["a0"], 340.29*a0.units)
+        self.assertEqual(sol["variables"]["a0"], 340.29*a0.units)
+        self.assertEqual(sol["freevariables"]["R"], 1807.58*R.units)
 
     def test_trivial_vector_gp(self):
         """
