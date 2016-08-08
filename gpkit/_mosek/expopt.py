@@ -214,7 +214,7 @@ def imize(c, A, p_idxs, *args, **kwargs):
                              numanz,
                              ptr_expopthnd
                              # Pointer to data structure holding nonlinear data
-                             )
+                            )
 
     # Any parameter can now be changed with standard mosek function calls
     if r == MSK._RES_OK:

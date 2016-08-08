@@ -5,6 +5,17 @@ from ..small_scripts import try_str_without
 from ..repr_conventions import _str, _repr, _repr_latex_
 
 
+def _sort_by_num_models(var):
+    "return integer for Variable sorting"
+    mods = var.key.models
+    return len(mods) if mods else 0
+
+
+def _sort_by_name_and_idx(var):
+    "return tuplef for Variable sorting"
+    return (var.key.str_without(["units", "idx"]), var.key.idx)
+
+
 class ConstraintSet(list):
     "Recursive container for ConstraintSets and Inequalities"
     def __init__(self, constraints, substitutions=None, recursesubs=True):
@@ -12,6 +23,7 @@ class ConstraintSet(list):
             constraints = [constraints]
         list.__init__(self, constraints)
         subs = substitutions if substitutions else {}
+        self.unused_variables = None
         if not isinstance(constraints, ConstraintSet):
             # constraintsetify everything
             for i, constraint in enumerate(self):
@@ -22,6 +34,7 @@ class ConstraintSet(list):
             # grab the substitutions dict from the top constraintset
             subs.update(constraints.substitutions)  # pylint: disable=no-member
         if recursesubs:
+            self.reset_varkeys()
             self.substitutions = KeyDict.with_keys(self.varkeys,
                                                    self._iter_subs(subs))
         else:
@@ -38,7 +51,21 @@ class ConstraintSet(list):
             if len(variables) == 1:
                 return variables[0]
             else:
-                return variables
+                variables.sort(key=_sort_by_num_models)
+                variable = variables[0]
+                # note: doesn't work for vector variables
+                return variable
+
+    def variables_byname(self, key):
+        "Get all variables with a given name"
+        from ..nomials import Variable
+        variables = [Variable(**key.descr) for key in self.varkeys[key]]
+        variables.sort(key=_sort_by_name_and_idx)
+        return variables
+
+    def __setitem__(self, key, value):
+        list.__setitem__(self, key, value)
+        self.reset_varkeys()
 
     __str__ = _str
     __repr__ = _repr
@@ -115,24 +142,31 @@ class ConstraintSet(list):
                 for yielded_constraint in subgenerator:
                     yield yielded_constraint
 
-    def subinplace(self, subs, value=None):
+    def subinplace(self, subs):
         "Substitutes in place."
         for constraint in self:
-            constraint.subinplace(subs, value)
+            constraint.subinplace(subs)
+        if self.unused_variables is not None:
+            unused_vars = []
+            for var in self.unused_variables:
+                if var.key in subs:
+                    unused_vars.append(subs[var.key])
+                else:
+                    unused_vars.append(var.key)
+            self.unused_variables = unused_vars
+        self.reset_varkeys()
 
-    @property
-    def varkeys(self):
-        "return all Varkeys present in this ConstraintSet"
-        return self._varkeys()
-
-    def _varkeys(self, init_dict=None):
-        "return all Varkeys present in this ConstraintSet"
-        init_dict = {} if init_dict is None else init_dict
-        out = KeySet(init_dict)
+    def reset_varkeys(self, init_dict=None):
+        "Goes through constraints and collects their varkeys."
+        varkeys = KeySet()
+        if init_dict is not None:
+            varkeys.update(init_dict)
         for constraint in self:
             if hasattr(constraint, "varkeys"):
-                out.update(constraint.varkeys)
-        return out
+                varkeys.update(constraint.varkeys)
+        if self.unused_variables is not None:
+            varkeys.update(self.unused_variables)
+        self.varkeys = varkeys
 
     def as_posyslt1(self):
         "Returns list of posynomials which must be kept <= 1"
@@ -164,17 +198,17 @@ class ConstraintSet(list):
         var_senss : dict
             The variable sensitivities of this constraint
         """
-        constr_sens = {}
+        # constr_sens = {}
         var_senss = HashVector()
         offset = 0
         for i, constr in enumerate(self):
             n_posys = self.posymap[i]
             la = las[offset:offset+n_posys]
             nu = nus[offset:offset+n_posys]
-            constr_sens[str(constr)], v_ss = constr.sens_from_dual(la, nu)
+            v_ss = constr.sens_from_dual(la, nu)
             var_senss += v_ss
             offset += n_posys
-        return constr_sens, var_senss
+        return var_senss
 
     def as_gpconstr(self, x0):
         """Returns GPConstraint approximating this constraint at x0
@@ -183,33 +217,6 @@ class ConstraintSet(list):
         gpconstrs = [constr.as_gpconstr(x0) for constr in self]
         return ConstraintSet(gpconstrs,
                              self.substitutions, recursesubs=False)
-
-    def sens_from_gpconstr(self, gpapprox, gp_sens, var_senss):
-        """Computes sensitivities from GPConstraint approximation
-
-        Arguments
-        ---------
-        gpapprox : GPConstraint
-            The GPConstraint returned by `self.as_gpconstr()`
-
-        gpconstr_sens :
-            Sensitivities created by `gpconstr.sens_from_dual`
-
-        var_senss : dict
-            Variable sensitivities from last GP solve.
-
-
-        Returns
-        -------
-        constraint_sens : dict
-            The interesting and computable sensitivities of this constraint
-        """
-        constr_sens = {}
-        for i, c in enumerate(self):
-            gpa = gpapprox[i]
-            gp_s = gp_sens[str(gpa)]
-            constr_sens[str(c)] = c.sens_from_gpconstr(gpa, gp_s, var_senss)
-        return constr_sens
 
     def process_result(self, result):
         """Does arbitrary computation / manipulation of a program's result

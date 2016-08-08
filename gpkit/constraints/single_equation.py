@@ -44,10 +44,10 @@ class SingleEquationConstraint(object):
         return ("%s %s %s" % (self.left.latex(excluded), latex_oper,
                               self.right.latex(excluded)))
 
-    def sub(self, subs, value=None):
+    def sub(self, subs):
         "Returns a substituted version of this constraint."
-        subbed = self.func_opers[self.oper](self.left.sub(subs, value),
-                                            self.right.sub(subs, value))
+        subbed = self.func_opers[self.oper](self.left.sub(subs),
+                                            self.right.sub(subs))
         subbed.substitutions = self.substitutions
         return subbed
 

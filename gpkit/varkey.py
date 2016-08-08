@@ -1,26 +1,34 @@
 """Defines the VarKey class"""
-from itertools import count
 from .small_classes import Strings, Quantity
 from .small_scripts import mag, unitstr, veckeyed
 
 
+class Count(object):
+    "Like python 2's itertools.count, for Python 3 compatibility."
+
+    def __init__(self):
+        self.count = -1
+
+    def next(self):
+        "Increment self.count and return it"
+        self.count += 1
+        return self.count
+
+
 class VarKey(object):
     """An object to correspond to each 'variable name'.
-
     Arguments
     ---------
     name : str, VarKey, or Monomial
         Name of this Variable, or object to derive this Variable from.
-
     **kwargs :
         Any additional attributes, which become the descr attribute (a dict).
-
     Returns
     -------
     VarKey with the given name and descr.
     """
-    new_id = {}
-    subscripts = ["models", "idx"]
+    new_unnamed_id = Count().next
+    subscripts = ("models", "idx")
     eq_ignores = frozenset(["units", "value"])
     # ignore value in ==. Also skip units, since pints is weird and the unitstr
     #    will be compared anyway
@@ -38,16 +46,8 @@ class VarKey(object):
                 raise TypeError("variables can only be formed from monomials"
                                 " with a c of 1 and a single variable")
         else:
-            unique = kwargs.get("unique", False)
             if name is None:
-                name = "\\fbox"
-                unique = True
-            elif unique:
-                name += "_"
-            if unique:
-                if name not in VarKey.new_id:
-                    VarKey.new_id[name] = count().next
-                name += "{%s}" % VarKey.new_id[name]()
+                name = "\\fbox{%s}" % VarKey.new_unnamed_id()
             self.descr["name"] = str(name)
 
         from . import units as ureg  # update in case user has disabled units
@@ -60,7 +60,8 @@ class VarKey(object):
         if ureg and "units" in self.descr:
             units = self.descr["units"]
             if isinstance(units, Strings):
-                units = units.replace("-", "dimensionless")
+                if units == "-":
+                    units = "dimensionless"
                 self.descr["units"] = Quantity(1.0, units)
             elif isinstance(units, Quantity):
                 self.descr["units"] = units

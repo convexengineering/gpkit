@@ -2,7 +2,7 @@
 import math
 import unittest
 from gpkit import (Model, Monomial, settings, VectorVariable, Variable,
-                   SignomialsEnabled, ArrayVariable)
+                   SignomialsEnabled, ArrayVariable, SignomialEquality)
 from gpkit.small_classes import CootMatrix
 from gpkit.feasibility import feasibility_model
 
@@ -41,6 +41,28 @@ class TestGP(unittest.TestCase):
                                2*math.sqrt(2),
                                self.ndig)
         self.assertAlmostEqual(sol["cost"], 2*math.sqrt(2), self.ndig)
+
+    def test_sigeq(self):
+        x = Variable("x")
+        y = Variable("y")
+        c = Variable("c")
+        with SignomialsEnabled():
+            m = Model(c, [c >= (x + 0.25)**2 + (y - 0.5)**2,
+                          SignomialEquality(x**2 + x, y)])
+        sol = m.localsolve(verbosity=0)
+        self.assertAlmostEqual(sol("x"), 0.1639472, 4)
+        self.assertAlmostEqual(sol("y"), 0.1908254, 4)
+        self.assertAlmostEqual(sol("c"), 0.2669448, 4)
+
+    def test_601(self):
+        # tautological monomials should solve but not pass to the solver
+        x = Variable("x")
+        y = Variable("y", 2)
+        m = Model(x,
+                  [x >= 1,
+                   y == 2])
+        m.solve(verbosity=0)
+        self.assertEqual(len(m.program.constraints), 2)
 
     def test_cost_freeing(self):
         "Test freeing a variable that's in the cost."
@@ -160,7 +182,7 @@ class TestGP(unittest.TestCase):
         '''Issue 296'''
         x1 = Variable('x1')
         x2 = Variable('x2')
-        m = Model(1.+ x1 + x2, [x1 >= 1., x2 >= 1.])
+        m = Model(1. + x1 + x2, [x1 >= 1., x2 >= 1.])
         sol = m.solve(solver=self.solver, verbosity=0)
         self.assertAlmostEqual(sol["cost"], 3, self.ndig)
 
@@ -232,12 +254,15 @@ class TestSP(unittest.TestCase):
             m = Model(x, [x + y >= z])
         self.assertAlmostEqual(m.solve(self.solver, verbosity=0)["cost"], 3)
 
-
     def test_trivial_sp(self):
         x = Variable('x')
         y = Variable('y')
         with SignomialsEnabled():
             m = Model(x, [x >= 1-y, y <= 0.1])
+        with self.assertRaises(ValueError):
+            # solve should catch the TypeError raised by an SP constraints
+            # and raise its own ValueError instead
+            m.solve(verbosity=0)
         sol = m.localsolve(self.solver, verbosity=0)
         self.assertAlmostEqual(sol["variables"]["x"], 0.9, self.ndig)
         with SignomialsEnabled():
@@ -349,14 +374,14 @@ class TestSP(unittest.TestCase):
                       "and variables failed")
         self.assertAlmostEqual(sol["cost"], 1, self.ndig)
 
-    def test_small_signomial(self):
+    def test_small_named_signomial(self):
         x = Variable('x')
         z = Variable('z')
         local_ndig = 4
         nonzero_adder = 0.1  # TODO: support reaching zero, issue #348
         with SignomialsEnabled():
             J = 0.01*(x - 1)**2 + nonzero_adder
-            m = Model(z, [z >= J])
+            m = Model(z, [z >= J], name="SmallSignomial")
         sol = m.localsolve(verbosity=0)
         self.assertAlmostEqual(sol['cost'], nonzero_adder, local_ndig)
         self.assertAlmostEqual(sol('x'), 0.987, 3)
@@ -381,10 +406,39 @@ class TestSP(unittest.TestCase):
         self.assertEqual(first_gp_constr_posy.exp[x.key], -1./3)
 
 
-TEST_CASES = [TestGP, TestSP]
+class TestModelSolverSpecific(unittest.TestCase):
+    """test cases run only for specific solvers"""
+    def test_cvxopt_kwargs(self):
+        if "cvxopt" not in settings["installed_solvers"]:
+            return
+        x = Variable("x")
+        m = Model(x, [x >= 12])
+        # make sure it's possible to pass the kktsolver option to cvxopt
+        sol = m.solve(solver="cvxopt", verbosity=0, kktsolver="ldl")
+        self.assertAlmostEqual(sol["cost"], 12., NDIGS["cvxopt"])
 
-TESTS = []
-for testcase in TEST_CASES:
+
+class Thing(Model):
+    "a thing, for model testing"
+    def __init__(self, n, **kwargs):
+        a = VectorVariable(n, "a", "g/m")
+        b = VectorVariable(n, "b", "m")
+        c = Variable("c", 17/4., "g")
+        Model.__init__(self, None, [a >= c/b], **kwargs)
+
+
+class TestModelNoSolve(unittest.TestCase):
+    """model tests that don't require a solver"""
+    def test_modelname_added(self):
+        t = Thing(2)
+        for vk in t.varkeys:
+            self.assertEqual(vk.models, ["Thing"])
+
+
+TESTS = [TestModelSolverSpecific, TestModelNoSolve]
+MULTI_SOLVER_TESTS = [TestGP, TestSP]
+
+for testcase in MULTI_SOLVER_TESTS:
     for solver in settings["installed_solvers"]:
         if solver:
             test = type(testcase.__name__+"_"+solver,
