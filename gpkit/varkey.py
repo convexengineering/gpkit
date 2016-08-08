@@ -1,7 +1,18 @@
 """Defines the VarKey class"""
-from itertools import count
 from .small_classes import Strings, Quantity
 from .small_scripts import mag, unitstr, veckeyed
+
+
+class Count(object):
+    "Like python 2's itertools.count, for Python 3 compatibility."
+
+    def __init__(self):
+        self.count = -1
+
+    def next(self):
+        "Increment self.count and return it"
+        self.count += 1
+        return self.count
 
 
 class VarKey(object):
@@ -19,8 +30,8 @@ class VarKey(object):
     -------
     VarKey with the given name and descr.
     """
-    new_unnamed_id = count().next
-    subscripts = ["models", "idx"]
+    new_unnamed_id = Count().next
+    subscripts = ("models", "idx")
     eq_ignores = frozenset(["units", "value"])
     # ignore value in ==. Also skip units, since pints is weird and the unitstr
     #    will be compared anyway
@@ -52,7 +63,8 @@ class VarKey(object):
         if ureg and "units" in self.descr:
             units = self.descr["units"]
             if isinstance(units, Strings):
-                units = units.replace("-", "dimensionless")
+                if units == "-":
+                    units = "dimensionless"
                 self.descr["units"] = Quantity(1.0, units)
             elif isinstance(units, Quantity):
                 self.descr["units"] = units

@@ -94,7 +94,7 @@ class DictOfLists(dict):
 
 
 def _enlist_dict(d_in, d_out):
-    "Recursviely copies d_in into d_out, placing non-dict items into lists."
+    "Recursively copies d_in into d_out, placing non-dict items into lists."
     for k, v in d_in.items():
         if isinstance(v, dict):
             d_out[k] = _enlist_dict(v, v.__class__())
@@ -105,19 +105,19 @@ def _enlist_dict(d_in, d_out):
 
 
 def _append_dict(d_in, d_out):
-    "Recursviely travels dict d_out and appends items found in d_in."
+    "Recursively travels dict d_out and appends items found in d_in."
     for k, v in d_in.items():
         if isinstance(v, dict):
             d_out[k] = _append_dict(v, d_out[k])
         else:
-            # consider apennding nan / nanvector for new / missed keys
+            # consider appending nan / nanvector for new / missed keys
             d_out[k].append(v)
     # assert set(i.keys()) == set(o.keys())  # keys change with swept varkeys
     return d_out
 
 
 def _index_dict(idx, d_in, d_out):
-    "Recursviely travels dict d_in, placing items at idx into dict d_out."
+    "Recursively travels dict d_in, placing items at idx into dict d_out."
     for k, v in d_in.items():
         if isinstance(v, dict):
             d_out[k] = _index_dict(idx, v, v.__class__())

@@ -134,9 +134,6 @@ class SignomialProgram(CostedConstraintSet):
 		self.flag = 1
 
         result["signomialstart"] = startpoint
-        self.sens_from_gpconstr(gp.constraints,
-                                result["sensitivities"]["constraints"],
-                                result["sensitivities"]["constants"])
         self.process_result(result)
         self.result = result  # NOTE: SIDE EFFECTS
         return result
