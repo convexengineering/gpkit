@@ -706,17 +706,17 @@ class SignomialInequality(ScalarSingleEquationConstraint):
 
 class SignomialEquality(SignomialInequality):
     "A constraint of the general form posynomial == posynomial"
-    
+
     def __init__(self, left, right):
         SignomialInequality.__init__(self, left, "<=", right)
         self.oper = "="
-    
+
     def as_posyslt1(self):
         "Returns the posys <= 1 representation of this constraint."
         # todo deal with substitutions
         raise TypeError("SignomialEquality could not simplify to"
                         " a PosynomialInequality")
-    
+
     def as_gpconstr(self, x0):
         "Returns GP approximation of an SP constraint at x0"
         siglt0, = self.unsubbed
@@ -729,6 +729,14 @@ class SignomialEquality(SignomialInequality):
         mec = (posy.mono_lower_bound(x0) == negy.mono_lower_bound(x0))
         mec.substitutions = self.substitutions
         return mec
+
+    def process_result(self, result):
+        "Checks that all constraints are satisfied with equality"
+        variables = result["variables"]
+        leftsubbed = self.left.sub(variables).value
+        rightsubbed = self.right.sub(variables).value
+        rel_diff = abs(rightsubbed - leftsubbed)
+        result["constr_viol"] = result.get("constr_viol", 0) + rel_diff
 
 class SignomialEqualityTriv(SignomialEquality):
     """A constraint of the general form posynomial == posynomial (linearized only the necessary parts)
@@ -766,7 +774,7 @@ class SignomialEqualityTrivTrust(SignomialEquality):
         self.substitutions = dict(self.left.values)
         self.substitutions.update(self.right.values)
         self.trustregion = 0.9
-         
+
     def as_gpconstr(self, x0):
         "Returns GP apprimxation of an SP constraint at x0"
         #return self.left >= self.right
@@ -784,7 +792,7 @@ class SignomialEqualityLin(SignomialEquality):
         Additionally retains input format (lhs vs rhs) in self.left and self.right
         Form is self.left >= self.right.
         """
-    
+
     def as_gpconstr(self, x0):
         "Returns GP apprimxation of an SP constraint at x0"
         #return self.left >= self.right
@@ -803,7 +811,7 @@ class SignomialEqualityLinTrust(SignomialEquality):
         Additionally retains input format (lhs vs rhs) in self.left and self.right
         Form is self.left >= self.right.
         """
-    
+
     def __init__(self, left, right):
         ScalarSingleEquationConstraint.__init__(self, left, "=", right)
         from .. import SIGNOMIALS_ENABLED
@@ -814,7 +822,7 @@ class SignomialEqualityLinTrust(SignomialEquality):
         self.substitutions = dict(self.left.values)
         self.substitutions.update(self.right.values)
         self.trustregion = 0.9
-    
+
     def as_gpconstr(self, x0):
         "Returns GP apprimxation of an SP constraint at x0"
         #return self.left >= self.right
@@ -827,4 +835,3 @@ class SignomialEqualityLinTrust(SignomialEquality):
         bounding_constraints = [[self.trustregion <= Monomial(vk)/x0[vk],
 		                 Monomial(vk)/x0[vk] <= 1/self.trustregion] for vk in varkeys]
         return [bounding_constraints, mleft == mright]
-    
