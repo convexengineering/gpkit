@@ -1,5 +1,5 @@
 import numpy as np
-from ..nomials.nomial_math import SignomialInequality
+from ..nomials.nomial_math import SignomialInequality, SignomialEquality
 from ..nomials.variables import Variable
 from ..nomials.array import NomialArray
 from .costed import CostedConstraintSet
@@ -42,16 +42,10 @@ XuConstraint_K11 = SignomialInequality
 XuConstraint_K12 = SignomialInequality
 
 
-class XuEqualityConstraint(SignomialInequality):
+class XuEqualityConstraint(SignomialEquality):
     def __init__(self, left, right):
         SignomialInequality.__init__(self, left, "<=", right)
         self.s = Variable("s", unique=True)
-
-    def as_posyslt1(self):
-        "Returns the posys <= 1 representation of this constraint."
-        # todo deal with substitutions
-        raise TypeError("SignomialEquality could not simplify to"
-                         " a PosynomialInequality")
 
     def process_result(self, result):
         "Checks that all constraints are satisfied with equality"
@@ -64,16 +58,10 @@ class XuEqualityConstraint(SignomialInequality):
 class XuConstraint_K21(XuEqualityConstraint):
     """An equality constraint of the general form monomial = monomial
     where posy and negy+1 are both monomials"""
-    
-    def as_posyslt1(self):
-        "Returns the posys <= 1 representation of this constraint."
-        # todo deal with substitutions
-        raise TypeError("SignomialEquality could not simplify to"
-                         " a PosynomialInequality")
-    
+
     def as_gpconstr(self, x0):
         with SignomialsEnabled():
-            posy, negy = self._unsubbed.sub(self.substitutions).posy_negy()
+            posy, negy = self.unsubbed.sub(self.substitutions).posy_negy()
         # TODO: turn self into a MonomialEquality Constraint here
         return posy == negy
 
@@ -81,16 +69,12 @@ class XuConstraint_K21(XuEqualityConstraint):
 class XuConstraint_K22(XuEqualityConstraint):
     """An equality constraint of the general form posynomial = monomial
     where posy is a posynomial and negy+1 is a monomial"""
-    
-    def as_posyslt1(self):
-        "Returns the posys <= 1 representation of this constraint."
-        # todo deal with substitutions
-        raise TypeError("SignomialEquality could not simplify to"
-                         " a PosynomialInequality")
 
     def as_gpconstr(self, x0):
         with SignomialsEnabled():
-            posy, negy = self._unsubbed.sub(self.substitutions).posy_negy()
+            siglt0, = self.unsubbed
+            siglt0 = siglt0.sub(self.substitutions, require_positive=False)
+            posy, negy = siglt0.posy_negy()
         c1 = posy <= negy
         # s above 1 makes the approximated side easier
         c2 = negy <= self.s*posy.mono_lower_bound(x0)
@@ -101,15 +85,12 @@ class XuConstraint_K22(XuEqualityConstraint):
 class XuConstraint_K23(XuEqualityConstraint):
     """An equality constraint of the general form monomial = posynomial
     where the posy is a monomial and negy+1 is a posynomial"""
-    
-    def as_posyslt1(self):
-        "Returns the posys <= 1 representation of this constraint."
-        # todo deal with substitutions
-        raise TypeError("SignomialEquality could not simplify to"
-                         " a PosynomialInequality")
+
     def as_gpconstr(self, x0):
         with SignomialsEnabled():
-            posy, negy = self._unsubbed.sub(self.substitutions).posy_negy()
+            siglt0, = self.unsubbed
+            siglt0 = siglt0.sub(self.substitutions, require_positive=False)
+            posy, negy = siglt0.posy_negy()
         c1 = negy <= posy
         # s above 1 makes the approximated side easier
         c2 = posy <= self.s*negy.mono_lower_bound(x0)
@@ -119,16 +100,12 @@ class XuConstraint_K23(XuEqualityConstraint):
 
 class XuConstraint_K24(XuEqualityConstraint):
     """ A equality contraint which does not lie in K21, K22 or K23"""
-    
-    def as_posyslt1(self):
-        "Returns the posys <= 1 representation of this constraint."
-        # todo deal with substitutions
-        raise TypeError("SignomialEquality could not simplify to"
-                        " a PosynomialInequality")
-    
+
     def as_gpconstr(self, x0):
         with SignomialsEnabled():
-            posy, negy = self._unsubbed.sub(self.substitutions).posy_negy()
+            siglt0, = self.unsubbed
+            siglt0 = siglt0.sub(self.substitutions, require_positive=False)
+            posy, negy = siglt0.posy_negy()
         # s above 1 makes one of the approximated sides easier
         c1 = negy <= self.s*posy.mono_lower_bound(x0)
         c2 = posy <= negy.mono_lower_bound(x0)
