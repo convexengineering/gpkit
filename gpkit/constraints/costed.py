@@ -19,16 +19,19 @@ class CostedConstraintSet(ConstraintSet):
             subs.update(substitutions)
         ConstraintSet.__init__(self, constraints, subs)
 
-    def subinplace(self, subs):
+    def subinplace(self, subs, value=None):
         "Substitutes in place."
-        self.cost = self.cost.sub(subs)
-        ConstraintSet.subinplace(self, subs)
+        for sub_varkey in subs:
+            if sub_varkey not in self.varkeys:
+                raise NameError("Varkey, Variable, or String \
+does not exist in the Model")
+        self.cost = self.cost.sub(subs, value)
+        ConstraintSet.subinplace(self, subs, value)
 
-    def reset_varkeys(self, init_dict=None):
-        "Resets varkeys to what is in the cost and constraints"
-        ConstraintSet.reset_varkeys(self, self.cost.varlocs)
-        if init_dict is not None:
-            self.varkeys.update(init_dict)
+    @property
+    def varkeys(self):
+        "return all Varkeys present in this ConstraintSet"
+        return ConstraintSet._varkeys(self, self.cost.varlocs)
 
     def rootconstr_str(self, excluded=None):
         "The appearance of a ConstraintSet in addition to its contents"

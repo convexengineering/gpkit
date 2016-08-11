@@ -72,10 +72,7 @@ def append_sub(sub, keys, constants, sweep, linkedsweep):
             linkedsweep[key] = value
 
 
-def substitution(nomial, substitutions):
-    # pylint:disable=too-many-locals
-    # pylint:disable=too-many-branches
-    # pylint:disable=too-many-statements
+def substitution(nomial, substitutions, val=None):
     """Efficient substituton into a list of monomials.
 
         Arguments
@@ -102,8 +99,18 @@ def substitution(nomial, substitutions):
         subs_ : dict
             Substitutions to apply to the above.
     """
+
+    if val is not None:
+        substitutions = {substitutions: val}
+
     if not substitutions:
         return nomial.varlocs, nomial.exps, nomial.cs, substitutions
+
+    else:
+        for sub_varkey in substitutions:
+            if sub_varkey not in nomial.varkeys:
+                raise NameError("Varkey, Variable, or String \
+does not exist in the Nomial")
 
     subs, _, _ = parse_subs(nomial.varkeys, substitutions)
 
