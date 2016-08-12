@@ -5,7 +5,6 @@ from .set import ConstraintSet
 class CostedConstraintSet(ConstraintSet):
     """
     A ConstraintSet with a cost
-
     Arguments
     ---------
     cost: gpkit.Posynomial
@@ -19,19 +18,20 @@ class CostedConstraintSet(ConstraintSet):
             subs.update(substitutions)
         ConstraintSet.__init__(self, constraints, subs)
 
-    def subinplace(self, subs, value=None):
+    def subinplace(self, subs):
         "Substitutes in place."
         for sub_varkey in subs:
             if sub_varkey not in self.varkeys:
                 raise NameError("Varkey, Variable, or String \
 does not exist in the Model")
-        self.cost = self.cost.sub(subs, value)
-        ConstraintSet.subinplace(self, subs, value)
+        self.cost = self.cost.sub(subs)
+        ConstraintSet.subinplace(self, subs)
 
-    @property
-    def varkeys(self):
-        "return all Varkeys present in this ConstraintSet"
-        return ConstraintSet._varkeys(self, self.cost.varlocs)
+    def reset_varkeys(self, init_dict=None):
+        "Resets varkeys to what is in the cost and constraints"
+        ConstraintSet.reset_varkeys(self, self.cost.varlocs)
+        if init_dict is not None:
+            self.varkeys.update(init_dict)
 
     def rootconstr_str(self, excluded=None):
         "The appearance of a ConstraintSet in addition to its contents"
@@ -47,21 +47,17 @@ does not exist in the Model")
 
     def interact(self, ranges=None, fn_of_sol=None, **solvekwargs):
         """Easy model interaction in IPython / Jupyter
-
         By default, this creates a model with sliders for every constant
         which prints a new solution table whenever the sliders are changed.
-
         Arguments
         ---------
         fn_of_sol : function
             The function called with the solution after each solve that
             displays the result. By default prints a table.
-
         ranges : dictionary {str: Slider object or tuple}
             Determines which sliders get created. Tuple values may contain
             two or three floats: two correspond to (min, max), while three
             correspond to (min, step, max)
-
         **solvekwargs
             kwargs which get passed to the solve()/localsolve() method.
         """
@@ -70,7 +66,6 @@ does not exist in the Model")
 
     def controlpanel(self, *args, **kwargs):
         """Easy model control in IPython / Jupyter
-
         Like interact(), but with the ability to control sliders and their
         ranges live. args and kwargs are passed on to interact()
         """
