@@ -7,7 +7,7 @@ from gpkit.nomials import MonomialEquality
 BLUE = np.array([16, 131, 246])/255.0
 RED = np.array([211, 24, 16])/255.0
 GRAY = 0.7*np.ones(3)
-
+#color_list = []
 
 def colorfn_gen(scale, power=0.66):
     "Generates color gradient of a given power law."
@@ -29,6 +29,7 @@ def colorfn_gen(scale, power=0.66):
 def signomial_print(sig, sol, colorfn, paintby="constants", idx=None):
     "For pretty printing with Sympy"
     mstrs = []
+    color_list = []
     for c, exp in zip(sig.cs, sig.exps):
         pos_vars, neg_vars = [], []
         for var, x in exp.items():
@@ -38,6 +39,7 @@ def signomial_print(sig, sol, colorfn, paintby="constants", idx=None):
                          if var in sol["sensitivities"]["constants"]
                          else 0.0)
                 colorstr = colorfn(senss)
+                color_list.append(colorstr)
                 varlatex = "\\textcolor%s{%s}" % (colorstr, varlatex)
             if x > 0:
                 pos_vars.append((varlatex, x))
@@ -78,9 +80,9 @@ def signomial_print(sig, sol, colorfn, paintby="constants", idx=None):
             idx += 1
             colorstr = colorfn(senss)
             mstrs_.append("\\textcolor%s{%s}" % (colorstr, mstr))
-        return " + ".join(sorted(mstrs_)), idx
+        return (" + ".join(sorted(mstrs_)), idx)
     else:
-        return " + ".join(sorted(mstrs))
+        return (" + ".join(sorted(mstrs)), color_list)
 
 
 class SensitivityMap(object):
@@ -107,6 +109,7 @@ class SensitivityMap(object):
         self.model = model
         self.costlatex = model.cost.latex()
         self.paintby = paintby
+        self.color_list = []
 
     @property
     def solution(self):
@@ -119,8 +122,8 @@ class SensitivityMap(object):
             return self.model.solution
 
     def _repr_latex_(self):
-        "iPython LaTeX representation."
-        return "$$\\require{color}\n"+self.latex+"\n$$"
+        "iPython LaTeX representation"
+        return "$$\\require{color}\n" +self.latex+"\n$$"+ self.color_list
 
     @property
     def latex(self, paintby=None):
@@ -147,13 +150,19 @@ class SensitivityMap(object):
             idx = len(self.model.cost.exps) if paintby == "monomials" else 1
             senss = sol["sensitivities"][paintby][idx:]
         colorfn = colorfn_gen(max(senss))
-
+        tup_list = []
         for i, constr in enumerate(self.model):
             if self.paintby == "constants":
                 left = signomial_print(constr.left, sol, colorfn, paintby)
                 right = signomial_print(constr.right, sol, colorfn, paintby)
                 constr_tex = ("    & %s \\\\" %
-                              (left + constr.latex_opers[constr.oper] + right))
+                              (left[0] + constr.latex_opers[constr.oper]
+                               + right[0]))
+                for j in right[1]+left[1]:
+                    num_tup = (j[6:10], j[11:15], j[16:-1])
+                    if num_tup != ('0.70', '0.70', '0.70') \
+                                  and num_tup not in tup_list:
+                        tup_list.append(num_tup)
             else:
                 if isinstance(constr, MonomialEquality):
                     constrs = [constr.leq, constr.geq]
@@ -173,4 +182,15 @@ class SensitivityMap(object):
                     constr_texs.append("    & %s %s\\\\" % (tex, rhs))
                 constr_tex = "\n".join(constr_texs)
             constraint_latex_list.append(constr_tex)
+        tup_list.sort(key=lambda x: float(x[0]))
+        for i in tup_list:
+            self.color_list.append("\\textcolor[rgb]{%s, %s, %s}\\blacksquare"
+                                   % (i[0], i[1], i[2]))
+        s = sol["sensitivities"]["constants"].values()
+        if len(s) != 1:
+            self.color_list.insert(0, "\\textcolor{black}{%.2f}" % min(s))
+            self.color_list.append("\\textcolor{black}{%.2f}" % max(s))
+        else:
+            self.color_list.insert(0, "\\textcolor{black}{%.2f}" % min(s))
+        self.color_list = "$$%s$$" % "".join(self.color_list)
         return constraint_latex_list
