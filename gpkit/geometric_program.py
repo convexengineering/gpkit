@@ -8,6 +8,8 @@ from .keydict import KeyDict
 from .small_classes import SolverLog
 
 
+DEFAULT_SOLVER_KWARGS = {"cvxopt": {"kktsolver": "ldl"}}
+
 class GeometricProgram(NomialData):
     # pylint: disable=too-many-instance-attributes
     """Standard mathematical representation of a GP.
@@ -68,11 +70,11 @@ class GeometricProgram(NomialData):
                 constr_posys = constraint.as_posyslt1()
             except TypeError as err:
                 if err.message == ("SignomialInequality could not simplify to"
-                                   "a PosynomialInequality"):
+                                   " a PosynomialInequality"):
                     raise ValueError("GeometricPrograms cannot contain"
                                      " SignomialInequalities: try forming your"
                                      " program as SignomialProgram or calling"
-                                     " Model.localsolve().")
+                                     " .localsolve().")
                 raise
             if not all(constr_posys):
                 raise ValueError("%s is an invalid constraint for a"
@@ -172,6 +174,10 @@ class GeometricProgram(NomialData):
             print("Using solver '%s'" % solvername)
             print("Solving for %i variables." % len(self.varlocs))
             tic = time()
+
+        default_kwargs = DEFAULT_SOLVER_KWARGS.get(solvername, {})
+        for k in default_kwargs:
+            kwargs.setdefault(k, default_kwargs[k])
 
         # NOTE: SIDE EFFECTS AS WE LOG SOLVER'S STDOUT AND OUTPUT
         original_stdout = sys.stdout
@@ -282,7 +288,7 @@ class GeometricProgram(NomialData):
             result["cost"] = self.posynomials[0].subsummag(freev)
 
         ## Get sensitivities
-        result["sensitivities"] = {"constraints": {}, "nu": nu, "la": la}
+        result["sensitivities"] = {"nu": nu, "la": la}
         # initialize the var_senss dict with the cost's constants...
         var_senss = {var: sum([self.cost.exps[i][var]*nu[i] for i in locs])
                      for (var, locs) in self.cost.varlocs.items()
@@ -293,12 +299,12 @@ class GeometricProgram(NomialData):
             constr = self.constraints[c_i]
             las = [la[p_i] for p_i in posy_idxs]
             nus = [[nu[i] for i in self.m_idxs[p_i]] for p_i in posy_idxs]
-            constr_sens, p_var_senss = \
-                constr.sens_from_dual(las, nus)
+            p_var_senss = constr.sens_from_dual(las, nus)
             # ...then add to it the constant sensitivities of each constraint
             var_senss += p_var_senss
             # also, add each constraint's sensitivities to the results
-            result["sensitivities"]["constraints"][str(constr)] = constr_sens
+            # TODO: enable this once there's a plan for how to use it
+            # result["sensitivities"]["constraints"][str(constr)] = constr_sens
         result["sensitivities"]["constants"] = KeyDict(var_senss)
 
         ## Get constants
@@ -307,10 +313,17 @@ class GeometricProgram(NomialData):
             if k in self.unusedsubkeys:
                 continue
             if isinstance(k, str):
-                k, = self.constraints.varkeys[k]
+                present_varkeys = self.constraints.varkeys[k]
+                # TODO: when unusedsubkeys is reimplemented, we should be able
+                #       to assume that any string _is_ in the constraints.
+                if present_varkeys:
+                    k, = present_varkeys
+                else:
+                    k = None
             else:
                 k = k.key
-            const[k] = v
+            if k is not None:
+                const[k] = v
         result["constants"] = KeyDict(const)
         result["variables"] = KeyDict(result["freevariables"])
         result["variables"].update(result["constants"])

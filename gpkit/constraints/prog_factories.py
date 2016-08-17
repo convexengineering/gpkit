@@ -1,10 +1,6 @@
 "Scripts for generating, solving and sweeping programs"
 from time import time
 import numpy as np
-from ..nomials.substitution import parse_subs
-from ..solution_array import SolutionArray
-from ..keydict import KeyDict
-from ..varkey import VarKey
 
 try:
     from ipyparallel import Client
@@ -15,6 +11,11 @@ try:
     print("Using parallel execution of sweeps on %s clients" % len(CLIENT))
 except (ImportError, IOError, AssertionError):
     POOL = None
+
+from ..nomials.substitution import parse_subs
+from ..solution_array import SolutionArray
+from ..keydict import KeyDict
+from ..varkey import VarKey
 
 
 def _progify_fctry(program, return_attr=None):
@@ -41,7 +42,7 @@ def _progify_fctry(program, return_attr=None):
 
 def _solve_fctry(genfunction):
     "Returns function for making/solving/sweeping a program."
-    def solvefn(self, solver=None, verbosity=2, skipsweepfailures=False,
+    def solvefn(self, solver=None, verbosity=1, skipsweepfailures=False,
                 *args, **kwargs):
         """Forms a mathematical program and attempts to solve it.
 
@@ -74,16 +75,14 @@ def _solve_fctry(genfunction):
         if sweep:
             run_sweep(genfunction, self, solution, skipsweepfailures,
                       constants, sweep, linkedsweep,
-                      solver, verbosity-1, *args, **kwargs)
+                      solver, verbosity, *args, **kwargs)
         else:
             self.program, solvefn = genfunction(self, verbosity-1)
-            result = solvefn(solver, verbosity-1, *args, **kwargs)
+            result = solvefn(solver, verbosity, *args, **kwargs)
             solution.append(result)
         solution.program = self.program
         solution.to_united_array(unitless_keys=["sensitivities"], united=True)
         self.solution = solution  # NOTE: SIDE EFFECTS
-        if verbosity > 0:
-            print(solution.table())
         return solution
     return solvefn
 

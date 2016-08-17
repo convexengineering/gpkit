@@ -67,6 +67,8 @@ Installing cvxopt
 
 Mac OSX and Linux
     Run ``pip install cvxopt``
+    
+    If experiencing issues with wheel in Ubuntu 16.04, try the `official installer. <http://cvxopt.org/install/index.html>`_
 
 Windows
     If you are using Windows 10, stop. Go to `Installing mosek`_.

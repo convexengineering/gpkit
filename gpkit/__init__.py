@@ -18,7 +18,7 @@ from os import sep as os_sep
 from os.path import dirname as os_path_dirname
 SETTINGS_PATH = os_sep.join([os_path_dirname(__file__), "env", "settings"])
 
-__version__ = "0.4.0"
+__version__ = "0.4.1"
 UNIT_REGISTRY = None
 SIGNOMIALS_ENABLED = False
 
@@ -123,6 +123,7 @@ from .varkey import VarKey
 from .nomials import Nomial, NomialArray
 from .nomials import Monomial, Posynomial, Signomial
 from .nomials import Variable, VectorVariable, ArrayVariable
+from .nomials import SignomialEquality
 from .geometric_program import GeometricProgram
 from .constraints.signomial_program import SignomialProgram
 from .constraints.set import ConstraintSet
