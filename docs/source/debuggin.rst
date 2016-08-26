@@ -67,9 +67,70 @@ Debugging large, dual infeasible, models can be difficult. The recommended proce
      m = Model(x, BoundedConstraintSet([x <= 1]))
      m.solve()
 
-With the formulation above, ``x`` has a lower bound at 1e-30 so the solver returns a solution with cost is 1e-30.
+With the formulation above, ``x`` has a lower bound at 1e-30, so the solver returns a solution with cost is 1e-30.
 
 
 Primal Infeasible Models
 =============
 
+A model is primal infeasible when it has no feasible region. This means there is no point which simultaneously satisfies all of the model’s constraints. A simple example is presented below.
+
+  .. code-block:: python
+ 
+     from gpkit import Variable, Model
+
+     #Make the necessary Variables
+     x = Variable("x")
+     y = Variable("y")
+
+     #make the constraints
+     constraints = [
+         x >= 1,
+         y >= 2,
+         x*y >= 0.5,
+         x*y <= 1.5
+     ]
+  
+     #declare the objective
+     objective = x*y
+
+     #construct the model
+     m = Model(objective, constraints)
+
+     #solve the model
+     m.solve()
+
+It is not possible for ``x*y`` to be less than 1.5 while ``x`` is greater than 1 and ``y`` is greater than 2.
+
+A common bug in large models that use ``substitutions`` is to substitute overly constraining values in for variables that make the model primal infeasible. An example of this is given below.
+
+  .. code-block:: python
+ 
+     from gpkit import Variable, Model
+
+     #Make the necessary Variables
+     x = Variable("x")
+     y = Variable("y")
+
+     #make the constraints
+     constraints = [
+         x >= 1,
+         x*y >= 0.5,
+         x*y <= 1.5
+     ]
+
+     #substitute a value for y
+     substitutions = {
+         ‘y’: 2
+     }
+  
+     #declare the objective
+     objective = x*y
+
+     #construct the model
+     m = Model(objective, constraints, substitutions)
+
+     #solve the model
+     m.solve()
+
+Since ``y`` is now set to 2 and ``x`` can be no less than 1 it is again impossible for x*y to be less than 1.5 and the model is primal infeasible. If ``y`` was instead set to 1, the model would be feasible and the cost would be 1.
