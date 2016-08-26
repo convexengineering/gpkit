@@ -35,7 +35,7 @@ class TightConstraintSet(ConstraintSet):
                         leftsubbed = constraint.left.sub(variables).value
                         rightsubbed = constraint.right.sub(variables).value
             if rel_diff >= self.reltol:
-                msg = ("Constraint [%.30s...] is not tight because "
+                msg = ("Constraint [%.200s...] is not tight because "
                        "the left hand side evaluated to %s but "
                        "the right hand side evaluated to %s "
                        "(Allowable error: %s%%, Actual error: %.2g%%)\n" %
