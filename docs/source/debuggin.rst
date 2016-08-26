@@ -26,7 +26,7 @@ A number of errors and warnings can be returned when attempting to solve a model
 Dual Infeasible Models
 =============
 
-A dual feasible error typically means that more than one unique solution meets the objective and satisfies the constraints. Usually this means that one or more variables are not sufficiently constrained.  When solving with ``mosek``, the error message will tell you that the solution is dual-feasible.  When solving with ``cvxopt`` the error for a dual-feasible solution will usually display as a ``Rank`` error or ``cvxopt`` will return ``unknown``.  An example of a dual-feasible model is shown below. This model is dual-feasible because there are multiple values of ``x`` and ``y`` that meet the satisfy the constraint set even though the obvious value of the objective should be 1.
+A dual infeasible error typically means that more than one unique solution meets the objective and satisfies the constraints. Usually this means that one or more variables are not sufficiently constrained.  When solving with ``mosek``, the error message will tell you that the solution is dual-infeasible.  When solving with ``cvxopt`` the error for a dual-feasible solution will usually display as a ``Rank`` error or ``cvxopt`` will return ``unknown``.  An example of a dual-feasible model is shown below. This model is dual-infeasible because there are multiple values of ``x`` and ``y`` that satisfy the constraint set even though the obvious value of the objective should be 1.
  
  .. code-block:: python
  
@@ -48,7 +48,27 @@ Note: When solving with ``mosek`` this model will actually solve because ``mosek
  
 While this model is very similar to the previous model, ``mosek`` is unable to solve this model and labels it as dual-feasible.
 
-Debugging large dual infeasible models can be difficult. The recommended procedure is to use
+Another common cause of dual-infeasability is a model’s objective applying pressure on a variable in an unexpected direction. If the variable is not bounded in this direction, its value will be pushed to either zero or infinity. This usually results in the solver returning a final status of dual-infeasible. A simple example is given below. ``x`` has no lower bound, and the objective is to minimize ``x``, so the solver pushes ``x`` towards zero and returns dual infeasible.
+
+ .. code-block:: python
+ 
+     from gpkit import Variable, Model
+     x = Variable("x")
+     m = Model(x, [x <= 1])
+     m.solve()
+
+Debugging large, dual infeasible, models can be difficult. The recommended procedure is to use a ``BoundedConstraintSet``, found in ``gpkit.tools``. ``BoundedConstraintSet`` adds additional constraints to the model that bounds each variable to be greater than or equal to a variables ``eps`` and less than or equal to ``1/eps``. The default value for ``eps`` is 1e-30. This prevents variables from being truly unbounded and allows most dual infeasible models to solve. By inspecting the solution, or by also making use of the a ``Tight Constraint Set``, it is easy to determine which variables are unbounded and modify constraints as necessary. Below, a BoundedConstraintSet is used to make the previous model solvable.
+
+  .. code-block:: python
+ 
+     from gpkit import Variable, Model
+     from gpkit.tools import BoundedConstraintSet
+     x = Variable("x")
+     m = Model(x, BoundedConstraintSet([x <= 1]))
+     m.solve()
+
+With the formulation above, ``x`` has a lower bound at 1e-30 so the solver returns a solution with cost is 1e-30.
+
 
 Primal Infeasible Models
 =============
