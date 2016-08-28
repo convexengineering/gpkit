@@ -9,6 +9,18 @@ def make_diagram(sol, depth, filename, sidelength, height, input_dict):
     method called to make the diagram - calls importsvgwrite from interactive
     to import svgwrite, calls all necessary follow on methods and sets
     important variables
+
+    inputs descriptions:
+    sol - the solution dict generated after solving the breakdown in such a way that each
+    variable in the breakdown is assigned the proper value
+    input_dict - a dict of values a breakdown is being generated for, sub levels are indicated
+    by nesting in the dict. For exapmle, if w11 and w12 are subweights of w1 the input
+    dict would look like {w1: {w11: 1, w12: 1}}
+    depth - the total number of sub weights. The depth of the example above is 2. The
+    depth of the breakdown with intpu sol {w1: {w11: {w111: 1, w112: 1}, w12: 1}} is 3.
+    filename - the name of the svg file created
+    sidelength - the width of the svg file created in cm
+    height - the height of the svg created in cm
     """
     #extract the total breakdown value for scaling purposes
     total = sol(input_dict.keys()[0])
