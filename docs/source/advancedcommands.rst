@@ -248,6 +248,7 @@ If the variables that need to be linked have the same varykey, then the class ``
 
 
   .. code-block:: python
+
      #create model #1
      from gpkit import Variable, Model
 
@@ -272,6 +273,7 @@ If the variables that need to be linked have the same varykey, then the class ``
              Model.__init__(self, objective, constraints, **kwargs)
 
 .. code-block:: python
+
      #create model #2
      from gpkit import Variable, Model
 
@@ -299,6 +301,7 @@ If the variables that need to be linked have the same varykey, then the class ``
 It might be desirable to link ``m1`` and ``m2`` and then solve for the objective ``x*z*y**2`` subject to all the two constraints in ``m1`` as well as the two constraints in ``m2``. Noting ``y`` has the same varkey in both ``m1`` and ``m2``, a ``LinkedConstraintSet`` will automatically link ``y`` between the two models. This This is done below.
 
 .. code-block:: python
+
      #creating a linked model
      from gpkit import Variable, Model, LinkedConstraintSet
      import M1, M2
@@ -332,6 +335,7 @@ Sub In-Place
 It is also possible to link variables that have a different varkey. Consider a revised ``m2`` presented below. Note that in this version of ``m2`` the variable ``y`` has a vary y2.
 
 .. code-block:: python
+
      #create model #2
      from gpkit import Variable, Model
 
@@ -358,6 +362,7 @@ It is also possible to link variables that have a different varkey. Consider a r
 If it was attempted to link ``m1``, from above, and the revised ``m2`` using a ``LinkedConstraintSet``, the two ``y`` variables would not link. This is because they have different varkeys, and a ``LinkedConstraintSet`` only links variables with the same vary. However, ``subinplace`` can be used to change the varkey of the variable ``y`` in ``m2`` to facilitate linking with a ``LinkedConstraintSet``. This is demonstrated below.
 
 .. code-block:: python
+
      #creating a linked model using sub in-place
      from gpkit import Variable, Model, LinkedConstraintSet
      import M1, M2
