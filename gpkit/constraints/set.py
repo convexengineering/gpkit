@@ -31,7 +31,9 @@ class ConstraintSet(list):
                         not isinstance(constraint, ConstraintSet)):
                     self[i] = ConstraintSet(constraint)
                 elif isinstance(constraint, bool):
-                    if i == 0:
+                    if len(self) == 1:
+                        adjacent = "as the only constraint"
+                    elif i == 0:
                         adjacent = "at the start, before %s" % self[i+1]
                     elif i == len(self) - 1:
                         adjacent = "at the end, after %s" % self[i-1]
