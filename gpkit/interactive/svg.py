@@ -63,14 +63,14 @@ def BDdwgrecurse(input_dict, initcoord, currentlevel, sol, elementlength,
             boundarylines.add(dwg.line(
                 start=(currentcoord[0]*cm, currentcoord[1]*cm),
                 end=((currentcoord[0] +
-                      (depth-currentlevel)*elementlength)*cm,
+                      (depth + 1 - currentlevel)*elementlength)*cm,
                      currentcoord[1]*cm)))
             #bottom boundary line
             boundarylines.add(dwg.line(
                 start=((currentcoord[0] + elementlength)*cm,
                        (currentcoord[1] + height)*cm),
                 end=((currentcoord[0] +
-                      (depth-currentlevel)*elementlength)*cm,
+                      (depth + 1 - currentlevel)*elementlength)*cm,
                      (currentcoord[1]+height)*cm)))
 
 def BDdrawsegment(input_name, height, initcoord, dwg, elementlength):
