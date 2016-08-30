@@ -24,7 +24,6 @@ class Breakdown(ConstraintSet):
         "Recursive function to generate gpkit Vars for each input weight"
         varlist = []
         constraints = []
-        print units
         for key, value in sorted(input_dict.items()):
             if isinstance(value, dict):
                 # there's another level to this breakdown

@@ -44,7 +44,8 @@ def BDdwgrecurse(input_dict, initcoord, currentlevel, sol, elementlength,
     totalheight = 0
     currentlevel = currentlevel+1
     for key, value in sorted(input_dict.items()):
-        height = int(round((((sheight/total)*sol(key)))))
+        height = (sheight/total)*sol(key)
+        height = height.item()
         currentcoord = (initcoord[0], initcoord[1]+totalheight)
         BDdrawsegment(key, height, currentcoord, dwg, elementlength)
         totalheight += height
