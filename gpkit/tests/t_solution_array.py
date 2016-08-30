@@ -23,8 +23,8 @@ class TestSolutionArray(unittest.TestCase):
         y = Variable("y", "m")
         m = Model(y, [y >= x])
         sol = m.solve(verbosity=0)
-        self.assertAlmostEqual(sol("y")/sol("x"), 1.0)
-        self.assertAlmostEqual(sol(x)/sol(y), 1.0)
+        self.assertAlmostEqual(sol("y")/sol("x"), 1.0, 6)
+        self.assertAlmostEqual(sol(x)/sol(y), 1.0, 6)
 
     def test_call_vector(self):
         n = 5

@@ -1,30 +1,202 @@
 Getting Started
 ***************
 
-GPkit is a Python package. We assume basic familiarity with Python. If you are new to Python take a look at `Learn Python <http://www.learnpython.org>`_.
+GPkit is a Python package, so we assume basic familiarity with Python: if you're new to Python we recommend you take a look at `Learn Python <http://www.learnpython.org>`_.
 
-GPkit is also a command line tool. This means that you need to be in the terminal (OS X/Linux) or command prompt (Windows) to use it. If you are not familiar with working in the command line, check out this `Learn Code the Hard Way tutorial <http://cli.learncodethehardway.org/book/>`_.
+Alright: `install GPkit <installation.html>`_ and import away.
 
-The first thing to do is `install GPkit <installation.html>`_ . Once you have done this, you can start using GPkit in 3 easy steps:
+.. code-block:: python
 
-1. Open your command line interface (terminal/Command Prompt).
-2. Open a Python interpreter. This can be done by typing ``python`` (or ``ipython`` if installed).
-3. Type ``import gpkit``.
-
-After doing this, your command line will look something like the following::
-
-    $ python
-    >>> import gpkit
-    >>>
-
-From here, you can use GPkit commands to formulate and solve geometric programs. To learn how, see `Basic Commands <basiccommands.html>`_.
+    from gpkit import Variable, VectorVariable, Model
 
 
-Writing GPkit Scripts
+Declaring Variables
+===================
+Instances of the ``Variable`` class represent scalar variables. They store a key (i.e. name) used to look up the Variable in dictionaries, and optionally units, a description, and a value (if the Variable is to be held constant).
+
+
+Free Variables
+--------------
+.. code-block:: python
+
+    # Declare a variable, x
+    x = Variable("x")
+
+    # Declare a variable, y, with units of meters
+    y = Variable("y", "m")
+
+    # Declare a variable, z, with units of meters, and a description
+    z = Variable("z", "m", "A variable called z with units of meters")
+
+Fixed Variables
+---------------
+To declare a variable with a constant value, use the ``Variable`` class, as above, but specify the ``value=`` input argument:
+
+.. code-block:: python
+
+    # Declare \rho equal to 1.225 kg/m^3.
+    # NOTE: write a literal backslash by preceding it with another backslash
+    rho = Variable("\\rho", 1.225, "kg/m^3", "Density of air at sea level")
+
+In the example above, the key name ``"\\rho"`` is for LaTeX printing (described later). The unit and description arguments are optional.
+
+.. code-block:: python
+
+    #Declare pi equal to 3.14
+    pi = Variable("\\pi", 3.14)
+
+
+
+Vector Variables
+----------------
+Vector variables are represented by the ``VectorVariable`` class.
+The first argument is the length of the vector.
+All other inputs follow those of the ``Variable`` class.
+
+.. code-block:: python
+
+    # Declare a 3-element vector variable "x" with units of "m"
+    x = VectorVariable(3, "x", "m", "Cube corner coordinates")
+    x_min = VectorVariable(3, "x", [1, 2, 3], "m", "Cube corner minimum")
+
+
+Creating Monomials and Posynomials
+==================================
+
+Monomial and posynomial expressions can be created using mathematical operations on variables.
+
+.. code-block:: python
+
+    # create a Monomial term xy^2/z
+    x = Variable("x")
+    y = Variable("y")
+    z = Variable("z")
+    m = x * y**2 / z
+    type(m)  # gpkit.nomials.Monomial
+
+.. code-block:: python
+
+    # create a Posynomial expression x + xy^2
+    x = Variable("x")
+    y = Variable("y")
+    p = x + x * y**2
+    type(p)  # gpkit.nomials.Posynomial
+
+Declaring Constraints
 =====================
-Another way to use GPkit is to write a script and save it as a .py file. To run this file (e.g. ``myscript.py``), type the following in your command line::
 
-    $ python myscript.py
+.. Introduce ConstraintSets here
 
-Again, ``ipython`` will also work here.
+``Constraint`` objects represent constraints of the form ``Monomial >= Posynomial``  or ``Monomial == Monomial`` (which are the forms required for GP-compatibility).
 
+Note that constraints must be formed using ``<=``, ``>=``, or ``==`` operators, not ``<`` or ``>``.
+
+.. code-block:: python
+
+    # consider a block with dimensions x, y, z less than 1
+    # constrain surface area less than 1.0 m^2
+    x = Variable("x", "m")
+    y = Variable("y", "m")
+    z = Variable("z", "m")
+    S = Variable("S", 1.0, "m^2")
+    c = (2*x*y + 2*x*z + 2*y*z <= S)
+    type(c)  # gpkit.nomials.PosynomialInequality
+
+Formulating a Model
+================
+
+The ``Model`` class represents an optimization problem. To create one, pass an objective and list of Constraints.
+
+By convention, the objective is the function to be *minimized*. If you wish to *maximize* a function, take its reciprocal. For example, the code below creates an objective which, when minimized, will maximize ``x*y*z``.
+
+.. code-block:: python
+
+    objective = 1/(x*y*z)
+    constraints = [2*x*y + 2*x*z + 2*y*z <= S,
+                   x >= 2*y]
+    m = Model(objective, constraints)
+
+
+Solving the Model
+=================
+
+.. move example solve printouts (below) up to here
+
+When solving the model you can change the level of information that gets printed to the screen with the ``verbosity`` setting. A verbosity of 1 (the default) prints warnings and the solution; a verbosity of 2 prints solve time, a verbosity of 3 prints solver output, and a verbosity of 0 prints nothing.
+
+.. code-block:: python
+
+    sol = m.solve(verbosity=0)
+
+
+Printing Results
+================
+
+We can also manually print the solution table, with the same result as if the verbosity argument had been left blank above.
+
+.. code-block:: python
+
+    print sol.table()
+
+::
+
+    Cost
+    ----
+     15.59 [1/m**3]
+
+    Free Variables
+    --------------
+    x : 0.5774  [m]
+    y : 0.2887  [m]
+    z : 0.3849  [m]
+
+    Constants
+    ---------
+    S : 1  [m**2]
+
+    Sensitivities
+    -------------
+    S : -1.5
+
+.. code-block:: python
+
+    print "The x dimension is %s." % (sol(x))
+
+::
+
+    The x dimension is 0.577351209028 meter.
+
+.. refactor this section; explain what can be done with a SolutionArray
+.. e.g. table(), __call__, ["variables"], etc.
+
+Sensitivities and dual variables
+================================
+
+When a GP is solved, the solver returns not just the optimal value for the problem’s variables (known as the "primal solution") but also, as a side effect of the solving process, the effect that scaling the :math:`\leq 1` of each canonical constraint would have on the overall objective (the "dual solution").
+
+From the dual solution GPkit computes the sensitivities for every fixed variable in the problem. This can be quite useful for seeing which constraints are most crucial, and prioritizing remodeling and assumption-checking.
+
+Using variable sensitivities
+----------------------------
+
+Fixed variable sensitivities can be accessed most easily using a SolutionArray’s ``sens()`` method, as in this example:
+
+.. code-block:: python
+
+    import gpkit
+    x = gpkit.Variable("x")
+    x_min = gpkit.Variable("x_{min}", 2)
+    sol = gpkit.Model(x, [x_min <= x]).solve()
+    assert sol.sens(x_min) == 1
+
+These sensitivities are actually log derivatives (:math:`\frac{d \mathrm{log}(y)}{d \mathrm{log}(x)}`); whereas a regular derivative is a tangent line, these are tangent monomials, so the ``1`` above indicates that ``x_min`` has a linear relation with the objective. This is confirmed by a further example:
+
+.. code-block:: python
+
+    import gpkit
+    x = gpkit.Variable("x")
+    x_squared_min = gpkit.Variable("x^2_{min}", 2)
+    sol = gpkit.Model(x, [x_squared_min <= x**2]).solve()
+    assert sol.sens(x_squared_min) == 2
+
+.. add a plot of a monomial approximation vs a tangent approximation

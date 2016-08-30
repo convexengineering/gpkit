@@ -3,6 +3,13 @@ Release Notes
 
 This page lists the changes made in each point version of gpkit.
 
+Version 0.4
+-----------
+ * New model for considering constraints: all constraints are considered as sets of constraints which may contain other constraints, and are asked for their substitutions / posynomial less than 1 representation as late as possible.
+ * Support for calling external code during an SP solve.
+ * New class KeyDict to allow referring to variables by name or with objects.
+ * Many many other bug fixes, speed ups, and refactors under the hood.
+
 Version 0.3
 -----------
  * Integrated GP and SP creation under the Model class

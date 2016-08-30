@@ -30,37 +30,8 @@ If your Model doesn't solve, you can automatically find the nearest feasible ver
     m.substitutions.update(feas["constants"])
     m.solve()
 
-
-Sensitivities and dual variables
-================================
-
-When a GP is solved, the solver returns not just the optimal value for the problem’s variables (known as the "primal solution") but also, as a side effect of the solving process, the effect that scaling the less-than side of each constraint would have on the overall objective (called the "dual solution", "shadow prices", or "posynomial sensitivities").
-
-Using variable sensitivities
-----------------------------
-
-GPkit uses this dual solution to compute the sensitivities of each variable, which can be accessed most easily using a SolutionArray’s ``sens()`` method, as in this example:
-
-.. code-block:: python
-
-    import gpkit
-    x = gpkit.Variable("x")
-    x_min = gpkit.Variable("x_{min}", 2)
-    sol = gpkit.Model(x, [x_min <= x]).solve()
-    assert sol.sens(x_min) == 1
-
-These sensitivities are actually log derivatives (:math:`\frac{d \mathrm{log}(y)}{d \mathrm{log}(x)}`); whereas a regular derivative is a tangent line, these are tangent monomials, so the ``1`` above indicates that ``x_min`` has a linear relation with the objective. This is confirmed by a further example:
-
-.. code-block:: python
-
-    import gpkit
-    x = gpkit.Variable("x")
-    x_squared_min = gpkit.Variable("x^2_{min}", 2)
-    sol = gpkit.Model(x, [x_squared_min <= x**2]).solve()
-    assert sol.sens(x_squared_min) == 2
-
 Plotting variable sensitivities
--------------------------------
+===============================
 
 Sensitivities are a useful way to evaluate the tradeoffs in your model, as well as what aspects of the model are driving the solution and should be examined. To help with this, GPkit has an automatic sensitivity plotting function that can be accessed as follows:
 
@@ -160,6 +131,26 @@ When a Model is created, any fixed Variables are used to form a dictionary: ``{v
 
 You can also substitute by just calling the solution, i.e. ``solution(p)``. This returns a numpy array of just the coefficients (``c``) of the posynomial after substitution, and will raise a` ``ValueError``` if some of the variables in ``p`` were not found in ``solution``.
 
+Freeing Fixed Variables
+-----------------------
+
+After creating a Model, it may be useful to "free" a fixed variable and resolve.  This can be done using the command ``del m.substitutions["x"]``, where ``m`` is a Model.  An example of how to do this is shown below.
+
+.. code-block:: python
+
+    from gpkit import Variable, Model
+    x = Variable("x")
+    y = Variable("y", 3)  # fix value to 3
+    m = Model(x, [x >= 1 + y, y >= 1])
+    _ = m.solve()  # optimal cost is 4; y appears in Constants
+
+    del m.substitutions["y"]
+    _ = m.solve()  # optimal cost is 2; y appears in Free Variables
+
+Note that ``del m.substitutions["y"]`` affects ``m`` but not ``y.key``.
+``y.value`` will still be 3, and if ``y`` is used in a new model,
+it will still carry the value of 3.
+
 .. _Sweeps:
 
 Sweeps
@@ -242,41 +233,3 @@ Example Usage
 The ``normsub`` argument specifies an expected value for your solution to normalize the different :math:`g_i` (you can also do this by hand). The feasibility of the problem should not depend on the normalization, but the spacing of the sweep will.
 
 The ``sweep`` argument specifies what points between 0 and 1 you wish to sample the weights at. If you want different resolutions or spacings for different weights, the ``sweeps`` argument accepts a list of sweep arrays.
-
-
-Signomial Programming
-==================
-
-Signomial programming finds a local solution to a problem of the form:
-
-
-.. math:: \begin{array}[lll]\text{}
-    \text{minimize} & g_0(x) & \\
-    \text{subject to} & f_i(x) = 1, & i = 1,....,m \\
-                      & g_i(x) - h_i(x) \leq 1, & i = 1,....,n
-                      \end{array}
-
-where each :math:`f` is monomial while each :math:`g` and :math:`h` is a posynomial.
-
-This requires multiple solutions of geometric programs, and so will take longer to solve than an equivalent geometric programming formulation.
-
-The specification of the signomial problem affects its solve time in a nuanced way: ``gpkit.SP(x, [x >= 0.1, x+y >= 1, y <= 0.1]).localsolve()`` takes about four times as many iterations to solve as ``gpkit.SP(x, [x >= 1-y, y <= 0.1]).localsolve()``, despite the two formulations being arithmetically equivalent.
-
-In general, when given the choice of which variables to include in the positive-posynomial / :math:`g` side of the constraint, the modeler should:
-
-    #. maximize the number of variables in :math:`g`,
-    #. prioritize variables that are in the objective,
-    #. then prioritize variables that are present in other constraints.
-
-The syntax ``SP.localsolve`` is chosen to emphasize that signomial programming returns a local optimum. For the same reason, calling ``SP.solve`` will raise an error.
-
-By default, signomial programs are first solved conservatively (by assuming each :math:`h` is equal only to its constant portion) and then become less conservative on each iteration.
-
-Example Usage
------------------------
-
-.. literalinclude:: examples/simple_sp.py
-
-When using the ``localsolve`` method, the ``reltol`` argument specifies the relative tolerance of the solver: that is, by what percent does the solution have to improve between iterations? If any iteration improves less than that amount, the solver stops and returns its value.
-
-If you wish to start the local optimization at a particular point :math:`x_k`, however, you may do so by putting that position (a dictionary formatted as you would a substitution) as the ``xk`` argument.

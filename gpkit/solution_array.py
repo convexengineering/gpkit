@@ -1,7 +1,7 @@
 """Defines SolutionArray class"""
 from collections import Iterable
 import numpy as np
-from .nomials import NomialArray, Monomial
+from .nomials import NomialArray
 from .small_classes import Strings, DictOfLists
 from .small_scripts import unitstr, mag
 
@@ -50,6 +50,8 @@ class SolutionArray(DictOfLists):
             return len(self["cost"])
         except TypeError:
             return 1
+        except KeyError:
+            return 0
 
     def __call__(self, posy):
         posy_subbed = self.subinto(posy)
@@ -57,7 +59,7 @@ class SolutionArray(DictOfLists):
             # it's a constant monomial
             return posy_subbed.c
         elif hasattr(posy_subbed, "c"):
-            # it's a posyosyarray, which'll throw an error if non-constant...
+            # it's a posyarray, which'll throw an error if non-constant...
             return posy_subbed.c
         return posy_subbed
 
@@ -71,30 +73,13 @@ class SolutionArray(DictOfLists):
         else:
             return posy.sub(self["variables"])
 
-    def sens(self, nomial):
-        """Returns array of each solution's sensitivity substituted into nomial
-
-        Note: this does not return monomial sensitivities if you pass it a
-        signomial; it returns each variable's sensitivity substituted in for it
-        in that signomial.
-
-        Returns scalar, unitless values.
-        """
-        if nomial in self["variables"]["sensitivities"]:
-            return NomialArray(self["variables"]["sensitivities"][nomial])
-        elif len(self) > 1:
-            return NomialArray([self.atindex(i).subinto(nomial)
-                                for i in range(len(self))])
-        else:
-            subbed = nomial.sub(self["variables"]["sensitivities"],
-                                require_positive=False)
-            assert isinstance(subbed, Monomial)
-            assert not subbed.exp
-            return mag(subbed.c)
+    def sens(self, key):
+        "Returns sensitivity of the given variable (unitless)."
+        return NomialArray(self["variables"]["sensitivities"][key])
 
     def table(self, tables=("cost", "sweepvariables", "freevariables",
                             "constants", "sensitivities"),
-              **kwargs):
+              latex=False, **kwargs):
         """A table representation of this SolutionArray
 
         Arguments
@@ -121,28 +106,46 @@ class SolutionArray(DictOfLists):
             subdict = self.get(table, None)
             table_title = self.table_titles[table]
             if table == "cost":
+                # pylint: disable=unsubscriptable-object
+                if latex:
+                    # TODO should probably print a small latex cost table here
+                    continue
                 strs += ["\n%s\n----" % table_title]
                 if len(self) > 1:
                     costs = ["%-8.3g" % c for c in subdict[:4]]
                     strs += [" [ %s %s ]" % ("  ".join(costs),
                                              "..." if len(self) > 4 else "")]
-                    # pylint: disable=unsubscriptable-object
                     cost_units = self.program[0].cost.units
                 else:
                     strs += [" %-.4g" % subdict]
-                    cost_units = self.program.cost.units
+                    if hasattr(self.program, "cost"):
+                        cost_units = self.program.cost.units
+                    else:
+                        # we're in a skipsweepfailures that only solved once
+                        cost_units = self.program[0].cost.units
                 strs[-1] += unitstr(cost_units, into=" [%s] ", dimless="")
                 strs += [""]
             elif not subdict:
                 continue
             elif table == "sensitivities":
+                if not subdict["constants"]:
+                    continue
                 strs += results_table(subdict["constants"], table_title,
                                       minval=1e-2,
                                       sortbyvals=True,
                                       printunits=False,
+                                      latex=latex,
                                       **kwargs)
             else:
-                strs += results_table(subdict, table_title, **kwargs)
+                strs += results_table(subdict, table_title,
+                                      latex=latex, **kwargs)
+        if latex:
+            preamble = "\n".join(("% \\documentclass[12pt]{article}",
+                                  "% \\usepackage{booktabs}",
+                                  "% \\usepackage{longtable}",
+                                  "% \\usepackage{amsmath}",
+                                  "% \\begin{document}\n"))
+            strs = [preamble] + strs + ["% \\end{document}"]
         return "\n".join(strs)
 
 
@@ -233,16 +236,16 @@ def results_table(data, title, minval=0, printunits=True, fixedcols=True,
         if not latex:
             lines.append([varstr, valstr, units, label])
         else:
-            varstr = varstr.replace(" : ", "")
+            varstr = "$%s$" % varstr.replace(" : ", "")
             if latex == 1:  # normal results table
-                lines.append(["$", varstr, "$ & ", valstr, "& $ ",
-                              units.replace('**', '^'), "$ & ", label, " \\\\"])
+                lines.append([varstr, valstr, "$%s$" % var.unitstr(), label])
+                coltitles = [title, "Value", "Units", "Description"]
             elif latex == 2:  # no values
-                lines.append(["$", varstr, "$ & $ ",
-                              units.replace('**', '^'), "$ & ", label, " \\\\"])
+                lines.append([varstr, "$%s$" % var.unitstr(), label])
+                coltitles = [title, "Units", "Description"]
             elif latex == 3:  # no description
-                lines.append(["$", varstr, "$ & ", valstr, "& $ ",
-                              units.replace('**', '^'), "$ \\\\"])
+                lines.append([varstr, valstr, "$%s$" % var.unitstr()])
+                coltitles = [title, "Value", "Units"]
             else:
                 raise ValueError("Unexpected latex option, %s." % latex)
     if not latex:
@@ -257,22 +260,12 @@ def results_table(data, title, minval=0, printunits=True, fixedcols=True,
         lines = [[fmt.format(s) for fmt, s in zip(fmts, line)]
                  for line in lines]
         lines = [title] + ["-"*len(title)] + [''.join(l) for l in lines] + [""]
-    elif latex == 1:
-        lines = (["{\\footnotesize"] + ["\\begin{longtable}{llll}"] +
-                 ["\\toprule"] +
-                 [title + " & Value & Units & Description \\\\"] +
-                 ["\\midrule"] +
-                 [''.join(l) for l in lines] + ["\\bottomrule"] +
-                 ["\\end{longtable}}"] + [""])
-    elif latex == 2:
-        lines = (["{\\footnotesize"] + ["\\begin{longtable}{lll}"] +
-                 ["\\toprule"] + [title + " & Units & Description \\\\"] +
-                 ["\\midrule"] +
-                 [''.join(l) for l in lines] + ["\\bottomrule"] +
-                 ["\\end{longtable}}"] + [""])
-    elif latex == 3:
-        lines = (["{\\footnotesize"] + ["\\begin{longtable}{lll}"] +
-                 ["\\toprule"] + [title + " & Value & Units \\\\"] +
-                 ["\\midrule"] + [''.join(l) for l in lines] +
-                 ["\\bottomrule"] + ["\\end{longtable}}"] + [""])
+    else:
+        colfmt = {1: "llcl", 2: "lcl", 3: "llc"}
+        lines = (["\n".join(["{\\footnotesize",
+                             "\\begin{longtable}{%s}" % colfmt[latex],
+                             "\\toprule",
+                             " & ".join(coltitles) + " \\\\ \\midrule"])] +
+                 [" & ".join(l) + " \\\\" for l in lines] +
+                 ["\n".join(["\\bottomrule", "\\end{longtable}}", ""])])
     return lines

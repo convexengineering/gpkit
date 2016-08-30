@@ -86,7 +86,7 @@ class DictOfLists(dict):
 
     def atindex(self, i):
         "Indexes into each list independently."
-        return self.__class__(index_dict(i, self, self.__class__()))
+        return self.__class__(_index_dict(i, self, self.__class__()))
 
     def to_united_array(self, unitless_keys=(), united=False):
         "Converts all lists into array, potentially grabbing units from keys."
@@ -94,7 +94,7 @@ class DictOfLists(dict):
 
 
 def _enlist_dict(d_in, d_out):
-    "Recursviely copies d_in into d_out, placing non-dict items into lists."
+    "Recursively copies d_in into d_out, placing non-dict items into lists."
     for k, v in d_in.items():
         if isinstance(v, dict):
             d_out[k] = _enlist_dict(v, v.__class__())
@@ -105,22 +105,22 @@ def _enlist_dict(d_in, d_out):
 
 
 def _append_dict(d_in, d_out):
-    "Recursviely travels dict d_out and appends items found in d_in."
+    "Recursively travels dict d_out and appends items found in d_in."
     for k, v in d_in.items():
         if isinstance(v, dict):
             d_out[k] = _append_dict(v, d_out[k])
         else:
-            # consider apennding nan / nanvector for new / missed keys
+            # consider appending nan / nanvector for new / missed keys
             d_out[k].append(v)
     # assert set(i.keys()) == set(o.keys())  # keys change with swept varkeys
     return d_out
 
 
-def index_dict(idx, d_in, d_out):
-    "Recursviely travels dict d_in, placing items at idx into dict d_out."
+def _index_dict(idx, d_in, d_out):
+    "Recursively travels dict d_in, placing items at idx into dict d_out."
     for k, v in d_in.items():
         if isinstance(v, dict):
-            d_out[k] = index_dict(idx, v, v.__class__())
+            d_out[k] = _index_dict(idx, v, v.__class__())
         else:
             try:
                 d_out[k] = v[idx]
@@ -139,12 +139,18 @@ def _enray_and_unit_dict(d_in, d_out, unitless_keys=(), united=False):
             d_out[k] = _enray_and_unit_dict(v, v.__class__(),
                                             unitless_keys, united)
         else:
+            if hasattr(v[0], "units"):
+                # if the first element of the list alrady has units,
+                # ensure unit consistency across the entire list
+                qty = Quantity(1, v[0].units)
+                v = [e.to(v[0].units).magnitude for e in v]*qty
+            else:
+                v = np.array(v)
+                if (united and hasattr(k, "units")
+                        and isinstance(k.units, Quantity)):
+                    v = v*k.units
             if len(v) == 1:
                 v = v[0]
-            v = np.array(v)
-            if (united and hasattr(k, "units")
-                    and isinstance(k.units, Quantity)):
-                v = v*k.units
             d_out[k] = v
     # assert set(i.keys()) == set(o.keys())  # keys change with swept varkeys
     return d_out

@@ -4,7 +4,7 @@ from __future__ import print_function
 import sys
 
 # custom build script
-if sys.argv[1] in ["build", "install", "develop"]:
+if sys.argv[1] not in ["clean", "uninstall", "sdist"]:
     from gpkit.build import build_gpkit
     build_gpkit()
 
@@ -25,7 +25,7 @@ and `CVXopt <http://cvxopt.org/>`_.
 
 LICENSE = """The MIT License (MIT)
 
-Copyright (c) 2015 MIT Convex Optimization Group
+Copyright (c) 2016 MIT Hoburg Research Group
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
@@ -52,10 +52,10 @@ setup(
     author="MIT Department of Aeronautics and Astronautics",
     author_email="gpkit@mit.edu",
     url="https://www.github.com/hoburg/gpkit",
-    install_requires=["numpy", "scipy", "pint"],
-    version="0.4.0.0",
+    install_requires=["numpy >= 1.8", "pint", "scipy"],
+    version="0.4.1.0",
     packages=["gpkit", "gpkit._mosek", "gpkit.tests", "gpkit.interactive",
-              "gpkit.nomials", "gpkit.constraints"],
+              "gpkit.nomials", "gpkit.constraints", "gpkit.tools"],
     package_data={"gpkit": ["pint/*", "env/*"],
                   "gpkit._mosek": ["lib/*"]},
     license=LICENSE,

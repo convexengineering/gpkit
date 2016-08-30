@@ -46,7 +46,9 @@ class NomialData(object):
         if self._hashvalue is None:
             # confirm lengths before calling zip
             assert len(self.exps) == len(self.cs)
-            self._hashvalue = hash(tuple(zip(self.exps, self.cs)))
+            # identical pint.Quantity object instances have different hashes
+            self._hashvalue = hash(tuple(zip(self.exps, mag(self.cs)) +
+                                         [str(self.units)]))
         return self._hashvalue
 
     @classmethod
@@ -96,7 +98,14 @@ class NomialData(object):
         -------
         NomialData
         """
-        var, = self.varkeys[var]
+        varset = self.varkeys[var]
+        if len(varset) == 0:
+            return NomialData(exps=[{}], cs=[0], simplify=False)
+        elif len(varset) > 1:
+            raise ValueError("multiple variables %s found for key %s"
+                             % (list(varset), var))
+        else:
+            var, = varset
         exps, cs = [], []
         # var.units may be str if units disabled
         var_units = (var.units if var.units and not isinstance(var.units, str)
@@ -113,15 +122,9 @@ class NomialData(object):
 
     def __eq__(self, other):
         """Equality test"""
-        if not all(hasattr(other, a) for a in ("exps", "cs", "units")):
+        if not all(hasattr(other, a) for a in ("exps", "cs")):
             return NotImplemented
-        if self.exps != other.exps:
-            return False
-        if not all(mag(self.cs) == mag(other.cs)):
-            return False
-        if self.units != other.units:
-            return False
-        return True
+        return self.exps == other.exps and all(self.cs == other.cs)
 
 
 def simplify_exps_and_cs(exps, cs, return_map=False):
@@ -174,10 +177,7 @@ def simplify_exps_and_cs(exps, cs, return_map=False):
 
     exps_ = tuple(matches.keys())
     cs_ = list(matches.values())
-    if units:
-        cs_ = Quantity(cs_, units)
-    else:
-        cs_ = np.array(cs_, dtype='float')
+    cs_ = Quantity(cs_, units) if units else np.array(cs_, dtype='float')
 
     if not return_map:
         return exps_, cs_

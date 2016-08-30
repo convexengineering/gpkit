@@ -133,22 +133,6 @@ class Nomial(NomialData):
         "Convert this signomial to new units"
         self.cs = self.cs.to(arg)   # pylint: disable=no-member
 
-    def diff(self, wrt):
-        """Derivative of this with respect to a Variable
-
-        Arguments
-        ---------
-        wrt (Variable):
-        Variable to take derivative with respect to
-
-        Returns
-        -------
-        Signomial (or Posynomial or Monomial)
-        """
-        deriv = super(Nomial, self).diff(wrt)
-        # pylint: disable=unexpected-keyword-arg
-        return self.__class__(deriv.exps, deriv.cs, require_positive=False)
-
     def prod(self):
         "base case: Product of a Nomial is itself"
         return self

@@ -3,12 +3,11 @@ import unittest
 from gpkit import Variable, SignomialsEnabled, Posynomial, VectorVariable
 from gpkit.nomials import SignomialInequality, PosynomialInequality
 from gpkit.nomials import MonomialEquality
-from gpkit.constraints import breakdown
-from gpkit import LinkConstraint, Model
+from gpkit import LinkedConstraintSet, Model
 from gpkit.constraints.tight import TightConstraintSet
+from gpkit.constraints import breakdown
 from gpkit.tests.helpers import run_tests
 from gpkit.small_scripts import mag
-import gpkit
 
 
 class TestConstraint(unittest.TestCase):
@@ -20,14 +19,15 @@ class TestConstraint(unittest.TestCase):
         x_fx1b = Variable("x", 1, models=["fixed1b"])
         x_free = Variable("x", models=["free"])
         x_fx2 = Variable("x", 2, models=["fixed2"])
-        lc = LinkConstraint([x_fx1 >= 1, x_fx1b >= 1])
+        lc = LinkedConstraintSet([x_fx1 >= 1, x_fx1b >= 1])
         self.assertEqual(lc.substitutions["x"], 1)
-        lc = LinkConstraint([x_fx1 >= 1, x_free >= 1])
+        lc = LinkedConstraintSet([x_fx1 >= 1, x_free >= 1])
         self.assertEqual(lc.substitutions["x"], 1)
-        self.assertRaises(ValueError, LinkConstraint, [x_fx1 >= 1, x_fx2 >= 1])
+        self.assertRaises(ValueError,
+                          LinkedConstraintSet, [x_fx1 >= 1, x_fx2 >= 1])
         vecx_free = VectorVariable(3, "x", models=["free"])
         vecx_fixed = VectorVariable(3, "x", [1, 2, 3], models=["fixed"])
-        lc = LinkConstraint([vecx_free >= 1, vecx_fixed >= 1])
+        lc = LinkedConstraintSet([vecx_free >= 1, vecx_fixed >= 1])
         self.assertEqual(lc.substitutions["x"].tolist(), [1, 2, 3])
 
     def test_additive_scalar(self):
@@ -65,6 +65,7 @@ class TestConstraint(unittest.TestCase):
         self.assertEqual(c.left, x)
         self.assertEqual(c.right, y**2)
         self.assertTrue("<=" in str(c))
+        self.assertEqual(type((1 >= x).latex()), str)
 
     def test_oper_overload(self):
         """Test Constraint initialization by operator overloading"""
@@ -94,6 +95,11 @@ class TestMonomialEquality(unittest.TestCase):
         mec2 = MonomialEquality(x, "=", y**2)
         self.assertTrue(mono in mec.as_posyslt1())
         self.assertTrue(mono in mec2.as_posyslt1())
+        x = Variable("x", "ft")
+        y = Variable("y")
+        if gpkit.units:
+            self.assertRaises(ValueError, MonomialEquality, x, "=", y)
+            self.assertRaises(ValueError, MonomialEquality, y, "=", x)
 
     def test_inheritance(self):
         """Make sure MonomialEquality inherits from the right things"""
@@ -132,6 +138,15 @@ class TestSignomialInequality(unittest.TestCase):
         self.assertTrue(isinstance(sc, SignomialInequality))
         self.assertFalse(isinstance(sc, Posynomial))
 
+    def test_posyslt1(self):
+        x = Variable("x")
+        y = Variable("y")
+        with SignomialsEnabled():
+            sc = (x + y >= x*y)
+        # make sure that the error type doesn't change on our users
+        with self.assertRaises(TypeError):
+            _ = sc.as_posyslt1()
+
 
 class TestBreakdown(unittest.TestCase):
     """test case for Breakdown class -- gets run for each installed solver"""
@@ -168,25 +183,37 @@ class TestBreakdown(unittest.TestCase):
 class TestTightConstraintSet(unittest.TestCase):
     """Test tight constraint set"""
 
-    def test_simple_gp(self):
+    def test_posyconstr_in_gp(self):
         """Tests tight constraint set with solve()"""
         x = Variable('x')
         x_min = Variable('x_{min}', 2)
-        m = Model(x, [TightConstraintSet([x >= 1]),
+        m = Model(x, [TightConstraintSet([x >= 1], raiseerror=True),
                       x >= x_min])
         with self.assertRaises(ValueError):
             m.solve(verbosity=0)
         m.substitutions[x_min] = 0.5
         self.assertAlmostEqual(m.solve(verbosity=0)["cost"], 1)
 
-    def test_simple_sp(self):
+    def test_posyconstr_in_sp(self):
+        x = Variable('x')
+        y = Variable('y')
+        with SignomialsEnabled():
+            sig_constraint = (x + y >= 0.1)
+        m = Model(x, [TightConstraintSet([x >= y], raiseerror=True),
+                      x >= 2, y >= 1, sig_constraint])
+        with self.assertRaises(ValueError):
+            m.localsolve(verbosity=0)
+        m.pop(1)
+        self.assertAlmostEqual(m.localsolve(verbosity=0)["cost"], 1)
+
+    def test_sigconstr_in_sp(self):
         """Tests tight constraint set with localsolve()"""
         x = Variable('x')
         y = Variable('y')
         x_min = Variable('x_{min}', 2)
         y_max = Variable('y_{max}', 0.5)
         with SignomialsEnabled():
-            m = Model(x, [TightConstraintSet([x + y >= 1]),
+            m = Model(x, [TightConstraintSet([x + y >= 1], raiseerror=True),
                           x >= x_min,
                           y <= y_max])
         with self.assertRaises(ValueError):
@@ -194,6 +221,36 @@ class TestTightConstraintSet(unittest.TestCase):
         m.substitutions[x_min] = 0.5
         self.assertAlmostEqual(m.localsolve(verbosity=0)["cost"], 0.5)
 
+class TestBreakdown(unittest.TestCase):
+    """test case for Breakdown class -- gets run for each installed solver"""
+    name = "TestBreakdown_"
+    solver = None
+    ndig = None
+
+    def test_breakdown(self):
+        """
+        Method to run unit tests on breakdown class
+        """
+        w22value = 2 if not gpkit.units else 0.449617
+
+        weights = {'w': {'w1': {'w11': [3, "N"],
+                                'w12': {'w121': [2, "N"], 'w122': [6, "N"]}},
+                         'w2': {'w21': [1, "N"], 'w22': [w22value, "lbf"]},
+                         'w3': [1, "N"]}}
+
+        bd = breakdown.Breakdown(weights, "N")
+        m = Model(bd.root, bd)
+        sol = m.solve(verbosity=0)
+        self.assertAlmostEqual(mag(sol('w')), 15, 5)
+        self.assertAlmostEqual(mag(sol('w1')), 11, 5)
+        self.assertAlmostEqual(mag(sol('w2')), 3, 5)
+        self.assertAlmostEqual(mag(sol('w3')), 1, 5)
+        self.assertAlmostEqual(mag(sol('w11')), 3, 5)
+        self.assertAlmostEqual(mag(sol('w12')), 8, 5)
+        self.assertAlmostEqual(mag(sol('w121')), 2, 5)
+        self.assertAlmostEqual(mag(sol('w122')), 6, 5)
+        self.assertAlmostEqual(mag(sol('w21')), 1, 5)
+        self.assertAlmostEqual(mag(sol('w22')), w22value, 5)
 
 TESTS = [TestConstraint, TestMonomialEquality, TestSignomialInequality,
          TestTightConstraintSet, TestBreakdown]

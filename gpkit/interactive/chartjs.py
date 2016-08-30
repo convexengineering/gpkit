@@ -39,7 +39,7 @@ class BarChart(object):
             updates = ""
             for i, varname in enumerate(self.varnames):
                 updates += ("%s.datasets[0].bars[%i].value = %f \n"
-                            % (self.name, i, valuedict[varname]))
+                            % (self.name, i, mag(valuedict[varname])))
             display(Javascript(updates + "%s.update()" % self.name))
         self.updates += 1
 

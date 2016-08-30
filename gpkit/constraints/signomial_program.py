@@ -48,7 +48,7 @@ class SignomialProgram(CostedConstraintSet):
         try:
             _ = self.as_posyslt1()  # should raise an error
             # TODO: is there a faster way to check?
-        except ValueError:
+        except TypeError:
             pass
         else:  # this is a GP
             raise ValueError("""No Signomials remained after substitution.
@@ -109,7 +109,7 @@ class SignomialProgram(CostedConstraintSet):
             except (RuntimeWarning, ValueError):
                 nearest_feasible = feasibility_model(gp, "max")
                 self.gps.append(nearest_feasible)
-                result = nearest_feasible.solve(verbosity=verbosity-1)
+                result = nearest_feasible.solve(solver, verbosity=verbosity-1)
                 result["cost"] = None
             x0 = result["variables"]
             prevcost, cost = cost, result["cost"]
@@ -123,15 +123,12 @@ class SignomialProgram(CostedConstraintSet):
                   + " and %.3g seconds." % (time() - starttime))
 
         result["signomialstart"] = startpoint
-        self.sens_from_gpconstr(gp.constraints,
-                                result["sensitivities"]["constraints"],
-                                result["sensitivities"]["constants"])
         self.process_result(result)
-
         self.result = result  # NOTE: SIDE EFFECTS
         return result
 
     def gp(self, x0=None, verbosity=1):
         """Get a GP approximation of this SP at x0"""
-        return GeometricProgram(self.cost, self.as_gpconstr(x0),
+        gpconstr = self.as_gpconstr(x0)
+        return GeometricProgram(self.cost, gpconstr,
                                 self.substitutions, verbosity=verbosity)

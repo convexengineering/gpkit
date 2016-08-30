@@ -3,7 +3,6 @@
 
 from collections import defaultdict, Iterable
 import numpy as np
-from .nomial_math import Monomial
 from ..small_classes import Numbers, Strings, Quantity
 from ..small_classes import HashVector
 from ..varkey import VarKey
@@ -73,7 +72,10 @@ def append_sub(sub, keys, constants, sweep, linkedsweep):
             linkedsweep[key] = value
 
 
-def substitution(nomial, substitutions, val=None):
+def substitution(nomial, substitutions):
+    # pylint:disable=too-many-locals
+    # pylint:disable=too-many-branches
+    # pylint:disable=too-many-statements
     """Efficient substituton into a list of monomials.
 
         Arguments
@@ -100,10 +102,6 @@ def substitution(nomial, substitutions, val=None):
         subs_ : dict
             Substitutions to apply to the above.
     """
-
-    if val is not None:
-        substitutions = {substitutions: val}
-
     if not substitutions:
         return nomial.varlocs, nomial.exps, nomial.cs, substitutions
 
@@ -165,7 +163,8 @@ def substitution(nomial, substitutions, val=None):
                 sub = VarKey(name=sub, **descr)
                 exps_[i] += HashVector({sub: x})
                 varlocs_[sub].append(i)
-            elif isinstance(sub, (VarKey, Monomial)):
+            elif (isinstance(sub, VarKey)
+                  or (hasattr(sub, "exp") and hasattr(sub, "c"))):
                 if sub.units != var.units:
                     try:
                         if hasattr(sub.units, "to"):

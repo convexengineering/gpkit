@@ -1,8 +1,9 @@
-import svgwrite
-from svgwrite import cm
 """
 Contains all svgwrite dependent methods
 """
+import svgwrite
+from svgwrite import cm
+
 
 def make_diagram(sol, depth, filename, sidelength, height, input_dict):
     """
@@ -27,13 +28,15 @@ def make_diagram(sol, depth, filename, sidelength, height, input_dict):
     #depth of each breakdown level
     elementlength = (sidelength/depth)
     dwg = svgwrite.Drawing(filename, debug=True)
-    dwgrecurse(input_dict, (2, 2), -1, sol, elementlength, height, total, depth, dwg)
+    dwgrecurse(input_dict, (2, 2), -1, sol, elementlength, height, total,
+               depth, dwg)
     #save the drawing at the conlusion of the recursive call
     dwg.save()
 
     return dwg
 
-def dwgrecurse(input_dict, initcoord, currentlevel, sol, elementlength, sheight, total, depth, dwg):
+def dwgrecurse(input_dict, initcoord, currentlevel, sol, elementlength,
+               sheight, total, depth, dwg):
     """
     recursive function to divide widnow into seperate units to be drawn and
     calls the draw function
@@ -44,28 +47,31 @@ def dwgrecurse(input_dict, initcoord, currentlevel, sol, elementlength, sheight,
         height = int(round((((sheight/total)*sol(key)))))
         currentcoord = (initcoord[0], initcoord[1]+totalheight)
         drawsegment(key, height, currentcoord, dwg, elementlength)
-        totalheight = totalheight+height
+        totalheight += height
         if isinstance(value, dict):
             #compute new initcoord
             newinitcoord = (initcoord[0]+elementlength,
                             initcoord[1]+totalheight-height)
             #recurse again
-            dwgrecurse(value, newinitcoord,
-                       currentlevel, sol, elementlength, sheight, total, depth, dwg)
+            dwgrecurse(value, newinitcoord, currentlevel, sol, elementlength,
+                       sheight, total, depth, dwg)
         #make sure all lines end at the same place
         elif currentlevel != depth:
             boundarylines = dwg.add(dwg.g(id='boundarylines',
                                           stroke='black'))
             #top boudnary line
-            boundarylines.add(dwg.line(start=(currentcoord[0]*cm, currentcoord[1]*cm),
-                                       end=((currentcoord[0] +
-                                             (depth-currentlevel)*elementlength)*cm,
-                                            currentcoord[1]*cm)))
+            boundarylines.add(dwg.line(
+                start=(currentcoord[0]*cm, currentcoord[1]*cm),
+                end=((currentcoord[0] +
+                      (depth-currentlevel)*elementlength)*cm,
+                     currentcoord[1]*cm)))
             #bottom boundary line
-            boundarylines.add(dwg.line(start=((currentcoord[0]+elementlength)*cm,
-                                              (currentcoord[1]+height)*cm),
-                                       end=((currentcoord[0] +(depth-currentlevel)
-                                             *elementlength)*cm, (currentcoord[1]+height)*cm)))
+            boundarylines.add(dwg.line(
+                start=((currentcoord[0] + elementlength)*cm,
+                       (currentcoord[1] + height)*cm),
+                end=((currentcoord[0] +
+                      (depth-currentlevel)*elementlength)*cm,
+                     (currentcoord[1]+height)*cm)))
 
 def drawsegment(input_name, height, initcoord, dwg, elementlength):
     """

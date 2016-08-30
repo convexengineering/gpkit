@@ -3,6 +3,7 @@ import unittest
 import numpy as np
 from gpkit import Variable, VectorVariable, Model
 from gpkit.tools import (composite_objective, te_exp_minus1)
+from gpkit.tools.fmincon import generate_mfiles
 
 
 class TestMathModels(unittest.TestCase):
@@ -35,6 +36,21 @@ class TestMathModels(unittest.TestCase):
         self.assertRaises(ValueError, te_exp_minus1, y, 0)
         # make sure y was not modified
         self.assertEqual(y, VectorVariable(3, 'y'))
+
+    def test_fmincon_generator(self):
+        """Test fmincon comparison tool"""
+        x = Variable('x')
+        y = Variable('y')
+        m = Model(x, [x**3.2 >= 17*y + y**-0.2,
+                      x >= 2,
+                      y == 4])
+        obj, c, ceq, DC, DCeq = generate_mfiles(m, writefiles=False)
+        self.assertEqual(obj, 'x(2)')
+        self.assertEqual(c, ['-x(2)**3.2 + 17*x(1) + x(1)**-0.2', '-x(2) + 2'])
+        self.assertEqual(ceq, ['-x(1) + 4'])
+        self.assertEqual(DC, ['-0.2*x(1).^-1.2 + 17,...\n          ' +
+                              '-3.2*x(2).^2.2', '0,...\n          -1'])
+        self.assertEqual(DCeq, ['-1,...\n            0'])
 
 TESTS = [TestMathModels]
 

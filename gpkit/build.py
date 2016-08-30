@@ -6,6 +6,7 @@ import sys
 import shutil
 import subprocess
 import glob
+import platform
 
 LOGSTR = ""
 settings = {}
@@ -99,6 +100,13 @@ class MosekCLI(SolverBackend):
 
     def look(self):
         "Attempts to run mskexpopt."
+
+        if sys.platform == "win32":
+            ## does not work on 32-bit windows ##
+            log("# Build script does not support mosek_cli"
+                " your architecture (%s)" % platform.architecture()[0])
+            return
+
         try:
             log("#   Trying to run mskexpopt...")
             if call("mskexpopt") in (1052, 28):  # 28 for MacOSX
@@ -130,41 +138,52 @@ class Mosek(SolverBackend):
     patches = {
         'dgopt.c': {
             # line 683:
-            '          printf("Number of Hessian non-zeros: %d\\n",nlh[0]->numhesnz);':
-            '          MSK_echotask(task,MSK_STREAM_MSG,"Number of Hessian non-zeros: %d\\n",nlh[0]->numhesnz);',
+            '          printf("Number of Hessian non-zeros: %d\\n",nlh[0]->numhesnz);':                           # pylint: disable=line-too-long
+            '          MSK_echotask(task,MSK_STREAM_MSG,"Number of Hessian non-zeros: %d\\n",nlh[0]->numhesnz);', # pylint: disable=line-too-long
         },
         'expopt.c': {
             # line 1115:
-            '    printf ("solsta = %d, prosta = %d\\n", (int)*solsta,(int)*prosta);':
-            '    MSK_echotask(expopttask,MSK_STREAM_MSG, "solsta = %d, prosta = %d\\n", (int)*solsta,(int)*prosta);',
-            """      printf("Warning: The variable with index '%d' has only positive coefficients akj.\\n The problem is possibly ill-posed.\\n.\\n",i);      """:
-            """      MSK_echotask(expopttask,MSK_STREAM_MSG, "Warning: The variable with index '%d' has only positive coefficients akj.\\n The problem is possibly ill-posed.\\n.\\n",i);""",
-            """      printf("Warning: The variable with index '%d' has only negative coefficients akj.\\n The problem is possibly ill-posed.\\n",i);      """:
-            """      MSK_echotask(expopttask,MSK_STREAM_MSG, "Warning: The variable with index '%d' has only negative coefficients akj.\\n The problem is possibly ill-posed.\\n",i);""",
+            '    printf ("solsta = %d, prosta = %d\\n", (int)*solsta,(int)*prosta);':                                                                              # pylint: disable=line-too-long
+            '    MSK_echotask(expopttask,MSK_STREAM_MSG, "solsta = %d, prosta = %d\\n", (int)*solsta,(int)*prosta);',                                              # pylint: disable=line-too-long
+            """      printf("Warning: The variable with index '%d' has only positive coefficients akj.\\n The problem is possibly ill-posed.\\n.\\n",i);      """: # pylint: disable=line-too-long
+            """      MSK_echotask(expopttask,MSK_STREAM_MSG, "Warning: The variable with index '%d' has only positive coefficients akj.\\n The problem is possibly ill-posed.\\n.\\n",i);""", # pylint: disable=line-too-long
+            """      printf("Warning: The variable with index '%d' has only negative coefficients akj.\\n The problem is possibly ill-posed.\\n",i);      """: # pylint: disable=line-too-long
+            """      MSK_echotask(expopttask,MSK_STREAM_MSG, "Warning: The variable with index '%d' has only negative coefficients akj.\\n The problem is possibly ill-posed.\\n",i);""", # pylint: disable=line-too-long
         }
     }
 
     def look(self):
         "Looks in default install locations for latest mosek version."
         if sys.platform == "win32":
-            self.dir = "C:\\Program Files\\Mosek"
-            self.platform = "win64x86"
-            self.libpattern = "mosek64_?_?.dll"
-            self.flags = "-Wl,--export-all-symbols,-R"
+            if platform.architecture()[0] == '64bit':
+                rootdir = "C:\\Program Files\\Mosek"
+                mosek_platform = "win64x86"
+                libpattern = "mosek64_?_?.dll"
+                self.flags = "-Wl,--export-all-symbols,-R"
             ## below is for 32-bit windows ##
-            # self.dir = "C:\\Program Files (x86)\\Mosek"
-            # self.platform = "win32x86"
-            # self.libpattern = "mosek?_?.dll"
+            ## TODO: for unknown reasons neither command line tools or
+            ##       mosek expopt.so works for 32-bit windows
+            ##       someone should look into this if 32-bit windows
+            ##       is really really really needed
+            #elif platform.architecture()[0] == '32bit':
+            #    rootdir = "C:\\Program Files (x86)\\Mosek"
+            #    mosek_platform = "win32x86"
+            #    libpattern = "mosek?_?.dll"
+            #    self.flags = "-Wl,--export-all-symbols,-R"
+            else:
+                log("# Build script does not support mosek"
+                    " your architecture (%s)" % platform.architecture()[0])
+                return
         elif sys.platform == "darwin":
-            self.dir = pathjoin(os.path.expanduser("~"), "mosek")
-            self.platform = "osx64x86"
-            self.libpattern = "libmosek64.?.?.dylib"
+            rootdir = pathjoin(os.path.expanduser("~"), "mosek")
+            mosek_platform = "osx64x86"
+            libpattern = "libmosek64.?.?.dylib"
             self.flags = "-Wl,-rpath"
 
         elif sys.platform == "linux2":
-            self.dir = pathjoin(os.path.expanduser("~"), "mosek")
-            self.platform = "linux64x86"
-            self.libpattern = "libmosek64.so"
+            rootdir = pathjoin(os.path.expanduser("~"), "mosek")
+            mosek_platform = "linux64x86"
+            libpattern = "libmosek64.so"
             self.flags = "-Wl,--export-dynamic,-R"
 
         else:
@@ -172,37 +191,37 @@ class Mosek(SolverBackend):
                 " your platform (%s)" % sys.platform)
             return
 
-        if not os.path.isdir(self.dir):
+        if not os.path.isdir(rootdir):
             return
 
-        possible_versions = [f for f in os.listdir(self.dir) if len(f) == 1]
-        self.version = sorted(possible_versions)[-1]
-        self.tools_dir = pathjoin(self.dir, self.version, "tools")
-        self.lib_dir = pathjoin(self.tools_dir, "platform", self.platform)
-        self.h_path = pathjoin(self.lib_dir, "h", "mosek.h")
-        self.bin_dir = pathjoin(self.lib_dir, "bin")
-        self.lib_path = glob.glob(self.bin_dir+os.sep+self.libpattern)[0]
+        possible_versions = [f for f in os.listdir(rootdir) if len(f) == 1]
+        version = sorted(possible_versions)[-1]
+        tools_dir = pathjoin(rootdir, version, "tools")
+        lib_dir = pathjoin(tools_dir, "platform", mosek_platform)
+        h_path = pathjoin(lib_dir, "h", "mosek.h")
+        self.bin_dir = pathjoin(lib_dir, "bin")
+        self.lib_path = glob.glob(self.bin_dir+os.sep+libpattern)[0]
 
-        if not isfile(self.h_path):
+        if not isfile(h_path):
             return
         if not isfile(self.lib_path):
             return
 
-        self.expopt_dir = pathjoin(self.tools_dir, "examples", "c")
+        expopt_dir = pathjoin(tools_dir, "examples", "c")
         expopt_filenames = ["scopt-ext.c", "expopt.c", "dgopt.c",
                             "scopt-ext.h", "expopt.h", "dgopt.h"]
-        self.expopt_files = [pathjoin(self.expopt_dir, fname)
+        self.expopt_files = [pathjoin(expopt_dir, fname)
                              for fname in expopt_filenames]
-        self.expopt_files += [self.h_path]
+        self.expopt_files += [h_path]
         for expopt_file in self.expopt_files:
             if not isfile(expopt_file):
                 return
 
         global settings
         settings["mosek_bin_dir"] = self.bin_dir
-        os.environ['PATH'] = os.environ['PATH']+':%s' % self.bin_dir
+        os.environ['PATH'] = os.environ['PATH'] + os.pathsep + self.bin_dir
 
-        return "version %s, installed to %s" % (self.version, self.dir)
+        return "version %s, installed to %s" % (version, rootdir)
 
     def build(self):
         "Builds a dynamic library to GPKITBUILD or $HOME/.gpkit"
@@ -241,16 +260,19 @@ class Mosek(SolverBackend):
                                 '   "' + self.lib_path + '"' +
                                 " -o " + pathjoin(solib_dir, "expopt.so"))
         if sys.platform == "darwin":
-            link_library = call("install_name_tool -change @loader_path/libmosek64.7.1.dylib "
+            link_library = call("install_name_tool -change @loader_path/libmosek64.7.1.dylib " # pylint: disable=line-too-long
                                 + self.lib_path + " "
                                 + pathjoin(solib_dir, "expopt.so"))
+            if link_library != 0:
+                return False
+
         if built_expopt_lib != 0:
             return False
 
         log("#\n#   Building Python bindings for expopt and Mosek...")
         # mosek_h_path = pathjoin(lib_dir, "mosek_h.py")
         built_expopt_h = call("python gpkit/modified_ctypesgen.py -a" +
-                              " -l "+pathjoin(solib_dir, "expopt.so").replace("\\", "/") +
+                              " -l " + pathjoin(solib_dir, "expopt.so").replace("\\", "/") +  # pylint: disable=line-too-long
                               ' -l "' + self.lib_path.replace("\\", "/") + '"' +
                               # ' -o "' + mosek_h_path.replace("\\", "/") + '"'+
                               " -o "+pathjoin(lib_dir, "expopt_h.py") +
