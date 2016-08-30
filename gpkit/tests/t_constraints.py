@@ -203,12 +203,12 @@ class TestBreakdown(unittest.TestCase):
         """
         w22value = 2 if not gpkit.units else 0.449617
 
-        TEST = {'w': {'w1': {'w11': [3, "N"],
-                             'w12': {'w121': [2, "N"], 'w122': [6, "N"]}},
-                'w2': {'w21': [1, "N"], 'w22': [w22value, "lbf"]},
-                'w3': [1, "N"]}}
+        weights = {'w': {'w1': {'w11': [3, "N"],
+                                'w12': {'w121': [2, "N"], 'w122': [6, "N"]}},
+                         'w2': {'w21': [1, "N"], 'w22': [w22value, "lbf"]},
+                         'w3': [1, "N"]}}
 
-        bd = breakdown.Breakdown(TEST, "N")
+        bd = breakdown.Breakdown(weights, "N")
         m = Model(bd.root, bd)
         sol = m.solve(verbosity=0)
         self.assertAlmostEqual(mag(sol('w')), 15, 5)
