@@ -3,9 +3,10 @@ Contains all svgwrite dependent methods
 """
 import svgwrite
 from svgwrite import cm
+from gpkit import units
 
 
-def BDmake_diagram(sol, depth, filename, sidelength, height, input_dict):
+def BDmake_diagram(sol, depth, filename, sidelength, height, input_dict, units):
     """
     method called to make the diagram - calls importsvgwrite from interactive
     to import svgwrite, calls all necessary follow on methods and sets
@@ -29,14 +30,14 @@ def BDmake_diagram(sol, depth, filename, sidelength, height, input_dict):
     elementlength = (sidelength/depth)
     dwg = svgwrite.Drawing(filename, debug=True)
     BDdwgrecurse(input_dict, (2, 2), -1, sol, elementlength, height, total,
-               depth, dwg)
+               depth, dwg, units)
     #save the drawing at the conlusion of the recursive call
     dwg.save()
 
     return dwg
 
 def BDdwgrecurse(input_dict, initcoord, currentlevel, sol, elementlength,
-               sheight, total, depth, dwg):
+               sheight, total, depth, dwg, units):
     """
     recursive function to divide widnow into seperate units to be drawn and
     calls the draw function
@@ -44,7 +45,10 @@ def BDdwgrecurse(input_dict, initcoord, currentlevel, sol, elementlength,
     totalheight = 0
     currentlevel = currentlevel+1
     for key, value in sorted(input_dict.items()):
-        height = (sheight/total)*sol(key)
+        if units != '-':
+            height = (sheight/total)*sol(key).to(units)
+        else:
+            height = (sheight/total)*sol(key)
         height = height.item()
         currentcoord = (initcoord[0], initcoord[1]+totalheight)
         BDdrawsegment(key, height, currentcoord, dwg, elementlength)
@@ -55,7 +59,7 @@ def BDdwgrecurse(input_dict, initcoord, currentlevel, sol, elementlength,
                             initcoord[1]+totalheight-height)
             #recurse again
             BDdwgrecurse(value, newinitcoord, currentlevel, sol, elementlength,
-                       sheight, total, depth, dwg)
+                       sheight, total, depth, dwg, units)
         #make sure all lines end at the same place
         elif currentlevel != depth:
             boundarylines = dwg.add(dwg.g(id='boundarylines',

@@ -220,11 +220,12 @@ class TestBreakdown(unittest.TestCase):
         self.assertAlmostEqual(mag(sol('w22')), w22value, 5)
 
         #draw a diagram if svgwrite is installed
-        try:
-         import svgwrite
-         bd.make_diagram(sol, 'bdtest.svg',12, 15)
-        except ImportError, e:
-         pass
+        if gpkit.units:
+            try:
+             import svgwrite
+             bd.make_diagram(sol, 'bdtest.svg',12, 15)
+            except ImportError, e:
+             pass
 
 TESTS = [TestConstraint, TestMonomialEquality, TestSignomialInequality,
          TestTightConstraintSet, TestBreakdown]

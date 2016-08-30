@@ -16,29 +16,30 @@ class Breakdown(ConstraintSet):
     def __init__(self, input_dict, units):
         self.input_dict = input_dict
         self.depth = 0
-        varlist, constraints = self._recurse(input_dict, units)
+        self.units = units
+        varlist, constraints = self._recurse(input_dict)
         self.root, = varlist
         ConstraintSet.__init__(self, constraints)
 
-    def _recurse(self, input_dict, units):
+    def _recurse(self, input_dict):
         "Recursive function to generate gpkit Vars for each input weight"
         varlist = []
         constraints = []
         for key, value in sorted(input_dict.items()):
             if isinstance(value, dict):
                 # there's another level to this breakdown
-                var = Variable(key, units)
+                var = Variable(key, self.units)
                 # going down...
                 self.depth += 1
-                subvariables, subconstraints = self._recurse(value, units)
+                subvariables, subconstraints = self._recurse(value)
                 # this depth's variable is greater than the sum of subvariables
                 constraints.append(var >= sum(subvariables))
                 # subvariables may have further depths
                 constraints.extend(subconstraints)
             elif isinstance(value, list):
-                var = Variable(key, *value)
+                var = Variable(key, value[0], value[1])
             else:
-                var = Variable(key, value, units)
+                var = Variable(key, value, self.units)
             varlist.append(var)
         return varlist, constraints
 
@@ -48,4 +49,4 @@ class Breakdown(ConstraintSet):
         """
         from ..interactive.svg import BDmake_diagram
         # set defualt parameters for the drawing
-        BDmake_diagram(sol, self.depth, filename, sidelength, height, self.input_dict)
+        BDmake_diagram(sol, self.depth, filename, sidelength, height, self.input_dict, self.units)
