@@ -2,7 +2,6 @@
 from .set import ConstraintSet
 from .. import Variable
 
-
 class Breakdown(ConstraintSet):
     """ConstraintSet of a summing tree. Can graph the breakdown of a solution.
 
@@ -25,6 +24,7 @@ class Breakdown(ConstraintSet):
         "Recursive function to generate gpkit Vars for each input weight"
         varlist = []
         constraints = []
+        print units
         for key, value in sorted(input_dict.items()):
             if isinstance(value, dict):
                 # there's another level to this breakdown
@@ -39,7 +39,7 @@ class Breakdown(ConstraintSet):
             elif isinstance(value, list):
                 var = Variable(key, *value)
             else:
-                var = Variable(key, value)
+                var = Variable(key, value, units)
             varlist.append(var)
         return varlist, constraints
 
@@ -47,6 +47,6 @@ class Breakdown(ConstraintSet):
         """Make an SVG representation of the tree for a given solution.
         Default diagram width is 12cm, height is 20cm.
         """
-        from ..interactive.svg import make_diagram
+        from ..interactive.svg import BDmake_diagram
         # set defualt parameters for the drawing
-        make_diagram(sol, self.depth, filename, sidelength, height, self.input_dict)
+        BDmake_diagram(sol, self.depth, filename, sidelength, height, self.input_dict)

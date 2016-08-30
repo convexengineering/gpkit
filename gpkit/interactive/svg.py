@@ -5,7 +5,7 @@ import svgwrite
 from svgwrite import cm
 
 
-def make_diagram(sol, depth, filename, sidelength, height, input_dict):
+def BDmake_diagram(sol, depth, filename, sidelength, height, input_dict):
     """
     method called to make the diagram - calls importsvgwrite from interactive
     to import svgwrite, calls all necessary follow on methods and sets
@@ -28,14 +28,14 @@ def make_diagram(sol, depth, filename, sidelength, height, input_dict):
     #depth of each breakdown level
     elementlength = (sidelength/depth)
     dwg = svgwrite.Drawing(filename, debug=True)
-    dwgrecurse(input_dict, (2, 2), -1, sol, elementlength, height, total,
+    BDdwgrecurse(input_dict, (2, 2), -1, sol, elementlength, height, total,
                depth, dwg)
     #save the drawing at the conlusion of the recursive call
     dwg.save()
 
     return dwg
 
-def dwgrecurse(input_dict, initcoord, currentlevel, sol, elementlength,
+def BDdwgrecurse(input_dict, initcoord, currentlevel, sol, elementlength,
                sheight, total, depth, dwg):
     """
     recursive function to divide widnow into seperate units to be drawn and
@@ -46,14 +46,14 @@ def dwgrecurse(input_dict, initcoord, currentlevel, sol, elementlength,
     for key, value in sorted(input_dict.items()):
         height = int(round((((sheight/total)*sol(key)))))
         currentcoord = (initcoord[0], initcoord[1]+totalheight)
-        drawsegment(key, height, currentcoord, dwg, elementlength)
+        BDdrawsegment(key, height, currentcoord, dwg, elementlength)
         totalheight += height
         if isinstance(value, dict):
             #compute new initcoord
             newinitcoord = (initcoord[0]+elementlength,
                             initcoord[1]+totalheight-height)
             #recurse again
-            dwgrecurse(value, newinitcoord, currentlevel, sol, elementlength,
+            BDdwgrecurse(value, newinitcoord, currentlevel, sol, elementlength,
                        sheight, total, depth, dwg)
         #make sure all lines end at the same place
         elif currentlevel != depth:
@@ -73,7 +73,7 @@ def dwgrecurse(input_dict, initcoord, currentlevel, sol, elementlength,
                       (depth-currentlevel)*elementlength)*cm,
                      (currentcoord[1]+height)*cm)))
 
-def drawsegment(input_name, height, initcoord, dwg, elementlength):
+def BDdrawsegment(input_name, height, initcoord, dwg, elementlength):
     """
     #function to draw each poriton of the diagram
     """
