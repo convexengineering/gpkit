@@ -12,23 +12,30 @@ def BDmake_diagram(sol, depth, filename, sidelength, height, input_dict, units):
     to import svgwrite, calls all necessary follow on methods and sets
     important variables
 
-    inputs descriptions:
-    sol - the solution dict generated after solving the breakdown in such a way that each
-    variable in the breakdown is assigned the proper value
+    Arguments
+    ---------
+    sol - the solution dict generated after solving the breakdown GP problem
+    
     input_dict - a dict of values a breakdown is being generated for, sub levels are indicated
     by nesting in the dict. For exapmle, if w11 and w12 are subweights of w1 the input
     dict would look like {w1: {w11: 1, w12: 1}}
+    
     depth - the total number of sub weights. The depth of the example above is 2. The
     depth of the breakdown with intpu sol {w1: {w11: {w111: 1, w112: 1}, w12: 1}} is 3.
-    filename - the name of the svg file created
+    
+    filename - the name of the svg file created, must end in .svg
+    
     sidelength - the width of the svg file created in cm
+    
     height - the height of the svg created in cm
     """
     #extract the total breakdown value for scaling purposes
     total = sol(input_dict.keys()[0])
     #depth of each breakdown level
     elementlength = (sidelength/depth)
+    #generate a drawing objet
     dwg = svgwrite.Drawing(filename, debug=True)
+    #call the recursive drawing function
     BDdwgrecurse(input_dict, (2, 2), -1, sol, elementlength, height, total,
                depth, dwg, units)
     #save the drawing at the conlusion of the recursive call
@@ -46,11 +53,15 @@ def BDdwgrecurse(input_dict, initcoord, currentlevel, sol, elementlength,
     currentlevel = currentlevel+1
     for key, value in sorted(input_dict.items()):
         if units != '-':
+            #make sure all quantities are in the default unit system
             height = (sheight/total)*sol(key).to(units)
         else:
             height = (sheight/total)*sol(key)
+        #extract just the numeric value from the quantity
         height = height.item()
+        #set the current coordinate
         currentcoord = (initcoord[0], initcoord[1]+totalheight)
+        #draw the three lines for each element of the breakdown
         BDdrawsegment(key, height, currentcoord, dwg, elementlength)
         totalheight += height
         if isinstance(value, dict):
@@ -80,7 +91,7 @@ def BDdwgrecurse(input_dict, initcoord, currentlevel, sol, elementlength,
 
 def BDdrawsegment(input_name, height, initcoord, dwg, elementlength):
     """
-    #function to draw each poriton of the diagram
+    function to draw each poriton of the diagram
     """
     lines = dwg.add(dwg.g(id='lines', stroke='black'))
     #draw the top horizontal line
