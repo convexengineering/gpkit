@@ -31,6 +31,7 @@ class ConstraintSet(list):
                         not isinstance(constraint, ConstraintSet)):
                     self[i] = ConstraintSet(constraint)
                 elif isinstance(constraint, bool):
+                    # TODO refactor this depending on the outcome of issue #824
                     if len(self) == 1:
                         adjacent = "as the only constraint"
                     elif i == 0:
