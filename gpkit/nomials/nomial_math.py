@@ -748,13 +748,8 @@ class SignomialEqualityTriv(SignomialEquality):
 
     def as_gpconstr(self, x0):
         "Returns GP apprimxation of an SP constraint at x0"
-        #return self.left >= self.right
-        def _force_mono(posy, x0):
-            if isinstance(posy, Monomial):
-                return posy
-            return posy.mono_lower_bound(x0)
-        return [_force_mono(self.left, x0) >= self.right,
-                self.left <= _force_mono(self.right, x0)]
+        return [self.left.mono_lower_bound(x0) >= self.right,
+                self.left <= self.right.mono_lower_bound(x0)]
 
 class SignomialEqualityTrivTrust(SignomialEquality):
     """A constraint of the general form posynomial == posynomial (linearized only the necessary parts)
@@ -777,13 +772,8 @@ class SignomialEqualityTrivTrust(SignomialEquality):
 
     def as_gpconstr(self, x0):
         "Returns GP apprimxation of an SP constraint at x0"
-        #return self.left >= self.right
-        def _force_mono(posy, x0):
-            if isinstance(posy, Monomial):
-                return posy
-            return posy.mono_lower_bound(x0)
-        return [_force_mono(self.left, x0) >= self.trustregion*self.right,
-                self.left <= _force_mono(self.right, x0)]
+        return [self.left.mono_lower_bound(x0) >= self.trustregion*self.right,
+                self.left <= self.right.mono_lower_bound(x0)]
 
 class SignomialEqualityLin(SignomialEquality):
     """A constraint of the general form posynomial == posynomial (fully linearized)
@@ -795,13 +785,9 @@ class SignomialEqualityLin(SignomialEquality):
 
     def as_gpconstr(self, x0):
         "Returns GP apprimxation of an SP constraint at x0"
-        #return self.left >= self.right
-        def _force_mono(posy, x0):
-            if isinstance(posy, Monomial):
-                return posy
-            return posy.mono_lower_bound(x0)
-        return [_force_mono(self.left, x0) >= _force_mono(self.right, x0),
-                _force_mono(self.left, x0) <= _force_mono(self.right, x0)]
+        return [
+            self.left.mono_lower_bound(x0) >= self.right.mono_lower_bound(x0),
+            self.left.mono_lower_bound(x0) <= self.right.mono_lower_bound(x0)]
 
 
 class SignomialEqualityLinTrust(SignomialEquality):
@@ -826,11 +812,8 @@ class SignomialEqualityLinTrust(SignomialEquality):
     def as_gpconstr(self, x0):
         "Returns GP apprimxation of an SP constraint at x0"
         #return self.left >= self.right
-        def _force_mono(posy):
-            if isinstance(posy, Monomial):
-                return posy
-            return posy.mono_lower_bound(x0)
-        mleft, mright = map(_force_mono, [self.left, self.right])
+        mleft = self.left.mono_lower_bound(x0)
+        mright = self.right.mono_lower_bound(x0)
         varkeys = set(mleft.varkeys).union(mright.varkeys)
         bounding_constraints = [[self.trustregion <= Monomial(vk)/x0[vk],
 		                 Monomial(vk)/x0[vk] <= 1/self.trustregion] for vk in varkeys]
