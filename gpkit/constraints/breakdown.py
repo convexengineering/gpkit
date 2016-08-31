@@ -8,9 +8,9 @@ class Breakdown(ConstraintSet):
     Arguments
     ---------
     input_dict : dictionary specifying variable names and values
-    
+
     units : ;default units string, '-' for unitless operation
-    
+
     filename: the name of the svg file produced, must end in .svg
     """
     def __init__(self, input_dict, units):

@@ -222,10 +222,10 @@ class TestBreakdown(unittest.TestCase):
         #draw a diagram if svgwrite is installed
         if gpkit.units:
             try:
-             import svgwrite
-             bd.make_diagram(sol, 'bdtest.svg',12, 15)
-            except ImportError, e:
-             pass
+                import svgwrite
+                bd.make_diagram(sol, 'bdtest.svg', 12, 15)
+            except ImportError:
+                pass
 
 TESTS = [TestConstraint, TestMonomialEquality, TestSignomialInequality,
          TestTightConstraintSet, TestBreakdown]

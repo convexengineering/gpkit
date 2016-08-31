@@ -3,8 +3,6 @@ Contains all svgwrite dependent methods
 """
 import svgwrite
 from svgwrite import cm
-from gpkit import units
-
 
 def BDmake_diagram(sol, depth, filename, sidelength, height, input_dict, units):
     """
@@ -15,18 +13,18 @@ def BDmake_diagram(sol, depth, filename, sidelength, height, input_dict, units):
     Arguments
     ---------
     sol - the solution dict generated after solving the breakdown GP problem
-    
+
     input_dict - a dict of values a breakdown is being generated for, sub levels are indicated
     by nesting in the dict. For exapmle, if w11 and w12 are subweights of w1 the input
     dict would look like {w1: {w11: 1, w12: 1}}
-    
+
     depth - the total number of sub weights. The depth of the example above is 2. The
     depth of the breakdown with intpu sol {w1: {w11: {w111: 1, w112: 1}, w12: 1}} is 3.
-    
+
     filename - the name of the svg file created, must end in .svg
-    
+
     sidelength - the width of the svg file created in cm
-    
+
     height - the height of the svg created in cm
     """
     #extract the total breakdown value for scaling purposes
@@ -37,14 +35,14 @@ def BDmake_diagram(sol, depth, filename, sidelength, height, input_dict, units):
     dwg = svgwrite.Drawing(filename, debug=True)
     #call the recursive drawing function
     BDdwgrecurse(input_dict, (2, 2), -1, sol, elementlength, height, total,
-               depth, dwg, units)
+                 depth, dwg, units)
     #save the drawing at the conlusion of the recursive call
     dwg.save()
 
     return dwg
 
 def BDdwgrecurse(input_dict, initcoord, currentlevel, sol, elementlength,
-               sheight, total, depth, dwg, units):
+                 sheight, total, depth, dwg, units):
     """
     recursive function to divide widnow into seperate units to be drawn and
     calls the draw function
@@ -70,7 +68,7 @@ def BDdwgrecurse(input_dict, initcoord, currentlevel, sol, elementlength,
                             initcoord[1]+totalheight-height)
             #recurse again
             BDdwgrecurse(value, newinitcoord, currentlevel, sol, elementlength,
-                       sheight, total, depth, dwg, units)
+                         sheight, total, depth, dwg, units)
         #make sure all lines end at the same place
         elif currentlevel != depth:
             boundarylines = dwg.add(dwg.g(id='boundarylines',
