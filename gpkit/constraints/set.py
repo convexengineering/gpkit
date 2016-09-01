@@ -1,4 +1,6 @@
 "Implements ConstraintSet"
+import numpy as np
+
 from ..small_classes import HashVector
 from ..keydict import KeySet, KeyDict
 from ..small_scripts import try_str_without
@@ -60,14 +62,27 @@ class ConstraintSet(list):
             return list.__getitem__(self, key)
         else:
             from ..nomials import Variable
-            variables = [Variable(**key.descr) for key in self.varkeys[key]]
+            variables = [Variable(**k.descr) for k in self.varkeys[key]]
             if len(variables) == 1:
                 return variables[0]
-            else:
-                variables.sort(key=_sort_by_num_models)
-                variable = variables[0]
-                # note: doesn't work for vector variables
-                return variable
+            elif variables[0].key.idx and variables[0].key.shape:
+                # maybe it's all one vector variable!
+                vector = np.full(variables[0].key.shape, np.nan, dtype="object")
+                goaldict = dict(variables[0].key.descr)
+                del goaldict["idx"]
+                for variable in variables:
+                    testdict = dict(variable.key.descr)
+                    del testdict["idx"]
+                    if testdict == goaldict:
+                        vector[variable.key.idx] = variable
+                    else:
+                        raise ValueError("multiple variables are called '%s'; use"
+                                         " variable_byname('%s') to see all of them"
+                                         % (key, key))
+                return vector
+            raise ValueError("multiple variables are called '%s'; use"
+                             " variable_byname('%s') to see all of them"
+                             % (key, key))
 
     def variables_byname(self, key):
         "Get all variables with a given name"

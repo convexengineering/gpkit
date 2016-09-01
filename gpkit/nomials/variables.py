@@ -142,6 +142,7 @@ class ArrayVariable(NomialArray):
         if "name" not in descr:
             descr["name"] = "\\fbox{%s}" % VarKey.new_unnamed_id()
 
+        arraykey = VarKey(**descr)
         vl = np.empty(shape, dtype="object")
         it = np.nditer(vl, flags=['multi_index', 'refs_ok'])
         while not it.finished:
@@ -153,6 +154,7 @@ class ArrayVariable(NomialArray):
             elif valuetype == "list":
                 descr.update({value_option: values[i[0]]})
             vl[i] = Variable(**descr)
+            vl[i].key.arraykey = arraykey
 
         obj = np.asarray(vl).view(cls)
         obj.descr = descr
