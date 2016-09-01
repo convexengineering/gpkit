@@ -30,6 +30,19 @@ class ConstraintSet(list):
                 if (hasattr(constraint, "__iter__") and
                         not isinstance(constraint, ConstraintSet)):
                     self[i] = ConstraintSet(constraint)
+                elif isinstance(constraint, bool):
+                    # TODO refactor this depending on the outcome of issue #824
+                    if len(self) == 1:
+                        adjacent = "as the only constraint"
+                    elif i == 0:
+                        adjacent = "at the start, before %s" % self[i+1]
+                    elif i == len(self) - 1:
+                        adjacent = "at the end, after %s" % self[i-1]
+                    else:
+                        adjacent = "between %s and %s" % (self[i-1], self[i+1])
+                    raise ValueError("boolean found %s."
+                                     " Did the constraint list contain an"
+                                     " accidental equality?" % adjacent)
         else:
             # grab the substitutions dict from the top constraintset
             subs.update(constraints.substitutions)  # pylint: disable=no-member
