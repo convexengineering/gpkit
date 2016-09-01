@@ -46,7 +46,8 @@ def modelinteract(model, ranges=None, fn_of_sol=None, **solvekwargs):
                 floatslider = widgets.FloatSlider(min=vmin, max=vmax,
                                                   step=vstep, value=v,
                                                   description=varkey_latex)
-                floatslider.width = "20ex"
+                # TODO: find way to set width across ipython versions
+                # floatslider.width = "20ex"
                 floatslider.varkey = k
                 ranges[str(k)] = floatslider
 
