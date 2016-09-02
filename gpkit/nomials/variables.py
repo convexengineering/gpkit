@@ -120,7 +120,7 @@ class ArrayVariable(NomialArray):
             elif isinstance(arg, Strings) and "label" not in descr:
                 descr["label"] = arg
 
-        values = []
+        values, value_option = [], None
         for value_option in ["value", "sp_init"]:
             if value_option in descr:
                 values = descr.pop(value_option)
@@ -148,6 +148,8 @@ class ArrayVariable(NomialArray):
             i = it.multi_index
             it.iternext()
             descr.update({"idx": i})
+            assert value_option is not None
+            # TODO refactor logic for value_option and remove above assert
             if valuetype == "array":
                 descr.update({value_option: values[i]})
             elif valuetype == "list":
