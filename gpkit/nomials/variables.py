@@ -120,7 +120,7 @@ class ArrayVariable(NomialArray):
             elif isinstance(arg, Strings) and "label" not in descr:
                 descr["label"] = arg
 
-        values = []
+        values, value_option = [], None
         for value_option in ["value", "sp_init"]:
             if value_option in descr:
                 values = descr.pop(value_option)
