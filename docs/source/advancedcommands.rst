@@ -241,9 +241,9 @@ Debugging
 Unbounded variables
 -------------------
 In some cases a solver will return ``unknown`` when a free variable is
-unbounded by the model. ``gpkit.tools.determine_unbounded_variables`` is a
+unbounded by the model. ``gpkit.constraints.bounded.BoundedConstraintSet`` is a
 simple tool that attempts to detect unbounded variables by adding extremely
-large upper bounds and extremely small lower bounds to all variables in a model,
+large upper bounds and extremely small lower bounds to all variables in a ConstraintSet,
 resolving, and checking whether any variables slide off to the bounds.
 Mosek returns unknown when attempting to solve the following model:
 

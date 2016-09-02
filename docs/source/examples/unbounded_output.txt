@@ -1,0 +1,5 @@
+
+UNBOUNDED VARIABLES
+   value near lower bound: [A]
+
+{'value near lower bound': array([A], dtype=object)}

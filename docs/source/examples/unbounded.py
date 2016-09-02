@@ -1,5 +1,5 @@
 from gpkit import Variable, Model, settings
-from gpkit.tools import BoundedConstraintSet
+from gpkit.constraints.bounded import BoundedConstraintSet
 
 A = Variable("A")
 D = Variable("D")
@@ -16,7 +16,10 @@ constraints = [F >= D + V**2,
                Fs <= mi,
                ]
 
-# Model(F, constraints).solve("mosek")  # returns UNKNOWN
+# Model(F, constraints).solve("mosek")  # does not solve
 if "mosek" in settings["installed_solvers"]:
-    sol = Model(F, BoundedConstraintSet(constraints)).solve("mosek")
+    m = Model(F, BoundedConstraintSet(constraints))
+    # by default, prints bounds warning during solve
+    sol = m.solve("mosek", verbosity=0)
+    # bound waring is also accessible in sol:
     print sol["boundedness"]
