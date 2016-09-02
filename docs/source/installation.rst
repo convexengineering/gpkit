@@ -119,7 +119,7 @@ Install GPkit
   - Run ``pip install ipywidgets`` for interactive control of models (recommended)
   - Run ``python -c "import gpkit.tests; gpkit.tests.run()"``
   - *Optional:* to install gpkit into an isolated python environment, install virtualenv, run ``virtualenv $DESTINATION_DIR`` then activate it with ``source $DESTINATION_DIR/bin/activate``
-  -*Note:* when installing GPkit directly to the system python (i.e. not using a virtualenv), it will be necessary to run ``sudo pip install gpkit``
+  - *Note:* when installing GPkit directly to the system python (i.e. not using a virtualenv), it will be necessary to run ``sudo pip install gpkit``
 
 
 Debugging installation

@@ -25,7 +25,7 @@ If your Model doesn't solve, you can automatically find the nearest feasible ver
     m.constraints = NomialArray(m.signomials)/feas["constraints"]
     m.solve()
 
-    # USING constants
+    # USING CONSTANTS
     m = Model(x, [x <= x_max, x >= x_min])
     m.substitutions.update(feas["constants"])
     m.solve()
@@ -237,14 +237,14 @@ The ``sweep`` argument specifies what points between 0 and 1 you wish to sample 
 Linking Variables
 =================
 
-When modeling a complex system, it is often desirable to begin by independently modeling each subsystem. This makes debugging and model validation easier. After developing all the subsystem models, they can be linked together to form a comprehensive system model. For example, instead of having one large airplane model, there may be separate wing, fuselage, vertical tail, horizontal tail, engine, and landing gear models which are linked together to form a full airplane model.
+It is often desirable to split a model into (linked) submodels. For example, instead of having one large airplane model, there may be separate wing, fuselage, vertical tail, horizontal tail, engine, and landing gear models which are linked together to form a full airplane model. This methodology can be beneficial because it allows a single component model to be linked into a variety of system models.
 
-Obviously, subsystems will share common variables. In the airplane example, the engine model will determine the engine weight and size. If the engines are mounted under the wing, the wing model will have an engine weight variable. When the subsystem models are linked to form the system level model, it is crucial that all models share one engine weight variable. GPkit has a built in class that performs linking, called ``LinkedConstraintSet``. Improperly linking variables together often leads to unexpected solver behavior, so it is recommended modelers use great care when linking variables, especially when altering variable’s varkeys.
+Obviously, subsystems will share common variables. In the airplane example, the engine model will determine the engine weight and size. If the engines are mounted under the wing, the wing model will have an engine weight variable. When the subsystem models are linked to form the system level model, it is crucial that all models share one engine weight variable. GPkit has a built in class that performs linking, called ``LinkedConstraintSet``. Improperly linking variables together is a common cause of modeling errors, so it is recommended modelers use great care when linking variables, especially when altering variable’s varkeys.
 
 Linked Constraint Set
 --------------
 
-If the variables that need to be linked have the same varykey, then the class ``LinkedConstraintSet`` can be used to link them. Consider the two models presented below.
+If the variables that need to be linked have the same varkey, then the class ``LinkedConstraintSet`` can be used to link them. Consider the two models presented below.
 
 
   .. code-block:: python
@@ -253,11 +253,11 @@ If the variables that need to be linked have the same varykey, then the class ``
      from gpkit import Variable, Model
 
      class M1(Model):
-         def __init__(self, **kwargs)
+         def __init__(self, **kwargs):
 
              #Make the necessary Variables
-             x = Variable(‘x’)
-             y = Variable(‘y’)
+             x = Variable(“x”)
+             y = Variable(“y”)
 
              #make the constraints
              constraints = [
@@ -282,8 +282,8 @@ If the variables that need to be linked have the same varykey, then the class ``
         def __init__(self, **kwargs):
 
    	    #Make the necessary Variables
-     	    y = Variable(‘y’)
-     	    z = Variable(‘z’)
+     	    y = Variable(“y”)
+     	    z = Variable(“z”)
 
            #make the constraints
            constraints = [
@@ -298,23 +298,23 @@ If the variables that need to be linked have the same varykey, then the class ``
           Model.__init__(self, objective, constraints, **kwargs)
 
 
-It might be desirable to link ``m1`` and ``m2`` and then solve for the objective ``x*z*y**2``, subject to both the two constraints in ``m1`` as well as the two constraints in ``m2``. Noting ``y`` has the same varkey in both ``m1`` and ``m2``, a ``LinkedConstraintSet`` will automatically link ``y`` between the two models. This This is done below.
+It might be desirable to link ``m1`` and ``m2`` and then solve for the objective ``x*z*y**2``, subject to both the two constraints in ``m1`` as well as the two constraints in ``m2``. Noting ``y`` has the same varkey in both ``m1`` and ``m2``, a ``LinkedConstraintSet`` will automatically link ``y`` between the two models. This is done below.
 
 .. code-block:: python
 
      #creating a linked model
-     from gpkit import Variable, Model, LinkedConstraintSet
-     import M1, M2
+     from gpkit import Variable, Model, LinkedConstraintSet, ConstraintSet
+     from import_classes import M1, M2
 
      #Create the two models
      m1 = M1()
      m2 = M2()
 
      #create a list of submodes
-     self.submodels = [m1, m2]
+     submodels = [m1, m2]
 
      #generate a constraint set for the full model
-     constraints = ConstraintSet([self.submodels])
+     constraints = ConstraintSet([submodels])
 
      #create a linked constraint set
      #now there is only a single y variable
@@ -324,12 +324,12 @@ It might be desirable to link ``m1`` and ``m2`` and then solve for the objective
      mFull = Model(m1.cost*m2.cost, lc)
 
      #solve the model
-     mFull.solve()
+     sol = mFull.solve()
 
 The cost of the full model is 0.5. If the solution table were to be printed there would only be a single ``y`` variable.
 
 
-Sub In-Place
+In-Place Substitution
 --------------
 
 It is also possible to link variables that have a different varkey. Consider a revised ``m2`` presented below. Note that in this version of ``m2``, the variable ``y`` has the varkey ``y2``.
@@ -340,12 +340,12 @@ It is also possible to link variables that have a different varkey. Consider a r
      from gpkit import Variable, Model
 
 
-     class M2(Model):
+     class M2new(Model):
         def __init__(self, **kwargs):
 
    	    #Make the necessary Variables
-     	    y = Variable(‘y2’)
-     	    z = Variable(‘z’)
+     	    y = Variable(“y2”)
+     	    z = Variable(“z”)
 
            #make the constraints
            constraints = [
@@ -364,21 +364,21 @@ If it was attempted to link ``m1``, from above, and the revised ``m2`` using a `
 .. code-block:: python
 
      #creating a linked model using sub in-place
-     from gpkit import Variable, Model, LinkedConstraintSet
-     import M1, M2
+     from gpkit import Variable, Model, LinkedConstraintSet, ConstraintSet
+     from import_classes import M1, M2new
 
      #Create the two models
      m1 = M1()
-     m2 = M2()
+     m2 = M2new()
 
      #create a list of submodes
-     self.submodels = [m1, m2]
+     submodels = [m1, m2]
 
      #generate a constraint set for the full model
-     constraints = ConstraintSet([self.submodels])
+     constraints = ConstraintSet([submodels])
 
      #use sub in-place to change all y2 varkeys to y
-     constraints.subinplace({‘y2’: ‘y’})
+     constraints.subinplace({“y2”: “y”})
 
      #create a linked constraint set
      #now there is only a single y variable
@@ -388,6 +388,6 @@ If it was attempted to link ``m1``, from above, and the revised ``m2`` using a `
      mFull = Model(m1.cost*m2.cost, lc)
 
      #solve the model
-     mFull.solve()
+     sol = mFull.solve()
      
 Once again, the cost of the full model is 0.5.
