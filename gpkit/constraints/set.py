@@ -22,7 +22,7 @@ class ConstraintSet(list):
         if isinstance(constraints, ConstraintSet):
             constraints = [constraints]
         list.__init__(self, constraints)
-        subs = substitutions if substitutions else {}
+        subs = dict(substitutions) if substitutions else {}
         self.unused_variables = None
         if not isinstance(constraints, ConstraintSet):
             # constraintsetify everything
