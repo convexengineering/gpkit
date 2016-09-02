@@ -76,24 +76,30 @@ class TestGP(unittest.TestCase):
         self.assertRaises((RuntimeWarning, ValueError), m.solve, verbosity=0)
 
     def test_simple_united_gp(self):
-        R = Variable('R', units="nautical_miles")
+        R = Variable("R", "nautical_miles")
         if not R.units:
             return
-        a0 = Variable('a0', 340.29, 'm/s')
-        theta = Variable(r'\theta', 0.7598)
-        t = Variable('t', 10, 'hr')
-        T_loiter = Variable('T_{loiter}', 1, 'hr')
-        T_reserve = Variable('T_{reserve}', 45, 'min')
-        M = VectorVariable(2, 'M')
+        a0 = Variable("a0", 340.29, "m/s")
+        theta = Variable("\\theta", 0.7598)
+        t = Variable("t", 10, "hr")
+        T_loiter = Variable("T_{loiter}", 1, "hr")
+        T_reserve = Variable("T_{reserve}", 45, "min")
+        M = VectorVariable(2, "M")
 
         prob = Model(1/R,
                      [t >= sum(R/a0/M/theta**0.5) + T_loiter + T_reserve,
                       M <= 0.76])
-        sol = prob.solve(verbosity=0)
-        self.assertAlmostEqual(sol["cost"], 0.0005532/R.units, self.ndig)
-        self.assertEqual(sol["constants"]["a0"], 340.29*a0.units)
-        self.assertEqual(sol["variables"]["a0"], 340.29*a0.units)
-        self.assertEqual(sol["freevariables"]["R"], 1807.58*R.units)
+        sol = prob.solve(solver=self.solver, verbosity=0)
+        # TODO: add better way to test united things
+        costdiff = (sol["cost"] - 0.0005532/R.units).magnitude
+        self.assertAlmostEqual(costdiff, 0, self.ndig)
+        diff = (sol["constants"]["a0"] - 340.29*a0.units).magnitude
+        self.assertAlmostEqual(diff, 0, self.ndig)
+        diff = (sol["variables"]["a0"] - 340.29*a0.units).magnitude
+        self.assertAlmostEqual(diff, 0, self.ndig)
+        diff = (sol["freevariables"]["R"] - 1807.58*R.units).magnitude
+        # inverse of cost is much more sensitive than self.ndig, unsurprisingly
+        self.assertAlmostEqual(diff, 0, 2)
 
     def test_trivial_vector_gp(self):
         """

@@ -134,10 +134,9 @@ def _enray_and_unit_dict(d_in, d_out, unitless_keys=(), united=False):
     "Recursively turns lists into numpy arrays."
     for k, v in d_in.items():
         if isinstance(v, dict):
-            if k in unitless_keys:
-                united = False
+            subunited = united and k not in unitless_keys
             d_out[k] = _enray_and_unit_dict(v, v.__class__(),
-                                            unitless_keys, united)
+                                            unitless_keys, subunited)
         else:
             if hasattr(v[0], "units"):
                 # if the first element of the list alrady has units,
