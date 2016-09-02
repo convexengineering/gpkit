@@ -1,1 +1,6 @@
-{}
+
+UNBOUNDED VARIABLES
+   value near upper bound: [x]
+ sensitive to upper bound: [x]
+
+{'value near upper bound': array([x], dtype=object), 'sensitive to upper bound': array([x], dtype=object)}
