@@ -3,7 +3,8 @@ import math
 import unittest
 from gpkit import Variable, Monomial, Posynomial, Signomial
 from gpkit import units, SignomialsEnabled
-
+from gpkit.nomials.nomial_core import monomial_strings
+from gpkit.small_scripts import Quantity
 
 class TestMonomial(unittest.TestCase):
     """TestCase for the Monomial class"""
@@ -189,6 +190,23 @@ class TestMonomial(unittest.TestCase):
         self.assertTrue(isinstance(m, Monomial))
         self.assertEqual(m.units, 1*units.kg)
 
+    def te_monomial_strings(self):
+        "Test monomial_strings function"
+        p_vars = [('\\textcolor[rgb]{0.70,0.70,0.70}{h}', 1)]
+        n_vars = []
+        d_val = Quantity(2.0, 'meter**2')
+        pvarstrings, nvarstrings, cstr = monomial_strings(p_vars, n_vars, d_val)
+        self.assertEqual('\\textcolor[rgb]{0.70,0.70,0.70}{h}', pvarstrings)
+        self.assertEqual('', nvarstrings)
+        self.assertEqual('2', cstr)
+        p_vars = [('\\textcolor[blue]{d}', 1), ('\\textcolor[red]{w}', 1)]
+        n_vars = [('\\textcolor[green]{S}', 2)]
+        d_val = Quantity(1.0, 'meter**2')
+        pvarstrings, nvarstrings, cstr = monomial_strings(p_vars, n_vars, d_val)
+        self.assertEqual('\\textcolor[blue]{d} \\textcolor[red]{w}',
+                         pvarstrings)
+        self.assertEqual('\\textcolor[green]{S}^{-2}', nvarstrings)
+        self.assertEqual('', cstr)
 
 class TestSignomial(unittest.TestCase):
     """TestCase for the Signomial class"""
