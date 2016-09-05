@@ -14,7 +14,7 @@ settings = {}
 
 def log(*args):
     "Print a line and append it to the log string."
-    global LOGSTR
+    global LOGSTR  # pylint: disable=global-statement
     print(*args)
     LOGSTR += " ".join(args) + "\n"
 
@@ -111,7 +111,8 @@ class MosekCLI(SolverBackend):
             log("#   Trying to run mskexpopt...")
             if call("mskexpopt") in (1052, 28):  # 28 for MacOSX
                 return "in system path"
-        except Exception:
+        except:  # pylint: disable=bare-except
+            # exception type varies by operating system
             return
 
 
@@ -202,9 +203,7 @@ class Mosek(SolverBackend):
         self.bin_dir = pathjoin(lib_dir, "bin")
         self.lib_path = glob.glob(self.bin_dir+os.sep+libpattern)[0]
 
-        if not isfile(h_path):
-            return
-        if not isfile(self.lib_path):
+        if not isfile(h_path) or not isfile(self.lib_path):
             return
 
         expopt_dir = pathjoin(tools_dir, "examples", "c")
@@ -217,7 +216,7 @@ class Mosek(SolverBackend):
             if not isfile(expopt_file):
                 return
 
-        global settings
+        global settings  # pylint: disable=global-variable-not-assigned
         settings["mosek_bin_dir"] = self.bin_dir
         os.environ['PATH'] = os.environ['PATH'] + os.pathsep + self.bin_dir
 
@@ -286,7 +285,7 @@ class Mosek(SolverBackend):
 
 def build_gpkit():
     "Builds GPkit"
-    global settings
+    global settings  # pylint: disable=global-variable-not-assigned
 
     if isfile("__init__.py"):
         #call("ls")

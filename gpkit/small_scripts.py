@@ -60,7 +60,7 @@ def is_sweepvar(sub):
         if sub[0] == "sweep":
             if isinstance(sub[1], Iterable) or hasattr(sub[1], "__call__"):
                 return True
-    except:
+    except:  # pylint: disable=bare-except
         return False
 
 
