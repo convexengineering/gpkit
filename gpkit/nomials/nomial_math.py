@@ -691,15 +691,21 @@ class SignomialInequality(ScalarSingleEquationConstraint):
             raise TypeError("SignomialInequality could not simplify to"
                             " a PosynomialInequality")
 
+    def _fill_default_x0(self, x0, varkeys):
+        """For all keys in varkeys, updates x0 with default values and
+        substitutions. Returns x0."""
+        if x0 is None:
+            x0 = {vk: vk.descr["sp_init"] for vk in varkeys
+                  if "sp_init" in vk.descr}
+        x0.update({var: 1 for var in varkeys if var not in x0})
+        x0.update(self.substitutions)
+        return x0
+
     def as_gpconstr(self, x0):
         "Returns GP approximation of an SP constraint at x0"
         siglt0, = self.unsubbed
         posy, negy = siglt0.posy_negy()
-        if x0 is None:
-            x0 = {vk: vk.descr["sp_init"] for vk in negy.varlocs
-                  if "sp_init" in vk.descr}
-        x0.update({var: 1 for var in negy.varlocs if var not in x0})
-        x0.update(self.substitutions)
+        x0 = self._fill_default_x0(x0, negy.varlocs)
         pc = PosynomialInequality(posy, "<=", negy.mono_lower_bound(x0))
         pc.substitutions = self.substitutions
         return pc
@@ -721,11 +727,7 @@ class SignomialEquality(SignomialInequality):
     def as_gpconstr(self, x0):
         "Returns GP approximation of an SP constraint at x0"
         siglt0, = self.unsubbed
-        if x0 is None:
-            x0 = {vk: vk.descr["sp_init"] for vk in siglt0.varlocs
-                  if "sp_init" in vk.descr}
-        x0.update({var: 1 for var in siglt0.varlocs if var not in x0})
-        x0.update(self.substitutions)
+        x0 = self._fill_default_x0(x0, siglt0.varlocs)
         posy, negy = siglt0.posy_negy()
         mec = (posy.mono_lower_bound(x0) == negy.mono_lower_bound(x0))
         mec.substitutions = self.substitutions
