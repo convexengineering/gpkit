@@ -760,14 +760,7 @@ class SignomialEqualityTrivTrust(SignomialEquality):
     """
 
     def __init__(self, left, right):
-        ScalarSingleEquationConstraint.__init__(self, left, "=", right)
-        from .. import SIGNOMIALS_ENABLED
-        if not SIGNOMIALS_ENABLED:
-            raise TypeError("Cannot initialize SignomialInequality"
-                            " outside of a SignomialsEnabled environment.")
-        self.nomials = [self.left, self.right]
-        self.substitutions = dict(self.left.values)
-        self.substitutions.update(self.right.values)
+        super(SignomialEqualityTrivTrust, self).__init__(left, right)
         self.trustregion = 0.9
 
     def as_gpconstr(self, x0):
@@ -799,14 +792,7 @@ class SignomialEqualityLinTrust(SignomialEquality):
         """
 
     def __init__(self, left, right):
-        ScalarSingleEquationConstraint.__init__(self, left, "=", right)
-        from .. import SIGNOMIALS_ENABLED
-        if not SIGNOMIALS_ENABLED:
-            raise TypeError("Cannot initialize SignomialInequality"
-                            " outside of a Signomial`sEnabled environment.")
-        self.nomials = [self.left, self.right]
-        self.substitutions = dict(self.left.values)
-        self.substitutions.update(self.right.values)
+        super(SignomialEqualityLinTrust, self).__init__(left, right)
         self.trustregion = 0.9
 
     def as_gpconstr(self, x0):
