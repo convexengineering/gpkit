@@ -7,12 +7,6 @@ from ..small_scripts import try_str_without
 from ..repr_conventions import _str, _repr, _repr_latex_
 
 
-def _sort_by_num_models(var):
-    "return integer for Variable sorting"
-    mods = var.key.models
-    return len(mods) if mods else 0
-
-
 def _sort_by_name_and_idx(var):
     "return tuplef for Variable sorting"
     return (var.key.str_without(["units", "idx"]), var.key.idx)
