@@ -693,12 +693,20 @@ class SignomialInequality(ScalarSingleEquationConstraint):
 
     def _fill_default_x0(self, x0, varkeys):
         """For all keys in varkeys, updates x0 with default values and
-        substitutions. Returns x0."""
+        substitutions. Returns x0.
+
+        Order of precedence for x0 default:
+            - substitution value
+            - x0 value
+            - sp_init value
+            - 1.0
+        """
         if x0 is None:
-            x0 = {vk: vk.descr["sp_init"] for vk in varkeys
-                  if "sp_init" in vk.descr}
-        x0.update({var: 1 for var in varkeys if var not in x0})
-        x0.update(self.substitutions)
+            x0 = {}
+        x0.update({
+            vk: self.substitutions.get(vk, x0.get(vk, vk.descr.get("sp_init",
+                                                                   1.0)))
+            for vk in varkeys})
         return x0
 
     def as_gpconstr(self, x0):
