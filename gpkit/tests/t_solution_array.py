@@ -79,6 +79,21 @@ class TestSolutionArray(unittest.TestCase):
         tab = sol.table()
         self.assertTrue(isinstance(tab, str))
 
+    def test_units_sub(self):
+        # issue 809
+        if not gpkit.units:
+            return
+        T = Variable("T", "N", "thrust")
+        Tmin = Variable("T_{min}", "N", "minimum thrust")
+        m = Model(T, [T >= Tmin])
+        tminsub = 1000 * gpkit.units.lbf
+        m.substitutions.update({Tmin: tminsub})
+        sol = m.solve(verbosity=0)
+        self.assertEqual(sol(Tmin), tminsub)
+        self.assertFalse(
+            "1000N" in
+            sol.table().replace(" ", "").replace("[", "").replace("]", ""))
+
 
 class TestResultsTable(unittest.TestCase):
     """TestCase for results_table()"""
