@@ -70,10 +70,7 @@ class ConstraintSet(list):
                     if testdict == goaldict:
                         vector[variable.key.idx] = variable
                     else:
-                        raise ValueError("multiple variables are called '%s';"
-                                         " use variable_byname('%s') to see"
-                                         " all of them."
-                                         % (key, key))
+                        break
                 return vector
             raise ValueError("multiple variables are called '%s'; use"
                              " variable_byname('%s') to see all of them"
