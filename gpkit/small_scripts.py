@@ -27,19 +27,6 @@ def listify(item):
         return [item]
 
 
-def isequal(a, b):
-    "Determine if two elements are equal, recursing through Iterables"
-    # pylint: disable=invalid-name
-    if (isinstance(a, Iterable) and
-            not isinstance(a, Strings+(tuple, list, dict))):
-        for i, a_i in enumerate(a):
-            if not isequal(a_i, b[i]):
-                return False
-    elif a != b:
-        return False
-    return True
-
-
 def mag(c):
     "Return magnitude of a Number or Quantity"
     if isinstance(c, Quantity):
@@ -75,14 +62,6 @@ def is_sweepvar(sub):
                 return True
     except:
         return False
-
-
-def invalid_types_for_oper(oper, a, b):
-    "Raises TypeError for unsupported operations."
-    typea = a.__class__.__name__
-    typeb = b.__class__.__name__
-    raise TypeError("unsupported operand types"
-                    " for %s: '%s' and '%s'" % (oper, typea, typeb))
 
 
 def latex_num(c):

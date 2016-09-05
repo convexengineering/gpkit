@@ -59,6 +59,7 @@ MSK = ModuleShortener("MSK", expopt_h)
 
 # lookup table from mosek.h, "MSKsolsta_enum"
 # switched where indicated because MOSEK solves the dual GP problem
+# pylint: disable=invalid-name
 MSK._SOL_STA_LOOKUPTABLE = ["UNKNOWN",
                             "OPTIMAL",
                             "DUAL_FEAS",  # originally position 3
