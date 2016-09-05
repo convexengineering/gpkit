@@ -5,6 +5,7 @@ from gpkit import (Model, Monomial, settings, VectorVariable, Variable,
                    SignomialsEnabled, ArrayVariable, SignomialEquality)
 from gpkit.small_classes import CootMatrix
 from gpkit.feasibility import feasibility_model
+from gpkit.exceptions import InvalidGPConstraint
 
 NDIGS = {"cvxopt": 5, "mosek": 7, "mosek_cli": 5}
 # name: decimal places of accuracy
@@ -259,9 +260,7 @@ class TestSP(unittest.TestCase):
         y = Variable('y')
         with SignomialsEnabled():
             m = Model(x, [x >= 1-y, y <= 0.1])
-        with self.assertRaises(ValueError):
-            # solve should catch the TypeError raised by an SP constraints
-            # and raise its own ValueError instead
+        with self.assertRaises(InvalidGPConstraint):
             m.solve(verbosity=0)
         sol = m.localsolve(self.solver, verbosity=0)
         self.assertAlmostEqual(sol["variables"]["x"], 0.9, self.ndig)

@@ -6,6 +6,7 @@ from gpkit.nomials import MonomialEquality
 from gpkit import LinkedConstraintSet, Model
 from gpkit.constraints.tight import TightConstraintSet
 from gpkit.tests.helpers import run_tests
+from gpkit.exceptions import InvalidGPConstraint
 import gpkit
 
 
@@ -143,7 +144,7 @@ class TestSignomialInequality(unittest.TestCase):
         with SignomialsEnabled():
             sc = (x + y >= x*y)
         # make sure that the error type doesn't change on our users
-        with self.assertRaises(TypeError):
+        with self.assertRaises(InvalidGPConstraint):
             _ = sc.as_posyslt1()
 
 
