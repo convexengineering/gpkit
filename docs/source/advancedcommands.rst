@@ -243,14 +243,16 @@ Unbounded variables
 In some cases a solver will return ``unknown`` when a free variable is
 unbounded by the model. ``gpkit.constraints.bounded.BoundedConstraintSet`` is a
 simple tool that attempts to detect unbounded variables by adding extremely
-large upper bounds and extremely small lower bounds to all variables in a ConstraintSet,
-resolving, and checking whether any variables slide off to the bounds.
-Mosek returns unknown when attempting to solve the following model:
+large upper bounds and extremely small lower bounds to all variables in a ConstraintSet.
+
+When a model if with a BoundedConstraintSet is solved, it checks whether any variables slid off to the bounds, notes this in the solution dictionary and prints a warning (if verbosity is greater than 0).
+
+For example, Mosek returns unknown when attempting to solve the following model:
 
 .. literalinclude:: examples/unbounded.py
 
-Upon viewing the output from ``determine_unbounded_variables``,
+Upon viewing the printed output,
 
 .. literalinclude:: examples/unbounded_output.txt
 
-it becomes clear that ``A`` is unbounded below in the original model.
+it becomes clear that ``x`` is unbounded below in the original model.
