@@ -153,6 +153,13 @@ class Mosek(SolverBackend):
         }
     }
 
+    def __init__(self):
+        super(Mosek, self).__init__()
+        self.expopt_files = None
+        self.bin_dir = None
+        self.flags = None
+        self.lib_path = None
+
     def look(self):
         "Looks in default install locations for latest mosek version."
         if sys.platform == "win32":
