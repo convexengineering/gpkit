@@ -102,10 +102,7 @@ class ArrayVariable(NomialArray):
         if "idx" in descr:
             raise KeyError("the description field 'idx' is reserved")
 
-        if isinstance(shape, Numbers):
-            shape = (shape,)
-        else:
-            shape = tuple(shape)
+        shape = (shape,) if isinstance(shape, Numbers) else tuple(shape)
 
         descr["shape"] = shape
 
