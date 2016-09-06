@@ -25,21 +25,21 @@ Dual Feasible and Infeasible Models
 
 A dual feasible solution typically means that more than one unique solution meets the objective.   An example of a dual-feasible model is shown below. This model is dual-infeasible because there are multiple values of ``x`` and ``y`` that satisfy the constraint set and yield the globally optimum cost of 0.5.
  
- .. literalinclude:: subinplace.py
+.. literalinclude:: subinplace.py
  
 ``cvxopt`` and ``Mosek`` both solve the above model and output a cost of 0.5, however, the values of ``x`` and ``y`` will be different, illustrating how the model is dual feasible.
 
 The following is an example of a dual-infeasible problem. While the difference is slight, this cannot be solved by either ``mosek`` or ``cvxopt``.  ``Cvxopt`` will again give a ``Rank`` error.  ``Mosek`` can identify deal-infeasible models and the error message will label it as such. Typically, this type of error means that one or more variables are not sufficiently bounded. 
  
- .. literalinclude:: dual_infeasible_ex2.py
+.. literalinclude:: dual_infeasible_ex2.py
 
 Another common cause of dual-infeasability occurs when a constrain applys pressure on a variable in an unexpected direction and pushs its value to either zero or infinity. When this occurs, Mosek usually returns a final status of dual-infeasible while cvxopt will return a final solver status of unknown. A simple example is given below. ``x`` has no upper bound, and the objective is to minimize ``1/x``, so the solver pushes ``x`` towards infinitiy and returns dual infeasible.
 
- .. literalinclude:: dual_infeasible_ex.py
+.. literalinclude:: dual_infeasible_ex.py
 
 Debugging large, dual infeasible, models can be difficult. The recommended procedure is to use a ``BoundedConstraintSet``, found in ``gpkit.tools``. ``BoundedConstraintSet`` adds additional constraints to the model that bounds each variable to be greater than or equal to ``eps``, and less than or equal to ``1/eps``. The default value for ``eps`` is 1e-30. This prevents variables from being truly unbounded and allows most dual infeasible models to solve. By inspecting the solution, or by also making use of the a ``Tight Constraint Set``, it is easy to determine which variables are unbounded and modify constraints as necessary. Below, a BoundedConstraintSet is used to make the previous model solvable.
 
-  .. literalinclude:: BoundedConstraintSet_ex.py
+.. literalinclude:: BoundedConstraintSet_ex.py
 
 With the formulation above, ``x`` has a lower bound at 1e-30, so the solver returns a solution with cost 1e-30.
 
@@ -49,12 +49,12 @@ Primal Infeasible Models
 
 A model is primal infeasible when it has no feasible region. This means there is no point which simultaneously satisfies all of the model’s constraints. A simple example is presented below.
 
-   .. literalinclude:: primal_infeasible_ex1.py
+.. literalinclude:: primal_infeasible_ex1.py
 
 It is not possible for ``x*y`` to be less than 1.5 while ``x`` is greater than 1 and ``y`` is greater than 2.
 
 A common bug in large models that use ``substitutions`` is to substitute overly constraining values in for variables that make the model primal infeasible. An example of this is given below.
 
-  .. literalinclude:: primal_infeasible_ex2.py
+.. literalinclude:: primal_infeasible_ex2.py
 
 Since ``y`` is now set to 2 and ``x`` can be no less than 1, it is again impossible for ``x*y`` to be less than 1.5 and the model is primal infeasible. If ``y`` was instead set to 1, the model would be feasible and the cost would be 1.
