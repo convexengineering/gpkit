@@ -20,10 +20,10 @@ A number of errors and warnings can be raised when attempting to solve a model.
 -``RuntimeWarning: final status of solver 'mosek' was 'DUAL_INFEAS_CER', not 'optimal’`` - this error is thrown when attempting to solve a dual infeasible model with MOSEK,  see *Dual Infeasible Models* below for more tips on debugging a dual infeasible model.
 
 
-Dual Infeasible Models
-=============
+Dual Feasible and Infeasible Models
+===================================
 
-A dual infeasible error typically means that more than one unique solution meets the objective and satisfies the constraints. Usually, this means that one or more variables are not sufficiently constrained.  When solving with ``mosek``, the error message will tell you that the solution is dual-infeasible.  When solving with ``cvxopt``, the error for a dual-feasible solution will usually display as a ``Rank`` error or ``cvxopt`` will return ``unknown``.  An example of a dual-feasible model is shown below. This model is dual-infeasible because there are multiple values of ``x`` and ``y`` that satisfy the constraint set even though the obvious value of the objective should be 1.
+A dual feasible solution typically means that more than one unique solution meets the objective.   An example of a dual-feasible model is shown below. This model is dual-infeasible because there are multiple values of ``x`` and ``y`` that satisfy the constraint set even though the obvious value of the objective should be 1.
  
  .. code-block:: python
  
@@ -33,7 +33,9 @@ A dual infeasible error typically means that more than one unique solution meets
      m = Model(x*y, [x*y >= 1])
      m.solve()
  
-Note: When solving with ``mosek`` this model will actually solve because ``mosek`` is robust enough to handle some dual-feasible problems. The following example is a model that ``mosek`` labels as dual-feasible and will not solve. 
+When solving with ``mosek`` this model will solve. ``Mosek`` is more robust robust and will solve dual-feasible problems.  The solver, ``cvxopt``, cannot solve this problem because of ``Rank`` errors.  When solving with ``cvxopt``, a ``Rank`` error can mean that the problem is dual-feasible. 
+
+The following is an example of a dual-infeasible problem. While the difference is slight, this cannot be solved by either ``mosek`` or ``cvxopt``.  ``Cvxopt`` will again give a ``Rank`` error.  ``Mosek`` can identify deal-infeasible models and the error message will label it as such. Typically, this type of error means that one or more variables are not sufficiently bounded. 
  
  .. code-block:: python
  
@@ -42,10 +44,8 @@ Note: When solving with ``mosek`` this model will actually solve because ``mosek
      y = Variable("y")
      m = Model(x**0.01 * y, [x*y >= 1])
      m.solve()
- 
-While this model is very similar to the previous model, ``mosek`` is unable to solve this model and labels it as dual-feasible.
 
-Another common cause of dual-infeasability is a model applying pressure on a variable in an unexpected direction and pushing its value to either zero or infinity. When this occurs, Mosek usually returns a final status of dual-infeasible while cvxopt will return a final solver status of unknown. A simple example is given below. ``x`` has no upper bound, and the objective is to minimize ``1/x``, so the solver pushes ``x`` towards infinitiy and returns dual infeasible.
+Another common cause of dual-infeasability occurs when a constrain applys pressure on a variable in an unexpected direction and pushs its value to either zero or infinity. When this occurs, Mosek usually returns a final status of dual-infeasible while cvxopt will return a final solver status of unknown. A simple example is given below. ``x`` has no upper bound, and the objective is to minimize ``1/x``, so the solver pushes ``x`` towards infinitiy and returns dual infeasible.
 
  .. code-block:: python
  
@@ -68,7 +68,7 @@ With the formulation above, ``x`` has a lower bound at 1e-30, so the solver retu
 
 
 Primal Infeasible Models
-=============
+========================
 
 A model is primal infeasible when it has no feasible region. This means there is no point which simultaneously satisfies all of the model’s constraints. A simple example is presented below.
 
