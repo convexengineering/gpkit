@@ -33,7 +33,7 @@ class TestConstraint(unittest.TestCase):
         x = VectorVariable(2, "x", [2, 1])
         x_ = VectorVariable(2, "x", [1, 2], model="_")
         try:
-            lc = LinkedConstraintSet([x >= 1, x_ >= 1], exclude="x")
+            LinkedConstraintSet([x >= 1, x_ >= 1], exclude="x")
         except ValueError:
             self.fail("linking was an unexpected ValueError (sub conflict?).")
 
