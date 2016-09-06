@@ -6,7 +6,6 @@ from .nomials import NomialData
 from .small_classes import CootMatrix, HashVector
 from .keydict import KeyDict
 from .small_classes import SolverLog
-from exceptions import InvalidGPConstraint
 
 
 DEFAULT_SOLVER_KWARGS = {"cvxopt": {"kktsolver": "ldl"}}
