@@ -40,15 +40,15 @@ def ractorjs(title, model, update_py, ranges, constraint_js=""):
     display(HTML("<script id='%s-after' type='text/throwaway'>%s</script>" %
                  (widget_id, constraint_js)))
     display(HTML(
-        ("<script>var %s = {storage: [], n:%i, ranges: {}, after: "
-         "document.getElementById('%s-after').innerHTML, bases: [1] }"
+        ("<script>var %s = {storage: [], n:%i, ranges: {},"
+         " after: document.getElementById('%s-after').innerHTML, bases: [1] }"
          "</script>") %
         (widget_id, len(ranges), widget_id)))
 
     container_id = widget_id + "_container"
     display(HTML(
-        ("<div id='%s'></div><style>#%s td "
-         "{text-align: right; border: none !important;}\n"
+        ("<div id='%s'></div><style>"
+         "#%s td {text-align: right; border: none !important;}\n"
          "#%s tr {border: none !important;}\n"
          "#%s table {border: none !important;}\n</style>") %
         (container_id, container_id, container_id, container_id)))
@@ -119,8 +119,8 @@ def ractorjs(title, model, update_py, ranges, constraint_js=""):
                   varname = 'var'+i
                   idx = $w.ractive.data[varname]
                   console.log("$w-"+varname);
-                  document.getElementById("$w-"+varname).innerText
-                     = Math.round(100*$w.ranges[varname][idx])/100
+                  percent = Math.round(100*$w.ranges[varname][idx])/100
+                  document.getElementById("$w-"+varname).innerText = percent
                   idxsum += idx*$w.bases[i]
               }
               if ($w.storage[idxsum] === "") {
