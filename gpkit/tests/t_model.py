@@ -91,11 +91,11 @@ class TestGP(unittest.TestCase):
                      [t >= sum(R/a0/M/theta**0.5) + T_loiter + T_reserve,
                       M <= 0.76])
         sol = prob.solve(solver=self.solver, verbosity=0)
-        aAE = self.assertAlmostEqual
-        aAE(0.000553226/R.units/sol["cost"], 1, self.ndig)
-        aAE(340.29*a0.units/sol["constants"]["a0"], 1, self.ndig)
-        aAE(340.29*a0.units/sol["variables"]["a0"], 1, self.ndig)
-        aAE(1807.58*R.units/sol["freevariables"]["R"], 1, self.ndig)
+        almostequal = self.assertAlmostEqual
+        almostequal(0.000553226/R.units/sol["cost"], 1, self.ndig)
+        almostequal(340.29*a0.units/sol["constants"]["a0"], 1, self.ndig)
+        almostequal(340.29*a0.units/sol["variables"]["a0"], 1, self.ndig)
+        almostequal(1807.58*R.units/sol["freevariables"]["R"], 1, self.ndig)
 
     def test_trivial_vector_gp(self):
         """
