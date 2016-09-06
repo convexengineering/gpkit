@@ -138,6 +138,18 @@ class TestNomialSubs(unittest.TestCase):
 class TestGPSubs(unittest.TestCase):
     """Test substitution for Model and GP objects"""
 
+    def test_persistence(self):
+        x = gpkit.Variable("x")
+        y = gpkit.Variable("y")
+        ymax = gpkit.Variable("y_{max}", 0.1)
+
+        with gpkit.SignomialsEnabled():
+            m = gpkit.Model(x, [x >= 1-y, y <= ymax])
+            m.substitutions[ymax] = 0.2
+            self.assertAlmostEqual(m.localsolve(verbosity=0)["cost"], 0.8, 3)
+            m = gpkit.Model(x, [x >= 1-y, y <= ymax])
+            self.assertAlmostEqual(m.localsolve(verbosity=0)["cost"], 0.9, 3)
+
     def test_united_sub_sweep(self):
         A = Variable("A", "USD")
         h = Variable("h", "USD/count")

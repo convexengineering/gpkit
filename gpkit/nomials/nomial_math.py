@@ -12,6 +12,7 @@ from ..varkey import VarKey
 from ..small_scripts import mag
 from .. import units as ureg
 from .. import DimensionalityError
+from ..exceptions import InvalidGPConstraint
 
 
 class Signomial(Nomial):
@@ -688,8 +689,10 @@ class SignomialInequality(ScalarSingleEquationConstraint):
             return self.unsubbed   # pylint: disable=no-member
 
         else:
-            raise TypeError("SignomialInequality could not simplify to"
-                            " a PosynomialInequality")
+            raise InvalidGPConstraint("SignomialInequality could not simplify"
+                                      " to a PosynomialInequality; try forming"
+                                      " your program as SignomialProgram or"
+                                      " calling .localsolve().")
 
     def _fill_default_x0(self, x0, varkeys):
         """For all keys in varkeys, updates x0 with default values and
@@ -729,8 +732,10 @@ class SignomialEquality(SignomialInequality):
     def as_posyslt1(self):
         "Returns the posys <= 1 representation of this constraint."
         # todo deal with substitutions
-        raise TypeError("SignomialEquality could not simplify to"
-                        " a PosynomialInequality")
+        raise InvalidGPConstraint("SignomialEquality could not simplify"
+                                  " to a PosynomialInequality; try forming"
+                                  " your program as SignomialProgram or"
+                                  " calling .localsolve().")
 
     def as_gpconstr(self, x0):
         "Returns GP approximation of an SP constraint at x0"
