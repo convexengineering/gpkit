@@ -17,7 +17,7 @@ from ctypes import POINTER as ptr_factory
 from ctypes import c_double, c_int, c_void_p
 
 try:
-    from .lib import expopt_h
+    from .lib import expopt_h # pylint: disable=import-error
 except Exception as e:
     raise ImportError("Could not load MOSEK library: "+repr(e))
 
