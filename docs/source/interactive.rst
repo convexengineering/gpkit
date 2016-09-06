@@ -19,4 +19,4 @@ The ``Breakdown`` constraint set will take this input dict and automatically gen
 
 If a GP is formed consisting of these constraints and the objective ``w``, all weights will be properly summed. The solution to this GP can then be used to create a breakdown diagram. This is shown below.
 
-.. literalinclude:: breakdown_example.py
+.. literalinclude:: examples/breakdown_example.py
