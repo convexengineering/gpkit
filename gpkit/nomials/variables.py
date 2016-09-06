@@ -148,8 +148,6 @@ class ArrayVariable(NomialArray):
             i = it.multi_index
             it.iternext()
             descr.update({"idx": i})
-            assert value_option is not None
-            # TODO refactor logic for value_option and remove above assert
             if valuetype == "array":
                 descr.update({value_option: values[i]})
             elif valuetype == "list":
