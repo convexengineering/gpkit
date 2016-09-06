@@ -59,6 +59,10 @@ MSK = ModuleShortener("MSK", expopt_h)
 
 # lookup table from mosek.h, "MSKsolsta_enum"
 # switched where indicated because MOSEK solves the dual GP problem
+
+# Pylint disabled here because the _ naming convention is a
+# side effect of the ModuleShortener
+# pylint: disable=invalid-name,attribute-defined-outside-init,protected-access
 MSK._SOL_STA_LOOKUPTABLE = ["UNKNOWN",
                             "OPTIMAL",
                             "DUAL_FEAS",  # originally position 3
@@ -119,7 +123,7 @@ def printcb(void, msg):  # pylint: disable=unused-argument
     return 0
 
 
-# pylint: disable=unused-argument,too-many-locals
+# pylint: disable=unused-argument,too-many-locals,protected-access
 def imize(c, A, p_idxs, *args, **kwargs):
     """Interface to the MOSEK EXPOPT solver via C
 
