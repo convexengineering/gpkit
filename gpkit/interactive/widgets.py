@@ -146,9 +146,8 @@ def modelcontrolpanel(model, *args, **kwargs):
 
 
 def create_settings(box):
-    "Creates a widget Container for settings and info of  a particular slider."
-    # pylint: disable=unused-variable
-    sl_enable, slider, sl_units = box.children
+    "Creates a widget Container for settings and info of a particular slider."
+    _, slider, sl_units = box.children
 
     enable = widgets.Checkbox(value=box.visible)
     link((box, 'visible'), (enable, 'value'))
