@@ -124,7 +124,8 @@ class CVXopt(SolverBackend):
         "Attempts to import mskexpopt."
         try:
             log("#   Trying to import cvxopt...")
-            import cvxopt
+            # Testing the import, so the variable is intentionally not used
+            import cvxopt # pylint: disable=unused-variable
             return "in Python path"
         except ImportError:
             return
@@ -232,7 +233,8 @@ class Mosek(SolverBackend):
     def build(self):
         "Builds a dynamic library to GPKITBUILD or $HOME/.gpkit"
         try:
-            import ctypesgencore
+            # Testing the import, so the variable is intentionally not used
+            import ctypesgencore # pylint: disable=unused-variable
         except ImportError:
             log("## SKIPPING MOSEK INSTALL: CTYPESGENCORE WAS NOT FOUND")
             return
