@@ -80,6 +80,7 @@ class DictOfLists(dict):
         "Appends a dict (of dicts) of lists to all held lists."
         if not hasattr(self, 'initialized'):
             _enlist_dict(sol, self)
+            # pylint: disable=attribute-defined-outside-init
             self.initialized = True
         else:
             _append_dict(sol, self)
