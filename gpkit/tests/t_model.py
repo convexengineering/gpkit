@@ -6,7 +6,7 @@ from gpkit import (Model, Monomial, settings, VectorVariable, Variable,
 from gpkit.small_classes import CootMatrix
 from gpkit.feasibility import feasibility_model
 
-NDIGS = {"cvxopt": 4, "mosek": 6, "mosek_cli": 5}
+NDIGS = {"cvxopt": 4, "mosek": 5, "mosek_cli": 5}
 # name: decimal places of accuracy
 
 
@@ -92,7 +92,7 @@ class TestGP(unittest.TestCase):
                       M <= 0.76])
         sol = prob.solve(solver=self.solver, verbosity=0)
         aAE = self.assertAlmostEqual
-        aAE(0.0005532/R.units/sol["cost"], 1, self.ndig)
+        aAE(0.000553226/R.units/sol["cost"], 1, self.ndig)
         aAE(340.29*a0.units/sol["constants"]["a0"], 1, self.ndig)
         aAE(340.29*a0.units/sol["variables"]["a0"], 1, self.ndig)
         aAE(1807.58*R.units/sol["freevariables"]["R"], 1, self.ndig)
@@ -390,7 +390,7 @@ class TestSP(unittest.TestCase):
             m = Model(z, [z >= J], name="SmallSignomial")
         sol = m.localsolve(verbosity=0)
         self.assertAlmostEqual(sol['cost'], nonzero_adder, local_ndig)
-        self.assertAlmostEqual(sol('x'), 0.98725, self.ndig)
+        self.assertAlmostEqual(sol('x'), 0.98725425, self.ndig)
 
     def test_sigs_not_allowed_in_cost(self):
         with SignomialsEnabled():
@@ -399,7 +399,7 @@ class TestSP(unittest.TestCase):
             J = 0.01*((x - 1)**2 + (y - 1)**2) + (x*y - 1)**2
             m = Model(J)
             with self.assertRaises(TypeError):
-                _ = m.localsolve(verbosity=0)
+                m.localsolve(verbosity=0)
 
     def test_partial_sub_signomial(self):
         """Test SP partial x0 initialization"""
