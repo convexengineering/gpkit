@@ -19,25 +19,4 @@ The ``Breakdown`` constraint set will take this input dict and automatically gen
 
 If a GP is formed consisting of these constraints and the objective ``w``, all weights will be properly summed. The solution to this GP can then be used to create a breakdown diagram. This is shown below.
 
-.. code-block:: python
-    
-    from gpkit.constraints.breakdown import Breakdown
-    from gpkit import Model, units
-
-    inputdict = {"w": {"w1": 2, "w2": {"w21": 2, "w22": [1, "lbf"]}}}
-
-    #arguments to Breakdown are the input dict and default units
-    #in the breakdown
-    bd = Breakdown(inputdict, "N")
-
-    #bd.root is the highest level variable in a breakdown
-    #which is w in this case
-    m = Model(bd.root, bd)
-
-    sol = m.solve()
-
-    #function call to make a diagram.
-    #arguments are solution dict, file name, diagram width,
-    #and diagram height. Default height and width are 12 and
-    #15 cm respectively
-   bd.make_diagram(sol, "example.svg", 8, 15)
+.. literalinclude:: breakdown_example.py

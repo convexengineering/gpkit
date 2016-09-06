@@ -25,65 +25,21 @@ Dual Feasible and Infeasible Models
 
 A dual feasible solution typically means that more than one unique solution meets the objective.   An example of a dual-feasible model is shown below. This model is dual-infeasible because there are multiple values of ``x`` and ``y`` that satisfy the constraint set and yield the globally optimum cost of 0.5.
  
- .. code-block:: python
- 
-      from gpkit import Variable, Model
-
-     #Make the necessary Variables
-     x = Variable("x")
-     y = Variable("y")
-
-     #make the constraints
-     constraints = [
-         x >= 1,
-         x*y >= 0.5,
-         x*y <= 1.5
-     ]
-
-     #substitute a value for y
-     substitutions = {
-         “y”: 2
-     }
-  
-     #declare the objective
-     objective = x*y
-
-     #construct the model
-     m = Model(objective, constraints, substitutions)
-
-     #solve the model
-     m.solve()
+ .. literalinclude:: subinplace.py
  
 ``cvxopt`` and ``Mosek`` both solve the above model and output a cost of 0.5, however, the values of ``x`` and ``y`` will be different, illustrating how the model is dual feasible.
 
 The following is an example of a dual-infeasible problem. While the difference is slight, this cannot be solved by either ``mosek`` or ``cvxopt``.  ``Cvxopt`` will again give a ``Rank`` error.  ``Mosek`` can identify deal-infeasible models and the error message will label it as such. Typically, this type of error means that one or more variables are not sufficiently bounded. 
  
- .. code-block:: python
- 
-     from gpkit import Variable, Model
-     x = Variable("x")
-     y = Variable("y")
-     m = Model(x**0.01 * y, [x*y >= 1])
-     m.solve()
+ .. literalinclude:: dual_infeasible_ex2.py
 
 Another common cause of dual-infeasability occurs when a constrain applys pressure on a variable in an unexpected direction and pushs its value to either zero or infinity. When this occurs, Mosek usually returns a final status of dual-infeasible while cvxopt will return a final solver status of unknown. A simple example is given below. ``x`` has no upper bound, and the objective is to minimize ``1/x``, so the solver pushes ``x`` towards infinitiy and returns dual infeasible.
 
- .. code-block:: python
- 
-     from gpkit import Variable, Model
-     x = Variable("x")
-     m = Model(x, [1/x >= 1])
-     m.solve()
+ .. literalinclude:: dual_infeasible_ex.py
 
 Debugging large, dual infeasible, models can be difficult. The recommended procedure is to use a ``BoundedConstraintSet``, found in ``gpkit.tools``. ``BoundedConstraintSet`` adds additional constraints to the model that bounds each variable to be greater than or equal to ``eps``, and less than or equal to ``1/eps``. The default value for ``eps`` is 1e-30. This prevents variables from being truly unbounded and allows most dual infeasible models to solve. By inspecting the solution, or by also making use of the a ``Tight Constraint Set``, it is easy to determine which variables are unbounded and modify constraints as necessary. Below, a BoundedConstraintSet is used to make the previous model solvable.
 
-  .. code-block:: python
- 
-     from gpkit import Variable, Model
-     from gpkit.tools import BoundedConstraintSet
-     x = Variable("x")
-     m = Model(1/x, BoundedConstraintSet([x >= 1]))
-     m.solve()
+  .. literalinclude:: BoundedConstraintSet_ex.py
 
 With the formulation above, ``x`` has a lower bound at 1e-30, so the solver returns a solution with cost 1e-30.
 
@@ -93,62 +49,12 @@ Primal Infeasible Models
 
 A model is primal infeasible when it has no feasible region. This means there is no point which simultaneously satisfies all of the model’s constraints. A simple example is presented below.
 
-  .. code-block:: python
- 
-     from gpkit import Variable, Model
-
-     #Make the necessary Variables
-     x = Variable("x")
-     y = Variable("y")
-
-     #make the constraints
-     constraints = [
-         x >= 1,
-         y >= 2,
-         x*y >= 0.5,
-         x*y <= 1.5
-     ]
-  
-     #declare the objective
-     objective = x*y
-
-     #construct the model
-     m = Model(objective, constraints)
-
-     #solve the model
-     m.solve()
+   .. literalinclude:: primal_infeasible_ex1.py
 
 It is not possible for ``x*y`` to be less than 1.5 while ``x`` is greater than 1 and ``y`` is greater than 2.
 
 A common bug in large models that use ``substitutions`` is to substitute overly constraining values in for variables that make the model primal infeasible. An example of this is given below.
 
-  .. code-block:: python
- 
-     from gpkit import Variable, Model
-
-     #Make the necessary Variables
-     x = Variable("x")
-     y = Variable("y")
-
-     #make the constraints
-     constraints = [
-         x >= 1,
-         x*y >= 0.5,
-         x*y <= 1.5
-     ]
-
-     #substitute a value for y
-     substitutions = {
-         “y”: 2
-     }
-  
-     #declare the objective
-     objective = x*y
-
-     #construct the model
-     m = Model(objective, constraints, substitutions)
-
-     #solve the model
-     m.solve()
+  .. literalinclude:: primal_infeasible_ex2.py
 
 Since ``y`` is now set to 2 and ``x`` can be no less than 1, it is again impossible for ``x*y`` to be less than 1.5 and the model is primal infeasible. If ``y`` was instead set to 1, the model would be feasible and the cost would be 1.
