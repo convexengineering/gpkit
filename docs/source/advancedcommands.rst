@@ -247,84 +247,16 @@ Linked Constraint Set
 If the variables that need to be linked have the same varkey, then the class ``LinkedConstraintSet`` can be used to link them. Consider the two models presented below.
 
 
-  .. code-block:: python
+.. literalinclude:: examples/import_classes.py
+   :lines: 3-21
 
-     #create model #1
-     from gpkit import Variable, Model
-
-     class M1(Model):
-         def __init__(self, **kwargs):
-
-             #Make the necessary Variables
-             x = Variable(“x”)
-             y = Variable(“y”)
-
-             #make the constraints
-             constraints = [
-                 x >= 1,
-                 x*y >= 0.5,
-             ]
-
-   
-             #declare the objective
-             objective = x*y
-
-             #construct the model
-             Model.__init__(self, objective, constraints, **kwargs)
-
-.. code-block:: python
-
-     #create model #2
-     from gpkit import Variable, Model
-
-
-     class M2(Model):
-        def __init__(self, **kwargs):
-
-   	    #Make the necessary Variables
-     	    y = Variable(“y”)
-     	    z = Variable(“z”)
-
-           #make the constraints
-           constraints = [
-               z >= 2,
-               y*z >= 1,
-           ]
-
-           #declare the objective
-           objective = z*y
-
-          #construct the model
-          Model.__init__(self, objective, constraints, **kwargs)
+.. literalinclude:: examples/import_classes.py
+   :lines: 24-41
 
 
 It might be desirable to link ``m1`` and ``m2`` and then solve for the objective ``x*z*y**2``, subject to both the two constraints in ``m1`` as well as the two constraints in ``m2``. Noting ``y`` has the same varkey in both ``m1`` and ``m2``, a ``LinkedConstraintSet`` will automatically link ``y`` between the two models. This is done below.
 
-.. code-block:: python
-
-     #creating a linked model
-     from gpkit import Variable, Model, LinkedConstraintSet, ConstraintSet
-     from import_classes import M1, M2
-
-     #Create the two models
-     m1 = M1()
-     m2 = M2()
-
-     #create a list of submodes
-     submodels = [m1, m2]
-
-     #generate a constraint set for the full model
-     constraints = ConstraintSet([submodels])
-
-     #create a linked constraint set
-     #now there is only a single y variable
-     lc = LinkedConstraintSet(constraints)
-
-     #create a model, note the cost is x*y*z*y
-     mFull = Model(m1.cost*m2.cost, lc)
-
-     #solve the model
-     sol = mFull.solve()
+.. literalinclude:: examples/LCS_ex.py
 
 The cost of the full model is 0.5. If the solution table were to be printed there would only be a single ``y`` variable.
 
@@ -334,60 +266,11 @@ In-Place Substitution
 
 It is also possible to link variables that have a different varkey. Consider a revised ``m2`` presented below. Note that in this version of ``m2``, the variable ``y`` has the varkey ``y2``.
 
-.. code-block:: python
-
-     #create model #2
-     from gpkit import Variable, Model
-
-
-     class M2new(Model):
-        def __init__(self, **kwargs):
-
-   	    #Make the necessary Variables
-     	    y = Variable(“y2”)
-     	    z = Variable(“z”)
-
-           #make the constraints
-           constraints = [
-               z >= 2,
-               y*z >= 1,
-           ]
-
-           #declare the objective
-           objective = z*y
-
-          #construct the model
-          Model.__init__(self, objective, constraints, **kwargs)
+.. literalinclude:: examples/import_classes.py
+   :lines: 43-60
 
 If it was attempted to link ``m1``, from above, and the revised ``m2`` using a ``LinkedConstraintSet``, the two ``y`` variables would not link. This is because they have different varkeys, and a ``LinkedConstraintSet`` only links variables with the same varkey. However, ``subinplace`` can be used to change the varkey of the variable ``y`` in ``m2`` to facilitate linking with a ``LinkedConstraintSet``. This is demonstrated below.
 
-.. code-block:: python
-
-     #creating a linked model using sub in-place
-     from gpkit import Variable, Model, LinkedConstraintSet, ConstraintSet
-     from import_classes import M1, M2new
-
-     #Create the two models
-     m1 = M1()
-     m2 = M2new()
-
-     #create a list of submodes
-     submodels = [m1, m2]
-
-     #generate a constraint set for the full model
-     constraints = ConstraintSet([submodels])
-
-     #use sub in-place to change all y2 varkeys to y
-     constraints.subinplace({“y2”: “y”})
-
-     #create a linked constraint set
-     #now there is only a single y variable
-     lc = LinkedConstraintSet(constraints)
-
-     #create a model, note the cost is x*y*z*y
-     mFull = Model(m1.cost*m2.cost, lc)
-
-     #solve the model
-     sol = mFull.solve()
-     
+.. literalinclude:: examples/subinplace.py
+   
 Once again, the cost of the full model is 0.5.
