@@ -23,17 +23,38 @@ A number of errors and warnings can be raised when attempting to solve a model.
 Dual Feasible and Infeasible Models
 ===================================
 
-A dual feasible solution typically means that more than one unique solution meets the objective.   An example of a dual-feasible model is shown below. This model is dual-infeasible because there are multiple values of ``x`` and ``y`` that satisfy the constraint set even though the obvious value of the objective should be 1.
+A dual feasible solution typically means that more than one unique solution meets the objective.   An example of a dual-feasible model is shown below. This model is dual-infeasible because there are multiple values of ``x`` and ``y`` that satisfy the constraint set and yield the globally optimum cost of 0.5.
  
  .. code-block:: python
  
-     from gpkit import Variable, Model
+      from gpkit import Variable, Model
+
+     #Make the necessary Variables
      x = Variable("x")
      y = Variable("y")
-     m = Model(x*y, [x*y >= 1])
+
+     #make the constraints
+     constraints = [
+         x >= 1,
+         x*y >= 0.5,
+         x*y <= 1.5
+     ]
+
+     #substitute a value for y
+     substitutions = {
+         “y”: 2
+     }
+  
+     #declare the objective
+     objective = x*y
+
+     #construct the model
+     m = Model(objective, constraints, substitutions)
+
+     #solve the model
      m.solve()
  
-When solving with ``mosek`` this model will solve. ``Mosek`` is more robust robust and will solve dual-feasible problems.  The solver, ``cvxopt``, cannot solve this problem because of ``Rank`` errors.  When solving with ``cvxopt``, a ``Rank`` error can mean that the problem is dual-feasible. 
+``cvxopt`` and ``Mosek`` both solve the above model and output a cost of 0.5, however, the values of ``x`` and ``y`` will be different, illustrating how the model is dual feasible.
 
 The following is an example of a dual-infeasible problem. While the difference is slight, this cannot be solved by either ``mosek`` or ``cvxopt``.  ``Cvxopt`` will again give a ``Rank`` error.  ``Mosek`` can identify deal-infeasible models and the error message will label it as such. Typically, this type of error means that one or more variables are not sufficiently bounded. 
  

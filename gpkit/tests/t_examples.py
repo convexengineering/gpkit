@@ -104,6 +104,10 @@ class TestExamples(unittest.TestCase):
         with self.assertRaises(RuntimeWarning):
             example.m.solve()
 
+    def test_dual_infeasible_ex2(self, example):
+        with self.assertRaises((RuntimeWarning, ValueError)):
+            example.m.solve()
+
     def test_primal_infeasible_ex1(self, example):
         with self.assertRaises(RuntimeWarning):
             example.m.solve()
