@@ -96,7 +96,7 @@ msg-template={path}:{line}: [{msg_id}({symbol}), {obj}] {msg}
 bad-functions=filter,input
 
 # Good variable names which should always be accepted, separated by a comma
-good-names=i,j,k,_,gp,sp,to,A,c,cs
+good-names=i,j,k,_,gp,sp,to,A,c,cs,x0
 
 # Bad variable names which should always be refused, separated by a comma
 bad-names=foo,bar,baz,toto,tutu,tata
@@ -133,7 +133,7 @@ attr-rgx=[a-z_][a-z0-9_]{2,30}$
 attr-name-hint=[a-z_][a-z0-9_]{2,30}$
 
 # Regular expression matching correct argument names
-argument-rgx=[a-z_][a-z0-9_]{2,30}|x0|nu|la|ax$
+argument-rgx=[a-z_][a-z0-9_]{2,30}|nu|la|ax$
 
 # Naming hint for argument names
 argument-name-hint=[a-z_][a-z0-9_]{2,30}$

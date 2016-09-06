@@ -103,6 +103,7 @@ class SignomialProgram(CostedConstraintSet):
     appear to be converging, you may wish to increase the iteration limit by
     calling .localsolve(..., iteration_limit=NEWLIMIT).""" % len(self.gps))
             gp = self.gp(x0, verbosity=verbosity-1)
+            gp.x0 = x0           # NOTE: SIDE EFFECTS
             self.gps.append(gp)  # NOTE: SIDE EFFECTS
             try:
                 result = gp.solve(solver, verbosity-1, **kwargs)

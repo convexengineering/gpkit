@@ -1,3 +1,4 @@
+# pylint: skip-file
 # from https://github.com/kanzure/ctypesgen
 #
 # Copyright (c) 2007-2008, Ctypesgen Developers

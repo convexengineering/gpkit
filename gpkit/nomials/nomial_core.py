@@ -1,7 +1,7 @@
 "The shared non-mathematical backbone of all Nomials"
 from .data import NomialData
 from ..small_classes import Numbers
-from ..small_scripts import latex_num
+from ..small_scripts import nomial_latex_helper
 from ..small_scripts import mag, unitstr
 from ..repr_conventions import _str, _repr, _repr_latex_
 
@@ -62,7 +62,6 @@ class Nomial(NomialData):
         return " + ".join(sorted(mstrs)) + units
 
     def latex(self, excluded=None):
-        # pylint: disable=too-many-locals
         "For pretty printing with Sympy"
         if excluded is None:
             excluded = []
@@ -75,30 +74,7 @@ class Nomial(NomialData):
                 elif x < 0:
                     neg_vars.append((var.latex(excluded), x))
 
-            pvarstrs = ['%s^{%.2g}' % (varl, x) if "%.2g" % x != "1" else varl
-                        for (varl, x) in pos_vars]
-            nvarstrs = ['%s^{%.2g}' % (varl, -x)
-                        if "%.2g" % -x != "1" else varl
-                        for (varl, x) in neg_vars]
-            pvarstrs.sort()
-            nvarstrs.sort()
-            pvarstr = ' '.join(pvarstrs)
-            nvarstr = ' '.join(nvarstrs)
-            c = mag(c)
-            cstr = "%.2g" % c
-            if pos_vars and (cstr == "1" or cstr == "-1"):
-                cstr = cstr[:-1]
-            else:
-                cstr = latex_num(c)
-
-            if not pos_vars and not neg_vars:
-                mstrs.append("%s" % cstr)
-            elif pos_vars and not neg_vars:
-                mstrs.append("%s%s" % (cstr, pvarstr))
-            elif neg_vars and not pos_vars:
-                mstrs.append("\\frac{%s}{%s}" % (cstr, nvarstr))
-            elif pos_vars and neg_vars:
-                mstrs.append("%s\\frac{%s}{%s}" % (cstr, pvarstr, nvarstr))
+            mstrs.append(nomial_latex_helper(c, pos_vars, neg_vars))
 
         if "units" in excluded:
             return " + ".join(sorted(mstrs))
