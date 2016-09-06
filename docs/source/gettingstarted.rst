@@ -158,12 +158,16 @@ We can also manually print the solution table, with the same result as if the ve
     -------------
     S : -1.5
 
+We can also print the optimal value and solved variables individually.
+
 .. code-block:: python
 
+    print "The optimal value is %s." % (sol["cost"])
     print "The x dimension is %s." % (sol(x))
 
 ::
 
+    The optimal value is 15.5884619886.
     The x dimension is 0.577351209028 meter.
 
 .. refactor this section; explain what can be done with a SolutionArray
