@@ -6,7 +6,7 @@ from gpkit import (Model, Monomial, settings, VectorVariable, Variable,
 from gpkit.small_classes import CootMatrix
 from gpkit.feasibility import feasibility_model
 
-NDIGS = {"cvxopt": 5, "mosek": 7, "mosek_cli": 5}
+NDIGS = {"cvxopt": 4, "mosek": 7, "mosek_cli": 5}
 # name: decimal places of accuracy
 
 
@@ -51,9 +51,9 @@ class TestGP(unittest.TestCase):
             m = Model(c, [c >= (x + 0.25)**2 + (y - 0.5)**2,
                           SignomialEquality(x**2 + x, y)])
         sol = m.localsolve(verbosity=0)
-        self.assertAlmostEqual(sol("x"), 0.1639472, 4)
-        self.assertAlmostEqual(sol("y"), 0.1908254, 4)
-        self.assertAlmostEqual(sol("c"), 0.2669448, 4)
+        self.assertAlmostEqual(sol("x"), 0.1639472, self.ndig)
+        self.assertAlmostEqual(sol("y"), 0.1908254, self.ndig)
+        self.assertAlmostEqual(sol("c"), 0.2669448, self.ndig)
 
     def test_601(self):
         # tautological monomials should solve but not pass to the solver
@@ -91,16 +91,11 @@ class TestGP(unittest.TestCase):
                      [t >= sum(R/a0/M/theta**0.5) + T_loiter + T_reserve,
                       M <= 0.76])
         sol = prob.solve(solver=self.solver, verbosity=0)
-        # TODO: add better way to test united things
-        costdiff = (sol["cost"] - 0.0005532/R.units).magnitude
-        self.assertAlmostEqual(costdiff, 0, self.ndig)
-        diff = (sol["constants"]["a0"] - 340.29*a0.units).magnitude
-        self.assertAlmostEqual(diff, 0, self.ndig)
-        diff = (sol["variables"]["a0"] - 340.29*a0.units).magnitude
-        self.assertAlmostEqual(diff, 0, self.ndig)
-        diff = (sol["freevariables"]["R"] - 1807.58*R.units).magnitude
-        # inverse of cost is much more sensitive than self.ndig, unsurprisingly
-        self.assertAlmostEqual(diff, 0, 2)
+        aAE = self.assertAlmostEqual
+        aAE(0.0005532/R.units/sol["cost"], 1, self.ndig)
+        aAE(340.29*a0.units/sol["constants"]["a0"], 1, self.ndig)
+        aAE(340.29*a0.units/sol["variables"]["a0"], 1, self.ndig)
+        aAE(1807.58*R.units/sol["freevariables"]["R"], 1, self.ndig)
 
     def test_trivial_vector_gp(self):
         """
@@ -395,7 +390,7 @@ class TestSP(unittest.TestCase):
             m = Model(z, [z >= J], name="SmallSignomial")
         sol = m.localsolve(verbosity=0)
         self.assertAlmostEqual(sol['cost'], nonzero_adder, local_ndig)
-        self.assertAlmostEqual(sol('x'), 0.987, 3)
+        self.assertAlmostEqual(sol('x'), 0.98725, self.ndig)
 
     def test_sigs_not_allowed_in_cost(self):
         with SignomialsEnabled():
