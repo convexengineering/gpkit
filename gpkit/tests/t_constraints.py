@@ -12,6 +12,22 @@ import gpkit
 class TestConstraint(unittest.TestCase):
     """Tests for Constraint class"""
 
+    def test_constraintget(self):
+        x = Variable("x")
+        x_ = Variable("x", model="_")
+        xv = VectorVariable(2, "x")
+        xv_ = VectorVariable(2, "x", model="_")
+        self.assertEqual(Model(x, [x >= 1])["x"], x)
+        with self.assertRaises(ValueError):
+            _ = Model(x, [x >= 1, x_ >= 1])["x"]
+        with self.assertRaises(ValueError):
+            _ = Model(x, [x >= 1, xv >= 1])["x"]
+        self.assertTrue(all(Model(xv.prod(), [xv >= 1])["x"] == xv))
+        with self.assertRaises(ValueError):
+            _ = Model(xv.prod(), [xv >= 1, xv_ >= 1])["x"]
+        with self.assertRaises(ValueError):
+            _ = Model(xv.prod(), [xv >= 1, x_ >= 1])["x"]
+
     def test_link_conflict(self):
         "Check that substitution conflicts are flagged during linking."
         x_fx1 = Variable("x", 1, models=["fixed1"])
