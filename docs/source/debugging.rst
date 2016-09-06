@@ -3,21 +3,21 @@ Common Errors and Warnings
 
 A number of errors and warnings can be raised when attempting to solve a model.
  
--``TypeError: unhashable type: ‘xxxx’`` - can be caused by passing something other than a constraint set as the second argument of a ``Model`` constructor
+- ``TypeError: unhashable type: ‘xxxx’`` - can be caused by passing something other than a constraint set as the second argument of a ``Model`` constructor
  
--``TypeError: SignomialInequality could not simplify to a PosynomialInequality`` - this error occurs when there is a signomial constraint in a problem not solved with ``localsolve``. Either signomials must be enabled and ``localsolve`` used, or the signomial constraint must be turned into a GP constraint.
+- ``InvalidGPConstraint: SignomialInequality could not simplify to a PosynomialInequality; try forming your program as SignomialProgram or calling .localsolve() `` - this error occurs when there is a signomial constraint in a problem not solved with ``localsolve``. Either signomials must be enabled and ``localsolve`` used, or the signomial constraint must be turned into a GP constraint.
  
--``AttributeError: 'str' object has no attribute 'sub’`` - this is caused by attempting to access an item in the solution dict with an invalid varkey
+- ``AttributeError: 'str' object has no attribute 'sub’`` - this is caused by attempting to access an item in the solution dict with an invalid varkey
  
--``TypeError: unsupported operand type(s) for ** or pow(): 'int' and 'ParserHelper’`` - this normally indicates a ``Variable`` has been created with invalid units (i.e. units not supported by ``pint``)
+- ``TypeError: unsupported operand type(s) for ** or pow(): 'int' and 'ParserHelper’`` - this normally indicates a ``Variable`` has been created with invalid units (i.e. units not supported by ``pint``)
  
--``RuntimeWarning: Primal solution violates constraint: 1.0000149786 is greater than 1`` - this warning may be seen in dual infeasible models, see *Dual Infeasible Models* below for more tips on debugging a dual infeasible model.
+- ``RuntimeWarning: Primal solution violates constraint: 1.0000149786 is greater than 1`` - this warning may be seen in dual infeasible models, see *Dual Infeasible Models* below for more tips on debugging a dual infeasible model.
 
--``RuntimeWarning: Dual cost nan does not match primal cost 1.00122315152`` - this warning may be seen in dual infeasible models, see *Dual Infeasible Models* below for more tips on debugging a dual infeasible model.
+- ``RuntimeWarning: Dual cost nan does not match primal cost 1.00122315152`` - this warning may be seen in dual infeasible models, see *Dual Infeasible Models* below for more tips on debugging a dual infeasible model.
 
--``RuntimeWarning: final status of solver 'cvxopt' was 'unknown', not 'optimal’`` or - this is the most difficult warning to debug. It can be thrown when attempting to solve a dual infeasible model or a primal infeasible model. See *Dual Infeasible Models* and *Primal Infeasible Models* below for more information.
+- ``RuntimeWarning: final status of solver 'cvxopt' was 'unknown', not 'optimal’`` or ``RuntimeWarning: final status of solver 'mosek' was ‘UNKNOWN’, not 'optimal’.``- this is the most difficult warning to debug. It can be thrown when attempting to solve a dual infeasible model or a primal infeasible model. See *Dual Infeasible Models* and *Primal Infeasible Models* below for more information.
 
--``RuntimeWarning: final status of solver 'mosek' was 'DUAL_INFEAS_CER', not 'optimal’`` - this error is thrown when attempting to solve a dual infeasible model with MOSEK,  see *Dual Infeasible Models* below for more tips on debugging a dual infeasible model.
+- ``RuntimeWarning: final status of solver 'mosek' was 'DUAL_INFEAS_CER', not 'optimal’`` - this error is thrown when attempting to solve a dual infeasible model with MOSEK,  see *Dual Infeasible Models* below for more tips on debugging a dual infeasible model.
 
 
 Dual Feasible and Infeasible Models
