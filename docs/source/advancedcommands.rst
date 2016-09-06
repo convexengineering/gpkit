@@ -234,10 +234,10 @@ The ``normsub`` argument specifies an expected value for your solution to normal
 
 The ``sweep`` argument specifies what points between 0 and 1 you wish to sample the weights at. If you want different resolutions or spacings for different weights, the ``sweeps`` argument accepts a list of sweep arrays.
 
-Linking Variables
-=================
+Submodels and Variable Linking
+===============================
 
-It is often desirable to split a model into (linked) submodels. For example, instead of having one large airplane model, there may be separate wing, fuselage, vertical tail, horizontal tail, engine, and landing gear models which are linked together to form a full airplane model. This methodology can be beneficial because it allows a single component model to be linked into a variety of system models.
+It is often desirable to split a model into submodels. For example, instead of having one large airplane model, there may be separate wing, fuselage, vertical tail, horizontal tail, engine, and landing gear models which are linked together to form a full airplane model. This methodology can be beneficial because it allows a single component model to be linked into a variety of system models.
 
 Obviously, subsystems will share common variables. In the airplane example, the engine model will determine the engine weight and size. If the engines are mounted under the wing, the wing model will have an engine weight variable. When the subsystem models are linked to form the system level model, it is crucial that all models share one engine weight variable. GPkit has a built in class that performs linking, called ``LinkedConstraintSet``. Improperly linking variables together is a common cause of modeling errors, so it is recommended modelers use great care when linking variables, especially when altering variable’s varkeys.
 
@@ -272,5 +272,5 @@ It is also possible to link variables that have a different varkey. Consider a r
 If it was attempted to link ``m1``, from above, and the revised ``m2`` using a ``LinkedConstraintSet``, the two ``y`` variables would not link. This is because they have different varkeys, and a ``LinkedConstraintSet`` only links variables with the same varkey. However, ``subinplace`` can be used to change the varkey of the variable ``y`` in ``m2`` to facilitate linking with a ``LinkedConstraintSet``. This is demonstrated below.
 
 .. literalinclude:: examples/subinplace.py
-   
+
 Once again, the cost of the full model is 0.5.

@@ -93,28 +93,28 @@ class TestExamples(unittest.TestCase):
 
 ##    def test_BoundedConstraintSet_ex(self, example):
 ##        self.assertAlmostEqual(example.sol["cost"], 0)
-        
+
     def test_LCS_ex(self, example):
         self.assertAlmostEqual(example.sol["cost"], .5)
-        
+
     def test_subinplace(self, example):
         self.assertAlmostEqual(example.sol["cost"], .5)
 
     def test_dual_infeasible_ex(self, example):
         with self.assertRaises(RuntimeWarning):
-            example.m.solve()
+            example.m.solve(verbosity=0)
 
     def test_dual_infeasible_ex2(self, example):
         with self.assertRaises((RuntimeWarning, ValueError)):
-            example.m.solve()
+            example.m.solve(verbosity=0)
 
     def test_primal_infeasible_ex1(self, example):
         with self.assertRaises(RuntimeWarning):
-            example.m.solve()
+            example.m.solve(verbosity=0)
 
     def test_primal_infeasible_ex2(self, example):
         with self.assertRaises(RuntimeWarning):
-            example.m.solve()
+            example.m.solve(verbosity=0)
 
 FILE_DIR = os.path.dirname(os.path.realpath(__file__))
 EXAMPLE_DIR = os.path.abspath(FILE_DIR + '../../../docs/source/examples')

@@ -17,6 +17,7 @@ Table of contents
        gpkit101
        installation
        gettingstarted
+       debugging
        advancedcommands
        signomialprogramming
        examples

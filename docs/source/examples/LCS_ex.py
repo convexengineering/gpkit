@@ -20,4 +20,5 @@ lc = LinkedConstraintSet(constraints)
 mFull = Model(m1.cost*m2.cost, lc)
 
 #solve the model
-sol = mFull.solve()
+sol = mFull.solve(verbosity=0)
+print sol.table()

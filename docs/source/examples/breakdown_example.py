@@ -11,5 +11,4 @@ bd = Breakdown(inputdict, "N")
 #which is w in this case
 m = Model(bd.root, bd)
 
-sol = m.solve()
-
+print m.solve(verbosity=0).table()

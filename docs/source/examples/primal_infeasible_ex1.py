@@ -6,10 +6,10 @@ y = Variable("y")
 
 #make the constraints
 constraints = [
- x >= 1,
- y >= 2,
- x*y >= 0.5,
- x*y <= 1.5
+    x >= 1,
+    y >= 2,
+    x*y >= 0.5,
+    x*y <= 1.5
 ]
 
 #declare the objective
