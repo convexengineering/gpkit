@@ -6,7 +6,7 @@ from gpkit import (Model, Monomial, settings, VectorVariable, Variable,
 from gpkit.small_classes import CootMatrix
 from gpkit.feasibility import feasibility_model
 
-NDIGS = {"cvxopt": 4, "mosek": 7, "mosek_cli": 5}
+NDIGS = {"cvxopt": 4, "mosek": 6, "mosek_cli": 5}
 # name: decimal places of accuracy
 
 
