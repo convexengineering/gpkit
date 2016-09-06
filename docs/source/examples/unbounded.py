@@ -6,7 +6,7 @@ x = Variable("x")
 
 constraints = [x >= 1]
 
-# Model(x, constraints).solve()  # does not solve
+# Model(1/x, constraints).solve()  # does not solve
 m = Model(1/x, BoundedConstraintSet(constraints))
 # by default, prints bounds warning during solve
 sol = m.solve(verbosity=0)

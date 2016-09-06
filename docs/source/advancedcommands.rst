@@ -240,14 +240,14 @@ Debugging
 
 Unbounded variables
 -------------------
-In some cases a solver will return ``unknown`` when a free variable is
-unbounded by the model. ``gpkit.constraints.bounded.BoundedConstraintSet`` is a
-simple tool that attempts to detect unbounded variables by adding extremely
-large upper bounds and extremely small lower bounds to all variables in a ConstraintSet.
+In some cases a model will not solve because its variables are pushing to 0 or infinity. If the solver catches such behaviour it will return ``dual infeasible`` (or equivalent), but sometimes solvers do not catch it and return ``unknown``.
 
-When a model if with a BoundedConstraintSet is solved, it checks whether any variables slid off to the bounds, notes this in the solution dictionary and prints a warning (if verbosity is greater than 0).
+``gpkit.constraints.bounded.BoundedConstraintSet`` is a
+simple tool that attempts to detect unbounded variables and get unbounded models to solve by adding extremely large upper bounds and extremely small lower bounds to all variables in a ConstraintSet.
 
-For example, Mosek returns unknown when attempting to solve the following model:
+When a model with an BoundedConstraintSet is solved, it checks whether any variables slid off to the bounds, notes this in the solution dictionary and prints a warning (if verbosity is greater than 0).
+
+For example, Mosek returns ``DUAL_INFEAS_CER`` when attempting to solve the following model:
 
 .. literalinclude:: examples/unbounded.py
 
@@ -255,4 +255,4 @@ Upon viewing the printed output,
 
 .. literalinclude:: examples/unbounded_output.txt
 
-it becomes clear that ``x`` is unbounded below in the original model.
+it becomes clear that the problem is, unsurprisingly, that ``x`` is unbounded below in the original model.
