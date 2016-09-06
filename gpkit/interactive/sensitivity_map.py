@@ -1,6 +1,7 @@
 "Implements heatmapped equations to highlight sensitivities."
 import numpy as np
 from gpkit.nomials import MonomialEquality
+from gpkit.small_scripts import nomial_latex_helper
 
 
 BLUE = np.array([16, 131, 246])/255.0
@@ -42,7 +43,7 @@ def signomial_print(sig, sol, colorfn, paintby="constants", idx=None):
             elif x < 0:
                 neg_vars.append((varlatex, x))
 
-        mstrs.append(sig.latex_varstr(c, pos_vars, neg_vars))
+        mstrs.append(nomial_latex_helper(c, pos_vars, neg_vars))
 
     if paintby == "monomials":
         mstrs_ = []
