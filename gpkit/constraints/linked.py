@@ -30,6 +30,8 @@ class LinkedConstraintSet(ConstraintSet):
         linkable = set()
         for varkey in self.varkeys:
             name_without_model = varkey.str_without(["models"])
+            if exclude and varkey.name in exclude:
+                continue
             if len(self.varkeys[name_without_model]) > 1:
                 linkable.add(name_without_model)
         if include_only:
