@@ -99,8 +99,18 @@ class TestExamples(unittest.TestCase):
         
     def test_subinplace(self, example):
         self.assertAlmostEqual(example.sol["cost"], .5)
-    
 
+    def test_dual_infeasible_ex(self, example):
+        with self.assertRaises(RuntimeWarning):
+            example.m.solve()
+
+    def test_primal_infeasible_ex1(self, example):
+        with self.assertRaises(RuntimeWarning):
+            example.m.solve()
+
+    def test_primal_infeasible_ex2(self, example):
+        with self.assertRaises(RuntimeWarning):
+            example.m.solve()
 
 FILE_DIR = os.path.dirname(os.path.realpath(__file__))
 EXAMPLE_DIR = os.path.abspath(FILE_DIR + '../../../docs/source/examples')

@@ -39,7 +39,7 @@ class TightConstraintSet(ConstraintSet):
                        "the left hand side evaluated to %s but "
                        "the right hand side evaluated to %s "
                        "(Allowable error: %s%%, Actual error: %.2g%%)\n" %
-                       (constraint, leftsubbed, rightsubbed,
+                       (constraint.left, constraint.oper, constraint.right, leftsubbed, rightsubbed,
                         self.reltol*100, mag(rel_diff)*100))
                 if self.raiseerror:
                     raise ValueError(msg)
