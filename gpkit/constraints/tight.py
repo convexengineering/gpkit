@@ -10,9 +10,9 @@ class TightConstraintSet(ConstraintSet):
 
     def __init__(self, constraints, substitutions=None, reltol=1e-6,
                  raiseerror=False):
+        super(TightConstraintSet, self).__init__(constraints, substitutions)
         self.reltol = reltol
         self.raiseerror = raiseerror
-        super(TightConstraintSet, self).__init__(constraints, substitutions)
 
     def process_result(self, result):
         "Checks that all constraints are satisfied with equality"
@@ -29,8 +29,9 @@ class TightConstraintSet(ConstraintSet):
                 posy, negy = siglt0.posy_negy()
                 posy = posy.sub(variables).value
                 negy = negy.sub(variables).value
-                rel_diff = abs(1-posy/negy)
+                rel_diff = abs(1 - posy/negy)
                 if rel_diff >= self.reltol:
+                    # do another substitution for the sake of printing
                     with SignomialsEnabled():
                         leftsubbed = constraint.left.sub(variables).value
                         rightsubbed = constraint.right.sub(variables).value

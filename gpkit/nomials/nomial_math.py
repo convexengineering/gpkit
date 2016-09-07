@@ -260,9 +260,6 @@ class Signomial(Nomial):
         else:
             return NotImplemented
 
-    def __radd__(self, other):
-        return self + other
-
     def __mul__(self, other):
         if isinstance(other, Numbers):
             if not other:

@@ -96,7 +96,7 @@ class KeyDict(dict):
             if idx:
                 number_array = isinstance(value, Numbers)
                 kwargs = {} if number_array else {"dtype": "object"}
-                emptyvec = np.full(key.descr["shape"], np.nan, **kwargs)
+                emptyvec = np.full(key.shape, np.nan, **kwargs)
                 dict.__setitem__(self, key, emptyvec)
         for key in self.keymap[key]:
             if idx:
@@ -139,12 +139,12 @@ class KeySet(KeyDict):
 
     def update(self, *args, **kwargs):
         "Iterates through the dictionary created by args and kwargs"
-        if len(args) == 1:
+        if len(args) == 1:  # set-like interface
             for item in args[0]:
                 self.add(item)
-        else:
-            for k, v in dict(*args, **kwargs).items():
-                self[k] = v
+        else:  # dict-like interface
+            for k in dict(*args, **kwargs):
+                self.add(k)
 
     def __getitem__(self, key):
         "Gets the keys corresponding to a particular key."
@@ -154,16 +154,3 @@ class KeySet(KeyDict):
     def __setitem__(self, key, value):
         "Assigns the key itself every time."
         KeyDict.__setitem__(self, key, None)
-
-    def map(self, iterable):
-        "Given a list of keys, returns a list of VarKeys"
-        varkeys = []
-        for key in iterable:
-            keys = self[key]
-            if len(keys) > 1:
-                raise ValueError("KeySet.map() accepts only unambiguous keys.")
-            key, = keys
-            varkeys.append(key)
-        if len(varkeys) == 1:
-            varkeys = varkeys[0]
-        return varkeys

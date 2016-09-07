@@ -90,7 +90,6 @@ class SignomialProgram(CostedConstraintSet):
         result : dict
             A dictionary containing the translated solver result.
         """
-        startpoint = x0 if x0 else {}
         if verbosity > 0:
             print("Beginning signomial solve.")
             starttime = time()
@@ -104,7 +103,6 @@ class SignomialProgram(CostedConstraintSet):
     appear to be converging, you may wish to increase the iteration limit by
     calling .localsolve(..., iteration_limit=NEWLIMIT).""" % len(self.gps))
             gp = self.gp(x0, verbosity=verbosity-1)
-            gp.x0 = x0           # NOTE: SIDE EFFECTS
             self.gps.append(gp)  # NOTE: SIDE EFFECTS
             try:
                 result = gp.solve(solver, verbosity-1, **kwargs)
@@ -112,7 +110,7 @@ class SignomialProgram(CostedConstraintSet):
                 nearest_feasible = feasibility_model(gp, "max")
                 self.gps.append(nearest_feasible)
                 result = nearest_feasible.solve(solver, verbosity=verbosity-1)
-                result["cost"] = None
+                result["cost"] = None  # reset the cost-counting
             x0 = result["variables"]
             prevcost, cost = cost, result["cost"]
             if prevcost and cost:
@@ -123,14 +121,13 @@ class SignomialProgram(CostedConstraintSet):
         if verbosity > 0:
             print("Solving took %i GP solves" % len(self.gps)
                   + " and %.3g seconds." % (time() - starttime))
-
-        result["signomialstart"] = startpoint
         self.process_result(result)
         self.result = result  # NOTE: SIDE EFFECTS
         return result
 
     def gp(self, x0=None, verbosity=1):
         """Get a GP approximation of this SP at x0"""
-        gpconstr = self.as_gpconstr(x0)
-        return GeometricProgram(self.cost, gpconstr,
-                                self.substitutions, verbosity=verbosity)
+        gp = GeometricProgram(self.cost, self.as_gpconstr(x0),
+                              self.substitutions, verbosity=verbosity)
+        gp.x0 = x0  # NOTE: SIDE EFFECTS
+        return gp

@@ -45,6 +45,7 @@ class Variable(Monomial):
                 descr["label"] = arg
 
         Monomial.__init__(self, **descr)
+        # NOTE: because Signomial.__init__ will change the class
         self.__class__ = Variable
 
     __hash__ = NomialData.__hash__
@@ -68,7 +69,7 @@ class Variable(Monomial):
         assert x.sub(3) == Variable('x', value=3)
         """
         if len(args) == 1 and "val" not in kwargs:
-            arg = args[0]
+            arg, = args
             if not isinstance(arg, dict):
                 args = ({self: arg},)
         return super(Variable, self).sub(*args, **kwargs)

@@ -6,6 +6,7 @@ from .nomial_math import MonomialEquality, PosynomialInequality
 from .nomial_math import SignomialInequality
 from .nomial_math import SignomialEquality
 from .variables import Variable, ArrayVariable
+from .substitution import parse_subs
 
 # TEMPORARY SHORTCUTS
 from .data import NomialData

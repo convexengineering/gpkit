@@ -16,12 +16,14 @@ class ConstraintSet(list):
     "Recursive container for ConstraintSets and Inequalities"
     def __init__(self, constraints, substitutions=None):
         if isinstance(constraints, ConstraintSet):
+            # stick it in a list to maintain hierarchy
             constraints = [constraints]
         list.__init__(self, constraints)
         subs = dict(substitutions) if substitutions else {}
         self.unused_variables = None
         self.substitutions = KeyDict()
         if isinstance(constraints, ConstraintSet):
+            # pylint: disable=no-member
             self.substitutions.update(constraints.substitutions)
         else:
             # constraintsetify everything
@@ -43,7 +45,8 @@ class ConstraintSet(list):
                                          " Did the constraint list contain an"
                                          " accidental equality?"
                                          % (type(constraint), loc))
-                # conditional needed because sometimes numpy_bools are needed??
+                # conditional because numpy_bools are used for vector ==
+                # TODO: remove conditional or otherwise clean up
                 if hasattr(self[i], "substitutions"):
                     self.substitutions.update(self[i].substitutions)
         self.substitutions.update(subs)
@@ -58,23 +61,19 @@ class ConstraintSet(list):
             variables = self.variables_byname(key)
             if len(variables) == 1:
                 return variables[0]
-            elif variables[0].key.idx and variables[0].key.shape:
+            elif variables[0].key.veckey:
                 # maybe it's all one vector variable!
-                from ..nomials.array import NomialArray
-                arr = np.full(variables[0].key.shape, np.nan, dtype="object")
-                arr = NomialArray(arr)
-                goaldict = dict(variables[0].key.descr)
-                del goaldict["idx"]
+                goalkey = variables[0].key.veckey
+                arr = np.full(goalkey.shape, np.nan, dtype="object")
                 for variable in variables:
-                    testdict = dict(variable.key.descr)
-                    idx = testdict.pop("idx", None)
-                    if testdict == goaldict:
-                        arr[idx] = variable
+                    if variable.key.veckey == goalkey:
+                        arr[variable.key.idx] = variable
                     else:
                         arr = None
                         break
                 if arr is not None:
-                    return arr
+                    from ..nomials import NomialArray
+                    return NomialArray(arr)
             raise ValueError("multiple variables are called '%s'; use"
                              " variable_byname('%s') to see all of them"
                              % (key, key))

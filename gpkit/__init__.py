@@ -42,7 +42,7 @@ def enable_units(path=None):
             # let user load their own unit definitions
             UNIT_REGISTRY = pint.UnitRegistry(path)
         if UNIT_REGISTRY is None:
-            UNIT_REGISTRY = pint.UnitRegistry() # use pint default
+            UNIT_REGISTRY = pint.UnitRegistry()  # use pint default
             path = os_sep.join([os_path_dirname(__file__), "pint"])
             UNIT_REGISTRY.load_definitions(os_sep.join([path, "usd_cpi.txt"]))
             # next line patches https://github.com/hgrecco/pint/issues/366

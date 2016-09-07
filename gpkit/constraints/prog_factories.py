@@ -12,10 +12,9 @@ try:
 except (ImportError, IOError, AssertionError):
     POOL = None
 
-from ..nomials.substitution import parse_subs
+from ..nomials import parse_subs
 from ..solution_array import SolutionArray
 from ..keydict import KeyDict
-from ..varkey import VarKey
 
 
 def _progify_fctry(program, return_attr=None):
@@ -109,8 +108,7 @@ def run_sweep(genfunction, self, solution, skipsweepfailures,
         "Solves one pass of a sweep."
         this_pass = {var: sweep_vect[i]
                      for (var, sweep_vect) in sweep_vects.items()}
-        linked = {var: fn(*[this_pass[VarKey(v)]
-                            for v in var.descr["args"]])
+        linked = {var: fn(*[this_pass[v.key] for v in var.descr["args"]])
                   for var, fn in linkedsweep.items()}
         this_pass.update(linked)
         constants.update(this_pass)
