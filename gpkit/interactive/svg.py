@@ -34,7 +34,7 @@ def BDmake_diagram(sol, depth, filename, sidelength, height, input_dict, units):
     #generate a drawing objet
     dwg = svgwrite.Drawing(filename, debug=True)
     #call the recursive drawing function
-    BDdwgrecurse(input_dict, (2, 2), -1, sol, elementlength, height, total,
+    BDdwgrecurse(input_dict, (.25, .25), 0, sol, elementlength, height, total,
                  depth, dwg, units)
     #save the drawing at the conlusion of the recursive call
     dwg.save()
@@ -48,17 +48,17 @@ def BDdwgrecurse(input_dict, initcoord, currentlevel, sol, elementlength,
     calls the draw function
     """
     totalheight = 0
-    currentlevel = currentlevel+1
+    currentlevel += 1
     for key, value in sorted(input_dict.items()):
         if units != '-':
             #make sure all quantities are in the default unit system
-            height = (sheight/total)*sol(key).to(units)
+            height = (sheight/total) * sol(key).to(units)
         else:
-            height = (sheight/total)*sol(key)
+            height = (sheight/total) * sol(key)
         #extract just the numeric value from the quantity
         height = height.item()
         #set the current coordinate
-        currentcoord = (initcoord[0], initcoord[1]+totalheight)
+        currentcoord = (initcoord[0], initcoord[1] + totalheight)
         #draw the three lines for each element of the breakdown
         BDdrawsegment(key, height, currentcoord, dwg, elementlength)
         totalheight += height

@@ -15,31 +15,36 @@ class Breakdown(ConstraintSet):
     """
     def __init__(self, input_dict, units):
         self.input_dict = input_dict
-        self.depth = 0
+        self.depth = []
         self.units = units
-        varlist, constraints = self._recurse(input_dict)
+        #pass in zero for initial local depth
+        varlist, constraints = self._recurse(input_dict, 0)
         self.root, = varlist
         ConstraintSet.__init__(self, constraints)
 
-    def _recurse(self, input_dict):
+    def _recurse(self, input_dict, locdepth):
         "Recursive function to generate gpkit Vars for each input weight"
         varlist = []
         constraints = []
+        #bug right here
+        locdepth += 1
         for key, value in sorted(input_dict.items()):
             if isinstance(value, dict):
                 # there's another level to this breakdown
                 var = Variable(key, self.units)
                 # going down...
-                self.depth += 1
-                subvariables, subconstraints = self._recurse(value)
+                
+                subvariables, subconstraints = self._recurse(value, locdepth)
                 # this depth's variable is greater than the sum of subvariables
                 constraints.append(var >= sum(subvariables))
                 # subvariables may have further depths
                 constraints.extend(subconstraints)
             elif isinstance(value, list):
                 var = Variable(key, value[0], value[1])
+                self.depth.append(locdepth)
             else:
                 var = Variable(key, value, self.units)
+                self.depth.append(locdepth)
             varlist.append(var)
         return varlist, constraints
 
@@ -49,4 +54,4 @@ class Breakdown(ConstraintSet):
         """
         from ..interactive.svg import BDmake_diagram
         # set defualt parameters for the drawing
-        BDmake_diagram(sol, self.depth, filename, sidelength, height, self.input_dict, self.units)
+        BDmake_diagram(sol, max(self.depth), filename, sidelength, height, self.input_dict, self.units)
