@@ -84,7 +84,8 @@ def contour_array(model, xname, yname, znames, cellsize=(5, 5),
         colors = LIGHT_COLORS[0], DARK_COLORS[0]
 
     fig, axes = plt.subplots(nrows, ncols, figsize=figsize,
-                             sharex=True, sharey=True)
+                             sharex=True, sharey=True, squeeze=False)
+    axes = axes[0]
     if nrows > 1 and ncols > 1:
         xlabeledaxes = axes[-1, :]
         ylabeledaxes = axes[:, 0]
@@ -92,7 +93,7 @@ def contour_array(model, xname, yname, znames, cellsize=(5, 5),
         xlabeledaxes = axes
         ylabeledaxes = [axes[0]]
     else:
-        xlabeledaxes = [axes[-1]]
+        xlabeledaxes = axes
         ylabeledaxes = axes
 
     for ax in xlabeledaxes:
