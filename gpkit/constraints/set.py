@@ -19,8 +19,13 @@ class ConstraintSet(list):
             # stick it in a list to maintain hierarchy
             constraints = [constraints]
         list.__init__(self, constraints)
-        subs = dict(substitutions) if substitutions else {}
+
+        # initializations for attributes used elsewhere
+        self.posymap = []
         self.unused_variables = None
+
+        # get substitutions and convert all members to ConstraintSets
+        subs = dict(substitutions) if substitutions else {}
         self.substitutions = KeyDict()
         if isinstance(constraints, ConstraintSet):
             # pylint: disable=no-member
@@ -49,31 +54,32 @@ class ConstraintSet(list):
                 # TODO: remove conditional or otherwise clean up
                 if hasattr(self[i], "substitutions"):
                     self.substitutions.update(self[i].substitutions)
-        self.substitutions.update(subs)
         self.reset_varkeys()
-        # initializations for attributes used elsewhere
-        self.posymap = []
+        self.substitutions.update({self[k].key: v for k, v in subs.items()
+                                   if k in self.varkeys})
+        # TODO: on all updates the keydict should do the referencing above
 
     def __getitem__(self, key):
         if isinstance(key, int):
             return list.__getitem__(self, key)
         else:
             variables = self.variables_byname(key)
-            if len(variables) == 1:
-                return variables[0]
-            elif variables[0].key.veckey:
+            if variables[0].key.veckey:
                 # maybe it's all one vector variable!
-                goalkey = variables[0].key.veckey
-                arr = np.full(goalkey.shape, np.nan, dtype="object")
+                from ..nomials import NomialArray
+                vk = variables[0].key.veckey
+                arr = NomialArray(np.full(vk.shape, np.nan, dtype="object"))
+                arr.key = vk
                 for variable in variables:
-                    if variable.key.veckey == goalkey:
+                    if variable.key.veckey == vk:
                         arr[variable.key.idx] = variable
                     else:
                         arr = None
                         break
                 if arr is not None:
-                    from ..nomials import NomialArray
-                    return NomialArray(arr)
+                    return arr
+            elif len(variables) == 1:
+                return variables[0]
             raise ValueError("multiple variables are called '%s'; use"
                              " variable_byname('%s') to see all of them"
                              % (key, key))
