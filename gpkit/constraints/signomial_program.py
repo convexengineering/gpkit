@@ -47,7 +47,7 @@ class SignomialProgram(CostedConstraintSet):
     (z >= s) and then minimizing that dummy variable.""")
         CostedConstraintSet.__init__(self, cost, constraints, substitutions)
         try:
-            _ = self.as_posyslt1()  # should raise an error
+            _ = self.as_posyslt1(substitutions)  # should raise an error
             # TODO: is there a faster way to check?
         except InvalidGPConstraint:
             pass

@@ -66,8 +66,7 @@ class GeometricProgram(NomialData):
                        " the cost or any constraints." % key)
 
         for constraint in constraints:
-            constraint.substitutions = self.substitutions
-            constr_posys = constraint.as_posyslt1()
+            constr_posys = constraint.as_posyslt1(self.substitutions)
             if not all(constr_posys):
                 raise ValueError("%s is an invalid constraint for a"
                                  " GeometricProgram" % constraint)

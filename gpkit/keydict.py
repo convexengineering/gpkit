@@ -2,7 +2,6 @@
 from collections import defaultdict
 import numpy as np
 from .small_classes import Numbers
-from .small_scripts import is_sweepvar
 
 
 class KeyDict(dict):
@@ -57,25 +56,6 @@ class KeyDict(dict):
                 key = key.veckey
         return key, idx
 
-    @classmethod
-    def with_keys(cls, keyset, dictionaries):
-        "Generates a KeyDict from a KeySet and iterable of dictionaries"
-        out = cls()
-        for dictionary in dictionaries:
-            for key, value in dictionary.items():
-                # The keyset filters and converts each dictionary's keys
-                keys = keyset[key]
-                for key in keys:
-                    if not key.idx:
-                        out[key] = value
-                    else:
-                        if not hasattr(value, "shape"):
-                            value = np.array(value)
-                        val_i = value[key.idx]
-                        if is_sweepvar(val_i) or not np.isnan(val_i):
-                            out[key] = val_i
-        return out
-
     def __contains__(self, key):
         "In a winding way, figures out if a key is in the KeyDict"
         key, idx = self.parse_and_index(key)
@@ -121,6 +101,10 @@ class KeyDict(dict):
         for key in self.keymap[key]:
             if idx:
                 dict.__getitem__(self, key)[idx] = value
+            elif (dict.__contains__(self, key) and hasattr(value, "shape")
+                  and np.isnan(value).any()):
+                goodvals = ~np.isnan(value)
+                self[key][goodvals] = value[goodvals]
             else:
                 dict.__setitem__(self, key, value)
 
