@@ -37,7 +37,7 @@ def contour_array(model, xname, yname, znames, cellsize=(5, 5),
     # pylint: disable=too-many-arguments
     # pylint: disable=too-many-locals
     # pylint: disable=too-many-statements
-    """Arrar of contour plots for variables in a solved model
+    """Array of contour plots for variables in a solved model
 
     Arguments
     ---------
@@ -138,19 +138,16 @@ def contour_array(model, xname, yname, znames, cellsize=(5, 5),
 #     pass
 
 
-def plot_frontiers(gp, znames, nrow=1, ncol=3, figsize=(15, 5)):
+def plot_frontiers(model, znames, nrow=1, ncol=3, figsize=(15, 5)):
     "Helper function to plot 2d contour plots."
-    sol = gp.solution
-    data = dict(sol["variables"])
-    data.update({"S{%s}" % k: v
-                 for (k, v) in sol["sensitivities"]["constants"].items()})
-    if len(gp.sweep) == 2:
-        contour_array(data,
-                      gp.sweep.keys()[0],
-                      gp.sweep.keys()[1],
-                      znames, nrow, ncol, figsize,
-                      xticks=gp.sweep.values()[0],
-                      yticks=gp.sweep.values()[1])
+    sweeps = model.solution['sweepvariables']
+    if len(sweeps) == 2:
+        contour_array(model,
+                      sweeps.keys()[0],
+                      sweeps.keys()[1],
+                      znames, figsize, nrow, ncol,
+                      xticks=sweeps.values()[0],
+                      yticks=sweeps.values()[1])
 
 
 def _combine_nearby_ticks(ticks, lim, ntick):
