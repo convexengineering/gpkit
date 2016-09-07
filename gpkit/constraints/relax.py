@@ -1,0 +1,138 @@
+"""Models for assessing primal feasibility"""
+from .model import Model
+from .set import ConstraintSet
+from ..nomials import Variable, VectorVariable, parse_subs, NomialArray
+
+
+class RelaxAll(Model):
+    """Relax constraints the same amount, as in Eqn. 10 of [Boyd2007].
+
+    Arguments
+    ---------
+    constraints : iterable
+        Constraints which will be relaxed (made easier).
+
+    varname : str
+        LaTeX name of relaxation variable.
+
+
+    Attributes
+    ----------
+    relaxvar : Variable
+        The variable controlling the relaxation. A solved value of 1 means no
+        relaxation. Higher values indicate the amount by which all constraints
+        have been made easier: e.g., a value of 1.5 means all constraints were
+        50 percent easier in the final solution than in the original problem.
+
+    [Boyd2007] : "A tutorial on geometric programming", Optim Eng 8:67-122
+
+    """
+
+    def __init__(self, constraints):
+        if not isinstance(constraints, ConstraintSet):
+            constraints = ConstraintSet(constraints)
+        substitutions = dict(constraints.substitutions)
+        posynomials = constraints.as_posyslt1()
+        self.relaxvar = Variable("C", models=["Relax"],
+                                 modelnums=[Model._nums["Relax"]])
+        Model.__init__(self, self.relaxvar,
+                       [[posy <= self.relaxvar
+                         for posy in posynomials],
+                        self.relaxvar >= 1],
+                       substitutions,
+                       name=False)
+
+
+class RelaxConstraints(Model):
+    """Relax constraints optimally, as in Eqn. 11 of [Boyd2007].
+
+    Arguments
+    ---------
+    constraints : iterable
+        Constraints which will be relaxed (made easier).
+
+
+    Attributes
+    ----------
+    relaxvars : Variable
+        The variables controlling the relaxation. A solved value of 1 means no
+        relaxation was necessary or optimal for a particular constraint.
+        Higher values indicate the amount by which that constraint has been
+        made easier: e.g., a value of 1.5 means it was made 50 percent easier
+        in the final solution than in the original problem.
+
+    [Boyd2007] : "A tutorial on geometric programming", Optim Eng 8:67-122
+
+    """
+
+    def __init__(self, constraints):
+        if not isinstance(constraints, ConstraintSet):
+            constraints = ConstraintSet(constraints)
+        substitutions = dict(constraints.substitutions)
+        posynomials = constraints.as_posyslt1()
+        N = len(posynomials)
+        self.relaxvars = VectorVariable(N, "C", models=["Relax"],
+                                        modelnums=[Model._nums["Relax"]])
+        Model.__init__(self, self.relaxvars.prod(),
+                       [[posynomials <= self.relaxvars],
+                        self.relaxvars >= 1],
+                       substitutions,
+                       name=False)
+
+
+class RelaxConstants(Model):
+    """Relax constraints optimally, as in Eqn. 11 of [Boyd2007].
+
+    Arguments
+    ---------
+    constraints : iterable
+        Constraints which will be relaxed (made easier).
+
+    include_only : set
+        if declared, variable names must be on this list to be relaxed
+
+    exclude : set
+        if declared, variable names on this list will never be relaxed
+
+
+    Attributes
+    ----------
+    relaxvars : Variable
+        The variables controlling the relaxation. A solved value of 1 means no
+        relaxation was necessary or optimal for a particular constant.
+        Higher values indicate the amount by which that constant has been
+        made easier: e.g., a value of 1.5 means it was made 50 percent easier
+        in the final solution than in the original problem. Of course, this
+        can also be determined by looking at the constant's new value directly.
+    """
+    def __init__(self, constraints, include_only=None, exclude=None):
+        if not isinstance(constraints, ConstraintSet):
+            constraints = ConstraintSet(constraints)
+        substitutions = dict(constraints.substitutions)
+        constants, _, _ = parse_subs(constraints.varkeys,
+                                     constraints.substitutions)
+        self.relaxvars, relaxation_constraints = [], []
+        self.num = Model._nums["Relax"]
+        for key, value in constants.items():
+            if include_only and key.name not in include_only:
+                continue
+            if exclude and key.name in exclude:
+                continue
+            descr = dict(key.descr)
+            del descr["value"]
+            descr["units"] = "-"
+            descr["models"] = descr.pop("models", [])+["Relax"]
+            descr["modelnums"] = descr.pop("modelnums", []) + [self.num]
+            relaxation = Variable(**descr)
+            self.relaxvars.append(relaxation)
+            del substitutions[key]
+            constant = constraints[key]
+            if constant.units and not hasattr(value, "units"):
+                value *= constant.units
+            relaxation_constraints.append([value/relaxation <= constant,
+                                           constant <= value*relaxation,
+                                           relaxation >= 1])
+        Model.__init__(self, NomialArray(self.relaxvars).prod(),
+                       [constraints, relaxation_constraints],
+                       name=False)
+        self.substitutions = substitutions

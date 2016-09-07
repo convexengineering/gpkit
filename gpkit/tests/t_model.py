@@ -4,7 +4,6 @@ import unittest
 from gpkit import (Model, Monomial, settings, VectorVariable, Variable,
                    SignomialsEnabled, ArrayVariable, SignomialEquality)
 from gpkit.small_classes import CootMatrix
-from gpkit.feasibility import feasibility_model
 from gpkit.exceptions import InvalidGPConstraint
 
 NDIGS = {"cvxopt": 5, "mosek": 7, "mosek_cli": 5}
@@ -195,18 +194,6 @@ class TestGP(unittest.TestCase):
         m = Model(x1**2 + 100 + 3*x2, [x1 >= 10., x2 >= 15.])
         sol = m.solve(solver=self.solver, verbosity=0)
         self.assertAlmostEqual(sol["cost"]/245., 1, self.ndig)
-
-    def test_feasibility_gp_(self):
-        x = Variable('x')
-        m = Model(x, [x**2 >= 1, x <= 0.5])
-        self.assertRaises(RuntimeWarning, m.solve, verbosity=0)
-        fm = feasibility_model(m.gp(), "max")
-        # pylint: disable=no-member
-        sol1 = fm.solve(verbosity=0)
-        fm = feasibility_model(m.gp(), "product")
-        sol2 = fm.solve(verbosity=0)
-        self.assertTrue(sol1["cost"] >= 1)
-        self.assertTrue(sol2["cost"] >= 1)
 
     def test_terminating_constant_(self):
         x = Variable('x')

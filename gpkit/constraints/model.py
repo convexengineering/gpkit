@@ -56,9 +56,9 @@ class Model(CostedConstraintSet):
         cost = cost if cost else Monomial(1)
         constraints = constraints if constraints else []
         CostedConstraintSet.__init__(self, cost, constraints, substitutions)
-        if self.__class__.__name__ != "Model" and not name:
+        if name is None:
             name = self.__class__.__name__
-        if name:
+        if name and name != "Model":
             self.name = name
             self.num = Model._nums[name]
             Model._nums[name] += 1
