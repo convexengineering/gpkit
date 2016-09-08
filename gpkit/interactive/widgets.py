@@ -46,7 +46,8 @@ def modelinteract(model, ranges=None, fn_of_sol=None, **solvekwargs):
                 floatslider = widgets.FloatSlider(min=vmin, max=vmax,
                                                   step=vstep, value=v,
                                                   description=varkey_latex)
-                floatslider.width = "20ex"
+                # TODO: find way to set width across ipython versions
+                # floatslider.width = "20ex"
                 floatslider.varkey = k
                 ranges[str(k)] = floatslider
 
@@ -107,7 +108,7 @@ def modelcontrolpanel(model, *args, **kwargs):
         cb = widgets.Checkbox(value=True)
         unit_latex = sl.varkey.unitstr()
         if unit_latex:
-            unit_latex = "$\scriptsize"+unit_latex+"$"
+            unit_latex = r"$\scriptsize"+unit_latex+"$"
         units = widgets.Latex(value=unit_latex)
         units.font_size = "1.16em"
         box = widgets.HBox(children=[cb, sl, units])
@@ -145,8 +146,8 @@ def modelcontrolpanel(model, *args, **kwargs):
 
 
 def create_settings(box):
-    "Creates a widget Container for settings and info of  a particular slider."
-    sl_enable, slider, sl_units = box.children
+    "Creates a widget Container for settings and info of a particular slider."
+    _, slider, sl_units = box.children
 
     enable = widgets.Checkbox(value=box.visible)
     link((box, 'visible'), (enable, 'value'))

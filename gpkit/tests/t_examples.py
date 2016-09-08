@@ -83,16 +83,14 @@ class TestExamples(unittest.TestCase):
             sol_rat = sol["sensitivities"]["constants"][key]/consenscheck[key]
             self.assertTrue(abs(1-sol_rat) < 1e-2)
 
-    def test_breakdown_example(self, example):
-        if gpkit.units:
-            self.assertAlmostEqual(mag(example.sol["cost"]), 8.448, 3)
-            self.assertAlmostEqual(mag(example.sol("w2")), 6.448, 3)
-        else:
-            self.assertAlmostEqual(example.sol["cost"], 5, 4)
-            self.assertAlmostEqual(example.sol("w2"), 3, 4)
-
-##    def test_BoundedConstraintSet_ex(self, example):
-##        self.assertAlmostEqual(example.sol["cost"], 0)
+    # TODO: uncomment when breakdown is merged
+    # def test_breakdown_example(self, example):
+    #     if gpkit.units:
+    #         self.assertAlmostEqual(mag(example.sol["cost"]), 8.448, 3)
+    #         self.assertAlmostEqual(mag(example.sol("w2")), 6.448, 3)
+    #     else:
+    #         self.assertAlmostEqual(example.sol["cost"], 5, 4)
+    #         self.assertAlmostEqual(example.sol("w2"), 3, 4)
 
     def test_LCS_ex(self, example):
         self.assertAlmostEqual(example.sol["cost"], .5)
@@ -115,6 +113,10 @@ class TestExamples(unittest.TestCase):
     def test_primal_infeasible_ex2(self, example):
         with self.assertRaises(RuntimeWarning):
             example.m.solve(verbosity=0)
+
+    def test_unbounded(self, example):
+        pass
+
 
 FILE_DIR = os.path.dirname(os.path.realpath(__file__))
 EXAMPLE_DIR = os.path.abspath(FILE_DIR + '../../../docs/source/examples')

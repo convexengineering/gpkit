@@ -1,6 +1,7 @@
-# source: http://www.bls.gov/cpi/cpid1510.pdf, table 24 (page 73)
+# source: http://www.bls.gov/cpi/cpid1607.pdf, table 24 (page 71)
 CPI = [money]
-USD2014 = CPI/236.736 = USD
+USD2015 = CPI/237.017 = USD
+USD2014 = CPI/236.736
 USD2013 = CPI/232.957
 USD2012 = CPI/229.594
 USD2011 = CPI/224.939

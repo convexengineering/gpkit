@@ -3,9 +3,6 @@ Glossary
 
 *For an alphabetical listing of all commands, check out the* :ref:`genindex`
 
-gpkit package
-=============
-
 Subpackages
 -----------
 

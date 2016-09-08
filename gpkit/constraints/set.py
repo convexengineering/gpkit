@@ -1,14 +1,10 @@
 "Implements ConstraintSet"
+import numpy as np
+
 from ..small_classes import HashVector
 from ..keydict import KeySet, KeyDict
 from ..small_scripts import try_str_without
 from ..repr_conventions import _str, _repr, _repr_latex_
-
-
-def _sort_by_num_models(var):
-    "return integer for Variable sorting"
-    mods = var.key.models
-    return len(mods) if mods else 0
 
 
 def _sort_by_name_and_idx(var):
@@ -22,7 +18,7 @@ class ConstraintSet(list):
         if isinstance(constraints, ConstraintSet):
             constraints = [constraints]
         list.__init__(self, constraints)
-        subs = substitutions if substitutions else {}
+        subs = dict(substitutions) if substitutions else {}
         self.unused_variables = None
         if not isinstance(constraints, ConstraintSet):
             # constraintsetify everything
@@ -30,6 +26,19 @@ class ConstraintSet(list):
                 if (hasattr(constraint, "__iter__") and
                         not isinstance(constraint, ConstraintSet)):
                     self[i] = ConstraintSet(constraint)
+                elif isinstance(constraint, bool):
+                    # TODO refactor this depending on the outcome of issue #824
+                    if len(self) == 1:
+                        adjacent = "as the only constraint"
+                    elif i == 0:
+                        adjacent = "at the start, before %s" % self[i+1]
+                    elif i == len(self) - 1:
+                        adjacent = "at the end, after %s" % self[i-1]
+                    else:
+                        adjacent = "between %s and %s" % (self[i-1], self[i+1])
+                    raise ValueError("boolean found %s."
+                                     " Did the constraint list contain an"
+                                     " accidental equality?" % adjacent)
         else:
             # grab the substitutions dict from the top constraintset
             subs.update(constraints.substitutions)  # pylint: disable=no-member
@@ -47,14 +56,27 @@ class ConstraintSet(list):
             return list.__getitem__(self, key)
         else:
             from ..nomials import Variable
-            variables = [Variable(**key.descr) for key in self.varkeys[key]]
+            variables = [Variable(**k.descr) for k in self.varkeys[key]]
             if len(variables) == 1:
                 return variables[0]
-            else:
-                variables.sort(key=_sort_by_num_models)
-                variable = variables[0]
-                # note: doesn't work for vector variables
-                return variable
+            elif variables[0].key.idx and variables[0].key.shape:
+                # maybe it's all one vector variable!
+                vector = np.full(variables[0].key.shape, np.nan, dtype="object")
+                goaldict = dict(variables[0].key.descr)
+                del goaldict["idx"]
+                for variable in variables:
+                    testdict = dict(variable.key.descr)
+                    del testdict["idx"]
+                    if testdict == goaldict:
+                        vector[variable.key.idx] = variable
+                    else:
+                        vector = None
+                        break
+                if vector is not None:
+                    return vector
+            raise ValueError("multiple variables are called '%s'; use"
+                             " variable_byname('%s') to see all of them"
+                             % (key, key))
 
     def variables_byname(self, key):
         "Get all variables with a given name"

@@ -1,7 +1,7 @@
 "Implements heatmapped equations to highlight sensitivities."
 import numpy as np
-from gpkit.small_scripts import mag, latex_num
 from gpkit.nomials import MonomialEquality
+from gpkit.small_scripts import nomial_latex_helper
 
 
 BLUE = np.array([16, 131, 246])/255.0
@@ -24,7 +24,6 @@ def colorfn_gen(scale, power=0.66):
         return "[rgb]{%.2f,%.2f,%.2f}" % tuple(blended_color)
     return colorfn
 
-
 # pylint: disable=too-many-locals
 def signomial_print(sig, sol, colorfn, paintby="constants", idx=None):
     "For pretty printing with Sympy"
@@ -44,32 +43,7 @@ def signomial_print(sig, sol, colorfn, paintby="constants", idx=None):
             elif x < 0:
                 neg_vars.append((varlatex, x))
 
-        pvarstrs = ['%s^{%.2g}' % (varl, x) if "%.2g" % x != "1" else varl
-                    for (varl, x) in pos_vars]
-        nvarstrs = ['%s^{%.2g}' % (varl, -x)
-                    if "%.2g" % -x != "1" else varl
-                    for (varl, x) in neg_vars]
-        pvarstrs.sort()
-        nvarstrs.sort()
-        pvarstr = ' '.join(pvarstrs)
-        nvarstr = ' '.join(nvarstrs)
-        c = mag(c)
-        cstr = "%.2g" % c
-        if pos_vars and (cstr == "1" or cstr == "-1"):
-            cstr = cstr[:-1]
-        else:
-            cstr = latex_num(c)
-
-        if not pos_vars and not neg_vars:
-            mstr = "%s" % cstr
-        elif pos_vars and not neg_vars:
-            mstr = "%s%s" % (cstr, pvarstr)
-        elif neg_vars and not pos_vars:
-            mstr = "\\frac{%s}{%s}" % (cstr, nvarstr)
-        elif pos_vars and neg_vars:
-            mstr = "%s\\frac{%s}{%s}" % (cstr, pvarstr, nvarstr)
-
-        mstrs.append(mstr)
+        mstrs.append(nomial_latex_helper(c, pos_vars, neg_vars))
 
     if paintby == "monomials":
         mstrs_ = []

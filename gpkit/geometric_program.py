@@ -10,6 +10,7 @@ from .small_classes import SolverLog
 
 DEFAULT_SOLVER_KWARGS = {"cvxopt": {"kktsolver": "ldl"}}
 
+
 class GeometricProgram(NomialData):
     # pylint: disable=too-many-instance-attributes
     """Standard mathematical representation of a GP.
@@ -66,16 +67,7 @@ class GeometricProgram(NomialData):
 
         for constraint in constraints:
             constraint.substitutions = self.substitutions
-            try:
-                constr_posys = constraint.as_posyslt1()
-            except TypeError as err:
-                if err.message == ("SignomialInequality could not simplify to"
-                                   " a PosynomialInequality"):
-                    raise ValueError("GeometricPrograms cannot contain"
-                                     " SignomialInequalities: try forming your"
-                                     " program as SignomialProgram or calling"
-                                     " .localsolve().")
-                raise
+            constr_posys = constraint.as_posyslt1()
             if not all(constr_posys):
                 raise ValueError("%s is an invalid constraint for a"
                                  " GeometricProgram" % constraint)

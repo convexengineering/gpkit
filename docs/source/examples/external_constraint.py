@@ -1,5 +1,6 @@
 "Can be found in gpkit/docs/source/examples/external_constraint.py"
 from gpkit import ConstraintSet
+from gpkit.exceptions import InvalidGPConstraint
 from external_function import external_code
 
 
@@ -21,7 +22,7 @@ class ExternalConstraint(ConstraintSet):
     # Prevents the ExternalConstraint class from solving in a GP, thus forcing
     # iteration
     def as_posyslt1(self):
-        raise TypeError("ExternalConstraint Model cannot solve as a GP.")
+        raise InvalidGPConstraint("ExternalConstraint cannot solve as a GP.")
 
     # Returns the ExternalConstraint class as a GP compatible constraint when
     # requested by the GPkit solver

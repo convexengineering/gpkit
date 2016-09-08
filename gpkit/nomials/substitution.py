@@ -116,6 +116,7 @@ def substitution(nomial, substitutions):
         cs_ = Quantity(cs_, nomial.cs.units)
     varlocs_ = defaultdict(list)
     varlocs_.update({vk: list(idxs) for (vk, idxs) in nomial.varlocs.items()})
+    # pylint: disable=too-many-nested-blocks
     for var, sub in subs.items():
         for i in nomial.varlocs[var]:
             x = exps_[i].pop(var)
