@@ -106,6 +106,8 @@ class RelaxConstants(Model):
         can also be determined by looking at the constant's new value directly.
     """
     def __init__(self, constraints, include_only=None, exclude=None):
+        exclude = frozenset(exclude) if exclude else frozenset()
+        include_only = frozenset(include_only) if include_only else frozenset()
         if not isinstance(constraints, ConstraintSet):
             constraints = ConstraintSet(constraints)
         substitutions = dict(constraints.substitutions)
@@ -116,7 +118,7 @@ class RelaxConstants(Model):
         for key, value in constants.items():
             if include_only and key.name not in include_only:
                 continue
-            if exclude and key.name in exclude:
+            if key.name in exclude:
                 continue
             descr = dict(key.descr)
             del descr["value"]
