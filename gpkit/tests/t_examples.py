@@ -82,6 +82,9 @@ class TestExamples(unittest.TestCase):
             sol_rat = sol["sensitivities"]["constants"][key]/consenscheck[key]
             self.assertTrue(abs(1-sol_rat) < 1e-2)
 
+    def test_unbounded(self, example):
+        pass
+
 
 FILE_DIR = os.path.dirname(os.path.realpath(__file__))
 EXAMPLE_DIR = os.path.abspath(FILE_DIR + '../../../docs/source/examples')
