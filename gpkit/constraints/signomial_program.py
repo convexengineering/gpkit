@@ -114,6 +114,11 @@ class SignomialProgram(CostedConstraintSet):
                 result = nearest_feasible.solve(solver, verbosity=verbosity-1)
                 result["cost"] = None
             x0 = result["variables"]
+            self.process_result(result)
+            if "sigeq_logsumerror" in result:
+                print "sigeq_logsumerror", result["sigeq_logsumerror"]
+                if result["sigeq_logsumerror"] >= 0.1:
+                    result["cost"] = None
             prevcost, cost = cost, result["cost"]
             if prevcost and cost:
                 rel_improvement = abs(prevcost-cost)/(prevcost + cost)
