@@ -255,6 +255,13 @@ class TestGPSubs(unittest.TestCase):
         if not isinstance(m["x"].key.units, str):
             expected = (1*gpkit.units.cm/(1*m.cost.units)).to("dimensionless")
             self.assertAlmostEqual(sol["cost"], expected)  # 1 cm/(1 ft or 1 m)
+        a1, b1 = Above(), Below()
+        m = b1.link(a1)
+        m.cost = m["x"]
+        sol = m.solve(verbosity=0)
+        if not isinstance(m["x"].key.units, str):
+            expected = (1*gpkit.units.cm/(1*m.cost.units)).to("dimensionless")
+            self.assertAlmostEqual(sol["cost"], expected)  # 1 cm/(1 ft or 1 m)
         self.assertIn(m["x"], sol["variables"])
         self.assertIn(a1["x"], sol["variables"])
         self.assertIn(b1["x"], sol["variables"])
