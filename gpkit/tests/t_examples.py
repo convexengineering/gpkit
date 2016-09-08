@@ -85,6 +85,9 @@ class TestExamples(unittest.TestCase):
     def test_relaxation(self, example):
         pass
 
+    def test_unbounded(self, example):
+        pass
+
 
 FILE_DIR = os.path.dirname(os.path.realpath(__file__))
 EXAMPLE_DIR = os.path.abspath(FILE_DIR + '../../../docs/source/examples')

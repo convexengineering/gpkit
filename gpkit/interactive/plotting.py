@@ -37,7 +37,7 @@ def contour_array(model, xname, yname, znames, cellsize=(5, 5),
     # pylint: disable=too-many-arguments
     # pylint: disable=too-many-locals
     # pylint: disable=too-many-statements
-    """Arrar of contour plots for variables in a solved model
+    """Array of contour plots for variables in a solved model
 
     Arguments
     ---------
@@ -84,7 +84,8 @@ def contour_array(model, xname, yname, znames, cellsize=(5, 5),
         colors = LIGHT_COLORS[0], DARK_COLORS[0]
 
     fig, axes = plt.subplots(nrows, ncols, figsize=figsize,
-                             sharex=True, sharey=True)
+                             sharex=True, sharey=True, squeeze=False)
+    axes = axes[0]
     if nrows > 1 and ncols > 1:
         xlabeledaxes = axes[-1, :]
         ylabeledaxes = axes[:, 0]
@@ -92,7 +93,7 @@ def contour_array(model, xname, yname, znames, cellsize=(5, 5),
         xlabeledaxes = axes
         ylabeledaxes = [axes[0]]
     else:
-        xlabeledaxes = [axes[-1]]
+        xlabeledaxes = axes
         ylabeledaxes = axes
 
     for ax in xlabeledaxes:
@@ -138,19 +139,16 @@ def contour_array(model, xname, yname, znames, cellsize=(5, 5),
 #     pass
 
 
-def plot_frontiers(gp, znames, nrow=1, ncol=3, figsize=(15, 5)):
+def plot_frontiers(model, znames, nrow=1, ncol=3, figsize=(15, 5)):
     "Helper function to plot 2d contour plots."
-    sol = gp.solution
-    data = dict(sol["variables"])
-    data.update({"S{%s}" % k: v
-                 for (k, v) in sol["sensitivities"]["constants"].items()})
-    if len(gp.sweep) == 2:
-        contour_array(data,
-                      gp.sweep.keys()[0],
-                      gp.sweep.keys()[1],
-                      znames, nrow, ncol, figsize,
-                      xticks=gp.sweep.values()[0],
-                      yticks=gp.sweep.values()[1])
+    sweeps = model.solution['sweepvariables']
+    if len(sweeps) == 2:
+        contour_array(model,
+                      sweeps.keys()[0],
+                      sweeps.keys()[1],
+                      znames, figsize, nrow, ncol,
+                      xticks=sweeps.values()[0],
+                      yticks=sweeps.values()[1])
 
 
 def _combine_nearby_ticks(ticks, lim, ntick):
