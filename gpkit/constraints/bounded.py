@@ -1,4 +1,4 @@
-"Implements BoundedConstraintSet"
+"Implements Bounded"
 from collections import defaultdict
 import numpy as np
 
@@ -30,7 +30,7 @@ def varkey_bounds(varkeys, lower, upper):
     return constraints
 
 
-class BoundedConstraintSet(ConstraintSet):
+class Bounded(ConstraintSet):
     """Bounds contained variables so as to ensure dual feasibility.
 
     Arguments
@@ -68,12 +68,12 @@ class BoundedConstraintSet(ConstraintSet):
         bounding_constraints = varkey_bounds(self.bounded_varkeys,
                                              self.lowerbound, self.upperbound)
         constraints = [constraintset, bounding_constraints]
-        super(BoundedConstraintSet, self).__init__(constraints, substitutions)
+        super(Bounded, self).__init__(constraints, substitutions)
 
     def sens_from_dual(self, las, nus):
         "Return sensitivities while capturing the relevant lambdas"
         self.bound_las = las[-2*len(self.bounded_varkeys):]
-        return super(BoundedConstraintSet, self).sens_from_dual(las, nus)
+        return super(Bounded, self).sens_from_dual(las, nus)
 
     def process_result(self, result):
         "Creates (and potentially prints) a dictionary of unbounded variables."

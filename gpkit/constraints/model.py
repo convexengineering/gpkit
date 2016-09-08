@@ -108,3 +108,46 @@ class Model(CostedConstraintSet):
         "The collapsed appearance of a ConstraintBase"
         if self.name:
             return "%s_{%s}" % (self.name, self.num)
+
+    def debug(self):
+        "Attempts to diagnose infeasible models."
+        from .relax import RelaxConstants, RelaxConstraints
+        from .bounded import Bounded
+
+        if self.substitutions:
+            feas = RelaxConstants(Bounded(self))
+            feas.cost *= self.cost**0.01
+        else:
+            # pylint: disable=redefined-variable-type
+            feas = Model(self.cost, Bounded(self))
+        try:
+            sol = feas.solve(verbosity=0)
+
+            relaxed = False
+            for constant, sub in self.substitutions.items():
+                if sol(constant)/sub >= 1.01:
+                    if not relaxed:
+                        print
+                        print "RELAXED VARIABLES"
+                        relaxed = True
+                    print ("  %s: relaxed from %-.4g to %-.4g"
+                           % (constant, sub, sol(constant)))
+        except (ValueError, RuntimeWarning):
+            try:
+                feas = RelaxConstraints(self)
+                feas.cost *= self.cost**0.01
+                sol = feas.solve(verbosity=0)
+
+                relaxvals = sol(feas.relaxvars)
+                if relaxvals.prod() >= 1.01:
+                    print
+                    print "RELAXED CONSTRAINTS"
+                iterator = enumerate(zip(relaxvals, feas[0][0]))
+                for i, (relaxval, constraint) in iterator:
+                    if relaxval >= 1.01:
+                        relax_percent = "%i%%" % ((relaxval-1)*100)
+                        print ("  %i: %4s relaxed  (as posynomial: %s <= 1)"
+                               % (i, relax_percent, constraint.right))
+            except (ValueError, RuntimeWarning):
+                print "Try without the self.cost?"
+                raise
