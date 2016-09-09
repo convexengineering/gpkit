@@ -183,7 +183,7 @@ class ConstraintSet(list):
                     if k not in constraint.varkeys.keymap:
                         continue
                     keys = constraint.varkeys.keymap[k]
-                    if k.shape and isinstance(v, Iterable):
+                    if isinstance(v, Iterable) and k.shape:
                         v = np.array(v) if not hasattr(v, "shape") else v
                         for key in keys:
                             subs_[key] = v[key.idx]

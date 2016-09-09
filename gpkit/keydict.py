@@ -44,6 +44,8 @@ class KeyDict(dict):
     def update(self, *args, **kwargs):
         "Iterates through the dictionary created by args and kwargs"
         for k, v in dict(*args, **kwargs).items():
+            if hasattr(v, "copy"):
+                v = v.copy()
             self[k] = v
 
     def parse_and_index(self, key):
@@ -63,7 +65,7 @@ class KeyDict(dict):
                                          " which variables it may refer to."
                                          % (key, key))
                 elif key != "filter":
-                    raise KeyError("key '%s' does not refer to any varkey in"
+                    raise KeyError("%s does not refer to any varkey in"
                                    " this ConstraintSet" % key)
         idx = None
         if self.collapse_arrays:
