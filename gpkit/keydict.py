@@ -140,11 +140,10 @@ class KeyDict(dict):
                     delete = False
             if delete:
                 dict.__delitem__(self, key)
-                if hasattr(key, "keys"):
-                    for mappedkey in key.keys:
-                        self.keymap[mappedkey].remove(key)
-                        if not self.keymap[mappedkey]:
-                            del self.keymap[mappedkey]
+                for mappedkey in [key] + list(getattr(key, "keys", [])):
+                    self.keymap[mappedkey].remove(key)
+                    if not self.keymap[mappedkey]:
+                        del self.keymap[mappedkey]
 
 
 class KeySet(KeyDict):

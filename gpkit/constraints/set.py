@@ -205,8 +205,12 @@ class ConstraintSet(list):
                     for ki in keys:
                         self.substitutions[v[ki.idx]] = self.substitutions[ki]
                 else:
-                    self.substitutions[v.key] = self.substitutions[key]
-                del self.substitutions[key]
+                    try:
+                        self.substitutions[v.key] = self.substitutions[k]
+                    except:
+                        print k, self.substitutions.keymap.keys()
+                        raise
+                del self.substitutions[k]
         if self.unused_variables is not None:
             unused_vars = []
             for var in self.unused_variables:
