@@ -114,40 +114,45 @@ class Model(CostedConstraintSet):
         from .relax import RelaxConstants, RelaxConstraints
         from .bounded import Bounded
 
+        relaxedconstraints = False
         if self.substitutions:
             feas = RelaxConstants(Bounded(self))
             feas.cost *= self.cost**0.01
         else:
-            # pylint: disable=redefined-variable-type
-            feas = Model(self.cost, Bounded(self))
+            feas = Model(self.cost, Bounded(self))  # pylint: disable=redefined-variable-type
         try:
+            print "Debugging..."
             sol = feas.solve(verbosity=0)
 
-            relaxed = False
             for constant, sub in self.substitutions.items():
                 if sol(constant)/sub >= 1.01:
-                    if not relaxed:
+                    if not relaxedconstraints:
                         print
                         print "RELAXED VARIABLES"
-                        relaxed = True
+                        relaxedconstraints = True
                     print ("  %s: relaxed from %-.4g to %-.4g"
                            % (constant, sub, sol(constant)))
         except (ValueError, RuntimeWarning):
-            try:
-                feas = RelaxConstraints(self)
-                feas.cost *= self.cost**0.01
-                sol = feas.solve(verbosity=0)
+            print ("Model does not solve with bounded variables"
+                   " or relaxed constants.")
+        try:
+            feas = RelaxConstraints(self)
+            feas.cost *= self.cost**0.01
+            sol = feas.solve(verbosity=0)
 
-                relaxvals = sol(feas.relaxvars)
-                if relaxvals.prod() >= 1.01:
-                    print
-                    print "RELAXED CONSTRAINTS"
-                iterator = enumerate(zip(relaxvals, feas[0][0]))
-                for i, (relaxval, constraint) in iterator:
-                    if relaxval >= 1.01:
-                        relax_percent = "%i%%" % ((relaxval-1)*100)
-                        print ("  %i: %4s relaxed  (as posynomial: %s <= 1)"
-                               % (i, relax_percent, constraint.right))
-            except (ValueError, RuntimeWarning):
-                print "Try without the self.cost?"
-                raise
+            relaxvals = sol(feas.relaxvars)
+            if relaxvals.prod() >= 1.01:
+                if relaxedconstraints:
+                    print "Alternately, the model solves with:"
+                print
+                print "RELAXED CONSTRAINTS"
+            iterator = enumerate(zip(relaxvals, feas[0][0]))
+            for i, (relaxval, constraint) in iterator:
+                if relaxval >= 1.01:
+                    relax_percent = "%i%%" % ((relaxval-1)*100)
+                    print ("  %i: %4s relaxed  (as posynomial: %s <= 1)"
+                           % (i, relax_percent, constraint.right))
+        except (ValueError, RuntimeWarning):
+            print ("Model does not solve with relaxed constraints.")
+        # NOTE: If the cost has a very strong relationship to feasibility,
+        #       the self.cost**0.01 component above could be the problem.
