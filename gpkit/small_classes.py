@@ -139,7 +139,7 @@ def _enray_and_unit_dict(d_in, d_out, unitless_keys=(), united=False):
             d_out[k] = _enray_and_unit_dict(v, v.__class__(),
                                             unitless_keys, subunited)
         else:
-            if hasattr(v[0], "units"):
+            if hasattr(v[0], "units") and united:
                 # if the first element of the list already has units,
                 # ensure unit consistency across the entire list
                 v = [e.to(k.units).magnitude for e in v]*k.units
