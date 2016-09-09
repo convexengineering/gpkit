@@ -53,7 +53,7 @@ class Beam(Model):
                         L == (N-1)*dx], **kwargs)
 
 
-b = Beam(N=6, substitutions={"L": 6, "EI": 1.1e4, "q": 110*np.ones(10)})
+b = Beam(N=6, substitutions={"L": 6, "EI": 1.1e4, "q": 110*np.ones(6)})
 b.zero_lower_unbounded_variables()
 sol = b.solve(verbosity=0)
 print sol.table()
@@ -64,7 +64,7 @@ x = np.linspace(0, mag(L), len(q))*units.m  # position along beam
 q = q[0]  # assume uniform loading for the check below
 w_exact = q/(24.*EI) * x**2 * (x**2 - 4*L*x + 6*L**2)  # analytic soln
 
-assert max(abs(w_gp - w_exact)) <= 1e-2*units.m
+assert max(abs(w_gp - w_exact)) <= 1.1*units.cm
 
 PLOT = False
 if PLOT:

@@ -1,6 +1,6 @@
 """Defines the VarKey class"""
 from .small_classes import Strings, Quantity
-from .small_scripts import mag, unitstr, veckeyed
+from .small_scripts import unitstr, veckeyed
 
 
 class Count(object):
@@ -41,46 +41,46 @@ class VarKey(object):
         # Python arg handling guarantees 'name' won't appear in kwargs
         if isinstance(name, VarKey):
             self.descr.update(name.descr)
-        elif hasattr(name, "c") and hasattr(name, "exp"):
-            if mag(name.c) == 1 and len(name.exp) == 1:
-                var = list(name.exp)[0]
-                self.descr.update(var.descr)
-            else:
-                raise TypeError("variables can only be formed from monomials"
-                                " with a c of 1 and a single variable")
         else:
             if name is None:
                 name = "\\fbox{%s}" % VarKey.new_unnamed_id()
             self.descr["name"] = str(name)
 
-        from . import units as ureg  # update in case user has disabled units
+            # update in case user has disabled units
+            from . import units as ureg
+            if ureg and "units" in self.descr:
+                units = self.descr["units"]
+                if isinstance(units, Strings):
+                    if units == "-":
+                        units = "dimensionless"
+                    self.descr["units"] = Quantity(1.0, units)
+                elif isinstance(units, Quantity):
+                    self.descr["units"] = units
+                else:
+                    raise ValueError("units must be either a string"
+                                     " or a Quantity from gpkit.units.")
 
-        if "value" in self.descr:
-            value = self.descr["value"]
-            if isinstance(value, Quantity):
-                self.descr["value"] = value.magnitude
-                self.descr["units"] = Quantity(1.0, value.units)
-        if ureg and "units" in self.descr:
-            units = self.descr["units"]
-            if isinstance(units, Strings):
-                if units == "-":
-                    units = "dimensionless"
-                self.descr["units"] = Quantity(1.0, units)
-            elif isinstance(units, Quantity):
-                self.descr["units"] = units
-            else:
-                raise ValueError("units must be either a string"
-                                 " or a Quantity from gpkit.units.")
+            if "value" in self.descr:
+                value = self.descr["value"]
+                if isinstance(value, Quantity):
+                    if "units" in self.descr:
+                        # convert to explicitly given units, if any
+                        value = value.to(self.descr["units"])
+                    else:
+                        self.descr["units"] = Quantity(1.0, value.units)
+                    self.descr["value"] = value.magnitude
+
+            self.descr["unitrepr"] = repr(self.units)
+
         selfstr = str(self)
         self._hashvalue = hash(selfstr)
         self.key = self
         self.keys = set([self.name, selfstr,
                          self.str_without("models")])
+
         if "idx" in self.descr:
             self.veckey = veckeyed(self)
             self.keys.add(self.veckey)
-        self.descr["unitrepr"] = repr(self.units)
-        self._unitstr = None
 
     def __repr__(self):
         return self.str_without()

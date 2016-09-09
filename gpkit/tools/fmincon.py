@@ -1,8 +1,7 @@
 "A module to facilitate testing GPkit against fmincon"
 from math import log10, floor
-from gpkit import SignomialsEnabled
-from gpkit.tools.simpleflight import simpleflight
-from gpkit.small_scripts import mag
+from .. import SignomialsEnabled
+from ..small_scripts import mag
 # pylint: disable=too-many-statements,too-many-locals
 
 def generate_mfiles(model, algorithm='interior-point', guesstype='ones',
@@ -191,7 +190,3 @@ def make_initial_guess(model, newlist, guesstype='ones'):
         x0string += ["];\n"]
 
     return "".join(x0string)
-
-if __name__ == '__main__':
-    SF = simpleflight()
-    OBJ, C, CEQ, DC, DCeq = generate_mfiles(SF)

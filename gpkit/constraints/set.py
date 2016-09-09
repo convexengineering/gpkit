@@ -14,66 +14,81 @@ def _sort_by_name_and_idx(var):
 
 class ConstraintSet(list):
     "Recursive container for ConstraintSets and Inequalities"
-    def __init__(self, constraints, substitutions=None, recursesubs=True):
+    def __init__(self, constraints, substitutions=None):
         if isinstance(constraints, ConstraintSet):
+            # stick it in a list to maintain hierarchy
             constraints = [constraints]
         list.__init__(self, constraints)
-        subs = dict(substitutions) if substitutions else {}
-        self.unused_variables = None
-        if not isinstance(constraints, ConstraintSet):
-            # constraintsetify everything
-            for i, constraint in enumerate(self):
-                if (hasattr(constraint, "__iter__") and
-                        not isinstance(constraint, ConstraintSet)):
-                    self[i] = ConstraintSet(constraint)
-                elif isinstance(constraint, bool):
-                    # TODO refactor this depending on the outcome of issue #824
-                    if len(self) == 1:
-                        adjacent = "as the only constraint"
-                    elif i == 0:
-                        adjacent = "at the start, before %s" % self[i+1]
-                    elif i == len(self) - 1:
-                        adjacent = "at the end, after %s" % self[i-1]
-                    else:
-                        adjacent = "between %s and %s" % (self[i-1], self[i+1])
-                    raise ValueError("boolean found %s."
-                                     " Did the constraint list contain an"
-                                     " accidental equality?" % adjacent)
-        else:
-            # grab the substitutions dict from the top constraintset
-            subs.update(constraints.substitutions)  # pylint: disable=no-member
-        if recursesubs:
-            self.reset_varkeys()
-            self.substitutions = KeyDict.with_keys(self.varkeys,
-                                                   self._iter_subs(subs))
-        else:
-            self.substitutions = subs
+
         # initializations for attributes used elsewhere
         self.posymap = []
+        self.unused_variables = None
+
+        # get substitutions and convert all members to ConstraintSets
+        subs = dict(substitutions) if substitutions else {}
+        self.substitutions = KeyDict()
+        if isinstance(constraints, ConstraintSet):
+            # pylint: disable=no-member
+            self.substitutions.update(constraints.substitutions)
+        else:
+            # constraintsetify everything
+            for i, constraint in enumerate(self):
+                if not isinstance(constraint, ConstraintSet):
+                    if hasattr(constraint, "__iter__"):
+                        list.__setitem__(self, i, ConstraintSet(constraint))
+                    elif isinstance(constraint, bool):
+                        # TODO refactor depending on the outcome of issue #824
+                        if len(self) == 1:
+                            loc = "as the only constraint"
+                        elif i == 0:
+                            loc = "at the start, before %s" % self[i+1]
+                        elif i == len(self) - 1:
+                            loc = "at the end, after %s" % self[i-1]
+                        else:
+                            loc = "between %s and %s" % (self[i-1], self[i+1])
+                        raise ValueError("%s found %s."
+                                         " Did the constraint list contain an"
+                                         " accidental equality?"
+                                         % (type(constraint), loc))
+                # conditional because numpy_bools are used for vector ==
+                # TODO: remove conditional or otherwise clean up
+                if hasattr(self[i], "substitutions"):
+                    self.substitutions.update(self[i].substitutions)
+        self.reset_varkeys()
+        for k, v in subs.items():
+            keys = self.varkeys[k]
+            key = next(iter(keys))
+            if key.veckey:
+                key = key.veckey
+            elif len(keys) > 1:
+                raise ValueError("substitution key '%s' was ambiguous; use"
+                                 " .variables_byname('%s') to see the"
+                                 " variables it could have referred to. %s"
+                                 % (k, k, self.varkeys[k]))
+            self.substitutions[key] = v
+        # TODO: on all updates the keydict should do the referencing above
 
     def __getitem__(self, key):
         if isinstance(key, int):
             return list.__getitem__(self, key)
         else:
-            from ..nomials import Variable
-            variables = [Variable(**k.descr) for k in self.varkeys[key]]
-            if len(variables) == 1:
-                return variables[0]
-            elif variables[0].key.idx and variables[0].key.shape:
+            variables = self.variables_byname(key)
+            if variables[0].key.veckey:
                 # maybe it's all one vector variable!
-                vector = np.full(variables[0].key.shape, np.nan, dtype="object")
-                goaldict = dict(variables[0].key.descr)
-                del goaldict["idx"]
+                from ..nomials import NomialArray
+                vk = variables[0].key.veckey
+                arr = NomialArray(np.full(vk.shape, np.nan, dtype="object"))
+                arr.key = vk
                 for variable in variables:
-                    testdict = dict(variable.key.descr)
-                    del testdict["idx"]
-                    if testdict == goaldict:
-                        vector[variable.key.idx] = variable
+                    if variable.key.veckey == vk:
+                        arr[variable.key.idx] = variable
                     else:
-                        vector = None
+                        arr = None
                         break
-                if vector is not None:
-                    return vector
+                if arr is not None:
+                    return arr
+            elif len(variables) == 1:
+                return variables[0]
             raise ValueError("multiple variables are called '%s'; use"
                              " variables_byname('%s') to see all of them"
                              % (key, key))
@@ -86,6 +101,8 @@ class ConstraintSet(list):
         return variables
 
     def __setitem__(self, key, value):
+        if hasattr(value, "substitutions"):
+            self.substitutions.update(value.substitutions)
         list.__setitem__(self, key, value)
         self.reset_varkeys()
 
@@ -190,12 +207,11 @@ class ConstraintSet(list):
             varkeys.update(self.unused_variables)
         self.varkeys = varkeys
 
-    def as_posyslt1(self):
+    def as_posyslt1(self, substitutions=None):
         "Returns list of posynomials which must be kept <= 1"
         posylist, self.posymap = [], []
         for constraint in self:
-            constraint.substitutions = self.substitutions
-            posys = constraint.as_posyslt1()
+            posys = constraint.as_posyslt1(substitutions)
             self.posymap.append(len(posys))
             posylist.extend(posys)
         return posylist
@@ -206,7 +222,7 @@ class ConstraintSet(list):
         Arguments
         ---------
         las : list
-            Sensitivity of each posynomial returned by `self.as_posyslt1()`
+            Sensitivity of each posynomial returned by `self.as_posyslt1`
 
         nus: list of lists
              Each posynomial's monomial sensitivities
@@ -237,8 +253,7 @@ class ConstraintSet(list):
 
         When x0 is none, may return a default guess."""
         gpconstrs = [constr.as_gpconstr(x0) for constr in self]
-        return ConstraintSet(gpconstrs,
-                             self.substitutions, recursesubs=False)
+        return ConstraintSet(gpconstrs, self.substitutions)
 
     def process_result(self, result):
         """Does arbitrary computation / manipulation of a program's result
@@ -256,10 +271,3 @@ class ConstraintSet(list):
         for constraint in self:
             if hasattr(constraint, "process_result"):
                 constraint.process_result(result)
-
-    def _iter_subs(self, substitutions):
-        for constraint in self.flat():
-            if hasattr(constraint, "substitutions"):
-                subs = constraint.substitutions
-                yield subs
-        yield substitutions

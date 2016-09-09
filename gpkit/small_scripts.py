@@ -14,25 +14,14 @@ def try_str_without(item, excluded):
 def veckeyed(key):
     "Return a veckey version of a VarKey"
     vecdescr = dict(key.descr)
-    del vecdescr["idx"]
-    vecdescr.pop("value", None)
+    for metadata in ["idx", "value"]:
+        vecdescr.pop(metadata, None)
     return key.__class__(**vecdescr)
-
-
-def listify(item):
-    "Make sure an item is in a list"
-    if isinstance(item, Iterable):
-        return list(item)
-    else:
-        return [item]
 
 
 def mag(c):
     "Return magnitude of a Number or Quantity"
-    if isinstance(c, Quantity):
-        return c.magnitude
-    else:
-        return c
+    return c.magnitude if isinstance(c, Quantity) else c
 
 
 def unitstr(units, into="%s", options="~", dimless='-'):
@@ -48,10 +37,7 @@ def unitstr(units, into="%s", options="~", dimless='-'):
         except ValueError:
             rawstr = "1.0 " + str(units.units)
         units = "".join(rawstr.replace("dimensionless", dimless).split()[1:])
-    if units:
-        return into % units
-    else:
-        return ""
+    return into % units if units else ""
 
 
 def nomial_latex_helper(c, pos_vars, neg_vars):
@@ -90,11 +76,13 @@ def nomial_latex_helper(c, pos_vars, neg_vars):
 def is_sweepvar(sub):
     "Determines if a given substitution indicates a sweep."
     try:
-        if sub[0] == "sweep":
-            if isinstance(sub[1], Iterable) or hasattr(sub[1], "__call__"):
-                return True
-    except (TypeError, IndexError):
-        return False
+        sweep, value = sub
+        if sweep == "sweep" and (isinstance(value, Iterable) or
+                                 hasattr(value, "__call__")):
+            return True
+    except (TypeError, ValueError):
+        pass
+    return False
 
 
 def latex_num(c):
@@ -104,34 +92,3 @@ def latex_num(c):
         idx = cstr.index('e')
         cstr = "%s \\times 10^{%i}" % (cstr[:idx], int(cstr[idx+1:]))
     return cstr
-
-
-def flatten(ible, classes):
-    """Flatten an iterable that contains other iterables
-
-    Arguments
-    ---------
-    l : Iterable
-        Top-level container
-
-    Returns
-    -------
-    out : list
-        List of all objects found in the nested iterables
-
-    Raises
-    ------
-    TypeError
-        If an object is found whose class was not in classes
-    """
-    out = []
-    for el in ible:
-        if isinstance(el, classes):
-            out.append(el)
-        elif isinstance(el, Iterable):
-            for elel in flatten(el, classes):
-                out.append(elel)
-        else:
-            raise TypeError("Iterable %s contains element '%s'"
-                            " of invalid class %s." % (ible, el, el.__class__))
-    return out

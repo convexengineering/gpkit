@@ -62,7 +62,7 @@ class CostedConstraintSet(ConstraintSet):
         **solvekwargs
             kwargs which get passed to the solve()/localsolve() method.
         """
-        from ..interactive.widgets import modelinteract
+        from ..interactive import modelinteract
         return modelinteract(self, ranges, fn_of_sol, **solvekwargs)
 
     def controlpanel(self, *args, **kwargs):
@@ -71,5 +71,5 @@ class CostedConstraintSet(ConstraintSet):
         Like interact(), but with the ability to control sliders and their
         ranges live. args and kwargs are passed on to interact()
         """
-        from ..interactive.widgets import modelcontrolpanel
+        from ..interactive import modelcontrolpanel
         return modelcontrolpanel(self, *args, **kwargs)

@@ -6,6 +6,7 @@ import numpy as np
 from ..small_classes import HashVector, Quantity
 from ..keydict import KeySet, KeyDict
 from ..small_scripts import mag
+from ..repr_conventions import _repr
 
 
 class NomialData(object):
@@ -41,6 +42,8 @@ class NomialData(object):
             self.units = None
 
         self._hashvalue = None
+
+    __repr__ = _repr
 
     def __hash__(self):
         if self._hashvalue is None:
@@ -82,9 +85,6 @@ class NomialData(object):
         # nomials are already simplified, so simplify=False
         NomialData.__init__(self, exps, cs, simplify=False)
         self.units = tuple(s.units for s in nomials)
-
-    def __repr__(self):
-        return "gpkit.%s(%s)" % (self.__class__.__name__, hash(self))
 
     def diff(self, var):
         """Derivative of this with respect to a Variable

@@ -2,7 +2,6 @@
 from collections import defaultdict
 import numpy as np
 from .small_classes import Numbers
-from .small_scripts import is_sweepvar
 
 
 class KeyDict(dict):
@@ -56,25 +55,6 @@ class KeyDict(dict):
                 key = key.veckey
         return key, idx
 
-    @classmethod
-    def with_keys(cls, keyset, dictionaries):
-        "Generates a KeyDict from a KeySet and iterable of dictionaries"
-        out = cls()
-        for dictionary in dictionaries:
-            for key, value in dictionary.items():
-                # The keyset filters and converts each dictionary's keys
-                keys = keyset[key]
-                for key in keys:
-                    if not key.idx:
-                        out[key] = value
-                    else:
-                        if not hasattr(value, "shape"):
-                            value = np.array(value)
-                        val_i = value[key.idx]
-                        if is_sweepvar(val_i) or not np.isnan(val_i):
-                            out[key] = val_i
-        return out
-
     def __contains__(self, key):
         "In a winding way, figures out if a key is in the KeyDict"
         key, idx = self.parse_and_index(key)
@@ -115,11 +95,15 @@ class KeyDict(dict):
             if idx:
                 number_array = isinstance(value, Numbers)
                 kwargs = {} if number_array else {"dtype": "object"}
-                emptyvec = np.full(key.descr["shape"], np.nan, **kwargs)
+                emptyvec = np.full(key.shape, np.nan, **kwargs)
                 dict.__setitem__(self, key, emptyvec)
         for key in self.keymap[key]:
             if idx:
                 dict.__getitem__(self, key)[idx] = value
+            elif (dict.__contains__(self, key) and hasattr(value, "shape")
+                  and np.isnan(value).any()):
+                goodvals = ~np.isnan(value)
+                self[key][goodvals] = value[goodvals]
             else:
                 dict.__setitem__(self, key, value)
 
@@ -154,12 +138,12 @@ class KeySet(KeyDict):
 
     def update(self, *args, **kwargs):
         "Iterates through the dictionary created by args and kwargs"
-        if len(args) == 1:
+        if len(args) == 1:  # set-like interface
             for item in args[0]:
                 self.add(item)
-        else:
-            for k, v in dict(*args, **kwargs).items():
-                self[k] = v
+        else:  # dict-like interface
+            for k in dict(*args, **kwargs):
+                self.add(k)
 
     def __getitem__(self, key):
         "Gets the keys corresponding to a particular key."
@@ -169,16 +153,3 @@ class KeySet(KeyDict):
     def __setitem__(self, key, value):
         "Assigns the key itself every time."
         KeyDict.__setitem__(self, key, None)
-
-    def map(self, iterable):
-        "Given a list of keys, returns a list of VarKeys"
-        varkeys = []
-        for key in iterable:
-            keys = self[key]
-            if len(keys) > 1:
-                raise ValueError("KeySet.map() accepts only unambiguous keys.")
-            key, = keys
-            varkeys.append(key)
-        if len(varkeys) == 1:
-            varkeys = varkeys[0]
-        return varkeys
