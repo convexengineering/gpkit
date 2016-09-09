@@ -68,7 +68,6 @@ class ConstraintSet(list):
                 vk = variables[0].key.veckey
                 arr = NomialArray(np.full(vk.shape, np.nan, dtype="object"))
                 arr.key = vk
-
                 for variable in variables:
                     if variable.key.veckey == vk:
                         arr[variable.key.idx] = variable
@@ -80,7 +79,7 @@ class ConstraintSet(list):
             elif len(variables) == 1:
                 return variables[0]
             raise ValueError("multiple variables are called '%s'; use"
-                             " variable_byname('%s') to see all of them"
+                             " variables_byname('%s') to see all of them"
                              % (key, key))
 
     def variables_byname(self, key):
