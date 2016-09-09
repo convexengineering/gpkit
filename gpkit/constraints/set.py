@@ -56,8 +56,6 @@ class ConstraintSet(list):
                     self.substitutions.update(self[i].substitutions)
         self.reset_varkeys()
         for k, v in subs.items():
-            if k not in self.varkeys:
-                continue
             keys = self.varkeys[k]
             key = next(iter(keys))
             if key.veckey:
