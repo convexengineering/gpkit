@@ -705,10 +705,9 @@ class SignomialInequality(ScalarSingleEquationConstraint):
         """
         if x0 is None:
             x0 = {}
-        x0.update({
-            vk: self.substitutions.get(vk, x0.get(vk, vk.descr.get("sp_init",
-                                                                   1.0)))
-            for vk in varkeys})
+        x0.update(self.substitutions)
+        x0.update({vk: x0.get(vk, vk.descr.get("sp_init", 1.0))
+                   for vk in varkeys})
         return x0
 
     def as_gpconstr(self, x0):
