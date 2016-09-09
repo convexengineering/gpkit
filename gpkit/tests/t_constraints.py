@@ -46,6 +46,14 @@ class TestConstraint(unittest.TestCase):
         lc = LinkedConstraintSet([vecx_free >= 1, vecx_fixed >= 1])
         self.assertEqual(lc.substitutions["x"].tolist(), [1, 2, 3])
 
+    def test_exclude_vector(self):
+        x = VectorVariable(2, "x", [2, 1])
+        x_ = VectorVariable(2, "x", [1, 2], model="_")
+        try:
+            LinkedConstraintSet([x >= 1, x_ >= 1], exclude="x")
+        except ValueError:
+            self.fail("linking was an unexpected ValueError (sub conflict?).")
+
     def test_additive_scalar(self):
         """Make sure additive scalars simplify properly"""
         x = Variable('x')

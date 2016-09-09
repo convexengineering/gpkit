@@ -244,24 +244,23 @@ class TestGPSubs(unittest.TestCase):
         a, b = Above(), Below()
         concatm = Model(a.cost*b.cost, [a, b])
         concat_cost = concatm.solve(verbosity=0)["cost"]
+        almostequal = self.assertAlmostEqual
         if not isinstance(a["x"].key.units, str):
-            self.assertAlmostEqual(a.solve(verbosity=0)["cost"], 0.3333333)
-            self.assertAlmostEqual(b.solve(verbosity=0)["cost"], 0.01)
-            self.assertAlmostEqual(concat_cost, 0.0109361)  # 1 cm/1 yd
+            almostequal(1/gpkit.units.yd/a.solve(verbosity=0)["cost"], 1, 5)
+            almostequal(1*gpkit.units.cm/b.solve(verbosity=0)["cost"], 1, 5)
+            almostequal(1*gpkit.units.cm/gpkit.units.yd/concat_cost, 1, 5)
         a1, b1 = Above(), Below()
         m = a1.link(b1)
         m.cost = m["x"]
         sol = m.solve(verbosity=0)
         if not isinstance(m["x"].key.units, str):
-            expected = (1*gpkit.units.cm/(1*m.cost.units)).to("dimensionless")
-            self.assertAlmostEqual(sol["cost"], expected)  # 1 cm/(1 ft or 1 m)
+            almostequal(1*gpkit.units.cm/sol["cost"], 1, 5)
         a1, b1 = Above(), Below()
         m = b1.link(a1)
         m.cost = m["x"]
         sol = m.solve(verbosity=0)
         if not isinstance(m["x"].key.units, str):
-            expected = (1*gpkit.units.cm/(1*m.cost.units)).to("dimensionless")
-            self.assertAlmostEqual(sol["cost"], expected)  # 1 cm/(1 ft or 1 m)
+            almostequal(1*gpkit.units.cm/sol["cost"], 1, 5)
         self.assertIn(m["x"], sol["variables"])
         self.assertIn(a1["x"], sol["variables"])
         self.assertIn(b1["x"], sol["variables"])
