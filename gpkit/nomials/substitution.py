@@ -172,10 +172,10 @@ def substitution(nomial, substitutions):
                     try:
                         if hasattr(sub.units, "to"):
                             vu = getattr(var.units, "units", "dimensionless")
-                            mag(cs_)[i] *= mag(sub.units.to(vu))
+                            mag(cs_)[i] *= mag(sub.units.to(vu))**x
                         elif hasattr(var.units, "to"):
-                            units = sub.units if sub.units else "dimensionless"
-                            mag(cs_)[i] /= mag(var.units.to(units))
+                            su = getattr(sub.units, "units", "dimensionless")
+                            mag(cs_)[i] /= mag(var.units.to(su))**x
                     except DimensionalityError:
                         raise ValueError("units of the substituted %s '%s'"
                                          " [%s] are not compatible with"

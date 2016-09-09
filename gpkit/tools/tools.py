@@ -2,7 +2,6 @@
 import numpy as np
 from ..nomials import Variable, VectorVariable
 from ..nomials import NomialArray
-# pylint: disable=duplicate-code
 
 
 def te_exp_minus1(posy, nterm):

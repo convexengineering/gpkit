@@ -24,7 +24,6 @@ class TestKeyDict(unittest.TestCase):
         self.assertEqual(kd[x.key], 52)
         self.assertEqual(kd["x"], 52)
         self.assertEqual(kd["x_motor"], 52)
-        self.assertEqual(kd["{x}_{motor}"], 52)
         self.assertNotIn("x_someothermodelname", kd)
 
     def test_dictlike(self):

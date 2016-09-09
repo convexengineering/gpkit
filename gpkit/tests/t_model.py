@@ -7,7 +7,7 @@ from gpkit.small_classes import CootMatrix
 from gpkit.feasibility import feasibility_model
 from gpkit.exceptions import InvalidGPConstraint
 
-NDIGS = {"cvxopt": 5, "mosek": 7, "mosek_cli": 5}
+NDIGS = {"cvxopt": 4, "mosek": 5, "mosek_cli": 5}
 # name: decimal places of accuracy
 
 
@@ -52,9 +52,9 @@ class TestGP(unittest.TestCase):
             m = Model(c, [c >= (x + 0.25)**2 + (y - 0.5)**2,
                           SignomialEquality(x**2 + x, y)])
         sol = m.localsolve(verbosity=0)
-        self.assertAlmostEqual(sol("x"), 0.1639472, 4)
-        self.assertAlmostEqual(sol("y"), 0.1908254, 4)
-        self.assertAlmostEqual(sol("c"), 0.2669448, 4)
+        self.assertAlmostEqual(sol("x"), 0.1639472, self.ndig)
+        self.assertAlmostEqual(sol("y"), 0.1908254, self.ndig)
+        self.assertAlmostEqual(sol("c"), 0.2669448, self.ndig)
 
     def test_601(self):
         # tautological monomials should solve but not pass to the solver
@@ -78,20 +78,25 @@ class TestGP(unittest.TestCase):
         self.assertRaises((RuntimeWarning, ValueError), m.solve, verbosity=0)
 
     def test_simple_united_gp(self):
-        R = Variable('R', units="nautical_miles")
-        a0 = Variable('a0', 340.29, 'm/s')
-        theta = Variable(r'\theta', 0.7598)
-        t = Variable('t', 10, 'hr')
-        T_loiter = Variable('T_{loiter}', 1, 'hr')
-        T_reserve = Variable('T_{reserve}', 45, 'min')
-        M = VectorVariable(2, 'M')
+        R = Variable("R", "nautical_miles")
+        if not R.units:
+            return
+        a0 = Variable("a0", 340.29, "m/s")
+        theta = Variable("\\theta", 0.7598)
+        t = Variable("t", 10, "hr")
+        T_loiter = Variable("T_{loiter}", 1, "hr")
+        T_reserve = Variable("T_{reserve}", 45, "min")
+        M = VectorVariable(2, "M")
 
-        if R.units:
-            prob = Model(1/R,
-                         [t >= sum(R/a0/M/theta**0.5) + T_loiter + T_reserve,
-                          M <= 0.76])
-            sol = prob.solve(verbosity=0)
-            self.assertAlmostEqual(sol["cost"], 0.0005532, self.ndig)
+        prob = Model(1/R,
+                     [t >= sum(R/a0/M/theta**0.5) + T_loiter + T_reserve,
+                      M <= 0.76])
+        sol = prob.solve(solver=self.solver, verbosity=0)
+        almostequal = self.assertAlmostEqual
+        almostequal(0.000553226/R.units/sol["cost"], 1, self.ndig)
+        almostequal(340.29*a0.units/sol["constants"]["a0"], 1, self.ndig)
+        almostequal(340.29*a0.units/sol["variables"]["a0"], 1, self.ndig)
+        almostequal(1807.58*R.units/sol["freevariables"]["R"], 1, self.ndig)
 
     def test_trivial_vector_gp(self):
         """
@@ -384,7 +389,7 @@ class TestSP(unittest.TestCase):
             m = Model(z, [z >= J], name="SmallSignomial")
         sol = m.localsolve(verbosity=0)
         self.assertAlmostEqual(sol['cost'], nonzero_adder, local_ndig)
-        self.assertAlmostEqual(sol('x'), 0.987, 3)
+        self.assertAlmostEqual(sol('x'), 0.98725425, self.ndig)
 
     def test_sigs_not_allowed_in_cost(self):
         with SignomialsEnabled():
@@ -393,10 +398,10 @@ class TestSP(unittest.TestCase):
             J = 0.01*((x - 1)**2 + (y - 1)**2) + (x*y - 1)**2
             m = Model(J)
             with self.assertRaises(TypeError):
-                _ = m.localsolve(verbosity=0)
+                m.localsolve(verbosity=0)
 
     def test_partial_sub_signomial(self):
-        """Test SP partial x0 initialization"""
+        "Test SP partial x0 initialization"
         x = Variable('x')
         y = Variable('y')
         with SignomialsEnabled():
@@ -404,6 +409,20 @@ class TestSP(unittest.TestCase):
         m.localsolve(x0={x: 0.5}, verbosity=0)
         first_gp_constr_posy = m.program.gps[0].constraints[0].as_posyslt1()[0]
         self.assertEqual(first_gp_constr_posy.exp[x.key], -1./3)
+
+    def test_unbounded_debugging(self):
+        "Test nearly-dual-feasible problems"
+        from gpkit.constraints.bounded import BoundedConstraintSet
+        x = Variable("x")
+        y = Variable("y")
+        m = Model(x*y, [x*y**1.000001 >= 100])
+        with self.assertRaises((RuntimeWarning, ValueError)):
+            m.solve(self.solver, verbosity=0)
+        m = Model(x*y, BoundedConstraintSet(m, verbosity=0))
+        sol = m.solve(self.solver, verbosity=0)
+        bounds = sol["boundedness"]
+        self.assertEqual(bounds["sensitive to upper bound"], [y.key])
+        self.assertEqual(bounds["sensitive to lower bound"], [x.key])
 
 
 class TestModelSolverSpecific(unittest.TestCase):

@@ -112,12 +112,12 @@ class SolutionArray(DictOfLists):
                     continue
                 strs += ["\n%s\n----" % table_title]
                 if len(self) > 1:
-                    costs = ["%-8.3g" % c for c in subdict[:4]]
+                    costs = ["%-8.3g" % c for c in mag(subdict[:4])]
                     strs += [" [ %s %s ]" % ("  ".join(costs),
                                              "..." if len(self) > 4 else "")]
                     cost_units = self.program[0].cost.units
                 else:
-                    strs += [" %-.4g" % subdict]
+                    strs += [" %-.4g" % mag(subdict)]
                     if hasattr(self.program, "cost"):
                         cost_units = self.program.cost.units
                     else:

@@ -75,7 +75,7 @@ class VarKey(object):
         selfstr = str(self)
         self._hashvalue = hash(selfstr)
         self.key = self
-        self.keys = set([self, self.name, selfstr, self.latex(),
+        self.keys = set([self.name, selfstr,
                          self.str_without("models")])
 
         if "idx" in self.descr:
