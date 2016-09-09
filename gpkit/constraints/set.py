@@ -55,8 +55,19 @@ class ConstraintSet(list):
                 if hasattr(self[i], "substitutions"):
                     self.substitutions.update(self[i].substitutions)
         self.reset_varkeys()
-        self.substitutions.update({self[k].key: v for k, v in subs.items()
-                                   if k in self.varkeys})
+        for k, v in subs.items():
+            if k not in self.varkeys:
+                continue
+            keys = self.varkeys[k]
+            key = next(iter(keys))
+            if key.veckey:
+                key = key.veckey
+            elif len(keys) > 1:
+                raise ValueError("substitution key '%s' was ambiguous; use"
+                                 " .variables_byname('%s') to see the"
+                                 " variables it could have referred to. %s"
+                                 % (k, k, self.varkeys[k]))
+            self.substitutions[key] = v
         # TODO: on all updates the keydict should do the referencing above
 
     def __getitem__(self, key):
