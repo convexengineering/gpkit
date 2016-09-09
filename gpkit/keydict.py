@@ -37,9 +37,9 @@ class KeyDict(dict):
     def __init__(self, *args, **kwargs):
         "Passes through to dict.__init__ via the `update()` method"
         # pylint: disable=super-init-not-called
+        self.varkeys = None
         self.keymap = defaultdict(set)
         self.update(*args, **kwargs)
-        self.varkeys = None
 
     def update(self, *args, **kwargs):
         "Iterates through the dictionary created by args and kwargs"
