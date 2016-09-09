@@ -696,9 +696,9 @@ class SignomialInequality(ScalarSingleEquationConstraint):
 
         else:
             raise InvalidGPConstraint("SignomialInequality could not simplify"
-                                      " to a PosynomialInequality; try forming"
-                                      " your program as SignomialProgram or"
-                                      " calling .localsolve().")
+                                      " to a PosynomialInequality; try calling"
+                                      "`.localsolve` instead of `.solve` to"
+                                      " form your Model as a SignomialProgram")
 
     def _fill_default_x0(self, x0, varkeys):
         """For all keys in varkeys, updates x0 with default values and
@@ -739,9 +739,9 @@ class SignomialEquality(SignomialInequality):
         "Returns the posys <= 1 representation of this constraint."
         # todo deal with substitutions
         raise InvalidGPConstraint("SignomialEquality could not simplify"
-                                  " to a PosynomialInequality; try forming"
-                                  " your program as SignomialProgram or"
-                                  " calling .localsolve().")
+                                  " to a PosynomialInequality; try calling"
+                                  "`.localsolve` instead of `.solve` to"
+                                  " form your Model as a SignomialProgram")
 
     def as_gpconstr(self, x0):
         "Returns GP approximation of an SP constraint at x0"

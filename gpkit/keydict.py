@@ -39,6 +39,7 @@ class KeyDict(dict):
         # pylint: disable=super-init-not-called
         self.keymap = defaultdict(set)
         self.update(*args, **kwargs)
+        self.varkeys = None
 
     def update(self, *args, **kwargs):
         "Iterates through the dictionary created by args and kwargs"
@@ -47,7 +48,23 @@ class KeyDict(dict):
 
     def parse_and_index(self, key):
         "Returns key if key had one, and veckey/idx for indexed veckeys."
-        key = getattr(key, "key", key)
+        if hasattr(key, "key"):
+            key = key.key
+        else:
+            if self.varkeys:
+                if key in self.varkeys:
+                    keys = self.varkeys[key]
+                    key = next(iter(keys))
+                    if key.veckey:
+                        key = key.veckey
+                    elif len(keys) > 1:
+                        raise ValueError("substitution key '%s' was ambiguous;"
+                                         " .variables_byname('%s') will show"
+                                         " which variables it may refer to."
+                                         % (key, key))
+                else:
+                    raise KeyError("key '%s' does not refer to any varkey in"
+                                   " this ConstraintSet" % key)
         idx = None
         if self.collapse_arrays:
             idx = getattr(key, "idx", None)

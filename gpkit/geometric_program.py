@@ -55,15 +55,6 @@ class GeometricProgram(NomialData):
         ## Create list of substituted posynomials <= 1
         self.posynomials = [cost.sub(self.substitutions)]
         self.constr_idxs = []
-        self.unusedsubkeys = set()
-        # TODO: speed up the below before uncommenting
-        # self.unusedsubkeys = set(key for key in self.substitutions
-        #                          if (key not in constraints.varkeys
-        #                              and key not in self.cost.varkeys))
-        for key in self.unusedsubkeys:
-            if verbosity > 0:
-                print ("Warning: %s has a substitution but was not found in"
-                       " the cost or any constraints." % key)
 
         for constraint in constraints:
             constr_posys = constraint.as_posyslt1(self.substitutions)
@@ -297,25 +288,7 @@ class GeometricProgram(NomialData):
             # TODO: enable this once there's a plan for how to use it
             # result["sensitivities"]["constraints"][str(constr)] = constr_sens
         result["sensitivities"]["constants"] = KeyDict(var_senss)
-
-        ## Get constants
-        const = {}
-        for k, v in self.substitutions.items():
-            if k in self.unusedsubkeys:
-                continue
-            if isinstance(k, str):
-                present_varkeys = self.constraints.varkeys[k]
-                # TODO: when unusedsubkeys is reimplemented, we should be able
-                #       to assume that any string _is_ in the constraints.
-                if present_varkeys:
-                    k, = present_varkeys
-                else:
-                    k = None
-            else:
-                k = k.key
-            if k is not None:
-                const[k] = v
-        result["constants"] = KeyDict(const)
+        result["constants"] = KeyDict(self.substitutions)
         result["variables"] = KeyDict(result["freevariables"])
         result["variables"].update(result["constants"])
 
