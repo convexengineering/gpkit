@@ -244,8 +244,8 @@ class TestGPSubs(unittest.TestCase):
         a, b = Above(), Below()
         concatm = Model(a.cost*b.cost, [a, b])
         concat_cost = concatm.solve(verbosity=0)["cost"]
+        almostequal = self.assertAlmostEqual
         if not isinstance(a["x"].key.units, str):
-            almostequal = self.assertAlmostEqual
             almostequal(1/gpkit.units.yd/a.solve(verbosity=0)["cost"], 1, 5)
             almostequal(1*gpkit.units.cm/b.solve(verbosity=0)["cost"], 1, 5)
             almostequal(1*gpkit.units.cm/gpkit.units.yd/concat_cost, 1, 5)
@@ -254,7 +254,12 @@ class TestGPSubs(unittest.TestCase):
         m.cost = m["x"]
         sol = m.solve(verbosity=0)
         if not isinstance(m["x"].key.units, str):
-            almostequal = self.assertAlmostEqual
+            almostequal(1*gpkit.units.cm/sol["cost"], 1, 5)
+        a1, b1 = Above(), Below()
+        m = b1.link(a1)
+        m.cost = m["x"]
+        sol = m.solve(verbosity=0)
+        if not isinstance(m["x"].key.units, str):
             almostequal(1*gpkit.units.cm/sol["cost"], 1, 5)
         self.assertIn(m["x"], sol["variables"])
         self.assertIn(a1["x"], sol["variables"])
