@@ -62,7 +62,7 @@ class KeyDict(dict):
                                          " .variables_byname('%s') will show"
                                          " which variables it may refer to."
                                          % (key, key))
-                else:
+                elif key != "filter":
                     raise KeyError("key '%s' does not refer to any varkey in"
                                    " this ConstraintSet" % key)
         idx = None
