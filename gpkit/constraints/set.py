@@ -55,20 +55,7 @@ class ConstraintSet(list):
                 if hasattr(self[i], "substitutions"):
                     self.substitutions.update(self[i].substitutions)
         self.reset_varkeys()
-        for k, v in subs.items():
-            if k not in self.varkeys:
-                continue
-            keys = self.varkeys[k]
-            key = next(iter(keys))
-            if key.veckey:
-                key = key.veckey
-            elif len(keys) > 1:
-                raise ValueError("substitution key '%s' was ambiguous; use"
-                                 " .variables_byname('%s') to see the"
-                                 " variables it could have referred to. %s"
-                                 % (k, k, self.varkeys[k]))
-            self.substitutions[key] = v
-        # TODO: on all updates the keydict should do the referencing above
+        self.substitutions.update(subs)
 
     def __getitem__(self, key):
         if isinstance(key, int):
@@ -81,6 +68,7 @@ class ConstraintSet(list):
                 vk = variables[0].key.veckey
                 arr = NomialArray(np.full(vk.shape, np.nan, dtype="object"))
                 arr.key = vk
+
                 for variable in variables:
                     if variable.key.veckey == vk:
                         arr[variable.key.idx] = variable
@@ -208,6 +196,7 @@ class ConstraintSet(list):
         if self.unused_variables is not None:
             varkeys.update(self.unused_variables)
         self.varkeys = varkeys
+        self.substitutions.varkeys = varkeys
 
     def as_posyslt1(self, substitutions=None):
         "Returns list of posynomials which must be kept <= 1"
