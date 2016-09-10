@@ -191,7 +191,7 @@ Fixed variable sensitivities can be accessed most easily using a SolutionArrayâ€
     x = gpkit.Variable("x")
     x_min = gpkit.Variable("x_{min}", 2)
     sol = gpkit.Model(x, [x_min <= x]).solve()
-    assert sol.sens(x_min) == 1
+    assert sol["sensitivities"]["constants"][x_min] == 1
 
 These sensitivities are actually log derivatives (:math:`\frac{d \mathrm{log}(y)}{d \mathrm{log}(x)}`); whereas a regular derivative is a tangent line, these are tangent monomials, so the ``1`` above indicates that ``x_min`` has a linear relation with the objective. This is confirmed by a further example:
 
@@ -201,6 +201,6 @@ These sensitivities are actually log derivatives (:math:`\frac{d \mathrm{log}(y)
     x = gpkit.Variable("x")
     x_squared_min = gpkit.Variable("x^2_{min}", 2)
     sol = gpkit.Model(x, [x_squared_min <= x**2]).solve()
-    assert sol.sens(x_squared_min) == 2
+    assert sol["sensitivities"]["constants"][x_squared_min] == 2
 
 .. add a plot of a monomial approximation vs a tangent approximation

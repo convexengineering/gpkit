@@ -52,7 +52,7 @@ class TestSolutionArray(unittest.TestCase):
         _ = sol(z1)
         self.assertLess(time.time() - t1, 0.05)
 
-    def test_subinto_sens(self):
+    def test_subinto(self):
         Nsweep = 20
         Pvals = np.linspace(13, 24, Nsweep)
         H_max = Variable("H_max", 10, "m", "Length")
