@@ -13,15 +13,13 @@ def te_exp_minus1(posy, nterm):
     posy : gpkit.Posynomial
         Variable or expression to exponentiate
     nterm : int
-        Number of terms in resulting Taylor expansion
+        Number of non-constant terms in resulting Taylor expansion
 
     Returns
     -------
     gpkit.Posynomial
         Taylor expansion of e^{posy} - 1, carried to nterm terms
     """
-    if nterm < 1:
-        raise ValueError("Unexpected number of terms, nterm=%s" % nterm)
     res = 0
     factorial_denom = 1
     for i in range(1, nterm + 1):
@@ -37,16 +35,13 @@ def te_secant(var, nterm):
     var : gpkit.monomial
       Variable or expression argument
     nterm : int
-        Number of terms in resulting Taylor expansion
+        Number of non-constant terms in resulting Taylor expansion
 
     Returns
     -------
     gpkit.Posynomial
         Taylor expansion of secant(x), carried to nterm terms
     """
-    if nterm < 1:
-        raise ValueError("Unexpected number of terms, nterm=%s" % nterm)
-
     # The first 12 Euler Numbers
     E2n = np.asarray([1,
                       5,
@@ -81,18 +76,16 @@ def te_tangent(var, nterm):
     var : gpkit.monomial
       Variable or expression argument
     nterm : int
-        Number of terms in resulting Taylor expansion
+        Number of non-constant terms in resulting Taylor expansion
 
     Returns
     -------
     gpkit.Posynomial
         Taylor expansion of tangent(x), carried to nterm terms
     """
-    if nterm < 1:
-        raise ValueError("Unexpected number of terms, nterm=%s" % nterm)
-
     if nterm > 15:
-        raise ValueError("Tangent expansion not implemented above 15 terms")
+        raise NotImplementedError("Tangent expansion not implemented above"
+                                  " 15 terms")
 
     # The first 15 Bernoulli Numbers
     B2n = np.asarray([1/6.,
