@@ -112,8 +112,8 @@ class SignomialProgram(CostedConstraintSet):
                 feas_constrs = ([slackvar >= 1] +
                                 [posy <= slackvar
                                  for posy in gp.posynomials[1:]])
-                nearest_feasible = GeometricProgram(slackvar, feas_constrs,
-                                                    verbosity=0)  # no bounds-warnings
+                nearest_feasible = GeometricProgram(
+                    slackvar, feas_constrs, verbosity=0)  # no bounds-warnings
                 self.gps.append(nearest_feasible)
                 result = nearest_feasible.solve(solver, verbosity=verbosity-1)
                 result["cost"] = None  # reset the cost-counting
