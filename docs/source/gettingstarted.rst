@@ -183,7 +183,7 @@ From the dual solution GPkit computes the sensitivities for every fixed variable
 Using variable sensitivities
 ----------------------------
 
-Fixed variable sensitivities can be accessed most easily using a SolutionArray’s ``sens()`` method, as in this example:
+Fixed variable sensitivities can be accessed from a SolutionArray’s ``["sensitivities"]["constants"]`` dict, as in this example:
 
 .. code-block:: python
 
