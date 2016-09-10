@@ -67,7 +67,7 @@ def te_secant(var, nterm):
         E2n = np.append(E2n, E2n_add)
 
     res = 1
-    factorial_denom = 1
+    factorial_denom = 1.
     for i in range(1, nterm + 1):
         factorial_denom *= ((2*i)*(2*i-1))
         res += E2n[i-1] / factorial_denom * var**(2*i)
