@@ -45,6 +45,7 @@ class KeyDict(dict):
         "Iterates through the dictionary created by args and kwargs"
         for k, v in dict(*args, **kwargs).items():
             if hasattr(v, "copy"):
+                # we don't want just a reference (for e.g. numpy arrays)
                 v = v.copy()
             self[k] = v
 
@@ -140,11 +141,12 @@ class KeyDict(dict):
                     delete = False
             if delete:
                 dict.__delitem__(self, key)
-                if hasattr(key, "keys"):
-                    for mappedkey in key.keys:
-                        self.keymap[mappedkey].remove(key)
-                        if not self.keymap[mappedkey]:
-                            del self.keymap[mappedkey]
+                mapkeys = set(getattr(key, "keys", []))
+                mapkeys.add(key)
+                for mappedkey in mapkeys:
+                    self.keymap[mappedkey].remove(key)
+                    if not self.keymap[mappedkey]:
+                        del self.keymap[mappedkey]
 
 
 class KeySet(KeyDict):
