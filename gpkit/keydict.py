@@ -33,6 +33,7 @@ class KeyDict(dict):
     See also: gpkit/tests/t_keydict.py.
     """
     collapse_arrays = True
+    keymapping = True
 
     def __init__(self, *args, **kwargs):
         "Passes through to dict.__init__ via the `update()` method"
@@ -44,6 +45,8 @@ class KeyDict(dict):
     def update(self, *args, **kwargs):
         "Iterates through the dictionary created by args and kwargs"
         for k, v in dict(*args, **kwargs).items():
+            if hasattr(v, "copy"):
+                v = v.copy()
             self[k] = v
 
     def parse_and_index(self, key):
@@ -106,7 +109,7 @@ class KeyDict(dict):
         key, idx = self.parse_and_index(key)
         if key not in self.keymap:
             self.keymap[key].add(key)
-            if hasattr(key, "keys"):
+            if hasattr(key, "keys") and self.keymapping:
                 for mapkey in key.keys:
                     self.keymap[mapkey].add(key)
             if idx:
@@ -138,7 +141,7 @@ class KeyDict(dict):
                     delete = False
             if delete:
                 dict.__delitem__(self, key)
-                if hasattr(key, "keys"):
+                if hasattr(key, "keys") and self.keymapping:
                     for mappedkey in key.keys:
                         self.keymap[mappedkey].remove(key)
                         if not self.keymap[mappedkey]:
@@ -170,3 +173,8 @@ class KeySet(KeyDict):
     def __setitem__(self, key, value):
         "Assigns the key itself every time."
         KeyDict.__setitem__(self, key, None)
+
+
+class FastKeyDict(KeyDict):
+    "FsatKeyDicts are KeyDicts that don't map keys, only collate arrays"
+    keymapping = False

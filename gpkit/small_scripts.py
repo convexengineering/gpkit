@@ -28,7 +28,12 @@ def unitstr(units, into="%s", options="~", dimless='-'):
     "Returns the unitstr of a given object."
     if hasattr(units, "descr") and hasattr(units.descr, "get"):
         units = units.descr.get("units", dimless)
-    if units and not isinstance(units, Strings):
+    if isinstance(units, Strings):
+        return into % units if units else ""
+    elif isinstance(units, Quantity):
+        if hasattr(mag(units), "shape"):
+            # If it's an array, make it scalar
+            units = Quantity(1, units.units)
         try:
             rawstr = ("{:%s}" % options).format(units)
             if str(units.units) == "count":
@@ -37,7 +42,8 @@ def unitstr(units, into="%s", options="~", dimless='-'):
         except ValueError:
             rawstr = "1.0 " + str(units.units)
         units = "".join(rawstr.replace("dimensionless", dimless).split()[1:])
-    return into % units if units else ""
+        return into % units if units else ""
+    return ""
 
 
 def nomial_latex_helper(c, pos_vars, neg_vars):

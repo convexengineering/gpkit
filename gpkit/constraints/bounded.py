@@ -85,7 +85,7 @@ class BoundedConstraintSet(ConstraintSet):
                 out["sensitive to upper bound"].append(varkey)
             if abs(lam_lt) >= 1e-7:  # arbitrary threshold
                 out["sensitive to lower bound"].append(varkey)
-            value = mag(result["variables"][varkey])
+            value = mag(result["freevariables"][varkey])
             distance_below = np.log(value/self.lowerbound)
             distance_above = np.log(self.upperbound/value)
             if distance_below <= 3:  # arbitrary threshold
