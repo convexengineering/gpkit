@@ -721,7 +721,7 @@ class SignomialInequality(ScalarSingleEquationConstraint):
 
 
 class SignomialEquality(SignomialInequality):
-    "A constraint of the general form posynomial == posynomial"
+    "A constraint of the form posynomial == posynomial"
 
     def __init__(self, left, right):
         SignomialInequality.__init__(self, left, "<=", right)
@@ -737,9 +737,51 @@ class SignomialEquality(SignomialInequality):
 
     def as_gpconstr(self, x0):
         "Returns GP approximation of an SP constraint at x0"
+        print "x0", x0
         siglt0, = self.unsubbed
         x0 = self._fill_default_x0(x0, siglt0.varlocs)
         posy, negy = siglt0.posy_negy()
         mec = (posy.mono_lower_bound(x0) == negy.mono_lower_bound(x0))
         mec.substitutions = self.substitutions
         return mec
+
+    def process_result(self, result):
+        "Checks that all constraints are satisfied with equality"
+        leftsubbed = self.left.sub(result["variables"]).value
+        rightsubbed = self.right.sub(result["variables"]).value
+        log_diff = abs(np.log10(mag(leftsubbed)) - np.log10(mag(rightsubbed)))
+        previously = result.get("sigeq_logsumerror", 0)
+        result["sigeq_logsumerror"] = previously + log_diff
+
+
+class SignomialEqualityTrust(SignomialEquality):
+    """A constraint of the form posynomial == posynomial with trust regions
+
+    The trust regions bound all varkeys in the constraint to stay within
+    a certain region. TODO: only do this for all varkeys?
+    """
+
+    def __init__(self, left, right, trustregion):
+        if trustregion >= 1 or trustregion <= 0:
+            raise ValueError("trust region must be between one and zero.")
+        self.trustregion = float(trustregion)
+        SignomialEquality.__init__(self, left, right)
+
+    def as_gpconstr(self, x0):
+        "Returns GP apprimxation of an SP constraint at x0"
+        #return self.left >= self.right
+        siglt0, = self.unsubbed
+        x0 = self._fill_default_x0(x0, siglt0.varlocs)
+        posy, negy = siglt0.posy_negy()
+        mec = (posy.mono_lower_bound(x0) == negy.mono_lower_bound(x0))
+        mec.substitutions = self.substitutions
+        trust_constraints = []
+        for vk in negy.varkeys:
+            mvk = Monomial(vk)
+            units = mvk.units if mvk.units else 1
+            lb = self.trustregion*x0[vk]*units <= mvk
+            ub = mvk <= x0[vk]*units/self.trustregion
+            lb.substitutions = self.substitutions
+            ub.substitutions = self.substitutions
+            trust_constraints.append([lb, ub])
+        return [mec, trust_constraints]
