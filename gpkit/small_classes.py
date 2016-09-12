@@ -94,6 +94,7 @@ class DictOfLists(dict):
         _enray_and_unit_dict(self, self, unitless_keys, united)
 
     def classify(self, cls):
+        "Converts all contained dictionaries into the given class."
         _classify(self, cls)
 
 

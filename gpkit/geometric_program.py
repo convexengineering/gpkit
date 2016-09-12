@@ -190,19 +190,19 @@ class GeometricProgram(NomialData):
                 (solvername, solver_out.get("status", None)))
 
         self._generate_nula(solver_out)
-        self.result = self._compile_result(solver_out)  # NOTE: SIDE EFFECTS
+        result = self._compile_result(solver_out)  # NOTE: SIDE EFFECTS
         if verbosity > 1:
             print ("result packing took %.2g%% of solve time" %
                    ((time() - tic) / soltime * 100))
             tic = time()
 
-        self.check_solution(self.result["cost"], solver_out['primal'],
+        self.check_solution(result["cost"], solver_out['primal'],
                             nu=solver_out["nu"], la=solver_out["la"])
         if verbosity > 1:
             print ("solution checking took %.2g%% of solve time" %
                    ((time() - tic) / soltime * 100))
 
-        self.result = SolutionArray(self.result)
+        self.result = SolutionArray(result)
         return self.result
 
     def _generate_nula(self, solver_out):
