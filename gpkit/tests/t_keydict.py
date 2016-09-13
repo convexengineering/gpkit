@@ -31,8 +31,7 @@ class TestKeyDict(unittest.TestCase):
         with self.assertRaises(KeyError):
             _ = kd["waldo"]
             # a failed __getitem__ causes potential state change (issue 893)
-        # TODO uncomment next assertNotIn after getting rest of test working
-        # self.assertNotIn("waldo", kd)
+        self.assertNotIn("waldo", kd)
         kd.update({"waldo": 5})
         res = kd["waldo"]
         self.assertEqual(res, 5)

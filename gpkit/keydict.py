@@ -89,6 +89,7 @@ class KeyDict(dict):
         key, idx = self.parse_and_index(key)
         keys = self.keymap[key]
         if not keys:
+            del self.keymap[key]
             raise KeyError("%s was not found." % key)
         values = []
         for key in keys:
