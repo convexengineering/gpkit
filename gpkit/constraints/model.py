@@ -109,6 +109,7 @@ class Model(CostedConstraintSet):
         if self.name:
             return "%s_{%s}" % (self.name, self.num)
 
+    # pylint: disable=too-many-locals
     def debug(self):
         "Attempts to diagnose infeasible models."
         from .relax import RelaxConstants, RelaxConstraints
