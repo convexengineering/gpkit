@@ -88,7 +88,7 @@ def _solve_fctry(genfunction):
         solution["variables"].update(solution["freevariables"])
         if "sweepvariables" in solution:
             solution["variables"].update(solution["sweepvariables"])
-        self.process_result(solution)
+        self.process_solution(solution)
         self.solution = solution  # NOTE: SIDE EFFECTS
         return solution
     return solvefn

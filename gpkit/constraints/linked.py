@@ -72,15 +72,15 @@ class LinkedConstraintSet(ConstraintSet):
                 constraint.reset_varkeys()
         self.reset_varkeys()
 
-    def process_result(self, result):
-        super(LinkedConstraintSet, self).process_result(result)
+    def process_solution(self, sol):
+        super(LinkedConstraintSet, self).process_solution(sol)
         for k in ["constants", "variables", "freevariables", "sensitivities"]:
-            resultdict = result[k]
+            soldict = sol[k]
             if k == "sensitivities":  # get ["sensitivities"]["constants"]
-                resultdict = resultdict["constants"]
+                soldict = soldict["constants"]
             for newvk, oldvks in self.reverselinks.items():
-                if newvk in resultdict:
-                    v = resultdict[newvk]
+                if newvk in soldict:
+                    v = soldict[newvk]
                     for oldvk in oldvks:
                         value = v.to(oldvk.units) if hasattr(v, "to") else v
-                        resultdict[oldvk] = value
+                        soldict[oldvk] = value
