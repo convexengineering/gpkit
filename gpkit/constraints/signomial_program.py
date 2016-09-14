@@ -95,7 +95,7 @@ class SignomialProgram(CostedConstraintSet):
             print("Beginning signomial solve.")
             starttime = time()
         self.gps = []  # NOTE: SIDE EFFECTS
-        slackvar = Variable()
+        slackvar, lilcost = Variable(), Variable()
         prevcost, cost, rel_improvement = None, None, None
         while rel_improvement is None or rel_improvement > rel_tol:
             if len(self.gps) > iteration_limit:
@@ -109,13 +109,13 @@ class SignomialProgram(CostedConstraintSet):
             try:
                 result = gp.solve(solver, verbosity-1, **kwargs)
             except (RuntimeWarning, ValueError):
-                feas_constrs = ([slackvar >= 1] +
+                feas_constrs = ([lilcost**100 >= self.cost,
+                                 slackvar >= 1] +
                                 [posy <= slackvar
                                  for posy in gp.posynomials[1:]])
-                nearest_feasible = GeometricProgram(
-                    slackvar, feas_constrs, verbosity=0)  # no bounds-warnings
-                self.gps.append(nearest_feasible)
-                result = nearest_feasible.solve(solver, verbosity=verbosity-1)
+                primal_feas = GeometricProgram(slackvar*lilcost, feas_constrs)
+                self.gps.append(primal_feas)
+                result = primal_feas.solve(solver, verbosity=verbosity-1)
                 result["cost"] = None  # reset the cost-counting
             x0 = result["variables"]
             prevcost, cost = cost, result["cost"]

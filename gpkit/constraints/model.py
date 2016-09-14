@@ -2,7 +2,7 @@
 from collections import defaultdict
 from .costed import CostedConstraintSet
 from ..varkey import VarKey
-from ..nomials import Monomial
+from ..nomials import Monomial, Variable
 from .prog_factories import _progify_fctry, _solve_fctry
 from ..geometric_program import GeometricProgram
 from .signomial_program import SignomialProgram
@@ -114,10 +114,12 @@ class Model(CostedConstraintSet):
         from .relax import RelaxConstants, RelaxConstraints
         from .bounded import Bounded
 
-        relaxedconstraints = False
+        relaxed = False
+        lilcost = Variable()
+        lilcost_constraint = [lilcost**100 >= self.cost]
         if self.substitutions:
-            feas = RelaxConstants(Bounded(self))
-            feas.cost *= self.cost**0.01
+            feas = RelaxConstants(Bounded([lilcost_constraint, self]))
+            feas.cost *= lilcost
         else:
             feas = Model(self.cost, Bounded(self))  # pylint: disable=redefined-variable-type
         try:
@@ -125,24 +127,25 @@ class Model(CostedConstraintSet):
             sol = feas.solve(verbosity=0)
 
             for constant, sub in self.substitutions.items():
-                if sol(constant)/sub >= 1.01:
-                    if not relaxedconstraints:
+                if sub/sol(constant) >= 1.01:
+                    if not relaxed:
                         print
                         print "RELAXED VARIABLES"
-                        relaxedconstraints = True
+                        relaxed = True
                     print ("  %s: relaxed from %-.4g to %-.4g"
                            % (constant, sub, sol(constant)))
         except (ValueError, RuntimeWarning):
             print ("Model does not solve with bounded variables"
                    " or relaxed constants.")
         try:
-            feas = RelaxConstraints(self)
-            feas.cost *= self.cost**0.01
+            feas = RelaxConstraints([lilcost_constraint, self])
+            feas.cost *= lilcost
             sol = feas.solve(verbosity=0)
 
             relaxvals = sol(feas.relaxvars)
-            if relaxvals.prod() >= 1.01:
-                if relaxedconstraints:
+            if (relaxvals >= 1.01).any():
+                if relaxed:
+                    print
                     print "Alternately, the model solves with:"
                 print
                 print "RELAXED CONSTRAINTS"
@@ -155,4 +158,4 @@ class Model(CostedConstraintSet):
         except (ValueError, RuntimeWarning):
             print ("Model does not solve with relaxed constraints.")
         # NOTE: If the cost has a very strong relationship to feasibility,
-        #       the self.cost**0.01 component above could be the problem.
+        #       the lilcost component above could be the problem.
