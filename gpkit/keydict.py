@@ -46,6 +46,9 @@ class KeyDict(dict):
         "Iterates through the dictionary created by args and kwargs"
         for k, v in dict(*args, **kwargs).items():
             if hasattr(v, "copy"):
+                # We don't want just a reference (for e.g. numpy arrays)
+                #   KeyDict values are expected to be immutable (Numbers)
+                #   or to have a copy attribute.
                 v = v.copy()
             self[k] = v
 
