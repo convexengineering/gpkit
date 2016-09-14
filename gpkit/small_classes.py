@@ -94,12 +94,12 @@ class DictOfLists(dict):
         _enray_and_unit_dict(self, self, unitless_keys, united)
 
     def classify(self, cls):
-        "Converts all contained dictionaries into the given class."
+        "Converts dictionaries whose first key isn't a string to given class."
         _classify(self, cls)
 
 
 def _classify(d_in, cls):
-    "Converts all contained dictionaries into the given class."
+    "Converts dictionaries whose first key isn't a string to given class."
     for k, v in d_in.items():
         if isinstance(v, dict) and v:
             if isinstance(v.keys()[0], Strings):

@@ -5,15 +5,15 @@ from .small_classes import Numbers
 
 
 class KeyDict(dict):
-    """KeyDicts allow storing and accessing the same value with multiple keys
-
-    A KeyDict keeps an internal list of VarKeys as canonical keys, but allows
-    accessing their values with any object whose `key` attribute matches
-    one of those VarKeys, or with strings who match any of the multiple
-    possible string interpretations of each key.
+    """KeyDicts do two things over a regular dict: collate arrays and map keys.
 
     Creating a KeyDict:
     >>>> kd = gpkit.keydict.KeyDict()
+
+    If keymapping is True, a KeyDict keeps an internal list of VarKeys as
+    canonical keys, but allows accessing their values with any object whose
+    `key` attribute matches one of those VarKeys, or with strings who match
+    any of the multiple possible string interpretations of each key:
 
     Now kd[x] can be set, where x is any gpkit Variable or VarKey.
     __getitem__ is such that kd[x] can be accessed using:
@@ -22,7 +22,7 @@ class KeyDict(dict):
      - x.name (a string)
      - "x_modelname" (x's name including modelname)
 
-    In addition, if collapse_arrays is True then VarKeys which have a `shape`
+    If collapse_arrays is True then VarKeys which have a `shape`
     parameter (indicating they are part of an array) are stored as numpy
     arrays, and automatically de-indexed when a matching VarKey with a
     particular `idx` parameter is used as a key.
@@ -176,5 +176,5 @@ class KeySet(KeyDict):
 
 
 class FastKeyDict(KeyDict):
-    "FsatKeyDicts are KeyDicts that don't map keys, only collate arrays"
+    "FastKeyDicts are KeyDicts that don't map keys, only collate arrays"
     keymapping = False

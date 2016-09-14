@@ -34,13 +34,10 @@ def unitstr(units, into="%s", options="~", dimless='-'):
         if hasattr(mag(units), "shape"):
             # If it's an array, make it scalar
             units = Quantity(1, units.units)
-        try:
-            rawstr = ("{:%s}" % options).format(units)
-            if str(units.units) == "count":
-            # TODO remove this conditional when pint issue 356 is resolved
-                rawstr = "1.0 count"
-        except ValueError:
-            rawstr = "1.0 " + str(units.units)
+        rawstr = ("{:%s}" % options).format(units)
+        if str(units.units) == "count":
+        # TODO remove this conditional when pint issue 356 is resolved
+            rawstr = "1.0 count"
         units = "".join(rawstr.replace("dimensionless", dimless).split()[1:])
         return into % units if units else ""
     return ""

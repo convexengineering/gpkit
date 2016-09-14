@@ -143,7 +143,7 @@ class SignomialProgram(CostedConstraintSet):
 
     def gp(self, x0=None, verbosity=1):
         """Get a GP approximation of this SP at x0"""
-        x0 = self._default_x0(x0)
+        x0 = self._default_x0(x0) if x0 is None else x0
         gp = GeometricProgram(self.cost, self.as_gpconstr(x0),
                               self.substitutions, verbosity=verbosity)
         gp.x0 = KeyDict(x0)  # NOTE: SIDE EFFECTS
