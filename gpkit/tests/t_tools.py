@@ -2,7 +2,8 @@
 import unittest
 import numpy as np
 from gpkit import Variable, VectorVariable, Model
-from gpkit.tools import (composite_objective, te_exp_minus1)
+from gpkit.tools.tools import (composite_objective,
+                               te_exp_minus1, te_secant, te_tangent)
 from gpkit.tools.fmincon import generate_mfiles
 
 
@@ -26,14 +27,46 @@ class TestMathModels(unittest.TestCase):
         x = Variable('x')
         self.assertEqual(te_exp_minus1(x, 1), x)
         self.assertEqual(te_exp_minus1(x, 3), x + x**2/2. + x**3/6.)
-        self.assertRaises(ValueError, te_exp_minus1, x, 0)
+        self.assertEqual(te_exp_minus1(x, 0), 0)
         # make sure x was not modified
         self.assertEqual(x, Variable('x'))
         # try for VectorVariable too
         y = VectorVariable(3, 'y')
         self.assertEqual(te_exp_minus1(y, 1), y)
         self.assertEqual(te_exp_minus1(y, 3), y + y**2/2. + y**3/6.)
-        self.assertRaises(ValueError, te_exp_minus1, y, 0)
+        self.assertEqual(te_exp_minus1(y, 0), 0)
+        # make sure y was not modified
+        self.assertEqual(y, VectorVariable(3, 'y'))
+
+    def test_te_secant(self):
+        "Test Taylor expansion of secant(var)"
+        x = Variable('x')
+        self.assertEqual(te_secant(x, 1), 1 + x**2/2.)
+        self.assertEqual(te_secant(x, 2), 1 + x**2/2. + 5*x**4/24.)
+        self.assertEqual(te_secant(x, 0), 1)
+        # make sure x was not modified
+        self.assertEqual(x, Variable('x'))
+        # try for VectorVariable too
+        y = VectorVariable(3, 'y')
+        self.assertEqual(te_secant(y, 1), 1 + y**2/2.)
+        self.assertEqual(te_secant(y, 2), 1 + y**2/2. + 5*y**4/24.)
+        self.assertEqual(te_secant(y, 0), 1)
+        # make sure y was not modified
+        self.assertEqual(y, VectorVariable(3, 'y'))
+
+    def test_te_tangent(self):
+        "Test Taylor expansion of tangent(var)"
+        x = Variable('x')
+        self.assertEqual(te_tangent(x, 1), x)
+        self.assertEqual(te_tangent(x, 3), x + x**3/3. + 2*x**5/15.)
+        self.assertEqual(te_tangent(x, 0), 0)
+        # make sure x was not modified
+        self.assertEqual(x, Variable('x'))
+        # try for VectorVariable too
+        y = VectorVariable(3, 'y')
+        self.assertEqual(te_tangent(y, 1), y)
+        self.assertEqual(te_tangent(y, 3), y + y**3/3. + 2*y**5/15.)
+        self.assertEqual(te_tangent(y, 0), 0)
         # make sure y was not modified
         self.assertEqual(y, VectorVariable(3, 'y'))
 
