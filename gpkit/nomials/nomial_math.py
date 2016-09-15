@@ -217,6 +217,13 @@ class Signomial(Nomial):
 
     def subinplace(self, substitutions):
         "Substitutes in place."
+        if "filter" in substitutions:
+            assert substitutions["filter"] == "ConstraintSet"
+            substitutions = {k: v for k, v in substitutions.items()
+                             if dict.__contains__(self.varkeys, k)}
+            if not substitutions:
+                return
+            substitutions["filter"] = "Signomial"
         _, exps, cs, _ = substitution(self, substitutions)
         super(Signomial, self).__init__(exps, cs)
 

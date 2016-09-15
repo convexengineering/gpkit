@@ -68,8 +68,8 @@ class KeyDict(dict):
                                          " .variables_byname('%s') will show"
                                          " which variables it may refer to."
                                          % (key, key))
-                else:
-                    raise KeyError("key '%s' does not refer to any varkey in"
+                elif key != "filter":
+                    raise KeyError("%s does not refer to any varkey in"
                                    " this ConstraintSet" % key)
         idx = None
         if self.collapse_arrays:
@@ -95,6 +95,7 @@ class KeyDict(dict):
         key, idx = self.parse_and_index(key)
         keys = self.keymap[key]
         if not keys:
+            del self.keymap[key] # remove blank entry added due to defaultdict
             raise KeyError("%s was not found." % key)
         values = []
         for key in keys:
@@ -144,11 +145,14 @@ class KeyDict(dict):
                     delete = False
             if delete:
                 dict.__delitem__(self, key)
-                if hasattr(key, "keys") and self.keymapping:
-                    for mappedkey in key.keys:
-                        self.keymap[mappedkey].remove(key)
-                        if not self.keymap[mappedkey]:
-                            del self.keymap[mappedkey]
+                mapkeys = set(getattr(key, "keys", []))
+                mapkeys = set([key])
+                if self.keymapping and hasattr(key, "keys"):
+                    mapkeys.update(key.keys)
+                for mappedkey in mapkeys:
+                    self.keymap[mappedkey].remove(key)
+                    if not self.keymap[mappedkey]:
+                        del self.keymap[mappedkey]
 
 
 class KeySet(KeyDict):

@@ -47,7 +47,8 @@ def generate_example_tests(path, testclasses, solvers=None, newtest_fn=None):
 def new_test(name, solver, import_dict, path):
     """logged_example_testcase with a NewDefaultSolver"""
     def test(self):
-        "Tests and logs stdout with a different default solver."
+        # pylint: disable=missing-docstring
+        # No docstring because it'd be uselessly the same for each example
         with NewDefaultSolver(solver):
             logged_example_testcase(name, import_dict, path)(self)
     return test

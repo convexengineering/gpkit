@@ -73,10 +73,6 @@ class SolutionArray(DictOfLists):
         else:
             return posy.sub(self["variables"])
 
-    def sens(self, key):
-        "Returns sensitivity of the given variable (unitless)."
-        return NomialArray(self["variables"]["sensitivities"][key])
-
     def table(self, tables=("cost", "sweepvariables", "freevariables",
                             "constants", "sensitivities"),
               latex=False, **kwargs):
