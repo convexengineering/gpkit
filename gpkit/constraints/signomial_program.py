@@ -115,7 +115,8 @@ class SignomialProgram(CostedConstraintSet):
                                  slackvar >= 1] +
                                 [posy <= slackvar
                                  for posy in gp.posynomials[1:]])
-                primal_feas = GeometricProgram(slackvar*lilcost, feas_constrs)
+                primal_feas = GeometricProgram(slackvar*lilcost, feas_constrs,
+                                               verbosity=verbosity-1)
                 self.gps.append(primal_feas)
                 result = primal_feas.solve(solver, verbosity=verbosity-1)
                 result["cost"] = None  # reset the cost-counting
