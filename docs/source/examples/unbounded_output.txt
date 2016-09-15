@@ -12,4 +12,4 @@ Free Variables
 --------------
 x : 1e+30 
 
-sol['boundedness'] is: {'value near upper bound': array([x], dtype=object), 'sensitive to upper bound': array([x], dtype=object)}
+sol['boundedness'] is: {'value near upper bound': [x], 'sensitive to upper bound': [x]}

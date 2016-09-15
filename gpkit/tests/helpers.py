@@ -48,6 +48,7 @@ def new_test(name, solver, import_dict, path):
     """logged_example_testcase with a NewDefaultSolver"""
     def test(self):
         # pylint: disable=missing-docstring
+        # No docstring because it'd be uselessly the same for each example
         with NewDefaultSolver(solver):
             logged_example_testcase(name, import_dict, path)(self)
     return test

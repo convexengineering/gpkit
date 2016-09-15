@@ -176,17 +176,21 @@ class ConstraintSet(list):
         # pylint: disable=too-many-branches
         allsubs_ = {}
         for constraint in self:
+            # break down the subs dictionary to pass each subconstraint
+            # only the keys that are in it, skipping subconstraints
+            # which don't need substitutions at all
             if "filter" in subs:
+                # all keys are already varkeys
                 subs_ = {k: v for k, v in subs.items()
                          if dict.__contains__(constraint.varkeys, k)}
             else:
+                # turn keys into varkeys
                 subs_ = {}
                 for k, v in subs.items():
                     if k not in constraint.varkeys.keymap:
                         continue
                     keys = constraint.varkeys.keymap[k]
                     if isinstance(v, Iterable) and k.shape:
-                        # NOTE: string access of vector may bug
                         v = np.array(v) if not hasattr(v, "shape") else v
                         for key in keys:
                             subs_[key] = v[key.idx]
@@ -282,7 +286,7 @@ class ConstraintSet(list):
         gpconstrs = [constr.as_gpconstr(x0) for constr in self]
         return ConstraintSet(gpconstrs, self.substitutions)
 
-    def process_result(self, result):
+    def process_solution(self, sol):
         """Does arbitrary computation / manipulation of a program's result
 
         There's no guarantee what order different constraints will process
@@ -296,5 +300,5 @@ class ConstraintSet(list):
 
         """
         for constraint in self:
-            if hasattr(constraint, "process_result"):
-                constraint.process_result(result)
+            if hasattr(constraint, "process_solution"):
+                constraint.process_solution(sol)
