@@ -175,7 +175,7 @@ class TestGPSubs(unittest.TestCase):
                                 h: 35*gpkit.units("USD"),
                                 Q: ("sweep", [50, 100, 500])})
         firstcost = m.solve(verbosity=0)["cost"][0]
-        self.assertAlmostEqual(firstcost, 1760, 3)
+        self.assertAlmostEqual(1760*gpkit.units("USD")/firstcost, 1, 5)
 
     def test_skipfailures(self):
         x = Variable("x")

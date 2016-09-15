@@ -269,7 +269,7 @@ class ConstraintSet(list):
         gpconstrs = [constr.as_gpconstr(x0) for constr in self]
         return ConstraintSet(gpconstrs, self.substitutions)
 
-    def process_result(self, result):
+    def process_solution(self, sol):
         """Does arbitrary computation / manipulation of a program's result
 
         There's no guarantee what order different constraints will process
@@ -283,5 +283,5 @@ class ConstraintSet(list):
 
         """
         for constraint in self:
-            if hasattr(constraint, "process_result"):
-                constraint.process_result(result)
+            if hasattr(constraint, "process_solution"):
+                constraint.process_solution(sol)

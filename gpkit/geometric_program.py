@@ -4,8 +4,9 @@ from time import time
 import numpy as np
 from .nomials import NomialData
 from .small_classes import CootMatrix, HashVector
-from .keydict import KeyDict
+from .keydict import FastKeyDict
 from .small_classes import SolverLog
+from .solution_array import SolutionArray
 
 
 DEFAULT_SOLVER_KWARGS = {"cvxopt": {"kktsolver": "ldl"}}
@@ -187,26 +188,19 @@ class GeometricProgram(NomialData):
                 (solvername, solver_out.get("status", None)))
 
         self._generate_nula(solver_out)
-        self.result = self._compile_result(solver_out)  # NOTE: SIDE EFFECTS
+        result = self._compile_result(solver_out)  # NOTE: SIDE EFFECTS
         if verbosity > 1:
             print ("result packing took %.2g%% of solve time" %
                    ((time() - tic) / soltime * 100))
             tic = time()
 
-        self.check_solution(self.result["cost"], solver_out['primal'],
+        self.check_solution(result["cost"], solver_out['primal'],
                             nu=solver_out["nu"], la=solver_out["la"])
         if verbosity > 1:
             print ("solution checking took %.2g%% of solve time" %
                    ((time() - tic) / soltime * 100))
 
-        ## Let constraints process the results
-        if hasattr(self.constraints, "process_result"):
-            self.constraints.process_result(self.result)
-        else:
-            for constraint in self.constraints:
-                if hasattr(constraint, "process_result"):
-                    constraint.process_result(self.result)
-
+        self.result = SolutionArray(result)
         return self.result
 
     def _generate_nula(self, solver_out):
@@ -257,7 +251,8 @@ class GeometricProgram(NomialData):
         nu, la = solver_out["nu"], solver_out["la"]
         # confirm lengths before calling zip
         assert len(self.varlocs) == len(primal)
-        result = {"freevariables": KeyDict(zip(self.varlocs, np.exp(primal)))}
+        result = {"freevariables": FastKeyDict(zip(self.varlocs,
+                                                   np.exp(primal)))}
 
         ## Get cost
         if "objective" in solver_out:
@@ -285,10 +280,8 @@ class GeometricProgram(NomialData):
             # also, add each constraint's sensitivities to the results
             # TODO: enable this once there's a plan for how to use it
             # result["sensitivities"]["constraints"][str(constr)] = constr_sens
-        result["sensitivities"]["constants"] = KeyDict(var_senss)
-        result["constants"] = KeyDict(self.substitutions)
-        result["variables"] = KeyDict(result["freevariables"])
-        result["variables"].update(result["constants"])
+        result["sensitivities"]["constants"] = FastKeyDict(var_senss)
+        result["constants"] = FastKeyDict(self.substitutions)
 
         return result
 

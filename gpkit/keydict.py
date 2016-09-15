@@ -5,15 +5,15 @@ from .small_classes import Numbers
 
 
 class KeyDict(dict):
-    """KeyDicts allow storing and accessing the same value with multiple keys
-
-    A KeyDict keeps an internal list of VarKeys as canonical keys, but allows
-    accessing their values with any object whose `key` attribute matches
-    one of those VarKeys, or with strings who match any of the multiple
-    possible string interpretations of each key.
+    """KeyDicts do two things over a regular dict: collate arrays and map keys.
 
     Creating a KeyDict:
     >>>> kd = gpkit.keydict.KeyDict()
+
+    If keymapping is True, a KeyDict keeps an internal list of VarKeys as
+    canonical keys, but allows accessing their values with any object whose
+    `key` attribute matches one of those VarKeys, or with strings who match
+    any of the multiple possible string interpretations of each key:
 
     Now kd[x] can be set, where x is any gpkit Variable or VarKey.
     __getitem__ is such that kd[x] can be accessed using:
@@ -22,7 +22,7 @@ class KeyDict(dict):
      - x.name (a string)
      - "x_modelname" (x's name including modelname)
 
-    In addition, if collapse_arrays is True then VarKeys which have a `shape`
+    If collapse_arrays is True then VarKeys which have a `shape`
     parameter (indicating they are part of an array) are stored as numpy
     arrays, and automatically de-indexed when a matching VarKey with a
     particular `idx` parameter is used as a key.
@@ -33,6 +33,7 @@ class KeyDict(dict):
     See also: gpkit/tests/t_keydict.py.
     """
     collapse_arrays = True
+    keymapping = True
 
     def __init__(self, *args, **kwargs):
         "Passes through to dict.__init__ via the `update()` method"
@@ -112,7 +113,7 @@ class KeyDict(dict):
         key, idx = self.parse_and_index(key)
         if key not in self.keymap:
             self.keymap[key].add(key)
-            if hasattr(key, "keys"):
+            if hasattr(key, "keys") and self.keymapping:
                 for mapkey in key.keys:
                     self.keymap[mapkey].add(key)
             if idx:
@@ -145,7 +146,9 @@ class KeyDict(dict):
             if delete:
                 dict.__delitem__(self, key)
                 mapkeys = set(getattr(key, "keys", []))
-                mapkeys.add(key)
+                mapkeys = set([key])
+                if self.keymapping and hasattr(key, "keys"):
+                    mapkeys.update(key.keys)
                 for mappedkey in mapkeys:
                     self.keymap[mappedkey].remove(key)
                     if not self.keymap[mappedkey]:
@@ -177,3 +180,8 @@ class KeySet(KeyDict):
     def __setitem__(self, key, value):
         "Assigns the key itself every time."
         KeyDict.__setitem__(self, key, None)
+
+
+class FastKeyDict(KeyDict):
+    "FastKeyDicts are KeyDicts that don't map keys, only collate arrays"
+    keymapping = False
