@@ -138,6 +138,21 @@ class TestNomialSubs(unittest.TestCase):
 class TestGPSubs(unittest.TestCase):
     """Test substitution for Model and GP objects"""
 
+    def test_phantoms(self):
+        x = Variable("x")
+        x_ = Variable("x", 1, model="test")
+        xv = VectorVariable(2, "x", [1, 1], model="vec")
+        m = Model(x, [x >= x_, x_ == xv.prod()])
+        m.solve(verbosity=0)
+        with self.assertRaises(ValueError):
+            _ = m.substitutions["x"]
+        with self.assertRaises(KeyError):
+            _ = m.substitutions["y"]
+        with self.assertRaises(ValueError):
+            _ = m["x"]
+        self.assertIn(x, m.variables_byname("x"))
+        self.assertIn(x_, m.variables_byname("x"))
+
     def test_persistence(self):
         x = gpkit.Variable("x")
         y = gpkit.Variable("y")
@@ -160,7 +175,7 @@ class TestGPSubs(unittest.TestCase):
                                 h: 35*gpkit.units("USD"),
                                 Q: ("sweep", [50, 100, 500])})
         firstcost = m.solve(verbosity=0)["cost"][0]
-        self.assertAlmostEqual(firstcost, 1760, 3)
+        self.assertAlmostEqual(1760*gpkit.units("USD")/firstcost, 1, 5)
 
     def test_skipfailures(self):
         x = Variable("x")

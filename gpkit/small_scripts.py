@@ -28,16 +28,19 @@ def unitstr(units, into="%s", options="~", dimless='-'):
     "Returns the unitstr of a given object."
     if hasattr(units, "descr") and hasattr(units.descr, "get"):
         units = units.descr.get("units", dimless)
-    if units and not isinstance(units, Strings):
-        try:
-            rawstr = ("{:%s}" % options).format(units)
-            if str(units.units) == "count":
-            # TODO remove this conditional when pint issue 356 is resolved
-                rawstr = "1.0 count"
-        except ValueError:
-            rawstr = "1.0 " + str(units.units)
+    if isinstance(units, Strings):
+        return into % units if units else ""
+    elif isinstance(units, Quantity):
+        if hasattr(mag(units), "shape"):
+            # If it's an array, make it scalar
+            units = Quantity(1, units.units)
+        rawstr = ("{:%s}" % options).format(units)
+        if str(units.units) == "count":
+        # TODO remove this conditional when pint issue 356 is resolved
+            rawstr = "1.0 count"
         units = "".join(rawstr.replace("dimensionless", dimless).split()[1:])
-    return into % units if units else ""
+        return into % units if units else ""
+    return ""
 
 
 def nomial_latex_helper(c, pos_vars, neg_vars):

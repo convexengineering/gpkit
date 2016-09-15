@@ -1,6 +1,7 @@
 """Unit testing of tests in docs/source/examples"""
 import unittest
 import os
+import numpy as np
 
 from gpkit import settings
 from gpkit.tests.helpers import generate_example_tests
@@ -40,7 +41,7 @@ class TestExamples(unittest.TestCase):
         pass
 
     def test_beam(self, example):
-        pass
+        self.assertFalse(np.isnan(example.sol("w")).any())
 
     def test_water_tank(self, example):
         pass

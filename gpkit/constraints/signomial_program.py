@@ -4,6 +4,7 @@ from ..geometric_program import GeometricProgram
 from ..nomials import Variable
 from .costed import CostedConstraintSet
 from ..exceptions import InvalidGPConstraint
+from ..keydict import KeyDict
 
 
 class SignomialProgram(CostedConstraintSet):
@@ -96,6 +97,7 @@ class SignomialProgram(CostedConstraintSet):
             starttime = time()
         self.gps = []  # NOTE: SIDE EFFECTS
         slackvar, lilcost = Variable(), Variable()
+        x0 = self._default_x0(x0)
         prevcost, cost, rel_improvement = None, None, None
         while rel_improvement is None or rel_improvement > rel_tol:
             if len(self.gps) > iteration_limit:
@@ -117,7 +119,7 @@ class SignomialProgram(CostedConstraintSet):
                 self.gps.append(primal_feas)
                 result = primal_feas.solve(solver, verbosity=verbosity-1)
                 result["cost"] = None  # reset the cost-counting
-            x0 = result["variables"]
+            x0.update(result["freevariables"])
             prevcost, cost = cost, result["cost"]
             if prevcost and cost:
                 rel_improvement = abs(prevcost-cost)/(prevcost + cost)
@@ -127,13 +129,28 @@ class SignomialProgram(CostedConstraintSet):
         if verbosity > 0:
             print("Solving took %i GP solves" % len(self.gps)
                   + " and %.3g seconds." % (time() - starttime))
-        self.process_result(result)
         self.result = result  # NOTE: SIDE EFFECTS
         return result
 
+    def _default_x0(self, x0_in):
+        """Creates a default x0 dictionary.
+
+        Order of precedence for x0 default:
+            - substitution value
+            - x0 value
+            - sp_init value
+        """
+        x0 = KeyDict({vk: vk.sp_init for vk in self.varkeys if vk.sp_init})
+        x0.varkeys = self.varkeys  # check that keys are actually in the SP
+        if x0_in is not None:
+            x0.update(x0_in)
+        x0.update(self.substitutions)
+        return x0
+
     def gp(self, x0=None, verbosity=1):
         """Get a GP approximation of this SP at x0"""
+        x0 = self._default_x0(x0) if x0 is None else x0
         gp = GeometricProgram(self.cost, self.as_gpconstr(x0),
                               self.substitutions, verbosity=verbosity)
-        gp.x0 = x0  # NOTE: SIDE EFFECTS
+        gp.x0 = KeyDict(x0)  # NOTE: SIDE EFFECTS
         return gp

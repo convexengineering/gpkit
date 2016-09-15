@@ -217,6 +217,13 @@ class Signomial(Nomial):
 
     def subinplace(self, substitutions):
         "Substitutes in place."
+        if "filter" in substitutions:
+            assert substitutions["filter"] == "ConstraintSet"
+            substitutions = {k: v for k, v in substitutions.items()
+                             if dict.__contains__(self.varkeys, k)}
+            if not substitutions:
+                return
+            substitutions["filter"] = "Signomial"
         _, exps, cs, _ = substitution(self, substitutions)
         super(Signomial, self).__init__(exps, cs)
 
@@ -689,33 +696,15 @@ class SignomialInequality(ScalarSingleEquationConstraint):
 
         else:
             raise InvalidGPConstraint("SignomialInequality could not simplify"
-                                      " to a PosynomialInequality; try forming"
-                                      " your program as SignomialProgram or"
-                                      " calling .localsolve().")
-
-    def _fill_default_x0(self, x0, varkeys):
-        """For all keys in varkeys, updates x0 with default values and
-        substitutions. Returns x0.
-
-        Order of precedence for x0 default:
-            - substitution value
-            - x0 value
-            - sp_init value
-            - 1.0
-        """
-        if x0 is None:
-            x0 = {}
-        x0.update({
-            vk: self.substitutions.get(vk, x0.get(vk, vk.descr.get("sp_init",
-                                                                   1.0)))
-            for vk in varkeys})
-        return x0
+                                      " to a PosynomialInequality; try calling"
+                                      "`.localsolve` instead of `.solve` to"
+                                      " form your Model as a SignomialProgram")
 
     def as_gpconstr(self, x0):
         "Returns GP approximation of an SP constraint at x0"
         siglt0, = self.unsubbed
         posy, negy = siglt0.posy_negy()
-        x0 = self._fill_default_x0(x0, negy.varlocs)
+        x0.update({vk: 1.0 for vk in negy.varlocs if vk not in x0})
         pc = PosynomialInequality(posy, "<=", negy.mono_lower_bound(x0))
         pc.substitutions = self.substitutions
         return pc
@@ -732,15 +721,15 @@ class SignomialEquality(SignomialInequality):
         "Returns the posys <= 1 representation of this constraint."
         # todo deal with substitutions
         raise InvalidGPConstraint("SignomialEquality could not simplify"
-                                  " to a PosynomialInequality; try forming"
-                                  " your program as SignomialProgram or"
-                                  " calling .localsolve().")
+                                  " to a PosynomialInequality; try calling"
+                                  "`.localsolve` instead of `.solve` to"
+                                  " form your Model as a SignomialProgram")
 
     def as_gpconstr(self, x0):
         "Returns GP approximation of an SP constraint at x0"
         siglt0, = self.unsubbed
-        x0 = self._fill_default_x0(x0, siglt0.varlocs)
         posy, negy = siglt0.posy_negy()
+        x0.update({vk: 1.0 for vk in siglt0.varlocs if vk not in x0})
         mec = (posy.mono_lower_bound(x0) == negy.mono_lower_bound(x0))
         mec.substitutions = self.substitutions
         return mec

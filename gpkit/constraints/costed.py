@@ -21,7 +21,7 @@ class CostedConstraintSet(ConstraintSet):
 
     def subinplace(self, subs):
         "Substitutes in place."
-        self.cost = self.cost.sub(subs)
+        self.cost.subinplace(subs)
         ConstraintSet.subinplace(self, subs)
 
     def reset_varkeys(self, init_dict=None):

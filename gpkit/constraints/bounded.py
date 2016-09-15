@@ -75,7 +75,7 @@ class Bounded(ConstraintSet):
         self.bound_las = las[-2*len(self.bounded_varkeys):]
         return super(Bounded, self).sens_from_dual(las, nus)
 
-    def process_result(self, result):
+    def process_solution(self, sol):
         "Creates (and potentially prints) a dictionary of unbounded variables."
         lam = self.bound_las
         out = defaultdict(list)
@@ -85,7 +85,7 @@ class Bounded(ConstraintSet):
                 out["sensitive to upper bound"].append(varkey)
             if abs(lam_lt) >= 1e-7:  # arbitrary threshold
                 out["sensitive to lower bound"].append(varkey)
-            value = mag(result["variables"][varkey])
+            value = mag(sol["freevariables"][varkey])
             distance_below = np.log(value/self.lowerbound)
             distance_above = np.log(self.upperbound/value)
             if distance_below <= 3:  # arbitrary threshold
@@ -98,6 +98,6 @@ class Bounded(ConstraintSet):
             for key, value in out.items():
                 print "% 25s: %s" % (key, value)
             print
-        if not "boundedness" in result:
-            result["boundedness"] = {}
-        result["boundedness"].update(out)
+        if not "boundedness" in sol:
+            sol["boundedness"] = {}
+        sol["boundedness"].update(out)

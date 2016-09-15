@@ -1,4 +1,5 @@
 "Implements ConstraintSet"
+from collections import Iterable
 import numpy as np
 
 from ..small_classes import HashVector
@@ -55,18 +56,7 @@ class ConstraintSet(list):
                 if hasattr(self[i], "substitutions"):
                     self.substitutions.update(self[i].substitutions)
         self.reset_varkeys()
-        for k, v in subs.items():
-            keys = self.varkeys[k]
-            key = next(iter(keys))
-            if key.veckey:
-                key = key.veckey
-            elif len(keys) > 1:
-                raise ValueError("substitution key '%s' was ambiguous; use"
-                                 " .variables_byname('%s') to see the"
-                                 " variables it could have referred to. %s"
-                                 % (k, k, self.varkeys[k]))
-            self.substitutions[key] = v
-        # TODO: on all updates the keydict should do the referencing above
+        self.substitutions.update(subs)
 
     def __getitem__(self, key):
         if isinstance(key, int):
@@ -184,7 +174,30 @@ class ConstraintSet(list):
     def subinplace(self, subs):
         "Substitutes in place."
         for constraint in self:
-            constraint.subinplace(subs)
+            # break down the subs dictionary to pass each subconstraint
+            # only the keys that are in it, skipping subconstraints
+            # which don't need substitutions at all
+            if "filter" in subs:
+                # all keys are already varkeys
+                subs_ = {k: v for k, v in subs.items()
+                         if dict.__contains__(constraint.varkeys, k)}
+            else:
+                # turn keys into varkeys
+                subs_ = {}
+                for k, v in subs.items():
+                    if k not in constraint.varkeys.keymap:
+                        continue
+                    keys = constraint.varkeys.keymap[k]
+                    if isinstance(v, Iterable) and k.shape:
+                        v = np.array(v) if not hasattr(v, "shape") else v
+                        for key in keys:
+                            subs_[key] = v[key.idx]
+                    else:
+                        key, = keys
+                        subs_[key] = v
+            if subs_:
+                subs_["filter"] = "ConstraintSet"
+                constraint.subinplace(subs_)
         if self.unused_variables is not None:
             unused_vars = []
             for var in self.unused_variables:
@@ -206,6 +219,7 @@ class ConstraintSet(list):
         if self.unused_variables is not None:
             varkeys.update(self.unused_variables)
         self.varkeys = varkeys
+        self.substitutions.varkeys = varkeys
 
     def as_posyslt1(self, substitutions=None):
         "Returns list of posynomials which must be kept <= 1"
@@ -255,7 +269,7 @@ class ConstraintSet(list):
         gpconstrs = [constr.as_gpconstr(x0) for constr in self]
         return ConstraintSet(gpconstrs, self.substitutions)
 
-    def process_result(self, result):
+    def process_solution(self, sol):
         """Does arbitrary computation / manipulation of a program's result
 
         There's no guarantee what order different constraints will process
@@ -269,5 +283,5 @@ class ConstraintSet(list):
 
         """
         for constraint in self:
-            if hasattr(constraint, "process_result"):
-                constraint.process_result(result)
+            if hasattr(constraint, "process_solution"):
+                constraint.process_solution(sol)
