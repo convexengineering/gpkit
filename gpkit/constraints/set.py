@@ -1,4 +1,5 @@
 "Implements ConstraintSet"
+from collections import Iterable
 import numpy as np
 
 from ..small_classes import HashVector
@@ -173,7 +174,30 @@ class ConstraintSet(list):
     def subinplace(self, subs):
         "Substitutes in place."
         for constraint in self:
-            constraint.subinplace(subs)
+            # break down the subs dictionary to pass each subconstraint
+            # only the keys that are in it, skipping subconstraints
+            # which don't need substitutions at all
+            if "filter" in subs:
+                # all keys are already varkeys
+                subs_ = {k: v for k, v in subs.items()
+                         if dict.__contains__(constraint.varkeys, k)}
+            else:
+                # turn keys into varkeys
+                subs_ = {}
+                for k, v in subs.items():
+                    if k not in constraint.varkeys.keymap:
+                        continue
+                    keys = constraint.varkeys.keymap[k]
+                    if isinstance(v, Iterable) and k.shape:
+                        v = np.array(v) if not hasattr(v, "shape") else v
+                        for key in keys:
+                            subs_[key] = v[key.idx]
+                    else:
+                        key, = keys
+                        subs_[key] = v
+            if subs_:
+                subs_["filter"] = "ConstraintSet"
+                constraint.subinplace(subs_)
         if self.unused_variables is not None:
             unused_vars = []
             for var in self.unused_variables:

@@ -44,6 +44,11 @@ class KeyDict(dict):
     def update(self, *args, **kwargs):
         "Iterates through the dictionary created by args and kwargs"
         for k, v in dict(*args, **kwargs).items():
+            if hasattr(v, "copy"):
+                # We don't want just a reference (for e.g. numpy arrays)
+                #   KeyDict values are expected to be immutable (Numbers)
+                #   or to have a copy attribute.
+                v = v.copy()
             self[k] = v
 
     def parse_and_index(self, key):
@@ -62,8 +67,8 @@ class KeyDict(dict):
                                          " .variables_byname('%s') will show"
                                          " which variables it may refer to."
                                          % (key, key))
-                else:
-                    raise KeyError("key '%s' does not refer to any varkey in"
+                elif key != "filter":
+                    raise KeyError("%s does not refer to any varkey in"
                                    " this ConstraintSet" % key)
         idx = None
         if self.collapse_arrays:
@@ -139,11 +144,12 @@ class KeyDict(dict):
                     delete = False
             if delete:
                 dict.__delitem__(self, key)
-                if hasattr(key, "keys"):
-                    for mappedkey in key.keys:
-                        self.keymap[mappedkey].remove(key)
-                        if not self.keymap[mappedkey]:
-                            del self.keymap[mappedkey]
+                mapkeys = set(getattr(key, "keys", []))
+                mapkeys.add(key)
+                for mappedkey in mapkeys:
+                    self.keymap[mappedkey].remove(key)
+                    if not self.keymap[mappedkey]:
+                        del self.keymap[mappedkey]
 
 
 class KeySet(KeyDict):
