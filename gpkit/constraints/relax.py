@@ -2,7 +2,7 @@
 from .model import Model
 from .set import ConstraintSet
 from ..nomials import Variable, VectorVariable, parse_subs, NomialArray
-from ..keydict import FastKeyDict, KeySet
+from ..keydict import FastKeyDict
 
 
 class RelaxAll(Model):

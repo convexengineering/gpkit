@@ -31,6 +31,9 @@ class TestExamples(unittest.TestCase):
               self.assertAlmostEqual(example.sol["cost"], 3.121)
     """
 
+    def test_debug(self, example):
+        pass
+
     def test_simple_sp(self, example):
         pass
 

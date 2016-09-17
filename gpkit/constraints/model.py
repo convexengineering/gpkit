@@ -2,7 +2,7 @@
 from collections import defaultdict
 from .costed import CostedConstraintSet
 from ..varkey import VarKey
-from ..nomials import Monomial, Variable
+from ..nomials import Monomial
 from .prog_factories import _progify_fctry, _solve_fctry
 from ..geometric_program import GeometricProgram
 from .signomial_program import SignomialProgram
@@ -104,13 +104,12 @@ class Model(CostedConstraintSet):
             return "%s_{%s}" % (self.name, self.num)
 
     # pylint: disable=too-many-locals
-    def debug(self):
+    def debug(self, verbosity=1, **solveargs):
         "Attempts to diagnose infeasible models."
         from .relax import RelaxConstants, RelaxConstraints
         from .bounded import Bounded
 
         relaxed = False
-        solved = False
         if self.substitutions:
             feas = RelaxConstants(Bounded(self))
             feas.cost = feas.cost**100 * self.cost
@@ -118,7 +117,7 @@ class Model(CostedConstraintSet):
             feas = Model(self.cost, Bounded(self))  # pylint: disable=redefined-variable-type
         try:
             print "Debugging..."
-            sol = feas.solve(verbosity=0)
+            sol = feas.solve(verbosity=verbosity, **solveargs)
 
             for relax, orig in zip(feas.relaxvars, feas.origvars):
                 if sol(relax) >= 1.01:
@@ -132,11 +131,12 @@ class Model(CostedConstraintSet):
         except (ValueError, RuntimeWarning):
             print ("Model does not solve with bounded variables"
                    " or relaxed constants.")
+        print
 
         try:
             feas = RelaxConstraints(self)
             feas.cost = feas.cost**100 * self.cost
-            sol = feas.solve(verbosity=0)
+            sol = feas.solve(verbosity=verbosity, **solveargs)
 
             relaxvals = sol(feas.relaxvars)
             if (relaxvals >= 1.01).any():
@@ -152,6 +152,7 @@ class Model(CostedConstraintSet):
                     print ("  %i: %4s relaxed  (as posynomial: %s <= 1)"
                            % (i, relax_percent, constraint.right))
         except (ValueError, RuntimeWarning):
+            print
             print ("Model does not solve with relaxed constraints.")
         # NOTE: If the cost has a very strong relationship to feasibility,
         #       the lilcost component above could be the problem
