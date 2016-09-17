@@ -19,7 +19,7 @@ class TestConstraint(unittest.TestCase):
         m = Model(x, [x == 3, x == 4])
         rc = RelaxConstraints(m)
         rc.cost *= x**0.01
-        self.assertAlmostEqual(rc.solve()(x), 3, 5)
+        self.assertAlmostEqual(rc.solve(verbosity=0)(x), 3, 5)
 
     def test_constraintget(self):
         x = Variable("x")

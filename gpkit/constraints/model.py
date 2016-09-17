@@ -9,6 +9,7 @@ from .signomial_program import SignomialProgram
 from .linked import LinkedConstraintSet
 from ..keydict import KeyDict
 from .. import SignomialsEnabled
+from ..small_scripts import mag
 
 
 class Model(CostedConstraintSet):
@@ -109,31 +110,32 @@ class Model(CostedConstraintSet):
         from .bounded import Bounded
 
         relaxed = False
-        lilcost = Variable()
-        lilcost_constraint = [lilcost**100 >= self.cost]
+        solved = False
         if self.substitutions:
-            feas = RelaxConstants(Bounded([lilcost_constraint, self]))
-            feas.cost *= lilcost
+            feas = RelaxConstants(Bounded(self))
+            feas.cost = feas.cost**100 * self.cost
         else:
             feas = Model(self.cost, Bounded(self))  # pylint: disable=redefined-variable-type
         try:
             print "Debugging..."
             sol = feas.solve(verbosity=0)
 
-            for constant, sub in self.substitutions.items():
-                if sub/sol(constant) >= 1.01:
+            for relax, orig in zip(feas.relaxvars, feas.origvars):
+                if sol(relax) >= 1.01:
                     if not relaxed:
                         print
                         print "RELAXED VARIABLES"
                         relaxed = True
                     print ("  %s: relaxed from %-.4g to %-.4g"
-                           % (constant, sub, sol(constant)))
+                           % (orig, mag(self.substitutions[orig]),
+                              mag(sol(orig))))
         except (ValueError, RuntimeWarning):
             print ("Model does not solve with bounded variables"
                    " or relaxed constants.")
+
         try:
-            feas = RelaxConstraints([lilcost_constraint, self])
-            feas.cost *= lilcost
+            feas = RelaxConstraints(self)
+            feas.cost = feas.cost**100 * self.cost
             sol = feas.solve(verbosity=0)
 
             relaxvals = sol(feas.relaxvars)
@@ -152,4 +154,6 @@ class Model(CostedConstraintSet):
         except (ValueError, RuntimeWarning):
             print ("Model does not solve with relaxed constraints.")
         # NOTE: If the cost has a very strong relationship to feasibility,
-        #       the lilcost component above could be the problem.
+        #       the lilcost component above could be the problem
+
+        # What to say when everything's fine?

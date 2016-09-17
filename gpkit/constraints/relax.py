@@ -2,6 +2,7 @@
 from .model import Model
 from .set import ConstraintSet
 from ..nomials import Variable, VectorVariable, parse_subs, NomialArray
+from ..keydict import FastKeyDict, KeySet
 
 
 class RelaxAll(Model):
@@ -110,10 +111,11 @@ class RelaxConstants(Model):
         include_only = frozenset(include_only) if include_only else frozenset()
         if not isinstance(constraints, ConstraintSet):
             constraints = ConstraintSet(constraints)
-        substitutions = dict(constraints.substitutions)
+        substitutions = FastKeyDict(constraints.substitutions)
         constants, _, _ = parse_subs(constraints.varkeys,
                                      constraints.substitutions)
         self.relaxvars, relaxation_constraints = [], []
+        self.origvars = []
         self.num = Model._nums["Relax"]
         for key, value in constants.items():
             if include_only and key.name not in include_only:
@@ -121,18 +123,19 @@ class RelaxConstants(Model):
             if key.name in exclude:
                 continue
             descr = dict(key.descr)
-            del descr["value"]
+            descr.pop("value", None)
             descr["units"] = "-"
             descr["models"] = descr.pop("models", [])+["Relax"]
             descr["modelnums"] = descr.pop("modelnums", []) + [self.num]
             relaxation = Variable(**descr)
             self.relaxvars.append(relaxation)
             del substitutions[key]
-            constant = constraints[key]
-            if constant.units and not hasattr(value, "units"):
-                value *= constant.units
-            relaxation_constraints.append([value/relaxation <= constant,
-                                           constant <= value*relaxation,
+            original = Variable(**key.descr)
+            self.origvars.append(original)
+            if original.units and not hasattr(value, "units"):
+                value *= original.units
+            relaxation_constraints.append([value/relaxation <= original,
+                                           original <= value*relaxation,
                                            relaxation >= 1])
         Model.__init__(self, NomialArray(self.relaxvars).prod(),
                        [constraints, relaxation_constraints],

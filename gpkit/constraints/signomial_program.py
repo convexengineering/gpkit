@@ -96,7 +96,7 @@ class SignomialProgram(CostedConstraintSet):
             print("Beginning signomial solve.")
             starttime = time()
         self.gps = []  # NOTE: SIDE EFFECTS
-        slackvar, lilcost = Variable(), Variable()
+        slackvar = Variable()
         x0 = self._default_x0(x0)
         prevcost, cost, rel_improvement = None, None, None
         while rel_improvement is None or rel_improvement > rel_tol:
@@ -111,11 +111,11 @@ class SignomialProgram(CostedConstraintSet):
             try:
                 result = gp.solve(solver, verbosity-1, **kwargs)
             except (RuntimeWarning, ValueError):
-                feas_constrs = ([lilcost**100 >= self.cost,
-                                 slackvar >= 1] +
+                feas_constrs = ([slackvar >= 1] +
                                 [posy <= slackvar
                                  for posy in gp.posynomials[1:]])
-                primal_feas = GeometricProgram(slackvar*lilcost, feas_constrs,
+                primal_feas = GeometricProgram(slackvar**100 * gp.cost,
+                                               feas_constrs,
                                                verbosity=verbosity-1)
                 self.gps.append(primal_feas)
                 result = primal_feas.solve(solver, verbosity=verbosity-1)
