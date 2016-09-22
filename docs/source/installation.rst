@@ -102,14 +102,14 @@ Linux
 Windows
     If you have a 32-bit version of Windows, stop. Go to `Installing cvxopt`_.
 
-    - Install the 64-bit version of `Anaconda <http://www.continuum.io/downloads#_windows>`_.
+    - Install the Python 2.7 64-bit version of `Anaconda <http://www.continuum.io/downloads#_windows>`_.
     - Install cytypesgen via ``pip install ctypesgen --pre`` (gpkit uses ctypesgen to interface with the MOSEK C bindings).
     - Download `MOSEK <http://mosek.com/resources/downloads>`_, then:
         - Follow `these steps for Windows <http://docs.mosek.com/7.0/toolsinstall/Windows_installation.html>`_.
         - Request an `academic license file <http://license.mosek.com/academic>`_ and put it in ``C:\Users\(your_username)\mosek\``
         - Make sure ``gcc`` is on your system path.
             - To do this, type ``gcc`` into a command prompt.
-            - If you get ``executable not found``, then install the            64-bit version of `mingw <http://sourceforge.net/projects/mingw-w64/>`_.
+            - If you get ``executable not found``, then install the 64-bit version (x86_64 installer architecture dropdown option) of `mingw <http://sourceforge.net/projects/mingw-w64/>`_. 
             - Make sure the ``mingw`` bin directory is on your system path (you may have to add it manually).
 
 
