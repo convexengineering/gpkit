@@ -10,7 +10,7 @@ Install dependencies
 GPkit's dependencies are the python packages
 
 - ``pip``
-- ``numpy`` version 1.8 or newer
+- ``numpy`` version 1.8.1 or newer
 - ``scipy``
 - ``pint``
 
