@@ -11,7 +11,7 @@ from ..keydict import KeySet
 from ..varkey import VarKey
 from ..small_scripts import mag
 from .. import units as ureg
-from .. import DimensionalityError
+from .. import DimensionalityError, SignomialsEnabled
 from ..exceptions import InvalidGPConstraint
 
 
@@ -749,8 +749,9 @@ class SignomialEquality(SignomialInequality):
 
     def process_result(self, result):
         "Checks that all constraints are satisfied with equality"
-        leftsubbed = self.left.sub(result["variables"]).value
-        rightsubbed = self.right.sub(result["variables"]).value
+        with SignomialsEnabled():
+            leftsubbed = self.left.sub(result["variables"]).value
+            rightsubbed = self.right.sub(result["variables"]).value
         log_diff = abs(np.log10(mag(leftsubbed)) - np.log10(mag(rightsubbed)))
         previously = result.get("sigeq_logsumerror", 0)
         result["sigeq_logsumerror"] = previously + log_diff
@@ -764,9 +765,9 @@ class SignomialEqualityTrust(SignomialEquality):
     """
 
     def __init__(self, left, right, trustregion):
+        self.trustregion = float(trustregion)
         if trustregion >= 1 or trustregion <= 0:
             raise ValueError("trust region must be between one and zero.")
-        self.trustregion = float(trustregion)
         SignomialEquality.__init__(self, left, right)
 
     def as_gpconstr(self, x0):
