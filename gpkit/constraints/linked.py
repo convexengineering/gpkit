@@ -47,7 +47,6 @@ class LinkedConstraintSet(ConstraintSet):
                     if sub is None or sub == self.substitutions[vk]:
                         subbed_vk = vk
                         sub = self.substitutions[vk]
-                        del self.substitutions[vk]
                     else:
                         raise ValueError("substitution conflict: could not"
                                          " link because %s was set to %s but"
@@ -57,19 +56,13 @@ class LinkedConstraintSet(ConstraintSet):
             # vks is a set, so it's convenient to use the loop variable here
             # since we've already verified above that vks is not null
             descr = dict(vk.descr)  # pylint: disable=undefined-loop-variable
-            descr.pop("value", None)
-            descr.pop("models", None)
-            descr.pop("modelnums", None)
+            for metadata in ["value", "models", "modelnums"]:
+                descr.pop(metadata, None)
             newvk = VarKey(**descr)
-            if sub:
-                self.substitutions[newvk] = sub
-            self.linked.update(dict(zip(vks, len(vks)*[newvk])))
             self.reverselinks[newvk] = vks
+            self.linked.update(dict(zip(vks, len(vks)*[newvk])))
         with SignomialsEnabled():  # since we're just substituting varkeys.
             self.subinplace(self.linked)
-        for constraint in self:
-            if hasattr(constraint, "reset_varkeys"):
-                constraint.reset_varkeys()
         self.reset_varkeys()
 
     def process_solution(self, sol):

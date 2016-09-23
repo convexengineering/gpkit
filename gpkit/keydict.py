@@ -145,7 +145,6 @@ class KeyDict(dict):
                     delete = False
             if delete:
                 dict.__delitem__(self, key)
-                mapkeys = set(getattr(key, "keys", []))
                 mapkeys = set([key])
                 if self.keymapping and hasattr(key, "keys"):
                     mapkeys.update(key.keys)
