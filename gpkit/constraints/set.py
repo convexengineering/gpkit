@@ -173,6 +173,8 @@ class ConstraintSet(list):
 
     def subinplace(self, subs):
         "Substitutes in place."
+        # pylint: disable=too-many-branches
+        allsubs_ = {}
         for constraint in self:
             # break down the subs dictionary to pass each subconstraint
             # only the keys that are in it, skipping subconstraints
@@ -198,11 +200,26 @@ class ConstraintSet(list):
             if subs_:
                 subs_["filter"] = "ConstraintSet"
                 constraint.subinplace(subs_)
+                allsubs_.update(subs)
+        for k, v in allsubs_.items():
+            if k in self.substitutions:
+                if isinstance(v, Iterable) and k.shape:
+                    keys = self.varkeys.keymap[k]
+                    v = np.array(v) if not hasattr(v, "shape") else v
+                    for ki in keys:
+                        self.substitutions[v[ki.idx]] = self.substitutions[ki]
+                else:
+                    try:
+                        self.substitutions[v.key] = self.substitutions[k]
+                    except:
+                        print k, self.substitutions.keymap.keys()
+                        raise
+                del self.substitutions[k]
         if self.unused_variables is not None:
             unused_vars = []
             for var in self.unused_variables:
-                if var.key in subs:
-                    unused_vars.append(subs[var.key])
+                if var.key in allsubs_:
+                    unused_vars.append(allsubs_[var.key])
                 else:
                     unused_vars.append(var.key)
             self.unused_variables = unused_vars

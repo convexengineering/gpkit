@@ -86,9 +86,6 @@ class Model(CostedConstraintSet):
             descr["modelnums"] = descr.pop("modelnums", []) + [num]
             newvk = VarKey(**descr)
             add_model_subs[vk] = newvk
-            if vk in self.substitutions:
-                self.substitutions[newvk] = self.substitutions[vk]
-                del self.substitutions[vk]
         with SignomialsEnabled():  # since we're just substituting varkeys.
             self.subinplace(add_model_subs)
 
