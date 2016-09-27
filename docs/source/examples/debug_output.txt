@@ -1,10 +1,5 @@
 Debugging...
-Using solver 'cvxopt'
-Solving for 6 variables.
-Solving took 0.222 seconds.
 Model does not solve with bounded variables or relaxed constants.
 
-Using solver 'cvxopt'
-Solving for 4 variables.
 
 Model does not solve with relaxed constraints.

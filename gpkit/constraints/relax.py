@@ -5,7 +5,7 @@ from ..nomials import Variable, VectorVariable, parse_subs, NomialArray
 from ..keydict import FastKeyDict
 
 
-class RelaxAll(Model):
+class RelaxedAllConstraints(Model):
     """Relax constraints the same amount, as in Eqn. 10 of [Boyd2007].
 
     Arguments
@@ -44,7 +44,7 @@ class RelaxAll(Model):
                        name=False)
 
 
-class RelaxConstraints(Model):
+class RelaxedConstraints(Model):
     """Relax constraints optimally, as in Eqn. 11 of [Boyd2007].
 
     Arguments
@@ -81,7 +81,7 @@ class RelaxConstraints(Model):
                        name=False)
 
 
-class RelaxConstants(Model):
+class RelaxedConstants(Model):
     """Relax constraints optimally, as in Eqn. 11 of [Boyd2007].
 
     Arguments
