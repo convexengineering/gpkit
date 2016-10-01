@@ -295,3 +295,36 @@ def plot_convergence(model):
     ax.set_ylabel('Cost')
     ax.set_xticks(range(1, len(model.program.gps)+1))
     return fig, ax
+
+def plot_sweep_1D(model, sweep, dependentvar):
+    """Creates and plots a sweep from an existing model
+
+    Example usage:
+    f, _ = plot_sweep_1D(m, {'x': np.linspace(1, 2, 5)}, 'y')
+    f.savefig('mysweep.png')
+    """
+    # Check that sweep var exists
+    if sweep.keys()[0] not in model.varkeys:
+        raise KeyError("{0} is not in model {1}".format(sweep.keys(), model))
+    # Check that dependent var exists
+    if dependentvar not in model.varkeys:
+        raise KeyError("{0} is not in model {1}".format(dependentvar, model))
+
+    sweepvar = sweep.keys()[0]
+    if sweepvar in model.substitutions:
+        originalsubvalue = model.substitutions[sweepvar]
+    x = sweep.values()[0]
+    model.substitutions.update({sweepvar: ('sweep', x)})
+    sol = model.localsolve()
+    y = mag(sol(dependentvar))
+    f, ax = plt.subplots()
+    ax.plot(x, y)
+    x_units = unitstr(model[sweepvar], into=" [%s] ", dimless="")
+    ax.set_xlabel(model[sweepvar].descr['label'] + x_units)
+    y_units = unitstr(model[dependentvar], into=" [%s] ", dimless="")
+    ax.set_ylabel(model[dependentvar].descr['label'] + y_units)
+    plt.show()
+
+    model.substitutions[sweepvar] = originalsubvalue
+
+    return f, ax
