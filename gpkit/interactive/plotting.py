@@ -300,7 +300,7 @@ def plot_sweep_1d(model, sweep, dependentvar):
     """Creates and plots a sweep from an existing model
 
     Example usage:
-    f, _ = plot_sweep_1D(m, {'x': np.linspace(1, 2, 5)}, 'y')
+    f, _ = plot_sweep_1d(m, {'x': np.linspace(1, 2, 5)}, 'y')
     f.savefig('mysweep.png')
     """
     # Check that sweep var exists
