@@ -296,7 +296,7 @@ def plot_convergence(model):
     ax.set_xticks(range(1, len(model.program.gps)+1))
     return fig, ax
 
-def plot_sweep_1D(model, sweep, dependentvar):
+def plot_sweep_1d(model, sweep, dependentvar):
     """Creates and plots a sweep from an existing model
 
     Example usage:
