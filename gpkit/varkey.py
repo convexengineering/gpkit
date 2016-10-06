@@ -91,7 +91,7 @@ class VarKey(object):
             excluded = []
         string = self.name
         for subscript in self.subscripts:
-            if subscript in self.descr and subscript not in excluded:
+            if self.descr.get(subscript) and subscript not in excluded:
                 substring = self.descr[subscript]
                 if subscript == "models":
                     substring = ", ".join(substring)

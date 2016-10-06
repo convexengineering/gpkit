@@ -72,7 +72,7 @@ class Variable(Monomial):
             arg, = args
             if not isinstance(arg, dict):
                 args = ({self: arg},)
-        return super(Variable, self).sub(*args, **kwargs)
+        return Monomial.sub(self, *args, **kwargs)
 
 
 class ArrayVariable(NomialArray):
@@ -160,3 +160,11 @@ class ArrayVariable(NomialArray):
         obj.key = VarKey(**obj.descr)
 
         return obj
+
+
+class VectorizableVariable(ArrayVariable):
+    def __new__(cls, *args, **descr):
+        shape = ()
+        from .. import VECTORIZATION
+        shape += VECTORIZATION
+        return ArrayVariable.__new__(cls, shape, *args, **descr)

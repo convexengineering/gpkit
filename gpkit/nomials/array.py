@@ -30,6 +30,8 @@ def array_constraint(symbol, func):
 
     def wrapped_func(self, other):
         "Creates array constraint from vectorized operator."
+        if not self.shape:
+            return func(self.flatten()[0], other)
         if isinstance(other, Quantity):
             veccable_other = np.array([other], dtype=object)
         else:
