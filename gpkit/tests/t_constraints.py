@@ -7,7 +7,7 @@ from gpkit import LinkedConstraintSet, Model
 from gpkit.constraints.tight import TightConstraintSet
 from gpkit.tests.helpers import run_tests
 from gpkit.exceptions import InvalidGPConstraint
-from gpkit.constraints.relax import RelaxConstraints
+from gpkit.constraints.relax import RelaxedConstraints
 import gpkit
 
 
@@ -17,7 +17,7 @@ class TestConstraint(unittest.TestCase):
     def test_equality_relaxation(self):
         x = Variable("x")
         m = Model(x, [x == 3, x == 4])
-        rc = RelaxConstraints(m)
+        rc = RelaxedConstraints(m)
         rc.cost *= x**0.01
         self.assertAlmostEqual(rc.solve(verbosity=0)(x), 3, 5)
 
