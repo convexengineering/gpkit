@@ -95,6 +95,21 @@ def disable_units():
 
 enable_units()
 
+VECTORIZATION = ()
+
+
+class vectorize(object):
+    def __init__(self, N):
+        self.N = N
+
+    def __enter__(self):
+        global VECTORIZATION
+        VECTORIZATION += (self.N,)
+
+    def __exit__(self, type_, val, traceback):
+        global VECTORIZATION
+        VECTORIZATION = VECTORIZATION[:-1]
+
 
 class SignomialsEnabled(object):
     """Class to put up and tear down signomial support in an instance of GPkit.
