@@ -51,6 +51,6 @@ class SingleEquationConstraint(object):
         subbed.substitutions = self.substitutions
         return subbed
 
-    def process_solution(self, sol):
+    def process_result(self, result):
         "Process solver results"
         pass

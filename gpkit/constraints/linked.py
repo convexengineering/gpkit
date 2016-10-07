@@ -47,6 +47,7 @@ class LinkedConstraintSet(ConstraintSet):
                     if sub is None or sub == self.substitutions[vk]:
                         subbed_vk = vk
                         sub = self.substitutions[vk]
+                        del self.substitutions[vk]
                     else:
                         raise ValueError("substitution conflict: could not"
                                          " link because %s was set to %s but"
@@ -56,24 +57,29 @@ class LinkedConstraintSet(ConstraintSet):
             # vks is a set, so it's convenient to use the loop variable here
             # since we've already verified above that vks is not null
             descr = dict(vk.descr)  # pylint: disable=undefined-loop-variable
-            for metadata in ["value", "models", "modelnums"]:
-                descr.pop(metadata, None)
+            descr.pop("value", None)
+            descr.pop("models", None)
+            descr.pop("modelnums", None)
             newvk = VarKey(**descr)
-            self.reverselinks[newvk] = vks
+            if sub:
+                self.substitutions[newvk] = sub
             self.linked.update(dict(zip(vks, len(vks)*[newvk])))
+            self.reverselinks[newvk] = vks
         with SignomialsEnabled():  # since we're just substituting varkeys.
             self.subinplace(self.linked)
+        for constraint in self:
+            if hasattr(constraint, "reset_varkeys"):
+                constraint.reset_varkeys()
         self.reset_varkeys()
 
-    def process_solution(self, sol):
-        super(LinkedConstraintSet, self).process_solution(sol)
+    def process_result(self, result):
+        super(LinkedConstraintSet, self).process_result(result)
         for k in ["constants", "variables", "freevariables", "sensitivities"]:
-            soldict = sol[k]
+            resultdict = result[k]
             if k == "sensitivities":  # get ["sensitivities"]["constants"]
-                soldict = soldict["constants"]
+                resultdict = resultdict["constants"]
             for newvk, oldvks in self.reverselinks.items():
-                if newvk in soldict:
-                    v = soldict[newvk]
+                if newvk in resultdict:
                     for oldvk in oldvks:
-                        value = v.to(oldvk.units) if hasattr(v, "to") else v
-                        soldict[oldvk] = value
+                        units = newvk.units if hasattr(newvk.units, "to") else 1
+                        resultdict[oldvk] = resultdict[newvk]*units
