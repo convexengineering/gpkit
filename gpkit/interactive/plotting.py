@@ -305,10 +305,10 @@ def plot_sweep_1d(model, sweep, dependentvar):
     """
     # Check that sweep var exists
     if sweep.keys()[0] not in model.varkeys:
-        raise KeyError("{0} is not in model {1}".format(sweep.keys(), model))
+        raise KeyError("{0} is not in model".format(sweep.keys()[0]))
     # Check that dependent var exists
     if dependentvar not in model.varkeys:
-        raise KeyError("{0} is not in model {1}".format(dependentvar, model))
+        raise KeyError("{0} is not in model".format(dependentvar))
 
     sweepvar = sweep.keys()[0]
     if sweepvar in model.substitutions:
