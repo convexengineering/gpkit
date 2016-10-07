@@ -1,5 +1,5 @@
 "Implements Model"
-from collections import defaultdict
+from .set import ConstraintSet
 from .costed import CostedConstraintSet
 from ..varkey import VarKey
 from ..nomials import Monomial
@@ -9,6 +9,7 @@ from .signomial_program import SignomialProgram
 from .linked import LinkedConstraintSet
 from ..keydict import KeyDict
 from .. import SignomialsEnabled
+from .. import end_variable_naming, begin_variable_naming
 
 
 class Model(CostedConstraintSet):
@@ -38,24 +39,29 @@ class Model(CostedConstraintSet):
     `program` is set during a solve
     `solution` is set at the end of a solve
     """
-    _nums = defaultdict(int)
+
     name = None
     num = None
+    naming = None
     program = None
     solution = None
 
-    def __init__(self, cost=None, constraints=None,
-                 substitutions=None, name=None):
+    def __new__(cls, *args, **kwargs):
+        name = kwargs.pop("name", None)
+        obj = super(Model, cls).__new__(cls, *args, **kwargs)
+        if not name:
+            name = cls.name if cls.name else cls.__name__
+        if name and name != "Model":
+            obj.name = name
+            obj.num, obj.naming = begin_variable_naming(obj.name)
+        return obj
+
+    def __init__(self, cost=None, constraints=None, substitutions=None):
         cost = cost if cost else Monomial(1)
         constraints = constraints if constraints else []
         CostedConstraintSet.__init__(self, cost, constraints, substitutions)
-        if self.__class__.__name__ != "Model" and not name:
-            name = self.__class__.__name__
-        if name:
-            self.name = name
-            self.num = Model._nums[name]
-            Model._nums[name] += 1
-            self._add_modelname_tovars(self.name, self.num)
+        if hasattr(self, "name"):
+            end_variable_naming()
 
     gp = _progify_fctry(GeometricProgram)
     sp = _progify_fctry(SignomialProgram)
@@ -77,20 +83,6 @@ class Model(CostedConstraintSet):
             zeros = {var: 0 for var, bound in bounds.items()
                      if bound == "lower"}
             self.substitutions.update(zeros)
-
-    def _add_modelname_tovars(self, name, num):
-        add_model_subs = KeyDict()
-        for vk in self.varkeys:
-            descr = dict(vk.descr)
-            descr["models"] = descr.pop("models", []) + [name]
-            descr["modelnums"] = descr.pop("modelnums", []) + [num]
-            newvk = VarKey(**descr)
-            add_model_subs[vk] = newvk
-            if vk in self.substitutions:
-                self.substitutions[newvk] = self.substitutions[vk]
-                del self.substitutions[vk]
-        with SignomialsEnabled():  # since we're just substituting varkeys.
-            self.subinplace(add_model_subs)
 
     def subconstr_str(self, excluded=None):
         "The collapsed appearance of a ConstraintBase"

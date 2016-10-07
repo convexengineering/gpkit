@@ -1,0 +1,102 @@
+Original model
+==============
+
+  # minimize
+        x
+  # subject to
+        x <= x_max
+        x >= x_min
+
+With constraints relaxed equally
+================================
+
+  # minimize
+        C_RelaxedAllConstraints
+  # subject to
+        C_RelaxedAllConstraints >= x*x_max**-1
+        C_RelaxedAllConstraints >= x**-1*x_min
+        C_RelaxedAllConstraints >= 1
+
+Cost
+----
+ 1.414
+
+Free Variables
+--------------
+                    x : 1.414 
+                              
+RelaxedAllConstraints |       
+                    C : 1.414 
+
+Constants
+---------
+x_max : 1 
+x_min : 2 
+
+Sensitivities
+-------------
+x_min : 0.5  
+x_max : -0.5 
+
+
+With constraints relaxed individually
+=====================================
+
+  # minimize
+        C_RelaxedConstraints_(0,)*C_RelaxedConstraints_(1,)*x**0.01
+  # subject to
+        \vec{C} >= [gpkit.Monomial(x*x_max**-1), gpkit.Monomial(x**-1*x_min)]
+        \vec{C} >= 1
+
+Cost
+----
+ 2
+
+Free Variables
+--------------
+                 x : 1                      
+                                            
+RelaxedConstraints |                        
+           \vec{C} : [ 1         2        ] 
+
+Constants
+---------
+x_max : 1 
+x_min : 2 
+
+Sensitivities
+-------------
+x_min : 1     
+x_max : -0.99 
+
+
+With constants relaxed individually
+===================================
+
+  # minimize
+        x**0.01*x_max_RelaxedConstants*x_min_RelaxedConstants
+  # subject to
+        x <= x_max
+        x >= x_min
+        x_min >= 2*x_min_RelaxedConstants**-1
+        x_min <= 2*x_min_RelaxedConstants
+        x_min_RelaxedConstants >= 1
+        x_max >= x_max_RelaxedConstants**-1
+        x_max <= x_max_RelaxedConstants
+        x_max_RelaxedConstants >= 1
+
+Cost
+----
+ 2
+
+Free Variables
+--------------
+               x : 1 
+           x_max : 1 
+           x_min : 1 
+                     
+RelaxedConstants |   
+           x_max : 1 
+           x_min : 2 
+
+
