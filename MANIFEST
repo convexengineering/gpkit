@@ -5,6 +5,7 @@ gpkit/build.py
 gpkit/feasibility.py
 gpkit/geometric_program.py
 gpkit/keydict.py
+gpkit/exceptions.py
 gpkit/modified_ctypesgen.py
 gpkit/repr_conventions.py
 gpkit/small_classes.py
@@ -16,6 +17,7 @@ gpkit/_mosek/cli_expopt.py
 gpkit/_mosek/expopt.py
 gpkit/constraints/__init__.py
 gpkit/constraints/array.py
+gpkit/constraints/bounded.py
 gpkit/constraints/costed.py
 gpkit/constraints/linked.py
 gpkit/constraints/model.py
@@ -54,5 +56,4 @@ gpkit/tests/t_tools.py
 gpkit/tests/t_vars.py
 gpkit/tools/__init__.py
 gpkit/tools/fmincon.py
-gpkit/tools/simpleflight.py
 gpkit/tools/tools.py
