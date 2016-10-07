@@ -96,6 +96,36 @@ def disable_units():
 enable_units()
 
 VECTORIZATION = ()
+MODELS = []
+MODELNUMS = []
+from collections import defaultdict
+MODELNUM_LOOKUP = defaultdict(int)
+
+
+def begin_variable_naming(model):
+    global MODELS, MODELNUMS
+    MODELS.append(model)
+    num = MODELNUM_LOOKUP[model]
+    MODELNUMS.append(num)
+    MODELNUM_LOOKUP[model] += 1
+    return num, (tuple(MODELS), tuple(MODELNUMS))
+
+
+def end_variable_naming():
+    global MODELS, MODELNUMS
+    MODELS = MODELS[:-1]
+    MODELNUMS = MODELNUMS[:-1]
+
+
+class namedvariables(object):
+        def __init__(self, model):
+            self.model = model
+
+        def __enter__(self):
+            begin_variable_naming(self.model)
+
+        def __exit__(self, type_, val, traceback):
+            end_variable_naming()
 
 
 class vectorize(object):
@@ -104,11 +134,11 @@ class vectorize(object):
 
     def __enter__(self):
         global VECTORIZATION
-        VECTORIZATION += (self.N,)
+        VECTORIZATION = (self.N,) + VECTORIZATION
 
     def __exit__(self, type_, val, traceback):
         global VECTORIZATION
-        VECTORIZATION = VECTORIZATION[:-1]
+        VECTORIZATION = VECTORIZATION[1:]
 
 
 class SignomialsEnabled(object):
@@ -137,7 +167,8 @@ class SignomialsEnabled(object):
 from .varkey import VarKey
 from .nomials import Nomial, NomialArray
 from .nomials import Monomial, Posynomial, Signomial
-from .nomials import Variable, VectorVariable, ArrayVariable
+from .nomials import VectorVariable, ArrayVariable
+from .nomials import VectorizableVariable as Variable
 from .nomials import SignomialEquality
 from .geometric_program import GeometricProgram
 from .constraints.signomial_program import SignomialProgram

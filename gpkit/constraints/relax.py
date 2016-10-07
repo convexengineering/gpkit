@@ -34,14 +34,12 @@ class RelaxedAllConstraints(Model):
             constraints = ConstraintSet(constraints)
         substitutions = dict(constraints.substitutions)
         posynomials = constraints.as_posyslt1()
-        self.relaxvar = Variable("C", models=["Relax"],
-                                 modelnums=[Model._nums["Relax"]])
+        self.relaxvar = Variable("C")
         Model.__init__(self, self.relaxvar,
                        [[posy <= self.relaxvar
                          for posy in posynomials],
                         self.relaxvar >= 1],
-                       substitutions,
-                       name=False)
+                       substitutions)
 
 
 class RelaxedConstraints(Model):
@@ -72,13 +70,11 @@ class RelaxedConstraints(Model):
         substitutions = dict(constraints.substitutions)
         posynomials = constraints.as_posyslt1()
         N = len(posynomials)
-        self.relaxvars = VectorVariable(N, "C", models=["Relax"],
-                                        modelnums=[Model._nums["Relax"]])
+        self.relaxvars = VectorVariable(N, "C")
         Model.__init__(self, self.relaxvars.prod(),
                        [[posynomials <= self.relaxvars],
                         self.relaxvars >= 1],
-                       substitutions,
-                       name=False)
+                       substitutions)
 
 
 class RelaxedConstants(Model):
@@ -116,28 +112,24 @@ class RelaxedConstants(Model):
                                      constraints.substitutions)
         self.relaxvars, relaxation_constraints = [], []
         self.origvars = []
-        self.num = Model._nums["Relax"]
         for key, value in constants.items():
             if include_only and key.name not in include_only:
                 continue
             if key.name in exclude:
                 continue
-            descr = dict(key.descr)
-            descr.pop("value", None)
-            descr["units"] = "-"
-            descr["models"] = descr.pop("models", [])+["Relax"]
-            descr["modelnums"] = descr.pop("modelnums", []) + [self.num]
-            relaxation = Variable(**descr)
-            self.relaxvars.append(relaxation)
             del substitutions[key]
-            original = Variable(**key.descr)
+            original = constraints[key]
             self.origvars.append(original)
             if original.units and not hasattr(value, "units"):
                 value *= original.units
+            descr = dict(key.descr)
+            descr.pop("value", None)
+            descr["units"] = "-"
+            relaxation = Variable(**descr)
+            self.relaxvars.append(relaxation)
             relaxation_constraints.append([value/relaxation <= original,
                                            original <= value*relaxation,
                                            relaxation >= 1])
         Model.__init__(self, NomialArray(self.relaxvars).prod(),
-                       [constraints, relaxation_constraints],
-                       name=False)
+                       [constraints, relaxation_constraints])
         self.substitutions = substitutions

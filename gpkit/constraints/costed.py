@@ -13,6 +13,12 @@ class CostedConstraintSet(ConstraintSet):
     substitutions: dict
     """
     def __init__(self, cost, constraints, substitutions=None):
+        if hasattr(cost, "prod"):
+            # it's a vector!
+            if not cost.shape:
+                cost = cost.flatten()[0]
+            else:
+                raise ValueError("cost must be a scalar, not the vector %s" % cost)
         self.cost = cost
         subs = dict(self.cost.values)
         if substitutions:

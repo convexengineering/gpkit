@@ -5,7 +5,7 @@ from .nomial_math import Monomial, Posynomial, Signomial
 from .nomial_math import MonomialEquality, PosynomialInequality
 from .nomial_math import SignomialInequality
 from .nomial_math import SignomialEquality
-from .variables import Variable, ArrayVariable
+from .variables import Variable, ArrayVariable, VectorizableVariable
 from .substitution import parse_subs
 
 # TEMPORARY SHORTCUTS

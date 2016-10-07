@@ -193,6 +193,6 @@ def substitution(nomial, substitutions):
                     for subvar in sub.exp:
                         varlocs_[subvar].append(i)
             else:
-                raise TypeError("could not substitute with value"
-                                " of type '%s'" % type(sub))
+                raise TypeError("could not substitute %s with value"
+                                " of type '%s'" % (var, type(sub)))
     return varlocs_, exps_, cs_, subs
