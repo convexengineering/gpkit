@@ -18,9 +18,9 @@ class Aircraft(Model):
 
         W = Variable("W", "lbf", "weight")
         self.weight = W
-        csr = [W >= sum(c["W"] for c in self.components)]
+        constraints = [W >= sum(c["W"] for c in self.components)]
 
-        super(Aircraft, self).__init__(W, self.components + csr, **kwargs)
+        Model.__init__(self, W, self.components + constraints, **kwargs)
 
 
 class AircraftP(Model):
@@ -30,10 +30,13 @@ class AircraftP(Model):
     def __init__(self, aircraft, state, **kwargs):
         self.aircraft = aircraft
         self.wing_aero = aircraft.wing.dynamic(state)
-        csr = [aircraft.weight <= (0.5*state["\\rho"]*state["V"]**2
-                                   * self.wing_aero["C_L"]
-                                   * aircraft.wing["S"])]
-        Model.__init__(self, None, [csr, self.wing_aero], **kwargs)
+        self.perf_models = [self.wing_aero]
+        constraints = [
+            aircraft.weight <= (0.5*state["\\rho"]*state["V"]**2
+                                * self.wing_aero["C_L"]
+                                * aircraft.wing["S"])
+            ]
+        Model.__init__(self, None, self.perf_models + constraints, **kwargs)
 
 
 class FlightState(Model):
@@ -42,10 +45,12 @@ class FlightState(Model):
         V = Variable("V", 40, "knots", "true airspeed")
         mu = Variable("\\mu", 1.628e-5, "N*s/m^2", "dynamic viscosity")
         rho = Variable("\\rho", 0.74, "kg/m^3", "air density")
-        csr = [V == V,
-               mu == mu,
-               rho == rho]
-        super(FlightState, self).__init__(None, csr, **kwargs)
+        constraints = [
+            V == V,
+            mu == mu,
+            rho == rho
+            ]
+        Model.__init__(self, None, constraints, **kwargs)
 
 
 class FlightSegment(Model):
@@ -71,9 +76,11 @@ class Wing(Model):
         A = Variable("A", 27, "-", "aspect ratio")
         c = Variable("c", "ft", "mean chord")
 
-        csr = [W >= S*rho,
-               c == (S/A)**0.5]
-        super(Wing, self).__init__(None, csr, **kwargs)
+        constraints = [
+            W >= S*rho,
+            c == (S/A)**0.5
+            ]
+        super(Wing, self).__init__(None, constraints, **kwargs)
 
 
 class WingAero(Model):
@@ -83,10 +90,11 @@ class WingAero(Model):
         CL = Variable("C_L", "-", "lift coefficient")
         e = Variable("e", 0.9, "-", "Oswald efficiency")
         Re = Variable("Re", "-", "Reynold's number")
-        csr = [CD >= (0.074/Re**0.2 + CL**2/np.pi/wing["A"]/e),
-               Re == state["\\rho"]*state["V"]*wing["c"]/state["\\mu"],
-              ]
-        Model.__init__(self, None, csr, **kwargs)
+        constraints = [
+            CD >= (0.074/Re**0.2 + CL**2/np.pi/wing["A"]/e),
+            Re == state["\\rho"]*state["V"]*wing["c"]/state["\\mu"],
+            ]
+        Model.__init__(self, None, constraints, **kwargs)
 
 
 class Fuselage(Model):
@@ -101,11 +109,11 @@ class Fuselage(Model):
         # CDA = Variable("CDA", "ft^2", "drag area")
         W = Variable("W", 100, "lbf", "weight")
 
-        csr = [  # CDA >= cd*4*V/d,
+        constraints = [  # CDA >= cd*4*V/d,
             W == W,  # todo replace with model
             ]
 
-        super(Fuselage, self).__init__(None, csr, **kwargs)
+        super(Fuselage, self).__init__(None, constraints, **kwargs)
 
 
 if __name__ == "__main__":
