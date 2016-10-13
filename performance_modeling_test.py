@@ -16,7 +16,8 @@ class Aircraft(Model):
 
         self.components = [self.fuse, self.wing]
 
-        W = Variable("W_aircraft", "lbf", "weight")
+        W = Variable("W", "lbf", "weight")
+        self.weight = W
         csr = [W >= sum(c["W"] for c in self.components)]
 
         super(Aircraft, self).__init__(W, self.components + csr, **kwargs)
@@ -29,9 +30,9 @@ class AircraftP(Model):
     def __init__(self, aircraft, state, **kwargs):
         self.aircraft = aircraft
         self.wing_aero = aircraft.wing.dynamic(state)
-        csr = [aircraft["W_aircraft"] <= (0.5*state["\\rho"]*state["V"]**2
-                                          * self.wing_aero["C_L"]
-                                          * aircraft.wing["S"])]
+        csr = [aircraft.weight <= (0.5*state["\\rho"]*state["V"]**2
+                                   * self.wing_aero["C_L"]
+                                   * aircraft.wing["S"])]
         Model.__init__(self, None, [csr, self.wing_aero], **kwargs)
 
 
