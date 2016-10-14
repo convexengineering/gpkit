@@ -31,10 +31,13 @@ class AircraftP(Model):
         self.aircraft = aircraft
         self.wing_aero = aircraft.wing.dynamic(state)
         self.perf_models = [self.wing_aero]
+        Wfuel = Variable("W_{fuel}", "lbf", "fuel weight")
+        Wburn = Variable("W_{burn}", "lbf", "segment fuel burn")
         constraints = [
-            aircraft.weight <= (0.5*state["\\rho"]*state["V"]**2
-                                * self.wing_aero["C_L"]
-                                * aircraft.wing["S"])
+            aircraft.weight + Wfuel <= (0.5*state["\\rho"]*state["V"]**2
+                                        * self.wing_aero["C_L"]
+                                        * aircraft.wing["S"]),
+            Wburn >= 0.1*self.wing_aero["D"]
             ]
         Model.__init__(self, None, self.perf_models + constraints, **kwargs)
 
@@ -60,6 +63,19 @@ class FlightSegment(Model):
         self.aircraftp = aircraft.dynamic(self.flightstate)
         Model.__init__(self, None,
                        [self.flightstate, self.aircraftp], **kwargs)
+
+
+class Mission(Model):
+    "list of flight segments"
+    def __init__(self, aircraft, **kwargs):
+        N = 4
+        with vectorize(N):
+            fs = FlightSegment(aircraft)
+        Wburn = fs.aircraftp["W_{burn}"]
+        Wfuel = fs.aircraftp["W_{fuel}"]
+        constraints = [Wfuel[:-1] >= Wfuel[1:] + Wburn[:-1],
+                       Wfuel[-1] >= Wburn[-1]]
+        Model.__init__(self, Wfuel[0], [constraints, fs], **kwargs)
 
 
 class Wing(Model):
@@ -90,9 +106,11 @@ class WingAero(Model):
         CL = Variable("C_L", "-", "lift coefficient")
         e = Variable("e", 0.9, "-", "Oswald efficiency")
         Re = Variable("Re", "-", "Reynold's number")
+        D = Variable("D", "lbf", "drag force")
         constraints = [
             CD >= (0.074/Re**0.2 + CL**2/np.pi/wing["A"]/e),
             Re == state["\\rho"]*state["V"]*wing["c"]/state["\\mu"],
+            D >= 0.5*state["\\rho"]*state["V"]**2*CD*wing["S"],
             ]
         Model.__init__(self, None, constraints, **kwargs)
 
@@ -118,10 +136,7 @@ class Fuselage(Model):
 
 if __name__ == "__main__":
     JHO = Aircraft()
-    N = 4
-    with vectorize(N):
-        FS = FlightSegment(JHO)
-    COST = FS.aircraftp.wing_aero["C_D"].prod()**(1./N)
-    M = Model(COST, [FS, JHO], {"V": np.linspace(20, 40, N)})
+    MISSION = Mission(JHO)
+    M = Model(MISSION.cost, [MISSION, JHO])  #, {"V": np.linspace(20, 40, N)})
     SOL = M.solve("mosek")
     print SOL.table()
