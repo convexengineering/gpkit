@@ -1,35 +1,6 @@
 Advanced Commands
 *****************
 
-Feasibility Analysis
-====================
-
-If your Model doesn't solve, you can automatically find the nearest feasible version of it with the ``Model.feasibility()`` command, as shown below. The feasible version can either involve relaxing all constraints by the smallest number possible (that is, dividing the less-than side of every constraint by the same number), relaxing each constraint by its own number and minimizing the product of those numbers, or changing each constant by the smallest total percentage possible.
-
-.. code-block:: python
-
-    from gpkit import Variable, Model, NomialArray
-    x = Variable("x")
-    x_min = Variable("x_min", 2)
-    x_max = Variable("x_max", 1)
-    m = Model(x, [x <= x_max, x >= x_min])
-    # m.solve()  # raises a RuntimeWarning!
-    feas = m.feasibility()
-
-    # USING OVERALL
-    m.constraints = NomialArray(m.signomials)/feas["overall"]
-    m.solve()
-
-    # USING CONSTRAINTS
-    m = Model(x, [x <= x_max, x >= x_min])
-    m.constraints = NomialArray(m.signomials)/feas["constraints"]
-    m.solve()
-
-    # USING CONSTANTS
-    m = Model(x, [x <= x_max, x >= x_min])
-    m.substitutions.update(feas["constants"])
-    m.solve()
-
 Plotting variable sensitivities
 ===============================
 

@@ -12,14 +12,6 @@ gpkit.tools.fmincon module
     :undoc-members:
     :show-inheritance:
 
-gpkit.tools.simpleflight module
--------------------------------
-
-.. automodule:: gpkit.tools.simpleflight
-    :members:
-    :undoc-members:
-    :show-inheritance:
-
 gpkit.tools.tools module
 ------------------------
 

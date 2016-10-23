@@ -12,6 +12,14 @@ gpkit.constraints.array module
     :undoc-members:
     :show-inheritance:
 
+gpkit.constraints.bounded module
+--------------------------------
+
+.. automodule:: gpkit.constraints.bounded
+    :members:
+    :undoc-members:
+    :show-inheritance:
+
 gpkit.constraints.costed module
 -------------------------------
 

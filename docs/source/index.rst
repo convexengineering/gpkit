@@ -19,6 +19,7 @@ Table of contents
        gettingstarted
        advancedcommands
        signomialprogramming
+       debugging
        examples
        autodoc/gpkit
        citinggpkit
