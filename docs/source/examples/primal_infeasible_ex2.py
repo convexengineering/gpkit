@@ -1,8 +1,9 @@
+"Another simple primal infeasible example"
 from gpkit import Variable, Model
 
 #Make the necessary Variables
 x = Variable("x")
-y = Variable("y")
+y = Variable("y", 2)
 
 #make the constraints
 constraints = [
@@ -11,16 +12,11 @@ constraints = [
     x*y <= 1.5
     ]
 
-#substitute a value for y
-substitutions = {
-    "y": 2
-    }
-
 #declare the objective
 objective = x*y
 
 #construct the model
-m = Model(objective, constraints, substitutions)
+m = Model(objective, constraints)
 
 #solve the model
 #raises RuntimeWarning uknown on cvxopt and RuntimeWarning

@@ -79,21 +79,7 @@ def imize_fn(path=None, clearfiles=True):
 
         """
 
-        with open(filename, "w") as f:
-            numcon = p_idxs[-1]
-            numter, numvar = map(int, A.shape)
-            for n in [numcon, numvar, numter]:
-                f.write("%d\n" % n)
-
-            f.write("\n*c\n")
-            f.writelines(["%.20e\n" % x for x in c])
-
-            f.write("\n*p_idxs\n")
-            f.writelines(["%d\n" % x for x in p_idxs])
-
-            f.write("\n*t j A_tj\n")
-            f.writelines(["%d %d %.20e\n" % tuple(x)
-                          for x in zip(A.row, A.col, A.data)])
+        write_output_file(filename, c, A, p_idxs)
 
         # run mskexpopt and print stdout
         for logline in check_output(["mskexpopt", filename]).split(b"\n"):
@@ -127,6 +113,24 @@ def imize_fn(path=None, clearfiles=True):
                     nu=dual_vals)
 
     return imize
+
+
+def write_output_file(filename, c, A, p_idxs):
+    with open(filename, "w") as f:
+        numcon = p_idxs[-1]
+        numter, numvar = map(int, A.shape)
+        for n in [numcon, numvar, numter]:
+            f.write("%d\n" % n)
+
+        f.write("\n*c\n")
+        f.writelines(["%.20e\n" % x for x in c])
+
+        f.write("\n*p_idxs\n")
+        f.writelines(["%d\n" % x for x in p_idxs])
+
+        f.write("\n*t j A_tj\n")
+        f.writelines(["%d %d %.20e\n" % tuple(x)
+                      for x in zip(A.row, A.col, A.data)])
 
 
 def assert_line(fil, expected):

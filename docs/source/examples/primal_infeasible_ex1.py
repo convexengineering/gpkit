@@ -1,3 +1,4 @@
+"A simple primal infeasible example"
 from gpkit import Variable, Model
 
 #Make the necessary Variables
