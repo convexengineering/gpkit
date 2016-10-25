@@ -76,7 +76,7 @@ def _solve_fctry(genfunction):
                       constants, sweep, linkedsweep,
                       solver, verbosity, *args, **kwargs)
         else:
-            self.program, solvefn = genfunction(self, verbosity-1)
+            self.program, solvefn = genfunction(self, verbosity)
             result = solvefn(solver, verbosity, *args, **kwargs)
             solution.append(result)
         solution.program = self.program
