@@ -697,7 +697,7 @@ class SignomialInequality(ScalarSingleEquationConstraint):
         else:
             raise InvalidGPConstraint("SignomialInequality could not simplify"
                                       " to a PosynomialInequality; try calling"
-                                      "`.localsolve` instead of `.solve` to"
+                                      " `.localsolve` instead of `.solve` to"
                                       " form your Model as a SignomialProgram")
 
     def as_gpconstr(self, x0):
