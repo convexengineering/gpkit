@@ -28,7 +28,7 @@ Version 0.4.0
  * New class KeyDict to allow referring to variables by name or with objects.
  * Many many other bug fixes, speed ups, and refactors under the hood.
 
-Version 0.3.2
+Version 0.3.4
 -------------
  * Modular / model composition fixes and improvements
  * Working controlpanel() for Model
