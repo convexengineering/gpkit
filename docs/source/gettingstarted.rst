@@ -3,7 +3,7 @@ Getting Started
 
 GPkit is a Python package, so we assume basic familiarity with Python: if you're new to Python we recommend you take a look at `Learn Python <http://www.learnpython.org>`_.
 
-Alright: `install GPkit <installation.html>`_ and import away.
+Alright! :ref:`Install GPkit <installation>` and import away.
 
 .. code-block:: python
 
@@ -12,7 +12,7 @@ Alright: `install GPkit <installation.html>`_ and import away.
 
 Declaring Variables
 ===================
-Instances of the ``Variable`` class represent scalar variables. They store a key (i.e. name) used to look up the Variable in dictionaries, and optionally units, a description, and a value (if the Variable is to be held constant).
+Instances of the ``Variable`` class represent scalar variables. They create a ``VarKey`` to store the variable's name, units, a description, and value (if the Variable is to be held constant), as well as other metadata.
 
 
 Free Variables
@@ -30,15 +30,15 @@ Free Variables
 
 Fixed Variables
 ---------------
-To declare a variable with a constant value, use the ``Variable`` class, as above, but specify the ``value=`` input argument:
+To declare a variable with a constant value, use the ``Variable`` class, as above, but put a number before the units:
 
 .. code-block:: python
 
     # Declare \rho equal to 1.225 kg/m^3.
-    # NOTE: write a literal backslash by preceding it with another backslash
+    # NOTE: in python string literals backslashes must be doubled
     rho = Variable("\\rho", 1.225, "kg/m^3", "Density of air at sea level")
 
-In the example above, the key name ``"\\rho"`` is for LaTeX printing (described later). The unit and description arguments are optional.
+In the example above, the key name ``"\rho"`` is for LaTeX printing (described later). The unit and description arguments are optional.
 
 .. code-block:: python
 
@@ -122,7 +122,7 @@ Solving the Model
 
 .. move example solve printouts (below) up to here
 
-When solving the model you can change the level of information that gets printed to the screen with the ``verbosity`` setting. A verbosity of 1 (the default) prints warnings and the solution; a verbosity of 2 prints solve time, a verbosity of 3 prints solver output, and a verbosity of 0 prints nothing.
+When solving the model you can change the level of information that gets printed to the screen with the ``verbosity`` setting. A verbosity of 1 (the default) prints warnings and timing; a verbosity of 2 prints solver output, and a verbosity of 0 prints nothing.
 
 .. code-block:: python
 
@@ -132,7 +132,7 @@ When solving the model you can change the level of information that gets printed
 Printing Results
 ================
 
-We can also manually print the solution table, with the same result as if the verbosity argument had been left blank above.
+The solution object can represent itself as a table:
 
 .. code-block:: python
 
@@ -162,13 +162,15 @@ We can also print the optimal value and solved variables individually.
 
 .. code-block:: python
 
-    print "The optimal value is %s." % (sol["cost"])
-    print "The x dimension is %s." % (sol(x))
+    print "The optimal value is %s." % sol["cost"]
+    print "The x dimension is %s." % sol(x)
+    print "The y dimension is %s." % sol["variables"]["y"]
 
 ::
 
     The optimal value is 15.5884619886.
-    The x dimension is 0.577351209028 meter.
+    The x dimension is 0.5774 meter.
+    The y dimension is 0.2887 meter.
 
 .. refactor this section; explain what can be done with a SolutionArray
 .. e.g. table(), __call__, ["variables"], etc.
@@ -176,7 +178,7 @@ We can also print the optimal value and solved variables individually.
 Sensitivities and dual variables
 ================================
 
-When a GP is solved, the solver returns not just the optimal value for the problem’s variables (known as the "primal solution") but also, as a side effect of the solving process, the effect that scaling the :math:`\leq 1` of each canonical constraint would have on the overall objective (the "dual solution").
+When a GP is solved, the solver returns not just the optimal value for the problem’s variables (known as the "primal solution") but also the effect relaxing each constraint would have on the overall objective (the "dual solution").
 
 From the dual solution GPkit computes the sensitivities for every fixed variable in the problem. This can be quite useful for seeing which constraints are most crucial, and prioritizing remodeling and assumption-checking.
 
