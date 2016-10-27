@@ -65,9 +65,13 @@ For Windows 10, cvxopt does not appear to be an option.
 Installing cvxopt
 -----------------
 
-Mac OSX and Linux
+Mac OSX
     Run ``pip install cvxopt``
-    
+
+Linux
+    Run ``sudo apt-get install libblas-dev liblapack-dev``
+    then ``sudo pip install cvxopt``
+
     If experiencing issues with wheel in Ubuntu 16.04, try the `official installer. <http://cvxopt.org/install/index.html>`_
 
 Windows
