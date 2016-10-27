@@ -25,6 +25,14 @@ gpkit.build module
     :undoc-members:
     :show-inheritance:
 
+gpkit.exceptions module
+-----------------------
+
+.. automodule:: gpkit.exceptions
+    :members:
+    :undoc-members:
+    :show-inheritance:
+
 gpkit.feasibility module
 ------------------------
 

@@ -82,13 +82,7 @@ def _solve_fctry(genfunction):
         solution.program = self.program
         solution.to_united_array(unitless_keys=["sensitivities"], united=True)
         if self.cost.units:
-            solution["cost"] = solution["cost"] * self.cost.units
-        solution.classify(KeyDict)
-        solution["variables"] = KeyDict(solution["constants"])
-        solution["variables"].update(solution["freevariables"])
-        if "sweepvariables" in solution:
-            solution["variables"].update(solution["sweepvariables"])
-        self.process_solution(solution)
+            solution["cost"] *= self.cost.units
         self.solution = solution  # NOTE: SIDE EFFECTS
         return solution
     return solvefn
@@ -155,6 +149,8 @@ def run_sweep(genfunction, self, solution, skipsweepfailures,
             solution["constants"][var] = [val[0]]
     for var in delvars:
         del solution["constants"][var]
+    if not solution["constants"]:
+        del solution["constants"]
 
     if verbosity > 0:
         soltime = time() - tic

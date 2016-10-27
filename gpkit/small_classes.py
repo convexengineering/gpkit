@@ -93,20 +93,6 @@ class DictOfLists(dict):
         "Converts all lists into array, potentially grabbing units from keys."
         _enray_and_unit_dict(self, self, unitless_keys, united)
 
-    def classify(self, cls):
-        "Converts dictionaries whose first key isn't a string to given class."
-        _classify(self, cls)
-
-
-def _classify(d_in, cls):
-    "Converts dictionaries whose first key isn't a string to given class."
-    for k, v in d_in.items():
-        if isinstance(v, dict) and v:
-            if isinstance(v.keys()[0], Strings):
-                _classify(v, cls)
-            else:
-                d_in[k] = cls(v)
-
 
 def _enlist_dict(d_in, d_out):
     "Recursively copies d_in into d_out, placing non-dict items into lists."
@@ -156,8 +142,7 @@ def _enray_and_unit_dict(d_in, d_out, unitless_keys=(), united=False):
             if hasattr(v[0], "units") and united:
                 # if the first element of the list already has units,
                 # ensure unit consistency across the entire list
-                units = getattr(k, "units", v[0].units)
-                v = [e.to(units).magnitude for e in v]*units
+                v = [e.to(k.units).magnitude for e in v]*k.units
             else:
                 v = np.array(v)
                 if (united and hasattr(k, "units")
