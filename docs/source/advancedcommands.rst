@@ -234,25 +234,43 @@ The ``normsub`` argument specifies an expected value for your solution to normal
 
 The ``sweep`` argument specifies what points between 0 and 1 you wish to sample the weights at. If you want different resolutions or spacings for different weights, the ``sweeps`` argument accepts a list of sweep arrays.
 
+Submodels and Variable Linking
+===============================
 
-Debugging
-=========
+It is often desirable to split a model into submodels. For example, instead of having one large airplane model, there may be separate wing, fuselage, vertical tail, horizontal tail, engine, and landing gear models which are linked together to form a full airplane model. This methodology can be beneficial because it allows a single component model to be linked into a variety of system models.
 
-Unbounded variables
--------------------
-In some cases a model will not solve because its variables are pushing to 0 or infinity. If the solver catches such behaviour it will return ``dual infeasible`` (or equivalent), but sometimes solvers do not catch it and return ``unknown``.
+Obviously, subsystems will share common variables. In the airplane example, the engine model will determine the engine weight and size. If the engines are mounted under the wing, the wing model will have an engine weight variable. When the subsystem models are linked to form the system level model, it is crucial that all models share one engine weight variable. GPkit has a built in class that performs linking, called ``LinkedConstraintSet``. Improperly linking variables together is a common cause of modeling errors, so it is recommended modelers use great care when linking variables, especially when altering variable’s varkeys.
 
-``gpkit.constraints.bounded.BoundedConstraintSet`` is a
-simple tool that attempts to detect unbounded variables and get unbounded models to solve by adding extremely large upper bounds and extremely small lower bounds to all variables in a ConstraintSet.
+Linked Constraint Set
+--------------
 
-When a model with an BoundedConstraintSet is solved, it checks whether any variables slid off to the bounds, notes this in the solution dictionary and prints a warning (if verbosity is greater than 0).
+If the variables that need to be linked have the same varkey, then the class ``LinkedConstraintSet`` can be used to link them. Consider the two models presented below.
 
-For example, Mosek returns ``DUAL_INFEAS_CER`` when attempting to solve the following model:
 
-.. literalinclude:: examples/unbounded.py
+.. literalinclude:: examples/import_classes.py
+   :lines: 3-21
 
-Upon viewing the printed output,
+.. literalinclude:: examples/import_classes.py
+   :lines: 24-41
 
-.. literalinclude:: examples/unbounded_output.txt
 
-it becomes clear that the problem is, unsurprisingly, that ``x`` is unbounded below in the original model.
+It might be desirable to link ``m1`` and ``m2`` and then solve for the objective ``x*z*y**2``, subject to both the two constraints in ``m1`` as well as the two constraints in ``m2``. Noting ``y`` has the same varkey in both ``m1`` and ``m2``, a ``LinkedConstraintSet`` will automatically link ``y`` between the two models. This is done below.
+
+.. literalinclude:: examples/LCS_ex.py
+
+The cost of the full model is 0.5. If the solution table were to be printed there would only be a single ``y`` variable.
+
+
+In-Place Substitution
+--------------
+
+It is also possible to link variables that have a different varkey. Consider a revised ``m2`` presented below. Note that in this version of ``m2``, the variable ``y`` has the varkey ``y2``.
+
+.. literalinclude:: examples/import_classes.py
+   :lines: 43-60
+
+If it was attempted to link ``m1``, from above, and the revised ``m2`` using a ``LinkedConstraintSet``, the two ``y`` variables would not link. This is because they have different varkeys, and a ``LinkedConstraintSet`` only links variables with the same varkey. However, ``subinplace`` can be used to change the varkey of the variable ``y`` in ``m2`` to facilitate linking with a ``LinkedConstraintSet``. This is demonstrated below.
+
+.. literalinclude:: examples/subinplace.py
+
+Once again, the cost of the full model is 0.5.

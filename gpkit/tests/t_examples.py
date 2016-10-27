@@ -6,6 +6,7 @@ import numpy as np
 from gpkit import settings
 from gpkit.tests.helpers import generate_example_tests
 from gpkit.small_scripts import mag
+import gpkit
 
 
 class TestExamples(unittest.TestCase):
@@ -82,6 +83,37 @@ class TestExamples(unittest.TestCase):
         for key in consenscheck:
             sol_rat = sol["sensitivities"]["constants"][key]/consenscheck[key]
             self.assertTrue(abs(1-sol_rat) < 1e-2)
+
+    # TODO: uncomment when breakdown is merged
+    # def test_breakdown_example(self, example):
+    #     if gpkit.units:
+    #         self.assertAlmostEqual(mag(example.sol["cost"]), 8.448, 3)
+    #         self.assertAlmostEqual(mag(example.sol("w2")), 6.448, 3)
+    #     else:
+    #         self.assertAlmostEqual(example.sol["cost"], 5, 4)
+    #         self.assertAlmostEqual(example.sol("w2"), 3, 4)
+
+    def test_LCS_ex(self, example):
+        self.assertAlmostEqual(example.sol["cost"], .5)
+
+    def test_subinplace(self, example):
+        self.assertAlmostEqual(example.sol["cost"], .5)
+
+    def test_dual_infeasible_ex(self, example):
+        with self.assertRaises(RuntimeWarning):
+            example.m.solve(verbosity=0)
+
+    def test_dual_infeasible_ex2(self, example):
+        with self.assertRaises((RuntimeWarning, ValueError)):
+            example.m.solve(verbosity=0)
+
+    def test_primal_infeasible_ex1(self, example):
+        with self.assertRaises(RuntimeWarning):
+            example.m.solve(verbosity=0)
+
+    def test_primal_infeasible_ex2(self, example):
+        with self.assertRaises(RuntimeWarning):
+            example.m.solve(verbosity=0)
 
     def test_unbounded(self, example):
         pass
