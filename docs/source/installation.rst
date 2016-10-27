@@ -61,7 +61,11 @@ At least one solver is required.
 Installing cvxopt
 -----------------
 
-Mac OSX and Linux
+Mac OSX
+    Run ``pip install cvxopt``
+
+Linux
+    Run ``sudo apt-get install libblas-dev liblapack-dev`` or otherwise install those libraries
     Run ``pip install cvxopt``
 
     If experiencing issues with wheel in Ubuntu 16.04, try the `official installer. <http://cvxopt.org/install/index.html>`_
