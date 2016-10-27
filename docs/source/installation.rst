@@ -44,7 +44,7 @@ Mac OS X
 Linux
     Use your package manager to install ``numpy`` and ``scipy``
         Ubuntu: ``sudo apt-get install python-numpy python-scipy``
-    Run ``pip install pint``
+    Run ``pip install pint`` (for system python installs, use ``sudo pip``)
 
 Windows
     Do nothing at this step; Anaconda already has the needed packages.
@@ -66,7 +66,7 @@ Mac OSX
 
 Linux
     Run ``sudo apt-get install libblas-dev liblapack-dev`` or otherwise install those libraries
-    Run ``pip install cvxopt``
+    Run ``pip install cvxopt`` (for system python installs, use ``sudo pip``)
 
     If experiencing issues with wheel in Ubuntu 16.04, try the `official installer. <http://cvxopt.org/install/index.html>`_
 
@@ -90,7 +90,7 @@ Mac OS X
       - Request an `academic license file <http://license.mosek.com/academic>`_ and put it in ``~/mosek/``
 
 Linux
-  - Install cypesgen with ``pip install ctypesgen --pre``.
+  - Install cypesgen with ``pip install ctypesgen --pre`` (for system python installs, use ``sudo pip``)
   - Download `MOSEK <http://mosek.com/resources/downloads>`_, then:
       - Move the ``mosek`` folder to your home directory
       - Follow `these steps for Linux <http://docs.mosek.com/7.0/toolsinstall/Linux_UNIX_installation_instructions.html>`_.
@@ -109,7 +109,7 @@ Windows
 
 Install GPkit
 =============
-  - Run ``pip install gpkit`` at the command line.
+  - Run ``pip install gpkit`` at the command line (for system python installs, use ``sudo pip``)
   - Run ``pip install ipywidgets`` for interactive control of models (recommended)
   - Run ``python -c "import gpkit.tests; gpkit.tests.run()"`` to run the tests; if any tests do not pass, please email ``gpkit@mit.edu`` or `raise a GitHub issue <http://github.com/hoburg/gpkit/issues/new>`_.
   - *Optional:* to install gpkit into an isolated python environment, install ``virtualenv``, run ``virtualenv $DESTINATION_DIR`` then activate it with ``source $DESTINATION_DIR/bin/activate``
@@ -130,8 +130,8 @@ To rebuild GPkit, do the following:
   - If any tests fail, please email ``gpkit@mit.edu`` or `raise a GitHub issue <http://github.com/hoburg/gpkit/issues/new>`_.
 
 
-Bleeding-edge / developer installation
-======================================
+Bleeding-edge / developer installations
+=======================================
 
 Active developers may wish to install the `latest GPkit <http://github.com/hoburg/gpkit>`_ directly from the source code on Github. To do so,
 
