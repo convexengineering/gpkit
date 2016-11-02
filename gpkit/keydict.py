@@ -77,7 +77,12 @@ class KeyDict(dict):
         key, idx = self.parse_and_index(key)
         if dict.__contains__(self, key):
             if idx:
-                return not np.isnan(dict.__getitem__(self, key)[idx])
+                try:
+                    return not np.isnan(dict.__getitem__(self, key)[idx])
+                except TypeError:
+                    raise TypeError("%s has an idx, but its value in this"
+                                    " KeyDict is the scalar %s."
+                                    % (key, dict.__getitem__(self, key)))
             return True
         elif key in self.keymap:
             return True
