@@ -2,6 +2,7 @@
 import math
 import unittest
 from gpkit import Variable, Monomial, Posynomial, Signomial, SignomialsEnabled
+from gpkit import VectorVariable, NomialArray
 import gpkit
 
 
@@ -182,15 +183,24 @@ class TestMonomial(unittest.TestCase):
     def test_units(self):
         "make sure multiplication with units works (issue 492)"
         # have had issues where Quantity.__mul__ causes wrong return type
-        m = 1.2 * gpkit.units.ft * Variable('x')**2
+        m = 1.2 * gpkit.units.ft * Variable("x", "m")**2
         self.assertTrue(isinstance(m, Monomial))
         if m.units:
-            self.assertEqual(m.units, 1*gpkit.ureg.ft)
+            self.assertEqual(m.units, 1*gpkit.ureg.ft*gpkit.ureg.m**2)
         # also multiply at the end, though this has not been a problem
-        m = 0.5 * Variable('x')**2 * gpkit.units.kg
+        m = 0.5 * Variable("x", "m")**2 * gpkit.units.kg
         self.assertTrue(isinstance(m, Monomial))
         if m.units:
-            self.assertEqual(m.units, 1*gpkit.ureg.kg)
+            self.assertEqual(m.units, 1*gpkit.ureg.kg*gpkit.ureg.m**2)
+        # and with vectors...
+        v = 0.5 * VectorVariable(3, "x", "m")**2 * gpkit.units.kg
+        self.assertTrue(isinstance(v, NomialArray))
+        if v.units:
+            self.assertEqual(v.units, 1*gpkit.ureg.kg*gpkit.ureg.m**2)
+        v = 0.5 * gpkit.units.kg * VectorVariable(3, "x", "m")**2
+        self.assertTrue(isinstance(v, NomialArray))
+        if v.units:
+            self.assertEqual(v.units, 1*gpkit.ureg.kg*gpkit.ureg.m**2)
 
 
 class TestSignomial(unittest.TestCase):
