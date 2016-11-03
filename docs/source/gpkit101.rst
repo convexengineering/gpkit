@@ -5,13 +5,17 @@ GPkit is a Python package for defining and manipulating
 geometric programming (GP) models,
 abstracting away the backend solver.
 
-The goal of GPkit is to make it easy to create, share, and explore geometric programming models, which tends to align well with being fast and mathematically correct.
+Our hopes are to bring the mathematics of Geometric Programming
+into the engineering design process
+in a disciplined and collaborative way, and to
+encourage research with and on GPs by providing an
+easily extensible object-oriented framework.
 
 
 Symbolic expressions
 ====================
 
-GPkit is a limited symbolic algebra language, allowing only for the creation of geometric program compatible equations (or signomial program compatible ones, if signomial programming is enabled). As mentioned in `Geometric Programming 101`_, one can view monomials as posynomials with a single term, and posynomials as signomials that have only positive coefficients. The inheritance structure of these objects in GPkit follows this mathematical basis.
+GPkit is a limited symbolic algebra language, allowing only for the creation of geometric program compatible equations (or signomial program compatible ones, if signomial programming is enabled). As mentioned in :ref:`geometricprogramming`, one can view monomials as posynomials with a single term, and posynomials as signomials that have only positive coefficients. The inheritance structure of these objects in GPkit follows this mathematical basis.
 
 .. figure::  inheritance.png
    :width: 500 px
