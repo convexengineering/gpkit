@@ -3,7 +3,7 @@ Getting Started
 
 GPkit is a Python package, so we assume basic familiarity with Python: if you're new to Python we recommend you take a look at `Learn Python <http://www.learnpython.org>`_.
 
-Alright! :ref:`Install GPkit <installation>` and import away.
+Otherwise, :ref:`install GPkit <installation>` and import away:
 
 .. code-block:: python
 
@@ -35,7 +35,7 @@ To declare a variable with a constant value, use the ``Variable`` class, as abov
 .. code-block:: python
 
     # Declare \rho equal to 1.225 kg/m^3.
-    # NOTE: in python string literals backslashes must be doubled
+    # NOTE: in python string literals, backslashes must be doubled
     rho = Variable("\\rho", 1.225, "kg/m^3", "Density of air at sea level")
 
 In the example above, the key name ``"\rho"`` is for LaTeX printing (described later). The unit and description arguments are optional.
@@ -178,7 +178,7 @@ We can also print the optimal value and solved variables individually.
 Sensitivities and dual variables
 ================================
 
-When a GP is solved, the solver returns not just the optimal value for the problem’s variables (known as the "primal solution") but also the effect relaxing each constraint would have on the overall objective (the "dual solution").
+When a GP is solved, the solver returns not just the optimal value for the problem’s variables (known as the "primal solution") but also the effect that relaxing each constraint would have on the overall objective (the "dual solution").
 
 From the dual solution GPkit computes the sensitivities for every fixed variable in the problem. This can be quite useful for seeing which constraints are most crucial, and prioritizing remodeling and assumption-checking.
 

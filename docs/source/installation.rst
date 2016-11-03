@@ -71,7 +71,7 @@ Linux
     If experiencing issues with wheel in Ubuntu 16.04, try the `official installer. <http://cvxopt.org/install/index.html>`_
 
 Windows
-    Run ``conda install -c https://conda.anaconda.org/omnia cvxopt`` in an Anaconda Command Prompt
+    Run ``conda install -c omnia cvxopt`` in an Anaconda Command Prompt.
 
 Installing mosek
 ----------------
