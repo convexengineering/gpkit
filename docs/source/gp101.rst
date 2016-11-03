@@ -1,3 +1,5 @@
+.. _geometricprogramming:
+
 Geometric Programming 101
 *************************
 
@@ -5,9 +7,10 @@ What is a GP?
 =============
 
 A Geometric Program (GP) is a type of non-linear optimization problem whose objective and constraints have a particular form.
-The decision variables in a GP must have strictly positive values (that is, they can't be zero).
 
-GP objectives and inequalities are formed out of *monomials* and *posynomials*. In the context of GP, a monomial is defined as:
+The decision variables must be strictly positive (non-zero, non-negative) quantities. This is a good fit for engineering design equations (which are often constructed to have only positive quantities), but any model with variables of unknown sign (such as forces and velocities without a predefined direction) may be difficult to express in a GP. Such models might be better expressed as :ref:`Signomials <signomials>`.
+
+More precisely, GP objectives and inequalities are formed out of *monomials* and *posynomials*. In the context of GP, a monomial is defined as:
 
 .. math::
 
@@ -63,11 +66,14 @@ Geometric programs have several powerful properties:
 These properties arise because GPs become *convex optimization problems* via a logarithmic transformation. In addition to their mathematical benefits, recent research has shown that many practical problems can be formulated as GPs or closely approximated as GPs.
 
 
+.. _signomials:
+
 What are Signomials / Signomial Programs?
 =========================================
 
 When the coefficients in a posynomial are allowed to be negative (but the variables stay strictly positive), that is called a Signomial.
-A Signomial Program has signomial constraints, and while they cannot be solved as quickly or to global optima, because they build on the structure of a GP they can be solved more quickly than a generic nonlinear program. More information on Signomial Programs can be found under `Advanced Commands`_.
+
+A Signomial Program has signomial constraints. While they cannot be solved as quickly or to global optima, because they build on the structure of a GP they can often be solved more quickly than a generic nonlinear program. More information can be found under :ref:`signomialprogramming`.
 
 
 Where can I learn more?
