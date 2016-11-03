@@ -1,7 +1,6 @@
 """Signomial, Posynomial, Monomial, Constraint, & MonoEQCOnstraint classes"""
 import numpy as np
 from .data import simplify_exps_and_cs
-from .array import NomialArray
 from .nomial_core import Nomial
 from .substitution import substitution, parse_subs
 from ..constraints import SingleEquationConstraint
@@ -231,17 +230,15 @@ class Signomial(Nomial):
         return mag(cs).sum()
 
     def __le__(self, other):
-        if isinstance(other, NomialArray):
-            return NotImplemented
-        else:
+        if isinstance(other, (Numbers, Signomial)):
             return SignomialInequality(self, "<=", other)
+        return NotImplemented
 
     def __ge__(self, other):
-        if isinstance(other, NomialArray):
-            return NotImplemented
-        else:
+        if isinstance(other, (Numbers, Signomial)):
             # by default all constraints take the form left >= right
             return SignomialInequality(self, ">=", other)
+        return NotImplemented
 
     # posynomial arithmetic
     def __add__(self, other):
@@ -255,8 +252,6 @@ class Signomial(Nomial):
              # pylint: disable=no-member
             cs = self.cs.tolist() + other.cs.tolist()
             return Signomial(self.exps + other.exps, cs)
-        elif isinstance(other, NomialArray):
-            return np.array(self)+other
         else:
             return NotImplemented
 
@@ -284,8 +279,6 @@ class Signomial(Nomial):
                 for j, exp_o in enumerate(other.exps):
                     Exps[i, j] = exp_s + exp_o
             return Signomial(Exps.flatten(), C.flatten())
-        elif isinstance(other, NomialArray):
-            return np.array(self)*other
         else:
             return NotImplemented
 
@@ -295,8 +288,6 @@ class Signomial(Nomial):
             return Signomial(self.exps, self.cs/other)
         elif isinstance(other, Monomial):
             return other.__rdiv__(self)
-        elif isinstance(other, NomialArray):
-            return np.array(self)/other
         else:
             return NotImplemented
 
