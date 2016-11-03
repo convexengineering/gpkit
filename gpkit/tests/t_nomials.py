@@ -1,8 +1,8 @@
 """Tests for Monomial, Posynomial, and Signomial classes"""
 import math
 import unittest
-from gpkit import Variable, Monomial, Posynomial, Signomial
-from gpkit import units, SignomialsEnabled
+from gpkit import Variable, Monomial, Posynomial, Signomial, SignomialsEnabled
+import gpkit
 
 
 class TestMonomial(unittest.TestCase):
@@ -182,13 +182,15 @@ class TestMonomial(unittest.TestCase):
     def test_units(self):
         "make sure multiplication with units works (issue 492)"
         # have had issues where Quantity.__mul__ causes wrong return type
-        m = 1.2 * units.ft * Variable('x')**2
+        m = 1.2 * gpkit.units.ft * Variable('x')**2
         self.assertTrue(isinstance(m, Monomial))
-        self.assertEqual(m.units, 1*units.ft)
+        if m.units:
+            self.assertEqual(m.units, 1*gpkit.ureg.ft)
         # also multiply at the end, though this has not been a problem
-        m = 0.5 * Variable('x')**2 * units.kg
+        m = 0.5 * Variable('x')**2 * gpkit.units.kg
         self.assertTrue(isinstance(m, Monomial))
-        self.assertEqual(m.units, 1*units.kg)
+        if m.units:
+            self.assertEqual(m.units, 1*gpkit.ureg.kg)
 
 
 class TestSignomial(unittest.TestCase):

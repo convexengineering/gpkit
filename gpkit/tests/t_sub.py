@@ -51,10 +51,10 @@ class TestNomialSubs(unittest.TestCase):
             self.assertEqual(x.sub({x: 1*gpkit.units.m}).c.magnitude, 100)
             # NOTE: uncomment the below if requiring Quantity substitutions
             # self.assertRaises(ValueError, x.sub, x, 1)
-            self.assertRaises(ValueError, x.sub, {x: 1*gpkit.units.N})
-            self.assertRaises(ValueError, y.sub, {y: 1*gpkit.units.N})
+            self.assertRaises(ValueError, x.sub, {x: 1*gpkit.ureg.N})
+            self.assertRaises(ValueError, y.sub, {y: 1*gpkit.ureg.N})
             v = gpkit.VectorVariable(3, "v", "cm")
-            subbed = v.sub({v: [1, 2, 3]*gpkit.units.m})
+            subbed = v.sub({v: [1, 2, 3]*gpkit.ureg.m})
             self.assertEqual([z.c.magnitude for z in subbed], [100, 200, 300])
 
     def test_scalar_units(self):
@@ -171,8 +171,8 @@ class TestGPSubs(unittest.TestCase):
         Q = Variable("Q", "count")
         Y = Variable("Y", "USD")
         m = Model(Y, [Y >= h*Q + A/Q])
-        m.substitutions.update({A: 500*gpkit.units("USD"),
-                                h: 35*gpkit.units("USD"),
+        m.substitutions.update({A: 500*gpkit.ureg("USD"),
+                                h: 35*gpkit.ureg("USD"),
                                 Q: ("sweep", [50, 100, 500])})
         firstcost = m.solve(verbosity=0)["cost"][0]
         self.assertAlmostEqual(firstcost, 1760, 3)
@@ -238,7 +238,7 @@ class TestGPSubs(unittest.TestCase):
         sol = m.solve(verbosity=0)
         solv = sol['variables']
         a = solv["xi"]
-        b = xi_dist*gpkit.units.N
+        b = xi_dist*gpkit.ureg.N
         self.assertTrue(all(abs(a-b)/(a+b) < 1e-7))
 
     def test_model_composition_units(self):
@@ -261,21 +261,21 @@ class TestGPSubs(unittest.TestCase):
         concat_cost = concatm.solve(verbosity=0)["cost"]
         almostequal = self.assertAlmostEqual
         if not isinstance(a["x"].key.units, str):
-            almostequal(1/gpkit.units.yd/a.solve(verbosity=0)["cost"], 1, 5)
-            almostequal(1*gpkit.units.cm/b.solve(verbosity=0)["cost"], 1, 5)
-            almostequal(1*gpkit.units.cm/gpkit.units.yd/concat_cost, 1, 5)
+            almostequal(1/gpkit.ureg.yd/a.solve(verbosity=0)["cost"], 1, 5)
+            almostequal(1*gpkit.ureg.cm/b.solve(verbosity=0)["cost"], 1, 5)
+            almostequal(1*gpkit.ureg.cm/gpkit.ureg.yd/concat_cost, 1, 5)
         a1, b1 = Above(), Below()
         m = a1.link(b1)
         m.cost = m["x"]
         sol = m.solve(verbosity=0)
         if not isinstance(m["x"].key.units, str):
-            almostequal(1*gpkit.units.cm/sol["cost"], 1, 5)
+            almostequal(1*gpkit.ureg.cm/sol["cost"], 1, 5)
         a1, b1 = Above(), Below()
         m = b1.link(a1)
         m.cost = m["x"]
         sol = m.solve(verbosity=0)
         if not isinstance(m["x"].key.units, str):
-            almostequal(1*gpkit.units.cm/sol["cost"], 1, 5)
+            almostequal(1*gpkit.ureg.cm/sol["cost"], 1, 5)
         self.assertIn(m["x"], sol["variables"])
         self.assertIn(a1["x"], sol["variables"])
         self.assertIn(b1["x"], sol["variables"])
