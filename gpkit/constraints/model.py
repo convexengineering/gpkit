@@ -60,7 +60,7 @@ class Model(CostedConstraintSet):
         cost = cost if cost else Monomial(1)
         constraints = constraints if constraints else []
         CostedConstraintSet.__init__(self, cost, constraints, substitutions)
-        if hasattr(self, "name"):
+        if self.name:
             end_variable_naming()
 
     gp = _progify_fctry(GeometricProgram)
