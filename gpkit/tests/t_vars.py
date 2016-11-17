@@ -170,7 +170,7 @@ class TestArrayVariable(unittest.TestCase):
     def test_is_vector_variable(self):
         """
         Make sure ArrayVariable is a shortcut to VectorVariable
-        (I want to know if this changes).
+        (we want to know if this changes).
         """
         self.assertTrue(ArrayVariable is VectorVariable)
 
@@ -182,7 +182,23 @@ class TestArrayVariable(unittest.TestCase):
         self.assertEqual(strx.count("]"), 3)
 
 
-TESTS = [TestVarKey, TestVariable, TestVectorVariable, TestArrayVariable]
+class TestVectorize(unittest.TestCase):
+    """TestCase for gpkit.vectorize"""
+
+    def test_shapes(self):
+        with gpkit.vectorize(3):
+            with gpkit.vectorize(5):
+                y = gpkit.Variable("y")
+                x = gpkit.VectorVariable(2, "x")
+            z = gpkit.VectorVariable(7, "z")
+
+        self.assertEqual(y.shape, (5, 3))
+        self.assertEqual(x.shape, (2, 5, 3))
+        self.assertEqual(z.shape, (7, 3))
+
+
+TESTS = [TestVarKey, TestVariable, TestVectorVariable, TestArrayVariable,
+         TestVectorize]
 
 if __name__ == '__main__':
     # pylint: disable=wrong-import-position
