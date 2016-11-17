@@ -448,12 +448,41 @@ class Thing(Model):
         Model.__init__(self, None, [a >= c/b], **kwargs)
 
 
+class Box(Model):
+    "simple box for model testing"
+    def __init__(self):
+        h = Variable("h", "m", "height")
+        w = Variable("w", "m", "width")
+        d = Variable("d", "m", "depth")
+        Model.__init__(self, 1/(h*w*d), [])
+
+class BoxAreaBounds(Model):
+    "for testing functionality of separate analysis models"
+    def __init__(self, box):
+        A_wall = Variable("A_{wall}", 100, "m^2", "Upper limit, wall area")
+        A_floor = Variable("A_{floor}", 50, "m^2", "Upper limit, floor area")
+
+        constraints = [2*box["h"]*box["w"] + 2*box["h"]*box["d"] <= A_wall,
+                       box["w"]*box["d"] <= A_floor]
+
+        Model.__init__(self, None, constraints)
+
+
 class TestModelNoSolve(unittest.TestCase):
     """model tests that don't require a solver"""
     def test_modelname_added(self):
         t = Thing(2)
         for vk in t.varkeys:
             self.assertEqual(vk.models, ["Thing"])
+
+    def test_no_naming_on_var_access(self):
+        # make sure that analysis models don't add their names to
+        # variables looked up from other models
+        box = Box()
+        area_bounds = BoxAreaBounds(box)
+        M = Model(box.cost, [box, area_bounds])
+        for var in ("h", "w", "d"):
+            self.assertEqual(len(M.variables_byname(var)), 1)
 
 
 TESTS = [TestModelSolverSpecific, TestModelNoSolve]
