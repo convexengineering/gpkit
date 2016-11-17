@@ -14,6 +14,7 @@
     settings : dict
         Contains settings loaded from ``./env/settings``
 """
+from collections import defaultdict
 from os import sep as os_sep
 from os.path import dirname as os_path_dirname
 SETTINGS_PATH = os_sep.join([os_path_dirname(__file__), "env", "settings"])
@@ -98,7 +99,6 @@ enable_units()
 VECTORIZATION = ()
 MODELS = []
 MODELNUMS = []
-from collections import defaultdict
 MODELNUM_LOOKUP = defaultdict(int)
 
 
@@ -117,15 +117,15 @@ def end_variable_naming():
     MODELNUMS = MODELNUMS[:-1]
 
 
-class namedvariables(object):
-        def __init__(self, model):
-            self.model = model
+class NamedVariables(object):
+    def __init__(self, model):
+        self.model = model
 
-        def __enter__(self):
-            begin_variable_naming(self.model)
+    def __enter__(self):
+        begin_variable_naming(self.model)
 
-        def __exit__(self, type_, val, traceback):
-            end_variable_naming()
+    def __exit__(self, type_, val, traceback):
+        end_variable_naming()
 
 
 class vectorize(object):

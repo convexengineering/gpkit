@@ -6,7 +6,7 @@ from gpkit import (Model, Monomial, settings, VectorVariable, Variable,
 from gpkit.small_classes import CootMatrix
 from gpkit.feasibility import feasibility_model
 from gpkit.exceptions import InvalidGPConstraint
-from gpkit import namedvariables
+from gpkit import NamedVariables
 
 NDIGS = {"cvxopt": 4, "mosek": 5, "mosek_cli": 5}
 # name: decimal places of accuracy
@@ -387,7 +387,7 @@ class TestSP(unittest.TestCase):
         nonzero_adder = 0.1  # TODO: support reaching zero, issue #348
         with SignomialsEnabled():
             J = 0.01*(x - 1)**2 + nonzero_adder
-            with namedvariables("SmallSignomial"):
+            with NamedVariables("SmallSignomial"):
                 m = Model(z, [z >= J])
         sol = m.localsolve(verbosity=0)
         self.assertAlmostEqual(sol['cost'], nonzero_adder, local_ndig)

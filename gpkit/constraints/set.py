@@ -85,7 +85,8 @@ class ConstraintSet(list):
     def variables_byname(self, key):
         "Get all variables with a given name"
         from ..nomials import Variable
-        variables = [Variable(newvariable=False, **key.descr) for key in self.varkeys[key]]
+        variables = [Variable(newvariable=False, **key.descr)
+                     for key in self.varkeys[key]]
         variables.sort(key=_sort_by_name_and_idx)
         return variables
 

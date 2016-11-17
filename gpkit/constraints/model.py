@@ -1,14 +1,10 @@
 "Implements Model"
-from .set import ConstraintSet
 from .costed import CostedConstraintSet
-from ..varkey import VarKey
 from ..nomials import Monomial
 from .prog_factories import _progify_fctry, _solve_fctry
 from ..geometric_program import GeometricProgram
 from .signomial_program import SignomialProgram
 from .linked import LinkedConstraintSet
-from ..keydict import KeyDict
-from .. import SignomialsEnabled
 from .. import end_variable_naming, begin_variable_naming
 
 

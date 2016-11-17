@@ -125,8 +125,8 @@ def substitution(nomial, substitutions):
                 del varlocs_[var]
             if isinstance(sub, (Numbers, np.ndarray)):
                 if getattr(sub, "shape", False):
-                    raise ValueError("cannot substitute array %s for variable %s"
-                                     % (sub, var))
+                    raise ValueError("cannot substitute array %s "
+                                     "for variable %s." % (sub, var))
                 if hasattr(sub, "units") and hasattr(sub, "to"):
                     if sub.units != var.units:
                         try:
