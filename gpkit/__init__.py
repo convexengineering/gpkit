@@ -33,6 +33,7 @@ class GPkitUnits(object):
     def __init__(self):
         self.Quantity = ureg.Quantity  # pylint: disable=invalid-name
         if hasattr(ureg, "__nonzero__"):
+            # that is, if it's a DummyUnits object
             self.__nonzero__ = ureg.__nonzero__
             self.__bool__ = ureg.__bool__
 

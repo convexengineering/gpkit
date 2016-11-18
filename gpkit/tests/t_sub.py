@@ -171,8 +171,8 @@ class TestGPSubs(unittest.TestCase):
         Q = Variable("Q", "count")
         Y = Variable("Y", "USD")
         m = Model(Y, [Y >= h*Q + A/Q])
-        m.substitutions.update({A: 500*gpkit.ureg("USD"),
-                                h: 35*gpkit.ureg("USD"),
+        m.substitutions.update({A: 500*gpkit.units("USD"),
+                                h: 35*gpkit.units("USD"),
                                 Q: ("sweep", [50, 100, 500])})
         firstcost = m.solve(verbosity=0)["cost"][0]
         self.assertAlmostEqual(firstcost, 1760, 3)
