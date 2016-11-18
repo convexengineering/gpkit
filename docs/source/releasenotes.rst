@@ -3,12 +3,47 @@ Release Notes
 
 This page lists the changes made in each point version of gpkit.
 
-Version 0.4
------------
+Version 0.4.2
+-------------
+ * prototype handling of SignomialEquality constraints
+ * fix an issue where solution tables printed incorrect units (despite the units being correct in the ``SolutionArray`` data structure)
+ * fix ``controlpanel`` slider display for newer versions of ipywidgets
+ * fix an issue where identical unit-ed variables could have different hashes
+ * Make the text of several error messages more informative
+ * Allow monomial approximation of monomials
+ * bug fixes and improvements to TightConstraintSet
+ * Don't print results table automatically (it was unwieldy for large models). To print it, ``print sol.table()``.
+ * Use cvxopt's ldl kkt solver by default for more robustness to rank issues
+ * Improved ``ConstraintSet.__getitem__``, only returns top-level Variable
+ * Move toward the varkeys of a ConstraintSet being an immutable set
+ * CPI update
+ * numerous pylint fixes
+ * BoundedConstraint sets added for dual feasibility debugging
+ * SP sweep compatibility
+
+Version 0.4.0
+-------------
  * New model for considering constraints: all constraints are considered as sets of constraints which may contain other constraints, and are asked for their substitutions / posynomial less than 1 representation as late as possible.
  * Support for calling external code during an SP solve.
  * New class KeyDict to allow referring to variables by name or with objects.
  * Many many other bug fixes, speed ups, and refactors under the hood.
+
+Version 0.3.4
+-------------
+ * Modular / model composition fixes and improvements
+ * Working controlpanel() for Model
+ * ipynb and numpy dependency fixes
+ * printing fixes
+ * El Capitan fix
+ * slider widgets now have units
+
+Version 0.3.2
+-------------
+ * Assorted bug fixes
+ * Assorted internal improvements and simplifications
+ * Refactor signomial constraints, resulting in smarter SP heuristic
+ * Simplify and strengthen equality testing for nomials
+ * Not counting submodules, went from 2400 to 2500 lines of code and from 1050 to 1170 lines of docstrings and comments.
 
 Version 0.3
 -----------
