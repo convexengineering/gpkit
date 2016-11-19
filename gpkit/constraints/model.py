@@ -36,19 +36,19 @@ class Model(CostedConstraintSet):
     `solution` is set at the end of a solve
     """
 
+    # name and num identify a model uniquely
     name = None
     num = None
+    # naming holds the name and num evironment in which a model was created
+    # this includes its own name and num, and those of models containing it
     naming = None
     program = None
     solution = None
 
     def __new__(cls, *args, **kwargs):
-        name = kwargs.pop("name", None)
         obj = super(Model, cls).__new__(cls, *args, **kwargs)
-        if not name:
-            name = cls.name if cls.name else cls.__name__
-        if name and name != "Model":
-            obj.name = name
+        if cls.__name__ != "Model":
+            obj.name = cls.__name__
             obj.num, obj.naming = begin_variable_naming(obj.name)
         return obj
 

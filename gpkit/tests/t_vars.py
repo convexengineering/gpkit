@@ -4,7 +4,7 @@ import numpy as np
 from gpkit import (Monomial, NomialArray, Variable, VarKey,
                    VectorVariable, ArrayVariable)
 import gpkit
-from gpkit.nomials import Variable as RealVariable
+from gpkit.nomials import Variable as PlainVariable
 
 
 class TestVarKey(unittest.TestCase):
@@ -83,11 +83,11 @@ class TestVariable(unittest.TestCase):
     def test_init(self):
         """Test Variable initialization"""
         v = Variable('v')
-        self.assertTrue(isinstance(v, RealVariable))
+        self.assertTrue(isinstance(v, PlainVariable))
         self.assertTrue(isinstance(v, Monomial))
         # test that operations on Variable cast to Monomial
         self.assertTrue(isinstance(3*v, Monomial))
-        self.assertFalse(isinstance(3*v, RealVariable))
+        self.assertFalse(isinstance(3*v, PlainVariable))
 
     def test_value(self):
         """Detailed tests for value kwarg of __init__"""
@@ -133,11 +133,11 @@ class TestVectorVariable(unittest.TestCase):
         self.assertTrue(isinstance(v, NomialArray))
         v_mult = 3*v
         for i in range(n):
-            self.assertTrue(isinstance(v[i], RealVariable))
+            self.assertTrue(isinstance(v[i], PlainVariable))
             self.assertTrue(isinstance(v[i], Monomial))
             # test that operations on Variable cast to Monomial
             self.assertTrue(isinstance(v_mult[i], Monomial))
-            self.assertFalse(isinstance(v_mult[i], RealVariable))
+            self.assertFalse(isinstance(v_mult[i], PlainVariable))
 
         # test 2
         x = VectorVariable(3, 'x', label='dummy variable')
@@ -186,8 +186,8 @@ class TestVectorize(unittest.TestCase):
     """TestCase for gpkit.vectorize"""
 
     def test_shapes(self):
-        with gpkit.vectorize(3):
-            with gpkit.vectorize(5):
+        with gpkit.Vectorize(3):
+            with gpkit.Vectorize(5):
                 y = gpkit.Variable("y")
                 x = gpkit.VectorVariable(2, "x")
             z = gpkit.VectorVariable(7, "z")

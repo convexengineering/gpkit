@@ -183,7 +183,7 @@ class ArrayVariable(NomialArray):
         return obj
 
 
-class VectorizableVariable(Variable):
+class VectorizableVariable(Variable, ArrayVariable):
     def __new__(cls, *args, **descr):
         from .. import VECTORIZATION
         if VECTORIZATION:

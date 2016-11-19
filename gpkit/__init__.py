@@ -113,8 +113,8 @@ def begin_variable_naming(model):
 
 def end_variable_naming():
     global MODELS, MODELNUMS
-    MODELS = MODELS[:-1]
-    MODELNUMS = MODELNUMS[:-1]
+    MODELS.pop()
+    MODELNUMS.pop()
 
 
 class NamedVariables(object):
@@ -128,7 +128,7 @@ class NamedVariables(object):
         end_variable_naming()
 
 
-class vectorize(object):
+class Vectorize(object):
     def __init__(self, N):
         self.N = N
 
