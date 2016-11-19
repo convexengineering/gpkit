@@ -152,7 +152,7 @@ class ArrayVariable(NomialArray):
                 shape_match = len(values) == shape[0]
                 valuetype = "list"
             else:
-                values = np.array(values)
+                values = np.array(values)    # pylint: disable=redefined-variable-type
                 shape_match = values.shape == shape
                 valuetype = "array"
             if not shape_match:
