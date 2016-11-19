@@ -67,6 +67,8 @@ class SolutionArray(DictOfLists):
         "Returns NomialArray of each solution substituted into posy."
         if posy in self["variables"]:
             return self["variables"][posy]
+        elif not hasattr(posy, "sub"):
+            raise ValueError("no variable '%s' found in the solution" % posy)
         elif len(self) > 1:
             return NomialArray([self.atindex(i).subinto(posy)
                                 for i in range(len(self))])

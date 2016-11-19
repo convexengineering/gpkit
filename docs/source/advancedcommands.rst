@@ -8,6 +8,7 @@ If your Model doesn't solve, you can automatically find the nearest primal feasi
 
 .. literalinclude:: examples/relaxation.py
 
+
 Plotting variable sensitivities
 ===============================
 

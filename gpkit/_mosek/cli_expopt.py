@@ -79,27 +79,18 @@ def imize_fn(path=None, clearfiles=True):
 
         """
 
-        with open(filename, "w") as f:
-            numcon = p_idxs[-1]
-            numter, numvar = map(int, A.shape)
-            for n in [numcon, numvar, numter]:
-                f.write("%d\n" % n)
-
-            f.write("\n*c\n")
-            f.writelines(["%.20e\n" % x for x in c])
-
-            f.write("\n*p_idxs\n")
-            f.writelines(["%d\n" % x for x in p_idxs])
-
-            f.write("\n*t j A_tj\n")
-            f.writelines(["%d %d %.20e\n" % tuple(x)
-                          for x in zip(A.row, A.col, A.data)])
+        write_output_file(filename, c, A, p_idxs)
 
         # run mskexpopt and print stdout
         for logline in check_output(["mskexpopt", filename]).split(b"\n"):
             print(logline)
         with open(filename+".sol") as f:
-            assert_line(f, "PROBLEM STATUS      : PRIMAL_AND_DUAL_FEASIBLE\n")
+            status = f.readline().split("PROBLEM STATUS      : ")
+            if len(status) != 2:
+                raise RuntimeWarning("could not read mskexpopt output status")
+            status = status[1][:-1]
+            if status == "PRIMAL_AND_DUAL_FEASIBLE":
+                status = "optimal"
             assert_line(f, "SOLUTION STATUS     : OPTIMAL\n")
             # line looks like "OBJECTIVE           : 2.763550e+002"
             objective_val = float(f.readline().split()[2])
@@ -116,7 +107,7 @@ def imize_fn(path=None, clearfiles=True):
             shutil.rmtree(path, ignore_errors=False,
                           onerror=error_remove_read_only)
 
-        return dict(status="optimal",
+        return dict(status=status,
                     objective=objective_val,
                     primal=primal_vals,
                     nu=dual_vals)
@@ -124,12 +115,31 @@ def imize_fn(path=None, clearfiles=True):
     return imize
 
 
+def write_output_file(filename, c, A, p_idxs):
+    "Writes a mosekexpopt compatible GP description to `filename`."
+    with open(filename, "w") as f:
+        numcon = p_idxs[-1]
+        numter, numvar = map(int, A.shape)
+        for n in [numcon, numvar, numter]:
+            f.write("%d\n" % n)
+
+        f.write("\n*c\n")
+        f.writelines(["%.20e\n" % x for x in c])
+
+        f.write("\n*p_idxs\n")
+        f.writelines(["%d\n" % x for x in p_idxs])
+
+        f.write("\n*t j A_tj\n")
+        f.writelines(["%d %d %.20e\n" % tuple(x)
+                      for x in zip(A.row, A.col, A.data)])
+
+
 def assert_line(fil, expected):
     "Asserts that a file's next line is as expected."
     received = fil.readline()
     if tuple(expected[:-1].split()) != tuple(received[:-1].split()):
         errstr = repr(expected)+" is not the same as "+repr(received)
-        raise RuntimeWarning(errstr)
+        raise RuntimeWarning("could not read mskexpopt output file: "+errstr)
 
 
 def read_vals(fil):
