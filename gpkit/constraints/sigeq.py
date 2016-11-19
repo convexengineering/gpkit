@@ -1,15 +1,15 @@
+"Implements SignomialEquality"
 from .set import ConstraintSet
-from ..nomials import SignomialEquality
+from ..nomials import SingleSignomialEquality
 from ..nomials.array import array_constraint
 
 
-sigeq_vectorized = array_constraint("=", SignomialEquality)
+class SignomialEquality(ConstraintSet):
+    "A constraint of the general form posynomial == posynomial"
 
-
-class SignomialEqualityConstraint(ConstraintSet):
     def __init__(self, left, right):
         if hasattr(left, "shape"):
-            constraints = sigeq_vectorized(left, right)
+            constraints = array_constraint("=", SignomialEquality)(left, right)
         else:
-            constraints = [SignomialEquality(left, right)]
+            constraints = [SingleSignomialEquality(left, right)]  # pylint: disable=redefined-variable-type
         ConstraintSet.__init__(self, constraints)

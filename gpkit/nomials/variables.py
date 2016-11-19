@@ -106,7 +106,7 @@ class ArrayVariable(NomialArray):
     """
 
     def __new__(cls, shape, *args, **descr):
-        # pylint: disable=too-many-branches
+        # pylint: disable=too-many-branches, too-many-statements
         cls = NomialArray
 
         if "idx" in descr:
@@ -115,7 +115,7 @@ class ArrayVariable(NomialArray):
         shape = (shape,) if isinstance(shape, Numbers) else tuple(shape)
         from .. import VECTORIZATION
         if VECTORIZATION:
-            shape = shape + VECTORIZATION
+            shape = shape + tuple(VECTORIZATION)
             descr["vectorization"] = VECTORIZATION
 
         descr["shape"] = shape
@@ -123,7 +123,8 @@ class ArrayVariable(NomialArray):
         for arg in args:
             if isinstance(arg, Strings) and "name" not in descr:
                 descr["name"] = arg
-            elif (isinstance(arg, (Numbers, Iterable)) and not isinstance(arg, Strings)
+            elif (isinstance(arg, (Numbers, Iterable))
+                  and not isinstance(arg, Strings)
                   and "value" not in descr):
                 descr["value"] = arg
             elif isinstance(arg, Strings+(Quantity,)) and "units" not in descr:
@@ -183,7 +184,9 @@ class ArrayVariable(NomialArray):
         return obj
 
 
+# pylint: disable=too-many-ancestors
 class VectorizableVariable(Variable, ArrayVariable):
+    "A Variable outside a vectorized environment, an ArrayVariable within."
     def __new__(cls, *args, **descr):
         from .. import VECTORIZATION
         if VECTORIZATION:

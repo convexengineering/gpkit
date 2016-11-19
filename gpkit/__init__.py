@@ -116,14 +116,14 @@ def disable_units():
 
 enable_units()
 
-VECTORIZATION = ()
+VECTORIZATION = []
 MODELS = []
 MODELNUMS = []
 MODELNUM_LOOKUP = defaultdict(int)
 
 
 def begin_variable_naming(model):
-    global MODELS, MODELNUMS
+    "Appends a model name and num to the environment."
     MODELS.append(model)
     num = MODELNUM_LOOKUP[model]
     MODELNUMS.append(num)
@@ -132,33 +132,41 @@ def begin_variable_naming(model):
 
 
 def end_variable_naming():
-    global MODELS, MODELNUMS
+    "Pops a model name and num from the environment."
     MODELS.pop()
     MODELNUMS.pop()
 
 
 class NamedVariables(object):
+    """Creates an environment in which all variables have
+       a model name and num appended to their varkeys.
+    """
     def __init__(self, model):
         self.model = model
 
     def __enter__(self):
+        "Enters a named environment."
         begin_variable_naming(self.model)
 
     def __exit__(self, type_, val, traceback):
+        "Leaves a named environment."
         end_variable_naming()
 
 
 class Vectorize(object):
-    def __init__(self, N):
-        self.N = N
+    """Creates an environment in which all variables are
+       exended in an additional dimension.
+    """
+    def __init__(self, dimension_length):
+        self.dimension_length = dimension_length
 
     def __enter__(self):
-        global VECTORIZATION
-        VECTORIZATION = (self.N,) + VECTORIZATION
+        "Enters a vectorized environment."
+        VECTORIZATION.insert(0, self.dimension_length)
 
     def __exit__(self, type_, val, traceback):
-        global VECTORIZATION
-        VECTORIZATION = VECTORIZATION[1:]
+        "Leaves a vectorized environment."
+        VECTORIZATION.pop(0)
 
 
 class SignomialsEnabled(object):
@@ -189,9 +197,9 @@ from .nomials import Nomial, NomialArray
 from .nomials import Monomial, Posynomial, Signomial
 from .nomials import VectorVariable, ArrayVariable
 from .nomials import VectorizableVariable as Variable
-from .nomials import SignomialEquality
 from .geometric_program import GeometricProgram
 from .constraints.signomial_program import SignomialProgram
+from .constraints.sigeq import SignomialEquality
 from .constraints.set import ConstraintSet
 from .constraints.model import Model
 from .constraints.linked import LinkedConstraintSet

@@ -720,7 +720,7 @@ class SignomialInequality(ScalarSingleEquationConstraint):
         return pc
 
 
-class SignomialEquality(SignomialInequality):
+class SingleSignomialEquality(SignomialInequality):
     "A constraint of the general form posynomial == posynomial"
 
     def __init__(self, left, right):
