@@ -1,10 +1,10 @@
 Advanced Commands
 *****************
 
-Relaxation Analysis
-====================
+Primal Feasibility Analysis
+===========================
 
-If your Model doesn't solve, you can automatically find the nearest feasible version of it with the ``Model.feasibility()`` command, as shown below. The feasible version can either involve relaxing all constraints by the smallest number possible (that is, dividing the less-than side of every constraint by the same number), relaxing each constraint by its own number and minimizing the product of those numbers, or changing each constant by the smallest total percentage possible.
+If your Model doesn't solve, you can automatically find the nearest primal feasible version of it by relaxing constraints, either relaxing all constraints by the smallest number possible (that is, dividing the less-than side of every constraint by the same number), relaxing each constraint by its own number and minimizing the product of those numbers, or changing each constant by the smallest total percentage possible.
 
 .. literalinclude:: examples/relaxation.py
 

@@ -1,5 +1,10 @@
 Debugging...
-Model does not solve with bounded variables or relaxed constants.
+
+RELAXED VARIABLES
+  x_min [ft]: relaxed from 2 to 1
 
 
-Model does not solve with relaxed constraints.
+Alternately, the model solves with:
+
+RELAXED CONSTRAINTS
+  1:  99% relaxed  (as posynomial: 0.305*x**-1*x_min <= 1)

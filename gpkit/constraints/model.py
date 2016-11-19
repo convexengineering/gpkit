@@ -106,13 +106,13 @@ class Model(CostedConstraintSet):
     # pylint: disable=too-many-locals
     def debug(self, verbosity=1, **solveargs):
         "Attempts to diagnose infeasible models."
-        from .relax import RelaxConstants, RelaxConstraints
+        from .relax import ConstantsRelaxed, ConstraintsRelaxed
         from .bounded import Bounded
 
         relaxed = False
         if self.substitutions:
-            feas = RelaxConstants(Bounded(self))
-            feas.cost = feas.cost**100 * self.cost
+            feas = ConstantsRelaxed(Bounded(self))
+            feas.cost = feas.cost**30 * self.cost
         else:
             feas = Model(self.cost, Bounded(self))  # pylint: disable=redefined-variable-type
         try:
@@ -134,8 +134,8 @@ class Model(CostedConstraintSet):
         print
 
         try:
-            feas = RelaxConstraints(self)
-            feas.cost = feas.cost**100 * self.cost
+            feas = ConstraintsRelaxed(self)
+            feas.cost = feas.cost**30 * self.cost
             sol = feas.solve(verbosity=verbosity, **solveargs)
 
             relaxvals = sol(feas.relaxvars)

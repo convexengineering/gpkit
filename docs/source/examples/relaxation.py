@@ -13,26 +13,26 @@ print
 
 print "With constraints relaxed equally"
 print "================================"
-from gpkit.constraints.relax import RelaxAll
-relaxall = RelaxAll(m)
-print relaxall
-print relaxall.solve(verbosity=0).table()  # solves with an x of 1.414
+from gpkit.constraints.relax import ConstraintsRelaxedEqually
+allrelaxed = ConstraintsRelaxedEqually(m)
+print allrelaxed
+print allrelaxed.solve(verbosity=0).table()  # solves with an x of 1.414
 print
 
 print "With constraints relaxed individually"
 print "====================================="
-from gpkit.constraints.relax import RelaxConstraints
-relaxconstraints = RelaxConstraints(m)
-relaxconstraints.cost *= m.cost**0.01  # add a bit of the original cost in
-print relaxconstraints
-print relaxconstraints.solve(verbosity=0).table()  # solves with an x of 1.0
+from gpkit.constraints.relax import ConstraintsRelaxed
+constraintsrelaxed = ConstraintsRelaxed(m)
+constraintsrelaxed.cost *= m.cost**0.01  # add a bit of the original cost in
+print constraintsrelaxed
+print constraintsrelaxed.solve(verbosity=0).table()  # solves with an x of 1.0
 print
 
 print "With constants relaxed individually"
 print "==================================="
-from gpkit.constraints.relax import RelaxConstants
-relaxedconstants = RelaxConstants(m)
-relaxedconstants.cost *= m.cost**0.01  # add a bit of the original cost in
-print relaxedconstants
-print relaxedconstants.solve(verbosity=0).table()  # brings x_min down to 1.0
+from gpkit.constraints.relax import ConstantsRelaxed
+constantsrelaxed = ConstantsRelaxed(m)
+constantsrelaxed.cost *= m.cost**0.01  # add a bit of the original cost in
+print constantsrelaxed
+print constantsrelaxed.solve(verbosity=0).table()  # brings x_min down to 1.0
 print
