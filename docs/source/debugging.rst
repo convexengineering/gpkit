@@ -1,7 +1,7 @@
 Debugging Models
 ****************
 
-A number of errors and warnings may be raised when attempting to solve a model. Because GPkit doesn't let you build models that aren't geometric programs or sequential geometric programs, and checks the solver-returned result to ensure that the problem has actually been solved, these errors can generally be classed into two types: models where there is no possible solution (primal infeasible models) and those where nothing stops the objective (or variables in the objective) from going to 0 or infinity (dual infeasible models).
+A number of errors and warnings may be raised when attempting to solve a model. These can generally be classed into two types: models where there is no possible solution (primal infeasible models) and those where nothing stops the objective (or variables in the objective) from going to 0 or infinity (dual infeasible models).
 
 ..  Add section like the below once that code has made it to master:
     GPkit contains several tools for diagnosing which constraints and variables might be causing this infeasibility. The first thing to try with a GP that doesn't solve is running `m.debug()`,
@@ -30,12 +30,12 @@ Potential errors and warnings
 Dual Infeasibility
 ==================
 
-In some cases a model will not solve because variables are being pushed by the objective to 0 or infinity. If the solver catches such behaviour it will return ``dual infeasible`` (or equivalent), but sometimes solvers do not catch it and return ``unknown``.
+In some cases a model will not solve because the optimal value of one or more variables is 0 or infinity (plus or minus infinity in logspace). Such a problem is known as ``dual infeasible`` because the GP's dual problem, which determines the optimal values of the sensitivites, does not have any feasible solution. If the solver can prove that the dual is infeasible, it will return a dual infeasibility certificate. Otherwise, it may finish with a solution status of ``unknown``.
 
 ``gpkit.constraints.bounded.Bounded`` is a
 simple tool that attempts to detect unbounded variables and get unbounded models to solve by adding extremely large upper bounds and extremely small lower bounds to all variables in a ConstraintSet.
 
-When a model with an Bounded is solved, it checks whether any variables slid off to the bounds, notes this in the solution dictionary and prints a warning (if verbosity is greater than 0).
+When a model with a Bounded ConstraintSet is solved, it checks whether any variables slid off to the bounds, notes this in the solution dictionary and prints a warning (if verbosity is greater than 0).
 
 For example, Mosek returns ``DUAL_INFEAS_CER`` when attempting to solve the following model:
 
@@ -68,6 +68,6 @@ Since ``y`` is now set to 2 and ``x`` can be no less than 1, it is again impossi
 Relaxation
 ----------
 
-If your Model doesn't solve, you can automatically find the nearest feasible version of it with the ``Model.feasibility()`` command, as shown below. The feasible version can either involve relaxing all constraints by the smallest number possible (that is, dividing the less-than side of every constraint by the same number), relaxing each constraint by its own number and minimizing the product of those numbers, or changing each constant by the smallest total percentage possible.
+If you suspect your model is primal infeasible, you can automatically find the nearest feasible version of it with the ``Model.feasibility()`` command, as shown below. The feasible version can either involve relaxing all constraints by the smallest number possible (that is, dividing the less-than side of every constraint by the same number), relaxing each constraint by its own number and minimizing the product of those numbers, or changing each constant by the smallest total percentage possible.
 
 .. literalinclude:: examples/relaxation.py

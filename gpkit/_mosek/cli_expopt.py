@@ -116,6 +116,7 @@ def imize_fn(path=None, clearfiles=True):
 
 
 def write_output_file(filename, c, A, p_idxs):
+    "Writes a mosekexpopt compatible GP description to `filename`."
     with open(filename, "w") as f:
         numcon = p_idxs[-1]
         numter, numvar = map(int, A.shape)
