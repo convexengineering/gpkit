@@ -64,6 +64,7 @@ def run(xmloutput=False):
         run_tests(tests, xmloutput='test_reports_nounits')
     else:
         run_tests(tests, verbosity=1)
+    gpkit.enable_units()
 
 if __name__ == '__main__':
     run()

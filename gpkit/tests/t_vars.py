@@ -155,13 +155,13 @@ class TestVectorVariable(unittest.TestCase):
     def test_constraint_creation_units(self):
         v = VectorVariable(2, "v", "m/s")
         c = (v >= 40*gpkit.units("ft/s"))
-        c2 = (v >= [20, 30]*gpkit.units("ft/s"))
+        c2 = (v >= np.array([20, 30])*gpkit.units("ft/s"))
         if gpkit.units:
             self.assertTrue(c.right.units)
-            self.assertTrue(c2.right.units)
+            self.assertTrue(NomialArray(c2.right).units)
         else:
             self.assertEqual(type(c.right), int)
-            self.assertEqual(type(c2.right), list)
+            self.assertEqual(type(c2.right), np.ndarray)
 
 
 class TestArrayVariable(unittest.TestCase):
