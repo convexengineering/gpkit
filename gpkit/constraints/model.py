@@ -114,7 +114,7 @@ class Model(CostedConstraintSet):
         if self.substitutions:
             feas = ConstantsRelaxed(Bounded(self))
             feas.cost = feas.cost**30 * self.cost
-            # NOTE: It hasn't yet been seen but might be possible that 
+            # NOTE: It hasn't yet been seen but might be possible that
             #       the self.cost component above could cause infeasibility
         else:
             feas = Model(self.cost, Bounded(self))  # pylint: disable=redefined-variable-type
@@ -168,4 +168,3 @@ class Model(CostedConstraintSet):
 
         print "_____________________"
         return sol
-
