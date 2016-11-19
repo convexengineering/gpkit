@@ -5,15 +5,15 @@ from .small_classes import Numbers
 
 
 class KeyDict(dict):
-    """KeyDicts do two things over a regular dict: collate arrays and map keys.
+    """KeyDicts allow storing and accessing the same value with multiple keys
+
+    A KeyDict keeps an internal list of VarKeys as canonical keys, but allows
+    accessing their values with any object whose `key` attribute matches
+    one of those VarKeys, or with strings who match any of the multiple
+    possible string interpretations of each key.
 
     Creating a KeyDict:
     >>>> kd = gpkit.keydict.KeyDict()
-
-    If keymapping is True, a KeyDict keeps an internal list of VarKeys as
-    canonical keys, but allows accessing their values with any object whose
-    `key` attribute matches one of those VarKeys, or with strings who match
-    any of the multiple possible string interpretations of each key:
 
     Now kd[x] can be set, where x is any gpkit Variable or VarKey.
     __getitem__ is such that kd[x] can be accessed using:
@@ -22,7 +22,7 @@ class KeyDict(dict):
      - x.name (a string)
      - "x_modelname" (x's name including modelname)
 
-    If collapse_arrays is True then VarKeys which have a `shape`
+    In addition, if collapse_arrays is True then VarKeys which have a `shape`
     parameter (indicating they are part of an array) are stored as numpy
     arrays, and automatically de-indexed when a matching VarKey with a
     particular `idx` parameter is used as a key.
@@ -33,7 +33,6 @@ class KeyDict(dict):
     See also: gpkit/tests/t_keydict.py.
     """
     collapse_arrays = True
-    keymapping = True
 
     def __init__(self, *args, **kwargs):
         "Passes through to dict.__init__ via the `update()` method"
@@ -45,11 +44,6 @@ class KeyDict(dict):
     def update(self, *args, **kwargs):
         "Iterates through the dictionary created by args and kwargs"
         for k, v in dict(*args, **kwargs).items():
-            if hasattr(v, "copy"):
-                # We don't want just a reference (for e.g. numpy arrays)
-                #   KeyDict values are expected to be immutable (Numbers)
-                #   or to have a copy attribute.
-                v = v.copy()
             self[k] = v
 
     def parse_and_index(self, key):
@@ -68,8 +62,8 @@ class KeyDict(dict):
                                          " .variables_byname('%s') will show"
                                          " which variables it may refer to."
                                          % (key, key))
-                elif key != "filter":
-                    raise KeyError("%s does not refer to any varkey in"
+                else:
+                    raise KeyError("key '%s' does not refer to any varkey in"
                                    " this ConstraintSet" % key)
         idx = None
         if self.collapse_arrays:
@@ -113,7 +107,7 @@ class KeyDict(dict):
         key, idx = self.parse_and_index(key)
         if key not in self.keymap:
             self.keymap[key].add(key)
-            if hasattr(key, "keys") and self.keymapping:
+            if hasattr(key, "keys"):
                 for mapkey in key.keys:
                     self.keymap[mapkey].add(key)
             if idx:
@@ -122,6 +116,12 @@ class KeyDict(dict):
                 emptyvec = np.full(key.shape, np.nan, **kwargs)
                 dict.__setitem__(self, key, emptyvec)
         for key in self.keymap[key]:
+            if getattr(value, "exp", None) is not None and not value.exp:
+                # get the value of variable-less monomials
+                # so that `x.sub({x: gpkit.units.m})`
+                # and `x.sub({x: gpkit.ureg.m})`
+                # are equivalent
+                value = value.value
             if idx:
                 dict.__getitem__(self, key)[idx] = value
             elif (dict.__contains__(self, key) and hasattr(value, "shape")
@@ -145,14 +145,11 @@ class KeyDict(dict):
                     delete = False
             if delete:
                 dict.__delitem__(self, key)
-                mapkeys = set(getattr(key, "keys", []))
-                mapkeys = set([key])
-                if self.keymapping and hasattr(key, "keys"):
-                    mapkeys.update(key.keys)
-                for mappedkey in mapkeys:
-                    self.keymap[mappedkey].remove(key)
-                    if not self.keymap[mappedkey]:
-                        del self.keymap[mappedkey]
+                if hasattr(key, "keys"):
+                    for mappedkey in key.keys:
+                        self.keymap[mappedkey].remove(key)
+                        if not self.keymap[mappedkey]:
+                            del self.keymap[mappedkey]
 
 
 class KeySet(KeyDict):
@@ -180,8 +177,3 @@ class KeySet(KeyDict):
     def __setitem__(self, key, value):
         "Assigns the key itself every time."
         KeyDict.__setitem__(self, key, None)
-
-
-class FastKeyDict(KeyDict):
-    "FastKeyDicts are KeyDicts that don't map keys, only collate arrays"
-    keymapping = False

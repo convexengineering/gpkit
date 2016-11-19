@@ -18,13 +18,30 @@ from os import sep as os_sep
 from os.path import dirname as os_path_dirname
 SETTINGS_PATH = os_sep.join([os_path_dirname(__file__), "env", "settings"])
 
-__version__ = "0.4.1"
+__version__ = "0.4.2"
 UNIT_REGISTRY = None
 SIGNOMIALS_ENABLED = False
 
 # global variable initializations
 DimensionalityError = ValueError
-units = None
+ureg, units = None, None  # pylint: disable=invalid-name
+
+
+class GPkitUnits(object):
+    "Return monomials instead of Quantitites"
+
+    def __init__(self):
+        self.Quantity = ureg.Quantity  # pylint: disable=invalid-name
+        if hasattr(ureg, "__nonzero__"):
+            # that is, if it's a DummyUnits object
+            self.__nonzero__ = ureg.__nonzero__
+            self.__bool__ = ureg.__bool__
+
+    def __getattr__(self, attr):
+        return Monomial(self.Quantity(1, getattr(ureg, attr)))
+
+    def __call__(self, arg):
+        return Monomial(self.Quantity(1, ureg(arg)))
 
 
 def enable_units(path=None):
@@ -35,7 +52,7 @@ def enable_units(path=None):
 
     If gpkit is imported multiple times, this needs to be run each time."""
     # pylint: disable=invalid-name,global-statement
-    global units, DimensionalityError, UNIT_REGISTRY
+    global DimensionalityError, UNIT_REGISTRY, ureg, units
     try:
         import pint
         if path:
@@ -47,8 +64,10 @@ def enable_units(path=None):
             UNIT_REGISTRY.load_definitions(os_sep.join([path, "usd_cpi.txt"]))
             # next line patches https://github.com/hgrecco/pint/issues/366
             UNIT_REGISTRY.define("nautical_mile = 1852 m = nmi")
-        units = UNIT_REGISTRY
+
+        ureg = UNIT_REGISTRY
         DimensionalityError = pint.DimensionalityError
+        units = GPkitUnits()
     except ImportError:
         print("Optional Python units library (Pint) not installed;"
               " unit support disabled.")
@@ -71,7 +90,7 @@ def disable_units():
         from gpkit import disable_units
         disable_units()
     """
-    global units  # pylint: disable=global-statement
+    global ureg, units  # pylint: disable=invalid-name,global-statement
 
     class DummyUnits(object):
         "Dummy class to replace missing pint"
@@ -91,7 +110,8 @@ def disable_units():
         def __call__(self, arg):
             return 1
 
-    units = DummyUnits()
+    ureg = DummyUnits()
+    units = ureg
 
 enable_units()
 
@@ -129,33 +149,6 @@ from .constraints.signomial_program import SignomialProgram
 from .constraints.set import ConstraintSet
 from .constraints.model import Model
 from .constraints.linked import LinkedConstraintSet
-
-if units:
-    def _subvert_pint():
-        """
-        When gpkit objects appear in mathematical operations with pint
-        Quantity objects, let the gpkit implementations determine what to do
-        """
-        def skip_if_gpkit_objects(fallback, objects=(Nomial, NomialArray)):
-            """Returned method calls self.fallback(other) if other is
-            not in objects, and otherwise returns NotImplemented.
-            """
-            def _newfn(self, other):
-                if isinstance(other, objects):
-                    return NotImplemented
-                else:
-                    return getattr(self, fallback)(other)
-            return _newfn
-
-        for op in "eq ge le add mul div truediv floordiv".split():
-            dunder = "__%s__" % op
-            trunder = "___%s___" % op
-            original = getattr(units.Quantity, dunder)
-            setattr(units.Quantity, trunder, original)
-            newfn = skip_if_gpkit_objects(fallback=trunder)
-            setattr(units.Quantity, dunder, newfn)
-
-    _subvert_pint()
 
 
 def load_settings(path=SETTINGS_PATH):

@@ -1,3 +1,5 @@
+.. _signomialprogramming:
+
 Signomial Programming
 *********************
 
@@ -14,7 +16,7 @@ where each :math:`f` is monomial while each :math:`g` and :math:`h` is a posynom
 
 This requires multiple solutions of geometric programs, and so will take longer to solve than an equivalent geometric programming formulation.
 
-The specification of a signomial problem can affect its solve time in a nuanced way: ``gpkit.SP(x, [x >= 0.1, x+y >= 1, y <= 0.1]).localsolve()`` takes about twice as long to solve with cvxopt as ``gpkit.SP(x, [x >= 1-y, y <= 0.1]).localsolve()``, despite the two formulations being arithmetically equivalent and taking the same number of iterations.
+The specification of a signomial problem can affect its solve time in a nuanced way: ``gpkit.Model(x, [x >= 0.1, x+y >= 1, y <= 0.1]).localsolve()`` takes about twice as long to solve with cvxopt as ``gpkit.Model(x, [x >= 1-y, y <= 0.1]).localsolve()``, despite the two formulations being arithmetically equivalent and taking the same number of iterations.
 
 In general, when given the choice of which variables to include in the positive-posynomial / :math:`g` side of the constraint, the modeler should:
 
@@ -22,7 +24,7 @@ In general, when given the choice of which variables to include in the positive-
     #. prioritize variables that are in the objective,
     #. then prioritize variables that are present in other constraints.
 
-The syntax ``SP.localsolve`` is chosen to emphasize that signomial programming returns a local optimum. For the same reason, calling ``SP.solve`` will raise an error.
+The ``.localsolve`` syntax was chosen to emphasize that signomial programming returns a local optimum. For the same reason, calling ``.solve`` on an SP will raise an error.
 
 By default, signomial programs are first solved conservatively (by assuming each :math:`h` is equal only to its constant portion) and then become less conservative on each iteration.
 
@@ -35,8 +37,11 @@ When using the ``localsolve`` method, the ``reltol`` argument specifies the rela
 
 If you wish to start the local optimization at a particular point :math:`x_k`, however, you may do so by putting that position (a dictionary formatted as you would a substitution) as the ``xk`` argument.
 
-Calling to External Codes
-=========================
+Sequential Geometric Programs
+=============================
+
+The method of solving local GP approximations of a non-GP compatible model can be generalized, at the cost of the general smoothness and lack of a need for trust regions that SPs guarantee.
+
 For some applications, it is useful to call external codes which may not be GP compatible.  Imagine we wished to solve the following optimization problem:
 
 .. math:: \begin{array}{lll}\text{}

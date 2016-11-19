@@ -14,10 +14,10 @@ class Tight(ConstraintSet):
         self.reltol = reltol
         self.raiseerror = raiseerror
 
-    def process_solution(self, sol):
+    def process_result(self, result):
         "Checks that all constraints are satisfied with equality"
-        super(Tight, self).process_solution(sol)
-        variables = sol["variables"]
+        super(Tight, self).process_result(result)
+        variables = result["variables"]
         for constraint in self.flat(constraintsets=False):
             rel_diff = 0
             if isinstance(constraint, PosynomialInequality):

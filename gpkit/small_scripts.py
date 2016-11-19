@@ -24,21 +24,20 @@ def mag(c):
     return c.magnitude if isinstance(c, Quantity) else c
 
 
-def unitstr(units, into="%s", options="~", dimless='-'):
+def unitstr(units, into="%s", options="~", dimless="-"):
     "Returns the unitstr of a given object."
     if hasattr(units, "descr") and hasattr(units.descr, "get"):
         units = units.descr.get("units", dimless)
+    if hasattr(units, "units") and isinstance(units.units, Quantity):
+        units = units.units
     if isinstance(units, Strings):
         return into % units if units else ""
     elif isinstance(units, Quantity):
-        if hasattr(mag(units), "shape"):
-            # If it's an array, make it scalar
-            units = Quantity(1, units.units)
-        rawstr = ("{:%s}" % options).format(units)
+        rawstr = ("{:%s}" % options).format(units.units)
         if str(units.units) == "count":
         # TODO remove this conditional when pint issue 356 is resolved
-            rawstr = "1.0 count"
-        units = "".join(rawstr.replace("dimensionless", dimless).split()[1:])
+            rawstr = "count"
+        units = rawstr.replace(" ", "").replace("dimensionless", dimless)
         return into % units if units else ""
     return ""
 

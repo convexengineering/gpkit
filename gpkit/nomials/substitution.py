@@ -104,13 +104,11 @@ def substitution(nomial, substitutions):
     """
     if not substitutions:
         return nomial.varlocs, nomial.exps, nomial.cs, substitutions
-    elif "filter" in substitutions:
-        del substitutions["filter"]
-        subs = substitutions
-    else:
-        subs, _, _ = parse_subs(nomial.varkeys, substitutions)
-        if not subs:
-            return nomial.varlocs, nomial.exps, nomial.cs, subs
+
+    subs, _, _ = parse_subs(nomial.varkeys, substitutions)
+
+    if not subs:
+        return nomial.varlocs, nomial.exps, nomial.cs, subs
 
     exps_ = [HashVector(exp) for exp in nomial.exps]
     cs_ = np.array(nomial.cs)

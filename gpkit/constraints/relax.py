@@ -2,7 +2,8 @@
 from .model import Model
 from .set import ConstraintSet
 from ..nomials import Variable, VectorVariable, parse_subs, NomialArray
-from ..keydict import FastKeyDict
+from ..nomials import Monomial
+from ..keydict import KeyDict
 
 
 class ConstraintsRelaxedEqually(Model):
@@ -111,7 +112,7 @@ class ConstantsRelaxed(Model):
         include_only = frozenset(include_only) if include_only else frozenset()
         if not isinstance(constraints, ConstraintSet):
             constraints = ConstraintSet(constraints)
-        substitutions = FastKeyDict(constraints.substitutions)
+        substitutions = KeyDict(constraints.substitutions)
         constants, _, _ = parse_subs(constraints.varkeys,
                                      constraints.substitutions)
         self.relaxvars, relaxation_constraints = [], []
@@ -134,6 +135,7 @@ class ConstantsRelaxed(Model):
             self.origvars.append(original)
             if original.units and not hasattr(value, "units"):
                 value *= original.units
+            value = Monomial(value)  # convert for use in constraint
             relaxation_constraints.append([value/relaxation <= original,
                                            original <= value*relaxation,
                                            relaxation >= 1])

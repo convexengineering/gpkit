@@ -52,16 +52,18 @@ class TestSmallScripts(unittest.TestCase):
     def test_unitstr(self):
         x = gpkit.Variable("x", "ft")
         # pint issue 356
+        footstrings = ("ft", "foot")  # backwards compatibility with pint 0.6
         self.assertEqual(unitstr(gpkit.Variable("n", "count")), "count")
-        self.assertEqual(unitstr(x), "ft")
-        self.assertEqual(unitstr(x.key), "ft")
+        self.assertIn(unitstr(x), footstrings)
+        self.assertIn(unitstr(x.key), footstrings)
         self.assertEqual(unitstr(gpkit.Variable("y"), dimless="---"), "---")
         self.assertEqual(unitstr(None, dimless="--"), "")
 
     def test_pint_366(self):
         # test for https://github.com/hgrecco/pint/issues/366
         if gpkit.units:
-            self.assertEqual(unitstr(gpkit.units("nautical_mile")), "nmi")
+            self.assertIn(unitstr(gpkit.units("nautical_mile")),
+                          ("nmi", "nautical_mile"))
             self.assertEqual(gpkit.units("nautical_mile"), gpkit.units("nmi"))
 
 
