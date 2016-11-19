@@ -1,10 +1,13 @@
 Debugging...
+_____________________
 
-RELAXED VARIABLES
+Feasible with these variables bounded:
+   value near upper bound: [y]
+ sensitive to upper bound: [y]
+
+and these constants relaxed:
   x_min [ft]: relaxed from 2 to 1
+_____________________
 
-
-Alternately, the model solves with:
-
-RELAXED CONSTRAINTS
-  1:  99% relaxed  (as posynomial: 0.305*x**-1*x_min <= 1)
+Model does not solve with relaxed constraints.
+_____________________
