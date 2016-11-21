@@ -52,6 +52,14 @@ gpkit.constraints.prog_factories module
     :undoc-members:
     :show-inheritance:
 
+gpkit.constraints.relax module
+------------------------------
+
+.. automodule:: gpkit.constraints.relax
+    :members:
+    :undoc-members:
+    :show-inheritance:
+
 gpkit.constraints.set module
 ----------------------------
 

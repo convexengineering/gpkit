@@ -1,32 +1,6 @@
 Advanced Commands
 *****************
 
-Primal Feasibility Analysis
-===========================
-
-If your Model doesn't solve, you can automatically find the nearest primal feasible version of it by relaxing constraints, either relaxing all constraints by the smallest number possible (that is, dividing the less-than side of every constraint by the same number), relaxing each constraint by its own number and minimizing the product of those numbers, or changing each constant by the smallest total percentage possible.
-
-.. literalinclude:: examples/relaxation.py
-
-
-Plotting variable sensitivities
-===============================
-
-Sensitivities are a useful way to evaluate the tradeoffs in your model, as well as what aspects of the model are driving the solution and should be examined. To help with this, GPkit has an automatic sensitivity plotting function that can be accessed as follows:
-
-.. code-block:: python
-
-    from gpkit.interactive.plotting import sensitivity_plot
-    sensitivity_plot(m)
-
-Which produces the following plot:
-
-.. figure::  sensitivities.png
-   :width: 500 px
-
-In this plot, steep lines that go up to the right are variables whose increase sharply increases (makes worse) the objective. Steep lines going down to the right are variables whose increase sharply decreases (improves) the objective.
-
-
 
 Substitutions
 =============
@@ -178,7 +152,7 @@ Example Usage
 
 
 Composite Objectives
-=================
+====================
 
 Given :math:`n` posynomial objectives :math:`g_i`, you can sweep out the problem's Pareto frontier with the composite objective:
 
@@ -212,26 +186,3 @@ Example Usage
 The ``normsub`` argument specifies an expected value for your solution to normalize the different :math:`g_i` (you can also do this by hand). The feasibility of the problem should not depend on the normalization, but the spacing of the sweep will.
 
 The ``sweep`` argument specifies what points between 0 and 1 you wish to sample the weights at. If you want different resolutions or spacings for different weights, the ``sweeps`` argument accepts a list of sweep arrays.
-
-
-Debugging
-=========
-
-Unbounded variables
--------------------
-In some cases a model will not solve because its variables are pushing to 0 or infinity. If the solver catches such behaviour it will return ``dual infeasible`` (or equivalent), but sometimes solvers do not catch it and return ``unknown``.
-
-``gpkit.constraints.bounded.BoundedConstraintSet`` is a
-simple tool that attempts to detect unbounded variables and get unbounded models to solve by adding extremely large upper bounds and extremely small lower bounds to all variables in a ConstraintSet.
-
-When a model with an BoundedConstraintSet is solved, it checks whether any variables slid off to the bounds, notes this in the solution dictionary and prints a warning (if verbosity is greater than 0).
-
-For example, Mosek returns ``DUAL_INFEAS_CER`` when attempting to solve the following model:
-
-.. literalinclude:: examples/unbounded.py
-
-Upon viewing the printed output,
-
-.. literalinclude:: examples/unbounded_output.txt
-
-it becomes clear that the problem is, unsurprisingly, that ``x`` is unbounded below in the original model.

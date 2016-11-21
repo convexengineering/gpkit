@@ -3,9 +3,7 @@ Debugging Models
 
 A number of errors and warnings may be raised when attempting to solve a model. These can generally be classed into two types: models where there is no possible solution (primal infeasible models) and those where nothing stops the objective (or variables in the objective) from going to 0 or infinity (dual infeasible models).
 
-..  Add section like the below once that code has made it to master:
-    GPkit contains several tools for diagnosing which constraints and variables might be causing this infeasibility. The first thing to try with a GP that doesn't solve is running `m.debug()`,
-    which will say what combinations of changes would make the model feasible. Of course, certain modeling errors (such as forgetting a constraint) will be harder to determine from this output than others. (NOTE: that speaks to a whole other modeling-process section that could be written...) Because SPs and sequential geometric programs do not have the same guarantees as geometric programs, the construction of feasibility models for them should be done by hand, as discussed below. (NOTE: add Relax to the discussion below as well)
+GPkit contains several tools for diagnosing which constraints and variables might be causing this infeasibility. The first thing to do with a model `m` that won't solve is to run ``m.debug()``, which will search for changes that would make the model feasible. Certain modeling errors (such as forgetting a constraint) will be harder to determine from this output than others.
 
 
 Potential errors and warnings
@@ -45,10 +43,9 @@ Upon viewing the printed output,
 
 .. literalinclude:: examples/unbounded_output.txt
 
-it becomes clear that the problem is, unsurprisingly, an ``x`` which has no lower bound in the original model.
+The problem, unsurprisingly, is that the variable ``x`` has no lower bound.
 
 For details read the `Bounded <autodoc/gpkit.constraints.html#module-gpkit.constraints.bounded>`__ docstring.
-
 
 Primal Infeasibility
 ====================
@@ -68,6 +65,8 @@ Since ``y`` is now set to 2 and ``x`` can be no less than 1, it is again impossi
 Relaxation
 ----------
 
-If you suspect your model is primal infeasible, you can automatically find the nearest feasible version of it with the ``Model.feasibility()`` command, as shown below. The feasible version can either involve relaxing all constraints by the smallest number possible (that is, dividing the less-than side of every constraint by the same number), relaxing each constraint by its own number and minimizing the product of those numbers, or changing each constant by the smallest total percentage possible.
+If your Model doesn't solve, you can automatically find the nearest primal feasible version of it by relaxing constraints, either relaxing all constraints by the smallest number possible (that is, dividing the less-than side of every constraint by the same number), relaxing each constraint by its own number and minimizing the product of those numbers, or changing each constant by the smallest total percentage possible.
 
 .. literalinclude:: examples/relaxation.py
+
+.. literalinclude:: examples/relaxation_output.txt
