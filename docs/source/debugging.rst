@@ -3,7 +3,13 @@ Debugging Models
 
 A number of errors and warnings may be raised when attempting to solve a model. These can generally be classed into two types: models where there is no possible solution (primal infeasible models) and those where nothing stops the objective (or variables in the objective) from going to 0 or infinity (dual infeasible models).
 
-GPkit contains several tools for diagnosing which constraints and variables might be causing this infeasibility. The first thing to do with a model `m` that won't solve is to run ``m.debug()``, which will search for changes that would make the model feasible. Certain modeling errors (such as forgetting a constraint) will be harder to determine from this output than others.
+GPkit contains several tools for diagnosing which constraints and variables might be causing this infeasibility. The first thing to do with a model `m` that won't solve is to run ``m.debug()``, which will search for changes that would make the model feasible:
+
+.. literalinclude:: examples/debug.py
+
+.. literalinclude:: examples/debug_output.txt
+
+Note that certain modeling errors (such as forgetting a constraint) may be difficult to determine from this output.
 
 
 Potential errors and warnings
