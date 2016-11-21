@@ -112,7 +112,7 @@ class SignomialProgram(CostedConstraintSet):
                 self.gps.append(nearest_feasible)
                 result = nearest_feasible.solve(solver, verbosity=verbosity-1)
                 result["cost"] = None  # reset the cost-counting
-            x0 = result["variables"]
+            x0 = result["freevariables"]
             prevcost, cost = cost, result["cost"]
             if prevcost and cost:
                 rel_improvement = abs(prevcost-cost)/(prevcost + cost)
@@ -126,28 +126,24 @@ class SignomialProgram(CostedConstraintSet):
         self.result = result  # NOTE: SIDE EFFECTS
         return result
 
-    def _default_x0(self, x0_in):
-        """Creates a default x0 dictionary.
-
-        Order of precedence for x0 default:
-            - substitution value
-            - x0 value
-            - sp_init value
-        """
-        x0 = KeyDict({vk: vk.sp_init for vk in self.varkeys if vk.sp_init})
-        x0.varkeys = self.varkeys  # check that keys are actually in the SP
-        if x0_in is not None:
-            x0.update(x0_in)
-        x0.update(self.substitutions)
-        if x0_in:
-            x0.update(x0_in)
-        x0.update({vk: 1.0 for vk in self.varkeys if vk not in x0})
+    def _fill_x0(self, x0):
+        "Fills x0 with subsitutions and sp_inits"
+        x0 = KeyDict(x0) if x0 is not None else KeyDict()
+        for key in self.varkeys:
+            if key in x0:
+                pass  # already specified by input dict
+            elif key in self.substitutions:
+                x0[key] = self.substitutions[key]
+            elif key.sp_init:
+                x0[key] = key.sp_init
+            # for now, variables not declared elsewhere are
+            # left for the individual constraints to handle
         return x0
 
     def gp(self, x0=None, verbosity=1):
-        """Get a GP approximation of this SP at x0"""
-        x0 = self._default_x0(x0)
+        "The GP approximation of this SP at x0"
+        x0 = self._fill_x0(x0)
         gp = GeometricProgram(self.cost, self.as_gpconstr(x0),
                               self.substitutions, verbosity=verbosity)
-        gp.x0 = KeyDict(x0)  # NOTE: SIDE EFFECTS
+        gp.x0 = x0  # NOTE: SIDE EFFECTS
         return gp

@@ -697,6 +697,8 @@ class SignomialInequality(ScalarSingleEquationConstraint):
         "Returns GP approximation of an SP constraint at x0"
         siglt0, = self.unsubbed
         posy, negy = siglt0.posy_negy()
+        # assume unspecified negy variables have a value of 1.0
+        x0.update({vk: 1.0 for vk in negy.varlocs if vk not in x0})
         pc = PosynomialInequality(posy, "<=", negy.mono_lower_bound(x0))
         pc.substitutions = self.substitutions
         return pc
@@ -721,6 +723,8 @@ class SingleSignomialEquality(SignomialInequality):
         "Returns GP approximation of an SP constraint at x0"
         siglt0, = self.unsubbed
         posy, negy = siglt0.posy_negy()
+        # assume unspecified variables have a value of 1.0
+        x0.update({vk: 1.0 for vk in siglt0.varlocs if vk not in x0})
         mec = (posy.mono_lower_bound(x0) == negy.mono_lower_bound(x0))
         mec.substitutions = self.substitutions
         return mec
