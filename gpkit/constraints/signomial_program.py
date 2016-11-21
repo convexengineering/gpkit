@@ -4,6 +4,7 @@ from ..geometric_program import GeometricProgram
 from ..feasibility import feasibility_model
 from .costed import CostedConstraintSet
 from ..exceptions import InvalidGPConstraint
+from ..keydict import KeyDict
 
 
 class SignomialProgram(CostedConstraintSet):
@@ -125,9 +126,28 @@ class SignomialProgram(CostedConstraintSet):
         self.result = result  # NOTE: SIDE EFFECTS
         return result
 
+    def _default_x0(self, x0_in):
+        """Creates a default x0 dictionary.
+
+        Order of precedence for x0 default:
+            - substitution value
+            - x0 value
+            - sp_init value
+        """
+        x0 = KeyDict({vk: vk.sp_init for vk in self.varkeys if vk.sp_init})
+        x0.varkeys = self.varkeys  # check that keys are actually in the SP
+        if x0_in is not None:
+            x0.update(x0_in)
+        x0.update(self.substitutions)
+        if x0_in:
+            x0.update(x0_in)
+        x0.update({vk: 1.0 for vk in self.varkeys if vk not in x0})
+        return x0
+
     def gp(self, x0=None, verbosity=1):
         """Get a GP approximation of this SP at x0"""
+        x0 = self._default_x0(x0)
         gp = GeometricProgram(self.cost, self.as_gpconstr(x0),
                               self.substitutions, verbosity=verbosity)
-        gp.x0 = x0  # NOTE: SIDE EFFECTS
+        gp.x0 = KeyDict(x0)  # NOTE: SIDE EFFECTS
         return gp
