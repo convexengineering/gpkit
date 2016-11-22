@@ -6,7 +6,7 @@ x = Variable("x")
 
 constraints = [x >= 1]
 
-m = Model(1/x, constraints)  # does not solve
+m = Model(1/x, constraints)  # MOSEK returns DUAL_INFEAS_CER on .solve()
 m = Model(1/x, Bounded(constraints))
 # by default, prints bounds warning during solve
 sol = m.solve(verbosity=0)

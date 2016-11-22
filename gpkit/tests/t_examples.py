@@ -31,8 +31,13 @@ class TestExamples(unittest.TestCase):
               self.assertAlmostEqual(example.sol["cost"], 3.121)
     """
     def test_primal_infeasible_ex1(self, example):
-        with self.assertRaises(RuntimeWarning):
+        with self.assertRaises(RuntimeWarning) as cm:
             example.m.solve(verbosity=0)
+        err = cm.exception
+        if "mosek" in err.message:
+            self.assertIn("PRIM_INFEAS_CER", err.message)
+        elif "cvxopt" in err.message:
+            self.assertIn("unknown", err.message)
 
     def test_primal_infeasible_ex2(self, example):
         with self.assertRaises(RuntimeWarning):
