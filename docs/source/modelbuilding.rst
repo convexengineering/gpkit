@@ -2,12 +2,14 @@ Building Complex Models
 ***********************
 
 
-Inheriting from ``Model``
-=========================
+Inheriting from Model
+=====================
 
-GPkit encourages an object-oriented modeling approach, where the modeler creates objects that inherit from ``Model`` to break large systems down into subsystems and analysis domains. The benefits of this approach include modularity, reusability, and the ability to more closely follow mental models of system hierarchy.
+GPkit encourages an object-oriented modeling approach, where the modeler creates objects that inherit from Model to break large systems down into subsystems and analysis domains. The benefits of this approach include modularity, reusability, and the ability to more closely follow mental models of system hierarchy.
 
 For example, two different models for a simple beam construction, designed by different modelers, could be used interchangeably inside another subsytem (such as an aircraft wing). 
+
+When you create a class that inherits from Model and presents a ``.setup()`` method, GPkit calls that method during ``__init__`` inside of an environment that adds that models name and id to any created variables, and adds those not used in constraints to the model. This allows for the creation of template models that start as constant values and become more advanced over time.
 
 At the end of this page a detailed example shows this technique in practice.
 

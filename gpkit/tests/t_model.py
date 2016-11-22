@@ -441,31 +441,30 @@ class TestModelSolverSpecific(unittest.TestCase):
 
 class Thing(Model):
     "a thing, for model testing"
-    def __init__(self, n, **kwargs):
+    def setup(self, n):
         a = VectorVariable(n, "a", "g/m")
         b = VectorVariable(n, "b", "m")
         c = Variable("c", 17/4., "g")
-        Model.__init__(self, None, [a >= c/b], **kwargs)
+        return [a >= c/b]
 
 
 class Box(Model):
     "simple box for model testing"
-    def __init__(self):
+    def setup(self):
         h = Variable("h", "m", "height")
         w = Variable("w", "m", "width")
         d = Variable("d", "m", "depth")
-        Model.__init__(self, 1/(h*w*d), [])
+        V = Variable("V", "m**3", "volume")
+        return [V == h*w*d]
 
 class BoxAreaBounds(Model):
     "for testing functionality of separate analysis models"
-    def __init__(self, box):
+    def setup(self, box):
         A_wall = Variable("A_{wall}", 100, "m^2", "Upper limit, wall area")
         A_floor = Variable("A_{floor}", 50, "m^2", "Upper limit, floor area")
 
-        constraints = [2*box["h"]*box["w"] + 2*box["h"]*box["d"] <= A_wall,
-                       box["w"]*box["d"] <= A_floor]
-
-        Model.__init__(self, None, constraints)
+        return [2*box["h"]*box["w"] + 2*box["h"]*box["d"] <= A_wall,
+                box["w"]*box["d"] <= A_floor]
 
 
 class TestModelNoSolve(unittest.TestCase):
@@ -480,7 +479,7 @@ class TestModelNoSolve(unittest.TestCase):
         # variables looked up from other models
         box = Box()
         area_bounds = BoxAreaBounds(box)
-        M = Model(box.cost, [box, area_bounds])
+        M = Model(box["V"], [box, area_bounds])
         for var in ("h", "w", "d"):
             self.assertEqual(len(M.variables_byname(var)), 1)
 

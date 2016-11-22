@@ -120,7 +120,7 @@ VECTORIZATION = []
 MODELS = []
 MODELNUMS = []
 MODELNUM_LOOKUP = defaultdict(int)
-
+NAMEDVARS = defaultdict(list)
 
 def begin_variable_naming(model):
     "Appends a model name and num to the environment."
@@ -133,6 +133,7 @@ def begin_variable_naming(model):
 
 def end_variable_naming():
     "Pops a model name and num from the environment."
+    NAMEDVARS.pop(tuple(MODELS), tuple(MODELNUMS))
     MODELS.pop()
     MODELNUMS.pop()
 

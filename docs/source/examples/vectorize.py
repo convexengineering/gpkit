@@ -1,9 +1,9 @@
 from gpkit import Model, Variable, Vectorize
 
 class Test(Model):
-	def __init__(self):
+	def setup(self):
 		x = Variable("x")
-		Model.__init__(self, None, [x >= 1])
+		return [x >= 1]
 
 print "SCALAR"
 m = Test()
