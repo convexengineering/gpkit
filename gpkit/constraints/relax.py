@@ -1,12 +1,12 @@
 """Models for assessing primal feasibility"""
-from .model import Model
 from .set import ConstraintSet
+from .model import Model
 from ..nomials import Variable, VectorVariable, parse_subs, NomialArray
 from ..nomials import Monomial
 from ..keydict import KeyDict
 
 
-class ConstraintsRelaxedEqually(Model):
+class ConstraintsRelaxedEqually(ConstraintSet):
     """Relax constraints the same amount, as in Eqn. 10 of [Boyd2007].
 
     Arguments
@@ -37,15 +37,14 @@ class ConstraintsRelaxedEqually(Model):
         posynomials = constraints.as_posyslt1()
         self.relaxvar = Variable("C", models=["Relax"],
                                  modelnums=[Model._nums["Relax"]])
-        Model.__init__(self, self.relaxvar,
-                       [[posy <= self.relaxvar
-                         for posy in posynomials],
-                        self.relaxvar >= 1],
-                       substitutions,
-                       name=False)
+        ConstraintSet.__init__(self,
+                               [[posy <= self.relaxvar
+                                 for posy in posynomials],
+                                self.relaxvar >= 1],
+                               substitutions)
 
 
-class ConstraintsRelaxed(Model):
+class ConstraintsRelaxed(ConstraintSet):
     """Relax constraints optimally, as in Eqn. 11 of [Boyd2007].
 
     Arguments
@@ -75,14 +74,13 @@ class ConstraintsRelaxed(Model):
         N = len(posynomials)
         self.relaxvars = VectorVariable(N, "C", models=["Relax"],
                                         modelnums=[Model._nums["Relax"]])
-        Model.__init__(self, self.relaxvars.prod(),
-                       [[posynomials <= self.relaxvars],
-                        self.relaxvars >= 1],
-                       substitutions,
-                       name=False)
+        ConstraintSet.__init__(self,
+                               [[posynomials <= self.relaxvars],
+                                self.relaxvars >= 1],
+                               substitutions)
 
 
-class ConstantsRelaxed(Model):
+class ConstantsRelaxed(ConstraintSet):
     """Relax constraints optimally, as in Eqn. 11 of [Boyd2007].
 
     Arguments
@@ -115,7 +113,7 @@ class ConstantsRelaxed(Model):
         substitutions = KeyDict(constraints.substitutions)
         constants, _, _ = parse_subs(constraints.varkeys,
                                      constraints.substitutions)
-        self.relaxvars, relaxation_constraints = [], []
+        relaxvars, relaxation_constraints = [], []
         self.origvars = []
         self.num = Model._nums["Relax"]
         for key, value in constants.items():
@@ -129,7 +127,7 @@ class ConstantsRelaxed(Model):
             descr["models"] = descr.pop("models", [])+["Relax"]
             descr["modelnums"] = descr.pop("modelnums", []) + [self.num]
             relaxation = Variable(**descr)
-            self.relaxvars.append(relaxation)
+            relaxvars.append(relaxation)
             del substitutions[key]
             original = Variable(**key.descr)
             self.origvars.append(original)
@@ -139,7 +137,6 @@ class ConstantsRelaxed(Model):
             relaxation_constraints.append([value/relaxation <= original,
                                            original <= value*relaxation,
                                            relaxation >= 1])
-        Model.__init__(self, NomialArray(self.relaxvars).prod(),
-                       [constraints, relaxation_constraints],
-                       name=False)
+        self.relaxvars = NomialArray(relaxvars)
+        ConstraintSet.__init__(self, [constraints, relaxation_constraints])
         self.substitutions = substitutions

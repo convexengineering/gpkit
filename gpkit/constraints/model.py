@@ -110,52 +110,60 @@ class Model(CostedConstraintSet):
         from .bounded import Bounded
 
         sol = None
-        relaxed = False
+        relaxedconsts = False
+
+        print "Debugging..."
+        print "_____________________"
+
         if self.substitutions:
-            feas = ConstantsRelaxed(Bounded(self))
-            feas.cost = feas.cost**30 * self.cost
+            constsrelaxed = ConstantsRelaxed(Bounded(self))
+            feas = Model(constsrelaxed.relaxvars.prod()**30 * self.cost,
+                         constsrelaxed)
             # NOTE: It hasn't yet been seen but might be possible that
             #       the self.cost component above could cause infeasibility
         else:
-            feas = Model(self.cost, Bounded(self))  # pylint: disable=redefined-variable-type
+            feas = Model(self.cost, Bounded(self))
+
         try:
-            print "Debugging..."
-            print "_____________________"
             sol = feas.solve(verbosity=verbosity, **solveargs)
 
-            for relax, orig in zip(feas.relaxvars, feas.origvars):
-                if sol(relax) >= 1.01:
-                    if not relaxed:
-                        if sol["boundedness"]:
-                            print "and these constants relaxed:"
-                        else:
-                            print
-                            print "Feasible with these constants relaxed:"
-                        relaxed = True
-                    print ("  %s: relaxed from %-.4g to %-.4g"
-                           % (orig, mag(self.substitutions[orig]),
-                              mag(sol(orig))))
+            if self.substitutions:
+                for relax, orig in zip(constsrelaxed.relaxvars,
+                                       constsrelaxed.origvars):
+                    if sol(relax) >= 1.01:
+                        if not relaxedconsts:
+                            if sol["boundedness"]:
+                                print "and these constants relaxed:"
+                            else:
+                                print
+                                print "Feasible with these constants relaxed:"
+                            relaxedconsts = True
+                        print ("  %s: relaxed from %-.4g to %-.4g"
+                               % (orig, mag(self.substitutions[orig]),
+                                  mag(sol(orig))))
         except (ValueError, RuntimeWarning):
             print
-            print ("Model does not solve with variables bounded"
-                   " and constants relaxed.")
+            print ("Model does not solve with bounded variables"
+                   " and relaxed constants.")
         print "_____________________"
 
         try:
-            feas = ConstraintsRelaxed(self)
-            feas.cost = feas.cost**30 * self.cost
+            constrsrelaxed = ConstraintsRelaxed(self)
+            feas = Model(constrsrelaxed.relaxvars.prod()**30 * self.cost,
+                         constrsrelaxed)
             sol_constraints = feas.solve(verbosity=verbosity, **solveargs)
 
-            relaxvals = sol_constraints(feas.relaxvars)
+            relaxvals = sol_constraints(constrsrelaxed.relaxvars)
             if any(rv >= 1.01 for rv in relaxvals):
-                print
-                if not relaxed:
-                    # then this is the only solution we have to return
-                    sol = sol_constraints
-                    print "Feasible with relaxed constraints:"
+                if sol_constraints["boundedness"]:
+                    print "and these constraints relaxed:"
                 else:
-                    print "Also feasible with these constraints relaxed:"
-            iterator = enumerate(zip(relaxvals, feas[0][0]))
+                    print
+                    print "Feasible with relaxed constraints:"
+                    if not relaxedconsts:
+                        # then this is the only solution we have to return
+                        sol = sol_constraints
+            iterator = enumerate(zip(relaxvals, feas[0][0][0]))
             for i, (relaxval, constraint) in iterator:
                 if relaxval >= 1.01:
                     relax_percent = "%i%%" % (0.5+(relaxval-1)*100)

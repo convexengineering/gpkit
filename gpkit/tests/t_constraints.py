@@ -18,8 +18,8 @@ class TestConstraint(unittest.TestCase):
         x = Variable("x")
         m = Model(x, [x == 3, x == 4])
         rc = ConstraintsRelaxed(m)
-        rc.cost *= x**0.01
-        self.assertAlmostEqual(rc.solve(verbosity=0)(x), 3, 5)
+        m2 = Model(rc.relaxvars.prod() * x**0.01, rc)
+        self.assertAlmostEqual(m2.solve(verbosity=0)(x), 3, 5)
 
     def test_constraintget(self):
         x = Variable("x")
