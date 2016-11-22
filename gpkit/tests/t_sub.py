@@ -244,17 +244,21 @@ class TestGPSubs(unittest.TestCase):
     def test_model_composition_units(self):
         class Above(Model):
             "A simple upper bound on x"
-            def __init__(self):
+            def setup(self):
+                "setup method"
                 x = Variable("x", "ft")
                 x_max = Variable("x_{max}", 1, "yard")
-                Model.__init__(self, 1/x, [x <= x_max])
+                self.cost = 1/x
+                return [x <= x_max]
 
         class Below(Model):
             "A simple lower bound on x"
-            def __init__(self):
+            def setup(self):
+                "setup method"
                 x = Variable("x", "m")
                 x_min = Variable("x_{min}", 1, "cm")
-                Model.__init__(self, x, [x >= x_min])
+                self.cost = x
+                return [x >= x_min]
 
         a, b = Above(), Below()
         concatm = Model(a.cost*b.cost, [a, b])
@@ -285,17 +289,21 @@ class TestGPSubs(unittest.TestCase):
     def test_getkey(self):
         class Top(Model):
             "Some high level model"
-            def __init__(self):
+            def setup(self):
+                "setup method"
                 y = Variable('y')
                 s = Sub()
                 sy = s["y"]
-                Model.__init__(self, y, [s, y >= sy, sy >= 1])
+                self.cost = y
+                return [s, y >= sy, sy >= 1]
 
         class Sub(Model):
             "A simple sub model"
-            def __init__(self):
+            def setup(self):
+                "setup method"
                 y = Variable('y')
-                Model.__init__(self, y, [y >= 2])
+                self.cost = y
+                return [y >= 2]
 
         sol = Top().solve(verbosity=0)
         self.assertAlmostEqual(sol['cost'], 2)
@@ -303,16 +311,20 @@ class TestGPSubs(unittest.TestCase):
     def test_model_recursion(self):
         class Top(Model):
             "Some high level model"
-            def __init__(self):
+            def setup(self):
+                "setup method"
                 x = Variable('x')
                 y = Variable('y')
-                Model.__init__(self, x, Sub().link([x >= y, y >= 1]))
+                self.cost = x
+                return Sub().link([x >= y, y >= 1])
 
         class Sub(Model):
             "A simple sub model"
-            def __init__(self):
+            def setup(self):
+                "setup method"
                 y = Variable('y')
-                Model.__init__(self, y, [y >= 2])
+                self.cost = y
+                return [y >= 2]
 
         sol = Top().solve(verbosity=0)
         self.assertAlmostEqual(sol['cost'], 2)

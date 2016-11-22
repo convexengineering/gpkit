@@ -1,9 +1,9 @@
 """Models for assessing primal feasibility"""
 from .set import ConstraintSet
-from .model import Model
 from ..nomials import Variable, VectorVariable, parse_subs, NomialArray
 from ..nomials import Monomial
 from ..keydict import KeyDict
+from .. import NamedVariables, MODELNUM_LOOKUP
 
 
 class ConstraintsRelaxedEqually(ConstraintSet):
@@ -35,8 +35,8 @@ class ConstraintsRelaxedEqually(ConstraintSet):
             constraints = ConstraintSet(constraints)
         substitutions = dict(constraints.substitutions)
         posynomials = constraints.as_posyslt1()
-        self.relaxvar = Variable("C", models=["Relax"],
-                                 modelnums=[Model._nums["Relax"]])
+        with NamedVariables("Relax"):
+            self.relaxvar = Variable("C")
         ConstraintSet.__init__(self,
                                [[posy <= self.relaxvar
                                  for posy in posynomials],
@@ -72,8 +72,8 @@ class ConstraintsRelaxed(ConstraintSet):
         substitutions = dict(constraints.substitutions)
         posynomials = constraints.as_posyslt1()
         N = len(posynomials)
-        self.relaxvars = VectorVariable(N, "C", models=["Relax"],
-                                        modelnums=[Model._nums["Relax"]])
+        with NamedVariables("Relax"):
+            self.relaxvars = VectorVariable(N, "C")
         ConstraintSet.__init__(self,
                                [[posynomials <= self.relaxvars],
                                 self.relaxvars >= 1],
@@ -115,7 +115,7 @@ class ConstantsRelaxed(ConstraintSet):
                                      constraints.substitutions)
         relaxvars, relaxation_constraints = [], []
         self.origvars = []
-        self.num = Model._nums["Relax"]
+        self.num = MODELNUM_LOOKUP["Relax"]
         for key, value in constants.items():
             if include_only and key.name not in include_only:
                 continue

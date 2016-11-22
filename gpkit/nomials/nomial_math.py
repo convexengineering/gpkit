@@ -690,37 +690,21 @@ class SignomialInequality(ScalarSingleEquationConstraint):
         else:
             raise InvalidGPConstraint("SignomialInequality could not simplify"
                                       " to a PosynomialInequality; try calling"
-                                      "`.localsolve` instead of `.solve` to"
+                                      " `.localsolve` instead of `.solve` to"
                                       " form your Model as a SignomialProgram")
-
-    def _fill_default_x0(self, x0, varkeys):
-        """For all keys in varkeys, updates x0 with default values and
-        substitutions. Returns x0.
-
-        Order of precedence for x0 default:
-            - substitution value
-            - x0 value
-            - sp_init value
-            - 1.0
-        """
-        if x0 is None:
-            x0 = {}
-        x0.update(self.substitutions)
-        x0.update({vk: x0.get(vk, vk.descr.get("sp_init", 1.0))
-                   for vk in varkeys})
-        return x0
 
     def as_gpconstr(self, x0):
         "Returns GP approximation of an SP constraint at x0"
         siglt0, = self.unsubbed
         posy, negy = siglt0.posy_negy()
-        x0 = self._fill_default_x0(x0, negy.varlocs)
+        # assume unspecified negy variables have a value of 1.0
+        x0.update({vk: 1.0 for vk in negy.varlocs if vk not in x0})
         pc = PosynomialInequality(posy, "<=", negy.mono_lower_bound(x0))
         pc.substitutions = self.substitutions
         return pc
 
 
-class SignomialEquality(SignomialInequality):
+class SingleSignomialEquality(SignomialInequality):
     "A constraint of the general form posynomial == posynomial"
 
     def __init__(self, left, right):
@@ -738,8 +722,9 @@ class SignomialEquality(SignomialInequality):
     def as_gpconstr(self, x0):
         "Returns GP approximation of an SP constraint at x0"
         siglt0, = self.unsubbed
-        x0 = self._fill_default_x0(x0, siglt0.varlocs)
         posy, negy = siglt0.posy_negy()
+        # assume unspecified variables have a value of 1.0
+        x0.update({vk: 1.0 for vk in siglt0.varlocs if vk not in x0})
         mec = (posy.mono_lower_bound(x0) == negy.mono_lower_bound(x0))
         mec.substitutions = self.substitutions
         return mec

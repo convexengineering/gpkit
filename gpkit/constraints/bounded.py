@@ -99,6 +99,6 @@ class Bounded(ConstraintSet):
             for key, value in out.items():
                 print "% 25s: %s" % (key, value)
             print
-        if not "boundedness" in result:
+        if "boundedness" not in result:
             result["boundedness"] = {}
         result["boundedness"].update(out)

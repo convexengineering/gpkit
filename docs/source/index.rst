@@ -27,6 +27,7 @@ Table of contents
        gettingstarted
        debugging
        visint
+       modelbuilding
        advancedcommands
        signomialprogramming
        examples

@@ -68,6 +68,14 @@ gpkit.constraints.set module
     :undoc-members:
     :show-inheritance:
 
+gpkit.constraints.sigeq module
+------------------------------
+
+.. automodule:: gpkit.constraints.sigeq
+    :members:
+    :undoc-members:
+    :show-inheritance:
+
 gpkit.constraints.signomial_program module
 ------------------------------------------
 

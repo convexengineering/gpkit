@@ -30,6 +30,13 @@ class TestExamples(unittest.TestCase):
           def test_dummy_example(self, example):
               self.assertAlmostEqual(example.sol["cost"], 3.121)
     """
+
+    def test_performance_modeling(self, example):
+        pass
+
+    def test_vectorize(self, example):
+        pass
+
     def test_primal_infeasible_ex1(self, example):
         with self.assertRaises(RuntimeWarning) as cm:
             example.m.solve(verbosity=0)
