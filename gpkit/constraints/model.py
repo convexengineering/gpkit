@@ -137,7 +137,7 @@ class Model(CostedConstraintSet):
             if self.substitutions:
                 for orig in (o for o, r in zip(constsrelaxed.origvars,
                                                constsrelaxed.relaxvars)
-                             if r >= 1.01):
+                             if sol(r) >= 1.01):
                     if not relaxedconsts:
                         if sol["boundedness"]:
                             print "and these constants relaxed:"
