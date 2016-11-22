@@ -1,16 +1,16 @@
-"""Jungle Hawk Owl Concept"""
+"""Modular aircraft concept"""
 import numpy as np
-from gpkit import Model, Variable, vectorize
+from gpkit import Model, Variable, Vectorize
 
 class Aircraft(Model):
-    "the JHO vehicle"
+    "the vehicle"
 
     def dynamic(self, state):
         """Creates an instance of this component's performance model,
         given a state"""
         return AircraftP(self, state)
 
-    def __init__(self, **kwargs):
+    def __init__(self):
         self.fuse = Fuselage()
         self.wing = Wing()
 
@@ -20,14 +20,14 @@ class Aircraft(Model):
         self.weight = W
         constraints = [W >= sum(c["W"] for c in self.components)]
 
-        Model.__init__(self, W, self.components + constraints, **kwargs)
+        Model.__init__(self, W, self.components + constraints)
 
 
 class AircraftP(Model):
     """Aircraft Performance Model (i.e., aircraft flight physics)
     Currently implemented as lift = weight
     """
-    def __init__(self, aircraft, state, **kwargs):
+    def __init__(self, aircraft, state):
         self.aircraft = aircraft
         self.wing_aero = aircraft.wing.dynamic(state)
         self.perf_models = [self.wing_aero]
@@ -39,12 +39,12 @@ class AircraftP(Model):
                                         * aircraft.wing["S"]),
             Wburn >= 0.1*self.wing_aero["D"]
             ]
-        Model.__init__(self, None, self.perf_models + constraints, **kwargs)
+        Model.__init__(self, None, self.perf_models + constraints)
 
 
 class FlightState(Model):
     "Instantaneous context for evaluating flight physics"
-    def __init__(self, **kwargs):
+    def __init__(self):
         V = Variable("V", 40, "knots", "true airspeed")
         mu = Variable("\\mu", 1.628e-5, "N*s/m^2", "dynamic viscosity")
         rho = Variable("\\rho", 0.74, "kg/m^3", "air density")
@@ -53,29 +53,29 @@ class FlightState(Model):
             mu == mu,
             rho == rho
             ]
-        Model.__init__(self, None, constraints, **kwargs)
+        Model.__init__(self, None, constraints)
 
 
 class FlightSegment(Model):
     "Combines a context (flight state) and a component (the aircraft)"
-    def __init__(self, aircraft, **kwargs):
+    def __init__(self, aircraft):
         self.flightstate = FlightState()
         self.aircraftp = aircraft.dynamic(self.flightstate)
         Model.__init__(self, None,
-                       [self.flightstate, self.aircraftp], **kwargs)
+                       [self.flightstate, self.aircraftp])
 
 
 class Mission(Model):
     "list of flight segments"
-    def __init__(self, aircraft, **kwargs):
+    def __init__(self, aircraft):
         N = 4
-        with vectorize(N):
+        with Vectorize(N):
             fs = FlightSegment(aircraft)
         Wburn = fs.aircraftp["W_{burn}"]
         Wfuel = fs.aircraftp["W_{fuel}"]
         constraints = [Wfuel[:-1] >= Wfuel[1:] + Wburn[:-1],
                        Wfuel[-1] >= Wburn[-1]]
-        Model.__init__(self, Wfuel[0], [constraints, fs], **kwargs)
+        Model.__init__(self, Wfuel[0], [constraints, fs])
 
 
 class Wing(Model):
@@ -85,7 +85,7 @@ class Wing(Model):
         given a state"""
         return WingAero(self, state)
 
-    def __init__(self, **kwargs):
+    def __init__(self):
         W = Variable("W", "lbf", "weight")
         S = Variable("S", 190, "ft^2", "surface area")
         rho = Variable("\\rho", 1, "lbf/ft^2", "areal density")
@@ -96,12 +96,12 @@ class Wing(Model):
             W >= S*rho,
             c == (S/A)**0.5
             ]
-        super(Wing, self).__init__(None, constraints, **kwargs)
+        Model.__init__(self, None, constraints)
 
 
 class WingAero(Model):
     "Wing drag model"
-    def __init__(self, wing, state, **kwargs):
+    def __init__(self, wing, state):
         CD = Variable("C_D", "-", "drag coefficient")
         CL = Variable("C_L", "-", "lift coefficient")
         e = Variable("e", 0.9, "-", "Oswald efficiency")
@@ -112,12 +112,12 @@ class WingAero(Model):
             Re == state["\\rho"]*state["V"]*wing["c"]/state["\\mu"],
             D >= 0.5*state["\\rho"]*state["V"]**2*CD*wing["S"],
             ]
-        Model.__init__(self, None, constraints, **kwargs)
+        Model.__init__(self, None, constraints)
 
 
 class Fuselage(Model):
     "The thing that carries the fuel, engine, and payload"
-    def __init__(self, **kwargs):
+    def __init__(self):
         # fuselage needs an external dynamic drag model,
         # left as an exercise for the reader
         # V = Variable("V", 16, "gal", "volume")
@@ -131,12 +131,11 @@ class Fuselage(Model):
             W == W,  # todo replace with model
             ]
 
-        super(Fuselage, self).__init__(None, constraints, **kwargs)
+        Model.__init__(self, None, constraints)
 
 
-if __name__ == "__main__":
-    JHO = Aircraft()
-    MISSION = Mission(JHO)
-    M = Model(MISSION.cost, [MISSION, JHO])  #, {"V": np.linspace(20, 40, N)})
-    SOL = M.solve("mosek")
-    print SOL.table()
+AC = Aircraft()
+MISSION = Mission(AC)
+M = Model(MISSION.cost, [MISSION, AC])
+SOL = M.solve(verbosity=0)
+print SOL.table()
