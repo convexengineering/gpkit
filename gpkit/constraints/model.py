@@ -75,8 +75,8 @@ class Model(CostedConstraintSet):
                 unused_vars = NAMEDVARS[tuple(MODELS), tuple(MODELNUMS)]
                 end_variable_naming()
                 if unused_vars:
-                    print("We recommend declaring a model's variables in `setup`,"
-                          " not in `__init__`. For details see gpkit.rtfd.org")
+                    print("Declaring a named Model's variables in __init__ is"
+                          " not recommended. For details see gpkit.rtfd.org")
                     # backwards compatibility: don't add unused vars
                     unused_vars = None
 
