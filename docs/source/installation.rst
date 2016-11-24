@@ -66,6 +66,7 @@ Mac OSX
 
 Linux
     Run ``sudo apt-get install libblas-dev liblapack-dev`` or otherwise install those libraries
+
     Run ``pip install cvxopt`` (for system python installs, use ``sudo pip``)
 
     If experiencing issues with wheel in Ubuntu 16.04, try the `official installer. <http://cvxopt.org/install/index.html>`_
