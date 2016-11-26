@@ -9,7 +9,7 @@ from ..small_classes import HashVector
 from ..keydict import KeySet
 from ..varkey import VarKey
 from ..small_scripts import mag
-from .. import units as ureg
+from .. import ureg
 from .. import DimensionalityError
 from ..exceptions import InvalidGPConstraint
 
