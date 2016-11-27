@@ -134,7 +134,7 @@ class SignomialProgram(CostedConstraintSet):
         return result
 
     def _fill_x0(self, x0):
-        "Fills x0 with subsitutions and sp_inits"
+        "Returns a copy of x0 with subsitutions and sp_inits added."
         x0 = KeyDict(x0) if x0 is not None else KeyDict()
         for key in self.varkeys:
             if key in x0:
@@ -148,7 +148,7 @@ class SignomialProgram(CostedConstraintSet):
         return x0
 
     def gp(self, x0=None, verbosity=1):
-        "The GP approximation of this SP at x0"
+        "The GP approximation of this SP at x0."
         x0 = self._fill_x0(x0)
         gp = GeometricProgram(self.cost, self.as_gpconstr(x0),
                               self.substitutions, verbosity=verbosity)

@@ -14,9 +14,6 @@ class ConstraintsRelaxedEqually(ConstraintSet):
     constraints : iterable
         Constraints which will be relaxed (made easier).
 
-    varname : str
-        LaTeX name of relaxation variable.
-
 
     Attributes
     ----------
@@ -45,7 +42,7 @@ class ConstraintsRelaxedEqually(ConstraintSet):
 
 
 class ConstraintsRelaxed(ConstraintSet):
-    """Relax constraints optimally, as in Eqn. 11 of [Boyd2007].
+    """Relax constraints, as in Eqn. 11 of [Boyd2007].
 
     Arguments
     ---------
@@ -81,7 +78,7 @@ class ConstraintsRelaxed(ConstraintSet):
 
 
 class ConstantsRelaxed(ConstraintSet):
-    """Relax constraints optimally, as in Eqn. 11 of [Boyd2007].
+    """Relax constants in a constraintset.
 
     Arguments
     ---------

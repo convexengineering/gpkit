@@ -129,7 +129,7 @@ class SolutionArray(DictOfLists):
                 if not subdict["constants"]:
                     continue
                 strs += results_table(subdict["constants"], table_title,
-                                      minval=0.1,
+                                      minval=1e-2,
                                       sortbyvals=True,
                                       printunits=False,
                                       latex=latex,

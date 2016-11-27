@@ -116,10 +116,15 @@ def disable_units():
 
 enable_units()
 
+# the current vectorization shape
 VECTORIZATION = []
+# the current model hierarchy
 MODELS = []
+# modelnumbers corresponding to MODELS, above
 MODELNUMS = []
+# lookup table for the number of models of each name that have been made
 MODELNUM_LOOKUP = defaultdict(int)
+# the list of variables named in the current MODELS/MODELNUM environment
 NAMEDVARS = defaultdict(list)
 
 def begin_variable_naming(model):
@@ -197,6 +202,7 @@ from .varkey import VarKey
 from .nomials import Nomial, NomialArray
 from .nomials import Monomial, Posynomial, Signomial
 from .nomials import VectorVariable, ArrayVariable
+# note: the Variable the user sees is not the Variable used internally
 from .nomials import VectorizableVariable as Variable
 from .geometric_program import GeometricProgram
 from .constraints.signomial_program import SignomialProgram

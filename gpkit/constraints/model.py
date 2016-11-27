@@ -47,6 +47,7 @@ class Model(CostedConstraintSet):
     solution = None
 
     def __new__(cls, *args, **kwargs):
+        # Implemented for backwards compatibility with v0.4
         obj = super(Model, cls).__new__(cls, *args, **kwargs)
         if cls.__name__ != "Model" and not hasattr(cls, "setup"):
             obj.name = cls.__name__
@@ -54,7 +55,7 @@ class Model(CostedConstraintSet):
         return obj
 
     def __init__(self, cost=None, constraints=None, *args, **kwargs):
-        unused_vars = None
+        setup_vars = None
         substitutions = kwargs.pop("substitutions", None)  # reserved keyword
         if hasattr(self, "setup"):
             with NamedVariables(self.__class__.__name__):
@@ -63,7 +64,7 @@ class Model(CostedConstraintSet):
                 constraints = self.setup(*args, **kwargs)  # pylint: disable=no-member
                 cost = getattr(self, "cost", None)  # if it was set in setup
                 from .. import NAMEDVARS, MODELS, MODELNUMS
-                unused_vars = NAMEDVARS[tuple(MODELS), tuple(MODELNUMS)]
+                setup_vars = NAMEDVARS[tuple(MODELS), tuple(MODELNUMS)]
                 self.name, self.num = MODELS[:-1], MODELNUMS[:-1]
                 self.naming = (tuple(MODELS), tuple(MODELNUMS))
         else:
@@ -72,19 +73,21 @@ class Model(CostedConstraintSet):
                 substitutions, = args
             if self.__class__.__name__ != "Model":
                 from .. import NAMEDVARS, MODELS, MODELNUMS
-                unused_vars = NAMEDVARS[tuple(MODELS), tuple(MODELNUMS)]
+                setup_vars = NAMEDVARS[tuple(MODELS), tuple(MODELNUMS)]
                 end_variable_naming()
-                if unused_vars:
+                if setup_vars:
                     print("Declaring a named Model's variables in __init__ is"
                           " not recommended. For details see gpkit.rtfd.org")
                     # backwards compatibility: don't add unused vars
-                    unused_vars = None
+                    setup_vars = None
 
         cost = cost if cost else Monomial(1)
         constraints = constraints if constraints else []
         CostedConstraintSet.__init__(self, cost, constraints, substitutions)
-        if unused_vars:
-            self.unused_variables = unused_vars
+        if setup_vars:
+            # add all the vars created in .setup to the Model's varkeys
+            # even if they aren't used in any constraints
+            self.unused_variables = setup_vars
             self.reset_varkeys()
 
     gp = _progify_fctry(GeometricProgram)

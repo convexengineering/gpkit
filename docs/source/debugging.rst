@@ -12,7 +12,7 @@ GPkit contains several tools for diagnosing which constraints and variables migh
 
 .. literalinclude:: examples/debug_output.txt
 
-Note that certain modeling errors (such as omitting or forgetting a constraint) may be difficult to determine from this output.
+Note that certain modeling errors (such as omitting or forgetting a constraint) may be difficult to diagnose from this output.
 
 
 Potential errors and warnings
@@ -43,7 +43,7 @@ Dual Infeasibility
 In some cases a model will not solve because the optimal value of one or more variables is 0 or infinity (negative or positive infinity in logspace). Such a problem is `dual infeasible` because the GP's dual problem, which determines the optimal values of the sensitivites, does not have any feasible solution. If the solver can prove that the dual is infeasible, it will return a dual infeasibility certificate. Otherwise, it may finish with a solution status of ``unknown``.
 
 ``gpkit.constraints.bounded.Bounded`` is a
-simple tool that attempts to detect unbounded variables and get dual infeasible models to solve by adding extremely large upper bounds and extremely small lower bounds to all variables in a ConstraintSet.
+simple tool that can be used to detect unbounded variables and get dual infeasible models to solve by adding extremely large upper bounds and extremely small lower bounds to all variables in a ConstraintSet.
 
 When a model with a Bounded ConstraintSet is solved, it checks whether any variables slid off to the bounds, notes this in the solution dictionary and prints a warning (if verbosity is greater than 0).
 
@@ -79,7 +79,7 @@ Since ``y`` is now set to 2 and ``x`` can be no less than 1, it is again impossi
 Relaxation
 ----------
 
-If your Model doesn't solve, you can automatically find the nearest primal feasible version of it by relaxing constraints, either relaxing all constraints by the smallest number possible (that is, dividing the less-than side of every constraint by the same number), relaxing each constraint by its own number and minimizing the product of those numbers, or changing each constant by the smallest total percentage possible.
+If you suspect your model is primal infeasible, you can find the nearest primal feasible version of it by relaxing constraints: either relaxing all constraints by the smallest number possible (that is, dividing the less-than side of every constraint by the same number), relaxing each constraint by its own number and minimizing the product of those numbers, or changing each constant by the smallest total percentage possible.
 
 .. literalinclude:: examples/relaxation.py
 

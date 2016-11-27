@@ -9,7 +9,7 @@ class SignomialEquality(ConstraintSet):
 
     def __init__(self, left, right):
         if hasattr(left, "shape"):
-            constraints = array_constraint("=", SignomialEquality)(left, right)
+            constraints = array_constraint("=", SingleSignomialEquality)(left, right)
         else:
             constraints = [SingleSignomialEquality(left, right)]  # pylint: disable=redefined-variable-type
         ConstraintSet.__init__(self, constraints)

@@ -16,7 +16,7 @@ class CostedConstraintSet(ConstraintSet):
         if hasattr(cost, "prod"):
             # it's a vector!
             if not cost.shape:
-                cost = cost.flatten()[0]
+                cost, = cost.flatten()
             else:
                 raise ValueError("cost must be a scalar, not the vector %s"
                                  % cost)
