@@ -140,7 +140,7 @@ class ArrayVariable(NomialArray):
                 values = descr.pop(value_option)
                 if "vectorization" in descr:
                     if shape:
-                        values = np.full(shape, values)
+                        values = np.full(shape, values, "f")
                     else:
                         descr["value"] = values
                         values = []

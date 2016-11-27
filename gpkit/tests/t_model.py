@@ -46,7 +46,7 @@ class TestGP(unittest.TestCase):
 
     def test_sigeq(self):
         x = Variable("x")
-        y = Variable("y")
+        y = VectorVariable(1, "y")  # test vector input to sigeq
         c = Variable("c")
         with SignomialsEnabled():
             m = Model(c, [c >= (x + 0.25)**2 + (y - 0.5)**2,
