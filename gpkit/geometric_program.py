@@ -134,7 +134,7 @@ class GeometricProgram(NomialData):
                         " installed, or found no solvers during the"
                         " installation process.")
 
-            if solver in ["cvxopt", "mosek"]:
+            if solver == "cvxopt":
                 from ._cvxopt import cvxoptimize
                 solverfn = cvxoptimize
             elif solver == "mosek_cli":
