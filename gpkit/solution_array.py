@@ -176,6 +176,10 @@ def results_table(data, title, minval=0, printunits=True, fixedcols=True,
     sortbyvals : boolean
         If true, rows are sorted by their average value instead of by name.
     """
+    from . import units
+    if not units:
+        # disable units printing
+        printunits = False
     lines = []
     decorated = []
     models = set()
