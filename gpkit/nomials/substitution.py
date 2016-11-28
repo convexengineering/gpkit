@@ -160,7 +160,8 @@ def substitution(nomial, substitutions):
                 # if sub is 0 and x is 0, pass
             elif isinstance(sub, np.ndarray):
                 if not sub.shape:
-                    cs_[i] *= sub.flatten()[0]**x
+                    c, = sub.flatten()
+                    cs_[i] *= c**x
             elif isinstance(sub, Strings):
                 descr = dict(var.descr)
                 del descr["name"]
