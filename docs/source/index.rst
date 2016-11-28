@@ -25,6 +25,7 @@ Table of contents
        gpkit101
        installation
        gettingstarted
+       modelbuilding
        advancedcommands
        signomialprogramming
        debugging

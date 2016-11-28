@@ -4,6 +4,7 @@ from ..geometric_program import GeometricProgram
 from ..feasibility import feasibility_model
 from .costed import CostedConstraintSet
 from ..exceptions import InvalidGPConstraint
+from ..keydict import KeyDict
 
 
 class SignomialProgram(CostedConstraintSet):
@@ -111,7 +112,7 @@ class SignomialProgram(CostedConstraintSet):
                 self.gps.append(nearest_feasible)
                 result = nearest_feasible.solve(solver, verbosity=verbosity-1)
                 result["cost"] = None  # reset the cost-counting
-            x0 = result["variables"]
+            x0 = result["freevariables"]
             prevcost, cost = cost, result["cost"]
             if prevcost and cost:
                 rel_improvement = abs(prevcost-cost)/(prevcost + cost)
@@ -125,8 +126,23 @@ class SignomialProgram(CostedConstraintSet):
         self.result = result  # NOTE: SIDE EFFECTS
         return result
 
+    def _fill_x0(self, x0):
+        "Fills x0 with subsitutions and sp_inits"
+        x0 = KeyDict(x0) if x0 is not None else KeyDict()
+        for key in self.varkeys:
+            if key in x0:
+                pass  # already specified by input dict
+            elif key in self.substitutions:
+                x0[key] = self.substitutions[key]
+            elif key.sp_init:
+                x0[key] = key.sp_init
+            # for now, variables not declared elsewhere are
+            # left for the individual constraints to handle
+        return x0
+
     def gp(self, x0=None, verbosity=1):
-        """Get a GP approximation of this SP at x0"""
+        "The GP approximation of this SP at x0"
+        x0 = self._fill_x0(x0)
         gp = GeometricProgram(self.cost, self.as_gpconstr(x0),
                               self.substitutions, verbosity=verbosity)
         gp.x0 = x0  # NOTE: SIDE EFFECTS

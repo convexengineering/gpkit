@@ -1,14 +1,11 @@
 "Implements Model"
-from collections import defaultdict
 from .costed import CostedConstraintSet
-from ..varkey import VarKey
 from ..nomials import Monomial
 from .prog_factories import _progify_fctry, _solve_fctry
 from ..geometric_program import GeometricProgram
 from .signomial_program import SignomialProgram
 from .linked import LinkedConstraintSet
-from ..keydict import KeyDict
-from .. import SignomialsEnabled
+from .. import end_variable_naming, begin_variable_naming, NamedVariables
 
 
 class Model(CostedConstraintSet):
@@ -38,24 +35,48 @@ class Model(CostedConstraintSet):
     `program` is set during a solve
     `solution` is set at the end of a solve
     """
-    _nums = defaultdict(int)
+
+    # name and num identify a model uniquely
     name = None
     num = None
+    # naming holds the name and num evironment in which a model was created
+    # this includes its own name and num, and those of models containing it
+    naming = None
     program = None
     solution = None
 
-    def __init__(self, cost=None, constraints=None,
-                 substitutions=None, name=None):
+    def __new__(cls, *args, **kwargs):
+        obj = super(Model, cls).__new__(cls, *args, **kwargs)
+        if cls.__name__ != "Model" and not hasattr(cls, "setup"):
+            obj.name = cls.__name__
+            obj.num, obj.naming = begin_variable_naming(obj.name)
+        return obj
+
+    def __init__(self, cost=None, constraints=None, *args, **kwargs):
+        unused_vars = None
+        substitutions = kwargs.pop("substitutions", None)  # reserved keyword
+        if hasattr(self, "setup"):
+            with NamedVariables(self.__class__.__name__):
+                start_args = [cost, constraints]
+                args = tuple(a for a in start_args if a is not None) + args
+                constraints = self.setup(*args, **kwargs)
+                cost = getattr(self, "cost", None)  # if it was set in setup
+                from .. import NAMEDVARS, MODELS, MODELNUMS
+                unused_vars = NAMEDVARS[tuple(MODELS), tuple(MODELNUMS)]
+        elif self.name:
+            from .. import NAMEDVARS, MODELS, MODELNUMS
+            unused_vars = NAMEDVARS[tuple(MODELS), tuple(MODELNUMS)]
+            end_variable_naming()
+            if unused_vars:
+                print("We recommend declaring a model's variables in `setup`,"
+                      " not in `__init__`. For details see gpkit.rtfd.org")
+
         cost = cost if cost else Monomial(1)
         constraints = constraints if constraints else []
         CostedConstraintSet.__init__(self, cost, constraints, substitutions)
-        if self.__class__.__name__ != "Model" and not name:
-            name = self.__class__.__name__
-        if name:
-            self.name = name
-            self.num = Model._nums[name]
-            Model._nums[name] += 1
-            self._add_modelname_tovars(self.name, self.num)
+        if unused_vars:
+            self.unused_variables = unused_vars
+            self.reset_varkeys()
 
     gp = _progify_fctry(GeometricProgram)
     sp = _progify_fctry(SignomialProgram)
@@ -77,20 +98,6 @@ class Model(CostedConstraintSet):
             zeros = {var: 0 for var, bound in bounds.items()
                      if bound == "lower"}
             self.substitutions.update(zeros)
-
-    def _add_modelname_tovars(self, name, num):
-        add_model_subs = KeyDict()
-        for vk in self.varkeys:
-            descr = dict(vk.descr)
-            descr["models"] = descr.pop("models", []) + [name]
-            descr["modelnums"] = descr.pop("modelnums", []) + [num]
-            newvk = VarKey(**descr)
-            add_model_subs[vk] = newvk
-            if vk in self.substitutions:
-                self.substitutions[newvk] = self.substitutions[vk]
-                del self.substitutions[vk]
-        with SignomialsEnabled():  # since we're just substituting varkeys.
-            self.subinplace(add_model_subs)
 
     def subconstr_str(self, excluded=None):
         "The collapsed appearance of a ConstraintBase"
