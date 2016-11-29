@@ -5,12 +5,13 @@ from .small_classes import Numbers
 
 
 class KeyDict(dict):
-    """KeyDicts do two things over a regular dict: collate arrays and map keys.
+    """KeyDicts do two things over a dict: map keys and collapse arrays.
 
-    Creating a KeyDict:
     >>>> kd = gpkit.keydict.KeyDict()
 
-    If keymapping is True, a KeyDict keeps an internal list of VarKeys as
+    Mapping keys
+    ------------
+    If ``.keymapping`` is True, a KeyDict keeps an internal list of VarKeys as
     canonical keys, but allows accessing their values with any object whose
     `key` attribute matches one of those VarKeys, or with strings who match
     any of the multiple possible string interpretations of each key:
@@ -22,13 +23,15 @@ class KeyDict(dict):
      - x.name (a string)
      - "x_modelname" (x's name including modelname)
 
-    If collapse_arrays is True then VarKeys which have a `shape`
+    Note that if a item is set using a key that does not have a `.key`
+    attribute, that key can be set and accessed normally.
+
+    Collapsing arrays
+    -----------------
+    If ``.collapse_arrays`` is True then VarKeys which have a `shape`
     parameter (indicating they are part of an array) are stored as numpy
     arrays, and automatically de-indexed when a matching VarKey with a
     particular `idx` parameter is used as a key.
-
-    Note that if a item is set using a key that does not have a `.key`
-    attribute, that key can be set and accessed normally.
 
     See also: gpkit/tests/t_keydict.py.
     """
@@ -166,7 +169,7 @@ class KeyDict(dict):
 
 
 class KeySet(KeyDict):
-    "KeySets are KeyDicts without values, serving only to filter and map keys"
+    "KeyDicts that don't collapse arrays or store values."
     collapse_arrays = False
 
     def add(self, item):
@@ -193,5 +196,5 @@ class KeySet(KeyDict):
 
 
 class FastKeyDict(KeyDict):
-    "FastKeyDicts are KeyDicts that don't map keys, only collate arrays"
+    "KeyDicts that don't map keys, only collapse arrays"
     keymapping = False
