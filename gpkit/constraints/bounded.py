@@ -95,7 +95,7 @@ class Bounded(ConstraintSet):
                 out["value near upper bound"].append(varkey)
         if self.verbosity > 0 and out:
             print
-            print "Feasible with these variables bounded:"
+            print "Solves with these variables bounded:"
             for key, value in out.items():
                 print "% 25s: %s" % (key, value)
             print

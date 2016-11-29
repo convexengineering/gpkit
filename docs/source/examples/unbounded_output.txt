@@ -1,5 +1,5 @@
 
-Feasible with these variables bounded:
+Solves with these variables bounded:
    value near upper bound: [x]
  sensitive to upper bound: [x]
 

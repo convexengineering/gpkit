@@ -155,7 +155,7 @@ class Model(CostedConstraintSet):
                             print "and these constants relaxed:"
                         else:
                             print
-                            print "Feasible with these constants relaxed:"
+                            print "Solves with these constants relaxed:"
                         relaxedconsts = True
                     print ("  %s: relaxed from %-.4g to %-.4g"
                            % (orig, mag(self.substitutions[orig]),
@@ -178,7 +178,7 @@ class Model(CostedConstraintSet):
                     print "and these constraints relaxed:"
                 else:
                     print
-                    print "Feasible with relaxed constraints:"
+                    print "Solves with relaxed constraints:"
                     if not relaxedconsts:
                         # then this is the only solution we have to return
                         sol = sol_constraints
