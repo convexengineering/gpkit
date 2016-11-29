@@ -123,7 +123,10 @@ def substitution(nomial, substitutions):
             varlocs_[var].remove(i)
             if len(varlocs_[var]) == 0:
                 del varlocs_[var]
-            if isinstance(sub, Numbers):
+            if isinstance(sub, (Numbers, np.ndarray)):
+                if getattr(sub, "shape", False):
+                    raise ValueError("cannot substitute array %s "
+                                     "for variable %s." % (sub, var))
                 if hasattr(sub, "units") and hasattr(sub, "to"):
                     if sub.units != var.units:
                         try:
@@ -191,6 +194,6 @@ def substitution(nomial, substitutions):
                     for subvar in sub.exp:
                         varlocs_[subvar].append(i)
             else:
-                raise TypeError("could not substitute with value"
-                                " of type '%s'" % type(sub))
+                raise TypeError("could not substitute %s with value"
+                                " of type '%s'" % (var, type(sub)))
     return varlocs_, exps_, cs_, subs
