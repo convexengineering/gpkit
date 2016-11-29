@@ -12,12 +12,12 @@ class KeyDict(dict):
     Mapping keys
     ------------
     If ``.keymapping`` is True, a KeyDict keeps an internal list of VarKeys as
-    canonical keys, but allows accessing their values with any object whose
-    `key` attribute matches one of those VarKeys, or with strings who match
+    canonical keys, and their values can be accessed with any object whose
+    `key` attribute matches one of those VarKeys, or with strings matching
     any of the multiple possible string interpretations of each key:
 
-    Now kd[x] can be set, where x is any gpkit Variable or VarKey.
-    __getitem__ is such that kd[x] can be accessed using:
+    For example, after creating the KeyDict kd and setting kd[x] = v (where x
+    is a Variable or VarKey), v can be accessed with by the following keys:
      - x
      - x.key
      - x.name (a string)
