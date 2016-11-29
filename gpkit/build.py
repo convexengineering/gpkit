@@ -164,25 +164,10 @@ class Mosek(SolverBackend):
     def look(self):
         "Looks in default install locations for latest mosek version."
         if sys.platform == "win32":
-            if platform.architecture()[0] == '64bit':
-                rootdir = "C:\\Program Files\\Mosek"
-                mosek_platform = "win64x86"
-                libpattern = "mosek64_?_?.dll"
-                self.flags = "-Wl,--export-all-symbols,-R"
-            ## below is for 32-bit windows ##
-            ## TODO: for unknown reasons neither command line tools or
-            ##       mosek expopt.so works for 32-bit windows
-            ##       someone should look into this if 32-bit windows
-            ##       is really really really needed
-            #elif platform.architecture()[0] == '32bit':
-            #    rootdir = "C:\\Program Files (x86)\\Mosek"
-            #    mosek_platform = "win32x86"
-            #    libpattern = "mosek?_?.dll"
-            #    self.flags = "-Wl,--export-all-symbols,-R"
-            else:
-                log("# Build script does not support mosek"
-                    " your architecture (%s)" % platform.architecture()[0])
-                return
+            rootdir = "C:\\Program Files\\Mosek"
+            mosek_platform = "win64x86"
+            libpattern = "mosek64_?_?.dll"
+            self.flags = "-Wl,--export-all-symbols,-R"
         elif sys.platform == "darwin":
             rootdir = pathjoin(os.path.expanduser("~"), "mosek")
             mosek_platform = "osx64x86"
