@@ -1,7 +1,7 @@
 """Implement the SignomialProgram class"""
 from time import time
 from ..geometric_program import GeometricProgram
-from ..feasibility import feasibility_model
+from ..nomials import Variable
 from .costed import CostedConstraintSet
 from ..exceptions import InvalidGPConstraint
 
@@ -60,6 +60,7 @@ class SignomialProgram(CostedConstraintSet):
         self.gps = []
         self.result = None
 
+    # pylint: disable=too-many-locals
     def localsolve(self, solver=None, verbosity=1, x0=None, rel_tol=1e-4,
                    iteration_limit=50, **kwargs):
         """Locally solves a SignomialProgram and returns the solution.
@@ -94,6 +95,7 @@ class SignomialProgram(CostedConstraintSet):
             print("Beginning signomial solve.")
             starttime = time()
         self.gps = []  # NOTE: SIDE EFFECTS
+        slackvar = Variable()
         prevcost, cost, rel_improvement = None, None, None
         while rel_improvement is None or rel_improvement > rel_tol:
             if len(self.gps) > iteration_limit:
@@ -107,9 +109,14 @@ class SignomialProgram(CostedConstraintSet):
             try:
                 result = gp.solve(solver, verbosity-1, **kwargs)
             except (RuntimeWarning, ValueError):
-                nearest_feasible = feasibility_model(gp, "max")
-                self.gps.append(nearest_feasible)
-                result = nearest_feasible.solve(solver, verbosity=verbosity-1)
+                feas_constrs = ([slackvar >= 1] +
+                                [posy <= slackvar
+                                 for posy in gp.posynomials[1:]])
+                primal_feas = GeometricProgram(slackvar**100 * gp.cost,
+                                               feas_constrs,
+                                               verbosity=verbosity-1)
+                self.gps.append(primal_feas)
+                result = primal_feas.solve(solver, verbosity=verbosity-1)
                 result["cost"] = None  # reset the cost-counting
             x0 = result["variables"]
             prevcost, cost = cost, result["cost"]

@@ -9,6 +9,7 @@ from .signomial_program import SignomialProgram
 from .linked import LinkedConstraintSet
 from ..keydict import KeyDict
 from .. import SignomialsEnabled
+from ..small_scripts import mag
 
 
 class Model(CostedConstraintSet):
@@ -49,9 +50,9 @@ class Model(CostedConstraintSet):
         cost = cost if cost else Monomial(1)
         constraints = constraints if constraints else []
         CostedConstraintSet.__init__(self, cost, constraints, substitutions)
-        if self.__class__.__name__ != "Model" and not name:
+        if name is None:
             name = self.__class__.__name__
-        if name:
+        if name and name != "Model":
             self.name = name
             self.num = Model._nums[name]
             Model._nums[name] += 1
@@ -101,3 +102,77 @@ class Model(CostedConstraintSet):
         "The collapsed appearance of a ConstraintBase"
         if self.name:
             return "%s_{%s}" % (self.name, self.num)
+
+    # pylint: disable=too-many-locals
+    def debug(self, verbosity=1, **solveargs):
+        "Attempts to diagnose infeasible models."
+        from .relax import ConstantsRelaxed, ConstraintsRelaxed
+        from .bounded import Bounded
+
+        sol = None
+        relaxedconsts = False
+
+        print "Debugging..."
+        print "_____________________"
+
+        if self.substitutions:
+            constsrelaxed = ConstantsRelaxed(Bounded(self))
+            feas = Model(constsrelaxed.relaxvars.prod()**30 * self.cost,
+                         constsrelaxed)
+            # NOTE: It hasn't yet been seen but might be possible that
+            #       the self.cost component above could cause infeasibility
+        else:
+            feas = Model(self.cost, Bounded(self))
+
+        try:
+            sol = feas.solve(verbosity=verbosity, **solveargs)
+
+            if self.substitutions:
+                for relax, orig in zip(constsrelaxed.relaxvars,
+                                       constsrelaxed.origvars):
+                    if sol(relax) >= 1.01:
+                        if not relaxedconsts:
+                            if sol["boundedness"]:
+                                print "and these constants relaxed:"
+                            else:
+                                print
+                                print "Feasible with these constants relaxed:"
+                            relaxedconsts = True
+                        print ("  %s: relaxed from %-.4g to %-.4g"
+                               % (orig, mag(self.substitutions[orig]),
+                                  mag(sol(orig))))
+        except (ValueError, RuntimeWarning):
+            print
+            print ("Model does not solve with bounded variables"
+                   " and relaxed constants.")
+        print "_____________________"
+
+        try:
+            constrsrelaxed = ConstraintsRelaxed(self)
+            feas = Model(constrsrelaxed.relaxvars.prod()**30 * self.cost,
+                         constrsrelaxed)
+            sol_constraints = feas.solve(verbosity=verbosity, **solveargs)
+
+            relaxvals = sol_constraints(constrsrelaxed.relaxvars)
+            if any(rv >= 1.01 for rv in relaxvals):
+                if sol_constraints["boundedness"]:
+                    print "and these constraints relaxed:"
+                else:
+                    print
+                    print "Feasible with relaxed constraints:"
+                    if not relaxedconsts:
+                        # then this is the only solution we have to return
+                        sol = sol_constraints
+            iterator = enumerate(zip(relaxvals, feas[0][0][0]))
+            for i, (relaxval, constraint) in iterator:
+                if relaxval >= 1.01:
+                    relax_percent = "%i%%" % (0.5+(relaxval-1)*100)
+                    print ("  %i: %4s relaxed  Canonical form: %s <= %.2f)"
+                           % (i, relax_percent, constraint.right, relaxval))
+
+        except (ValueError, RuntimeWarning):
+            print
+            print ("Model does not solve with relaxed constraints.")
+
+        print "_____________________"
+        return sol

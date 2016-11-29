@@ -7,11 +7,19 @@ from gpkit import LinkedConstraintSet, Model
 from gpkit.constraints.tight import TightConstraintSet
 from gpkit.tests.helpers import run_tests
 from gpkit.exceptions import InvalidGPConstraint
+from gpkit.constraints.relax import ConstraintsRelaxed
 import gpkit
 
 
 class TestConstraint(unittest.TestCase):
     """Tests for Constraint class"""
+
+    def test_equality_relaxation(self):
+        x = Variable("x")
+        m = Model(x, [x == 3, x == 4])
+        rc = ConstraintsRelaxed(m)
+        m2 = Model(rc.relaxvars.prod() * x**0.01, rc)
+        self.assertAlmostEqual(m2.solve(verbosity=0)(x), 3, 5)
 
     def test_constraintget(self):
         x = Variable("x")

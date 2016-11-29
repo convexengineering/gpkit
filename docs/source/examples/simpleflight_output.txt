@@ -43,8 +43,6 @@ Sensitivities
      W_{W_{coeff1}} : 0.2903  Wing Weight Coefficent 1        
             N_{ult} : 0.2903  ultimate load factor            
      W_{W_{coeff2}} : 0.1303  Wing Weight Coefficent 2        
-             (CDA0) : 0.09156 fuselage drag area              
-                \mu : 0.08599 viscosity of air                
           C_{L,max} : -0.1839 max CL with flaps down          
                \rho : -0.2269 density of air                  
                \tau : -0.2903 airfoil thickness to chord ratio

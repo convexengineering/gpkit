@@ -4,7 +4,6 @@ import unittest
 from gpkit import (Model, Monomial, settings, VectorVariable, Variable,
                    SignomialsEnabled, ArrayVariable, SignomialEquality)
 from gpkit.small_classes import CootMatrix
-from gpkit.feasibility import feasibility_model
 from gpkit.exceptions import InvalidGPConstraint
 
 NDIGS = {"cvxopt": 4, "mosek": 5, "mosek_cli": 5}
@@ -200,18 +199,6 @@ class TestGP(unittest.TestCase):
         m = Model(x1**2 + 100 + 3*x2, [x1 >= 10., x2 >= 15.])
         sol = m.solve(solver=self.solver, verbosity=0)
         self.assertAlmostEqual(sol["cost"]/245., 1, self.ndig)
-
-    def test_feasibility_gp_(self):
-        x = Variable('x')
-        m = Model(x, [x**2 >= 1, x <= 0.5])
-        self.assertRaises(RuntimeWarning, m.solve, verbosity=0)
-        fm = feasibility_model(m.gp(), "max")
-        # pylint: disable=no-member
-        sol1 = fm.solve(verbosity=0)
-        fm = feasibility_model(m.gp(), "product")
-        sol2 = fm.solve(verbosity=0)
-        self.assertTrue(sol1["cost"] >= 1)
-        self.assertTrue(sol2["cost"] >= 1)
 
     def test_terminating_constant_(self):
         x = Variable('x')
@@ -412,13 +399,13 @@ class TestSP(unittest.TestCase):
 
     def test_unbounded_debugging(self):
         "Test nearly-dual-feasible problems"
-        from gpkit.constraints.bounded import BoundedConstraintSet
+        from gpkit.constraints.bounded import Bounded
         x = Variable("x")
         y = Variable("y")
         m = Model(x*y, [x*y**1.000001 >= 100])
         with self.assertRaises((RuntimeWarning, ValueError)):
             m.solve(self.solver, verbosity=0)
-        m = Model(x*y, BoundedConstraintSet(m, verbosity=0))
+        m = Model(x*y, Bounded(m, verbosity=0))
         sol = m.solve(self.solver, verbosity=0)
         bounds = sol["boundedness"]
         self.assertEqual(bounds["sensitive to upper bound"], [y.key])
