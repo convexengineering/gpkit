@@ -16,4 +16,4 @@ Which produces the following plot:
 .. figure::  sensitivities.png
    :width: 500 px
 
-In this plot, steep lines that go up to the right are variables whose increase sharply increases (makes worse) the objective. Steep lines going down to the right are variables whose increase sharply decreases (improves) the objective. Only local sensitivities are displayed, so the lines are conservative: the real effect of changing parameters may lead to lower costs than shown.
+In this plot, steep lines that go up to the right are variables whose increase sharply increases (makes worse) the objective. Steep lines going down to the right are variables whose increase sharply decreases (improves) the objective. Only local sensitivities are displayed, so the lines are optimistic: the real effect of changing parameters may lead to higher costs than shown.

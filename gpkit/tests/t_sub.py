@@ -245,7 +245,6 @@ class TestGPSubs(unittest.TestCase):
         class Above(Model):
             "A simple upper bound on x"
             def setup(self):
-                "setup method"
                 x = Variable("x", "ft")
                 x_max = Variable("x_{max}", 1, "yard")
                 self.cost = 1/x
@@ -254,7 +253,6 @@ class TestGPSubs(unittest.TestCase):
         class Below(Model):
             "A simple lower bound on x"
             def setup(self):
-                "setup method"
                 x = Variable("x", "m")
                 x_min = Variable("x_{min}", 1, "cm")
                 self.cost = x
@@ -290,7 +288,6 @@ class TestGPSubs(unittest.TestCase):
         class Top(Model):
             "Some high level model"
             def setup(self):
-                "setup method"
                 y = Variable('y')
                 s = Sub()
                 sy = s["y"]
@@ -300,7 +297,6 @@ class TestGPSubs(unittest.TestCase):
         class Sub(Model):
             "A simple sub model"
             def setup(self):
-                "setup method"
                 y = Variable('y')
                 self.cost = y
                 return [y >= 2]
@@ -312,7 +308,6 @@ class TestGPSubs(unittest.TestCase):
         class Top(Model):
             "Some high level model"
             def setup(self):
-                "setup method"
                 x = Variable('x')
                 y = Variable('y')
                 self.cost = x
@@ -321,7 +316,6 @@ class TestGPSubs(unittest.TestCase):
         class Sub(Model):
             "A simple sub model"
             def setup(self):
-                "setup method"
                 y = Variable('y')
                 self.cost = y
                 return [y >= 2]

@@ -58,15 +58,16 @@ class Model(CostedConstraintSet):
         setup_vars = None
         substitutions = kwargs.pop("substitutions", None)  # reserved keyword
         if hasattr(self, "setup"):
+            self.cost = None
             with NamedVariables(self.__class__.__name__):
                 start_args = [cost, constraints]
                 args = tuple(a for a in start_args if a is not None) + args
                 constraints = self.setup(*args, **kwargs)  # pylint: disable=no-member
-                cost = getattr(self, "cost", None)  # if it was set in setup
                 from .. import NAMEDVARS, MODELS, MODELNUMS
                 setup_vars = NAMEDVARS[tuple(MODELS), tuple(MODELNUMS)]
                 self.name, self.num = MODELS[:-1], MODELNUMS[:-1]
                 self.naming = (tuple(MODELS), tuple(MODELNUMS))
+            cost = self.cost
         else:
             if args and not substitutions:
                 # backwards compatibility: substitutions as third arg

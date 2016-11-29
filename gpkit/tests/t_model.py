@@ -429,7 +429,6 @@ class TestModelSolverSpecific(unittest.TestCase):
 class Thing(Model):
     "a thing, for model testing"
     def setup(self, length):
-        "setup method"
         a = VectorVariable(length, "a", "g/m")
         b = VectorVariable(length, "b", "m")
         c = Variable("c", 17/4., "g")
@@ -439,7 +438,6 @@ class Thing(Model):
 class Box(Model):
     "simple box for model testing"
     def setup(self):
-        "setup method"
         h = Variable("h", "m", "height")
         w = Variable("w", "m", "width")
         d = Variable("d", "m", "depth")
@@ -449,7 +447,6 @@ class Box(Model):
 class BoxAreaBounds(Model):
     "for testing functionality of separate analysis models"
     def setup(self, box):
-        "setup method"
         A_wall = Variable("A_{wall}", 100, "m^2", "Upper limit, wall area")
         A_floor = Variable("A_{floor}", 50, "m^2", "Upper limit, floor area")
 
