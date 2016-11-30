@@ -186,15 +186,15 @@ def results_table(data, title, minval=0, printunits=True, fixedcols=True,
     for i, (k, v) in enumerate(data.items()):
         v_ = mag(v)
         notnan = ~np.isnan([v_])
-        if np.any(notnan) and np.max(np.abs(np.array([v_])[notnan])) >= minval:
+        if np.any(notnan) and np.sum(np.abs(np.array([v_])[notnan])) >= minval:
             b = isinstance(v, Iterable) and bool(v.shape)
             kmodels = k.descr.get("models", [])
             kmodelnums = k.descr.get("modelnums", [])
             model = ""
-            for i in range(len(kmodels)):
+            for i, kmodel in enumerate(kmodels):
                 if model:
                     model += "/"
-                model += kmodels[i]
+                model += kmodel
                 if kmodelnums[i] != 0:
                     model += ".%i" % kmodelnums[i]
             models.add(model)
@@ -266,7 +266,7 @@ def results_table(data, title, minval=0, printunits=True, fixedcols=True,
                 line = [fmts[0].format(" | "), line[1]]
             else:
                 line = [fmt.format(s) for fmt, s in zip(fmts, line)]
-            line = "".join(line).rstrip()
+            line = "".join(line).rstrip()  # pylint:disable=redefined-variable-type
             lines[i] = line
         lines = [title] + ["-"*len(title)] + lines + [""]
     elif lines:
