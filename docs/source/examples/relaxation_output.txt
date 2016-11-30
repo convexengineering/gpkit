@@ -23,20 +23,20 @@ Cost
 
 Free Variables
 --------------
-x : 1.414  
-           
+x : 1.414
+
   | Relax.2
-C : 1.414  
+C : 1.414
 
 Constants
 ---------
-x_max : 1 
-x_min : 2 
+x_max : 1
+x_min : 2
 
 Sensitivities
 -------------
-x_min : 0.5  
-x_max : -0.5 
+x_min : 0.5
+x_max : -0.5
 
 
 With constraints relaxed individually
@@ -54,20 +54,20 @@ Cost
 
 Free Variables
 --------------
-x : 1                      
-                           
+x : 1
+
   | Relax.3
-C : [ 1         2        ] 
+C : [ 1         2        ]
 
 Constants
 ---------
-x_max : 1 
-x_min : 2 
+x_max : 1
+x_min : 2
 
 Sensitivities
 -------------
-x_min : 1     
-x_max : -0.99 
+x_min : 1
+x_max : -0.99
 
 
 With constants relaxed individually
@@ -91,12 +91,12 @@ Cost
 
 Free Variables
 --------------
-    x : 1      
-x_max : 1      
-x_min : 1      
-               
+    x : 1
+x_max : 1
+x_min : 1
+
       | Relax.4
-x_max : 1      
-x_min : 2      
+x_max : 1
+x_min : 2
 
 

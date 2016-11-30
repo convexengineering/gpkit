@@ -261,12 +261,14 @@ def results_table(data, title, minval=0, printunits=True, fixedcols=True,
             # check lengths before using zip
             assert len(list(dirs)) == len(list(maxlens))
             fmts = ['{0:%s%s}' % (direc, L) for direc, L in zip(dirs, maxlens)]
-        for i in range(len(lines)):
-            if lines[i][0] == ("modelname",):
-                lines[i] = [fmts[0].format(" | "), lines[i][1]]
+        for i, line in enumerate(lines):
+            if line[0] == ("modelname",):
+                line = [fmts[0].format(" | "), line[1]]
             else:
-                lines[i] = [fmt.format(s) for fmt, s in zip(fmts, lines[i])]
-        lines = [title] + ["-"*len(title)] + [''.join(l) for l in lines] + [""]
+                line = [fmt.format(s) for fmt, s in zip(fmts, line)]
+            line = "".join(line).rstrip()
+            lines[i] = line
+        lines = [title] + ["-"*len(title)] + lines + [""]
     elif lines:
         colfmt = {1: "llcl", 2: "lcl", 3: "llc"}
         lines = (["\n".join(["{\\footnotesize",
