@@ -18,5 +18,5 @@ Cost
 
 Free Variables
 --------------
-\vec{x} : [ 1         2         1        ] 
+x : [ 1         2         1        ] 
 

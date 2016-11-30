@@ -45,8 +45,8 @@ With constraints relaxed individually
   # minimize
         C_Relax_(0,)*C_Relax_(1,)*x**0.01
   # subject to
-        \vec{C} >= [gpkit.Monomial(x*x_max**-1), gpkit.Monomial(x**-1*x_min)]
-        \vec{C} >= 1
+        C >= [gpkit.Monomial(x*x_max**-1), gpkit.Monomial(x**-1*x_min)]
+        C >= 1
 
 Cost
 ----
@@ -54,10 +54,10 @@ Cost
 
 Free Variables
 --------------
-      x : 1                      
-                                 
-        | Relax.3
-\vec{C} : [ 1         2        ] 
+x : 1                      
+                           
+  | Relax.3
+C : [ 1         2        ] 
 
 Constants
 ---------

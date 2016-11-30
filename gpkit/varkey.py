@@ -96,8 +96,6 @@ class VarKey(object):
                 if subscript == "models":
                     substring = ", ".join(substring)
                 string += "_%s" % (substring,)
-        if self.shape and not self.idx:
-            string = "\\vec{%s}" % string  # add vector arrow for veckeys
         return string
 
     def __getattr__(self, attr):
