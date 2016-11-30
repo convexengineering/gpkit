@@ -272,7 +272,12 @@ class Mosek(SolverBackend):
 
 def build_gpkit():
     "Builds GPkit"
-    global settings  # pylint: disable=global-variable-not-assigned
+    try:
+        import gpkit
+        log("# Moving to the directory from which GPkit was imported.")
+        os.chdir(gpkit.__path__[0])
+    except ImportError:
+        pass
 
     if isfile("__init__.py"):
         #call("ls")
