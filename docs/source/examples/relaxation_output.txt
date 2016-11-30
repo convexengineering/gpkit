@@ -23,10 +23,10 @@ Cost
 
 Free Variables
 --------------
-    x : 1.414 
-              
-Relax |       
-    C : 1.414 
+x : 1.414  
+           
+  | Relax.2
+C : 1.414  
 
 Constants
 ---------
@@ -56,7 +56,7 @@ Free Variables
 --------------
       x : 1                      
                                  
-  Relax |                        
+        | Relax.3
 \vec{C} : [ 1         2        ] 
 
 Constants
@@ -91,12 +91,12 @@ Cost
 
 Free Variables
 --------------
-    x : 1 
-x_max : 1 
-x_min : 1 
-          
-Relax |   
-x_max : 1 
-x_min : 2 
+    x : 1      
+x_max : 1      
+x_min : 1      
+               
+      | Relax.4
+x_max : 1      
+x_min : 2      
 
 
