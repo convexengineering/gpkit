@@ -6,7 +6,6 @@ import sys
 import shutil
 import subprocess
 import glob
-import platform
 
 LOGSTR = ""
 settings = {}
