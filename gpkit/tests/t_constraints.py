@@ -199,12 +199,12 @@ class TestTight(unittest.TestCase):
         y = Variable('y')
         with SignomialsEnabled():
             sig_constraint = (x + y >= 0.1)
-        m = Model(x, [Tight([x >= y], raiseerror=True),
-                      x >= 2, y >= 1, sig_constraint])
+        m = Model(x*y, [Tight([x >= y], raiseerror=True),
+                        x >= 2, y >= 1, sig_constraint])
         with self.assertRaises(ValueError):
             m.localsolve(verbosity=0)
         m.pop(1)
-        self.assertAlmostEqual(m.localsolve(verbosity=0)["cost"], 1)
+        self.assertAlmostEqual(m.localsolve(verbosity=0)["cost"], 1, 5)
 
     def test_sigconstr_in_sp(self):
         """Tests tight constraint set with localsolve()"""
