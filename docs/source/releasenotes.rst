@@ -12,7 +12,7 @@ Version 0.5.0
  * Added and documented debugging tools (PR #933)
  * Added and documented vectorization tools
  * Documented modular model construction
- * Up to 3200 lines of code, 1700 lines of docstring. (not counting ``interactive`` and ``tests``)
+ * 3200 lines of code, 1800 lines of tests, 1700 lines of docstring. (not counting `interactive`)
 
 Changes to named models / Model inheritance
 -------------------------------------------
