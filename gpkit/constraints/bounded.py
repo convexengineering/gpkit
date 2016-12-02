@@ -1,10 +1,11 @@
-"Implements BoundedConstraintSet"
+"Implements Bounded"
 from collections import defaultdict
 import numpy as np
 
 from .. import Variable
 from .set import ConstraintSet
 from ..small_scripts import mag
+from ..small_classes import Quantity
 
 
 def varkey_bounds(varkeys, lower, upper):
@@ -24,13 +25,13 @@ def varkey_bounds(varkeys, lower, upper):
     constraints = []
     for varkey in varkeys:
         variable = Variable(**varkey.descr)
-        units = varkey.descr.get("units", 1)
-        constraints.append([upper*units >= variable,
-                            variable >= lower*units])
+        units = varkey.units if isinstance(varkey.units, Quantity) else 1
+        constraints.append([upper >= variable/units,
+                            variable/units >= lower])
     return constraints
 
 
-class BoundedConstraintSet(ConstraintSet):
+class Bounded(ConstraintSet):
     """Bounds contained variables so as to ensure dual feasibility.
 
     Arguments
@@ -68,12 +69,12 @@ class BoundedConstraintSet(ConstraintSet):
         bounding_constraints = varkey_bounds(self.bounded_varkeys,
                                              self.lowerbound, self.upperbound)
         constraints = [constraintset, bounding_constraints]
-        super(BoundedConstraintSet, self).__init__(constraints, substitutions)
+        super(Bounded, self).__init__(constraints, substitutions)
 
     def sens_from_dual(self, las, nus):
         "Return sensitivities while capturing the relevant lambdas"
         self.bound_las = las[-2*len(self.bounded_varkeys):]
-        return super(BoundedConstraintSet, self).sens_from_dual(las, nus)
+        return super(Bounded, self).sens_from_dual(las, nus)
 
     def process_result(self, result):
         "Creates (and potentially prints) a dictionary of unbounded variables."
@@ -94,10 +95,10 @@ class BoundedConstraintSet(ConstraintSet):
                 out["value near upper bound"].append(varkey)
         if self.verbosity > 0 and out:
             print
-            print "UNBOUNDED VARIABLES"
+            print "Solves with these variables bounded:"
             for key, value in out.items():
                 print "% 25s: %s" % (key, value)
             print
-        if not "boundedness" in result:
+        if "boundedness" not in result:
             result["boundedness"] = {}
         result["boundedness"].update(out)

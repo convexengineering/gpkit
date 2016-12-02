@@ -91,13 +91,11 @@ class VarKey(object):
             excluded = []
         string = self.name
         for subscript in self.subscripts:
-            if subscript in self.descr and subscript not in excluded:
+            if self.descr.get(subscript) and subscript not in excluded:
                 substring = self.descr[subscript]
                 if subscript == "models":
                     substring = ", ".join(substring)
                 string += "_%s" % (substring,)
-        if self.shape and not self.idx:
-            string = "\\vec{%s}" % string  # add vector arrow for veckeys
         return string
 
     def __getattr__(self, attr):
