@@ -14,17 +14,35 @@
     settings : dict
         Contains settings loaded from ``./env/settings``
 """
+from collections import defaultdict
 from os import sep as os_sep
 from os.path import dirname as os_path_dirname
 SETTINGS_PATH = os_sep.join([os_path_dirname(__file__), "env", "settings"])
 
-__version__ = "0.4.2"
+__version__ = "0.5.0"
 UNIT_REGISTRY = None
 SIGNOMIALS_ENABLED = False
 
 # global variable initializations
 DimensionalityError = ValueError
-units = None
+ureg, units = None, None  # pylint: disable=invalid-name
+
+
+class GPkitUnits(object):
+    "Return monomials instead of Quantitites"
+
+    def __init__(self):
+        self.Quantity = ureg.Quantity  # pylint: disable=invalid-name
+        if hasattr(ureg, "__nonzero__"):
+            # that is, if it's a DummyUnits object
+            self.__nonzero__ = ureg.__nonzero__
+            self.__bool__ = ureg.__bool__
+
+    def __getattr__(self, attr):
+        return Monomial(self.Quantity(1, getattr(ureg, attr)))
+
+    def __call__(self, arg):
+        return Monomial(self.Quantity(1, ureg(arg)))
 
 
 def enable_units(path=None):
@@ -35,7 +53,7 @@ def enable_units(path=None):
 
     If gpkit is imported multiple times, this needs to be run each time."""
     # pylint: disable=invalid-name,global-statement
-    global units, DimensionalityError, UNIT_REGISTRY
+    global DimensionalityError, UNIT_REGISTRY, ureg, units
     try:
         import pint
         if path:
@@ -47,8 +65,10 @@ def enable_units(path=None):
             UNIT_REGISTRY.load_definitions(os_sep.join([path, "usd_cpi.txt"]))
             # next line patches https://github.com/hgrecco/pint/issues/366
             UNIT_REGISTRY.define("nautical_mile = 1852 m = nmi")
-        units = UNIT_REGISTRY
+
+        ureg = UNIT_REGISTRY
         DimensionalityError = pint.DimensionalityError
+        units = GPkitUnits()
     except ImportError:
         print("Optional Python units library (Pint) not installed;"
               " unit support disabled.")
@@ -71,7 +91,7 @@ def disable_units():
         from gpkit import disable_units
         disable_units()
     """
-    global units  # pylint: disable=global-statement
+    global ureg, units  # pylint: disable=invalid-name,global-statement
 
     class DummyUnits(object):
         "Dummy class to replace missing pint"
@@ -91,9 +111,68 @@ def disable_units():
         def __call__(self, arg):
             return 1
 
-    units = DummyUnits()
+    ureg = DummyUnits()
+    units = ureg
 
 enable_units()
+
+# the current vectorization shape
+VECTORIZATION = []
+# the current model hierarchy
+MODELS = []
+# modelnumbers corresponding to MODELS, above
+MODELNUMS = []
+# lookup table for the number of models of each name that have been made
+MODELNUM_LOOKUP = defaultdict(int)
+# the list of variables named in the current MODELS/MODELNUM environment
+NAMEDVARS = defaultdict(list)
+
+def begin_variable_naming(model):
+    "Appends a model name and num to the environment."
+    MODELS.append(model)
+    num = MODELNUM_LOOKUP[model]
+    MODELNUMS.append(num)
+    MODELNUM_LOOKUP[model] += 1
+    return num, (tuple(MODELS), tuple(MODELNUMS))
+
+
+def end_variable_naming():
+    "Pops a model name and num from the environment."
+    NAMEDVARS.pop(tuple(MODELS), tuple(MODELNUMS))
+    MODELS.pop()
+    MODELNUMS.pop()
+
+
+class NamedVariables(object):
+    """Creates an environment in which all variables have
+       a model name and num appended to their varkeys.
+    """
+    def __init__(self, model):
+        self.model = model
+
+    def __enter__(self):
+        "Enters a named environment."
+        begin_variable_naming(self.model)
+
+    def __exit__(self, type_, val, traceback):
+        "Leaves a named environment."
+        end_variable_naming()
+
+
+class Vectorize(object):
+    """Creates an environment in which all variables are
+       exended in an additional dimension.
+    """
+    def __init__(self, dimension_length):
+        self.dimension_length = dimension_length
+
+    def __enter__(self):
+        "Enters a vectorized environment."
+        VECTORIZATION.insert(0, self.dimension_length)
+
+    def __exit__(self, type_, val, traceback):
+        "Leaves a vectorized environment."
+        VECTORIZATION.pop(0)
 
 
 class SignomialsEnabled(object):
@@ -122,40 +201,15 @@ class SignomialsEnabled(object):
 from .varkey import VarKey
 from .nomials import Nomial, NomialArray
 from .nomials import Monomial, Posynomial, Signomial
-from .nomials import Variable, VectorVariable, ArrayVariable
-from .nomials import SignomialEquality
+from .nomials import VectorVariable, ArrayVariable
+# note: the Variable the user sees is not the Variable used internally
+from .nomials import VectorizableVariable as Variable
 from .geometric_program import GeometricProgram
 from .constraints.signomial_program import SignomialProgram
+from .constraints.sigeq import SignomialEquality
 from .constraints.set import ConstraintSet
 from .constraints.model import Model
 from .constraints.linked import LinkedConstraintSet
-
-if units:
-    def _subvert_pint():
-        """
-        When gpkit objects appear in mathematical operations with pint
-        Quantity objects, let the gpkit implementations determine what to do
-        """
-        def skip_if_gpkit_objects(fallback, objects=(Nomial, NomialArray)):
-            """Returned method calls self.fallback(other) if other is
-            not in objects, and otherwise returns NotImplemented.
-            """
-            def _newfn(self, other):
-                if isinstance(other, objects):
-                    return NotImplemented
-                else:
-                    return getattr(self, fallback)(other)
-            return _newfn
-
-        for op in "eq ge le add mul div truediv floordiv".split():
-            dunder = "__%s__" % op
-            trunder = "___%s___" % op
-            original = getattr(units.Quantity, dunder)
-            setattr(units.Quantity, trunder, original)
-            newfn = skip_if_gpkit_objects(fallback=trunder)
-            setattr(units.Quantity, dunder, newfn)
-
-    _subvert_pint()
 
 
 def load_settings(path=SETTINGS_PATH):

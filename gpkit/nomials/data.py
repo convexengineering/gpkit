@@ -19,10 +19,6 @@ class NomialData(object):
     """
     # pylint: disable=too-many-instance-attributes
     def __init__(self, exps=None, cs=None, simplify=True):
-        if exps is None and cs is None:
-            # pass through for classmethods to get a NomialData object,
-            # which they will then call __init__ on
-            return
         if simplify:
             exps, cs = simplify_exps_and_cs(exps, cs)
         self.exps, self.cs = exps, cs
@@ -53,13 +49,6 @@ class NomialData(object):
             self._hashvalue = hash(tuple(list(zip(self.exps, mag(self.cs))) +
                                          [str(self.units)]))
         return self._hashvalue
-
-    @classmethod
-    def fromnomials(cls, nomials):
-        """Construct a NomialData from an iterable of Signomial objects"""
-        nd = cls()  # use pass-through version of __init__
-        nd.init_from_nomials(nomials)
-        return nd
 
     @property
     def varkeys(self):

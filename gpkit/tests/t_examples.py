@@ -31,6 +31,28 @@ class TestExamples(unittest.TestCase):
               self.assertAlmostEqual(example.sol["cost"], 3.121)
     """
 
+    def test_performance_modeling(self, example):
+        pass
+
+    def test_vectorize(self, example):
+        pass
+
+    def test_primal_infeasible_ex1(self, example):
+        with self.assertRaises(RuntimeWarning) as cm:
+            example.m.solve(verbosity=0)
+        err = cm.exception
+        if "mosek" in err.message:
+            self.assertIn("PRIM_INFEAS_CER", err.message)
+        elif "cvxopt" in err.message:
+            self.assertIn("unknown", err.message)
+
+    def test_primal_infeasible_ex2(self, example):
+        with self.assertRaises(RuntimeWarning):
+            example.m.solve(verbosity=0)
+
+    def test_debug(self, example):
+        pass
+
     def test_simple_sp(self, example):
         pass
 
@@ -82,6 +104,9 @@ class TestExamples(unittest.TestCase):
         for key in consenscheck:
             sol_rat = sol["sensitivities"]["constants"][key]/consenscheck[key]
             self.assertTrue(abs(1-sol_rat) < 1e-2)
+
+    def test_relaxation(self, example):
+        pass
 
     def test_unbounded(self, example):
         pass

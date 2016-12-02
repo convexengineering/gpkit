@@ -20,8 +20,10 @@ class LinkedConstraintSet(ConstraintSet):
     ---------
     constraints: iterable
         valid argument to ConstraintSet
+
     include_only: set
         whitelist of variable names to include
+
     exclude: set
         blacklist of variable names, supercedes include_only
     """

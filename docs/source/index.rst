@@ -16,6 +16,8 @@ Supported solvers are
 `MOSEK <http://mosek.com>`_
 and `CVXOPT <http://cvxopt.org>`_.
 
+Join our `mailing list <https://mailman.mit.edu/mailman/listinfo/gpkit-users/>`_ and/or `chatroom <https://gitter.im/gpkit-users/Lobby>`_ for support and examples.
+
 Table of contents
 ====================
     .. toctree::
@@ -25,6 +27,9 @@ Table of contents
        gpkit101
        installation
        gettingstarted
+       debugging
+       visint
+       modelbuilding
        advancedcommands
        signomialprogramming
        examples

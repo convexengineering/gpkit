@@ -28,6 +28,8 @@ def unitstr(units, into="%s", options="~", dimless="-"):
     "Returns the unitstr of a given object."
     if hasattr(units, "descr") and hasattr(units.descr, "get"):
         units = units.descr.get("units", dimless)
+    if hasattr(units, "units") and isinstance(units.units, Quantity):
+        units = units.units
     if isinstance(units, Strings):
         return into % units if units else ""
     elif isinstance(units, Quantity):
@@ -77,7 +79,7 @@ def is_sweepvar(sub):
     "Determines if a given substitution indicates a sweep."
     try:
         sweep, value = sub
-        if sweep == "sweep" and (isinstance(value, Iterable) or
+        if sweep is "sweep" and (isinstance(value, Iterable) or
                                  hasattr(value, "__call__")):
             return True
     except (TypeError, ValueError):

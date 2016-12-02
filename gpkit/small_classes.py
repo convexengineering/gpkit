@@ -1,7 +1,7 @@
 """Miscellaneous small classes"""
 from collections import namedtuple
 import numpy as np
-from . import units as gpkitunits
+from . import ureg
 
 try:
     isinstance("", basestring)
@@ -9,7 +9,7 @@ try:
 except NameError:
     Strings = (str,)
 
-Quantity = gpkitunits.Quantity
+Quantity = ureg.Quantity
 Numbers = (int, float, np.number, Quantity)
 CootMatrixTuple = namedtuple('CootMatrix', ['row', 'col', 'data'])
 
@@ -92,6 +92,20 @@ class DictOfLists(dict):
     def to_united_array(self, unitless_keys=(), united=False):
         "Converts all lists into array, potentially grabbing units from keys."
         _enray_and_unit_dict(self, self, unitless_keys, united)
+
+    def classify(self, cls):
+        "Converts dictionaries whose first key isn't a string to given class."
+        _classify(self, cls)
+
+
+def _classify(d_in, cls):
+    "Converts dictionaries whose first key isn't a string to given class."
+    for k, v in d_in.items():
+        if isinstance(v, dict) and v:
+            if isinstance(v.keys()[0], Strings):
+                _classify(v, cls)
+            else:
+                d_in[k] = cls(v)
 
 
 def _enlist_dict(d_in, d_out):

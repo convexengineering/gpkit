@@ -3,9 +3,9 @@ import sys
 from time import time
 import numpy as np
 from .nomials import NomialData
-from .small_classes import CootMatrix, HashVector
-from .keydict import KeyDict
-from .small_classes import SolverLog
+from .small_classes import CootMatrix, HashVector, SolverLog
+from .keydict import FastKeyDict
+from .small_scripts import mag
 
 
 DEFAULT_SOLVER_KWARGS = {"cvxopt": {"kktsolver": "ldl"}}
@@ -58,9 +58,6 @@ class GeometricProgram(NomialData):
 
         for constraint in constraints:
             constr_posys = constraint.as_posyslt1(self.substitutions)
-            if not all(constr_posys):
-                raise ValueError("%s is an invalid constraint for a"
-                                 " GeometricProgram" % constraint)
             start_idx, ps_added = len(self.posynomials), len(constr_posys)
             self.constr_idxs.append(range(start_idx, start_idx + ps_added))
             self.posynomials.extend(constr_posys)
@@ -257,7 +254,8 @@ class GeometricProgram(NomialData):
         nu, la = solver_out["nu"], solver_out["la"]
         # confirm lengths before calling zip
         assert len(self.varlocs) == len(primal)
-        result = {"freevariables": KeyDict(zip(self.varlocs, np.exp(primal)))}
+        result = {"freevariables": FastKeyDict(zip(self.varlocs,
+                                                   np.exp(primal)))}
 
         ## Get cost
         if "objective" in solver_out:
@@ -265,7 +263,11 @@ class GeometricProgram(NomialData):
         else:
             # use self.posynomials[0] because the cost may have had constants
             freev = result["freevariables"]
-            result["cost"] = self.posynomials[0].subsummag(freev)
+            cost = self.posynomials[0].sub(freev)
+            if cost.varkeys:
+                raise ValueError("cost contains unsolved variables %s"
+                                 % cost.varkeys.keys())
+            result["cost"] = mag(cost.c)
 
         ## Get sensitivities
         result["sensitivities"] = {"nu": nu, "la": la}
@@ -285,9 +287,9 @@ class GeometricProgram(NomialData):
             # also, add each constraint's sensitivities to the results
             # TODO: enable this once there's a plan for how to use it
             # result["sensitivities"]["constraints"][str(constr)] = constr_sens
-        result["sensitivities"]["constants"] = KeyDict(var_senss)
-        result["constants"] = KeyDict(self.substitutions)
-        result["variables"] = KeyDict(result["freevariables"])
+        result["sensitivities"]["constants"] = FastKeyDict(var_senss)
+        result["constants"] = FastKeyDict(self.substitutions)
+        result["variables"] = FastKeyDict(result["freevariables"])
         result["variables"].update(result["constants"])
 
         return result

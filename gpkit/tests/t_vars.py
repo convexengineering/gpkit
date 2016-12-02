@@ -4,6 +4,7 @@ import numpy as np
 from gpkit import (Monomial, NomialArray, Variable, VarKey,
                    VectorVariable, ArrayVariable)
 import gpkit
+from gpkit.nomials import Variable as PlainVariable
 
 
 class TestVarKey(unittest.TestCase):
@@ -82,11 +83,11 @@ class TestVariable(unittest.TestCase):
     def test_init(self):
         """Test Variable initialization"""
         v = Variable('v')
-        self.assertTrue(isinstance(v, Variable))
+        self.assertTrue(isinstance(v, PlainVariable))
         self.assertTrue(isinstance(v, Monomial))
         # test that operations on Variable cast to Monomial
         self.assertTrue(isinstance(3*v, Monomial))
-        self.assertFalse(isinstance(3*v, Variable))
+        self.assertFalse(isinstance(3*v, PlainVariable))
 
     def test_value(self):
         """Detailed tests for value kwarg of __init__"""
@@ -132,11 +133,11 @@ class TestVectorVariable(unittest.TestCase):
         self.assertTrue(isinstance(v, NomialArray))
         v_mult = 3*v
         for i in range(n):
-            self.assertTrue(isinstance(v[i], Variable))
+            self.assertTrue(isinstance(v[i], PlainVariable))
             self.assertTrue(isinstance(v[i], Monomial))
             # test that operations on Variable cast to Monomial
             self.assertTrue(isinstance(v_mult[i], Monomial))
-            self.assertFalse(isinstance(v_mult[i], Variable))
+            self.assertFalse(isinstance(v_mult[i], PlainVariable))
 
         # test 2
         x = VectorVariable(3, 'x', label='dummy variable')
@@ -154,13 +155,13 @@ class TestVectorVariable(unittest.TestCase):
     def test_constraint_creation_units(self):
         v = VectorVariable(2, "v", "m/s")
         c = (v >= 40*gpkit.units("ft/s"))
-        c2 = (v >= [20, 30]*gpkit.units("ft/s"))
+        c2 = (v >= np.array([20, 30])*gpkit.units("ft/s"))
         if gpkit.units:
             self.assertTrue(c.right.units)
-            self.assertTrue(c2.right.units)
+            self.assertTrue(NomialArray(c2.right).units)
         else:
             self.assertEqual(type(c.right), int)
-            self.assertEqual(type(c2.right), list)
+            self.assertEqual(type(c2.right), np.ndarray)
 
 
 class TestArrayVariable(unittest.TestCase):
@@ -169,7 +170,7 @@ class TestArrayVariable(unittest.TestCase):
     def test_is_vector_variable(self):
         """
         Make sure ArrayVariable is a shortcut to VectorVariable
-        (I want to know if this changes).
+        (we want to know if this changes).
         """
         self.assertTrue(ArrayVariable is VectorVariable)
 
@@ -181,7 +182,23 @@ class TestArrayVariable(unittest.TestCase):
         self.assertEqual(strx.count("]"), 3)
 
 
-TESTS = [TestVarKey, TestVariable, TestVectorVariable, TestArrayVariable]
+class TestVectorize(unittest.TestCase):
+    """TestCase for gpkit.vectorize"""
+
+    def test_shapes(self):
+        with gpkit.Vectorize(3):
+            with gpkit.Vectorize(5):
+                y = gpkit.Variable("y")
+                x = gpkit.VectorVariable(2, "x")
+            z = gpkit.VectorVariable(7, "z")
+
+        self.assertEqual(y.shape, (5, 3))
+        self.assertEqual(x.shape, (2, 5, 3))
+        self.assertEqual(z.shape, (7, 3))
+
+
+TESTS = [TestVarKey, TestVariable, TestVectorVariable, TestArrayVariable,
+         TestVectorize]
 
 if __name__ == '__main__':
     # pylint: disable=wrong-import-position

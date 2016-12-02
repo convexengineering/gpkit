@@ -66,6 +66,7 @@ Mac OSX
 
 Linux
     Run ``sudo apt-get install libblas-dev liblapack-dev`` or otherwise install those libraries
+
     Run ``pip install cvxopt`` (for system python installs, use ``sudo pip``)
 
     If experiencing issues with wheel in Ubuntu 16.04, try the `official installer. <http://cvxopt.org/install/index.html>`_
@@ -112,7 +113,7 @@ Install GPkit
   - Run ``pip install gpkit`` at the command line (for system python installs, use ``sudo pip``)
   - Run ``pip install ipywidgets`` for interactive control of models (recommended)
   - Run ``python -c "import gpkit.tests; gpkit.tests.run()"`` to run the tests; if any tests do not pass, please email ``gpkit@mit.edu`` or `raise a GitHub issue <http://github.com/hoburg/gpkit/issues/new>`_.
-  - *Optional:* to install gpkit into an isolated python environment, install ``virtualenv``, run ``virtualenv $DESTINATION_DIR`` then activate it with ``source $DESTINATION_DIR/bin/activate``
+  - Join our `mailing list <https://mailman.mit.edu/mailman/listinfo/gpkit-users/>`_ and/or `chatroom <https://gitter.im/gpkit-users/Lobby>`_ for support and examples.
 
 
 Debugging installation
@@ -123,7 +124,7 @@ You may need to rebuild GPkit if any of the following occur:
   - You delete the ``.gpkit`` folder from your home directory
   - You see ``Could not load settings file.`` when importing GPkit, or
   - ``Could not load MOSEK library: ImportError('$HOME/.gpkit/expopt.so not found.')``
-To rebuild GPkit, do the following:
+To rebuild GPkit, first try running ``python -c "from gpkit.build import rebuild; rebuild()"``. If that doesn't work then try the following:
   - Run ``pip uninstall gpkit``
   - Run ``pip install --no-cache-dir --no-deps gpkit``
   - Run ``python -c "import gpkit.tests; gpkit.tests.run()"``

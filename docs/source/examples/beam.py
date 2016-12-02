@@ -3,7 +3,7 @@ A simple beam example with fixed geometry. Solves the discretized
 Euler-Bernoulli beam equations for a constant distributed load
 """
 import numpy as np
-from gpkit import Variable, VectorVariable, Model, units
+from gpkit import Variable, VectorVariable, Model, ureg
 from gpkit.small_scripts import mag
 
 
@@ -21,7 +21,7 @@ class Beam(Model):
     q : float or N-vector of floats
         [N/m] Loading density: can be specified as constants or as an array.
     """
-    def __init__(self, N=4, **kwargs):
+    def setup(self, N=4):
         EI = Variable("EI", 1e4, "N*m^2")
         dx = Variable("dx", "m", "Length of an element")
         L = Variable("L", 5, "m", "Overall beam length")
@@ -48,9 +48,9 @@ class Beam(Model):
         displ_eq = (w >= w.left + 0.5*dx*(th + th.left))
         displ_eq[0] = (w[0] >= w_base)
         # minimize tip displacement (the last w)
-        Model.__init__(self, w[-1],
-                       [shear_eq, moment_eq, theta_eq, displ_eq,
-                        L == (N-1)*dx], **kwargs)
+        self.cost = w[-1]
+        return [shear_eq, moment_eq, theta_eq, displ_eq,
+                L == (N-1)*dx]
 
 
 b = Beam(N=6, substitutions={"L": 6, "EI": 1.1e4, "q": 110*np.ones(6)})
@@ -60,11 +60,11 @@ print sol.table()
 w_gp = sol("w")  # deflection along beam
 
 L, EI, q = sol("L"), sol("EI"), sol("q")
-x = np.linspace(0, mag(L), len(q))*units.m  # position along beam
+x = np.linspace(0, mag(L), len(q))*ureg.m  # position along beam
 q = q[0]  # assume uniform loading for the check below
 w_exact = q/(24.*EI) * x**2 * (x**2 - 4*L*x + 6*L**2)  # analytic soln
 
-assert max(abs(w_gp - w_exact)) <= 1.1*units.cm
+assert max(abs(w_gp - w_exact)) <= 1.1*ureg.cm
 
 PLOT = False
 if PLOT:

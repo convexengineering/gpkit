@@ -1,22 +1,22 @@
-"Implements TightConstraintSet"
+"Implements Tight"
 from .set import ConstraintSet
 from ..nomials import PosynomialInequality, SignomialInequality
 from ..small_scripts import mag
 from .. import SignomialsEnabled
 
 
-class TightConstraintSet(ConstraintSet):
+class Tight(ConstraintSet):
     "ConstraintSet whose inequalities must result in an equality."
 
     def __init__(self, constraints, substitutions=None, reltol=1e-6,
                  raiseerror=False):
-        super(TightConstraintSet, self).__init__(constraints, substitutions)
+        super(Tight, self).__init__(constraints, substitutions)
         self.reltol = reltol
         self.raiseerror = raiseerror
 
     def process_result(self, result):
         "Checks that all constraints are satisfied with equality"
-        super(TightConstraintSet, self).process_result(result)
+        super(Tight, self).process_result(result)
         variables = result["variables"]
         for constraint in self.flat(constraintsets=False):
             rel_diff = 0
@@ -36,13 +36,22 @@ class TightConstraintSet(ConstraintSet):
                         leftsubbed = constraint.left.sub(variables).value
                         rightsubbed = constraint.right.sub(variables).value
             if rel_diff >= self.reltol:
-                msg = ("Constraint [%.30s...] is not tight because "
-                       "the left hand side evaluated to %s but "
-                       "the right hand side evaluated to %s "
-                       "(Allowable error: %s%%, Actual error: %.2g%%)\n" %
-                       (constraint, leftsubbed, rightsubbed,
+                msg = ("Constraint [%.100s... %s %.100s...] is not tight"
+                       " because the left hand side evaluated to %s but"
+                       " the right hand side evaluated to %s"
+                       " (Allowable error: %s%%, Actual error: %.2g%%)\n" %
+                       (constraint.left, constraint.oper, constraint.right,
+                        leftsubbed, rightsubbed,
                         self.reltol*100, mag(rel_diff)*100))
                 if self.raiseerror:
                     raise ValueError(msg)
                 else:
                     print "Warning: %s" % msg
+
+
+class TightConstraintSet(Tight):
+    "kept for backwards compatibility, discard in 0.6"
+    def __init__(self, *args, **kwargs):
+        print("The class name `TightConstraintSet` is deprecated; please"
+              " use the new name `Tight`.")
+        Tight.__init__(self, *args, **kwargs)

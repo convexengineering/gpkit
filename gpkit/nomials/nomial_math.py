@@ -1,7 +1,6 @@
 """Signomial, Posynomial, Monomial, Constraint, & MonoEQCOnstraint classes"""
 import numpy as np
 from .data import simplify_exps_and_cs
-from .array import NomialArray
 from .nomial_core import Nomial
 from .substitution import substitution, parse_subs
 from ..constraints import SingleEquationConstraint
@@ -10,7 +9,7 @@ from ..small_classes import HashVector
 from ..keydict import KeySet
 from ..varkey import VarKey
 from ..small_scripts import mag
-from .. import units as ureg
+from .. import ureg
 from .. import DimensionalityError
 from ..exceptions import InvalidGPConstraint
 
@@ -171,10 +170,6 @@ class Signomial(Nomial):
         -------
         Monomial (unless self(x0) < 0, in which case a Signomial is returned)
         """
-        if not x0:
-            for i, exp in enumerate(self.exps):
-                if exp == {}:
-                    return Monomial({}, self.cs[i])
         x0, _, _ = parse_subs(self.varkeys, x0)  # use only varkey keys
         exp = HashVector()
         psub = self.sub(x0)
@@ -220,28 +215,18 @@ class Signomial(Nomial):
         _, exps, cs, _ = substitution(self, substitutions)
         super(Signomial, self).__init__(exps, cs)
 
-    def subsummag(self, substitutions):
-        "Returns the sum of the magnitudes of the substituted Nomial."
-        _, exps, cs, _ = substitution(self, substitutions)
-        if any(exps):
-            keys = set()
-            for exp in exps:
-                keys.update(exp)
-            raise ValueError("could not substitute for %s" % keys)
-        return mag(cs).sum()
-
     def __le__(self, other):
-        if isinstance(other, NomialArray):
-            return NotImplemented
-        else:
+        if isinstance(other, (Numbers, Signomial)):
             return SignomialInequality(self, "<=", other)
+        else:
+            return NotImplemented
 
     def __ge__(self, other):
-        if isinstance(other, NomialArray):
-            return NotImplemented
-        else:
+        if isinstance(other, (Numbers, Signomial)):
             # by default all constraints take the form left >= right
             return SignomialInequality(self, ">=", other)
+        else:
+            return NotImplemented
 
     # posynomial arithmetic
     def __add__(self, other):
@@ -255,8 +240,6 @@ class Signomial(Nomial):
              # pylint: disable=no-member
             cs = self.cs.tolist() + other.cs.tolist()
             return Signomial(self.exps + other.exps, cs)
-        elif isinstance(other, NomialArray):
-            return np.array(self)+other
         else:
             return NotImplemented
 
@@ -284,8 +267,6 @@ class Signomial(Nomial):
                 for j, exp_o in enumerate(other.exps):
                     Exps[i, j] = exp_s + exp_o
             return Signomial(Exps.flatten(), C.flatten())
-        elif isinstance(other, NomialArray):
-            return np.array(self)*other
         else:
             return NotImplemented
 
@@ -295,8 +276,6 @@ class Signomial(Nomial):
             return Signomial(self.exps, self.cs/other)
         elif isinstance(other, Monomial):
             return other.__rdiv__(self)
-        elif isinstance(other, NomialArray):
-            return np.array(self)/other
         else:
             return NotImplemented
 
@@ -579,11 +558,6 @@ class PosynomialInequality(ScalarSingleEquationConstraint):
         "GP version of a Posynomial constraint is itself"
         return self
 
-    # pylint: disable=unused-argument
-    def sens_from_gpconstr(self, posyapprox, pa_sens, var_senss):
-        "Returns sensitivities as parsed from an approximating GP constraint."
-        return pa_sens
-
 
 class MonomialEquality(PosynomialInequality):
     "A Constraint of the form Monomial == Monomial."
@@ -690,37 +664,21 @@ class SignomialInequality(ScalarSingleEquationConstraint):
         else:
             raise InvalidGPConstraint("SignomialInequality could not simplify"
                                       " to a PosynomialInequality; try calling"
-                                      "`.localsolve` instead of `.solve` to"
+                                      " `.localsolve` instead of `.solve` to"
                                       " form your Model as a SignomialProgram")
-
-    def _fill_default_x0(self, x0, varkeys):
-        """For all keys in varkeys, updates x0 with default values and
-        substitutions. Returns x0.
-
-        Order of precedence for x0 default:
-            - substitution value
-            - x0 value
-            - sp_init value
-            - 1.0
-        """
-        if x0 is None:
-            x0 = {}
-        x0.update(self.substitutions)
-        x0.update({vk: x0.get(vk, vk.descr.get("sp_init", 1.0))
-                   for vk in varkeys})
-        return x0
 
     def as_gpconstr(self, x0):
         "Returns GP approximation of an SP constraint at x0"
         siglt0, = self.unsubbed
         posy, negy = siglt0.posy_negy()
-        x0 = self._fill_default_x0(x0, negy.varlocs)
+        # assume unspecified negy variables have a value of 1.0
+        x0.update({vk: 1.0 for vk in negy.varlocs if vk not in x0})
         pc = PosynomialInequality(posy, "<=", negy.mono_lower_bound(x0))
         pc.substitutions = self.substitutions
         return pc
 
 
-class SignomialEquality(SignomialInequality):
+class SingleSignomialEquality(SignomialInequality):
     "A constraint of the general form posynomial == posynomial"
 
     def __init__(self, left, right):
@@ -738,8 +696,9 @@ class SignomialEquality(SignomialInequality):
     def as_gpconstr(self, x0):
         "Returns GP approximation of an SP constraint at x0"
         siglt0, = self.unsubbed
-        x0 = self._fill_default_x0(x0, siglt0.varlocs)
         posy, negy = siglt0.posy_negy()
+        # assume unspecified variables have a value of 1.0
+        x0.update({vk: 1.0 for vk in siglt0.varlocs if vk not in x0})
         mec = (posy.mono_lower_bound(x0) == negy.mono_lower_bound(x0))
         mec.substitutions = self.substitutions
         return mec

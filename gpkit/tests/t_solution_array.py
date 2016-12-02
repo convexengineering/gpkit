@@ -67,9 +67,9 @@ class TestSolutionArray(unittest.TestCase):
         sol = m.solve(verbosity=0)
         Psol = sol.subinto(P_max)
         self.assertEqual(len(Psol), Nsweep)
-        self.assertAlmostEqual(0*gpkit.units.m,
-                               np.max(np.abs(Pvals*gpkit.units.m - Psol)))
-        self.assertAlmostEqual(0*gpkit.units.m,
+        self.assertAlmostEqual(0*gpkit.ureg.m,
+                               np.max(np.abs(Pvals*gpkit.ureg.m - Psol)))
+        self.assertAlmostEqual(0*gpkit.ureg.m,
                                np.max(np.abs(Psol - sol(P_max))))
 
     def test_table(self):
@@ -81,12 +81,10 @@ class TestSolutionArray(unittest.TestCase):
 
     def test_units_sub(self):
         # issue 809
-        if not gpkit.units:
-            return
         T = Variable("T", "N", "thrust")
         Tmin = Variable("T_{min}", "N", "minimum thrust")
         m = Model(T, [T >= Tmin])
-        tminsub = 1000 * gpkit.units.lbf
+        tminsub = 1000 * gpkit.ureg.lbf
         m.substitutions.update({Tmin: tminsub})
         sol = m.solve(verbosity=0)
         self.assertEqual(sol(Tmin), tminsub)

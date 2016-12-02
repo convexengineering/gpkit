@@ -13,7 +13,7 @@ from ..small_classes import Numbers
 from ..small_scripts import try_str_without
 from ..constraints import ArrayConstraint
 from ..repr_conventions import _str, _repr, _repr_latex_
-from .. import units as ureg
+from .. import ureg
 from .. import DimensionalityError
 Quantity = ureg.Quantity
 
@@ -30,11 +30,9 @@ def array_constraint(symbol, func):
 
     def wrapped_func(self, other):
         "Creates array constraint from vectorized operator."
-        if isinstance(other, Quantity):
-            veccable_other = np.array([other], dtype=object)
-        else:
-            veccable_other = other
-        result = vecfunc(self, veccable_other)
+        if not self.shape:
+            return func(self.flatten()[0], other)
+        result = vecfunc(self, other)
         left = self.key if hasattr(self, "key") else self
         right = other.key if hasattr(other, "key") else other
         return ArrayConstraint(result, left, symbol, right)
@@ -57,7 +55,7 @@ class NomialArray(np.ndarray):
     __repr__ = _repr
     _repr_latex_ = _repr_latex_
 
-    def str_without(self, excluded=()):
+    def str_without(self, excluded=None):
         "Returns string without certain fields (such as 'models')."
         if self.shape:
             return "[" + ", ".join([try_str_without(el, excluded)

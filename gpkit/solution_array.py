@@ -2,7 +2,7 @@
 from collections import Iterable
 import numpy as np
 from .nomials import NomialArray
-from .small_classes import Strings, DictOfLists
+from .small_classes import DictOfLists
 from .small_scripts import unitstr, mag
 
 
@@ -55,18 +55,14 @@ class SolutionArray(DictOfLists):
 
     def __call__(self, posy):
         posy_subbed = self.subinto(posy)
-        if hasattr(posy_subbed, "exp") and not posy_subbed.exp:
-            # it's a constant monomial
-            return posy_subbed.c
-        elif hasattr(posy_subbed, "c"):
-            # it's a posyarray, which'll throw an error if non-constant...
-            return posy_subbed.c
-        return posy_subbed
+        return getattr(posy_subbed, "c", posy_subbed)
 
     def subinto(self, posy):
         "Returns NomialArray of each solution substituted into posy."
         if posy in self["variables"]:
             return self["variables"][posy]
+        elif not hasattr(posy, "sub"):
+            raise ValueError("no variable '%s' found in the solution" % posy)
         elif len(self) > 1:
             return NomialArray([self.atindex(i).subinto(posy)
                                 for i in range(len(self))])
@@ -95,8 +91,6 @@ class SolutionArray(DictOfLists):
         -------
         str
         """
-        if isinstance(tables, Strings):
-            tables = [tables]
         strs = []
         for table in tables:
             subdict = self.get(table, None)
@@ -111,15 +105,9 @@ class SolutionArray(DictOfLists):
                     costs = ["%-8.3g" % c for c in mag(subdict[:4])]
                     strs += [" [ %s %s ]" % ("  ".join(costs),
                                              "..." if len(self) > 4 else "")]
-                    cost_units = self.program[0].cost.units
                 else:
                     strs += [" %-.4g" % mag(subdict)]
-                    if hasattr(self.program, "cost"):
-                        cost_units = self.program.cost.units
-                    else:
-                        # we're in a skipsweepfailures that only solved once
-                        cost_units = self.program[0].cost.units
-                strs[-1] += unitstr(cost_units, into=" [%s] ", dimless="")
+                strs[-1] += unitstr(subdict, into=" [%s] ", dimless="")
                 strs += [""]
             elif not subdict:
                 continue
@@ -180,15 +168,23 @@ def results_table(data, title, minval=0, printunits=True, fixedcols=True,
     sortbyvals : boolean
         If true, rows are sorted by their average value instead of by name.
     """
+    from . import units
+    if not units:
+        # disable units printing
+        printunits = False
     lines = []
     decorated = []
     models = set()
     for i, (k, v) in enumerate(data.items()):
         v_ = mag(v)
         notnan = ~np.isnan([v_])
-        if np.any(notnan) and np.max(np.abs(np.array([v_])[notnan])) >= minval:
+        if np.any(notnan) and np.sum(np.abs(np.array([v_])[notnan])) >= minval:
             b = isinstance(v, Iterable) and bool(v.shape)
-            model = ", ".join(k.descr.get("models", ""))
+            kmodels = k.descr.get("models", [])
+            kmodelnums = k.descr.get("modelnums", [])
+            model = "/".join([kstr + (".%i" % knum if knum != 0 else "")
+                              for kstr, knum in zip(kmodels, kmodelnums)
+                              if kstr])
             models.add(model)
             s = k.str_without("models")
             if not sortbyvals:
@@ -215,7 +211,7 @@ def results_table(data, title, minval=0, printunits=True, fixedcols=True,
                 lines.append(["", "", "", ""])
             if model is not "":
                 if not latex:
-                    lines.append([model+" | ", "", "", ""])
+                    lines.append([("modelname",), model, "", ""])
                 else:
                     lines.append([r"\multicolumn{3}{l}{\textbf{" +
                                   model + r"}} \\"])
@@ -234,13 +230,14 @@ def results_table(data, title, minval=0, printunits=True, fixedcols=True,
         else:
             varstr = "$%s$" % varstr.replace(" : ", "")
             if latex == 1:  # normal results table
-                lines.append([varstr, valstr, "$%s$" % var.unitstr(), label])
+                lines.append([varstr, valstr, "$%s$" % var.latex_unitstr(),
+                              label])
                 coltitles = [title, "Value", "Units", "Description"]
             elif latex == 2:  # no values
-                lines.append([varstr, "$%s$" % var.unitstr(), label])
+                lines.append([varstr, "$%s$" % var.latex_unitstr(), label])
                 coltitles = [title, "Units", "Description"]
             elif latex == 3:  # no description
-                lines.append([varstr, valstr, "$%s$" % var.unitstr()])
+                lines.append([varstr, valstr, "$%s$" % var.latex_unitstr()])
                 coltitles = [title, "Value", "Units"]
             else:
                 raise ValueError("Unexpected latex option, %s." % latex)
@@ -253,9 +250,13 @@ def results_table(data, title, minval=0, printunits=True, fixedcols=True,
             # check lengths before using zip
             assert len(list(dirs)) == len(list(maxlens))
             fmts = ['{0:%s%s}' % (direc, L) for direc, L in zip(dirs, maxlens)]
-        lines = [[fmt.format(s) for fmt, s in zip(fmts, line)]
-                 for line in lines]
-        lines = [title] + ["-"*len(title)] + [''.join(l) for l in lines] + [""]
+        for i, line in enumerate(lines):
+            if line[0] == ("modelname",):
+                line = [fmts[0].format(" | "), line[1]]
+            else:
+                line = [fmt.format(s) for fmt, s in zip(fmts, line)]
+            lines[i] = "".join(line).rstrip()
+        lines = [title] + ["-"*len(title)] + lines + [""]
     elif lines:
         colfmt = {1: "llcl", 2: "lcl", 3: "llc"}
         lines = (["\n".join(["{\\footnotesize",
