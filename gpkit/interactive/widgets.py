@@ -106,7 +106,7 @@ def modelcontrolpanel(model, *args, **kwargs):
     sliderboxes = []
     for sl in sliders.children:
         cb = widgets.Checkbox(value=True)
-        unit_latex = sl.varkey.unitstr()
+        unit_latex = sl.varkey.latex_unitstr()
         if unit_latex:
             unit_latex = r"$\scriptsize"+unit_latex+"$"
         units = widgets.Latex(value=unit_latex)

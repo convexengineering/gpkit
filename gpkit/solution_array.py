@@ -182,13 +182,9 @@ def results_table(data, title, minval=0, printunits=True, fixedcols=True,
             b = isinstance(v, Iterable) and bool(v.shape)
             kmodels = k.descr.get("models", [])
             kmodelnums = k.descr.get("modelnums", [])
-            model = ""
-            for i, kmodel in enumerate(kmodels):
-                if model:
-                    model += "/"
-                model += kmodel
-                if kmodelnums[i] != 0:
-                    model += ".%i" % kmodelnums[i]
+            model = "/".join([kstr + (".%i" % knum if knum != 0 else "")
+                              for kstr, knum in zip(kmodels, kmodelnums)
+                              if kstr])
             models.add(model)
             s = k.str_without("models")
             if not sortbyvals:
@@ -234,13 +230,14 @@ def results_table(data, title, minval=0, printunits=True, fixedcols=True,
         else:
             varstr = "$%s$" % varstr.replace(" : ", "")
             if latex == 1:  # normal results table
-                lines.append([varstr, valstr, "$%s$" % var.unitstr(), label])
+                lines.append([varstr, valstr, "$%s$" % var.latex_unitstr(),
+                              label])
                 coltitles = [title, "Value", "Units", "Description"]
             elif latex == 2:  # no values
-                lines.append([varstr, "$%s$" % var.unitstr(), label])
+                lines.append([varstr, "$%s$" % var.latex_unitstr(), label])
                 coltitles = [title, "Units", "Description"]
             elif latex == 3:  # no description
-                lines.append([varstr, valstr, "$%s$" % var.unitstr()])
+                lines.append([varstr, valstr, "$%s$" % var.latex_unitstr()])
                 coltitles = [title, "Value", "Units"]
             else:
                 raise ValueError("Unexpected latex option, %s." % latex)
@@ -258,8 +255,7 @@ def results_table(data, title, minval=0, printunits=True, fixedcols=True,
                 line = [fmts[0].format(" | "), line[1]]
             else:
                 line = [fmt.format(s) for fmt, s in zip(fmts, line)]
-            line = "".join(line).rstrip()  # pylint:disable=redefined-variable-type
-            lines[i] = line
+            lines[i] = "".join(line).rstrip()
         lines = [title] + ["-"*len(title)] + lines + [""]
     elif lines:
         colfmt = {1: "llcl", 2: "lcl", 3: "llc"}
