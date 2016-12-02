@@ -5,6 +5,6 @@ Cost
 
 Free Variables
 --------------
-x : 0.9 
-y : 0.1 
+x : 0.9
+y : 0.1
 
