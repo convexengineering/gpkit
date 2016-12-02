@@ -35,8 +35,9 @@ def imize_fn(path=None, clearfiles=True):
     if not path:
         path = tempfile.mkdtemp()
     filename = path + os.sep + "gpkit_mosek"
-    os.environ['PATH'] = (os.environ['PATH'] + ':%s' %
-                          settings["mosek_bin_dir"])
+    if "mosek_bin_dir" in settings:
+        os.environ['PATH'] = ":".join([os.environ['PATH'],
+                                       settings["mosek_bin_dir"]])
 
     # pylint: disable=unused-argument
     def imize(c, A, p_idxs, *args, **kwargs):

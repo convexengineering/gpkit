@@ -6,7 +6,6 @@ import sys
 import shutil
 import subprocess
 import glob
-import platform
 
 LOGSTR = ""
 settings = {}
@@ -100,13 +99,6 @@ class MosekCLI(SolverBackend):
 
     def look(self):
         "Attempts to run mskexpopt."
-
-        if sys.platform == "win32":
-            ## does not work on 32-bit windows ##
-            log("# Build script does not support mosek_cli"
-                " your architecture (%s)" % platform.architecture()[0])
-            return
-
         try:
             log("#   Trying to run mskexpopt...")
             if call("mskexpopt") in (1052, 28):  # 28 for MacOSX
@@ -121,7 +113,7 @@ class CVXopt(SolverBackend):
     name = "cvxopt"
 
     def look(self):
-        "Attempts to import mskexpopt."
+        "Attempts to import cvxopt."
         try:
             log("#   Trying to import cvxopt...")
             # Testing the import, so the variable is intentionally not used
@@ -279,7 +271,12 @@ class Mosek(SolverBackend):
 
 def build_gpkit():
     "Builds GPkit"
-    global settings  # pylint: disable=global-variable-not-assigned
+    try:
+        import gpkit
+        log("# Moving to the directory from which GPkit was imported.")
+        os.chdir(gpkit.__path__[0])
+    except ImportError:
+        pass
 
     if isfile("__init__.py"):
         #call("ls")
