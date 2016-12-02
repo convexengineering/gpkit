@@ -225,7 +225,7 @@ def results_table(data, title, minval=0, printunits=True, fixedcols=True,
         else:
             if valfmt != "%-.4g ":
                 valstr = valfmt % mag(val)
-            elif mag(val) > 10000 :
+            elif mag(val) > 10000:
                 valstr = "%-.3g " % mag(val)
             elif mag(val) > 10:
                 # this is to keep mags >1000 out of scientific notation
