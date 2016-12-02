@@ -102,11 +102,11 @@ class SolutionArray(DictOfLists):
                     continue
                 strs += ["\n%s\n----" % table_title]
                 if len(self) > 1:
-                    costs = ["%-8.4g" % c for c in mag(subdict[:4])]
+                    costs = ["%-8.3g" % c for c in mag(subdict[:4])]
                     strs += [" [ %s %s ]" % ("  ".join(costs),
                                              "..." if len(self) > 4 else "")]
                 else:
-                    strs += [" %-.5g" % mag(subdict)]
+                    strs += [" %-.4g" % mag(subdict)]
                 strs[-1] += unitstr(subdict, into=" [%s] ", dimless="")
                 strs += [""]
             elif not subdict:

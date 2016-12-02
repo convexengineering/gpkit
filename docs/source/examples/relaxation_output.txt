@@ -19,7 +19,7 @@ With constraints relaxed equally
 
 Cost
 ----
- 1.4142
+ 1.414
 
 Free Variables
 --------------
