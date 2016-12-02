@@ -11,7 +11,7 @@ class ConstraintsRelaxedEqually(ConstraintSet):
 
     Arguments
     ---------
-    constraints : iterable
+    constraints: iterable
         Constraints which will be relaxed (made easier).
 
 
@@ -28,6 +28,8 @@ class ConstraintsRelaxedEqually(ConstraintSet):
     """
 
     def __init__(self, constraints):
+        if not isinstance(constraints, ConstraintSet):
+            constraints = ConstraintSet(constraints)
         substitutions = dict(constraints.substitutions)
         posynomials = constraints.as_posyslt1()
         with NamedVariables("Relax"):
@@ -44,7 +46,7 @@ class ConstraintsRelaxed(ConstraintSet):
 
     Arguments
     ---------
-    constraints : iterable
+    constraints: iterable
         Constraints which will be relaxed (made easier).
 
 
@@ -62,6 +64,8 @@ class ConstraintsRelaxed(ConstraintSet):
     """
 
     def __init__(self, constraints):
+        if not isinstance(constraints, ConstraintSet):
+            constraints = ConstraintSet(constraints)
         substitutions = dict(constraints.substitutions)
         posynomials = constraints.as_posyslt1()
         N = len(posynomials)
@@ -78,7 +82,7 @@ class ConstantsRelaxed(ConstraintSet):
 
     Arguments
     ---------
-    constraints : iterable
+    constraints: iterable
         Constraints which will be relaxed (made easier).
 
     include_only : set
@@ -99,6 +103,8 @@ class ConstantsRelaxed(ConstraintSet):
         can also be determined by looking at the constant's new value directly.
     """
     def __init__(self, constraints, include_only=None, exclude=None):
+        if not isinstance(constraints, ConstraintSet):
+            constraints = ConstraintSet(constraints)
         exclude = frozenset(exclude) if exclude else frozenset()
         include_only = frozenset(include_only) if include_only else frozenset()
         substitutions = KeyDict(constraints.substitutions)
