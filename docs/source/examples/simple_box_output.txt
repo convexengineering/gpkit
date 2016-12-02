@@ -1,13 +1,13 @@
 
 Cost
 ----
- 0.00367424 [1/m**3] 
+ 0.0036742 [1/m**3] 
 
 Free Variables
 --------------
-d : 8.17  [m] depth
-h : 8.16  [m] height
-w : 4.08  [m] width
+d : 8.17   [m] depth
+h : 8.163  [m] height
+w : 4.081  [m] width
 
 Constants
 ---------

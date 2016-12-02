@@ -1,7 +1,7 @@
 
 Cost
 ----
- 1.94258 [lbf] 
+ 1.9426 [lbf] 
 
 Free Variables
 --------------
@@ -10,7 +10,7 @@ Free Variables
 
          | Aircraft/Wing
        W : 190                                         [lbf] weight
-       c : 2.65                                        [ft]  mean chord
+       c : 2.653                                       [ft]  mean chord
 
          | Mission/FlightSegment/AircraftP
 W_{burn} : [ 0.487     0.486     0.485     0.485    ]  [lbf] segment fuel burn
@@ -51,10 +51,10 @@ Sensitivities
    e : [ -0.0926   -0.0924   -0.0922   -0.092   ] Oswald efficiency
 
      | Aircraft/Wing
-   S : 0.683                                      surface area
-\rho : 0.482                                      areal density
-   A : -0.306                                     aspect ratio
+   S : 0.6831                                     surface area
+\rho : 0.4816                                     areal density
+   A : -0.3056                                    aspect ratio
 
      | Aircraft/Fuselage
-   W : 0.253                                      weight
+   W : 0.2535                                     weight
 
