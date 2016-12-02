@@ -1,0 +1,22 @@
+SCALAR
+
+Cost
+----
+ 1
+
+Free Variables
+--------------
+x : 1
+
+__________
+
+VECTORIZED
+
+Cost
+----
+ 2
+
+Free Variables
+--------------
+x : [ 1         2         1        ]
+

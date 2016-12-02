@@ -12,6 +12,14 @@ gpkit.interactive.chartjs module
     :undoc-members:
     :show-inheritance:
 
+gpkit.interactive.linking_diagram module
+----------------------------------------
+
+.. automodule:: gpkit.interactive.linking_diagram
+    :members:
+    :undoc-members:
+    :show-inheritance:
+
 gpkit.interactive.plotting module
 ---------------------------------
 

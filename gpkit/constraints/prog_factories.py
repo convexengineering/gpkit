@@ -76,13 +76,14 @@ def _solve_fctry(genfunction):
                       constants, sweep, linkedsweep,
                       solver, verbosity, *args, **kwargs)
         else:
-            self.program, solvefn = genfunction(self, verbosity-1)
+            self.program, solvefn = genfunction(self, verbosity)
             result = solvefn(solver, verbosity, *args, **kwargs)
             solution.append(result)
         solution.program = self.program
         solution.to_united_array(unitless_keys=["sensitivities"], united=True)
         if self.cost.units:
-            solution["cost"] *= self.cost.units
+            solution["cost"] = solution["cost"] * self.cost.units
+        solution.classify(KeyDict)
         self.solution = solution  # NOTE: SIDE EFFECTS
         return solution
     return solvefn
@@ -149,8 +150,6 @@ def run_sweep(genfunction, self, solution, skipsweepfailures,
             solution["constants"][var] = [val[0]]
     for var in delvars:
         del solution["constants"][var]
-    if not solution["constants"]:
-        del solution["constants"]
 
     if verbosity > 0:
         soltime = time() - tic
