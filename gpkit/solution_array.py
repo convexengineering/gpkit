@@ -102,11 +102,11 @@ class SolutionArray(DictOfLists):
                     continue
                 strs += ["\n%s\n----" % table_title]
                 if len(self) > 1:
-                    costs = ["%-8.3g" % c for c in mag(subdict[:4])]
+                    costs = ["%-8.5g" % c for c in mag(subdict[:4])]
                     strs += [" [ %s %s ]" % ("  ".join(costs),
                                              "..." if len(self) > 4 else "")]
                 else:
-                    strs += [" %-.4g" % mag(subdict)]
+                    strs += [" %-.6g" % mag(subdict)]
                 strs[-1] += unitstr(subdict, into=" [%s] ", dimless="")
                 strs += [""]
             elif not subdict:
@@ -223,7 +223,11 @@ def results_table(data, title, minval=0, printunits=True, fixedcols=True,
             ellipsis = " ..." if len(val) > 4 else ""
             valstr = "[ %s%s ] " % ("  ".join(vals), ellipsis)
         else:
-            if valfmt is "%-.4g " and mag(val) > 10:
+            if valfmt != "%-.4g ":
+                valstr = valfmt % mag(val)
+            elif mag(val) > 10000 :
+                valstr = "%-.3g " % mag(val)
+            elif mag(val) > 10:
                 # this is to keep mags >1000 out of scientific notation
                 #   and keep a decimal place on mags >10
                 valstr = valfmt % mag(val)

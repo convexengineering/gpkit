@@ -1,7 +1,7 @@
 
 Cost
 ----
- 1.943 [lbf] 
+ 1.94258 [lbf] 
 
 Free Variables
 --------------

@@ -3,20 +3,20 @@ SINGLE
 
 Cost
 ----
- 303.1 [N] 
+ 303.075 [N] 
 
 Free Variables
 --------------
-  A : 8.46              aspect ratio
-C_D : 0.0206            Drag coefficient of wing
-C_L : 0.499             Lift coefficent of wing
-C_f : 0.0036            skin friction coefficient
-  D : 303.1      [N]    total drag force
- Re : 3.675e+06         Reynold's number
-  S : 16.44      [m**2] total wing area
-  V : 38.15      [m/s]  cruising speed
-  W : 7341       [N]    total aircraft weight
-W_w : 2401       [N]    wing weight
+  A : 8.46             aspect ratio
+C_D : 0.0206           Drag coefficient of wing
+C_L : 0.499            Lift coefficent of wing
+C_f : 0.0036           skin friction coefficient
+  D : 303.1     [N]    total drag force
+ Re : 3.68e+06         Reynold's number
+  S : 16.44     [m**2] total wing area
+  V : 38.15     [m/s]  cruising speed
+  W : 7341      [N]    total aircraft weight
+W_w : 2401      [N]    wing weight
 
 Constants
 ---------
@@ -57,7 +57,7 @@ SWEEP
 
 Cost
 ----
- [ 338       294       396       326       ] [N] 
+ [ 337.78    294.29    396.08    325.94    ] [N] 
 
 Sweep Variables
 ---------------
