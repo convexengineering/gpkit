@@ -55,13 +55,7 @@ class SolutionArray(DictOfLists):
 
     def __call__(self, posy):
         posy_subbed = self.subinto(posy)
-        if hasattr(posy_subbed, "exp") and not posy_subbed.exp:
-            # it's a constant monomial
-            return posy_subbed.c
-        elif hasattr(posy_subbed, "c"):
-            # it's a posyarray, which'll throw an error if non-constant...
-            return posy_subbed.c
-        return posy_subbed
+        return getattr(posy_subbed, "c", posy_subbed)
 
     def subinto(self, posy):
         "Returns NomialArray of each solution substituted into posy."
@@ -97,8 +91,6 @@ class SolutionArray(DictOfLists):
         -------
         str
         """
-        if isinstance(tables, Strings):
-            tables = [tables]
         strs = []
         for table in tables:
             subdict = self.get(table, None)
