@@ -269,6 +269,7 @@ class Mosek(SolverBackend):
         return True
 
 def rebuild():
+    "Changes to the installed gpkit directory and runs build_gpkit()"
     import gpkit
     log("# Moving to the directory from which GPkit was imported.")
     os.chdir(gpkit.__path__[0])
