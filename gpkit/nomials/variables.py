@@ -48,7 +48,8 @@ class Variable(Monomial):
         if descr.pop("newvariable", True):
             from .. import MODELS, MODELNUMS, NAMEDVARS
 
-            NAMEDVARS[tuple(MODELS), tuple(MODELNUMS)].append(self)
+            if MODELS and MODELNUMS:
+                NAMEDVARS[tuple(MODELS), tuple(MODELNUMS)].append(self)
 
             if MODELS:
                 descr["models"] = descr.get("models", []) + MODELS

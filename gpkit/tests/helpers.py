@@ -49,8 +49,26 @@ def new_test(name, solver, import_dict, path):
     def test(self):
         # pylint: disable=missing-docstring
         # No docstring because it'd be uselessly the same for each example
+
+        import gpkit
+        # clear MODELNUMS to ensure determinate script-like output!
+        for key in set(gpkit.MODELNUM_LOOKUP):
+            del gpkit.MODELNUM_LOOKUP[key]
+
         with NewDefaultSolver(solver):
             logged_example_testcase(name, import_dict, path)(self)
+
+        # check all other global state besides MODELNUM_LOOKUP
+        #   is falsy (which should mean blank)
+        for globname, global_thing in [("models", gpkit.MODELS),
+                                       ("modelnums", gpkit.MODELNUMS),
+                                       ("vectorization",
+                                            gpkit.VECTORIZATION),
+                                       ("namedvars", gpkit.NAMEDVARS)]:
+            if global_thing:
+                raise ValueError("global attribute %s should have been"
+                                 " falsy after the test, but was instead %s"
+                                 % (globname, global_thing))
     return test
 
 
