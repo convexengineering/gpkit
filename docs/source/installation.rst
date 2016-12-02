@@ -113,7 +113,7 @@ Install GPkit
   - Run ``pip install gpkit`` at the command line (for system python installs, use ``sudo pip``)
   - Run ``pip install ipywidgets`` for interactive control of models (recommended)
   - Run ``python -c "import gpkit.tests; gpkit.tests.run()"`` to run the tests; if any tests do not pass, please email ``gpkit@mit.edu`` or `raise a GitHub issue <http://github.com/hoburg/gpkit/issues/new>`_.
-  - *Optional:* to install gpkit into an isolated python environment, install ``virtualenv``, run ``virtualenv $DESTINATION_DIR`` then activate it with ``source $DESTINATION_DIR/bin/activate``
+  - Join our `mailing list <https://mailman.mit.edu/mailman/listinfo/gpkit-users/>`_ and/or `chatroom <https://gitter.im/gpkit-users/Lobby>`_ for support and examples.
 
 
 Debugging installation
