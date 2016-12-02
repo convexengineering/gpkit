@@ -53,7 +53,7 @@ setup(
     author_email="gpkit@mit.edu",
     url="https://www.github.com/hoburg/gpkit",
     install_requires=["numpy >= 1.8.1", "pint", "scipy"],
-    version="0.5.0.0",
+    version="0.5.0.2",
     packages=["gpkit", "gpkit._mosek", "gpkit.tests", "gpkit.interactive",
               "gpkit.nomials", "gpkit.constraints", "gpkit.tools"],
     package_data={"gpkit": ["pint/*", "env/*"],

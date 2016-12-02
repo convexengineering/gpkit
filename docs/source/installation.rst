@@ -124,7 +124,7 @@ You may need to rebuild GPkit if any of the following occur:
   - You delete the ``.gpkit`` folder from your home directory
   - You see ``Could not load settings file.`` when importing GPkit, or
   - ``Could not load MOSEK library: ImportError('$HOME/.gpkit/expopt.so not found.')``
-To rebuild GPkit, do the following:
+To rebuild GPkit, first try running ``python -c "from gpkit.build import rebuild; rebuild()"``. If that doesn't work then try the following:
   - Run ``pip uninstall gpkit``
   - Run ``pip install --no-cache-dir --no-deps gpkit``
   - Run ``python -c "import gpkit.tests; gpkit.tests.run()"``
