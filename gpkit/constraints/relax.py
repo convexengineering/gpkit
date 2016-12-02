@@ -11,7 +11,7 @@ class ConstraintsRelaxedEqually(ConstraintSet):
 
     Arguments
     ---------
-    constraints: iterable
+    constraints : iterable
         Constraints which will be relaxed (made easier).
 
 
@@ -46,7 +46,7 @@ class ConstraintsRelaxed(ConstraintSet):
 
     Arguments
     ---------
-    constraints: iterable
+    constraints : iterable
         Constraints which will be relaxed (made easier).
 
 
@@ -82,7 +82,7 @@ class ConstantsRelaxed(ConstraintSet):
 
     Arguments
     ---------
-    constraints: iterable
+    constraints : iterable
         Constraints which will be relaxed (made easier).
 
     include_only : set
