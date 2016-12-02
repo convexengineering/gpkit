@@ -223,7 +223,12 @@ def results_table(data, title, minval=0, printunits=True, fixedcols=True,
             ellipsis = " ..." if len(val) > 4 else ""
             valstr = "[ %s%s ] " % ("  ".join(vals), ellipsis)
         else:
-            valstr = valfmt % mag(val)
+            if valfmt is "%-.4g " and mag(val) > 10:
+                # this is to keep mags >1000 out of scientific notation
+                #   and keep a decimal place on mags >10
+                valstr = valfmt % mag(val)
+            else:
+                valstr = "%-.3g " % mag(val)
         valstr = valstr.replace("nan", " - ")
         if not latex:
             lines.append([varstr, valstr, units, label])

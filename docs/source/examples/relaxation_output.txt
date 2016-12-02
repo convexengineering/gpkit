@@ -23,10 +23,10 @@ Cost
 
 Free Variables
 --------------
-x : 1.414
+x : 1.41
 
   | Relax
-C : 1.414
+C : 1.41
 
 Constants
 ---------
