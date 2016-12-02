@@ -265,7 +265,8 @@ class GeometricProgram(NomialData):
             freev = result["freevariables"]
             cost = self.posynomials[0].sub(freev)
             if cost.varkeys:
-                raise ValueError("could not substitute for %s" % set(cost.varkeys))
+                raise ValueError("cost contains unsolved variables %s"
+                                 % cost.varkeys.keys())
             result["cost"] = mag(cost.c)
 
         ## Get sensitivities

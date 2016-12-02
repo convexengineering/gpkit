@@ -2,7 +2,7 @@
 from collections import Iterable
 import numpy as np
 from .nomials import NomialArray
-from .small_classes import Strings, DictOfLists
+from .small_classes import DictOfLists
 from .small_scripts import unitstr, mag
 
 
