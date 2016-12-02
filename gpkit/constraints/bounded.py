@@ -69,8 +69,8 @@ class Bounded(ConstraintSet):
                                      if "value" not in vk.descr)
         bounding_constraints = varkey_bounds(self.bounded_varkeys,
                                              self.lowerbound, self.upperbound)
-        constraints = [constraints, bounding_constraints]
-        super(Bounded, self).__init__(constraints, substitutions)
+        super(Bounded, self).__init__([constraints, bounding_constraints],
+                                      substitutions)
 
     def sens_from_dual(self, las, nus):
         "Return sensitivities while capturing the relevant lambdas"

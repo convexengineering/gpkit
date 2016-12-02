@@ -62,8 +62,7 @@ def new_test(name, solver, import_dict, path):
         #   is falsy (which should mean blank)
         for globname, global_thing in [("models", gpkit.MODELS),
                                        ("modelnums", gpkit.MODELNUMS),
-                                       ("vectorization",
-                                            gpkit.VECTORIZATION),
+                                       ("vectorization", gpkit.VECTORIZATION),
                                        ("namedvars", gpkit.NAMEDVARS)]:
             if global_thing:
                 raise ValueError("global attribute %s should have been"
