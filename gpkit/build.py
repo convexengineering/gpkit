@@ -58,8 +58,8 @@ def diff(filename, diff_dict):
     with open(filename, "r") as a:
         with open(filename+".new", "w") as b:
             for line_number, line in enumerate(a):
-                if line[:-1] in diff_dict:
-                    newline = diff_dict[line[:-1]]+"\n"
+                if line[:-1].strip() in diff_dict:
+                    newline = diff_dict[line[:-1].strip()]+"\n"
                     log("#\n#     Change in %s"
                         "on line %i" % (filename, line_number + 1))
                     log("#     --", line[:-1][:70])
@@ -132,17 +132,17 @@ class Mosek(SolverBackend):
     patches = {
         'dgopt.c': {
             # line 683:
-            '          printf("Number of Hessian non-zeros: %d\\n",nlh[0]->numhesnz);':                           # pylint: disable=line-too-long
-            '          MSK_echotask(task,MSK_STREAM_MSG,"Number of Hessian non-zeros: %d\\n",nlh[0]->numhesnz);', # pylint: disable=line-too-long
+            'printf("Number of Hessian non-zeros: %d\\n",nlh[0]->numhesnz);':
+            'MSK_echotask(task,MSK_STREAM_MSG,"Number of Hessian non-zeros: %d\\n",nlh[0]->numhesnz);',  # pylint: disable=line-too-long
         },
         'expopt.c': {
             # line 1115:
-            '    printf ("solsta = %d, prosta = %d\\n", (int)*solsta,(int)*prosta);':                                                                              # pylint: disable=line-too-long
-            '    MSK_echotask(expopttask,MSK_STREAM_MSG, "solsta = %d, prosta = %d\\n", (int)*solsta,(int)*prosta);',                                              # pylint: disable=line-too-long
-            """      printf("Warning: The variable with index '%d' has only positive coefficients akj.\\n The problem is possibly ill-posed.\\n.\\n",i);      """: # pylint: disable=line-too-long
-            """      MSK_echotask(expopttask,MSK_STREAM_MSG, "Warning: The variable with index '%d' has only positive coefficients akj.\\n The problem is possibly ill-posed.\\n.\\n",i);""", # pylint: disable=line-too-long
-            """      printf("Warning: The variable with index '%d' has only negative coefficients akj.\\n The problem is possibly ill-posed.\\n",i);      """: # pylint: disable=line-too-long
-            """      MSK_echotask(expopttask,MSK_STREAM_MSG, "Warning: The variable with index '%d' has only negative coefficients akj.\\n The problem is possibly ill-posed.\\n",i);""", # pylint: disable=line-too-long
+            'printf ("solsta = %d, prosta = %d\\n", (int)*solsta,(int)*prosta);':  # pylint: disable=line-too-long
+            'MSK_echotask(expopttask,MSK_STREAM_MSG, "solsta = %d, prosta = %d\\n", (int)*solsta,(int)*prosta);',  # pylint: disable=line-too-long
+            """printf("Warning: The variable with index '%d' has only positive coefficients akj.\\n The problem is possibly ill-posed.\\n.\\n",i);""":  # pylint: disable=line-too-long
+            """MSK_echotask(expopttask,MSK_STREAM_MSG, "Warning: The variable with index '%d' has only positive coefficients akj.\\n The problem is possibly ill-posed.\\n.\\n",i);""",  # pylint: disable=line-too-long
+            """printf("Warning: The variable with index '%d' has only negative coefficients akj.\\n The problem is possibly ill-posed.\\n",i);""":  # pylint: disable=line-too-long
+            """MSK_echotask(expopttask,MSK_STREAM_MSG, "Warning: The variable with index '%d' has only negative coefficients akj.\\n The problem is possibly ill-posed.\\n",i);""",  # pylint: disable=line-too-long
         }
     }
 

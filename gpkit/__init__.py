@@ -138,7 +138,7 @@ def begin_variable_naming(model):
 
 def end_variable_naming():
     "Pops a model name and num from the environment."
-    NAMEDVARS.pop(tuple(MODELS), tuple(MODELNUMS))
+    NAMEDVARS.pop((tuple(MODELS), tuple(MODELNUMS)), None)
     MODELS.pop()
     MODELNUMS.pop()
 

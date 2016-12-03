@@ -59,17 +59,18 @@ class Bounded(ConstraintSet):
 
     def __init__(self, constraints, substitutions=None, verbosity=1,
                  eps=1e-30, lower=None, upper=None):
+        if not isinstance(constraints, ConstraintSet):
+            constraints = ConstraintSet(constraints)
         self.bound_las = None
         self.verbosity = verbosity
         self.lowerbound = lower if lower else eps
         self.upperbound = upper if upper else 1/eps
-        constraintset = ConstraintSet([constraints])
-        self.bounded_varkeys = tuple(vk for vk in constraintset.varkeys
+        self.bounded_varkeys = tuple(vk for vk in constraints.varkeys
                                      if "value" not in vk.descr)
         bounding_constraints = varkey_bounds(self.bounded_varkeys,
                                              self.lowerbound, self.upperbound)
-        constraints = [constraintset, bounding_constraints]
-        super(Bounded, self).__init__(constraints, substitutions)
+        super(Bounded, self).__init__([constraints, bounding_constraints],
+                                      substitutions)
 
     def sens_from_dual(self, las, nus):
         "Return sensitivities while capturing the relevant lambdas"

@@ -294,7 +294,7 @@ class GeometricProgram(NomialData):
 
         return result
 
-    def check_solution(self, cost, primal, nu, la, tol=1e-5):
+    def check_solution(self, cost, primal, nu, la, tol=1e-5, abstol=1e-20):
         """Run a series of checks to mathematically confirm sol solves this GP
 
         Arguments
@@ -314,7 +314,8 @@ class GeometricProgram(NomialData):
         """
         def _almost_equal(num1, num2):
             "local almost equal test"
-            return num1 == num2 or abs((num1 - num2) / (num1 + num2)) < tol
+            return (num1 == num2 or abs((num1 - num2) / (num1 + num2)) < tol
+                    or abs(num1 - num2) < abstol)
         A = self.A.tocsr()
         # check primal sol
         primal_exp_vals = self.cs * np.exp(A.dot(primal))   # c*e^Ax
