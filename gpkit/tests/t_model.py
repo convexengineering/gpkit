@@ -404,7 +404,7 @@ class TestSP(unittest.TestCase):
         from gpkit.constraints.bounded import Bounded
         x = Variable("x")
         y = Variable("y")
-        m = Model(x*y, [x*y**1.000001 >= 100])
+        m = Model(x*y, [x*y**1.01 >= 100])
         with self.assertRaises((RuntimeWarning, ValueError)):
             m.solve(self.solver, verbosity=0)
         m = Model(x*y, Bounded(m, verbosity=0))
