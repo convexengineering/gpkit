@@ -8,7 +8,7 @@ from .. import SignomialsEnabled
 class Tight(ConstraintSet):
     "ConstraintSet whose inequalities must result in an equality."
 
-    def __init__(self, constraints, substitutions=None, reltol=1e-6,
+    def __init__(self, constraints, substitutions=None, reltol=0.01,
                  raiseerror=False):
         super(Tight, self).__init__(constraints, substitutions)
         self.reltol = reltol
