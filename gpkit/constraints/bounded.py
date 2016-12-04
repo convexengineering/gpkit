@@ -66,7 +66,7 @@ class Bounded(ConstraintSet):
         self.lowerbound = lower if lower else eps
         self.upperbound = upper if upper else 1/eps
         self.bounded_varkeys = tuple(vk for vk in constraints.varkeys
-                                     if "value" not in vk.descr)
+                                     if vk not in constraints.substitutions)
         bounding_constraints = varkey_bounds(self.bounded_varkeys,
                                              self.lowerbound, self.upperbound)
         super(Bounded, self).__init__([constraints, bounding_constraints],

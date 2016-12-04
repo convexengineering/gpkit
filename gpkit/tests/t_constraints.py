@@ -231,7 +231,7 @@ class TestBounded(unittest.TestCase):
         y = Variable("y")
         m = Model(x, [x >= y], {"y": 1})
         bm = Model(m.cost, Bounded(m))
-        sol = bm.solve()
+        sol = bm.solve(verbosity=0)
         self.assertAlmostEqual(sol["cost"], 1.0)
 
 
