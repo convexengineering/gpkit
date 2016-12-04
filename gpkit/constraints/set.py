@@ -34,20 +34,8 @@ class ConstraintSet(list):
         else:
             # constraintsetify everything
             for i, constraint in enumerate(self):
-                guess = None
                 if getattr(constraint, "numpy_bools", None):
-                    cause = ("An ArrayConstraint was created with elements of"
-                             " numpy.bool_")
-                    for side in [constraint.left, constraint.right]:
-                        if not (isinstance(side, Numbers)
-                                or hasattr(side, "exps")
-                                or hasattr(side, "__iter__")):
-                                    cause += ( ", because "
-                                        "NomialArray comparison with %.10s %s"
-                                        " does not return a valid constraint."
-                                        % (repr(side), type(side)))
-                    raise ValueError("%s\nFull constraint: %s"
-                                     % (cause, constraint))
+                    raise_badsubconstraintarray(constraint)
                 elif not isinstance(constraint, ConstraintSet):
                     if hasattr(constraint, "__iter__"):
                         list.__setitem__(self, i, ConstraintSet(constraint))
@@ -57,19 +45,7 @@ class ConstraintSet(list):
                             self.numpy_bools = True  # but mark them
                             # so we can catch them (see above) in ConstraintSets
                             continue
-                        cause = "" if not isinstance(constraint, bool) else (
-                                            "Did the constraint list contain"
-                                            " an accidental equality?")
-                        if len(self) == 1:
-                            loc = "as the only constraint"
-                        elif i == 0:
-                            loc = "at the start, before %s" % self[i+1]
-                        elif i == len(self) - 1:
-                            loc = "at the end, after %s" % self[i-1]
-                        else:
-                            loc = "between %s and %s" % (self[i-1], self[i+1])
-                        raise ValueError("%s was found %s. %s"
-                                         % (type(constraint), loc, cause))
+                        raise_badelement(self, i, constraint)
                 if hasattr(self[i], "substitutions"):
                     self.substitutions.update(self[i].substitutions)
         self.reset_varkeys()
@@ -280,3 +256,36 @@ class ConstraintSet(list):
         for constraint in self:
             if hasattr(constraint, "process_result"):
                 constraint.process_result(result)
+
+
+def raise_badelement(cns, i, constraint):
+    "Identify the bad element and raise a ValueError"
+    cause = "" if not isinstance(constraint, bool) else (
+        "Did the constraint list contain"
+        " an accidental equality?")
+    if len(cns) == 1:
+        loc = "as the only constraint"
+    elif i == 0:
+        loc = "at the start, before %s" % cns[i+1]
+    elif i == len(cns) - 1:
+        loc = "at the end, after %s" % cns[i-1]
+    else:
+        loc = "between %s and %s" % (cns[i-1], cns[i+1])
+    raise ValueError("%s was found %s. %s"
+                     % (type(constraint), loc, cause))
+
+
+def raise_badsubconstraintarray(constraint):
+    "Identify the bad subconstraint array and raise a ValueError"
+    cause = ("An ArrayConstraint was created with elements of"
+             " numpy.bool_")
+    for side in [constraint.left, constraint.right]:
+        if not (isinstance(side, Numbers)
+                or hasattr(side, "exps")
+                or hasattr(side, "__iter__")):
+            cause += (", because "
+                      "NomialArray comparison with %.10s %s"
+                      " does not return a valid constraint."
+                      % (repr(side), type(side)))
+    raise ValueError("%s\nFull constraint: %s"
+                     % (cause, constraint))
