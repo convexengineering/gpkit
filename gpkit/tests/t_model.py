@@ -235,6 +235,29 @@ class TestSP(unittest.TestCase):
     solver = None
     ndig = None
 
+    def test_values_vs_subs(self):
+        # Substitutions update method
+        x = Variable("x")
+        y = Variable("y")
+        z = Variable("z")
+
+        with SignomialsEnabled():
+            constraints = [x + y >= z,
+                           y >= x - 1]
+        m = Model(x + y*z, constraints)
+        m.substitutions.update({"z" : 5})
+        sol = m.localsolve(verbosity=0)
+        self.assertAlmostEqual(sol["cost"], 13, self.ndig)
+
+        # Constant variable declaration method
+        z = Variable("z", 5)
+        with SignomialsEnabled():
+            constraints = [x + y >= z,
+                           y >= x - 1]
+        m = Model(x + y*z, constraints)
+        sol = m.localsolve(verbosity=0)
+        self.assertAlmostEqual(sol["cost"], 13, self.ndig)
+
     def test_sp_substitutions(self):
         x = Variable('x')
         y = Variable('y', 1)
