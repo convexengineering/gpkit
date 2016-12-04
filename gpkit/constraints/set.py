@@ -14,6 +14,8 @@ def _sort_by_name_and_idx(var):
 
 class ConstraintSet(list):
     "Recursive container for ConstraintSets and Inequalities"
+    varkeys = None
+
     def __init__(self, constraints, substitutions=None):
         if isinstance(constraints, ConstraintSet):
             # stick it in a list to maintain hierarchy
@@ -227,7 +229,6 @@ class ConstraintSet(list):
         var_senss : dict
             The variable sensitivities of this constraint
         """
-        # constr_sens = {}
         var_senss = HashVector()
         offset = 0
         for i, constr in enumerate(self):

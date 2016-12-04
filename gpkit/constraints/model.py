@@ -2,7 +2,7 @@
 from .costed import CostedConstraintSet
 from ..nomials import Monomial
 from .prog_factories import _progify_fctry, _solve_fctry
-from ..geometric_program import GeometricProgram
+from .geometric_program import GeometricProgram
 from .signomial_program import SignomialProgram
 from .linked import LinkedConstraintSet
 from ..small_scripts import mag
@@ -152,18 +152,16 @@ class Model(CostedConstraintSet):
                              if sol(r) >= 1.01):
                     if not relaxedconsts:
                         if sol["boundedness"]:
-                            print "and these constants relaxed:"
+                            print("and these constants relaxed:")
                         else:
-                            print
-                            print "Solves with these constants relaxed:"
+                            print("\nSolves with these constants relaxed:")
                         relaxedconsts = True
-                    print ("  %s: relaxed from %-.4g to %-.4g"
-                           % (orig, mag(self.substitutions[orig]),
-                              mag(sol(orig))))
+                    print("  %s: relaxed from %-.4g to %-.4g"
+                          % (orig, mag(self.substitutions[orig]),
+                             mag(sol(orig))))
         except (ValueError, RuntimeWarning):
-            print
-            print ("Model does not solve with bounded variables"
-                   " and relaxed constants.")
+            print("\nModel does not solve with bounded variables"
+                  " and relaxed constants.")
         print "_____________________"
 
         try:
@@ -175,10 +173,9 @@ class Model(CostedConstraintSet):
             relaxvals = sol_constraints(constrsrelaxed.relaxvars)
             if any(rv >= 1.01 for rv in relaxvals):
                 if sol_constraints["boundedness"]:
-                    print "and these constraints relaxed:"
+                    print("and these constraints relaxed:")
                 else:
-                    print
-                    print "Solves with relaxed constraints:"
+                    print("\nSolves with relaxed constraints:")
                     if not relaxedconsts:
                         # then this is the only solution we have to return
                         sol = sol_constraints
@@ -186,12 +183,11 @@ class Model(CostedConstraintSet):
             for i, (relaxval, constraint) in iterator:
                 if relaxval >= 1.01:
                     relax_percent = "%i%%" % (0.5+(relaxval-1)*100)
-                    print ("  %i: %4s relaxed  Canonical form: %s <= %.2f)"
-                           % (i, relax_percent, constraint.right, relaxval))
+                    print("  %i: %4s relaxed  Canonical form: %s <= %.2f)"
+                          % (i, relax_percent, constraint.right, relaxval))
 
         except (ValueError, RuntimeWarning):
-            print
-            print ("Model does not solve with relaxed constraints.")
+            print("\nModel does not solve with relaxed constraints.")
 
         print "_____________________"
         return sol
