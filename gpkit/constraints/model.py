@@ -46,14 +46,6 @@ class Model(CostedConstraintSet):
     program = None
     solution = None
 
-    def __new__(cls, *args, **kwargs):
-        # Implemented for backwards compatibility with v0.4
-        obj = super(Model, cls).__new__(cls, *args, **kwargs)
-        if cls.__name__ != "Model" and not hasattr(cls, "setup"):
-            obj.name = cls.__name__
-            obj.num, obj.naming = begin_variable_naming(obj.name)
-        return obj
-
     def __init__(self, cost=None, constraints=None, *args, **kwargs):
         setup_vars = None
         substitutions = kwargs.pop("substitutions", None)  # reserved keyword
@@ -74,13 +66,12 @@ class Model(CostedConstraintSet):
                 substitutions, = args
             if self.__class__.__name__ != "Model":
                 from .. import NAMEDVARS, MODELS, MODELNUMS
-                setup_vars = NAMEDVARS[tuple(MODELS), tuple(MODELNUMS)]
-                end_variable_naming()
-                if setup_vars:
-                    print("Declaring a named Model's variables in __init__ is"
-                          " not recommended. For details see gpkit.rtfd.org")
-                    # backwards compatibility: don't add unused vars
-                    setup_vars = None
+                print("Declaring a named Model's variables in __init__ is"
+                      " not recommended. For details see gpkit.rtfd.org")
+                self.name = self.__class__.__name__
+                self.num = MODELNUMS[name]
+                MODELNUMS[name] += 1
+                self._add_modelname_tovars(self.name, self.num)
 
         cost = cost if cost else Monomial(1)
         constraints = constraints if constraints else []
@@ -122,6 +113,20 @@ class Model(CostedConstraintSet):
         if self.name:
             return "%s_{%s}" % (self.name, self.num)
 
+    def _add_modelname_tovars(self, name, num):
+        add_model_subs = KeyDict()
+        for vk in self.varkeys:
+            descr = dict(vk.descr)
+            descr["models"] = descr.pop("models", []) + [name]
+            descr["modelnums"] = descr.pop("modelnums", []) + [num]
+            newvk = VarKey(**descr)
+            add_model_subs[vk] = newvk
+            if vk in self.substitutions:
+                self.substitutions[newvk] = self.substitutions[vk]
+                del self.substitutions[vk]
+        with SignomialsEnabled():  # since we're just substituting varkeys.
+            self.subinplace(add_model_subs)
+
     # pylint: disable=too-many-locals
     def debug(self, verbosity=1, **solveargs):
         "Attempts to diagnose infeasible models."
@@ -152,18 +157,16 @@ class Model(CostedConstraintSet):
                              if sol(r) >= 1.01):
                     if not relaxedconsts:
                         if sol["boundedness"]:
-                            print "and these constants relaxed:"
+                            print("and these constants relaxed:")
                         else:
-                            print
-                            print "Solves with these constants relaxed:"
+                            print("\nSolves with these constants relaxed:")
                         relaxedconsts = True
-                    print ("  %s: relaxed from %-.4g to %-.4g"
-                           % (orig, mag(self.substitutions[orig]),
-                              mag(sol(orig))))
+                    print("  %s: relaxed from %-.4g to %-.4g"
+                          % (orig, mag(self.substitutions[orig]),
+                             mag(sol(orig))))
         except (ValueError, RuntimeWarning):
-            print
-            print ("Model does not solve with bounded variables"
-                   " and relaxed constants.")
+            print("\nModel does not solve with bounded variables"
+                  " and relaxed constants.")
         print "_____________________"
 
         try:
@@ -175,10 +178,9 @@ class Model(CostedConstraintSet):
             relaxvals = sol_constraints(constrsrelaxed.relaxvars)
             if any(rv >= 1.01 for rv in relaxvals):
                 if sol_constraints["boundedness"]:
-                    print "and these constraints relaxed:"
+                    print("and these constraints relaxed:")
                 else:
-                    print
-                    print "Solves with relaxed constraints:"
+                    print("\nSolves with relaxed constraints:")
                     if not relaxedconsts:
                         # then this is the only solution we have to return
                         sol = sol_constraints
@@ -186,12 +188,11 @@ class Model(CostedConstraintSet):
             for i, (relaxval, constraint) in iterator:
                 if relaxval >= 1.01:
                     relax_percent = "%i%%" % (0.5+(relaxval-1)*100)
-                    print ("  %i: %4s relaxed  Canonical form: %s <= %.2f)"
-                           % (i, relax_percent, constraint.right, relaxval))
+                    print("  %i: %4s relaxed  Canonical form: %s <= %.2f)"
+                          % (i, relax_percent, constraint.right, relaxval))
 
         except (ValueError, RuntimeWarning):
-            print
-            print ("Model does not solve with relaxed constraints.")
+            print("\nModel does not solve with relaxed constraints.")
 
         print "_____________________"
         return sol
