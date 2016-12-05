@@ -9,8 +9,9 @@
 """
 from operator import eq, le, ge, xor
 import numpy as np
+from .nomial_math import Signomial
 from ..small_classes import Numbers
-from ..small_scripts import try_str_without
+from ..small_scripts import try_str_without, mag
 from ..constraints import ArrayConstraint
 from ..repr_conventions import _str, _repr, _repr_latex_
 from .. import ureg
@@ -152,20 +153,12 @@ class NomialArray(np.ndarray):
         """units must have same dimensions across the entire nomial array"""
         units = None
         for el in self.flat:
-            if isinstance(el, Numbers):
-                if units and not (el == 0 or np.isnan(el)):
-                    raise DimensionalityError("elements of a NomialArray"
-                                              "must have the same units.")
-            elif units:
-                try:
-                    (units/el.units).to("dimensionless")
-                except DimensionalityError:
-                    raise DimensionalityError("elements of a NomialArray"
-                                              "must have the same units.")
-                except:
-                    raise RuntimeWarning("%s %s" % (type(el), el))
-            else:
-                units = el.units
+            el_units = getattr(el, "units", None)
+            if units is None:
+                units = el_units
+            elif ((el_units and units != el_units) or
+                  (isinstance(el, Numbers) and not (el == 0 or np.isnan(el)))):
+                raise DimensionalityError(el_units, units)
         return units
 
     def padleft(self, padding):
@@ -193,3 +186,44 @@ class NomialArray(np.ndarray):
     def right(self):
         "Returns (self[1], self[2] ... self[N], 0)"
         return self.padright(0)[1:]
+
+    def sum(self, *args, **kwargs):
+        "Returns a sum. O(N) if no arguments are given."
+        if args or kwargs or all(l == 0 for l in self.shape):
+            return np.ndarray.sum(self, *args, **kwargs)
+        cs = []
+        units = self.units
+        exps = []
+        it = np.nditer(self, flags=['multi_index', 'refs_ok'])
+        while not it.finished:
+            i = it.multi_index
+            it.iternext()
+            cs.extend(mag(self[i].cs).tolist())
+            exps.extend(self[i].exps)
+        if units:
+            cs *= units
+        return Signomial(exps, cs)
+
+    def prod(self, *args, **kwargs):
+        "Returns a product. O(N) if no arguments and only contains monomials."
+        if args or kwargs or all(l == 0 for l in self.shape):
+            return np.ndarray.prod(self, *args, **kwargs)
+        c = 1.0
+        exp = {}
+        units = self.units
+        it = np.nditer(self, flags=['multi_index', 'refs_ok'])
+        while not it.finished:
+            idx = it.multi_index
+            it.iternext()
+            m_ = self[idx]
+            if not hasattr(m_, "exp"):  # it's not a monomial, abort!
+                return np.ndarray.prod(self, *args, **kwargs)
+            c = c * mag(m_.c)
+            for key, value in m_.exp.items():
+                if key in exp:
+                    exp[key] += value
+                else:
+                    exp[key] = value
+        if units:
+            c *= units
+        return Signomial(exp, c)
