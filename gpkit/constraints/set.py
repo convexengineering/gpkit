@@ -35,7 +35,7 @@ class ConstraintSet(list):
             # constraintsetify everything
             for i, constraint in enumerate(self):
                 if getattr(constraint, "numpy_bools", None):
-                    raise_subconstrainthasnumpybools(constraint)
+                    raise_elementhasnumpybools(constraint)
                 elif not isinstance(constraint, ConstraintSet):
                     if hasattr(constraint, "__iter__"):
                         list.__setitem__(self, i, ConstraintSet(constraint))
@@ -275,7 +275,7 @@ def raise_badelement(cns, i, constraint):
                      % (type(constraint), loc, cause))
 
 
-def raise_subconstrainthasnumpybools(constraint):
+def raise_elementhasnumpybools(constraint):
     "Identify the bad subconstraint array and raise a ValueError"
     cause = ("An ArrayConstraint was created with elements of"
              " numpy.bool_")
