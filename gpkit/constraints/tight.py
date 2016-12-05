@@ -7,11 +7,13 @@ from .. import SignomialsEnabled
 
 class Tight(ConstraintSet):
     "ConstraintSet whose inequalities must result in an equality."
+    reltol = 1e-6
 
-    def __init__(self, constraints, substitutions=None, reltol=0.01,
+    def __init__(self, constraints, substitutions=None, reltol=None,
                  raiseerror=False):
         super(Tight, self).__init__(constraints, substitutions)
-        self.reltol = reltol
+        if reltol:
+            self.reltol = reltol
         self.raiseerror = raiseerror
 
     def process_result(self, result):
