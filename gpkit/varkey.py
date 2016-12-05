@@ -1,18 +1,6 @@
 """Defines the VarKey class"""
-from .small_classes import Strings, Quantity
+from .small_classes import Strings, Quantity, Count
 from .small_scripts import unitstr, veckeyed
-
-
-class Count(object):
-    "Like python 2's itertools.count, for Python 3 compatibility."
-
-    def __init__(self):
-        self.count = -1
-
-    def next(self):
-        "Increment self.count and return it"
-        self.count += 1
-        return self.count
 
 
 class VarKey(object):
