@@ -8,7 +8,7 @@ from .linked import LinkedConstraintSet
 from ..small_scripts import mag
 from ..keydict import KeyDict
 from ..varkey import VarKey
-from .. import end_variable_naming, begin_variable_naming, NamedVariables, SignomialsEnabled
+from .. import NamedVariables, SignomialsEnabled
 
 
 class Model(CostedConstraintSet):
@@ -57,10 +57,10 @@ class Model(CostedConstraintSet):
                 start_args = [cost, constraints]
                 args = tuple(a for a in start_args if a is not None) + args
                 constraints = self.setup(*args, **kwargs)  # pylint: disable=no-member
-                from .. import NAMEDVARS, MODELS, MODELNUM_LOOKUPS
-                setup_vars = NAMEDVARS[tuple(MODELS), tuple(MODELNUM_LOOKUPS)]
-                self.name, self.num = MODELS[:-1], MODELNUM_LOOKUPS[:-1]
-                self.naming = (tuple(MODELS), tuple(MODELNUM_LOOKUPS))
+                from .. import NAMEDVARS, MODELS, MODELNUMS
+                setup_vars = NAMEDVARS[tuple(MODELS), tuple(MODELNUMS)]
+                self.name, self.num = MODELS[:-1], MODELNUMS[:-1]
+                self.naming = (tuple(MODELS), tuple(MODELNUMS))
             cost = self.cost
         else:
             if args and not substitutions:
@@ -75,15 +75,15 @@ class Model(CostedConstraintSet):
             # even if they aren't used in any constraints
             self.unused_variables = setup_vars
             self.reset_varkeys()
-	if not hasattr(self, "setup"):
-            if self.__class__.__name__ != "Model":
-                from .. import MODELNUM_LOOKUP
-                print("Declaring a named Model's variables in __init__ is"
-                      " not recommended. For details see gpkit.rtfd.org")
-                self.name = self.__class__.__name__
-                self.num = MODELNUM_LOOKUP[self.name]
-                MODELNUM_LOOKUP[self.name] += 1
-                self._add_modelname_tovars(self.name, self.num)
+        # for backwards compatibility keep add_modelnames
+        if not hasattr(self, "setup") and self.__class__.__name__ != "Model":
+            from .. import MODELNUM_LOOKUP
+            print("Declaring a named Model's variables in __init__ is"
+                  " not recommended. For details see gpkit.rtfd.org")
+            self.name = self.__class__.__name__
+            self.num = MODELNUM_LOOKUP[self.name]
+            MODELNUM_LOOKUP[self.name] += 1
+            self._add_modelname_tovars(self.name, self.num)
 
     gp = _progify_fctry(GeometricProgram)
     sp = _progify_fctry(SignomialProgram)
