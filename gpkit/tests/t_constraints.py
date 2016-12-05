@@ -15,6 +15,24 @@ import gpkit
 class TestConstraint(unittest.TestCase):
     """Tests for Constraint class"""
 
+    def test_bad_elements(self):
+        x = Variable("x")
+        with self.assertRaises(ValueError):
+            _ = Model(x, [x == "A"])
+        with self.assertRaises(ValueError):
+            _ = Model(x, [x >= 1, x == "A"])
+        with self.assertRaises(ValueError):
+            _ = Model(x, [x >= 1, x == "A", x >= 1, ])
+        with self.assertRaises(ValueError):
+            _ = Model(x, [x == "A", x >= 1])
+        v = VectorVariable(2, "v")
+        with self.assertRaises(ValueError):
+            _ = Model(x, [v == "A"])
+        with self.assertRaises(ValueError):
+            _ = Model(x, [v <= ["A", "B"]])
+        with self.assertRaises(ValueError):
+            _ = Model(x, [v >= ["A", "B"]])
+
     def test_equality_relaxation(self):
         x = Variable("x")
         m = Model(x, [x == 3, x == 4])
