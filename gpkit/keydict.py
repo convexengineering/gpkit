@@ -139,7 +139,8 @@ class KeyDict(dict):
             if idx:
                 dict.__getitem__(self, key)[idx] = value
             else:
-                if dict.__contains__(self, key) and hasattr(value, "shape"):
+                if (dict.__contains__(self, key)
+                    and getattr(value, "shape", False)):
                     try:
                         goodvals = ~np.isnan(value)
                     except TypeError:

@@ -47,13 +47,16 @@ class GeometricProgram(CostedConstraintSet, NomialData):
 
     def __init__(self, cost, constraints, substitutions=None, verbosity=1):
         # pylint:disable=super-init-not-called
+        CostedConstraintSet.__init__(self, cost, constraints)
+        if substitutions is not None:
+            # GP substitutions replace constraints subs to allow
+            #    for the deletion of the costs's value
+            self.substitutions = substitutions
+
         # initialize attributes modified by internal methods
         self.result = None
         self.solver_log = None
         self.solver_out = None
-        CostedConstraintSet.__init__(self, cost, constraints)
-        # NOTE: unnecessary work done above in creating self.substitutions
-        self.substitutions = substitutions
         self.posynomials = [cost.sub(self.substitutions)]
         self.posynomials.extend(self.as_posyslt1(self.substitutions))
 
