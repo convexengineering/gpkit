@@ -104,6 +104,7 @@ class TestSolutionArray(unittest.TestCase):
         # spsol("x") did not exist in issue 993
         self.assertEqual(msol("x"), spsol("x"))
         self.assertEqual(msol(x), spsol(x))
+        self.assertEqual(m.program.gps[-1].solve(verbosity=0)("x"), msol("x"))
 
 
 class TestResultsTable(unittest.TestCase):
