@@ -47,20 +47,19 @@ class GeometricProgram(CostedConstraintSet, NomialData):
 
     def __init__(self, cost, constraints, substitutions=None, verbosity=1):
         # pylint:disable=super-init-not-called
-        CostedConstraintSet.__init__(self, cost, constraints)
-        if substitutions is not None:
-            # GP substitutions replace constraints subs to allow
-            #    for the deletion of the costs's value
-            self.substitutions = substitutions
-
         # initialize attributes modified by internal methods
         self.result = None
         self.solver_log = None
         self.solver_out = None
+
+        # barebones ConstraintSet init
+        self.cost = cost
+        list.__init__(self, [constraints])
+        self.substitutions = substitutions if substitutions else {}
+
+        # sideways NomialData init to create self.exps, self.cs, etc
         self.posynomials = [cost.sub(self.substitutions)]
         self.posynomials.extend(self.as_posyslt1(self.substitutions))
-
-        ## use NomialData to create self.exps, self.cs and so on
         NomialData.init_from_nomials(self, self.posynomials)
         if self.any_nonpositive_cs:
             raise ValueError("GeometricPrograms cannot contain Signomials.")
