@@ -416,18 +416,6 @@ class TestSP(unittest.TestCase):
         if "sensitive to lower bound" in bounds:
             self.assertEqual(bounds["sensitive to lower bound"], [x.key])
 
-    def test_result_access(self):
-        x = Variable("x")
-        y = Variable("y")
-        with SignomialsEnabled():
-            sig = (y + 6*x >= 13 + x**2)
-        m = Model(y, [sig])
-        sol = m.localsolve(verbosity=0)
-        _ = [gp.result.table() for gp in m.program.gps]
-        self.assertAlmostEqual(sol["cost"]/4.0, 1.0, self.ndig)
-        # TODO: refactor ndig of 3 below when #870 resolved
-        self.assertAlmostEqual(sol("x")/3.0, 1.0, 3)
-
 
 class TestModelSolverSpecific(unittest.TestCase):
     """test cases run only for specific solvers"""
