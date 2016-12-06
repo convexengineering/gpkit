@@ -180,7 +180,8 @@ class Signomial(Nomial):
         p0 = psub.value  # includes any units
         m0 = 1
         for vk in self.varlocs:
-            e = mag(x0[vk]*self.diff(vk).sub(x0, require_positive=False).c/p0)
+            diff = self.diff(vk)
+            e = x0[vk]*mag(diff.sub(x0, require_positive=False).c)/mag(p0)
             exp[vk] = e
             m0 *= (x0[vk])**e
         return Monomial(exp, p0/mag(m0))
