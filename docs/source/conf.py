@@ -48,7 +48,7 @@ master_doc = 'index'
 
 # General information about the project.
 project = u'gpkit'
-copyright = u'2016 MIT Hoburg Research Group'
+copyright = u'2016 Edward Burnell and Warren Hoburg'
 
 # The version info for the project you're documenting, acts as replacement for
 # |version| and |release|, also used in various other places throughout the

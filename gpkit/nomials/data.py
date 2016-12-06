@@ -97,17 +97,17 @@ class NomialData(object):
             var, = varset
         exps, cs = [], []
         # var.units may be str if units disabled
-        var_units = (var.units if var.units and not isinstance(var.units, str)
-                     else 1)
+        units = (self.cs.units/var.units
+                 if var.units and not isinstance(var.units, str) else 1)
         for i, exp in enumerate(self.exps):
             exp = HashVector(exp)   # copy -- exp is mutated below
             e = exp.get(var, 0)
             if var in exp:
                 exp[var] -= 1
             exps.append(exp)
-            cs.append(e*self.cs[i] / var_units)
+            cs.append(e*mag(self.cs)[i])
         # don't simplify to keep length same as self
-        return NomialData(exps=exps, cs=cs, simplify=False)
+        return NomialData(exps=exps, cs=cs*units, simplify=False)
 
     def __eq__(self, other):
         """Equality test"""

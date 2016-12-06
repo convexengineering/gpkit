@@ -64,7 +64,8 @@ class TestGP(unittest.TestCase):
                   [x >= 1,
                    y == 2])
         m.solve(verbosity=0)
-        self.assertEqual(len(m.program.constraints), 2)
+        self.assertEqual(len(m.program[0]), 2)  # pylint:disable=unsubscriptable-object
+        self.assertEqual(len(m.program.posynomials), 2)
 
     def test_cost_freeing(self):
         "Test freeing a variable that's in the cost."
@@ -419,7 +420,7 @@ class TestSP(unittest.TestCase):
         with SignomialsEnabled():
             m = Model(x, [x + y >= 1, y <= 0.5])
         m.localsolve(x0={x: 0.5}, verbosity=0)
-        first_gp_constr_posy = m.program.gps[0].constraints[0].as_posyslt1()[0]
+        first_gp_constr_posy = m.program.gps[0][0].as_posyslt1()[0]
         self.assertEqual(first_gp_constr_posy.exp[x.key], -1./3)
 
     def test_unbounded_debugging(self):

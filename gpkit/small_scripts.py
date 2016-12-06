@@ -21,7 +21,7 @@ def veckeyed(key):
 
 def mag(c):
     "Return magnitude of a Number or Quantity"
-    return c.magnitude if isinstance(c, Quantity) else c
+    return getattr(c, "magnitude", c)
 
 
 def unitstr(units, into="%s", options="~", dimless="-"):
@@ -35,7 +35,7 @@ def unitstr(units, into="%s", options="~", dimless="-"):
     elif isinstance(units, Quantity):
         rawstr = ("{:%s}" % options).format(units.units)
         if str(units.units) == "count":
-        # TODO remove this conditional when pint issue 356 is resolved
+            # TODO remove this conditional when pint issue 356 is resolved
             rawstr = "count"
         units = rawstr.replace(" ", "").replace("dimensionless", dimless)
         return into % units if units else ""
