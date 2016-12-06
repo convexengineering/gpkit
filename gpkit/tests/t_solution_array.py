@@ -92,6 +92,19 @@ class TestSolutionArray(unittest.TestCase):
             "1000N" in
             sol.table().replace(" ", "").replace("[", "").replace("]", ""))
 
+    def test_call_model_vs_sp(self):
+        x = Variable("x")
+        y = Variable("y")
+        with SignomialsEnabled():
+            sig = (y + 6*x >= 13 + x**2)
+        m = Model(y, [sig])
+        msol = m.localsolve(verbosity=0)
+        spsol = m.sp().localsolve(verbosity=0) # pylint: disable=no-member
+        self.assertEqual(msol(x), msol("x"))
+        # spsol("x") did not exist in issue 993
+        self.assertEqual(msol("x"), spsol("x"))
+        self.assertEqual(msol(x), spsol(x))
+
 
 class TestResultsTable(unittest.TestCase):
     """TestCase for results_table()"""
