@@ -112,7 +112,8 @@ class TestResultsTable(unittest.TestCase):
             sig = (y + 6*x >= 13 + x**2)
         m = Model(y, [sig])
         sol = m.localsolve(verbosity=0)
-        _ = [gp.result.table() for gp in m.program.gps]
+        self.assertTrue(all([isinstance(gp.result.table(), str)
+                             for gp in m.program.gps]))
         self.assertAlmostEqual(sol["cost"]/4.0, 1.0, 5)
         self.assertAlmostEqual(sol("x")/3.0, 1.0, 3)
 
