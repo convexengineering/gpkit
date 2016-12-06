@@ -127,6 +127,7 @@ MODELNUM_LOOKUP = defaultdict(int)
 # the list of variables named in the current MODELS/MODELNUM environment
 NAMEDVARS = defaultdict(list)
 
+
 def begin_variable_naming(model):
     "Appends a model name and num to the environment."
     MODELS.append(model)
@@ -204,7 +205,7 @@ from .nomials import Monomial, Posynomial, Signomial
 from .nomials import VectorVariable, ArrayVariable
 # note: the Variable the user sees is not the Variable used internally
 from .nomials import VectorizableVariable as Variable
-from .geometric_program import GeometricProgram
+from .constraints.geometric_program import GeometricProgram
 from .constraints.signomial_program import SignomialProgram
 from .constraints.sigeq import SignomialEquality
 from .constraints.set import ConstraintSet

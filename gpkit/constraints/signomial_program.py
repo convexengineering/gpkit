@@ -1,10 +1,10 @@
 """Implement the SignomialProgram class"""
 from time import time
-from ..geometric_program import GeometricProgram
-from ..nomials import Variable
-from .costed import CostedConstraintSet
 from ..exceptions import InvalidGPConstraint
 from ..keydict import KeyDict
+from ..nomials import Variable
+from .costed import CostedConstraintSet
+from .geometric_program import GeometricProgram
 
 
 class SignomialProgram(CostedConstraintSet):
