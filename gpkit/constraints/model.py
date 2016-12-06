@@ -76,6 +76,7 @@ class Model(CostedConstraintSet):
             self.unused_variables = setup_vars
             self.reset_varkeys()
         # for backwards compatibility keep add_modelnames
+        # TODO: remove with linking
         if not hasattr(self, "setup") and self.__class__.__name__ != "Model":
             from .. import MODELNUM_LOOKUP
             print("Declaring a named Model's variables in __init__ is"
@@ -90,6 +91,7 @@ class Model(CostedConstraintSet):
     solve = _solve_fctry(_progify_fctry(GeometricProgram, "solve"))
     localsolve = _solve_fctry(_progify_fctry(SignomialProgram, "localsolve"))
 
+    # TODO: remove with linking
     def link(self, other, include_only=None, exclude=None):
         "Connects this model with a set of constraints"
         lc = LinkedConstraintSet([self, other], include_only, exclude)
@@ -116,6 +118,7 @@ class Model(CostedConstraintSet):
         if self.name:
             return "%s_{%s}" % (self.name, self.num)
 
+    # TODO: remove with linking
     def _add_modelname_tovars(self, name, num):
         add_model_subs = KeyDict()
         for vk in self.varkeys:
