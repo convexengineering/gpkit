@@ -65,7 +65,7 @@ Mac OSX
     Run ``pip install cvxopt``
 
 Linux
-    Run ``sudo apt-get install libblas-dev liblapack-dev`` or otherwise install those libraries
+    Run ``sudo apt-get install libblas-dev liblapack-dev suitesparse-dev`` or otherwise install those libraries
 
     Run ``pip install cvxopt`` (for system python installs, use ``sudo pip``)
 

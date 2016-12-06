@@ -1,7 +1,7 @@
 "Implements ConstraintSet"
 import numpy as np
 
-from ..small_classes import HashVector
+from ..small_classes import HashVector, Numbers
 from ..keydict import KeySet, KeyDict
 from ..small_scripts import try_str_without
 from ..repr_conventions import _str, _repr, _repr_latex_
@@ -14,6 +14,8 @@ def _sort_by_name_and_idx(var):
 
 class ConstraintSet(list):
     "Recursive container for ConstraintSets and Inequalities"
+    varkeys = None
+
     def __init__(self, constraints, substitutions=None):
         if isinstance(constraints, ConstraintSet):
             # stick it in a list to maintain hierarchy
@@ -23,39 +25,28 @@ class ConstraintSet(list):
         # initializations for attributes used elsewhere
         self.posymap = []
         self.unused_variables = None
+        self.numpy_bools = False
 
         # get substitutions and convert all members to ConstraintSets
-        subs = dict(substitutions) if substitutions else {}
         self.substitutions = KeyDict()
-        if isinstance(constraints, ConstraintSet):
-            # pylint: disable=no-member
-            self.substitutions.update(constraints.substitutions)
-        else:
-            # constraintsetify everything
-            for i, constraint in enumerate(self):
-                if not isinstance(constraint, ConstraintSet):
-                    if hasattr(constraint, "__iter__"):
-                        list.__setitem__(self, i, ConstraintSet(constraint))
-                    elif isinstance(constraint, bool):
-                        # TODO refactor depending on the outcome of issue #824
-                        if len(self) == 1:
-                            loc = "as the only constraint"
-                        elif i == 0:
-                            loc = "at the start, before %s" % self[i+1]
-                        elif i == len(self) - 1:
-                            loc = "at the end, after %s" % self[i-1]
-                        else:
-                            loc = "between %s and %s" % (self[i-1], self[i+1])
-                        raise ValueError("%s found %s."
-                                         " Did the constraint list contain an"
-                                         " accidental equality?"
-                                         % (type(constraint), loc))
-                # conditional because numpy_bools are used for vector ==
-                # TODO: remove conditional or otherwise clean up
-                if hasattr(self[i], "substitutions"):
-                    self.substitutions.update(self[i].substitutions)
+        for i, constraint in enumerate(self):
+            if getattr(constraint, "numpy_bools", None):
+                raise_elementhasnumpybools(constraint)
+            elif not isinstance(constraint, ConstraintSet):
+                if hasattr(constraint, "__iter__"):
+                    list.__setitem__(self, i, ConstraintSet(constraint))
+                elif not hasattr(constraint, "varkeys"):
+                    if not isinstance(constraint, np.bool_):
+                        raise_badelement(self, i, constraint)
+                    else:
+                        # allow NomialArray equalities (arr == "a", etc.)
+                        self.numpy_bools = True  # but mark them
+                        # so we can catch them (see above) in ConstraintSets
+            if hasattr(self[i], "substitutions"):
+                self.substitutions.update(self[i].substitutions)
         self.reset_varkeys()
-        self.substitutions.update(subs)
+        if substitutions:
+            self.substitutions.update(substitutions)
 
     def __getitem__(self, key):
         if isinstance(key, int):
@@ -227,7 +218,6 @@ class ConstraintSet(list):
         var_senss : dict
             The variable sensitivities of this constraint
         """
-        # constr_sens = {}
         var_senss = HashVector()
         offset = 0
         for i, constr in enumerate(self):
@@ -262,3 +252,36 @@ class ConstraintSet(list):
         for constraint in self:
             if hasattr(constraint, "process_result"):
                 constraint.process_result(result)
+
+
+def raise_badelement(cns, i, constraint):
+    "Identify the bad element and raise a ValueError"
+    cause = "" if not isinstance(constraint, bool) else (
+        " Did the constraint list contain"
+        " an accidental equality?")
+    if len(cns) == 1:
+        loc = "as the only constraint"
+    elif i == 0:
+        loc = "at the start, before %s" % cns[i+1]
+    elif i == len(cns) - 1:
+        loc = "at the end, after %s" % cns[i-1]
+    else:
+        loc = "between %s and %s" % (cns[i-1], cns[i+1])
+    raise ValueError("%s was found %s.%s"
+                     % (type(constraint), loc, cause))
+
+
+def raise_elementhasnumpybools(constraint):
+    "Identify the bad subconstraint array and raise a ValueError"
+    cause = ("An ArrayConstraint was created with elements of"
+             " numpy.bool_")
+    for side in [constraint.left, constraint.right]:
+        if not (isinstance(side, Numbers)
+                or hasattr(side, "exps")
+                or hasattr(side, "__iter__")):
+            cause += (", because "
+                      "NomialArray comparison with %.10s %s"
+                      " does not return a valid constraint."
+                      % (repr(side), type(side)))
+    raise ValueError("%s\nFull constraint: %s"
+                     % (cause, constraint))
