@@ -54,7 +54,7 @@ class GeometricProgram(CostedConstraintSet, NomialData):
 
         # barebones ConstraintSet init
         self.cost = cost
-        list.__init__(self, [constraints])
+        list.__init__(self, [constraints])  # pylint:disable=non-parent-init-called
         self.substitutions = substitutions if substitutions else {}
 
         # sideways NomialData init to create self.exps, self.cs, etc
