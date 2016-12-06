@@ -6,7 +6,9 @@ from .geometric_program import GeometricProgram
 from .signomial_program import SignomialProgram
 from .linked import LinkedConstraintSet
 from ..small_scripts import mag
-from .. import end_variable_naming, begin_variable_naming, NamedVariables
+from ..keydict import KeyDict
+from ..varkey import VarKey
+from .. import NamedVariables, SignomialsEnabled
 
 
 class Model(CostedConstraintSet):
@@ -46,14 +48,6 @@ class Model(CostedConstraintSet):
     program = None
     solution = None
 
-    def __new__(cls, *args, **kwargs):
-        # Implemented for backwards compatibility with v0.4
-        obj = super(Model, cls).__new__(cls, *args, **kwargs)
-        if cls.__name__ != "Model" and not hasattr(cls, "setup"):
-            obj.name = cls.__name__
-            obj.num, obj.naming = begin_variable_naming(obj.name)
-        return obj
-
     def __init__(self, cost=None, constraints=None, *args, **kwargs):
         setup_vars = None
         substitutions = kwargs.pop("substitutions", None)  # reserved keyword
@@ -72,15 +66,6 @@ class Model(CostedConstraintSet):
             if args and not substitutions:
                 # backwards compatibility: substitutions as third arg
                 substitutions, = args
-            if self.__class__.__name__ != "Model":
-                from .. import NAMEDVARS, MODELS, MODELNUMS
-                setup_vars = NAMEDVARS[tuple(MODELS), tuple(MODELNUMS)]
-                end_variable_naming()
-                if setup_vars:
-                    print("Declaring a named Model's variables in __init__ is"
-                          " not recommended. For details see gpkit.rtfd.org")
-                    # backwards compatibility: don't add unused vars
-                    setup_vars = None
 
         cost = cost if cost else Monomial(1)
         constraints = constraints if constraints else []
@@ -90,12 +75,23 @@ class Model(CostedConstraintSet):
             # even if they aren't used in any constraints
             self.unused_variables = setup_vars
             self.reset_varkeys()
+        # for backwards compatibility keep add_modelnames
+        # TODO: remove with linking
+        if not hasattr(self, "setup") and self.__class__.__name__ != "Model":
+            from .. import MODELNUM_LOOKUP
+            print("Declaring a named Model's variables in __init__ is"
+                  " not recommended. For details see gpkit.rtfd.org")
+            self.name = self.__class__.__name__
+            self.num = MODELNUM_LOOKUP[self.name]
+            MODELNUM_LOOKUP[self.name] += 1
+            self._add_modelname_tovars(self.name, self.num)
 
     gp = _progify_fctry(GeometricProgram)
     sp = _progify_fctry(SignomialProgram)
     solve = _solve_fctry(_progify_fctry(GeometricProgram, "solve"))
     localsolve = _solve_fctry(_progify_fctry(SignomialProgram, "localsolve"))
 
+    # TODO: remove with linking
     def link(self, other, include_only=None, exclude=None):
         "Connects this model with a set of constraints"
         lc = LinkedConstraintSet([self, other], include_only, exclude)
@@ -121,6 +117,21 @@ class Model(CostedConstraintSet):
         "The collapsed appearance of a ConstraintBase"
         if self.name:
             return "%s_{%s}" % (self.name, self.num)
+
+    # TODO: remove with linking
+    def _add_modelname_tovars(self, name, num):
+        add_model_subs = KeyDict()
+        for vk in self.varkeys:
+            descr = dict(vk.descr)
+            descr["models"] = descr.pop("models", []) + [name]
+            descr["modelnums"] = descr.pop("modelnums", []) + [num]
+            newvk = VarKey(**descr)
+            add_model_subs[vk] = newvk
+            if vk in self.substitutions:
+                self.substitutions[newvk] = self.substitutions[vk]
+                del self.substitutions[vk]
+        with SignomialsEnabled():  # since we're just substituting varkeys.
+            self.subinplace(add_model_subs)
 
     # pylint: disable=too-many-locals
     def debug(self, verbosity=1, **solveargs):
