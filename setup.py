@@ -25,7 +25,7 @@ and `CVXopt <http://cvxopt.org/>`_.
 
 LICENSE = """The MIT License (MIT)
 
-Copyright (c) 2016 MIT Hoburg Research Group
+Copyright (c) Edward Burnell and Warren Hoburg
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
@@ -49,11 +49,11 @@ setup(
     name="gpkit",
     description="Package for defining and manipulating geometric "
                 "programming models.",
-    author="MIT Department of Aeronautics and Astronautics",
+    author="Edward Burnell and Warren Hoburg",
     author_email="gpkit@mit.edu",
     url="https://www.github.com/hoburg/gpkit",
     install_requires=["numpy >= 1.8.1", "pint", "scipy"],
-    version="0.5.0.2",
+    version="0.5.0.4",
     packages=["gpkit", "gpkit._mosek", "gpkit.tests", "gpkit.interactive",
               "gpkit.nomials", "gpkit.constraints", "gpkit.tools"],
     package_data={"gpkit": ["pint/*", "env/*"],

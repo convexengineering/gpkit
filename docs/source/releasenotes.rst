@@ -5,10 +5,10 @@ This page lists the changes made in each point version of gpkit.
 
 Version 0.5.0
 =============
- * No longer recommend the use of linked variables and subinplace
+ * No longer recommend the use of linked variables and subinplace (see below)
  * Switched default solver to MOSEK
  * Added Linked Variable diagram (PR #915)
- * Dropped operator overloading with pint (PR #938)
+ * Changed how overloaded operators interact with pint (PR #938)
  * Added and documented debugging tools (PR #933)
  * Added and documented vectorization tools
  * Documented modular model construction
@@ -20,7 +20,7 @@ We are deprecating the creation of named submodels with custom ``__init__`` meth
 
 We're moving to an explicitly-irregular ``setup`` method, which (if declared for a class inheriting from Model) is automatically called during ``Model.__init__`` inside a ``NamedVariables(self.__class__.__name__)`` environment. This 1) handles the naming of variables more explicitly and efficiently, and 2) allows us to capture variables created within ``setup``, so that constants that are not a part of any constraint can be used directly (several examples of such template models are in the new `Building Complex Models` documentation).
 
-``Model.__init__`` calls ``setup`` with the arguments given to the constructor,  with the exception of ``substitutions``, which is a reserved keyword. This allows for the easy creation of a named model with custom parameter values (as in the documentation's Beam example). ``setup`` methods should return an iterable (list, tuple, ConstraintSet, ...) of constraints or nothing if the model contains no constraints. To declare a submodel cost, set ``self.cost`` during ``setup``. However, we often find declaring a model's cost explicitly just before solving to be a more legible practice.
+``Model.__init__`` calls ``setup`` with the arguments given to the constructor,  with the exception of the reserved keyword ``substitutions``. This allows for the easy creation of a named model with custom parameter values (as in the documentation's Beam example). ``setup`` methods should return an iterable (list, tuple, ConstraintSet, ...) of constraints or nothing if the model contains no constraints. To declare a submodel cost, set ``self.cost`` during ``setup``. However, we often find declaring a model's cost explicitly just before solving to be a more legible practice.
 
 In addition to permitting us to name variables at creation, and include unconstrained variables in a model, we hope that ``setup`` methods will clarify the side effects of named model creation.
 

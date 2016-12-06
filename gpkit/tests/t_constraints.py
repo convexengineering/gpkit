@@ -8,11 +8,30 @@ from gpkit.constraints.tight import Tight
 from gpkit.tests.helpers import run_tests
 from gpkit.exceptions import InvalidGPConstraint
 from gpkit.constraints.relax import ConstraintsRelaxed
+from gpkit.constraints.bounded import Bounded
 import gpkit
 
 
 class TestConstraint(unittest.TestCase):
     """Tests for Constraint class"""
+
+    def test_bad_elements(self):
+        x = Variable("x")
+        with self.assertRaises(ValueError):
+            _ = Model(x, [x == "A"])
+        with self.assertRaises(ValueError):
+            _ = Model(x, [x >= 1, x == "A"])
+        with self.assertRaises(ValueError):
+            _ = Model(x, [x >= 1, x == "A", x >= 1, ])
+        with self.assertRaises(ValueError):
+            _ = Model(x, [x == "A", x >= 1])
+        v = VectorVariable(2, "v")
+        with self.assertRaises(ValueError):
+            _ = Model(x, [v == "A"])
+        with self.assertRaises(ValueError):
+            _ = Model(x, [v <= ["A", "B"]])
+        with self.assertRaises(ValueError):
+            _ = Model(x, [v >= ["A", "B"]])
 
     def test_equality_relaxation(self):
         x = Variable("x")
@@ -199,12 +218,12 @@ class TestTight(unittest.TestCase):
         y = Variable('y')
         with SignomialsEnabled():
             sig_constraint = (x + y >= 0.1)
-        m = Model(x, [Tight([x >= y], raiseerror=True),
-                      x >= 2, y >= 1, sig_constraint])
+        m = Model(x*y, [Tight([x >= y], raiseerror=True),
+                        x >= 2, y >= 1, sig_constraint])
         with self.assertRaises(ValueError):
             m.localsolve(verbosity=0)
         m.pop(1)
-        self.assertAlmostEqual(m.localsolve(verbosity=0)["cost"], 1)
+        self.assertAlmostEqual(m.localsolve(verbosity=0)["cost"], 1, 5)
 
     def test_sigconstr_in_sp(self):
         """Tests tight constraint set with localsolve()"""
@@ -221,8 +240,21 @@ class TestTight(unittest.TestCase):
         m.substitutions[x_min] = 0.5
         self.assertAlmostEqual(m.localsolve(verbosity=0)["cost"], 0.5)
 
+
+class TestBounded(unittest.TestCase):
+    """Test bounded constraint set"""
+
+    def test_substitution_issue905(self):
+        x = Variable("x")
+        y = Variable("y")
+        m = Model(x, [x >= y], {"y": 1})
+        bm = Model(m.cost, Bounded(m))
+        sol = bm.solve(verbosity=0)
+        self.assertAlmostEqual(sol["cost"], 1.0)
+
+
 TESTS = [TestConstraint, TestMonomialEquality, TestSignomialInequality,
-         TestTight]
+         TestTight, TestBounded]
 
 if __name__ == '__main__':
     run_tests(TESTS)

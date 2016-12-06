@@ -180,7 +180,8 @@ class Signomial(Nomial):
         p0 = psub.value  # includes any units
         m0 = 1
         for vk in self.varlocs:
-            e = mag(x0[vk]*self.diff(vk).sub(x0, require_positive=False).c/p0)
+            diff = self.diff(vk)
+            e = x0[vk]*mag(diff.sub(x0, require_positive=False).c)/mag(p0)
             exp[vk] = e
             m0 *= (x0[vk])**e
         return Monomial(exp, p0/mag(m0))
@@ -448,7 +449,7 @@ class PosynomialInequality(ScalarSingleEquationConstraint):
     def _simplify_posy_ineq(self, exps, cs):
         "Simplify a posy <= 1 by moving constants to the right side."
         if len(exps) == 1:
-            if not exps[0]:
+            if not exps[0] or cs[0] == 0:
                 if cs[0] > 1:
                     raise ValueError("infeasible constraint: %s" % self)
                 else:
@@ -492,20 +493,16 @@ class PosynomialInequality(ScalarSingleEquationConstraint):
     def as_posyslt1(self, substitutions=None):
         "Returns the posys <= 1 representation of this constraint."
         posys = self.unsubbed
-        self._last_used_substitutions = substitutions
         if not substitutions:
+            self._last_used_substitutions = substitutions
             # just return the pre-generated posynomial representation
             return posys
 
         out = []
         for posy in posys:
-            _, exps, cs, _ = substitution(posy, substitutions)
-            # remove any cs that are just nans and/or 0s
-            nans = np.isnan(cs)
-            if np.all(nans) or np.all(cs[~nans] == 0):
-                continue  # skip nan'd or 0'd constraint
-
-            exps, cs = self._simplify_posy_ineq(exps, cs)
+            _, exps, cs, subs = substitution(posy, substitutions)
+            self._last_used_substitutions = subs
+            exps, cs = self._simplify_posy_ineq(exps, mag(cs))
             if not exps and not cs:  # tautological constraint
                 continue
             exps, cs, pmap = simplify_exps_and_cs(exps, cs, return_map=True)
@@ -520,10 +517,12 @@ class PosynomialInequality(ScalarSingleEquationConstraint):
             #  from that particular parent.
 
             self.pmap = pmap  # pylint: disable=attribute-defined-outside-init
-            p = Posynomial(exps, cs, simplify=False)
-            if p.any_nonpositive_cs:
+            try:
+                p = Posynomial(exps, cs, simplify=False)
+            except ValueError:
                 raise RuntimeWarning("PosynomialInequality %s became Signomial"
-                                     " after substitution" % self)
+                                     " after substitution %s"
+                                     % (self, substitutions))
             out.append(p)
         return out
 
@@ -548,9 +547,10 @@ class PosynomialInequality(ScalarSingleEquationConstraint):
         #     mono_str = fast_monomial_str(self.p_lt.exps[i], self.p_lt.cs[i])
         #     constr_sens[mono_str] = mono_sens
         # Constant sensitivities
-        var_senss = {var: sum([presub.exps[i][var]*nu[i] for i in locs])
-                     for (var, locs) in presub.varlocs.items()
-                     if var in self._last_used_substitutions}
+        var_senss = {}
+        for var in self._last_used_substitutions:
+            locs = presub.varlocs[var]
+            var_senss[var] = sum([presub.exps[i][var]*nu[i] for i in locs])
         return var_senss
 
     # pylint: disable=unused-argument
