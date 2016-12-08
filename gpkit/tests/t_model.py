@@ -272,6 +272,10 @@ class TestSP(unittest.TestCase):
         sol = m.localsolve(verbosity=0)
         self.assertAlmostEqual(sol["cost"], 2**0.5, self.ndig)
         self.assertAlmostEqual(sol(y), 0.5, self.ndig)
+        second_solve_key_names = [key.name[:5]
+                                  for key in m.program.gps[1].cost.exp.keys()
+                                  if key.name[:5] == "\\fbox"]
+        self.assertIn("\\fbox", second_solve_key_names)
 
     def test_sp_substitutions(self):
         x = Variable('x')
