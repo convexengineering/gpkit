@@ -97,9 +97,9 @@ class NomialData(object):
             var, = varset
         exps, cs = [], []
         # var.units may be str if units disabled
-        if not var.units:
+        if not var.units or isinstance(var.units, str):
             units = 1
-        elif isinstance(var.units, str):
+        else:
             if hasattr(self.cs, "units"):
                 cs_units = Quantity(1, self.cs.units)
             else:
