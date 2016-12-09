@@ -1,7 +1,8 @@
+"Implements SPData class"
 import h5py
 import numpy as np
-from ..nomials import *
-from ..geometric_program import genA
+from ..nomials import NomialData, SignomialInequality, PosynomialInequality
+from ..constraints.geometric_program import genA
 from ..small_scripts import mag
 
 
@@ -15,6 +16,7 @@ class SPData(NomialData):
     ``spdata.save('example_sp.h5')``
     """
     def __init__(self, model):
+        # pylint:disable=super-init-not-called
         if not hasattr(model, "solution"):
             print "You nede to solve the model first."
 
@@ -35,7 +37,8 @@ class SPData(NomialData):
         # A [i, v]: sparse matrix of variable's powers in each monomial
         self.A, _ = genA(self.exps, self.varlocs)
 
-        self.varsols = np.array([mag(model.solution(var)) for var in self.varlocs])
+        self.varsols = np.array([mag(model.solution(var))
+                                 for var in self.varlocs])
         self.varnames = np.array([str(var) for var in self.varlocs])
 
     def __repr__(self):
