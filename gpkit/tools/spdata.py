@@ -1,5 +1,4 @@
 "Implements SPData class"
-import h5py
 import numpy as np
 from ..nomials import NomialData, SignomialInequality, PosynomialInequality
 from ..constraints.geometric_program import genA
@@ -46,6 +45,7 @@ class SPData(NomialData):
 
     def save(self, filename):
         "Save spdata to an h5 file."
+        import h5py
         h5f = h5py.File(filename, 'w')
         try:
             h5f.create_dataset('cs', data=self.cs)
