@@ -1,6 +1,7 @@
 "Runs each file listed in pwd/TESTS as a test"
 
 import unittest
+import os
 import re
 import importlib
 from gpkit import settings
@@ -32,7 +33,14 @@ def add_filetest(testclass, path):
     print "adding test for", repr(path)
 
     def test_fn(self):
-        mod = importlib.import_module(path[:-3])
+        top_level = os.getcwd()
+        try:
+            dirname = os.path.dirname(path)
+            if dirname:
+                os.chdir(os.path.dirname(path))
+            mod = importlib.import_module(os.path.basename(path)[:-3])
+        finally:
+            os.chdir(top_level)
         if not hasattr(mod, "test"):
             self.fail("file '%s' had no `test` function." % path)
         mod.test()
