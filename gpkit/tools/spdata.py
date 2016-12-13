@@ -45,7 +45,11 @@ class SPData(NomialData):
 
     def save(self, filename):
         "Save spdata to an h5 file."
-        import h5py
+        try:
+            import h5py  # pylint:disable=import-error
+        except ImportError as ie:
+            print "SPData.save requires the h5py library."
+            raise ie
         h5f = h5py.File(filename, 'w')
         try:
             h5f.create_dataset('cs', data=self.cs)
