@@ -17,7 +17,7 @@ class SPData(NomialData):
     def __init__(self, model):
         # pylint:disable=super-init-not-called
         if not hasattr(model, "solution"):
-            print "You nede to solve the model first."
+            print "You need to solve the model first."
 
         self.signomials = [model.cost]
         for constraint in model.flat(constraintsets=False):
