@@ -7,7 +7,7 @@ from collections import defaultdict
 from gpkit.tests.from_paths import run
 
 
-def test_repos(repos=["d8", "gas_solar_trade"]):
+def test_repos(repos=["d8", "gas_solar_trade"], xmloutput=False):
     gpkit_models = False
     for repo in repos:
         git_clone(repo, branch="test_prep")
@@ -39,7 +39,8 @@ def test_repos(repos=["d8", "gas_solar_trade"]):
 
         # TODO: xmloutput=True
         testpy = ("from gpkit.tests.from_paths import run;"
-                  "run(skipsolvers=%s)" % repr(settings["skipsolvers"]))
+                  "run(xmloutput=%s, skipsolvers=%s)"
+                  % (xmloutput, repr(settings["skipsolvers"])))
         subprocess.call(["python", "-c", testpy])
         os.chdir("..")
 
