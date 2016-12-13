@@ -48,9 +48,6 @@ def add_filetest(testclass, path):
     setattr(testclass, "test_"+clean(path), test_fn)
 
 
-SOLVERS = settings["installed_solvers"]
-
-
 def newtest_fn(name, solver, import_dict, path):
     "Doubly nested callbacks to run the test with `getattr(self, name)()`"
     return new_test(name, solver, import_dict, path,
@@ -58,12 +55,14 @@ def newtest_fn(name, solver, import_dict, path):
                             lambda self: getattr(self, name)()))  # pylint:disable=undefined-variable
 
 
-def run(filename="TESTS", xmloutput=False):
+def run(filename="TESTS", xmloutput=False, skipsolvers=None):
     "Parse and run paths from a given file for each solver"
     with open(filename, "r") as f:
         for path in f:
             add_filetest(TestFiles, path)
-    tests = generate_example_tests("", [TestFiles], SOLVERS,
+    solvers = [s for s in settings["installed_solvers"]
+               if not skipsolvers or s not in skipsolvers]
+    tests = generate_example_tests("", [TestFiles], solvers,
                                    newtest_fn=newtest_fn)
     from gpkit.tests.run_tests import run as run_
     run_(tests=tests, unitless=False, xmloutput=xmloutput)
