@@ -10,20 +10,22 @@ class SPData(NomialData):
 
     Usage
     -----
-
-    ``spdata = SPData(m)``
-    ``spdata.save('example_sp.h5')``
+    >>> spdata = SPData(m)
+    >>> spdata.save('example_sp.h5')
     """
     def __init__(self, model):
         # pylint:disable=super-init-not-called
         if not hasattr(model, "solution"):
-            print "You need to solve the model first."
+            raise ValueError("You need to solve the model first.")
 
         self.signomials = [model.cost]
         for constraint in model.flat(constraintsets=False):
             if isinstance(constraint, (SignomialInequality,
                                        PosynomialInequality)):
                 self.signomials.extend(constraint.unsubbed)
+            else:
+                raise ValueError("unknown constraint %s of type %s"
+                                 % (constraint, type(constraint)))
         NomialData.init_from_nomials(self, self.signomials)
 
         # k [j]: number of monomials (columns of F) present in each constraint
@@ -35,6 +37,7 @@ class SPData(NomialData):
         self.p_idxs = np.array(p_idxs)
         # A [i, v]: sparse matrix of variable's powers in each monomial
         self.A, _ = genA(self.exps, self.varlocs)
+        # NOTE: NomialData might be refactored to include the above
 
         self.varsols = np.array([mag(model.solution(var))
                                  for var in self.varlocs])
