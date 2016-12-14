@@ -9,16 +9,18 @@ from collections import defaultdict
 def test_repos(xmloutput=False):
     "From gpkit-models gets the list of external repos to test, and tests."
     git_clone("gpkit-models")
-    pip_install("gpkit-models", local=True)
-    os.chdir("gpkit-models")
-    repos = [line.strip() for line in open("EXTERNALTESTS", "r")]
-    os.chdir("..")
+    repos_list_filename = "gpkit-models"+os.sep+"EXTERNALTESTS"
+    repos = [line.strip() for line in open(repos_list_filename, "r")]
     for repo in repos:
         git_clone(repo)
         if os.path.isfile("repo"+os.sep+"setup.py"):
             pip_install(repo, local=True)
         os.chdir(repo)
         settings = get_settings()
+        print
+        print "SETTINGS"
+        print settings
+        print
 
         # install gpkit-models
         if "gpkit-models branch" in settings:
