@@ -6,25 +6,29 @@ from time import sleep
 from collections import defaultdict
 
 
-def test_repos(xmloutput=False):
-    "From gpkit-models gets the list of external repos to test, and tests."
-    git_clone("gpkit-models")
-    repos_list_filename = "gpkit-models"+os.sep+"EXTERNALTESTS"
-    repos = [line.strip() for line in open(repos_list_filename, "r")]
-    for repo in repos:
-        git_clone(repo)
-        if os.path.isfile("repo"+os.sep+"setup.py"):
-            pip_install(repo, local=True)
-        os.chdir(repo)
-        settings = get_settings()
-        print
-        print "SETTINGS"
-        print settings
-        print
+def test_repo(repo=".", xmloutput=False):
+    """Test repository.
 
-        # install gpkit-models
-        if "gpkit-models branch" in settings:
-            branch = settings["gpkit-models branch"]
+    If no repo name given, runs in current directory.
+    Otherwise, assumes is in directory above the repo
+    with a shared gpkit-models repository.
+    """
+    if os.path.isfile(repo+os.sep+"setup.py"):
+        pip_install(repo, local=True)
+    os.chdir(repo)
+    settings = get_settings()
+    print
+    print "SETTINGS"
+    print settings
+    print
+
+    # install gpkit-models
+    if "gpkit-models branch" in settings:
+        branch = settings["gpkit-models branch"]
+        if repo == ".":
+            git_clone("gpkit-models", branch=branch)
+            pip_install("gpkit-models", local=True)
+        else:
             os.chdir("..")
             os.chdir("gpkit-models")
             call_and_retry(["git", "fetch", "--depth", "1", "origin",
@@ -34,18 +38,28 @@ def test_repos(xmloutput=False):
             pip_install("gpkit-models", local=True)
             os.chdir(repo)
 
-        # install other dependencies
-        if settings["pip install"]:
-            for package in settings["pip install"].split(","):
-                package = package.strip()
-                pip_install(package)
+    # install other dependencies
+    if settings["pip install"]:
+        for package in settings["pip install"].split(","):
+            package = package.strip()
+            pip_install(package)
 
-        # TODO: xmloutput=True
-        testpy = ("from gpkit.tests.from_paths import run;"
-                  "run(xmloutput=%s, skipsolvers=%s)"
-                  % (xmloutput, repr(settings["skipsolvers"])))
-        subprocess.call(["python", "-c", testpy])
+    testpy = ("from gpkit.tests.from_paths import run;"
+              "run(xmloutput=%s, skipsolvers=%s)"
+              % (xmloutput, repr(settings["skipsolvers"])))
+    subprocess.call(["python", "-c", testpy])
+    if repo != ".":
         os.chdir("..")
+
+
+def test_repos(repos=None, xmloutput=False):
+    "Get the list of external repos to test, and test."
+    git_clone("gpkit-models")
+    repos_list_filename = "gpkit-models"+os.sep+"EXTERNALTESTS"
+    repos = [line.strip() for line in open(repos_list_filename, "r")]
+    for repo in repos:
+        git_clone(repo)
+        test_repo(repo, xmloutput=xmloutput)
 
 
 def get_settings():
