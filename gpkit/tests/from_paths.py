@@ -38,7 +38,7 @@ def add_filetest(testclass, path):
             dirname = os.path.dirname(path)
             if dirname:
                 os.chdir(os.path.dirname(path))
-            mod = importlib.import_module(os.path.basename(path)[:-3])
+            mod = __import__(os.path.basename(path)[:-3])
         finally:
             os.chdir(top_level)
         if not hasattr(mod, "test"):
