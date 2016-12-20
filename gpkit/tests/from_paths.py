@@ -3,7 +3,6 @@
 import unittest
 import os
 import re
-import importlib
 from gpkit import settings
 from gpkit.tests.helpers import generate_example_tests, new_test
 
