@@ -3,13 +3,12 @@
 import unittest
 import os
 import re
-import importlib
 from gpkit import settings
 from gpkit.tests.helpers import generate_example_tests, new_test
 
 
 class TestFiles(unittest.TestCase):
-    "Stub to be filled with files in pwd/TEST"
+    "Stub to be filled with files in $pwd/TESTS"
     pass
 
 
@@ -38,7 +37,7 @@ def add_filetest(testclass, path):
             dirname = os.path.dirname(path)
             if dirname:
                 os.chdir(os.path.dirname(path))
-            mod = importlib.import_module(os.path.basename(path)[:-3])
+            mod = __import__(os.path.basename(path)[:-3])
         finally:
             os.chdir(top_level)
         if not hasattr(mod, "test"):
@@ -64,5 +63,8 @@ def run(filename="TESTS", xmloutput=False, skipsolvers=None):
                if not skipsolvers or s not in skipsolvers]
     tests = generate_example_tests("", [TestFiles], solvers,
                                    newtest_fn=newtest_fn)
+    if not solvers:
+        # Dummy test in case all installed solvers are skipped.
+        tests[0].test_dummy = lambda self: None
     from gpkit.tests.run_tests import run as run_
     run_(tests=tests, unitless=False, xmloutput=xmloutput)

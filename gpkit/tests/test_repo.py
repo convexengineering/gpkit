@@ -44,9 +44,13 @@ def test_repo(repo=".", xmloutput=False):
             package = package.strip()
             pip_install(package)
 
+    skipsolvers = None
+    if "skipsolvers" in settings:
+        skipsolvers = [s.strip() for s in settings["skipsolvers"].split(",")]
+
     testpy = ("from gpkit.tests.from_paths import run;"
               "run(xmloutput=%s, skipsolvers=%s)"
-              % (xmloutput, repr(settings["skipsolvers"])))
+              % (xmloutput, skipsolvers))
     subprocess.call(["python", "-c", testpy])
     if repo != ".":
         os.chdir("..")
@@ -92,7 +96,7 @@ def pip_install(package, local=False):
         subprocess.call(cmd + ["uninstall", package])
     cmd += ["install"]
     if local:
-        cmd += ["-e"]
+        cmd += ["--no-cache-dir", "--no-deps", "-e"]
     else:
         cmd += ["--upgrade"]
     cmd += [package]
