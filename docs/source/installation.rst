@@ -111,7 +111,7 @@ Windows
 Install GPkit
 =============
   - Run ``pip install gpkit`` at the command line (for system python installs, use ``sudo pip``)
-  - Run ``pip install jupyer`` to install jupyter notebook (recommended)
+  - Run ``pip install jupyter`` to install jupyter notebook (recommended)
   - Run ``jupyter nbextension enable --py widgetsnbextension`` for interactive control of models in jupyter (recommended)
   - Run ``python -c "import gpkit.tests; gpkit.tests.run()"`` to run the tests; if any tests do not pass, please email ``gpkit@mit.edu`` or `raise a GitHub issue <http://github.com/hoburg/gpkit/issues/new>`_.
   - Join our `mailing list <https://mailman.mit.edu/mailman/listinfo/gpkit-users/>`_ and/or `chatroom <https://gitter.im/gpkit-users/Lobby>`_ for support and examples.
