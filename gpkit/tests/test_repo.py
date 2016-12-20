@@ -94,9 +94,9 @@ def pip_install(package, local=False):
         cmd = ["python", os.environ["PIP"]]
     if local:  # remove any other local packages of the same name...
         subprocess.call(cmd + ["uninstall", package])
-    cmd += ["install", "--no-cache-dir"]
+    cmd += ["install"]
     if local:
-        cmd += ["-e", "--no-deps"]
+        cmd += ["-e", "--no-deps", "--no-cache-dir"]
     else:
         cmd += ["--upgrade"]
     cmd += [package]
