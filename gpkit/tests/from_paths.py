@@ -9,7 +9,7 @@ from gpkit.tests.helpers import generate_example_tests, new_test
 
 
 class TestFiles(unittest.TestCase):
-    "Stub to be filled with files in pwd/TEST"
+    "Stub to be filled with files in $pwd/TESTS"
     pass
 
 
@@ -64,5 +64,8 @@ def run(filename="TESTS", xmloutput=False, skipsolvers=None):
                if not skipsolvers or s not in skipsolvers]
     tests = generate_example_tests("", [TestFiles], solvers,
                                    newtest_fn=newtest_fn)
+    if not solvers:
+        # Dummy test in case all installed solvers are skipped.
+        tests[0].test_dummy = lambda self: None
     from gpkit.tests.run_tests import run as run_
     run_(tests=tests, unitless=False, xmloutput=xmloutput)
