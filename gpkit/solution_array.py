@@ -249,7 +249,7 @@ def results_table(data, title, minval=0, printunits=True, fixedcols=True,
             dirs = ['>', '<', '<', '<']
             # check lengths before using zip
             assert len(list(dirs)) == len(list(maxlens))
-            fmts = [u'{0:%s%s}' % (direc, L) for direc, L in zip(dirs, maxlens)]
+            fmts = ['{0:%s%s}' % (direc, L) for direc, L in zip(dirs, maxlens)]
         for i, line in enumerate(lines):
             if line[0] == ("modelname",):
                 line = [fmts[0].format(" | "), line[1]]
