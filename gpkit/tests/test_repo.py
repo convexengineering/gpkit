@@ -46,8 +46,7 @@ def test_repo(repo=".", xmloutput=False):
 
     skipsolvers = None
     if "skipsolvers" in settings:
-        skipsolvers = settings["skipsolvers"].split(",")
-        skipsolvers = map(lambda s: s.strip(), skipsolvers)
+        skipsolvers = [s.strip() for s in settings["skipsolvers"].split(",")]
 
     testpy = ("from gpkit.tests.from_paths import run;"
               "run(xmloutput=%s, skipsolvers=%s)"
