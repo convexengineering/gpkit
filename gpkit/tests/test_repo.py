@@ -96,7 +96,7 @@ def pip_install(package, local=False):
         subprocess.call(cmd + ["uninstall", package])
     cmd += ["install", "--no-cache-dir"]
     if local:
-        cmd += ["-e"]
+        cmd += ["-e", "--no-deps"]
     else:
         cmd += ["--upgrade"]
     cmd += [package]
