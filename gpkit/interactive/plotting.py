@@ -4,6 +4,7 @@ from matplotlib.mlab import griddata
 import numpy as np
 from .. import VarKey
 from ..small_scripts import unitstr, mag
+from ..exceptions import InvalidGPConstraint
 
 
 LIGHT_COLORS = ['#80cdc1']
