@@ -315,14 +315,25 @@ def plot_sweep_1d(model, sweep, dependentvar):
         originalsubvalue = model.substitutions[sweepvar]
     x = sweep.values()[0]
     model.substitutions.update({sweepvar: ('sweep', x)})
-    sol = model.localsolve()
+    try:
+        sol = model.solve()
+    except InvalidGPConstraint:
+        sol = model.localsolve()
     y = mag(sol(dependentvar))
     f, ax = plt.subplots()
     ax.plot(x, y)
+    try:
+        xvarname = model[sweepvar].descr['label']
+    except KeyError:
+        xvarname = model[sweepvar].descr['name']
+    try:
+        yvarname = model[dependentvar].descr['label']
+    except KeyError:
+        yvarname = model[dependentvar].descr['name']
     x_units = unitstr(model[sweepvar], into=" [%s] ", dimless="")
-    ax.set_xlabel(model[sweepvar].descr['label'] + x_units)
     y_units = unitstr(model[dependentvar], into=" [%s] ", dimless="")
-    ax.set_ylabel(model[dependentvar].descr['label'] + y_units)
+    ax.set_xlabel(xvarname + x_units)
+    ax.set_ylabel(yvarname + y_units)
     plt.show()
 
     model.substitutions[sweepvar] = originalsubvalue
