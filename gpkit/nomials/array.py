@@ -198,6 +198,13 @@ class NomialArray(np.ndarray):
         while not it.finished:
             i = it.multi_index
             it.iternext()
+            if isinstance(mag(self[i]), Numbers):
+                # somehow a number got in here
+                if mag(self[i]) == 0:
+                    continue
+                else:
+                    cs.append(mag(self[i]))
+                    exps.append({})
             cs.extend(mag(self[i].cs).tolist())
             exps.extend(self[i].exps)
         if units:
