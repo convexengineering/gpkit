@@ -272,7 +272,7 @@ class GeometricProgram(CostedConstraintSet, NomialData):
         return SolutionArray(result)
 
     # TODO: set tol by solver? or otherwise return it to 1e-5 for mosek
-    def check_solution(self, cost, primal, nu, la, tol=1e-3, abstol=1e-20):
+    def check_solution(self, cost, primal, nu, la, tol=1e-5, abstol=1e-20):
         """Run a series of checks to mathematically confirm sol solves this GP
 
         Arguments
@@ -301,11 +301,15 @@ class GeometricProgram(CostedConstraintSet, NomialData):
             raise RuntimeWarning("Primal solution computed cost did not match"
                                  " solver-returned cost: %s vs %s" %
                                  (primal_exp_vals[self.m_idxs[0]].sum(), cost))
-        for mi in self.m_idxs[1:]:
+        for i, mi in enumerate(self.m_idxs[1:]):
             if primal_exp_vals[mi].sum() > 1 + tol:
+                assert _almost_equal(la[i + 1], nu[mi].sum())
+                # TODO: remove assert once we confirm it isn't triggering
+                # can also remove the variable i and the enumerate
                 raise RuntimeWarning("Primal solution violates constraint:"
-                                     " %s is greater than 1." %
-                                     primal_exp_vals[mi].sum())
+                                     " %s is greater than 1. The corresponding "
+                                     "lambda value is %s." %
+                                     (primal_exp_vals[mi].sum(), nu[mi].sum()))
         # check dual sol
         # note: follows dual formulation in section 3.1 of
         # http://web.mit.edu/~whoburg/www/papers/hoburg_phd_thesis.pdf
