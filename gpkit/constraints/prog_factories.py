@@ -19,7 +19,7 @@ from ..keydict import KeyDict
 
 def _progify_fctry(program, return_attr=None):
     "Generates function that returns a program() and optionally an attribute."
-    def programify(self, verbosity=1, substitutions=None, **kwargs):
+    def programify(self, verbosity=1, constants=None, **kwargs):
         """Return program version of self
 
         Arguments
@@ -29,9 +29,11 @@ def _progify_fctry(program, return_attr=None):
         return_attr: string
             attribute to return in addition to the program
         """
-        if not substitutions:
-            substitutions = self.substitutions
-        prog = program(self.cost, self, substitutions, verbosity, **kwargs)
+        if not constants:
+            constants, _, linkedsweep = parse_subs(self.varkeys,
+                                                   self.substitutions)
+            constants.update({v: f(constants) for v, f in linkedsweep.items()})
+        prog = program(self.cost, self, constants, verbosity, **kwargs)
         if return_attr:
             return prog, getattr(prog, return_attr)
         else:
@@ -111,10 +113,8 @@ def run_sweep(genfunction, self, solution, skipsweepfailures,
         "Solves one pass of a sweep."
         this_pass = {var: sweep_vect[i]
                      for (var, sweep_vect) in sweep_vects.items()}
-        linked = {var: fn(*[this_pass[v.key] for v in var.descr["args"]])
-                  for var, fn in linkedsweep.items()}
-        this_pass.update(linked)
         constants.update(this_pass)
+        constants.update({v: f(constants) for v, f in linkedsweep.items()})
         program, solvefn = genfunction(self, verbosity-1, constants)
         try:
             result = solvefn(solver, verbosity-1, *args, **kwargs)

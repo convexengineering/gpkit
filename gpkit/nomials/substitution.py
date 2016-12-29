@@ -61,15 +61,16 @@ def append_sub(sub, keys, constants, sweep, linkedsweep):
                                  " variable %s of shape %s." %
                                  (sub.shape, key.str_without("model"),
                                   key.shape))
-        if not sweepsub:
+
+        if hasattr(value, "__call__") and not hasattr(value, "key"):
+            linkedsweep[key] = value
+        elif sweepsub:
+            sweep[key] = value
+        else:
             try:
                 assert np.isnan(value)
             except (AssertionError, TypeError, ValueError):
                 constants[key] = value
-        elif not hasattr(value, "__call__"):
-            sweep[key] = value
-        else:
-            linkedsweep[key] = value
 
 
 def substitution(nomial, substitutions):
