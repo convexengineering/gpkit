@@ -74,6 +74,9 @@ class TestExamples(unittest.TestCase):
     def test_external_sp(self, example):
         pass
 
+    def test_external_sp2(self, example):
+        pass
+
     def test_simpleflight(self, example):
         sol = example.sol
         freevarcheck = dict(A=8.46,

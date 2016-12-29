@@ -135,7 +135,7 @@ def composite_objective(*objectives, **kwargs):
         descr = dict(w.descr)
         del descr["value"]
         descr["name"] = "v_{CO}"
-        w_s.append(Variable(value=lambda const: 1-const[w.key], **descr))
+        w_s.append(Variable(value=lambda const: 1-const[w.key], **descr))  # pylint: disable=cell-var-from-loop
     w_s = normalization[-1]*NomialArray(w_s)*objectives[-1]
     objective = w_s.prod()
     for i, obj in enumerate(objectives[:-1]):
