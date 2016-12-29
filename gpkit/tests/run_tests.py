@@ -43,7 +43,7 @@ def import_tests():
     return tests
 
 
-def run(xmloutput=False):
+def run(xmloutput=False, tests=None, unitless=True):
     """Run all gpkit unit tests.
 
     Arguments
@@ -51,20 +51,22 @@ def run(xmloutput=False):
     xmloutput: bool
         If true, generate xml output files for continuous integration
     """
-    tests = import_tests()
+    if tests is None:
+        tests = import_tests()
     if xmloutput:
         run_tests(tests, xmloutput='test_reports')
     else:
         run_tests(tests)
-    print("\n##################################"
-          "####################################")
-    print("Running with units disabled:")
-    gpkit.disable_units()
-    if xmloutput:
-        run_tests(tests, xmloutput='test_reports_nounits')
-    else:
-        run_tests(tests, verbosity=1)
-    gpkit.enable_units()
+    if unitless:
+        print("\n##################################"
+              "####################################")
+        print("Running with units disabled:")
+        gpkit.disable_units()
+        if xmloutput:
+            run_tests(tests, xmloutput='test_reports_nounits')
+        else:
+            run_tests(tests, verbosity=1)
+        gpkit.enable_units()
 
 if __name__ == '__main__':
     run()

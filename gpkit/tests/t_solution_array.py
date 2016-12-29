@@ -2,10 +2,11 @@
 import unittest
 import time
 import numpy as np
-from gpkit import Variable, VectorVariable, Model
+from gpkit import Variable, VectorVariable, Model, SignomialsEnabled
 import gpkit
 from gpkit.solution_array import results_table
 from gpkit.varkey import VarKey
+from gpkit.small_classes import Strings
 
 
 class TestSolutionArray(unittest.TestCase):
@@ -77,7 +78,7 @@ class TestSolutionArray(unittest.TestCase):
         gp = Model(x, [x >= 12])
         sol = gp.solve(verbosity=0)
         tab = sol.table()
-        self.assertTrue(isinstance(tab, str))
+        self.assertTrue(isinstance(tab, Strings))
 
     def test_units_sub(self):
         # issue 809
@@ -104,6 +105,18 @@ class TestResultsTable(unittest.TestCase):
         printstr = "\n".join(results_table(data, title))
         self.assertTrue(" - " in printstr)  # nan is printed as " - "
         self.assertTrue(title in printstr)
+
+    def test_result_access(self):
+        x = Variable("x")
+        y = Variable("y")
+        with SignomialsEnabled():
+            sig = (y + 6*x >= 13 + x**2)
+        m = Model(y, [sig])
+        sol = m.localsolve(verbosity=0)
+        self.assertTrue(all([isinstance(gp.result.table(), Strings)
+                             for gp in m.program.gps]))
+        self.assertAlmostEqual(sol["cost"]/4.0, 1.0, 5)
+        self.assertAlmostEqual(sol("x")/3.0, 1.0, 3)
 
 TESTS = [TestSolutionArray, TestResultsTable]
 

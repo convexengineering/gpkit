@@ -1,6 +1,6 @@
 [<img src="http://gpkit.rtfd.org/en/latest/_images/gplogo.png" width=110 alt="GPkit" />](http://gpkit.readthedocs.org/)
 
-**[Documentation](http://gpkit.readthedocs.org/)** | [Install instructions](http://gpkit.readthedocs.org/en/latest/installation.html) | [Examples](http://gpkit.readthedocs.org/en/latest/examples.html) | [Glossary](http://gpkit.readthedocs.org/en/latest/glossary.html) | [Citing GPkit](http://gpkit.readthedocs.org/en/latest/citinggpkit.html)
+**[Documentation](http://gpkit.readthedocs.org/)** | [Install instructions](http://gpkit.readthedocs.org/en/latest/installation.html) | [Examples](http://gpkit.readthedocs.org/en/latest/examples.html) | [Glossary](https://gpkit.readthedocs.io/en/latest/autodoc/gpkit.html) | [Citing GPkit](http://gpkit.readthedocs.org/en/latest/citinggpkit.html)
 
 GPkit is a Python package for defining and manipulating
 geometric programming models,

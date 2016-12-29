@@ -97,8 +97,14 @@ class NomialData(object):
             var, = varset
         exps, cs = [], []
         # var.units may be str if units disabled
-        units = (Quantity(1, self.cs.units)/var.units
-                 if var.units and not isinstance(var.units, str) else 1)
+        if not var.units or isinstance(var.units, str):
+            units = 1
+        else:
+            if hasattr(self.cs, "units"):
+                cs_units = Quantity(1, self.cs.units)
+            else:
+                cs_units = 1
+            units = cs_units/var.units
         for i, exp in enumerate(self.exps):
             exp = HashVector(exp)   # copy -- exp is mutated below
             e = exp.get(var, 0)
