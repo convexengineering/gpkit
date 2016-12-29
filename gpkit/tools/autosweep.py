@@ -5,10 +5,6 @@ from gpkit.small_classes import Count
 from gpkit.small_scripts import mag
 
 
-def assert_logtol(x, y, logtol=1e-6):
-    np.testing.assert_allclose(log(mag(x)), log(mag(y)), atol=logtol, rtol=0)
-
-
 class BinarySweepTree(object):
     def __init__(self, bounds, sols):
         if len(bounds) != 2:
@@ -120,12 +116,6 @@ class VariableOracle(object):
             fit = np.array(fit)
         return fit
 
-bst0 = BinarySweepTree([1, 2], [{"cost": 1}, {"cost": 8}])
-assert_logtol(bst0["cost"]([1, 1.5, 2]), [1, 3.375, 8], 1e-3)
-bst0.add_split(1.5, {"cost": 4})
-assert_logtol(bst0["cost"]([1, 1.25, 1.5, 1.75, 2]),
-              [1, 2.144, 4, 5.799, 8], 1e-3)
-
 
 def sweep_1d(model, logtol, variable, bounds, conservative=False, **solvekwargs):
     "Autosweep a model over one variable"
@@ -168,22 +158,34 @@ def get_tol(sols, variable):
     ub = y0*interp + y1*(1-interp)
     return exp(x), ub, lb
 
-from gpkit import *
-x = Variable("x", "m**2")
-xmin = Variable("xmin", "m")
-m = Model(x**2, [x >= xmin**2 + units.m**2])
 
-xmin_ = np.linspace(1, 10, 100)
-for dec in range(6):
-    tol = 10**-dec
-    print "Testing with tolerance of %.3g" % tol
-    bst = sweep_1d(m, tol, xmin, [1, 10])
-    assert_logtol(bst["xmin"](xmin_), xmin_)
-    assert_logtol(bst["x"](xmin_), xmin_**2 + 1, tol)
-    assert_logtol(bst["cost"](xmin_), (xmin_**2 + 1)**2, tol)
+if __name__ == "__main__":
+    from gpkit import *
 
-assert bst["cost"](xmin_).units == ureg.m**4
-assert bst["x"](xmin_).units == ureg.m**2
+    def assert_logtol(x, y, logtol=1e-6):
+        np.testing.assert_allclose(log(mag(x)), log(mag(y)), atol=logtol, rtol=0)
 
-bst = sweep_1d(m, 1, xmin, [1, 10])
-# fill_between(xmin_, bst["cost"].lb(xmin_), bst["cost"].ub(xmin_))
+    bst0 = BinarySweepTree([1, 2], [{"cost": 1}, {"cost": 8}])
+    assert_logtol(bst0["cost"]([1, 1.5, 2]), [1, 3.375, 8], 1e-3)
+    bst0.add_split(1.5, {"cost": 4})
+    assert_logtol(bst0["cost"]([1, 1.25, 1.5, 1.75, 2]),
+                  [1, 2.144, 4, 5.799, 8], 1e-3)
+
+    x = Variable("x", "m**2")
+    xmin = Variable("xmin", "m")
+    m = Model(x**2, [x >= xmin**2 + units.m**2])
+
+    xmin_ = np.linspace(1, 10, 100)
+    for dec in range(6):
+        tol = 10**-dec
+        print "Testing with tolerance of %.3g" % tol
+        bst = sweep_1d(m, tol, xmin, [1, 10])
+        assert_logtol(bst["xmin"](xmin_), xmin_)
+        assert_logtol(bst["x"](xmin_), xmin_**2 + 1, tol)
+        assert_logtol(bst["cost"](xmin_), (xmin_**2 + 1)**2, tol)
+
+    assert bst["cost"](xmin_).units == ureg.m**4
+    assert bst["x"](xmin_).units == ureg.m**2
+
+    bst = sweep_1d(m, 1, xmin, [1, 10])
+    # fill_between(xmin_, bst["cost"].lb(xmin_), bst["cost"].ub(xmin_))
