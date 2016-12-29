@@ -95,6 +95,9 @@ class VarKey(object):
             if self.descr.get(subscript) and subscript not in excluded:
                 substring = self.descr[subscript]
                 if subscript == "models":
+                    if self.modelnums:
+                        substring = ["%s.%s" % (ss, mn) for ss, mn
+                                     in zip(substring, self.modelnums)]
                     substring = ", ".join(substring)
                 string += "_%s" % (substring,)
         return string
@@ -117,6 +120,9 @@ class VarKey(object):
             if subscript in self.descr and subscript not in excluded:
                 substring = self.descr[subscript]
                 if subscript == "models":
+                    if self.modelnums:
+                        substring = ["%s.%s" % (ss, mn) for ss, mn
+                                     in zip(substring, self.modelnums)]
                     substring = ", ".join(substring)
                 string = "{%s}_{%s}" % (string, substring)
                 if subscript == "idx":
