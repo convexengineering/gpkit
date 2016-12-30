@@ -75,7 +75,7 @@ class KeyDict(dict):
                 else:
                     raise KeyError("key '%s' does not refer to any varkey in"
                                    " this ConstraintSet" % key)
-            self.maybe_make_keymap()
+            self.update_keymap()
         idx = None
         if self.collapse_arrays:
             idx = getattr(key, "idx", None)
@@ -150,7 +150,7 @@ class KeyDict(dict):
                         continue
                 dict.__setitem__(self, key, value)
 
-    def maybe_make_keymap(self):
+    def update_keymap(self):
         while self.keymapping and self._unmapped_keys:
             key = self._unmapped_keys.pop()
             for mapkey in key.keys:
