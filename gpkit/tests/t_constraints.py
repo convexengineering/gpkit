@@ -71,7 +71,7 @@ class TestConstraint(unittest.TestCase):
         vecx_free = VectorVariable(3, "x", models=["free"])
         vecx_fixed = VectorVariable(3, "x", [1, 2, 3], models=["fixed"])
         lc = LinkedConstraintSet([vecx_free >= 1, vecx_fixed >= 1])
-        self.assertEqual(lc.substitutions["x"].tolist(), [1, 2, 3])
+        self.assertEqual(lc.substitutions["x_fixed"].tolist(), [1, 2, 3])
 
     def test_exclude_vector(self):
         x = VectorVariable(2, "x", [2, 1])

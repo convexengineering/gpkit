@@ -104,7 +104,7 @@ class KeyDict(dict):
         keys = self.keymap[key]
         if not keys:
             del self.keymap[key]  # remove blank entry added due to defaultdict
-            raise KeyError("%s was not found." % key)
+            raise KeyError(key)
         values = []
         for key in keys:
             got = dict.__getitem__(self, key)

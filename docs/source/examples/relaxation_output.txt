@@ -11,11 +11,11 @@ With constraints relaxed equally
 ================================
 
   # minimize
-        C_Relax.0
+        C_Relax
   # subject to
-        C_Relax.0 >= x*x_max**-1
-        C_Relax.0 >= x**-1*x_min
-        C_Relax.0 >= 1
+        C_Relax >= x*x_max**-1
+        C_Relax >= x**-1*x_min
+        C_Relax >= 1
 
 Cost
 ----
