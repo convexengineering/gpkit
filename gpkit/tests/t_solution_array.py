@@ -37,34 +37,6 @@ class TestSolutionArray(unittest.TestCase):
         self.assertEqual(solx.shape, (n,))
         self.assertTrue((abs(solx - 2.5*np.ones(n)) < 1e-7).all())
 
-    def test_call_time(self):
-        N = 4
-        x = VectorVariable(N, 'x', 'm')
-        y = VectorVariable(N, 'y', 'm')
-        z1 = VectorVariable(N, 'z1', 'm')
-        z2 = VectorVariable(N, 'z2', 'm')
-        z3 = VectorVariable(N, 'z3', 'm')
-        z4 = VectorVariable(N, 'z4', 'm')
-        L = Variable('L', 5, 'm')
-        prob = Model(sum(x),
-                     [x >= y, y >= z1, z1 >= z2, z2 >= z3, z3 >= z4, z4 >= L])
-        sol = prob.solve(verbosity=0)
-        short_time = timeit.timeit(lambda: sol(z1), number=100)
-
-        N = 20
-        x = VectorVariable(N, 'x', 'm')
-        y = VectorVariable(N, 'y', 'm')
-        z1 = VectorVariable(N, 'z1', 'm')
-        z2 = VectorVariable(N, 'z2', 'm')
-        z3 = VectorVariable(N, 'z3', 'm')
-        z4 = VectorVariable(N, 'z4', 'm')
-        L = Variable('L', 5, 'm')
-        prob = Model(sum(x),
-                     [x >= y, y >= z1, z1 >= z2, z2 >= z3, z3 >= z4, z4 >= L])
-        sol = prob.solve(verbosity=0)
-        long_time = timeit.timeit(lambda: sol(z1), number=100)
-        self.assertLess(long_time/short_time, 3)
-
     def test_subinto(self):
         Nsweep = 20
         Pvals = np.linspace(13, 24, Nsweep)
