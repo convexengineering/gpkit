@@ -43,7 +43,7 @@ class KeyDict(dict):
         # pylint: disable=super-init-not-called
         self.varkeys = None
         self.keymap = defaultdict(set)
-        self._up_to_date_keymap = True
+        self._unmapped_keys = set()
         self.update(*args, **kwargs)
 
     def update(self, *args, **kwargs):
@@ -124,7 +124,7 @@ class KeyDict(dict):
         if key not in self.keymap:
             self.keymap[key].add(key)
             if hasattr(key, "keys"):
-                self._up_to_date_keymap = False
+                self._unmapped_keys.add(key)
             if idx:
                 number_array = isinstance(value, Numbers)
                 kwargs = {} if number_array else {"dtype": "object"}
@@ -151,12 +151,10 @@ class KeyDict(dict):
                 dict.__setitem__(self, key, value)
 
     def maybe_make_keymap(self):
-        if not self._up_to_date_keymap:
-            for key in self:
-                if hasattr(key, "keys") and self.keymapping:
-                    for mapkey in key.keys:
-                        self.keymap[mapkey].add(key)
-        self._up_to_date_keymap = True
+        while self.keymapping and self._unmapped_keys:
+            key = self._unmapped_keys.pop()
+            for mapkey in key.keys:
+                self.keymap[mapkey].add(key)
 
     def __delitem__(self, key):
         "Overloads del [] to work with all keys"
