@@ -3,6 +3,7 @@ import ipywidgets as widgets
 from traitlets import link
 from ..small_scripts import is_sweepvar
 from ..small_classes import Numbers
+from ..exceptions import InvalidGPConstraint
 
 
 def modelinteract(model, ranges=None, fn_of_sol=None, **solvekwargs):
@@ -69,7 +70,7 @@ def modelinteract(model, ranges=None, fn_of_sol=None, **solvekwargs):
         try:
             try:
                 model.solve(**solvekwargs)
-            except (AttributeError, TypeError):
+            except InvalidGPConstraint:
                 # TypeError raised by as_posyslt1 in non-GP-compatible models
                 model.localsolve(**solvekwargs)
             if hasattr(model, "solution"):
