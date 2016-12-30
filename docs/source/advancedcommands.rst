@@ -104,6 +104,26 @@ Note that ``del m.substitutions["y"]`` affects ``m`` but not ``y.key``.
 ``y.value`` will still be 3, and if ``y`` is used in a new model,
 it will still carry the value of 3.
 
+Tight ConstraintSets
+====================
+
+Tight ConstraintSets will warn if any inequalities they contain are not
+tight (that is, the right side equals the left side) after solving. This
+is useful when you know that a constraint _should_ be tight for a given model,
+but reprenting it as an equality would be non-convex.
+
+.. code-block:: python
+
+    from gpkit import Variable, Model
+    from gpkit.constraints.tight import Tight
+
+    Tight.reltol = 1e-2  # set the global tolerance of Tight
+    x = Variable('x')
+    x_min = Variable('x_{min}', 2)
+    m = Model(x, [Tight([x >= 1], reltol=1e-3),  # set the specific tolerance
+                  x >= x_min])
+    m.solve(verbosity=0)  # prints warning
+
 .. _Sweeps:
 
 Sweeps
@@ -123,7 +143,7 @@ Sweeping Vector Variables
 Vector variables may also be substituted for: ``y = VectorVariable(3, "y", value=('sweep' ,[[1, 2], [1, 2], [1, 2]])`` will sweep :math:`y\ \forall~y_i\in\left\{1,2\right\}`.
 
 Parallel Sweeps
------------------------
+---------------
 
 During a normal sweep, each result is independent, so they can be run in parallel. To use this feature, run ``$ ipcluster start`` at a terminal: it will automatically start a number of iPython parallel computing engines equal to the number of cores on your machine, and when you next import gpkit you should see a note like ``Using parallel execution of sweeps on 4 clients``. If you do, then all sweeps performed with that import of gpkit will be parallelized.
 
@@ -132,7 +152,13 @@ This parallelization sets the stage for gpkit solves to be outsourced to a serve
 Linked Sweeps
 -------------
 
-Some constants may be "linked" to another sweep variable. This can be represented by a Variable whose value is ``('sweep', fn)``, where the arguments of the function ``fn`` are stored in the Varkeys's ``args`` attribute. If you declare a variables value to be a function, then it will assume you meant that as a sweep value: for example, ``a_ = gpkit.Variable("a_", lambda a: 1-a, "-", args=[a])`` will create a constant whose value is always 1 minus the value of a (valid for values of a less than 1). Note that this declaration requires the variable ``a`` to already have been declared.
+Some constants may be "linked" to another sweep variable. This can be
+represented by a Variable whose value is ``('sweep', fn)``, where the argument
+of the function ``fn`` is the dictionary of non-linked constants. If you
+declare a variables value to be a function, then it will assume you meant that
+as a sweep value: for example, ``a_ = gpkit.Variable("a_", lambda c: 1-c[a.key], "-")`` will create a constant whose value is always 1 minus the value of a
+(valid for values of a less than 1). Note that this declaration requires the
+variable ``a`` to already have been declared.
 
 Example Usage
 -------------
