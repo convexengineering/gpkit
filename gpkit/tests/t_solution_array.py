@@ -1,6 +1,5 @@
 """Tests for SolutionArray class"""
 import unittest
-import timeit
 import numpy as np
 from gpkit import Variable, VectorVariable, Model, SignomialsEnabled
 import gpkit
