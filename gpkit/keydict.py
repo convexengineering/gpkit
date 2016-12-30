@@ -151,6 +151,7 @@ class KeyDict(dict):
                 dict.__setitem__(self, key, value)
 
     def update_keymap(self):
+        "Updates the keymap with the keys in _unmapped_keys"
         while self.keymapping and self._unmapped_keys:
             key = self._unmapped_keys.pop()
             for mapkey in key.keys:
