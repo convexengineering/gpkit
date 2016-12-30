@@ -38,6 +38,21 @@ class TestSolutionArray(unittest.TestCase):
         self.assertTrue((abs(solx - 2.5*np.ones(n)) < 1e-7).all())
 
     def test_call_time(self):
+        N = 4
+        x = VectorVariable(N, 'x', 'm')
+        y = VectorVariable(N, 'y', 'm')
+        z1 = VectorVariable(N, 'z1', 'm')
+        z2 = VectorVariable(N, 'z2', 'm')
+        z3 = VectorVariable(N, 'z3', 'm')
+        z4 = VectorVariable(N, 'z4', 'm')
+        L = Variable('L', 5, 'm')
+        prob = Model(sum(x),
+                     [x >= y, y >= z1, z1 >= z2, z2 >= z3, z3 >= z4, z4 >= L])
+        sol = prob.solve(verbosity=0)
+        t1 = time.time()
+        _ = sol(z1)
+        short_time = time.time() - t1
+
         N = 20
         x = VectorVariable(N, 'x', 'm')
         y = VectorVariable(N, 'y', 'm')
@@ -51,7 +66,8 @@ class TestSolutionArray(unittest.TestCase):
         sol = prob.solve(verbosity=0)
         t1 = time.time()
         _ = sol(z1)
-        self.assertLess(time.time() - t1, 0.05)
+        long_time = time.time() - t1
+        self.assertLess(long_time/short_time, 2)
 
     def test_subinto(self):
         Nsweep = 20
