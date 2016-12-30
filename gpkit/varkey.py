@@ -95,7 +95,7 @@ class VarKey(object):
             if self.descr.get(subscript) and subscript not in excluded:
                 substring = self.descr[subscript]
                 if subscript == "models":
-                    substring = ", ".join(substring)
+                    substring = "/".join(substring)
                 string += "_%s" % (substring,)
         return string
 
