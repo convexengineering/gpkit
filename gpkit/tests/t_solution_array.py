@@ -1,6 +1,6 @@
 """Tests for SolutionArray class"""
 import unittest
-import time
+import timeit
 import numpy as np
 from gpkit import Variable, VectorVariable, Model, SignomialsEnabled
 import gpkit
@@ -49,9 +49,7 @@ class TestSolutionArray(unittest.TestCase):
         prob = Model(sum(x),
                      [x >= y, y >= z1, z1 >= z2, z2 >= z3, z3 >= z4, z4 >= L])
         sol = prob.solve(verbosity=0)
-        t1 = time.time()
-        _ = sol(z1)
-        short_time = time.time() - t1
+        short_time = timeit.timeit(lambda: sol(z1), number=100)
 
         N = 20
         x = VectorVariable(N, 'x', 'm')
@@ -64,10 +62,8 @@ class TestSolutionArray(unittest.TestCase):
         prob = Model(sum(x),
                      [x >= y, y >= z1, z1 >= z2, z2 >= z3, z3 >= z4, z4 >= L])
         sol = prob.solve(verbosity=0)
-        t1 = time.time()
-        _ = sol(z1)
-        long_time = time.time() - t1
-        self.assertLess(long_time/short_time, 2)
+        long_time = timeit.timeit(lambda: sol(z1), number=100)
+        self.assertLess(long_time/short_time, 3)
 
     def test_subinto(self):
         Nsweep = 20
