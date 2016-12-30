@@ -3,6 +3,16 @@ Release Notes
 
 This page lists the changes made in each point version of gpkit.
 
+Version 0.5.1
+=============
+ * O(N) sums and monomial products
+ * Warn about invalid ConstraintSet elements
+ * allow setting Tight tolerance as a class attribute
+ * full backwards compatibility for __init__ methods
+ * scripts to test remote repositories
+ * minor fixes, tests, and refactors
+ * 3550 lines of code, 1800 lines of tests, 1700 lines of docstring. (not counting `interactive`)
+
 Version 0.5.0
 =============
  * No longer recommend the use of linked variables and subinplace (see below)

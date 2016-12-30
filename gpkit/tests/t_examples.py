@@ -115,7 +115,10 @@ class TestExamples(unittest.TestCase):
 FILE_DIR = os.path.dirname(os.path.realpath(__file__))
 EXAMPLE_DIR = os.path.abspath(FILE_DIR + '../../../docs/source/examples')
 SOLVERS = settings["installed_solvers"]
-TESTS = generate_example_tests(EXAMPLE_DIR, [TestExamples], SOLVERS)
+if os.path.isdir(EXAMPLE_DIR):
+    TESTS = generate_example_tests(EXAMPLE_DIR, [TestExamples], SOLVERS)
+else:
+    TESTS = []
 
 if __name__ == "__main__":
     # pylint:disable=wrong-import-position
