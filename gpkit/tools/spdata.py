@@ -1,6 +1,8 @@
 "Implements SPData class"
 import numpy as np
+from .. import SignomialsEnabled
 from ..nomials import NomialData, SignomialInequality, PosynomialInequality
+from ..nomials.nomial_math import SingleSignomialEquality
 from ..constraints.geometric_program import genA
 from ..small_scripts import mag
 
@@ -23,6 +25,9 @@ class SPData(NomialData):
             if isinstance(constraint, (SignomialInequality,
                                        PosynomialInequality)):
                 self.signomials.extend(constraint.unsubbed)
+                if isinstance(constraint, SingleSignomialEquality):
+                    with SignomialsEnabled():
+                        self.signomials.append(-1*constraint.unsubbed[0])
             else:
                 raise ValueError("unknown constraint %s of type %s"
                                  % (constraint, type(constraint)))
