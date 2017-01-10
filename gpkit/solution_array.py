@@ -142,12 +142,9 @@ class SolutionArray(DictOfLists):
         -------
         str
         """
-        self["variables"].update_keymap()
         showvars_tmp = set()
         for k in showvars:
-            k = getattr(k, "key", k)
-            if getattr(k, "veckey", None):
-                k = k.veckey
+            k, _ = self["variables"].parse_and_index(k)
             keys = self["variables"].keymap[k]
             showvars_tmp.update(keys)
         showvars = showvars_tmp
