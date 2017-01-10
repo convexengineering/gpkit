@@ -43,6 +43,7 @@ class KeyDict(dict):
         # pylint: disable=super-init-not-called
         self.varkeys = None
         self.keymap = defaultdict(set)
+        self._unmapped_keys = set()
         self.update(*args, **kwargs)
 
     def update(self, *args, **kwargs):
@@ -74,6 +75,7 @@ class KeyDict(dict):
                 else:
                     raise KeyError("key '%s' does not refer to any varkey in"
                                    " this ConstraintSet" % key)
+            self.update_keymap()
         idx = None
         if self.collapse_arrays:
             idx = getattr(key, "idx", None)
@@ -121,9 +123,8 @@ class KeyDict(dict):
         key, idx = self.parse_and_index(key)
         if key not in self.keymap:
             self.keymap[key].add(key)
-            if hasattr(key, "keys") and self.keymapping:
-                for mapkey in key.keys:
-                    self.keymap[mapkey].add(key)
+            if hasattr(key, "keys"):
+                self._unmapped_keys.add(key)
             if idx:
                 number_array = isinstance(value, Numbers)
                 kwargs = {} if number_array else {"dtype": "object"}
@@ -149,6 +150,13 @@ class KeyDict(dict):
                         continue
                 dict.__setitem__(self, key, value)
 
+    def update_keymap(self):
+        "Updates the keymap with the keys in _unmapped_keys"
+        while self.keymapping and self._unmapped_keys:
+            key = self._unmapped_keys.pop()
+            for mapkey in key.keys:
+                self.keymap[mapkey].add(key)
+
     def __delitem__(self, key):
         "Overloads del [] to work with all keys"
         key, idx = self.parse_and_index(key)
@@ -167,9 +175,10 @@ class KeyDict(dict):
                 if self.keymapping and hasattr(key, "keys"):
                     mapkeys.update(key.keys)
                 for mappedkey in mapkeys:
-                    self.keymap[mappedkey].remove(key)
-                    if not self.keymap[mappedkey]:
-                        del self.keymap[mappedkey]
+                    if mappedkey in self.keymap:
+                        self.keymap[mappedkey].remove(key)
+                        if not self.keymap[mappedkey]:
+                            del self.keymap[mappedkey]
 
 
 class KeySet(KeyDict):
