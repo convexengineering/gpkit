@@ -153,7 +153,7 @@ class SignomialProgram(CostedConstraintSet):
     def gp(self, x0=None, verbosity=1):
         "The GP approximation of this SP at x0."
         x0 = self._fill_x0(x0)
-        gp_constrs = self.as_gpconstr(x0)
+        gp_constrs = self.as_gpconstr(x0, self.substitutions)
         self.__add_external_fns_maybe()
         if self.external_fn_vars:
             gp_constrs.extend([v.key.external_fn(v, x0)

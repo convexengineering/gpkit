@@ -53,6 +53,8 @@ class ConstraintSet(list):
             return list.__getitem__(self, key)
         else:
             variables = self.variables_byname(key)
+            if not variables:
+                raise KeyError(key)
             if variables[0].key.veckey:
                 # maybe it's all one vector variable!
                 from ..nomials import NomialArray
@@ -229,12 +231,12 @@ class ConstraintSet(list):
             offset += n_posys
         return var_senss
 
-    def as_gpconstr(self, x0):
+    def as_gpconstr(self, x0, substitutions=None):
         """Returns GPConstraint approximating this constraint at x0
 
         When x0 is none, may return a default guess."""
-        gpconstrs = [constr.as_gpconstr(x0) for constr in self]
-        return ConstraintSet(gpconstrs, self.substitutions)
+        gpconstrs = [constr.as_gpconstr(x0, substitutions) for constr in self]
+        return ConstraintSet(gpconstrs, substitutions)
 
     def process_result(self, result):
         """Does arbitrary computation / manipulation of a program's result
