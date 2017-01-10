@@ -76,6 +76,17 @@ class TestSolutionArray(unittest.TestCase):
             "1000N" in
             sol.table().replace(" ", "").replace("[", "").replace("]", ""))
 
+    def test_key_options(self):
+        # issue 993
+        x = Variable("x")
+        y = Variable("y")
+        with SignomialsEnabled():
+            m = Model(y, [y + 6*x >= 13 + x**2])
+        msol = m.localsolve(verbosity=0)
+        spsol = m.sp().localsolve(verbosity=0)  # pylint: disable=no-member
+        self.assertEqual(msol(x), msol("x"))
+        self.assertEqual(spsol(x), spsol("x"))
+
 
 class TestResultsTable(unittest.TestCase):
     """TestCase for results_table()"""
