@@ -164,6 +164,14 @@ class ArrayVariable(NomialArray):
             vl[i] = Variable(**descr)
             vl[i].key.arraykey = arraykey
 
+        if descr.pop("newvariable", True):
+            from .. import MODELS, MODELNUMS, NAMEDVARS
+
+            if MODELS:
+                descr["models"] = descr.get("models", []) + MODELS
+            if MODELNUMS:
+                descr["modelnums"] = descr.get("modelnums", []) + MODELNUMS
+
         obj = np.asarray(vl).view(cls)
         obj.descr = descr
         obj.descr.pop("idx", None)
