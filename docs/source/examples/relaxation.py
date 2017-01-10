@@ -17,7 +17,7 @@ from gpkit.constraints.relax import ConstraintsRelaxedEqually
 allrelaxed = ConstraintsRelaxedEqually(m)
 mr1 = Model(allrelaxed.relaxvar, allrelaxed)
 print mr1
-print mr1.solve(verbosity=0)  # solves with an x of 1.414
+print mr1.solve(verbosity=0).table()  # solves with an x of 1.414
 print
 
 print "With constraints relaxed individually"
@@ -28,7 +28,7 @@ mr2 = Model(constraintsrelaxed.relaxvars.prod() * m.cost**0.01,
             # add a bit of the original cost in
             constraintsrelaxed)
 print mr2
-print mr2.solve(verbosity=0)  # solves with an x of 1.0
+print mr2.solve(verbosity=0).table()  # solves with an x of 1.0
 print
 
 print "With constants relaxed individually"
@@ -39,5 +39,5 @@ mr3 = Model(constantsrelaxed.relaxvars.prod() * m.cost**0.01,
             # add a bit of the original cost in
             constantsrelaxed)
 print mr3
-print mr3.solve(verbosity=0)  # brings x_min down to 1.0
+print mr3.solve(verbosity=0).table()  # brings x_min down to 1.0
 print

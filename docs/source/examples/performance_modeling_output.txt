@@ -17,17 +17,18 @@ W_{burn} : [ 0.487     0.486     0.485     0.485    ]  [lbf] segment fuel burn
 W_{fuel} : [ 1.94      1.46      0.97      0.485    ]  [lbf] fuel weight
 
          | Mission/FlightSegment/AircraftP/WingAero
-     C_D : [ 0.00783   0.00782   0.00781   0.0078   ]        drag coefficient
-     C_L : [ 0.47      0.469     0.468     0.467    ]        lift coefficient
        D : [ 4.87      4.86      4.85      4.85     ]  [lbf] drag force
-      Re : [ 7.56e+05  7.56e+05  7.56e+05  7.56e+05 ]        Reynold's number
 
 Most Sensitive Fixed Variables
 ------------------------------
-  | Mission/FlightSegment/FlightState
-V : [ +0.1      +0.1      +0.1      +0.1     ] true airspeed
+     | Aircraft/Fuselage
+   W : +0.25                                      weight
 
-  | Aircraft/Wing
-S : +0.68                                      surface area
-A : -0.31                                      aspect ratio
+     | Aircraft/Wing
+   S : +0.68                                      surface area
+\rho : +0.48                                      areal density
+   A : -0.31                                      aspect ratio
+
+     | Mission/FlightSegment/FlightState
+   V : [ +0.1      +0.1      +0.1      +0.1     ] true airspeed
 

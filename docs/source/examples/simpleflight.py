@@ -57,12 +57,12 @@ constraints += [D >= 0.5*rho*S*C_D*V**2,
 print("SINGLE\n======")
 m = Model(D, constraints)
 sol = m.solve(verbosity=0)
-print sol
+print sol.summary()
 
-# print("SWEEP\n=====")
-# N = 2
-# sweeps = {V_min: ("sweep", np.linspace(20, 25, N)),
-#           V: ("sweep", np.linspace(45, 55, N)), }
-# m.substitutions.update(sweeps)
-# sweepsol = m.solve(verbosity=0)
-# print(sweepsol.table())
+print("SWEEP\n=====")
+N = 2
+sweeps = {V_min: ("sweep", np.linspace(20, 25, N)),
+          V: ("sweep", np.linspace(45, 55, N)), }
+m.substitutions.update(sweeps)
+sweepsol = m.solve(verbosity=0)
+print(sweepsol.summary())

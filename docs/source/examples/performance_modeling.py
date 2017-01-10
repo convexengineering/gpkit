@@ -2,6 +2,7 @@
 import numpy as np
 from gpkit import Model, Variable, Vectorize
 
+
 class Aircraft(Model):
     "The vehicle model"
     def setup(self):
@@ -58,14 +59,14 @@ class Mission(Model):
     "A sequence of flight segments"
     def setup(self, aircraft):
         with Vectorize(4):  # four flight segments
-            fs = FlightSegment(aircraft)
+            self.fs = FlightSegment(aircraft)
 
-        Wburn = fs.aircraftp["W_{burn}"]
-        Wfuel = fs.aircraftp["W_{fuel}"]
+        Wburn = self.fs.aircraftp["W_{burn}"]
+        Wfuel = self.fs.aircraftp["W_{fuel}"]
         self.takeoff_fuel = Wfuel[0]
 
-        return fs, [Wfuel[:-1] >= Wfuel[1:] + Wburn[:-1],
-                    Wfuel[-1] >= Wburn[-1]]
+        return self.fs, [Wfuel[:-1] >= Wfuel[1:] + Wburn[:-1],
+                         Wfuel[-1] >= Wburn[-1]]
 
 
 class Wing(Model):
@@ -116,4 +117,9 @@ class Fuselage(Model):
 AC = Aircraft()
 MISSION = Mission(AC)
 M = Model(MISSION.takeoff_fuel, [MISSION, AC])
-print M.solve(verbosity=0)
+sol = M.solve(verbosity=0)
+
+vars_of_interest = set(AC.varkeys)
+vars_of_interest.update(MISSION.fs.aircraftp.unique_varkeys)
+vars_of_interest.add("D")
+print sol.summary(vars_of_interest)

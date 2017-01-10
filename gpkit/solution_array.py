@@ -6,33 +6,39 @@ from .small_classes import DictOfLists
 from .small_scripts import unitstr, mag
 
 
-def senss_table(data, title="Sensitivities", minval=1e-2, **kwargs):
+def senss_table(data, showvars, title="Sensitivities", minval=1e-2, **kwargs):
     if "constants" in data.get("sensitivities", {}):
         data = data["sensitivities"]["constants"]
+    if showvars:
+        data = {k: data[k] for k in showvars if k in data}
     return results_table(data, title, minval=minval, sortbyvals=True,
                          valfmt="%+-.2g ", vecfmt="%+-8.2g",
                          printunits=False, **kwargs)
 
 
-def mostsens_table(data, N=3, minval=0.1, **kwargs):
+def topsenss_table(data, showvars, N=5, minval=0.1, **kwargs):
+    data = topsenss_filter(data, N, minval)
+    return senss_table(data, (), "Most Sensitive Fixed Variables")
+
+
+def topsenss_filter(data, N=5, minval=0.1):
     if "constants" in data.get("sensitivities", {}):
         data = data["sensitivities"]["constants"]
     meansens = {k: np.mean(np.abs(s)) for k, s in data.items()}
     meansens = {k: ms for k, ms in meansens.items() if not np.isnan(ms) and ms > minval}
-    sorteddata = sorted(meansens.items(), key=lambda l: l if np.inf > l else 0)[-N:]
-    data = {k: data[k] for (k, _) in sorteddata}
-    return senss_table(data, "Most Sensitive Fixed Variables")
+    sorteddata = sorted(meansens.items(), key=lambda l: l[1])[-N:]
+    return {k: data[k] for (k, _) in sorteddata}
 
 
-def insens_table(data, maxval=0.1, **kwargs):
+def insenss_table(data, showvars, maxval=0.1, **kwargs):
     if "constants" in data.get("sensitivities", {}):
         data = data["sensitivities"]["constants"]
     data = {k: s for k, s in data.items() if np.mean(np.abs(s)) < maxval}
     return senss_table(data, "Insensitive Fixed Variables", minval=0)
 
 TABLEFNS = {"sensitivities": senss_table,
-            "topsensitivities": mostsens_table,
-            "insensitivities": insens_table,
+            "topsensitivities": topsenss_table,
+            "insensitivities": insenss_table,
             }
 
 
@@ -97,17 +103,26 @@ class SolutionArray(DictOfLists):
         else:
             return posy.sub(self["variables"])
 
-    def summary(self, salientvars=None):
+    def summary(self, showvars=()):
+        showvars = set(showvars)
         tables = ["cost", "sweepvariables", "freevariables"]
-        # filter free variables and sensitivities by salientvars
-        if len(self["constants"]) > 5:
+        out_str = self.table(tables, showvars)
+        constants_in_showvars = len(showvars.intersection(self["constants"]))
+        tables, topkeys = [], {}
+        if len(self["constants"]) >= 7:
+            topkeys = topsenss_filter(self)
             tables.append("topsensitivities")
-        else:
+        if constants_in_showvars or len(self["constants"]) < 7:
+            showvars.difference_update(topkeys)
             tables.append("sensitivities")
-        return self.table(tables)
+        senss_str = self.table(tables, showvars)
+        if senss_str:
+            out_str += "\n" + senss_str
+        return out_str
 
     def table(self, tables=("cost", "sweepvariables", "freevariables",
-                            "constants", "sensitivities"), **kwargs):
+                            "constants", "sensitivities"), showvars=(),
+              **kwargs):
         """A table representation of this SolutionArray
 
         Arguments
@@ -127,6 +142,15 @@ class SolutionArray(DictOfLists):
         -------
         str
         """
+        self["variables"].update_keymap()
+        showvars_tmp = set()
+        for k in showvars:
+            k = getattr(k, "key", k)
+            if getattr(k, "veckey", None):
+                k = k.veckey
+            keys = self["variables"].keymap[k]
+            showvars_tmp.update(keys)
+        showvars = showvars_tmp
         strs = []
         for table in tables:
             if table == "cost":
@@ -145,10 +169,12 @@ class SolutionArray(DictOfLists):
                 strs[-1] += unitstr(cost, into=" [%s] ", dimless="")
                 strs += [""]
             elif table in TABLEFNS:
-                strs += TABLEFNS[table](self, **kwargs)
+                strs += TABLEFNS[table](self, showvars, **kwargs)
             elif table in self:
-                strs += results_table(self[table], self.table_titles[table],
-                                      **kwargs)
+                data = self[table]
+                if showvars:
+                    data = {k: data[k] for k in showvars if k in data}
+                strs += results_table(data, self.table_titles[table], **kwargs)
         if kwargs.get("latex", None):
             preamble = "\n".join(("% \\documentclass[12pt]{article}",
                                   "% \\usepackage{booktabs}",
@@ -218,15 +244,15 @@ def results_table(data, title, minval=0, printunits=True, fixedcols=True,
             if not sortbyvals:
                 decorated.append((model, b, (varfmt % s), i, k, v))
             else:
-                val = np.abs(np.mean(v))
-                decorated.append((model, val, b, (varfmt % s), i, k, v))
+                val = np.mean(np.abs(v))
+                decorated.append((model, -val, b, (varfmt % s), i, k, v))
     if included_models:
         included_models = set(included_models)
         included_models.add("")
         models = models.intersection(included_models)
     if excluded_models:
         models = models.difference(excluded_models)
-    decorated.sort(reverse=sortbyvals)
+    decorated.sort()
     oldmodel = None
     for varlist in decorated:
         if not sortbyvals:
