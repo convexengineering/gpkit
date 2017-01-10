@@ -556,7 +556,7 @@ class PosynomialInequality(ScalarSingleEquationConstraint):
         return var_senss
 
     # pylint: disable=unused-argument
-    def as_gpconstr(self, x0):
+    def as_gpconstr(self, x0, substitutions):
         "GP version of a Posynomial constraint is itself"
         return self
 
@@ -673,9 +673,15 @@ class SignomialInequality(ScalarSingleEquationConstraint):
                                       " `.localsolve` instead of `.solve` to"
                                       " form your Model as a SignomialProgram")
 
-    def as_gpconstr(self, x0):
+    def as_gpconstr(self, x0, substitutions=None):
         "Returns GP approximation of an SP constraint at x0"
         siglt0, = self.unsubbed
+        if substitutions:
+            # check if it's a posynomial constraint after substitutions
+            subsiglt0 = siglt0.sub(substitutions, require_positive=False)
+            _, subnegy = subsiglt0.posy_negy()
+            if not hasattr(subnegy, "cs") or len(subnegy.cs) == 1:
+                return self
         posy, negy = siglt0.posy_negy()
         # assume unspecified negy variables have a value of 1.0
         x0.update({vk: 1.0 for vk in negy.varlocs if vk not in x0})
@@ -699,8 +705,9 @@ class SingleSignomialEquality(SignomialInequality):
                                   "`.localsolve` instead of `.solve` to"
                                   " form your Model as a SignomialProgram")
 
-    def as_gpconstr(self, x0):
+    def as_gpconstr(self, x0, substitutions=None):
         "Returns GP approximation of an SP constraint at x0"
+        # todo deal with substitutions
         siglt0, = self.unsubbed
         posy, negy = siglt0.posy_negy()
         # assume unspecified variables have a value of 1.0

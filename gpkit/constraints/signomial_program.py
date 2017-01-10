@@ -150,7 +150,8 @@ class SignomialProgram(CostedConstraintSet):
     def gp(self, x0=None, verbosity=1):
         "The GP approximation of this SP at x0."
         x0 = self._fill_x0(x0)
-        gp = GeometricProgram(self.cost, self.as_gpconstr(x0),
+        gp_constrs = self.as_gpconstr(x0, self.substitutions)
+        gp = GeometricProgram(self.cost, gp_constrs,
                               self.substitutions, verbosity=verbosity)
         gp.x0 = x0  # NOTE: SIDE EFFECTS
         return gp

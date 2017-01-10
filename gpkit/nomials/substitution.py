@@ -14,6 +14,7 @@ from .. import DimensionalityError
 def parse_subs(varkeys, substitutions):
     "Seperates subs into constants, sweeps linkedsweeps actually present."
     constants, sweep, linkedsweep = {}, {}, {}
+    varkeys.update_keymap()
     if hasattr(substitutions, "keymap"):
         for var in varkeys.keymap:
             if dict.__contains__(substitutions, var):
