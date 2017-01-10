@@ -87,6 +87,7 @@ class Variable(Monomial):
         return Monomial.sub(self, *args, **kwargs)
 
 
+# pylint: disable=too-many-locals
 class ArrayVariable(NomialArray):
     """A described vector of singlet Monomials.
 
@@ -163,6 +164,14 @@ class ArrayVariable(NomialArray):
                 descr.update({value_option: values[i]})
             vl[i] = Variable(**descr)
             vl[i].key.arraykey = arraykey
+
+        if descr.pop("newvariable", True):
+            from .. import MODELS, MODELNUMS, NAMEDVARS
+
+            if MODELS:
+                descr["models"] = descr.get("models", []) + MODELS
+            if MODELNUMS:
+                descr["modelnums"] = descr.get("modelnums", []) + MODELNUMS
 
         obj = np.asarray(vl).view(cls)
         obj.descr = descr
