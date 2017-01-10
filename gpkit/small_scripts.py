@@ -33,10 +33,10 @@ def unitstr(units, into="%s", options="~", dimless="-"):
     if isinstance(units, Strings):
         return into % units if units else ""
     elif isinstance(units, Quantity):
-        rawstr = ("{:%s}" % options).format(units.units)
+        rawstr = (u"{:%s}" % options).format(units.units)
         if str(units.units) == "count":
             # TODO remove this conditional when pint issue 356 is resolved
-            rawstr = "count"
+            rawstr = u"count"
         units = rawstr.replace(" ", "").replace("dimensionless", dimless)
         return into % units if units else ""
     return ""
