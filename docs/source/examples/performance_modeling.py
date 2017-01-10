@@ -116,5 +116,4 @@ class Fuselage(Model):
 AC = Aircraft()
 MISSION = Mission(AC)
 M = Model(MISSION.takeoff_fuel, [MISSION, AC])
-SOL = M.solve(verbosity=0)
-print SOL.table()
+print M.solve(verbosity=0)

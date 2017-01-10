@@ -16,6 +16,6 @@ Constants
 
 Sensitivities
 -------------
-   M : 0.6667  Mass of Water in the Tank
-\rho : -0.6667 Density of Water in the Tank
+\rho : -0.67 Density of Water in the Tank
+   M : +0.67 Mass of Water in the Tank
 

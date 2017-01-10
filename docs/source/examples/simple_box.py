@@ -30,5 +30,4 @@ objective = 1/V  # To maximize V, we minimize its reciprocal
 m = Model(objective, constraints)
 
 # Solve the Model and print the results table
-sol = m.solve(verbosity=0)
-print sol.table()
+print m.solve(verbosity=0)

@@ -6,6 +6,36 @@ from .small_classes import DictOfLists
 from .small_scripts import unitstr, mag
 
 
+def senss_table(data, title="Sensitivities", minval=1e-2, **kwargs):
+    if "constants" in data.get("sensitivities", {}):
+        data = data["sensitivities"]["constants"]
+    return results_table(data, title, minval=minval, sortbyvals=True,
+                         valfmt="%+-.2g ", vecfmt="%+-8.2g",
+                         printunits=False, **kwargs)
+
+
+def mostsens_table(data, N=3, minval=0.1, **kwargs):
+    if "constants" in data.get("sensitivities", {}):
+        data = data["sensitivities"]["constants"]
+    meansens = {k: np.mean(np.abs(s)) for k, s in data.items()}
+    meansens = {k: ms for k, ms in meansens.items() if not np.isnan(ms) and ms > minval}
+    sorteddata = sorted(meansens.items(), key=lambda l: l if np.inf > l else 0)[-N:]
+    data = {k: data[k] for (k, _) in sorteddata}
+    return senss_table(data, "Most Sensitive Fixed Variables")
+
+
+def insens_table(data, maxval=0.1, **kwargs):
+    if "constants" in data.get("sensitivities", {}):
+        data = data["sensitivities"]["constants"]
+    data = {k: s for k, s in data.items() if np.mean(np.abs(s)) < maxval}
+    return senss_table(data, "Insensitive Fixed Variables", minval=0)
+
+TABLEFNS = {"sensitivities": senss_table,
+            "topsensitivities": mostsens_table,
+            "insensitivities": insens_table,
+            }
+
+
 class SolutionArray(DictOfLists):
     """A dictionary (of dictionaries) of lists, with convenience methods.
 
@@ -38,12 +68,10 @@ class SolutionArray(DictOfLists):
     >>> assert all(np.array(senss) == 1)
     """
     program = None
-    table_titles = {"cost": "Cost",
-                    "sweepvariables": "Sweep Variables",
+    table_titles = {"sweepvariables": "Sweep Variables",
                     "freevariables": "Free Variables",
                     "constants": "Constants",
-                    "variables": "Variables",
-                    "sensitivities": "Sensitivities"}
+                    "variables": "Variables"}
 
     def __len__(self):
         try:
@@ -69,9 +97,17 @@ class SolutionArray(DictOfLists):
         else:
             return posy.sub(self["variables"])
 
+    def summary(self, salientvars=None):
+        tables = ["cost", "sweepvariables", "freevariables"]
+        # filter free variables and sensitivities by salientvars
+        if len(self["constants"]) > 5:
+            tables.append("topsensitivities")
+        else:
+            tables.append("sensitivities")
+        return self.table(tables)
+
     def table(self, tables=("cost", "sweepvariables", "freevariables",
-                            "constants", "sensitivities"),
-              latex=False, **kwargs):
+                            "constants", "sensitivities"), **kwargs):
         """A table representation of this SolutionArray
 
         Arguments
@@ -93,37 +129,27 @@ class SolutionArray(DictOfLists):
         """
         strs = []
         for table in tables:
-            subdict = self.get(table, None)
-            table_title = self.table_titles[table]
             if table == "cost":
+                cost = self["cost"]
                 # pylint: disable=unsubscriptable-object
-                if latex:
+                if kwargs.get("latex", None):
                     # TODO should probably print a small latex cost table here
                     continue
-                strs += ["\n%s\n----" % table_title]
+                strs += ["\n%s\n----" % "Cost"]
                 if len(self) > 1:
-                    costs = ["%-8.3g" % c for c in mag(subdict[:4])]
+                    costs = ["%-8.3g" % c for c in mag(cost[:4])]
                     strs += [" [ %s %s ]" % ("  ".join(costs),
                                              "..." if len(self) > 4 else "")]
                 else:
-                    strs += [" %-.4g" % mag(subdict)]
-                strs[-1] += unitstr(subdict, into=" [%s] ", dimless="")
+                    strs += [" %-.4g" % mag(cost)]
+                strs[-1] += unitstr(cost, into=" [%s] ", dimless="")
                 strs += [""]
-            elif not subdict:
-                continue
-            elif table == "sensitivities":
-                if not subdict["constants"]:
-                    continue
-                strs += results_table(subdict["constants"], table_title,
-                                      minval=1e-2,
-                                      sortbyvals=True,
-                                      printunits=False,
-                                      latex=latex,
+            elif table in TABLEFNS:
+                strs += TABLEFNS[table](self, **kwargs)
+            elif table in self:
+                strs += results_table(self[table], self.table_titles[table],
                                       **kwargs)
-            else:
-                strs += results_table(subdict, table_title,
-                                      latex=latex, **kwargs)
-        if latex:
+        if kwargs.get("latex", None):
             preamble = "\n".join(("% \\documentclass[12pt]{article}",
                                   "% \\usepackage{booktabs}",
                                   "% \\usepackage{longtable}",
@@ -168,6 +194,8 @@ def results_table(data, title, minval=0, printunits=True, fixedcols=True,
     sortbyvals : boolean
         If true, rows are sorted by their average value instead of by name.
     """
+    if not data:
+        return []
     from . import units
     if not units:
         # disable units printing
@@ -190,7 +218,8 @@ def results_table(data, title, minval=0, printunits=True, fixedcols=True,
             if not sortbyvals:
                 decorated.append((model, b, (varfmt % s), i, k, v))
             else:
-                decorated.append((model, np.mean(v), b, (varfmt % s), i, k, v))
+                val = np.abs(np.mean(v))
+                decorated.append((model, val, b, (varfmt % s), i, k, v))
     if included_models:
         included_models = set(included_models)
         included_models.add("")
