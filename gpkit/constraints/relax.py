@@ -115,6 +115,8 @@ class ConstantsRelaxed(ConstraintSet):
         self.num = MODELNUM_LOOKUP["Relax"]
         MODELNUM_LOOKUP["Relax"] += 1
         for key, value in constants.items():
+            if value == 0:
+                continue
             if include_only and key.name not in include_only:
                 continue
             if key.name in exclude:

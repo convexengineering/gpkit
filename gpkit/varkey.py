@@ -77,11 +77,13 @@ class VarKey(object):
         self._hashvalue = hash(selfstr)
         self.key = self
         self.keys = set([self.name, selfstr,
-                         self.str_without("models")])
+                         self.str_without(["modelnums"])])
 
         if "idx" in self.descr:
             self.veckey = veckeyed(self)
             self.keys.add(self.veckey)
+            self.keys.add(self.str_without(["idx"]))
+            self.keys.add(self.str_without(["idx", "modelnums"]))
 
     def __repr__(self):
         return self.str_without()
@@ -95,6 +97,10 @@ class VarKey(object):
             if self.descr.get(subscript) and subscript not in excluded:
                 substring = self.descr[subscript]
                 if subscript == "models":
+                    if self.modelnums and "modelnums" not in excluded:
+                        substring = ["%s.%s" % (ss, mn) if mn > 0 else ss
+                                     for ss, mn
+                                     in zip(substring, self.modelnums)]
                     substring = ", ".join(substring)
                 string += "_%s" % (substring,)
         return string
@@ -117,6 +123,10 @@ class VarKey(object):
             if subscript in self.descr and subscript not in excluded:
                 substring = self.descr[subscript]
                 if subscript == "models":
+                    if self.modelnums and "modelnums" not in excluded:
+                        substring = ["%s.%s" % (ss, mn) if mn > 0 else ss
+                                     for ss, mn
+                                     in zip(substring, self.modelnums)]
                     substring = ", ".join(substring)
                 string = "{%s}_{%s}" % (string, substring)
                 if subscript == "idx":
