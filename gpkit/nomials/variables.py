@@ -87,6 +87,7 @@ class Variable(Monomial):
         return Monomial.sub(self, *args, **kwargs)
 
 
+# pylint: disable=too-many-locals
 class ArrayVariable(NomialArray):
     """A described vector of singlet Monomials.
 
