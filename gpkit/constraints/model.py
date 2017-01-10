@@ -134,7 +134,7 @@ class Model(CostedConstraintSet):
         with SignomialsEnabled():  # since we're just substituting varkeys.
             self.subinplace(add_model_subs)
 
-    # pylint: disable=too-many-locals
+    # pylint: disable=too-many-locals,too-many-branches,too-many-statements
     def debug(self, solver=None, verbosity=1, **solveargs):
         "Attempts to diagnose infeasible models."
         from .relax import ConstantsRelaxed, ConstraintsRelaxed
