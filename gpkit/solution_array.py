@@ -6,7 +6,9 @@ from .small_classes import DictOfLists
 from .small_scripts import unitstr, mag
 
 
-def senss_table(data, showvars, title="Sensitivities", minval=1e-2, **kwargs):
+def senss_table(data, showvars=(), title="Sensitivities", minval=1e-2,
+                **kwargs):
+    "Returns sensitivity table lines"
     if "constants" in data.get("sensitivities", {}):
         data = data["sensitivities"]["constants"]
     if showvars:
@@ -16,30 +18,33 @@ def senss_table(data, showvars, title="Sensitivities", minval=1e-2, **kwargs):
                          printunits=False, **kwargs)
 
 
-def topsenss_table(data, showvars, N=5, minval=0.1, **kwargs):
-    data = topsenss_filter(data, N, minval)
-    return senss_table(data, (), "Most Sensitive Fixed Variables")
+def topsenss_table(data, _, topN=5, **kwargs):
+    "Returns top sensitivity table lines"
+    data = topsenss_filter(data, topN)
+    return senss_table(data, "Most Sensitive Fixed Variables", 0, **kwargs)
 
 
-def topsenss_filter(data, N=5, minval=0.1):
+def topsenss_filter(data, topN=5):
+    "Filters sensitivities down to top N"
     if "constants" in data.get("sensitivities", {}):
         data = data["sensitivities"]["constants"]
     meansens = {k: np.mean(np.abs(s)) for k, s in data.items()}
-    meansens = {k: ms for k, ms in meansens.items() if not np.isnan(ms) and ms > minval}
-    sorteddata = sorted(meansens.items(), key=lambda l: l[1])[-N:]
+    meansens = {k: ms for k, ms in meansens.items() if not np.isnan(ms)}
+    sorteddata = sorted(meansens.items(), key=lambda l: l[1])[-topN:]
     return {k: data[k] for (k, _) in sorteddata}
 
 
-def insenss_table(data, showvars, maxval=0.1, **kwargs):
+def insenss_table(data, _, maxval=0.1, **kwargs):
+    "Returns insensitivity table lines"
     if "constants" in data.get("sensitivities", {}):
         data = data["sensitivities"]["constants"]
     data = {k: s for k, s in data.items() if np.mean(np.abs(s)) < maxval}
-    return senss_table(data, "Insensitive Fixed Variables", minval=0)
+    return senss_table(data, "Insensitive Fixed Variables", 0, **kwargs)
 
 TABLEFNS = {"sensitivities": senss_table,
             "topsensitivities": topsenss_table,
             "insensitivities": insenss_table,
-            }
+           }
 
 
 class SolutionArray(DictOfLists):
@@ -103,14 +108,15 @@ class SolutionArray(DictOfLists):
         else:
             return posy.sub(self["variables"])
 
-    def summary(self, showvars=()):
+    def summary(self, showvars=(), topN=5):
+        "Print summary table, showing top sensitivities and no constants"
         showvars = set(showvars)
         tables = ["cost", "sweepvariables", "freevariables"]
         out_str = self.table(tables, showvars)
         constants_in_showvars = len(showvars.intersection(self["constants"]))
         tables, topkeys = [], {}
-        if len(self["constants"]) >= 7:
-            topkeys = topsenss_filter(self)
+        if len(self["constants"]) >= 7:  # 2 more than the default topN
+            topkeys = topsenss_filter(self, topN)
             tables.append("topsensitivities")
         if constants_in_showvars or len(self["constants"]) < 7:
             showvars.difference_update(topkeys)
