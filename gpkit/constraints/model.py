@@ -73,7 +73,7 @@ class Model(CostedConstraintSet):
         if setup_vars:
             # add all the vars created in .setup to the Model's varkeys
             # even if they aren't used in any constraints
-            self.unique_varkeys = set(v.key for v in setup_vars)
+            self.unique_varkeys = frozenset(v.key for v in setup_vars)
             self.reset_varkeys()
         # for backwards compatibility keep add_modelnames
         # TODO: remove with linking

@@ -28,6 +28,14 @@ gpkit.constraints.costed module
     :undoc-members:
     :show-inheritance:
 
+gpkit.constraints.geometric_program module
+------------------------------------------
+
+.. automodule:: gpkit.constraints.geometric_program
+    :members:
+    :undoc-members:
+    :show-inheritance:
+
 gpkit.constraints.linked module
 -------------------------------
 
