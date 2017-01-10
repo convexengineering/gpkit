@@ -57,7 +57,7 @@ This problem is not GP compatible due to the sin(x) constraint.  One approach mi
 .. literalinclude:: examples/sin_approx_example_output.txt
 
 We can do better, however, by utilizing some built in functionality of GPkit.
-For simple cases with a single Variable, GPkit looks for ``external_fn`` metadata:
+For simple cases with a single Variable, GPkit looks for ``externalfn`` metadata:
 
 .. literalinclude:: examples/external_sp.py
 

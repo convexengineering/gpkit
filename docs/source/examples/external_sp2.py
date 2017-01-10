@@ -12,7 +12,7 @@ def y_ext(self, x0):
     else:
         return self >= x/x0[x] * np.sin(x0[x])
 
-y = Variable("y", external_fn=y_ext)
+y = Variable("y", externalfn=y_ext)
 
 m = Model(y, [np.pi/4 <= x, x <= np.pi/2])
 sol = m.localsolve(verbosity=0)
