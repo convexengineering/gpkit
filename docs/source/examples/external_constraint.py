@@ -26,7 +26,7 @@ class ExternalConstraint(ConstraintSet):
 
     # Returns the ExternalConstraint class as a GP compatible constraint when
     # requested by the GPkit solver
-    def as_gpconstr(self, x0):
+    def as_gpconstr(self, x0, substitutions=None):
 
         # Unpacking the GPkit variables
         x = self.x
