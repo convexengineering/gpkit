@@ -9,6 +9,7 @@ from ..small_scripts import mag
 from ..keydict import KeyDict
 from ..varkey import VarKey
 from .. import NamedVariables, SignomialsEnabled
+from ..exceptions import InvalidGPConstraint
 
 
 class Model(CostedConstraintSet):
@@ -158,7 +159,10 @@ class Model(CostedConstraintSet):
             feas = Model(self.cost, Bounded(self))
 
         try:
-            sol = feas.solve(**solveargs)
+            try:
+                sol = feas.solve(**solveargs)
+            except InvalidGPConstraint:
+                sol = feas.localsolve(**solveargs)
 
             if self.substitutions:
                 for orig in (o for o, r in zip(constsrelaxed.origvars,
@@ -182,7 +186,10 @@ class Model(CostedConstraintSet):
             constrsrelaxed = ConstraintsRelaxed(self)
             feas = Model(constrsrelaxed.relaxvars.prod()**30 * self.cost,
                          constrsrelaxed)
-            sol_constraints = feas.solve(**solveargs)
+            try:
+                sol_constraints = feas.solve(**solveargs)
+            except InvalidGPConstraint:
+                sol_constraints = feas.localsolve(**solveargs)
 
             relaxvals = sol_constraints(constrsrelaxed.relaxvars)
             if any(rv >= 1.01 for rv in relaxvals):
