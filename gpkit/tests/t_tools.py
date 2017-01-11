@@ -20,7 +20,6 @@ class TestMathModels(unittest.TestCase):
     """TestCase for math models"""
 
     def test_autosweep(self):
-        from gpkit import units, ureg
         bst0 = BinarySweepTree([1, 2], [{"cost": 1}, {"cost": 8}])
         assert_logtol(bst0["cost"]([1, 1.5, 2]), [1, 3.375, 8], 1e-3)
         bst0.add_split(1.5, {"cost": 4})

@@ -97,6 +97,7 @@ class VarKey(object):
         return self.descr.get(attr, None)
 
     def unitstr(self):
+        "Returns string representation of units"
         return unitstr(self, into=" [%s] ", dimless="")
 
     def latex_unitstr(self):
