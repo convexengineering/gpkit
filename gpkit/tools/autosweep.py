@@ -4,6 +4,7 @@ import numpy as np
 from numpy import log, exp
 from gpkit.small_classes import Count
 from gpkit.small_scripts import mag
+# pylint: disable=missing-docstring
 
 
 class BinarySweepTree(object):
@@ -97,11 +98,11 @@ class VariableOracle(object):
         fit = [self.interpfn(self.var, value) for value in values]
         return fit*self.units if self.units else np.array(fit)
 
-    def lb(self, values):
+    def lb(self, values):  # pylint: disable=invalid-name
         fit = [self.interpfn(self.var, value, "lb") for value in values]
         return fit*self.units if self.units else np.array(fit)
 
-    def ub(self, values):
+    def ub(self, values):  # pylint: disable=invalid-name
         fit = [self.interpfn(self.var, value, "ub") for value in values]
         return fit*self.units if self.units else np.array(fit)
 
@@ -133,7 +134,8 @@ def recurse_splits(model, bst, variable, logtol, solvekwargs, sols):
         model.substitutions.update({variable: x})
         bst.add_split(x, model.solve(**solvekwargs))
         sols()
-        tols = [recurse_splits(model, split, variable, logtol, solvekwargs, sols)
+        tols = [recurse_splits(model, split, variable, logtol, solvekwargs,
+                               sols)
                 for split in bst.splits]
         return max(tols)
     else:
@@ -141,7 +143,7 @@ def recurse_splits(model, bst, variable, logtol, solvekwargs, sols):
         return tol
 
 
-def get_tol(costs, bounds, sols, variable):
+def get_tol(costs, bounds, sols, variable):  # pylint: disable=too-many-locals
     y0, y1 = costs
     x0, x1 = log(bounds)
     s0, s1 = [sol["sensitivities"]["constants"][variable] for sol in sols]
