@@ -166,6 +166,6 @@ class SignomialProgram(CostedConstraintSet):
     def __add_externalfns_maybe(self):
         if not hasattr(self, "externalfn_vars"):
             self.externalfn_vars = frozenset(Variable(newvariable=False,
-                                                       **v.descr)
-                                              for v in self.varkeys
-                                              if v.externalfn)
+                                                      **v.descr)
+                                             for v in self.varkeys
+                                             if v.externalfn)

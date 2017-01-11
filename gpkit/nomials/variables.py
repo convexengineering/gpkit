@@ -166,7 +166,7 @@ class ArrayVariable(NomialArray):
             vl[i].key.arraykey = arraykey
 
         if descr.pop("newvariable", True):
-            from .. import MODELS, MODELNUMS, NAMEDVARS
+            from .. import MODELS, MODELNUMS
 
             if MODELS:
                 descr["models"] = descr.get("models", []) + MODELS
