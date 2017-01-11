@@ -1,14 +1,23 @@
 """Tests for GP and SP classes"""
-import math
 import unittest
+import numpy as np
+from numpy import log
 from gpkit import (Model, Monomial, settings, VectorVariable, Variable,
                    SignomialsEnabled, ArrayVariable, SignomialEquality)
 from gpkit.small_classes import CootMatrix
 from gpkit.exceptions import InvalidGPConstraint
 from gpkit import NamedVariables
+from gpkit.tools.autosweep import autosweep_1d
+from gpkit.small_scripts import mag
 
 NDIGS = {"cvxopt": 4, "mosek": 5, "mosek_cli": 5}
 # name: decimal places of accuracy
+
+
+def assert_logtol(first, second, logtol=1e-6):
+    "Asserts that the logs of two arrays have a given abstol"
+    np.testing.assert_allclose(log(mag(first)), log(mag(second)),
+                               atol=logtol, rtol=0)
 
 
 class TestGP(unittest.TestCase):
@@ -20,6 +29,35 @@ class TestGP(unittest.TestCase):
     # solver and ndig get set in loop at bottom this file, a bit hacky
     solver = None
     ndig = None
+
+    def test_autosweep(self):
+        from gpkit import units, ureg
+        x = Variable("x", "m**2")
+        xmin = Variable("xmin", "m")
+        m = Model(x**2, [x >= xmin**2 + units.m**2])
+
+        xmin_ = np.linspace(1, 10, 100)
+        tol = 1e-3
+        bst = autosweep_1d(m, tol, xmin, [1, 10], verbosity=0)
+        assert_logtol(bst["xmin"](xmin_), xmin_)
+        assert_logtol(bst["x"](xmin_), xmin_**2 + 1, tol)
+        assert_logtol(bst["cost"](xmin_), (xmin_**2 + 1)**2, tol)
+
+        # cvxopt: 7, mosek: 12
+        tol = 10**(-2*self.ndig+1)
+        m = Model(x**2, [x >= (xmin/3)**2, x >= (xmin/3)**0.5 * units.m**1.5])
+        bst = autosweep_1d(m, tol, xmin, [1, 10], verbosity=0)
+        self.assertAlmostEqual(mag(bst["cost"]([3]))[0], 1.0, 2*self.ndig-1)
+        x_bc = np.linspace(1, 3, 50)  # before corner
+        assert_logtol(bst["x"](x_bc), (x_bc/3)**0.5, tol)
+        assert_logtol(bst["cost"](x_bc), x_bc/3, tol)
+        x_ac = np.linspace(3, 10, 50)  # after corner
+        assert_logtol(bst["x"](x_ac), (x_ac/3)**2, tol)
+        assert_logtol(bst["cost"](x_ac), (x_ac/3)**4, tol)
+
+        if units:
+            self.assertEqual(bst["cost"](xmin_).units, ureg.m**4)
+            self.assertEqual(bst["x"](xmin_).units, ureg.m**2)
 
     def test_trivial_gp(self):
         """
@@ -37,12 +75,12 @@ class TestGP(unittest.TestCase):
         self.assertEqual(type(prob.latex()), str)
         # pylint: disable=protected-access
         self.assertEqual(type(prob._repr_latex_()), str)
-        self.assertAlmostEqual(sol("x"), math.sqrt(2.), self.ndig)
-        self.assertAlmostEqual(sol("y"), 1/math.sqrt(2.), self.ndig)
+        self.assertAlmostEqual(sol("x"), np.sqrt(2.), self.ndig)
+        self.assertAlmostEqual(sol("y"), 1/np.sqrt(2.), self.ndig)
         self.assertAlmostEqual(sol("x") + 2*sol("y"),
-                               2*math.sqrt(2),
+                               2*np.sqrt(2),
                                self.ndig)
-        self.assertAlmostEqual(sol["cost"], 2*math.sqrt(2), self.ndig)
+        self.assertAlmostEqual(sol["cost"], 2*np.sqrt(2), self.ndig)
 
     def test_sigeq(self):
         x = Variable("x")
@@ -111,9 +149,9 @@ class TestGP(unittest.TestCase):
         self.assertEqual(sol('x').shape, (2,))
         self.assertEqual(sol('y').shape, (2,))
         for x, y in zip(sol('x'), sol('y')):
-            self.assertAlmostEqual(x, math.sqrt(2.), self.ndig)
-            self.assertAlmostEqual(y, 1/math.sqrt(2.), self.ndig)
-        self.assertAlmostEqual(sol["cost"]/(4*math.sqrt(2)), 1., self.ndig)
+            self.assertAlmostEqual(x, np.sqrt(2.), self.ndig)
+            self.assertAlmostEqual(y, 1/np.sqrt(2.), self.ndig)
+        self.assertAlmostEqual(sol["cost"]/(4*np.sqrt(2)), 1., self.ndig)
 
     def test_zero_lower_unbounded(self):
         x = Variable('x', value=4)

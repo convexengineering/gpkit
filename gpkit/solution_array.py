@@ -217,7 +217,7 @@ def results_table(data, title, minval=0, printunits=True, fixedcols=True,
                                   model + r"}} \\"])
             oldmodel = model
         label = var.descr.get('label', '')
-        units = unitstr(var, into=" [%s] ", dimless="") if printunits else ""
+        units = var.unitstr() if printunits else ""
         if isvector:
             vals = [vecfmt % v for v in mag(val).flatten()[:4]]
             ellipsis = " ..." if len(val) > 4 else ""

@@ -4,7 +4,6 @@ from matplotlib.mlab import griddata
 import numpy as np
 from .. import VarKey
 from ..small_scripts import unitstr, mag
-from ..exceptions import InvalidGPConstraint
 
 
 LIGHT_COLORS = ['#80cdc1']
@@ -133,11 +132,6 @@ def contour_array(model, xname, yname, znames, cellsize=(5, 5),
                      zlabel, colors, shortlevels, lablevels)
 
     return fig, axes
-
-
-# def frontier_surface_plot(data, xvar, yvar, zvars,
-#                           colors=None, maxfigsize=(5,5), axsize=(5,5)):
-#     pass
 
 
 def plot_frontiers(model, znames, nrow=1, ncol=3, figsize=(15, 5)):
@@ -296,47 +290,3 @@ def plot_convergence(model):
     ax.set_ylabel('Cost')
     ax.set_xticks(range(1, len(model.program.gps)+1))
     return fig, ax
-
-def plot_sweep_1d(model, sweep, dependentvar):
-    """Creates and plots a sweep from an existing model
-
-    Example usage:
-    f, _ = plot_sweep_1d(m, {'x': np.linspace(1, 2, 5)}, 'y')
-    f.savefig('mysweep.png')
-    """
-    # Check that sweep var exists
-    if sweep.keys()[0] not in model.varkeys:
-        raise KeyError("{0} is not in model".format(sweep.keys()[0]))
-    # Check that dependent var exists
-    if dependentvar not in model.varkeys:
-        raise KeyError("{0} is not in model".format(dependentvar))
-
-    sweepvar = sweep.keys()[0]
-    if sweepvar in model.substitutions:
-        originalsubvalue = model.substitutions[sweepvar]
-    x = sweep.values()[0]
-    model.substitutions.update({sweepvar: ('sweep', x)})
-    try:
-        sol = model.solve()
-    except InvalidGPConstraint:
-        sol = model.localsolve()
-    y = mag(sol(dependentvar))
-    f, ax = plt.subplots()
-    ax.plot(x, y)
-    try:
-        xvarname = model[sweepvar].descr['label']
-    except KeyError:
-        xvarname = model[sweepvar].descr['name']
-    try:
-        yvarname = model[dependentvar].descr['label']
-    except KeyError:
-        yvarname = model[dependentvar].descr['name']
-    x_units = unitstr(model[sweepvar], into=" [%s] ", dimless="")
-    y_units = unitstr(model[dependentvar], into=" [%s] ", dimless="")
-    ax.set_xlabel(xvarname + x_units)
-    ax.set_ylabel(yvarname + y_units)
-    plt.show()
-
-    model.substitutions[sweepvar] = originalsubvalue
-
-    return f, ax
