@@ -1,7 +1,7 @@
 "Implements ConstraintSet"
 import numpy as np
 
-from ..small_classes import HashVector, Numbers
+from ..small_classes import HashVector, Numbers, Strings
 from ..keydict import KeySet, KeyDict
 from ..small_scripts import try_str_without
 from ..repr_conventions import _str, _repr, _repr_latex_
@@ -168,8 +168,16 @@ class ConstraintSet(list):
         "Substitutes in place."
         for constraint in self:
             constraint.subinplace(subs)
-        for key in set(self.substitutions).intersection(subs):
-            self.substitutions[subs[key]] = self.substitutions[key]
+        for key in set(subs).intersection(self.substitutions):
+            if hasattr(subs[key], "key"):
+                self.substitutions[subs[key].key] = self.substitutions[key]
+            else:
+                raise ValueError("the substitution {%s: %s} is invalidated"
+                                 " by the subinplace {%s: %s}, because"
+                                 " %s does not have a `key` attribute"
+                                 % (self.substitutions[key],
+                                    self.substitutions[sub],
+                                    key, subs[key], subs[key]))
         self.unique_varkeys = frozenset(subs[vk] if vk in subs else vk
                                         for vk in self.unique_varkeys)
         self.reset_varkeys()
