@@ -84,8 +84,12 @@ class TestSolutionArray(unittest.TestCase):
             m = Model(y, [y + 6*x >= 13 + x**2])
         msol = m.localsolve(verbosity=0)
         spsol = m.sp().localsolve(verbosity=0)  # pylint: disable=no-member
+        gpsol = m.program.gps[-1].solve(verbosity=0)
         self.assertEqual(msol(x), msol("x"))
         self.assertEqual(spsol(x), spsol("x"))
+        self.assertEqual(gpsol(x), gpsol("x"))
+        self.assertEqual(msol(x), spsol(x))
+        self.assertEqual(msol(x), gpsol(x))
 
 
 class TestResultsTable(unittest.TestCase):
