@@ -12,6 +12,19 @@ from gpkit.tests.helpers import run_tests
 class TestNomialSubs(unittest.TestCase):
     """Test substitution for nomial-family objects"""
 
+    def test_bad_subinplace(self):
+        x = Variable("x")
+        y = Variable("y")
+        z = Variable("z")
+        # good
+        m = Model(x*y, [x >= 1, y >= z], {z: 2})
+        m.subinplace({y: x})
+        self.assertAlmostEqual(m.solve(verbosity=0)["cost"], 4)
+        # bad
+        m = Model(x, [y >= 1], {y: 2})
+        with self.assertRaises(ValueError):
+            m.subinplace({y: 3})
+
     def test_bad_gp_sub(self):
         x = Variable("x")
         y = Variable("y")
