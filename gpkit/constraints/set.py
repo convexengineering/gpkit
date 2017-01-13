@@ -172,7 +172,7 @@ class ConstraintSet(list):
             if key not in self.substitutions:
                 continue
             if hasattr(subs[key], "key"):
-                self.substitutions[subs[key].key] = self.substitutions[key]
+                self.substitutions[subs[key].key] = self.substitutions.pop(key)
             else:
                 raise ValueError("the substitution {%s: %s} is invalidated"
                                  " by the subinplace {%s: %s}, because"
