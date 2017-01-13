@@ -168,7 +168,9 @@ class ConstraintSet(list):
         "Substitutes in place."
         for constraint in self:
             constraint.subinplace(subs)
-        for key in set(subs).intersection(self.substitutions):
+        for key in subs:
+            if key not in self.substitutions:
+                continue
             if hasattr(subs[key], "key"):
                 self.substitutions[subs[key].key] = self.substitutions[key]
             else:
