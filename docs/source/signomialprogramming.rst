@@ -16,8 +16,6 @@ where each :math:`f` is monomial while each :math:`g` and :math:`h` is a posynom
 
 This requires multiple solutions of geometric programs, and so will take longer to solve than an equivalent geometric programming formulation.
 
-The specification of a signomial problem can affect its solve time in a nuanced way: ``gpkit.Model(x, [x >= 0.1, x+y >= 1, y <= 0.1]).localsolve()`` takes about twice as long to solve with cvxopt as ``gpkit.Model(x, [x >= 1-y, y <= 0.1]).localsolve()``, despite the two formulations being arithmetically equivalent and taking the same number of iterations.
-
 In general, when given the choice of which variables to include in the positive-posynomial / :math:`g` side of the constraint, the modeler should:
 
     #. maximize the number of variables in :math:`g`,
