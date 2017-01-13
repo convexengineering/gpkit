@@ -176,6 +176,22 @@ Example Usage
     b = [10, 14, 22, 15, 21, 33]
     assert all(abs(a-b)/(a+b) < 1e-7)
 
+Plotting a 1D Sweep
+-------------------
+
+A function called ``plot_sweep_1d`` has been created to facilitate creating, solving, and plotting the results of a single-variable sweep. Example usage is as follows:
+
+.. code-block:: python
+
+    import numpy as np
+    from gpkit.interactive.plotting import plot_sweep_1d
+    # m is an existing model, with variables x and y
+    f, ax = plot_sweep_1d(m, {'x': np.linspace(1, 2, 20)}, 'y')
+
+The resulting plot looks like:
+
+.. image:: plot_sweep_1d_example.png
+    :align: center
 
 Composite Objectives
 ====================

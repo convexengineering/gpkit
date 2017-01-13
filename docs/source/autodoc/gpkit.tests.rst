@@ -4,6 +4,22 @@ gpkit.tests package
 Submodules
 ----------
 
+gpkit.tests.diff_output module
+------------------------------
+
+.. automodule:: gpkit.tests.diff_output
+    :members:
+    :undoc-members:
+    :show-inheritance:
+
+gpkit.tests.from_paths module
+-----------------------------
+
+.. automodule:: gpkit.tests.from_paths
+    :members:
+    :undoc-members:
+    :show-inheritance:
+
 gpkit.tests.helpers module
 --------------------------
 
@@ -104,6 +120,14 @@ gpkit.tests.t_vars module
 -------------------------
 
 .. automodule:: gpkit.tests.t_vars
+    :members:
+    :undoc-members:
+    :show-inheritance:
+
+gpkit.tests.test_repo module
+----------------------------
+
+.. automodule:: gpkit.tests.test_repo
     :members:
     :undoc-members:
     :show-inheritance:

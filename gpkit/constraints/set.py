@@ -15,6 +15,7 @@ def _sort_by_name_and_idx(var):
 class ConstraintSet(list):
     "Recursive container for ConstraintSets and Inequalities"
     varkeys = None
+    unique_varkeys = frozenset()
 
     def __init__(self, constraints, substitutions=None):
         if isinstance(constraints, ConstraintSet):
@@ -24,7 +25,6 @@ class ConstraintSet(list):
 
         # initializations for attributes used elsewhere
         self.posymap = []
-        self.unused_variables = None
         self.numpy_bools = False
 
         # get substitutions and convert all members to ConstraintSets
@@ -168,14 +168,8 @@ class ConstraintSet(list):
         "Substitutes in place."
         for constraint in self:
             constraint.subinplace(subs)
-        if self.unused_variables is not None:
-            unused_vars = []
-            for var in self.unused_variables:
-                if var.key in subs:
-                    unused_vars.append(subs[var.key])
-                else:
-                    unused_vars.append(var.key)
-            self.unused_variables = unused_vars
+        self.unique_varkeys = frozenset(subs[vk] if vk in subs else vk
+                                        for vk in self.unique_varkeys)
         self.reset_varkeys()
 
     def reset_varkeys(self, init_dict=None):
@@ -186,8 +180,7 @@ class ConstraintSet(list):
         for constraint in self:
             if hasattr(constraint, "varkeys"):
                 varkeys.update(constraint.varkeys)
-        if self.unused_variables is not None:
-            varkeys.update(self.unused_variables)
+        varkeys.update(self.unique_varkeys)
         self.varkeys = varkeys
         self.substitutions.varkeys = varkeys
 
@@ -254,6 +247,14 @@ class ConstraintSet(list):
         for constraint in self:
             if hasattr(constraint, "process_result"):
                 constraint.process_result(result)
+        for v in self.unique_varkeys:
+            if not v.evalfn or v in result["variables"]:
+                continue
+            if v.veckey:
+                v = v.veckey
+            val = v.evalfn(result["variables"])
+            result["freevariables"][v] = val
+            result["variables"][v] = val
 
 
 def raise_badelement(cns, i, constraint):
