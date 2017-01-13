@@ -168,6 +168,8 @@ class ConstraintSet(list):
         "Substitutes in place."
         for constraint in self:
             constraint.subinplace(subs)
+        for key in set(self.substitutions).intersection(subs):
+            self.substitutions[subs[key]] = self.substitutions[key]
         self.unique_varkeys = frozenset(subs[vk] if vk in subs else vk
                                         for vk in self.unique_varkeys)
         self.reset_varkeys()
