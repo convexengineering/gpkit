@@ -1,7 +1,7 @@
 "Implements ConstraintSet"
 import numpy as np
 
-from ..small_classes import HashVector, Numbers, Strings
+from ..small_classes import HashVector, Numbers
 from ..keydict import KeySet, KeyDict
 from ..small_scripts import try_str_without
 from ..repr_conventions import _str, _repr, _repr_latex_
@@ -177,8 +177,7 @@ class ConstraintSet(list):
                 raise ValueError("the substitution {%s: %s} is invalidated"
                                  " by the subinplace {%s: %s}, because"
                                  " %s does not have a `key` attribute"
-                                 % (self.substitutions[key],
-                                    self.substitutions[sub],
+                                 % (key, self.substitutions[key],
                                     key, subs[key], subs[key]))
         self.unique_varkeys = frozenset(subs[vk] if vk in subs else vk
                                         for vk in self.unique_varkeys)
