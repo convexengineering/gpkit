@@ -37,6 +37,8 @@ When using the ``localsolve`` method, the ``reltol`` argument specifies the rela
 
 If you wish to start the local optimization at a particular point :math:`x_k`, however, you may do so by putting that position (a dictionary formatted as you would a substitution) as the ``xk`` argument.
 
+.. _sgp:
+
 Sequential Geometric Programs
 =============================
 
@@ -59,10 +61,9 @@ This problem is not GP compatible due to the sin(x) constraint.  One approach mi
 We can do better, however, by utilizing some built in functionality of GPkit.
 For simple cases with a single Variable, GPkit looks for ``externalfn`` metadata:
 
-.. literalinclude:: examples/external_sp.py
+.. literalinclude:: examples/external_sp2.py
 
-.. literalinclude:: examples/external_sp_output.txt
-
+.. literalinclude:: examples/external_sp2_output.txt
 
 However, for external functions not intrinsically tied to a single variable it's best to
 use the full ConstraintSet API, as follows:

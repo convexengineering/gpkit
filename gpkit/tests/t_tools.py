@@ -19,13 +19,12 @@ def assert_logtol(first, second, logtol=1e-6):
 class TestMathModels(unittest.TestCase):
     """TestCase for math models"""
 
-    def test_autosweep(self):
+    def test_binary_sweep_tree(self):
         bst0 = BinarySweepTree([1, 2], [{"cost": 1}, {"cost": 8}])
-        assert_logtol(bst0["cost"]([1, 1.5, 2]), [1, 3.375, 8], 1e-3)
+        assert_logtol(bst0.sample_at([1, 1.5, 2])["cost"], [1, 3.375, 8], 1e-3)
         bst0.add_split(1.5, {"cost": 4})
-        assert_logtol(bst0["cost"]([1, 1.25, 1.5, 1.75, 2]),
+        assert_logtol(bst0.sample_at([1, 1.25, 1.5, 1.75, 2])["cost"],
                       [1, 2.144, 4, 5.799, 8], 1e-3)
-
 
     def test_composite_objective(self):
         L = Variable("L")

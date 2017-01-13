@@ -150,6 +150,6 @@ def run_sweep(genfunction, self, solution, skipsweepfailures,
     for var in delvars:
         del solution["constants"][var]
 
-    if verbosity > 0:
+    if verbosity > 1:
         soltime = time() - tic
         print("Sweeping took %.3g seconds." % (soltime,))
