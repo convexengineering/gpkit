@@ -6,38 +6,28 @@ from gpkit import ConstraintSet
 from gpkit.small_scripts import mag
 
 
-def expcone_GP(posynomials):
-    freevars = []
-    varkeys = ConstraintSet(posynomials).varkeys
-    vk_idx = 0
-    vk_map = {}
-    for vk in varkeys:
-        if vk not in vk_map:
-            vk_map[vk] = vk_idx
-            vk_idx += 1
-            freevars.append(vk)
-    mon_idx = 0
-    mon_map = {}
+def expcone_GP(posynomials, varkeys):
     n_vars = len(varkeys)
     n_posys = len(posynomials) - 1
+    vk_map = {vk: i for i, vk in enumerate(varkeys)}
+    mon_idx = 0
+    mon_map = {}
     for posy in posynomials:
         for exp in posy.exps:
             if exp not in mon_map:
                 mon_map[exp] = mon_idx
                 mon_idx += 1
-                freevars.append(exp)
     n_monos = len(mon_map)
 
-    # make c
-    c_ = np.zeros(n_vars + n_monos)
+    # make costvec
+    costvec = np.zeros(n_vars + n_monos)
     cost_posy = posynomials[0]
     cost_mon_idxs = [mon_map[exp] for exp in cost_posy.exps]
     for c, m_i in zip(cost_posy.cs, cost_mon_idxs):
-        c_[n_vars+m_i] = mag(c)  # c*m_i
+        costvec[n_vars+m_i] = mag(c)  # c*m_i
 
     # make positive orthant constraints
-    G = CootMatrix([], [], [])
-    h = []
+    G, h = CootMatrix([], [], []), []
     for p_i, posy in enumerate(posynomials[1:]):
         mon_idxs = [mon_map[exp] for exp in posy.exps]
         for c, m_i in zip(posy.cs, mon_idxs):
@@ -54,23 +44,23 @@ def expcone_GP(posynomials):
         h.extend([0.0, 0.0, 1.0])
 
     dims = {"l": n_posys, "e": n_monos}
-    return c_, G.tocsc(), np.array(h), dims, varkeys
+    return costvec, G.tocsc(), np.array(h), dims
 
 
 def ecoptimize_factory(gp):
     def ecoptimize(*args, **kwargs):
-        c, G, h, dims, varkeys = expcone_GP(gp.posynomials)
+        c, G, h, dims = expcone_GP(gp.posynomials, gp.varlocs)
         n_posys = len(gp.posynomials) - 1
-        n_vars = len(varkeys)
-        opts = {'feastol': 1e-9, 'reltol': 1e-9, 'abstol': 1e-9, 'verbose':True}
+        n_vars = len(gp.varlocs)
+        opts = {'feastol': 1e-9, 'reltol': 1e-9, 'abstol': 1e-9, 'verbose': True}
         solution = ecos.solve(c, G, h, dims, **opts)
         status = solution["info"]["infostring"]
-        if status in ["Optimal solution found", "Close to optimal solution found",
-                      "Close to primal infeasible", "Maximum number of iterations reached"]:
+        if status in ["Optimal solution found"]:
             status = "optimal"
-        print
-        print dict(zip(varkeys, np.exp(solution["x"])))
+        elif status != "Primal infeasible":
+            raise ValueError(status+"\n"+str(dict(zip(gp.varlocs, np.exp(solution["x"])))))
         return dict(status=status,
+                    cost=solution["info"]["pcost"],
                     primal=solution["x"][:n_vars],
                     la=solution["z"][:n_posys]/solution["info"]["pcost"])
 

@@ -45,6 +45,8 @@ class TestExamples(unittest.TestCase):
             self.assertIn("PRIM_INFEAS_CER", err.message)
         elif "cvxopt" in err.message:
             self.assertIn("unknown", err.message)
+        elif "ecos" in err.message:
+            self.assertIn("Primal infeasible", err.message)
 
     def test_primal_infeasible_ex2(self, example):
         with self.assertRaises(RuntimeWarning):
@@ -80,7 +82,7 @@ class TestExamples(unittest.TestCase):
                             C_D=0.0206,
                             C_f=0.0036,
                             C_L=0.499,
-                            Re=3.68e+06,
+                            Re=3675,
                             S=16.4,
                             W=7.34e+03,
                             V=38.2,

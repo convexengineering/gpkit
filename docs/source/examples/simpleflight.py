@@ -27,7 +27,7 @@ A = Variable("A", "-", "aspect ratio")
 S = Variable("S", "m^2", "total wing area")
 V = Variable("V", "m/s", "cruising speed")
 W = Variable("W", "N", "total aircraft weight")
-Re = Variable("Re", "-", "Reynold's number")
+Re = Variable("Re", "-", "Reynold's number divided by one thousand")
 C_D = Variable("C_D", "-", "Drag coefficient of wing")
 C_L = Variable("C_L", "-", "Lift coefficent of wing")
 C_f = Variable("C_f", "-", "skin friction coefficient")
@@ -48,8 +48,8 @@ constraints += [W_w >= W_w_surf + W_w_strc]
 
 # and the rest of the models
 constraints += [D >= 0.5*rho*S*C_D*V**2,
-                Re <= (rho/mu)*V*(S/A)**0.5,
-                C_f >= 0.074/Re**0.2,
+                Re*1000 <= (rho/mu)*V*(S/A)**0.5,
+                C_f >= 0.074/(Re*1000)**0.2,
                 W <= 0.5*rho*S*C_L*V**2,
                 W <= 0.5*rho*S*C_Lmax*V_min**2,
                 W >= W_0 + W_w]
@@ -59,10 +59,10 @@ m = Model(D, constraints)
 sol = m.solve(verbosity=0)
 print(sol.table())
 
-print("SWEEP\n=====")
-N = 2
-sweeps = {V_min: ("sweep", np.linspace(20, 25, N)),
-          V: ("sweep", np.linspace(45, 55, N)), }
-m.substitutions.update(sweeps)
-sweepsol = m.solve(verbosity=0)
-print(sweepsol.table())
+# print("SWEEP\n=====")
+# N = 2
+# sweeps = {V_min: ("sweep", np.linspace(20, 25, N)),
+#           V: ("sweep", np.linspace(45, 55, N)), }
+# m.substitutions.update(sweeps)
+# sweepsol = m.solve(verbosity=0)
+# print(sweepsol.table())

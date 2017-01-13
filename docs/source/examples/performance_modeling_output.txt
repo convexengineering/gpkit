@@ -20,7 +20,7 @@ W_{fuel} : [ 1.94      1.46      0.97      0.485    ]  [lbf] fuel weight
      C_D : [ 0.00783   0.00782   0.00781   0.0078   ]        drag coefficient
      C_L : [ 0.47      0.469     0.468     0.467    ]        lift coefficient
        D : [ 4.87      4.86      4.85      4.85     ]  [lbf] drag force
-      Re : [ 7.56e+05  7.56e+05  7.56e+05  7.56e+05 ]        Reynold's number
+      Re : [ 756       756       756       756      ]        Reynold's number divided by 1000
 
 Constants
 ---------

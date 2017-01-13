@@ -91,12 +91,12 @@ class WingAero(Model):
         CD = Variable("C_D", "-", "drag coefficient")
         CL = Variable("C_L", "-", "lift coefficient")
         e = Variable("e", 0.9, "-", "Oswald efficiency")
-        Re = Variable("Re", "-", "Reynold's number")
+        Re = Variable("Re", "-", "Reynold's number divided by 1000")
         D = Variable("D", "lbf", "drag force")
 
         return [
-            CD >= (0.074/Re**0.2 + CL**2/np.pi/wing["A"]/e),
-            Re == state["\\rho"]*state["V"]*wing["c"]/state["\\mu"],
+            CD >= (0.074/(Re*1000)**0.2 + CL**2/np.pi/wing["A"]/e),
+            Re*1000 == state["\\rho"]*state["V"]*wing["c"]/state["\\mu"],
             D >= 0.5*state["\\rho"]*state["V"]**2*CD*wing["S"],
             ]
 

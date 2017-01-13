@@ -6,6 +6,7 @@ from gpkit.tests.helpers import run_tests
 def import_tests():
     """Get a list of all GPkit unit test TestCases"""
     tests = []
+    unit_only_tests = []
 
     from gpkit.tests import t_tools
     tests += t_tools.TESTS
@@ -35,15 +36,15 @@ def import_tests():
     tests += t_small.TESTS
 
     from gpkit.tests import t_examples
-    tests += t_examples.TESTS
+    unit_only_tests += t_examples.TESTS
 
     from gpkit.tests import t_keydict
     tests += t_keydict.TESTS
 
-    return tests
+    return tests, unit_only_tests
 
 
-def run(xmloutput=False, tests=None, unitless=True):
+def run(xmloutput=False, tests=None, unit_only_tests=None, unitless=True):
     """Run all gpkit unit tests.
 
     Arguments
@@ -51,13 +52,15 @@ def run(xmloutput=False, tests=None, unitless=True):
     xmloutput: bool
         If true, generate xml output files for continuous integration
     """
-    if tests is None:
-        tests = import_tests()
+    tests = [] if tests is None else tests
+    unit_only_tests = [] if unit_only_tests is None else unit_only_tests
+    if not (tests or unit_only_tests):
+        tests, unit_only_tests = import_tests()
     if xmloutput:
-        run_tests(tests, xmloutput='test_reports')
+        run_tests(tests+unit_only_tests, xmloutput='test_reports')
     else:
-        run_tests(tests)
-    if unitless:
+        run_tests(tests+unit_only_tests)
+    if tests and unitless:
         print("\n##################################"
               "####################################")
         print("Running with units disabled:")
