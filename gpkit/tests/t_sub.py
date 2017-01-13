@@ -12,7 +12,7 @@ from gpkit.tests.helpers import run_tests
 class TestNomialSubs(unittest.TestCase):
     """Test substitution for nomial-family objects"""
 
-    def test_badGPsub(self):
+    def test_bad_gp_sub(self):
         x = Variable("x")
         y = Variable("y")
         m = Model(x, [y >= 1], {y: x})
