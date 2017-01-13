@@ -57,6 +57,7 @@ coverage.xml
 
 # Sphinx documentation
 docs/_build/
+docs/source/autodoc/gpkit.rst-e
 
 # MATLAB autosave
 *.asv
