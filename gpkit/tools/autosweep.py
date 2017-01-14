@@ -35,7 +35,7 @@ class BinarySweepTree(object):
         The cost upper bound at splitval
     """
 
-    def __init__(self, bounds, sols, cost_posy=None):
+    def __init__(self, bounds, sols, sweptvar, costposy):
         if len(bounds) != 2:
             raise ValueError("bounds must be of length 2.")
         if bounds[1] <= bounds[0]:
@@ -47,7 +47,8 @@ class BinarySweepTree(object):
         self.splitval = None
         self.splitlb = None
         self.splitub = None
-        self.cost_posy = cost_posy
+        self.sweptvar = sweptvar
+        self.costposy = costposy
 
     def add_split(self, splitval, splitsol):
         "Creates subtrees from bounds[0] to splitval and splitval to bounds[1]"
@@ -58,10 +59,10 @@ class BinarySweepTree(object):
         self.splitval = splitval
         self.splits = [BinarySweepTree([self.bounds[0], splitval],
                                        [self.sols[0], splitsol],
-                                       self.cost_posy),
+                                       self.sweptvar, self.costposy),
                        BinarySweepTree([splitval, self.bounds[1]],
                                        [splitsol, self.sols[1]],
-                                       self.cost_posy)]
+                                       self.sweptvar, self.costposy)]
 
     def add_splitcost(self, splitval, splitlb, splitub):
         "Adds a splitval, lower bound, and upper bound"
@@ -128,8 +129,8 @@ class BinarySweepTree(object):
 
 class SolutionOracle(object):
     "Acts like a SolutionArray for autosweeps"
-    def __init__(self, bst, values):
-        self.values = values
+    def __init__(self, bst, sampled_at):
+        self.sampled_at = sampled_at
         self.bst = bst
 
     def __call__(self, key):
@@ -138,51 +139,77 @@ class SolutionOracle(object):
     def __getitem__(self, key):
         return self.__getval(key)
 
+    def _is_cost(self, key):
+        if hasattr(key, "exps") and (key.exps == self.bst.costposy.exps and
+                                     key.cs == self.bst.costposy.cs):
+            key = "cost"
+        return key is "cost"
+
     def __getval(self, key):
         "Gets values from the BST and units them"
-        if hasattr(key, "exps") and (key.exps == self.bst.cost_posy.exps and
-                                     key.cs == self.bst.cost_posy.cs):
-            key = "cost"
-        if key is "cost":
+        if self._is_cost(key):
             key_at = self.bst.cost_at
             v0 = self.bst.sols[0]["cost"]
         else:
             key_at = self.bst.posy_at
             v0 = self.bst.sols[0](key)
         units = Quantity(1.0, getattr(v0, "units", None))
-        fit = [key_at(key, value) for value in self.values]
+        fit = [key_at(key, x) for x in self.sampled_at]
         return fit*units if units else np.array(fit)
 
     def cost_lb(self):
         "Gets cost lower bounds from the BST and units them"
         units = Quantity(1.0, getattr(self.bst.sols[0]["cost"], "units", None))
-        fit = [self.bst.cost_at("cost", value, "lb") for value in self.values]
+        fit = [self.bst.cost_at("cost", x, "lb") for x in self.sampled_at]
         return fit*units if units else np.array(fit)
 
     def cost_ub(self):
         "Gets cost upper bounds from the BST and units them"
         units = Quantity(1.0, getattr(self.bst.sols[0]["cost"], "units", None))
-        fit = [self.bst.cost_at("cost", value, "ub") for value in self.values]
+        fit = [self.bst.cost_at("cost", x, "ub") for x in self.sampled_at]
         return fit*units if units else np.array(fit)
 
+    def plot(self, posys=None, axes=None):
+        "Plots the seep for each posy"
+        import matplotlib.pyplot as plt
+        from ..interactive.plot_sweep import assign_axes
+        from .. import GPBLU
+        posys, axes = assign_axes(self.bst.sweptvar, posys, axes)
+        for posy, ax in zip(posys, axes):
+            if self._is_cost(posy):  # with small tol should look like a line
+                ax.fill_between(self.sampled_at,
+                                self.cost_lb(), self.cost_ub(),
+                                facecolor=GPBLU, edgecolor=GPBLU,
+                                linewidth=0.75)
+            else:
+                ax.plot(self.sampled_at, self(posy), color=GPBLU)
+        if len(axes) == 1:
+            axes, = axes
+        return plt.gcf(), axes
 
-def autosweep_1d(model, logtol, variable, bounds, **solvekwargs):
-    "Autosweep a model over one variable"
+
+def autosweep_1d(model, logtol, sweepvar, bounds, **solvekwargs):
+    "Autosweep a model over one sweepvar"
+    original_val = model.substitutions.get(sweepvar, None)
     start_time = time()
     solvekwargs.setdefault("verbosity", 1)
     solvekwargs["verbosity"] -= 1
     sols = Count().next
     firstsols = []
     for bound in bounds:
-        model.substitutions.update({variable: bound})
+        model.substitutions.update({sweepvar: bound})
         firstsols.append(model.solve(**solvekwargs))
         sols()
-    bst = BinarySweepTree(bounds, firstsols, model.cost)
-    tol = recurse_splits(model, bst, variable, logtol, solvekwargs, sols)
+    bst = BinarySweepTree(bounds, firstsols, sweepvar, model.cost)
+    tol = recurse_splits(model, bst, sweepvar, logtol, solvekwargs, sols)
     if solvekwargs["verbosity"] > -1:
         print "Solved after %2i passes, cost logtol +/-%.3g" % (sols(), tol)
     if solvekwargs["verbosity"] > 0:
         print "Autosweeping took %.3g seconds." % (time() - start_time)
+    if original_val:
+        model.substitutions[sweepvar] = original_val
+    else:
+        del model.substitutions[sweepvar]
     return bst
 
 

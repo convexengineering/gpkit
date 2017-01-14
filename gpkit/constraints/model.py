@@ -1,4 +1,5 @@
 "Implements Model"
+import numpy as np
 from .costed import CostedConstraintSet
 from ..nomials import Monomial
 from .prog_factories import _progify_fctry, _solve_fctry
@@ -8,6 +9,7 @@ from .linked import LinkedConstraintSet
 from ..small_scripts import mag
 from ..keydict import KeyDict
 from ..varkey import VarKey
+from ..tools.autosweep import autosweep_1d
 from .. import NamedVariables, SignomialsEnabled
 from ..exceptions import InvalidGPConstraint
 
@@ -133,6 +135,35 @@ class Model(CostedConstraintSet):
                 del self.substitutions[vk]
         with SignomialsEnabled():  # since we're just substituting varkeys.
             self.subinplace(add_model_subs)
+
+    def sweep(self, sweeps, **solveargs):
+        "Sweeps variable, returning swept solution"
+        sols = []
+        for sweepvar, sweepvals in sweeps.items():
+            original_val = self.substitutions.get(sweepvar, None)
+            self.substitutions.update({sweepvar: ('sweep', sweepvals)})
+            try:
+                sols.append(self.solve(**solveargs))
+            except InvalidGPConstraint:
+                sols.append(self.localsolve(**solveargs))
+            if original_val:
+                self.substitutions[sweepvar] = original_val
+            else:
+                del self.substitutions[sweepvar]
+        if len(sols) == 1:
+            return sols[0]
+        return sols
+
+    def autosweep(self, sweeps, tol=0.01, samplepoints=100, **solveargs):
+        "Autosweeps variable, returning swept and sampled solution"
+        sols = []
+        for sweepvar, sweepvals in sweeps.items():
+            start, end = sweepvals
+            bst = autosweep_1d(self, tol, sweepvar, [start, end], **solveargs)
+            sols.append(bst.sample_at(np.linspace(start, end, samplepoints)))
+        if len(sols) == 1:
+            return sols[0]
+        return sols
 
     # pylint: disable=too-many-locals,too-many-branches,too-many-statements
     def debug(self, solver=None, verbosity=1, **solveargs):

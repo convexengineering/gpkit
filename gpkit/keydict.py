@@ -46,6 +46,13 @@ class KeyDict(dict):
         self._unmapped_keys = set()
         self.update(*args, **kwargs)
 
+    def get(self, key, alternative=KeyError):
+        if key not in self:
+            if alternative is KeyError:
+                raise alternative(key)
+            return alternative
+        return self[key]
+
     def update(self, *args, **kwargs):
         "Iterates through the dictionary created by args and kwargs"
         for k, v in dict(*args, **kwargs).items():

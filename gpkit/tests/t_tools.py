@@ -16,11 +16,11 @@ def assert_logtol(first, second, logtol=1e-6):
                                atol=logtol, rtol=0)
 
 
-class TestMathModels(unittest.TestCase):
+class TestTools(unittest.TestCase):
     """TestCase for math models"""
 
     def test_binary_sweep_tree(self):
-        bst0 = BinarySweepTree([1, 2], [{"cost": 1}, {"cost": 8}])
+        bst0 = BinarySweepTree([1, 2], [{"cost": 1}, {"cost": 8}], None, None)
         assert_logtol(bst0.sample_at([1, 1.5, 2])["cost"], [1, 3.375, 8], 1e-3)
         bst0.add_split(1.5, {"cost": 4})
         assert_logtol(bst0.sample_at([1, 1.25, 1.5, 1.75, 2])["cost"],
@@ -101,7 +101,7 @@ class TestMathModels(unittest.TestCase):
                               '-3.2*x(2).^2.2', '0,...\n          -1'])
         self.assertEqual(DCeq, ['-1,...\n            0'])
 
-TESTS = [TestMathModels]
+TESTS = [TestTools]
 
 
 if __name__ == '__main__':

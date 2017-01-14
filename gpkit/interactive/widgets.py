@@ -103,12 +103,12 @@ def modelcontrolpanel(model, ranges=None, fns_of_sol=None, **solvekwargs):
     """
 
     if fns_of_sol is None:
-        def fn_of_sol(solution):
+        def __defaultfn(solution):
             "Display function to run when a slider is moved."
             tables = ["cost", "freevariables", "sensitivities"]
             print solution.table(tables=tables)
 
-        fns_of_sol = [fn_of_sol]
+        fns_of_sol = [__defaultfn]
 
     sliders = model.interact(fns_of_sol, ranges, **solvekwargs)
     sliderboxes = []
@@ -137,16 +137,17 @@ def modelcontrolpanel(model, ranges=None, fns_of_sol=None, **solvekwargs):
     for sliderbox in sliderboxes:
         settings.append(create_settings(sliderbox))
     sweep = widgets.Checkbox(value=False, width="3ex")
-    label = ("When checked, starts plotting the top sliders"
-             " against cost and these ', '-separated variables:")
+    label = ("If checked, plots the top sliders against cost and these"
+             " variables (separate with two spaces):")
     boxlabel = widgets.Label(value=label)
     y_axes = widgets.Text(value="none", width="20ex")
 
     def append_plotfn():
         "Creates and adds plotfn to fn_of_sols"
-        from . import plot_sweep1d
+        from . import plot_1dsweepgrid
         yvars = [model.cost]
-        for varname in y_axes.value.split(", "):  # pylint: disable=no-member
+        for varname in y_axes.value.split("  "):  # pylint: disable=no-member
+            varname = varname.strip()
             try:
                 yvars.append(model[varname])
             except:  # pylint: disable=bare-except
@@ -157,14 +158,14 @@ def modelcontrolpanel(model, ranges=None, fns_of_sol=None, **solvekwargs):
                 slider = sb.children[1]
                 ranges[slider.varkey] = (slider.min, slider.max)
 
-        def __plotfn(sol):
+        def __defaultfn(sol):
             "Plots a 1D sweep grid, starting from a single solution"
-            plot_sweep1d(model, ranges, yvars, original_sol=sol, verbosity=0)
-        fns_of_sol.append(__plotfn)
+            plot_1dsweepgrid(model, ranges, yvars, origsol=sol, verbosity=0)
+        fns_of_sol.append(__defaultfn)
 
     def redo_plots(_):
         "Refreshes the plotfn"
-        if fns_of_sol and fns_of_sol[-1].__name__ == "__plotfn":
+        if fns_of_sol and fns_of_sol[-1].__name__ == "__defaultfn":
             fns_of_sol.pop()  # get rid of the old one!
         if sweep.value:
             append_plotfn()
