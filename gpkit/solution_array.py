@@ -126,9 +126,9 @@ class SolutionArray(DictOfLists):
             out_str += "\n" + senss_str
         return out_str
 
-    def table(self, tables=("cost", "sweepvariables", "freevariables",
-                            "constants", "sensitivities"), showvars=(),
-              **kwargs):
+    def table(self, showvars=(),
+              tables=("cost", "sweepvariables", "freevariables",
+                      "constants", "sensitivities"), **kwargs):
         """A table representation of this SolutionArray
 
         Arguments
