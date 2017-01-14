@@ -79,7 +79,7 @@ class Bounded(ConstraintSet):
 
     def sens_from_dual(self, las, nus):
         "Return sensitivities while capturing the relevant lambdas"
-        n = sum(map(bool, [self.lowerbound, self.upperbound]))
+        n = bool(self.lowerbound) + bool(self.upperbound)
         self.bound_las = las[-n*len(self.bounded_varkeys):]
         return super(Bounded, self).sens_from_dual(las, nus)
 
