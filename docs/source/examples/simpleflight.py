@@ -57,7 +57,7 @@ constraints += [D >= 0.5*rho*S*C_D*V**2,
 print("SINGLE\n======")
 m = Model(D, constraints)
 sol = m.solve(verbosity=0)
-print sol.summary()
+print(sol.summary())
 
 print("SWEEP\n=====")
 N = 2
