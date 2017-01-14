@@ -2,7 +2,7 @@
 from time import time
 import numpy as np
 from numpy import log, exp
-from gpkit.small_classes import Count
+from gpkit.small_classes import Count, Quantity
 from gpkit.small_scripts import mag
 
 
@@ -149,19 +149,19 @@ class SolutionOracle(object):
         else:
             key_at = self.bst.posy_at
             v0 = self.bst.sols[0](key)
-        units = getattr(v0, "units", None)
+        units = Quantity(1.0, getattr(v0, "units", None))
         fit = [key_at(key, value) for value in self.values]
         return fit*units if units else np.array(fit)
 
     def cost_lb(self):
         "Gets cost lower bounds from the BST and units them"
-        units = getattr(self.bst.sols[0]["cost"], "units", None)
+        units = Quantity(1.0, getattr(self.bst.sols[0]["cost"], "units", None))
         fit = [self.bst.cost_at("cost", value, "lb") for value in self.values]
         return fit*units if units else np.array(fit)
 
     def cost_ub(self):
         "Gets cost upper bounds from the BST and units them"
-        units = getattr(self.bst.sols[0]["cost"], "units", None)
+        units = Quantity(1.0, getattr(self.bst.sols[0]["cost"], "units", None))
         fit = [self.bst.cost_at("cost", value, "ub") for value in self.values]
         return fit*units if units else np.array(fit)
 

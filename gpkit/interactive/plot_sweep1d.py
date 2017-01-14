@@ -29,7 +29,7 @@ def plot_sweep1d(model, sweeps, posys, axes=None, orig_sol=None, **solveargs):
     else:
         N, S = len(posys), len(sweeps)
         f, axes = plt.subplots(N, S, sharex='col', sharey='row',
-                               figsize=(2.5+2.5*S, 2.5+2.5*N))
+                               figsize=(3+2*S, 2.5+1.5*N))
         plt.subplots_adjust(hspace=0.1)
 
     for i, (swept, swept_over) in enumerate(sweeps.items()):

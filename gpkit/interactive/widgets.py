@@ -29,6 +29,8 @@ def modelinteract(model, fns_of_sol, ranges=None, **solvekwargs):
     """
     ranges_out = {}
     if ranges:
+        if not isinstance(ranges, dict):
+            ranges = {k: None for k in ranges}
         slider_vars = set()
         for k in ranges.keys():
             if k in model.varkeys:
