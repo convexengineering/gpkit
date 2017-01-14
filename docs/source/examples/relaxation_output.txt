@@ -35,8 +35,8 @@ x_min : 2
 
 Sensitivities
 -------------
-x_max : -0.5
 x_min : +0.5
+x_max : -0.5
 
 
 With constraints relaxed individually

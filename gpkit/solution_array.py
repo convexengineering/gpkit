@@ -246,8 +246,8 @@ def results_table(data, title, minval=0, printunits=True, fixedcols=True,
             s = k.str_without("models")
             if not sortbyvals:
                 decorated.append((model, b, (varfmt % s), i, k, v))
-            else:
-                val = np.mean(np.abs(v))
+            else:  # for consistent sorting, add small offset to negative vals
+                val = np.mean(np.abs(v)) - (1e-9 if np.mean(v) < 0 else 0)
                 decorated.append((model, -val, b, (varfmt % s), i, k, v))
     if included_models:
         included_models = set(included_models)
