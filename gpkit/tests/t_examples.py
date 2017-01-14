@@ -6,6 +6,7 @@ import numpy as np
 from gpkit import settings
 from gpkit.tests.helpers import generate_example_tests
 from gpkit.small_scripts import mag
+from gpkit.small_classes import Quantity
 
 
 def assert_logtol(first, second, logtol=1e-6):
@@ -53,8 +54,10 @@ class TestExamples(unittest.TestCase):
         assert_logtol(sol1("A"), l_**2 + 1, tol1)
         assert_logtol(sol1["cost"], (l_**2 + 1)**2, tol1)
         if units:
-            self.assertEqual(sol1["cost"].units, ureg.m**4)
-            self.assertEqual(sol1("A").units, ureg.m**2)
+            self.assertEqual(Quantity(1.0, sol1["cost"].units),
+                             Quantity(1.0, ureg.m)**4)
+            self.assertEqual(Quantity(1.0, sol1("A").units),
+                             Quantity(1.0, ureg.m)**2)
 
         ndig = -int(np.log10(tol2))
         self.assertAlmostEqual(bst2.cost_at("cost", 3), 1.0, ndig)
