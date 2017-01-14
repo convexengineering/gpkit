@@ -9,6 +9,15 @@ d : 8.17   [m] depth
 h : 8.163  [m] height
 w : 4.081  [m] width
 
+Constants
+---------
+A_{floor} : 50   [m**2] upper limit, floor area
+ A_{wall} : 200  [m**2] upper limit, wall area
+    alpha : 2           lower limit, wall aspect ratio
+     beta : 10          upper limit, wall aspect ratio
+    delta : 10          upper limit, floor aspect ratio
+    gamma : 2           lower limit, floor aspect ratio
+
 Sensitivities
 -------------
 A_{wall} : -1.5 upper limit, wall area

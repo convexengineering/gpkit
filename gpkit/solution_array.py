@@ -112,7 +112,7 @@ class SolutionArray(DictOfLists):
         "Print summary table, showing top sensitivities and no constants"
         showvars = set(showvars)
         tables = ["cost", "sweepvariables", "freevariables"]
-        out_str = self.table(tables, showvars)
+        out_str = self.table(showvars, tables)
         constants_in_showvars = len(showvars.intersection(self["constants"]))
         tables, topkeys = [], {}
         if len(self["constants"]) >= 7:  # 2 more than the default topN
@@ -121,7 +121,7 @@ class SolutionArray(DictOfLists):
         if constants_in_showvars or len(self["constants"]) < 7:
             showvars.difference_update(topkeys)
             tables.append("sensitivities")
-        senss_str = self.table(tables, showvars)
+        senss_str = self.table(showvars, tables)
         if senss_str:
             out_str += "\n" + senss_str
         return out_str
