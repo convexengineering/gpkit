@@ -11,12 +11,12 @@ print "MANUAL SWEEP"
 # arguments are: model, swept: values, posnomial for y-axis
 f, ax = plot_sweep1d(m, {x: np.linspace(1, 3, 20)}, y)
 ax.set_title("Manually swept (20 points)")
-f.show()
+# f.show()  # uncomment to show figure in a window
 f.savefig("plot_sweep1d.png")
 
 print "\nAUTOSWEEP"
 # arguments are: model, swept: (min, max, optional logtol), posnomial for y-axis
 f, ax = plot_sweep1d(m, {x: (1, 3, 0.001)}, y)
 ax.set_title("Autoswept (7 points)\nGuaranteed to be in blue region")
-f.show()
+# f.show()  # uncomment to show figure in a window
 f.savefig("plot_autosweep1d.png")
