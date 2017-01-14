@@ -19,7 +19,7 @@ class TestNomialSubs(unittest.TestCase):
         # good
         m = Model(x*y, [x >= 1, y >= z], {z: 2})
         m.subinplace({y: x})
-        self.assertAlmostEqual(m.solve(verbosity=0)["cost"], 4)
+        self.assertAlmostEqual(m.solve(verbosity=0)["cost"], 4, 5)
         # bad
         m = Model(x, [y >= 1], {y: 2})
         with self.assertRaises(ValueError):
