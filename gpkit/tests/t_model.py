@@ -3,6 +3,7 @@ import math
 import unittest
 from gpkit import (Model, Monomial, settings, VectorVariable, Variable,
                    SignomialsEnabled, ArrayVariable, SignomialEquality)
+from gpkit.constraints.bounded import Bounded
 from gpkit.small_classes import CootMatrix
 from gpkit.exceptions import InvalidGPConstraint
 from gpkit import NamedVariables
@@ -236,6 +237,28 @@ class TestSP(unittest.TestCase):
     solver = None
     ndig = None
 
+    def test_sp_bounded(self):
+        x = Variable("x")
+        y = Variable("y")
+
+        with SignomialsEnabled():
+            m = Model(x, [x + y >= 1, y <= 0.1])  # solves
+        cost = m.localsolve(verbosity=0)["cost"]
+        self.assertAlmostEqual(cost, 0.9, self.ndig)
+
+        with SignomialsEnabled():
+            m = Model(x, [x + y >= 1])  # dual infeasible
+        with self.assertRaises((RuntimeWarning, ValueError)):
+            m.localsolve(verbosity=0)
+
+        with SignomialsEnabled():
+            m = Model(x, Bounded([x + y >= 1], verbosity=0))
+        sol = m.localsolve(verbosity=0)
+        if "value near lower bound" in sol["boundedness"]:
+            self.assertIn(x, sol["boundedness"]["value near lower bound"])
+        if "value near upper bound" in sol["boundedness"]:
+            self.assertIn(y, sol["boundedness"]["value near upper bound"])
+
     def test_values_vs_subs(self):
         # Substitutions update method
         x = Variable("x")
@@ -443,7 +466,6 @@ class TestSP(unittest.TestCase):
 
     def test_unbounded_debugging(self):
         "Test nearly-dual-feasible problems"
-        from gpkit.constraints.bounded import Bounded
         x = Variable("x")
         y = Variable("y")
         m = Model(x*y, [x*y**1.01 >= 100])
