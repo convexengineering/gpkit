@@ -236,6 +236,30 @@ class TestSP(unittest.TestCase):
     solver = None
     ndig = None
 
+    def test_sp_bounded(self):
+        from gpkit import Variable, Model, SignomialsEnabled
+        from gpkit.constraints.bounded import Bounded
+        x = Variable("x")
+        y = Variable("y")
+
+        with SignomialsEnabled():
+            m = Model(x, [x + y >= 1, y <= 0.1])  # solves
+        cost = m.localsolve(verbosity=0)["cost"]
+        self.assertAlmostEqual(cost, 0.9, self.ndig)
+
+        with SignomialsEnabled():
+            m = Model(x, [x + y >= 1])  # dual infeasible
+        with self.assertRaises((RuntimeWarning, ValueError)):
+            m.localsolve(verbosity=0)
+
+        with SignomialsEnabled():
+            m = Model(x, Bounded([x + y >= 1], verbosity=0))
+        sol = m.localsolve(verbosity=0)
+        if "value near lower bound" in sol["boundedness"]:
+            self.assertIn(x, sol["boundedness"]["value near lower bound"])
+        if "value near upper bound" in sol["boundedness"]:
+            self.assertIn(y, sol["boundedness"]["value near upper bound"])
+
     def test_values_vs_subs(self):
         # Substitutions update method
         x = Variable("x")

@@ -83,18 +83,24 @@ class Bounded(ConstraintSet):
         self.bound_las = las[-n*len(self.bounded_varkeys):]
         return super(Bounded, self).sens_from_dual(las, nus)
 
+    def as_gpconstr(self, x0, substitutions):
+        gp_constrs = ConstraintSet.as_gpconstr(self, x0, substitutions)
+        return Bounded(gp_constrs, verbosity=self.verbosity,
+                       lower=self.lowerbound, upper=self.upperbound)
+
     def process_result(self, result):
         "Creates (and potentially prints) a dictionary of unbounded variables."
-        lam = self.bound_las
+        if not self.bound_las:
+            return  # must be an SP Bounded, boundedness was solved in the GP
         out = defaultdict(list)
         for i, varkey in enumerate(self.bounded_varkeys):
             value = mag(result["variables"][varkey])
             if self.lowerbound and self.upperbound:
-                lam_gt, lam_lt = lam[2*i], lam[2*i+1]
+                lam_gt, lam_lt = self.bound_las[2*i], self.bound_las[2*i+1]
             elif self.lowerbound:
-                lam_lt = lam[i]
+                lam_lt = self.bound_las[i]
             elif self.upperbound:
-                lam_gt = lam[i]
+                lam_gt = self.bound_las[i]
             if self.lowerbound:
                 if abs(lam_lt) >= 1e-7:  # arbitrary threshold
                     out["sensitive to lower bound"].append(varkey)
