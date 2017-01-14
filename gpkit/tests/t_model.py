@@ -3,6 +3,7 @@ import math
 import unittest
 from gpkit import (Model, Monomial, settings, VectorVariable, Variable,
                    SignomialsEnabled, ArrayVariable, SignomialEquality)
+from gpkit.constraints.bounded import Bounded
 from gpkit.small_classes import CootMatrix
 from gpkit.exceptions import InvalidGPConstraint
 from gpkit import NamedVariables
@@ -237,8 +238,6 @@ class TestSP(unittest.TestCase):
     ndig = None
 
     def test_sp_bounded(self):
-        from gpkit import Variable, Model, SignomialsEnabled
-        from gpkit.constraints.bounded import Bounded
         x = Variable("x")
         y = Variable("y")
 
@@ -467,7 +466,6 @@ class TestSP(unittest.TestCase):
 
     def test_unbounded_debugging(self):
         "Test nearly-dual-feasible problems"
-        from gpkit.constraints.bounded import Bounded
         x = Variable("x")
         y = Variable("y")
         m = Model(x*y, [x*y**1.01 >= 100])

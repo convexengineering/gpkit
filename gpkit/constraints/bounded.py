@@ -61,7 +61,7 @@ class Bounded(ConstraintSet):
         upper bound for all varkeys, replaces 1/eps
     """
 
-    def __init__(self, constraints, substitutions=None, verbosity=1,
+    def __init__(self, constraints, verbosity=1,
                  eps=1e-30, lower=None, upper=None):
         if not isinstance(constraints, ConstraintSet):
             constraints = ConstraintSet(constraints)
@@ -74,8 +74,7 @@ class Bounded(ConstraintSet):
                                      if vk not in constraints.substitutions)
         bounding_constraints = varkey_bounds(self.bounded_varkeys,
                                              self.lowerbound, self.upperbound)
-        super(Bounded, self).__init__([constraints, bounding_constraints],
-                                      substitutions)
+        super(Bounded, self).__init__([constraints, bounding_constraints])
 
     def sens_from_dual(self, las, nus):
         "Return sensitivities while capturing the relevant lambdas"
@@ -83,9 +82,9 @@ class Bounded(ConstraintSet):
         self.bound_las = las[-n*len(self.bounded_varkeys):]
         return super(Bounded, self).sens_from_dual(las, nus)
 
-    def as_gpconstr(self, x0, substitutions):
+    def as_gpconstr(self, x0, substitutions=None):
         gp_constrs = ConstraintSet.as_gpconstr(self, x0, substitutions)
-        return Bounded(gp_constrs, verbosity=self.verbosity,
+        return Bounded(gp_constrs, self.verbosity,
                        lower=self.lowerbound, upper=self.upperbound)
 
     def process_result(self, result):
