@@ -180,7 +180,7 @@ def autosweep_1d(model, logtol, variable, bounds, **solvekwargs):
     bst = BinarySweepTree(bounds, firstsols, model.cost)
     tol = recurse_splits(model, bst, variable, logtol, solvekwargs, sols)
     if solvekwargs["verbosity"] > -1:
-        print "Solved after %i passes, possible logerr +/-%.3g" % (sols(), tol)
+        print "Solved after %2i passes, cost logtol +/-%.3g" % (sols(), tol)
     if solvekwargs["verbosity"] > 0:
         print "Autosweeping took %.3g seconds." % (time() - start_time)
     return bst
