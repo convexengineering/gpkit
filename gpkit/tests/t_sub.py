@@ -232,10 +232,10 @@ class TestGPSubs(unittest.TestCase):
         m.substitutions.update({y: ('sweep', [[2, 3, 9], [5, 7, 11]])})
         self.assertRaises(ValueError, m.solve, verbosity=0)
 
-    def test_linked_sweep(self):
+    def test_calcconst(self):
         x = Variable("x", "hours")
         t_day = Variable("t_{day}", 12, "hours")
-        t_night = Variable("t_{night}", lambda c: 24 - c[t_day.key], "hours")
+        t_night = Variable("t_{night}", lambda c: 24 - c[t_day], "hours")
         m = Model(x, [x >= t_day, x >= t_night])
         sol = m.solve(verbosity=0)
         self.assertAlmostEqual(sol(t_night)/gpkit.ureg.hours, 12)

@@ -187,6 +187,22 @@ class SolutionArray(DictOfLists):
             strs = [preamble] + strs + ["% \\end{document}"]
         return "\n".join(strs)
 
+    def plot(self, posys=None, axes=None):
+        "Plots a sweep for each posy"
+        if len(self["sweepvariables"]) != 1:
+            print "SolutionArray.plot only supports 1-dimensional sweeps"
+        import matplotlib.pyplot as plt
+        from .interactive.plot_sweep import assign_axes
+        from . import GPBLU
+        (swept, x), = self["sweepvariables"].items()
+        posys, axes = assign_axes(swept, posys, axes)
+        for posy, ax in zip(posys, axes):
+            y = self(posy) if posy not in [None, "cost"] else self["cost"]
+            ax.plot(x, y, color=GPBLU)
+        if len(axes) == 1:
+            axes, = axes
+        return plt.gcf(), axes
+
 
 # pylint: disable=too-many-statements,too-many-arguments
 # pylint: disable=too-many-branches,too-many-locals
@@ -275,7 +291,7 @@ def results_table(data, title, minval=0, printunits=True, fixedcols=True,
                                   model + r"}} \\"])
             oldmodel = model
         label = var.descr.get('label', '')
-        units = unitstr(var, into=" [%s] ", dimless="") if printunits else ""
+        units = var.unitstr() if printunits else ""
         if isvector:
             vals = [vecfmt % v for v in mag(val).flatten()[:4]]
             ellipsis = " ..." if len(val) > 4 else ""

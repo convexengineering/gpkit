@@ -1,5 +1,4 @@
-Debugging...
-_____________________
+> Trying to solve with bounded variables and relaxed constants
 
 Solves with these variables bounded:
    value near upper bound: [y]
@@ -7,7 +6,7 @@ Solves with these variables bounded:
 
 and these constants relaxed:
   x_min [ft]: relaxed from 2 to 1
-_____________________
+> ...success!
 
-Model does not solve with relaxed constraints.
-_____________________
+> Trying to solve with relaxed constraints
+> ...does not solve with relaxed constraints.
