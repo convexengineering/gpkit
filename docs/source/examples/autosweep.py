@@ -10,7 +10,8 @@ l = Variable("l", "m")
 
 m1 = Model(A**2, [A >= l**2 + units.m**2])
 tol1 = 1e-3
-bst1 = autosweep_1d(m1, tol1, l, [1, 10])
+bst1 = autosweep_1d(m1, tol1, l, [1, 10], verbosity=0)
+print "Solved after %2i passes, cost logtol +/-%.3g" % (bst1.nsols, bst1.tol)
 # autosweep solution accessing
 l_vals = np.linspace(1, 10, 10)
 sol1 = bst1.sample_at(l_vals)
@@ -32,4 +33,5 @@ np.testing.assert_allclose((np.log(mag(cost_lb)) + np.log(mag(cost_ub)))/2,
 m2 = Model(A**2, [A >= (l/3)**2, A >= (l/3)**0.5 * units.m**1.5])
 tol2 = {"mosek": 1e-12, "cvxopt": 1e-7,
         "mosek_cli": 1e-6}[gpkit.settings["default_solver"]]
-bst2 = autosweep_1d(m2, tol2, l, [1, 10])
+bst2 = autosweep_1d(m2, tol2, l, [1, 10], verbosity=0)
+print "Solved after %2i passes, cost logtol +/-%.3g" % (bst2.nsols, bst2.tol)

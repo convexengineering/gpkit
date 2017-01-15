@@ -202,8 +202,9 @@ def autosweep_1d(model, logtol, sweepvar, bounds, **solvekwargs):
         sols()
     bst = BinarySweepTree(bounds, firstsols, sweepvar, model.cost)
     tol = recurse_splits(model, bst, sweepvar, logtol, solvekwargs, sols)
+    bst.nsols = sols()
     if solvekwargs["verbosity"] > -1:
-        print "Solved after %2i passes, cost logtol +/-%.3g" % (sols(), tol)
+        print "Solved after %2i passes, cost logtol +/-%.3g" % (bst.nsols, tol)
         print "Autosweeping took %.3g seconds." % (time() - start_time)
     if original_val:
         model.substitutions[sweepvar] = original_val
@@ -223,7 +224,8 @@ def recurse_splits(model, bst, variable, logtol, solvekwargs, sols):
         tols = [recurse_splits(model, split, variable, logtol, solvekwargs,
                                sols)
                 for split in bst.splits]
-        return max(tols)
+        bst.tol = max(tols)
+        return bst.tol
     else:
         bst.add_splitcost(x, lb, ub)
         return tol
