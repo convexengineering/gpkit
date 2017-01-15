@@ -1,4 +1,4 @@
-"Demonstrates manual and auto sweeping with plot_sweep1d"
+"Demonstrates manual and auto sweeping and plotting"
 import matplotlib as mpl
 mpl.use('Agg')
 # comment out the imports above and `show()` to show figures in a window

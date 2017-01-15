@@ -56,9 +56,12 @@ For evaluated variables than can be used during a solution, see ``externalfn`` u
 Sweeps
 ======
 
-Declaring Sweeps
-----------------
-Sweeps are useful for analyzing tradeoff surfaces. A sweep “value” is an Iterable of numbers, e.g. ``[1, 2, 3]``. Variables are swept when their substitution value takes the form ``('sweep', Iterable), (e.g. 'sweep', np.linspace(1e6, 1e7, 100))``. During variable declaration, giving an Iterable value for a Variable is assumed to be giving it a sweep value: for example, ``x = Variable("x", [1, 2, 3]``. Sweeps can also be declared during later substitution (``gp.sub("x", ('sweep', [1, 2, 3]))``, or if the variable was already substituted for a constant, ``gp.sub("x", ('sweep', [1, 2, 3]), replace=True))``.
+Sweeps are useful for analyzing tradeoff surfaces. A sweep “value” is an Iterable of numbers, e.g. ``[1, 2, 3]``. The simplest way to sweep a model is to call ``model.sweep({sweepvar: sweepvalues})``, which will return a solution array but not change the model's substitutions dictionary. If multiple ``sweepvars`` are given, the method will run them all as independent one-dimensional sweeps and return a list of one solution per sweep. The method ``model.autosweep({sweepvar: (start, end)}, tol=0.01)`` behaves very similarly, except that only the bounds of the sweep need be specified and the region in betwen will be swept to a maximum possible error of tol in the log of the cost. For details see `1D Autosweeps`_ below.
+
+
+Sweep Substitutions
+-------------------
+Alternatively, or to sweep in multiple dimensions simultaneously, Variables can swept with a substitution value takes the form ``('sweep', Iterable), (e.g. 'sweep', np.linspace(1e6, 1e7, 100))``. During variable declaration, giving an Iterable value for a Variable is assumed to be giving it a sweep value: for example, ``x = Variable("x", [1, 2, 3])`` will sweep ``x`` over three values.
 
 Solving Sweeps
 --------------

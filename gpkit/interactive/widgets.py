@@ -108,7 +108,9 @@ def modelcontrolpanel(model, ranges=None, fns_of_sol=None, **solvekwargs):
             tables = ["cost", "freevariables", "sensitivities"]
             print solution.table(tables=tables)
 
-        fns_of_sol = [__defaultfn]
+        __defaultfntable = __defaultfn
+
+        fns_of_sol = [__defaultfntable]
 
     sliders = model.interact(fns_of_sol, ranges, **solvekwargs)
     sliderboxes = []
@@ -169,6 +171,8 @@ def modelcontrolpanel(model, ranges=None, fns_of_sol=None, **solvekwargs):
             fns_of_sol.pop()  # get rid of the old one!
         if sweep.value:
             append_plotfn()
+        if not fns_of_sol:
+            fns_of_sol.append(__defaultfntable)
         sl.value = sl.value*(1.000001)  # pylint: disable=undefined-loop-variable
 
     sweep.observe(redo_plots, "value")
