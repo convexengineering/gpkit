@@ -1,4 +1,4 @@
-"Can be found in gpkit/docs/source/examples/external_sp.py"
+"Can be found in gpkit/docs/source/examples/external_sp2.py"
 import numpy as np
 from gpkit import Variable, Model
 
