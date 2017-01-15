@@ -7,12 +7,14 @@ def assign_axes(var, posys, axes):
     "Assigns axes to posys, creating and formatting if necessary"
     if not hasattr(posys, "__iter__"):
         posys = [posys]
+    N = len(posys)
     if axes is None:
-        N = len(posys)
         _, axes = plt.subplots(N, 1, sharex="col", figsize=(4.5, 3+1.5*N))
         if N == 1:
             axes = [axes]
         format_and_label_axes(var, posys, axes)
+    elif N == 1 and not hasattr(axes, "__len__"):
+        axes = [axes]
     return posys, axes
 
 

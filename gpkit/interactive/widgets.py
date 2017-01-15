@@ -85,8 +85,9 @@ def modelinteract(model, fns_of_sol, ranges=None, **solvekwargs):
                 sol = model.result
             for fn in fns_of_sol:
                 fn(sol)
-        except RuntimeWarning:
-            print "Model did not solve!"
+        except RuntimeWarning, e:
+            print "RuntimeWarning:", str(e).split("\n")[0]
+            print "\n> Running model.debug()"
             model.debug()
 
     resolve()

@@ -4,20 +4,20 @@ Advanced Commands
 Derived Variables
 =================
 
-Calculated Constants
---------------------
+Evaluated Fixed Variables
+-------------------------
 
-Some constants may be derived from the values of other (non-calculated) constants.
-For example, air density, viscosity, and temperature are all calculated from altitude.
-These calculated constants can be represented by a variable whose value is a function
-of the constants dictionary.
+Some fixed variables may be derived from the values of other fixed variables.
+For example, air density, viscosity, and temperature are functions of altitude.
+These can be represented by a substitution or value that is a one-argument function
+accepting ``model.substitutions`` (for details, see `Substitutions`_ below).
 
 .. code-block:: python
 
     # code from t_GPSubs.test_calcconst in tests/t_sub.py
     x = Variable("x", "hours")
     t_day = Variable("t_{day}", 12, "hours")
-    t_night = Variable("t_{night}", lambda c: 24 - c[t_day.key], "hours")
+    t_night = Variable("t_{night}", lambda c: 24 - c[t_day], "hours")
     # note that t_night has a function as its value
     m = Model(x, [x >= t_day, x >= t_night])
     sol = m.solve(verbosity=0)
@@ -48,7 +48,7 @@ Note that this variable should not be used in constructing your model!
     self.assertAlmostEqual(sol(x2), sol(x)**2)
 
 
-For evaluated variables than can be used during a solution, see ``externalfn`` under :ref:`sgp`.
+For evaluated variables that can be used during a solution, see ``externalfn`` under :ref:`sgp`.
 
 
 .. _Sweeps:
@@ -61,14 +61,11 @@ Sweeps are useful for analyzing tradeoff surfaces. A sweep “value” is an Ite
 
 Sweep Substitutions
 -------------------
-Alternatively, or to sweep in multiple dimensions simultaneously, Variables can swept with a substitution value takes the form ``('sweep', Iterable), (e.g. 'sweep', np.linspace(1e6, 1e7, 100))``. During variable declaration, giving an Iterable value for a Variable is assumed to be giving it a sweep value: for example, ``x = Variable("x", [1, 2, 3])`` will sweep ``x`` over three values.
+Alternatively, or to sweep a higher-dimensional grid, Variables can swept with a substitution value takes the form ``('sweep', Iterable)``, such as ``('sweep', np.linspace(1e6, 1e7, 100))``. During variable declaration, giving an Iterable value for a Variable is assumed to be giving it a sweep value: for example, ``x = Variable("x", [1, 2, 3])`` will sweep ``x`` over three values.
 
-Solving Sweeps
---------------
-A Model with sweeps will solve for all possible combinations: e.g., if there’s a variable ``x`` with value ``('sweep', [1, 3])`` and a variable ``y`` with value ``('sweep', [14, 17])`` then the gp will be solved four times, for :math:`(x,y)\in\left\{(1, 14),\ (1, 17),\ (3, 14),\ (3, 17)\right\}`. The returned solutions will be a one-dimensional array (or 2-D for vector variables), accessed in the usual way.
-Sweeping Vector Variables
+Vector variables may also be substituted for: ``y = VectorVariable(3, "y", ("sweep" ,[[1, 2], [1, 2], [1, 2]])`` will sweep :math:`y\ \forall~y_i\in\left\{1,2\right\}`.
 
-Vector variables may also be substituted for: ``y = VectorVariable(3, "y", value=('sweep' ,[[1, 2], [1, 2], [1, 2]])`` will sweep :math:`y\ \forall~y_i\in\left\{1,2\right\}`.
+A Model with sweep substitutions will solve for all possible combinations: e.g., if there’s a variable ``x`` with value ``('sweep', [1, 3])`` and a variable ``y`` with value ``('sweep', [14, 17])`` then the gp will be solved four times, for :math:`(x,y)\in\left\{(1, 14),\ (1, 17),\ (3, 14),\ (3, 17)\right\}`. The returned solutions will be a one-dimensional array (or 2-D for vector variables), accessed in the usual way.
 
 Parallel Sweeps
 ---------------
@@ -88,7 +85,7 @@ can be seen in this example:
 
 .. literalinclude:: examples/autosweep.py
 
-If you need access to the raw solutions arrays, the minimum tree spanning
+If you need access to the raw solutions arrays, the smallest simplex tree containing
 any given point can be gotten with ``min_bst = bst.min_bst(val)``, the extents of that tree with ``bst.bounds`` and solutions of that tree with ``bst.sols``. More information is in ``help(bst)``.
 
 
@@ -96,7 +93,7 @@ Tight ConstraintSets
 ====================
 
 Tight ConstraintSets will warn if any inequalities they contain are not
-tight (that is, the right side equals the left side) after solving. This
+tight (that is, the right side does not equal the left side) after solving. This
 is useful when you know that a constraint _should_ be tight for a given model,
 but reprenting it as an equality would be non-convex.
 
@@ -206,7 +203,7 @@ After creating a Model, it may be useful to "free" a fixed variable and resolve.
     x = Variable("x")
     y = Variable("y", 3)  # fix value to 3
     m = Model(x, [x >= 1 + y, y >= 1])
-    _ = m.solve()  # optimal cost is 4; y appears in Constants
+    _ = m.solve()  # optimal cost is 4; y appears in sol["constants"]
 
     del m.substitutions["y"]
     _ = m.solve()  # optimal cost is 2; y appears in Free Variables

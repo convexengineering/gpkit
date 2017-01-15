@@ -19,9 +19,7 @@ Methods exist to facilitate creating, solving, and plotting the results of a sin
 
 .. literalinclude:: examples/plot_sweep1d.py
 
-The result looks like:
-
-.. literalinclude:: examples/plot_sweep1d_output.txt
+Which results in:
 
 .. figure:: examples/plot_sweep1d.png
     :align: center

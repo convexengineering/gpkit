@@ -20,7 +20,7 @@ class BinarySweepTree(object):
         The left and right solutions of the segment
 
     costs : array
-        The left and right logcosts of the span
+        The left and right logcosts of the segment
 
     splits : None or two-element list
         If not None, contains the left and right subtrees
@@ -114,7 +114,7 @@ class BinarySweepTree(object):
         return exp(interp*loval + (1-interp)*hival)
 
     def min_bst(self, value):
-        "Returns smallest spanning tree around value."
+        "Returns smallest bst around value."
         if not self.splits:
             return self
         elif value <= self.splitval:
@@ -170,7 +170,7 @@ class SolutionOracle(object):
         return fit*units if units else np.array(fit)
 
     def plot(self, posys=None, axes=None):
-        "Plots the seep for each posy"
+        "Plots the sweep for each posy"
         import matplotlib.pyplot as plt
         from ..interactive.plot_sweep import assign_axes
         from .. import GPBLU
@@ -204,7 +204,6 @@ def autosweep_1d(model, logtol, sweepvar, bounds, **solvekwargs):
     tol = recurse_splits(model, bst, sweepvar, logtol, solvekwargs, sols)
     if solvekwargs["verbosity"] > -1:
         print "Solved after %2i passes, cost logtol +/-%.3g" % (sols(), tol)
-    if solvekwargs["verbosity"] > 0:
         print "Autosweeping took %.3g seconds." % (time() - start_time)
     if original_val:
         model.substitutions[sweepvar] = original_val
@@ -239,16 +238,18 @@ def get_tol(costs, bounds, sols, variable):
     # y0 + s0*(x - x0) == y1 + s1*(x - x1)
     num = y1-y0 + x0*s0-x1*s1
     denom = s0-s1
+    # NOTE: several branches below deal with straight lines, where lower
+    #       and upper bounds are identical and so x is undefined
     if denom == 0:
-        # mosek only runs into this on perfectly corners, where num == 0
-        # mosek_cli seems to run into this on non-sharp corners...
-        interp = -1
+        # mosek runs into this on perfect straight lines, num also equal to 0
+        # mosek_cli also runs into this on near-straight lines, num ~= 0
+        interp = -1  # fflag interp as out-of bounds
     else:
         x = num/denom
         lb = y0 + s0*(x-x0)
         interp = (x1-x)/(x1-x0)
         ub = y0*interp + y1*(1-interp)
-    if interp < 1e-7 or interp > 1 - 1e-7:  # cvxopt corners
-        x = (x0 + x1)/2
+    if interp < 1e-7 or interp > 1 - 1e-7:  # cvxopt on straight lines
+        x = (x0 + x1)/2  # x is undefined? stick it in the middle!
         lb = ub = (y0 + y1)/2
     return exp(x), lb, ub

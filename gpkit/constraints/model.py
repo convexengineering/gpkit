@@ -137,7 +137,7 @@ class Model(CostedConstraintSet):
             self.subinplace(add_model_subs)
 
     def sweep(self, sweeps, **solveargs):
-        "Sweeps variable, returning swept solution"
+        "Sweeps {var: values} pairs in sweeps. Returns swept solutions."
         sols = []
         for sweepvar, sweepvals in sweeps.items():
             original_val = self.substitutions.get(sweepvar, None)
@@ -155,7 +155,11 @@ class Model(CostedConstraintSet):
         return sols
 
     def autosweep(self, sweeps, tol=0.01, samplepoints=100, **solveargs):
-        "Autosweeps variable, returning swept and sampled solution"
+        """Autosweeps {var: (start, end)} pairs in sweeps to tol.
+
+        Returns swept and sampled solutions.
+        The original simplex tree can be accessed at sol.bst
+        """
         sols = []
         for sweepvar, sweepvals in sweeps.items():
             start, end = sweepvals
@@ -177,8 +181,7 @@ class Model(CostedConstraintSet):
         solveargs["solver"] = solver
         solveargs["verbosity"] = verbosity
 
-        print "Debugging..."
-        print "_____________________"
+        print "> Trying to solve with bounded variables and relaxed constants"
 
         if self.substitutions:
             constsrelaxed = ConstantsRelaxed(Bounded(self))
@@ -208,10 +211,11 @@ class Model(CostedConstraintSet):
                     print("  %s: relaxed from %-.4g to %-.4g"
                           % (orig, mag(self.substitutions[orig]),
                              mag(sol(orig))))
+            print "> ...success!"
         except (ValueError, RuntimeWarning):
-            print("\nModel does not solve with bounded variables"
+            print("> ...does not solve with bounded variables"
                   " and relaxed constants.")
-        print "_____________________"
+        print "\n> Trying to solve with relaxed constraints"
 
         try:
             constrsrelaxed = ConstraintsRelaxed(self)
@@ -237,9 +241,8 @@ class Model(CostedConstraintSet):
                     relax_percent = "%i%%" % (0.5+(relaxval-1)*100)
                     print("  %i: %4s relaxed  Canonical form: %s <= %.2f)"
                           % (i, relax_percent, constraint.right, relaxval))
-
+            print "> ...success!"
         except (ValueError, RuntimeWarning):
-            print("\nModel does not solve with relaxed constraints.")
+            print("> ...does not solve with relaxed constraints.")
 
-        print "_____________________"
         return sol

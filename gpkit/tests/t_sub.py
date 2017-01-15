@@ -235,7 +235,7 @@ class TestGPSubs(unittest.TestCase):
     def test_calcconst(self):
         x = Variable("x", "hours")
         t_day = Variable("t_{day}", 12, "hours")
-        t_night = Variable("t_{night}", lambda c: 24 - c[t_day.key], "hours")
+        t_night = Variable("t_{night}", lambda c: 24 - c[t_day], "hours")
         m = Model(x, [x >= t_day, x >= t_night])
         sol = m.solve(verbosity=0)
         self.assertAlmostEqual(sol(t_night)/gpkit.ureg.hours, 12)
