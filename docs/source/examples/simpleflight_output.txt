@@ -18,8 +18,8 @@ C_f : 0.003599          skin friction coefficient
   W : 7341       [N]    total aircraft weight
 W_w : 2401       [N]    wing weight
 
-Most Sensitive Fixed Variables
-------------------------------
+Most Sensitive
+--------------
                 W_0 : +1    aircraft weight excluding wing
                   e : -0.48 Oswald efficiency factor
 (\frac{S}{S_{wet}}) : +0.43 wetted area ratio
@@ -50,8 +50,8 @@ C_f : [ 0.00333   0.00361   0.00314   0.00342  ]         skin friction coefficie
   W : [ 6.85e+03  6.97e+03  6.4e+03   6.44e+03 ]  [N]    total aircraft weight
 W_w : [ 1.91e+03  2.03e+03  1.46e+03  1.5e+03  ]  [N]    wing weight
 
-Most Sensitive Fixed Variables
-------------------------------
+Most Sensitive
+--------------
                 W_0 : [ +0.92     +0.95     +0.85     +0.85    ] aircraft weight excluding wing
             V_{min} : [ -0.82     -0.41     -1        -0.71    ] takeoff speed
                   V : [ +0.59     +0.25     +0.97     +0.75    ] cruising speed

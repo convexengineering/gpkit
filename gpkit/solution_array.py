@@ -18,20 +18,26 @@ def senss_table(data, showvars=(), title="Sensitivities", minval=1e-2,
                          printunits=False, **kwargs)
 
 
-def topsenss_table(data, _, topN=5, **kwargs):
+def topsenss_table(data, showvars, topN=5, **kwargs):
     "Returns top sensitivity table lines"
-    data = topsenss_filter(data, topN)
-    return senss_table(data, (), "Most Sensitive Fixed Variables", 0, **kwargs)
+    data, filtered = topsenss_filter(data, showvars, topN)
+    title = "Most Sensitive" if not filtered else "Next Largest Sensitivities"
+    return senss_table(data, (), title, 0, **kwargs)
 
 
-def topsenss_filter(data, topN=5):
+def topsenss_filter(data, showvars, topN=5):
     "Filters sensitivities down to top N"
     if "constants" in data.get("sensitivities", {}):
         data = data["sensitivities"]["constants"]
-    meansens = {k: np.mean(np.abs(s)) for k, s in data.items()}
-    meansens = {k: ms for k, ms in meansens.items() if not np.isnan(ms)}
-    sorteddata = sorted(meansens.items(), key=lambda l: l[1])[-topN:]
-    return {k: data[k] for (k, _) in sorteddata}
+    mean_abs_senss = {k: np.abs(s).mean() for k, s in data.items()
+                      if not np.isnan(s).any()}
+    topk = [k for k, _ in sorted(mean_abs_senss.items(), key=lambda l: l[1])]
+    filter_already_shown = showvars.intersection(topk)
+    for k in filter_already_shown:
+        topk.remove(k)
+        if topN > 3:  # always show at least 3
+            topN -= 1
+    return {k: data[k] for k in topk[-topN:]}, filter_already_shown
 
 
 def insenss_table(data, _, maxval=0.1, **kwargs):
@@ -108,23 +114,29 @@ class SolutionArray(DictOfLists):
         else:
             return posy.sub(self["variables"])
 
+    def _parse_showvars(self, showvars):
+        showvars_out = set()
+        if showvars:
+            for k in showvars:
+                k, _ = self["variables"].parse_and_index(k)
+                keys = self["variables"].keymap[k]
+                showvars_out.update(keys)
+        return showvars_out
+
     def summary(self, showvars=()):
         "Print summary table, showing top sensitivities and no constants"
-        showvars = set(showvars)
-        tables = ["cost", "sweepvariables", "freevariables"]
-        out_str = self.table(showvars, tables)
-        constants_in_showvars = len(showvars.intersection(self["constants"]))
-        tables, topkeys = [], {}
+        showvars = self._parse_showvars(showvars)
+        out = self.table(showvars, ["cost", "sweepvariables", "freevariables"])
+        constants_in_showvars = showvars.intersection(self["constants"])
+        senss_tables = []
+        if len(self["constants"]) < 7 or constants_in_showvars:
+            senss_tables.append("sensitivities")
         if len(self["constants"]) >= 7:  # 2 more than the default topN
-            topkeys = topsenss_filter(self, 5)
-            tables.append("topsensitivities")
-        if constants_in_showvars or len(self["constants"]) < 7:
-            showvars.difference_update(topkeys)
-            tables.append("sensitivities")
-        senss_str = self.table(showvars, tables)
+            senss_tables.append("topsensitivities")
+        senss_str = self.table(showvars, senss_tables)
         if senss_str:
-            out_str += "\n" + senss_str
-        return out_str
+            out += "\n" + senss_str
+        return out
 
     def table(self, showvars=(),
               tables=("cost", "sweepvariables", "freevariables",
@@ -148,12 +160,7 @@ class SolutionArray(DictOfLists):
         -------
         str
         """
-        showvars_tmp = set()
-        for k in showvars:
-            k, _ = self["variables"].parse_and_index(k)
-            keys = self["variables"].keymap[k]
-            showvars_tmp.update(keys)
-        showvars = showvars_tmp
+        showvars = self._parse_showvars(showvars)
         strs = []
         for table in tables:
             if table == "cost":

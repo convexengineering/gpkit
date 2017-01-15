@@ -33,7 +33,7 @@ def modelinteract(model, fns_of_sol, ranges=None, **solvekwargs):
             ranges = {k: None for k in ranges}
         slider_vars = set()
         for k in ranges.keys():
-            if k in model.varkeys:
+            if k in model.substitutions:  # only if already a constant
                 for key in model.varkeys[k]:
                     slider_vars.add(key)
                     ranges[key] = ranges[k]
@@ -103,11 +103,19 @@ def modelcontrolpanel(model, ranges=None, fns_of_sol=None, **solvekwargs):
     live. args and kwargs are passed on to interact()
     """
 
+    freevars = set(model.varkeys).difference(model.substitutions)
+    freev_in_ranges = False
+    for var in ranges:
+        if var in model.varkeys and freevars.intersection(model.varkeys[var]):
+            freev_in_ranges = True
+            break
+
     if fns_of_sol is None:
         def __defaultfn(solution):
             "Display function to run when a slider is moved."
-            tables = ["cost", "freevariables", "sensitivities"]
-            print solution.table(tables=tables)
+            # NOTE: if there are some freevariables in ranges, filter
+            #       the table to show only those and the slider constants
+            print solution.summary(ranges if freev_in_ranges else ())
 
         __defaultfntable = __defaultfn
 
