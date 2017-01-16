@@ -2,7 +2,7 @@
 from gpkit import Variable, Model
 
 # Decision variable
-x = Variable('x')
+x = Variable("x")
 
 # Constraint
 constraints = [x >= 1]
@@ -17,5 +17,5 @@ m = Model(objective, constraints)
 sol = m.solve(verbosity=0)
 
 # print selected results
-print("Optimal cost:  %s" % sol['cost'])
+print("Optimal cost:  %s" % sol["cost"])
 print("Optimal x val: %s" % sol(x))

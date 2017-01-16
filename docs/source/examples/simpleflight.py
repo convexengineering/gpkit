@@ -1,13 +1,13 @@
 "Minimizes airplane drag for a simple drag and structure model."
 import numpy as np
 from gpkit import Variable, Model
+pi = np.pi
 
 
 # Constants
 k = Variable("k", 1.2, "-", "form factor")
 e = Variable("e", 0.95, "-", "Oswald efficiency factor")
 mu = Variable("\\mu", 1.78e-5, "kg/m/s", "viscosity of air")
-pi = Variable("\\pi", np.pi, "-", "half of the circle constant")
 rho = Variable("\\rho", 1.23, "kg/m^3", "density of air")
 tau = Variable("\\tau", 0.12, "-", "airfoil thickness to chord ratio")
 N_ult = Variable("N_{ult}", 3.8, "-", "ultimate load factor")
@@ -57,7 +57,7 @@ constraints += [D >= 0.5*rho*S*C_D*V**2,
 print("SINGLE\n======")
 m = Model(D, constraints)
 sol = m.solve(verbosity=0)
-print(sol.table())
+print(sol.summary())
 
 print("SWEEP\n=====")
 N = 2
@@ -65,4 +65,4 @@ sweeps = {V_min: ("sweep", np.linspace(20, 25, N)),
           V: ("sweep", np.linspace(45, 55, N)), }
 m.substitutions.update(sweeps)
 sweepsol = m.solve(verbosity=0)
-print(sweepsol.table())
+print(sweepsol.summary())
