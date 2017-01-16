@@ -32,7 +32,9 @@ def _progify_fctry(program, return_attr=None):
         if not constants:
             constants, _, linkedsweep = parse_subs(self.varkeys,
                                                    self.substitutions)
-            constants.update({v: f(constants) for v, f in linkedsweep.items()})
+            if linkedsweep:
+                kdc = KeyDict(constants)
+                constants.update({v: f(kdc) for v, f in linkedsweep.items()})
         prog = program(self.cost, self, constants, verbosity, **kwargs)
         if return_attr:
             return prog, getattr(prog, return_attr)
@@ -113,7 +115,9 @@ def run_sweep(genfunction, self, solution, skipsweepfailures,
         this_pass = {var: sweep_vect[i]
                      for (var, sweep_vect) in sweep_vects.items()}
         constants.update(this_pass)
-        constants.update({v: f(constants) for v, f in linkedsweep.items()})
+        if linkedsweep:
+            kdc = KeyDict(constants)
+            constants.update({v: f(kdc) for v, f in linkedsweep.items()})
         program, solvefn = genfunction(self, verbosity-1, constants)
         try:
             result = solvefn(solver, verbosity-1, *args, **kwargs)

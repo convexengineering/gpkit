@@ -23,6 +23,7 @@ gpkit/interactive/__init__.py
 gpkit/interactive/chartjs.py
 gpkit/interactive/linking_diagram.py
 gpkit/interactive/plotting.py
+gpkit/interactive/plot_sweep.py
 gpkit/interactive/ractor.py
 gpkit/interactive/sensitivity_map.py
 gpkit/interactive/widgets.py
@@ -58,6 +59,7 @@ gpkit/tests/t_tools.py
 gpkit/tests/t_vars.py
 gpkit/tests/test_repo.py
 gpkit/tools/__init__.py
+gpkit/tools/autosweep.py
 gpkit/tools/fmincon.py
 gpkit/tools/spdata.py
 gpkit/tools/tools.py

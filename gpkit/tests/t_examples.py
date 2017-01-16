@@ -6,6 +6,13 @@ import numpy as np
 from gpkit import settings
 from gpkit.tests.helpers import generate_example_tests
 from gpkit.small_scripts import mag
+from gpkit.small_classes import Quantity
+
+
+def assert_logtol(first, second, logtol=1e-6):
+    "Asserts that the logs of two arrays have a given abstol"
+    np.testing.assert_allclose(np.log(mag(first)), np.log(mag(second)),
+                               atol=logtol, rtol=0)
 
 
 class TestExamples(unittest.TestCase):
@@ -30,6 +37,40 @@ class TestExamples(unittest.TestCase):
           def test_dummy_example(self, example):
               self.assertAlmostEqual(example.sol["cost"], 3.121)
     """
+
+    # TODO: allow enabling plotting examples, make plots in correct folder...
+    # def test_plot_sweep1d(self, _):
+    #     import matplotlib.pyplot as plt
+    #     plt.close("all")
+
+    def test_autosweep(self, example):
+        from gpkit import units, ureg
+        bst1, tol1 = example.bst1, example.tol1
+        bst2, tol2 = example.bst2, example.tol2
+
+        l_ = np.linspace(1, 10, 100)
+        sol1 = bst1.sample_at(l_)
+        assert_logtol(sol1("l"), l_)
+        assert_logtol(sol1("A"), l_**2 + 1, tol1)
+        assert_logtol(sol1["cost"], (l_**2 + 1)**2, tol1)
+        if units:
+            self.assertEqual(Quantity(1.0, sol1["cost"].units),
+                             Quantity(1.0, ureg.m)**4)
+            self.assertEqual(Quantity(1.0, sol1("A").units),
+                             Quantity(1.0, ureg.m)**2)
+
+        ndig = -int(np.log10(tol2))
+        self.assertAlmostEqual(bst2.cost_at("cost", 3), 1.0, ndig)
+        # before corner
+        A_bc = np.linspace(1, 3, 50)
+        sol_bc = bst2.sample_at(A_bc)
+        assert_logtol(sol_bc("A"), (A_bc/3)**0.5, tol2)
+        assert_logtol(sol_bc["cost"], A_bc/3, tol2)
+        # after corner
+        A_ac = np.linspace(3, 10, 50)
+        sol_ac = bst2.sample_at(A_ac)
+        assert_logtol(sol_ac("A"), (A_ac/3)**2, tol2)
+        assert_logtol(sol_ac["cost"], (A_ac/3)**4, tol2)
 
     def test_performance_modeling(self, example):
         pass
@@ -91,7 +132,6 @@ class TestExamples(unittest.TestCase):
         # sensitivity values from p. 34 of W. Hoburg's thesis
         consenscheck = {r"(\frac{S}{S_{wet}})": 0.4300,
                         "e": -0.4785,
-                        r"\pi": -0.4785,
                         "V_{min}": -0.3691,
                         "k": 0.4300,
                         r"\mu": 0.0860,

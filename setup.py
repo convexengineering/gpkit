@@ -25,7 +25,7 @@ and `CVXopt <http://cvxopt.org/>`_.
 
 LICENSE = """The MIT License (MIT)
 
-Copyright (c) Edward Burnell and Warren Hoburg
+Copyright (c) 2017 Edward Burnell and Warren Hoburg
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
@@ -53,7 +53,7 @@ setup(
     author_email="gpkit@mit.edu",
     url="https://www.github.com/hoburg/gpkit",
     install_requires=["numpy >= 1.8.1", "pint", "scipy"],
-    version="0.5.1.1",
+    version="0.5.2.0",
     packages=["gpkit", "gpkit._mosek", "gpkit.tests", "gpkit.interactive",
               "gpkit.nomials", "gpkit.constraints", "gpkit.tools"],
     package_data={"gpkit": ["pint/*", "env/*"],

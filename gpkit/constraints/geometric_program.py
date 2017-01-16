@@ -3,7 +3,7 @@ import sys
 from time import time
 import numpy as np
 from ..nomials import NomialData
-from ..small_classes import CootMatrix, SolverLog
+from ..small_classes import CootMatrix, SolverLog, Numbers
 from ..keydict import KeyDict
 from ..small_scripts import mag
 from ..solution_array import SolutionArray
@@ -58,7 +58,12 @@ class GeometricProgram(CostedConstraintSet, NomialData):
             constraints = ConstraintSet(constraints)
         list.__init__(self, [constraints])  # pylint:disable=non-parent-init-called
         self.substitutions = substitutions if substitutions else {}
-
+        for key, sub in self.substitutions.items():
+            if not isinstance(sub, (Numbers, np.ndarray)):
+                raise ValueError("substitution {%s: %s} with value type %s is"
+                                 " not allowed in .substitutions; such"
+                                 " substitutions must be done by using"
+                                 " .subinplace()." % (key, sub, type(sub)))
         # sideways NomialData init to create self.exps, self.cs, etc
         self.posynomials = [cost.sub(self.substitutions)]
         self.posynomials.extend(self.as_posyslt1(self.substitutions))
