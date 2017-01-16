@@ -6,27 +6,26 @@ from .small_classes import DictOfLists
 from .small_scripts import unitstr, mag
 
 
-def senss_table(data, showvars=(), title="Sensitivities", minval=1e-2,
-                **kwargs):
+def senss_table(data, showvars=(), title="Sensitivities", **kwargs):
     "Returns sensitivity table lines"
     if "constants" in data.get("sensitivities", {}):
         data = data["sensitivities"]["constants"]
     if showvars:
         data = {k: data[k] for k in showvars if k in data}
-    return results_table(data, title, minval=minval, sortbyvals=True,
+    return results_table(data, title, sortbyvals=True,
                          valfmt="%+-.2g ", vecfmt="%+-8.2g",
                          printunits=False, **kwargs)
 
 
-def topsenss_table(data, showvars, topN=5, **kwargs):
+def topsenss_table(data, showvars, nvars=5, **kwargs):
     "Returns top sensitivity table lines"
-    data, filtered = topsenss_filter(data, showvars, topN)
+    data, filtered = topsenss_filter(data, showvars, nvars)
     title = "Most Sensitive" if not filtered else "Next Largest Sensitivities"
-    return senss_table(data, (), title, 0, **kwargs)
+    return senss_table(data, title=title, **kwargs)
 
 
-def topsenss_filter(data, showvars, topN=5):
-    "Filters sensitivities down to top N"
+def topsenss_filter(data, showvars, nvars=5):
+    "Filters sensitivities down to top N vars"
     if "constants" in data.get("sensitivities", {}):
         data = data["sensitivities"]["constants"]
     mean_abs_senss = {k: np.abs(s).mean() for k, s in data.items()
@@ -35,9 +34,9 @@ def topsenss_filter(data, showvars, topN=5):
     filter_already_shown = showvars.intersection(topk)
     for k in filter_already_shown:
         topk.remove(k)
-        if topN > 3:  # always show at least 3
-            topN -= 1
-    return {k: data[k] for k in topk[-topN:]}, filter_already_shown
+        if nvars > 3:  # always show at least 3
+            nvars -= 1
+    return {k: data[k] for k in topk[-nvars:]}, filter_already_shown
 
 
 def insenss_table(data, _, maxval=0.1, **kwargs):
@@ -45,7 +44,7 @@ def insenss_table(data, _, maxval=0.1, **kwargs):
     if "constants" in data.get("sensitivities", {}):
         data = data["sensitivities"]["constants"]
     data = {k: s for k, s in data.items() if np.mean(np.abs(s)) < maxval}
-    return senss_table(data, (), "Insensitive Fixed Variables", 0, **kwargs)
+    return senss_table(data, title="Insensitive Fixed Variables", **kwargs)
 
 TABLEFNS = {"sensitivities": senss_table,
             "topsensitivities": topsenss_table,
@@ -123,17 +122,17 @@ class SolutionArray(DictOfLists):
                 showvars_out.update(keys)
         return showvars_out
 
-    def summary(self, showvars=()):
+    def summary(self, showvars=(), ntopsenss=5):
         "Print summary table, showing top sensitivities and no constants"
         showvars = self._parse_showvars(showvars)
         out = self.table(showvars, ["cost", "sweepvariables", "freevariables"])
         constants_in_showvars = showvars.intersection(self["constants"])
         senss_tables = []
-        if len(self["constants"]) < 7 or constants_in_showvars:
+        if len(self["constants"]) < ntopsenss+2 or constants_in_showvars:
             senss_tables.append("sensitivities")
-        if len(self["constants"]) >= 7:  # 2 more than the default topN
+        if len(self["constants"]) >= ntopsenss+2:
             senss_tables.append("topsensitivities")
-        senss_str = self.table(showvars, senss_tables)
+        senss_str = self.table(showvars, senss_tables, nvars=ntopsenss)
         if senss_str:
             out += "\n" + senss_str
         return out
@@ -216,7 +215,7 @@ class SolutionArray(DictOfLists):
 def results_table(data, title, minval=0, printunits=True, fixedcols=True,
                   varfmt="%s : ", valfmt="%-.4g ", vecfmt="%-8.3g",
                   included_models=None, excluded_models=None, latex=False,
-                  sortbyvals=False):
+                  sortbyvals=False, **_):  # **_ catches unused tablefn args
     """
     Pretty string representation of a dict of VarKeys
     Iterable values are handled specially (partial printing)

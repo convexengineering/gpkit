@@ -96,32 +96,32 @@ def modelinteract(model, fns_of_sol, ranges=None, **solvekwargs):
 
 
 # pylint: disable=too-many-locals
-def modelcontrolpanel(model, ranges=None, fns_of_sol=None, **solvekwargs):
+def modelcontrolpanel(model, showvars=None, fns_of_sol=None, **solvekwargs):
     """Easy model control in IPython / Jupyter
 
-    Like interact(), but with the ability to control sliders and their ranges
+    Like interact(), but with the ability to control sliders and their showvars
     live. args and kwargs are passed on to interact()
     """
 
     freevars = set(model.varkeys).difference(model.substitutions)
-    freev_in_ranges = False
-    for var in ranges:
+    freev_in_showvars = False
+    for var in showvars:
         if var in model.varkeys and freevars.intersection(model.varkeys[var]):
-            freev_in_ranges = True
+            freev_in_showvars = True
             break
 
     if fns_of_sol is None:
         def __defaultfn(solution):
             "Display function to run when a slider is moved."
-            # NOTE: if there are some freevariables in ranges, filter
+            # NOTE: if there are some freevariables in showvars, filter
             #       the table to show only those and the slider constants
-            print solution.summary(ranges if freev_in_ranges else ())
+            print solution.summary(showvars if freev_in_showvars else ())
 
         __defaultfntable = __defaultfn
 
         fns_of_sol = [__defaultfntable]
 
-    sliders = model.interact(fns_of_sol, ranges, **solvekwargs)
+    sliders = model.interact(fns_of_sol, showvars, **solvekwargs)
     sliderboxes = []
     for sl in sliders.children:
         cb = widgets.Checkbox(value=True, width="3ex")
