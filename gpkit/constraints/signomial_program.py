@@ -48,6 +48,9 @@ class SignomialProgram(CostedConstraintSet):
     (z >= s) and then minimizing that dummy variable.""")
         CostedConstraintSet.__init__(self, cost, constraints, substitutions)
         try:
+            self.__add_externalfns_maybe()
+            if self.externalfn_vars:  # not a GP! Skip to the `except`
+                raise InvalidGPConstraint("some variables have externalfns")
             _ = self.as_posyslt1(substitutions)  # should raise an error
             # TODO: is there a faster way to check?
         except InvalidGPConstraint:
@@ -138,7 +141,7 @@ class SignomialProgram(CostedConstraintSet):
         x0 = KeyDict(x0) if x0 is not None else KeyDict()
         for key in self.varkeys:
             if key in x0:
-                pass  # already specified by input dict
+                continue  # already specified by input dict
             elif key in self.substitutions:
                 x0[key] = self.substitutions[key]
             elif key.sp_init:
@@ -150,7 +153,20 @@ class SignomialProgram(CostedConstraintSet):
     def gp(self, x0=None, verbosity=1):
         "The GP approximation of this SP at x0."
         x0 = self._fill_x0(x0)
-        gp = GeometricProgram(self.cost, self.as_gpconstr(x0),
+        gp_constrs = self.as_gpconstr(x0, self.substitutions)
+        self.__add_externalfns_maybe()
+        if self.externalfn_vars:
+            gp_constrs.extend([v.key.externalfn(v, x0)
+                               for v in self.externalfn_vars])
+        gp = GeometricProgram(self.cost, gp_constrs,
                               self.substitutions, verbosity=verbosity)
         gp.x0 = x0  # NOTE: SIDE EFFECTS
         return gp
+
+    def __add_externalfns_maybe(self):
+        "If this hasn't already been done, look for vars with externalfns"
+        if not hasattr(self, "externalfn_vars"):
+            self.externalfn_vars = frozenset(Variable(newvariable=False,
+                                                      **v.descr)
+                                             for v in self.varkeys
+                                             if v.externalfn)

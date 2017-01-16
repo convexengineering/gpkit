@@ -43,7 +43,15 @@ class KeyDict(dict):
         # pylint: disable=super-init-not-called
         self.varkeys = None
         self.keymap = defaultdict(set)
+        self._unmapped_keys = set()
         self.update(*args, **kwargs)
+
+    def get(self, key, alternative=KeyError):
+        if key not in self:
+            if alternative is KeyError:
+                raise alternative(key)
+            return alternative
+        return self[key]
 
     def update(self, *args, **kwargs):
         "Iterates through the dictionary created by args and kwargs"
@@ -59,26 +67,24 @@ class KeyDict(dict):
         "Returns key if key had one, and veckey/idx for indexed veckeys."
         if hasattr(key, "key"):
             key = key.key
-        else:
-            if self.varkeys:
-                if key in self.varkeys:
-                    keys = self.varkeys[key]
-                    key = next(iter(keys))
-                    if key.veckey:
-                        key = key.veckey
-                    elif len(keys) > 1:
-                        raise ValueError("substitution key '%s' was ambiguous;"
-                                         " .variables_byname('%s') will show"
-                                         " which variables it may refer to."
-                                         % (key, key))
-                else:
-                    raise KeyError("key '%s' does not refer to any varkey in"
-                                   " this ConstraintSet" % key)
-        idx = None
-        if self.collapse_arrays:
-            idx = getattr(key, "idx", None)
-            if idx:
+        elif not self.varkeys:
+            self.update_keymap()
+        elif key in self.varkeys:
+            keys = self.varkeys[key]
+            key = next(iter(keys))
+            if key.veckey:  # presume all keys are part of that vector
                 key = key.veckey
+            elif len(keys) > 1:
+                raise ValueError("substitution key '%s' was ambiguous;"
+                                 " .variables_byname('%s') will show which"
+                                 " variables it may refer to." % (key, key))
+        else:
+            raise KeyError(key)
+        idx = getattr(key, "idx", None)
+        if not self.collapse_arrays:
+            idx = None
+        elif idx:
+            key = key.veckey
         return key, idx
 
     def __contains__(self, key):
@@ -104,7 +110,7 @@ class KeyDict(dict):
         keys = self.keymap[key]
         if not keys:
             del self.keymap[key]  # remove blank entry added due to defaultdict
-            raise KeyError("%s was not found." % key)
+            raise KeyError(key)
         values = []
         for key in keys:
             got = dict.__getitem__(self, key)
@@ -121,9 +127,8 @@ class KeyDict(dict):
         key, idx = self.parse_and_index(key)
         if key not in self.keymap:
             self.keymap[key].add(key)
-            if hasattr(key, "keys") and self.keymapping:
-                for mapkey in key.keys:
-                    self.keymap[mapkey].add(key)
+            if hasattr(key, "keys"):
+                self._unmapped_keys.add(key)
             if idx:
                 number_array = isinstance(value, Numbers)
                 kwargs = {} if number_array else {"dtype": "object"}
@@ -149,6 +154,13 @@ class KeyDict(dict):
                         continue
                 dict.__setitem__(self, key, value)
 
+    def update_keymap(self):
+        "Updates the keymap with the keys in _unmapped_keys"
+        while self.keymapping and self._unmapped_keys:
+            key = self._unmapped_keys.pop()
+            for mapkey in key.keys:
+                self.keymap[mapkey].add(key)
+
     def __delitem__(self, key):
         "Overloads del [] to work with all keys"
         key, idx = self.parse_and_index(key)
@@ -167,9 +179,10 @@ class KeyDict(dict):
                 if self.keymapping and hasattr(key, "keys"):
                     mapkeys.update(key.keys)
                 for mappedkey in mapkeys:
-                    self.keymap[mappedkey].remove(key)
-                    if not self.keymap[mappedkey]:
-                        del self.keymap[mappedkey]
+                    if mappedkey in self.keymap:
+                        self.keymap[mappedkey].remove(key)
+                        if not self.keymap[mappedkey]:
+                            del self.keymap[mappedkey]
 
 
 class KeySet(KeyDict):
@@ -197,8 +210,3 @@ class KeySet(KeyDict):
     def __setitem__(self, key, value):
         "Assigns the key itself every time."
         KeyDict.__setitem__(self, key, None)
-
-
-class FastKeyDict(KeyDict):
-    "KeyDicts that don't map keys, only collapse arrays"
-    keymapping = False

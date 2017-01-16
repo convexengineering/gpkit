@@ -12,4 +12,4 @@ export PYTHONPATH=$PYTHONPATH:$WORKSPACE/gpkit/
 
 python $PYLINT --rcfile=$WORKSPACE/.pylintrc --disable=fixme $@ $WORKSPACE/gpkit/
 
-python $PYLINT --rcfile=$WORKSPACE/.pylintrc --disable=attribute-defined-outside-init,invalid-name,too-many-locals,redefined-outer-name,wrong-import-position $@ $WORKSPACE/docs/source/examples/*.py
+python $PYLINT --rcfile=$WORKSPACE/.pylintrc --disable=no-member,not-callable,attribute-defined-outside-init,invalid-name,too-many-locals,redefined-outer-name,wrong-import-position $@ $WORKSPACE/docs/source/examples/*.py

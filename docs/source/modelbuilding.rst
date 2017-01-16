@@ -54,4 +54,6 @@ This means that when an aircraft is being optimized for a mission, you can creat
 
 .. literalinclude:: examples/performance_modeling.py
 
+Note that the output table can be filtered with a list of variables to show.
+
 .. literalinclude:: examples/performance_modeling_output.txt

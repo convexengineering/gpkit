@@ -14,6 +14,14 @@ from .. import DimensionalityError
 from ..exceptions import InvalidGPConstraint
 
 
+def non_dimensionalize(posy):
+    "Non-dimensionalize a posy (warning: mutates posy)"
+    if posy.units:
+        posy.convert_to('dimensionless')
+        posy.cs = posy.cs.magnitude
+        posy.units = None
+
+
 class Signomial(Nomial):
     """A representation of a Signomial.
 
@@ -479,15 +487,12 @@ class PosynomialInequality(ScalarSingleEquationConstraint):
         "Returns the unsubstituted posys <= 1."
         p = self.p_lt / self.m_gt
 
-        if isinstance(p.cs, Quantity):
-            try:
-                p.convert_to('dimensionless')
-                p.cs = p.cs.magnitude
-                p.units = None
-            except DimensionalityError:
-                raise ValueError("unit mismatch: units of %s cannot "
-                                 "be converted to units of %s" %
-                                 (self.p_lt, self.m_gt))
+        try:
+            non_dimensionalize(p)
+        except DimensionalityError:
+            raise ValueError("unit mismatch: units of %s cannot "
+                             "be converted to units of %s" %
+                             (self.p_lt, self.m_gt))
 
         p.exps, p.cs = self._simplify_posy_ineq(p.exps, p.cs)
         return [p]
@@ -556,7 +561,7 @@ class PosynomialInequality(ScalarSingleEquationConstraint):
         return var_senss
 
     # pylint: disable=unused-argument
-    def as_gpconstr(self, x0):
+    def as_gpconstr(self, x0, substitutions):
         "GP version of a Posynomial constraint is itself"
         return self
 
@@ -580,18 +585,13 @@ class MonomialEquality(PosynomialInequality):
     def _gen_unsubbed(self):
         "Returns the unsubstituted posys <= 1."
         l_lt_r, r_lt_l = self.left/self.right, self.right/self.left
-        if l_lt_r.units:
-            try:
-                l_lt_r.convert_to('dimensionless')
-                l_lt_r.cs = l_lt_r.cs.magnitude
-                l_lt_r.units = None
-                r_lt_l.convert_to('dimensionless')
-                r_lt_l.cs = r_lt_l.cs.magnitude
-                r_lt_l.units = None
-            except DimensionalityError:
-                raise ValueError("unit mismatch: units of %s cannot "
-                                 "be converted to units of %s" %
-                                 (self.left, self.right))
+        try:
+            non_dimensionalize(l_lt_r)
+            non_dimensionalize(l_lt_r)
+        except DimensionalityError:
+            raise ValueError("unit mismatch: units of %s cannot "
+                             "be converted to units of %s" %
+                             (self.left, self.right))
         return [l_lt_r, r_lt_l]
 
     def __nonzero__(self):
@@ -673,9 +673,15 @@ class SignomialInequality(ScalarSingleEquationConstraint):
                                       " `.localsolve` instead of `.solve` to"
                                       " form your Model as a SignomialProgram")
 
-    def as_gpconstr(self, x0):
+    def as_gpconstr(self, x0, substitutions=None):
         "Returns GP approximation of an SP constraint at x0"
         siglt0, = self.unsubbed
+        if substitutions:
+            # check if it's a posynomial constraint after substitutions
+            subsiglt0 = siglt0.sub(substitutions, require_positive=False)
+            _, subnegy = subsiglt0.posy_negy()
+            if not hasattr(subnegy, "cs") or len(subnegy.cs) == 1:
+                return self
         posy, negy = siglt0.posy_negy()
         # assume unspecified negy variables have a value of 1.0
         x0.update({vk: 1.0 for vk in negy.varlocs if vk not in x0})
@@ -699,8 +705,9 @@ class SingleSignomialEquality(SignomialInequality):
                                   "`.localsolve` instead of `.solve` to"
                                   " form your Model as a SignomialProgram")
 
-    def as_gpconstr(self, x0):
+    def as_gpconstr(self, x0, substitutions=None):
         "Returns GP approximation of an SP constraint at x0"
+        # todo deal with substitutions
         siglt0, = self.unsubbed
         posy, negy = siglt0.posy_negy()
         # assume unspecified variables have a value of 1.0

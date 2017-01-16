@@ -1,4 +1,5 @@
 "Implements Model"
+import numpy as np
 from .costed import CostedConstraintSet
 from ..nomials import Monomial
 from .prog_factories import _progify_fctry, _solve_fctry
@@ -8,7 +9,9 @@ from .linked import LinkedConstraintSet
 from ..small_scripts import mag
 from ..keydict import KeyDict
 from ..varkey import VarKey
+from ..tools.autosweep import autosweep_1d
 from .. import NamedVariables, SignomialsEnabled
+from ..exceptions import InvalidGPConstraint
 
 
 class Model(CostedConstraintSet):
@@ -73,7 +76,7 @@ class Model(CostedConstraintSet):
         if setup_vars:
             # add all the vars created in .setup to the Model's varkeys
             # even if they aren't used in any constraints
-            self.unused_variables = setup_vars
+            self.unique_varkeys = frozenset(v.key for v in setup_vars)
             self.reset_varkeys()
         # for backwards compatibility keep add_modelnames
         # TODO: remove with linking
@@ -133,8 +136,41 @@ class Model(CostedConstraintSet):
         with SignomialsEnabled():  # since we're just substituting varkeys.
             self.subinplace(add_model_subs)
 
-    # pylint: disable=too-many-locals
-    def debug(self, verbosity=1, **solveargs):
+    def sweep(self, sweeps, **solveargs):
+        "Sweeps {var: values} pairs in sweeps. Returns swept solutions."
+        sols = []
+        for sweepvar, sweepvals in sweeps.items():
+            original_val = self.substitutions.get(sweepvar, None)
+            self.substitutions.update({sweepvar: ('sweep', sweepvals)})
+            try:
+                sols.append(self.solve(**solveargs))
+            except InvalidGPConstraint:
+                sols.append(self.localsolve(**solveargs))
+            if original_val:
+                self.substitutions[sweepvar] = original_val
+            else:
+                del self.substitutions[sweepvar]
+        if len(sols) == 1:
+            return sols[0]
+        return sols
+
+    def autosweep(self, sweeps, tol=0.01, samplepoints=100, **solveargs):
+        """Autosweeps {var: (start, end)} pairs in sweeps to tol.
+
+        Returns swept and sampled solutions.
+        The original simplex tree can be accessed at sol.bst
+        """
+        sols = []
+        for sweepvar, sweepvals in sweeps.items():
+            start, end = sweepvals
+            bst = autosweep_1d(self, tol, sweepvar, [start, end], **solveargs)
+            sols.append(bst.sample_at(np.linspace(start, end, samplepoints)))
+        if len(sols) == 1:
+            return sols[0]
+        return sols
+
+    # pylint: disable=too-many-locals,too-many-branches,too-many-statements
+    def debug(self, solver=None, verbosity=1, **solveargs):
         "Attempts to diagnose infeasible models."
         from .relax import ConstantsRelaxed, ConstraintsRelaxed
         from .bounded import Bounded
@@ -142,8 +178,10 @@ class Model(CostedConstraintSet):
         sol = None
         relaxedconsts = False
 
-        print "Debugging..."
-        print "_____________________"
+        solveargs["solver"] = solver
+        solveargs["verbosity"] = verbosity
+
+        print "> Trying to solve with bounded variables and relaxed constants"
 
         if self.substitutions:
             constsrelaxed = ConstantsRelaxed(Bounded(self))
@@ -155,7 +193,10 @@ class Model(CostedConstraintSet):
             feas = Model(self.cost, Bounded(self))
 
         try:
-            sol = feas.solve(verbosity=verbosity, **solveargs)
+            try:
+                sol = feas.solve(**solveargs)
+            except InvalidGPConstraint:
+                sol = feas.localsolve(**solveargs)
 
             if self.substitutions:
                 for orig in (o for o, r in zip(constsrelaxed.origvars,
@@ -170,16 +211,20 @@ class Model(CostedConstraintSet):
                     print("  %s: relaxed from %-.4g to %-.4g"
                           % (orig, mag(self.substitutions[orig]),
                              mag(sol(orig))))
+            print "> ...success!"
         except (ValueError, RuntimeWarning):
-            print("\nModel does not solve with bounded variables"
+            print("> ...does not solve with bounded variables"
                   " and relaxed constants.")
-        print "_____________________"
+        print "\n> Trying to solve with relaxed constraints"
 
         try:
             constrsrelaxed = ConstraintsRelaxed(self)
             feas = Model(constrsrelaxed.relaxvars.prod()**30 * self.cost,
                          constrsrelaxed)
-            sol_constraints = feas.solve(verbosity=verbosity, **solveargs)
+            try:
+                sol_constraints = feas.solve(**solveargs)
+            except InvalidGPConstraint:
+                sol_constraints = feas.localsolve(**solveargs)
 
             relaxvals = sol_constraints(constrsrelaxed.relaxvars)
             if any(rv >= 1.01 for rv in relaxvals):
@@ -196,9 +241,8 @@ class Model(CostedConstraintSet):
                     relax_percent = "%i%%" % (0.5+(relaxval-1)*100)
                     print("  %i: %4s relaxed  Canonical form: %s <= %.2f)"
                           % (i, relax_percent, constraint.right, relaxval))
-
+            print "> ...success!"
         except (ValueError, RuntimeWarning):
-            print("\nModel does not solve with relaxed constraints.")
+            print("> ...does not solve with relaxed constraints.")
 
-        print "_____________________"
         return sol

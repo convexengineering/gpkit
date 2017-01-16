@@ -1,18 +1,6 @@
 """Defines the VarKey class"""
-from .small_classes import Strings, Quantity
+from .small_classes import Strings, Quantity, Count
 from .small_scripts import unitstr, veckeyed
-
-
-class Count(object):
-    "Like python 2's itertools.count, for Python 3 compatibility."
-
-    def __init__(self):
-        self.count = -1
-
-    def next(self):
-        "Increment self.count and return it"
-        self.count += 1
-        return self.count
 
 
 class VarKey(object):
@@ -77,11 +65,13 @@ class VarKey(object):
         self._hashvalue = hash(selfstr)
         self.key = self
         self.keys = set([self.name, selfstr,
-                         self.str_without("models")])
+                         self.str_without(["modelnums"])])
 
         if "idx" in self.descr:
             self.veckey = veckeyed(self)
             self.keys.add(self.veckey)
+            self.keys.add(self.str_without(["idx"]))
+            self.keys.add(self.str_without(["idx", "modelnums"]))
 
     def __repr__(self):
         return self.str_without()
@@ -95,12 +85,20 @@ class VarKey(object):
             if self.descr.get(subscript) and subscript not in excluded:
                 substring = self.descr[subscript]
                 if subscript == "models":
+                    if self.modelnums and "modelnums" not in excluded:
+                        substring = ["%s.%s" % (ss, mn) if mn > 0 else ss
+                                     for ss, mn
+                                     in zip(substring, self.modelnums)]
                     substring = ", ".join(substring)
                 string += "_%s" % (substring,)
         return string
 
     def __getattr__(self, attr):
         return self.descr.get(attr, None)
+
+    def unitstr(self, dimless=""):
+        "Returns string representation of units"
+        return unitstr(self, into=" [%s] ", dimless=dimless)
 
     def latex_unitstr(self):
         "Returns latex unitstr"
@@ -117,6 +115,10 @@ class VarKey(object):
             if subscript in self.descr and subscript not in excluded:
                 substring = self.descr[subscript]
                 if subscript == "models":
+                    if self.modelnums and "modelnums" not in excluded:
+                        substring = ["%s.%s" % (ss, mn) if mn > 0 else ss
+                                     for ss, mn
+                                     in zip(substring, self.modelnums)]
                     substring = ", ".join(substring)
                 string = "{%s}_{%s}" % (string, substring)
                 if subscript == "idx":

@@ -9,13 +9,8 @@ A : 1.293                             [m**2] Surface Area of the Tank
 V : 0.1                               [m**3] Volume of the Tank
 d : [ 0.464     0.464     0.464    ]  [m]    Dimension Vector
 
-Constants
----------
-   M : 100   [kg]      Mass of Water in the Tank
-\rho : 1000  [kg/m**3] Density of Water in the Tank
-
 Sensitivities
 -------------
-   M : 0.6667  Mass of Water in the Tank
-\rho : -0.6667 Density of Water in the Tank
+   M : +0.67 Mass of Water in the Tank
+\rho : -0.67 Density of Water in the Tank
 

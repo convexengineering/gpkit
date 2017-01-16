@@ -6,6 +6,52 @@ from .small_classes import DictOfLists
 from .small_scripts import unitstr, mag
 
 
+def senss_table(data, showvars=(), title="Sensitivities", **kwargs):
+    "Returns sensitivity table lines"
+    if "constants" in data.get("sensitivities", {}):
+        data = data["sensitivities"]["constants"]
+    if showvars:
+        data = {k: data[k] for k in showvars if k in data}
+    return results_table(data, title, sortbyvals=True,
+                         valfmt="%+-.2g ", vecfmt="%+-8.2g",
+                         printunits=False, **kwargs)
+
+
+def topsenss_table(data, showvars, nvars=5, **kwargs):
+    "Returns top sensitivity table lines"
+    data, filtered = topsenss_filter(data, showvars, nvars)
+    title = "Most Sensitive" if not filtered else "Next Largest Sensitivities"
+    return senss_table(data, title=title, **kwargs)
+
+
+def topsenss_filter(data, showvars, nvars=5):
+    "Filters sensitivities down to top N vars"
+    if "constants" in data.get("sensitivities", {}):
+        data = data["sensitivities"]["constants"]
+    mean_abs_senss = {k: np.abs(s).mean() for k, s in data.items()
+                      if not np.isnan(s).any()}
+    topk = [k for k, _ in sorted(mean_abs_senss.items(), key=lambda l: l[1])]
+    filter_already_shown = showvars.intersection(topk)
+    for k in filter_already_shown:
+        topk.remove(k)
+        if nvars > 3:  # always show at least 3
+            nvars -= 1
+    return {k: data[k] for k in topk[-nvars:]}, filter_already_shown
+
+
+def insenss_table(data, _, maxval=0.1, **kwargs):
+    "Returns insensitivity table lines"
+    if "constants" in data.get("sensitivities", {}):
+        data = data["sensitivities"]["constants"]
+    data = {k: s for k, s in data.items() if np.mean(np.abs(s)) < maxval}
+    return senss_table(data, title="Insensitive Fixed Variables", **kwargs)
+
+TABLEFNS = {"sensitivities": senss_table,
+            "topsensitivities": topsenss_table,
+            "insensitivities": insenss_table,
+           }
+
+
 class SolutionArray(DictOfLists):
     """A dictionary (of dictionaries) of lists, with convenience methods.
 
@@ -38,12 +84,10 @@ class SolutionArray(DictOfLists):
     >>> assert all(np.array(senss) == 1)
     """
     program = None
-    table_titles = {"cost": "Cost",
-                    "sweepvariables": "Sweep Variables",
+    table_titles = {"sweepvariables": "Sweep Variables",
                     "freevariables": "Free Variables",
                     "constants": "Constants",
-                    "variables": "Variables",
-                    "sensitivities": "Sensitivities"}
+                    "variables": "Variables"}
 
     def __len__(self):
         try:
@@ -69,9 +113,33 @@ class SolutionArray(DictOfLists):
         else:
             return posy.sub(self["variables"])
 
-    def table(self, tables=("cost", "sweepvariables", "freevariables",
-                            "constants", "sensitivities"),
-              latex=False, **kwargs):
+    def _parse_showvars(self, showvars):
+        showvars_out = set()
+        if showvars:
+            for k in showvars:
+                k, _ = self["variables"].parse_and_index(k)
+                keys = self["variables"].keymap[k]
+                showvars_out.update(keys)
+        return showvars_out
+
+    def summary(self, showvars=(), ntopsenss=5):
+        "Print summary table, showing top sensitivities and no constants"
+        showvars = self._parse_showvars(showvars)
+        out = self.table(showvars, ["cost", "sweepvariables", "freevariables"])
+        constants_in_showvars = showvars.intersection(self["constants"])
+        senss_tables = []
+        if len(self["constants"]) < ntopsenss+2 or constants_in_showvars:
+            senss_tables.append("sensitivities")
+        if len(self["constants"]) >= ntopsenss+2:
+            senss_tables.append("topsensitivities")
+        senss_str = self.table(showvars, senss_tables, nvars=ntopsenss)
+        if senss_str:
+            out += "\n" + senss_str
+        return out
+
+    def table(self, showvars=(),
+              tables=("cost", "sweepvariables", "freevariables",
+                      "constants", "sensitivities"), **kwargs):
         """A table representation of this SolutionArray
 
         Arguments
@@ -91,39 +159,32 @@ class SolutionArray(DictOfLists):
         -------
         str
         """
+        showvars = self._parse_showvars(showvars)
         strs = []
         for table in tables:
-            subdict = self.get(table, None)
-            table_title = self.table_titles[table]
             if table == "cost":
+                cost = self["cost"]
                 # pylint: disable=unsubscriptable-object
-                if latex:
+                if kwargs.get("latex", None):
                     # TODO should probably print a small latex cost table here
                     continue
-                strs += ["\n%s\n----" % table_title]
+                strs += ["\n%s\n----" % "Cost"]
                 if len(self) > 1:
-                    costs = ["%-8.3g" % c for c in mag(subdict[:4])]
+                    costs = ["%-8.3g" % c for c in mag(cost[:4])]
                     strs += [" [ %s %s ]" % ("  ".join(costs),
                                              "..." if len(self) > 4 else "")]
                 else:
-                    strs += [" %-.4g" % mag(subdict)]
-                strs[-1] += unitstr(subdict, into=" [%s] ", dimless="")
+                    strs += [" %-.4g" % mag(cost)]
+                strs[-1] += unitstr(cost, into=" [%s] ", dimless="")
                 strs += [""]
-            elif not subdict:
-                continue
-            elif table == "sensitivities":
-                if not subdict["constants"]:
-                    continue
-                strs += results_table(subdict["constants"], table_title,
-                                      minval=1e-2,
-                                      sortbyvals=True,
-                                      printunits=False,
-                                      latex=latex,
-                                      **kwargs)
-            else:
-                strs += results_table(subdict, table_title,
-                                      latex=latex, **kwargs)
-        if latex:
+            elif table in TABLEFNS:
+                strs += TABLEFNS[table](self, showvars, **kwargs)
+            elif table in self:
+                data = self[table]
+                if showvars:
+                    data = {k: data[k] for k in showvars if k in data}
+                strs += results_table(data, self.table_titles[table], **kwargs)
+        if kwargs.get("latex", None):
             preamble = "\n".join(("% \\documentclass[12pt]{article}",
                                   "% \\usepackage{booktabs}",
                                   "% \\usepackage{longtable}",
@@ -132,13 +193,29 @@ class SolutionArray(DictOfLists):
             strs = [preamble] + strs + ["% \\end{document}"]
         return "\n".join(strs)
 
+    def plot(self, posys=None, axes=None):
+        "Plots a sweep for each posy"
+        if len(self["sweepvariables"]) != 1:
+            print "SolutionArray.plot only supports 1-dimensional sweeps"
+        import matplotlib.pyplot as plt
+        from .interactive.plot_sweep import assign_axes
+        from . import GPBLU
+        (swept, x), = self["sweepvariables"].items()
+        posys, axes = assign_axes(swept, posys, axes)
+        for posy, ax in zip(posys, axes):
+            y = self(posy) if posy not in [None, "cost"] else self["cost"]
+            ax.plot(x, y, color=GPBLU)
+        if len(axes) == 1:
+            axes, = axes
+        return plt.gcf(), axes
+
 
 # pylint: disable=too-many-statements,too-many-arguments
 # pylint: disable=too-many-branches,too-many-locals
 def results_table(data, title, minval=0, printunits=True, fixedcols=True,
                   varfmt="%s : ", valfmt="%-.4g ", vecfmt="%-8.3g",
                   included_models=None, excluded_models=None, latex=False,
-                  sortbyvals=False):
+                  sortbyvals=False, **_):  # **_ catches unused tablefn args
     """
     Pretty string representation of a dict of VarKeys
     Iterable values are handled specially (partial printing)
@@ -168,6 +245,8 @@ def results_table(data, title, minval=0, printunits=True, fixedcols=True,
     sortbyvals : boolean
         If true, rows are sorted by their average value instead of by name.
     """
+    if not data:
+        return []
     from . import units
     if not units:
         # disable units printing
@@ -189,15 +268,16 @@ def results_table(data, title, minval=0, printunits=True, fixedcols=True,
             s = k.str_without("models")
             if not sortbyvals:
                 decorated.append((model, b, (varfmt % s), i, k, v))
-            else:
-                decorated.append((model, np.mean(v), b, (varfmt % s), i, k, v))
+            else:  # for consistent sorting, add small offset to negative vals
+                val = np.mean(np.abs(v)) - (1e-9 if np.mean(v) < 0 else 0)
+                decorated.append((model, -val, b, (varfmt % s), i, k, v))
     if included_models:
         included_models = set(included_models)
         included_models.add("")
         models = models.intersection(included_models)
     if excluded_models:
         models = models.difference(excluded_models)
-    decorated.sort(reverse=sortbyvals)
+    decorated.sort()
     oldmodel = None
     for varlist in decorated:
         if not sortbyvals:
@@ -217,7 +297,7 @@ def results_table(data, title, minval=0, printunits=True, fixedcols=True,
                                   model + r"}} \\"])
             oldmodel = model
         label = var.descr.get('label', '')
-        units = unitstr(var, into=" [%s] ", dimless="") if printunits else ""
+        units = var.unitstr() if printunits else ""
         if isvector:
             vals = [vecfmt % v for v in mag(val).flatten()[:4]]
             ellipsis = " ..." if len(val) > 4 else ""

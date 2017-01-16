@@ -1,8 +1,12 @@
-Debugging...
-_____________________
+> Trying to solve with bounded variables and relaxed constants
 
-Model does not solve with bounded variables and relaxed constants.
-_____________________
+Solves with these variables bounded:
+   value near upper bound: [y]
+ sensitive to upper bound: [y]
 
-Model does not solve with relaxed constraints.
-_____________________
+and these constants relaxed:
+  x_min [ft]: relaxed from 2 to 1
+> ...success!
+
+> Trying to solve with relaxed constraints
+> ...does not solve with relaxed constraints.

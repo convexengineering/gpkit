@@ -33,6 +33,14 @@ class TestConstraint(unittest.TestCase):
         with self.assertRaises(ValueError):
             _ = Model(x, [v >= ["A", "B"]])
 
+    def test_evalfn(self):
+        x = Variable("x")
+        x2 = Variable("x^2", evalfn=lambda solv: solv[x]**2)
+        m = Model(x, [x >= 2])
+        m.unique_varkeys = set([x2.key])
+        sol = m.solve(verbosity=0)
+        self.assertAlmostEqual(sol(x2), sol(x)**2)
+
     def test_equality_relaxation(self):
         x = Variable("x")
         m = Model(x, [x == 3, x == 4])
@@ -71,7 +79,7 @@ class TestConstraint(unittest.TestCase):
         vecx_free = VectorVariable(3, "x", models=["free"])
         vecx_fixed = VectorVariable(3, "x", [1, 2, 3], models=["fixed"])
         lc = LinkedConstraintSet([vecx_free >= 1, vecx_fixed >= 1])
-        self.assertEqual(lc.substitutions["x"].tolist(), [1, 2, 3])
+        self.assertEqual(lc.substitutions["x_fixed"].tolist(), [1, 2, 3])
 
     def test_exclude_vector(self):
         x = VectorVariable(2, "x", [2, 1])

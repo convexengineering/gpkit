@@ -11,23 +11,9 @@ Free Variables
 \theta : [  -        0.177     0.285     0.341    ... ]        Slope
      w : [  -        0.106     0.384     0.759    ... ]  [m]   Displacement
 
-Constants
----------
-           EI : 1.1e+04                                         [N*m**2]
-            L : 6                                               [m]      Overall beam length
-      M_{tip} : 0                                               [N*m]    Tip moment
-      V_{tip} : 0                                               [N]      Tip loading
-\theta_{base} : 0                                                        Base angle
-     w_{base} : 0                                               [m]      Base deflection
-            M : [  -         -         -         -       ... ]  [N*m]    Internal moment
-            V : [  -         -         -         -       ... ]  [N]      Internal shear
-       \theta : [ 0          -         -         -       ... ]           Slope
-            q : [ 110       110       110       110      ... ]  [N/m]    Distributed load at each point
-            w : [ 0          -         -         -       ... ]  [m]      Displacement
-
-Sensitivities
--------------
- L : 4                                              Overall beam length
- q : [ 0.0072    0.0416    0.118     0.234    ... ] Distributed load at each point
+Most Sensitive
+--------------
+ L : +4                                             Overall beam length
 EI : -1
+ q : [ +0.0072   +0.042    +0.12     +0.23    ... ] Distributed load at each point
 

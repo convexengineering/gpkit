@@ -12,6 +12,29 @@ from gpkit.tests.helpers import run_tests
 class TestNomialSubs(unittest.TestCase):
     """Test substitution for nomial-family objects"""
 
+    def test_bad_subinplace(self):
+        x = Variable("x")
+        y = Variable("y")
+        z = Variable("z")
+        # good
+        m = Model(x*y, [x >= 1, y >= z], {z: 2})
+        m.subinplace({y: x})
+        self.assertAlmostEqual(m.solve(verbosity=0)["cost"], 4, 5)
+        # bad
+        m = Model(x, [y >= 1], {y: 2})
+        with self.assertRaises(ValueError):
+            m.subinplace({y: 3})
+
+    def test_bad_gp_sub(self):
+        x = Variable("x")
+        y = Variable("y")
+        m = Model(x, [y >= 1], {y: x})
+        with self.assertRaises(ValueError):
+            m.solve()
+        m = Model(x, [y >= 1])
+        m.subinplace({y: x})
+        self.assertAlmostEqual(m.solve(verbosity=0)["cost"], 1)
+
     def test_numeric(self):
         """Basic substitution of numeric value"""
         x = Variable("x")
@@ -209,14 +232,13 @@ class TestGPSubs(unittest.TestCase):
         m.substitutions.update({y: ('sweep', [[2, 3, 9], [5, 7, 11]])})
         self.assertRaises(ValueError, m.solve, verbosity=0)
 
-    def test_linked_sweep(self):
-        def night_hrs(day_hrs):
-            "twenty four minus day hours"
-            return 24 - day_hrs
-        t_day = Variable("t_{day}", "hours")
-        t_night = Variable("t_{night}", night_hrs, "hours", args=[t_day])
+    def test_calcconst(self):
         x = Variable("x", "hours")
+        t_day = Variable("t_{day}", 12, "hours")
+        t_night = Variable("t_{night}", lambda c: 24 - c[t_day], "hours")
         m = Model(x, [x >= t_day, x >= t_night])
+        sol = m.solve(verbosity=0)
+        self.assertAlmostEqual(sol(t_night)/gpkit.ureg.hours, 12)
         m.substitutions.update({t_day: ("sweep", [8, 12, 16])})
         sol = m.solve(verbosity=0)
         self.assertEqual(len(sol["cost"]), 3)

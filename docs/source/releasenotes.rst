@@ -3,6 +3,30 @@ Release Notes
 
 This page lists the changes made in each point version of gpkit.
 
+Version 0.5.2
+=============
+ * Added new ``sweep`` and ``autosweep`` methods to Model
+    * Added ``plot`` routines to the results of those routines to make it easy to plot a 1D sweep.
+ * Added new ``summary`` method to solution_array.
+    * It and table accept iterables of vars, will only print vars in that iterable (or, by default, all vars)
+ * Cleaned up and documented the ``interactive`` submodule
+    * removed contour and sensitivity plots
+    * added a 1D-sweep plotting function
+    * added that plotting function as an option within the control panel interface
+ * Overhauled and documented three types of variables whose value is determined by functions:
+    * calculated constants
+    * post-solve calculated variables
+    * between-GP-solves calculated variables (for Sequential Geometric Programs)
+ * Fix ``Bounded`` and implement ``debug()`` for SPs
+ * Apply ``subinplace`` to substitutions dictionary as well
+ * Require GP substitutions to be Numbers only
+ * Extend Bounded to one-sided bounds
+ * Print model's numbers by default, unless ``"modelnums" in exclude``
+ * Implement lazy keymapping, allowing GP/SP results to be KeyDicts
+ * Handle Signomial Inequalities that become Posynomial Inequalities after substitution
+ * Various documentation updates
+ * Various bug fixes
+
 Version 0.5.1
 =============
  * O(N) sums and monomial products

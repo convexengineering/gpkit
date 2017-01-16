@@ -3,8 +3,8 @@ import sys
 from time import time
 import numpy as np
 from ..nomials import NomialData
-from ..small_classes import CootMatrix, SolverLog
-from ..keydict import FastKeyDict
+from ..small_classes import CootMatrix, SolverLog, Numbers
+from ..keydict import KeyDict
 from ..small_scripts import mag
 from ..solution_array import SolutionArray
 from .costed import CostedConstraintSet
@@ -58,7 +58,12 @@ class GeometricProgram(CostedConstraintSet, NomialData):
             constraints = ConstraintSet(constraints)
         list.__init__(self, [constraints])  # pylint:disable=non-parent-init-called
         self.substitutions = substitutions if substitutions else {}
-
+        for key, sub in self.substitutions.items():
+            if not isinstance(sub, (Numbers, np.ndarray)):
+                raise ValueError("substitution {%s: %s} with value type %s is"
+                                 " not allowed in .substitutions; such"
+                                 " substitutions must be done by using"
+                                 " .subinplace()." % (key, sub, type(sub)))
         # sideways NomialData init to create self.exps, self.cs, etc
         self.posynomials = [cost.sub(self.substitutions)]
         self.posynomials.extend(self.as_posyslt1(self.substitutions))
@@ -242,8 +247,7 @@ class GeometricProgram(CostedConstraintSet, NomialData):
         nu, la = solver_out["nu"], solver_out["la"]
         # confirm lengths before calling zip
         assert len(self.varlocs) == len(primal)
-        result = {"freevariables": FastKeyDict(zip(self.varlocs,
-                                                   np.exp(primal)))}
+        result = {"freevariables": KeyDict(zip(self.varlocs, np.exp(primal)))}
 
         ## Get cost
         if "objective" in solver_out:
@@ -268,9 +272,9 @@ class GeometricProgram(CostedConstraintSet, NomialData):
                       if (var in self.cost.varlocs
                           and var not in self.posynomials[0].varlocs)}
 
-        result["sensitivities"]["constants"] = FastKeyDict(var_senss)
-        result["constants"] = FastKeyDict(self.substitutions)
-        result["variables"] = FastKeyDict(result["freevariables"])
+        result["sensitivities"]["constants"] = KeyDict(var_senss)
+        result["constants"] = KeyDict(self.substitutions)
+        result["variables"] = KeyDict(result["freevariables"])
         result["variables"].update(result["constants"])
         return SolutionArray(result)
 

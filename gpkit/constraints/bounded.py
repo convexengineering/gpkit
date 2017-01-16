@@ -26,8 +26,12 @@ def varkey_bounds(varkeys, lower, upper):
     for varkey in varkeys:
         variable = Variable(**varkey.descr)
         units = varkey.units if isinstance(varkey.units, Quantity) else 1
-        constraints.append([upper >= variable/units,
-                            variable/units >= lower])
+        constraint = []
+        if upper:
+            constraint.append(upper >= variable/units)
+        if lower:
+            constraint.append(variable/units >= lower)
+        constraints.append(constraint)
     return constraints
 
 
@@ -57,43 +61,57 @@ class Bounded(ConstraintSet):
         upper bound for all varkeys, replaces 1/eps
     """
 
-    def __init__(self, constraints, substitutions=None, verbosity=1,
+    def __init__(self, constraints, verbosity=1,
                  eps=1e-30, lower=None, upper=None):
         if not isinstance(constraints, ConstraintSet):
             constraints = ConstraintSet(constraints)
         self.bound_las = None
         self.verbosity = verbosity
-        self.lowerbound = lower if lower else eps
-        self.upperbound = upper if upper else 1/eps
+        not_using_eps = lower or upper
+        self.lowerbound = lower if not_using_eps else eps
+        self.upperbound = upper if not_using_eps else 1/eps
         self.bounded_varkeys = tuple(vk for vk in constraints.varkeys
                                      if vk not in constraints.substitutions)
         bounding_constraints = varkey_bounds(self.bounded_varkeys,
                                              self.lowerbound, self.upperbound)
-        super(Bounded, self).__init__([constraints, bounding_constraints],
-                                      substitutions)
+        super(Bounded, self).__init__([constraints, bounding_constraints])
 
     def sens_from_dual(self, las, nus):
         "Return sensitivities while capturing the relevant lambdas"
-        self.bound_las = las[-2*len(self.bounded_varkeys):]
+        n = bool(self.lowerbound) + bool(self.upperbound)
+        self.bound_las = las[-n*len(self.bounded_varkeys):]
         return super(Bounded, self).sens_from_dual(las, nus)
+
+    def as_gpconstr(self, x0, substitutions=None):
+        gp_constrs = ConstraintSet.as_gpconstr(self, x0, substitutions)
+        return Bounded(gp_constrs, self.verbosity,
+                       lower=self.lowerbound, upper=self.upperbound)
 
     def process_result(self, result):
         "Creates (and potentially prints) a dictionary of unbounded variables."
-        lam = self.bound_las
+        if not self.bound_las:
+            return  # must be an SP Bounded, boundedness was solved in the GP
         out = defaultdict(list)
         for i, varkey in enumerate(self.bounded_varkeys):
-            lam_gt, lam_lt = lam[2*i], lam[2*i+1]
-            if abs(lam_gt) >= 1e-7:  # arbitrary threshold
-                out["sensitive to upper bound"].append(varkey)
-            if abs(lam_lt) >= 1e-7:  # arbitrary threshold
-                out["sensitive to lower bound"].append(varkey)
             value = mag(result["variables"][varkey])
-            distance_below = np.log(value/self.lowerbound)
-            distance_above = np.log(self.upperbound/value)
-            if distance_below <= 3:  # arbitrary threshold
-                out["value near lower bound"].append(varkey)
-            elif distance_above <= 3:  # arbitrary threshold
-                out["value near upper bound"].append(varkey)
+            if self.lowerbound and self.upperbound:
+                lam_gt, lam_lt = self.bound_las[2*i], self.bound_las[2*i+1]
+            elif self.lowerbound:
+                lam_lt = self.bound_las[i]
+            elif self.upperbound:
+                lam_gt = self.bound_las[i]
+            if self.lowerbound:
+                if abs(lam_lt) >= 1e-7:  # arbitrary threshold
+                    out["sensitive to lower bound"].append(varkey)
+                distance_below = np.log(value/self.lowerbound)
+                if distance_below <= 3:  # arbitrary threshold
+                    out["value near lower bound"].append(varkey)
+            if self.upperbound:
+                if abs(lam_gt) >= 1e-7:  # arbitrary threshold
+                    out["sensitive to upper bound"].append(varkey)
+                distance_above = np.log(self.upperbound/value)
+                if distance_above <= 3:  # arbitrary threshold
+                    out["value near upper bound"].append(varkey)
         if self.verbosity > 0 and out:
             print
             print "Solves with these variables bounded:"
