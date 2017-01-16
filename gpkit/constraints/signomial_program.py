@@ -49,8 +49,8 @@ class SignomialProgram(CostedConstraintSet):
         CostedConstraintSet.__init__(self, cost, constraints, substitutions)
         try:
             self.__add_externalfns_maybe()
-            if self.externalfn_vars:
-                raise InvalidGPConstraint
+            if self.externalfn_vars:  # not a GP! Skip to the `except`
+                raise InvalidGPConstraint("some variables have externalfns")
             _ = self.as_posyslt1(substitutions)  # should raise an error
             # TODO: is there a faster way to check?
         except InvalidGPConstraint:
@@ -164,6 +164,7 @@ class SignomialProgram(CostedConstraintSet):
         return gp
 
     def __add_externalfns_maybe(self):
+        "If this hasn't already been done, look for vars with externalfns"
         if not hasattr(self, "externalfn_vars"):
             self.externalfn_vars = frozenset(Variable(newvariable=False,
                                                       **v.descr)
