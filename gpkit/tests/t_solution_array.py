@@ -15,7 +15,7 @@ class TestSolutionArray(unittest.TestCase):
         A = Variable('A', '-', 'Test Variable')
         prob = Model(A, [A >= 1])
         sol = prob.solve(verbosity=0)
-        self.assertAlmostEqual(sol(A), 1.0, 10)
+        self.assertAlmostEqual(sol(A), 1.0, 7)
 
     def test_call_units(self):
         # test from issue541

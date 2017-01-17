@@ -6,6 +6,7 @@ from .prog_factories import _progify_fctry, _solve_fctry
 from .geometric_program import GeometricProgram
 from .signomial_program import SignomialProgram
 from .linked import LinkedConstraintSet
+from .robust import Robust
 from ..small_scripts import mag
 from ..keydict import KeyDict
 from ..varkey import VarKey
@@ -88,6 +89,7 @@ class Model(CostedConstraintSet):
             self.num = MODELNUM_LOOKUP[self.name]
             MODELNUM_LOOKUP[self.name] += 1
             self._add_modelname_tovars(self.name, self.num)
+        self.robust = Robust.from_model(self)
 
     gp = _progify_fctry(GeometricProgram)
     sp = _progify_fctry(SignomialProgram)

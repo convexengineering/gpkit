@@ -54,6 +54,7 @@ class GeometricProgram(CostedConstraintSet, NomialData):
 
         # barebones ConstraintSet init
         self.cost = cost
+        self.robust = getattr(constraints, "robust", None)
         if not isinstance(constraints, ConstraintSet):
             constraints = ConstraintSet(constraints)
         list.__init__(self, [constraints])  # pylint:disable=non-parent-init-called
@@ -129,6 +130,15 @@ class GeometricProgram(CostedConstraintSet, NomialData):
                         "No solver was given; perhaps gpkit was not properly"
                         " installed, or found no solvers during the"
                         " installation process.")
+
+            if self.robust is not None and solver != "ecos":
+                from .. import settings
+                if "ecos" in settings.get("installed_solvers", {}):
+                    solver = "ecos"
+                    print "Solver changed to 'ecos' for robust GP."
+                else:
+                    raise ValueError("Solver 'ecos' not installed, cannot"
+                                     " solve robust GP.")
 
             if solver == "cvxopt":
                 from .._cvxopt import cvxoptimize
@@ -271,6 +281,8 @@ class GeometricProgram(CostedConstraintSet, NomialData):
                       for (var, locs) in self.cost.varlocs.items()
                       if (var in self.cost.varlocs
                           and var not in self.posynomials[0].varlocs)}
+        # try getting the variable sensitivities of robust variables!
+        # because of the robustness SOCP constraints, they should be nonzero
 
         result["sensitivities"]["constants"] = KeyDict(var_senss)
         result["constants"] = KeyDict(self.substitutions)
@@ -327,16 +339,19 @@ class GeometricProgram(CostedConstraintSet, NomialData):
             else:
                 raise RuntimeWarning("Dual solution has negative entries as"
                                      " small as %s." % min(nu))
-        ATnu = A.T.dot(nu)
-        if any(np.abs(ATnu) > tol):
-            raise RuntimeWarning("sum of nu^T * A did not vanish")
-        b = np.log(self.cs)
-        dual_cost = sum(nu[mi].dot(b[mi]) -
-                        (nu[mi].dot(np.log(nu[mi]/la[i])) if la[i] else 0)
-                        for i, mi in enumerate(self.m_idxs))
-        if not _almost_equal(np.exp(dual_cost), cost):
-            raise RuntimeWarning("Dual cost %s does not match primal"
-                                 " cost %s" % (np.exp(dual_cost), cost))
+        if self.robust is None:
+            # NOTE: robust variables have non-vanishing sensitivities
+            #       because they're not fully captured by A!
+            ATnu = A.T.dot(nu)
+            if any(np.abs(ATnu) > tol):
+                raise RuntimeWarning("sum of nu^T * A did not vanish")
+            b = np.log(self.cs)
+            dual_cost = sum(nu[mi].dot(b[mi]) -
+                            (nu[mi].dot(np.log(nu[mi]/la[i])) if la[i] else 0)
+                            for i, mi in enumerate(self.m_idxs))
+            if not _almost_equal(np.exp(dual_cost), cost):
+                raise RuntimeWarning("Dual cost %s does not match primal"
+                                     " cost %s" % (np.exp(dual_cost), cost))
 
 
 def genA(exps, varlocs):

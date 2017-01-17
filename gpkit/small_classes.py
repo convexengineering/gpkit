@@ -79,8 +79,7 @@ class SolverLog(list):
     def write(self, writ):
         "Append and potentially write the new line."
         if writ != "\n":
-            writ = writ.rstrip("\n")
-            self.append(writ)
+            self.append(writ.strip("\n"))
         if self.verbosity > 0:
             self.output.write(writ)
 

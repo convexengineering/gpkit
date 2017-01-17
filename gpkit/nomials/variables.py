@@ -32,10 +32,11 @@ class Variable(Monomial):
         for arg in args:
             if isinstance(arg, Strings) and "name" not in descr:
                 descr["name"] = arg
-            elif isinstance(arg, Numbers) and "value" not in descr:
+            elif ((isinstance(arg, Numbers) or hasattr(arg, "__call__"))
+                  and "value" not in descr):
                 descr["value"] = arg
-            elif (((isinstance(arg, Iterable) and not isinstance(arg, Strings))
-                   or hasattr(arg, "__call__")) and "value" not in descr):
+            elif (isinstance(arg, Iterable) and not isinstance(arg, Strings)
+                  and "value" not in descr):
                 if is_sweepvar(arg):
                     descr["value"] = arg
                 else:
