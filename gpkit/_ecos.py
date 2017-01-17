@@ -8,16 +8,16 @@ from gpkit.small_scripts import mag
 
 def expcone_GP(gp):
     posynomials, varkeys = gp.posynomials, gp.varlocs
-    n_vars = len(varkeys)
-    n_posys = len(posynomials) - 1
     vk_map = {vk: i for i, vk in enumerate(varkeys)}
-    mon_idx = 0
-    mon_map = {}
+    mon_idx, mon_map = 0, {}
     for posy in posynomials:
         for exp in posy.exps:
             if exp not in mon_map:
                 mon_map[exp] = mon_idx
                 mon_idx += 1
+
+    n_vars = len(varkeys)
+    n_posys = len(posynomials) - 1  # minus one for cost, the 0th posynomial
     n_monos = len(mon_map)
 
     dims = {"l": n_posys,  # number of positive orthant cone constraints
@@ -41,62 +41,56 @@ def expcone_GP(gp):
             G.append(len(h), n_vars+m_i, c)  # Ci*m
         h.append(1.0)  # 1
 
-    # NOTE: alternate way to get sensitivity to median is to create equality
-    #       constraints for (x-x_median)/sigma, gives senss for sigma too...
     # SECOND ORDER CONE
-    #     for cone i,  dims["q"][i] rows of h - Gx are taken and become t, s...
-    #     ||s||_2 <= t
+    #     for cone i,  dims["q"][i] rows of h-Gx  become t, s...
+    #         ||s||_2 <= t
     if gp.robust is not None:
         # TODO: not entirely sure what this corresponds to uncertainty in...
-        R = len(gp.robust.robustvarkeys)
         Sigma = gp.robust.get_Sigma()
-        for i, r in enumerate(gp.robust.robustvarkeys):
-            dims["q"].append(1 + R)
+        if gp.robust.distr == "lognormal":
+            r_map = vk_map
+        elif gp.robust.distr == "normal":
+            # make auxiliary variables mu_r
+            r_map = {r: n_monos+n_vars+i  # mon_map.get(r, i)
+                     for i, r in enumerate(gp.robust.robustvarkeys)}
+            costvec = np.concatenate((costvec, np.zeros(len(r_map))))
+        for r in gp.robust.robustvarkeys:
+        # better +1   Sigma*r_sigma*||\vec{log(r)}|| + log(r) <= log(r.median)
+        # better -1   Sigma*r_sigma*||\vec{log(r)}|| + log(r.median) <= log(r)
+            dims["q"].append(1 + len(gp.robust.robustvarkeys))
             r_sigma = gp.robust.substitutions[r.sigma]
             r_median = gp.robust.substitutions[r.median]
-            # TODO: if r.median has been used as a variable, use that instead!
             if gp.robust.distr == "lognormal":
-            # +1   Sigma*r_sigma*||\vec{log(r)}|| + log(r) <= log(r.median)
-            # -1   Sigma*r_sigma*||\vec{log(r)}|| + log(r.median) <= log(r)
-                # t = h_0-Gx_0 = (log(r.median)-log(r))*r.better
-                G.append(len(h), vk_map[r], r.better)
-                h.append(np.log(r_median)*r.better)
-                # (better +1)  ||s|| + log(r) <= log(r.median)
-                # (better -1)  ||s|| + log(r.median) <= log(r)
-                for r_ in gp.robust.robustvarkeys:
-                    # s_n = h_n-Gx_n = Sigma*r.sigma * log(r_)
-                    G.append(len(h), vk_map[r_], -Sigma*r_sigma)
-                    h.append(0)
-            elif gp.robust.distr == "normal":  # the second-order cone part
-            # Sigma*r_sigma*||\vec{r}|| + r <= r.median
-                # t = h_0-Gx_0 = (r.median - r)
-                G.append(len(h), n_monos+n_vars+i, 1)
-                h.append(r_median)
-                # ||s|| + r <= r.median
-                for j, r_ in enumerate(gp.robust.robustvarkeys):
-                    # s_n = h_n-Gx_n = Sigma*r_sigma * r_
-                    G.append(len(h), n_monos+n_vars+j, -Sigma*r_sigma)
-                    h.append(0)
+                r_median = np.log(r_median)
+            # TODO: if r.median has been used as a variable, use that instead!
+            # t = h_0-Gx_0 = (log(r.median)-log(r))*r.better
+            # (better +1)  ||s|| + log(r) <= log(r.median)
+            # (better -1)  ||s|| + log(r.median) <= log(r)
+            G.append(len(h), r_map[r], r.better)
+            h.append(r_median*r.better)
+            for r_ in gp.robust.robustvarkeys:
+                # s_n = h_n-Gx_n = Sigma*r.sigma * log(r_)
+                G.append(len(h), r_map[r_], -Sigma*r_sigma)
+                h.append(0)
         if gp.robust.distr == "normal":  # the exponential cone part
-        # exp(x_r) <= mu_r
-            costvec = np.concatenate((costvec, np.zeros(R)))
-            for i, r in enumerate(gp.robust.robustvarkeys):
-                if gp.robust[r] in mon_map:
-                    continue
-                dims["e"] += 1
+            for r in gp.robust.robustvarkeys:
+            # exp(x_r) <= mu_r
                 # a = log(r)
                 G.append(len(h), vk_map[r], -1.0)
                 h.append(0.0)
                 # b = mu_r
-                G.append(len(h), n_monos+n_vars+i, -1.0)
+                G.append(len(h), r_map[r], -1.0)
                 h.append(0.0)
                 # third row, c = 1
                 G.append(len(h), 0, 0.0)  # empty G row
                 h.append(1.0)
+                dims["e"] += 1
+    # NOTE: alternate way to get sensitivity to median is to create equality
+    #       constraints for (x-x_median)/sigma, gives senss for sigma too...
 
     # EXPONENTIAL CONE
-    #     per cone three rows of h-Gx are taken and become a, b, c
-    #     exp(a/c) <= b/c, c > 0
+    #     per cone three rows of h-Gx become a, b, c
+    #         exp(a/c) <= b/c, c > 0
     for exp, m_i in mon_map.items():  # NOTE: could be sorted
     # exp(Ei x) <= mu_i
         # a = Ei*x

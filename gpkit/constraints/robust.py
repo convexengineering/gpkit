@@ -67,7 +67,7 @@ class Robust(ConstraintSet):
     def get_Sigma(self):
         value = self.substitutions["\\Sigma"]
         if hasattr(value, "__call__"):
-            return value(gp.robust.substitutions)
+            return value(self.substitutions)
         return value
 
     @classmethod
