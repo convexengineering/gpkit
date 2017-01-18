@@ -97,8 +97,6 @@ def pip_install(package, local=False):
     cmd += ["install"]
     if local:
         cmd += ["--no-cache-dir", "--no-deps", "-e"]
-    else:
-        cmd += ["--upgrade", "--no-deps"]
     cmd += [package]
     call_and_retry(cmd)
 
