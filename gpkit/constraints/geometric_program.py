@@ -189,16 +189,14 @@ class GeometricProgram(CostedConstraintSet, NomialData):
             print("result packing took %.2g%% of solve time" %
                   ((time() - tic) / soltime * 100))
             tic = time()
-
-        if warn_on_check:
-            try:
-                self.check_solution(self.result["cost"], solver_out['primal'],
-                                    nu=solver_out["nu"], la=solver_out["la"])
-            except RuntimeWarning, e:
-                print "Solution check warning", str(e)
-        else:
+        try:
             self.check_solution(self.result["cost"], solver_out['primal'],
                                 nu=solver_out["nu"], la=solver_out["la"])
+        except RuntimeWarning as e:
+            if warn_on_check:
+                print "Solution check warning:", str(e)
+            else:
+                raise e
         if verbosity > 1:
             print("solution checking took %.2g%% of solve time" %
                   ((time() - tic) / soltime * 100))
