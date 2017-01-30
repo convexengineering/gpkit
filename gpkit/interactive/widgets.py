@@ -96,7 +96,7 @@ def modelinteract(model, fns_of_sol, ranges=None, **solvekwargs):
 
 
 # pylint: disable=too-many-locals
-def modelcontrolpanel(model, showvars=None, fns_of_sol=None, **solvekwargs):
+def modelcontrolpanel(model, showvars=(), fns_of_sol=None, **solvekwargs):
     """Easy model control in IPython / Jupyter
 
     Like interact(), but with the ability to control sliders and their showvars
