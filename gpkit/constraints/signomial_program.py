@@ -65,7 +65,7 @@ class SignomialProgram(CostedConstraintSet):
         self.result = None
 
     # pylint: disable=too-many-locals
-    def localsolve(self, solver=None, verbosity=1, x0=None, rel_tol=1e-4,
+    def localsolve(self, solver=None, verbosity=1, x0=None, reltol=1e-4,
                    iteration_limit=50, **kwargs):
         """Locally solves a SignomialProgram and returns the solution.
 
@@ -81,7 +81,7 @@ class SignomialProgram(CostedConstraintSet):
             if greater than 1, prints solver name and time for each GP.
         x0 : dict (optional)
             Initial location to approximate signomials about.
-        rel_tol : float
+        reltol : float
             Iteration ends when this is greater than the distance between two
             consecutive solve's objective values.
         iteration_limit : int
@@ -101,7 +101,7 @@ class SignomialProgram(CostedConstraintSet):
         self.gps = []  # NOTE: SIDE EFFECTS
         slackvar = Variable()
         prevcost, cost, rel_improvement = None, None, None
-        while rel_improvement is None or rel_improvement > rel_tol:
+        while rel_improvement is None or rel_improvement > reltol:
             if len(self.gps) > iteration_limit:
                 raise RuntimeWarning("""problem unsolved after %s iterations.
 
