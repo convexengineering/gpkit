@@ -14,7 +14,7 @@ h = Variable("h", "m", "height")
 w = Variable("w", "m", "width")
 d = Variable("d", "m", "depth")
 
-#Constraints
+# Constraints
 constraints = [A_wall >= 2*h*w + 2*h*d,
                A_floor >= w*d,
                h/w >= alpha,
@@ -22,7 +22,7 @@ constraints = [A_wall >= 2*h*w + 2*h*d,
                d/w >= gamma,
                d/w <= delta]
 
-#Objective function
+# Objective function
 V = h*w*d
 objective = 1/V  # To maximize V, we minimize its reciprocal
 
@@ -30,5 +30,4 @@ objective = 1/V  # To maximize V, we minimize its reciprocal
 m = Model(objective, constraints)
 
 # Solve the Model and print the results table
-sol = m.solve(verbosity=0)
-print sol.table()
+print m.solve(verbosity=0).table()

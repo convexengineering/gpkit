@@ -17,44 +17,24 @@ W_{burn} : [ 0.487     0.486     0.485     0.485    ]  [lbf] segment fuel burn
 W_{fuel} : [ 1.94      1.46      0.97      0.485    ]  [lbf] fuel weight
 
          | Mission/FlightSegment/AircraftP/WingAero
-     C_D : [ 0.00783   0.00782   0.00781   0.0078   ]        drag coefficient
-     C_L : [ 0.47      0.469     0.468     0.467    ]        lift coefficient
        D : [ 4.87      4.86      4.85      4.85     ]  [lbf] drag force
-      Re : [ 7.56e+05  7.56e+05  7.56e+05  7.56e+05 ]        Reynold's number
-
-Constants
----------
-     | Aircraft/Fuselage
-   W : 100                                         [lbf]       weight
-
-     | Aircraft/Wing
-   A : 27                                                      aspect ratio
-   S : 190                                         [ft**2]     surface area
-\rho : 1                                           [lbf/ft**2] areal density
-
-     | Mission/FlightSegment/AircraftP/WingAero
-   e : [ 0.9       0.9       0.9       0.9      ]              Oswald efficiency
-
-     | Mission/FlightSegment/FlightState
-   V : [ 40        40        40        40       ]  [kt]        true airspeed
- \mu : [ 1.63e-05  1.63e-05  1.63e-05  1.63e-05 ]  [N*s/m**2]  dynamic viscosity
-\rho : [ 0.74      0.74      0.74      0.74     ]  [kg/m**3]   air density
 
 Sensitivities
 -------------
-     | Mission/FlightSegment/FlightState
-   V : [ 0.0997    0.1       0.101     0.102    ] true airspeed
-\rho : [ 0.034     0.0344    0.0347    0.0351   ] air density
- \mu : [ 0.0316    0.0317    0.0317    0.0318   ] dynamic viscosity
-
-     | Mission/FlightSegment/AircraftP/WingAero
-   e : [ -0.0926   -0.0924   -0.0922   -0.092   ] Oswald efficiency
+     | Aircraft/Fuselage
+   W : +0.25            weight
 
      | Aircraft/Wing
-   S : 0.6831                                     surface area
-\rho : 0.4816                                     areal density
-   A : -0.3056                                    aspect ratio
+   S : +0.68            surface area
+\rho : +0.48            areal density
+   A : -0.31            aspect ratio
 
-     | Aircraft/Fuselage
-   W : 0.2535                                     weight
+Next Largest Sensitivities
+--------------------------
+     | Mission/FlightSegment/AircraftP/WingAero
+   e : [ -0.093    -0.092    -0.092    -0.092   ] Oswald efficiency
+
+     | Mission/FlightSegment/FlightState
+   V : [ +0.1      +0.1      +0.1      +0.1     ] true airspeed
+\rho : [ +0.034    +0.034    +0.035    +0.035   ] air density
 

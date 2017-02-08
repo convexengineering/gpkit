@@ -149,7 +149,7 @@ def substitution(nomial, substitutions):
                 #                          " '%s' into '%s' of units '%s'." %
                 #                          (sub, var, var.units.units))
                 if sub != 0:
-                    mag(cs_)[i] *= sub**x
+                    mag(cs_)[i] *= float(sub)**x
                 elif x > 0:  # HACK to prevent RuntimeWarnings
                     mag(cs_)[i] = 0
                 elif x < 0:
