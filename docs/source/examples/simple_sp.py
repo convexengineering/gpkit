@@ -11,6 +11,5 @@ with gpkit.SignomialsEnabled():
 
 # create and solve the SP
 m = gpkit.Model(x, constraints)
-sol = m.localsolve(verbosity=0)
-print sol.table()
-assert abs(sol(x) - 0.9) < 1e-6
+print m.localsolve(verbosity=0).summary()
+assert abs(m.solution(x) - 0.9) < 1e-6

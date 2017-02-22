@@ -3,7 +3,7 @@ import sys
 from time import time
 import numpy as np
 from ..nomials import NomialData
-from ..small_classes import CootMatrix, SolverLog
+from ..small_classes import CootMatrix, SolverLog, Numbers
 from ..keydict import KeyDict
 from ..small_scripts import mag
 from ..solution_array import SolutionArray
@@ -58,7 +58,12 @@ class GeometricProgram(CostedConstraintSet, NomialData):
             constraints = ConstraintSet(constraints)
         list.__init__(self, [constraints])  # pylint:disable=non-parent-init-called
         self.substitutions = substitutions if substitutions else {}
-
+        for key, sub in self.substitutions.items():
+            if not isinstance(sub, (Numbers, np.ndarray)):
+                raise ValueError("substitution {%s: %s} with value type %s is"
+                                 " not allowed in .substitutions; such"
+                                 " substitutions must be done by using"
+                                 " .subinplace()." % (key, sub, type(sub)))
         # sideways NomialData init to create self.exps, self.cs, etc
         self.posynomials = [cost.sub(self.substitutions)]
         self.posynomials.extend(self.as_posyslt1(self.substitutions))
@@ -83,8 +88,9 @@ class GeometricProgram(CostedConstraintSet, NomialData):
             for var, bound in sorted(self.missingbounds.items()):
                 print("%s has no %s bound" % (var, bound))
 
-    # pylint: disable=too-many-statements
-    def solve(self, solver=None, verbosity=1, *args, **kwargs):
+    # pylint: disable=too-many-statements, too-many-locals
+    def solve(self, solver=None, verbosity=1, warn_on_check=False,
+              *args, **kwargs):
         """Solves a GeometricProgram and returns the solution.
 
         Arguments
@@ -183,9 +189,14 @@ class GeometricProgram(CostedConstraintSet, NomialData):
             print("result packing took %.2g%% of solve time" %
                   ((time() - tic) / soltime * 100))
             tic = time()
-
-        self.check_solution(self.result["cost"], solver_out['primal'],
-                            nu=solver_out["nu"], la=solver_out["la"])
+        try:
+            self.check_solution(self.result["cost"], solver_out['primal'],
+                                nu=solver_out["nu"], la=solver_out["la"])
+        except RuntimeWarning as e:
+            if warn_on_check:
+                print "Solution check warning:", str(e)
+            else:
+                raise e
         if verbosity > 1:
             print("solution checking took %.2g%% of solve time" %
                   ((time() - tic) / soltime * 100))

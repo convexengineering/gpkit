@@ -1,19 +1,28 @@
 Visualization and Interaction
 *****************************
 
-Plotting variable sensitivities
-===============================
+Interactive Control Panel
+=========================
 
-Sensitivities are a useful way to evaluate the tradeoffs in your model, as well as what aspects of the model are driving the solution and should be examined. To help with this, ``gpkit.interactive`` has an automatic sensitivity plotting function that can be accessed as follows:
+A model can be manipulated and visualized in Jupyter Notebook by calling ``model.controlpanel()``. By default this creates a slider for every constant in the model and gives them automatic ranges, but variables and/or ranges can be changed in the Settings tab or specified in the first argument to ``controlpanel()``.
 
-.. code-block:: python
+.. figure:: controlpanel.gif
+    :align: center
 
-    from gpkit.interactive.plotting import sensitivity_plot
-    sensitivity_plot(m)
+Besides the default behaviour shown above, the control panel can also display custom analyses and plots via the  ``fn_of_sol`` argument, which accepts a function (or list of functions) that take the solution as their input.
 
-Which produces the following plot:
 
-.. figure::  sensitivities.png
-   :width: 500 px
+Plotting a 1D Sweep
+==================
 
-In this plot, steep lines that go up to the right are variables whose increase sharply increases (makes worse) the objective. Steep lines going down to the right are variables whose increase sharply decreases (improves) the objective. Only local sensitivities are displayed, so the lines are optimistic: the real effect of changing parameters may lead to higher costs than shown.
+Methods exist to facilitate creating, solving, and plotting the results of a single-variable sweep (see :ref:`Sweeps` for details). Example usage is as follows:
+
+.. literalinclude:: examples/plot_sweep1d.py
+
+Which results in:
+
+.. figure:: examples/plot_sweep1d.png
+    :align: center
+
+.. figure:: examples/plot_autosweep1d.png
+    :align: center

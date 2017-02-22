@@ -19,11 +19,11 @@ from os import sep as os_sep
 from os.path import dirname as os_path_dirname
 SETTINGS_PATH = os_sep.join([os_path_dirname(__file__), "env", "settings"])
 
-__version__ = "0.5.1"
+__version__ = "0.5.2"
 UNIT_REGISTRY = None
 SIGNOMIALS_ENABLED = False
+GPBLU = "#59ade4"
 
-# global variable initializations
 DimensionalityError = ValueError
 ureg, units = None, None  # pylint: disable=invalid-name
 

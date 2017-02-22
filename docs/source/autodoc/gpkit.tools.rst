@@ -4,6 +4,14 @@ gpkit.tools package
 Submodules
 ----------
 
+gpkit.tools.autosweep module
+----------------------------
+
+.. automodule:: gpkit.tools.autosweep
+    :members:
+    :undoc-members:
+    :show-inheritance:
+
 gpkit.tools.fmincon module
 --------------------------
 

@@ -1,8 +1,9 @@
 """Tests for GP and SP classes"""
-import math
 import unittest
+import numpy as np
 from gpkit import (Model, Monomial, settings, VectorVariable, Variable,
                    SignomialsEnabled, ArrayVariable, SignomialEquality)
+from gpkit.constraints.bounded import Bounded
 from gpkit.small_classes import CootMatrix
 from gpkit.exceptions import InvalidGPConstraint
 from gpkit import NamedVariables
@@ -37,12 +38,12 @@ class TestGP(unittest.TestCase):
         self.assertEqual(type(prob.latex()), str)
         # pylint: disable=protected-access
         self.assertEqual(type(prob._repr_latex_()), str)
-        self.assertAlmostEqual(sol("x"), math.sqrt(2.), self.ndig)
-        self.assertAlmostEqual(sol("y"), 1/math.sqrt(2.), self.ndig)
+        self.assertAlmostEqual(sol("x"), np.sqrt(2.), self.ndig)
+        self.assertAlmostEqual(sol("y"), 1/np.sqrt(2.), self.ndig)
         self.assertAlmostEqual(sol("x") + 2*sol("y"),
-                               2*math.sqrt(2),
+                               2*np.sqrt(2),
                                self.ndig)
-        self.assertAlmostEqual(sol["cost"], 2*math.sqrt(2), self.ndig)
+        self.assertAlmostEqual(sol["cost"], 2*np.sqrt(2), self.ndig)
 
     def test_sigeq(self):
         x = Variable("x")
@@ -111,9 +112,9 @@ class TestGP(unittest.TestCase):
         self.assertEqual(sol('x').shape, (2,))
         self.assertEqual(sol('y').shape, (2,))
         for x, y in zip(sol('x'), sol('y')):
-            self.assertAlmostEqual(x, math.sqrt(2.), self.ndig)
-            self.assertAlmostEqual(y, 1/math.sqrt(2.), self.ndig)
-        self.assertAlmostEqual(sol["cost"]/(4*math.sqrt(2)), 1., self.ndig)
+            self.assertAlmostEqual(x, np.sqrt(2.), self.ndig)
+            self.assertAlmostEqual(y, 1/np.sqrt(2.), self.ndig)
+        self.assertAlmostEqual(sol["cost"]/(4*np.sqrt(2)), 1., self.ndig)
 
     def test_zero_lower_unbounded(self):
         x = Variable('x', value=4)
@@ -235,6 +236,28 @@ class TestSP(unittest.TestCase):
     name = "TestSP_"
     solver = None
     ndig = None
+
+    def test_sp_bounded(self):
+        x = Variable("x")
+        y = Variable("y")
+
+        with SignomialsEnabled():
+            m = Model(x, [x + y >= 1, y <= 0.1])  # solves
+        cost = m.localsolve(verbosity=0)["cost"]
+        self.assertAlmostEqual(cost, 0.9, self.ndig)
+
+        with SignomialsEnabled():
+            m = Model(x, [x + y >= 1])  # dual infeasible
+        with self.assertRaises((RuntimeWarning, ValueError)):
+            m.localsolve(verbosity=0)
+
+        with SignomialsEnabled():
+            m = Model(x, Bounded([x + y >= 1], verbosity=0))
+        sol = m.localsolve(verbosity=0)
+        if "value near lower bound" in sol["boundedness"]:
+            self.assertIn(x, sol["boundedness"]["value near lower bound"])
+        if "value near upper bound" in sol["boundedness"]:
+            self.assertIn(y, sol["boundedness"]["value near upper bound"])
 
     def test_values_vs_subs(self):
         # Substitutions update method
@@ -443,7 +466,6 @@ class TestSP(unittest.TestCase):
 
     def test_unbounded_debugging(self):
         "Test nearly-dual-feasible problems"
-        from gpkit.constraints.bounded import Bounded
         x = Variable("x")
         y = Variable("y")
         m = Model(x*y, [x*y**1.01 >= 100])

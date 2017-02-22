@@ -1,6 +1,114 @@
 Advanced Commands
 *****************
 
+Derived Variables
+=================
+
+Evaluated Fixed Variables
+-------------------------
+
+Some fixed variables may be derived from the values of other fixed variables.
+For example, air density, viscosity, and temperature are functions of altitude.
+These can be represented by a substitution or value that is a one-argument function
+accepting ``model.substitutions`` (for details, see `Substitutions`_ below).
+
+.. code-block:: python
+
+    # code from t_GPSubs.test_calcconst in tests/t_sub.py
+    x = Variable("x", "hours")
+    t_day = Variable("t_{day}", 12, "hours")
+    t_night = Variable("t_{night}", lambda c: 24 - c[t_day], "hours")
+    # note that t_night has a function as its value
+    m = Model(x, [x >= t_day, x >= t_night])
+    sol = m.solve(verbosity=0)
+    self.assertAlmostEqual(sol(t_night)/gpkit.ureg.hours, 12)
+    m.substitutions.update({t_day: ("sweep", [8, 12, 16])})
+    sol = m.solve(verbosity=0)
+    self.assertEqual(len(sol["cost"]), 3)
+    npt.assert_allclose(sol(t_day) + sol(t_night), 24)
+
+
+Evaluated Free Variables
+------------------------
+
+Some free variables may be evaluated from the values of other (non-evaluated) free variables
+after the optimization is performed. For example, if the efficiency :math:`\nu` of a motor is not a GP-compatible
+variable, but :math:`(1-\nu)` is a valid GP variable, then :math:`\nu` can be calculated after solving.
+These evaluated free variables can be represented by a ``Variable`` with ``evalfn`` metadata.
+Note that this variable should not be used in constructing your model!
+
+.. code-block:: python
+
+    # code from t_constraints.test_evalfn in tests/t_sub.py
+    x = Variable("x")
+    x2 = Variable("x^2", evalfn=lambda v: v[x]**2)
+    m = Model(x, [x >= 2])
+    m.unique_varkeys = set([x2.key])
+    sol = m.solve(verbosity=0)
+    self.assertAlmostEqual(sol(x2), sol(x)**2)
+
+
+For evaluated variables that can be used during a solution, see ``externalfn`` under :ref:`sgp`.
+
+
+.. _Sweeps:
+
+Sweeps
+======
+
+Sweeps are useful for analyzing tradeoff surfaces. A sweep “value” is an Iterable of numbers, e.g. ``[1, 2, 3]``. The simplest way to sweep a model is to call ``model.sweep({sweepvar: sweepvalues})``, which will return a solution array but not change the model's substitutions dictionary. If multiple ``sweepvars`` are given, the method will run them all as independent one-dimensional sweeps and return a list of one solution per sweep. The method ``model.autosweep({sweepvar: (start, end)}, tol=0.01)`` behaves very similarly, except that only the bounds of the sweep need be specified and the region in betwen will be swept to a maximum possible error of tol in the log of the cost. For details see `1D Autosweeps`_ below.
+
+
+Sweep Substitutions
+-------------------
+Alternatively, or to sweep a higher-dimensional grid, Variables can swept with a substitution value takes the form ``('sweep', Iterable)``, such as ``('sweep', np.linspace(1e6, 1e7, 100))``. During variable declaration, giving an Iterable value for a Variable is assumed to be giving it a sweep value: for example, ``x = Variable("x", [1, 2, 3])`` will sweep ``x`` over three values.
+
+Vector variables may also be substituted for: ``y = VectorVariable(3, "y", ("sweep" ,[[1, 2], [1, 2], [1, 2]])`` will sweep :math:`y\ \forall~y_i\in\left\{1,2\right\}`.
+
+A Model with sweep substitutions will solve for all possible combinations: e.g., if there’s a variable ``x`` with value ``('sweep', [1, 3])`` and a variable ``y`` with value ``('sweep', [14, 17])`` then the gp will be solved four times, for :math:`(x,y)\in\left\{(1, 14),\ (1, 17),\ (3, 14),\ (3, 17)\right\}`. The returned solutions will be a one-dimensional array (or 2-D for vector variables), accessed in the usual way.
+
+Parallel Sweeps
+---------------
+During a normal sweep, each result is independent, so they can be run in parallel. To use this feature, run ``$ ipcluster start`` at a terminal: it will automatically start a number of iPython parallel computing engines equal to the number of cores on your machine, and when you next import gpkit you should see a note like ``Using parallel execution of sweeps on 4 clients``. If you do, then all sweeps performed with that import of gpkit will be parallelized.
+
+This parallelization sets the stage for gpkit solves to be outsourced to a server, which may be valuable for faster results; alternately, it could allow the use of gpkit without installing a solver.
+
+1D Autosweeps
+-------------
+If you're only sweeping over a single variable, autosweeping lets you specify a
+tolerance for cost error instead of a number of exact positions to solve at.
+GPkit will then search the sweep segment for a locally optimal number of sweeps
+that can guarantee a max absolute error on the log of the cost.
+
+Accessing variable and cost values from an autosweep is slightly different, as
+can be seen in this example:
+
+.. literalinclude:: examples/autosweep.py
+
+If you need access to the raw solutions arrays, the smallest simplex tree containing
+any given point can be gotten with ``min_bst = bst.min_bst(val)``, the extents of that tree with ``bst.bounds`` and solutions of that tree with ``bst.sols``. More information is in ``help(bst)``.
+
+
+Tight ConstraintSets
+====================
+
+Tight ConstraintSets will warn if any inequalities they contain are not
+tight (that is, the right side does not equal the left side) after solving. This
+is useful when you know that a constraint _should_ be tight for a given model,
+but reprenting it as an equality would be non-convex.
+
+.. code-block:: python
+
+    from gpkit import Variable, Model
+    from gpkit.constraints.tight import Tight
+
+    Tight.reltol = 1e-2  # set the global tolerance of Tight
+    x = Variable('x')
+    x_min = Variable('x_{min}', 2)
+    m = Model(x, [Tight([x >= 1], reltol=1e-3),  # set the specific tolerance
+                  x >= x_min])
+    m.solve(verbosity=0)  # prints warning
+
 
 Substitutions
 =============
@@ -95,7 +203,7 @@ After creating a Model, it may be useful to "free" a fixed variable and resolve.
     x = Variable("x")
     y = Variable("y", 3)  # fix value to 3
     m = Model(x, [x >= 1 + y, y >= 1])
-    _ = m.solve()  # optimal cost is 4; y appears in Constants
+    _ = m.solve()  # optimal cost is 4; y appears in sol["constants"]
 
     del m.substitutions["y"]
     _ = m.solve()  # optimal cost is 2; y appears in Free Variables
@@ -104,94 +212,6 @@ Note that ``del m.substitutions["y"]`` affects ``m`` but not ``y.key``.
 ``y.value`` will still be 3, and if ``y`` is used in a new model,
 it will still carry the value of 3.
 
-Tight ConstraintSets
-====================
-
-Tight ConstraintSets will warn if any inequalities they contain are not
-tight (that is, the right side equals the left side) after solving. This
-is useful when you know that a constraint _should_ be tight for a given model,
-but reprenting it as an equality would be non-convex.
-
-.. code-block:: python
-
-    from gpkit import Variable, Model
-    from gpkit.constraints.tight import Tight
-
-    Tight.reltol = 1e-2  # set the global tolerance of Tight
-    x = Variable('x')
-    x_min = Variable('x_{min}', 2)
-    m = Model(x, [Tight([x >= 1], reltol=1e-3),  # set the specific tolerance
-                  x >= x_min])
-    m.solve(verbosity=0)  # prints warning
-
-.. _Sweeps:
-
-Sweeps
-======
-
-Declaring Sweeps
-----------------
-
-Sweeps are useful for analyzing tradeoff surfaces. A sweep “value” is an Iterable of numbers, e.g. ``[1, 2, 3]``. Variables are swept when their substitution value takes the form ``('sweep', Iterable), (e.g. 'sweep', np.linspace(1e6, 1e7, 100))``. During variable declaration, giving an Iterable value for a Variable is assumed to be giving it a sweep value: for example, ``x = Variable("x", [1, 2, 3]``. Sweeps can also be declared during later substitution (``gp.sub("x", ('sweep', [1, 2, 3]))``, or if the variable was already substituted for a constant, ``gp.sub("x", ('sweep', [1, 2, 3]), replace=True))``.
-
-Solving Sweeps
---------------
-
-A Model with sweeps will solve for all possible combinations: e.g., if there’s a variable ``x`` with value ``('sweep', [1, 3])`` and a variable ``y`` with value ``('sweep', [14, 17])`` then the gp will be solved four times, for :math:`(x,y)\in\left\{(1, 14),\ (1, 17),\ (3, 14),\ (3, 17)\right\}`. The returned solutions will be a one-dimensional array (or 2-D for vector variables), accessed in the usual way.
-Sweeping Vector Variables
-
-Vector variables may also be substituted for: ``y = VectorVariable(3, "y", value=('sweep' ,[[1, 2], [1, 2], [1, 2]])`` will sweep :math:`y\ \forall~y_i\in\left\{1,2\right\}`.
-
-Parallel Sweeps
----------------
-
-During a normal sweep, each result is independent, so they can be run in parallel. To use this feature, run ``$ ipcluster start`` at a terminal: it will automatically start a number of iPython parallel computing engines equal to the number of cores on your machine, and when you next import gpkit you should see a note like ``Using parallel execution of sweeps on 4 clients``. If you do, then all sweeps performed with that import of gpkit will be parallelized.
-
-This parallelization sets the stage for gpkit solves to be outsourced to a server, which may be valuable for faster results; alternately, it could allow the use of gpkit without installing a solver.
-
-Linked Sweeps
--------------
-
-Some constants may be "linked" to another sweep variable. This can be
-represented by a Variable whose value is ``('sweep', fn)``, where the argument
-of the function ``fn`` is the dictionary of non-linked constants. If you
-declare a variables value to be a function, then it will assume you meant that
-as a sweep value: for example, ``a_ = gpkit.Variable("a_", lambda c: 1-c[a.key], "-")`` will create a constant whose value is always 1 minus the value of a
-(valid for values of a less than 1). Note that this declaration requires the
-variable ``a`` to already have been declared.
-
-Example Usage
--------------
-
-.. code-block:: python
-
-    # code from t_GPSubs.test_VectorSweep in tests/t_sub.py
-    from gpkit import Variable, VectorVariable, Model
-
-    x = Variable("x")
-    y = VectorVariable(2, "y")
-    m = Model(x, [x >= y.prod()])
-    m.substitutions.update({y: ('sweep', [[2, 3], [5, 7, 11]])})
-    a = m.solve(printing=False)["cost"]
-    b = [10, 14, 22, 15, 21, 33]
-    assert all(abs(a-b)/(a+b) < 1e-7)
-
-Plotting a 1D Sweep
--------------------
-
-A function called ``plot_sweep_1d`` has been created to facilitate creating, solving, and plotting the results of a single-variable sweep. Example usage is as follows:
-
-.. code-block:: python
-
-    import numpy as np
-    from gpkit.interactive.plotting import plot_sweep_1d
-    # m is an existing model, with variables x and y
-    f, ax = plot_sweep_1d(m, {'x': np.linspace(1, 2, 20)}, 'y')
-
-The resulting plot looks like:
-
-.. image:: plot_sweep_1d_example.png
-    :align: center
 
 Composite Objectives
 ====================
@@ -203,9 +223,6 @@ Given :math:`n` posynomial objectives :math:`g_i`, you can sweep out the problem
 where :math:`i \in 0 ... n-1` and :math:`v_i = 1- w_i` and :math:`w_i \in [0, 1]`
 
 GPkit has the helper function ``composite_objective`` for constructing these.
-
-Example Usage
---------------
 
 .. code-block:: python
 

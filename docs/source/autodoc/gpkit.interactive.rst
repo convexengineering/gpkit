@@ -20,6 +20,14 @@ gpkit.interactive.linking_diagram module
     :undoc-members:
     :show-inheritance:
 
+gpkit.interactive.plot_sweep module
+-----------------------------------
+
+.. automodule:: gpkit.interactive.plot_sweep
+    :members:
+    :undoc-members:
+    :show-inheritance:
+
 gpkit.interactive.plotting module
 ---------------------------------
 
