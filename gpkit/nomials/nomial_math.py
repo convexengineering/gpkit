@@ -454,7 +454,7 @@ class PosynomialInequality(ScalarSingleEquationConstraint):
         self.nomials.extend(self.unsubbed)
         self._last_used_substitutions = None
 
-    def _simplify_posy_ineq(self, exps, cs):
+    def _check_constraint(self, exps, cs):
         "Simplify a posy <= 1 by moving constants to the right side."
         if len(exps) == 1:
             if not exps[0] or cs[0] == 0:
@@ -463,7 +463,7 @@ class PosynomialInequality(ScalarSingleEquationConstraint):
                 else:
                     # allow tautological monomial constraints (cs[0] <= 1)
                     # because they allow models to impose requirements
-                    return (), np.array([])
+                    return False
             return exps, cs
         coeff = 1.0
         exps_ = []
@@ -474,14 +474,11 @@ class PosynomialInequality(ScalarSingleEquationConstraint):
                 exps_.append(exp)
             else:
                 coeff -= cs[i]
-        if len(exps_) < len(exps):
-            if coeff > 0:
-                cs = cs[nonzero_exp_ixs]
-            elif coeff < 0:
-                raise ValueError("infeasible constraint: %s" % self)
-            elif coeff == 0:
-                raise ValueError("tautological constraint: %s" % self)
-        return tuple(exps_), cs/coeff
+        if coeff < 0:
+            raise ValueError("infeasible constraint: %s" % self)
+        elif coeff == 0:
+            raise ValueError("tautological constraint: %s" % self)
+        return True
 
     def _gen_unsubbed(self):
         "Returns the unsubstituted posys <= 1."
@@ -494,7 +491,7 @@ class PosynomialInequality(ScalarSingleEquationConstraint):
                              "be converted to units of %s" %
                              (self.p_lt, self.m_gt))
 
-        p.exps, p.cs = self._simplify_posy_ineq(p.exps, p.cs)
+        self._check_constraint(p.exps, p.cs)
         return [p]
 
     def as_posyslt1(self, substitutions=None):
@@ -509,9 +506,8 @@ class PosynomialInequality(ScalarSingleEquationConstraint):
         for posy in posys:
             _, exps, cs, subs = substitution(posy, substitutions)
             self._last_used_substitutions = subs
-            exps, cs = self._simplify_posy_ineq(exps, cs)
-            if not exps and not cs:  # tautological constraint
-                continue
+            if not self._check_constraint(exps, cs):
+                continue  # tautological monomial
             exps, cs, pmap = simplify_exps_and_cs(exps, cs, return_map=True)
 
             #  The monomial sensitivities from the GP/SP are in terms of this

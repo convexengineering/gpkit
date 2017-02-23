@@ -89,17 +89,18 @@ class TestConstraint(unittest.TestCase):
         except ValueError:
             self.fail("linking was an unexpected ValueError (sub conflict?).")
 
-    def test_additive_scalar(self):
-        """Make sure additive scalars simplify properly"""
-        x = Variable('x')
-        c1 = 1 >= 10*x
-        c2 = 1 >= 5*x + 0.5
-        self.assertEqual(type(c1), PosynomialInequality)
-        self.assertEqual(type(c2), PosynomialInequality)
-        c1posy, = c1.as_posyslt1()
-        c2posy, = c2.as_posyslt1()
-        self.assertEqual(c1posy.cs, c2posy.cs)
-        self.assertEqual(c1posy.exps, c2posy.exps)
+    # TODO: maybe we should reimplement this simplification
+    # def test_additive_scalar(self):
+    #     """Make sure additive scalars simplify properly"""
+    #     x = Variable('x')
+    #     c1 = 1 >= 10*x
+    #     c2 = 1 >= 5*x + 0.5
+    #     self.assertEqual(type(c1), PosynomialInequality)
+    #     self.assertEqual(type(c2), PosynomialInequality)
+    #     c1posy, = c1.as_posyslt1()
+    #     c2posy, = c2.as_posyslt1()
+    #     self.assertEqual(c1posy.cs, c2posy.cs)
+    #     self.assertEqual(c1posy.exps, c2posy.exps)
 
     def test_additive_scalar_gt1(self):
         """1 can't be greater than (1 + something positive)"""

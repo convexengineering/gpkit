@@ -142,27 +142,28 @@ class TestGP(unittest.TestCase):
         sol3 = m3.solve(solver=self.solver, verbosity=0)
         # pylint: disable=no-member
         gp1, gp2, gp3 = [m.program for m in [m1, m2, m3]]
-        self.assertEqual(gp1.A, CootMatrix(row=[0, 1, 2],
+        self.assertEqual(gp1.A, CootMatrix(row=[0, 1, 3, 2],
+                                           col=[0, 0, 0, 0],
+                                           data=[-1, 1, -1, 0]))
+        self.assertEqual(gp2.A, CootMatrix(row=[0, 1, 2],
                                            col=[0, 0, 0],
-                                           data=[-1, 1, -1]))
-        self.assertEqual(gp2.A, CootMatrix(row=[0, 1],
-                                           col=[0, 0],
-                                           data=[-1, 1]))
-        self.assertEqual(gp3.A, CootMatrix(row=[0, 1, 2],
-                                           col=[0, 0, 0],
-                                           data=[-1, 1, -1]))
+                                           data=[-1, 1, 0]))
+        self.assertEqual(gp3.A, CootMatrix(row=[0, 1, 3, 2],
+                                           col=[0, 0, 0, 0],
+                                           data=[-1, 1, -1, 0]))
         self.assertAlmostEqual(sol1(Mdd), sol2(Mdd))
         self.assertAlmostEqual(sol1(Mdd), sol3(Mdd))
         self.assertAlmostEqual(sol2(Mdd), sol3(Mdd))
 
-    def test_additive_constants(self):
-        x = Variable('x')
-        m = Model(1/x, [1 >= 5*x + 0.5, 1 >= 10*x])
-        m.solve(verbosity=0)
-        # pylint: disable=no-member
-        gp = m.program  # created by solve()
-        self.assertEqual(gp.cs[1], gp.cs[2])
-        self.assertEqual(gp.A.data[1], gp.A.data[2])
+    # TODO: maybe we should reimplement this simplification
+    # def test_additive_constants(self):
+    #     x = Variable('x')
+    #     m = Model(1/x, [1 >= 5*x + 0.5, 1 >= 10*x])
+    #     m.solve(verbosity=0)
+    #     # pylint: disable=no-member
+    #     gp = m.program  # created by solve()
+    #     self.assertEqual(gp.cs[1], gp.cs[2])
+    #     self.assertEqual(gp.A.data[1], gp.A.data[2])
 
     def test_zeroing(self):
         L = Variable("L")
