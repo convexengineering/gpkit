@@ -467,6 +467,7 @@ class PosynomialInequality(ScalarSingleEquationConstraint):
                 exps_.pop(i)
                 exps = tuple(exps_)
                 if pmap is not None:
+                    # move constant term's mmap to another attribute
                     self.const_mmap = pmap.pop(i)  # pylint: disable=attribute-defined-outside-init
                     self.const_coeff = coeff  # pylint: disable=attribute-defined-outside-init
                 break
@@ -501,11 +502,14 @@ class PosynomialInequality(ScalarSingleEquationConstraint):
 
         out = []
         for posy in posys:
+            # 1) substitution
             _, exps, cs, subs = substitution(posy, substitutions)
             self._last_used_substitutions = subs
+            # 2) algebraic simplification
             exps, cs, pmap = simplify_exps_and_cs(exps, cs, return_map=True)
+            # 3) constraint simpl. (subtracting the constant term from the RHS)
             exps, cs, pmap = self._simplify_posy_ineq(exps, cs, pmap)
-            if not exps and not cs:  # tautological constraint
+            if not exps and not cs:  # skip tautological constraints
                 continue
 
             #  The monomial sensitivities from the GP/SP are in terms of this
