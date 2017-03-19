@@ -175,7 +175,10 @@ class GeometricProgram(CostedConstraintSet, NomialData):
             print("Solving took %.3g seconds." % (soltime,))
             tic = time()
 
-        if solver_out.get("status", "").lower() != "optimal":
+        # allow mosek's NEAR_DUAL_FEAS solution status, because our check
+        # will catch anything that's not actually near enough.
+        if solver_out.get("status", "").lower() not in ["optimal",
+                                                        "near_dual_feas"]:
             raise RuntimeWarning(
                 "final status of solver '%s' was '%s', not 'optimal'.\n\n"
                 "The solver's result is stored in model.program.solver_out. "
