@@ -78,7 +78,30 @@ class ConstraintsRelaxed(ConstraintSet):
                                substitutions)
 
 
-class ConstantsRelaxed(ConstraintSet):
+class ConstantsRelaxedSensitivities(ConstraintSet):
+
+    def sens_from_dual(self, las, nus):
+        """Computes constraint and variable sensitivities from dual solution
+
+        Replaces the sensitivity of the relaxed constants (which, as a free
+        variable, is 0) with the sensitivity of the relaxed constant's value.
+        """
+        var_senss = HashVector()
+        offset = 0
+        for i, constr in enumerate(self):
+            n_posys = self.posymap[i]
+            la = las[offset:offset+n_posys]
+            nu = nus[offset:offset+n_posys]
+            v_ss = constr.sens_from_dual(la, nu)
+            var_senss += v_ss
+            offset += n_posys
+
+        var_senss += {var.key: las[-3*i - 2] - las[-3*i - 1]
+                      for i, var in enumerate(reversed(self.origvars))}
+        return var_senss
+
+
+class ConstantsRelaxed(ConstantsRelaxedSensitivities):
     """Relax constants in a constraintset.
 
     Arguments
@@ -142,22 +165,7 @@ class ConstantsRelaxed(ConstraintSet):
         ConstraintSet.__init__(self, [constraints, relaxation_constraints])
         self.substitutions = substitutions
 
-    def sens_from_dual(self, las, nus):
-        """Computes constraint and variable sensitivities from dual solution
-
-        Replaces the sensitivity of the relaxed constants (which, as a free
-        variable, is 0) with the sensitivity of the relaxed constant's value.
-        """
-        var_senss = HashVector()
-        offset = 0
-        for i, constr in enumerate(self):
-            n_posys = self.posymap[i]
-            la = las[offset:offset+n_posys]
-            nu = nus[offset:offset+n_posys]
-            v_ss = constr.sens_from_dual(la, nu)
-            var_senss += v_ss
-            offset += n_posys
-
-        var_senss += {var.key: las[-3*i - 2] - las[-3*i - 1]
-                      for i, var in enumerate(reversed(self.origvars))}
-        return var_senss
+    def as_gpconstr(self, *args, **kwargs):
+        crs = ConstantsRelaxedSensitivities(ConstraintSet.as_gpconstr(self, *args, **kwargs))
+        crs.origvars = self.origvars
+        return crs
