@@ -186,6 +186,11 @@ class GeometricProgram(CostedConstraintSet, NomialData):
                 "program._compile_result(program.solver_out)." %
                 (solvername, solver_out.get("status", None)))
 
+        if solver_out.get("status", "").lower() == "near_dual_feas":
+            print RuntimeWarning(
+                "final status of solver '%s' was '%s', not 'optimal'.\n\n" %
+                (solvername, solver_out.get("status", None)))
+
         self._generate_nula(solver_out)
         self.result = self._compile_result(solver_out)  # NOTE: SIDE EFFECTS
         if verbosity > 1:
