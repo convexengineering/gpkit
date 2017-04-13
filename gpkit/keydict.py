@@ -2,6 +2,7 @@
 from collections import defaultdict
 import numpy as np
 from .small_classes import Numbers
+from .varkey import VarKey
 
 
 class KeyDict(dict):
@@ -61,6 +62,9 @@ class KeyDict(dict):
                 #   KeyDict values are expected to be immutable (Numbers)
                 #   or to have a copy attribute.
                 v = v.copy()
+            if (isinstance(k, VarKey) and k.shape
+                and not k.idx and not isinstance(v, np.ndarray)):
+                v = np.array(v)
             self[k] = v
 
     def parse_and_index(self, key):
