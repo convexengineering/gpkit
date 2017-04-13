@@ -5,6 +5,7 @@ from ..keydict import KeyDict
 from ..nomials import Variable
 from .costed import CostedConstraintSet
 from .geometric_program import GeometricProgram
+from ..solution_array import SolutionArray
 
 
 class SignomialProgram(CostedConstraintSet):
@@ -95,9 +96,9 @@ class SignomialProgram(CostedConstraintSet):
         result : dict
             A dictionary containing the translated solver result.
         """
+        starttime = time()
         if verbosity > 0:
             print("Beginning signomial solve.")
-            starttime = time()
         self.gps = []  # NOTE: SIDE EFFECTS
         slackvar = Variable()
         prevcost, cost, rel_improvement = None, None, None
@@ -129,12 +130,14 @@ class SignomialProgram(CostedConstraintSet):
             else:
                 rel_improvement = None
         # solved successfully!
+        soltime = time() - starttime
         if verbosity > 0:
             print("Solving took %i GP solves" % len(self.gps)
-                  + " and %.3g seconds." % (time() - starttime))
+                  + " and %.3g seconds." % soltime)
         self.process_result(result)
-        self.result = result  # NOTE: SIDE EFFECTS
-        return result
+        self.result = SolutionArray(result.copy())  # NOTE: SIDE EFFECTS
+        self.result["soltime"] = soltime
+        return self.result
 
     def _fill_x0(self, x0):
         "Returns a copy of x0 with subsitutions and sp_inits added."
