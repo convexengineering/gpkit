@@ -63,7 +63,7 @@ class KeyDict(dict):
                 #   or to have a copy attribute.
                 v = v.copy()
             if (isinstance(k, VarKey) and k.shape
-                and not k.idx and not isinstance(v, np.ndarray)):
+                    and not k.idx and not isinstance(v, np.ndarray)):
                 v = np.array(v)
             self[k] = v
 
