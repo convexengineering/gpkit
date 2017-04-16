@@ -79,7 +79,6 @@ def substitution(nomial, substitutions):
     # pylint:disable=too-many-branches
     # pylint:disable=too-many-statements
     """Efficient substituton into a list of monomials.
-
         Arguments
         ---------
         varlocs : dict
@@ -92,7 +91,6 @@ def substitution(nomial, substitutions):
             Substitutions to apply to the above.
         val : number (optional)
             Used to substitute singlet variables.
-
         Returns
         -------
         varlocs_ : dict
@@ -106,6 +104,12 @@ def substitution(nomial, substitutions):
     """
     if not substitutions:
         return nomial.varlocs, nomial.exps, nomial.cs, substitutions
+
+    else:
+        for sub_varkey in substitutions:
+            if sub_varkey not in nomial.varkeys:
+                raise NameError("Varkey, Variable, or String \
+does not exist in the Nomial")
 
     subs, _, _ = parse_subs(nomial.varkeys, substitutions)
 

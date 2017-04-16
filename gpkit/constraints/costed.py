@@ -5,7 +5,6 @@ from .set import ConstraintSet
 class CostedConstraintSet(ConstraintSet):
     """
     A ConstraintSet with a cost
-
     Arguments
     ---------
     cost: gpkit.Posynomial
@@ -28,6 +27,10 @@ class CostedConstraintSet(ConstraintSet):
 
     def subinplace(self, subs):
         "Substitutes in place."
+        for sub_varkey in subs:
+            if sub_varkey not in self.varkeys:
+                raise NameError("Varkey, Variable, or String \
+does not exist in the Model")
         self.cost = self.cost.sub(subs)
         ConstraintSet.subinplace(self, subs)
 
@@ -51,21 +54,17 @@ class CostedConstraintSet(ConstraintSet):
 
     def interact(self, ranges=None, fn_of_sol=None, **solvekwargs):
         """Easy model interaction in IPython / Jupyter
-
         By default, this creates a model with sliders for every constant
         which prints a new solution table whenever the sliders are changed.
-
         Arguments
         ---------
         fn_of_sol : function
             The function called with the solution after each solve that
             displays the result. By default prints a table.
-
         ranges : dictionary {str: Slider object or tuple}
             Determines which sliders get created. Tuple values may contain
             two or three floats: two correspond to (min, max), while three
             correspond to (min, step, max)
-
         **solvekwargs
             kwargs which get passed to the solve()/localsolve() method.
         """
@@ -74,7 +73,6 @@ class CostedConstraintSet(ConstraintSet):
 
     def controlpanel(self, *args, **kwargs):
         """Easy model control in IPython / Jupyter
-
         Like interact(), but with the ability to control sliders and their
         ranges live. args and kwargs are passed on to interact()
         """
