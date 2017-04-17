@@ -14,3 +14,6 @@ and [cvxopt](http://cvxopt.org/).
 [![Build Status](https://acdl.mit.edu/csi/buildStatus/icon?job=gpkit_Install)](https://acdl.mit.edu/csi/job/gpkit_Install/) pip install
 
 [![Build Status](https://acdl.mit.edu/csi/buildStatus/icon?job=gpkit_Push_Depends)](https://acdl.mit.edu/csi/job/gpkit_Push_Depends/) Dependencies
+
+
+[![Join the chat at https://gitter.im/gpkit-users/Lobby](https://badges.gitter.im/gpkit-users/Lobby.svg)](https://gitter.im/gpkit-users/Lobby?utm_source=badge&utm_medium=badge&utm_campaign=pr-badge&utm_content=badge)
