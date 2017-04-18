@@ -2,6 +2,7 @@
 from collections import defaultdict
 import numpy as np
 from .small_classes import Numbers
+from .small_scripts import is_sweepvar
 
 
 class KeyDict(dict):
@@ -61,6 +62,11 @@ class KeyDict(dict):
                 #   KeyDict values are expected to be immutable (Numbers)
                 #   or to have a copy attribute.
                 v = v.copy()
+            # if it's a veckey but the value isn't an array, convert it
+            if (hasattr(k, "descr") and "shape" in k.descr
+                    and "idx" not in k.descr and not isinstance(v, np.ndarray)
+                    and not is_sweepvar(v)):
+                v = np.array(v)
             self[k] = v
 
     def parse_and_index(self, key):

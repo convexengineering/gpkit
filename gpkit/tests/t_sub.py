@@ -345,6 +345,18 @@ class TestGPSubs(unittest.TestCase):
         sol = Top().solve(verbosity=0)
         self.assertAlmostEqual(sol['cost'], 2)
 
+    def test_vector_sub(self):
+        x = VectorVariable(3, "x")
+        y = VectorVariable(3, "y")
+        ymax = VectorVariable(3, "ymax")
+
+        with SignomialsEnabled():
+            # issue1077 links to a case that failed for SPs only
+            m = Model(x.prod(), [x + y >= 1, y <= ymax])
+
+        m.substitutions.update({"ymax": [0.3, 0.5, 0.8]})
+        m.localsolve(verbosity=0)
+
 
 TESTS = [TestNomialSubs, TestGPSubs]
 
