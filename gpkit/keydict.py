@@ -62,8 +62,9 @@ class KeyDict(dict):
                 #   KeyDict values are expected to be immutable (Numbers)
                 #   or to have a copy attribute.
                 v = v.copy()
-            if (isinstance(k, VarKey) and k.shape
-                    and not k.idx and not isinstance(v, np.ndarray)):
+            # if it's a veckey but the value isn't an array, convert it
+            if (hasattr(k, "descr") and "shape" in k.descr
+                and "idx" not in k.descr and not isinstance(v, np.ndarray)):
                 v = np.array(v)
             self[k] = v
 
