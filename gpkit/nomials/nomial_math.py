@@ -189,10 +189,13 @@ class Signomial(Nomial):
         m0 = 1
         for vk in self.varlocs:
             diff = self.diff(vk)
-            e = x0[vk]*mag(diff.sub(x0, require_positive=False).c)/mag(p0)
+            # we convert the x0 value to the proper units
+            x0vk = mag(x0[vk]/vk.units) if hasattr(x0[vk], "units") else x0[vk]
+            # to ensure that e and m0 are dimensionless
+            e = x0vk/mag(p0) * mag(diff.sub(x0, require_positive=False).c)
             exp[vk] = e
-            m0 *= (x0[vk])**e
-        return Monomial(exp, p0/mag(m0))
+            m0 *= (x0vk)**e
+        return Monomial(exp, p0/m0)
 
     def sub(self, substitutions, require_positive=True):
         """Returns a nomial with substitued values.
