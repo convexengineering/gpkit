@@ -3,7 +3,6 @@ from collections import defaultdict
 import numpy as np
 from .small_classes import Numbers
 from .small_scripts import is_sweepvar
-from .varkey import VarKey
 
 
 class KeyDict(dict):
@@ -65,8 +64,8 @@ class KeyDict(dict):
                 v = v.copy()
             # if it's a veckey but the value isn't an array, convert it
             if (hasattr(k, "descr") and "shape" in k.descr
-                and "idx" not in k.descr and not isinstance(v, np.ndarray)
-                and not is_sweepvar(v)):
+                    and "idx" not in k.descr and not isinstance(v, np.ndarray)
+                    and not is_sweepvar(v)):
                 v = np.array(v)
             self[k] = v
 
