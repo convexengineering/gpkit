@@ -177,19 +177,19 @@ class GeometricProgram(CostedConstraintSet, NomialData):
 
         # allow mosek's NEAR_DUAL_FEAS solution status, because our check
         # will catch anything that's not actually near enough.
-        if solver_out.get("status", "").lower() not in ["optimal",
-                                                        "near_dual_feas"]:
+        solver_status = str(solver_out.get("status", None)).lower()
+        if solver_status not in ["optimal", "near_dual_feas"]:
             raise RuntimeWarning(
                 "final status of solver '%s' was '%s', not 'optimal'.\n\n"
                 "The solver's result is stored in model.program.solver_out. "
                 "A result dict can be generated via "
                 "program._compile_result(program.solver_out)." %
-                (solvername, solver_out.get("status", None)))
+                (solvername, solver_status))
 
-        if solver_out.get("status", "").lower() == "near_dual_feas":
+        if solver_status == "near_dual_feas":
             print RuntimeWarning(
                 "final status of solver '%s' was '%s', not 'optimal'.\n\n" %
-                (solvername, solver_out.get("status", None)))
+                (solvername, solver_status))
 
         self._generate_nula(solver_out)
         self.result = self._compile_result(solver_out)  # NOTE: SIDE EFFECTS
