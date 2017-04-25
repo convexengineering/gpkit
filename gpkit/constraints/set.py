@@ -52,28 +52,38 @@ class ConstraintSet(list):
         if isinstance(key, int):
             return list.__getitem__(self, key)
         else:
-            variables = self.variables_byname(key)
-            if not variables:
-                raise KeyError(key)
-            if variables[0].key.veckey:
-                # maybe it's all one vector variable!
-                from ..nomials import NomialArray
-                vk = variables[0].key.veckey
-                arr = NomialArray(np.full(vk.shape, np.nan, dtype="object"))
-                arr.key = vk
-                for variable in variables:
-                    if variable.key.veckey == vk:
-                        arr[variable.key.idx] = variable
-                    else:
-                        arr = None
-                        break
-                if arr is not None:
-                    return arr
-            elif len(variables) == 1:
-                return variables[0]
-            raise ValueError("multiple variables are called '%s'; use"
-                             " variables_byname('%s') to see all of them"
-                             % (key, key))
+            return self._choosevar(key, self.variables_byname(key))
+
+    def _choosevar(self, key, variables):
+        if not variables:
+            raise KeyError(key)
+        if variables[0].key.veckey:
+            # maybe it's all one vector variable!
+            from ..nomials import NomialArray
+            vk = variables[0].key.veckey
+            arr = NomialArray(np.full(vk.shape, np.nan, dtype="object"))
+            arr.key = vk
+            for variable in variables:
+                if variable.key.veckey == vk:
+                    arr[variable.key.idx] = variable
+                else:
+                    arr = None
+                    break
+            if arr is not None:
+                return arr
+        elif len(variables) == 1:
+            return variables[0]
+        raise ValueError("multiple variables are called '%s'; use"
+                         " variables_byname('%s') to see all of them"
+                         % (key, key))
+
+    def topvar(self, key):
+        if not self.naming:
+            raise TypeError("constraintsets must be named to have top-level"
+                            " named variables.")
+        topvars = filter(lambda v: v.key.naming == self.naming,
+                         self.variables_byname(key))
+        return self._choosevar(key, topvars)
 
     def variables_byname(self, key):
         "Get all variables with a given name"
