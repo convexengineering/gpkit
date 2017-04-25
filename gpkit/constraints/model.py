@@ -162,9 +162,12 @@ class Model(CostedConstraintSet):
         """
         sols = []
         for sweepvar, sweepvals in sweeps.items():
+            sweepvar = self[sweepvar].key
             start, end = sweepvals
             bst = autosweep_1d(self, tol, sweepvar, [start, end], **solveargs)
-            sols.append(bst.sample_at(np.linspace(start, end, samplepoints)))
+            sol = bst.sample_at(np.linspace(start, end, samplepoints))
+            sol.program = self
+            sols.append(sol)
         if len(sols) == 1:
             return sols[0]
         return sols

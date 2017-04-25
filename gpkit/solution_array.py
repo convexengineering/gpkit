@@ -197,6 +197,12 @@ class SolutionArray(DictOfLists):
         "Plots a sweep for each posy"
         if len(self["sweepvariables"]) != 1:
             print "SolutionArray.plot only supports 1-dimensional sweeps"
+        if not hasattr(posys, "__len__"):
+            posys = [posys]
+        if len(self.program.cost.exps) == 1:
+            for i, posy in enumerate(posys):
+                if posy in [None, "cost"]:
+                    posys[i] = self.program.cost
         import matplotlib.pyplot as plt
         from .interactive.plot_sweep import assign_axes
         from . import GPBLU

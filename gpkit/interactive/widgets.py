@@ -171,7 +171,9 @@ def modelcontrolpanel(model, showvars=(), fns_of_sol=None, **solvekwargs):
 
         def __defaultfn(sol):
             "Plots a 1D sweep grid, starting from a single solution"
-            plot_1dsweepgrid(model, ranges, yvars, origsol=sol, verbosity=0)
+            fig, _ = plot_1dsweepgrid(model, ranges, yvars, origsol=sol,
+                                      verbosity=0)
+            fig.show()
         fns_of_sol.append(__defaultfn)
 
     def redo_plots(_):
