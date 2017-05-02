@@ -108,6 +108,8 @@ class VarKey(object):
 
     @property
     def naming(self):
+        "Returns this varkey's naming tuple"
+        # TODO: store directly, instead of re-creating?
         return (tuple(self.descr["models"]),
                 tuple(self.descr["modelnums"]))
 

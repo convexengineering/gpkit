@@ -78,11 +78,13 @@ class ConstraintSet(list):
                          % (key, key))
 
     def topvar(self, key):
-        if not self.naming:
+        "If a variable by a given name exists in the top model, return it"
+        # TODO: could this be done with unique_varkeys?
+        if not self.naming:  # pylint: disable=no-member
             raise TypeError("constraintsets must be named to have top-level"
                             " named variables.")
-        topvars = filter(lambda v: v.key.naming == self.naming,
-                         self.variables_byname(key))
+        topvars = [var for var in self.variables_byname(key)
+                   if var.key.naming == self.naming]  # pylint: disable=no-member
         return self._choosevar(key, topvars)
 
     def variables_byname(self, key):
