@@ -79,6 +79,11 @@ class TestNomialSubs(unittest.TestCase):
             v = gpkit.VectorVariable(3, "v", "cm")
             subbed = v.sub({v: [1, 2, 3]*gpkit.ureg.m})
             self.assertEqual([z.c.magnitude for z in subbed], [100, 200, 300])
+            x = VectorVariable(1, "x", "km")
+            x_min = VectorVariable(1, "x_min", "km")
+            m = Model(x.prod(), [x >= x_min], {x_min: [2*gpkit.units("nmi")]})
+            cost = m.solve()["cost"]
+            self.assertAlmostEqual(cost/(3.704*gpkit.ureg("km")), 1.0)
 
     def test_scalar_units(self):
         x = Variable("x", "m")
