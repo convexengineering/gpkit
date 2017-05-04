@@ -87,7 +87,6 @@ def _solve_fctry(genfunction):
         solution.to_united_array(unitless_keys=["sensitivities"], united=True)
         if self.cost.units:
             solution["cost"] = solution["cost"] * self.cost.units
-        solution.result = result
         self.solution = solution  # NOTE: SIDE EFFECTS
         return solution
     return solvefn
