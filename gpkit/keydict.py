@@ -5,6 +5,23 @@ from .small_classes import Numbers
 from .small_scripts import is_sweepvar
 
 
+def convert_constantmonomials_and_quantities(key, value):
+    """Gets the value of variable-less monomials, so that
+    `x.sub({x: gpkit.units.m})` and `x.sub({x: gpkit.ureg.m})` are equivalent.
+
+    Also converts any quantities to the key's units, because quantities
+    can't/shouldn't be stored as elements of numpy arrays.
+    """
+    if getattr(value, "exp", None) is not None and not value.exp:
+        value = value.value
+    # TODO: should we do this only for vectorvariables? regular variables
+    #       don't particularly need to store their substitutions in an array...
+    if hasattr(value, "units") and not hasattr(value, "exps"):
+        kunits = key.units or "dimensionless"
+        value = value.to(key.units).magnitude
+    return value
+
+
 class KeyDict(dict):
     """KeyDicts do two things over a dict: map keys and collapse arrays.
 
@@ -66,7 +83,10 @@ class KeyDict(dict):
             if (hasattr(k, "descr") and "shape" in k.descr
                     and "idx" not in k.descr and not isinstance(v, np.ndarray)
                     and not is_sweepvar(v)):
-                v = np.array(v)
+                v = np.array([convert_constantmonomials_and_quantities(k, v)
+                             for v in v])
+            else:
+                v = convert_constantmonomials_and_quantities(k, v)
             self[k] = v
 
     def parse_and_index(self, key):
@@ -141,12 +161,6 @@ class KeyDict(dict):
                 emptyvec = np.full(key.shape, np.nan, **kwargs)
                 dict.__setitem__(self, key, emptyvec)
         for key in self.keymap[key]:
-            if getattr(value, "exp", None) is not None and not value.exp:
-                # get the value of variable-less monomials
-                # so that `x.sub({x: gpkit.units.m})`
-                # and `x.sub({x: gpkit.ureg.m})`
-                # are equivalent
-                value = value.value
             if idx:
                 dict.__getitem__(self, key)[idx] = value
             else:
