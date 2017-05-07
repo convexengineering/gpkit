@@ -57,7 +57,7 @@ class TestSmallScripts(unittest.TestCase):
         self.assertIn(unitstr(x), footstrings)
         self.assertIn(unitstr(x.key), footstrings)
         self.assertEqual(unitstr(gpkit.Variable("y"), dimless="---"), "---")
-        self.assertEqual(unitstr(None, dimless="--"), "")
+        self.assertEqual(unitstr(None, dimless="--"), "--")
 
     def test_pint_366(self):
         # test for https://github.com/hgrecco/pint/issues/366

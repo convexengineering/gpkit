@@ -82,7 +82,7 @@ class TestNomialSubs(unittest.TestCase):
             v = VectorVariable(1, "v", "km")
             v_min = VectorVariable(1, "v_min", "km")
             m = Model(v.prod(), [v >= v_min], {v_min: [2*gpkit.units("nmi")]})
-            cost = m.solve()["cost"]
+            cost = m.solve(verbosity=0)["cost"]
             self.assertAlmostEqual(cost/(3.704*gpkit.ureg("km")), 1.0)
 
     def test_scalar_units(self):
@@ -359,7 +359,7 @@ class TestGPSubs(unittest.TestCase):
             # issue1077 links to a case that failed for SPs only
             m = Model(x.prod(), [x + y >= 1, y <= ymax])
 
-        m.substitutions.update({"ymax": [0.3, 0.5, 0.8]})
+        m.substitutions["ymax"] = [0.3, 0.5, 0.8]
         m.localsolve(verbosity=0)
 
 
