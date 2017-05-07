@@ -5,7 +5,7 @@ from .small_classes import Numbers
 from .small_scripts import is_sweepvar
 
 
-def convert_constantmonomials_and_quantities(key, value):
+def clean_values(key, value):
     """Gets the value of variable-less monomials, so that
     `x.sub({x: gpkit.units.m})` and `x.sub({x: gpkit.ureg.m})` are equivalent.
 
@@ -17,8 +17,7 @@ def convert_constantmonomials_and_quantities(key, value):
     # TODO: should we do this only for vectorvariables? regular variables
     #       don't particularly need to store their substitutions in an array...
     if hasattr(value, "units") and not hasattr(value, "exps"):
-        kunits = key.units or "dimensionless"
-        value = value.to(key.units).magnitude
+        value = value.to(key.units or "dimensionless").magnitude
     return value
 
 
@@ -80,13 +79,12 @@ class KeyDict(dict):
                 #   or to have a copy attribute.
                 v = v.copy()
             # if it's a veckey but the value isn't an array, convert it
-            if (hasattr(k, "descr") and "shape" in k.descr
-                    and "idx" not in k.descr and not isinstance(v, np.ndarray)
-                    and not is_sweepvar(v)):
-                v = np.array([convert_constantmonomials_and_quantities(k, v)
-                             for v in v])
+            if (hasattr(k, "descr") and not isinstance(v, np.ndarray)
+                    and "shape" in k.descr and "idx" not in k.descr
+                    and not is_sweepvar(v)):  # TODO: cleaner sweeps
+                v = np.array([clean_values(k, v) for v in v])
             else:
-                v = convert_constantmonomials_and_quantities(k, v)
+                v = clean_values(k, v)
             self[k] = v
 
     def parse_and_index(self, key):
