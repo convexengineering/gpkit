@@ -1,22 +1,8 @@
 "Implements KeyDict and KeySet classes"
 from collections import defaultdict
 import numpy as np
-from .small_classes import Numbers, Quantity
+from .small_classes import Numbers
 from .small_scripts import is_sweepvar
-
-
-def clean_value(key, value):
-    """Gets the value of variable-less monomials, so that
-    `x.sub({x: gpkit.units.m})` and `x.sub({x: gpkit.ureg.m})` are equivalent.
-
-    Also converts any quantities to the key's units, because quantities
-    can't/shouldn't be stored as elements of numpy arrays.
-    """
-    if hasattr(value, "exp") and not value.exp:
-        value = value.value
-    if hasattr(value, "units") and not hasattr(value, "exps"):
-        value = value.to(key.units or "dimensionless").magnitude
-    return value
 
 
 class KeyDict(dict):
@@ -76,6 +62,11 @@ class KeyDict(dict):
                 #   KeyDict values are expected to be immutable (Numbers)
                 #   or to have a copy attribute.
                 v = v.copy()
+            # if it's a veckey but the value isn't an array, convert it
+            if (hasattr(k, "descr") and "shape" in k.descr
+                    and "idx" not in k.descr and not isinstance(v, np.ndarray)
+                    and not is_sweepvar(v)):
+                v = np.array(v)
             self[k] = v
 
     def parse_and_index(self, key):
@@ -140,15 +131,6 @@ class KeyDict(dict):
     def __setitem__(self, key, value):
         "Overloads __setitem__ and []= to work with all keys"
         key, idx = self.parse_and_index(key)
-        if hasattr(value, "exp") and not value.exp:
-            value = value.value  # substitute constant monomials
-        # if it's a veckey but the value isn't an array, convert it
-        if (self.collapse_arrays and hasattr(key, "descr")
-                and "shape" in key.descr and not idx
-                and not isinstance(value, (np.ndarray, Quantity))
-                and not is_sweepvar(value)
-                and not isinstance(value[0], np.ndarray)):
-            value = np.array([clean_value(key, v) for v in value])
         if key not in self.keymap:
             self.keymap[key].add(key)
             if hasattr(key, "keys"):

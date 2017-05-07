@@ -81,7 +81,12 @@ class TestNomialSubs(unittest.TestCase):
             self.assertEqual([z.c.magnitude for z in subbed], [100, 200, 300])
             v = VectorVariable(1, "v", "km")
             v_min = VectorVariable(1, "v_min", "km")
-            m = Model(v.prod(), [v >= v_min], {v_min: [2*gpkit.units("nmi")]})
+            m = Model(v.prod(), [v >= v_min],
+                      {v_min: [2*gpkit.units("nmi")]})
+            cost = m.solve(verbosity=0)["cost"]
+            self.assertAlmostEqual(cost/(3.704*gpkit.ureg("km")), 1.0)
+            m = Model(v.prod(), [v >= v_min],
+                      {v_min: np.array([2])*gpkit.units("nmi")})
             cost = m.solve(verbosity=0)["cost"]
             self.assertAlmostEqual(cost/(3.704*gpkit.ureg("km")), 1.0)
 
