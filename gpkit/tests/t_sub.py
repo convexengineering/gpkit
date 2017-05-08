@@ -79,6 +79,16 @@ class TestNomialSubs(unittest.TestCase):
             v = gpkit.VectorVariable(3, "v", "cm")
             subbed = v.sub({v: [1, 2, 3]*gpkit.ureg.m})
             self.assertEqual([z.c.magnitude for z in subbed], [100, 200, 300])
+            v = VectorVariable(1, "v", "km")
+            v_min = VectorVariable(1, "v_min", "km")
+            m = Model(v.prod(), [v >= v_min],
+                      {v_min: [2*gpkit.units("nmi")]})
+            cost = m.solve(verbosity=0)["cost"]
+            self.assertAlmostEqual(cost/(3.704*gpkit.ureg("km")), 1.0)
+            m = Model(v.prod(), [v >= v_min],
+                      {v_min: np.array([2])*gpkit.units("nmi")})
+            cost = m.solve(verbosity=0)["cost"]
+            self.assertAlmostEqual(cost/(3.704*gpkit.ureg("km")), 1.0)
 
     def test_scalar_units(self):
         x = Variable("x", "m")
@@ -344,6 +354,18 @@ class TestGPSubs(unittest.TestCase):
 
         sol = Top().solve(verbosity=0)
         self.assertAlmostEqual(sol['cost'], 2)
+
+    def test_vector_sub(self):
+        x = VectorVariable(3, "x")
+        y = VectorVariable(3, "y")
+        ymax = VectorVariable(3, "ymax")
+
+        with SignomialsEnabled():
+            # issue1077 links to a case that failed for SPs only
+            m = Model(x.prod(), [x + y >= 1, y <= ymax])
+
+        m.substitutions["ymax"] = [0.3, 0.5, 0.8]
+        m.localsolve(verbosity=0)
 
 
 TESTS = [TestNomialSubs, TestGPSubs]

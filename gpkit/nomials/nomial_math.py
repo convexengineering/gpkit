@@ -189,10 +189,13 @@ class Signomial(Nomial):
         m0 = 1
         for vk in self.varlocs:
             diff = self.diff(vk)
-            e = x0[vk]*mag(diff.sub(x0, require_positive=False).c)/mag(p0)
+            # we convert the x0 value to the proper units
+            x0vk = mag(x0[vk]/vk.units) if hasattr(x0[vk], "units") else x0[vk]
+            # to ensure that e and m0 are dimensionless
+            e = x0vk/mag(p0) * mag(diff.sub(x0, require_positive=False).c)
             exp[vk] = e
-            m0 *= (x0[vk])**e
-        return Monomial(exp, p0/mag(m0))
+            m0 *= (x0vk)**e
+        return Monomial(exp, p0/m0)
 
     def sub(self, substitutions, require_positive=True):
         """Returns a nomial with substitued values.
@@ -430,6 +433,7 @@ class ScalarSingleEquationConstraint(SingleEquationConstraint):
         self.varkeys.update(self.right.varlocs)
 
 
+# pylint: disable=too-many-instance-attributes
 class PosynomialInequality(ScalarSingleEquationConstraint):
     """A constraint of the general form monomial >= posynomial
     Stored in the posylt1_rep attribute as a single Posynomial (self <= 1)
@@ -454,34 +458,28 @@ class PosynomialInequality(ScalarSingleEquationConstraint):
         self.nomials.extend(self.unsubbed)
         self._last_used_substitutions = None
 
-    def _simplify_posy_ineq(self, exps, cs):
+    def _simplify_posy_ineq(self, exps, cs, pmap):
         "Simplify a posy <= 1 by moving constants to the right side."
-        if len(exps) == 1:
-            if not exps[0] or cs[0] == 0:
-                if cs[0] > 1:
-                    raise ValueError("infeasible constraint: %s" % self)
-                else:
-                    # allow tautological monomial constraints (cs[0] <= 1)
-                    # because they allow models to impose requirements
-                    return (), np.array([])
-            return exps, cs
         coeff = 1.0
-        exps_ = []
-        nonzero_exp_ixs = []
         for i, exp in enumerate(exps):
-            if exp:
-                nonzero_exp_ixs.append(i)
-                exps_.append(exp)
-            else:
-                coeff -= cs[i]
-        if len(exps_) < len(exps):
-            if coeff > 0:
-                cs = cs[nonzero_exp_ixs]
-            elif coeff < 0:
-                raise ValueError("infeasible constraint: %s" % self)
-            elif coeff == 0:
-                raise ValueError("tautological constraint: %s" % self)
-        return tuple(exps_), cs/coeff
+            if not exp:
+                cs = cs.tolist()
+                coeff -= cs.pop(i)
+                cs = np.array(cs)/coeff
+                exps_ = list(exps)
+                exps_.pop(i)
+                exps = tuple(exps_)
+                if pmap is not None:
+                    # move constant term's mmap to another attribute
+                    self.const_mmap = pmap.pop(i)  # pylint: disable=attribute-defined-outside-init
+                    self.const_coeff = coeff  # pylint: disable=attribute-defined-outside-init
+                break
+
+        if not exps and coeff >= 0:  # tautological monomial
+            return None, None, pmap
+        elif coeff <= 0:
+            raise ValueError("infeasible constraint: %s" % self)
+        return exps, cs, pmap
 
     def _gen_unsubbed(self):
         "Returns the unsubstituted posys <= 1."
@@ -494,7 +492,7 @@ class PosynomialInequality(ScalarSingleEquationConstraint):
                              "be converted to units of %s" %
                              (self.p_lt, self.m_gt))
 
-        p.exps, p.cs = self._simplify_posy_ineq(p.exps, p.cs)
+        p.exps, p.cs, _ = self._simplify_posy_ineq(p.exps, p.cs, None)
         return [p]
 
     def as_posyslt1(self, substitutions=None):
@@ -507,12 +505,15 @@ class PosynomialInequality(ScalarSingleEquationConstraint):
 
         out = []
         for posy in posys:
+            # 1) substitution
             _, exps, cs, subs = substitution(posy, substitutions)
             self._last_used_substitutions = subs
-            exps, cs = self._simplify_posy_ineq(exps, cs)
-            if not exps and not cs:  # tautological constraint
-                continue
+            # 2) algebraic simplification
             exps, cs, pmap = simplify_exps_and_cs(exps, cs, return_map=True)
+            # 3) constraint simpl. (subtracting the constant term from the RHS)
+            exps, cs, pmap = self._simplify_posy_ineq(exps, cs, pmap)
+            if not exps and not cs:  # skip tautological constraints
+                continue
 
             #  The monomial sensitivities from the GP/SP are in terms of this
             #  smaller post-substitution list of monomials, so we need to map
@@ -547,7 +548,12 @@ class PosynomialInequality(ScalarSingleEquationConstraint):
             for i, mmap in enumerate(self.pmap):
                 for idx, percentage in mmap.items():
                     nu_[idx] += percentage*nu[i]
+            if hasattr(self, "const_mmap"):
+                scale = (1-self.const_coeff)/self.const_coeff
+                for idx, percentage in self.const_mmap.items():
+                    nu_[idx] += percentage * la*scale
             nu = nu_
+
         # Monomial sensitivities
         # constr_sens[str(self.m_gt)] = la
         # for i, mono_sens in enumerate(nu):
