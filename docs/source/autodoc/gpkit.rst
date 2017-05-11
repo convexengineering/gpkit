@@ -57,14 +57,6 @@ gpkit.repr_conventions module
     :undoc-members:
     :show-inheritance:
 
-gpkit.simplebox module
-----------------------
-
-.. automodule:: gpkit.simplebox
-    :members:
-    :undoc-members:
-    :show-inheritance:
-
 gpkit.small_classes module
 --------------------------
 
