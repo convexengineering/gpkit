@@ -2,7 +2,7 @@ rm source/autodoc/*
 sphinx-apidoc ../gpkit -o source/autodoc
 
 # Delete fist 3 lines
-sed -i'' -e '1,3d' source/autodoc/gpkit.rst
+sed -i '' -e '1,3d' source/autodoc/gpkit.rst
 
 # Add header
 header="Glossary\n********\n\n*For an alphabetical listing of all commands, check out the* :ref:\`genindex\`\n"
