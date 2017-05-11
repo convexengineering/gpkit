@@ -28,7 +28,7 @@ class PowerSystem(Model):
         components = [Battery(), Motor()]
         m = Variable("m", "lb", "mass")
         return [components,
-                m >= sum(comp["m"] for comp in components)]
+                m >= sum(comp.topvar("m") for comp in components)]
 
 PS = PowerSystem()
 print "Getting the only var 'E': ", PS["E"]
