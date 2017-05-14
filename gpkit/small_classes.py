@@ -45,9 +45,9 @@ class CootMatrix(CootMatrixTuple):
             raise ValueError("Only positive indices allowed")
         if not self.shape:
             self.shape = [row + 1, col + 1]
-        elif row >= self.shape[0]:
+        if row >= self.shape[0]:
             self.shape[0] = row + 1
-        elif col >= self.shape[1]:
+        if col >= self.shape[1]:
             self.shape[1] = col + 1
         self.row.append(row)
         self.col.append(col)
