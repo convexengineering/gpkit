@@ -23,8 +23,6 @@ class Motor(Model):
 class PowerSystem(Model):
     "A battery powering a motor"
     def setup(self):
-        # self.battery = Battery()
-        # self.motor = Motor()
         components = [Battery(), Motor()]
         m = Variable("m", "lb", "mass")
         return [components,
