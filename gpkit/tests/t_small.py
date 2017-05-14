@@ -52,6 +52,7 @@ class TestCootMatrix(unittest.TestCase):
     """TestCase for the CootMatrix class"""
     def test_shape(self):
         A = CootMatrix([], [], [])
+        self.assertEqual(A.shape, [0, 0])
         A.append(0, 0, 1)
         self.assertEqual(A.shape, [1, 1])
         A.append(1, 0, -0.5)
