@@ -72,6 +72,14 @@ class TestExamples(unittest.TestCase):
         assert_logtol(sol_ac("A"), (A_ac/3)**2, tol2)
         assert_logtol(sol_ac["cost"], (A_ac/3)**4, tol2)
 
+    def test_model_var_access(self, example):
+        model = example.PS
+        _ = model["E"]
+        with self.assertRaises(ValueError):
+            _ = model["m"]  # multiple variables called m
+        with self.assertRaises(KeyError):
+            _ = model.topvar("E") # try to get a topvar in a submodel
+
     def test_performance_modeling(self, example):
         pass
 
