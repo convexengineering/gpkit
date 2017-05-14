@@ -1,7 +1,7 @@
 rm source/autodoc/*
 sphinx-apidoc ../gpkit -o source/autodoc
 
-# Delete fist 3 lines
+# Delete first 3 lines
 sed -i '' -e '1,3d' source/autodoc/gpkit.rst
 
 # Add header
