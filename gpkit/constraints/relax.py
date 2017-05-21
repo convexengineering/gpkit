@@ -124,7 +124,6 @@ class ConstantsRelaxed(ConstraintSet):
                 continue
             descr = dict(key.descr)
             descr.pop("value", None)
-            descr["name"] += "_{relaxratio}"
             descr["units"] = "-"
             descr["models"] = descr.pop("models", [])+["Relax"]
             descr["modelnums"] = descr.pop("modelnums", []) + [self.num]
@@ -132,8 +131,9 @@ class ConstantsRelaxed(ConstraintSet):
             relaxvars.append(relaxation)
             del substitutions[key]
             var = Variable(**key.descr)  # TODO: make it easier to make copies of a variable
+            self.origvars.append(var)
             descr = dict(key.descr)
-            descr["name"] += "_{origvalue}"
+            descr["name"] += "_{before}"
             descr["models"] = descr.pop("models", [])+["Relax"]
             descr["modelnums"] = descr.pop("modelnums", []) + [self.num]
             unrelaxed = Variable(**descr)
@@ -155,7 +155,10 @@ class ConstantsRelaxed(ConstraintSet):
         return crs
 
     def process_result(self, result):
+        ConstraintSet.process_result(self, result)
         csenss = result["sensitivities"]["constants"]
         for const in csenss:
             if const in self._unrelaxmap:
-                csenss[self._unrelaxmap[const]] = csenss.pop(const)
+                origvar = self._unrelaxmap[const]
+                if origvar not in csenss:
+                    csenss[origvar] = csenss.pop(const)

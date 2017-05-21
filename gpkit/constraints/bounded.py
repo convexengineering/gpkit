@@ -84,6 +84,7 @@ class Bounded(ConstraintSet):
 
     def process_result(self, result):
         "Creates (and potentially prints) a dictionary of unbounded variables."
+        ConstraintSet.process_result(self, result)
         out = defaultdict(list)
         for i, varkey in enumerate(self.bounded_varkeys):
             value = mag(result["variables"][varkey])
@@ -99,17 +100,17 @@ class Bounded(ConstraintSet):
                     lam_gt = self.bound_las[i]
             if self.lowerbound:
                 if self.bound_las:
-                    if abs(lam_lt) >= 1e-7:  # arbitrary threshold
+                    if abs(lam_lt) >= 1e-7:  # arbitrary sens threshold
                         out["sensitive to lower bound"].append(varkey)
                 distance_below = np.log(value/self.lowerbound)
-                if distance_below <= 3:  # arbitrary threshold
+                if distance_below <= 3:  # arbitrary dist threshold
                     out["value near lower bound"].append(varkey)
             if self.upperbound:
                 if self.bound_las:
-                    if abs(lam_gt) >= 1e-7:  # arbitrary threshold
+                    if abs(lam_gt) >= 1e-7:  # arbitrary sens threshold
                         out["sensitive to upper bound"].append(varkey)
                 distance_above = np.log(self.upperbound/value)
-                if distance_above <= 3:  # arbitrary threshold
+                if distance_above <= 3:  # arbitrary dist threshold
                     out["value near upper bound"].append(varkey)
         if self.verbosity > 0 and out:
             print
