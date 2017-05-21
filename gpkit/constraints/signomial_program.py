@@ -4,8 +4,10 @@ from ..exceptions import InvalidGPConstraint
 from ..keydict import KeyDict
 from ..nomials import Variable
 from .costed import CostedConstraintSet
+from .set import ConstraintSet
 from .geometric_program import GeometricProgram
 from ..solution_array import SolutionArray
+from ..nomials import SignomialInequality
 
 
 class SignomialProgram(CostedConstraintSet):
@@ -152,6 +154,23 @@ class SignomialProgram(CostedConstraintSet):
             # for now, variables not declared elsewhere are
             # left for the individual constraints to handle
         return x0
+
+    def as_gpconstr(self, x0, substitutions):
+        if not hasattr(self, "gp_constrs"):
+            self.gp_constrs = []
+            self.sp_constrs = []
+            for cs in self.flat(constraintsets=False):
+                try:
+                    self.gp_constrs.extend(cs.as_posyslt1(substitutions))
+                except InvalidGPConstraint:
+                    if isinstance(cs, SignomialInequality):
+                        self.sp_constrs.append(cs)
+                    else:
+                        raise TypeError
+            self.gp_constrs = [p <= 1 for p in self.gp_constrs]
+            self.sp_constrs = ConstraintSet(self.sp_constrs)
+        return [self.gp_constrs,
+                self.sp_constrs.as_gpconstr(x0, substitutions)]
 
     def gp(self, x0=None, verbosity=1):
         "The GP approximation of this SP at x0."
