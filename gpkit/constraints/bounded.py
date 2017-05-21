@@ -82,6 +82,7 @@ class Bounded(ConstraintSet):
         self.bound_las = las[-n*len(self.bounded_varkeys):]
         return super(Bounded, self).sens_from_dual(las, nus)
 
+    # pylint: disable=too-many-branches
     def process_result(self, result):
         "Creates (and potentially prints) a dictionary of unbounded variables."
         ConstraintSet.process_result(self, result)

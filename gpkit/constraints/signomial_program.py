@@ -9,7 +9,6 @@ from .set import ConstraintSet
 from .geometric_program import GeometricProgram
 from ..solution_array import SolutionArray
 from ..nomials import SignomialInequality
-from .. import SignomialsEnabled
 
 
 class SignomialProgram(CostedConstraintSet):
@@ -53,7 +52,7 @@ class SignomialProgram(CostedConstraintSet):
     (z >= s) and then minimizing that dummy variable.""")
         CostedConstraintSet.__init__(self, cost, constraints, substitutions)
         try:
-            self.__add_externalfns_maybe()
+            self.__parse_externalfnvars()
             if self.externalfn_vars:  # not a GP! Skip to the `except`
                 raise InvalidGPConstraint("some variables have externalfns")
             _ = self.as_posyslt1(substitutions)  # should raise an error
@@ -69,6 +68,9 @@ class SignomialProgram(CostedConstraintSet):
         self.gps = []
         self.result = None
         self.lastgp = None
+        self.is_sgp = False
+        self._posys = []
+        self._spconstrs = []
 
     # pylint: disable=too-many-locals
     def localsolve(self, solver=None, verbosity=1, x0=None, reltol=1e-4,
@@ -159,19 +161,19 @@ class SignomialProgram(CostedConstraintSet):
             # left for the individual constraints to handle
         return x0
 
-    def as_gpconstr(self, x0, substitutions):
+    def _initial_gpconstrs(self, x0, substitutions):
         self._posys = []
-        self.spconstrs = []
+        self._spconstrs = []
         approx_posys = []
         for cs in self.flat(constraintsets=False):
             try:
                 self._posys.extend(cs.as_posyslt1(substitutions))
             except InvalidGPConstraint:
                 if isinstance(cs, SignomialInequality):
-                    self.spconstrs.append(cs)
+                    self._spconstrs.append(cs)
                     approx_posys.extend(cs.as_approxposyslt1(x0, substitutions))
                 else:
-                    self.custom_constraints = True
+                    self.is_sgp = True
                     return ConstraintSet.as_gpconstr(self, x0, substitutions)
         gpconstrs = [p <= 1 for p in self._posys]
         gp_approxconstrs = [p <= 1 for p in approx_posys]
@@ -181,9 +183,12 @@ class SignomialProgram(CostedConstraintSet):
         "The GP approximation of this SP at x0."
         x0 = self._fill_x0(x0)
         if not hasattr(self, "externalfn_vars"):
-            self.__add_externalfns_maybe()
-        if self.lastgp is None or self.custom_constraints:
-            gp_constrs = self.as_gpconstr(x0, self.substitutions)
+            self.__parse_externalfnvars()
+        if self.lastgp is None or self.is_sgp:
+            if self.lastgp is None:
+                gp_constrs = self._initial_gpconstrs(x0, self.substitutions)
+            if self.is_sgp:  # may be set to True by the call above
+                gp_constrs = self.as_gpconstr(x0, self.substitutions)
             if self.externalfn_vars:
                 gp_constrs.extend([v.key.externalfn(v, x0)
                                    for v in self.externalfn_vars])
@@ -191,16 +196,17 @@ class SignomialProgram(CostedConstraintSet):
                                   self.substitutions, verbosity=verbosity)
             gp.x0 = x0  # NOTE: SIDE EFFECTS
             spposys = []
-            for spc in self.spconstrs:
+            for spc in self._spconstrs:
                 spposys.extend(spc.as_approxposyslt1(x0, self.substitutions))
             return gp
         else:
             lastgp = self.lastgp
-            gpmons = sum([len(p.exps) for p in self._posys]) + len(self.cost.exps)
+            gpmons = len(self.cost.exps) + sum([len(p.exps)
+                                                for p in self._posys])
             spposys = []
-            for spc in self.spconstrs:
+            for spc in self._spconstrs:
                 spposys.extend(spc.as_approxposyslt1(x0, self.substitutions))
-            # k [j]: number of monomials (columns of F) present in each constraint
+            # k [j]: number of monomials present in each signomial constraint
             k = [len(p.exps) for p in spposys]
             # p_idxs [i]: posynomial index of each monomial
             p_idxs = []
@@ -219,10 +225,10 @@ class SignomialProgram(CostedConstraintSet):
 
             return lastgp
 
-    def __add_externalfns_maybe(self):
+    def __parse_externalfnvars(self):
         "If this hasn't already been done, look for vars with externalfns"
         self.externalfn_vars = frozenset(Variable(newvariable=False,
                                                   **v.descr)
                                          for v in self.varkeys
                                          if v.externalfn)
-        self.custom_constraints = bool(self.externalfn_vars)
+        self.is_sgp = bool(self.externalfn_vars)

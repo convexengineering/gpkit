@@ -1,7 +1,6 @@
 """Models for assessing primal feasibility"""
 from .set import ConstraintSet
 from ..nomials import Variable, VectorVariable, parse_subs, NomialArray
-from ..nomials import Monomial
 from ..keydict import KeyDict
 from .. import NamedVariables, MODELNUM_LOOKUP
 
@@ -130,7 +129,8 @@ class ConstantsRelaxed(ConstraintSet):
             relaxation = Variable(**descr)
             relaxvars.append(relaxation)
             del substitutions[key]
-            var = Variable(**key.descr)  # TODO: make it easier to make copies of a variable
+            var = Variable(**key.descr)
+            # TODO: make it easier to make copies of a variable
             self.origvars.append(var)
             descr = dict(key.descr)
             descr["name"] += "_{before}"
@@ -145,14 +145,6 @@ class ConstantsRelaxed(ConstraintSet):
         self.relaxvars = NomialArray(relaxvars)
         ConstraintSet.__init__(self, [constraints, relaxation_constraints])
         self.substitutions = substitutions
-
-    def as_gpconstr(self, *args, **kwargs):
-        """Wraps GP-approx constraints in a ConstantsRelaxedSensitivities
-        so that sensitivities will be calculated."""
-        as_gp = ConstraintSet.as_gpconstr(self, *args, **kwargs)
-        crs = ConstantsRelaxedSensitivities(as_gp)
-        crs.origvars = self.origvars
-        return crs
 
     def process_result(self, result):
         ConstraintSet.process_result(self, result)

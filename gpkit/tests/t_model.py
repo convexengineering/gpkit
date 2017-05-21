@@ -481,7 +481,7 @@ class TestSP(unittest.TestCase):
         y = Variable('y')
         with SignomialsEnabled():
             m = Model(x, [x + y >= 1, y <= 0.5])
-        gp = m.sp().gp(x0={x: 0.5}, verbosity=0)
+        gp = m.sp().gp(x0={x: 0.5}, verbosity=0)  # pylint: disable=no-member
         # TODO: sp solves now reorder the constraints to be
         #       gp constraints first, then sp constraints,
         #       so m[0][0] becomes m.sp().gp()[0][1]

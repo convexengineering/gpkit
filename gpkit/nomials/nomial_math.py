@@ -697,6 +697,7 @@ class SignomialInequality(ScalarSingleEquationConstraint):
         return pc
 
     def as_approxposyslt1(self, x0, substitutions=None):
+        "Returns posy <= 1 approximations with consistent exp ordering."
         if substitutions is not self._last_used_substitutions:
             self._last_used_substitutions = substitutions
             self.unsubbed = [s.sub(substitutions, require_positive=False)
@@ -738,6 +739,7 @@ class SingleSignomialEquality(SignomialInequality):
         return mec
 
     def as_approxposyslt1(self, x0, substitutions=None):
+        "Returns posy <= 1 approximations with consistent exp ordering."
         if substitutions is not self._last_used_substitutions:
             self._last_used_substitutions = substitutions
             self.unsubbed = [s.sub(substitutions, require_positive=False)
