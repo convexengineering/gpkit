@@ -654,6 +654,7 @@ class SignomialInequality(ScalarSingleEquationConstraint):
         self.nomials.extend(self.unsubbed)
         self.substitutions = dict(self.left.values)
         self.substitutions.update(self.right.values)
+        self._last_used_substitutions = None
 
     def as_posyslt1(self, substitutions=None):
         "Returns the posys <= 1 representation of this constraint."
@@ -695,6 +696,20 @@ class SignomialInequality(ScalarSingleEquationConstraint):
         pc.substitutions = self.substitutions
         return pc
 
+    def as_approxposyslt1(self, x0, substitutions=None):
+        if substitutions is not self._last_used_substitutions:
+            self._last_used_substitutions = substitutions
+            self.unsubbed = [s.sub(substitutions, require_positive=False)
+                             for s in self.unsubbed]
+        siglt0, = self.unsubbed
+        posy, negy = siglt0.posy_negy()
+        # assume unspecified negy variables have a value of 1.0
+        x0.update({vk: 1.0 for vk in negy.varlocs if vk not in x0})
+        rhs = negy.mono_lower_bound(x0)
+        exps = [exp - rhs.exp for exp in posy.exps]
+        cs = [c/rhs.c for c in posy.cs]
+        return [Posynomial(exps, cs, simplify=False)]
+
 
 class SingleSignomialEquality(SignomialInequality):
     "A constraint of the general form posynomial == posynomial"
@@ -705,7 +720,7 @@ class SingleSignomialEquality(SignomialInequality):
 
     def as_posyslt1(self, substitutions=None):
         "Returns the posys <= 1 representation of this constraint."
-        # todo deal with substitutions
+        # TODO: deal with substitutions
         raise InvalidGPConstraint("SignomialEquality could not simplify"
                                   " to a PosynomialInequality; try calling"
                                   "`.localsolve` instead of `.solve` to"
@@ -713,7 +728,7 @@ class SingleSignomialEquality(SignomialInequality):
 
     def as_gpconstr(self, x0, substitutions=None):
         "Returns GP approximation of an SP constraint at x0"
-        # todo deal with substitutions
+        # TODO: deal with substitutions
         siglt0, = self.unsubbed
         posy, negy = siglt0.posy_negy()
         # assume unspecified variables have a value of 1.0
@@ -721,3 +736,15 @@ class SingleSignomialEquality(SignomialInequality):
         mec = (posy.mono_lower_bound(x0) == negy.mono_lower_bound(x0))
         mec.substitutions = self.substitutions
         return mec
+
+    def as_approxposyslt1(self, x0, substitutions=None):
+        if substitutions is not self._last_used_substitutions:
+            self._last_used_substitutions = substitutions
+            self.unsubbed = [s.sub(substitutions, require_positive=False)
+                             for s in self.unsubbed]
+        siglt0, = self.unsubbed
+        posy, negy = siglt0.posy_negy()
+        # assume unspecified negy variables have a value of 1.0
+        x0.update({vk: 1.0 for vk in negy.varlocs if vk not in x0})
+        lhs, rhs = posy.mono_lower_bound(x0), negy.mono_lower_bound(x0)
+        return lhs/rhs, rhs/lhs

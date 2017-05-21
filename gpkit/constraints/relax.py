@@ -77,23 +77,7 @@ class ConstraintsRelaxed(ConstraintSet):
                                substitutions)
 
 
-class ConstantsRelaxedSensitivities(ConstraintSet):
-    "A ConstraintSet to determine relaxed constant's sensitivities."
-    origvars = None
-
-    def sens_from_dual(self, las, nus):
-        """Computes constraint and variable sensitivities from dual solution
-
-        Replaces the sensitivity of the relaxed constants (which, as a free
-        variable, is 0) with the sensitivity of the relaxed constant's value.
-        """
-        var_senss = ConstraintSet.sens_from_dual(self, las, nus)
-        var_senss += {var.key: las[-3*i - 2] - las[-3*i - 1]
-                      for i, var in enumerate(reversed(self.origvars))}
-        return var_senss
-
-
-class ConstantsRelaxed(ConstantsRelaxedSensitivities):
+class ConstantsRelaxed(ConstraintSet):
     """Relax constants in a constraintset.
 
     Arguments
@@ -129,6 +113,7 @@ class ConstantsRelaxed(ConstantsRelaxedSensitivities):
         relaxvars, relaxation_constraints = [], []
         self.origvars = []
         self.num = MODELNUM_LOOKUP["Relax"]
+        self._unrelaxmap = {}
         MODELNUM_LOOKUP["Relax"] += 1
         for key, value in constants.items():
             if value == 0:
@@ -139,23 +124,26 @@ class ConstantsRelaxed(ConstantsRelaxedSensitivities):
                 continue
             descr = dict(key.descr)
             descr.pop("value", None)
+            descr["name"] += "_{relaxratio}"
             descr["units"] = "-"
             descr["models"] = descr.pop("models", [])+["Relax"]
             descr["modelnums"] = descr.pop("modelnums", []) + [self.num]
             relaxation = Variable(**descr)
             relaxvars.append(relaxation)
             del substitutions[key]
-            original = Variable(**key.descr)
-            self.origvars.append(original)
-            if original.units and not hasattr(value, "units"):
-                value *= original.units
-            value = Monomial(value)  # convert for use in constraint
+            var = Variable(**key.descr)  # TODO: make it easier to make copies of a variable
+            descr = dict(key.descr)
+            descr["name"] += "_{origvalue}"
+            descr["models"] = descr.pop("models", [])+["Relax"]
+            descr["modelnums"] = descr.pop("modelnums", []) + [self.num]
+            unrelaxed = Variable(**descr)
+            self._unrelaxmap[unrelaxed.key] = key
+            substitutions[unrelaxed] = value
             relaxation_constraints.append([relaxation >= 1,
-                                           value/relaxation <= original,
-                                           original <= value*relaxation])
+                                           unrelaxed/relaxation <= var,
+                                           var <= unrelaxed*relaxation])
         self.relaxvars = NomialArray(relaxvars)
-        ConstantsRelaxedSensitivities.__init__(self, [constraints,
-                                                      relaxation_constraints])
+        ConstraintSet.__init__(self, [constraints, relaxation_constraints])
         self.substitutions = substitutions
 
     def as_gpconstr(self, *args, **kwargs):
@@ -165,3 +153,9 @@ class ConstantsRelaxed(ConstantsRelaxedSensitivities):
         crs = ConstantsRelaxedSensitivities(as_gp)
         crs.origvars = self.origvars
         return crs
+
+    def process_result(self, result):
+        csenss = result["sensitivities"]["constants"]
+        for const in csenss:
+            if const in self._unrelaxmap:
+                csenss[self._unrelaxmap[const]] = csenss.pop(const)

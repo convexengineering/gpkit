@@ -4,15 +4,13 @@ from gpkit.exceptions import InvalidGPConstraint
 from external_function import external_code
 
 
-class ExternalConstraint(ConstraintSet):
+class ExternalConstraint(object):
     "Class for external calling"
+    varkeys = {}
     # Overloading the __init__ function here permits the constraint class to be
     # called more cleanly at the top level GP.
+
     def __init__(self, x, y, **kwargs):
-
-        # Calls the ConstriantSet __init__ function
-        super(ExternalConstraint, self).__init__([], **kwargs)
-
         # We need a GPkit variable defined to return in our constraint.  The
         # easiest way to do this is to read in the parameters of interest in
         # the initiation of the class and store them here.
