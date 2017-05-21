@@ -96,8 +96,6 @@ class ConstraintSet(list):
         return variables
 
     def __setitem__(self, key, value):
-        if not isinstance(value, ConstraintSet):
-            value = ConstraintSet(value)
         self.substitutions.update(value.substitutions)
         list.__setitem__(self, key, value)
         self.reset_varkeys()
