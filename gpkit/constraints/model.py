@@ -8,6 +8,7 @@ from .signomial_program import SignomialProgram
 from ..small_scripts import mag
 from ..tools.autosweep import autosweep_1d
 from ..exceptions import InvalidGPConstraint
+from .. import NamedVariables
 
 
 class Model(CostedConstraintSet):
