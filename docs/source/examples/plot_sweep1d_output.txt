@@ -1,5 +1,0 @@
-MANUAL SWEEP
-Solving over 20 passes.
-
-AUTOSWEEP
-Solved after 7 passes, possible logerr +/-0.000476
