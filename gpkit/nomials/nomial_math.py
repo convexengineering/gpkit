@@ -1,6 +1,5 @@
 """Signomial, Posynomial, Monomial, Constraint, & MonoEQCOnstraint classes"""
 import numpy as np
-from .array import NomialArray
 from .nomial_core import Nomial
 from ..constraints import SingleEquationConstraint
 from ..small_classes import Strings, Numbers, Quantity
@@ -193,21 +192,19 @@ class Signomial(Nomial):
         return sum(hmap.values())
 
     def __le__(self, other):
-        if isinstance(other, NomialArray):
-            return NotImplemented
-        else:
+        if isinstance(other, (Numbers, Signomial)):
             return SignomialInequality(self, "<=", other)
+        return NotImplemented
 
     def __ge__(self, other):
-        if isinstance(other, NomialArray):
-            return NotImplemented
-        else:
+        if isinstance(other, (Numbers, Signomial)):
             # by default all constraints take the form left >= right
             return SignomialInequality(self, ">=", other)
+        return NotImplemented
 
     # posynomial arithmetic
     def __add__(self, other):
-        if isinstance(other, NomialArray):
+        if isinstance(other, np.ndarray):
             return np.array(self)+other
 
         other_hmap = None
@@ -226,7 +223,7 @@ class Signomial(Nomial):
             return NotImplemented
 
     def __mul__(self, other):
-        if isinstance(other, NomialArray):
+        if isinstance(other, np.ndarray):
             return np.array(self)*other
 
         if isinstance(other, Numbers):
@@ -266,8 +263,6 @@ class Signomial(Nomial):
             return self*other**-1
         elif isinstance(other, Monomial):
             return other.__rdiv__(self)
-        elif isinstance(other, NomialArray):
-            return np.array(self)/other
         else:
             return NotImplemented
 

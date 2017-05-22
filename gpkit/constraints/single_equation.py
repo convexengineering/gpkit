@@ -41,16 +41,25 @@ class SingleEquationConstraint(object):
         if not excluded:
             excluded = ["units"]  # previously bool(self.left.units)
         latex_oper = self.latex_opers[self.oper]
-        return ("%s %s %s" % (self.left.latex(excluded), latex_oper,
-                              self.right.latex(excluded)))
+        latexleft = trycall(self.left, "latex", excluded, str(self.left))
+        latexright = trycall(self.right, "latex", excluded, str(self.right))
+        return ("%s %s %s" % (latexleft, latex_oper, latexright))
 
     def sub(self, subs):
         "Returns a substituted version of this constraint."
-        subbed = self.func_opers[self.oper](self.left.sub(subs),
-                                            self.right.sub(subs))
+        subbedleft = trycall(self.left, "sub", subs, self.left)
+        subbedright = trycall(self.right, "sub", subs, self.right)
+        subbed = self.func_opers[self.oper](subbedleft, subbedright)
         subbed.substitutions = self.substitutions
         return subbed
 
     def process_result(self, result):
         "Process solver results"
         pass
+
+
+def trycall(obj, attr, arg, default):
+    "Try to call method of an object, returning `default` if it does not exist"
+    if hasattr(obj, attr):
+        return getattr(obj, attr)(arg)
+    return default
