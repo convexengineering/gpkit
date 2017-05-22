@@ -153,7 +153,7 @@ def plot_frontiers(gp, znames, nrow=1, ncol=3, figsize=(15, 5)):
                       yticks=gp.sweep.values()[1])
 
 
-def _combine_nearby_ticks(ticks, lim, ntick=25):
+def _combine_nearby_ticks(ticks, lim, ntick):
     # pylint: disable=too-many-locals
     """This function deals with overlapping labels in non-regularly-spaced
     plotting ticks. Nearby ticks are combined (averaged), and their labels
@@ -212,7 +212,8 @@ def _combine_nearby_ticks(ticks, lim, ntick=25):
     return [t for _, t, w, _, _ in decorated if w]
 
 
-def sensitivity_plot(gp, keys=None, xmax=1, yxmax=1):
+# pylint: disable=too-many-locals
+def sensitivity_plot(gp, keys=None, xmax=1, yxmax=1, ntick=25, mins=0.0):
     """Plot percentage change in objective (cost) as variables change,
     using sensitivity information.
 
@@ -226,6 +227,9 @@ def sensitivity_plot(gp, keys=None, xmax=1, yxmax=1):
         max (and min) percentage to plot on x axis
     yxmax (float):
         max (and min) percentage for y axis, *as a fraction of xmax*
+    ntick (int):
+        maximum number of ticks for which tick labels don't overlap
+    mins (float): don't plot sensitivities below this value
 
     Returns
     -------
@@ -239,11 +243,12 @@ def sensitivity_plot(gp, keys=None, xmax=1, yxmax=1):
     left_ax.set_ylim((-ymax, ymax))
     for k in keys:
         s = gp.solution["sensitivities"]["constants"][k]
-        left_ax.plot((-xmax, xmax), (-xmax*s, xmax*s))
-        if abs(s) > yxmax:
-            top_ticks.append((ymax/s, str(k)))
-        else:
-            right_ticks.append((xmax*s, str(k)))
+        if abs(s) >= mins:
+            left_ax.plot((-xmax, xmax), (-xmax*s, xmax*s), "b", alpha=abs(s))
+            if abs(s) > yxmax:
+                top_ticks.append((ymax/s, str(k)))
+            else:
+                right_ticks.append((xmax*s, str(k)))
     left_ax.set_xlabel("% change")
     left_ax.set_ylabel("Approx. % change in cost")
     left_ax.grid(True)
@@ -253,8 +258,8 @@ def sensitivity_plot(gp, keys=None, xmax=1, yxmax=1):
     right_ax = left_ax.twinx()
     top_ax = left_ax.twiny()
     ylim = left_ax.get_ylim()
-    right_ticks = _combine_nearby_ticks(right_ticks, lim=ylim)
-    top_ticks = _combine_nearby_ticks(top_ticks, lim=(-xmax, xmax))
+    right_ticks = _combine_nearby_ticks(right_ticks, lim=ylim, ntick=ntick)
+    top_ticks = _combine_nearby_ticks(top_ticks, lim=(-xmax, xmax), ntick=ntick)
     right_ax.set_yticks([t[0] for t in right_ticks])
     right_ax.set_yticklabels([t[1] for t in right_ticks])
     top_ax.set_xticks([t[0] for t in top_ticks])

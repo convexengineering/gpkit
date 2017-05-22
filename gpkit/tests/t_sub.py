@@ -16,9 +16,9 @@ class TestNomialSubs(unittest.TestCase):
         """Basic substitution of numeric value"""
         x = Variable("x")
         p = x**2
-        self.assertEqual(p.sub(x, 3), 9)
-        self.assertEqual(p.sub(x.key, 3), 9)
-        self.assertEqual(p.sub("x", 3), 9)
+        self.assertEqual(p.sub({x: 3}), 9)
+        self.assertEqual(p.sub({x.key: 3}), 9)
+        self.assertEqual(p.sub({"x": 3}), 9)
 
     def test_basic(self):
         """Basic substitution, symbolic"""
@@ -32,7 +32,7 @@ class TestNomialSubs(unittest.TestCase):
     def test_string_mutation(self):
         x = Variable("x", "m")
         descr_before = list(x.exp)[0].descr
-        y = x.sub("x", "y")
+        y = x.sub({"x": "y"})
         descr_after = list(x.exp)[0].descr
         self.assertEqual(descr_before, descr_after)
         x_changed_descr = dict(descr_before)
@@ -42,19 +42,19 @@ class TestNomialSubs(unittest.TestCase):
         if not isinstance(descr_before["units"], str):
             self.assertAlmostEqual(x_changed_descr["units"]/y_descr["units"],
                                    1.0)
-        self.assertEqual(x.sub("x", x), x)
+        self.assertEqual(x.sub({"x": x}), x)
 
     def test_quantity_sub(self):
         if gpkit.units:
             x = Variable("x", 1, "cm")
             y = Variable("y", 1)
-            self.assertEqual(x.sub(x, 1*gpkit.units.m).c.magnitude, 100)
+            self.assertEqual(x.sub({x: 1*gpkit.units.m}).c.magnitude, 100)
             # NOTE: uncomment the below if requiring Quantity substitutions
             # self.assertRaises(ValueError, x.sub, x, 1)
-            self.assertRaises(ValueError, x.sub, x, 1*gpkit.units.N)
-            self.assertRaises(ValueError, y.sub, y, 1*gpkit.units.N)
+            self.assertRaises(ValueError, x.sub, {x: 1*gpkit.units.N})
+            self.assertRaises(ValueError, y.sub, {y: 1*gpkit.units.N})
             v = gpkit.VectorVariable(3, "v", "cm")
-            subbed = v.sub(v, [1, 2, 3]*gpkit.units.m)
+            subbed = v.sub({v: [1, 2, 3]*gpkit.units.m})
             self.assertEqual([z.c.magnitude for z in subbed], [100, 200, 300])
 
     def test_scalar_units(self):
@@ -69,10 +69,10 @@ class TestNomialSubs(unittest.TestCase):
                     expected = 1000.0
                 else:
                     expected = 1.0
-                self.assertAlmostEqual(expected, mag(x.sub(x_, y_).c))
+                self.assertAlmostEqual(expected, mag(x.sub({x_: y_}).c))
         if units_exist:
             z = Variable("z", "s")
-            self.assertRaises(ValueError, y.sub, y, z)
+            self.assertRaises(ValueError, y.sub, {y: z})
 
     def test_dimensionless_units(self):
         x = Variable('x', 3, 'ft')
@@ -85,7 +85,7 @@ class TestNomialSubs(unittest.TestCase):
         "Tests that dimensionless and undimensioned subs can interact."
         x = Variable("x", "-")
         y = Variable("y")
-        self.assertEqual(x.sub(x, y), y)
+        self.assertEqual(x.sub({x: y}), y)
 
     def test_vector(self):
         x = Variable("x")
@@ -94,12 +94,12 @@ class TestNomialSubs(unittest.TestCase):
         p = x*y*z
         self.assertTrue(all(p.sub({x: 1, "y": 2}) == 2*z))
         self.assertTrue(all(p.sub({x: 1, y: 2, "z": [1, 2]}) ==
-                            z.sub(z, [2, 4])))
+                            z.sub({z: [2, 4]})))
 
         xvec = VectorVariable(3, "x", "m")
         xs = xvec[:2].sum()
         for x_ in ["x", xvec]:
-            self.assertAlmostEqual(mag(xs.sub(x_, [1, 2, 3]).c), 3.0)
+            self.assertAlmostEqual(mag(xs.sub({x_: [1, 2, 3]}).c), 3.0)
 
     def test_variable(self):
         """Test special single-argument substitution for Variable"""

@@ -68,11 +68,11 @@ class GeometricProgram(NomialData):
                 constr_posys = constraint.as_posyslt1()
             except TypeError as err:
                 if err.message == ("SignomialInequality could not simplify to"
-                                   "a PosynomialInequality"):
+                                   " a PosynomialInequality"):
                     raise ValueError("GeometricPrograms cannot contain"
                                      " SignomialInequalities: try forming your"
                                      " program as SignomialProgram or calling"
-                                     " Model.localsolve().")
+                                     " .localsolve().")
                 raise
             if not all(constr_posys):
                 raise ValueError("%s is an invalid constraint for a"
@@ -307,10 +307,17 @@ class GeometricProgram(NomialData):
             if k in self.unusedsubkeys:
                 continue
             if isinstance(k, str):
-                k, = self.constraints.varkeys[k]
+                present_varkeys = self.constraints.varkeys[k]
+                # TODO: when unusedsubkeys is reimplemented, we should be able
+                #       to assume that any string _is_ in the constraints.
+                if present_varkeys:
+                    k, = present_varkeys
+                else:
+                    k = None
             else:
                 k = k.key
-            const[k] = v
+            if k is not None:
+                const[k] = v
         result["constants"] = KeyDict(const)
         result["variables"] = KeyDict(result["freevariables"])
         result["variables"].update(result["constants"])
