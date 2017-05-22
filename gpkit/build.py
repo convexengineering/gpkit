@@ -14,7 +14,7 @@ settings = {}
 
 def log(*args):
     "Print a line and append it to the log string."
-    global LOGSTR
+    global LOGSTR  # pylint: disable=global-statement
     print(*args)
     LOGSTR += " ".join(args) + "\n"
 
@@ -111,7 +111,8 @@ class MosekCLI(SolverBackend):
             log("#   Trying to run mskexpopt...")
             if call("mskexpopt") in (1052, 28):  # 28 for MacOSX
                 return "in system path"
-        except Exception:
+        except:  # pylint: disable=bare-except
+            # exception type varies by operating system
             return
 
 
@@ -123,7 +124,8 @@ class CVXopt(SolverBackend):
         "Attempts to import mskexpopt."
         try:
             log("#   Trying to import cvxopt...")
-            import cvxopt
+            # Testing the import, so the variable is intentionally not used
+            import cvxopt # pylint: disable=unused-variable
             return "in Python path"
         except ImportError:
             return
@@ -151,6 +153,13 @@ class Mosek(SolverBackend):
             """      MSK_echotask(expopttask,MSK_STREAM_MSG, "Warning: The variable with index '%d' has only negative coefficients akj.\\n The problem is possibly ill-posed.\\n",i);""", # pylint: disable=line-too-long
         }
     }
+
+    def __init__(self):
+        super(Mosek, self).__init__()
+        self.expopt_files = None
+        self.bin_dir = None
+        self.flags = None
+        self.lib_path = None
 
     def look(self):
         "Looks in default install locations for latest mosek version."
@@ -202,9 +211,7 @@ class Mosek(SolverBackend):
         self.bin_dir = pathjoin(lib_dir, "bin")
         self.lib_path = glob.glob(self.bin_dir+os.sep+libpattern)[0]
 
-        if not isfile(h_path):
-            return
-        if not isfile(self.lib_path):
+        if not isfile(h_path) or not isfile(self.lib_path):
             return
 
         expopt_dir = pathjoin(tools_dir, "examples", "c")
@@ -217,7 +224,7 @@ class Mosek(SolverBackend):
             if not isfile(expopt_file):
                 return
 
-        global settings
+        global settings  # pylint: disable=global-variable-not-assigned
         settings["mosek_bin_dir"] = self.bin_dir
         os.environ['PATH'] = os.environ['PATH'] + os.pathsep + self.bin_dir
 
@@ -226,7 +233,8 @@ class Mosek(SolverBackend):
     def build(self):
         "Builds a dynamic library to GPKITBUILD or $HOME/.gpkit"
         try:
-            import ctypesgencore
+            # Testing the import, so the variable is intentionally not used
+            import ctypesgencore # pylint: disable=unused-variable
         except ImportError:
             log("## SKIPPING MOSEK INSTALL: CTYPESGENCORE WAS NOT FOUND")
             return
@@ -286,7 +294,7 @@ class Mosek(SolverBackend):
 
 def build_gpkit():
     "Builds GPkit"
-    global settings
+    global settings  # pylint: disable=global-variable-not-assigned
 
     if isfile("__init__.py"):
         #call("ls")

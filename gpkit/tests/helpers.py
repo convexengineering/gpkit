@@ -90,7 +90,7 @@ def run_tests(tests, xmloutput=None, verbosity=2):
     for t in tests:
         suite.addTests(loader.loadTestsFromTestCase(t))
     if xmloutput:
-        import xmlrunner
+        import xmlrunner  # pylint: disable=import-error
         xmlrunner.XMLTestRunner(output=xmloutput).run(suite)
     else:
         unittest.TextTestRunner(verbosity=verbosity).run(suite)

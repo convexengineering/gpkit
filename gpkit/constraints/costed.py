@@ -14,7 +14,7 @@ class CostedConstraintSet(ConstraintSet):
     """
     def __init__(self, cost, constraints, substitutions=None):
         self.cost = cost
-        subs = self.cost.values
+        subs = dict(self.cost.values)
         if substitutions:
             subs.update(substitutions)
         ConstraintSet.__init__(self, constraints, subs)

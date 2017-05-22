@@ -27,19 +27,6 @@ def listify(item):
         return [item]
 
 
-def isequal(a, b):
-    "Determine if two elements are equal, recursing through Iterables"
-    # pylint: disable=invalid-name
-    if (isinstance(a, Iterable) and
-            not isinstance(a, Strings+(tuple, list, dict))):
-        for i, a_i in enumerate(a):
-            if not isequal(a_i, b[i]):
-                return False
-    elif a != b:
-        return False
-    return True
-
-
 def mag(c):
     "Return magnitude of a Number or Quantity"
     if isinstance(c, Quantity):
@@ -67,22 +54,47 @@ def unitstr(units, into="%s", options="~", dimless='-'):
         return ""
 
 
+def nomial_latex_helper(c, pos_vars, neg_vars):
+    """Combines (varlatex, exponent) tuples,
+    separated by positive vs negative exponent,
+    into a single latex string"""
+    # TODO this is awkward due to sensitivity_map, which needs a refactor
+    pvarstrs = ['%s^{%.2g}' % (varl, x) if "%.2g" % x != "1" else varl
+                for (varl, x) in pos_vars]
+    nvarstrs = ['%s^{%.2g}' % (varl, -x)
+                if "%.2g" % -x != "1" else varl
+                for (varl, x) in neg_vars]
+    pvarstrs.sort()
+    nvarstrs.sort()
+    pvarstr = ' '.join(pvarstrs)
+    nvarstr = ' '.join(nvarstrs)
+    c = mag(c)
+    cstr = "%.2g" % c
+    if pos_vars and (cstr == "1" or cstr == "-1"):
+        cstr = cstr[:-1]
+    else:
+        cstr = latex_num(c)
+
+    if not pos_vars and not neg_vars:
+        mstr = "%s" % cstr
+    elif pos_vars and not neg_vars:
+        mstr = "%s%s" % (cstr, pvarstr)
+    elif neg_vars and not pos_vars:
+        mstr = "\\frac{%s}{%s}" % (cstr, nvarstr)
+    elif pos_vars and neg_vars:
+        mstr = "%s\\frac{%s}{%s}" % (cstr, pvarstr, nvarstr)
+
+    return mstr
+
+
 def is_sweepvar(sub):
     "Determines if a given substitution indicates a sweep."
     try:
         if sub[0] == "sweep":
             if isinstance(sub[1], Iterable) or hasattr(sub[1], "__call__"):
                 return True
-    except:
+    except (TypeError, IndexError):
         return False
-
-
-def invalid_types_for_oper(oper, a, b):
-    "Raises TypeError for unsupported operations."
-    typea = a.__class__.__name__
-    typeb = b.__class__.__name__
-    raise TypeError("unsupported operand types"
-                    " for %s: '%s' and '%s'" % (oper, typea, typeb))
 
 
 def latex_num(c):

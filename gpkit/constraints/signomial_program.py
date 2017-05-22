@@ -3,6 +3,7 @@ from time import time
 from ..geometric_program import GeometricProgram
 from ..feasibility import feasibility_model
 from .costed import CostedConstraintSet
+from ..exceptions import InvalidGPConstraint
 
 
 class SignomialProgram(CostedConstraintSet):
@@ -48,10 +49,10 @@ class SignomialProgram(CostedConstraintSet):
         try:
             _ = self.as_posyslt1()  # should raise an error
             # TODO: is there a faster way to check?
-        except TypeError:
+        except InvalidGPConstraint:
             pass
         else:  # this is a GP
-            raise ValueError("""No Signomials remained after substitution.
+            raise ValueError("""Model valid as a Geometric Program.
 
     SignomialPrograms should only be created with Models containing Signomial
     Constraints, since Models without Signomials have global solutions and can
@@ -103,6 +104,7 @@ class SignomialProgram(CostedConstraintSet):
     appear to be converging, you may wish to increase the iteration limit by
     calling .localsolve(..., iteration_limit=NEWLIMIT).""" % len(self.gps))
             gp = self.gp(x0, verbosity=verbosity-1)
+            gp.x0 = x0           # NOTE: SIDE EFFECTS
             self.gps.append(gp)  # NOTE: SIDE EFFECTS
             try:
                 result = gp.solve(solver, verbosity-1, **kwargs)
