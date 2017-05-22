@@ -4,8 +4,8 @@ import unittest
 from gpkit import (Model, Monomial, settings, VectorVariable, Variable,
                    SignomialsEnabled, ArrayVariable, SignomialEquality)
 from gpkit.small_classes import CootMatrix
-from gpkit.feasibility import feasibility_model
 from gpkit.exceptions import InvalidGPConstraint
+from gpkit import NamedVariables
 
 NDIGS = {"cvxopt": 4, "mosek": 5, "mosek_cli": 5}
 # name: decimal places of accuracy
@@ -46,7 +46,7 @@ class TestGP(unittest.TestCase):
 
     def test_sigeq(self):
         x = Variable("x")
-        y = Variable("y")
+        y = VectorVariable(1, "y")  # test vector input to sigeq
         c = Variable("c")
         with SignomialsEnabled():
             m = Model(c, [c >= (x + 0.25)**2 + (y - 0.5)**2,
@@ -200,18 +200,6 @@ class TestGP(unittest.TestCase):
         m = Model(x1**2 + 100 + 3*x2, [x1 >= 10., x2 >= 15.])
         sol = m.solve(solver=self.solver, verbosity=0)
         self.assertAlmostEqual(sol["cost"]/245., 1, self.ndig)
-
-    def test_feasibility_gp_(self):
-        x = Variable('x')
-        m = Model(x, [x**2 >= 1, x <= 0.5])
-        self.assertRaises(RuntimeWarning, m.solve, verbosity=0)
-        fm = feasibility_model(m.gp(), "max")
-        # pylint: disable=no-member
-        sol1 = fm.solve(verbosity=0)
-        fm = feasibility_model(m.gp(), "product")
-        sol2 = fm.solve(verbosity=0)
-        self.assertTrue(sol1["cost"] >= 1)
-        self.assertTrue(sol2["cost"] >= 1)
 
     def test_terminating_constant_(self):
         x = Variable('x')
@@ -386,7 +374,8 @@ class TestSP(unittest.TestCase):
         nonzero_adder = 0.1  # TODO: support reaching zero, issue #348
         with SignomialsEnabled():
             J = 0.01*(x - 1)**2 + nonzero_adder
-            m = Model(z, [z >= J], name="SmallSignomial")
+            with NamedVariables("SmallSignomial"):
+                m = Model(z, [z >= J])
         sol = m.localsolve(verbosity=0)
         self.assertAlmostEqual(sol['cost'], nonzero_adder, local_ndig)
         self.assertAlmostEqual(sol('x'), 0.98725425, self.ndig)
@@ -412,13 +401,13 @@ class TestSP(unittest.TestCase):
 
     def test_unbounded_debugging(self):
         "Test nearly-dual-feasible problems"
-        from gpkit.constraints.bounded import BoundedConstraintSet
+        from gpkit.constraints.bounded import Bounded
         x = Variable("x")
         y = Variable("y")
         m = Model(x*y, [x*y**1.000001 >= 100])
         with self.assertRaises((RuntimeWarning, ValueError)):
             m.solve(self.solver, verbosity=0)
-        m = Model(x*y, BoundedConstraintSet(m, verbosity=0))
+        m = Model(x*y, Bounded(m, verbosity=0))
         sol = m.solve(self.solver, verbosity=0)
         bounds = sol["boundedness"]
         if "sensitive to upper bound" in bounds:
@@ -441,11 +430,30 @@ class TestModelSolverSpecific(unittest.TestCase):
 
 class Thing(Model):
     "a thing, for model testing"
-    def __init__(self, n, **kwargs):
-        a = VectorVariable(n, "a", "g/m")
-        b = VectorVariable(n, "b", "m")
+    def setup(self, length):
+        a = VectorVariable(length, "a", "g/m")
+        b = VectorVariable(length, "b", "m")
         c = Variable("c", 17/4., "g")
-        Model.__init__(self, None, [a >= c/b], **kwargs)
+        return [a >= c/b]
+
+
+class Box(Model):
+    "simple box for model testing"
+    def setup(self):
+        h = Variable("h", "m", "height")
+        w = Variable("w", "m", "width")
+        d = Variable("d", "m", "depth")
+        V = Variable("V", "m**3", "volume")
+        return [V == h*w*d]
+
+class BoxAreaBounds(Model):
+    "for testing functionality of separate analysis models"
+    def setup(self, box):
+        A_wall = Variable("A_{wall}", 100, "m^2", "Upper limit, wall area")
+        A_floor = Variable("A_{floor}", 50, "m^2", "Upper limit, floor area")
+
+        return [2*box["h"]*box["w"] + 2*box["h"]*box["d"] <= A_wall,
+                box["w"]*box["d"] <= A_floor]
 
 
 class TestModelNoSolve(unittest.TestCase):
@@ -454,6 +462,15 @@ class TestModelNoSolve(unittest.TestCase):
         t = Thing(2)
         for vk in t.varkeys:
             self.assertEqual(vk.models, ["Thing"])
+
+    def test_no_naming_on_var_access(self):
+        # make sure that analysis models don't add their names to
+        # variables looked up from other models
+        box = Box()
+        area_bounds = BoxAreaBounds(box)
+        M = Model(box["V"], [box, area_bounds])
+        for var in ("h", "w", "d"):
+            self.assertEqual(len(M.variables_byname(var)), 1)
 
 
 TESTS = [TestModelSolverSpecific, TestModelNoSolve]

@@ -25,9 +25,11 @@ Table of contents
        gpkit101
        installation
        gettingstarted
+       debugging
+       visint
+       modelbuilding
        advancedcommands
        signomialprogramming
-       debugging
        examples
        autodoc/gpkit
        citinggpkit

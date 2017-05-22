@@ -27,6 +27,7 @@ class Variable(Monomial):
     Monomials containing a VarKey with the name '$name',
     where $name is the vector's name and i is the VarKey's index.
     """
+
     def __init__(self, *args, **descr):
         for arg in args:
             if isinstance(arg, Strings) and "name" not in descr:
@@ -43,6 +44,16 @@ class Variable(Monomial):
                 descr["units"] = arg
             elif isinstance(arg, Strings) and "label" not in descr:
                 descr["label"] = arg
+
+        if descr.pop("newvariable", True):
+            from .. import MODELS, MODELNUMS, NAMEDVARS
+
+            NAMEDVARS[tuple(MODELS), tuple(MODELNUMS)].append(self)
+
+            if MODELS:
+                descr["models"] = descr.get("models", []) + MODELS
+            if MODELNUMS:
+                descr["modelnums"] = descr.get("modelnums", []) + MODELNUMS
 
         Monomial.__init__(self, **descr)
         # NOTE: because Signomial.__init__ will change the class
@@ -72,7 +83,7 @@ class Variable(Monomial):
             arg, = args
             if not isinstance(arg, dict):
                 args = ({self: arg},)
-        return super(Variable, self).sub(*args, **kwargs)
+        return Monomial.sub(self, *args, **kwargs)
 
 
 class ArrayVariable(NomialArray):
@@ -97,20 +108,25 @@ class ArrayVariable(NomialArray):
     """
 
     def __new__(cls, shape, *args, **descr):
-        # pylint: disable=too-many-branches
+        # pylint: disable=too-many-branches, too-many-statements
         cls = NomialArray
 
         if "idx" in descr:
             raise KeyError("the description field 'idx' is reserved")
 
         shape = (shape,) if isinstance(shape, Numbers) else tuple(shape)
+        from .. import VECTORIZATION
+        if VECTORIZATION:
+            shape = shape + tuple(VECTORIZATION)
+            descr["vectorization"] = VECTORIZATION
 
         descr["shape"] = shape
 
         for arg in args:
             if isinstance(arg, Strings) and "name" not in descr:
                 descr["name"] = arg
-            elif (isinstance(arg, Iterable) and not isinstance(arg, Strings)
+            elif (isinstance(arg, (Numbers, Iterable))
+                  and not isinstance(arg, Strings)
                   and "value" not in descr):
                 descr["value"] = arg
             elif isinstance(arg, Strings+(Quantity,)) and "units" not in descr:
@@ -122,7 +138,15 @@ class ArrayVariable(NomialArray):
         for value_option in ["value", "sp_init"]:
             if value_option in descr:
                 values = descr.pop(value_option)
+                if "vectorization" in descr:
+                    if shape:
+                        values = np.full(shape, values, "f")
+                    else:
+                        descr["value"] = values
+                        values = []
                 break
+
+        descr.pop("vectorization", None)
 
         valuetype = ""
         if len(values):
@@ -130,7 +154,7 @@ class ArrayVariable(NomialArray):
                 shape_match = len(values) == shape[0]
                 valuetype = "list"
             else:
-                values = np.array(values)
+                values = np.array(values)    # pylint: disable=redefined-variable-type
                 shape_match = values.shape == shape
                 valuetype = "array"
             if not shape_match:
@@ -160,3 +184,15 @@ class ArrayVariable(NomialArray):
         obj.key = VarKey(**obj.descr)
 
         return obj
+
+
+# pylint: disable=too-many-ancestors
+class VectorizableVariable(Variable, ArrayVariable):
+    "A Variable outside a vectorized environment, an ArrayVariable within."
+    def __new__(cls, *args, **descr):
+        from .. import VECTORIZATION
+        if VECTORIZATION:
+            shape = descr.pop("shape", ())
+            return ArrayVariable.__new__(cls, shape, *args, **descr)
+        else:
+            return Variable(*args, **descr)

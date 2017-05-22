@@ -33,14 +33,6 @@ gpkit.exceptions module
     :undoc-members:
     :show-inheritance:
 
-gpkit.feasibility module
-------------------------
-
-.. automodule:: gpkit.feasibility
-    :members:
-    :undoc-members:
-    :show-inheritance:
-
 gpkit.geometric_program module
 ------------------------------
 

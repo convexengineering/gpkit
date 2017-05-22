@@ -14,6 +14,7 @@
     settings : dict
         Contains settings loaded from ``./env/settings``
 """
+from collections import defaultdict
 from os import sep as os_sep
 from os.path import dirname as os_path_dirname
 SETTINGS_PATH = os_sep.join([os_path_dirname(__file__), "env", "settings"])
@@ -117,6 +118,64 @@ def disable_units():
 
 enable_units()
 
+# the current vectorization shape
+VECTORIZATION = []
+# the current model hierarchy
+MODELS = []
+# modelnumbers corresponding to MODELS, above
+MODELNUMS = []
+# lookup table for the number of models of each name that have been made
+MODELNUM_LOOKUP = defaultdict(int)
+# the list of variables named in the current MODELS/MODELNUM environment
+NAMEDVARS = defaultdict(list)
+
+def begin_variable_naming(model):
+    "Appends a model name and num to the environment."
+    MODELS.append(model)
+    num = MODELNUM_LOOKUP[model]
+    MODELNUMS.append(num)
+    MODELNUM_LOOKUP[model] += 1
+    return num, (tuple(MODELS), tuple(MODELNUMS))
+
+
+def end_variable_naming():
+    "Pops a model name and num from the environment."
+    NAMEDVARS.pop(tuple(MODELS), tuple(MODELNUMS))
+    MODELS.pop()
+    MODELNUMS.pop()
+
+
+class NamedVariables(object):
+    """Creates an environment in which all variables have
+       a model name and num appended to their varkeys.
+    """
+    def __init__(self, model):
+        self.model = model
+
+    def __enter__(self):
+        "Enters a named environment."
+        begin_variable_naming(self.model)
+
+    def __exit__(self, type_, val, traceback):
+        "Leaves a named environment."
+        end_variable_naming()
+
+
+class Vectorize(object):
+    """Creates an environment in which all variables are
+       exended in an additional dimension.
+    """
+    def __init__(self, dimension_length):
+        self.dimension_length = dimension_length
+
+    def __enter__(self):
+        "Enters a vectorized environment."
+        VECTORIZATION.insert(0, self.dimension_length)
+
+    def __exit__(self, type_, val, traceback):
+        "Leaves a vectorized environment."
+        VECTORIZATION.pop(0)
+
 
 class SignomialsEnabled(object):
     """Class to put up and tear down signomial support in an instance of GPkit.
@@ -144,10 +203,12 @@ class SignomialsEnabled(object):
 from .varkey import VarKey
 from .nomials import Nomial, NomialArray
 from .nomials import Monomial, Posynomial, Signomial
-from .nomials import Variable, VectorVariable, ArrayVariable
-from .nomials import SignomialEquality
+from .nomials import VectorVariable, ArrayVariable
+# note: the Variable the user sees is not the Variable used internally
+from .nomials import VectorizableVariable as Variable
 from .geometric_program import GeometricProgram
 from .constraints.signomial_program import SignomialProgram
+from .constraints.sigeq import SignomialEquality
 from .constraints.set import ConstraintSet
 from .constraints.model import Model
 from .constraints.linked import LinkedConstraintSet

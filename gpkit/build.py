@@ -313,8 +313,14 @@ def build_gpkit():
 
     log("...finished building gpkit.")
 
+    if "GPKITSOLVERS" in os.environ:
+        log("Replaced found solvers (%s) with environment var GPKITSOLVERS"
+            " (%s)" % (installed_solvers, os.environ["GPKITSOLVERS"]))
+        settings["installed_solvers"] = os.environ["GPKITSOLVERS"]
+    else:
+        settings["installed_solvers"] = ", ".join(installed_solvers)
+
     # Choose default solver
-    settings["installed_solvers"] = ", ".join(installed_solvers)
     log("\nFound the following solvers: " + settings["installed_solvers"])
 
     # Write settings

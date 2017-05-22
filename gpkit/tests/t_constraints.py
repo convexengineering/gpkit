@@ -4,14 +4,22 @@ from gpkit import Variable, SignomialsEnabled, Posynomial, VectorVariable
 from gpkit.nomials import SignomialInequality, PosynomialInequality
 from gpkit.nomials import MonomialEquality
 from gpkit import LinkedConstraintSet, Model
-from gpkit.constraints.tight import TightConstraintSet
+from gpkit.constraints.tight import Tight
 from gpkit.tests.helpers import run_tests
 from gpkit.exceptions import InvalidGPConstraint
+from gpkit.constraints.relax import ConstraintsRelaxed
 import gpkit
 
 
 class TestConstraint(unittest.TestCase):
     """Tests for Constraint class"""
+
+    def test_equality_relaxation(self):
+        x = Variable("x")
+        m = Model(x, [x == 3, x == 4])
+        rc = ConstraintsRelaxed(m)
+        m2 = Model(rc.relaxvars.prod() * x**0.01, rc)
+        self.assertAlmostEqual(m2.solve(verbosity=0)(x), 3, 5)
 
     def test_constraintget(self):
         x = Variable("x")
@@ -172,14 +180,14 @@ class TestSignomialInequality(unittest.TestCase):
             _ = sc.as_posyslt1()
 
 
-class TestTightConstraintSet(unittest.TestCase):
+class TestTight(unittest.TestCase):
     """Test tight constraint set"""
 
     def test_posyconstr_in_gp(self):
         """Tests tight constraint set with solve()"""
         x = Variable('x')
         x_min = Variable('x_{min}', 2)
-        m = Model(x, [TightConstraintSet([x >= 1], raiseerror=True),
+        m = Model(x, [Tight([x >= 1], raiseerror=True),
                       x >= x_min])
         with self.assertRaises(ValueError):
             m.solve(verbosity=0)
@@ -191,7 +199,7 @@ class TestTightConstraintSet(unittest.TestCase):
         y = Variable('y')
         with SignomialsEnabled():
             sig_constraint = (x + y >= 0.1)
-        m = Model(x, [TightConstraintSet([x >= y], raiseerror=True),
+        m = Model(x, [Tight([x >= y], raiseerror=True),
                       x >= 2, y == 1, sig_constraint])
         with self.assertRaises(ValueError):
             m.localsolve(verbosity=0)
@@ -205,7 +213,7 @@ class TestTightConstraintSet(unittest.TestCase):
         x_min = Variable('x_{min}', 2)
         y_max = Variable('y_{max}', 0.5)
         with SignomialsEnabled():
-            m = Model(x, [TightConstraintSet([x + y >= 1], raiseerror=True),
+            m = Model(x, [Tight([x + y >= 1], raiseerror=True),
                           x >= x_min,
                           y <= y_max])
         with self.assertRaises(ValueError):
@@ -214,7 +222,7 @@ class TestTightConstraintSet(unittest.TestCase):
         self.assertAlmostEqual(m.localsolve(verbosity=0)["cost"], 0.5)
 
 TESTS = [TestConstraint, TestMonomialEquality, TestSignomialInequality,
-         TestTightConstraintSet]
+         TestTight]
 
 if __name__ == '__main__':
     run_tests(TESTS)
