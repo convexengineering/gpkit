@@ -183,6 +183,7 @@ class GeometricProgram(CostedConstraintSet, NomialData):
 
         # allow mosek's NEAR_DUAL_FEAS solution status, because our check
         # will catch anything that's not actually near enough.
+        # TODO: implement this in the mosek / mosek_cli interfaces, not here.
         solver_status = str(solver_out.get("status", None))
         if solver_status.lower() not in ["optimal", "near_dual_feas"]:
             raise RuntimeWarning(
