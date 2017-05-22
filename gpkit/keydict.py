@@ -22,7 +22,6 @@ class KeyDict(dict):
      - x.key
      - x.name (a string)
      - "x_modelname" (x's name including modelname)
-     - "{x}_{modelname}" (by convention, for latex)
 
     In addition, if collapse_arrays is True then VarKeys which have a `shape`
     parameter (indicating they are part of an array) are stored as numpy
