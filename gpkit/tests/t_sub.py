@@ -250,6 +250,24 @@ class TestGPSubs(unittest.TestCase):
         self.assertNotIn(a["x"], sol["variables"])
         self.assertNotIn(b["x"], sol["variables"])
 
+    def test_getkey(self):
+        class Top(Model):
+            "Some high level model"
+            def __init__(self):
+                y = Variable('y')
+                s = Sub()
+                sy = s["y"]
+                Model.__init__(self, y, [s, y >= sy, sy >= 1])
+
+        class Sub(Model):
+            "A simple sub model"
+            def __init__(self):
+                y = Variable('y')
+                Model.__init__(self, y, [y >= 2])
+
+        sol = Top().solve(verbosity=0)
+        self.assertAlmostEqual(sol['cost'], 2)
+
     def test_model_recursion(self):
         class Top(Model):
             "Some high level model"

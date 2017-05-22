@@ -5,10 +5,15 @@ from ..small_scripts import try_str_without
 from ..repr_conventions import _str, _repr, _repr_latex_
 
 
-def _var_sort_key(var):
-    "return thing to compare for Variable sorting"
-    k = var.key
-    return (k.str_without(["units", "idx"]), k.idx)
+def _sort_by_num_models(var):
+    "return integer for Variable sorting"
+    mods = var.key.models
+    return len(mods) if mods else 0
+
+
+def _sort_by_name_and_idx(var):
+    "return tuplef for Variable sorting"
+    return (var.key.str_without(["units", "idx"]), var.key.idx)
 
 
 class ConstraintSet(list):
@@ -44,8 +49,17 @@ class ConstraintSet(list):
             if len(variables) == 1:
                 return variables[0]
             else:
-                variables.sort(key=_var_sort_key)
-                return variables
+                variables.sort(key=_sort_by_num_models)
+                variable = variables[0]
+                # note: doesn't work for vector variables
+                return variable
+
+    def variables_byname(self, key):
+        "Get all variables with a given name"
+        from ..nomials import Variable
+        variables = [Variable(**key.descr) for key in self.varkeys[key]]
+        variables.sort(key=_sort_by_name_and_idx)
+        return variables
 
     __str__ = _str
     __repr__ = _repr
@@ -171,17 +185,17 @@ class ConstraintSet(list):
         var_senss : dict
             The variable sensitivities of this constraint
         """
-        constr_sens = {}
+        # constr_sens = {}
         var_senss = HashVector()
         offset = 0
         for i, constr in enumerate(self):
             n_posys = self.posymap[i]
             la = las[offset:offset+n_posys]
             nu = nus[offset:offset+n_posys]
-            constr_sens[str(constr)], v_ss = constr.sens_from_dual(la, nu)
+            v_ss = constr.sens_from_dual(la, nu)
             var_senss += v_ss
             offset += n_posys
-        return constr_sens, var_senss
+        return var_senss
 
     def as_gpconstr(self, x0):
         """Returns GPConstraint approximating this constraint at x0
@@ -190,33 +204,6 @@ class ConstraintSet(list):
         gpconstrs = [constr.as_gpconstr(x0) for constr in self]
         return ConstraintSet(gpconstrs,
                              self.substitutions, recursesubs=False)
-
-    def sens_from_gpconstr(self, gpapprox, gp_sens, var_senss):
-        """Computes sensitivities from GPConstraint approximation
-
-        Arguments
-        ---------
-        gpapprox : GPConstraint
-            The GPConstraint returned by `self.as_gpconstr()`
-
-        gpconstr_sens :
-            Sensitivities created by `gpconstr.sens_from_dual`
-
-        var_senss : dict
-            Variable sensitivities from last GP solve.
-
-
-        Returns
-        -------
-        constraint_sens : dict
-            The interesting and computable sensitivities of this constraint
-        """
-        constr_sens = {}
-        for i, c in enumerate(self):
-            gpa = gpapprox[i]
-            gp_s = gp_sens[str(gpa)]
-            constr_sens[str(c)] = c.sens_from_gpconstr(gpa, gp_s, var_senss)
-        return constr_sens
 
     def process_result(self, result):
         """Does arbitrary computation / manipulation of a program's result

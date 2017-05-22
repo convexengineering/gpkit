@@ -8,6 +8,8 @@ from .keydict import KeyDict
 from .small_classes import SolverLog
 
 
+DEFAULT_SOLVER_KWARGS = {"cvxopt": {"kktsolver": "ldl"}}
+
 class GeometricProgram(NomialData):
     # pylint: disable=too-many-instance-attributes
     """Standard mathematical representation of a GP.
@@ -173,6 +175,10 @@ class GeometricProgram(NomialData):
             print("Solving for %i variables." % len(self.varlocs))
             tic = time()
 
+        default_kwargs = DEFAULT_SOLVER_KWARGS.get(solvername, {})
+        for k in default_kwargs:
+            kwargs.setdefault(k, default_kwargs[k])
+
         # NOTE: SIDE EFFECTS AS WE LOG SOLVER'S STDOUT AND OUTPUT
         original_stdout = sys.stdout
         self.solver_log = SolverLog(verbosity-1, original_stdout)
@@ -282,7 +288,7 @@ class GeometricProgram(NomialData):
             result["cost"] = self.posynomials[0].subsummag(freev)
 
         ## Get sensitivities
-        result["sensitivities"] = {"constraints": {}, "nu": nu, "la": la}
+        result["sensitivities"] = {"nu": nu, "la": la}
         # initialize the var_senss dict with the cost's constants...
         var_senss = {var: sum([self.cost.exps[i][var]*nu[i] for i in locs])
                      for (var, locs) in self.cost.varlocs.items()
@@ -293,12 +299,12 @@ class GeometricProgram(NomialData):
             constr = self.constraints[c_i]
             las = [la[p_i] for p_i in posy_idxs]
             nus = [[nu[i] for i in self.m_idxs[p_i]] for p_i in posy_idxs]
-            constr_sens, p_var_senss = \
-                constr.sens_from_dual(las, nus)
+            p_var_senss = constr.sens_from_dual(las, nus)
             # ...then add to it the constant sensitivities of each constraint
             var_senss += p_var_senss
             # also, add each constraint's sensitivities to the results
-            result["sensitivities"]["constraints"][str(constr)] = constr_sens
+            # TODO: enable this once there's a plan for how to use it
+            # result["sensitivities"]["constraints"][str(constr)] = constr_sens
         result["sensitivities"]["constants"] = KeyDict(var_senss)
 
         ## Get constants
