@@ -23,16 +23,31 @@ class ConstraintSet(list):
             constraints = [constraints]
         list.__init__(self, constraints)
         subs = substitutions if substitutions else {}
+        self.unused_variables = None
         if not isinstance(constraints, ConstraintSet):
             # constraintsetify everything
             for i, constraint in enumerate(self):
                 if (hasattr(constraint, "__iter__") and
                         not isinstance(constraint, ConstraintSet)):
                     self[i] = ConstraintSet(constraint)
+                elif isinstance(constraint, bool):
+                    # TODO refactor this depending on the outcome of issue #824
+                    if len(self) == 1:
+                        adjacent = "as the only constraint"
+                    elif i == 0:
+                        adjacent = "at the start, before %s" % self[i+1]
+                    elif i == len(self) - 1:
+                        adjacent = "at the end, after %s" % self[i-1]
+                    else:
+                        adjacent = "between %s and %s" % (self[i-1], self[i+1])
+                    raise ValueError("boolean found %s."
+                                     " Did the constraint list contain an"
+                                     " accidental equality?" % adjacent)
         else:
             # grab the substitutions dict from the top constraintset
             subs.update(constraints.substitutions)  # pylint: disable=no-member
         if recursesubs:
+            self.reset_varkeys()
             self.substitutions = KeyDict.with_keys(self.varkeys,
                                                    self._iter_subs(subs))
         else:
@@ -60,6 +75,10 @@ class ConstraintSet(list):
         variables = [Variable(**key.descr) for key in self.varkeys[key]]
         variables.sort(key=_sort_by_name_and_idx)
         return variables
+
+    def __setitem__(self, key, value):
+        list.__setitem__(self, key, value)
+        self.reset_varkeys()
 
     __str__ = _str
     __repr__ = _repr
@@ -140,20 +159,27 @@ class ConstraintSet(list):
         "Substitutes in place."
         for constraint in self:
             constraint.subinplace(subs)
+        if self.unused_variables is not None:
+            unused_vars = []
+            for var in self.unused_variables:
+                if var.key in subs:
+                    unused_vars.append(subs[var.key])
+                else:
+                    unused_vars.append(var.key)
+            self.unused_variables = unused_vars
+        self.reset_varkeys()
 
-    @property
-    def varkeys(self):
-        "return all Varkeys present in this ConstraintSet"
-        return self._varkeys()
-
-    def _varkeys(self, init_dict=None):
-        "return all Varkeys present in this ConstraintSet"
-        init_dict = {} if init_dict is None else init_dict
-        out = KeySet(init_dict)
+    def reset_varkeys(self, init_dict=None):
+        "Goes through constraints and collects their varkeys."
+        varkeys = KeySet()
+        if init_dict is not None:
+            varkeys.update(init_dict)
         for constraint in self:
             if hasattr(constraint, "varkeys"):
-                out.update(constraint.varkeys)
-        return out
+                varkeys.update(constraint.varkeys)
+        if self.unused_variables is not None:
+            varkeys.update(self.unused_variables)
+        self.varkeys = varkeys
 
     def as_posyslt1(self):
         "Returns list of posynomials which must be kept <= 1"
