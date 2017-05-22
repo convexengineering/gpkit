@@ -26,6 +26,17 @@ class TestKeyDict(unittest.TestCase):
         self.assertEqual(kd["x_motor"], 52)
         self.assertNotIn("x_someothermodelname", kd)
 
+    def test_failed_getattr(self):
+        kd = KeyDict()
+        with self.assertRaises(KeyError):
+            _ = kd["waldo"]
+            # issue 893: failed __getitem__ caused state change
+        self.assertNotIn("waldo", kd)
+        kd.update({"waldo": 5})
+        res = kd["waldo"]
+        self.assertEqual(res, 5)
+        self.assertIn("waldo", kd)
+
     def test_dictlike(self):
         kd = KeyDict()
         kd["a string key"] = "a string value"

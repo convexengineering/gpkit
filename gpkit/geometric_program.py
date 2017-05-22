@@ -178,14 +178,12 @@ class GeometricProgram(NomialData):
             print("Solving took %.3g seconds." % (soltime,))
             tic = time()
 
-        if solver_out.get("status", None) not in ["optimal", "OPTIMAL"]:
+        if solver_out.get("status", "").lower() != "optimal":
             raise RuntimeWarning(
-                "final status of solver '%s' was '%s', not 'optimal'."
-                "\n\nThe infeasible solve's result is stored in"
-                " model.program.solver_out. A result dict can be generated "
-                " via program._compile_result(program.solver_out)."
-                " If the problem was Primal Infeasible, you can generate a"
-                " feasibility-finding relaxation with model.feasibility()." %
+                "final status of solver '%s' was '%s', not 'optimal'.\n\n"
+                "The solver's result is stored in model.program.solver_out. "
+                "A result dict can be generated via "
+                "program._compile_result(program.solver_out)." %
                 (solvername, solver_out.get("status", None)))
 
         self._generate_nula(solver_out)
