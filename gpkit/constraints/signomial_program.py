@@ -43,7 +43,13 @@ class SignomialProgram(CostedConstraintSet):
 
     def __init__(self, cost, constraints, substitutions=None, verbosity=1):
         # pylint: disable=unused-argument
-        "Constructor. Required for objects inheriting from np.ndarray."
+        self.gps = []
+        self.result = None
+        self.lastgp = None
+        self.is_sgp = False
+        self._posys = []
+        self._spconstrs = []
+
         if cost.any_nonpositive_cs:
             raise TypeError("""SignomialPrograms need Posyomial objectives.
 
@@ -65,12 +71,6 @@ class SignomialProgram(CostedConstraintSet):
     SignomialPrograms should only be created with Models containing Signomial
     Constraints, since Models without Signomials have global solutions and can
     be solved with 'Model.solve()'.""")
-        self.gps = []
-        self.result = None
-        self.lastgp = None
-        self.is_sgp = False
-        self._posys = []
-        self._spconstrs = []
 
     # pylint: disable=too-many-locals
     def localsolve(self, solver=None, verbosity=1, x0=None, reltol=1e-4,
@@ -174,7 +174,7 @@ class SignomialProgram(CostedConstraintSet):
                     approx_posys.extend(cs.as_approxposyslt1(x0, substitutions))
                 else:
                     self.is_sgp = True
-                    return ConstraintSet.as_gpconstr(self, x0, substitutions)
+                    return
         gpconstrs = [p <= 1 for p in self._posys]
         gp_approxconstrs = [p <= 1 for p in approx_posys]
         return [gpconstrs, gp_approxconstrs]
