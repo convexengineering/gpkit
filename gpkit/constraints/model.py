@@ -1,4 +1,5 @@
 "Implements Model"
+import numpy as np
 from .costed import CostedConstraintSet
 from ..nomials import Monomial
 from .prog_factories import _progify_fctry, _solve_fctry
@@ -8,6 +9,7 @@ from .linked import LinkedConstraintSet
 from ..small_scripts import mag
 from ..keydict import KeyDict
 from ..varkey import VarKey
+from ..tools.autosweep import autosweep_1d
 from .. import NamedVariables, SignomialsEnabled
 from ..exceptions import InvalidGPConstraint
 
@@ -135,6 +137,39 @@ class Model(CostedConstraintSet):
         with SignomialsEnabled():  # since we're just substituting varkeys.
             self.subinplace(add_model_subs)
 
+    def sweep(self, sweeps, **solveargs):
+        "Sweeps {var: values} pairs in sweeps. Returns swept solutions."
+        sols = []
+        for sweepvar, sweepvals in sweeps.items():
+            original_val = self.substitutions.get(sweepvar, None)
+            self.substitutions.update({sweepvar: ('sweep', sweepvals)})
+            try:
+                sols.append(self.solve(**solveargs))
+            except InvalidGPConstraint:
+                sols.append(self.localsolve(**solveargs))
+            if original_val:
+                self.substitutions[sweepvar] = original_val
+            else:
+                del self.substitutions[sweepvar]
+        if len(sols) == 1:
+            return sols[0]
+        return sols
+
+    def autosweep(self, sweeps, tol=0.01, samplepoints=100, **solveargs):
+        """Autosweeps {var: (start, end)} pairs in sweeps to tol.
+
+        Returns swept and sampled solutions.
+        The original simplex tree can be accessed at sol.bst
+        """
+        sols = []
+        for sweepvar, sweepvals in sweeps.items():
+            start, end = sweepvals
+            bst = autosweep_1d(self, tol, sweepvar, [start, end], **solveargs)
+            sols.append(bst.sample_at(np.linspace(start, end, samplepoints)))
+        if len(sols) == 1:
+            return sols[0]
+        return sols
+
     # pylint: disable=too-many-locals,too-many-branches,too-many-statements
     def debug(self, solver=None, verbosity=1, **solveargs):
         "Attempts to diagnose infeasible models."
@@ -147,8 +182,7 @@ class Model(CostedConstraintSet):
         solveargs["solver"] = solver
         solveargs["verbosity"] = verbosity
 
-        print "Debugging..."
-        print "_____________________"
+        print "> Trying to solve with bounded variables and relaxed constants"
 
         if self.substitutions:
             constsrelaxed = ConstantsRelaxed(Bounded(self))
@@ -178,10 +212,11 @@ class Model(CostedConstraintSet):
                     print("  %s: relaxed from %-.4g to %-.4g"
                           % (orig, mag(self.substitutions[orig]),
                              mag(sol(orig))))
+            print "> ...success!"
         except (ValueError, RuntimeWarning):
-            print("\nModel does not solve with bounded variables"
+            print("> ...does not solve with bounded variables"
                   " and relaxed constants.")
-        print "_____________________"
+        print "\n> Trying to solve with relaxed constraints"
 
         try:
             constrsrelaxed = ConstraintsRelaxed(self)
@@ -207,9 +242,8 @@ class Model(CostedConstraintSet):
                     relax_percent = "%i%%" % (0.5+(relaxval-1)*100)
                     print("  %i: %4s relaxed  Canonical form: %s <= %.2f)"
                           % (i, relax_percent, constraint.right, relaxval))
-
+            print "> ...success!"
         except (ValueError, RuntimeWarning):
-            print("\nModel does not solve with relaxed constraints.")
+            print("> ...does not solve with relaxed constraints.")
 
-        print "_____________________"
         return sol
