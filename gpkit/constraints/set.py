@@ -14,6 +14,8 @@ def _sort_by_name_and_idx(var):
 
 class ConstraintSet(list):
     "Recursive container for ConstraintSets and Inequalities"
+    varkeys = None
+
     def __init__(self, constraints, substitutions=None):
         if isinstance(constraints, ConstraintSet):
             # stick it in a list to maintain hierarchy
@@ -26,30 +28,25 @@ class ConstraintSet(list):
         self.numpy_bools = False
 
         # get substitutions and convert all members to ConstraintSets
-        subs = dict(substitutions) if substitutions else {}
         self.substitutions = KeyDict()
-        if isinstance(constraints, ConstraintSet):
-            # pylint: disable=no-member
-            self.substitutions.update(constraints.substitutions)
-        else:
-            # constraintsetify everything
-            for i, constraint in enumerate(self):
-                if getattr(constraint, "numpy_bools", None):
-                    raise_elementhasnumpybools(constraint)
-                elif not isinstance(constraint, ConstraintSet):
-                    if hasattr(constraint, "__iter__"):
-                        list.__setitem__(self, i, ConstraintSet(constraint))
-                    elif not hasattr(constraint, "varkeys"):
-                        if not isinstance(constraint, np.bool_):
-                            raise_badelement(self, i, constraint)
-                        else:
-                            # allow NomialArray equalities (arr == "a", etc.)
-                            self.numpy_bools = True  # but mark them
-                            # so we can catch them (see above) in ConstraintSets
-                if hasattr(self[i], "substitutions"):
-                    self.substitutions.update(self[i].substitutions)
+        for i, constraint in enumerate(self):
+            if getattr(constraint, "numpy_bools", None):
+                raise_elementhasnumpybools(constraint)
+            elif not isinstance(constraint, ConstraintSet):
+                if hasattr(constraint, "__iter__"):
+                    list.__setitem__(self, i, ConstraintSet(constraint))
+                elif not hasattr(constraint, "varkeys"):
+                    if not isinstance(constraint, np.bool_):
+                        raise_badelement(self, i, constraint)
+                    else:
+                        # allow NomialArray equalities (arr == "a", etc.)
+                        self.numpy_bools = True  # but mark them
+                        # so we can catch them (see above) in ConstraintSets
+            if hasattr(self[i], "substitutions"):
+                self.substitutions.update(self[i].substitutions)
         self.reset_varkeys()
-        self.substitutions.update(subs)
+        if substitutions:
+            self.substitutions.update(substitutions)
 
     def __getitem__(self, key):
         if isinstance(key, int):
@@ -221,7 +218,6 @@ class ConstraintSet(list):
         var_senss : dict
             The variable sensitivities of this constraint
         """
-        # constr_sens = {}
         var_senss = HashVector()
         offset = 0
         for i, constr in enumerate(self):

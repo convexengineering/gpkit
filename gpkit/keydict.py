@@ -103,7 +103,7 @@ class KeyDict(dict):
         key, idx = self.parse_and_index(key)
         keys = self.keymap[key]
         if not keys:
-            del self.keymap[key] # remove blank entry added due to defaultdict
+            del self.keymap[key]  # remove blank entry added due to defaultdict
             raise KeyError("%s was not found." % key)
         values = []
         for key in keys:
@@ -138,11 +138,15 @@ class KeyDict(dict):
                 value = value.value
             if idx:
                 dict.__getitem__(self, key)[idx] = value
-            elif (dict.__contains__(self, key) and hasattr(value, "shape")
-                  and np.isnan(value).any()):
-                goodvals = ~np.isnan(value)
-                self[key][goodvals] = value[goodvals]
             else:
+                if dict.__contains__(self, key) and getattr(value, "shape", ()):
+                    try:
+                        goodvals = ~np.isnan(value)
+                    except TypeError:
+                        pass  # could not evaluate nan-ness! assume no nans
+                    else:
+                        self[key][goodvals] = value[goodvals]
+                        continue
                 dict.__setitem__(self, key, value)
 
     def __delitem__(self, key):
