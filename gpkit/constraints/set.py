@@ -75,7 +75,7 @@ class ConstraintSet(list):
                 if vector is not None:
                     return vector
             raise ValueError("multiple variables are called '%s'; use"
-                             " variable_byname('%s') to see all of them"
+                             " variables_byname('%s') to see all of them"
                              % (key, key))
 
     def variables_byname(self, key):
