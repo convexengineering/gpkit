@@ -1,4 +1,5 @@
 "Implement CostedConstraintSet"
+import numpy as np
 from .set import ConstraintSet
 
 
@@ -13,7 +14,7 @@ class CostedConstraintSet(ConstraintSet):
     substitutions: dict
     """
     def __init__(self, cost, constraints, substitutions=None):
-        if hasattr(cost, "prod"):
+        if isinstance(cost, np.ndarray):
             # it's a vector!
             if not cost.shape:
                 cost, = cost.flatten()
