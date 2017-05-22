@@ -24,20 +24,32 @@ def mag(c):
     return c.magnitude if isinstance(c, Quantity) else c
 
 
-def unitstr(units, into="%s", options="~", dimless='-'):
+def unitstr(units, into="%s", options="~", dimless="-"):
     "Returns the unitstr of a given object."
     if hasattr(units, "descr") and hasattr(units.descr, "get"):
         units = units.descr.get("units", dimless)
-    if units and not isinstance(units, Strings):
-        try:
-            rawstr = ("{:%s}" % options).format(units)
-            if str(units)[-5:] == "count":
-            # TODO remove this conditional when pint issue 356 is resolved
-                rawstr = "1.0 count"
-        except ValueError:
-            rawstr = "1.0 " + str(units.units)
-        units = "".join(rawstr.replace("dimensionless", dimless).split()[1:])
-    return into % units if units else ""
+# <<<<<<< HEAD
+#     if units and not isinstance(units, Strings):
+#         try:
+#             rawstr = ("{:%s}" % options).format(units)
+#             if str(units)[-5:] == "count":
+#             # TODO remove this conditional when pint issue 356 is resolved
+#                 rawstr = "1.0 count"
+#         except ValueError:
+#             rawstr = "1.0 " + str(units.units)
+#         units = "".join(rawstr.replace("dimensionless", dimless).split()[1:])
+#     return into % units if units else ""
+# =======
+    if isinstance(units, Strings):
+        return into % units if units else ""
+    elif isinstance(units, Quantity):
+        rawstr = ("{:%s}" % options).format(units.units)
+        if str(units.units) == "count":
+        # TODO remove this conditional when pint issue 356 is resolved
+            rawstr = "count"
+        units = rawstr.replace(" ", "").replace("dimensionless", dimless)
+        return into % units if units else ""
+    return ""
 
 
 def nomial_latex_helper(c, pos_vars, neg_vars):

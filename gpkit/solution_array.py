@@ -256,7 +256,7 @@ def results_table(data, title, minval=0, printunits=True, fixedcols=True,
         lines = [[fmt.format(s) for fmt, s in zip(fmts, line)]
                  for line in lines]
         lines = [title] + ["-"*len(title)] + [''.join(l) for l in lines] + [""]
-    else:
+    elif lines:
         colfmt = {1: "llcl", 2: "lcl", 3: "llc"}
         lines = (["\n".join(["{\\footnotesize",
                              "\\begin{longtable}{%s}" % colfmt[latex],
