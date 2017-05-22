@@ -381,7 +381,8 @@ class Monomial(Posynomial):
         if isinstance(x, Numbers):
             exp, c = self.hmap.items()[0]
             exp = exp*x if x else HashVector()
-            hmap = NomialMap({exp: c**x})
+            # TODO: c should already be a float
+            hmap = NomialMap({exp: float(c)**x})
             hmap.units = self.hmap.units
             if hmap.units:
                 hmap.units = hmap.units**x
