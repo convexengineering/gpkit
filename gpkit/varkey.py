@@ -109,6 +109,13 @@ class VarKey(object):
         utf = us.replace("frac", "tfrac").replace(r"\cdot", r"\cdot ")
         return utf if utf != r"~\mathrm{-}" else ""
 
+    @property
+    def naming(self):
+        "Returns this varkey's naming tuple"
+        # TODO: store directly, instead of re-creating?
+        return (tuple(self.descr["models"]),
+                tuple(self.descr["modelnums"]))
+
     def latex(self, excluded=None):
         "Returns latex representation."
         if excluded is None:
