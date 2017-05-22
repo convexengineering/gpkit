@@ -146,6 +146,7 @@ class NomialMap(HashVector):
 
 def parse_subs(varkeys, substitutions, sweeps=True):
     "Seperates subs into constants, sweeps linkedsweeps actually present."
+    varkeys.update_keymap()
     constants, sweep, linkedsweep = {}, None, None
     if sweeps:
         sweep, linkedsweep = {}, {}
