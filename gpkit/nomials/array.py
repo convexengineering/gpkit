@@ -13,7 +13,7 @@ from ..small_classes import Numbers
 from ..small_scripts import try_str_without
 from ..constraints import ArrayConstraint
 from ..repr_conventions import _str, _repr, _repr_latex_
-from .. import units as ureg
+from .. import ureg
 from .. import DimensionalityError
 Quantity = ureg.Quantity
 

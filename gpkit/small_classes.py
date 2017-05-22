@@ -1,7 +1,7 @@
 """Miscellaneous small classes"""
 from collections import namedtuple
 import numpy as np
-from . import units as gpkitunits
+from . import ureg
 
 try:
     isinstance("", basestring)
@@ -9,7 +9,7 @@ try:
 except NameError:
     Strings = (str,)
 
-Quantity = gpkitunits.Quantity
+Quantity = ureg.Quantity
 Numbers = (int, float, np.number, Quantity)
 CootMatrixTuple = namedtuple('CootMatrix', ['row', 'col', 'data'])
 
