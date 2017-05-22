@@ -442,7 +442,7 @@ class PosynomialInequality(ScalarSingleEquationConstraint):
         self.unsubbed = self._gen_unsubbed(p_lt, m_gt)
         self.nomials = [self.left, self.right, self.p_lt, self.m_gt]
         self.nomials.extend(self.unsubbed)
-        self._last_used_substitutions = None
+        self._last_used_substitutions = {}
 
     def _simplify_posy_ineq(self, hmap):
         "Simplify a posy <= 1 by moving constants to the right side."
@@ -478,14 +478,16 @@ class PosynomialInequality(ScalarSingleEquationConstraint):
     def as_posyslt1(self, substitutions=None):
         "Returns the posys <= 1 representation of this constraint."
         posys = self.unsubbed
-        self._last_used_substitutions = substitutions
         if not substitutions:
             # just return the pre-generated posynomial representation
             return posys
 
         out = []
+        self._last_used_substitutions = {}
         for posy in posys:
-            hmap = posy.hmap.sub(substitutions)
+            fixed = parse_subs(posy.varkeys, substitutions, sweeps=False)
+            self._last_used_substitutions.update(fixed)
+            hmap = posy.hmap.sub(fixed)
             simp = self._simplify_posy_ineq(hmap)
             if not simp:  # tautological constraint
                 continue
@@ -510,7 +512,8 @@ class PosynomialInequality(ScalarSingleEquationConstraint):
             p = Posynomial(hmap)
             if p.any_nonpositive_cs:
                 raise RuntimeWarning("PosynomialInequality %s became Signomial"
-                                     " after substitution" % self)
+                                     " after substitution %s"
+                                     % (self, substitutions))
             out.append(p)
         return out
 
@@ -544,9 +547,10 @@ class PosynomialInequality(ScalarSingleEquationConstraint):
         #     mono_str = fast_monomial_str(self.p_lt.exps[i], self.p_lt.cs[i])
         #     constr_sens[mono_str] = mono_sens
         # Constant sensitivities
-        var_senss = {var: sum([presub.exps[i][var]*nu[i] for i in locs])
-                     for (var, locs) in presub.varlocs.items()
-                     if var in self._last_used_substitutions}
+        var_senss = {}
+        for var in self._last_used_substitutions:
+            locs = presub.varlocs[var]
+            var_senss[var] = sum([presub.exps[i][var]*nu[i] for i in locs])
         return var_senss
 
     # pylint: disable=unused-argument
@@ -570,6 +574,7 @@ class MonomialEquality(PosynomialInequality):
         self.unsubbed = self._gen_unsubbed()
         self.nomials = [self.left, self.right]
         self.nomials.extend(self.unsubbed)
+        self._last_used_substitutions = {}
 
     def _gen_unsubbed(self):
         "Returns the unsubstituted posys <= 1."
