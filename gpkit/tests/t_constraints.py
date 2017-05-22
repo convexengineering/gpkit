@@ -8,6 +8,7 @@ from gpkit.constraints.tight import Tight
 from gpkit.tests.helpers import run_tests
 from gpkit.exceptions import InvalidGPConstraint
 from gpkit.constraints.relax import ConstraintsRelaxed
+from gpkit.constraints.bounded import Bounded
 import gpkit
 
 
@@ -239,8 +240,21 @@ class TestTight(unittest.TestCase):
         m.substitutions[x_min] = 0.5
         self.assertAlmostEqual(m.localsolve(verbosity=0)["cost"], 0.5)
 
+
+class TestBounded(unittest.TestCase):
+    """Test bounded constraint set"""
+
+    def test_substitution_issue905(self):
+        x = Variable("x")
+        y = Variable("y")
+        m = Model(x, [x >= y], {"y": 1})
+        bm = Model(m.cost, Bounded(m))
+        sol = bm.solve(verbosity=0)
+        self.assertAlmostEqual(sol["cost"], 1.0)
+
+
 TESTS = [TestConstraint, TestMonomialEquality, TestSignomialInequality,
-         TestTight]
+         TestTight, TestBounded]
 
 if __name__ == '__main__':
     run_tests(TESTS)
