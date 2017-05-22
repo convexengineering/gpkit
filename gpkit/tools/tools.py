@@ -42,7 +42,7 @@ def te_secant(var, nterm):
         Taylor expansion of secant(x), carried to nterm terms
     """
     # The first 12 Euler Numbers
-    E2n = np.asarray([1,
+    E2n = np.asarray([1.0,
                       5,
                       61,
                       1385,
