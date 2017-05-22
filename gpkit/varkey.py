@@ -52,8 +52,9 @@ class VarKey(object):
                 units = self.descr["units"]
                 if isinstance(units, Strings):
                     if units == "-":
-                        units = "dimensionless"
-                    self.descr["units"] = Quantity(1.0, units)
+                        del self.descr["units"]  # dimensionless
+                    else:
+                        self.descr["units"] = Quantity(1.0, units)
                 elif isinstance(units, Quantity):
                     self.descr["units"] = units
                 else:
