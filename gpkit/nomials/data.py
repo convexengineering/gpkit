@@ -7,6 +7,7 @@ from ..small_classes import HashVector, Quantity
 from ..keydict import KeySet, KeyDict
 from ..small_scripts import mag
 from ..nomial_map import NomialMap
+from ..repr_conventions import _repr
 
 
 class NomialData(object):
@@ -59,6 +60,8 @@ class NomialData(object):
                 self._cs = self._cs*self.hmap.units
         return self._cs
 
+    __repr__ = _repr
+
     def __hash__(self):
         if self._hashvalue is None:
             self._hashvalue = hash(hash(self.hmap) + hash(str(self.hmap.units)))
@@ -98,9 +101,6 @@ class NomialData(object):
         self._exps = exps
         self._cs = cs
         self.units = tuple(s.units for s in nomials)
-
-    def __repr__(self):
-        return "gpkit.%s(%s)" % (self.__class__.__name__, hash(self))
 
     def diff(self, var):
         """Derivative of this with respect to a Variable

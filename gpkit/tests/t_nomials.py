@@ -12,7 +12,8 @@ class TestMonomial(unittest.TestCase):
         "Test multiple ways to create a Monomial"
         m = Monomial({'x': 2, 'y': -1}, 5)
         m2 = Monomial({'x': 2, 'y': -1}, 5)
-        x, y = m.varkeys.map("x y".split())
+        x, = m.varkeys["x"]
+        y, = m.varkeys["y"]
         self.assertEqual(m.varlocs, {x: [0], y: [0]})
         self.assertEqual(m.exp, {x: 2, y: -1})
         self.assertEqual(m.c, 5)
@@ -20,14 +21,14 @@ class TestMonomial(unittest.TestCase):
 
         # default c and a
         m = Monomial('x')
-        x = m.varkeys.map("x")
+        x, = m.varkeys["x"]
         self.assertEqual(m.varlocs, {x: [0]})
         self.assertEqual(m.exp, {x: 1})
         self.assertEqual(m.c, 1)
 
         # single (string) var with non-default c
         m = 0.1*Variable('tau')
-        tau = m.varkeys.map(["tau"])
+        tau, = m.varkeys["tau"]
         self.assertEqual(m.varlocs, {tau: [0]})
         self.assertEqual(m.exp, {tau: 1})
         self.assertEqual(m.c, .1)
@@ -35,7 +36,7 @@ class TestMonomial(unittest.TestCase):
         # variable names not compatible with python namespaces
         crazy_varstr = 'what the !!!/$**?'
         m = Monomial({'x': 1, crazy_varstr: .5}, 25)
-        crazy_varkey = m.varkeys.map([crazy_varstr])
+        crazy_varkey, = m.varkeys[crazy_varstr]
         self.assertTrue(crazy_varkey in m.exp)
 
         # non-positive c raises
@@ -240,7 +241,10 @@ class TestPosynomial(unittest.TestCase):
         p = Posynomial(({'m': 1, 'v': 2},
                         {'m': 1, 'g': 1, 'h': 1}),
                        (0.5, 1))
-        m, g, h, v = p.varkeys.map("m g h v".split())
+        m, = p.varkeys["m"]
+        g, = p.varkeys["g"]
+        h, = p.varkeys["h"]
+        v, = p.varkeys["v"]
         self.assertTrue(all(isinstance(x, float) for x in p.cs))
         self.assertEqual(len(p.exps), 2)
         self.assertEqual(set(p.varlocs), set([m, g, h, v]))

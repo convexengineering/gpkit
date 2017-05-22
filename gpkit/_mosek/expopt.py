@@ -17,7 +17,7 @@ from ctypes import POINTER as ptr_factory
 from ctypes import c_double, c_int, c_void_p
 
 try:
-    from .lib import expopt_h # pylint: disable=import-error
+    from .lib import expopt_h  # pylint: disable=import-error
 except Exception as e:
     raise ImportError("Could not load MOSEK library: "+repr(e))
 
@@ -57,11 +57,9 @@ class ModuleShortener(object):
 
 MSK = ModuleShortener("MSK", expopt_h)
 
-# lookup table from mosek.h, "MSKsolsta_enum"
-# switched where indicated because MOSEK solves the dual GP problem
-
-# Pylint disabled here because the _ naming convention is a
-# side effect of the ModuleShortener
+# below is MSKsolsta_enum from mosek.h
+#   positions changed as noted because MOSEK solves the dual GP problem
+#   Pylint disabled because the _ naming comes from the C code
 # pylint: disable=invalid-name,attribute-defined-outside-init,protected-access
 MSK._SOL_STA_LOOKUPTABLE = ["UNKNOWN",
                             "OPTIMAL",
@@ -216,8 +214,8 @@ def imize(c, A, p_idxs, *args, **kwargs):
                              subj,
                              akj,
                              numanz,
-                             ptr_expopthnd
                              # Pointer to data structure holding nonlinear data
+                             ptr_expopthnd
                             )
 
     # Any parameter can now be changed with standard mosek function calls

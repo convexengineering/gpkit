@@ -125,7 +125,7 @@ class CVXopt(SolverBackend):
         try:
             log("#   Trying to import cvxopt...")
             # Testing the import, so the variable is intentionally not used
-            import cvxopt # pylint: disable=unused-variable
+            import cvxopt  # pylint: disable=unused-variable
             return "in Python path"
         except ImportError:
             return
@@ -234,7 +234,7 @@ class Mosek(SolverBackend):
         "Builds a dynamic library to GPKITBUILD or $HOME/.gpkit"
         try:
             # Testing the import, so the variable is intentionally not used
-            import ctypesgencore # pylint: disable=unused-variable
+            import ctypesgencore  # pylint: disable=unused-variable
         except ImportError:
             log("## SKIPPING MOSEK INSTALL: CTYPESGENCORE WAS NOT FOUND")
             return
@@ -268,7 +268,7 @@ class Mosek(SolverBackend):
                                 '   "' + self.lib_path + '"' +
                                 " -o " + pathjoin(solib_dir, "expopt.so"))
         if sys.platform == "darwin":
-            link_library = call("install_name_tool -change @loader_path/libmosek64.7.1.dylib " # pylint: disable=line-too-long
+            link_library = call("install_name_tool -change @loader_path/libmosek64.7.1.dylib "  # pylint: disable=line-too-long
                                 + self.lib_path + " "
                                 + pathjoin(solib_dir, "expopt.so"))
             if link_library != 0:
@@ -280,7 +280,7 @@ class Mosek(SolverBackend):
         log("#\n#   Building Python bindings for expopt and Mosek...")
         # mosek_h_path = pathjoin(lib_dir, "mosek_h.py")
         built_expopt_h = call("python gpkit/modified_ctypesgen.py -a" +
-                              " -l " + pathjoin(solib_dir, "expopt.so").replace("\\", "/") +  # pylint: disable=line-too-long
+                              " -l " + pathjoin(solib_dir, "expopt.so").replace("\\", "/") +   # pylint: disable=line-too-long
                               ' -l "' + self.lib_path.replace("\\", "/") + '"' +
                               # ' -o "' + mosek_h_path.replace("\\", "/") + '"'+
                               " -o "+pathjoin(lib_dir, "expopt_h.py") +
@@ -310,8 +310,6 @@ def build_gpkit():
                          if solver.installed]
     if not installed_solvers:
         log("Can't find any solvers!\n")
-    #    sys.stderr.write("Can't find any solvers!\n")
-    #    sys.exit(70)
 
     log("...finished building gpkit.")
 
@@ -331,9 +329,3 @@ def build_gpkit():
 
     with open("gpkit/build.log", "w") as f:
         f.write(LOGSTR)
-
-    #call("ls")
-    #call("echo \\# gpkit")
-    #call("ls gpkit")
-    #call("echo \\# gpkit/env")
-    #call("ls gpkit/env")

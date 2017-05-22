@@ -21,7 +21,7 @@ class ExternalConstraint(ConstraintSet):
 
     # Prevents the ExternalConstraint class from solving in a GP, thus forcing
     # iteration
-    def as_posyslt1(self):
+    def as_posyslt1(self, substitutions=None):
         raise InvalidGPConstraint("ExternalConstraint cannot solve as a GP.")
 
     # Returns the ExternalConstraint class as a GP compatible constraint when

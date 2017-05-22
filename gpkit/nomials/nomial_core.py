@@ -102,14 +102,6 @@ class Nomial(NomialData):
          # pylint: disable=no-member
         return self.__class__(self.hmap.to(units))
 
-    def prod(self):
-        "base case: Product of a Nomial is itself"
-        return self
-
-    def sum(self):
-        "base case: Sum of a Nomial is itself"
-        return self
-
     def __ne__(self, other):
         return not self.__eq__(other)
 
@@ -126,13 +118,8 @@ class Nomial(NomialData):
                     self.cs[0] == other)     # the right constant
         return super(Nomial, self).__eq__(other)
 
-    def __float__(self):
-        if len(self.hmap) == 1:
-            if not self.vks:
-                return float(self.cs[0])
-        else:
-            raise AttributeError("float() can only be called on"
-                                 " monomials with no variable terms")
+    def __radd__(self, other):
+        return self + other
 
     def __rmul__(self, other):
         return self * other

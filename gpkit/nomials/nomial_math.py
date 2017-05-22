@@ -225,9 +225,6 @@ class Signomial(Nomial):
         else:
             return NotImplemented
 
-    def __radd__(self, other):
-        return self + other
-
     def __mul__(self, other):
         if isinstance(other, NomialArray):
             return np.array(self)*other
@@ -461,6 +458,7 @@ class PosynomialInequality(ScalarSingleEquationConstraint):
         self.unsubbed = self._gen_unsubbed(p_lt, m_gt)
         self.nomials = [self.left, self.right, self.p_lt, self.m_gt]
         self.nomials.extend(self.unsubbed)
+        self._last_used_substitutions = None
 
     def _simplify_posy_ineq(self, hmap):
         "Simplify a posy <= 1 by moving constants to the right side."
@@ -493,16 +491,17 @@ class PosynomialInequality(ScalarSingleEquationConstraint):
         hmap = self._simplify_posy_ineq(hmap)
         return [Posynomial(hmap)]
 
-    def as_posyslt1(self):
+    def as_posyslt1(self, substitutions=None):
         "Returns the posys <= 1 representation of this constraint."
         posys = self.unsubbed
-        if not self.substitutions:
+        self._last_used_substitutions = substitutions
+        if not substitutions:
             # just return the pre-generated posynomial representation
             return posys
 
         out = []
         for posy in posys:
-            hmap = posy.hmap.sub(self.substitutions)
+            hmap = posy.hmap.sub(substitutions)
             simp = self._simplify_posy_ineq(hmap)
             if not simp:  # tautological constraint
                 continue
@@ -563,7 +562,7 @@ class PosynomialInequality(ScalarSingleEquationConstraint):
         # Constant sensitivities
         var_senss = {var: sum([presub.exps[i][var]*nu[i] for i in locs])
                      for (var, locs) in presub.varlocs.items()
-                     if var in self.substitutions}
+                     if var in self._last_used_substitutions}
         return var_senss
 
     # pylint: disable=unused-argument
@@ -623,7 +622,7 @@ class MonomialEquality(PosynomialInequality):
             presub = self.unsubbed[i]
             var_sens = {var: sum([presub.exps[i][var]*m_s[i] for i in locs])
                         for (var, locs) in presub.varlocs.items()
-                        if var in self.substitutions}
+                        if var in self._last_used_substitutions}
             var_senss += HashVector(var_sens)
         return var_senss
 
@@ -655,10 +654,10 @@ class SignomialInequality(ScalarSingleEquationConstraint):
         self.substitutions = dict(self.left.values)
         self.substitutions.update(self.right.values)
 
-    def as_posyslt1(self):
+    def as_posyslt1(self, substitutions=None):
         "Returns the posys <= 1 representation of this constraint."
         siglt0, = self.unsubbed
-        siglt0 = siglt0.sub(self.substitutions, require_positive=False)
+        siglt0 = siglt0.sub(substitutions, require_positive=False)
         posy, negy = siglt0.posy_negy()
         if posy is 0:
             raise ValueError("SignomialConstraint %s became the tautological"
@@ -671,7 +670,7 @@ class SignomialInequality(ScalarSingleEquationConstraint):
         elif not hasattr(negy, "cs") or len(negy.cs) == 1:
             self.__class__ = PosynomialInequality
             self.__init__(posy, "<=", negy)
-            return self.unsubbed   # pylint: disable=no-member
+            return self.as_posyslt1(substitutions)
 
         else:
             raise InvalidGPConstraint("SignomialInequality could not simplify"
@@ -714,7 +713,7 @@ class SignomialEquality(SignomialInequality):
         SignomialInequality.__init__(self, left, "<=", right)
         self.oper = "="
 
-    def as_posyslt1(self):
+    def as_posyslt1(self, substitutions=None):
         "Returns the posys <= 1 representation of this constraint."
         # todo deal with substitutions
         raise InvalidGPConstraint("SignomialEquality could not simplify"

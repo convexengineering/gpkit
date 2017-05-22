@@ -192,7 +192,7 @@ class TestTightConstraintSet(unittest.TestCase):
         with SignomialsEnabled():
             sig_constraint = (x + y >= 0.1)
         m = Model(x, [TightConstraintSet([x >= y], raiseerror=True),
-                      x >= 2, y >= 1, sig_constraint])
+                      x >= 2, y == 1, sig_constraint])
         with self.assertRaises(ValueError):
             m.localsolve(verbosity=0)
         m.pop(1)
