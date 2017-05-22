@@ -67,13 +67,6 @@ class NomialData(object):
             self._hashvalue = hash(hash(self.hmap) + hash(str(self.hmap.units)))
         return self._hashvalue
 
-    @classmethod
-    def fromnomials(cls, nomials):
-        """Construct a NomialData from an iterable of Signomial objects"""
-        nd = cls()  # use pass-through version of __init__
-        nd.init_from_nomials(nomials)
-        return nd
-
     @property
     def varkeys(self):
         "The NomialData's varkeys, created when necessary for a substitution."

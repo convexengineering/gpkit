@@ -268,16 +268,15 @@ class Mosek(SolverBackend):
 
         return True
 
+def rebuild():
+    "Changes to the installed gpkit directory and runs build_gpkit()"
+    import gpkit
+    log("# Moving to the directory from which GPkit was imported.")
+    os.chdir(gpkit.__path__[0])
+    build_gpkit()
 
 def build_gpkit():
     "Builds GPkit"
-    try:
-        import gpkit
-        log("# Moving to the directory from which GPkit was imported.")
-        os.chdir(gpkit.__path__[0])
-    except ImportError:
-        pass
-
     if isfile("__init__.py"):
         #call("ls")
         log("#     Don't want to be in a folder with __init__.py, going up!")

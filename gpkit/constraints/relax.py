@@ -28,8 +28,6 @@ class ConstraintsRelaxedEqually(ConstraintSet):
     """
 
     def __init__(self, constraints):
-        if not isinstance(constraints, ConstraintSet):
-            constraints = ConstraintSet(constraints)
         substitutions = dict(constraints.substitutions)
         posynomials = constraints.as_posyslt1()
         with NamedVariables("Relax"):
@@ -64,8 +62,6 @@ class ConstraintsRelaxed(ConstraintSet):
     """
 
     def __init__(self, constraints):
-        if not isinstance(constraints, ConstraintSet):
-            constraints = ConstraintSet(constraints)
         substitutions = dict(constraints.substitutions)
         posynomials = constraints.as_posyslt1()
         N = len(posynomials)
@@ -105,8 +101,6 @@ class ConstantsRelaxed(ConstraintSet):
     def __init__(self, constraints, include_only=None, exclude=None):
         exclude = frozenset(exclude) if exclude else frozenset()
         include_only = frozenset(include_only) if include_only else frozenset()
-        if not isinstance(constraints, ConstraintSet):
-            constraints = ConstraintSet(constraints)
         substitutions = KeyDict(constraints.substitutions)
         constants, _, _ = parse_subs(constraints.varkeys,
                                      constraints.substitutions)

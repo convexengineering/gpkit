@@ -6,24 +6,6 @@ from ..small_scripts import mag, unitstr
 from ..repr_conventions import _str, _repr, _repr_latex_
 
 
-def fast_monomial_str(exp, c):
-    "Quickly generates a unitless monomial string."
-    varstrs = []
-    for (var, x) in exp.items():
-        if x != 0:
-            varstr = str(var)
-            if x != 1:
-                varstr += "**%.2g" % x
-            varstrs.append(varstr)
-    c = mag(c)
-    cstr = "%.3g" % c
-    if cstr == "-1" and varstrs:
-        return "-" + "*".join(varstrs)
-    else:
-        cstr = [cstr] if (cstr != "1" or not varstrs) else []
-        return "*".join(cstr + varstrs)
-
-
 class Nomial(NomialData):
     "Shared non-mathematical properties of all nomials"
     __div__ = None

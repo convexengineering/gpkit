@@ -128,8 +128,6 @@ class Signomial(Nomial):
         -------
         Monomial (unless self(x0) < 0, in which case a Signomial is returned)
         """
-        if not x0:
-            return Monomial(HashVector(), self.hmap[HashVector()])
         x0 = parse_subs(self.varkeys, x0, sweeps=False)  # use only varkey keys
         psub = self.sub(x0)
         if psub.vks:
@@ -180,27 +178,18 @@ class Signomial(Nomial):
         super(Signomial, self).__init__(hmap)
         self._reset()
 
-    def subsummag(self, substitutions):
-        "Returns the sum of the magnitudes of the substituted Nomial."
-        hmap = self.hmap.sub(substitutions)
-        exps = hmap.keys()
-        if any(exps):
-            keys = set()
-            for exp in exps:
-                keys.update(exp)
-            raise ValueError("could not substitute for %s" % keys)
-        return sum(hmap.values())
-
     def __le__(self, other):
         if isinstance(other, (Numbers, Signomial)):
             return SignomialInequality(self, "<=", other)
-        return NotImplemented
+        else:
+            return NotImplemented
 
     def __ge__(self, other):
         if isinstance(other, (Numbers, Signomial)):
             # by default all constraints take the form left >= right
             return SignomialInequality(self, ">=", other)
-        return NotImplemented
+        else:
+            return NotImplemented
 
     # posynomial arithmetic
     def __add__(self, other):
@@ -564,11 +553,6 @@ class PosynomialInequality(ScalarSingleEquationConstraint):
     def as_gpconstr(self, x0):
         "GP version of a Posynomial constraint is itself"
         return self
-
-    # pylint: disable=unused-argument
-    def sens_from_gpconstr(self, posyapprox, pa_sens, var_senss):
-        "Returns sensitivities as parsed from an approximating GP constraint."
-        return pa_sens
 
 
 class MonomialEquality(PosynomialInequality):

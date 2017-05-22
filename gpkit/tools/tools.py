@@ -115,10 +115,7 @@ def composite_objective(*objectives, **kwargs):
     "Creates a cost function that sweeps between multiple objectives."
     objectives = list(objectives)
     n = len(objectives)
-    if "k" in kwargs:
-        k = kwargs["k"]
-    else:
-        k = 4
+    k = kwargs.get("k", 4)
     if "sweep" in kwargs:
         sweeps = [kwargs["sweep"]]*(n-1)
     elif "sweeps" in kwargs:
