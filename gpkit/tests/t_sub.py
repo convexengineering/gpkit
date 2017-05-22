@@ -210,13 +210,12 @@ class TestGPSubs(unittest.TestCase):
         self.assertRaises(ValueError, m.solve, verbosity=0)
 
     def test_linked_sweep(self):
-        def night_hrs(day_hrs):
-            "twenty four minus day hours"
-            return 24 - day_hrs
-        t_day = Variable("t_{day}", "hours")
-        t_night = Variable("t_{night}", night_hrs, "hours", args=[t_day])
         x = Variable("x", "hours")
+        t_day = Variable("t_{day}", 12, "hours")
+        t_night = Variable("t_{night}", lambda c: 24 - c[t_day.key], "hours")
         m = Model(x, [x >= t_day, x >= t_night])
+        sol = m.solve(verbosity=0)
+        self.assertAlmostEqual(sol(t_night)/gpkit.ureg.hours, 12)
         m.substitutions.update({t_day: ("sweep", [8, 12, 16])})
         sol = m.solve(verbosity=0)
         self.assertEqual(len(sol["cost"]), 3)
