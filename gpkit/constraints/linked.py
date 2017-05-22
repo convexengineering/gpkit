@@ -80,5 +80,6 @@ class LinkedConstraintSet(ConstraintSet):
                 resultdict = resultdict["constants"]
             for newvk, oldvks in self.reverselinks.items():
                 if newvk in resultdict:
-                    for vk in oldvks:
-                        resultdict[vk] = resultdict[newvk]
+                    for oldvk in oldvks:
+                        units = newvk.units if hasattr(newvk.units, "to") else 1
+                        resultdict[oldvk] = resultdict[newvk]*units
