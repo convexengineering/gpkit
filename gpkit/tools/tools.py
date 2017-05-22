@@ -26,6 +26,7 @@ def te_exp_minus1(posy, nterm):
         res += posy**i / factorial_denom
     return res
 
+
 def te_secant(var, nterm):
     """Taylor expansion of secant(var).
 
@@ -66,6 +67,7 @@ def te_secant(var, nterm):
         factorial_denom *= ((2*i)*(2*i-1))
         res += E2n[i-1] / factorial_denom * var**(2*i)
     return res
+
 
 def te_tangent(var, nterm):
     """Taylor expansion of tangent(var).
@@ -111,6 +113,8 @@ def te_tangent(var, nterm):
                 B2n[i-1] / factorial_denom * var**(2*i-1))
     return res
 
+
+# pylint: disable=too-many-locals
 def composite_objective(*objectives, **kwargs):
     "Creates a cost function that sweeps between multiple objectives."
     objectives = list(objectives)
@@ -128,8 +132,10 @@ def composite_objective(*objectives, **kwargs):
     else:
         normalization = [1]*n
 
-    sweeps = list(zip(["sweep"]*(n-1), sweeps))
-    ws = VectorVariable(n-1, "w_{CO}", sweeps, "-")
+    sweepvals = np.empty(n-1, dtype="object")
+    for i in range(n-1):
+        sweepvals[i] = ("sweep", sweeps[i])
+    ws = VectorVariable(n-1, "w_{CO}", sweepvals, "-")
     w_s = []
     for w in ws:
         descr = dict(w.descr)

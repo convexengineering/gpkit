@@ -53,6 +53,8 @@ class ConstraintSet(list):
             return list.__getitem__(self, key)
         else:
             variables = self.variables_byname(key)
+            if not variables:
+                raise KeyError(key)
             if variables[0].key.veckey:
                 # maybe it's all one vector variable!
                 from ..nomials import NomialArray

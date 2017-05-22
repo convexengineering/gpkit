@@ -119,7 +119,6 @@ class ArrayVariable(NomialArray):
         from .. import VECTORIZATION
         if VECTORIZATION:
             shape = shape + tuple(VECTORIZATION)
-            descr["vectorization"] = VECTORIZATION
 
         descr["shape"] = shape
 
@@ -135,35 +134,23 @@ class ArrayVariable(NomialArray):
             elif isinstance(arg, Strings) and "label" not in descr:
                 descr["label"] = arg
 
-        values, value_option = [], None
-        for value_option in ["value", "sp_init"]:
-            if value_option in descr:
-                values = descr.pop(value_option)
-                if "vectorization" in descr:
-                    if shape:
-                        values = np.full(shape, values, "f")
-                    else:
-                        descr["value"] = values
-                        values = []
-                break
-
-        descr.pop("vectorization", None)
-
-        valuetype = ""
-        if len(values):
-            if len(shape) == 1:
-                shape_match = len(values) == shape[0]
-                valuetype = "list"
-            else:
-                values = np.array(values)    # pylint: disable=redefined-variable-type
-                shape_match = values.shape == shape
-                valuetype = "array"
-            if not shape_match:
-                raise ValueError("the value's shape must be the same"
-                                 " as the vector's.")
-
         if "name" not in descr:
             descr["name"] = "\\fbox{%s}" % VarKey.new_unnamed_id()
+
+        value_option = None
+        if "value" in descr:
+            value_option = "value"
+        elif "sp_init" in descr:
+            value_option = "sp_init"
+        if value_option:
+            values = descr.pop(value_option)
+            if VECTORIZATION:
+                values = np.full(shape, values, "f")
+            elif not hasattr(values, "shape"):
+                values = np.array(values)  # pylint: disable=redefined-variable-type
+            if values.shape != shape:
+                raise ValueError("the value's shape %s is different than"
+                                 " the vector's %s." % (values.shape, shape))
 
         arraykey = VarKey(**descr)
         vl = np.empty(shape, dtype="object")
@@ -172,10 +159,8 @@ class ArrayVariable(NomialArray):
             i = it.multi_index
             it.iternext()
             descr.update({"idx": i})
-            if valuetype == "array":
+            if value_option:
                 descr.update({value_option: values[i]})
-            elif valuetype == "list":
-                descr.update({value_option: values[i[0]]})
             vl[i] = Variable(**descr)
             vl[i].key.arraykey = arraykey
 
