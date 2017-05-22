@@ -7,6 +7,9 @@ from .small_scripts import mag, is_sweepvar
 from .varkey import VarKey
 
 
+dimensionless = Quantity(1, "dimensionless")
+
+
 class NomialMap(HashVector):
 
     def set_units(self, united_thing):
@@ -31,8 +34,8 @@ class NomialMap(HashVector):
                     self[key] = value + self.get(key, 0)
 
     def to(self, units):
-        sunits = self.units if self.units else Quantity(1, ureg.dimensionless)
-        nm = self*sunits.to(units).magnitude
+        sunits = self.units if self.units else dimensionless
+        nm = self * sunits.to(units).magnitude
         nm.units = units
         return nm
 
@@ -71,8 +74,10 @@ class NomialMap(HashVector):
                     # TODO: can't-sub-posynomials error here
                 if hasattr(cval, "to"):
                     if not vk.units or isinstance(vk.units, Strings):
-                        vk.units = ureg.dimensionless
+                        vk.units = dimensionless
                     cval = mag(cval.to(vk.units))
+                    if isinstance(cval, NomialMap) and cval.keys() == [{}]:
+                        cval, = cval.values()
                 if expval:
                     cval, = cval.values()
                 exps_covered = set()
@@ -113,12 +118,12 @@ class NomialMap(HashVector):
         if not (self.units or other.units):
             pass
         elif not self.units:
-            unit_conversion = other.units.to(ureg.dimensionless)
+            unit_conversion = other.units.to(dimensionless)
             units = other.units
         elif not other.units:
-            unit_conversion = self.units.to(ureg.dimensionless)
+            unit_conversion = self.units.to(dimensionless)
         elif self.units != other.units:
-            unit_conversion = (other.units/self.units).to(ureg.dimensionless)
+            unit_conversion = (other.units/self.units).to(dimensionless)
         if unit_conversion:
             other = float(unit_conversion)*other
 
