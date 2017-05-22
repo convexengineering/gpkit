@@ -10,7 +10,6 @@ from ..small_scripts import mag
 from .. import ureg
 from .. import DimensionalityError
 from ..exceptions import InvalidGPConstraint
-
 from ..nomial_map import NomialMap, parse_subs
 
 

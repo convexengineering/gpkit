@@ -132,7 +132,6 @@ class TestExamples(unittest.TestCase):
         # sensitivity values from p. 34 of W. Hoburg's thesis
         consenscheck = {r"(\frac{S}{S_{wet}})": 0.4300,
                         "e": -0.4785,
-                        r"\pi": -0.4785,
                         "V_{min}": -0.3691,
                         "k": 0.4300,
                         r"\mu": 0.0860,

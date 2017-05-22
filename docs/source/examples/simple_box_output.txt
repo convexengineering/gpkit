@@ -20,6 +20,10 @@ A_{floor} : 50   [m**2] upper limit, floor area
 
 Sensitivities
 -------------
-   alpha : 0.5  lower limit, wall aspect ratio
-A_{wall} : -1.5 upper limit, wall area
+ A_{wall} : -1.5     upper limit, wall area
+    alpha : +0.5     lower limit, wall aspect ratio
+    gamma : +0.0003  lower limit, floor aspect ratio
+A_{floor} : -5.7e-09 upper limit, floor area
+     beta : -1.4e-09 upper limit, wall aspect ratio
+    delta : -1.4e-09 upper limit, floor aspect ratio
 
