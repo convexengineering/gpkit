@@ -419,6 +419,7 @@ class ScalarSingleEquationConstraint(SingleEquationConstraint):
         self.varkeys.update(self.right.vks)
 
 
+# pylint: disable=too-many-instance-attributes
 class PosynomialInequality(ScalarSingleEquationConstraint):
     """A constraint of the general form monomial >= posynomial
     Stored in the posylt1_rep attribute as a single Posynomial (self <= 1)
@@ -443,11 +444,16 @@ class PosynomialInequality(ScalarSingleEquationConstraint):
         self.nomials.extend(self.unsubbed)
         self._last_used_substitutions = {}
 
-    def _simplify_posy_ineq(self, hmap):
+    def _simplify_posy_ineq(self, hmap, pmap=None):
         "Simplify a posy <= 1 by moving constants to the right side."
         if HashVector() not in hmap:
             return hmap
         coeff = 1 - hmap[HashVector()]
+        if pmap is not None:
+            # move constant term's mmap to another
+            const_idx = hmap.keys().index(HashVector())
+            self.const_mmap = self.pmap.pop(const_idx)  # pylint: disable=attribute-defined-outside-init
+            self.const_coeff = coeff  # pylint: disable=attribute-defined-outside-init
         if len(hmap) == 1 and coeff >= 0:
             # don't error on tautological monomials (0 <= coeff)
             # because they allow models to impose requirements
@@ -484,21 +490,24 @@ class PosynomialInequality(ScalarSingleEquationConstraint):
         out = []
         self._last_used_substitutions = {}
         for posy in posys:
+            # 1) substitution
             fixed = parse_subs(posy.varkeys, substitutions, sweeps=False)
             self._last_used_substitutions.update(fixed)
             hmap = posy.hmap.sub(fixed)
-            simp = self._simplify_posy_ineq(hmap)
-            if not simp:  # tautological constraint
-                continue
-            # pylint: disable=attribute-defined-outside-init
             self.pmap, self.mfm = hmap.mmap(posy.hmap)
-            if simp is not hmap:
-                const_idx = hmap.keys().index(HashVector())
-                const_pmap = self.pmap.pop(const_idx)
-                for el in self.pmap:
-                    for key, value in const_pmap.items():
-                        el[key] = -value
-                hmap = simp
+            # 2) constraint simpl. (subtracting the constant term from the RHS)
+            hmap = self._simplify_posy_ineq(hmap, self.pmap)
+            if not hmap:  # tautological constraint
+                continue
+
+            #  The monomial sensitivities from the GP/SP are in terms of this
+            #  smaller post-substitution list of monomials, so we need to map
+            #  back to the pre-substitution list.
+            #
+            #  A "pmap" is a list of HashVectors (mmaps), whose keys are
+            #  monomial indexes pre-substitution, and whose values are the
+            #  percentage of the simplified  monomial's coefficient that came
+            #  from that particular parent.
 
             allnan_or_zero = True
             for c in hmap.values():
@@ -539,7 +548,12 @@ class PosynomialInequality(ScalarSingleEquationConstraint):
             #         idx = presubexps.index(presubexp)
             #         nu_2[idx] += fraction*nu
 
+            if hasattr(self, "const_mmap"):
+                scale = (1-self.const_coeff)/self.const_coeff
+                for idx, percentage in self.const_mmap.items():
+                    nu_[idx] += percentage * la*scale
             nu = nu_
+
         # Monomial sensitivities
         # constr_sens[str(self.m_gt)] = la
         # for i, mono_sens in enumerate(nu):
