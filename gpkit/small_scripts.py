@@ -28,18 +28,6 @@ def unitstr(units, into="%s", options="~", dimless="-"):
     "Returns the unitstr of a given object."
     if hasattr(units, "descr") and hasattr(units.descr, "get"):
         units = units.descr.get("units", dimless)
-# <<<<<<< HEAD
-#     if units and not isinstance(units, Strings):
-#         try:
-#             rawstr = ("{:%s}" % options).format(units)
-#             if str(units)[-5:] == "count":
-#             # TODO remove this conditional when pint issue 356 is resolved
-#                 rawstr = "1.0 count"
-#         except ValueError:
-#             rawstr = "1.0 " + str(units.units)
-#         units = "".join(rawstr.replace("dimensionless", dimless).split()[1:])
-#     return into % units if units else ""
-# =======
     if isinstance(units, Strings):
         return into % units if units else ""
     elif isinstance(units, Quantity):
