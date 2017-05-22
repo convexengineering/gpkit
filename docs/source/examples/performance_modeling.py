@@ -113,7 +113,6 @@ class Fuselage(Model):
         # CDA = Variable("CDA", "ft^2", "drag area")
         Variable("W", 100, "lbf", "weight")
 
-
 AC = Aircraft()
 MISSION = Mission(AC)
 M = Model(MISSION.takeoff_fuel, [MISSION, AC])

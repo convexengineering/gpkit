@@ -186,9 +186,17 @@ def results_table(data, title, minval=0, printunits=True, fixedcols=True,
     for i, (k, v) in enumerate(data.items()):
         v_ = mag(v)
         notnan = ~np.isnan([v_])
-        if np.any(notnan) and np.max(np.abs(np.array([v_])[notnan])) >= minval:
+        if np.any(notnan) and np.sum(np.abs(np.array([v_])[notnan])) >= minval:
             b = isinstance(v, Iterable) and bool(v.shape)
-            model = ", ".join(k.descr.get("models", ""))
+            kmodels = k.descr.get("models", [])
+            kmodelnums = k.descr.get("modelnums", [])
+            model = ""
+            for i, kmodel in enumerate(kmodels):
+                if model:
+                    model += "/"
+                model += kmodel
+                if kmodelnums[i] != 0:
+                    model += ".%i" % kmodelnums[i]
             models.add(model)
             s = k.str_without("models")
             if not sortbyvals:
@@ -215,7 +223,7 @@ def results_table(data, title, minval=0, printunits=True, fixedcols=True,
                 lines.append(["", "", "", ""])
             if model is not "":
                 if not latex:
-                    lines.append([model+" | ", "", "", ""])
+                    lines.append([("modelname",), model, "", ""])
                 else:
                     lines.append([r"\multicolumn{3}{l}{\textbf{" +
                                   model + r"}} \\"])
@@ -253,9 +261,14 @@ def results_table(data, title, minval=0, printunits=True, fixedcols=True,
             # check lengths before using zip
             assert len(list(dirs)) == len(list(maxlens))
             fmts = ['{0:%s%s}' % (direc, L) for direc, L in zip(dirs, maxlens)]
-        lines = [[fmt.format(s) for fmt, s in zip(fmts, line)]
-                 for line in lines]
-        lines = [title] + ["-"*len(title)] + [''.join(l) for l in lines] + [""]
+        for i, line in enumerate(lines):
+            if line[0] == ("modelname",):
+                line = [fmts[0].format(" | "), line[1]]
+            else:
+                line = [fmt.format(s) for fmt, s in zip(fmts, line)]
+            line = "".join(line).rstrip()  # pylint:disable=redefined-variable-type
+            lines[i] = line
+        lines = [title] + ["-"*len(title)] + lines + [""]
     elif lines:
         colfmt = {1: "llcl", 2: "lcl", 3: "llc"}
         lines = (["\n".join(["{\\footnotesize",
