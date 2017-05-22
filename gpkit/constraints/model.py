@@ -5,7 +5,6 @@ from ..nomials import Monomial
 from .prog_factories import _progify_fctry, _solve_fctry
 from .geometric_program import GeometricProgram
 from .signomial_program import SignomialProgram
-from .linked import LinkedConstraintSet
 from ..small_scripts import mag
 from ..keydict import KeyDict
 from ..varkey import VarKey
