@@ -133,6 +133,7 @@ class Signomial(Nomial):
             raise ValueError("Variables %s remained after substituting x0=%s"
                              % (list(psub.vks), x0)
                              + " into %s" % self)
+        # TODO: profile this code, return an hmap
         c0, = psub.hmap.values()
         exp = HashVector()
         c = c0
