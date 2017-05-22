@@ -246,7 +246,7 @@ class TestSP(unittest.TestCase):
             constraints = [x + y >= z,
                            y >= x - 1]
         m = Model(x + y*z, constraints)
-        m.substitutions.update({"z" : 5})
+        m.substitutions.update({"z": 5})
         sol = m.localsolve(verbosity=0)
         self.assertAlmostEqual(sol["cost"], 13, self.ndig)
 
@@ -258,6 +258,24 @@ class TestSP(unittest.TestCase):
         m = Model(x + y*z, constraints)
         sol = m.localsolve(verbosity=0)
         self.assertAlmostEqual(sol["cost"], 13, self.ndig)
+
+    def test_initially_infeasible(self):
+        x = Variable("x")
+        y = Variable("y")
+
+        with SignomialsEnabled():
+            sigc = x >= y + y**2 - y**3
+            sigc2 = x <= y**0.5
+
+        m = Model(1/x, [sigc, sigc2, y <= 0.5])
+
+        sol = m.localsolve(verbosity=0)
+        self.assertAlmostEqual(sol["cost"], 2**0.5, self.ndig)
+        self.assertAlmostEqual(sol(y), 0.5, self.ndig)
+        second_solve_key_names = [key.name[:5]
+                                  for key in m.program.gps[1].cost.exp.keys()
+                                  if key.name[:5] == "\\fbox"]
+        self.assertIn("\\fbox", second_solve_key_names)
 
     def test_sp_substitutions(self):
         x = Variable('x')

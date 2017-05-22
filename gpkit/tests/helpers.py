@@ -30,22 +30,25 @@ def generate_example_tests(path, testclasses, solvers=None, newtest_fn=None):
     for testclass in testclasses:
         if os.path.isdir(path):
             sys.path.insert(0, path)
-            for fn in dir(testclass):
-                if fn[:5] == "test_":
-                    name = fn[5:]
-                    old_test = getattr(testclass, fn)
-                    setattr(testclass, name, old_test)  # move to a non-test fn
-                    delattr(testclass, fn)  # delete the old old_test
-                    for solver in solvers:
-                        new_name = "test_%s_%s" % (name, solver)
-                        new_fn = newtest_fn(name, solver, import_dict, path)
-                        setattr(testclass, new_name, new_fn)
-            tests.append(testclass)
+        for fn in dir(testclass):
+            if fn[:5] == "test_":
+                name = fn[5:]
+                old_test = getattr(testclass, fn)
+                setattr(testclass, name, old_test)  # move to a non-test fn
+                delattr(testclass, fn)  # delete the old old_test
+                for solver in solvers:
+                    new_name = "test_%s_%s" % (name, solver)
+                    new_fn = newtest_fn(name, solver, import_dict, path)
+                    setattr(testclass, new_name, new_fn)
+        tests.append(testclass)
     return tests
 
 
-def new_test(name, solver, import_dict, path):
+def new_test(name, solver, import_dict, path, testfn=None):
     """logged_example_testcase with a NewDefaultSolver"""
+    if testfn is None:
+        testfn = logged_example_testcase
+
     def test(self):
         # pylint: disable=missing-docstring
         # No docstring because it'd be uselessly the same for each example
@@ -56,7 +59,7 @@ def new_test(name, solver, import_dict, path):
             del gpkit.MODELNUM_LOOKUP[key]
 
         with NewDefaultSolver(solver):
-            logged_example_testcase(name, import_dict, path)(self)
+            testfn(name, import_dict, path)(self)
 
         # check all other global state besides MODELNUM_LOOKUP
         #   is falsy (which should mean blank)
