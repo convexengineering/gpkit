@@ -81,8 +81,6 @@ class TestSolutionArray(unittest.TestCase):
 
     def test_units_sub(self):
         # issue 809
-        if not gpkit.units:
-            return
         T = Variable("T", "N", "thrust")
         Tmin = Variable("T_{min}", "N", "minimum thrust")
         m = Model(T, [T >= Tmin])

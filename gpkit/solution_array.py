@@ -113,15 +113,9 @@ class SolutionArray(DictOfLists):
                     costs = ["%-8.3g" % c for c in mag(subdict[:4])]
                     strs += [" [ %s %s ]" % ("  ".join(costs),
                                              "..." if len(self) > 4 else "")]
-                    cost_units = self.program[0].cost.units
                 else:
                     strs += [" %-.4g" % mag(subdict)]
-                    if hasattr(self.program, "cost"):
-                        cost_units = self.program.cost.units
-                    else:
-                        # we're in a skipsweepfailures that only solved once
-                        cost_units = self.program[0].cost.units
-                strs[-1] += unitstr(cost_units, into=" [%s] ", dimless="")
+                strs[-1] += unitstr(subdict, into=" [%s] ", dimless="")
                 strs += [""]
             elif not subdict:
                 continue
@@ -182,6 +176,10 @@ def results_table(data, title, minval=0, printunits=True, fixedcols=True,
     sortbyvals : boolean
         If true, rows are sorted by their average value instead of by name.
     """
+    from . import units
+    if not units:
+        # disable units printing
+        printunits = False
     lines = []
     decorated = []
     models = set()
