@@ -149,8 +149,6 @@ class ConstantsRelaxed(ConstraintSet):
     def process_result(self, result):
         ConstraintSet.process_result(self, result)
         csenss = result["sensitivities"]["constants"]
-        for const in csenss:
-            if const in self._unrelaxmap:
-                origvar = self._unrelaxmap[const]
-                if origvar not in csenss:
-                    csenss[origvar] = csenss.pop(const)
+        for const, origvar in self._unrelaxmap.items():
+            csenss[origvar] = csenss[const]
+            del csenss[const]
