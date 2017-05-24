@@ -3,7 +3,7 @@ from collections import defaultdict
 from functools import reduce as functools_reduce
 from operator import add
 import numpy as np
-from ..small_classes import HashVector, Quantity
+from ..small_classes import HashVector, Quantity, Strings
 from ..keydict import KeySet, KeyDict
 from ..small_scripts import mag
 from ..nomial_map import NomialMap
@@ -123,9 +123,12 @@ class NomialData(object):
                     exp[var] -= 1
                     hmap[exp] = c
             hmap._remove_zeros()
-        units = getattr(self, "units", None) or 1.0
-        units /= getattr(var, "units", None) or 1.0
-        hmap.set_units(units)
+        sunits = getattr(self, "units", None) or 1.0
+        vunits = getattr(var, "units", None) or 1.0
+        if isinstance(sunits, Strings) or isinstance(vunits, Strings):
+            hmap.set_units(None)
+        else:
+            hmap.set_units(sunits/vunits)
         return NomialData(hmap)
 
     def __eq__(self, other):
