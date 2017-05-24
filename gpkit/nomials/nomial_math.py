@@ -654,7 +654,6 @@ class SignomialInequality(ScalarSingleEquationConstraint):
         self.nomials.extend(self.unsubbed)
         self.substitutions = dict(self.left.values)
         self.substitutions.update(self.right.values)
-        self._last_used_substitutions = None
 
     def as_posyslt1(self, substitutions=None):
         "Returns the posys <= 1 representation of this constraint."
@@ -696,20 +695,17 @@ class SignomialInequality(ScalarSingleEquationConstraint):
         pc.substitutions = self.substitutions
         return pc
 
-    def as_approxposyslt1(self, x0, substitutions=None):
+    def as_approxslt(self, substitutions=None):
         "Returns posy <= 1 approximations with consistent exp ordering."
-        if substitutions is not self._last_used_substitutions:
-            self._last_used_substitutions = substitutions
-            self.unsubbed = [s.sub(substitutions, require_positive=False)
-                             for s in self.unsubbed]
-        siglt0, = self.unsubbed
-        posy, negy = siglt0.posy_negy()
+        siglt0, = [s.sub(substitutions, require_positive=False)
+                   for s in self.unsubbed]
+        posy, self._negy = siglt0.posy_negy()
+        return [posy]
+
+    def as_approxsgt(self, x0):
         # assume unspecified negy variables have a value of 1.0
-        x0.update({vk: 1.0 for vk in negy.varlocs if vk not in x0})
-        rhs = negy.mono_lower_bound(x0)
-        exps = [exp - rhs.exp for exp in posy.exps]
-        cs = [c/rhs.c for c in posy.cs]
-        return [Posynomial(exps, cs, simplify=False)]
+        x0.update({vk: 1.0 for vk in self._negy.varlocs if vk not in x0})
+        return [self._negy.mono_lower_bound(x0)]
 
 
 class SingleSignomialEquality(SignomialInequality):
@@ -738,15 +734,16 @@ class SingleSignomialEquality(SignomialInequality):
         mec.substitutions = self.substitutions
         return mec
 
-    def as_approxposyslt1(self, x0, substitutions=None):
+    def as_approxslt(self, substitutions=None):
         "Returns posy <= 1 approximations with consistent exp ordering."
-        if substitutions is not self._last_used_substitutions:
-            self._last_used_substitutions = substitutions
-            self.unsubbed = [s.sub(substitutions, require_positive=False)
-                             for s in self.unsubbed]
-        siglt0, = self.unsubbed
-        posy, negy = siglt0.posy_negy()
+        self._siglt0, = [s.sub(substitutions, require_positive=False)
+                         for s in self.unsubbed]
+        self._posy, self._negy = self._siglt0.posy_negy()
+        return Monomial(1), Monomial(1)
+
+    def as_approxsgt(self, x0):
         # assume unspecified negy variables have a value of 1.0
-        x0.update({vk: 1.0 for vk in negy.varlocs if vk not in x0})
-        lhs, rhs = posy.mono_lower_bound(x0), negy.mono_lower_bound(x0)
+        x0.update({vk: 1.0 for vk in self._siglt0.varlocs if vk not in x0})
+        lhs = self._posy.mono_lower_bound(x0)
+        rhs = self._negy.mono_lower_bound(x0)
         return lhs/rhs, rhs/lhs
