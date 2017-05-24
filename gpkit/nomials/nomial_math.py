@@ -695,16 +695,13 @@ class SignomialInequality(ScalarSingleEquationConstraint):
         pc.substitutions = self.substitutions
         return pc
 
-    def as_approxslt(self, substitutions=None):
+    def as_approxslt(self):
         "Returns posy <= 1 approximations with consistent exp ordering."
-        siglt0, = [s.sub(substitutions, require_positive=False)
-                   for s in self.unsubbed]
+        siglt0, = self.unsubbed
         posy, self._negy = siglt0.posy_negy()
         return [posy]
 
     def as_approxsgt(self, x0):
-        # assume unspecified negy variables have a value of 1.0
-        x0.update({vk: 1.0 for vk in self._negy.varlocs if vk not in x0})
         return [self._negy.mono_lower_bound(x0)]
 
 
@@ -734,16 +731,13 @@ class SingleSignomialEquality(SignomialInequality):
         mec.substitutions = self.substitutions
         return mec
 
-    def as_approxslt(self, substitutions=None):
+    def as_approxslt(self):
         "Returns posy <= 1 approximations with consistent exp ordering."
-        self._siglt0, = [s.sub(substitutions, require_positive=False)
-                         for s in self.unsubbed]
+        self._siglt0, = self.unsubbed
         self._posy, self._negy = self._siglt0.posy_negy()
         return Monomial(1), Monomial(1)
 
     def as_approxsgt(self, x0):
-        # assume unspecified negy variables have a value of 1.0
-        x0.update({vk: 1.0 for vk in self._siglt0.varlocs if vk not in x0})
         lhs = self._posy.mono_lower_bound(x0)
         rhs = self._negy.mono_lower_bound(x0)
         return lhs/rhs, rhs/lhs

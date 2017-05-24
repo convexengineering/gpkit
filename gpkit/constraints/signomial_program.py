@@ -47,8 +47,6 @@ class SignomialProgram(CostedConstraintSet):
         self.result = None
         self.lastgp = None
         self.is_sgp = False
-        self._posys = []
-        self._spconstrs = []
 
         if cost.any_nonpositive_cs:
             raise TypeError("""SignomialPrograms need Posyomial objectives.
@@ -163,34 +161,41 @@ class SignomialProgram(CostedConstraintSet):
             # left for the individual constraints to handle
         return x0
 
-    def _initial_gpconstrs(self, x0, substitutions):
-        self._posys = []
+    def _init_SPdata(self, x0, substitutions):
+        gpposys = []
+        gpconstrs = []
         self._spconstrs = []
         self.approx_lt = []
-        self.approx_gt = []
+        approx_gt = []
         for cs in self.flat(constraintsets=False):
             try:
-                self._posys.extend(cs.as_posyslt1(substitutions))
+                gpposys.extend(cs.as_posyslt1(substitutions))
+                gpconstrs.append(cs)
             except InvalidGPConstraint:
                 if isinstance(cs, SignomialInequality):
                     self._spconstrs.append(cs)
-                    self.approx_lt.extend(cs.as_approxslt(substitutions))
-                    self.approx_gt.extend(cs.as_approxsgt(x0))
+                    self.approx_lt.extend(cs.as_approxslt())
+                    # assume unspecified negy variables have a value of 1.0
+                    x0.update({vk: 1.0 for vk in cs.varkeys if vk not in x0})
+                    approx_gt.extend(cs.as_approxsgt(x0))
                 else:
                     self.is_sgp = True
                     return
-        self.gpmons = len(self.cost.exps) + sum([len(p.exps)
-                                                 for p in self._posys])
+
+        # accounting
+        self.gppos = 1 + len(gpposys)
+        # TODO: note that len(self.cost.exps) may change after substitution!
+        gpmons = len(self.cost.exps) + sum([len(p.exps) for p in gpposys])
         # k [j]: number of monomials present in each signomial constraint
         k = [len(p.exps) for p in self.approx_lt]
         # p_idxs [i]: posynomial index of each monomial
         self.p_idxs = []
         for i, p_len in enumerate(k):
             self.p_idxs += [i]*p_len
-        self.kcs = np.cumsum([self.gpmons]+k)
-        self.approx_posys = [p/m for p, m in zip(self.approx_lt, self.approx_gt)]
-        return [[p <= 1 for p in self._posys],
-                [p <= 1 for p in self.approx_posys]]
+        self.kcs = np.cumsum([gpmons]+k)
+
+        return [gpconstrs,
+                [p/m <= 1 for p, m in zip(self.approx_lt, approx_gt)]]
 
     def gp(self, x0=None, verbosity=1):
         "The GP approximation of this SP at x0."
@@ -199,7 +204,7 @@ class SignomialProgram(CostedConstraintSet):
             self.__parse_externalfnvars()
         if self.lastgp is None or self.is_sgp:
             if self.lastgp is None:
-                gp_constrs = self._initial_gpconstrs(x0, self.substitutions)
+                gp_constrs = self._init_SPdata(x0, self.substitutions)
             if self.is_sgp:  # may be set to True by the call above
                 gp_constrs = self.as_gpconstr(x0, self.substitutions)
             if self.externalfn_vars:
@@ -212,12 +217,13 @@ class SignomialProgram(CostedConstraintSet):
         else:
             lastgp = self.lastgp
             spmonos = []
-            gppos = 1+len(self._posys)
             for spc in self._spconstrs:
                 spmonos.extend(spc.as_approxsgt(x0))
             for i, spmono in enumerate(spmonos):
                 firstposy = self.approx_lt[i]
-                lastgp.posynomials[gppos+i] = firstposy/spmono
+                unsubbed = firstposy/spmono
+                lastgp[0][1][i].unsubbed = [unsubbed]
+                lastgp.posynomials[self.gppos+i] = unsubbed.sub(self.substitutions)
             lastgp.gen()
             return lastgp
             # if not hasattr(self, "_Adat"):
