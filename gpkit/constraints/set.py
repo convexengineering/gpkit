@@ -96,9 +96,15 @@ class ConstraintSet(list):
         return variables
 
     def __setitem__(self, key, value):
-        if hasattr(value, "substitutions"):
-            self.substitutions.update(value.substitutions)
+        self.substitutions.update(value.substitutions)
         list.__setitem__(self, key, value)
+        self.reset_varkeys()
+
+    def append(self, value):
+        if hasattr(value, "__iter__") and not isinstance(value, ConstraintSet):
+            value = ConstraintSet(value)
+        self.substitutions.update(value.substitutions)
+        list.append(self, value)
         self.reset_varkeys()
 
     __str__ = _str
