@@ -83,7 +83,7 @@ def _solve_fctry(genfunction):
             self.program, solvefn = genfunction(self, verbosity)
             result = solvefn(solver, verbosity, *args, **kwargs)
             solution.append(result)
-        solution.program = self
+        solution.program = self.program
         solution.to_united_array(unitless_keys=["sensitivities"], united=True)
         if self.cost.units:
             solution["cost"] = solution["cost"] * self.cost.units
