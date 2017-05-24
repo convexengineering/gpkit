@@ -107,6 +107,7 @@ class SignomialProgram(CostedConstraintSet):
         if verbosity > 0:
             print("Beginning signomial solve.")
         self.gps = []  # NOTE: SIDE EFFECTS
+        self.results = []
         slackvar = Variable()
         prevcost, cost, rel_improvement = None, None, None
         while rel_improvement is None or rel_improvement > reltol:
@@ -121,6 +122,7 @@ class SignomialProgram(CostedConstraintSet):
             try:
                 result = gp.solve(solver, verbosity-1, **kwargs)
                 self.lastgp = gp
+                self.results.append(result)
             except (RuntimeWarning, ValueError):
                 feas_constrs = ([slackvar >= 1] +
                                 [posy <= slackvar
