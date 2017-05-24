@@ -59,8 +59,7 @@ class SignomialProgram(CostedConstraintSet):
             self.__parse_externalfnvars()
             if self.externalfn_vars:  # not a GP! Skip to the `except`
                 raise InvalidGPConstraint("some variables have externalfns")
-            _ = self.as_posyslt1(substitutions)  # should raise an error
-            # TODO: is there a faster way to check?
+            _ = self.as_posyslt1(substitutions)
         except InvalidGPConstraint:
             pass
         else:  # this is a GP

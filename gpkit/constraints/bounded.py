@@ -67,9 +67,8 @@ class Bounded(ConstraintSet):
             constraints = ConstraintSet(constraints)
         self.bound_las = None
         self.verbosity = verbosity
-        not_using_eps = lower or upper
-        self.lowerbound = lower if not_using_eps else eps
-        self.upperbound = upper if not_using_eps else 1/eps
+        self.lowerbound = lower if (lower or upper) else eps
+        self.upperbound = upper if (lower or upper) else 1/eps
         self.bounded_varkeys = tuple(vk for vk in constraints.varkeys
                                      if vk not in constraints.substitutions)
         bounding_constraints = varkey_bounds(self.bounded_varkeys,

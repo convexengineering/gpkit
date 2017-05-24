@@ -299,13 +299,14 @@ class TestGPSubs(unittest.TestCase):
             almostequal(1*gpkit.ureg.cm/b.solve(verbosity=0)["cost"], 1, 5)
             almostequal(1*gpkit.ureg.cm/gpkit.ureg.yd/concat_cost, 1, 5)
         a1, b1 = Above(), Below()
-        m = a1.link(b1)
-        m.cost = m["x"]
+        b1.subinplace({b1["x"]: a1["x"]})
+        m = Model(a1["x"], [a1, b1])
         sol = m.solve(verbosity=0)
         if not isinstance(m["x"].key.units, str):
             almostequal(1*gpkit.ureg.cm/sol["cost"], 1, 5)
         a1, b1 = Above(), Below()
-        m = b1.link(a1)
+        a1.subinplace({a1["x"]: b1["x"]})
+        m = Model(b1["x"], [a1, b1])
         m.cost = m["x"]
         sol = m.solve(verbosity=0)
         if not isinstance(m["x"].key.units, str):
@@ -340,10 +341,10 @@ class TestGPSubs(unittest.TestCase):
         class Top(Model):
             "Some high level model"
             def setup(self):
-                x = Variable('x')
-                y = Variable('y')
+                sub = Sub()
+                x = Variable("x")
                 self.cost = x
-                return Sub().link([x >= y, y >= 1])
+                return sub, [x >= sub["y"], sub["y"] >= 1]
 
         class Sub(Model):
             "A simple sub model"

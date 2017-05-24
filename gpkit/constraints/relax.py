@@ -34,10 +34,8 @@ class ConstraintsRelaxedEqually(ConstraintSet):
         with NamedVariables("Relax"):
             self.relaxvar = Variable("C")
         ConstraintSet.__init__(self,
-                               [[posy <= self.relaxvar
-                                 for posy in posynomials],
-                                self.relaxvar >= 1],
-                               substitutions)
+                               [[p <= self.relaxvar for p in posynomials],
+                                self.relaxvar >= 1], substitutions)
 
 
 class ConstraintsRelaxed(ConstraintSet):
