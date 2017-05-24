@@ -57,8 +57,14 @@ class GeometricProgram(CostedConstraintSet, NomialData):
         if not isinstance(constraints, ConstraintSet):
             constraints = ConstraintSet(constraints)
         list.__init__(self, [constraints])  # pylint:disable=non-parent-init-called
-        self.substitutions = substitutions if substitutions else {}
+        self.substitutions = substitutions or {}
         for key, sub in self.substitutions.items():
+            if hasattr(sub, "exp") and not sub.exp:
+                sub = sub.value
+                if hasattr(sub, "units"):
+                    sub = sub.to(key.units or "dimensionless").magnitude
+                self.substitutions[key] = sub
+            # only allow Numbers and ndarrays
             if not isinstance(sub, (Numbers, np.ndarray)):
                 raise ValueError("substitution {%s: %s} with value type %s is"
                                  " not allowed in .substitutions; such"
@@ -175,13 +181,21 @@ class GeometricProgram(CostedConstraintSet, NomialData):
             print("Solving took %.3g seconds." % (soltime,))
             tic = time()
 
-        if solver_out.get("status", "").lower() != "optimal":
+        # allow mosek's NEAR_DUAL_FEAS solution status, because our check
+        # will catch anything that's not actually near enough.
+        solver_status = str(solver_out.get("status", None))
+        if solver_status.lower() not in ["optimal", "near_dual_feas"]:
             raise RuntimeWarning(
                 "final status of solver '%s' was '%s', not 'optimal'.\n\n"
                 "The solver's result is stored in model.program.solver_out. "
                 "A result dict can be generated via "
                 "program._compile_result(program.solver_out)." %
-                (solvername, solver_out.get("status", None)))
+                (solvername, solver_status))
+
+        if solver_status.lower() == "near_dual_feas":
+            print RuntimeWarning(
+                "final status of solver '%s' was '%s', not 'optimal'.\n\n" %
+                (solvername, solver_status))
 
         self._generate_nula(solver_out)
         self.result = self._compile_result(solver_out)  # NOTE: SIDE EFFECTS
