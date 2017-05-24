@@ -142,13 +142,12 @@ class KeyDict(dict):
         key, idx = self.parse_and_index(key)
         if hasattr(value, "exp") and not value.exp:
             value = value.value  # substitute constant monomials
-        # if it's a veckey but the value isn't an array, convert it
         if (self.collapse_arrays and hasattr(key, "descr")
-                and "shape" in key.descr and not idx
-                and not isinstance(value, (np.ndarray, Quantity))
-                and not is_sweepvar(value)
-                and not isinstance(value[0], np.ndarray)):
-            value = np.array([clean_value(key, v) for v in value])
+                and "shape" in key.descr and not idx  # if a veckey, not
+                and not isinstance(value, (np.ndarray, Quantity))  # an array,
+                and not is_sweepvar(value)  # not a sweep, and
+                and not isinstance(value[0], np.ndarray)):  # not a solarray,
+            value = np.array([clean_value(key, v) for v in value])  # convert
         if key not in self.keymap:
             self.keymap[key].add(key)
             if hasattr(key, "keys"):
