@@ -92,7 +92,7 @@ class VarKey(object):
                         substring = ["%s.%s" % (ss, mn) if mn > 0 else ss
                                      for ss, mn
                                      in zip(substring, self.modelnums)]
-                    substring = ", ".join(substring)
+                    substring = "/".join(substring)
                 string += "_%s" % (substring,)
         return string
 
