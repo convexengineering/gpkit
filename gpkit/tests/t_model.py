@@ -481,8 +481,14 @@ class TestSP(unittest.TestCase):
         y = Variable('y')
         with SignomialsEnabled():
             m = Model(x, [x + y >= 1, y <= 0.5])
-        m.localsolve(x0={x: 0.5}, verbosity=0)
-        first_gp_constr_posy = m.program.gps[0][0].as_posyslt1()[0]
+        gp = m.sp().gp(x0={x: 0.5}, verbosity=0)  # pylint: disable=no-member
+        # TODO: sp solves now reorder the constraints to be
+        #       gp constraints first, then sp constraints,
+        #       so m[0][0] becomes m.sp().gp()[0][1]
+        # TODO: complete gps are no longer accessible,
+        #       as they are re-used over time!
+        #       potentially generate an solutionarray of results instead?
+        first_gp_constr_posy = gp[0][1].as_posyslt1()[0]
         self.assertEqual(first_gp_constr_posy.exp[x.key], -1./3)
 
     def test_unbounded_debugging(self):

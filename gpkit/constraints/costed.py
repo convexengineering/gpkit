@@ -34,7 +34,7 @@ class CostedConstraintSet(ConstraintSet):
 
     def reset_varkeys(self, init_dict=None):
         "Resets varkeys to what is in the cost and constraints"
-        ConstraintSet.reset_varkeys(self, self.cost.varlocs)
+        ConstraintSet.reset_varkeys(self, self.cost.vks)
         if init_dict is not None:
             self.varkeys.update(init_dict)
 

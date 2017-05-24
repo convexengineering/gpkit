@@ -285,10 +285,11 @@ class GeometricProgram(CostedConstraintSet, NomialData):
                                         [[nu[i] for i in m_idx]
                                          for m_idx in self.m_idxs[1:]])
         # add cost's sensitivity in
+        # TODO: don't use varlocs
         var_senss += {var: sum([self.cost.exps[i][var]*nu[i] for i in locs])
                       for (var, locs) in self.cost.varlocs.items()
                       if (var in self.cost.varlocs
-                          and var not in self.posynomials[0].varlocs)}
+                          and var not in self.posynomials[0].vks)}
 
         result["sensitivities"]["constants"] = KeyDict(var_senss)
         result["constants"] = KeyDict(self.substitutions)
@@ -396,8 +397,7 @@ def genA(exps, varlocs):
                 bound = "lower"
             elif varsign == -1:
                 bound = "upper"
-            else:
-                # just being safe
+            else:  # just being safe
                 raise RuntimeWarning("Unexpected varsign %s" % varsign)
             missingbounds[var] = bound
 

@@ -65,7 +65,7 @@ class Variable(Monomial):
     @property
     def key(self):
         """Get the VarKey associated with this Variable"""
-        return list(self.exp)[0]
+        return self.vks.keys()[0]
 
     @property
     def descr(self):

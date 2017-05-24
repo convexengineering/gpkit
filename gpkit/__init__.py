@@ -95,6 +95,8 @@ def disable_units():
 
     class DummyUnits(object):
         "Dummy class to replace missing pint"
+        dimensionless = None
+
         class Quantity(object):
             "Dummy Quantity instead of pint"
             pass

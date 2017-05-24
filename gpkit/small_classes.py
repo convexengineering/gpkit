@@ -205,12 +205,10 @@ class HashVector(dict):
     def __hash__(self):
         "Allows HashVectors to be used as dictionary keys."
         if self._hashvalue is None:
-            self._hashvalue = hash(tuple(self.items()))
+            # use a sum/xor so it's cheaper to create and update?
+            sortfn = lambda x: (getattr(x[0], "descr", x[0]), x[1])
+            self._hashvalue = hash(tuple(sorted(self.items(), key=sortfn)))
         return self._hashvalue
-
-    # temporarily disabling immutability
-    #def __setitem__(self, key, value):
-    #    raise TypeError("HashVectors are immutable.")
 
     def __neg__(self):
         "Return Hashvector with each value negated."
@@ -247,8 +245,9 @@ class HashVector(dict):
             return self.__class__({key: val+other
                                    for (key, val) in self.items()})
         elif isinstance(other, dict):
-            keys = set(self).union(other)
-            sums = {key: self.get(key, 0) + other.get(key, 0) for key in keys}
+            sums = self.copy()
+            for key, value in other.items():
+                sums[key] = value + sums.get(key, 0)
             return self.__class__(sums)
         else:
             return NotImplemented

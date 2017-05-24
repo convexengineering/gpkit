@@ -1,5 +1,5 @@
 """Defines the VarKey class"""
-from .small_classes import Strings, Quantity, Count
+from .small_classes import Strings, Quantity, HashVector, Count
 from .small_scripts import unitstr, veckeyed
 
 
@@ -25,6 +25,8 @@ class VarKey(object):
     #    will be compared anyway
 
     def __init__(self, name=None, **kwargs):
+        # update in case user has disabled units
+        from . import units as ureg
         self.descr = kwargs
         # Python arg handling guarantees 'name' won't appear in kwargs
         if isinstance(name, VarKey):
@@ -34,8 +36,6 @@ class VarKey(object):
                 name = "\\fbox{%s}" % VarKey.new_unnamed_id()
             self.descr["name"] = str(name)
 
-            # update in case user has disabled units
-            from . import units as ureg
             if ureg and "units" in self.descr:
                 units = self.descr["units"]
                 if isinstance(units, Strings):
@@ -72,6 +72,9 @@ class VarKey(object):
             self.keys.add(self.veckey)
             self.keys.add(self.str_without(["idx"]))
             self.keys.add(self.str_without(["idx", "modelnums"]))
+
+        self.hmap = NomialMap({HashVector({self: 1}): 1.0})
+        self.hmap.units = self.units if ureg else None
 
     def __repr__(self):
         return self.str_without()
@@ -159,3 +162,5 @@ class VarKey(object):
 
     def __ne__(self, other):
         return not self.__eq__(other)
+
+from .nomial_map import NomialMap
