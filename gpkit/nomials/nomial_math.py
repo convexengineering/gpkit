@@ -445,7 +445,7 @@ class PosynomialInequality(ScalarSingleEquationConstraint):
         self.nomials.extend(self.unsubbed)
         self._last_used_substitutions = {}
 
-    def _simplify_posy_ineq(self, hmap, pmap=None):
+    def _simplify_posy_ineq(self, hmap, pmap=None, allow_tautological=True):
         "Simplify a posy <= 1 by moving constants to the right side."
         if HashVector() not in hmap:
             return hmap
@@ -455,7 +455,7 @@ class PosynomialInequality(ScalarSingleEquationConstraint):
             const_idx = hmap.keys().index(HashVector())
             self.const_mmap = self.pmap.pop(const_idx)  # pylint: disable=attribute-defined-outside-init
             self.const_coeff = coeff  # pylint: disable=attribute-defined-outside-init
-        if len(hmap) == 1 and coeff >= 0:
+        if allow_tautological and len(hmap) == 1 and coeff >= 0:
             # don't error on tautological monomials (0 <= coeff)
             # because they allow models to impose requirements
             # raise ValueError("tautological constraint: %s" % self)
@@ -479,6 +479,8 @@ class PosynomialInequality(ScalarSingleEquationConstraint):
                                  "be converted to units of %s" %
                                  (p_lt, m_gt))
         hmap = self._simplify_posy_ineq(hmap)
+        if not hmap:
+            return []
         return [Posynomial(hmap)]
 
     def as_posyslt1(self, substitutions=None):
