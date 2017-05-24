@@ -123,7 +123,8 @@ class NomialData(object):
                     exp[var] -= 1
                     hmap[exp] = c
             hmap._remove_zeros()
-        units = (self.units or 1.0)/(var.units or 1.0)
+        units = getattr(self, "units", None) or 1.0
+        units /= getattr(var, "units", None) or 1.0
         hmap.set_units(units)
         return NomialData(hmap)
 
