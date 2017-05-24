@@ -57,8 +57,14 @@ class GeometricProgram(CostedConstraintSet, NomialData):
         if not isinstance(constraints, ConstraintSet):
             constraints = ConstraintSet(constraints)
         list.__init__(self, [constraints])  # pylint:disable=non-parent-init-called
-        self.substitutions = substitutions if substitutions else {}
+        self.substitutions = substitutions or {}
         for key, sub in self.substitutions.items():
+            if hasattr(sub, "exp") and not sub.exp:
+                sub = sub.value
+                if hasattr(sub, "units"):
+                    sub = sub.to(key.units or "dimensionless").magnitude
+                self.substitutions[key] = sub
+            # only allow Numbers and ndarrays
             if not isinstance(sub, (Numbers, np.ndarray)):
                 raise ValueError("substitution {%s: %s} with value type %s is"
                                  " not allowed in .substitutions; such"
