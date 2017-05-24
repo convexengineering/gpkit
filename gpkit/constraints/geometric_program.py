@@ -400,4 +400,9 @@ def genA(exps, varlocs):
                 bound = "upper"
             missingbounds[var] = bound
 
+    # add constant terms
+    for i, exp in enumerate(exps):
+        if not exp:
+            A.append(i, 0, 0)
+
     return A, missingbounds
