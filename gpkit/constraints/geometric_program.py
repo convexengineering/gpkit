@@ -395,16 +395,9 @@ def genA(exps, varlocs):
         if varsign != "both":
             if varsign == 1:
                 bound = "lower"
-            elif varsign == -1:
-                bound = "upper"
             else:
-                # just being safe
-                raise RuntimeWarning("Unexpected varsign %s" % varsign)
+                assert varsign == -1
+                bound = "upper"
             missingbounds[var] = bound
-
-    # add constant terms
-    for i, exp in enumerate(exps):
-        if not exp:
-            A.append(i, 0, 0)
 
     return A, missingbounds
