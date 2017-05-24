@@ -101,7 +101,7 @@ class ConstraintSet(list):
         self.reset_varkeys()
 
     def append(self, value):
-        if not isinstance(value, ConstraintSet):
+        if hasattr(value, "__iter__") and not isinstance(value, ConstraintSet):
             value = ConstraintSet(value)
         self.substitutions.update(value.substitutions)
         list.append(self, value)
