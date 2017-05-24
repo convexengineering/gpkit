@@ -67,10 +67,12 @@ class GeometricProgram(CostedConstraintSet, NomialData):
         # sideways NomialData init to create self.exps, self.cs, etc
         self.posynomials = [cost.sub(self.substitutions)]
         self.posynomials.extend(self.as_posyslt1(self.substitutions))
+        self.gen(verbosity)
+
+    def gen(self, verbosity=1):
         NomialData.init_from_nomials(self, self.posynomials)
         if self.any_nonpositive_cs:
             raise ValueError("GeometricPrograms cannot contain Signomials.")
-
         ## Generate various maps into the posy- and monomials
         # k [j]: number of monomials (columns of F) present in each constraint
         self.k = [len(p.cs) for p in self.posynomials]

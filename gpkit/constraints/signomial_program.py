@@ -208,23 +208,32 @@ class SignomialProgram(CostedConstraintSet):
             gp.x0 = x0  # NOTE: SIDE EFFECTS
             return gp
         else:
-            if not hasattr(self, "_Adat"):
-                self._Adat = [x for x in self.lastgp.A.data]
-                self._cs = [x for x in self.lastgp.cs]
             lastgp = self.lastgp
             spmonos = []
+            gppos = 1+len(self._posys)
             for spc in self._spconstrs:
                 spmonos.extend(spc.as_approxsgt(x0))
-            for i, row in enumerate(lastgp.A.row):
-                if row < self.gpmons:
-                    continue
-                var = lastgp.varlocs.keys()[lastgp.A.col[i]]
-                p_idx = self.p_idxs[row-self.gpmons]
-                spmono = spmonos[p_idx]
-                firstmono = self.approx_gt[p_idx]
-                lastgp.cs[row] = self._cs[row]*firstmono.c/spmono.c
-                lastgp.A.data[i] = self._Adat[i]+(firstmono.exp-spmono.exp).get(var, 0)
+            for i, spmono in enumerate(spmonos):
+                firstposy = self.approx_lt[i]
+                lastgp.posynomials[gppos+i] = firstposy/spmono
+            lastgp.gen()
             return lastgp
+            # if not hasattr(self, "_Adat"):
+            #     self._Adat = [x for x in lastgp.A.data]
+            #     self._cs = [x for x in lastgp.cs]
+            # spmonos = []
+            # for spc in self._spconstrs:
+            #     spmonos.extend(spc.as_approxsgt(x0))
+            # for i, row in enumerate(lastgp.A.row):
+            #     if row < self.gpmons:
+            #         continue
+            #     var = lastgp.varlocs.keys()[lastgp.A.col[i]]
+            #     p_idx = self.p_idxs[row-self.gpmons]
+            #     spmono = spmonos[p_idx]
+            #     firstmono = self.approx_gt[p_idx]
+            #     lastgp.cs[row] = self._cs[row]*firstmono.c/spmono.c
+            #     lastgp.A.data[i] = self._Adat[i]+firstmono.exp.get(var, 0)-spmono.exp.get(var, 0)
+            # return lastgp
 
     def __parse_externalfnvars(self):
         "If this hasn't already been done, look for vars with externalfns"
