@@ -184,6 +184,7 @@ class ConstraintSet(list):
 
     def subinplace(self, subs):
         "Substitutes in place."
+        subs = {k.key: getattr(v, "key", v) for k, v in subs.items()}
         for constraint in self:
             constraint.subinplace(subs)
         for key in subs:
@@ -202,17 +203,13 @@ class ConstraintSet(list):
                                         for vk in self.unique_varkeys)
         self.reset_varkeys()
 
-    def reset_varkeys(self, init_dict=None):
+    def reset_varkeys(self):
         "Goes through constraints and collects their varkeys."
-        varkeys = KeySet()
-        if init_dict is not None:
-            varkeys.update(init_dict)
+        self.varkeys = KeySet(self.unique_varkeys)
         for constraint in self:
             if hasattr(constraint, "varkeys"):
-                varkeys.update(constraint.varkeys)
-        varkeys.update(self.unique_varkeys)
-        self.varkeys = varkeys
-        self.substitutions.varkeys = varkeys
+                self.varkeys.update(constraint.varkeys)
+        self.substitutions.varkeys = self.varkeys
 
     def as_posyslt1(self, substitutions=None):
         "Returns list of posynomials which must be kept <= 1"

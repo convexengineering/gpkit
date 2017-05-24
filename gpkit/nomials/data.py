@@ -33,7 +33,7 @@ class NomialData(object):
         self.varlocs = varlocs
         self._varkeys, self._values = None, None
         if hasattr(self.cs, "units"):
-            self.units = Quantity(1, self.cs.units)  #pylint: disable=no-member
+            self.units = Quantity(1, self.cs.units)  # pylint: disable=no-member
         else:
             self.units = None
 

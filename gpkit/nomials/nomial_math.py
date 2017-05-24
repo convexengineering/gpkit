@@ -68,7 +68,7 @@ class Signomial(Nomial):
                         exp[VarKey(key)] = exp.pop(key)
             else:
                 raise TypeError("could not make Monomial with %s" % type(exps))
-            #simplify = False #TODO: this shouldn't require simplification
+            #simplify = False
             cs = [cs]
             exps = [HashVector(exp)]  # pylint: disable=redefined-variable-type
         elif isinstance(exps, Nomial):
