@@ -142,6 +142,7 @@ class KeyDict(dict):
         key, idx = self.parse_and_index(key)
         if hasattr(value, "exp") and not value.exp:
             value = value.value  # substitute constant monomials
+        # pylint: disable=too-many-boolean-expressions
         if (self.collapse_arrays and hasattr(key, "descr")
                 and "shape" in key.descr and not idx  # if a veckey, not
                 and not isinstance(value, (np.ndarray, Quantity))  # an array,
