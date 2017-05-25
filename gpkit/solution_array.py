@@ -201,7 +201,7 @@ class SolutionArray(DictOfLists):
             posys = [posys]
         for i, posy in enumerate(posys):
             if posy in [None, "cost"]:
-                posys[i] = self.program[0].cost
+                posys[i] = self.program[0].cost   # pylint: disable=unsubscriptable-object
         import matplotlib.pyplot as plt
         from .interactive.plot_sweep import assign_axes
         from . import GPBLU
