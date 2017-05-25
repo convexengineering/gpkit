@@ -8,6 +8,7 @@ class SignomialEquality(ConstraintSet):
     "A constraint of the general form posynomial == posynomial"
 
     def __init__(self, left, right):
+        # TODO: really it should be easier to vectorize a constraint
         if hasattr(left, "shape"):
             cns = array_constraint("=", SingleSignomialEquality)(left, right)
         elif hasattr(right, "shape"):

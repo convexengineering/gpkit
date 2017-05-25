@@ -212,7 +212,6 @@ from .constraints.signomial_program import SignomialProgram
 from .constraints.sigeq import SignomialEquality
 from .constraints.set import ConstraintSet
 from .constraints.model import Model
-from .constraints.linked import LinkedConstraintSet
 
 
 def load_settings(path=SETTINGS_PATH):
