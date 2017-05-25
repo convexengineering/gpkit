@@ -71,7 +71,7 @@ class SignomialProgram(CostedConstraintSet):
 
     # pylint: disable=too-many-locals
     def localsolve(self, solver=None, verbosity=1, x0=None, reltol=1e-4,
-                   iteration_limit=50, **kwargs):
+                   iteration_limit=50, modifylastgp=True, **kwargs):
         """Locally solves a SignomialProgram and returns the solution.
 
         Arguments
@@ -114,7 +114,7 @@ class SignomialProgram(CostedConstraintSet):
     The last result is available in Model.program.gps[-1].result. If the gps
     appear to be converging, you may wish to increase the iteration limit by
     calling .localsolve(..., iteration_limit=NEWLIMIT).""" % len(self.gps))
-            gp = self.gp(x0, verbosity=verbosity-1)
+            gp = self.gp(x0, verbosity-1, modifylastgp)
             self.gps.append(gp)  # NOTE: SIDE EFFECTS
             try:
                 result = gp.solve(solver, verbosity-1, **kwargs)
@@ -180,11 +180,10 @@ class SignomialProgram(CostedConstraintSet):
                 else:
                     self.is_sgp = True
                     return
-
         # accounting
         self.gppos = 1 + len(gpposys)
-        # TODO: note that len(self.cost.exps) may change after substitution!
-        gpmons = len(self.cost.exps) + sum([len(p.exps) for p in gpposys])
+        costmonos = len(self.cost.sub(substitutions).exps)
+        gpmons = costmonos + sum([len(p.exps) for p in gpposys])
         # k [j]: number of monomials present in each signomial constraint
         k = [len(p.exps) for p in self.approx_lt]
         # p_idxs [i]: posynomial index of each monomial
@@ -196,13 +195,13 @@ class SignomialProgram(CostedConstraintSet):
         return [gpconstrs,
                 [p/m <= 1 for p, m in zip(self.approx_lt, approx_gt)]]
 
-    def gp(self, x0=None, verbosity=1):
+    def gp(self, x0=None, verbosity=1, modifylastgp=False):
         "The GP approximation of this SP at x0."
         x0 = self._fill_x0(x0)
         if not hasattr(self, "externalfn_vars"):
             self.__parse_externalfnvars()
-        if self.lastgp is None or self.is_sgp:
-            if self.lastgp is None:
+        if (not modifylastgp or self.lastgp is None) or self.is_sgp:
+            if modifylastgp and self.lastgp is None:
                 gp_constrs = self._init_SPdata(x0, self.substitutions)
             if self.is_sgp:  # may be set to True by the call above
                 gp_constrs = self.as_gpconstr(x0, self.substitutions)
@@ -214,33 +213,17 @@ class SignomialProgram(CostedConstraintSet):
             gp.x0 = x0  # NOTE: SIDE EFFECTS
             return gp
         else:
-            lastgp = self.lastgp
             spmonos = []
             for spc in self._spconstrs:
                 spmonos.extend(spc.as_approxsgt(x0))
             for i, spmono in enumerate(spmonos):
                 firstposy = self.approx_lt[i]
                 unsubbed = firstposy/spmono
-                lastgp[0][1][i].unsubbed = [unsubbed]
-                lastgp.posynomials[self.gppos+i] = unsubbed.sub(self.substitutions)
-            lastgp.gen()
-            return lastgp
-            # if not hasattr(self, "_Adat"):
-            #     self._Adat = [x for x in lastgp.A.data]
-            #     self._cs = [x for x in lastgp.cs]
-            # spmonos = []
-            # for spc in self._spconstrs:
-            #     spmonos.extend(spc.as_approxsgt(x0))
-            # for i, row in enumerate(lastgp.A.row):
-            #     if row < self.gpmons:
-            #         continue
-            #     var = lastgp.varlocs.keys()[lastgp.A.col[i]]
-            #     p_idx = self.p_idxs[row-self.gpmons]
-            #     spmono = spmonos[p_idx]
-            #     firstmono = self.approx_gt[p_idx]
-            #     lastgp.cs[row] = self._cs[row]*firstmono.c/spmono.c
-            #     lastgp.A.data[i] = self._Adat[i]+firstmono.exp.get(var, 0)-spmono.exp.get(var, 0)
-            # return lastgp
+                self.lastgp[0][1][i].unsubbed = [unsubbed]
+                localposylt1 = unsubbed.sub(self.substitutions)
+                self.lastgp.posynomials[self.gppos+i] = localposylt1
+            self.lastgp.gen()
+            return self.lastgp
 
     def __parse_externalfnvars(self):
         "If this hasn't already been done, look for vars with externalfns"
