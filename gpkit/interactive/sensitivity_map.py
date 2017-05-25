@@ -8,7 +8,6 @@ BLUE = np.array([16, 131, 246])/255.0
 RED = np.array([211, 24, 16])/255.0
 GRAY = 0.7*np.ones(3)
 
-
 def colorfn_gen(scale, power=0.66):
     "Generates color gradient of a given power law."
     scale = float(scale)
@@ -21,13 +20,15 @@ def colorfn_gen(scale, power=0.66):
         else:
             color = RED
         blended_color = GRAY + (color-GRAY)*(senss/scale)**power
-        return "[rgb]{%.2f,%.2f,%.2f}" % tuple(blended_color)
+        return ("[rgb]{%.2f,%.2f,%.2f}" % tuple(blended_color),
+                [round(i, 2) for i in blended_color])
     return colorfn
 
 # pylint: disable=too-many-locals
 def signomial_print(sig, sol, colorfn, paintby="constants", idx=None):
     "For pretty printing with Sympy"
     mstrs = []
+    color_set = set()
     for c, exp in zip(sig.cs, sig.exps):
         pos_vars, neg_vars = [], []
         for var, x in exp.items():
@@ -36,7 +37,8 @@ def signomial_print(sig, sol, colorfn, paintby="constants", idx=None):
                 senss = (sol["sensitivities"]["constants"][var]
                          if var in sol["sensitivities"]["constants"]
                          else 0.0)
-                colorstr = colorfn(senss)
+                colorstr, colorarr = colorfn(senss)
+                color_set.add(tuple(colorarr))
                 varlatex = "\\textcolor%s{%s}" % (colorstr, varlatex)
             if x > 0:
                 pos_vars.append((varlatex, x))
@@ -52,9 +54,9 @@ def signomial_print(sig, sol, colorfn, paintby="constants", idx=None):
             idx += 1
             colorstr = colorfn(senss)
             mstrs_.append("\\textcolor%s{%s}" % (colorstr, mstr))
-        return " + ".join(sorted(mstrs_)), idx
+        return (" + ".join(sorted(mstrs_)), idx)
     else:
-        return " + ".join(sorted(mstrs))
+        return (" + ".join(sorted(mstrs)), color_set)
 
 
 class SensitivityMap(object):
@@ -81,6 +83,7 @@ class SensitivityMap(object):
         self.model = model
         self.costlatex = model.cost.latex()
         self.paintby = paintby
+        self.colorstr = []
 
     @property
     def solution(self):
@@ -93,8 +96,8 @@ class SensitivityMap(object):
             return self.model.solution
 
     def _repr_latex_(self):
-        "iPython LaTeX representation."
-        return "$$\\require{color}\n"+self.latex+"\n$$"
+        "iPython LaTeX representation"
+        return "$$\\require{color}\n" +self.latex+"\n$$"+ self.colorstr
 
     @property
     def latex(self, paintby=None):
@@ -121,13 +124,15 @@ class SensitivityMap(object):
             idx = len(self.model.cost.exps) if paintby == "monomials" else 1
             senss = sol["sensitivities"][paintby][idx:]
         colorfn = colorfn_gen(max(senss))
-
+        tup_set = set()
         for i, constr in enumerate(self.model):
             if self.paintby == "constants":
                 left = signomial_print(constr.left, sol, colorfn, paintby)
                 right = signomial_print(constr.right, sol, colorfn, paintby)
                 constr_tex = ("    & %s \\\\" %
-                              (left + constr.latex_opers[constr.oper] + right))
+                              (left[0] + constr.latex_opers[constr.oper]
+                               + right[0]))
+                tup_set = tup_set.union(left[1].union(right[1]))
             else:
                 if isinstance(constr, MonomialEquality):
                     constrs = [constr.leq, constr.geq]
@@ -147,4 +152,16 @@ class SensitivityMap(object):
                     constr_texs.append("    & %s %s\\\\" % (tex, rhs))
                 constr_tex = "\n".join(constr_texs)
             constraint_latex_list.append(constr_tex)
+
+        for i in sorted(list(tup_set), key=lambda num: (num[2], num[1]),
+                        reverse=True):
+            self.colorstr.append("\\textcolor[rgb]{%.2f,%.2f,%.2f}\\blacksquare"
+                                 % (i[0], i[1], i[2]))
+        s = sol["sensitivities"]["constants"].values()
+        if len(s) != 1:
+            self.colorstr.insert(0, "\\textcolor{black}{%.2f}" % min(s))
+            self.colorstr.append("\\textcolor{black}{%.2f}" % max(s))
+        else:
+            self.colorstr.insert(0, "\\textcolor{black}{%.2f}" % min(s))
+        self.colorstr = "$$%s$$" % "".join(self.colorstr)
         return constraint_latex_list
