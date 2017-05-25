@@ -1,32 +1,25 @@
 "Can be found in gpkit/docs/source/examples/external_constraint.py"
-from gpkit import ConstraintSet
 from gpkit.exceptions import InvalidGPConstraint
 from external_function import external_code
 
 
-class ExternalConstraint(ConstraintSet):
+class ExternalConstraint(object):
     "Class for external calling"
-    # Overloading the __init__ function here permits the constraint class to be
-    # called more cleanly at the top level GP.
-    def __init__(self, x, y, **kwargs):
+    varkeys = {}
 
-        # Calls the ConstriantSet __init__ function
-        super(ExternalConstraint, self).__init__([], **kwargs)
-
+    def __init__(self, x, y):
         # We need a GPkit variable defined to return in our constraint.  The
         # easiest way to do this is to read in the parameters of interest in
         # the initiation of the class and store them here.
         self.x = x
         self.y = y
 
-    # Prevents the ExternalConstraint class from solving in a GP, thus forcing
-    # iteration
-    def as_posyslt1(self, substitutions=None):
+    def as_posyslt1(self, _):
+        "Ensures this is treated as an SGP constraint"
         raise InvalidGPConstraint("ExternalConstraint cannot solve as a GP.")
 
-    # Returns the ExternalConstraint class as a GP compatible constraint when
-    # requested by the GPkit solver
-    def as_gpconstr(self, x0, substitutions=None):
+    def as_gpconstr(self, x0, _):
+        "Returns locally-approximating GP constraint"
 
         # Unpacking the GPkit variables
         x = self.x
