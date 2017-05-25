@@ -73,10 +73,13 @@ class GeometricProgram(CostedConstraintSet, NomialData):
         # sideways NomialData init to create self.exps, self.cs, etc
         self.posynomials = [cost.sub(self.substitutions)]
         self.posynomials.extend(self.as_posyslt1(self.substitutions))
+        self.gen(verbosity)
+
+    def gen(self, verbosity=1):
+        "Generates nomial and solve data (A, p_idxs) from self.posynomials"
         NomialData.init_from_nomials(self, self.posynomials)
         if self.any_nonpositive_cs:
             raise ValueError("GeometricPrograms cannot contain Signomials.")
-
         ## Generate various maps into the posy- and monomials
         # k [j]: number of monomials (columns of F) present in each constraint
         self.k = [len(p.cs) for p in self.posynomials]
@@ -183,6 +186,7 @@ class GeometricProgram(CostedConstraintSet, NomialData):
 
         # allow mosek's NEAR_DUAL_FEAS solution status, because our check
         # will catch anything that's not actually near enough.
+        # TODO: implement this in the mosek / mosek_cli interfaces, not here.
         solver_status = str(solver_out.get("status", None))
         if solver_status.lower() not in ["optimal", "near_dual_feas"]:
             raise RuntimeWarning(
@@ -394,11 +398,9 @@ def genA(exps, varlocs):
         if varsign != "both":
             if varsign == 1:
                 bound = "lower"
-            elif varsign == -1:
-                bound = "upper"
             else:
-                # just being safe
-                raise RuntimeWarning("Unexpected varsign %s" % varsign)
+                assert varsign == -1
+                bound = "upper"
             missingbounds[var] = bound
 
     # add constant terms

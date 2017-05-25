@@ -6,18 +6,6 @@ from ..small_scripts import mag
 from ..solution_array import SolutionArray
 
 
-def flatten(listy):
-    """ Recursively flatten a list.
-
-    from stackoverflow.com/questions/12472338/flattening-a-list-recursively
-    """
-    if listy == []:
-        return listy
-    if isinstance(listy[0], list):
-        return flatten(listy[0]) + flatten(listy[1:])
-    return listy[:1] + flatten(listy[1:])
-
-
 # pylint: disable=too-many-instance-attributes
 class BinarySweepTree(object):
     """Spans a line segment. May contain two subtrees that divide the segment.
@@ -141,17 +129,18 @@ class BinarySweepTree(object):
     @property
     def sollist(self):
         "Returns a list of all the solutions in an autosweep"
+        sollist = [self.sols[0]]
         if self.splits:
-            return [self.sols[0], self.splits[0].sollist[1:-1],
-                    self.splits[1].sollist[:-1], self.sols[1]]
-        else:
-            return self.sols
+            sollist.extend(self.splits[0].sollist[1:])
+            sollist.extend(self.splits[1].sollist[1:-1])
+        sollist.append(self.sols[1])
+        return sollist
 
     @property
     def solarray(self):
         "Returns a solution array of all the solutions in an autosweep"
         solution = SolutionArray()
-        for sol in flatten(self.sollist):
+        for sol in self.sollist:
             solution.append(sol.program.result)
         solution.to_united_array(unitless_keys=["sensitivities"], united=True)
         units = Quantity(1.0, getattr(self.sols[0]["cost"], "units", None))

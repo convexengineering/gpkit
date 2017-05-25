@@ -68,7 +68,7 @@ class Signomial(Nomial):
                         exp[VarKey(key)] = exp.pop(key)
             else:
                 raise TypeError("could not make Monomial with %s" % type(exps))
-            #simplify = False #TODO: this shouldn't require simplification
+            #simplify = False
             cs = [cs]
             exps = [HashVector(exp)]  # pylint: disable=redefined-variable-type
         elif isinstance(exps, Nomial):
@@ -695,6 +695,16 @@ class SignomialInequality(ScalarSingleEquationConstraint):
         pc.substitutions = self.substitutions
         return pc
 
+    def as_approxslt(self):
+        "Returns posynomial-less-than sides of a signomial constraint"
+        siglt0, = self.unsubbed
+        posy, self._negy = siglt0.posy_negy()  # pylint: disable=attribute-defined-outside-init
+        return [posy]
+
+    def as_approxsgt(self, x0):
+        "Returns monomial-greater-than sides, to be called after as_approxlt1"
+        return [self._negy.mono_lower_bound(x0)]
+
 
 class SingleSignomialEquality(SignomialInequality):
     "A constraint of the general form posynomial == posynomial"
@@ -705,7 +715,7 @@ class SingleSignomialEquality(SignomialInequality):
 
     def as_posyslt1(self, substitutions=None):
         "Returns the posys <= 1 representation of this constraint."
-        # todo deal with substitutions
+        # TODO: deal with substitutions
         raise InvalidGPConstraint("SignomialEquality could not simplify"
                                   " to a PosynomialInequality; try calling"
                                   "`.localsolve` instead of `.solve` to"
@@ -713,7 +723,7 @@ class SingleSignomialEquality(SignomialInequality):
 
     def as_gpconstr(self, x0, substitutions=None):
         "Returns GP approximation of an SP constraint at x0"
-        # todo deal with substitutions
+        # TODO: deal with substitutions
         siglt0, = self.unsubbed
         posy, negy = siglt0.posy_negy()
         # assume unspecified variables have a value of 1.0
@@ -721,3 +731,15 @@ class SingleSignomialEquality(SignomialInequality):
         mec = (posy.mono_lower_bound(x0) == negy.mono_lower_bound(x0))
         mec.substitutions = self.substitutions
         return mec
+
+    def as_approxslt(self):
+        "Returns posynomial-less-than sides of a signomial constraint"
+        self._siglt0, = self.unsubbed  # pylint: disable=attribute-defined-outside-init
+        self._posy, self._negy = self._siglt0.posy_negy()  # pylint: disable=attribute-defined-outside-init
+        return Monomial(1), Monomial(1)
+
+    def as_approxsgt(self, x0):
+        "Returns monomial-greater-than sides, to be called after as_approxlt1"
+        lhs = self._posy.mono_lower_bound(x0)
+        rhs = self._negy.mono_lower_bound(x0)
+        return lhs/rhs, rhs/lhs

@@ -79,11 +79,11 @@ With constants relaxed individually
         x <= x_max
         x >= x_min
         x_min_Relax.2 >= 1
-        x_min >= 2*x_min_Relax.2**-1
-        x_min <= 2*x_min_Relax.2
+        x_min >= x_min_Relax.2**-1*x_min_{before}_Relax.2
+        x_min <= x_min_Relax.2*x_min_{before}_Relax.2
         x_max_Relax.2 >= 1
-        x_max >= x_max_Relax.2**-1
-        x_max <= x_max_Relax.2
+        x_max >= x_max_Relax.2**-1*x_max_{before}_Relax.2
+        x_max <= x_max_Relax.2*x_max_{before}_Relax.2
 
 Cost
 ----
@@ -98,6 +98,11 @@ x_min : 1
       | Relax.2
 x_max : 1
 x_min : 2
+
+Constants
+---------
+x_max_{before} : 1
+x_min_{before} : 2
 
 Sensitivities
 -------------
