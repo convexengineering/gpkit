@@ -552,12 +552,6 @@ class PosynomialInequality(ScalarSingleEquationConstraint):
                 for idx, percentage in self.const_mmap.items():
                     nu_[idx] += percentage * la*scale
             nu = nu_
-
-        # Monomial sensitivities
-        # constr_sens[str(self.m_gt)] = la
-        # for i, mono_sens in enumerate(nu):
-        #     mono_str = fast_monomial_str(self.p_lt.exps[i], self.p_lt.cs[i])
-        #     constr_sens[mono_str] = mono_sens
         # Constant sensitivities
         var_senss = {}
         for var in self._last_used_substitutions:

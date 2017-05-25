@@ -15,6 +15,11 @@ class NomialMap(HashVector):
     def set_units(self, united_thing):
         if hasattr(united_thing, "units"):
             self.units = Quantity(1, united_thing.units)
+            if self.units.dimensionless:
+                conversion = float(self.units)
+                self.units = None
+                for key, value in self.items():
+                    self[key] = value*conversion
         else:
             self.units = None
 
@@ -121,7 +126,7 @@ class NomialMap(HashVector):
             unit_conversion = other.units.to(dimensionless)
             units = other.units
         elif not other.units:
-            unit_conversion = 1/self.units.to(dimensionless)
+            unit_conversion = 1.0/self.units.to(dimensionless)
         elif self.units != other.units:
             unit_conversion = (other.units/self.units).to(dimensionless)
         if unit_conversion:
