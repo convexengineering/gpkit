@@ -138,8 +138,8 @@ class Signomial(Nomial):
         c = c0
         for vk in self.vks:
             val = mag(x0[vk])
-            diff = self.diff(vk).sub(x0, require_positive=False)
-            e = val*diff.hmap.values()[0]/c0
+            diff, = self.diff(vk).sub(x0, require_positive=False).hmap.values()
+            e = val*diff/c0
             exp[vk] = e
             c /= val**e
         if psub.hmap.units:
