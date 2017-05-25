@@ -121,7 +121,7 @@ class NomialMap(HashVector):
             unit_conversion = other.units.to(dimensionless)
             units = other.units
         elif not other.units:
-            unit_conversion = self.units.to(dimensionless)
+            unit_conversion = 1/self.units.to(dimensionless)
         elif self.units != other.units:
             unit_conversion = (other.units/self.units).to(dimensionless)
         if unit_conversion:

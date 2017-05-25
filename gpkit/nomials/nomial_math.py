@@ -195,16 +195,13 @@ class Signomial(Nomial):
         if isinstance(other, np.ndarray):
             return np.array(self)+other
 
-        other_hmap = None
+        other_hmap = getattr(other, "hmap", None)
         if isinstance(other, Numbers):
             if not other:
                 return Signomial(self.hmap)
             else:
                 other_hmap = NomialMap({HashVector(): mag(other)})
                 other_hmap.set_units(other)
-        elif hasattr(other, "hmap"):
-            other_hmap = other.hmap
-
         if other_hmap:
             return Signomial(self.hmap + other_hmap)
         else:
