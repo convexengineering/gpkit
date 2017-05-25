@@ -23,6 +23,7 @@ __version__ = "0.5.2"
 UNIT_REGISTRY = None
 SIGNOMIALS_ENABLED = False
 GPBLU = "#59ade4"
+GPCOLORS = ["#59ade4", "#FA3333"]
 
 DimensionalityError = ValueError
 ureg, units = None, None  # pylint: disable=invalid-name
