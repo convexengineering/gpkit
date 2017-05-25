@@ -196,6 +196,11 @@ class SolutionOracle(object):
         import matplotlib.pyplot as plt
         from ..interactive.plot_sweep import assign_axes
         from .. import GPBLU
+        if not hasattr(posys, "__len__"):
+            posys = [posys]
+        for i, posy in enumerate(posys):
+            if posy in [None, "cost"]:
+                posys[i] = self.bst.costposy
         posys, axes = assign_axes(self.bst.sweptvar, posys, axes)
         for posy, ax in zip(posys, axes):
             if self._is_cost(posy):  # with small tol should look like a line

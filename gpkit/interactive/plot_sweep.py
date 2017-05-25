@@ -31,14 +31,14 @@ def format_and_label_axes(var, posys, axes, ylabel=True):
         ax.grid(color="0.6")
         # ax.set_frame_on(False)
         for item in [ax.xaxis.label, ax.yaxis.label]:
-            item.set_fontsize(9)
+            item.set_fontsize(12)
         for item in ax.get_xticklabels() + ax.get_yticklabels():
-            item.set_fontsize(7)
+            item.set_fontsize(9)
         ax.tick_params(length=0)
         ax.spines['left'].set_visible(False)
         ax.spines['top'].set_visible(False)
         for i in ax.spines.itervalues():
-            i.set_linewidth(0.4)
+            i.set_linewidth(0.6)
             i.set_color("0.6")
             i.set_linestyle("dotted")
     xlabel = (var.key.descr.get("label", var.key.name)
@@ -68,7 +68,7 @@ def plot_1dsweepgrid(model, sweeps, posys, origsol=None, tol=0.01, **solveargs):
 
     N, S = len(posys), len(sweeps)
     f, axes = plt.subplots(N, S, sharex='col', sharey='row',
-                           figsize=(3+1.5*S, 3+1.5*N))
+                           figsize=(4+2*S, 4+2*N))
     plt.subplots_adjust(hspace=0.15)
 
     for i, (swept, swept_over) in enumerate(sweeps.items()):
@@ -90,7 +90,7 @@ def plot_1dsweepgrid(model, sweeps, posys, origsol=None, tol=0.01, **solveargs):
         sol.plot(posys, subaxes)
         if origsubs:
             for posy, ax in zip(posys, subaxes):
-                ax.plot(origsubs[swept], origsol(posy), "ko", markersize=2)
+                ax.plot(origsubs[swept], origsol(posy), "ko", markersize=4)
         format_and_label_axes(swept, posys, subaxes, ylabel=(i is 0))
         model.substitutions.update(origsubs)
 
