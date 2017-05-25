@@ -1,16 +1,15 @@
 """Implement the SignomialProgram class"""
 from time import time
-import numpy as np
 from ..exceptions import InvalidGPConstraint
 from ..keydict import KeyDict
 from ..nomials import Variable
 from .costed import CostedConstraintSet
-from .set import ConstraintSet
 from .geometric_program import GeometricProgram
 from ..solution_array import SolutionArray
 from ..nomials import SignomialInequality
 
 
+# pylint: disable=too-many-instance-attributes
 class SignomialProgram(CostedConstraintSet):
     """Prepares a collection of signomials for a SP solve.
 
@@ -44,9 +43,13 @@ class SignomialProgram(CostedConstraintSet):
     def __init__(self, cost, constraints, substitutions=None, verbosity=1):
         # pylint: disable=unused-argument
         self.gps = []
+        self.results = []
         self.result = None
         self.lastgp = None
         self.is_sgp = False
+        self._spconstrs = []
+        self._approx_lt = []
+        self._gppos = None
 
         if cost.any_nonpositive_cs:
             raise TypeError("""SignomialPrograms need Posyomial objectives.
@@ -160,11 +163,12 @@ class SignomialProgram(CostedConstraintSet):
             # left for the individual constraints to handle
         return x0
 
-    def _init_SPdata(self, x0, substitutions):
+    def firstgp(self, x0, substitutions):
+        "Generates a simplified GP representation for later modification"
         gpposys = []
         gpconstrs = []
         self._spconstrs = []
-        self.approx_lt = []
+        self._approx_lt = []
         approx_gt = []
         for cs in self.flat(constraintsets=False):
             try:
@@ -173,57 +177,46 @@ class SignomialProgram(CostedConstraintSet):
             except InvalidGPConstraint:
                 if isinstance(cs, SignomialInequality):
                     self._spconstrs.append(cs)
-                    self.approx_lt.extend(cs.as_approxslt())
+                    self._approx_lt.extend(cs.as_approxslt())
                     # assume unspecified negy variables have a value of 1.0
                     x0.update({vk: 1.0 for vk in cs.varkeys if vk not in x0})
                     approx_gt.extend(cs.as_approxsgt(x0))
                 else:
                     self.is_sgp = True
                     return
-        # accounting
-        self.gppos = 1 + len(gpposys)
-        costmonos = len(self.cost.sub(substitutions).exps)
-        gpmons = costmonos + sum([len(p.exps) for p in gpposys])
-        # k [j]: number of monomials present in each signomial constraint
-        k = [len(p.exps) for p in self.approx_lt]
-        # p_idxs [i]: posynomial index of each monomial
-        self.p_idxs = []
-        for i, p_len in enumerate(k):
-            self.p_idxs += [i]*p_len
-        self.kcs = np.cumsum([gpmons]+k)
-
+        self._gppos = 1 + len(gpposys)
         return [gpconstrs,
-                [p/m <= 1 for p, m in zip(self.approx_lt, approx_gt)]]
+                [p/m <= 1 for p, m in zip(self._approx_lt, approx_gt)]]
 
     def gp(self, x0=None, verbosity=1, modifylastgp=False):
         "The GP approximation of this SP at x0."
         x0 = self._fill_x0(x0)
         if not hasattr(self, "externalfn_vars"):
             self.__parse_externalfnvars()
-        if (not modifylastgp or self.lastgp is None) or self.is_sgp:
-            if modifylastgp and self.lastgp is None:
-                gp_constrs = self._init_SPdata(x0, self.substitutions)
-            if self.is_sgp:  # may be set to True by the call above
-                gp_constrs = self.as_gpconstr(x0, self.substitutions)
-            if self.externalfn_vars:
-                gp_constrs.extend([v.key.externalfn(v, x0)
-                                   for v in self.externalfn_vars])
-            gp = GeometricProgram(self.cost, gp_constrs,
-                                  self.substitutions, verbosity=verbosity)
-            gp.x0 = x0  # NOTE: SIDE EFFECTS
-            return gp
-        else:
+        if modifylastgp and self.lastgp:
             spmonos = []
             for spc in self._spconstrs:
                 spmonos.extend(spc.as_approxsgt(x0))
             for i, spmono in enumerate(spmonos):
-                firstposy = self.approx_lt[i]
+                firstposy = self._approx_lt[i]
                 unsubbed = firstposy/spmono
                 self.lastgp[0][1][i].unsubbed = [unsubbed]
                 localposylt1 = unsubbed.sub(self.substitutions)
-                self.lastgp.posynomials[self.gppos+i] = localposylt1
+                self.lastgp.posynomials[self._gppos+i] = localposylt1
             self.lastgp.gen()
             return self.lastgp
+        else:
+            if modifylastgp and not self.lastgp:
+                gp_constrs = self.firstgp(x0, self.substitutions)
+            if not modifylastgp or self.is_sgp:  # may be set by the above
+                gp_constrs = self.as_gpconstr(x0, self.substitutions)  # pylint: disable=redefined-variable-type
+                if self.externalfn_vars:
+                    gp_constrs.extend([v.key.externalfn(v, x0)
+                                       for v in self.externalfn_vars])
+            gp = GeometricProgram(self.cost, gp_constrs,
+                                  self.substitutions, verbosity=verbosity)
+            gp.x0 = x0  # NOTE: SIDE EFFECTS
+            return gp
 
     def __parse_externalfnvars(self):
         "If this hasn't already been done, look for vars with externalfns"

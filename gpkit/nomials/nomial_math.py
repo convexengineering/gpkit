@@ -696,12 +696,13 @@ class SignomialInequality(ScalarSingleEquationConstraint):
         return pc
 
     def as_approxslt(self):
-        "Returns posy <= 1 approximations with consistent exp ordering."
+        "Returns posynomial-less-than sides of a signomial constraint"
         siglt0, = self.unsubbed
-        posy, self._negy = siglt0.posy_negy()
+        posy, self._negy = siglt0.posy_negy()  # pylint: disable=attribute-defined-outside-init
         return [posy]
 
     def as_approxsgt(self, x0):
+        "Returns monomial-greater-than sides, to be called after as_approxlt1"
         return [self._negy.mono_lower_bound(x0)]
 
 
@@ -732,12 +733,13 @@ class SingleSignomialEquality(SignomialInequality):
         return mec
 
     def as_approxslt(self):
-        "Returns posy <= 1 approximations with consistent exp ordering."
-        self._siglt0, = self.unsubbed
-        self._posy, self._negy = self._siglt0.posy_negy()
+        "Returns posynomial-less-than sides of a signomial constraint"
+        self._siglt0, = self.unsubbed  # pylint: disable=attribute-defined-outside-init
+        self._posy, self._negy = self._siglt0.posy_negy()  # pylint: disable=attribute-defined-outside-init
         return Monomial(1), Monomial(1)
 
     def as_approxsgt(self, x0):
+        "Returns monomial-greater-than sides, to be called after as_approxlt1"
         lhs = self._posy.mono_lower_bound(x0)
         rhs = self._negy.mono_lower_bound(x0)
         return lhs/rhs, rhs/lhs

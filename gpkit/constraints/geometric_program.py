@@ -76,6 +76,7 @@ class GeometricProgram(CostedConstraintSet, NomialData):
         self.gen(verbosity)
 
     def gen(self, verbosity=1):
+        "Generates nomial and solve data (A, p_idxs) from self.posynomials"
         NomialData.init_from_nomials(self, self.posynomials)
         if self.any_nonpositive_cs:
             raise ValueError("GeometricPrograms cannot contain Signomials.")
