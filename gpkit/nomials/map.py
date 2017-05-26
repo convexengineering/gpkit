@@ -1,9 +1,10 @@
+from collections import defaultdict
 import numpy as np
-from collections import defaultdict, Iterable
 from ..small_classes import HashVector, Quantity, Strings
 from ..keydict import KeySet
-from ..small_scripts import mag, is_sweepvar
+from ..small_scripts import mag
 from ..varkey import VarKey
+from .substitution import parse_subs
 
 
 DIMLESS_QUANTITY = Quantity(1, "dimensionless")
@@ -12,6 +13,7 @@ DIMLESS_QUANTITY = Quantity(1, "dimensionless")
 class NomialMap(HashVector):
 
     def set_units(self, united_thing):
+        self.units = None
         if hasattr(united_thing, "units"):
             self.units = Quantity(1, united_thing.units)
             if self.units.dimensionless:
@@ -19,8 +21,26 @@ class NomialMap(HashVector):
                 self.units = None
                 for key, value in self.items():
                     self[key] = value*conversion
-        else:
-            self.units = None
+
+    def to(self, units):
+        sunits = self.units if self.units else DIMLESS_QUANTITY
+        nm = self * sunits.to(units).magnitude
+        nm.set_units(units)
+        return nm
+
+    def __add__(self, other):
+        units = self.units
+        if units != other.units and (units or other.units):
+            if not units:
+                unit_conversion = float(other.units)
+                units = other.units
+            else:
+                unit_conversion = float(other.units/units)
+            other = unit_conversion*other
+        hmap = HashVector.__add__(self, other)
+        hmap.set_units(units)
+        hmap._remove_zeros(just_monomials=True)
+        return hmap
 
     def _remove_zeros(self, just_monomials=False):
         posynomial = (len(self) > 1)
@@ -36,12 +56,6 @@ class NomialMap(HashVector):
                         del key[vk]
                     key._hashvalue = None
                     self[key] = value + self.get(key, 0)
-
-    def to(self, units):
-        sunits = self.units if self.units else DIMLESS_QUANTITY
-        nm = self * sunits.to(units).magnitude
-        nm.units = units
-        return nm
 
     def diff(self, varkey):
         "Return differentiation of an hmap wrt a varkey"
@@ -78,7 +92,7 @@ class NomialMap(HashVector):
 
         if not substitutions:
             return cp
-        fixed = parse_subs(KeySet(varlocs), substitutions, sweeps=False)
+        fixed = parse_subs(KeySet(varlocs), substitutions)
         if not fixed:
             return cp
 
@@ -134,104 +148,3 @@ class NomialMap(HashVector):
                 orig_idx = origexps.index(orig_exp)
                 pmap[selfexps.index(self_exp)][orig_idx] = fraction
         return pmap, m_from_ms
-
-    def __add__(self, other):
-        units = self.units
-        unit_conversion = None
-        if not (self.units or other.units):
-            pass
-        elif not self.units:
-            unit_conversion = other.units.to("dimensionless")
-            units = other.units
-        elif not other.units:
-            unit_conversion = 1.0/self.units.to("dimensionless")
-        elif self.units != other.units:
-            unit_conversion = (other.units/self.units).to("dimensionless")
-        if unit_conversion:
-            other = float(unit_conversion)*other
-
-        hmap = HashVector.__add__(self, other)
-        hmap.set_units(units)
-        hmap._remove_zeros(just_monomials=True)
-        return hmap
-
-    @classmethod
-    def from_exps_and_cs(cls, exps, cs):
-        if isinstance(cs, Quantity):
-            units = Quantity(1, cs.units)
-            cs = cs.magnitude
-        else:
-            units = None
-        nm = cls(zip(exps, cs))
-        nm.set_units(units)
-        return nm
-
-
-def parse_subs(varkeys, substitutions, sweeps=True):
-    "Seperates subs into constants, sweeps linkedsweeps actually present."
-    varkeys.update_keymap()
-    constants, sweep, linkedsweep = {}, None, None
-    if sweeps:
-        sweep, linkedsweep = {}, {}
-    if hasattr(substitutions, "keymap"):
-        for var in varkeys.keymap:
-            if dict.__contains__(substitutions, var):
-                sub = dict.__getitem__(substitutions, var)
-                keys = varkeys.keymap[var]
-                append_sub(sub, keys, constants, sweep, linkedsweep)
-    else:
-        for var in substitutions:
-            key = getattr(var, "key", var)
-            if key in varkeys.keymap:
-                sub, keys = substitutions[var], varkeys.keymap[key]
-                append_sub(sub, keys, constants, sweep, linkedsweep)
-    if sweeps:
-        return constants, sweep, linkedsweep
-    else:
-        return constants
-
-
-def append_sub(sub, keys, constants, sweep=None, linkedsweep=None):
-    "Appends sub to constants, sweep, or linkedsweep."
-    sweepsub = is_sweepvar(sub)
-    if sweepsub and sweep is None and linkedsweep is None:
-        return
-    if sweepsub:
-        _, sub = sub  # _ catches the "sweep" marker
-    for key in keys:
-        if not key.shape or not isinstance(sub, Iterable):
-            value = sub
-        else:
-            sub = np.array(sub) if not hasattr(sub, "shape") else sub
-            if key.shape == sub.shape:
-                value = sub[key.idx]
-                if is_sweepvar(value):
-                    _, value = value
-                    sweepsub = True
-            elif sweepsub:
-                try:
-                    np.broadcast(sub, np.empty(key.shape))
-                except ValueError:
-                    raise ValueError("cannot sweep variable %s of shape %s"
-                                     " with array of shape %s; array shape"
-                                     " must either be %s or %s" %
-                                     (key.str_without("model"), key.shape,
-                                      sub.shape,
-                                      key.shape, ("N",)+key.shape))
-                idx = (slice(None),)+key.descr["idx"]
-                value = sub[idx]
-            else:
-                raise ValueError("cannot substitute array of shape %s for"
-                                 " variable %s of shape %s." %
-                                 (sub.shape, key.str_without("model"),
-                                  key.shape))
-
-        if hasattr(value, "__call__") and not hasattr(value, "key"):
-            linkedsweep[key] = value
-        elif sweepsub:
-            sweep[key] = value
-        else:
-            try:
-                assert np.isnan(value)
-            except (AssertionError, TypeError, ValueError):
-                constants[key] = value
