@@ -139,7 +139,7 @@ class Signomial(Nomial):
         Usage
         -----
         3 == (x**2 + y).sub({'x': 1, y: 2})
-        3 == (x).gp.sub(x, 3)substitution
+        3 == (x).gp.sub(x, 3)
 
         Arguments
         ---------
@@ -330,9 +330,7 @@ class Monomial(Posynomial):
             exp = exp*x if x else EMPTY_EXP
             # TODO: c should already be a float
             hmap = NomialMap({exp: float(c)**x})
-            hmap.units = self.hmap.units
-            if hmap.units:
-                hmap.units = hmap.units**x
+            hmap.set_units((self.hmap.units or 1.0)**x)
             return Monomial(hmap)
         else:
             return NotImplemented
@@ -340,10 +338,8 @@ class Monomial(Posynomial):
     # inherit __ne__ from Signomial
 
     def __eq__(self, other):
-        mons = Numbers + (Monomial,)
-        if isinstance(other, mons):
-            # if both are monomials, return a constraint
-            try:
+        if isinstance(other, MONS):
+            try:  # if both are monomials, return a constraint
                 return MonomialEquality(self, "=", other)
             except ValueError:
                 return False
@@ -360,6 +356,8 @@ class Monomial(Posynomial):
 
     def mono_approximation(self, x0):
         return self
+
+MONS = Numbers + (Monomial,)
 
 
 #######################################################
@@ -452,9 +450,7 @@ class PosynomialInequality(ScalarSingleEquationConstraint):
             self._last_used_substitutions.update(fixed)
             hmap = posy.hmap.sub(fixed)
             self.pmap, self.mfm = hmap.mmap(posy.hmap)
-            hmap = self._simplify_posy_ineq(hmap, self.pmap)
-            if hmap is None:
-                continue
+            # ABOUT PMAPS
             #  The monomial sensitivities from the GP/SP are in terms of this
             #  smaller post-substitution list of monomials, so we need to map
             #  back to the pre-substitution list.
@@ -463,13 +459,12 @@ class PosynomialInequality(ScalarSingleEquationConstraint):
             #  monomial indexes pre-substitution, and whose values are the
             #  percentage of the simplified  monomial's coefficient that came
             #  from that particular parent.
-            allnan_or_zero = True
-            for c in hmap.values():
-                if c != 0 and not np.isnan(c):
-                    allnan_or_zero = False
-                    break
-            if allnan_or_zero:
-                continue  # skip nan'd or 0'd constraint
+            #
+            hmap = self._simplify_posy_ineq(hmap, self.pmap)
+            if hmap is None:
+                continue
+            if all(c == 0 for c in hmap.values()):
+                continue  # skip tautological 0'd constraint
             p = Posynomial(hmap)
             out.append(p)
             if p.any_nonpositive_cs:

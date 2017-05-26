@@ -197,7 +197,7 @@ class NomialArray(np.ndarray):
         "Returns a product. O(N) if no arguments and only contains monomials."
         if args or kwargs or all(l == 0 for l in self.shape):
             return np.ndarray.prod(self, *args, **kwargs)
-        c, unitpower = 1.0, 1
+        c, unitpower = 1.0, 0
         exp = HashVector()
         it = np.nditer(self, flags=['multi_index', 'refs_ok'])
         while not it.finished:

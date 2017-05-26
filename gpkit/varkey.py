@@ -25,17 +25,15 @@ class VarKey(object):
     #    will be compared anyway
 
     def __init__(self, name=None, **kwargs):
-        # update in case user has disabled units
-        from . import units as ureg
+        from . import units as ureg  # update in case user disabled units
+        # NOTE: Python arg handling guarantees 'name' won't appear in kwargs
         self.descr = kwargs
-        # Python arg handling guarantees 'name' won't appear in kwargs
         if isinstance(name, VarKey):
             self.descr.update(name.descr)
         else:
             if name is None:
                 name = "\\fbox{%s}" % VarKey.new_unnamed_id()
             self.descr["name"] = str(name)
-
             if ureg and "units" in self.descr:
                 units = self.descr["units"]
                 if isinstance(units, Strings):
