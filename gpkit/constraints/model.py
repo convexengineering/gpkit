@@ -47,7 +47,6 @@ class Model(CostedConstraintSet):
     naming = None
     program = None
     solution = None
-    defaultnames = ["Model"]
 
     def __init__(self, cost=None, constraints=None, *args, **kwargs):
         setup_vars = None

@@ -30,12 +30,11 @@ def _progify_fctry(program, return_attr=None):
             attribute to return in addition to the program
         """
         if not constants:
-            constants, _, linkedsweep = parse_subs(self.varkeys,
-                                                   self.substitutions,
-                                                   sweeps=True)
-            if linkedsweep:
+            constants, _, linked = parse_subs(self.varkeys,
+                                              self.substitutions, sweeps=True)
+            if linked:
                 kdc = KeyDict(constants)
-                constants.update({v: f(kdc) for v, f in linkedsweep.items()})
+                constants.update({v: f(kdc) for v, f in linked.items()})
         prog = program(self.cost, self, constants, verbosity, **kwargs)
         if return_attr:
             return prog, getattr(prog, return_attr)
@@ -71,15 +70,14 @@ def _solve_fctry(genfunction):
          ValueError if the program is invalid.
          RuntimeWarning if an error occurs in solving or parsing the solution.
          """
-        constants, sweep, linkedsweep = parse_subs(self.varkeys,
-                                                   self.substitutions,
-                                                   sweeps=True)
+        constants, sweep, linked = parse_subs(self.varkeys,
+                                              self.substitutions, sweeps=True)
         solution = SolutionArray()
 
         # NOTE: SIDE EFFECTS: self.program is set below
         if sweep:
             run_sweep(genfunction, self, solution, skipsweepfailures,
-                      constants, sweep, linkedsweep,
+                      constants, sweep, linked,
                       solver, verbosity, *args, **kwargs)
         else:
             self.program, solvefn = genfunction(self, verbosity)
@@ -97,7 +95,7 @@ def _solve_fctry(genfunction):
 
 # pylint: disable=too-many-locals,too-many-arguments
 def run_sweep(genfunction, self, solution, skipsweepfailures,
-              constants, sweep, linkedsweep,
+              constants, sweep, linked,
               solver, verbosity, *args, **kwargs):
     "Runs through a sweep."
     if len(sweep) == 1:
@@ -118,9 +116,9 @@ def run_sweep(genfunction, self, solution, skipsweepfailures,
         this_pass = {var: sweep_vect[i]
                      for (var, sweep_vect) in sweep_vects.items()}
         constants.update(this_pass)
-        if linkedsweep:
+        if linked:
             kdc = KeyDict(constants)
-            constants.update({v: f(kdc) for v, f in linkedsweep.items()})
+            constants.update({v: f(kdc) for v, f in linked.items()})
         program, solvefn = genfunction(self, verbosity-1, constants)
         try:
             result = solvefn(solver, verbosity-1, *args, **kwargs)
@@ -146,10 +144,10 @@ def run_sweep(genfunction, self, solution, skipsweepfailures,
         raise RuntimeWarning("no sweeps solved successfully.")
 
     solution["sweepvariables"] = KeyDict()
-    ksweep, klinkedsweep = KeyDict(sweep), KeyDict(linkedsweep)
+    ksweep = KeyDict(sweep)
     delvars = set()
     for var, val in solution["constants"].items():
-        if var in ksweep or var in klinkedsweep:
+        if var in ksweep:
             solution["sweepvariables"][var] = val
             delvars.add(var)
         else:

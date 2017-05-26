@@ -8,14 +8,14 @@ gpkit/constraints/__init__.py
 gpkit/constraints/array.py
 gpkit/constraints/bounded.py
 gpkit/constraints/costed.py
-gpkit/constraints/geometric_program.py
+gpkit/constraints/gp.py
 gpkit/constraints/linked.py
 gpkit/constraints/model.py
 gpkit/constraints/prog_factories.py
 gpkit/constraints/relax.py
 gpkit/constraints/set.py
 gpkit/constraints/sigeq.py
-gpkit/constraints/signomial_program.py
+gpkit/constraints/sgp.py
 gpkit/constraints/single_equation.py
 gpkit/constraints/tight.py
 gpkit/exceptions.py
@@ -34,6 +34,7 @@ gpkit/nomials/array.py
 gpkit/nomials/data.py
 gpkit/nomials/core.py
 gpkit/nomials/math.py
+gpkit/nomials/map.py
 gpkit/nomials/substitution.py
 gpkit/nomials/variables.py
 gpkit/pint/usd_cpi.txt
