@@ -6,7 +6,8 @@ from .math import MonomialEquality, PosynomialInequality
 from .math import SignomialInequality
 from .math import SingleSignomialEquality
 from .variables import Variable, ArrayVariable, VectorizableVariable
-from .map import parse_subs, NomialMap
+from .map import NomialMap
+from .substitutions import parse_subs
 
 # TEMPORARY SHORTCUTS
 from .data import NomialData

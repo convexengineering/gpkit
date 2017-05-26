@@ -15,7 +15,7 @@ class Nomial(NomialData):
     _repr_latex_ = _repr_latex_
 
     def str_without(self, excluded=None):
-        "String representation excluding fields ('units', varkey attributes)"
+        "String representation, excluding fields ('units', varkey attributes)"
         if excluded is None:
             excluded = []
         mstrs = []
@@ -41,7 +41,7 @@ class Nomial(NomialData):
         return " + ".join(sorted(mstrs)) + units
 
     def latex(self, excluded=None):
-        "For pretty printing with Sympy"
+        "Latex representation, parsing `excluded` just as .str_without does"
         if excluded is None:
             excluded = []
         mstrs = []
@@ -73,9 +73,8 @@ class Nomial(NomialData):
         (Monomial, Posynomial, or Nomial), otherwise.
         """
         p = self.sub(self.values)  # pylint: disable=not-callable
-        if len(p.hmap) == 1:
-            if not p.vks:
-                return p.c
+        if len(p.hmap) == 1 and not p.vks:
+            return p.c
         return p
 
     def prod(self):
@@ -95,12 +94,7 @@ class Nomial(NomialData):
         return not self.__eq__(other)
 
     def __eq__(self, other):
-        """Equality test
-
-        Returns
-        -------
-        bool
-        """
+        "Should be True if self and other are algbreaically identical."
         if isinstance(other, Numbers):
             return (len(self.hmap) == 1 and  # single term
                     not self.vks and         # constant
@@ -114,5 +108,5 @@ class Nomial(NomialData):
         return self * other
 
     def __truediv__(self, other):
-        """Support the / operator in Python 3.x"""
+        "For the / operator in Python 3.x"
         return self.__div__(other)   # pylint: disable=not-callable

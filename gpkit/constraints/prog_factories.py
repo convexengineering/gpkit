@@ -31,7 +31,8 @@ def _progify_fctry(program, return_attr=None):
         """
         if not constants:
             constants, _, linkedsweep = parse_subs(self.varkeys,
-                                                   self.substitutions)
+                                                   self.substitutions,
+                                                   sweeps=True)
             if linkedsweep:
                 kdc = KeyDict(constants)
                 constants.update({v: f(kdc) for v, f in linkedsweep.items()})
@@ -71,7 +72,8 @@ def _solve_fctry(genfunction):
          RuntimeWarning if an error occurs in solving or parsing the solution.
          """
         constants, sweep, linkedsweep = parse_subs(self.varkeys,
-                                                   self.substitutions)
+                                                   self.substitutions,
+                                                   sweeps=True)
         solution = SolutionArray()
 
         # NOTE: SIDE EFFECTS: self.program is set below

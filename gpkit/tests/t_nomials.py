@@ -3,6 +3,8 @@ import math
 import unittest
 from gpkit import Variable, Monomial, Posynomial, Signomial, SignomialsEnabled
 from gpkit import VectorVariable, NomialArray
+from gpkit.nomials import NomialMap
+from gpkit.small_classes import HashVector
 import gpkit
 
 
@@ -245,14 +247,18 @@ class TestPosynomial(unittest.TestCase):
         for m in ms:
             cs += m.cs.tolist()
             exps += m.exps
-        p = Posynomial(exps, cs)
+        hmap = NomialMap(zip(exps, cs))
+        hmap.set_units(None)
+        p = Posynomial(hmap)
         # check arithmetic
         p2 = 3.14*x*y**2 + y/2 + x**3*6*y + 2
         self.assertEqual(p, p2)
 
-        p = Posynomial(({'m': 1, 'v': 2},
-                        {'m': 1, 'g': 1, 'h': 1}),
-                       (0.5, 1))
+        hmap = NomialMap(zip((HashVector({'m': 1, 'v': 2}),
+                              HashVector({'m': 1, 'g': 1, 'h': 1})),
+                             (0.5, 1)))
+        hmap.set_units(None)
+        p = Posynomial(hmap)
         m, = p.varkeys["m"]
         g, = p.varkeys["g"]
         h, = p.varkeys["h"]

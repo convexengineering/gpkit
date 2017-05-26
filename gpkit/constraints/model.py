@@ -3,8 +3,8 @@ import numpy as np
 from .costed import CostedConstraintSet
 from ..nomials import Monomial
 from .prog_factories import _progify_fctry, _solve_fctry
-from .geometric_program import GeometricProgram
-from .signomial_program import SignomialProgram
+from .gp import GeometricProgram
+from .sgp import SignomialProgram
 from ..small_scripts import mag
 from ..tools.autosweep import autosweep_1d
 from ..exceptions import InvalidGPConstraint

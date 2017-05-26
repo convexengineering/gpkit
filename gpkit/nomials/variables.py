@@ -56,16 +56,12 @@ class Variable(Monomial):
             if MODELNUMS:
                 descr["modelnums"] = descr.get("modelnums", []) + MODELNUMS
 
-        Monomial.__init__(self, **descr)
+        self.key = VarKey(**descr)
+        Monomial.__init__(self, self.key.hmap)
         # NOTE: because Signomial.__init__ will change the class
         self.__class__ = Variable
 
     __hash__ = NomialData.__hash__
-
-    @property
-    def key(self):
-        """Get the VarKey associated with this Variable"""
-        return self.vks.keys()[0]
 
     @property
     def descr(self):

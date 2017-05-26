@@ -4,7 +4,7 @@ from ..exceptions import InvalidGPConstraint
 from ..keydict import KeyDict
 from ..nomials import Variable
 from .costed import CostedConstraintSet
-from .geometric_program import GeometricProgram
+from .gp import GeometricProgram
 from ..solution_array import SolutionArray
 from ..nomials import SignomialInequality
 
@@ -58,15 +58,12 @@ class SignomialProgram(CostedConstraintSet):
     a dummy variable z to be greater than the desired Signomial objective s
     (z >= s) and then minimizing that dummy variable.""")
         CostedConstraintSet.__init__(self, cost, constraints, substitutions)
-        try:
-            self.__parse_externalfnvars()
-            if self.externalfn_vars:  # not a GP! Skip to the `except`
-                raise InvalidGPConstraint("some variables have externalfns")
-            _ = self.as_posyslt1(substitutions)
-        except InvalidGPConstraint:
-            pass
-        else:  # this is a GP
-            raise ValueError("""Model valid as a Geometric Program.
+        self.__parse_externalfnvars()
+        if not self.is_sgp:  # not a GP! Skip to the `except`
+            self._firstgpconstrs = self.firstgp(self._fill_x0(None),
+                                                self.substitutions)
+            if not (self.is_sgp or self._firstgpconstrs[1]):
+                raise ValueError("""Model valid as a Geometric Program.
 
     SignomialPrograms should only be created with Models containing Signomial
     Constraints, since Models without Signomials have global solutions and can
@@ -206,9 +203,12 @@ class SignomialProgram(CostedConstraintSet):
             self.lastgp.gen()
             return self.lastgp
         else:
-            if modifylastgp and not self.lastgp:
-                gp_constrs = self.firstgp(x0, self.substitutions)
-            if not modifylastgp or self.is_sgp:  # may be set by the above
+            if modifylastgp and not self.is_sgp:
+                if not self.gps:
+                    gp_constrs = self._firstgpconstrs
+                else:  # was initially infeasible
+                    gp_constrs = self.firstgp(x0, self.substitutions)
+            else:
                 gp_constrs = self.as_gpconstr(x0, self.substitutions)  # pylint: disable=redefined-variable-type
                 if self.externalfn_vars:
                     gp_constrs.extend([v.key.externalfn(v, x0)

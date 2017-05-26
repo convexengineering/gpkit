@@ -206,10 +206,10 @@ from .varkey import VarKey
 from .nomials import Nomial, NomialArray
 from .nomials import Monomial, Posynomial, Signomial
 from .nomials import VectorVariable, ArrayVariable
-# note: the Variable the user sees is not the Variable used internally
 from .nomials import VectorizableVariable as Variable
-from .constraints.geometric_program import GeometricProgram
-from .constraints.signomial_program import SignomialProgram
+# NOTE above: the Variable the user sees is not the Variable used internally
+from .constraints.gp import GeometricProgram
+from .constraints.sgp import SignomialProgram
 from .constraints.sigeq import SignomialEquality
 from .constraints.set import ConstraintSet
 from .constraints.model import Model

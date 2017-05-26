@@ -289,10 +289,9 @@ class GeometricProgram(CostedConstraintSet, NomialData):
                                         [[nu[i] for i in m_idx]
                                          for m_idx in self.m_idxs[1:]])
         # add cost's sensitivity in
-        # TODO: don't use varlocs
         var_senss += {var: sum([self.cost.exps[i][var]*nu[i] for i in locs])
                       for (var, locs) in self.cost.varlocs.items()
-                      if (var in self.cost.varlocs
+                      if (var in self.cost.vks
                           and var not in self.posynomials[0].vks)}
 
         result["sensitivities"]["constants"] = KeyDict(var_senss)
@@ -354,16 +353,14 @@ class GeometricProgram(CostedConstraintSet, NomialData):
         if any(np.abs(ATnu) > tol):
             raise RuntimeWarning("sum of nu^T * A did not vanish")
         b = np.log(self.cs)
-        dual_cost = sum(nu[mi].dot(b[mi]) -
-                        (nu[mi].dot(np.log(nu[mi]/la[i])) if la[i] else 0)
-                        for i, mi in enumerate(self.m_idxs))
-        if not _almost_equal(np.exp(dual_cost), cost):
+        dualcost = sum(nu[mi].dot(b[mi] - np.log(nu[mi]/la[i]) if la[i] else 0)
+                       for i, mi in enumerate(self.m_idxs))
+        if not _almost_equal(np.exp(dualcost), cost):
             raise RuntimeWarning("Dual cost %s does not match primal"
                                  " cost %s" % (np.exp(dual_cost), cost))
 
 
-def genA(exps, varlocs):
-    # pylint: disable=invalid-name
+def genA(exps, varlocs):  # pylint: disable=invalid-name
     """Generates A matrix from exps and varlocs
 
     Arguments
