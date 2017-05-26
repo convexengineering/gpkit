@@ -197,7 +197,7 @@ class NomialArray(np.ndarray):
         "Returns a product. O(N) if no arguments and only contains monomials."
         if args or kwargs or all(l == 0 for l in self.shape):
             return np.ndarray.prod(self, *args, **kwargs)
-        c = 1.0
+        c, unitpower = 1.0, 1
         exp = HashVector()
         it = np.nditer(self, flags=['multi_index', 'refs_ok'])
         while not it.finished:
@@ -207,11 +207,12 @@ class NomialArray(np.ndarray):
             if not hasattr(m_, "exp"):  # it's not a monomial, abort!
                 return np.ndarray.prod(self, *args, **kwargs)
             c = c * mag(m_.c)
+            unitpower += 1
             for key, value in m_.exp.items():
                 if key in exp:
                     exp[key] += value
                 else:
                     exp[key] = value
         hmap = NomialMap({exp: c})
-        hmap.set_units(self.units)
+        hmap.set_units((self.units or 1)**unitpower)
         return Signomial(hmap)
