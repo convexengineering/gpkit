@@ -3,7 +3,7 @@ from collections import Iterable
 import numpy as np
 from .data import NomialData
 from .array import NomialArray
-from .nomial_math import Monomial
+from .math import Monomial
 from ..varkey import VarKey
 from ..small_classes import Strings, Numbers, Quantity
 from ..small_scripts import is_sweepvar

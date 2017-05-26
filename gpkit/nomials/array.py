@@ -9,7 +9,7 @@
 """
 from operator import eq, le, ge, xor
 import numpy as np
-from .nomial_math import Signomial
+from .math import Signomial
 from ..small_classes import Numbers
 from ..small_scripts import try_str_without, mag
 from ..constraints import ArrayConstraint

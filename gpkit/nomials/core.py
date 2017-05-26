@@ -1,8 +1,7 @@
 "The shared non-mathematical backbone of all Nomials"
 from .data import NomialData
 from ..small_classes import Numbers
-from ..small_scripts import nomial_latex_helper
-from ..small_scripts import mag, unitstr
+from ..small_scripts import nomial_latex_helper, unitstr
 from ..repr_conventions import _str, _repr, _repr_latex_
 
 

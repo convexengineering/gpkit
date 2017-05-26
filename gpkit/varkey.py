@@ -163,4 +163,4 @@ class VarKey(object):
     def __ne__(self, other):
         return not self.__eq__(other)
 
-from .nomial_map import NomialMap
+from .nomials import NomialMap

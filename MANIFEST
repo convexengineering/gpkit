@@ -32,8 +32,8 @@ gpkit/modified_ctypesgen.py
 gpkit/nomials/__init__.py
 gpkit/nomials/array.py
 gpkit/nomials/data.py
-gpkit/nomials/nomial_core.py
-gpkit/nomials/nomial_math.py
+gpkit/nomials/core.py
+gpkit/nomials/math.py
 gpkit/nomials/substitution.py
 gpkit/nomials/variables.py
 gpkit/pint/usd_cpi.txt

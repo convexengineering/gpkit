@@ -1,12 +1,11 @@
 """Machinery for exps, cs, varlocs data -- common to nomials and programs"""
-from collections import defaultdict
 from functools import reduce as functools_reduce
 from operator import add
 import numpy as np
-from ..small_classes import HashVector, Quantity, Strings
+from ..small_classes import HashVector
 from ..keydict import KeySet, KeyDict
 from ..small_scripts import mag
-from ..nomial_map import NomialMap
+from .map import NomialMap
 from ..repr_conventions import _repr
 
 
@@ -113,27 +112,15 @@ class NomialData(object):
                              % (list(varset), var))
         elif len(varset) == 0:
             hmap = NomialMap({HashVector(): 0})
-        else:
-            var, = varset
-            hmap = NomialMap()
-            for exp in self.hmap:
-                if var in exp:
-                    exp = HashVector(exp)
-                    c = self.hmap[exp] * exp[var]
-                    exp[var] -= 1
-                    hmap[exp] = c
-            hmap._remove_zeros()
-        sunits = getattr(self, "units", None) or 1.0
-        vunits = getattr(var, "units", None) or 1.0
-        if isinstance(sunits, Strings) or isinstance(vunits, Strings):
             hmap.set_units(None)
         else:
-            hmap.set_units(sunits/vunits)
+            var, = varset
+            hmap = self.hmap.diff(var)
         return NomialData(hmap)
 
     def __eq__(self, other):
-        """Equality test"""
-        if not all(hasattr(other, a) for a in ("exps", "cs")):
+        "Equality test"
+        if not hasattr(other, "hmap"):
             return NotImplemented
         if self.hmap != other.hmap:
             return False

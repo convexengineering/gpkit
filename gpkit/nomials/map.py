@@ -1,13 +1,12 @@
 import numpy as np
 from collections import defaultdict, Iterable
-from .small_classes import HashVector, Numbers, Quantity, Strings
-from .keydict import KeySet
-from . import units as ureg
-from .small_scripts import mag, is_sweepvar
-from .varkey import VarKey
+from ..small_classes import HashVector, Quantity, Strings
+from ..keydict import KeySet
+from ..small_scripts import mag, is_sweepvar
+from ..varkey import VarKey
 
 
-dimensionless = Quantity(1, "dimensionless")
+DIMLESS_QUANTITY = Quantity(1, "dimensionless")
 
 
 class NomialMap(HashVector):
@@ -39,12 +38,30 @@ class NomialMap(HashVector):
                     self[key] = value + self.get(key, 0)
 
     def to(self, units):
-        sunits = self.units if self.units else dimensionless
+        sunits = self.units if self.units else DIMLESS_QUANTITY
         nm = self * sunits.to(units).magnitude
         nm.units = units
         return nm
 
-    def sub(self, substitutions, val=None, mmap=False):
+    def diff(self, varkey):
+        "Return differentiation of an hmap wrt a varkey"
+        out = NomialMap()
+        for exp in self:
+            if varkey in exp:
+                exp = HashVector(exp)
+                c = self[exp] * exp[varkey]
+                exp[varkey] -= 1
+                out[exp] = c
+        out._remove_zeros()
+        vunits = getattr(varkey, "units", None) or 1.0
+        if isinstance(vunits, Strings):
+            out.set_units(None)
+        else:
+            sunits = self.units or 1.0
+            out.set_units(sunits/vunits)
+        return out
+
+    def sub(self, substitutions, val=None):
         if val is not None:
             substitutions = {substitutions: val}
 
@@ -79,7 +96,7 @@ class NomialMap(HashVector):
                     # TODO: can't-sub-posynomials error here
                 if hasattr(cval, "to"):
                     if not vk.units or isinstance(vk.units, Strings):
-                        vk.units = dimensionless
+                        vk.units = DIMLESS_QUANTITY
                     cval = mag(cval.to(vk.units))
                     if isinstance(cval, NomialMap) and cval.keys() == [{}]:
                         cval, = cval.values()
@@ -124,12 +141,12 @@ class NomialMap(HashVector):
         if not (self.units or other.units):
             pass
         elif not self.units:
-            unit_conversion = other.units.to(dimensionless)
+            unit_conversion = other.units.to("dimensionless")
             units = other.units
         elif not other.units:
-            unit_conversion = 1.0/self.units.to(dimensionless)
+            unit_conversion = 1.0/self.units.to("dimensionless")
         elif self.units != other.units:
-            unit_conversion = (other.units/self.units).to(dimensionless)
+            unit_conversion = (other.units/self.units).to("dimensionless")
         if unit_conversion:
             other = float(unit_conversion)*other
 
@@ -208,12 +225,13 @@ def append_sub(sub, keys, constants, sweep=None, linkedsweep=None):
                                  " variable %s of shape %s." %
                                  (sub.shape, key.str_without("model"),
                                   key.shape))
-        if not sweepsub:
+
+        if hasattr(value, "__call__") and not hasattr(value, "key"):
+            linkedsweep[key] = value
+        elif sweepsub:
+            sweep[key] = value
+        else:
             try:
                 assert np.isnan(value)
             except (AssertionError, TypeError, ValueError):
                 constants[key] = value
-        elif not hasattr(value, "__call__"):
-            sweep[key] = value
-        else:
-            linkedsweep[key] = value

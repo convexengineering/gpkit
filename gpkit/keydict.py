@@ -14,7 +14,7 @@ def clean_value(key, value):
     """
     if hasattr(value, "exp") and not value.exp:
         value = value.value
-    if hasattr(value, "units") and not hasattr(value, "exps"):
+    if hasattr(value, "units") and not hasattr(value, "hmap"):
         value = value.to(key.units or "dimensionless").magnitude
     return value
 

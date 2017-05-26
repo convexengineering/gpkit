@@ -205,7 +205,7 @@ class HashVector(dict):
     def __hash__(self):
         "Allows HashVectors to be used as dictionary keys."
         if self._hashvalue is None:
-            # use a sum/xor so it's cheaper to create and update?
+            # TODO: use a sum/xor so it's cheaper to create and update
             sortfn = lambda x: (getattr(x[0], "descr", x[0]), x[1])
             self._hashvalue = hash(tuple(sorted(self.items(), key=sortfn)))
         return self._hashvalue

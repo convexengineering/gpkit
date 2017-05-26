@@ -1,6 +1,6 @@
 """Signomial, Posynomial, Monomial, Constraint, & MonoEQCOnstraint classes"""
 import numpy as np
-from .nomial_core import Nomial
+from .core import Nomial
 from ..constraints import SingleEquationConstraint
 from ..small_classes import Strings, Numbers, Quantity
 from ..small_classes import HashVector
@@ -10,7 +10,7 @@ from ..small_scripts import mag
 from .. import ureg
 from .. import DimensionalityError
 from ..exceptions import InvalidGPConstraint
-from ..nomial_map import NomialMap, parse_subs
+from .map import NomialMap, parse_subs
 
 
 class Signomial(Nomial):
@@ -137,14 +137,15 @@ class Signomial(Nomial):
         exp = HashVector()
         c = c0
         for vk in self.vks:
-            val = mag(x0[vk])
+            val = float(x0[vk])
             diff, = self.diff(vk).sub(x0, require_positive=False).hmap.values()
             e = val*diff/c0
             exp[vk] = e
             c /= val**e
-        if psub.hmap.units:
-            c *= psub.hmap.units
-        return Monomial(exp, c)
+        hmap = NomialMap({exp: c})
+        hmap.set_units(psub.units)
+        hmap._remove_zeros()
+        return Monomial(hmap)
 
     def sub(self, substitutions, require_positive=True):
         """Returns a nomial with substitued values.
@@ -527,26 +528,15 @@ class PosynomialInequality(ScalarSingleEquationConstraint):
     def sens_from_dual(self, la, nu):
         "Returns the variable/constraint sensitivities from lambda/nu"
         if not la or not nu:
-            # as_posyslt1 created no inequalities
-            return {}
+            return {}  # as_posyslt1 created no inequalities
         la, = la
         nu, = nu
         presub, = self.unsubbed
-        # constr_sens = {"overall": la}
         if hasattr(self, "pmap"):
             nu_ = np.zeros(len(presub.cs))
             for i, mmap in enumerate(self.pmap):
                 for idx, percentage in mmap.items():
                     nu_[idx] += percentage*nu[i]
-
-            # TODO: why wrong in the aircraft example??
-            # presubexps = presub.hmap.keys()
-            # nu_2 = np.zeros(len(presub.cs))
-            # for nu, exp in zip(nu, self.mfm):
-            #     for presubexp, fraction in self.mfm[exp].items():
-            #         idx = presubexps.index(presubexp)
-            #         nu_2[idx] += fraction*nu
-
             if hasattr(self, "const_mmap"):
                 scale = (1-self.const_coeff)/self.const_coeff
                 for idx, percentage in self.const_mmap.items():
