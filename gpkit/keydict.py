@@ -140,44 +140,45 @@ class KeyDict(dict):
     def __setitem__(self, key, value):
         "Overloads __setitem__ and []= to work with all keys"
         key, idx = self.parse_and_index(key)
-        if hasattr(value, "exp") and not value.exp:
-            value = value.value  # substitute constant monomials
-        # pylint: disable=too-many-boolean-expressions
-        if (self.collapse_arrays and hasattr(key, "descr")
-                and "shape" in key.descr and not idx  # if a veckey, not
-                and not isinstance(value, (np.ndarray, Quantity))  # an array,
-                and not is_sweepvar(value)  # not a sweep, and
-                and not isinstance(value[0], np.ndarray)):  # not a solarray,
-            value = np.array([clean_value(key, v) for v in value])  # convert
         if key not in self.keymap:
             self.keymap[key].add(key)
-            if hasattr(key, "keys"):
-                self._unmapped_keys.add(key)
+            self._unmapped_keys.add(key)
             if idx:
                 number_array = isinstance(value, Numbers)
                 kwargs = {} if number_array else {"dtype": "object"}
                 emptyvec = np.full(key.shape, np.nan, **kwargs)
                 dict.__setitem__(self, key, emptyvec)
-        for key in self.keymap[key]:
-            if idx:
-                dict.__getitem__(self, key)[idx] = value
-            else:
-                if dict.__contains__(self, key) and getattr(value, "shape", ()):
-                    try:
-                        goodvals = ~np.isnan(value)
-                    except TypeError:
-                        pass  # could not evaluate nan-ness! assume no nans
-                    else:
-                        self[key][goodvals] = value[goodvals]
-                        continue
-                dict.__setitem__(self, key, value)
+        if idx:
+            if hasattr(value, "exp") and not value.exp:
+                value = value.value  # substitute constant monomials
+            dict.__getitem__(self, key)[idx] = value
+        else:
+            # pylint: disable=too-many-boolean-expressions
+            if (self.collapse_arrays and hasattr(key, "descr")
+                    and "shape" in key.descr  # if veckey, not
+                    and not isinstance(value, (np.ndarray, Quantity))  # array,
+                    and not is_sweepvar(value)  # not sweep, and
+                    and not isinstance(value[0], np.ndarray)):  # not solarray,
+                value = np.array([clean_value(key, v) for v in value])
+            if getattr(value, "shape", False) and dict.__contains__(self, key):
+                try:
+                    goodvals = ~np.isnan(value)
+                except TypeError:
+                    pass  # could not evaluate nan-ness! assume no nans
+                else:
+                    self[key][goodvals] = value[goodvals]
+                    return
+            if hasattr(value, "exp") and not value.exp:
+                value = value.value  # substitute constant monomials
+            dict.__setitem__(self, key, value)
 
     def update_keymap(self):
         "Updates the keymap with the keys in _unmapped_keys"
         while self.keymapping and self._unmapped_keys:
             key = self._unmapped_keys.pop()
-            for mapkey in key.keys:
-                self.keymap[mapkey].add(key)
+            if hasattr(key, "keys"):
+                for mapkey in key.keys:
+                    self.keymap[mapkey].add(key)
 
     def __delitem__(self, key):
         "Overloads del [] to work with all keys"

@@ -192,7 +192,7 @@ class Signomial(Nomial):
             if not other:  # other is zero
                 return other
             hmap = mag(other)*self.hmap
-            hmap.set_units((self.hmap.units or 1)*other)
+            hmap.set_units(self.hmap.units, other)
             return Signomial(hmap)
         elif isinstance(other, Signomial):
             hmap = NomialMap()
@@ -201,7 +201,9 @@ class Signomial(Nomial):
                     exp = exp_s + exp_o
                     hmap[exp] = c_s*c_o + hmap.get(exp, 0)
             hmap._remove_zeros()
-            hmap.set_units((other.hmap.units or 1) * (self.hmap.units or 1))
+            # if "N_f" in self.varkeys and "G_f" in other.varkeys:
+            #     raise RuntimeWarning(self.hmap.units, other.hmap.units)
+            hmap.set_units(self.hmap.units, other.hmap.units)
             return Signomial(hmap)
         else:
             return NotImplemented
@@ -321,7 +323,18 @@ class Monomial(Posynomial):
             exp = exp*x if x else EMPTY_EXP
             # TODO: c should already be a float
             hmap = NomialMap({exp: float(c)**x})
-            hmap.set_units((self.hmap.units or 1.0)**x)
+            if not (x and self.hmap.units):
+                hmap.units = None
+            else:
+                hmap.units = self.hmap.units**x
+                # try:  # faster than "if self.units.dimensionless"
+                #     conversion = float(hmap.units)
+                #     raise RuntimeWarning((self, self.hmap.units))
+                #     hmap.units = None
+                #     for key, value in hmap.items():
+                #         hmap[key] = value*conversion
+                # except DimensionalityError:
+                #     pass
             return Monomial(hmap)
         else:
             return NotImplemented

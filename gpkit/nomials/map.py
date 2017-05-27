@@ -13,17 +13,25 @@ DIMLESS_QUANTITY = Quantity(1, "dimensionless")
 
 class NomialMap(HashVector):
 
-    def set_units(self, united_thing):
-        self.units = None
-        if hasattr(united_thing, "units"):
-            self.units = Quantity(1, united_thing.units)
-            try:  # faster than "if self.units.dimensionless"
-                conversion = float(self.units)
-                self.units = None
-                for key, value in self.items():
-                    self[key] = value*conversion
-            except DimensionalityError:
-                pass
+    def set_units(self, thing, thing2=None):
+        if thing is None and thing2 is None:
+            self.units = None
+        elif hasattr(thing, "units"):
+            if hasattr(thing2, "units"):
+                self.units = Quantity(1, (thing*thing2).units)
+                try:  # faster than "if self.units.dimensionless"
+                    conversion = float(self.units)
+                    self.units = None
+                    for key, value in self.items():
+                        self[key] = value*conversion
+                except DimensionalityError:
+                    pass
+            else:
+                self.units = Quantity(1, thing.units)
+        elif hasattr(thing2, "units"):
+            self.units = Quantity(1, thing2.units)
+        else:
+            self.units = None
 
     def to(self, units):
         sunits = self.units if self.units else DIMLESS_QUANTITY
@@ -32,16 +40,10 @@ class NomialMap(HashVector):
         return nm
 
     def __add__(self, other):
-        units = self.units
-        if units != other.units and (units or other.units):
-            if not units:
-                unit_conversion = float(other.units)
-                units = other.units
-            else:
-                unit_conversion = float(other.units/units)
-            other = unit_conversion*other
+        if self.units != other.units:
+            other = float(other.units/self.units)*other
         hmap = HashVector.__add__(self, other)
-        hmap.set_units(units)
+        hmap.units = self.units
         hmap._remove_zeros(just_monomials=True)
         return hmap
 
@@ -73,11 +75,11 @@ class NomialMap(HashVector):
                 else:
                     exp[varkey] = x-1
                 out[exp] = c
-        vunits = getattr(varkey, "units", None) or 1.0
-        if isinstance(vunits, Strings):
-            out.set_units(None)
+        vunits = getattr(varkey, "units", None)
+        if not vunits or isinstance(vunits, Strings):
+            out.units = self.units
         else:
-            out.set_units((self.units or 1.0)/vunits)
+            out.set_units(self.units, 1.0/vunits)
         return out
 
     def sub(self, substitutions, varkeys, parsedsubs=False):

@@ -99,7 +99,7 @@ class NomialData(object):
                              % (list(varset), var))
         elif len(varset) == 0:
             hmap = NomialMap({HashVector(): 0})
-            hmap.set_units(None)
+            hmap.units = None
         else:
             var, = varset
             hmap = self.hmap.diff(var)

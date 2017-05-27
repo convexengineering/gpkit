@@ -179,7 +179,7 @@ class NomialArray(np.ndarray):
         if args or kwargs or all(l == 0 for l in self.shape):
             return np.ndarray.sum(self, *args, **kwargs)
         hmap = NomialMap()
-        hmap.set_units(self.units)
+        hmap.units = self.units
         it = np.nditer(self, flags=['multi_index', 'refs_ok'])
         while not it.finished:
             i = it.multi_index
@@ -214,5 +214,5 @@ class NomialArray(np.ndarray):
                 else:
                     exp[key] = value
         hmap = NomialMap({exp: c})
-        hmap.set_units((self.units or 1)**unitpower)
+        hmap.units = self.units**unitpower if self.units else None
         return Signomial(hmap)

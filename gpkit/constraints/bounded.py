@@ -25,8 +25,9 @@ def varkey_bounds(varkeys, lower, upper):
     constraints = []
     for varkey in varkeys:
         variable = Variable(**varkey.descr)
-        if varkey.units:
-            variable = variable/varkey.units
+        if variable.units:
+            variable.hmap.units = None
+            variable.units = None
         constraint = []
         if upper:
             constraint.append(upper >= variable)

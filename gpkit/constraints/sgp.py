@@ -6,7 +6,7 @@ from ..nomials import Variable
 from .costed import CostedConstraintSet
 from .gp import GeometricProgram
 from ..solution_array import SolutionArray
-from ..nomials import SignomialInequality
+from ..nomials import SignomialInequality, PosynomialInequality
 
 
 # pylint: disable=too-many-instance-attributes
@@ -170,7 +170,10 @@ class SignomialProgram(CostedConstraintSet):
         x0 = self._fill_x0(x0)
         for cs in self.flat(constraintsets=False):
             try:
-                gpposys.extend(cs.as_posyslt1(substitutions))
+                if isinstance(cs, PosynomialInequality):
+                    gpposys.extend(cs.unsubbed)
+                else:
+                    gpposys.extend(cs.as_posyslt1(substitutions))
                 gpconstrs.append(cs)
             except InvalidGPConstraint:
                 if isinstance(cs, SignomialInequality):
@@ -185,7 +188,7 @@ class SignomialProgram(CostedConstraintSet):
         self._gppos = 1 + len(gpposys)
         spapproxs = [p/m <= 1 for p, m in zip(self._approx_lt, approx_gt)]
         gp = GeometricProgram(self.cost, [gpconstrs, spapproxs],
-                              self.substitutions, verbosity=verbosity)
+                              substitutions, verbosity=verbosity)
         gp.x0 = x0
         return gp
 
