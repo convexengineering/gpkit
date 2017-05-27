@@ -45,8 +45,7 @@ class GeometricProgram(CostedConstraintSet, NomialData):
                         ])
     >>> gp.solve()
     """
-    def __init__(self, cost, constraints, substitutions=None, verbosity=1,
-                 preparsedhmaps=None):
+    def __init__(self, cost, constraints, substitutions=None, verbosity=1):
         # pylint:disable=super-init-not-called
         # initialize attributes modified by internal methods
         self.result = None
@@ -60,28 +59,22 @@ class GeometricProgram(CostedConstraintSet, NomialData):
             constraints = ConstraintSet(constraints)
         list.__init__(self, [constraints])  # pylint:disable=non-parent-init-called
         self.substitutions = substitutions or {}
-        if preparsedhmaps is None:
-            for key, sub in self.substitutions.items():
-                if hasattr(sub, "exp") and not sub.exp:
-                    sub = sub.value
-                    if hasattr(sub, "units"):
-                        sub = sub.to(key.units or "dimensionless").magnitude
-                    self.substitutions[key] = sub
-                # only allow Numbers and ndarrays
-                if not isinstance(sub, (Numbers, np.ndarray)):
-                    raise ValueError("substitution {%s: %s} with value type %s is"
-                                     " not allowed in .substitutions; such"
-                                     " substitutions must be done by using"
-                                     " .subinplace()." % (key, sub, type(sub)))
+        for key, sub in self.substitutions.items():
+            if hasattr(sub, "exp") and not sub.exp:
+                sub = sub.value
+                if hasattr(sub, "units"):
+                    sub = sub.to(key.units or "dimensionless").magnitude
+                self.substitutions[key] = sub
+            # only allow Numbers and ndarrays
+            if not isinstance(sub, (Numbers, np.ndarray)):
+                raise ValueError("substitution {%s: %s} with value type %s is"
+                                 " not allowed in .substitutions; such"
+                                 " substitutions must be done by using"
+                                 " .subinplace()." % (key, sub, type(sub)))
         # sideways NomialData init to create self.exps, self.cs, etc
         self.posynomials = [cost.sub(self.substitutions)]
-        # TODO: calculate sensitivities via A matrix and the line below
-        #       can be moved below the "if preparsedhmaps"
         self.posynomials.extend(self.as_posyslt1(self.substitutions))
-        if preparsedhmaps is None:
-            self.hmaps = [p.hmap for p in self.posynomials]
-        else:
-            self.hmaps = [self.posynomials[0].hmap]+preparsedhmaps
+        self.hmaps = [p.hmap for p in self.posynomials]
         self.gen()
         if any(c <= 0 for c in self._cs):
             raise ValueError("GeometricPrograms cannot contain Signomials.")

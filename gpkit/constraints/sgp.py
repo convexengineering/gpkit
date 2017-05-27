@@ -162,7 +162,6 @@ class SignomialProgram(CostedConstraintSet):
 
     def init_gp(self, substitutions, verbosity=1, x0=None):
         "Generates a simplified GP representation for later modification"
-        gpposys = []
         gpconstrs = []
         self._spconstrs = []
         self._approx_lt = []
@@ -170,10 +169,8 @@ class SignomialProgram(CostedConstraintSet):
         x0 = self._fill_x0(x0)
         for cs in self.flat(constraintsets=False):
             try:
-                if isinstance(cs, PosynomialInequality):
-                    gpposys.extend(cs.unsubbed)
-                else:
-                    gpposys.extend(cs.as_posyslt1(substitutions))
+                if not isinstance(cs, PosynomialInequality):
+                    cs.as_posyslt1(substitutions)  # is it gp-compatible?
                 gpconstrs.append(cs)
             except InvalidGPConstraint:
                 if isinstance(cs, SignomialInequality):
@@ -185,11 +182,11 @@ class SignomialProgram(CostedConstraintSet):
                 else:
                     self.is_sgp = True
                     return
-        self._gppos = 1 + len(gpposys)
         spapproxs = [p/m <= 1 for p, m in zip(self._approx_lt, approx_gt)]
         gp = GeometricProgram(self.cost, [gpconstrs, spapproxs],
                               substitutions, verbosity=verbosity)
         gp.x0 = x0
+        self._gppos = len(gp.hmaps) - len(spapproxs)
         return gp
 
     def gp(self, x0=None, verbosity=1, mutategp=False):
