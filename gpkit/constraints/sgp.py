@@ -201,8 +201,9 @@ class SignomialProgram(CostedConstraintSet):
                     firstposy = self._approx_lt[i]
                     unsubbed = firstposy/spmono
                     self._gp[0][1][i].unsubbed = [unsubbed]
-                    localposylt1 = unsubbed.sub(self.substitutions)
-                    self._gp.posynomials[self._gppos+i] = localposylt1
+                    # TODO: cache parsed self.substitutions
+                    smap = unsubbed.hmap.sub(self.substitutions, unsubbed.varkeys)
+                    self._gp.hmaps[self._gppos+i] = smap
                 self._gp.gen()
             return self._gp
         else:

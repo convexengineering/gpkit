@@ -81,21 +81,6 @@ class NomialData(object):
                                     if "value" in k.descr})
         return self._values
 
-    def init_from_nomials(self, nomials):
-        """Way to initialize from nomials. Calls __init__.
-        Used by subclass __init__ methods.
-        """
-        exps = []
-        for sig in nomials:
-            exps.extend(sig.exps)
-        cs = np.hstack((mag(s.cs) for s in nomials))
-        hmap = NomialMap(zip(exps, cs))
-        hmap.units = None
-        NomialData.__init__(self, hmap)
-        self._exps = exps
-        self._cs = cs
-        self.units = tuple(s.units for s in nomials)
-
     def diff(self, var):
         """Derivative of this with respect to a Variable
 

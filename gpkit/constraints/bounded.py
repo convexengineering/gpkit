@@ -25,12 +25,13 @@ def varkey_bounds(varkeys, lower, upper):
     constraints = []
     for varkey in varkeys:
         variable = Variable(**varkey.descr)
-        units = varkey.units if isinstance(varkey.units, Quantity) else 1
+        if varkey.units:
+            variable = variable/varkey.units
         constraint = []
         if upper:
-            constraint.append(upper >= variable/units)
+            constraint.append(upper >= variable)
         if lower:
-            constraint.append(variable/units >= lower)
+            constraint.append(variable >= lower)
         constraints.append(constraint)
     return constraints
 

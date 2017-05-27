@@ -74,16 +74,13 @@ class GeometricProgram(CostedConstraintSet, NomialData):
         # sideways NomialData init to create self.exps, self.cs, etc
         self.posynomials = [cost.sub(self.substitutions)]
         self.posynomials.extend(self.as_posyslt1(self.substitutions))
-        self.gen(verbosity)
-
-    def gen(self, verbosity=1):
-        "Generates nomial and solve data (A, p_idxs) from self.posynomials"
-        NomialData.init_from_nomials(self, self.posynomials)
-        if self.any_nonpositive_cs:
+        self.hmaps = [p.hmap for p in self.posynomials]
+        self.gen()
+        if any(c <= 0 for c in self._cs):
             raise ValueError("GeometricPrograms cannot contain Signomials.")
         ## Generate various maps into the posy- and monomials
         # k [j]: number of monomials (columns of F) present in each constraint
-        self.k = [len(p.cs) for p in self.posynomials]
+        self.k = [len(hm) for hm in self.hmaps]
         # p_idxs [i]: posynomial index of each monomial
         p_idxs = []
         # m_idxs [i]: monomial indices of each posynomial
@@ -93,10 +90,18 @@ class GeometricProgram(CostedConstraintSet, NomialData):
             p_idxs += [i]*p_len
         self.p_idxs = np.array(p_idxs)
         # A [i, v]: sparse matrix of variable's powers in each monomial
-        self.A, self.missingbounds = genA(self.exps, self.varlocs)
         if verbosity > 0:
             for var, bound in sorted(self.missingbounds.items()):
                 print("%s has no %s bound" % (var, bound))
+
+    def gen(self):
+        "Generates nomial and solve data (A, p_idxs) from posynomials"
+        self._reset()
+        self._exps, self._cs = [], []
+        for hmap in self.hmaps:
+            self._exps.extend(hmap.keys())
+            self._cs.extend(hmap.values())
+        self.A, self.missingbounds = genA(self.exps, self.varlocs)
 
     # pylint: disable=too-many-statements, too-many-locals
     def solve(self, solver=None, verbosity=1, warn_on_check=False,
