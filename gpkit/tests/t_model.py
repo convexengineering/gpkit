@@ -351,6 +351,17 @@ class TestSP(unittest.TestCase):
         sol = m.localsolve(self.solver, verbosity=0)
         self.assertAlmostEqual(sol["variables"]["x"], 0.9, self.ndig)
 
+    def test_tautological_spconstraint(self):
+        x = Variable('x')
+        y = Variable('y')
+        z = Variable('z', 0)
+        with SignomialsEnabled():
+            m = Model(x, [x >= 1-y, y <= 0.1, y >= z])
+        with self.assertRaises(InvalidGPConstraint):
+            m.solve(verbosity=0)
+        sol = m.localsolve(self.solver, verbosity=0)
+        self.assertAlmostEqual(sol["variables"]["x"], 0.9, self.ndig)
+
     def test_relaxation(self):
         x = Variable("x")
         y = Variable("y")
