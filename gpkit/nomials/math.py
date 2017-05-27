@@ -35,31 +35,23 @@ class Signomial(Nomial):
         Posynomial (if the input has only positive cs)
         Monomial   (if the input has one term and only positive cs)
     """
-    def __init__(self, exps=None, cs=1, require_positive=True, **descr):  # pylint: disable=too-many-statements,too-many-branches
-        if isinstance(exps, NomialMap):
-            hmap = exps
-        else:
-            hmap = None
-            if isinstance(cs, Numbers):
-                if exps is None:
-                    exps = VarKey(**descr)
-                elif isinstance(exps, Strings):
-                    exps = VarKey(exps, **descr)
-                elif isinstance(exps, dict):
-                    exp = HashVector(exps)
-                    for key in exps:
-                        if isinstance(key, Strings):
-                            exp[VarKey(key)] = exp.pop(key)
-                    hmap = NomialMap({exp: mag(cs)})
-                    hmap.set_units(cs)
-                    hmap._remove_zeros()
-            if hasattr(exps, "hmap"):
-                hmap = exps.hmap  # should this be a copy?
-                if cs is not 1:
-                    raise ValueError("Nomial and cs cannot be input together.")
-            elif isinstance(exps, Numbers):
-                hmap = NomialMap([(EMPTY_EXP, mag(exps))])
-                hmap.set_units(exps)
+    def __init__(self, hmap=None, cs=1, require_positive=True, **descr):  # pylint: disable=too-many-statements,too-many-branches
+        if not isinstance(hmap, NomialMap):
+            if hasattr(hmap, "hmap"):
+                hmap = hmap.hmap
+            elif isinstance(hmap, Numbers):
+                hmap_ = NomialMap([(EMPTY_EXP, mag(hmap))])
+                hmap_.set_units(hmap)
+                hmap = hmap_
+            elif hmap is None:
+                hmap = VarKey(**descr).hmap
+            elif isinstance(hmap, Strings):
+                hmap = VarKey(hmap, **descr).hmap
+            elif isinstance(hmap, dict):
+                exp = HashVector({VarKey(k): v for k, v in hmap.items()})
+                hmap = NomialMap({exp: mag(cs)})
+                hmap.set_units(cs)
+                hmap._remove_zeros()
         super(Signomial, self).__init__(hmap)
         if self.any_nonpositive_cs:
             from .. import SIGNOMIALS_ENABLED
@@ -115,21 +107,22 @@ class Signomial(Nomial):
         Monomial (unless self(x0) < 0, in which case a Signomial is returned)
         """
         x0 = parse_subs(self.varkeys, x0)  # use only varkey keys
-        psub = self.sub(x0)
-        if psub.vks:
+        psub = self.hmap.sub(x0, self.varkeys, parsedsubs=True)
+        if len(psub) > 1 or EMPTY_EXP not in psub:
             raise ValueError("Variables %s remained after substituting x0=%s"
                              " into %s" % (list(psub.vks), x0, self))
-        c0, = psub.hmap.values()
+        c0, = psub.values()
         exp = HashVector()
         c = c0
         for vk in self.vks:
             val = float(x0[vk])
-            diff, = self.diff(vk).sub(x0, require_positive=False).hmap.values()
+            diff, = self.hmap.diff(vk).sub(x0, self.varkeys,
+                                           parsedsubs=True).values()
             e = val*diff/c0
             exp[vk] = e
             c /= val**e
         hmap = NomialMap({exp: c})
-        hmap.set_units(psub.units)
+        hmap.units = self.units
         hmap._remove_zeros()
         return Monomial(hmap)
 
@@ -155,12 +148,12 @@ class Signomial(Nomial):
         -------
         Returns substituted nomial.
         """
-        return Signomial(self.hmap.sub(substitutions),
+        return Signomial(self.hmap.sub(substitutions, self.varkeys),
                          require_positive=require_positive)
 
     def subinplace(self, substitutions):
         "Substitutes in place."
-        super(Signomial, self).__init__(self.hmap.sub(substitutions))
+        Nomial.__init__(self, self.hmap.sub(substitutions, self.varkeys))
         self._reset()
 
     def __le__(self, other):
@@ -199,9 +192,7 @@ class Signomial(Nomial):
             if not other:  # other is zero
                 return other
             hmap = mag(other)*self.hmap
-            hmap.units = self.hmap.units
-            if isinstance(other, Quantity):
-                hmap.set_units((hmap.units or 1)*other)
+            hmap.set_units((self.hmap.units or 1)*other)
             return Signomial(hmap)
         elif isinstance(other, Signomial):
             hmap = NomialMap()
@@ -448,7 +439,7 @@ class PosynomialInequality(ScalarSingleEquationConstraint):
         for posy in posys:
             fixed = parse_subs(posy.varkeys, substitutions)
             self._last_used_substitutions.update(fixed)
-            hmap = posy.hmap.sub(fixed)
+            hmap = posy.hmap.sub(fixed, posy.varkeys, parsedsubs=True)
             self.pmap, self.mfm = hmap.mmap(posy.hmap)
             # ABOUT PMAPS
             #  The monomial sensitivities from the GP/SP are in terms of this

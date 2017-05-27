@@ -43,10 +43,10 @@ class TestMonomial(unittest.TestCase):
         self.assertTrue(crazy_varkey in m.exp)
 
         # non-positive c raises
-        self.assertRaises(ValueError, Monomial, 'x', -2)
-        self.assertRaises(ValueError, Monomial, {'x': 2}, -1.)
-        self.assertRaises(ValueError, Monomial, 'x', 0)
-        self.assertRaises(ValueError, Monomial, 'x', 0.0)
+        self.assertRaises(ValueError, Monomial, -2)
+        self.assertRaises(ValueError, Monomial, -1.)
+        self.assertRaises(ValueError, Monomial, 0)
+        self.assertRaises(ValueError, Monomial, 0.0)
 
         # can create nameless Monomials
         x1 = Monomial()

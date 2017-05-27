@@ -79,7 +79,7 @@ class NomialArray(np.ndarray):
             return None
 
     def __hash__(self):
-        return hash(reduce(xor, map(hash, self.flat), 0))
+        return reduce(xor, map(hash, self.flat), 0)
 
     def __new__(cls, input_array):
         "Constructor. Required for objects inheriting from np.ndarray."

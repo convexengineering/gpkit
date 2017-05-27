@@ -2,6 +2,7 @@
 from collections import namedtuple
 import numpy as np
 from . import ureg
+from operator import xor
 
 try:
     isinstance("", basestring)
@@ -198,16 +199,10 @@ class HashVector(dict):
     >>> exp = gpkit.small_classes.HashVector({x: 2})
     """
 
-    def __init__(self, *args, **kwargs):
-        super(HashVector, self).__init__(*args, **kwargs)
-        self._hashvalue = None
-
     def __hash__(self):
         "Allows HashVectors to be used as dictionary keys."
-        if self._hashvalue is None:
-            # TODO: use a sum/xor so it's cheaper to create and update
-            sortfn = lambda x: (getattr(x[0], "descr", x[0]), x[1])
-            self._hashvalue = hash(tuple(sorted(self.items(), key=sortfn)))
+        if not hasattr(self, "_hashvalue") or self._hashvalue is None:
+            self._hashvalue = reduce(xor, map(hash, self.items()), 0)
         return self._hashvalue
 
     def __neg__(self):

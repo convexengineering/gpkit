@@ -71,7 +71,7 @@ class SignomialProgram(CostedConstraintSet):
 
     # pylint: disable=too-many-locals
     def localsolve(self, solver=None, verbosity=1, x0=None, reltol=1e-4,
-                   iteration_limit=50, modifylastgp=True, **kwargs):
+                   iteration_limit=50, mutategp=True, **kwargs):
         """Locally solves a SignomialProgram and returns the solution.
 
         Arguments
@@ -105,7 +105,7 @@ class SignomialProgram(CostedConstraintSet):
             print("Beginning signomial solve.")
         self.gps = []  # NOTE: SIDE EFFECTS
         self.results = []
-        if x0 and modifylastgp:
+        if x0 and mutategp:
             self._gp = self.init_gp(self.substitutions, verbosity, x0)
         slackvar = Variable()
         prevcost, cost, rel_improvement = None, None, None
@@ -116,7 +116,7 @@ class SignomialProgram(CostedConstraintSet):
     The last result is available in Model.program.gps[-1].result. If the gps
     appear to be converging, you may wish to increase the iteration limit by
     calling .localsolve(..., iteration_limit=NEWLIMIT).""" % len(self.gps))
-            gp = self.gp(x0, verbosity-1, modifylastgp)
+            gp = self.gp(x0, verbosity-1, mutategp)
             self.gps.append(gp)  # NOTE: SIDE EFFECTS
             try:
                 result = gp.solve(solver, verbosity-1, **kwargs)
@@ -186,16 +186,17 @@ class SignomialProgram(CostedConstraintSet):
         spapproxs = [p/m <= 1 for p, m in zip(self._approx_lt, approx_gt)]
         gp = GeometricProgram(self.cost, [gpconstrs, spapproxs],
                               self.substitutions, verbosity=verbosity)
+        gp.x0 = x0
         return gp
 
-    def gp(self, x0=None, verbosity=1, modifylastgp=False):
+    def gp(self, x0=None, verbosity=1, mutategp=False):
         "The GP approximation of this SP at x0."
-        x0 = self._fill_x0(x0)
-        if modifylastgp and not self.is_sgp:
+        if mutategp and not self.is_sgp:
             if self.gps:  # update self._gp with new x0
+                self._gp.x0.update(x0)
                 spmonos = []
                 for spc in self._spconstrs:
-                    spmonos.extend(spc.as_approxsgt(x0))
+                    spmonos.extend(spc.as_approxsgt(self._gp.x0))
                 for i, spmono in enumerate(spmonos):
                     firstposy = self._approx_lt[i]
                     unsubbed = firstposy/spmono
@@ -205,6 +206,7 @@ class SignomialProgram(CostedConstraintSet):
                 self._gp.gen()
             return self._gp
         else:
+            x0 = self._fill_x0(x0)
             gp_constrs = self.as_gpconstr(x0, self.substitutions)  # pylint: disable=redefined-variable-type
             if self.externalfn_vars:
                 gp_constrs.extend([v.key.externalfn(v, x0)
