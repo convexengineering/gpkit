@@ -50,9 +50,9 @@ class TestConstraint(unittest.TestCase):
 
     def test_constraintget(self):
         x = Variable("x")
-        x_ = Variable("x", model="_")
+        x_ = Variable("x", models=["_"])
         xv = VectorVariable(2, "x")
-        xv_ = VectorVariable(2, "x", model="_")
+        xv_ = VectorVariable(2, "x", models=["_"])
         self.assertEqual(Model(x, [x >= 1])["x"], x)
         with self.assertRaises(ValueError):
             _ = Model(x, [x >= 1, x_ >= 1])["x"]

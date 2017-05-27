@@ -20,9 +20,6 @@ class VarKey(object):
     """
     new_unnamed_id = Count().next
     subscripts = ("models", "idx")
-    eq_ignores = frozenset(["units", "value"])
-    # ignore value in ==. Also skip units, since pints is weird and the unitstr
-    #    will be compared anyway
 
     def __init__(self, name=None, **kwargs):
         from . import units as ureg  # update in case user disabled units
@@ -60,7 +57,8 @@ class VarKey(object):
             self.descr["unitrepr"] = repr(self.units)
 
         selfstr = str(self)
-        self._hashvalue = hash(selfstr)
+        self._hashstr = selfstr + self.descr["unitrepr"]
+        self._hashvalue = hash(self._hashstr)
         self.key = self
         self.keys = set([self.name, selfstr,
                          self.str_without(["modelnums"])])
@@ -146,17 +144,7 @@ class VarKey(object):
     def __eq__(self, other):
         if not hasattr(other, "descr"):
             return False
-        if self.descr["name"] != other.descr["name"]:
-            return False
-        keyset = set(self.descr.keys())
-        keyset = keyset.symmetric_difference(other.descr.keys())
-        if keyset - self.eq_ignores:
-            return False
-        for key in self.descr:
-            if key not in self.eq_ignores:
-                if self.descr[key] != other.descr[key]:
-                    return False
-        return True
+        return self._hashstr == other._hashstr
 
     def __ne__(self, other):
         return not self.__eq__(other)

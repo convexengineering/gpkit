@@ -49,6 +49,7 @@ class GeometricProgram(CostedConstraintSet, NomialData):
         # pylint:disable=super-init-not-called
         # initialize attributes modified by internal methods
         self.result = None
+        self.nup = None
         self.solver_log = None
         self.solver_out = None
 
@@ -229,8 +230,8 @@ class GeometricProgram(CostedConstraintSet, NomialData):
         if "nu" in solver_out:
             # solver gave us monomial sensitivities, generate posynomial ones
             nu = np.ravel(solver_out["nu"])
-            la = np.array([sum(nu[self.p_idxs == i])
-                           for i in range(len(self.posynomials))])
+            self.nup = [nu[mi] for mi in self.m_idxs]
+            la = np.array([sum(nup) for nup in self.nup])
         elif "la" in solver_out:
             # solver gave us posynomial sensitivities, generate monomial ones
             la = np.ravel(solver_out["la"])
@@ -240,8 +241,9 @@ class GeometricProgram(CostedConstraintSet, NomialData):
             Ax = np.ravel(self.A.dot(solver_out['primal']))
             z = Ax + np.log(self.cs)
             m_iss = [self.p_idxs == i for i in range(len(la))]
-            nu = np.hstack([la[p_i]*np.exp(z[m_is])/sum(np.exp(z[m_is]))
-                            for p_i, m_is in enumerate(m_iss)])
+            self.nup = [la[p_i]*np.exp(z[m_is])/sum(np.exp(z[m_is]))
+                        for p_i, m_is in enumerate(m_iss)]
+            nu = np.hstack(self.nup)
         else:
             raise RuntimeWarning("The dual solution was not returned.")
         solver_out["nu"], solver_out["la"] = nu, la
@@ -270,7 +272,6 @@ class GeometricProgram(CostedConstraintSet, NomialData):
         # confirm lengths before calling zip
         assert len(self.varlocs) == len(primal)
         result = {"freevariables": KeyDict(zip(self.varlocs, np.exp(primal)))}
-
         ## Get cost
         if "objective" in solver_out:
             result["cost"] = float(solver_out["objective"])
@@ -285,9 +286,7 @@ class GeometricProgram(CostedConstraintSet, NomialData):
 
         ## Get sensitivities
         result["sensitivities"] = {"nu": nu, "la": la}
-        var_senss = self.sens_from_dual(la[1:].tolist(),
-                                        [[nu[i] for i in m_idx]
-                                         for m_idx in self.m_idxs[1:]])
+        var_senss = self.sens_from_dual(la[1:].tolist(), self.nup[1:])
         # add cost's sensitivity in
         var_senss += {var: sum([self.cost.exps[i][var]*nu[i] for i in locs])
                       for (var, locs) in self.cost.varlocs.items()
@@ -338,10 +337,9 @@ class GeometricProgram(CostedConstraintSet, NomialData):
         # check dual sol
         # note: follows dual formulation in section 3.1 of
         # http://web.mit.edu/~whoburg/www/papers/hoburg_phd_thesis.pdf
-        nu0 = nu[self.m_idxs[0]]
-        if not _almost_equal(nu0.sum(), 1.):
+        if not _almost_equal(self.nup[0].sum(), 1.):
             raise RuntimeWarning("Dual variables associated with objective"
-                                 " sum to %s, not 1" % nu0.sum())
+                                 " sum to %s, not 1" % self.nup[0].sum())
         if any(nu < 0):
             if all(nu > -tol/1000.):  # HACK, see issue 528
                 print("Allowing negative dual variable(s) as small as"
@@ -353,7 +351,7 @@ class GeometricProgram(CostedConstraintSet, NomialData):
         if any(np.abs(ATnu) > tol):
             raise RuntimeWarning("sum of nu^T * A did not vanish")
         b = np.log(self.cs)
-        dualcost = sum(nu[mi].dot(b[mi] - np.log(nu[mi]/la[i]) if la[i] else 0)
+        dualcost = sum(self.nup[i].dot(b[mi] - np.log(self.nup[i]/la[i]) if la[i] else 0)
                        for i, mi in enumerate(self.m_idxs))
         if not _almost_equal(np.exp(dualcost), cost):
             raise RuntimeWarning("Dual cost %s does not match primal"

@@ -173,8 +173,8 @@ class TestGPSubs(unittest.TestCase):
 
     def test_phantoms(self):
         x = Variable("x")
-        x_ = Variable("x", 1, model="test")
-        xv = VectorVariable(2, "x", [1, 1], model="vec")
+        x_ = Variable("x", 1, models=["test"])
+        xv = VectorVariable(2, "x", [1, 1], models=["vec"])
         m = Model(x, [x >= x_, x_ == xv.prod()])
         m.solve(verbosity=0)
         with self.assertRaises(ValueError):

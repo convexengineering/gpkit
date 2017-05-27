@@ -87,12 +87,12 @@ class KeyDict(dict):
         elif key in self.varkeys:
             keys = self.varkeys[key]
             key = next(iter(keys))
-            if key.veckey:  # presume all keys are part of that vector
-                key = key.veckey
-            elif len(keys) > 1:
-                raise ValueError("substitution key '%s' was ambiguous;"
-                                 " .variables_byname('%s') will show which"
-                                 " variables it may refer to." % (key, key))
+            if len(keys) > 1:
+                if key.veckey and all(k.veckey == key.veckey for k in keys):
+                    key = key.veckey
+                else:
+                    raise ValueError("%s could refer to multiple keys in"
+                                     " this substitutions KeyDict." % key)
         else:
             raise KeyError(key)
         idx = getattr(key, "idx", None)

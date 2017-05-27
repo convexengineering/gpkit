@@ -102,7 +102,6 @@ class TestVariable(unittest.TestCase):
         self.assertEqual(a.value, a)
 
     def test_hash(self):
-        """Hashes should collide independent of units"""
         x1 = Variable("x", "-", "first x")
         x2 = Variable("x", "-", "second x")
         self.assertEqual(hash(x1), hash(x2))
@@ -110,10 +109,7 @@ class TestVariable(unittest.TestCase):
         p2 = Variable("p", "psi", "second pressure")
         self.assertEqual(hash(p1), hash(p2))
         xu = Variable("x", "m", "x with units")
-        if gpkit.units:
-            self.assertNotEqual(hash(x1), hash(xu))
-        else:
-            self.assertEqual(hash(x1), hash(xu))
+        self.assertNotEqual(hash(x1), hash(xu))
 
     def test_unit_parsing(self):
         x = Variable("x", "s^0.5/m^0.5")
