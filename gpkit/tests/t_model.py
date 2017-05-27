@@ -276,9 +276,11 @@ class TestSP(unittest.TestCase):
             m = Model(x, Bounded([x + y >= 1], verbosity=0))
         sol = m.localsolve(verbosity=0)
         if "value near lower bound" in sol["boundedness"]:
-            self.assertIn(x, sol["boundedness"]["value near lower bound"])
+            self.assertEqual(x.key,
+                             sol["boundedness"]["value near lower bound"][0])
         if "value near upper bound" in sol["boundedness"]:
-            self.assertIn(y, sol["boundedness"]["value near upper bound"])
+            self.assertEqual(y.key,
+                             sol["boundedness"]["value near upper bound"][0])
 
     def test_values_vs_subs(self):
         # Substitutions update method
