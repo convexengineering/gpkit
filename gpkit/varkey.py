@@ -31,18 +31,19 @@ class VarKey(object):
             if name is None:
                 name = "\\fbox{%s}" % VarKey.new_unnamed_id()
             self.descr["name"] = str(name)
-            if ureg and "units" in self.descr:
-                units = self.descr["units"]
-                if isinstance(units, Strings):
-                    if not units or units == "-":
-                        del self.descr["units"]  # dimensionless
+            if "units" in self.descr:
+                units = self.descr.pop("units")
+                if ureg:
+                    if isinstance(units, Strings):
+                        if units not in ["", "-"]:  # not dimensionless
+                            self.descr["units"] = Quantity(1.0, units)
+                    elif isinstance(units, Quantity):
+                        self.descr["units"] = units
                     else:
-                        self.descr["units"] = Quantity(1.0, units)
-                elif isinstance(units, Quantity):
-                    self.descr["units"] = units
+                        raise ValueError("units must be either a string"
+                                         " or a Quantity from gpkit.units.")
                 else:
-                    raise ValueError("units must be either a string"
-                                     " or a Quantity from gpkit.units.")
+                    self.descr["unitslabel"] = units
 
             if "value" in self.descr:
                 value = self.descr["value"]
@@ -70,7 +71,7 @@ class VarKey(object):
             self.keys.add(self.str_without(["idx", "modelnums"]))
 
         self.hmap = NomialMap({HashVector({self: 1}): 1.0})
-        self.hmap.units = self.units if ureg else None
+        self.hmap.units = self.units
 
     def __repr__(self):
         return self.str_without()

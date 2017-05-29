@@ -75,11 +75,7 @@ class NomialMap(HashVector):
                 else:
                     exp[varkey] = x-1
                 out[exp] = c
-        vunits = getattr(varkey, "units", None)
-        if not vunits or isinstance(vunits, Strings):
-            out.units = self.units
-        else:
-            out.set_units(self.units, 1.0/vunits)
+        out.set_units(self.units, 1.0/varkey.units if varkey.units else None)
         return out
 
     def sub(self, substitutions, varkeys, parsedsubs=False):
@@ -116,9 +112,7 @@ class NomialMap(HashVector):
                     cval = cval.hmap
                     # TODO: can't-sub-posynomials error here
                 if hasattr(cval, "to"):
-                    if not vk.units or isinstance(vk.units, Strings):
-                        vk.units = DIMLESS_QUANTITY
-                    cval = mag(cval.to(vk.units))
+                    cval = mag(cval.to(vk.units or DIMLESS_QUANTITY))
                     if isinstance(cval, NomialMap) and cval.keys() == [{}]:
                         cval, = cval.values()
                 if expval:
@@ -126,7 +120,6 @@ class NomialMap(HashVector):
                 exps_covered = set()
                 for o_exp, exp in exps:
                     x = exp[vk]
-                    # TODO: cval should already be a float
                     powval = float(cval)**x if cval != 0 or x >= 0 else np.inf
                     cp.csmap[o_exp] = powval * cp.csmap.get(o_exp, self[o_exp])
                     if exp in cp and exp not in exps_covered:
