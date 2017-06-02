@@ -269,7 +269,7 @@ class GeometricProgram(CostedConstraintSet, NomialData):
         result["variables"].update(result["constants"])
         return SolutionArray(result)
 
-    def check_solution(self, cost, primal, nu, la, tol=1e-5, abstol=1e-20):
+    def check_solution(self, cost, primal, nu, la, tol=1e-4, abstol=1e-20):
         """Run a series of checks to mathematically confirm sol solves this GP
 
         Arguments
