@@ -1,8 +1,8 @@
+"Implements the NomialMap class"
 from collections import defaultdict
 import numpy as np
 from .. import DimensionalityError
 from ..small_classes import HashVector, Quantity, Strings
-from ..keydict import KeySet
 from ..small_scripts import mag
 from ..varkey import VarKey
 from .substitution import parse_subs
@@ -12,8 +12,13 @@ DIMLESS_QUANTITY = Quantity(1, "dimensionless")
 
 
 class NomialMap(HashVector):
+    "Class for efficent algebraic represention of a nomial"
+    units = None
+    expmap = None
+    csmap = None
 
     def set_units(self, thing, thing2=None):
+        "Sets units to those of `thing*thing2`"
         if thing is None and thing2 is None:
             self.units = None
         elif hasattr(thing, "units"):
@@ -34,20 +39,24 @@ class NomialMap(HashVector):
             self.units = None
 
     def to(self, units):
+        "Converts a NomialMap to the given units"
         sunits = self.units if self.units else DIMLESS_QUANTITY
         nm = self * sunits.to(units).magnitude
-        nm.set_units(units)
+        nm.set_units(units)  # pylint: disable=no-member
         return nm
 
     def __add__(self, other):
+        "Adds NomialMaps together"
         if self.units != other.units:
             other = float(other.units/self.units)*other
         hmap = HashVector.__add__(self, other)
         hmap.units = self.units
-        hmap._remove_zeros(just_monomials=True)
+        hmap.remove_zeros(just_monomials=True)   # pylint: disable=no-member, protected-access
         return hmap
 
-    def _remove_zeros(self, just_monomials=False):
+    def remove_zeros(self, just_monomials=False):
+        "Removes zeroed exponents and monomials."
+        # TODO: do this automatically during HashVector operations?
         posynomial = (len(self) > 1)
         for key in self.keys():
             value = self[key]
@@ -59,11 +68,11 @@ class NomialMap(HashVector):
                     del self[key]
                     for vk in zeroes:
                         del key[vk]
-                    key._hashvalue = None  # reset hash
+                    key._hashvalue = None  # reset hash # pylint: disable=protected-access
                     self[key] = value + self.get(key, 0)
 
     def diff(self, varkey):
-        "Return differentiation of an hmap wrt a varkey"
+        "Differentiates a NomialMap with respect to a varkey"
         out = NomialMap()
         for exp in self:
             if varkey in exp:
@@ -79,13 +88,16 @@ class NomialMap(HashVector):
         return out
 
     def sub(self, substitutions, varkeys, parsedsubs=False):
+        "Applies substitutions to a NomialMap"
+        # pylint: disable=too-many-locals, too-many-branches
         if parsedsubs or not substitutions:
             fixed = substitutions
         else:
             fixed = parse_subs(varkeys, substitutions)
 
         if not substitutions:
-            self.expmap, self.csmap = {exp: exp for exp in self}, {}
+            if not self.expmap:
+                self.expmap, self.csmap = {exp: exp for exp in self}, {}
             return self
 
         cp = NomialMap()
@@ -108,9 +120,8 @@ class NomialMap(HashVector):
                     del descr["name"]
                     cval = VarKey(name=cval, **descr)
                 if hasattr(cval, "hmap"):
-                    expval, = cval.hmap.keys()
-                    cval = cval.hmap
-                    # TODO: can't-sub-posynomials error here
+                    expval, = cval.hmap.keys()  # TODO: catch "can't-sub-posys"
+                    cval = cval.hmap  # pylint: disable=redefined-variable-type
                 if hasattr(cval, "to"):
                     cval = mag(cval.to(vk.units or DIMLESS_QUANTITY))
                     if isinstance(cval, NomialMap) and cval.keys() == [{}]:
@@ -127,13 +138,14 @@ class NomialMap(HashVector):
                         del exp[vk]
                         for key in expval:
                             exp[key] = expval[key]*x + exp.get(key, 0)
-                        exp._hashvalue = None  # reset hash
+                        exp._hashvalue = None  # reset hash, # pylint: disable=protected-access
                         cp[exp] = powval * c + cp.get(exp, 0)
                         exps_covered.add(exp)
-        cp._remove_zeros(just_monomials=True)
+                        cp.remove_zeros(just_monomials=True)  # pylint: disable=protected-access
         return cp
 
     def mmap(self, orig):
+        "Maps substituted monomials back to the original nomial"
         m_from_ms = defaultdict(dict)
         pmap = [{} for _ in self]
         origexps = orig.keys()

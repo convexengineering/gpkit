@@ -2,13 +2,11 @@
 import numpy as np
 from .core import Nomial
 from ..constraints import SingleEquationConstraint
-from ..small_classes import Strings, Numbers, Quantity
+from ..small_classes import Strings, Numbers
 from ..small_classes import HashVector
 from ..keydict import KeySet
 from ..varkey import VarKey
 from ..small_scripts import mag
-from .. import ureg
-from .. import DimensionalityError
 from ..exceptions import InvalidGPConstraint
 from .map import NomialMap
 from .substitution import parse_subs
@@ -35,6 +33,8 @@ class Signomial(Nomial):
         Posynomial (if the input has only positive cs)
         Monomial   (if the input has one term and only positive cs)
     """
+    _c = _exp = None  # pylint: disable=invalid-name
+
     def __init__(self, hmap=None, cs=1, require_positive=True, **descr):  # pylint: disable=too-many-statements,too-many-branches
         if not isinstance(hmap, NomialMap):
             if hasattr(hmap, "hmap"):
@@ -51,7 +51,7 @@ class Signomial(Nomial):
                 exp = HashVector({VarKey(k): v for k, v in hmap.items()})
                 hmap = NomialMap({exp: mag(cs)})
                 hmap.set_units(cs)
-                hmap._remove_zeros()
+                hmap.remove_zeros()
         super(Signomial, self).__init__(hmap)
         if self.any_nonpositive_cs:
             from .. import SIGNOMIALS_ENABLED
@@ -123,7 +123,7 @@ class Signomial(Nomial):
             c /= val**e
         hmap = NomialMap({exp: c})
         hmap.units = self.units
-        hmap._remove_zeros()
+        hmap.remove_zeros()
         return Monomial(hmap)
 
     def sub(self, substitutions, require_positive=True):
@@ -200,7 +200,7 @@ class Signomial(Nomial):
                 for exp_o, c_o in other.hmap.items():
                     exp = exp_s + exp_o
                     hmap[exp] = c_s*c_o + hmap.get(exp, 0)
-            hmap._remove_zeros()
+            hmap.remove_zeros()
             # if "N_f" in self.varkeys and "G_f" in other.varkeys:
             #     raise RuntimeWarning(self.hmap.units, other.hmap.units)
             hmap.set_units(self.hmap.units, other.hmap.units)
@@ -296,14 +296,16 @@ class Monomial(Posynomial):
 
     @property
     def exp(self):
-        if not hasattr(self, "_exp"):
-            self._exp, = self.hmap.keys()
+        "Creates exp or returns a cached exp"
+        if not self._exp:
+            self._exp, = self.hmap.keys()  # pylint: disable=attribute-defined-outside-init
         return self._exp
 
     @property
-    def c(self):
-        if not hasattr(self, "_c"):
-            self._c, = self.cs
+    def c(self):  # pylint: disable=invalid-name
+        "Creates c or returns a cached c"
+        if not self._c:
+            self._c, = self.cs  # pylint: disable=attribute-defined-outside-init, invalid-name
         return self._c
 
     def __rdiv__(self, other):
@@ -453,7 +455,7 @@ class PosynomialInequality(ScalarSingleEquationConstraint):
             fixed = parse_subs(posy.varkeys, substitutions)
             self._last_used_substitutions.update(fixed)
             hmap = posy.hmap.sub(fixed, posy.varkeys, parsedsubs=True)
-            self.pmap, self.mfm = hmap.mmap(posy.hmap)
+            self.pmap, self.mfm = hmap.mmap(posy.hmap)  # pylint: disable=attribute-defined-outside-init
             # ABOUT PMAPS
             #  The monomial sensitivities from the GP/SP are in terms of this
             #  smaller post-substitution list of monomials, so we need to map
@@ -508,23 +510,24 @@ class PosynomialInequality(ScalarSingleEquationConstraint):
 class MonomialEquality(PosynomialInequality):
     "A Constraint of the form Monomial == Monomial."
 
-    def __init__(self, left, oper, right):  # pylint: disable=super-init-not-called,non-parent-init-called
+    def __init__(self, left, oper, right):
+        # pylint: disable=super-init-not-called,non-parent-init-called
         ScalarSingleEquationConstraint.__init__(self, left, oper, right)
         if self.oper is not "=":
             raise ValueError("operator %s is not supported by"
                              " MonomialEquality." % self.oper)
         self.substitutions = dict(self.left.values)
         self.substitutions.update(self.right.values)
-        self.unsubbed = self._gen_unsubbed()
+        self.unsubbed = self._gen_unsubbed(self.left, self.right)
         self.nomials = [self.left, self.right]
         self.nomials.extend(self.unsubbed)
         self._last_used_substitutions = {}
 
-    def _gen_unsubbed(self):
+    def _gen_unsubbed(self, left, right):
         "Returns the unsubstituted posys <= 1."
         unsubbed = PosynomialInequality._gen_unsubbed
-        l_over_r = unsubbed(self, self.left, self.right)
-        r_over_l = unsubbed(self, self.right, self.left)
+        l_over_r = unsubbed(self, left, right)
+        r_over_l = unsubbed(self, right, left)
         return l_over_r + r_over_l
 
     def __nonzero__(self):

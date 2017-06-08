@@ -10,7 +10,7 @@
 from operator import eq, le, ge, xor
 import numpy as np
 from .math import Signomial, EMPTY_EXP
-from ..small_classes import Numbers, Quantity, HashVector
+from ..small_classes import Numbers, HashVector
 from ..small_scripts import try_str_without, mag
 from ..constraints import ArrayConstraint
 from ..repr_conventions import _str, _repr, _repr_latex_

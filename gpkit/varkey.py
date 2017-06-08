@@ -58,8 +58,8 @@ class VarKey(object):
             self.descr["unitrepr"] = repr(self.units)
 
         selfstr = str(self)
-        self._hashstr = selfstr + self.descr["unitrepr"]
-        self._hashvalue = hash(self._hashstr)
+        self.hashstr = selfstr + self.descr["unitrepr"]
+        self._hashvalue = hash(self.hashstr)
         self.key = self
         self.keys = set([self.name, selfstr,
                          self.str_without(["modelnums"])])
@@ -145,9 +145,9 @@ class VarKey(object):
     def __eq__(self, other):
         if not hasattr(other, "descr"):
             return False
-        return self._hashstr == other._hashstr
+        return self.hashstr == other.hashstr
 
     def __ne__(self, other):
         return not self.__eq__(other)
 
-from .nomials import NomialMap
+from .nomials import NomialMap  # pylint: disable=wrong-import-position

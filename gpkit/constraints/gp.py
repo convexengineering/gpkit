@@ -356,9 +356,10 @@ class GeometricProgram(CostedConstraintSet, NomialData):
         if any(np.abs(ATnu) > tol):
             raise RuntimeWarning("sum of nu^T * A did not vanish")
         b = np.log(self.cs)
-        dualcost = sum(self.nup[i].dot(b[mi] - np.log(self.nup[i]/la[i]) if la[i] else 0)
-                       for i, mi in enumerate(self.m_idxs))
-        if not _almost_equal(np.exp(dualcost), cost):
+        dual_cost = sum(self.nup[i].dot(b[mi] - np.log(self.nup[i]/la[i])
+                                        if la[i] else 0)
+                        for i, mi in enumerate(self.m_idxs))
+        if not _almost_equal(np.exp(dual_cost), cost):
             raise RuntimeWarning("Dual cost %s does not match primal"
                                  " cost %s" % (np.exp(dual_cost), cost))
 

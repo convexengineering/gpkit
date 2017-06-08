@@ -201,8 +201,9 @@ class SignomialProgram(CostedConstraintSet):
                     firstposy = self._approx_lt[i]
                     unsubbed = firstposy/spmono
                     self._gp[0][1][i].unsubbed = [unsubbed]
-                    # TODO: cache parsed self.substitutions
-                    smap = unsubbed.hmap.sub(self.substitutions, unsubbed.varkeys)
+                    # TODO: cache parsed self.substitutions for each spmono
+                    smap = unsubbed.hmap.sub(self.substitutions,
+                                             unsubbed.varkeys)
                     self._gp.hmaps[self._gppos+i] = smap
                 self._gp.gen()
             return self._gp

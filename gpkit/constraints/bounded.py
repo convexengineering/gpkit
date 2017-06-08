@@ -5,7 +5,6 @@ import numpy as np
 from .. import Variable
 from .set import ConstraintSet
 from ..small_scripts import mag
-from ..small_classes import Quantity
 
 
 def varkey_bounds(varkeys, lower, upper):

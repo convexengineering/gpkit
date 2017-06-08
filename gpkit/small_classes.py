@@ -1,8 +1,8 @@
 """Miscellaneous small classes"""
 from collections import namedtuple
+from operator import xor
 import numpy as np
 from . import ureg
-from operator import xor
 
 try:
     isinstance("", basestring)
@@ -201,6 +201,7 @@ class HashVector(dict):
 
     def __hash__(self):
         "Allows HashVectors to be used as dictionary keys."
+         # pylint:disable=access-member-before-definition, attribute-defined-outside-init
         if not hasattr(self, "_hashvalue") or self._hashvalue is None:
             self._hashvalue = reduce(xor, map(hash, self.items()), 0)
         return self._hashvalue

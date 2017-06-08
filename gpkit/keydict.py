@@ -139,6 +139,7 @@ class KeyDict(dict):
 
     def __setitem__(self, key, value):
         "Overloads __setitem__ and []= to work with all keys"
+        # pylint: disable=too-many-boolean-expressions
         key, idx = self.parse_and_index(key)
         if key not in self.keymap:
             self.keymap[key].add(key)
@@ -153,12 +154,11 @@ class KeyDict(dict):
                 value = value.value  # substitute constant monomials
             dict.__getitem__(self, key)[idx] = value
         else:
-            # pylint: disable=too-many-boolean-expressions
             if (self.collapse_arrays and hasattr(key, "descr")
                     and "shape" in key.descr  # if veckey, not
                     and not isinstance(value, (np.ndarray, Quantity))  # array,
                     and not is_sweepvar(value)  # not sweep, and
-                    and not isinstance(value[0], np.ndarray)):  # not solarray,
+                    and not isinstance(value[0], np.ndarray)):  # not solarray
                 value = np.array([clean_value(key, v) for v in value])
             if getattr(value, "shape", False) and dict.__contains__(self, key):
                 try:

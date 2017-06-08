@@ -1,10 +1,7 @@
 """Machinery for exps, cs, varlocs data -- common to nomials and programs"""
-from functools import reduce as functools_reduce
-from operator import add
 import numpy as np
 from ..small_classes import HashVector
 from ..keydict import KeySet, KeyDict
-from ..small_scripts import mag
 from .map import NomialMap
 from ..repr_conventions import _repr
 
@@ -18,6 +15,8 @@ class NomialData(object):
     units: pint.UnitsContainer
     """
     # pylint: disable=too-many-instance-attributes
+    _hashvalue = _varlocs = _exps = _cs = _varkeys = _values = None
+
     def __init__(self, hmap):
         self.hmap = hmap
 
@@ -36,6 +35,7 @@ class NomialData(object):
 
     @property
     def varlocs(self):
+        "Create varlocs or return cached varlocs"
         if self._varlocs is None:
             self._varlocs = {}
             for i, exp in enumerate(self.exps):
@@ -47,12 +47,14 @@ class NomialData(object):
 
     @property
     def exps(self):
+        "Create exps or return cached exps"
         if self._exps is None:
             self._exps = tuple(self.hmap.keys())
         return self._exps
 
     @property
     def cs(self):
+        "Create cs or return cached cs"
         if self._cs is None:
             self._cs = np.array(self.hmap.values())
             if self.hmap.units:

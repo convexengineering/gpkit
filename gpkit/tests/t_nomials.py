@@ -33,8 +33,8 @@ class TestMonomial(unittest.TestCase):
         m = 0.1*Variable('tau')
         tau, = m.varkeys["tau"]
         self.assertEqual(m.varlocs, {tau: [0]})
-        self.assertEqual(m.exp, {tau: 1})
-        self.assertEqual(m.c, .1)
+        self.assertEqual(m.exp, {tau: 1})  # pylint: disable=no-member
+        self.assertEqual(m.c, .1)  # pylint: disable=no-member
 
         # variable names not compatible with python namespaces
         crazy_varstr = 'what the !!!/$**?'
@@ -180,7 +180,7 @@ class TestMonomial(unittest.TestCase):
         c1, c2 = 1/700., 123e8
         m1 = Monomial({'x': 2, 'y': 1}, c1)
         m2 = Monomial({'y': -1, 'z': 3/2.}, c2)
-        self.assertEqual(math.log((m1**4 * m2**3).c),
+        self.assertEqual(math.log((m1**4 * m2**3).c),  # pylint: disable=no-member
                          4*math.log(c1) + 3*math.log(c2))
 
     def test_units(self):
