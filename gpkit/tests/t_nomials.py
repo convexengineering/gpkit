@@ -224,7 +224,10 @@ class TestSignomial(unittest.TestCase):
         xu = Variable('x', units="ft")
         with SignomialsEnabled():
             self.assertEqual(x - x**2, -x**2 + x)
-            self.assertNotEqual(-x, -xu)
+            if gpkit.units:
+                self.assertNotEqual(-x, -xu)
+            else:  # units don't create inequality if they're disabled
+                self.assertEqual(-x, -xu)
             # numeric
             self.assertEqual(Signomial(0), 0)
             self.assertNotEqual(Signomial(0), 1)
@@ -290,9 +293,12 @@ class TestPosynomial(unittest.TestCase):
         p2u = Variable('x', units="m") + Variable('y', units="m")
         self.assertEqual(p1, p2)
         self.assertEqual(p1u, p2u)
-        self.assertFalse(p1 == p1u)
-        self.assertNotEqual(p1, p1u)
-
+        if gpkit.units:
+            self.assertFalse(p1 == p1u)
+            self.assertNotEqual(p1, p1u)
+        else:  # units don't distinguish variables when they're disabled
+            self.assertTrue(p1 == p1u)
+            self.assertEqual(p1, p1u)
 
     def test_simplification(self):
         "Make sure like monomial terms get automatically combined"
