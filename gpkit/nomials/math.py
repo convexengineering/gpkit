@@ -107,6 +107,9 @@ class Signomial(Nomial):
         Monomial (unless self(x0) < 0, in which case a Signomial is returned)
         """
         x0 = parse_subs(self.varkeys, x0)  # use only varkey keys
+        for key, value in x0.items():
+            if hasattr(value, "units"):
+                x0[key] = value.to(key.units).magnitude
         psub = self.hmap.sub(x0, self.varkeys, parsedsubs=True)
         if len(psub) > 1 or EMPTY_EXP not in psub:
             raise ValueError("Variables %s remained after substituting x0=%s"
