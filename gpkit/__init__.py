@@ -19,10 +19,11 @@ from os import sep as os_sep
 from os.path import dirname as os_path_dirname
 SETTINGS_PATH = os_sep.join([os_path_dirname(__file__), "env", "settings"])
 
-__version__ = "0.5.2"
+__version__ = "0.5.3"
 UNIT_REGISTRY = None
 SIGNOMIALS_ENABLED = False
 GPBLU = "#59ade4"
+GPCOLORS = ["#59ade4", "#FA3333"]
 
 DimensionalityError = ValueError
 ureg, units = None, None  # pylint: disable=invalid-name
@@ -210,7 +211,6 @@ from .constraints.signomial_program import SignomialProgram
 from .constraints.sigeq import SignomialEquality
 from .constraints.set import ConstraintSet
 from .constraints.model import Model
-from .constraints.linked import LinkedConstraintSet
 
 
 def load_settings(path=SETTINGS_PATH):

@@ -79,6 +79,16 @@ class TestNomialSubs(unittest.TestCase):
             v = gpkit.VectorVariable(3, "v", "cm")
             subbed = v.sub({v: [1, 2, 3]*gpkit.ureg.m})
             self.assertEqual([z.c.magnitude for z in subbed], [100, 200, 300])
+            v = VectorVariable(1, "v", "km")
+            v_min = VectorVariable(1, "v_min", "km")
+            m = Model(v.prod(), [v >= v_min],
+                      {v_min: [2*gpkit.units("nmi")]})
+            cost = m.solve(verbosity=0)["cost"]
+            self.assertAlmostEqual(cost/(3.704*gpkit.ureg("km")), 1.0)
+            m = Model(v.prod(), [v >= v_min],
+                      {v_min: np.array([2])*gpkit.units("nmi")})
+            cost = m.solve(verbosity=0)["cost"]
+            self.assertAlmostEqual(cost/(3.704*gpkit.ureg("km")), 1.0)
 
     def test_scalar_units(self):
         x = Variable("x", "m")
@@ -289,13 +299,14 @@ class TestGPSubs(unittest.TestCase):
             almostequal(1*gpkit.ureg.cm/b.solve(verbosity=0)["cost"], 1, 5)
             almostequal(1*gpkit.ureg.cm/gpkit.ureg.yd/concat_cost, 1, 5)
         a1, b1 = Above(), Below()
-        m = a1.link(b1)
-        m.cost = m["x"]
+        b1.subinplace({b1["x"]: a1["x"]})
+        m = Model(a1["x"], [a1, b1])
         sol = m.solve(verbosity=0)
         if not isinstance(m["x"].key.units, str):
             almostequal(1*gpkit.ureg.cm/sol["cost"], 1, 5)
         a1, b1 = Above(), Below()
-        m = b1.link(a1)
+        a1.subinplace({a1["x"]: b1["x"]})
+        m = Model(b1["x"], [a1, b1])
         m.cost = m["x"]
         sol = m.solve(verbosity=0)
         if not isinstance(m["x"].key.units, str):
@@ -330,10 +341,10 @@ class TestGPSubs(unittest.TestCase):
         class Top(Model):
             "Some high level model"
             def setup(self):
-                x = Variable('x')
-                y = Variable('y')
+                sub = Sub()
+                x = Variable("x")
                 self.cost = x
-                return Sub().link([x >= y, y >= 1])
+                return sub, [x >= sub["y"], sub["y"] >= 1]
 
         class Sub(Model):
             "A simple sub model"
@@ -344,6 +355,18 @@ class TestGPSubs(unittest.TestCase):
 
         sol = Top().solve(verbosity=0)
         self.assertAlmostEqual(sol['cost'], 2)
+
+    def test_vector_sub(self):
+        x = VectorVariable(3, "x")
+        y = VectorVariable(3, "y")
+        ymax = VectorVariable(3, "ymax")
+
+        with SignomialsEnabled():
+            # issue1077 links to a case that failed for SPs only
+            m = Model(x.prod(), [x + y >= 1, y <= ymax])
+
+        m.substitutions["ymax"] = [0.3, 0.5, 0.8]
+        m.localsolve(verbosity=0)
 
 
 TESTS = [TestNomialSubs, TestGPSubs]

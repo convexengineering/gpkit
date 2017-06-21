@@ -33,7 +33,7 @@ class NomialData(object):
         self.varlocs = varlocs
         self._varkeys, self._values = None, None
         if hasattr(self.cs, "units"):
-            self.units = Quantity(1, self.cs.units)  #pylint: disable=no-member
+            self.units = Quantity(1, self.cs.units)  # pylint: disable=no-member
         else:
             self.units = None
 
@@ -165,10 +165,11 @@ def simplify_exps_and_cs(exps, cs, return_map=False):
         if return_map:
             expmap[exp][i] = cs[i]
 
-    if len(matches) > 1:
-        zeroed_terms = (exp for exp, c in matches.items() if mag(c) == 0)
-        for exp in zeroed_terms:
-            del matches[exp]
+    zeroed_terms = (exp for exp, c in matches.items() if mag(c) == 0)
+    for exp in zeroed_terms:
+        del matches[exp]
+    if not matches:  # it's a zero monomial
+        matches[HashVector()] = 0
 
     exps_ = tuple(matches.keys())
     cs_ = list(matches.values())

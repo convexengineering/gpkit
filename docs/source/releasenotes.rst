@@ -3,6 +3,14 @@ Release Notes
 
 This page lists the changes made in each point version of gpkit.
 
+Version 0.5.3
+=============
+ * faster SP solves (#1109)
+ * LinkedConstraintSet deprecated (#1110)
+ * Fixes to autosweep, ConstraintSet, interactive
+ * Solution time is now stored with soltutions (including sweeps/SPs)
+ * Model strings are divided with slashes (e.g. Airplane/Wing)
+
 Version 0.5.2
 =============
  * Added new ``sweep`` and ``autosweep`` methods to Model

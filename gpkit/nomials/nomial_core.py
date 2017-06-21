@@ -82,6 +82,14 @@ class Nomial(NomialData):
                 return p.c
         return p
 
+    def prod(self):
+        "Return self for compatibility with NomialArray"
+        return self
+
+    def sum(self):
+        "Return self for compatibility with NomialArray"
+        return self
+
     def to(self, arg):
         "Create new Signomial converted to new units"
          # pylint: disable=no-member

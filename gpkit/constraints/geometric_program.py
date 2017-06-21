@@ -57,8 +57,14 @@ class GeometricProgram(CostedConstraintSet, NomialData):
         if not isinstance(constraints, ConstraintSet):
             constraints = ConstraintSet(constraints)
         list.__init__(self, [constraints])  # pylint:disable=non-parent-init-called
-        self.substitutions = substitutions if substitutions else {}
+        self.substitutions = substitutions or {}
         for key, sub in self.substitutions.items():
+            if hasattr(sub, "exp") and not sub.exp:
+                sub = sub.value
+                if hasattr(sub, "units"):
+                    sub = sub.to(key.units or "dimensionless").magnitude
+                self.substitutions[key] = sub
+            # only allow Numbers and ndarrays
             if not isinstance(sub, (Numbers, np.ndarray)):
                 raise ValueError("substitution {%s: %s} with value type %s is"
                                  " not allowed in .substitutions; such"
@@ -67,10 +73,13 @@ class GeometricProgram(CostedConstraintSet, NomialData):
         # sideways NomialData init to create self.exps, self.cs, etc
         self.posynomials = [cost.sub(self.substitutions)]
         self.posynomials.extend(self.as_posyslt1(self.substitutions))
+        self.gen(verbosity)
+
+    def gen(self, verbosity=1):
+        "Generates nomial and solve data (A, p_idxs) from self.posynomials"
         NomialData.init_from_nomials(self, self.posynomials)
         if self.any_nonpositive_cs:
             raise ValueError("GeometricPrograms cannot contain Signomials.")
-
         ## Generate various maps into the posy- and monomials
         # k [j]: number of monomials (columns of F) present in each constraint
         self.k = [len(p.cs) for p in self.posynomials]
@@ -149,10 +158,10 @@ class GeometricProgram(CostedConstraintSet, NomialData):
 
         solverfn, solvername = _get_solver(solver)
 
+        starttime = time()
         if verbosity > 0:
             print("Using solver '%s'" % solvername)
             print("Solving for %i variables." % len(self.varlocs))
-            tic = time()
 
         default_kwargs = DEFAULT_SOLVER_KWARGS.get(solvername, {})
         for k in default_kwargs:
@@ -170,18 +179,27 @@ class GeometricProgram(CostedConstraintSet, NomialData):
             sys.stdout = original_stdout
          # STDOUT HAS BEEN RETURNED. ENDING SIDE EFFECTS.
 
+        soltime = time() - starttime
         if verbosity > 0:
-            soltime = time() - tic
             print("Solving took %.3g seconds." % (soltime,))
             tic = time()
 
-        if solver_out.get("status", "").lower() != "optimal":
+        # allow mosek's NEAR_DUAL_FEAS solution status, because our check
+        # will catch anything that's not actually near enough.
+        # TODO: implement this in the mosek / mosek_cli interfaces, not here.
+        solver_status = str(solver_out.get("status", None))
+        if solver_status.lower() not in ["optimal", "near_dual_feas"]:
             raise RuntimeWarning(
                 "final status of solver '%s' was '%s', not 'optimal'.\n\n"
                 "The solver's result is stored in model.program.solver_out. "
                 "A result dict can be generated via "
                 "program._compile_result(program.solver_out)." %
-                (solvername, solver_out.get("status", None)))
+                (solvername, solver_status))
+
+        if solver_status.lower() == "near_dual_feas":
+            print RuntimeWarning(
+                "final status of solver '%s' was '%s', not 'optimal'.\n\n" %
+                (solvername, solver_status))
 
         self._generate_nula(solver_out)
         self.result = self._compile_result(solver_out)  # NOTE: SIDE EFFECTS
@@ -202,6 +220,7 @@ class GeometricProgram(CostedConstraintSet, NomialData):
                   ((time() - tic) / soltime * 100))
 
         self.process_result(self.result)
+        self.result["soltime"] = soltime
         return self.result
 
     def _generate_nula(self, solver_out):
@@ -382,11 +401,9 @@ def genA(exps, varlocs):
         if varsign != "both":
             if varsign == 1:
                 bound = "lower"
-            elif varsign == -1:
-                bound = "upper"
             else:
-                # just being safe
-                raise RuntimeWarning("Unexpected varsign %s" % varsign)
+                assert varsign == -1
+                bound = "upper"
             missingbounds[var] = bound
 
     # add constant terms

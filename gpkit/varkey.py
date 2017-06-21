@@ -89,7 +89,7 @@ class VarKey(object):
                         substring = ["%s.%s" % (ss, mn) if mn > 0 else ss
                                      for ss, mn
                                      in zip(substring, self.modelnums)]
-                    substring = ", ".join(substring)
+                    substring = "/".join(substring)
                 string += "_%s" % (substring,)
         return string
 
@@ -105,6 +105,13 @@ class VarKey(object):
         us = unitstr(self.units, r"~\mathrm{%s}", "L~")
         utf = us.replace("frac", "tfrac").replace(r"\cdot", r"\cdot ")
         return utf if utf != r"~\mathrm{-}" else ""
+
+    @property
+    def naming(self):
+        "Returns this varkey's naming tuple"
+        # TODO: store naming (as special object?) instead of models/modelnums
+        return (tuple(self.descr["models"]),
+                tuple(self.descr["modelnums"]))
 
     def latex(self, excluded=None):
         "Returns latex representation."
