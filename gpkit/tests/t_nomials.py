@@ -257,9 +257,8 @@ class TestPosynomial(unittest.TestCase):
         p2 = 3.14*x*y**2 + y/2 + x**3*6*y + 2
         self.assertEqual(p, p2)
 
-        hmap = NomialMap(zip((HashVector({'m': 1, 'v': 2}),
-                              HashVector({'m': 1, 'g': 1, 'h': 1})),
-                             (0.5, 1)))
+        hmap = NomialMap({HashVector({'m': 1, 'v': 2}): 0.5,
+                          HashVector({'m': 1, 'g': 1, 'h': 1}): 1})
         hmap.set_units(None)
         p = Posynomial(hmap)
         m, = p.varkeys["m"]

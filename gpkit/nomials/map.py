@@ -27,10 +27,12 @@ class NomialMap(HashVector):
                 try:  # faster than "if self.units.dimensionless"
                     conversion = float(self.units)
                     self.units = None
-                    for key, value in self.items():
-                        self[key] = value*conversion
+                    for key in self:
+                        self[key] *= conversion
                 except DimensionalityError:
                     pass
+            elif not isinstance(thing, Quantity):
+                self.units = thing.units
             else:
                 self.units = Quantity(1, thing.units)
         elif hasattr(thing2, "units"):
@@ -39,30 +41,34 @@ class NomialMap(HashVector):
             self.units = None
 
     def to(self, units):
-        "Converts a NomialMap to the given units"
-        sunits = self.units if self.units else DIMLESS_QUANTITY
-        nm = self * sunits.to(units).magnitude
+        "Returns a new NomialMap of the given units"
+        sunits = self.units or DIMLESS_QUANTITY
+        nm = self * sunits.to(units).magnitude  # note that * creates a copy
         nm.set_units(units)  # pylint: disable=no-member
         return nm
 
     def __add__(self, other):
         "Adds NomialMaps together"
         if self.units != other.units:
-            other = float(other.units/self.units)*other
+            other *= float(other.units/self.units)
         hmap = HashVector.__add__(self, other)
         hmap.units = self.units
-        hmap.remove_zeros(just_monomials=True)   # pylint: disable=no-member, protected-access
+        hmap.remove_zeros(only_check_cs=True)   # pylint: disable=no-member, protected-access
         return hmap
 
-    def remove_zeros(self, just_monomials=False):
-        "Removes zeroed exponents and monomials."
+    def remove_zeros(self, only_check_cs=False):
+        """Removes zeroed exponents and monomials.
+
+        If `only_check_cs` is True, checks only whether any values are zero.
+        If False also checks whether any exponents in the keys are zero.
+        """
         # TODO: do this automatically during HashVector operations?
-        posynomial = (len(self) > 1)
+        im_a_posynomial = (len(self) > 1)
         for key in self.keys():
             value = self[key]
-            if posynomial and value == 0:
-                del self[key]
-            elif not just_monomials:
+            if im_a_posynomial and value == 0:
+                del self[key]  # doesn't remove a 0-monomial's only key
+            elif not only_check_cs:
                 zeroes = set(vk for vk, exp in key.items() if exp == 0)
                 if zeroes:
                     del self[key]
@@ -88,7 +94,22 @@ class NomialMap(HashVector):
         return out
 
     def sub(self, substitutions, varkeys, parsedsubs=False):
-        "Applies substitutions to a NomialMap"
+        """Applies substitutions to a NomialMap
+
+        Parameters
+        ----------
+        substitutions : (dict-like)
+            list of substitutions to perform
+
+        varkeys : (set-like)
+            varkeys that are present in self
+            (externally provided to promote caching)
+
+        parsedsubs : bool
+            flag if the substitutions have already been parsed
+            to contain only keys in varkeys
+
+        """
         # pylint: disable=too-many-locals, too-many-branches
         if parsedsubs or not substitutions:
             fixed = substitutions
@@ -141,7 +162,7 @@ class NomialMap(HashVector):
                         exp._hashvalue = None  # reset hash, # pylint: disable=protected-access
                         cp[exp] = powval * c + cp.get(exp, 0)
                         exps_covered.add(exp)
-                        cp.remove_zeros(just_monomials=True)  # pylint: disable=protected-access
+                        cp.remove_zeros(only_check_cs=True)  # pylint: disable=protected-access
         return cp
 
     def mmap(self, orig):

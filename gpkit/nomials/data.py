@@ -1,5 +1,6 @@
 """Machinery for exps, cs, varlocs data -- common to nomials and programs"""
 import numpy as np
+from collections import defaultdict
 from ..small_classes import HashVector
 from ..keydict import KeySet, KeyDict
 from .map import NomialMap
@@ -17,31 +18,29 @@ class NomialData(object):
     # pylint: disable=too-many-instance-attributes
     _hashvalue = _varlocs = _exps = _cs = _varkeys = _values = None
 
-    def __init__(self, hmap):
-        self.hmap = hmap
-
-        self.vks = {}
-        for exp in self.hmap:
-            for vk in exp:
-                if vk not in self.vks:
-                    self.vks[vk] = None
-        self.units = self.hmap.units
-        self.any_nonpositive_cs = any(c <= 0 for c in self.hmap.values())
-        self._reset()
-
     def _reset(self):
         for attr in "hashvalue varlocs exps cs varkeys values".split():
             setattr(self, "_"+attr, None)
+
+    def __init__(self, hmap):
+        self.hmap = hmap
+
+        self.vks = set()
+        for exp in self.hmap:
+            for vk in exp:
+                if vk not in self.vks:
+                    self.vks.add(vk)
+        self.units = self.hmap.units
+        self.any_nonpositive_cs = any(c <= 0 for c in self.hmap.values())
+        self._reset()
 
     @property
     def varlocs(self):
         "Create varlocs or return cached varlocs"
         if self._varlocs is None:
-            self._varlocs = {}
+            self._varlocs = defaultdict(list)
             for i, exp in enumerate(self.exps):
                 for var in exp:
-                    if var not in self._varlocs:
-                        self._varlocs[var] = []
                     self._varlocs[var].append(i)
         return self._varlocs
 

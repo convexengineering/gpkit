@@ -175,7 +175,7 @@ class Signomial(Nomial):
     # posynomial arithmetic
     def __add__(self, other):
         if isinstance(other, np.ndarray):
-            return np.array(self)+other
+            return np.array(self) + other
         other_hmap = getattr(other, "hmap", None)
         if isinstance(other, Numbers):
             if not other:  # other is zero
@@ -204,8 +204,6 @@ class Signomial(Nomial):
                     exp = exp_s + exp_o
                     hmap[exp] = c_s*c_o + hmap.get(exp, 0)
             hmap.remove_zeros()
-            # if "N_f" in self.varkeys and "G_f" in other.varkeys:
-            #     raise RuntimeWarning(self.hmap.units, other.hmap.units)
             hmap.set_units(self.hmap.units, other.hmap.units)
             return Signomial(hmap)
         else:
@@ -324,7 +322,7 @@ class Monomial(Posynomial):
 
     def __pow__(self, x):
         if isinstance(x, Numbers):
-            exp, c = self.hmap.items()[0]
+            (exp, c), = self.hmap.items()
             exp = exp*x if x else EMPTY_EXP
             # TODO: c should already be a float
             hmap = NomialMap({exp: float(c)**x})
@@ -332,14 +330,6 @@ class Monomial(Posynomial):
                 hmap.units = None
             else:
                 hmap.units = self.hmap.units**x
-                # try:  # faster than "if self.units.dimensionless"
-                #     conversion = float(hmap.units)
-                #     raise RuntimeWarning((self, self.hmap.units))
-                #     hmap.units = None
-                #     for key, value in hmap.items():
-                #         hmap[key] = value*conversion
-                # except DimensionalityError:
-                #     pass
             return Monomial(hmap)
         else:
             return NotImplemented
@@ -350,7 +340,7 @@ class Monomial(Posynomial):
         if isinstance(other, MONS):
             try:  # if both are monomials, return a constraint
                 return MonomialEquality(self, "=", other)
-            except ValueError:
+            except ValueError:  # units mismatch or infeasible constraint
                 return False
         return super(Monomial, self).__eq__(other)
 
@@ -426,6 +416,7 @@ class PosynomialInequality(ScalarSingleEquationConstraint):
             self.const_mmap = self.pmap.pop(const_idx)  # pylint: disable=attribute-defined-outside-init
             self.const_coeff = coeff  # pylint: disable=attribute-defined-outside-init
         if allow_tautological and len(hmap) == 1 and coeff >= 0:
+            # it's a tautological monomial!
             return None  # ValueError("tautological constraint: %s" % self)
         elif coeff <= 0:
             raise ValueError("infeasible constraint: %s" % self)
@@ -435,7 +426,17 @@ class PosynomialInequality(ScalarSingleEquationConstraint):
         return scaled
 
     def _gen_unsubbed(self, p_lt, m_gt):
-        "Returns the unsubstituted posys <= 1."
+        """Returns the unsubstituted posys <= 1.
+
+        Parameters
+        ----------
+        p_lt : posynomial
+            the left-hand side of (posynomial < monomial)
+
+        m_gt : posynomial
+            the right-hand side of (posynomial < monomial)
+
+        """
         hmap = (p_lt / m_gt).hmap
         if hmap.units:
             raise ValueError("unit mismatch: units of %s cannot be converted"
@@ -614,7 +615,7 @@ class SignomialInequality(ScalarSingleEquationConstraint):
             if not hasattr(subnegy, "cs") or len(subnegy.cs) == 1:
                 return self
         posy, negy = siglt0.posy_negy()
-        # assume unspecified negy variables have a value of 1.0
+        # default guess of 1.0 for unspecified negy variables
         x0.update({vk: 1.0 for vk in negy.vks if vk not in x0})
         pc = PosynomialInequality(posy, "<=", negy.mono_lower_bound(x0))
         return pc

@@ -32,14 +32,14 @@ class VarKey(object):
                 name = "\\fbox{%s}" % VarKey.new_unnamed_id()
             self.descr["name"] = str(name)
             if "units" in self.descr:
-                units = self.descr.pop("units")
+                units = self.descr["units"]
                 if ureg:
                     if isinstance(units, Strings):
-                        if units not in ["", "-"]:  # not dimensionless
+                        if units in ["", "-"]:  # dimensionless
+                            del self.descr["units"]
+                        else:
                             self.descr["units"] = Quantity(1.0, units)
-                    elif isinstance(units, Quantity):
-                        self.descr["units"] = units
-                    else:
+                    elif not isinstance(units, Quantity):
                         raise ValueError("units must be either a string"
                                          " or a Quantity from gpkit.units.")
                 else:

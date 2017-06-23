@@ -47,11 +47,11 @@ class SignomialProgram(CostedConstraintSet):
         self.result = None
         self._spconstrs = []
         self._approx_lt = []
-        self._gppos = None
+        self._Ngpconstr = None
         self._gp = None
 
         if cost.any_nonpositive_cs:
-            raise TypeError("""SignomialPrograms need Posyomial objectives.
+            raise TypeError("""SignomialPrograms need Posynomial objectives.
 
     The equivalent of a Signomial objective can be constructed by constraining
     a dummy variable z to be greater than the desired Signomial objective s
@@ -62,7 +62,7 @@ class SignomialProgram(CostedConstraintSet):
         self.is_sgp = bool(self.externalfn_vars)
         if not self.is_sgp:
             self._gp = self.init_gp(self.substitutions, verbosity)
-            if not (self.is_sgp or self._gp[0][1]):
+            if not (self.is_sgp or self._gp[0][1]):  # [0][1]: sp constraints
                 raise ValueError("""Model valid as a Geometric Program.
 
     SignomialPrograms should only be created with Models containing Signomial
@@ -186,7 +186,7 @@ class SignomialProgram(CostedConstraintSet):
         gp = GeometricProgram(self.cost, [gpconstrs, spapproxs],
                               substitutions, verbosity=verbosity)
         gp.x0 = x0
-        self._gppos = len(gp.hmaps) - len(spapproxs)
+        self._Ngpconstr = len(gp.hmaps) - len(spapproxs)
         return gp
 
     def gp(self, x0=None, verbosity=1, mutategp=False):
@@ -194,17 +194,18 @@ class SignomialProgram(CostedConstraintSet):
         if mutategp and not self.is_sgp:
             if self.gps:  # update self._gp with new x0
                 self._gp.x0.update(x0)
-                spmonos = []
+                negyapproxs = []
                 for spc in self._spconstrs:
-                    spmonos.extend(spc.as_approxsgt(self._gp.x0))
-                for i, spmono in enumerate(spmonos):
-                    firstposy = self._approx_lt[i]
-                    unsubbed = firstposy/spmono
+                    negyapproxs.extend(spc.as_approxsgt(self._gp.x0))
+                for i, negyapprox in enumerate(negyapproxs):
+                    posyapprox = self._approx_lt[i]
+                    unsubbed = posyapprox/negyapprox
+                    # the index [0][1] gets the set of all sp constraints
                     self._gp[0][1][i].unsubbed = [unsubbed]
                     # TODO: cache parsed self.substitutions for each spmono
                     smap = unsubbed.hmap.sub(self.substitutions,
                                              unsubbed.varkeys)
-                    self._gp.hmaps[self._gppos+i] = smap
+                    self._gp.hmaps[self._Ngpconstr+i] = smap
                 self._gp.gen()
             return self._gp
         else:

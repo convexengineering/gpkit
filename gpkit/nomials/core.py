@@ -94,7 +94,7 @@ class Nomial(NomialData):
         return not self.__eq__(other)
 
     def __eq__(self, other):
-        "Should be True if self and other are algbreaically identical."
+        "True if self and other are algbraically identical."
         if isinstance(other, Numbers):
             return (len(self.hmap) == 1 and  # single term
                     not self.vks and         # constant
