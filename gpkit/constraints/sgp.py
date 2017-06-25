@@ -1,4 +1,4 @@
-"""Implement the SignomialProgram class"""
+"""Implement the SequentialGeometricProgram class"""
 from time import time
 from ..exceptions import InvalidGPConstraint
 from ..keydict import KeyDict
@@ -10,7 +10,7 @@ from ..nomials import SignomialInequality, PosynomialInequality
 
 
 # pylint: disable=too-many-instance-attributes
-class SignomialProgram(CostedConstraintSet):
+class SequentialGeometricProgram(CostedConstraintSet):
     """Prepares a collection of signomials for a SP solve.
 
     Arguments
@@ -20,8 +20,8 @@ class SignomialProgram(CostedConstraintSet):
     constraints : list of Constraint or SignomialConstraint objects
         Constraints to maintain when solving (implicitly Signomials <= 1)
     verbosity : int (optional)
-        Currently has no effect: SignomialPrograms don't know anything new
-        after being created, unlike GeometricPrograms.
+        Currently has no effect: SequentialGeometricPrograms don't know
+        anything new after being created, unlike GeometricPrograms.
 
     Attributes with side effects
     ----------------------------
@@ -30,7 +30,7 @@ class SignomialProgram(CostedConstraintSet):
 
     Examples
     --------
-    >>> gp = gpkit.geometric_program.SignomialProgram(
+    >>> gp = gpkit.geometric_program.SequentialGeometricProgram(
                         # minimize
                         x,
                         [   # subject to
@@ -47,32 +47,32 @@ class SignomialProgram(CostedConstraintSet):
         self.result = None
         self._spconstrs = []
         self._approx_lt = []
-        self._Ngpconstr = None
+        self._numgpconstrs = None
         self._gp = None
 
         if cost.any_nonpositive_cs:
-            raise TypeError("""SignomialPrograms need Posynomial objectives.
+            raise TypeError("""Sequential GPs need Posynomial objectives.
 
     The equivalent of a Signomial objective can be constructed by constraining
-    a dummy variable z to be greater than the desired Signomial objective s
+    a dummy variable `z` to be greater than the desired Signomial objective `s`
     (z >= s) and then minimizing that dummy variable.""")
         CostedConstraintSet.__init__(self, cost, constraints, substitutions)
         self.externalfn_vars = frozenset(Variable(newvariable=False, **v.descr)
                                          for v in self.varkeys if v.externalfn)
-        self.is_sgp = bool(self.externalfn_vars)
-        if not self.is_sgp:
+        self.not_sp = bool(self.externalfn_vars)
+        if not self.not_sp:
             self._gp = self.init_gp(self.substitutions, verbosity)
-            if not (self.is_sgp or self._gp[0][1]):  # [0][1]: sp constraints
+            if not (self.not_sp or self._gp[0][1]):  # [0][1]: sp constraints
                 raise ValueError("""Model valid as a Geometric Program.
 
-    SignomialPrograms should only be created with Models containing Signomial
+    SequentialGeometricPrograms should only be created with Models containing Signomial
     Constraints, since Models without Signomials have global solutions and can
     be solved with 'Model.solve()'.""")
 
     # pylint: disable=too-many-locals
     def localsolve(self, solver=None, verbosity=1, x0=None, reltol=1e-4,
                    iteration_limit=50, mutategp=True, **kwargs):
-        """Locally solves a SignomialProgram and returns the solution.
+        """Locally solves a SequentialGeometricProgram and returns the solution.
 
         Arguments
         ---------
@@ -180,18 +180,18 @@ class SignomialProgram(CostedConstraintSet):
                     x0.update({vk: 1.0 for vk in cs.varkeys if vk not in x0})
                     approx_gt.extend(cs.as_approxsgt(x0))
                 else:
-                    self.is_sgp = True
+                    self.not_sp = True
                     return
         spapproxs = [p/m <= 1 for p, m in zip(self._approx_lt, approx_gt)]
         gp = GeometricProgram(self.cost, [gpconstrs, spapproxs],
                               substitutions, verbosity=verbosity)
         gp.x0 = x0
-        self._Ngpconstr = len(gp.hmaps) - len(spapproxs)
+        self._numgpconstrs = len(gp.hmaps) - len(spapproxs)
         return gp
 
     def gp(self, x0=None, verbosity=1, mutategp=False):
         "The GP approximation of this SP at x0."
-        if mutategp and not self.is_sgp:
+        if mutategp and not self.not_sp:
             if self.gps:  # update self._gp with new x0
                 self._gp.x0.update(x0)
                 negyapproxs = []
@@ -205,7 +205,7 @@ class SignomialProgram(CostedConstraintSet):
                     # TODO: cache parsed self.substitutions for each spmono
                     smap = unsubbed.hmap.sub(self.substitutions,
                                              unsubbed.varkeys)
-                    self._gp.hmaps[self._Ngpconstr+i] = smap
+                    self._gp.hmaps[self._numgpconstrs+i] = smap
                 self._gp.gen()
             return self._gp
         else:

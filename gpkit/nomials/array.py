@@ -187,7 +187,7 @@ class NomialArray(np.ndarray):
             if isinstance(mag(self[i]), Numbers):
                 if mag(self[i]) == 0:
                     continue
-                else:  # somehow a number got in here
+                else:  # number manually inserted by user
                     hmap[EMPTY_EXP] = mag(self[i]) + hmap.get(EMPTY_EXP, 0)
             else:
                 hmap += self[i].hmap

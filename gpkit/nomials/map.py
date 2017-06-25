@@ -14,7 +14,7 @@ DIMLESS_QUANTITY = Quantity(1, "dimensionless")
 class NomialMap(HashVector):
     "Class for efficent algebraic represention of a nomial"
     units = None
-    expmap = None
+    expmap = None  # used for monomial-mapping postsubstitution; see .mmap()
     csmap = None
 
     def set_units(self, thing, thing2=None):

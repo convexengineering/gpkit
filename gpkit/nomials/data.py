@@ -1,6 +1,6 @@
 """Machinery for exps, cs, varlocs data -- common to nomials and programs"""
-import numpy as np
 from collections import defaultdict
+import numpy as np
 from ..small_classes import HashVector
 from ..keydict import KeySet, KeyDict
 from .map import NomialMap

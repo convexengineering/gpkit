@@ -25,7 +25,7 @@ def _progify_fctry(program, return_attr=None):
         Arguments
         ---------
         program: NomialData
-            Class to return, e.g. GeometricProgram or SignomialProgram
+            Class to return, e.g. GeometricProgram or SequentialGeometricProgram
         return_attr: string
             attribute to return in addition to the program
         """

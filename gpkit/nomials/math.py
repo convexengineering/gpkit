@@ -604,7 +604,8 @@ class SignomialInequality(ScalarSingleEquationConstraint):
             raise InvalidGPConstraint("SignomialInequality could not simplify"
                                       " to a PosynomialInequality; try calling"
                                       " `.localsolve` instead of `.solve` to"
-                                      " form your Model as a SignomialProgram")
+                                      " form your Model as a"
+                                      " SequentialGeometricProgram")
 
     def as_gpconstr(self, x0, substitutions=None):
         "Returns GP approximation of an SP constraint at x0"
@@ -644,7 +645,8 @@ class SingleSignomialEquality(SignomialInequality):
         raise InvalidGPConstraint("SignomialEquality could not simplify"
                                   " to a PosynomialInequality; try calling"
                                   "`.localsolve` instead of `.solve` to"
-                                  " form your Model as a SignomialProgram")
+                                  " form your Model as a"
+                                  " SequentialGeometricProgram")
 
     def as_gpconstr(self, x0, substitutions=None):
         "Returns GP approximation of an SP constraint at x0"

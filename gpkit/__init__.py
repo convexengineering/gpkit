@@ -207,7 +207,7 @@ from .nomials import VectorVariable, ArrayVariable
 from .nomials import VectorizableVariable as Variable
 # NOTE above: the Variable the user sees is not the Variable used internally
 from .constraints.gp import GeometricProgram
-from .constraints.sgp import SignomialProgram
+from .constraints.sgp import SequentialGeometricProgram
 from .constraints.sigeq import SignomialEquality
 from .constraints.set import ConstraintSet
 from .constraints.model import Model
