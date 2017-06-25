@@ -9,7 +9,6 @@ gpkit/constraints/array.py
 gpkit/constraints/bounded.py
 gpkit/constraints/costed.py
 gpkit/constraints/gp.py
-gpkit/constraints/linked.py
 gpkit/constraints/model.py
 gpkit/constraints/prog_factories.py
 gpkit/constraints/relax.py
