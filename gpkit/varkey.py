@@ -42,7 +42,8 @@ class VarKey(object):
                     elif not isinstance(units, Quantity):
                         raise ValueError("units must be either a string"
                                          " or a Quantity from gpkit.units.")
-                else:
+                else:  # units are disabled
+                    del self.descr["units"]
                     self.descr["unitslabel"] = units
 
             if "value" in self.descr:
