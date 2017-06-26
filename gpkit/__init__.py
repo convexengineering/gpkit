@@ -22,6 +22,8 @@ SETTINGS_PATH = os_sep.join([os_path_dirname(__file__), "env", "settings"])
 __version__ = "0.5.0"
 UNIT_REGISTRY = None
 SIGNOMIALS_ENABLED = False
+GPBLU = "#59ade4"
+GPCOLORS = ["#59ade4", "#FA3333"]
 
 # global variable initializations
 DimensionalityError = ValueError

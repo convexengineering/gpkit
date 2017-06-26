@@ -9,6 +9,8 @@ from ..small_scripts import mag
 from ..keydict import KeyDict
 from ..varkey import VarKey
 from .. import NamedVariables, SignomialsEnabled
+from ..tools.autosweep import autosweep_1d
+import numpy as np
 
 
 class Model(CostedConstraintSet):
@@ -97,6 +99,22 @@ class Model(CostedConstraintSet):
         lc = LinkedConstraintSet([self, other], include_only, exclude)
         cost = self.cost.sub(lc.linked)
         return Model(cost, lc, lc.substitutions)
+
+    def autosweep(self, sweeps, tol=0.01, samplepoints=100, **solveargs):
+        """Autosweeps {var: (start, end)} pairs in sweeps to tol.
+
+        Returns swept and sampled solutions.
+        The original simplex tree can be accessed at sol.bst
+        """
+        sols = []
+        for sweepvar, sweepvals in sweeps.items():
+           sweepvar = self[sweepvar].key
+           start, end = sweepvals
+           bst = autosweep_1d(self, tol, sweepvar, [start, end], **solveargs)
+           sols.append(bst.sample_at(np.linspace(start, end, samplepoints)))
+           if len(sols) == 1:
+               return sols[0]
+           return sols
 
     def zero_lower_unbounded_variables(self):
         "Recursively substitutes 0 for variables that lack a lower bound"

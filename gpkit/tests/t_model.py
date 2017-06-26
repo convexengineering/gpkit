@@ -7,7 +7,7 @@ from gpkit.small_classes import CootMatrix
 from gpkit.exceptions import InvalidGPConstraint
 from gpkit import NamedVariables
 
-NDIGS = {"cvxopt": 4, "mosek": 5, "mosek_cli": 5}
+NDIGS = {"ecos": 4, "cvxopt": 4, "mosek": 5, "mosek_cli": 5}
 # name: decimal places of accuracy
 
 
