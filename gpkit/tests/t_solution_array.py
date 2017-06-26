@@ -77,7 +77,6 @@ class TestSolutionArray(unittest.TestCase):
         gp = Model(x, [x >= 12])
         sol = gp.solve(verbosity=0)
         tab = sol.table()
-        self.assertTrue(isinstance(tab, str))
 
     def test_units_sub(self):
         # issue 809

@@ -55,16 +55,16 @@ def run(xmloutput=False):
     if xmloutput:
         run_tests(tests, xmloutput='test_reports')
     else:
-        run_tests(tests)
-    print("\n##################################"
-          "####################################")
-    print("Running with units disabled:")
-    gpkit.disable_units()
-    if xmloutput:
-        run_tests(tests, xmloutput='test_reports_nounits')
-    else:
         run_tests(tests, verbosity=1)
-    gpkit.enable_units()
+    #print("\n##################################"
+    #      "####################################")
+    #print("Running with units disabled:")
+    #gpkit.disable_units()
+    #if xmloutput:
+    #    run_tests(tests, xmloutput='test_reports_nounits')
+    #else:
+    #    run_tests(tests, verbosity=1)
+    #gpkit.enable_units()
 
 if __name__ == '__main__':
     run()

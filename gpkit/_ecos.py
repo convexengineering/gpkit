@@ -69,7 +69,7 @@ def ecoptimize_factory(gp):
         solution = ecos.solve(c, G, h, dims, **opts)
         status = solution["info"]["infostring"]
         print dict(zip(gp.varlocs, np.exp(solution["x"])))
-        if status in ["Optimal solution found"]:
+        if status in ["Optimal solution found", "Close to optimal solution found"]:
             status = "optimal"
         return dict(status=status,
                     cost=solution["info"]["pcost"],

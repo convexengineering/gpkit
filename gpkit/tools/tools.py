@@ -26,7 +26,6 @@ def te_exp_minus1(posy, nterm):
         res += posy**i / factorial_denom
     return res
 
-
 def te_secant(var, nterm):
     """Taylor expansion of secant(var).
 
@@ -43,7 +42,7 @@ def te_secant(var, nterm):
         Taylor expansion of secant(x), carried to nterm terms
     """
     # The first 12 Euler Numbers
-    E2n = np.asarray([1.0,
+    E2n = np.asarray([1,
                       5,
                       61,
                       1385,
@@ -67,7 +66,6 @@ def te_secant(var, nterm):
         factorial_denom *= ((2*i)*(2*i-1))
         res += E2n[i-1] / factorial_denom * var**(2*i)
     return res
-
 
 def te_tangent(var, nterm):
     """Taylor expansion of tangent(var).
@@ -113,8 +111,6 @@ def te_tangent(var, nterm):
                 B2n[i-1] / factorial_denom * var**(2*i-1))
     return res
 
-
-# pylint: disable=too-many-locals
 def composite_objective(*objectives, **kwargs):
     "Creates a cost function that sweeps between multiple objectives."
     objectives = list(objectives)
@@ -132,16 +128,14 @@ def composite_objective(*objectives, **kwargs):
     else:
         normalization = [1]*n
 
-    sweepvals = np.empty(n-1, dtype="object")
-    for i in range(n-1):
-        sweepvals[i] = ("sweep", sweeps[i])
-    ws = VectorVariable(n-1, "w_{CO}", sweepvals, "-")
+    sweeps = list(zip(["sweep"]*(n-1), sweeps))
+    ws = VectorVariable(n-1, "w_{CO}", sweeps, "-")
     w_s = []
     for w in ws:
         descr = dict(w.descr)
         del descr["value"]
         descr["name"] = "v_{CO}"
-        w_s.append(Variable(value=lambda const: 1-const[w.key], **descr))  # pylint: disable=cell-var-from-loop
+        w_s.append(Variable(value=('sweep', lambda x: 1-x), args=[w], **descr))
     w_s = normalization[-1]*NomialArray(w_s)*objectives[-1]
     objective = w_s.prod()
     for i, obj in enumerate(objectives[:-1]):
