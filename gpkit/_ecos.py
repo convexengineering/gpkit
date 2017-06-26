@@ -65,7 +65,7 @@ def ecoptimize_factory(gp):
         c, G, h, dims = expcone_GP(gp)
         n_posys = len(gp.posynomials) - 1
         n_vars = len(gp.varlocs)
-        opts = {'feastol': 1e-9, 'reltol': 1e-9, 'abstol': 1e-9, 'verbose': True}
+        opts = {'max_iters': 1000, 'feastol': 1e-5, 'reltol': 1e-7, 'abstol': 1e-7, 'verbose':True}
         solution = ecos.solve(c, G, h, dims, **opts)
         status = solution["info"]["infostring"]
         print dict(zip(gp.varlocs, np.exp(solution["x"])))
