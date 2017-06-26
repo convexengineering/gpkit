@@ -214,7 +214,9 @@ class ConstraintSet(list):
     def as_posyslt1(self, substitutions=None):
         "Returns list of posynomials which must be kept <= 1"
         posylist, self.posymap = [], []
-        for constraint in self:
+        for i, constraint in enumerate(self):
+            if not hasattr(constraint, "as_posyslt1"):
+                raise_badelement(self, i, constraint)
             posys = constraint.as_posyslt1(substitutions)
             self.posymap.append(len(posys))
             posylist.extend(posys)
