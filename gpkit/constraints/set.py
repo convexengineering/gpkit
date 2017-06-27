@@ -44,6 +44,7 @@ class ConstraintSet(list):
                         # so we can catch them (see above) in ConstraintSets
             if hasattr(self[i], "substitutions"):
                 self.substitutions.update(self[i].substitutions)
+                self[i].substitutions = self.substitutions
         self.reset_varkeys()
         if substitutions:
             self.substitutions.update(substitutions)
