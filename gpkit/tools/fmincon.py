@@ -1,21 +1,24 @@
 "A module to facilitate testing GPkit against fmincon"
-from math import log10, floor
+from math import log10, floor, log
 from .. import SignomialsEnabled
 from ..small_scripts import mag
 # pylint: disable=too-many-statements,too-many-locals
 
-def generate_mfiles(model, algorithm='interior-point', guesstype='ones',
-                    gradobj='on', gradconstr='on', writefiles=True):
+def generate_mfiles(model, logspace=False, algorithm='interior-point',
+                    guess='ones', gradobj='on', gradconstr='on',
+                    writefiles=True):
     """A method for preparing fmincon input files to run a GPkit program
 
     INPUTS:
         model       [GPkit model] The model to replicate in fmincon
 
+        logspace    [Boolean] Whether to re-produce the model in logspace
+
         algorithm:  [string] Algorithm used by fmincon
                     'interior-point': uses the interior point solver
                     'SQP': uses the sequential quadratic programming solver
 
-        guesstype:  [string] The type of initial guess used
+        guess:      [string] The type of initial guess used
                     'ones': One for each variable
                     'order-of-magnitude-floor': The "log-floor" order of
                                                 magnitude of the GP/SP optimal
@@ -25,6 +28,8 @@ def generate_mfiles(model, algorithm='interior-point', guesstype='ones',
                                                 solution (i.e. O(42)=100)
                     'almost-exact-solution': The GP/SP optimal solution rounded
                                              to 1 significant figure
+                    OR
+                    [list] The actual values of initial guess to use
 
         gradconstr: [string] Include analytical constraint gradients?
                     'on': Yes
@@ -36,6 +41,9 @@ def generate_mfiles(model, algorithm='interior-point', guesstype='ones',
 
         writefiles: [Boolean] whether or not to actually write the m files
     """
+    if logspace: # Supplying derivatives not supported for logspace
+        gradobj = 'off'
+        gradconstr = 'off'
 
     # Create a new dictionary mapping variables to x(i)'s for use w/ fmincon
     i = 1
@@ -46,10 +54,12 @@ def generate_mfiles(model, algorithm='interior-point', guesstype='ones',
     for key in model.varkeys:
         if key not in model.substitutions:
             newdict[key] = 'x({0})'.format(i)
+            if logspace:
+                newdict[key].replace('x', 'y')
             newlist += [key.str_without(["units"])]
             lookup += ['x_{0}: '.format(i) + key.str_without(["units"])]
             i += 1
-    x0string = make_initial_guess(model, newlist, guesstype)
+    x0string = make_initial_guess(model, newlist, guess, logspace)
 
     cost = model.cost # needs to be before subinplace()
     constraints = model
@@ -61,29 +71,48 @@ def generate_mfiles(model, algorithm='interior-point', guesstype='ones',
     ceq = [] # equality constraints
     dc = [] # gradients of inequality constraints
     dceq = [] # gradients of equality constraints
-    with SignomialsEnabled():
+
+    if logspace:
         for constraint in constraints:
-            if constraint.oper == '<=':
-                cc = constraint.left - constraint.right
-                c += [cc.str_without(["units", "models"])]
-            elif constraint.oper == '>=':
-                cc = constraint.right - constraint.left
-                c += [cc.str_without(["units", "models"])]
-            elif constraint.oper == '=':
-                cc = constraint.right - constraint.left
-                ceq += [cc.str_without(["units", "models"])]
+            expdicttuple = constraint.as_posyslt1()[0].exps
+            clist = constraint.as_posyslt1()[0].cs.magnitude
 
-            # Differentiate each constraint w.r.t each variable
-            cdm = []
-            for key in original_varkeys:
-                if key not in model.substitutions:
-                    cd = cc.diff(newdict[key])
-                    cdm += [cd.str_without("units").replace('**', '.^')]
+            constraintstring = ['log(']
+            for expdict, C in zip(expdicttuple, clist):
+                constraintstring += ['+ {0}*exp('.format(C)]
+                for k, v in expdict.iteritems():
+                    constraintstring += ['+{0} * {1}'.format(v, k)]
+                constraintstring += [')']
+            constraintstring += [')']
 
-            if constraint.oper != '=':
-                dc += [",...\n          ".join(cdm)]
+            if constraint.oper == '=':
+                ceq += [' '.join(constraintstring)]
             else:
-                dceq += [",...\n            ".join(cdm)]
+                c += [' '.join(constraintstring)]
+    else:
+        with SignomialsEnabled():
+            for constraint in constraints:
+                if constraint.oper == '<=':
+                    cc = constraint.left - constraint.right
+                    c += [cc.str_without(["units", "models"])]
+                elif constraint.oper == '>=':
+                    cc = constraint.right - constraint.left
+                    c += [cc.str_without(["units", "models"])]
+                elif constraint.oper == '=':
+                    cc = constraint.right - constraint.left
+                    ceq += [cc.str_without(["units", "models"])]
+
+                # Differentiate each constraint w.r.t each variable
+                cdm = []
+                for key in original_varkeys:
+                    if key not in model.substitutions:
+                        cd = cc.diff(newdict[key])
+                        cdm += [cd.str_without("units").replace('**', '.^')]
+
+                if constraint.oper != '=':
+                    dc += [",...\n          ".join(cdm)]
+                else:
+                    dceq += [",...\n            ".join(cdm)]
 
     # String for the constraint function .m file
     confunstr = ("function [c, ceq, DC, DCeq] = confun(x)\n" +
@@ -103,18 +132,31 @@ def generate_mfiles(model, algorithm='interior-point', guesstype='ones',
                  "\n           ]';\n" +
                  "end")
 
-    # Differentiate the objective function w.r.t each variable
-    objdiff = []
-    for key in original_varkeys:
-        if key not in model.substitutions:
-            costdiff = cost.diff(key)
-            costdiff.subinplace(newdict)
-            objdiff += [costdiff.str_without(["units", "models"]).replace('**',
-                                                                          '.^')]
-
-    # Replace variables with x(i), make clean string using matlab power syntax
+    # Objective function (and derivatives if applicable)
     cost.subinplace(newdict)
-    obj = cost.str_without(["units", "models"]).replace('**', '.^')
+    objdiff = []
+    if logspace:
+        objstring = ['log(']
+        expdicttuple = cost.exps
+        clist = cost.cs.magnitude
+        for expdict, c in zip(expdicttuple, clist):
+            objstring += ['+ {0}*exp('.format(c)]
+            for k, v in expdict.iteritems():
+                objstring += ['+{0} * {1}'.format(v, k)]
+            objstring += [')']
+        objstring += [')']
+        obj = ' '.join(objstring)
+    else:
+        # Differentiate the objective function w.r.t each variable
+        for key in original_varkeys:
+            if key not in model.substitutions:
+                costdiff = cost.diff(key)
+                costdiff.subinplace(newdict)
+                objdiff += [costdiff.str_without(["units", "models"]).replace(
+                    '**', '.^')]
+
+        # Replace variables with x(i), make clean string using matlab power syn.
+        obj = cost.str_without(["units", "models"]).replace('**', '.^')
 
     # String for the objective function .m file
     objfunstr = ("function [f, gradf] = objfun(x)\n" +
@@ -126,6 +168,10 @@ def generate_mfiles(model, algorithm='interior-point', guesstype='ones',
                  "end")
 
     # String for main.m
+    if logspace:
+        fval = "exp(fval)"
+    else:
+        fval = "fval"
     mainfunstr = (x0string +
                   "options = optimset('fmincon');\n" +
                   "options.Algorithm = '{0}';\n".format(algorithm) +
@@ -134,14 +180,18 @@ def generate_mfiles(model, algorithm='interior-point', guesstype='ones',
                   "options.GradObj = '{0}';\n".format(gradobj) +
                   "options.GradConstr = '{0}';\n".format(gradconstr) +
                   "tic;\n" +
-                  "[x,fval] = ...\n" +
+                  "[x,fval, exitflag, output] = ...\n" +
                   "fmincon(@objfun,x0,[],[],[],[],[],[],@confun,options);\n" +
                   "elapsed = toc;\n" +
                   "fid = fopen('elapsed.txt', 'w');\n" +
                   "fprintf(fid, '%.1f', elapsed);\n" +
                   "fclose(fid);\n" +
+                  "fid = fopen('iterations.txt', 'w');\n" +
+                  "fprintf(fid, '%d', output.iterations);\n" +
+                  "fclose(fid);\n" +
                   "fid = fopen('cost.txt', 'w');\n" +
-                  "fprintf(fid, '%.5g', fval);\n" +
+                  "fprintf(fid, '%.5g', {0});\n".format(fval) +
+                  "if exitflag == -2\n\tfprintf(fid, '(i)');\nend\n" +
                   "fclose(fid);")
 
     if writefiles:
@@ -164,27 +214,37 @@ def generate_mfiles(model, algorithm='interior-point', guesstype='ones',
     return obj, c, ceq, dc, dceq
 
 
-def make_initial_guess(model, newlist, guesstype='ones'):
+def make_initial_guess(model, newlist, guess='ones', logspace=False):
     """Returns initial guess"""
     try:
         sol = model.solve(verbosity=0)
     except TypeError:
         sol = model.localsolve(verbosity=0)
-    if guesstype == "ones":
-        x0string = ["x0 = ones({0},1);\n".format(len(sol['freevariables']))]
+
+    if guess == "ones":
+        nvars = len(sol['freevariables'])
+        if logspace:
+            x0string = ["x0 = zeros({0},1);\n".format(nvars)]
+        else:
+            x0string = ["x0 = ones({0},1);\n".format(nvars)]
     else:
         x0string = ["x0 = ["]
         i = 1
         for vk in newlist:
             xf = mag(sol['freevariables'][vk])
-            if guesstype == "almost-exact-solution":
+            if guess == "almost-exact-solution":
                 x0 = round(xf, -int(floor(log10(abs(xf))))) # rounds to 1sf
-            elif guesstype == "order-of-magnitude-floor":
+            elif guess == "order-of-magnitude-floor":
                 x0 = 10**floor(log10(xf))
-            elif guesstype == "order-of-magnitude-round":
+            elif guess == "order-of-magnitude-round":
                 x0 = 10**round(log10(xf))
+            elif isinstance(guess, list):
+                x0 = guess[i-1]
             else:
                 raise Exception("Unexpected guess type")
+
+            if logspace:
+                x0 = log(x0)
             x0string += [str(x0) + ", "]
             i += 1
         x0string += ["];\n"]
