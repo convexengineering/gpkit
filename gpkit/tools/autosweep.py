@@ -83,7 +83,7 @@ class BinarySweepTree(object):
         bst = self.min_bst(value)
         lo, hi = bst.bounds
         loval, hival = [sol(posy) for sol in bst.sols]
-        lo, hi, loval, hival = np.log(map(mag, [lo, hi, loval, hival]))
+        lo, hi, loval, hival = np.log([mag(x) for x in (lo, hi, loval, hival)])
         interp = (hi-np.log(value))/float(hi-lo)
         return np.exp(interp*loval + (1-interp)*hival)
 
@@ -109,7 +109,7 @@ class BinarySweepTree(object):
         else:
             lo, hi = bst.bounds
             loval, hival = [sol["cost"] for sol in bst.sols]
-        lo, hi, loval, hival = np.log(map(mag, [lo, hi, loval, hival]))
+        lo, hi, loval, hival = np.log([mag(x) for x in (lo, hi, loval, hival)])
         interp = (hi-np.log(value))/float(hi-lo)
         return np.exp(interp*loval + (1-interp)*hival)
 
@@ -236,8 +236,8 @@ def autosweep_1d(model, logtol, sweepvar, bounds, **solvekwargs):
     tol = recurse_splits(model, bst, sweepvar, logtol, solvekwargs, sols)
     bst.nsols = sols()  # pylint: disable=attribute-defined-outside-init
     if solvekwargs["verbosity"] > -1:
-        print "Solved after %2i passes, cost logtol +/-%.3g" % (bst.nsols, tol)
-        print "Autosweeping took %.3g seconds." % (time() - start_time)
+        print("Solved after %2i passes, cost logtol +/-%.3g" % (bst.nsols, tol))
+        print("Autosweeping took %.3g seconds." % (time() - start_time))
     if original_val:
         model.substitutions[sweepvar] = original_val
     else:

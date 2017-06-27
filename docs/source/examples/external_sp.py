@@ -15,4 +15,4 @@ constraints = [ExternalConstraint(x, y),
               ]
 
 m = Model(objective, constraints)
-print m.localsolve(verbosity=0).summary()
+print(m.localsolve(verbosity=0).summary())

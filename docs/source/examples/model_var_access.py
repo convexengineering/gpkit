@@ -29,6 +29,6 @@ class PowerSystem(Model):
                 m >= sum(comp.topvar("m") for comp in components)]
 
 PS = PowerSystem()
-print "Getting the only var 'E': ", PS["E"]
-print "The top-level var 'm': ", PS.topvar("m")
-print "All the variables 'm': ", PS.variables_byname("m")
+print("Getting the only var 'E': ", PS["E"])
+print("The top-level var 'm': ", PS.topvar("m"))
+print("All the variables 'm': ", PS.variables_byname("m"))
