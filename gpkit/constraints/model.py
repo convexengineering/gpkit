@@ -57,10 +57,10 @@ class Model(CostedConstraintSet):
                 start_args = [cost, constraints]
                 args = tuple(a for a in start_args if a is not None) + args
                 cs = self.setup(*args, **kwargs)  # pylint: disable=no-member
-                if not isinstance(cs, tuple):
-                    constraints = cs
-                else:
+                if isinstance(cs, tuple) and len(cs) == 2 and isinstance(cs[1], dict):
                     constraints, substitutions = cs
+                else:
+                    constraints = cs
                 from .. import NAMEDVARS, MODELS, MODELNUMS
                 setup_vars = NAMEDVARS[tuple(MODELS), tuple(MODELNUMS)]
                 self.name, self.num = MODELS[:-1], MODELNUMS[:-1]
