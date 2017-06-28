@@ -88,8 +88,9 @@ class GeometricProgram(CostedConstraintSet, NomialData):
             for var, bound in sorted(self.missingbounds.items()):
                 print("%s has no %s bound" % (var, bound))
 
-    # pylint: disable=too-many-statements
-    def solve(self, solver=None, verbosity=1, *args, **kwargs):
+    # pylint: disable=too-many-statements, too-many-locals
+    def solve(self, solver=None, verbosity=1, warn_on_check=False,
+              *args, **kwargs):
         """Solves a GeometricProgram and returns the solution.
 
         Arguments
@@ -191,9 +192,14 @@ class GeometricProgram(CostedConstraintSet, NomialData):
             print("result packing took %.2g%% of solve time" %
                   ((time() - tic) / soltime * 100))
             tic = time()
-
-        self.check_solution(self.result["cost"], solver_out['primal'],
-                            nu=solver_out["nu"], la=solver_out["la"])
+        try:
+            self.check_solution(self.result["cost"], solver_out['primal'],
+                                nu=solver_out["nu"], la=solver_out["la"])
+        except RuntimeWarning as e:
+            if warn_on_check:
+                print "Solution check warning:", str(e)
+            else:
+                raise e
         if verbosity > 1:
             print("solution checking took %.2g%% of solve time" %
                   ((time() - tic) / soltime * 100))
