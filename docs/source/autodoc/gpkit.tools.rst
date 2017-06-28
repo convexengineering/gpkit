@@ -12,6 +12,14 @@ gpkit.tools.fmincon module
     :undoc-members:
     :show-inheritance:
 
+gpkit.tools.spdata module
+-------------------------
+
+.. automodule:: gpkit.tools.spdata
+    :members:
+    :undoc-members:
+    :show-inheritance:
+
 gpkit.tools.tools module
 ------------------------
 
