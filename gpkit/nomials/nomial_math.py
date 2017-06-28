@@ -465,7 +465,7 @@ class PosynomialInequality(ScalarSingleEquationConstraint):
                 nonzero_exp_ixs.append(i)
                 exps_.append(exp)
             else:
-                coeff -= mag(cs[i])
+                coeff -= cs[i]
         if len(exps_) < len(exps):
             if coeff > 0:
                 cs = cs[nonzero_exp_ixs]
@@ -482,6 +482,8 @@ class PosynomialInequality(ScalarSingleEquationConstraint):
         if isinstance(p.cs, Quantity):
             try:
                 p.convert_to('dimensionless')
+                p.cs = p.cs.magnitude
+                p.units = None
             except DimensionalityError:
                 raise ValueError("unit mismatch: units of %s cannot "
                                  "be converted to units of %s" %
@@ -501,13 +503,12 @@ class PosynomialInequality(ScalarSingleEquationConstraint):
         out = []
         for posy in posys:
             _, exps, cs, subs = substitution(posy, substitutions)
-            self._last_used_substitutions = subs
             # remove any cs that are just nans and/or 0s
             nans = np.isnan(cs)
             if np.all(nans) or np.all(cs[~nans] == 0):
                 continue  # skip nan'd or 0'd constraint
 
-            exps, cs = self._simplify_posy_ineq(exps, mag(cs))
+            exps, cs = self._simplify_posy_ineq(exps, cs)
             if not exps and not cs:  # tautological constraint
                 continue
             exps, cs, pmap = simplify_exps_and_cs(exps, cs, return_map=True)
@@ -586,7 +587,11 @@ class MonomialEquality(PosynomialInequality):
         if l_lt_r.units:
             try:
                 l_lt_r.convert_to('dimensionless')
+                l_lt_r.cs = l_lt_r.cs.magnitude
+                l_lt_r.units = None
                 r_lt_l.convert_to('dimensionless')
+                r_lt_l.cs = r_lt_l.cs.magnitude
+                r_lt_l.units = None
             except DimensionalityError:
                 raise ValueError("unit mismatch: units of %s cannot "
                                  "be converted to units of %s" %
