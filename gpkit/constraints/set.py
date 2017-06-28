@@ -307,7 +307,7 @@ def raise_elementhasnumpybools(constraint):
              " numpy.bool_")
     for side in [constraint.left, constraint.right]:
         if not (isinstance(side, Numbers)
-                or hasattr(side, "exps")
+                or hasattr(side, "hmap")
                 or hasattr(side, "__iter__")):
             cause += (", because "
                       "NomialArray comparison with %.10s %s"

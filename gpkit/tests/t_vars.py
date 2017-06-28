@@ -46,8 +46,10 @@ class TestVarKey(unittest.TestCase):
         x1 = Variable("x", 3, "m")
         x2 = Variable("x", 2, "ft")
         x3 = Variable("x", 2, "m")
-        self.assertNotEqual(x2.key, x3.key)
-        # do we want these to collide?
+        if gpkit.units:
+            self.assertNotEqual(x2.key, x3.key)
+        else:  # units don't distinguish variables when they're disabled
+            self.assertEqual(x2.key, x3.key)
         self.assertEqual(x1.key, x3.key)
 
     def test_repr(self):
@@ -102,7 +104,6 @@ class TestVariable(unittest.TestCase):
         self.assertEqual(a.value, a)
 
     def test_hash(self):
-        """Hashes should collide independent of units"""
         x1 = Variable("x", "-", "first x")
         x2 = Variable("x", "-", "second x")
         self.assertEqual(hash(x1), hash(x2))
@@ -112,7 +113,7 @@ class TestVariable(unittest.TestCase):
         xu = Variable("x", "m", "x with units")
         if gpkit.units:
             self.assertNotEqual(hash(x1), hash(xu))
-        else:
+        else:  # units don't distinguish variables when they're disabled
             self.assertEqual(hash(x1), hash(xu))
 
     def test_unit_parsing(self):

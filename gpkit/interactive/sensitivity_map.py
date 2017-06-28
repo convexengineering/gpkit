@@ -28,7 +28,7 @@ def colorfn_gen(scale, power=0.66):
 def signomial_print(sig, sol, colorfn, paintby="constants", idx=None):
     "For pretty printing with Sympy"
     mstrs = []
-    for c, exp in zip(sig.cs, sig.exps):
+    for exp, c in sig.hmap.items():
         pos_vars, neg_vars = [], []
         for var, x in exp.items():
             varlatex = var.latex()
@@ -118,7 +118,7 @@ class SensitivityMap(object):
         if self.paintby == "constants":
             senss = abs(np.array(sol["sensitivities"]["constants"].values()))
         else:
-            idx = len(self.model.cost.exps) if paintby == "monomials" else 1
+            idx = len(self.model.cost.hmap) if paintby == "monomials" else 1
             senss = sol["sensitivities"][paintby][idx:]
         colorfn = colorfn_gen(max(senss))
 

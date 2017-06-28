@@ -3,6 +3,8 @@ import math
 import unittest
 from gpkit import Variable, Monomial, Posynomial, Signomial, SignomialsEnabled
 from gpkit import VectorVariable, NomialArray
+from gpkit.nomials import NomialMap
+from gpkit.small_classes import HashVector
 import gpkit
 
 
@@ -28,11 +30,11 @@ class TestMonomial(unittest.TestCase):
         self.assertEqual(m.c, 1)
 
         # single (string) var with non-default c
-        m = Monomial('tau', .1)
+        m = 0.1*Variable('tau')
         tau, = m.varkeys["tau"]
         self.assertEqual(m.varlocs, {tau: [0]})
-        self.assertEqual(m.exp, {tau: 1})
-        self.assertEqual(m.c, .1)
+        self.assertEqual(m.exp, {tau: 1})  # pylint: disable=no-member
+        self.assertEqual(m.c, .1)  # pylint: disable=no-member
 
         # variable names not compatible with python namespaces
         crazy_varstr = 'what the !!!/$**?'
@@ -41,10 +43,10 @@ class TestMonomial(unittest.TestCase):
         self.assertTrue(crazy_varkey in m.exp)
 
         # non-positive c raises
-        self.assertRaises(ValueError, Monomial, 'x', -2)
-        self.assertRaises(ValueError, Monomial, {'x': 2}, -1.)
-        self.assertRaises(ValueError, Monomial, 'x', 0)
-        self.assertRaises(ValueError, Monomial, 'x', 0.0)
+        self.assertRaises(ValueError, Monomial, -2)
+        self.assertRaises(ValueError, Monomial, -1.)
+        self.assertRaises(ValueError, Monomial, 0)
+        self.assertRaises(ValueError, Monomial, 0.0)
 
         # can create nameless Monomials
         x1 = Monomial()
@@ -67,14 +69,15 @@ class TestMonomial(unittest.TestCase):
 
     def test_latex(self):
         "Test latex string creation"
+        x = Variable("x")
         m = Monomial({'x': 2, 'y': -1}, 5).latex()
         self.assertEqual(type(m), str)
-        self.assertEqual(Monomial('x', 5).latex(), '5x')
+        self.assertEqual((5*x).latex(), '5x')
 
     def test_str_with_units(self):
         "Make sure __str__() works when units are involved"
-        S = Monomial('S', units='m^2')
-        rho = Monomial('rho', units='kg/m^3')
+        S = Variable('S', units='m^2')
+        rho = Variable('rho', units='kg/m^3')
         x = rho*S
         xstr = str(x)
         self.assertEqual(type(xstr), str)
@@ -177,7 +180,7 @@ class TestMonomial(unittest.TestCase):
         c1, c2 = 1/700., 123e8
         m1 = Monomial({'x': 2, 'y': 1}, c1)
         m2 = Monomial({'y': -1, 'z': 3/2.}, c2)
-        self.assertEqual(math.log((m1**4 * m2**3).c),
+        self.assertEqual(math.log((m1**4 * m2**3).c),  # pylint: disable=no-member
                          4*math.log(c1) + 3*math.log(c2))
 
     def test_units(self):
@@ -221,7 +224,10 @@ class TestSignomial(unittest.TestCase):
         xu = Variable('x', units="ft")
         with SignomialsEnabled():
             self.assertEqual(x - x**2, -x**2 + x)
-            self.assertNotEqual(-x, -xu)
+            if gpkit.units:
+                self.assertNotEqual(-x, -xu)
+            else:  # units don't create inequality if they're disabled
+                self.assertEqual(-x, -xu)
             # numeric
             self.assertEqual(Signomial(0), 0)
             self.assertNotEqual(Signomial(0), 1)
@@ -237,21 +243,24 @@ class TestPosynomial(unittest.TestCase):
         x = Monomial('x')
         y = Monomial('y')
         ms = [Monomial({'x': 1, 'y': 2}, 3.14),
-              Monomial('y', 0.5),
+              0.5*Monomial('y'),
               Monomial({'x': 3, 'y': 1}, 6),
-              Monomial({}, 2)]
+              Monomial(2)]
         exps, cs = [], []
         for m in ms:
             cs += m.cs.tolist()
             exps += m.exps
-        p = Posynomial(exps, cs)
+        hmap = NomialMap(zip(exps, cs))
+        hmap.set_units(None)
+        p = Posynomial(hmap)
         # check arithmetic
         p2 = 3.14*x*y**2 + y/2 + x**3*6*y + 2
         self.assertEqual(p, p2)
 
-        p = Posynomial(({'m': 1, 'v': 2},
-                        {'m': 1, 'g': 1, 'h': 1}),
-                       (0.5, 1))
+        hmap = NomialMap({HashVector({'m': 1, 'v': 2}): 0.5,
+                          HashVector({'m': 1, 'g': 1, 'h': 1}): 1})
+        hmap.set_units(None)
+        p = Posynomial(hmap)
         m, = p.varkeys["m"]
         g, = p.varkeys["g"]
         h, = p.varkeys["h"]
@@ -283,9 +292,12 @@ class TestPosynomial(unittest.TestCase):
         p2u = Variable('x', units="m") + Variable('y', units="m")
         self.assertEqual(p1, p2)
         self.assertEqual(p1u, p2u)
-        self.assertFalse(p1 == p1u)
-        self.assertNotEqual(p1, p1u)
-
+        if gpkit.units:
+            self.assertFalse(p1 == p1u)
+            self.assertNotEqual(p1, p1u)
+        else:  # units don't distinguish variables when they're disabled
+            self.assertTrue(p1 == p1u)
+            self.assertEqual(p1, p1u)
 
     def test_simplification(self):
         "Make sure like monomial terms get automatically combined"

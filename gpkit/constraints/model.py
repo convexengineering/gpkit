@@ -3,8 +3,8 @@ import numpy as np
 from .costed import CostedConstraintSet
 from ..nomials import Monomial
 from .prog_factories import _progify_fctry, _solve_fctry
-from .geometric_program import GeometricProgram
-from .signomial_program import SignomialProgram
+from .gp import GeometricProgram
+from .sgp import SequentialGeometricProgram
 from ..small_scripts import mag
 from ..tools.autosweep import autosweep_1d
 from ..exceptions import InvalidGPConstraint
@@ -82,9 +82,10 @@ class Model(CostedConstraintSet):
             self.reset_varkeys()
 
     gp = _progify_fctry(GeometricProgram)
-    sp = _progify_fctry(SignomialProgram)
+    sp = _progify_fctry(SequentialGeometricProgram)
     solve = _solve_fctry(_progify_fctry(GeometricProgram, "solve"))
-    localsolve = _solve_fctry(_progify_fctry(SignomialProgram, "localsolve"))
+    localsolve = _solve_fctry(_progify_fctry(SequentialGeometricProgram,
+                                             "localsolve"))
 
     def zero_lower_unbounded_variables(self):
         "Recursively substitutes 0 for variables that lack a lower bound"

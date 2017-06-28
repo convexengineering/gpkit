@@ -39,7 +39,7 @@ class TestNomialSubs(unittest.TestCase):
         x_changed_descr["name"] = "y"
         y_descr = list(y.exp)[0].descr
         self.assertEqual(x_changed_descr["name"], y_descr["name"])
-        if not isinstance(descr_before["units"], str):
+        if "units" in descr_before:
             self.assertAlmostEqual(x_changed_descr["units"]/y_descr["units"],
                                    1.0)
         self.assertEqual(x.sub({"x": x}), x)
@@ -173,8 +173,8 @@ class TestModelSubs(unittest.TestCase):
 
     def test_phantoms(self):
         x = Variable("x")
-        x_ = Variable("x", 1, model="test")
-        xv = VectorVariable(2, "x", [1, 1], model="vec")
+        x_ = Variable("x", 1, models=["test"])
+        xv = VectorVariable(2, "x", [1, 1], models=["vec"])
         m = Model(x, [x >= x_, x_ == xv.prod()])
         m.solve(verbosity=0)
         with self.assertRaises(ValueError):
