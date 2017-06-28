@@ -49,11 +49,3 @@ class Tight(ConstraintSet):
                     raise ValueError(msg)
                 else:
                     print "Warning: %s" % msg
-
-
-class TightConstraintSet(Tight):
-    "kept for backwards compatibility, discard in 0.6"
-    def __init__(self, *args, **kwargs):
-        print("The class name `TightConstraintSet` is deprecated; please"
-              " use the new name `Tight`.")
-        Tight.__init__(self, *args, **kwargs)

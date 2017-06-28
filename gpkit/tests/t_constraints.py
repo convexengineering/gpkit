@@ -3,7 +3,7 @@ import unittest
 from gpkit import Variable, SignomialsEnabled, Posynomial, VectorVariable
 from gpkit.nomials import SignomialInequality, PosynomialInequality
 from gpkit.nomials import MonomialEquality
-from gpkit import LinkedConstraintSet, Model
+from gpkit import Model
 from gpkit.constraints.tight import Tight
 from gpkit.tests.helpers import run_tests
 from gpkit.exceptions import InvalidGPConstraint
@@ -63,31 +63,6 @@ class TestConstraint(unittest.TestCase):
             _ = Model(xv.prod(), [xv >= 1, xv_ >= 1])["x"]
         with self.assertRaises(ValueError):
             _ = Model(xv.prod(), [xv >= 1, x_ >= 1])["x"]
-
-    def test_link_conflict(self):
-        "Check that substitution conflicts are flagged during linking."
-        x_fx1 = Variable("x", 1, models=["fixed1"])
-        x_fx1b = Variable("x", 1, models=["fixed1b"])
-        x_free = Variable("x", models=["free"])
-        x_fx2 = Variable("x", 2, models=["fixed2"])
-        lc = LinkedConstraintSet([x_fx1 >= 1, x_fx1b >= 1])
-        self.assertEqual(lc.substitutions["x"], 1)
-        lc = LinkedConstraintSet([x_fx1 >= 1, x_free >= 1])
-        self.assertEqual(lc.substitutions["x"], 1)
-        self.assertRaises(ValueError,
-                          LinkedConstraintSet, [x_fx1 >= 1, x_fx2 >= 1])
-        vecx_free = VectorVariable(3, "x", models=["free"])
-        vecx_fixed = VectorVariable(3, "x", [1, 2, 3], models=["fixed"])
-        lc = LinkedConstraintSet([vecx_free >= 1, vecx_fixed >= 1])
-        self.assertEqual(lc.substitutions["x_fixed"].tolist(), [1, 2, 3])
-
-    def test_exclude_vector(self):
-        x = VectorVariable(2, "x", [2, 1])
-        x_ = VectorVariable(2, "x", [1, 2], model="_")
-        try:
-            LinkedConstraintSet([x >= 1, x_ >= 1], exclude="x")
-        except ValueError:
-            self.fail("linking was an unexpected ValueError (sub conflict?).")
 
     def test_additive_scalar(self):
         """Make sure additive scalars simplify properly"""

@@ -186,6 +186,7 @@ class GeometricProgram(CostedConstraintSet, NomialData):
 
         # allow mosek's NEAR_DUAL_FEAS solution status, because our check
         # will catch anything that's not actually near enough.
+        # TODO: implement this in the mosek / mosek_cli interfaces, not here.
         solver_status = str(solver_out.get("status", None))
         if solver_status.lower() not in ["optimal", "near_dual_feas"]:
             raise RuntimeWarning(
@@ -398,11 +399,9 @@ def genA(exps, varlocs):
         if varsign != "both":
             if varsign == 1:
                 bound = "lower"
-            elif varsign == -1:
-                bound = "upper"
             else:
-                # just being safe
-                raise RuntimeWarning("Unexpected varsign %s" % varsign)
+                assert varsign == -1
+                bound = "upper"
             missingbounds[var] = bound
 
     # add constant terms

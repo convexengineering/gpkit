@@ -5,15 +5,10 @@ from ..nomials import Monomial
 from .prog_factories import _progify_fctry, _solve_fctry
 from .geometric_program import GeometricProgram
 from .signomial_program import SignomialProgram
-from .linked import LinkedConstraintSet
 from ..small_scripts import mag
-from ..keydict import KeyDict
-from ..varkey import VarKey
 from ..tools.autosweep import autosweep_1d
-from .. import NamedVariables, SignomialsEnabled
-from ..tools.autosweep import autosweep_1d
-import numpy as np
 from ..exceptions import InvalidGPConstraint
+from .. import NamedVariables
 
 
 class Model(CostedConstraintSet):
@@ -83,45 +78,13 @@ class Model(CostedConstraintSet):
             # add all the vars created in .setup to the Model's varkeys
             # even if they aren't used in any constraints
             self.unique_varkeys = frozenset(v.key for v in setup_vars)
+            # TODO: is unique_varkeys really the right way to do this?
             self.reset_varkeys()
-        # for backwards compatibility keep add_modelnames
-        # TODO: remove with linking
-        if not hasattr(self, "setup") and self.__class__.__name__ != "Model":
-            from .. import MODELNUM_LOOKUP
-            print("Declaring a named Model's variables in __init__ is"
-                  " not recommended. For details see gpkit.rtfd.org")
-            self.name = self.__class__.__name__
-            self.num = MODELNUM_LOOKUP[self.name]
-            MODELNUM_LOOKUP[self.name] += 1
-            self._add_modelname_tovars(self.name, self.num)
 
     gp = _progify_fctry(GeometricProgram)
     sp = _progify_fctry(SignomialProgram)
     solve = _solve_fctry(_progify_fctry(GeometricProgram, "solve"))
     localsolve = _solve_fctry(_progify_fctry(SignomialProgram, "localsolve"))
-
-    # TODO: remove with linking
-    def link(self, other, include_only=None, exclude=None):
-        "Connects this model with a set of constraints"
-        lc = LinkedConstraintSet([self, other], include_only, exclude)
-        cost = self.cost.sub(lc.linked)
-        return Model(cost, lc, lc.substitutions)
-
-    def autosweep(self, sweeps, tol=0.01, samplepoints=100, **solveargs):
-        """Autosweeps {var: (start, end)} pairs in sweeps to tol.
-
-        Returns swept and sampled solutions.
-        The original simplex tree can be accessed at sol.bst
-        """
-        sols = []
-        for sweepvar, sweepvals in sweeps.items():
-           sweepvar = self[sweepvar].key
-           start, end = sweepvals
-           bst = autosweep_1d(self, tol, sweepvar, [start, end], **solveargs)
-           sols.append(bst.sample_at(np.linspace(start, end, samplepoints)))
-           if len(sols) == 1:
-               return sols[0]
-           return sols
 
     def zero_lower_unbounded_variables(self):
         "Recursively substitutes 0 for variables that lack a lower bound"
@@ -142,21 +105,6 @@ class Model(CostedConstraintSet):
         "The collapsed appearance of a ConstraintBase"
         if self.name:
             return "%s_{%s}" % (self.name, self.num)
-
-    # TODO: remove with linking
-    def _add_modelname_tovars(self, name, num):
-        add_model_subs = KeyDict()
-        for vk in self.varkeys:
-            descr = dict(vk.descr)
-            descr["models"] = descr.pop("models", []) + [name]
-            descr["modelnums"] = descr.pop("modelnums", []) + [num]
-            newvk = VarKey(**descr)
-            add_model_subs[vk] = newvk
-            if vk in self.substitutions:
-                self.substitutions[newvk] = self.substitutions[vk]
-                del self.substitutions[vk]
-        with SignomialsEnabled():  # since we're just substituting varkeys.
-            self.subinplace(add_model_subs)
 
     def sweep(self, sweeps, **solveargs):
         "Sweeps {var: values} pairs in sweeps. Returns swept solutions."

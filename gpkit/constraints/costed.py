@@ -4,22 +4,20 @@ from .set import ConstraintSet
 
 
 class CostedConstraintSet(ConstraintSet):
-    """
-    A ConstraintSet with a cost
+    """A ConstraintSet with a cost
 
     Arguments
     ---------
-    cost: gpkit.Posynomial
-    constraints: Iterable
-    substitutions: dict
+    cost : gpkit.Posynomial
+    constraints : Iterable
+    substitutions : dict
     """
     def __init__(self, cost, constraints, substitutions=None):
-        if isinstance(cost, np.ndarray):
-            # it's a vector!
-            if not cost.shape:
+        if isinstance(cost, np.ndarray):  # if it's a vector
+            if not cost.shape:  # if it's zero-dimensional
                 cost, = cost.flatten()
             else:
-                raise ValueError("cost must be a scalar, not the vector %s"
+                raise ValueError("cost must be scalar, not the vector %s"
                                  % cost)
         self.cost = cost
         subs = dict(self.cost.values)
@@ -32,20 +30,19 @@ class CostedConstraintSet(ConstraintSet):
         self.cost = self.cost.sub(subs)
         ConstraintSet.subinplace(self, subs)
 
-    def reset_varkeys(self, init_dict=None):
+    def reset_varkeys(self):
         "Resets varkeys to what is in the cost and constraints"
-        ConstraintSet.reset_varkeys(self, self.cost.varlocs)
-        if init_dict is not None:
-            self.varkeys.update(init_dict)
+        ConstraintSet.reset_varkeys(self)
+        self.varkeys.update(self.cost.varlocs)
 
     def rootconstr_str(self, excluded=None):
-        "The appearance of a ConstraintSet in addition to its contents"
+        "String showing cost, to be used when this is the top constraint"
         return "\n".join(["  # minimize",
                           "        %s" % self.cost.str_without(excluded),
                           "  # subject to"])
 
     def rootconstr_latex(self, excluded=None):
-        "The appearance of a ConstraintSet in addition to its contents"
+        "Latex showing cost, to be used when this is the top constraint"
         return "\n".join(["\\text{minimize}",
                           "    & %s \\\\" % self.cost.latex(excluded),
                           "\\text{subject to}"])
