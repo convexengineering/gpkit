@@ -8,6 +8,7 @@ gpkit/constraints/__init__.py
 gpkit/constraints/array.py
 gpkit/constraints/bounded.py
 gpkit/constraints/costed.py
+gpkit/constraints/geometric_program.py
 gpkit/constraints/linked.py
 gpkit/constraints/model.py
 gpkit/constraints/prog_factories.py
@@ -18,7 +19,6 @@ gpkit/constraints/signomial_program.py
 gpkit/constraints/single_equation.py
 gpkit/constraints/tight.py
 gpkit/exceptions.py
-gpkit/geometric_program.py
 gpkit/interactive/__init__.py
 gpkit/interactive/chartjs.py
 gpkit/interactive/linking_diagram.py
@@ -41,6 +41,8 @@ gpkit/small_classes.py
 gpkit/small_scripts.py
 gpkit/solution_array.py
 gpkit/tests/__init__.py
+gpkit/tests/diff_output.py
+gpkit/tests/from_paths.py
 gpkit/tests/helpers.py
 gpkit/tests/run_tests.py
 gpkit/tests/t_constraints.py
@@ -54,8 +56,10 @@ gpkit/tests/t_solution_array.py
 gpkit/tests/t_sub.py
 gpkit/tests/t_tools.py
 gpkit/tests/t_vars.py
+gpkit/tests/test_repo.py
 gpkit/tools/__init__.py
 gpkit/tools/fmincon.py
+gpkit/tools/spdata.py
 gpkit/tools/tools.py
 gpkit/varkey.py
 setup.py
