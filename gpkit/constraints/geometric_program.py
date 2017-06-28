@@ -274,7 +274,8 @@ class GeometricProgram(CostedConstraintSet, NomialData):
         result["variables"].update(result["constants"])
         return SolutionArray(result)
 
-    def check_solution(self, cost, primal, nu, la, tol=1e-4, abstol=1e-20):
+    # TODO: set tol by solver? or otherwise return it to 1e-5 for mosek
+    def check_solution(self, cost, primal, nu, la, tol=1e-3, abstol=1e-20):
         """Run a series of checks to mathematically confirm sol solves this GP
 
         Arguments
