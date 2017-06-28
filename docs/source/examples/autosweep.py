@@ -31,7 +31,7 @@ np.testing.assert_allclose((np.log(mag(cost_lb)) + np.log(mag(cost_ub)))/2,
 
 # this problem is two intersecting lines in logspace
 m2 = Model(A**2, [A >= (l/3)**2, A >= (l/3)**0.5 * units.m**1.5])
-tol2 = {"mosek": 1e-12, "cvxopt": 1e-7,
+tol2 = {"mosek": 1e-12, "cvxopt": 1e-7, "ecos": 1e-7,
         "mosek_cli": 1e-6}[gpkit.settings["default_solver"]]
 bst2 = autosweep_1d(m2, tol2, l, [1, 10], verbosity=0)
 print "Solved after %2i passes, cost logtol +/-%.3g" % (bst2.nsols, bst2.tol)
