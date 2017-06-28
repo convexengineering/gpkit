@@ -186,7 +186,10 @@ class Mosek(SolverBackend):
         lib_dir = pathjoin(tools_dir, "platform", mosek_platform)
         h_path = pathjoin(lib_dir, "h", "mosek.h")
         self.bin_dir = pathjoin(lib_dir, "bin")
-        self.lib_path = glob.glob(self.bin_dir+os.sep+libpattern)[0]
+        try:
+            self.lib_path = glob.glob(self.bin_dir+os.sep+libpattern)[0]
+        except IndexError:  # mosek folder found, but mosek not installed
+            return
 
         if not isfile(h_path) or not isfile(self.lib_path):
             return
