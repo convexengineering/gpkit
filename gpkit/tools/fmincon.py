@@ -1,6 +1,7 @@
 "A module to facilitate testing GPkit against fmincon"
 from math import log10, floor, log
 from .. import SignomialsEnabled
+from ..keydict import KeyDict
 from ..small_scripts import mag
 # pylint: disable=too-many-statements,too-many-locals
 
@@ -63,7 +64,9 @@ def generate_mfiles(model, logspace=False, algorithm='interior-point',
 
     cost = model.cost # needs to be before subinplace()
     constraints = model
-    constraints.subinplace(constraints.substitutions)
+    substitutions = constraints.substitutions
+    constraints.substitutions = KeyDict()
+    constraints.subinplace(substitutions)
     constraints.subinplace(newdict)
 
     # Make all constraints less than zero, return list of clean strings
@@ -75,7 +78,7 @@ def generate_mfiles(model, logspace=False, algorithm='interior-point',
     if logspace:
         for constraint in constraints:
             expdicttuple = constraint.as_posyslt1()[0].exps
-            clist = constraint.as_posyslt1()[0].cs.magnitude
+            clist = mag(constraint.as_posyslt1()[0].cs)
 
             constraintstring = ['log(']
             for expdict, C in zip(expdicttuple, clist):
