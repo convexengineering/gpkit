@@ -168,6 +168,18 @@ class ConstraintSet(list):
         "Substitutes in place."
         for constraint in self:
             constraint.subinplace(subs)
+        for key in subs:
+            if key not in self.substitutions:
+                continue
+            if hasattr(subs[key], "key"):
+                self.substitutions[subs[key]] = self.substitutions[key]
+                del self.substitutions[key]
+            else:
+                raise ValueError("the substitution {%s: %s} is invalidated"
+                                 " by the subinplace {%s: %s}, because"
+                                 " %s does not have a `key` attribute"
+                                 % (key, self.substitutions[key],
+                                    key, subs[key], subs[key]))
         self.unique_varkeys = frozenset(subs[vk] if vk in subs else vk
                                         for vk in self.unique_varkeys)
         self.reset_varkeys()

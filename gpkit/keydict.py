@@ -206,8 +206,3 @@ class KeySet(KeyDict):
     def __setitem__(self, key, value):
         "Assigns the key itself every time."
         KeyDict.__setitem__(self, key, None)
-
-
-class FastKeyDict(KeyDict):
-    "KeyDicts that don't map keys, only collapse arrays"
-    keymapping = False
