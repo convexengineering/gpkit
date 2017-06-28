@@ -1,15 +1,9 @@
 "Tools for optimal fits to GP sweeps"
 from time import time
 import numpy as np
-<<<<<<< HEAD
-from ..small_classes import Count, Quantity
-from ..small_scripts import mag
-from ..solution_array import SolutionArray
-=======
 from numpy import log, exp
 from gpkit.small_classes import Count, Quantity
 from gpkit.small_scripts import mag
->>>>>>> master~26
 
 
 # pylint: disable=too-many-instance-attributes
@@ -48,11 +42,7 @@ class BinarySweepTree(object):
             raise ValueError("bounds[0] must be smaller than bounds[1].")
         self.bounds = bounds
         self.sols = sols
-<<<<<<< HEAD
-        self.costs = np.log([mag(sol["cost"]) for sol in sols])
-=======
         self.costs = log([mag(sol["cost"]) for sol in sols])
->>>>>>> master~26
         self.splits = None
         self.splitval = None
         self.splitlb = None
@@ -93,15 +83,9 @@ class BinarySweepTree(object):
         bst = self.min_bst(value)
         lo, hi = bst.bounds
         loval, hival = [sol(posy) for sol in bst.sols]
-<<<<<<< HEAD
-        lo, hi, loval, hival = np.log(map(mag, [lo, hi, loval, hival]))
-        interp = (hi-np.log(value))/float(hi-lo)
-        return np.exp(interp*loval + (1-interp)*hival)
-=======
         lo, hi, loval, hival = log(map(mag, [lo, hi, loval, hival]))
         interp = (hi-log(value))/float(hi-lo)
         return exp(interp*loval + (1-interp)*hival)
->>>>>>> master~26
 
     def cost_at(self, _, value, bound=None):
         "Logspace interpolates between split and costs. Guaranteed bounded."
@@ -111,19 +95,11 @@ class BinarySweepTree(object):
         if bst.splitlb:
             if bound:
                 if bound is "lb":
-<<<<<<< HEAD
-                    splitcost = np.exp(bst.splitlb)
-                elif bound is "ub":
-                    splitcost = np.exp(bst.splitub)
-            else:
-                splitcost = np.exp((bst.splitlb + bst.splitub)/2)
-=======
                     splitcost = exp(bst.splitlb)
                 elif bound is "ub":
                     splitcost = exp(bst.splitub)
             else:
                 splitcost = exp((bst.splitlb + bst.splitub)/2)
->>>>>>> master~26
             if value <= bst.splitval:
                 lo, hi = bst.bounds[0], bst.splitval
                 loval, hival = bst.sols[0]["cost"], splitcost
@@ -133,15 +109,9 @@ class BinarySweepTree(object):
         else:
             lo, hi = bst.bounds
             loval, hival = [sol["cost"] for sol in bst.sols]
-<<<<<<< HEAD
-        lo, hi, loval, hival = np.log(map(mag, [lo, hi, loval, hival]))
-        interp = (hi-np.log(value))/float(hi-lo)
-        return np.exp(interp*loval + (1-interp)*hival)
-=======
         lo, hi, loval, hival = log(map(mag, [lo, hi, loval, hival]))
         interp = (hi-log(value))/float(hi-lo)
         return exp(interp*loval + (1-interp)*hival)
->>>>>>> master~26
 
     def min_bst(self, value):
         "Returns smallest bst around value."
@@ -156,31 +126,6 @@ class BinarySweepTree(object):
         "Creates a SolutionOracle at a given range of values"
         return SolutionOracle(self, values)
 
-<<<<<<< HEAD
-    @property
-    def sollist(self):
-        "Returns a list of all the solutions in an autosweep"
-        sollist = [self.sols[0]]
-        if self.splits:
-            sollist.extend(self.splits[0].sollist[1:])
-            sollist.extend(self.splits[1].sollist[1:-1])
-        sollist.append(self.sols[1])
-        return sollist
-
-    @property
-    def solarray(self):
-        "Returns a solution array of all the solutions in an autosweep"
-        solution = SolutionArray()
-        for sol in self.sollist:
-            solution.append(sol.program.result)
-        solution.to_united_array(unitless_keys=["sensitivities"], united=True)
-        units = Quantity(1.0, getattr(self.sols[0]["cost"], "units", None))
-        if units:
-            solution["cost"] = solution["cost"] * units
-        return solution
-
-=======
->>>>>>> master~26
 
 class SolutionOracle(object):
     "Acts like a SolutionArray for autosweeps"
@@ -195,12 +140,8 @@ class SolutionOracle(object):
         return self.__getval(key)
 
     def _is_cost(self, key):
-<<<<<<< HEAD
-        if hasattr(key, "hmap") and key.hmap == self.bst.costposy.hmap:
-=======
         if hasattr(key, "exps") and (key.exps == self.bst.costposy.exps and
                                      key.cs == self.bst.costposy.cs):
->>>>>>> master~26
             key = "cost"
         return key is "cost"
 
@@ -233,14 +174,6 @@ class SolutionOracle(object):
         import matplotlib.pyplot as plt
         from ..interactive.plot_sweep import assign_axes
         from .. import GPBLU
-<<<<<<< HEAD
-        if not hasattr(posys, "__len__"):
-            posys = [posys]
-        for i, posy in enumerate(posys):
-            if posy in [None, "cost"]:
-                posys[i] = self.bst.costposy
-=======
->>>>>>> master~26
         posys, axes = assign_axes(self.bst.sweptvar, posys, axes)
         for posy, ax in zip(posys, axes):
             if self._is_cost(posy):  # with small tol should look like a line
@@ -254,14 +187,6 @@ class SolutionOracle(object):
             axes, = axes
         return plt.gcf(), axes
 
-<<<<<<< HEAD
-    @property
-    def solarray(self):
-        "Returns a solution array of all the solutions in an autosweep"
-        return self.bst.solarray
-
-=======
->>>>>>> master~26
 
 def autosweep_1d(model, logtol, sweepvar, bounds, **solvekwargs):
     "Autosweep a model over one sweepvar"
@@ -310,11 +235,7 @@ def recurse_splits(model, bst, variable, logtol, solvekwargs, sols):
 def get_tol(costs, bounds, sols, variable):
     "Gets the intersection point and corresponding bounds from two solutions."
     y0, y1 = costs
-<<<<<<< HEAD
-    x0, x1 = np.log(bounds)
-=======
     x0, x1 = log(bounds)
->>>>>>> master~26
     s0, s1 = [sol["sensitivities"]["constants"][variable] for sol in sols]
     # y0 + s0*(x - x0) == y1 + s1*(x - x1)
     num = y1-y0 + x0*s0-x1*s1
@@ -333,8 +254,4 @@ def get_tol(costs, bounds, sols, variable):
     if interp < 1e-7 or interp > 1 - 1e-7:  # cvxopt on straight lines
         x = (x0 + x1)/2  # x is undefined? stick it in the middle!
         lb = ub = (y0 + y1)/2
-<<<<<<< HEAD
-    return np.exp(x), lb, ub
-=======
     return exp(x), lb, ub
->>>>>>> master~26
