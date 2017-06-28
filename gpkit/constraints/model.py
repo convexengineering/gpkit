@@ -76,8 +76,8 @@ class Model(CostedConstraintSet):
                 # backwards compatibility: substitutions as third arg
                 substitutions, = args
 
-        cost = cost if cost else Monomial(1)
-        constraints = constraints if constraints else []
+        cost = cost or Monomial(1)
+        constraints = constraints or []
         CostedConstraintSet.__init__(self, cost, constraints, substitutions)
         if setup_vars:
             # add all the vars created in .setup to the Model's varkeys

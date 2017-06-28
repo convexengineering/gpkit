@@ -141,12 +141,6 @@ class KeyDict(dict):
                 emptyvec = np.full(key.shape, np.nan, **kwargs)
                 dict.__setitem__(self, key, emptyvec)
         for key in self.keymap[key]:
-            if getattr(value, "exp", None) is not None and not value.exp:
-                # get the value of variable-less monomials
-                # so that `x.sub({x: gpkit.units.m})`
-                # and `x.sub({x: gpkit.ureg.m})`
-                # are equivalent
-                value = value.value
             if idx:
                 dict.__getitem__(self, key)[idx] = value
             else:
