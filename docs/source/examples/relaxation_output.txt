@@ -109,4 +109,3 @@ Sensitivities
 x_min : +1
 x_max : -0.99
 
-

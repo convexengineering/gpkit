@@ -113,11 +113,10 @@ class Bounded(ConstraintSet):
                 if distance_above <= 3:  # arbitrary dist threshold
                     out["value near upper bound"].append(varkey)
         if self.verbosity > 0 and out:
-            print()
-            print("Solves with these variables bounded:")
+            print("\nSolves with these variables bounded:")
             for key, value in out.items():
                 print("% 25s: %s" % (key, value))
-            print()
+            print("")
         if "boundedness" not in result:
             result["boundedness"] = {}
         result["boundedness"].update(out)

@@ -15,13 +15,13 @@ print("Solved after %2i passes, cost logtol +/-%.3g" % (bst1.nsols, bst1.tol))
 # autosweep solution accessing
 l_vals = np.linspace(1, 10, 10)
 sol1 = bst1.sample_at(l_vals)
-print("values of l:", l_vals)
-print("values of A:", sol1("A"))
+print("values of l: %s" % l_vals)
+print("values of A: %s" % sol1("A"))
 cost_estimate = sol1["cost"]
 cost_lb, cost_ub = sol1.cost_lb(), sol1.cost_ub()
-print("cost lower bound:", cost_lb)
-print("cost estimate:   ", cost_estimate)
-print("cost upper bound:", cost_ub)
+print("cost lower bound: %s" % cost_lb)
+print("cost estimate:    %s" % cost_estimate)
+print("cost upper bound: %s" % cost_ub)
 # you can evaluate arbitrary posynomials
 np.testing.assert_allclose(mag(2*sol1(A)), mag(sol1(2*A)))
 assert (sol1["cost"] == sol1(A**2)).all()
