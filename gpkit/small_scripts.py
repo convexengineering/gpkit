@@ -31,7 +31,7 @@ def unitstr(units, into="%s", options="~", dimless=""):
     if hasattr(units, "units") and isinstance(units.units, Quantity):
         units = units.units
     if isinstance(units, Strings):
-        return into % units or ""
+        return into % units or dimless
     elif isinstance(units, Quantity):
         rawstr = (u"{:%s}" % options).format(units.units)
         if str(units.units) == "count":
