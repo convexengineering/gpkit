@@ -503,6 +503,7 @@ class PosynomialInequality(ScalarSingleEquationConstraint):
         out = []
         for posy in posys:
             _, exps, cs, subs = substitution(posy, substitutions)
+            self._last_used_substitutions = subs
             # remove any cs that are just nans and/or 0s
             nans = np.isnan(cs)
             if np.all(nans) or np.all(cs[~nans] == 0):
