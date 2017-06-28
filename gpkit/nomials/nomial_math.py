@@ -14,6 +14,14 @@ from .. import DimensionalityError
 from ..exceptions import InvalidGPConstraint
 
 
+def non_dimensionalize(posy):
+    "Non-dimensionalize a posy (warning: mutates posy)"
+    if posy.units:
+        posy.convert_to('dimensionless')
+        posy.cs = posy.cs.magnitude
+        posy.units = None
+
+
 class Signomial(Nomial):
     """A representation of a Signomial.
 
@@ -479,15 +487,12 @@ class PosynomialInequality(ScalarSingleEquationConstraint):
         "Returns the unsubstituted posys <= 1."
         p = self.p_lt / self.m_gt
 
-        if isinstance(p.cs, Quantity):
-            try:
-                p.convert_to('dimensionless')
-                p.cs = p.cs.magnitude
-                p.units = None
-            except DimensionalityError:
-                raise ValueError("unit mismatch: units of %s cannot "
-                                 "be converted to units of %s" %
-                                 (self.p_lt, self.m_gt))
+        try:
+            non_dimensionalize(p)
+        except DimensionalityError:
+            raise ValueError("unit mismatch: units of %s cannot "
+                             "be converted to units of %s" %
+                             (self.p_lt, self.m_gt))
 
         p.exps, p.cs = self._simplify_posy_ineq(p.exps, p.cs)
         return [p]
@@ -585,18 +590,13 @@ class MonomialEquality(PosynomialInequality):
     def _gen_unsubbed(self):
         "Returns the unsubstituted posys <= 1."
         l_lt_r, r_lt_l = self.left/self.right, self.right/self.left
-        if l_lt_r.units:
-            try:
-                l_lt_r.convert_to('dimensionless')
-                l_lt_r.cs = l_lt_r.cs.magnitude
-                l_lt_r.units = None
-                r_lt_l.convert_to('dimensionless')
-                r_lt_l.cs = r_lt_l.cs.magnitude
-                r_lt_l.units = None
-            except DimensionalityError:
-                raise ValueError("unit mismatch: units of %s cannot "
-                                 "be converted to units of %s" %
-                                 (self.left, self.right))
+        try:
+            non_dimensionalize(l_lt_r)
+            non_dimensionalize(l_lt_r)
+        except DimensionalityError:
+            raise ValueError("unit mismatch: units of %s cannot "
+                             "be converted to units of %s" %
+                             (self.left, self.right))
         return [l_lt_r, r_lt_l]
 
     def __nonzero__(self):
