@@ -77,7 +77,23 @@ class ConstraintsRelaxed(ConstraintSet):
                                substitutions)
 
 
-class ConstantsRelaxed(ConstraintSet):
+class ConstantsRelaxedSensitivities(ConstraintSet):
+    "A ConstraintSet to determine relaxed constant's sensitivities."
+    origvars = None
+
+    def sens_from_dual(self, las, nus):
+        """Computes constraint and variable sensitivities from dual solution
+
+        Replaces the sensitivity of the relaxed constants (which, as a free
+        variable, is 0) with the sensitivity of the relaxed constant's value.
+        """
+        var_senss = ConstraintSet.sens_from_dual(self, las, nus)
+        var_senss += {var.key: las[-3*i - 2] - las[-3*i - 1]
+                      for i, var in enumerate(reversed(self.origvars))}
+        return var_senss
+
+
+class ConstantsRelaxed(ConstantsRelaxedSensitivities):
     """Relax constants in a constraintset.
 
     Arguments
@@ -134,9 +150,18 @@ class ConstantsRelaxed(ConstraintSet):
             if original.units and not hasattr(value, "units"):
                 value *= original.units
             value = Monomial(value)  # convert for use in constraint
-            relaxation_constraints.append([value/relaxation <= original,
-                                           original <= value*relaxation,
-                                           relaxation >= 1])
+            relaxation_constraints.append([relaxation >= 1,
+                                           value/relaxation <= original,
+                                           original <= value*relaxation])
         self.relaxvars = NomialArray(relaxvars)
-        ConstraintSet.__init__(self, [constraints, relaxation_constraints])
+        ConstantsRelaxedSensitivities.__init__(self, [constraints,
+                                                      relaxation_constraints])
         self.substitutions = substitutions
+
+    def as_gpconstr(self, *args, **kwargs):
+        """Wraps GP-approx constraints in a ConstantsRelaxedSensitivities
+        so that sensitivities will be calculated."""
+        as_gp = ConstraintSet.as_gpconstr(self, *args, **kwargs)
+        crs = ConstantsRelaxedSensitivities(as_gp)
+        crs.origvars = self.origvars
+        return crs
