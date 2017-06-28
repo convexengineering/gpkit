@@ -152,10 +152,10 @@ class GeometricProgram(CostedConstraintSet, NomialData):
 
         solverfn, solvername = _get_solver(solver)
 
+        starttime = time()
         if verbosity > 0:
             print("Using solver '%s'" % solvername)
             print("Solving for %i variables." % len(self.varlocs))
-            tic = time()
 
         default_kwargs = DEFAULT_SOLVER_KWARGS.get(solvername, {})
         for k in default_kwargs:
@@ -173,8 +173,8 @@ class GeometricProgram(CostedConstraintSet, NomialData):
             sys.stdout = original_stdout
          # STDOUT HAS BEEN RETURNED. ENDING SIDE EFFECTS.
 
+        soltime = time() - starttime
         if verbosity > 0:
-            soltime = time() - tic
             print("Solving took %.3g seconds." % (soltime,))
             tic = time()
 
@@ -205,6 +205,7 @@ class GeometricProgram(CostedConstraintSet, NomialData):
                   ((time() - tic) / soltime * 100))
 
         self.process_result(self.result)
+        self.result["soltime"] = soltime
         return self.result
 
     def _generate_nula(self, solver_out):
