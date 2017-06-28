@@ -24,24 +24,6 @@ def mag(c):
     return getattr(c, "magnitude", c)
 
 
-def unitstr(units, into="%s", options="~", dimless=""):
-    "Returns the unitstr of a given object."
-    if hasattr(units, "descr") and hasattr(units.descr, "get"):
-        units = units.descr.get("units", None)
-    if hasattr(units, "units") and isinstance(units.units, Quantity):
-        units = units.units
-    if isinstance(units, Strings):
-        return into % units or dimless
-    elif isinstance(units, Quantity):
-        rawstr = (u"{:%s}" % options).format(units.units)
-        if str(units.units) == "count":
-            # TODO remove this conditional when pint issue 356 is resolved
-            rawstr = u"count"
-        units = rawstr.replace(" ", "").replace("dimensionless", dimless)
-        return into % units or dimless
-    return dimless
-
-
 def nomial_latex_helper(c, pos_vars, neg_vars):
     """Combines (varlatex, exponent) tuples,
     separated by positive vs negative exponent,
