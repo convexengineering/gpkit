@@ -184,22 +184,22 @@ class ConstraintSet(list):
                     yield yielded_constraint
 
     def subinplace(self, subs):
-        "Substitutes in place."
+        """Substitutes in place, updating self.substitutions accordingly.
+
+        Keys substituted with `subinplace` are no longer present, so if such a
+        key is also in self.substitutions that substitution is now orphaned. If
+        `subs[key]` describes some key in the ConstraintSet (i.e. one key has
+        been substituted for another), then a substitution is added, mapping
+        the orphaned value to this new key; otherwise, an error is raised.
+        """
         subs = {k.key: getattr(v, "key", v) for k, v in subs.items()}
         for constraint in self:
             constraint.subinplace(subs)
-        for key in subs:
-            if key not in self.substitutions:
-                continue
-            if hasattr(subs[key], "key"):
-                self.substitutions[subs[key]] = self.substitutions[key]
+        for key, value in subs.items():
+            if key in self.substitutions:
+                valkey, _ = self.substitutions.parse_and_index(value)
+                self.substitutions[valkey] = self.substitutions[key]
                 del self.substitutions[key]
-            else:
-                raise ValueError("the substitution {%s: %s} is invalidated"
-                                 " by the subinplace {%s: %s}, because"
-                                 " %s does not have a `key` attribute"
-                                 % (key, self.substitutions[key],
-                                    key, subs[key], subs[key]))
         self.unique_varkeys = frozenset(subs[vk] if vk in subs else vk
                                         for vk in self.unique_varkeys)
         self.reset_varkeys()
