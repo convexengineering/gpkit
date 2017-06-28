@@ -65,7 +65,7 @@ Mac OSX
     Run ``pip install cvxopt``
 
 Linux
-    Run ``sudo apt-get install libblas-dev liblapack-dev suitesparse-dev`` or otherwise install those libraries
+    Run ``sudo apt-get install libblas-dev liblapack-dev libsuitesparse-dev`` or otherwise install those libraries
 
     Run ``pip install cvxopt`` (for system python installs, use ``sudo pip``)
 
@@ -91,7 +91,7 @@ Mac OS X
       - Request an `academic license file <http://license.mosek.com/academic>`_ and put it in ``~/mosek/``
 
 Linux
-  - Install cypesgen with ``pip install ctypesgen --pre`` (for system python installs, use ``sudo pip``)
+  - Install ctypesgen with ``pip install ctypesgen --pre`` (for system python installs, use ``sudo pip``)
   - Download `MOSEK <http://mosek.com/resources/downloads>`_, then:
       - Move the ``mosek`` folder to your home directory
       - Follow `these steps for Linux <http://docs.mosek.com/7.0/toolsinstall/Linux_UNIX_installation_instructions.html>`_.
@@ -111,7 +111,8 @@ Windows
 Install GPkit
 =============
   - Run ``pip install gpkit`` at the command line (for system python installs, use ``sudo pip``)
-  - Run ``pip install ipywidgets`` for interactive control of models (recommended)
+  - Run ``pip install jupyter`` to install jupyter notebook (recommended)
+  - Run ``jupyter nbextension enable --py widgetsnbextension`` for interactive control of models in jupyter (recommended)
   - Run ``python -c "import gpkit.tests; gpkit.tests.run()"`` to run the tests; if any tests do not pass, please email ``gpkit@mit.edu`` or `raise a GitHub issue <http://github.com/hoburg/gpkit/issues/new>`_.
   - Join our `mailing list <https://mailman.mit.edu/mailman/listinfo/gpkit-users/>`_ and/or `chatroom <https://gitter.im/gpkit-users/Lobby>`_ for support and examples.
 
