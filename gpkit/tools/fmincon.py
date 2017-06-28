@@ -68,6 +68,7 @@ def generate_mfiles(model, logspace=False, algorithm='interior-point',
     constraints.substitutions = KeyDict()
     constraints.subinplace(substitutions)
     constraints.subinplace(newdict)
+    constraints.substitutions = substitutions
 
     # Make all constraints less than zero, return list of clean strings
     c = [] # inequality constraints
