@@ -148,9 +148,8 @@ def modelcontrolpanel(model, showvars=(), fns_of_sol=None, **solvekwargs):
     for sliderbox in sliderboxes:
         settings.append(create_settings(sliderbox))
     sweep = widgets.Checkbox(value=False, width="3ex")
-    label = ("If checked, plots the top sliders against cost and these"
-             " variables (separate with two spaces):")
-    boxlabel = widgets.Label(value=label)
+    label = ("Plot top sliders against: (separate with two spaces)")
+    boxlabel = widgets.Label(value=label, width="200ex")
     y_axes = widgets.Text(value="none", width="20ex")
 
     def append_plotfn():
@@ -171,7 +170,9 @@ def modelcontrolpanel(model, showvars=(), fns_of_sol=None, **solvekwargs):
 
         def __defaultfn(sol):
             "Plots a 1D sweep grid, starting from a single solution"
-            plot_1dsweepgrid(model, ranges, yvars, origsol=sol, verbosity=0)
+            fig, _ = plot_1dsweepgrid(model, ranges, yvars, origsol=sol,
+                                      verbosity=0, solver="mosek_cli")
+            fig.show()
         fns_of_sol.append(__defaultfn)
 
     def redo_plots(_):
@@ -187,13 +188,10 @@ def modelcontrolpanel(model, showvars=(), fns_of_sol=None, **solvekwargs):
     sweep.observe(redo_plots, "value")
     y_axes.on_submit(redo_plots)
     sliderboxes.insert(0, widgets.HBox(children=[sweep, boxlabel, y_axes]))
-    tabs = widgets.Tab(children=[widgets.Box(children=sliderboxes,
-                                             padding="1.25ex"),
-                                 widgets.Box(children=settings,
-                                             padding="1.25ex")])
+    tabs = widgets.Tab(children=[widgets.VBox(children=sliderboxes,
+                                              padding="1.25ex")])
 
     tabs.set_title(0, 'Sliders')
-    tabs.set_title(1, 'Settings')
 
     return tabs
 
