@@ -8,6 +8,7 @@ from ..keydict import FastKeyDict
 from ..small_scripts import mag
 from ..solution_array import SolutionArray
 from .costed import CostedConstraintSet
+from .set import ConstraintSet
 
 
 DEFAULT_SOLVER_KWARGS = {"cvxopt": {"kktsolver": "ldl"}}
@@ -44,7 +45,6 @@ class GeometricProgram(CostedConstraintSet, NomialData):
                         ])
     >>> gp.solve()
     """
-
     def __init__(self, cost, constraints, substitutions=None, verbosity=1):
         # pylint:disable=super-init-not-called
         # initialize attributes modified by internal methods
@@ -54,6 +54,8 @@ class GeometricProgram(CostedConstraintSet, NomialData):
 
         # barebones ConstraintSet init
         self.cost = cost
+        if not isinstance(constraints, ConstraintSet):
+            constraints = ConstraintSet(constraints)
         list.__init__(self, [constraints])  # pylint:disable=non-parent-init-called
         self.substitutions = substitutions if substitutions else {}
 
