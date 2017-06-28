@@ -88,6 +88,7 @@ def _solve_fctry(genfunction):
         if self.cost.units:
             solution["cost"] = solution["cost"] * self.cost.units
         self.solution = solution  # NOTE: SIDE EFFECTS
+        # TODO: run process_result here, seperately for each i in a sweep?
         return solution
     return solvefn
 

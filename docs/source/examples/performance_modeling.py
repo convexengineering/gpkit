@@ -11,10 +11,9 @@ class Aircraft(Model):
         self.components = [self.fuse, self.wing]
 
         W = Variable("W", "lbf", "weight")
-        self.weight = W
 
         return self.components, [
-            W >= sum(c["W"] for c in self.components)
+            W >= sum(c.topvar("W") for c in self.components)
             ]
 
     def dynamic(self, state):
@@ -32,9 +31,9 @@ class AircraftP(Model):
         Wburn = Variable("W_{burn}", "lbf", "segment fuel burn")
 
         return self.perf_models, [
-            aircraft.weight + Wfuel <= (0.5*state["\\rho"]*state["V"]**2
-                                        * self.wing_aero["C_L"]
-                                        * aircraft.wing["S"]),
+            aircraft.topvar("W") + Wfuel <= (0.5*state["\\rho"]*state["V"]**2
+                                             * self.wing_aero["C_L"]
+                                             * aircraft.wing["S"]),
             Wburn >= 0.1*self.wing_aero["D"]
             ]
 

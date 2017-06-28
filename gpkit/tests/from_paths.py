@@ -18,16 +18,12 @@ def clean(string):
     https://stackoverflow.com/questions/3303312/
     how-do-i-convert-a-string-to-a-valid-variable-name-in-python
     """
-    string = re.sub('[^0-9a-zA-Z_]', '', string)  # Remove invalid characters
-    # Remove leading characters until we find a letter or underscore
-    string = re.sub('^[^a-zA-Z_]+', '', string)
-    return string
+    string = re.sub('[^0-9a-zA-Z_]', '_', string)  # Replace invalid with _
+    return re.sub('^[^a-zA-Z_]+', '', string)  # Remove leading until valid
 
 
 def add_filetest(testclass, path):
-    """Add test that imports the given path and runs its test() function
-
-    TODO: make work for subdirectories, using os.chdir"""
+    "Add test that imports the given path and runs its test() function"
     path = path.strip()
     print "adding test for", repr(path)
 

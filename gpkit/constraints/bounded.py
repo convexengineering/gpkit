@@ -67,9 +67,8 @@ class Bounded(ConstraintSet):
             constraints = ConstraintSet(constraints)
         self.bound_las = None
         self.verbosity = verbosity
-        not_using_eps = lower or upper
-        self.lowerbound = lower if not_using_eps else eps
-        self.upperbound = upper if not_using_eps else 1/eps
+        self.lowerbound = lower if (lower or upper) else eps
+        self.upperbound = upper if (lower or upper) else 1/eps
         self.bounded_varkeys = tuple(vk for vk in constraints.varkeys
                                      if vk not in constraints.substitutions)
         bounding_constraints = varkey_bounds(self.bounded_varkeys,
@@ -82,35 +81,36 @@ class Bounded(ConstraintSet):
         self.bound_las = las[-n*len(self.bounded_varkeys):]
         return super(Bounded, self).sens_from_dual(las, nus)
 
-    def as_gpconstr(self, x0, substitutions=None):
-        gp_constrs = ConstraintSet.as_gpconstr(self, x0, substitutions)
-        return Bounded(gp_constrs, self.verbosity,
-                       lower=self.lowerbound, upper=self.upperbound)
-
+    # pylint: disable=too-many-branches
     def process_result(self, result):
         "Creates (and potentially prints) a dictionary of unbounded variables."
-        if not self.bound_las:
-            return  # must be an SP Bounded, boundedness was solved in the GP
+        ConstraintSet.process_result(self, result)
         out = defaultdict(list)
         for i, varkey in enumerate(self.bounded_varkeys):
             value = mag(result["variables"][varkey])
-            if self.lowerbound and self.upperbound:
-                lam_gt, lam_lt = self.bound_las[2*i], self.bound_las[2*i+1]
-            elif self.lowerbound:
-                lam_lt = self.bound_las[i]
-            elif self.upperbound:
-                lam_gt = self.bound_las[i]
+            if self.bound_las:
+                # TODO: support sensitive-to bounds for SPs
+                #       by using named variables, returning las,
+                #       or pulling from self.las?
+                if self.lowerbound and self.upperbound:
+                    lam_gt, lam_lt = self.bound_las[2*i], self.bound_las[2*i+1]
+                elif self.lowerbound:
+                    lam_lt = self.bound_las[i]
+                elif self.upperbound:
+                    lam_gt = self.bound_las[i]
             if self.lowerbound:
-                if abs(lam_lt) >= 1e-7:  # arbitrary threshold
-                    out["sensitive to lower bound"].append(varkey)
+                if self.bound_las:
+                    if abs(lam_lt) >= 1e-7:  # arbitrary sens threshold
+                        out["sensitive to lower bound"].append(varkey)
                 distance_below = np.log(value/self.lowerbound)
-                if distance_below <= 3:  # arbitrary threshold
+                if distance_below <= 3:  # arbitrary dist threshold
                     out["value near lower bound"].append(varkey)
             if self.upperbound:
-                if abs(lam_gt) >= 1e-7:  # arbitrary threshold
-                    out["sensitive to upper bound"].append(varkey)
+                if self.bound_las:
+                    if abs(lam_gt) >= 1e-7:  # arbitrary sens threshold
+                        out["sensitive to upper bound"].append(varkey)
                 distance_above = np.log(self.upperbound/value)
-                if distance_above <= 3:  # arbitrary threshold
+                if distance_above <= 3:  # arbitrary dist threshold
                     out["value near upper bound"].append(varkey)
         if self.verbosity > 0 and out:
             print
