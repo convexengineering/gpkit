@@ -481,8 +481,8 @@ class TestSP(unittest.TestCase):
         y = Variable('y')
         with SignomialsEnabled():
             m = Model(x, [x + y >= 1, y <= 0.5])
-        m.localsolve(x0={x: 0.5}, verbosity=0)
-        first_gp_constr_posy = m.program.gps[0][0].as_posyslt1()[0]
+        gp = m.sp().gp(x0={x: 0.5}, verbosity=0)  # pylint: disable=no-member
+        first_gp_constr_posy = gp[0][0].as_posyslt1()[0]
         self.assertEqual(first_gp_constr_posy.exp[x.key], -1./3)
 
     def test_unbounded_debugging(self):
