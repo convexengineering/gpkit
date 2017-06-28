@@ -6,7 +6,7 @@ from gpkit import (Model, Monomial, settings, VectorVariable, Variable,
 from gpkit.constraints.bounded import Bounded
 from gpkit.small_classes import CootMatrix
 from gpkit.exceptions import InvalidGPConstraint
-from gpkit import NamedVariables
+from gpkit import NamedVariables, units
 
 NDIGS = {"ecos": 4, "cvxopt": 4, "mosek": 5, "mosek_cli": 5}
 # name: decimal places of accuracy
@@ -52,7 +52,7 @@ class TestGP(unittest.TestCase):
         with SignomialsEnabled():
             m = Model(c, [c >= (x + 0.25)**2 + (y - 0.5)**2,
                           SignomialEquality(x**2 + x, y)])
-        sol = m.localsolve(verbosity=0)
+        sol = m.localsolve(solver=self.solver, verbosity=0)
         self.assertAlmostEqual(sol("x"), 0.1639472, self.ndig)
         self.assertAlmostEqual(sol("y"), 0.1908254, self.ndig)
         self.assertAlmostEqual(sol("c"), 0.2669448, self.ndig)
@@ -64,7 +64,7 @@ class TestGP(unittest.TestCase):
         m = Model(x,
                   [x >= 1,
                    y == 2])
-        m.solve(verbosity=0)
+        m.solve(solver=self.solver, verbosity=0)
         self.assertEqual(len(m.program[0]), 2)  # pylint:disable=unsubscriptable-object
         self.assertEqual(len(m.program.posynomials), 2)
 
@@ -73,11 +73,14 @@ class TestGP(unittest.TestCase):
         x = Variable("x", 1)
         x_min = Variable("x_{min}", 2)
         m = Model(x, [x >= x_min])
-        self.assertRaises((RuntimeWarning, ValueError), m.solve, verbosity=0)
+        self.assertRaises((RuntimeWarning, ValueError), m.solve,
+                          solver=self.solver, verbosity=0)
         del m.substitutions["x"]
-        self.assertAlmostEqual(m.solve(verbosity=0)["cost"], 2)
+        self.assertAlmostEqual(m.solve(solver=self.solver,
+                                       verbosity=0)["cost"], 2)
         del m.substitutions["x_{min}"]
-        self.assertRaises((RuntimeWarning, ValueError), m.solve, verbosity=0)
+        self.assertRaises((RuntimeWarning, ValueError), m.solve,
+                          solver=self.solver, verbosity=0)
 
     def test_simple_united_gp(self):
         R = Variable("R", "nautical_miles")
@@ -115,6 +118,24 @@ class TestGP(unittest.TestCase):
             self.assertAlmostEqual(x, np.sqrt(2.), self.ndig)
             self.assertAlmostEqual(y, 1/np.sqrt(2.), self.ndig)
         self.assertAlmostEqual(sol["cost"]/(4*np.sqrt(2)), 1., self.ndig)
+
+    def test_sensitivities(self):
+        W_payload = Variable("W_{payload}", 175*(195 + 30), "lbf")
+        if not W_payload.units:
+            return
+        f_oew = Variable("f_{oew}", 0.53, "-", "OEW/MTOW")
+        fuel_per_nm = Variable("\\theta_{fuel}", 13.75, "lbf/nautical_mile")
+        R = Variable("R", 3000, "nautical_miles", "range")
+        mtow = Variable("MTOW", "lbf", "max take off weight")
+
+        m = Model(61.3e6*units.USD*(mtow/(1e5*units.lbf))**0.807,
+                  [mtow >= W_payload + f_oew*mtow + fuel_per_nm*R])
+        sol = m.solve(solver=self.solver, verbosity=0)
+        senss = sol["sensitivities"]["constants"]
+        self.assertAlmostEqual(senss[f_oew], 0.91, 2)
+        self.assertAlmostEqual(senss[R], 0.41, 2)
+        self.assertAlmostEqual(senss[fuel_per_nm], 0.41, 2)
+        self.assertAlmostEqual(senss[W_payload], 0.39, 2)
 
     def test_zero_lower_unbounded(self):
         x = Variable('x', value=4)
