@@ -10,6 +10,7 @@ from ..small_scripts import mag
 from ..exceptions import InvalidGPConstraint
 from .map import NomialMap
 from .substitution import parse_subs
+from ..exceptions import DimensionalityError
 
 
 EMPTY_EXP = HashVector()
@@ -441,10 +442,8 @@ class PosynomialInequality(ScalarSingleEquationConstraint):
         if hmap.units:
             try:
                 hmap = hmap.to("dimensionless")
-            except e:
-                print e
-                raise ValueError("unit mismatch: units of %s cannot be converted"
-                                 " to units of %s" % (p_lt, m_gt))
+            except DimensionalityError:
+                raise DimensionalityError(p_lt, m_gt)  # clearer error message
         hmap = self._simplify_posy_ineq(hmap)
         if hmap is None:
             return []

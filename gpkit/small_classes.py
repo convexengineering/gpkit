@@ -14,18 +14,6 @@ Quantity = ureg.Quantity
 Numbers = (int, float, np.number, Quantity)
 CootMatrixTuple = namedtuple('CootMatrix', ['row', 'col', 'data'])
 
-class Count(object):
-    "Like python 2's itertools.count, for Python 3 compatibility."
-
-    def __init__(self):
-        self.count = -1
-        
-    
-    def next(self):
-        "Increment self.count and return it"
-        self.count += 1
-        return self.count
-
 
 class Count(object):
     "Like python 2's itertools.count, for Python 3 compatibility."

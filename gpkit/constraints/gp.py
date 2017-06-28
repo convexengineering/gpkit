@@ -326,7 +326,6 @@ class GeometricProgram(CostedConstraintSet, NomialData):
         ------
         RuntimeWarning, if any problems are found
         """
-        return
         def _almost_equal(num1, num2):
             "local almost equal test"
             return (num1 == num2 or abs((num1 - num2) / (num1 + num2)) < tol
