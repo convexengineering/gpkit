@@ -449,6 +449,12 @@ class TestSP(unittest.TestCase):
         m = Model(x*y, [x*y**1.01 >= 100])
         with self.assertRaises((RuntimeWarning, ValueError)):
             m.solve(self.solver, verbosity=0)
+        # test one-sided bound
+        m = Model(x*y, Bounded(m, verbosity=0, lower=0.001))
+        sol = m.solve(self.solver, verbosity=0)
+        bounds = sol["boundedness"]
+        self.assertEqual(bounds["sensitive to lower bound"], [x.key])
+        # end test one-sided bound
         m = Model(x*y, Bounded(m, verbosity=0))
         sol = m.solve(self.solver, verbosity=0)
         bounds = sol["boundedness"]

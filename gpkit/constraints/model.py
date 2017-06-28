@@ -156,13 +156,16 @@ class Model(CostedConstraintSet):
             self.subinplace(add_model_subs)
 
     # pylint: disable=too-many-locals
-    def debug(self, verbosity=1, **solveargs):
+    def debug(self, solver=None, verbosity=1, **solveargs):
         "Attempts to diagnose infeasible models."
         from .relax import ConstantsRelaxed, ConstraintsRelaxed
         from .bounded import Bounded
 
         sol = None
         relaxedconsts = False
+
+        solveargs["solver"] = solver
+        solveargs["verbosity"] = verbosity
 
         print "Debugging..."
         print "_____________________"
@@ -177,7 +180,7 @@ class Model(CostedConstraintSet):
             feas = Model(self.cost, Bounded(self))
 
         try:
-            sol = feas.solve(verbosity=verbosity, **solveargs)
+            sol = feas.solve(**solveargs)
 
             if self.substitutions:
                 for orig in (o for o, r in zip(constsrelaxed.origvars,
@@ -201,7 +204,7 @@ class Model(CostedConstraintSet):
             constrsrelaxed = ConstraintsRelaxed(self)
             feas = Model(constrsrelaxed.relaxvars.prod()**30 * self.cost,
                          constrsrelaxed)
-            sol_constraints = feas.solve(verbosity=verbosity, **solveargs)
+            sol_constraints = feas.solve(**solveargs)
 
             relaxvals = sol_constraints(constrsrelaxed.relaxvars)
             if any(rv >= 1.01 for rv in relaxvals):
