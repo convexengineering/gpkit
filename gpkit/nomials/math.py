@@ -462,8 +462,8 @@ class PosynomialInequality(ScalarSingleEquationConstraint):
             fixed = parse_subs(posy.varkeys, substitutions)
             self._last_used_substitutions.update(fixed)
             hmap = posy.hmap.sub(fixed, posy.varkeys, parsedsubs=True)
-            if np.all(np.isnan(hmap.values())) or all(val == 0 for val in hmap.values()):
-                continue  # skip nan'd or 0'd constraint
+            if all(val == 0 for val in hmap.values()) or np.all(np.isnan(hmap.values())):
+                continue  # skip all-nans or all-0s constraint
             self.pmap, self.mfm = hmap.mmap(posy.hmap)  # pylint: disable=attribute-defined-outside-init
             # ABOUT PMAPS
             #  The monomial sensitivities from the GP/SP are in terms of this
