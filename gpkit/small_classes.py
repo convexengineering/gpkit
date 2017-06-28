@@ -49,17 +49,18 @@ def matrix_converter(name):
 
 class CootMatrix(CootMatrixTuple):
     "A very simple sparse matrix representation."
-    shape = None
+    def __init__(self, *args, **kwargs):
+        super(CootMatrix, self).__init__(*args, **kwargs)
+        self.shape = [(max(self.row) + 1) if self.row else 0,
+                      (max(self.col) + 1) if self.col else 0]
 
     def append(self, row, col, data):
         "Appends entry to matrix."
         if row < 0 or col < 0:
             raise ValueError("Only positive indices allowed")
-        if not self.shape:
-            self.shape = [row + 1, col + 1]
-        elif row >= self.shape[0]:
+        if row >= self.shape[0]:
             self.shape[0] = row + 1
-        elif col >= self.shape[1]:
+        if col >= self.shape[1]:
             self.shape[1] = col + 1
         self.row.append(row)
         self.col.append(col)
