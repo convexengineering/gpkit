@@ -1,6 +1,6 @@
 """Tests for GP and SP classes"""
-import math
 import unittest
+import numpy as np
 from gpkit import (Model, Monomial, settings, VectorVariable, Variable,
                    SignomialsEnabled, ArrayVariable, SignomialEquality)
 from gpkit.constraints.bounded import Bounded
@@ -38,12 +38,12 @@ class TestGP(unittest.TestCase):
         self.assertEqual(type(prob.latex()), str)
         # pylint: disable=protected-access
         self.assertEqual(type(prob._repr_latex_()), str)
-        self.assertAlmostEqual(sol("x"), math.sqrt(2.), self.ndig)
-        self.assertAlmostEqual(sol("y"), 1/math.sqrt(2.), self.ndig)
+        self.assertAlmostEqual(sol("x"), np.sqrt(2.), self.ndig)
+        self.assertAlmostEqual(sol("y"), 1/np.sqrt(2.), self.ndig)
         self.assertAlmostEqual(sol("x") + 2*sol("y"),
-                               2*math.sqrt(2),
+                               2*np.sqrt(2),
                                self.ndig)
-        self.assertAlmostEqual(sol["cost"], 2*math.sqrt(2), self.ndig)
+        self.assertAlmostEqual(sol["cost"], 2*np.sqrt(2), self.ndig)
 
     def test_sigeq(self):
         x = Variable("x")
@@ -112,9 +112,9 @@ class TestGP(unittest.TestCase):
         self.assertEqual(sol('x').shape, (2,))
         self.assertEqual(sol('y').shape, (2,))
         for x, y in zip(sol('x'), sol('y')):
-            self.assertAlmostEqual(x, math.sqrt(2.), self.ndig)
-            self.assertAlmostEqual(y, 1/math.sqrt(2.), self.ndig)
-        self.assertAlmostEqual(sol["cost"]/(4*math.sqrt(2)), 1., self.ndig)
+            self.assertAlmostEqual(x, np.sqrt(2.), self.ndig)
+            self.assertAlmostEqual(y, 1/np.sqrt(2.), self.ndig)
+        self.assertAlmostEqual(sol["cost"]/(4*np.sqrt(2)), 1., self.ndig)
 
     def test_zero_lower_unbounded(self):
         x = Variable('x', value=4)
