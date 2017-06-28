@@ -11,6 +11,7 @@ from ..varkey import VarKey
 from .. import NamedVariables, SignomialsEnabled
 from ..tools.autosweep import autosweep_1d
 import numpy as np
+from ..exceptions import InvalidGPConstraint
 
 
 class Model(CostedConstraintSet):
@@ -155,7 +156,7 @@ class Model(CostedConstraintSet):
         with SignomialsEnabled():  # since we're just substituting varkeys.
             self.subinplace(add_model_subs)
 
-    # pylint: disable=too-many-locals
+    # pylint: disable=too-many-locals,too-many-branches,too-many-statements
     def debug(self, solver=None, verbosity=1, **solveargs):
         "Attempts to diagnose infeasible models."
         from .relax import ConstantsRelaxed, ConstraintsRelaxed
@@ -180,7 +181,10 @@ class Model(CostedConstraintSet):
             feas = Model(self.cost, Bounded(self))
 
         try:
-            sol = feas.solve(**solveargs)
+            try:
+                sol = feas.solve(**solveargs)
+            except InvalidGPConstraint:
+                sol = feas.localsolve(**solveargs)
 
             if self.substitutions:
                 for orig in (o for o, r in zip(constsrelaxed.origvars,
@@ -204,7 +208,10 @@ class Model(CostedConstraintSet):
             constrsrelaxed = ConstraintsRelaxed(self)
             feas = Model(constrsrelaxed.relaxvars.prod()**30 * self.cost,
                          constrsrelaxed)
-            sol_constraints = feas.solve(**solveargs)
+            try:
+                sol_constraints = feas.solve(**solveargs)
+            except InvalidGPConstraint:
+                sol_constraints = feas.localsolve(**solveargs)
 
             relaxvals = sol_constraints(constrsrelaxed.relaxvars)
             if any(rv >= 1.01 for rv in relaxvals):
