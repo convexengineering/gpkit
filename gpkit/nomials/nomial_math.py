@@ -507,7 +507,7 @@ class PosynomialInequality(ScalarSingleEquationConstraint):
             if np.all(nans) or np.all(cs[~nans] == 0):
                 continue  # skip nan'd or 0'd constraint
 
-            exps, cs = self._simplify_posy_ineq(exps, cs)
+            exps, cs = self._simplify_posy_ineq(exps, mag(cs))
             if not exps and not cs:  # tautological constraint
                 continue
             exps, cs, pmap = simplify_exps_and_cs(exps, cs, return_map=True)
