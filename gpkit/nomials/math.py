@@ -159,6 +159,7 @@ class Signomial(Nomial):
         "Substitutes in place."
         Nomial.__init__(self, self.hmap.sub(substitutions, self.varkeys))
         self._reset()
+        self.hmap.expmap = {}
 
     def __le__(self, other):
         if isinstance(other, (Numbers, Signomial)):
