@@ -3,7 +3,7 @@ from math import log10, floor, log
 from .. import SignomialsEnabled
 from ..keydict import KeyDict
 from ..small_scripts import mag
-# pylint: disable=too-many-statements,too-many-locals
+# pylint: disable=too-many-statements,too-many-locals,too-many-branches
 
 def generate_mfiles(model, logspace=False, algorithm='interior-point',
                     guess='ones', gradobj='on', gradconstr='on',
@@ -142,9 +142,9 @@ def generate_mfiles(model, logspace=False, algorithm='interior-point',
     if logspace:
         objstring = ['log(']
         expdicttuple = cost.exps
-        clist = cost.cs.magnitude
-        for expdict, c in zip(expdicttuple, clist):
-            objstring += ['+ {0}*exp('.format(c)]
+        clist = mag(cost.cs)
+        for expdict, cc in zip(expdicttuple, clist):
+            objstring += ['+ {0}*exp('.format(cc)]
             for k, v in expdict.iteritems():
                 objstring += ['+{0} * {1}'.format(v, k)]
             objstring += [')']
