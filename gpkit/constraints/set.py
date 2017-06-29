@@ -184,7 +184,7 @@ class ConstraintSet(list):
 
     def subinplace(self, subs):
         "Substitutes in place."
-        subs = {k.key: getattr(v, "key", v) for k, v in subs.items()}
+        subs = {k: getattr(v, "key", v) for k, v in subs.items()}
         for constraint in self:
             constraint.subinplace(subs)
         for key in subs:

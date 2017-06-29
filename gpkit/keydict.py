@@ -104,7 +104,12 @@ class KeyDict(dict):
 
     def __contains__(self, key):
         "In a winding way, figures out if a key is in the KeyDict"
-        key, idx = self.parse_and_index(key)
+        try:
+            key, idx = self.parse_and_index(key)
+        except KeyError:
+            return False
+        except ValueError:
+            return True
         if dict.__contains__(self, key):
             if idx:
                 try:
