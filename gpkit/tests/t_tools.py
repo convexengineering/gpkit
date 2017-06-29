@@ -111,7 +111,7 @@ class TestTools(unittest.TestCase):
         obj, c, ceq, _, _ = generate_mfiles(m, writefiles=False, logspace=True)
         self.assertEqual(c, [('log( + 1.0*exp( +-3.2 * x(2) +-0.2 * x(1) ) + ' +
                               '17.0*exp( +-3.2 * x(2) +1 * x(1) ) )'),
-                              'log( + 2.0*exp( +-1 * x(2) ) )'])
+                             'log( + 2.0*exp( +-1 * x(2) ) )'])
         self.assertEqual(obj, 'log( + 1.0*exp( +1 * x(2) ) )')
         self.assertEqual(ceq, ['log( + 0.25*exp( +1 * x(1) ) )'])
 
