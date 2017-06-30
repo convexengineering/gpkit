@@ -66,6 +66,7 @@ def enable_units(path=None):
             UNIT_REGISTRY.load_definitions(os_sep.join([path, "usd_cpi.txt"]))
             # next line patches https://github.com/hgrecco/pint/issues/366
             UNIT_REGISTRY.define("nautical_mile = 1852 m = nmi")
+            UNIT_REGISTRY.define("gravitational_accel = 9.81 m/s**2 = G")
 
         ureg = UNIT_REGISTRY
         DimensionalityError = pint.DimensionalityError
