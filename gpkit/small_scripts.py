@@ -1,6 +1,5 @@
 """Assorted helper methods"""
 from collections import Iterable
-from .small_classes import Strings, Quantity
 
 
 def try_str_without(item, excluded):
