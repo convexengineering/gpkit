@@ -27,9 +27,7 @@ class NomialData(object):
 
         self.vks = set()
         for exp in self.hmap:
-            for vk in exp:
-                if vk not in self.vks:
-                    self.vks.add(vk)
+            self.vks.update(exp)
         self.units = self.hmap.units
         self.any_nonpositive_cs = any(c <= 0 for c in self.hmap.values())
         self._reset()

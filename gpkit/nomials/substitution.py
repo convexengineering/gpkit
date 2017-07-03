@@ -22,10 +22,7 @@ def parse_subs(varkeys, substitutions, sweeps=False):
             if key in varkeys.keymap:
                 sub, keys = substitutions[var], varkeys.keymap[key]
                 append_sub(sub, keys, constants, sweep, linkedsweep)
-    if sweeps:
-        return constants, sweep, linkedsweep
-    else:
-        return constants
+    return constants, sweep, linkedsweep
 
 
 def append_sub(sub, keys, constants, sweep=None, linkedsweep=None):

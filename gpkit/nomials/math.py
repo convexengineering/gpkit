@@ -12,9 +12,6 @@ from .map import NomialMap
 from .substitution import parse_subs
 
 
-EMPTY_EXP = HashVector()
-
-
 class Signomial(Nomial):
     """A representation of a Signomial.
 
@@ -40,8 +37,8 @@ class Signomial(Nomial):
             if hasattr(hmap, "hmap"):
                 hmap = hmap.hmap
             elif isinstance(hmap, Numbers):
-                hmap_ = NomialMap([(EMPTY_EXP, mag(hmap))])
-                hmap_.set_units(hmap)
+                hmap_ = NomialMap([(HashVector(), mag(hmap))])
+                hmap_.units_of_product(hmap)
                 hmap = hmap_
             elif hmap is None:
                 hmap = VarKey(**descr).hmap
@@ -50,7 +47,7 @@ class Signomial(Nomial):
             elif isinstance(hmap, dict):
                 exp = HashVector({VarKey(k): v for k, v in hmap.items()})
                 hmap = NomialMap({exp: mag(cs)})
-                hmap.set_units(cs)
+                hmap.units_of_product(cs)
                 hmap.remove_zeros()
         super(Signomial, self).__init__(hmap)
         if self.any_nonpositive_cs:
@@ -106,12 +103,12 @@ class Signomial(Nomial):
         -------
         Monomial (unless self(x0) < 0, in which case a Signomial is returned)
         """
-        x0 = parse_subs(self.varkeys, x0)  # use only varkey keys
+        x0, _, _ = parse_subs(self.varkeys, x0)  # use only varkey keys
         for key, value in x0.items():
             if hasattr(value, "units"):
                 x0[key] = value.to(key.units).magnitude
         psub = self.hmap.sub(x0, self.varkeys, parsedsubs=True)
-        if len(psub) > 1 or EMPTY_EXP not in psub:
+        if len(psub) > 1 or HashVector() not in psub:
             raise ValueError("Variables %s remained after substituting x0=%s"
                              " into %s" % (list(psub.vks), x0, self))
         c0, = psub.values()
@@ -181,8 +178,8 @@ class Signomial(Nomial):
             if not other:  # other is zero
                 return Signomial(self.hmap)
             else:
-                other_hmap = NomialMap({EMPTY_EXP: mag(other)})
-                other_hmap.set_units(other)
+                other_hmap = NomialMap({HashVector(): mag(other)})
+                other_hmap.units_of_product(other)
         if other_hmap:
             return Signomial(self.hmap + other_hmap)
         else:
@@ -195,7 +192,7 @@ class Signomial(Nomial):
             if not other:  # other is zero
                 return other
             hmap = mag(other)*self.hmap
-            hmap.set_units(self.hmap.units, other)
+            hmap.units_of_product(self.hmap.units, other)
             return Signomial(hmap)
         elif isinstance(other, Signomial):
             hmap = NomialMap()
@@ -204,7 +201,7 @@ class Signomial(Nomial):
                     exp = exp_s + exp_o
                     hmap[exp] = c_s*c_o + hmap.get(exp, 0)
             hmap.remove_zeros()
-            hmap.set_units(self.hmap.units, other.hmap.units)
+            hmap.units_of_product(self.hmap.units, other.hmap.units)
             return Signomial(hmap)
         else:
             return NotImplemented
@@ -323,7 +320,7 @@ class Monomial(Posynomial):
     def __pow__(self, x):
         if isinstance(x, Numbers):
             (exp, c), = self.hmap.items()
-            exp = exp*x if x else EMPTY_EXP
+            exp = exp*x if x else HashVector()
             # TODO: c should already be a float
             hmap = NomialMap({exp: float(c)**x})
             if not (x and self.hmap.units):
@@ -408,21 +405,22 @@ class PosynomialInequality(ScalarSingleEquationConstraint):
 
     def _simplify_posy_ineq(self, hmap, pmap=None, allow_tautological=True):
         "Simplify a posy <= 1 by moving constants to the right side."
-        if EMPTY_EXP not in hmap:
+        empty_exp = HashVector()
+        if empty_exp not in hmap:
             return hmap
-        coeff = 1 - hmap[EMPTY_EXP]
+        coeff = 1 - hmap[empty_exp]
         if pmap is not None:  # note constant term's mmap
-            const_idx = hmap.keys().index(EMPTY_EXP)
+            const_idx = hmap.keys().index(empty_exp)
             self.const_mmap = self.pmap.pop(const_idx)  # pylint: disable=attribute-defined-outside-init
             self.const_coeff = coeff  # pylint: disable=attribute-defined-outside-init
-        if allow_tautological and len(hmap) == 1 and coeff >= 0:
-            # it's a tautological monomial!
+        if (allow_tautological and (coeff >= 0 or np.isnan(coeff))
+                and len(hmap) == 1):  # a tautological monomial!
             return None  # ValueError("tautological constraint: %s" % self)
         elif coeff <= 0:
             raise ValueError("infeasible constraint: %s" % self)
         scaled = hmap/coeff
         scaled.units = hmap.units
-        del scaled[EMPTY_EXP]
+        del scaled[empty_exp]
         return scaled
 
     def _gen_unsubbed(self, p_lt, m_gt):
@@ -447,7 +445,8 @@ class PosynomialInequality(ScalarSingleEquationConstraint):
         return [Posynomial(hmap)]
 
     def as_posyslt1(self, substitutions=None):
-        "Returns the posys <= 1 representation of this constraint."
+        """Returns the posys <= 1 representation of this constraint.
+        """
         posys = self.unsubbed
         if not substitutions:
             # just return the pre-generated posynomial representation
@@ -456,25 +455,13 @@ class PosynomialInequality(ScalarSingleEquationConstraint):
         out = []
         self._last_used_substitutions = {}
         for posy in posys:
-            fixed = parse_subs(posy.varkeys, substitutions)
+            fixed, _, _ = parse_subs(posy.varkeys, substitutions)
             self._last_used_substitutions.update(fixed)
             hmap = posy.hmap.sub(fixed, posy.varkeys, parsedsubs=True)
             self.pmap, self.mfm = hmap.mmap(posy.hmap)  # pylint: disable=attribute-defined-outside-init
-            # ABOUT PMAPS
-            #  The monomial sensitivities from the GP/SP are in terms of this
-            #  smaller post-substitution list of monomials, so we need to map
-            #  back to the pre-substitution list.
-            #
-            #  A "pmap" is a list of HashVectors (mmaps), whose keys are
-            #  monomial indexes pre-substitution, and whose values are the
-            #  percentage of the simplified  monomial's coefficient that came
-            #  from that particular parent.
-            #
             hmap = self._simplify_posy_ineq(hmap, self.pmap)
             if hmap is None:
                 continue
-            if all(c == 0 for c in hmap.values()):
-                continue  # skip tautological 0'd constraint
             p = Posynomial(hmap)
             out.append(p)
             if p.any_nonpositive_cs:
@@ -662,7 +649,7 @@ class SingleSignomialEquality(SignomialInequality):
         "Returns posynomial-less-than sides of a signomial constraint"
         siglt0, = self.unsubbed
         self._posy, self._negy = siglt0.posy_negy()  # pylint: disable=attribute-defined-outside-init
-        return Monomial(1), Monomial(1)
+        return Monomial(1), Monomial(1)  # no 'fixed' posy_lt for a SigEq
 
     def as_approxsgt(self, x0):
         "Returns monomial-greater-than sides, to be called after as_approxlt1"

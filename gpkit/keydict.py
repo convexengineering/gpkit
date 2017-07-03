@@ -91,8 +91,10 @@ class KeyDict(dict):
                 if key.veckey and all(k.veckey == key.veckey for k in keys):
                     key = key.veckey
                 else:
-                    raise ValueError("%s could refer to multiple keys in"
-                                     " this substitutions KeyDict." % key)
+                    raise ValueError("%s could refer to multiple keys in this"
+                                     " substitutions KeyDict. Use"
+                                     " `.variables_byname(%s)` to see all of"
+                                     " them." % (key, key))
         else:
             raise KeyError(key)
         idx = getattr(key, "idx", None)

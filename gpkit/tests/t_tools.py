@@ -58,9 +58,10 @@ class TestTools(unittest.TestCase):
         "Test Taylor expansion of secant(var)"
         x = Variable('x')
         self.assertEqual(te_secant(x, 1), 1 + x**2/2.)
-        # TODO: floating point inaccuracy caused the c of x**4 to vary
-        #       slightly from the below fraction
-        # self.assertEqual(te_secant(x, 2), 1 + x**2/2. + 5*x**4/24.)
+        a = te_secant(x, 2)
+        b = 1 + x**2/2. + 5*x**4/24.
+        self.assertTrue(all([abs(val) <= 1e-10
+                             for val in (a.hmap - b.hmap).values()]))
         self.assertEqual(te_secant(x, 0), 1)
         # make sure x was not modified
         self.assertEqual(x, Variable('x'))

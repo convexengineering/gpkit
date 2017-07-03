@@ -194,12 +194,12 @@ class SequentialGeometricProgram(CostedConstraintSet):
         if mutategp and not self.not_sp:
             if self.gps:  # update self._gp with new x0
                 self._gp.x0.update(x0)
-                negyapproxs = []
+                mono_gts = []
                 for spc in self._spconstrs:
-                    negyapproxs.extend(spc.as_approxsgt(self._gp.x0))
-                for i, negyapprox in enumerate(negyapproxs):
-                    posyapprox = self._approx_lt[i]
-                    unsubbed = posyapprox/negyapprox
+                    mono_gts.extend(spc.as_approxsgt(self._gp.x0))
+                for i, mono_gt in enumerate(mono_gts):
+                    posy_lt = self._approx_lt[i]
+                    unsubbed = posy_lt/mono_gt
                     # the index [0][1] gets the set of all sp constraints
                     self._gp[0][1][i].unsubbed = [unsubbed]
                     # TODO: cache parsed self.substitutions for each spmono

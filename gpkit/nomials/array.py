@@ -9,7 +9,7 @@
 """
 from operator import eq, le, ge, xor
 import numpy as np
-from .math import Signomial, EMPTY_EXP
+from .math import Signomial, HashVector
 from ..small_classes import Numbers, HashVector
 from ..small_scripts import try_str_without, mag
 from ..constraints import ArrayConstraint
@@ -181,6 +181,7 @@ class NomialArray(np.ndarray):
         hmap = NomialMap()
         hmap.units = self.units
         it = np.nditer(self, flags=['multi_index', 'refs_ok'])
+        empty_exp = HashVector()
         while not it.finished:
             i = it.multi_index
             it.iternext()
@@ -188,7 +189,7 @@ class NomialArray(np.ndarray):
                 if mag(self[i]) == 0:
                     continue
                 else:  # number manually inserted by user
-                    hmap[EMPTY_EXP] = mag(self[i]) + hmap.get(EMPTY_EXP, 0)
+                    hmap[empty_exp] = mag(self[i]) + hmap.get(HashVector(), 0)
             else:
                 hmap += self[i].hmap
         return Signomial(hmap)
