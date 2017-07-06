@@ -135,7 +135,7 @@ class TestModelSubs(unittest.TestCase):
         self.assertAlmostEqual(m.solve(verbosity=0)["cost"], 4, 5)
         # bad
         m = Model(x, [y >= 1], {y: 2})
-        with self.assertRaises(ValueError):
+        with self.assertRaises((KeyError, ValueError)):
             m.subinplace({y: 3})
 
     def test_bad_gp_sub(self):
