@@ -178,10 +178,19 @@ You can also substitute in sweep variables (see Sweeps_), strings, and monomials
 
 Note that units are preserved, and that the value can be either a string (in which case it just renames the variable), a varkey (in which case it changes its description, including the name) or a Monomial (in which case it substitutes for the variable with a new monomial).
 
+Updating ConstraintSet substitutions
+------------------------------------
+ConstraintSets have a ``.substitutions`` KeyDict attribute which will be substituted before solving.
+This KeyDict accepts variable names, VarKeys, and Variable objects as keys, and can be updated (or deleted from)
+like a regular Python dictionary to change the substitutions that will be used at solve-time. If a ConstraintSet itself
+contains ConstraintSets, it and all its elements share pointers to the same substitutions dictionary object,
+so that updating any one of them will update all of them.
+
+
 Substituting with replacement
 ------------------------------
 
-Any of the substitutions above can be run with ``p.sub(*args, replace=True)`` to clobber any previously-substituted values.
+Any of the substitutions above can be run with ``p.subinplace(*args)`` to substitute directly into the object in question.
 
 Fixed Variables
 ---------------
