@@ -44,6 +44,8 @@ class NomialMap(HashVector):
                 self.units = Quantity(1, thing.units)
         elif hasattr(thing2, "units"):
             self.units = Quantity(1, thing2.units)
+        elif thing2 is None and isinstance(thing, Strings):
+            self.units = Quantity(1, thing)
         else:
             self.units = None
 

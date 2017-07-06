@@ -68,6 +68,11 @@ class Variable(Monomial):
         "a Variable's descr is derived from its VarKey."
         return self.key.descr
 
+    def to(self, arg):
+        "Create new Signomial converted to new units"
+         # pylint: disable=no-member
+        return Monomial(self).to(arg)
+
     def sub(self, *args, **kwargs):
         """Same as nomial substitution, but also allows single-argument calls
 

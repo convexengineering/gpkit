@@ -1,8 +1,8 @@
 "The shared non-mathematical backbone of all Nomials"
 from .data import NomialData
 from ..small_classes import Numbers
-from ..small_scripts import nomial_latex_helper, unitstr
-from ..repr_conventions import _str, _repr, _repr_latex_
+from ..small_scripts import nomial_latex_helper
+from ..repr_conventions import _str, _repr, _repr_latex_, unitstr
 
 
 class Nomial(NomialData):
@@ -13,6 +13,7 @@ class Nomial(NomialData):
     __str__ = _str
     __repr__ = _repr
     _repr_latex_ = _repr_latex_
+    unitstr = unitstr
 
     def str_without(self, excluded=None):
         "String representation, excluding fields ('units', varkey attributes)"
@@ -35,7 +36,7 @@ class Nomial(NomialData):
                 cstr = [cstr] if (cstr != "1" or not varstrs) else []
                 mstrs.append("*".join(cstr + varstrs))
         if "units" not in excluded:
-            units = unitstr(self.units, " [%s]")
+            units = self.unitstr(" [%s]")
         else:
             units = ""
         return " + ".join(sorted(mstrs)) + units
@@ -57,7 +58,7 @@ class Nomial(NomialData):
         if "units" in excluded:
             return " + ".join(sorted(mstrs))
 
-        units = unitstr(self.units, r"\mathrm{~\left[ %s \right]}", "L~")
+        units = self.unitstr(r"\mathrm{~\left[ %s \right]}", "L~")
         units_tf = units.replace("frac", "tfrac").replace(r"\cdot", r"\cdot ")
         return " + ".join(sorted(mstrs)) + units_tf
 
