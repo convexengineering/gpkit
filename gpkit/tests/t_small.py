@@ -1,7 +1,7 @@
 """Tests for small_classes.py and small_scripts.py"""
 import unittest
 from gpkit.small_classes import HashVector, CootMatrix
-from gpkit.small_scripts import unitstr
+from gpkit.repr_conventions import unitstr
 import gpkit
 
 
@@ -69,9 +69,10 @@ class TestSmallScripts(unittest.TestCase):
         x = gpkit.Variable("x", "ft")
         # pint issue 356
         footstrings = ("ft", "foot")  # backwards compatibility with pint 0.6
-        self.assertEqual(unitstr(gpkit.Variable("n", "count")), "count")
-        self.assertIn(unitstr(x), footstrings)
-        self.assertIn(unitstr(x.key), footstrings)
+        if gpkit.units:
+            self.assertEqual(unitstr(gpkit.Variable("n", "count")), "count")
+            self.assertIn(unitstr(x), footstrings)
+            self.assertIn(unitstr(x.key), footstrings)
         self.assertEqual(unitstr(gpkit.Variable("y"), dimless="---"), "---")
         self.assertEqual(unitstr(None, dimless="--"), "--")
 
