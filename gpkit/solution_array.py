@@ -3,7 +3,8 @@ from collections import Iterable
 import numpy as np
 from .nomials import NomialArray
 from .small_classes import DictOfLists
-from .small_scripts import unitstr, mag
+from .small_scripts import mag
+from .repr_conventions import unitstr
 
 
 def senss_table(data, showvars=(), title="Sensitivities", **kwargs):
@@ -302,7 +303,7 @@ def results_table(data, title, minval=0, printunits=True, fixedcols=True,
                                   model + r"}} \\"])
             oldmodel = model
         label = var.descr.get('label', '')
-        units = var.unitstr() if printunits else ""
+        units = var.unitstr(" [%s] ") if printunits else ""
         if isvector:
             vals = [vecfmt % v for v in mag(val).flatten()[:4]]
             ellipsis = " ..." if len(val) > 4 else ""
