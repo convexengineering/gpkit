@@ -198,6 +198,9 @@ class HashVector(dict):
     >>> x = gpkit.nomials.Monomial('x')
     >>> exp = gpkit.small_classes.HashVector({x: 2})
     """
+    def copy(self):
+        "Return a copy of this"
+        return self.__class__(super(HashVector, self).copy())
 
     def __hash__(self):
         "Allows HashVectors to be used as dictionary keys."
@@ -244,7 +247,7 @@ class HashVector(dict):
             sums = self.copy()
             for key, value in other.items():
                 sums[key] = value + sums.get(key, 0)
-            return self.__class__(sums)
+            return sums
         else:
             return NotImplemented
 
