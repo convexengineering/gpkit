@@ -57,7 +57,8 @@ class SignomialProgram(CostedConstraintSet):
     The equivalent of a Signomial objective can be constructed by constraining
     a dummy variable z to be greater than the desired Signomial objective s
     (z >= s) and then minimizing that dummy variable.""")
-        CostedConstraintSet.__init__(self, cost, constraints, substitutions)
+        CostedConstraintSet.__init__(self, cost, constraints, substitutions,
+                                     add_cost_values_to_substitutions=False)
         try:
             self.__parse_externalfnvars()
             if self.externalfn_vars:  # not a GP! Skip to the `except`
