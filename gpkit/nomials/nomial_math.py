@@ -128,6 +128,8 @@ class Signomial(Nomial):
             self.exp = self.exps[0]
             self.c = self.cs[0]
 
+    __hash__ = Nomial.__hash__  # required by Python 3
+
     def diff(self, wrt):
         """Derivative of this with respect to a Variable
 
@@ -346,6 +348,8 @@ class Posynomial(Signomial):
 
     # Posynomial.__ge__ falls back on Signomial.__ge__
 
+    __hash__ = Signomial.__hash__  # required by Python 3
+
     def mono_lower_bound(self, x0):
         """Monomial lower bound at a point x0
 
@@ -387,6 +391,8 @@ class Monomial(Posynomial):
             return Monomial(self.exp*other, self.c**other)
         else:
             return NotImplemented
+
+    __hash__ = Posynomial.__hash__  # required by Python 3
 
     # inherit __ne__ from Signomial
 

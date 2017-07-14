@@ -117,7 +117,7 @@ def printcb(void, msg):  # pylint: disable=unused-argument
     result : int
       0 indicates success
     """
-    print msg[:-1]
+    print(msg[:-1])
     return 0
 
 

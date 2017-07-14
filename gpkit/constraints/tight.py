@@ -48,4 +48,4 @@ class Tight(ConstraintSet):
                 if self.raiseerror:
                     raise ValueError(msg)
                 else:
-                    print "Warning: %s" % msg
+                    print("Warning: %s" % msg)

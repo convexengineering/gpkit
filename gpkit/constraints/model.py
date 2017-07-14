@@ -148,7 +148,7 @@ class Model(CostedConstraintSet):
         solveargs["solver"] = solver
         solveargs["verbosity"] = verbosity
 
-        print "> Trying to solve with bounded variables and relaxed constants"
+        print("> Trying to solve with bounded variables and relaxed constants")
 
         if self.substitutions:
             constsrelaxed = ConstantsRelaxed(Bounded(self))
@@ -178,11 +178,11 @@ class Model(CostedConstraintSet):
                     print("  %s: relaxed from %-.4g to %-.4g"
                           % (orig, mag(self.substitutions[orig]),
                              mag(sol(orig))))
-            print "> ...success!"
+            print("> ...success!")
         except (ValueError, RuntimeWarning):
             print("> ...does not solve with bounded variables"
                   " and relaxed constants.")
-        print "\n> Trying to solve with relaxed constraints"
+        print("\n> Trying to solve with relaxed constraints")
 
         try:
             constrsrelaxed = ConstraintsRelaxed(self)
@@ -208,7 +208,7 @@ class Model(CostedConstraintSet):
                     relax_percent = "%i%%" % (0.5+(relaxval-1)*100)
                     print("  %i: %4s relaxed  Canonical form: %s <= %.2f)"
                           % (i, relax_percent, constraint.right, relaxval))
-            print "> ...success!"
+            print("> ...success!")
         except (ValueError, RuntimeWarning):
             print("> ...does not solve with relaxed constraints.")
 
