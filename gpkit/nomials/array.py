@@ -61,23 +61,21 @@ class NomialArray(np.ndarray):
         if self.shape:
             return "[" + ", ".join([try_str_without(el, excluded)
                                     for el in self]) + "]"
-        else:
-            return str(self.flatten()[0])  # TODO THIS IS WEIRD
+        return str(self.flatten()[0])  # TODO THIS IS WEIRD
 
     def latex(self, matwrap=True):
         "Returns 1D latex list of contents."
-        if len(self.shape) == 0:
+        if self.ndim == 0:
             return self.flatten()[0].latex()
-        if len(self.shape) == 1:
+        if self.ndim == 1:
             return (("\\begin{bmatrix}" if matwrap else "") +
                     " & ".join(el.latex() for el in self) +
                     ("\\end{bmatrix}" if matwrap else ""))
-        elif len(self.shape) == 2:
+        elif self.ndim == 2:
             return ("\\begin{bmatrix}" +
                     " \\\\\n".join(el.latex(matwrap=False) for el in self) +
                     "\\end{bmatrix}")
-        else:
-            return None
+        return None
 
     def __hash__(self):
         return hash(reduce(xor, map(hash, self.flat), 0))
@@ -121,10 +119,7 @@ class NomialArray(np.ndarray):
         """The coefficient vector in the GP input data sense"""
         try:
             floatarray = np.array(self, dtype='float')
-            if not floatarray.shape:
-                return floatarray.flatten()[0]
-            else:
-                return floatarray
+            return floatarray if floatarray.shape else floatarray.flatten()[0]
         except TypeError:
             raise ValueError("only a nomialarray of numbers has a 'c'")
 

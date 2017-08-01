@@ -123,7 +123,7 @@ def substitution(nomial, substitutions):
         for i in nomial.varlocs[var]:
             x = exps_[i].pop(var)
             varlocs_[var].remove(i)
-            if len(varlocs_[var]) == 0:
+            if not varlocs_[var]:
                 del varlocs_[var]
             if isinstance(sub, (Numbers, np.ndarray)):
                 if getattr(sub, "shape", False):
