@@ -210,7 +210,7 @@ class SignomialProgram(CostedConstraintSet):
             if modifylastgp and not self.lastgp:
                 gp_constrs = self.firstgp(x0, self.substitutions)
             if not modifylastgp or self.is_sgp:  # may be set by the above
-                gp_constrs = self.as_gpconstr(x0, self.substitutions)  # pylint: disable=redefined-variable-type
+                gp_constrs = self.as_gpconstr(x0, self.substitutions)
                 if self.externalfn_vars:
                     gp_constrs.extend([v.key.externalfn(v, x0)
                                        for v in self.externalfn_vars])

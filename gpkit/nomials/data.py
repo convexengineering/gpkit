@@ -87,6 +87,7 @@ class NomialData(object):
         -------
         NomialData
         """
+        # pylint:disable=len-as-condition
         varset = self.varkeys[var]
         if len(varset) == 0:
             return NomialData(exps=[{}], cs=[0], simplify=False)
@@ -177,10 +178,10 @@ def simplify_exps_and_cs(exps, cs, return_map=False):
 
     if not return_map:
         return exps_, cs_
-    else:
-        mmap = [HashVector() for c in cs_]
-        for i, item in enumerate(matches.items()):
-            exp, c = item
-            for j in expmap[exp]:
-                mmap[i][j] = mag(expmap[exp][j]/c)
-        return exps_, cs_, mmap
+
+    mmap = [HashVector() for c in cs_]
+    for i, item in enumerate(matches.items()):
+        exp, c = item
+        for j in expmap[exp]:
+            mmap[i][j] = mag(expmap[exp][j]/c)
+    return exps_, cs_, mmap
