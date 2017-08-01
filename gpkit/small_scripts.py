@@ -59,7 +59,8 @@ def is_sweepvar(sub):
     "Determines if a given substitution indicates a sweep."
     try:
         sweep, value = sub
-        if sweep == "sweep" and (isinstance(value, Iterable) or
+        # pylint:disable=literal-comparison
+        if sweep is "sweep" and (isinstance(value, Iterable) or
                                  hasattr(value, "__call__")):
             return True
     except (TypeError, ValueError):
