@@ -1,7 +1,20 @@
 """Rendering methods"""
 
+"""Save a set of variables to a .csm, for usage
+with the Engineering Sketch Pad rendering software.
 
-def saveDesignParametersToCSM(filepath,paramdict):
+Arguments:
+
+- filepath is a string with the full filepath to the .csm,
+for example "design.csm" or "renders/version1.csm"
+
+- sol is a GPkit Solution instance
+
+- paramdict is a dictionary comprised of GPkit Variables
+indexed by their design parameter name in ESP (String).
+"""
+
+def saveVariablesToCSM(filepath,sol,paramdict):
         contents = ""
         if filepath != "":
             with open(filepath, 'r') as file:
@@ -11,7 +24,7 @@ def saveDesignParametersToCSM(filepath,paramdict):
             if line[0:7] == 'despmtr':
                 key = line[10:25].strip()
                 if key in paramdict:
-                    line = line[:25] + str(paramdict[key])
+                    line = line[:25] + str(float(sol(paramdict[key])))
                     lines[i] = line
         output = ""
         for line in lines:
@@ -19,4 +32,3 @@ def saveDesignParametersToCSM(filepath,paramdict):
         contents = output
         with open(filepath, "w") as file:
             file.write(contents)
-            print 'successfully updated ESP file'
