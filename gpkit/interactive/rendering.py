@@ -24,7 +24,8 @@ def saveVariablesToCSM(filepath,sol,paramdict):
             if line[0:7] == 'despmtr':
                 key = line[10:25].strip()
                 if key in paramdict:
-                    line = line[:25] + str(float(sol(paramdict[key])))
+                    valStr = str(float(sol(paramdict[key])))
+                    line = line[:len(line)-len(valStr)] + valStr 
                     lines[i] = line
         output = ""
         for line in lines:
