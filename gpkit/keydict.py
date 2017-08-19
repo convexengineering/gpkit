@@ -159,6 +159,8 @@ class KeyDict(dict):
                 dict.__setitem__(self, key, emptyvec)
         for mapkey in self.keymap[key]:
             if idx:
+                if isinstance(value, Quantity):
+                    value = value.to(key.units).magnitude
                 dict.__getitem__(self, mapkey)[idx] = value
             else:
                 if (dict.__contains__(self, mapkey)
