@@ -1,7 +1,8 @@
 """Test KeyDict class"""
 import unittest
 import numpy as np
-from gpkit import Variable, VectorVariable, units
+from gpkit import Variable, VectorVariable
+import gpkit
 from gpkit.keydict import KeyDict
 from gpkit.tests.helpers import run_tests
 
@@ -58,7 +59,8 @@ class TestKeyDict(unittest.TestCase):
         self.assertTrue(all(kd[v] == np.array([6, 3, 4])))
         v = VectorVariable(3, "v", "m")
         kd[v] = np.array([2, 3, 4])
-        kd[v[0]] = units("inch")
+        if gpkit.units:
+            kd[v[0]] = gpkit.units("inch")
 
 
 TESTS = [TestKeyDict]
