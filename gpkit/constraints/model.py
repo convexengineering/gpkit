@@ -205,7 +205,7 @@ class Model(CostedConstraintSet):
                                  constraint.right, relaxval))
                 print "\n>> Success!"
             except (ValueError, RuntimeWarning):
-                print(">> Does not solve with relaxed constraints.")
+                print(">> Failure")
         print
         return sol
 
