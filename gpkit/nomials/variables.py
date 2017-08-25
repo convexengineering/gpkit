@@ -67,11 +67,6 @@ class Variable(Monomial):
         """Get the VarKey associated with this Variable"""
         return list(self.exp)[0]
 
-    @property
-    def descr(self):
-        "a Variable's descr is derived from its VarKey."
-        return self.key.descr
-
     def to(self, arg):
         "Create new Signomial converted to new units"
          # pylint: disable=no-member
