@@ -138,7 +138,7 @@ def composite_objective(*objectives, **kwargs):
     ws = VectorVariable(n-1, "w_{CO}", sweepvals, "-")
     w_s = []
     for w in ws:
-        descr = dict(w.descr)
+        descr = dict(w.key.descr)
         del descr["value"]
         descr["name"] = "v_{CO}"
         w_s.append(Variable(value=lambda const: 1-const[w.key], **descr))  # pylint: disable=cell-var-from-loop
