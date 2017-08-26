@@ -85,7 +85,7 @@ you will need an academic or trial license to proceed.
 Mac OS X
   - If ``which gcc`` does not return anything, install ``XCode`` and the `Apple Command Line Tools <https://developer.apple.com/downloads/index.action?=command%20line%20tools>`_.
   - Install ctypesgen with ``pip install ctypesgen --pre``.
-  - Download `MOSEK <http://mosek.com/resources/downloads>`_, then:
+  - Download `MOSEK 7 <https://www.mosek.com/downloads/list/7/>`_, then:
       - Move the ``mosek`` folder to your home directory
       - Follow `these steps for Mac <http://docs.mosek.com/7.0/toolsinstall/Mac_OS_X_installation.html>`_.
       - Request an `academic license file <http://license.mosek.com/academic>`_ and put it in ``~/mosek/``
