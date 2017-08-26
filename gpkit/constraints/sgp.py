@@ -206,6 +206,8 @@ class SequentialGeometricProgram(CostedConstraintSet):
                     smap = unsubbed.hmap.sub(self.substitutions,
                                              unsubbed.varkeys)
                     self._gp.hmaps[self._numgpconstrs+i] = smap
+                    # TODO: WHY ON EARTH IS THIS LINE REQUIRED:
+                    self._gp.posynomials[self._numgpconstrs+i].hmap = smap
                 self._gp.gen()
             return self._gp
         else:
