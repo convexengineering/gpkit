@@ -5,7 +5,7 @@ import numpy as np
 try:
     from ipyparallel import Client
     CLIENT = Client(timeout=0.01)
-    assert len(CLIENT) > 0
+    assert len(CLIENT) > 0  # pylint:disable=len-as-condition
     POOL = CLIENT[:]
     POOL.use_dill()
     print("Using parallel execution of sweeps on %s clients" % len(CLIENT))
@@ -38,8 +38,7 @@ def _progify_fctry(program, return_attr=None):
         prog = program(self.cost, self, constants, verbosity, **kwargs)
         if return_attr:
             return prog, getattr(prog, return_attr)
-        else:
-            return prog
+        return prog
     return programify
 
 
@@ -140,7 +139,7 @@ def run_sweep(genfunction, self, solution, skipsweepfailures,
                                  " To ignore such failures, solve with"
                                  " skipsweepfailures=True.")
 
-    if not len(solution):
+    if not solution:
         raise RuntimeWarning("no sweeps solved successfully.")
 
     solution["sweepvariables"] = KeyDict()

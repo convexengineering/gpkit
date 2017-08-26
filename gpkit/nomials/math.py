@@ -60,19 +60,20 @@ class Signomial(Nomial):
         else:
             self.__class__ = Posynomial
 
-    def diff(self, wrt):
+    def diff(self, var):
         """Derivative of this with respect to a Variable
 
         Arguments
         ---------
-        wrt (Variable):
+        var (Variable):
         Variable to take derivative with respect to
 
         Returns
         -------
         Signomial (or Posynomial or Monomial)
         """
-        return Signomial(Nomial.diff(self, wrt), require_positive=False)
+        # pylint: disable=unexpected-keyword-arg
+        return Signomial(Nomial.diff(self, var), require_positive=False)
 
     def posy_negy(self):
         """Get the positive and negative parts, both as Posynomials
@@ -159,15 +160,13 @@ class Signomial(Nomial):
     def __le__(self, other):
         if isinstance(other, (Numbers, Signomial)):
             return SignomialInequality(self, "<=", other)
-        else:
-            return NotImplemented
+        return NotImplemented
 
     def __ge__(self, other):
         if isinstance(other, (Numbers, Signomial)):
             # by default all constraints take the form left >= right
             return SignomialInequality(self, ">=", other)
-        else:
-            return NotImplemented
+        return NotImplemented
 
     # posynomial arithmetic
     def __add__(self, other):
@@ -212,8 +211,7 @@ class Signomial(Nomial):
             return self*other**-1
         elif isinstance(other, Monomial):
             return other.__rdiv__(self)
-        else:
-            return NotImplemented
+        return NotImplemented
 
     def __pow__(self, expo):
         if isinstance(expo, int) and expo >= 0:
@@ -227,24 +225,15 @@ class Signomial(Nomial):
 
     def __neg__(self):
         from .. import SIGNOMIALS_ENABLED
-        if SIGNOMIALS_ENABLED:
-            return -1*self
-        else:
-            return NotImplemented
+        return -1*self if SIGNOMIALS_ENABLED else NotImplemented
 
     def __sub__(self, other):
         from .. import SIGNOMIALS_ENABLED
-        if SIGNOMIALS_ENABLED:
-            return self + -other
-        else:
-            return NotImplemented
+        return self + -other if SIGNOMIALS_ENABLED else NotImplemented
 
     def __rsub__(self, other):
         from .. import SIGNOMIALS_ENABLED
-        if SIGNOMIALS_ENABLED:
-            return other + -self
-        else:
-            return NotImplemented
+        return other + -self if SIGNOMIALS_ENABLED else NotImplemented
 
 
 class Posynomial(Signomial):
@@ -260,9 +249,8 @@ class Posynomial(Signomial):
     def __le__(self, other):
         if isinstance(other, Numbers + (Monomial,)):
             return PosynomialInequality(self, "<=", other)
-        else:
-            # fall back on other's __ge__
-            return NotImplemented
+        # fall back on other's __ge__
+        return NotImplemented
 
     # Posynomial.__ge__ falls back on Signomial.__ge__
 
@@ -310,8 +298,7 @@ class Monomial(Posynomial):
         "Divide other by this Monomial"
         if isinstance(other, Numbers + (Signomial,)):
             return other * self**-1
-        else:
-            return NotImplemented
+        return NotImplemented
 
     def __rtruediv__(self, other):
         "__rdiv__ for python 3.x"
@@ -328,8 +315,7 @@ class Monomial(Posynomial):
             else:
                 hmap.units = self.hmap.units**x
             return Monomial(hmap)
-        else:
-            return NotImplemented
+        return NotImplemented
 
     # inherit __ne__ from Signomial
 
@@ -346,9 +332,8 @@ class Monomial(Posynomial):
     def __ge__(self, other):
         if isinstance(other, Numbers + (Posynomial,)):
             return PosynomialInequality(self, ">=", other)
-        else:
-            # fall back on other's __ge__
-            return NotImplemented
+        # fall back on other's __ge__
+        return NotImplemented
 
     def mono_approximation(self, x0):
         return self
@@ -504,7 +489,7 @@ class MonomialEquality(PosynomialInequality):
     def __init__(self, left, oper, right):
         # pylint: disable=super-init-not-called,non-parent-init-called
         ScalarSingleEquationConstraint.__init__(self, left, oper, right)
-        if self.oper is not "=":
+        if self.oper != "=":
             raise ValueError("operator %s is not supported by"
                              " MonomialEquality." % self.oper)
         self.substitutions = dict(self.left.values)

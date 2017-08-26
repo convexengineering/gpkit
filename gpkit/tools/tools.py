@@ -182,10 +182,9 @@ def mdparse(filename, return_tex=False):
             elif line:
                 py_content = "# " + line
             py_lines.append(py_content)
-        if not return_tex:
-            return "\n".join(py_lines)
-        else:
+        if return_tex:
             return "\n".join(py_lines), "\n".join(texmd_lines)
+        return "\n".join(py_lines)
 
 
 def mdmake(filename, make_tex=True):

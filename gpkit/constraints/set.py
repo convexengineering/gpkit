@@ -52,8 +52,7 @@ class ConstraintSet(list):
     def __getitem__(self, key):
         if isinstance(key, int):
             return list.__getitem__(self, key)
-        else:
-            return self._choosevar(key, self.variables_byname(key))
+        return self._choosevar(key, self.variables_byname(key))
 
     def _choosevar(self, key, variables):
         if not variables:

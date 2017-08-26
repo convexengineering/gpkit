@@ -214,13 +214,13 @@ def create_settings(box):
             # however, this is not held true for the minimum, because
             # during typing the max or value will grow, and we don't want
             # to permanently anchor the minimum to unfinished typing
-            if attr is "max" and new_value <= slider.value:
+            if attr == "max" and new_value <= slider.value:
                 if slider.max >= slider.min:
                     slider.value = new_value
                 else:
                     pass  # bounds nonsensical, probably because we picked up
                           # a small value during user typing.
-            elif attr is "min" and new_value >= slider.value:
+            elif attr == "min" and new_value >= slider.value:
                 slider.value = new_value
             setattr(slider, attr, new_value)
             slider.step = (slider.max - slider.min)/24.0

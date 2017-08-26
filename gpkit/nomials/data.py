@@ -92,6 +92,7 @@ class NomialData(object):
         -------
         NomialData
         """
+        # pylint:disable=len-as-condition
         varset = self.varkeys[var]
         if len(varset) > 1:
             raise ValueError("multiple variables %s found for key %s"

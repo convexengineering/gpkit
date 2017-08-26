@@ -129,15 +129,14 @@ class KeyDict(dict):
             del self.keymap[key]  # remove blank entry added due to defaultdict
             raise KeyError(key)
         values = []
-        for key in keys:
-            got = dict.__getitem__(self, key)
+        for k in keys:
+            got = dict.__getitem__(self, k)
             if idx:
                 got = got[idx]
             values.append(got)
         if len(values) == 1:
             return values[0]
-        else:
-            return KeyDict(zip(keys, values))
+        return KeyDict(zip(keys, values))
 
     def __setitem__(self, key, value):
         "Overloads __setitem__ and []= to work with all keys"
@@ -151,6 +150,7 @@ class KeyDict(dict):
                 kwargs = {} if number_array else {"dtype": "object"}
                 emptyvec = np.full(key.shape, np.nan, **kwargs)
                 dict.__setitem__(self, key, emptyvec)
+# <<<<<<< HEAD
         if idx:
             if hasattr(value, "exp") and not value.exp:
                 value = value.value  # substitute constant monomials
@@ -173,6 +173,22 @@ class KeyDict(dict):
             if hasattr(value, "exp") and not value.exp:
                 value = value.value  # substitute constant monomials
             dict.__setitem__(self, key, value)
+# =======
+#         for mapkey in self.keymap[key]:
+#             if idx:
+#                 dict.__getitem__(self, mapkey)[idx] = value
+#             else:
+#                 if (dict.__contains__(self, mapkey)
+#                         and getattr(value, "shape", ())):
+#                     try:
+#                         goodvals = ~np.isnan(value)
+#                     except TypeError:
+#                         pass  # could not evaluate nan-ness! assume no nans
+#                     else:
+#                         self[mapkey][goodvals] = value[goodvals]
+#                         continue
+#                 dict.__setitem__(self, mapkey, value)
+# >>>>>>> master
 
     def update_keymap(self):
         "Updates the keymap with the keys in _unmapped_keys"
@@ -188,20 +204,20 @@ class KeyDict(dict):
         keys = self.keymap[key]
         if not keys:
             raise KeyError("key %s not found." % key)
-        for key in list(keys):
+        for k in list(keys):
             delete = True
             if idx:
-                dict.__getitem__(self, key)[idx] = np.nan
-                if np.isfinite(dict.__getitem__(self, key)).any():
+                dict.__getitem__(self, k)[idx] = np.nan
+                if np.isfinite(dict.__getitem__(self, k)).any():
                     delete = False
             if delete:
-                dict.__delitem__(self, key)
-                mapkeys = set([key])
-                if self.keymapping and hasattr(key, "keys"):
-                    mapkeys.update(key.keys)
+                dict.__delitem__(self, k)
+                mapkeys = set([k])
+                if self.keymapping and hasattr(k, "keys"):
+                    mapkeys.update(k.keys)
                 for mappedkey in mapkeys:
                     if mappedkey in self.keymap:
-                        self.keymap[mappedkey].remove(key)
+                        self.keymap[mappedkey].remove(k)
                         if not self.keymap[mappedkey]:
                             del self.keymap[mappedkey]
 

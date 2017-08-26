@@ -74,6 +74,7 @@ class Variable(Monomial):
         return Monomial(self).to(arg)
 
     def sub(self, *args, **kwargs):
+        # pylint: disable=arguments-differ
         """Same as nomial substitution, but also allows single-argument calls
 
         Example
@@ -112,6 +113,7 @@ class ArrayVariable(NomialArray):
 
     def __new__(cls, shape, *args, **descr):
         # pylint: disable=too-many-branches, too-many-statements
+        # pylint: disable=arguments-differ
         cls = NomialArray
 
         if "idx" in descr:
@@ -149,7 +151,7 @@ class ArrayVariable(NomialArray):
             if VECTORIZATION:
                 values = np.full(shape, values, "f")
             elif not hasattr(values, "shape"):
-                values = np.array(values)  # pylint: disable=redefined-variable-type
+                values = np.array(values)
             if values.shape != shape:
                 raise ValueError("the value's shape %s is different than"
                                  " the vector's %s." % (values.shape, shape))
@@ -190,5 +192,4 @@ class VectorizableVariable(Variable, ArrayVariable):
         if VECTORIZATION:
             shape = descr.pop("shape", ())
             return ArrayVariable.__new__(cls, shape, *args, **descr)
-        else:
-            return Variable(*args, **descr)
+        return Variable(*args, **descr)

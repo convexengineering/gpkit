@@ -295,7 +295,7 @@ def results_table(data, title, minval=0, printunits=True, fixedcols=True,
         if model != oldmodel and len(models) > 1:
             if oldmodel is not None:
                 lines.append(["", "", "", ""])
-            if model is not "":
+            if model != "":
                 if not latex:
                     lines.append([("modelname",), model, "", ""])
                 else:

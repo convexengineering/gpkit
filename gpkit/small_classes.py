@@ -39,7 +39,10 @@ def matrix_converter(name):
 class CootMatrix(CootMatrixTuple):
     "A very simple sparse matrix representation."
     def __init__(self, *args, **kwargs):
-        super(CootMatrix, self).__init__(*args, **kwargs)
+        # pylint:disable=non-parent-init-called
+        # pylint:disable=super-init-not-called
+        # TODO these pylint disables go away with removal of namedtuple
+        CootMatrixTuple.__init__(self, *args, **kwargs)
         self.shape = [(max(self.row) + 1) if self.row else 0,
                       (max(self.col) + 1) if self.col else 0]
 
@@ -218,8 +221,7 @@ class HashVector(dict):
         if isinstance(other, Numbers):
             return self.__class__({key: val**other
                                    for (key, val) in self.items()})
-        else:
-            return NotImplemented
+        return NotImplemented
 
     def __mul__(self, other):
         """Accepts scalars and dicts. Returns with each value multiplied.
@@ -232,8 +234,7 @@ class HashVector(dict):
         elif isinstance(other, dict):
             keys = set(self).intersection(other)
             return self.__class__({key: self[key] * other[key] for key in keys})
-        else:
-            return NotImplemented
+        return NotImplemented
 
     def __add__(self, other):
         """Accepts scalars and dicts. Returns with each value added.
