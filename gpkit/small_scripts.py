@@ -6,8 +6,7 @@ def try_str_without(item, excluded):
     "Try to call item.str_without(excluded); fall back to str(item)"
     if hasattr(item, "str_without"):
         return item.str_without(excluded)
-    else:
-        return str(item)
+    return str(item)
 
 
 def veckeyed(key):
@@ -60,6 +59,7 @@ def is_sweepvar(sub):
     "Determines if a given substitution indicates a sweep."
     try:
         sweep, value = sub
+        # pylint:disable=literal-comparison
         if sweep is "sweep" and (isinstance(value, Iterable) or
                                  hasattr(value, "__call__")):
             return True

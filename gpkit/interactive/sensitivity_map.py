@@ -53,8 +53,7 @@ def signomial_print(sig, sol, colorfn, paintby="constants", idx=None):
             colorstr = colorfn(senss)
             mstrs_.append("\\textcolor%s{%s}" % (colorstr, mstr))
         return " + ".join(sorted(mstrs_)), idx
-    else:
-        return " + ".join(sorted(mstrs))
+    return " + ".join(sorted(mstrs))
 
 
 class SensitivityMap(object):
@@ -89,8 +88,7 @@ class SensitivityMap(object):
             self.model.solve()
         if len(self.model.solution) > 1:
             return self.model.solution.atindex(0)  # TODO: support sweeps
-        else:
-            return self.model.solution
+        return self.model.solution
 
     def _repr_latex_(self):
         "iPython LaTeX representation."
@@ -134,15 +132,15 @@ class SensitivityMap(object):
                 else:
                     constrs = [constr]
                 constr_texs = []
-                for constr in constrs:
+                for constr_ in constrs:
                     # TODO: not the right way to check if Signomial
-                    rhs = "\\leq 0" if constr.any_nonpositive_cs else "\\leq 1"
+                    rhs = "\\leq 0" if constr_.any_nonpositive_cs else "\\leq 1"
                     if self.paintby == "monomials":
-                        tex, idx = signomial_print(constr, sol, colorfn,
+                        tex, idx = signomial_print(constr_, sol, colorfn,
                                                    paintby, idx)
                     elif self.paintby == "posynomials":
                         color = colorfn(senss[i])
-                        tex = signomial_print(constr, None, None, paintby)
+                        tex = signomial_print(constr_, None, None, paintby)
                         tex = "\\textcolor%s{%s}" % (color, tex)
                     constr_texs.append("    & %s %s\\\\" % (tex, rhs))
                 constr_tex = "\n".join(constr_texs)

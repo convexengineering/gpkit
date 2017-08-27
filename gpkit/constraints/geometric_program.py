@@ -388,7 +388,7 @@ def genA(exps, varlocs):
         for i in varlocs[var]:
             exp = exps[i][var]
             A.append(i, j, exp)
-            if varsign is "both":
+            if varsign == "both":
                 pass
             elif varsign is None:
                 varsign = np.sign(exp)

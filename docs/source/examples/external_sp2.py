@@ -9,8 +9,7 @@ def y_ext(self, x0):
     "Returns constraints on y derived from x0"
     if x not in x0:
         return self >= x
-    else:
-        return self >= x/x0[x] * np.sin(x0[x])
+    return self >= x/x0[x] * np.sin(x0[x])
 
 y = Variable("y", externalfn=y_ext)
 
