@@ -172,10 +172,7 @@ def generate_mfiles(model, logspace=False, algorithm='interior-point',
                  "end")
 
     # String for main.m
-    if logspace:
-        fval = "exp(fval)"
-    else:
-        fval = "fval"
+    fval = "exp(fval)" if logspace else "fval"
     mainfunstr = (x0string +
                   "options = optimset('fmincon');\n" +
                   "options.Algorithm = '{0}';\n".format(algorithm) +
