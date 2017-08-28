@@ -63,11 +63,6 @@ class Variable(Monomial):
 
     __hash__ = NomialData.__hash__
 
-    @property
-    def key(self):
-        """Get the VarKey associated with this Variable"""
-        return list(self.exp)[0]
-
     def to(self, arg):
         "Create new Signomial converted to new units"
          # pylint: disable=no-member

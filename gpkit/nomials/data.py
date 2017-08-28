@@ -5,6 +5,7 @@ from ..small_classes import HashVector
 from ..keydict import KeySet, KeyDict
 from .map import NomialMap
 from ..repr_conventions import _repr
+from ..varkey import VarKey
 
 
 class NomialData(object):
@@ -109,8 +110,13 @@ class NomialData(object):
         "Equality test"
         if not hasattr(other, "hmap"):
             return NotImplemented
+        if isinstance(other, VarKey):
+            return False
         if self.hmap != other.hmap:
             return False
         if self.units != other.units:
             return False
         return True
+
+    def __ne__(self, other):
+        return not self.__eq__(other)
