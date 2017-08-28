@@ -154,7 +154,7 @@ class NomialMap(HashVector):
                     cval = VarKey(name=cval, **descr)
                 if hasattr(cval, "hmap"):
                     expval, = cval.hmap.keys()  # TODO: catch "can't-sub-posys"
-                    cval = cval.hmap  # pylint: disable=redefined-variable-type
+                    cval = cval.hmap
                 if hasattr(cval, "to"):
                     cval = mag(cval.to(vk.units or DIMLESS_QUANTITY))
                     if isinstance(cval, NomialMap) and cval.keys() == [{}]:

@@ -181,8 +181,7 @@ class Signomial(Nomial):
                 other_hmap.units_of_product(other)
         if other_hmap:
             return Signomial(self.hmap + other_hmap)
-        else:
-            return NotImplemented
+        return NotImplemented
 
     def __mul__(self, other):
         if isinstance(other, np.ndarray):
@@ -202,8 +201,7 @@ class Signomial(Nomial):
             hmap.remove_zeros()
             hmap.units_of_product(self.hmap.units, other.hmap.units)
             return Signomial(hmap)
-        else:
-            return NotImplemented
+        return NotImplemented
 
     def __div__(self, other):
         "Support the / operator in Python 2.x"
@@ -220,8 +218,7 @@ class Signomial(Nomial):
                 p *= self
                 expo -= 1
             return p
-        else:
-            return NotImplemented
+        return NotImplemented
 
     def __neg__(self):
         from .. import SIGNOMIALS_ENABLED
@@ -304,16 +301,16 @@ class Monomial(Posynomial):
         "__rdiv__ for python 3.x"
         return self.__rdiv__(other)
 
-    def __pow__(self, x):
-        if isinstance(x, Numbers):
+    def __pow__(self, expo):
+        if isinstance(expo, Numbers):
             (exp, c), = self.hmap.items()
-            exp = exp*x if x else HashVector()
+            exp = exp*expo if expo else HashVector()
             # TODO: c should already be a float
-            hmap = NomialMap({exp: float(c)**x})
-            if not (x and self.hmap.units):
+            hmap = NomialMap({exp: float(c)**expo})
+            if not (expo and self.hmap.units):
                 hmap.units = None
             else:
-                hmap.units = self.hmap.units**x
+                hmap.units = self.hmap.units**expo
             return Monomial(hmap)
         return NotImplemented
 
@@ -499,7 +496,7 @@ class MonomialEquality(PosynomialInequality):
         self.nomials.extend(self.unsubbed)
         self._last_used_substitutions = {}
 
-    def _gen_unsubbed(self, left, right):
+    def _gen_unsubbed(self, left, right):  # pylint: disable=arguments-differ
         "Returns the unsubstituted posys <= 1."
         unsubbed = PosynomialInequality._gen_unsubbed
         l_over_r = unsubbed(self, left, right)

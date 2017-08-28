@@ -249,8 +249,7 @@ class HashVector(dict):
             for key, value in other.items():
                 sums[key] = value + sums.get(key, 0)
             return sums
-        else:
-            return NotImplemented
+        return NotImplemented
 
     # pylint: disable=multiple-statements
     def __sub__(self, other): return self + -other

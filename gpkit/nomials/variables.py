@@ -63,10 +63,10 @@ class Variable(Monomial):
 
     __hash__ = NomialData.__hash__
 
-    def to(self, arg):
+    def to(self, units):
         "Create new Signomial converted to new units"
          # pylint: disable=no-member
-        return Monomial(self).to(arg)
+        return Monomial(self).to(units)
 
     def sub(self, *args, **kwargs):
         # pylint: disable=arguments-differ
