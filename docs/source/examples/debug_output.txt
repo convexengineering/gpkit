@@ -1,4 +1,5 @@
-> Trying to solve with bounded variables and relaxed constants
+< DEBUGGING >
+> Trying with bounded variables and relaxed constants:
 
 Solves with these variables bounded:
    value near upper bound: [y]
@@ -6,7 +7,30 @@ Solves with these variables bounded:
 
 and these constants relaxed:
   x_min [ft]: relaxed from 2 to 1
-> ...success!
 
-> Trying to solve with relaxed constraints
-> ...does not solve with relaxed constraints.
+>> Success!
+
+# Now let's try a model unsolvable with relaxed constants
+
+< DEBUGGING >
+> Trying with bounded variables and relaxed constants:
+>> Failure.
+> Trying with relaxed constraints:
+
+Solves with these constraints relaxed:
+   1: 3500% relaxed, from 3*x**-1 <= 1
+                       to 3*x**-1 <= 36
+
+>> Success!
+
+# And one that's only unbounded
+
+< DEBUGGING >
+> Trying with bounded variables and relaxed constants:
+
+Solves with these variables bounded:
+   value near upper bound: [y]
+ sensitive to upper bound: [y]
+
+>> Success!
+

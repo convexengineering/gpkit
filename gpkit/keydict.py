@@ -150,9 +150,11 @@ class KeyDict(dict):
                 kwargs = {} if number_array else {"dtype": "object"}
                 emptyvec = np.full(key.shape, np.nan, **kwargs)
                 dict.__setitem__(self, key, emptyvec)
+        if hasattr(value, "exp") and not value.exp:
+            value = value.value  # substitute constant monomials
         if idx:
-            if hasattr(value, "exp") and not value.exp:
-                value = value.value  # substitute constant monomials
+            if isinstance(value, Quantity):
+                value = value.to(key.units).magnitude
             dict.__getitem__(self, key)[idx] = value
         else:
             if (self.collapse_arrays and hasattr(key, "descr")
@@ -169,8 +171,6 @@ class KeyDict(dict):
                 else:
                     self[key][goodvals] = value[goodvals]
                     return
-            if hasattr(value, "exp") and not value.exp:
-                value = value.value  # substitute constant monomials
             dict.__setitem__(self, key, value)
 
     def update_keymap(self):
