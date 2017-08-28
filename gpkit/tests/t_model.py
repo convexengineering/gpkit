@@ -275,12 +275,11 @@ class TestSP(unittest.TestCase):
         with SignomialsEnabled():
             m = Model(x, Bounded([x + y >= 1], verbosity=0))
         sol = m.localsolve(verbosity=0)
-        if "value near lower bound" in sol["boundedness"]:
-            self.assertEqual(x.key,
-                             sol["boundedness"]["value near lower bound"][0])
-        if "value near upper bound" in sol["boundedness"]:
-            self.assertEqual(y.key,
-                             sol["boundedness"]["value near upper bound"][0])
+        boundedness = sol["boundedness"]
+        if "value near lower bound" in boundedness:
+            self.assertEqual(x.key, boundedness["value near lower bound"][0])
+        if "value near upper bound" in boundedness:
+            self.assertEqual(y.key, boundedness["value near upper bound"][0])
 
     def test_values_vs_subs(self):
         # Substitutions update method
