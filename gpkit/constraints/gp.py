@@ -49,6 +49,7 @@ class GeometricProgram(CostedConstraintSet, NomialData):
         # pylint:disable=super-init-not-called
         # initialize attributes modified by internal methods
         self.result = None
+        self.nu_by_posy = None
         self.solver_log = None
         self.solver_out = None
 
@@ -73,16 +74,13 @@ class GeometricProgram(CostedConstraintSet, NomialData):
         # sideways NomialData init to create self.exps, self.cs, etc
         self.posynomials = [cost.sub(self.substitutions)]
         self.posynomials.extend(self.as_posyslt1(self.substitutions))
-        self.gen(verbosity)
-
-    def gen(self, verbosity=1):
-        "Generates nomial and solve data (A, p_idxs) from self.posynomials"
-        NomialData.init_from_nomials(self, self.posynomials)
-        if self.any_nonpositive_cs:
+        self.hmaps = [p.hmap for p in self.posynomials]
+        self.gen()
+        if any(c <= 0 for c in self._cs):
             raise ValueError("GeometricPrograms cannot contain Signomials.")
         ## Generate various maps into the posy- and monomials
         # k [j]: number of monomials (columns of F) present in each constraint
-        self.k = [len(p.cs) for p in self.posynomials]
+        self.k = [len(hm) for hm in self.hmaps]
         # p_idxs [i]: posynomial index of each monomial
         p_idxs = []
         # m_idxs [i]: monomial indices of each posynomial
@@ -92,10 +90,18 @@ class GeometricProgram(CostedConstraintSet, NomialData):
             p_idxs += [i]*p_len
         self.p_idxs = np.array(p_idxs)
         # A [i, v]: sparse matrix of variable's powers in each monomial
-        self.A, self.missingbounds = genA(self.exps, self.varlocs)
         if verbosity > 0:
             for var, bound in sorted(self.missingbounds.items()):
                 print("%s has no %s bound" % (var, bound))
+
+    def gen(self):
+        "Generates nomial and solve data (A, p_idxs) from posynomials"
+        self._reset()
+        self._exps, self._cs = [], []
+        for hmap in self.hmaps:
+            self._exps.extend(hmap.keys())
+            self._cs.extend(hmap.values())
+        self.A, self.missingbounds = genA(self.exps, self.varlocs)
 
     # pylint: disable=too-many-statements, too-many-locals
     def solve(self, solver=None, verbosity=1, warn_on_check=False,
@@ -229,19 +235,20 @@ class GeometricProgram(CostedConstraintSet, NomialData):
         if "nu" in solver_out:
             # solver gave us monomial sensitivities, generate posynomial ones
             nu = np.ravel(solver_out["nu"])
-            la = np.array([sum(nu[self.p_idxs == i])
-                           for i in range(len(self.posynomials))])
+            self.nu_by_posy = [nu[mi] for mi in self.m_idxs]
+            la = np.array([sum(nup) for nup in self.nu_by_posy])
         elif "la" in solver_out:
             # solver gave us posynomial sensitivities, generate monomial ones
             la = np.ravel(solver_out["la"])
-            if len(la) == len(self.posynomials) - 1:
+            if len(la) == len(self.hmaps) - 1:
                 # assume the solver dropped the cost's sensitivity (always 1.0)
                 la = np.hstack(([1.0], la))
             Ax = np.ravel(self.A.dot(solver_out['primal']))
             z = Ax + np.log(self.cs)
             m_iss = [self.p_idxs == i for i in range(len(la))]
-            nu = np.hstack([la[p_i]*np.exp(z[m_is])/sum(np.exp(z[m_is]))
-                            for p_i, m_is in enumerate(m_iss)])
+            self.nu_by_posy = [la[p_i]*np.exp(z[m_is])/sum(np.exp(z[m_is]))
+                               for p_i, m_is in enumerate(m_iss)]
+            nu = np.hstack(self.nu_by_posy)
         else:
             raise RuntimeWarning("The dual solution was not returned.")
         solver_out["nu"], solver_out["la"] = nu, la
@@ -270,7 +277,6 @@ class GeometricProgram(CostedConstraintSet, NomialData):
         # confirm lengths before calling zip
         assert len(self.varlocs) == len(primal)
         result = {"freevariables": KeyDict(zip(self.varlocs, np.exp(primal)))}
-
         ## Get cost
         if "objective" in solver_out:
             result["cost"] = float(solver_out["objective"])
@@ -285,14 +291,12 @@ class GeometricProgram(CostedConstraintSet, NomialData):
 
         ## Get sensitivities
         result["sensitivities"] = {"nu": nu, "la": la}
-        var_senss = self.sens_from_dual(la[1:].tolist(),
-                                        [[nu[i] for i in m_idx]
-                                         for m_idx in self.m_idxs[1:]])
+        var_senss = self.sens_from_dual(la[1:].tolist(), self.nu_by_posy[1:])
         # add cost's sensitivity in
         var_senss += {var: sum([self.cost.exps[i][var]*nu[i] for i in locs])
                       for (var, locs) in self.cost.varlocs.items()
-                      if (var in self.cost.varlocs
-                          and var not in self.posynomials[0].varlocs)}
+                      if (var in self.cost.vks
+                          and var not in self.posynomials[0].vks)}
 
         result["sensitivities"]["constants"] = KeyDict(var_senss)
         result["constants"] = KeyDict(self.substitutions)
@@ -338,10 +342,9 @@ class GeometricProgram(CostedConstraintSet, NomialData):
         # check dual sol
         # note: follows dual formulation in section 3.1 of
         # http://web.mit.edu/~whoburg/www/papers/hoburg_phd_thesis.pdf
-        nu0 = nu[self.m_idxs[0]]
-        if not _almost_equal(nu0.sum(), 1.):
-            raise RuntimeWarning("Dual variables associated with objective"
-                                 " sum to %s, not 1" % nu0.sum())
+        if not _almost_equal(self.nu_by_posy[0].sum(), 1.):
+            raise RuntimeWarning("Dual variables associated with objective sum"
+                                 " to %s, not 1" % self.nu_by_posy[0].sum())
         if any(nu < 0):
             if all(nu > -tol/1000.):  # HACK, see issue 528
                 print("Allowing negative dual variable(s) as small as"
@@ -353,16 +356,16 @@ class GeometricProgram(CostedConstraintSet, NomialData):
         if any(np.abs(ATnu) > tol):
             raise RuntimeWarning("sum of nu^T * A did not vanish")
         b = np.log(self.cs)
-        dual_cost = sum(nu[mi].dot(b[mi]) -
-                        (nu[mi].dot(np.log(nu[mi]/la[i])) if la[i] else 0)
+        dual_cost = sum(self.nu_by_posy[i].dot(b[mi] -
+                                               np.log(self.nu_by_posy[i]/la[i])
+                                               if la[i] else 0)
                         for i, mi in enumerate(self.m_idxs))
         if not _almost_equal(np.exp(dual_cost), cost):
             raise RuntimeWarning("Dual cost %s does not match primal"
                                  " cost %s" % (np.exp(dual_cost), cost))
 
 
-def genA(exps, varlocs):
-    # pylint: disable=invalid-name
+def genA(exps, varlocs):  # pylint: disable=invalid-name
     """Generates A matrix from exps and varlocs
 
     Arguments

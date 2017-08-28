@@ -1,25 +1,15 @@
 """Signomial, Posynomial, Monomial, Constraint, & MonoEQCOnstraint classes"""
 import numpy as np
-from .data import simplify_exps_and_cs
-from .nomial_core import Nomial
-from .substitution import substitution, parse_subs
+from .core import Nomial
 from ..constraints import SingleEquationConstraint
-from ..small_classes import Strings, Numbers, Quantity
+from ..small_classes import Strings, Numbers
 from ..small_classes import HashVector
 from ..keydict import KeySet
 from ..varkey import VarKey
 from ..small_scripts import mag
-from .. import ureg
-from .. import DimensionalityError
 from ..exceptions import InvalidGPConstraint
-
-
-def non_dimensionalize(posy):
-    "Non-dimensionalize a posy (warning: mutates posy)"
-    if posy.units:
-        posy.convert_to('dimensionless')
-        posy.cs = posy.cs.magnitude
-        posy.units = None
+from .map import NomialMap
+from .substitution import parse_subs
 
 
 class Signomial(Nomial):
@@ -40,93 +30,35 @@ class Signomial(Nomial):
         Posynomial (if the input has only positive cs)
         Monomial   (if the input has one term and only positive cs)
     """
-    def __init__(self, exps=None, cs=1, require_positive=True, simplify=True,
-                 **descr):
-        # pylint: disable=too-many-statements
-        # pylint: disable=too-many-branches
-        # this is somewhat deprecated, used for Variables and subbing Monomials
-        units = descr.get("units", None)
-        # If cs has units, then they will override this setting.
-        if isinstance(exps, Numbers):
-            cs = exps
-            exps = {}
-        if (isinstance(cs, Numbers) and
-                (exps is None or isinstance(exps, Strings + (VarKey, dict)))):
-            # building a Monomial
-            if isinstance(exps, VarKey):
-                exp = {exps: 1}
-                units = exps.units  # pylint: disable=no-member
-            elif exps is None or isinstance(exps, Strings):
-                vk = VarKey(**descr) if exps is None else VarKey(exps, **descr)
-                descr = vk.descr
-                units = vk.units
-                exp = {vk: 1}
-            elif isinstance(exps, dict):
-                exp = dict(exps)
-                for key in exps:
-                    if isinstance(key, Strings):
-                        exp[VarKey(key)] = exp.pop(key)
-            else:
-                raise TypeError("could not make Monomial with %s" % type(exps))
-            #simplify = False
-            cs = [cs]
-            exps = [HashVector(exp)]
-        elif isinstance(exps, Nomial):
-            simplify = False
-            cs = exps.cs  # pylint: disable=no-member
-            exps = exps.exps  # pylint: disable=no-member
-        else:
-            try:
-                # test for presence of length and identical lengths
-                assert len(cs) == len(exps)
-                exps_ = list(range(len(exps)))
-                if not all(isinstance(c, Quantity) for c in cs):
-                    try:
-                        cs = np.array(cs, dtype='float')
-                    except ValueError:
-                        raise ValueError("cannot add dimensioned and"
-                                         " dimensionless monomials together.")
-                else:
-                    units = Quantity(1, cs[0].units)
-                    if units.dimensionless:
-                        cs = [c * ureg.dimensionless for c in cs]
-                        units = ureg.dimensionless
-                    try:
-                        cs = [c.to(units).magnitude for c in cs] * units
-                    except DimensionalityError:
-                        raise ValueError("cannot add monomials of"
-                                         " different units together")
-                for i, k in enumerate(exps):
-                    exps_[i] = HashVector(k)
-                    for key in exps_[i]:
-                        if isinstance(key, Strings+(Monomial,)):
-                            exps_[i][VarKey(key)] = exps_[i].pop(key)
-                exps = tuple(exps_)
-            except AssertionError:
-                raise TypeError("cs and exps must have the same length.")
+    _c = _exp = None  # pylint: disable=invalid-name
 
-        if isinstance(units, Quantity):
-            if not isinstance(cs, Quantity):
-                cs = cs*units
-            else:
-                cs = cs.to(units)
-
-        # init NomialData to create self.exps, self.cs, and so on
-        super(Signomial, self).__init__(exps, cs, simplify=simplify)
-
+    def __init__(self, hmap=None, cs=1, require_positive=True, **descr):  # pylint: disable=too-many-statements,too-many-branches
+        if not isinstance(hmap, NomialMap):
+            if hasattr(hmap, "hmap"):
+                hmap = hmap.hmap
+            elif isinstance(hmap, Numbers):
+                hmap_ = NomialMap([(HashVector(), mag(hmap))])
+                hmap_.units_of_product(hmap)
+                hmap = hmap_
+            elif hmap is None:
+                hmap = VarKey(**descr).hmap
+            elif isinstance(hmap, Strings):
+                hmap = VarKey(hmap, **descr).hmap
+            elif isinstance(hmap, dict):
+                exp = HashVector({VarKey(k): v for k, v in hmap.items()})
+                hmap = NomialMap({exp: mag(cs)})
+                hmap.units_of_product(cs)
+                hmap.remove_zeros()
+        super(Signomial, self).__init__(hmap)
         if self.any_nonpositive_cs:
             from .. import SIGNOMIALS_ENABLED
             if require_positive and not SIGNOMIALS_ENABLED:
                 raise ValueError("each c must be positive.")
             self.__class__ = Signomial
+        elif len(self.hmap) == 1:
+            self.__class__ = Monomial
         else:
             self.__class__ = Posynomial
-
-        if len(self.exps) == 1:
-            if self.__class__ is Posynomial:
-                self.__class__ = Monomial
-            self.exp = self.exps[0]
-            self.c = self.cs[0]
 
     def diff(self, var):
         """Derivative of this with respect to a Variable
@@ -140,9 +72,8 @@ class Signomial(Nomial):
         -------
         Signomial (or Posynomial or Monomial)
         """
-        deriv = super(Signomial, self).diff(var)
         # pylint: disable=unexpected-keyword-arg
-        return Signomial(deriv.exps, deriv.cs, require_positive=False)
+        return Signomial(Nomial.diff(self, var), require_positive=False)
 
     def posy_negy(self):
         """Get the positive and negative parts, both as Posynomials
@@ -152,19 +83,14 @@ class Signomial(Nomial):
         Posynomial, Posynomial:
             p_pos and p_neg in (self = p_pos - p_neg) decomposition,
         """
-        p_exp, p_cs, n_exp, n_cs = [], [], [], []
-        assert len(self.cs) == len(self.exps)   # assert before calling zip
-        for c, exp in zip(self.cs, self.exps):
-            if mag(c) > 0:
-                p_exp.append(exp)
-                p_cs.append(c)
-            elif mag(c) < 0:
-                n_exp.append(exp)
-                n_cs.append(-c)  # -c to keep posynomial
-            else:
-                raise ValueError("Unexpected c=%s in %s" % (c, self))
-        return (Posynomial(p_exp, p_cs) if p_cs else 0,
-                Posynomial(n_exp, n_cs) if n_cs else 0)
+        py, ny = NomialMap(), NomialMap()
+        py.units, ny.units = self.units, self.units
+        for exp, c in self.hmap.items():
+            if c > 0:
+                py[exp] = c
+            elif c < 0:
+                ny[exp] = -c  # -c to keep it a posynomial
+        return Posynomial(py) if py else 0, Posynomial(ny) if ny else 0
 
     def mono_approximation(self, x0):
         """Monomial approximation about a point x0
@@ -179,23 +105,27 @@ class Signomial(Nomial):
         Monomial (unless self(x0) < 0, in which case a Signomial is returned)
         """
         x0, _, _ = parse_subs(self.varkeys, x0)  # use only varkey keys
-        exp = HashVector()
-        psub = self.sub(x0)
-        if psub.varlocs:
+        for key, value in x0.items():
+            if hasattr(value, "units"):
+                x0[key] = value.to(key.units).magnitude
+        psub = self.hmap.sub(x0, self.varkeys, parsedsubs=True)
+        if len(psub) > 1 or HashVector() not in psub:
             raise ValueError("Variables %s remained after substituting x0=%s"
-                             % (list(psub.varlocs), x0)
-                             + " into %s" % self)
-        p0 = psub.value  # includes any units
-        m0 = 1
-        for vk in self.varlocs:
-            diff = self.diff(vk)
-            # we convert the x0 value to the proper units
-            x0vk = mag(x0[vk]/vk.units) if hasattr(x0[vk], "units") else x0[vk]
-            # to ensure that e and m0 are dimensionless
-            e = x0vk/mag(p0) * mag(diff.sub(x0, require_positive=False).c)
+                             " into %s" % (list(psub.vks), x0, self))
+        c0, = psub.values()
+        exp = HashVector()
+        c = c0
+        for vk in self.vks:
+            val = float(x0[vk])
+            diff, = self.hmap.diff(vk).sub(x0, self.varkeys,
+                                           parsedsubs=True).values()
+            e = val*diff/c0
             exp[vk] = e
-            m0 *= (x0vk)**e
-        return Monomial(exp, p0/m0)
+            c /= val**e
+        hmap = NomialMap({exp: c})
+        hmap.units = self.units
+        hmap.remove_zeros()
+        return Monomial(hmap)
 
     def sub(self, substitutions, require_positive=True):
         """Returns a nomial with substitued values.
@@ -219,13 +149,13 @@ class Signomial(Nomial):
         -------
         Returns substituted nomial.
         """
-        _, exps, cs, _ = substitution(self, substitutions)
-        return Signomial(exps, cs, require_positive=require_positive)
+        return Signomial(self.hmap.sub(substitutions, self.varkeys),
+                         require_positive=require_positive)
 
     def subinplace(self, substitutions):
         "Substitutes in place."
-        _, exps, cs, _ = substitution(self, substitutions)
-        super(Signomial, self).__init__(exps, cs)
+        Nomial.__init__(self, self.hmap.sub(substitutions, self.varkeys))
+        self._reset()
 
     def __le__(self, other):
         if isinstance(other, (Numbers, Signomial)):
@@ -240,66 +170,55 @@ class Signomial(Nomial):
 
     # posynomial arithmetic
     def __add__(self, other):
+        if isinstance(other, np.ndarray):
+            return np.array(self) + other
+        other_hmap = getattr(other, "hmap", None)
         if isinstance(other, Numbers):
-            if other == 0:
-                return Signomial(self.exps, self.cs)
-            cs = self.cs.tolist() + [other]  # pylint: disable=no-member
-            return Signomial(self.exps + ({},), cs)
-        elif isinstance(other, Signomial):
-             # pylint: disable=no-member
-            cs = self.cs.tolist() + other.cs.tolist()
-            return Signomial(self.exps + other.exps, cs)
-        else:
-            return NotImplemented
+            if not other:  # other is zero
+                return Signomial(self.hmap)
+            else:
+                other_hmap = NomialMap({HashVector(): mag(other)})
+                other_hmap.units_of_product(other)
+        if other_hmap:
+            return Signomial(self.hmap + other_hmap)
+        return NotImplemented
 
     def __mul__(self, other):
-        if isinstance(other, Numbers):
-            if not other:
-                # assume other is multiplicative zero
+        if isinstance(other, np.ndarray):
+            return np.array(self)*other
+        elif isinstance(other, Numbers):
+            if not other:  # other is zero
                 return other
-            return Signomial(self.exps, other*self.cs)
+            hmap = mag(other)*self.hmap
+            hmap.units_of_product(self.hmap.units, other)
+            return Signomial(hmap)
         elif isinstance(other, Signomial):
-            C = np.outer(self.cs, other.cs)
-            if isinstance(self.cs, Quantity) or isinstance(other.cs, Quantity):
-                if not isinstance(self.cs, Quantity):
-                    sunits = ureg.dimensionless
-                else:
-                    sunits = Quantity(1, self.cs[0].units)
-                if not isinstance(other.cs, Quantity):
-                    ounits = ureg.dimensionless
-                else:
-                    ounits = Quantity(1, other.cs[0].units)
-                # HACK: fix for pint not working with np.outer
-                C = C * sunits * ounits
-            Exps = np.empty((len(self.exps), len(other.exps)), dtype="object")
-            for i, exp_s in enumerate(self.exps):
-                for j, exp_o in enumerate(other.exps):
-                    Exps[i, j] = exp_s + exp_o
-            return Signomial(Exps.flatten(), C.flatten())
-        else:
-            return NotImplemented
+            hmap = NomialMap()
+            for exp_s, c_s in self.hmap.items():
+                for exp_o, c_o in other.hmap.items():
+                    exp = exp_s + exp_o
+                    hmap[exp] = c_s*c_o + hmap.get(exp, 0)
+            hmap.remove_zeros()
+            hmap.units_of_product(self.hmap.units, other.hmap.units)
+            return Signomial(hmap)
+        return NotImplemented
 
     def __div__(self, other):
-        """Support the / operator in Python 2.x"""
+        "Support the / operator in Python 2.x"
         if isinstance(other, Numbers):
-            return Signomial(self.exps, self.cs/other)
+            return self*other**-1
         elif isinstance(other, Monomial):
             return other.__rdiv__(self)
         return NotImplemented
 
     def __pow__(self, expo):
-        if isinstance(expo, int):
-            if expo >= 0:
-                p = Monomial({}, 1)
-                while expo > 0:
-                    p *= self
-                    expo -= 1
-                return p
-            else:
-                raise ValueError("Signomials are only closed under"
-                                 " nonnegative integer exponents.")
-        else:
-            return NotImplemented
+        if isinstance(expo, int) and expo >= 0:
+            p = 1
+            while expo > 0:
+                p *= self
+                expo -= 1
+            return p
+        return NotImplemented
 
     def __neg__(self):
         from .. import SIGNOMIALS_ENABLED
@@ -357,6 +276,21 @@ class Monomial(Posynomial):
           These will be deprecated in the future, replaced with a single
           __init__ syntax, same as Signomial.
     """
+
+    @property
+    def exp(self):
+        "Creates exp or returns a cached exp"
+        if not self._exp:
+            self._exp, = self.hmap.keys()  # pylint: disable=attribute-defined-outside-init
+        return self._exp
+
+    @property
+    def c(self):  # pylint: disable=invalid-name
+        "Creates c or returns a cached c"
+        if not self._c:
+            self._c, = self.cs  # pylint: disable=attribute-defined-outside-init, invalid-name
+        return self._c
+
     def __rdiv__(self, other):
         "Divide other by this Monomial"
         if isinstance(other, Numbers + (Signomial,)):
@@ -369,16 +303,25 @@ class Monomial(Posynomial):
 
     def __pow__(self, expo):
         if isinstance(expo, Numbers):
-            return Monomial(self.exp*expo, self.c**expo)
+            (exp, c), = self.hmap.items()
+            exp = exp*expo if expo else HashVector()
+            # TODO: c should already be a float
+            hmap = NomialMap({exp: float(c)**expo})
+            if not (expo and self.hmap.units):
+                hmap.units = None
+            else:
+                hmap.units = self.hmap.units**expo
+            return Monomial(hmap)
         return NotImplemented
 
     # inherit __ne__ from Signomial
 
     def __eq__(self, other):
-        mons = Numbers + (Monomial,)
-        if isinstance(other, mons):
-            # if both are monomials, return a constraint
-            return MonomialEquality(self, "=", other)
+        if isinstance(other, MONS):
+            try:  # if both are monomials, return a constraint
+                return MonomialEquality(self, "=", other)
+            except ValueError:  # units mismatch or infeasible constraint
+                return False
         return super(Monomial, self).__eq__(other)
 
     # Monomial.__le__ falls back on Posynomial.__le__
@@ -391,6 +334,8 @@ class Monomial(Posynomial):
 
     def mono_approximation(self, x0):
         return self
+
+MONS = Numbers + (Monomial,)
 
 
 #######################################################
@@ -405,15 +350,15 @@ class ScalarSingleEquationConstraint(SingleEquationConstraint):
     def __init__(self, left, oper, right):
         super(ScalarSingleEquationConstraint,
               self).__init__(Signomial(left), oper, Signomial(right))
-        self.varkeys = KeySet(self.left.varlocs)
-        self.varkeys.update(self.right.varlocs)
+        self.varkeys = KeySet(self.left.vks)
+        self.varkeys.update(self.right.vks)
 
     def subinplace(self, substitutions):
         "Modifies the constraint in place with substitutions."
         for nomial in self.nomials:
             nomial.subinplace(substitutions)
-        self.varkeys = KeySet(self.left.varlocs)
-        self.varkeys.update(self.right.varlocs)
+        self.varkeys = KeySet(self.left.vks)
+        self.varkeys.update(self.right.vks)
 
 
 # pylint: disable=too-many-instance-attributes
@@ -430,102 +375,90 @@ class PosynomialInequality(ScalarSingleEquationConstraint):
         elif self.oper == ">=":
             m_gt, p_lt = self.left, self.right
         else:
-            raise ValueError("operator %s is not supported by Posynomial"
-                             "Constraint." % self.oper)
+            raise ValueError("operator %s is not supported." % self.oper)
 
         self.p_lt, self.m_gt = p_lt, m_gt
         self.substitutions = dict(p_lt.values)
         self.substitutions.update(m_gt.values)
-        self.unsubbed = self._gen_unsubbed()
+        self.unsubbed = self._gen_unsubbed(p_lt, m_gt)
         self.nomials = [self.left, self.right, self.p_lt, self.m_gt]
         self.nomials.extend(self.unsubbed)
-        self._last_used_substitutions = None
+        self._last_used_substitutions = {}
 
-    def _simplify_posy_ineq(self, exps, cs, pmap):
+    def _simplify_posy_ineq(self, hmap, pmap=None, allow_tautological=True):
         "Simplify a posy <= 1 by moving constants to the right side."
-        coeff = 1.0
-        for i, exp in enumerate(exps):
-            if not exp:
-                cs = cs.tolist()
-                coeff -= cs.pop(i)
-                cs = np.array(cs)/coeff
-                exps_ = list(exps)
-                exps_.pop(i)
-                exps = tuple(exps_)
-                if pmap is not None:
-                    # move constant term's mmap to another attribute
-                    self.const_mmap = pmap.pop(i)  # pylint: disable=attribute-defined-outside-init
-                    self.const_coeff = coeff  # pylint: disable=attribute-defined-outside-init
-                break
-
-        if not exps and coeff >= 0:  # tautological monomial
-            return None, None, pmap
+        empty_exp = HashVector()
+        if empty_exp not in hmap:
+            return hmap
+        coeff = 1 - hmap[empty_exp]
+        if pmap is not None:  # note constant term's mmap
+            const_idx = hmap.keys().index(empty_exp)
+            self.const_mmap = self.pmap.pop(const_idx)  # pylint: disable=attribute-defined-outside-init
+            self.const_coeff = coeff  # pylint: disable=attribute-defined-outside-init
+        if (allow_tautological and (coeff >= 0 or np.isnan(coeff))
+                and len(hmap) == 1):  # a tautological monomial!
+            return None  # ValueError("tautological constraint: %s" % self)
         elif coeff <= 0:
             raise ValueError("infeasible constraint: %s" % self)
-        return exps, cs, pmap
+        scaled = hmap/coeff
+        scaled.units = hmap.units
+        del scaled[empty_exp]
+        return scaled
 
-    def _gen_unsubbed(self):
-        "Returns the unsubstituted posys <= 1."
-        p = self.p_lt / self.m_gt
+    def _gen_unsubbed(self, p_lt, m_gt):
+        """Returns the unsubstituted posys <= 1.
 
-        try:
-            non_dimensionalize(p)
-        except DimensionalityError:
-            raise ValueError("unit mismatch: units of %s cannot "
-                             "be converted to units of %s" %
-                             (self.p_lt, self.m_gt))
+        Parameters
+        ----------
+        p_lt : posynomial
+            the left-hand side of (posynomial < monomial)
 
-        p.exps, p.cs, _ = self._simplify_posy_ineq(p.exps, p.cs, None)
-        return [p]
+        m_gt : posynomial
+            the right-hand side of (posynomial < monomial)
+
+        """
+        hmap = (p_lt / m_gt).hmap
+        if hmap.units:
+            raise ValueError("unit mismatch: units of %s cannot be converted"
+                             " to units of %s" % (p_lt, m_gt))
+        hmap = self._simplify_posy_ineq(hmap)
+        if hmap is None:
+            return []
+        return [Posynomial(hmap)]
 
     def as_posyslt1(self, substitutions=None):
-        "Returns the posys <= 1 representation of this constraint."
+        """Returns the posys <= 1 representation of this constraint.
+        """
         posys = self.unsubbed
         if not substitutions:
-            self._last_used_substitutions = substitutions
             # just return the pre-generated posynomial representation
             return posys
 
         out = []
+        self._last_used_substitutions = {}
         for posy in posys:
-            # 1) substitution
-            _, exps, cs, subs = substitution(posy, substitutions)
-            self._last_used_substitutions = subs
-            # 2) algebraic simplification
-            exps, cs, pmap = simplify_exps_and_cs(exps, cs, return_map=True)
-            # 3) constraint simpl. (subtracting the constant term from the RHS)
-            exps, cs, pmap = self._simplify_posy_ineq(exps, cs, pmap)
-            if not exps and not cs:  # skip tautological constraints
+            fixed, _, _ = parse_subs(posy.varkeys, substitutions)
+            self._last_used_substitutions.update(fixed)
+            hmap = posy.hmap.sub(fixed, posy.varkeys, parsedsubs=True)
+            self.pmap, self.mfm = hmap.mmap(posy.hmap)  # pylint: disable=attribute-defined-outside-init
+            hmap = self._simplify_posy_ineq(hmap, self.pmap)
+            if hmap is None:
                 continue
-
-            #  The monomial sensitivities from the GP/SP are in terms of this
-            #  smaller post-substitution list of monomials, so we need to map
-            #  back to the pre-substitution list.
-            #
-            #  A "pmap" is a list of HashVectors (mmaps), whose keys are
-            #  monomial indexes pre-substitution, and whose values are the
-            #  percentage of the simplified  monomial's coefficient that came
-            #  from that particular parent.
-
-            self.pmap = pmap  # pylint: disable=attribute-defined-outside-init
-            try:
-                p = Posynomial(exps, cs, simplify=False)
-            except ValueError:
+            p = Posynomial(hmap)
+            out.append(p)
+            if p.any_nonpositive_cs:
                 raise RuntimeWarning("PosynomialInequality %s became Signomial"
                                      " after substitution %s"
                                      % (self, substitutions))
-            out.append(p)
         return out
 
     def sens_from_dual(self, la, nu):
         "Returns the variable/constraint sensitivities from lambda/nu"
         if not la or not nu:
-            # as_posyslt1 created no inequalities
-            return {}
+            return {}  # as_posyslt1 created no inequalities
         la, = la
         nu, = nu
         presub, = self.unsubbed
-        # constr_sens = {"overall": la}
         if hasattr(self, "pmap"):
             nu_ = np.zeros(len(presub.cs))
             for i, mmap in enumerate(self.pmap):
@@ -536,52 +469,39 @@ class PosynomialInequality(ScalarSingleEquationConstraint):
                 for idx, percentage in self.const_mmap.items():
                     nu_[idx] += percentage * la*scale
             nu = nu_
-
-        # Monomial sensitivities
-        # constr_sens[str(self.m_gt)] = la
-        # for i, mono_sens in enumerate(nu):
-        #     mono_str = fast_monomial_str(self.p_lt.exps[i], self.p_lt.cs[i])
-        #     constr_sens[mono_str] = mono_sens
-        # Constant sensitivities
-        var_senss = {}
+        var_senss = {}  # Constant sensitivities
         for var in self._last_used_substitutions:
             locs = presub.varlocs[var]
             var_senss[var] = sum([presub.exps[i][var]*nu[i] for i in locs])
         return var_senss
 
-    # pylint: disable=unused-argument
-    def as_gpconstr(self, x0, substitutions):
-        "GP version of a Posynomial constraint is itself"
+    def as_gpconstr(self, x0, substitutions):  # pylint: disable=unused-argument
+        "The GP version of a Posynomial constraint is itself"
         return self
 
 
 class MonomialEquality(PosynomialInequality):
     "A Constraint of the form Monomial == Monomial."
 
-    # pylint: disable=super-init-not-called
     def __init__(self, left, oper, right):
-        # pylint: disable=non-parent-init-called
+        # pylint: disable=super-init-not-called,non-parent-init-called
         ScalarSingleEquationConstraint.__init__(self, left, oper, right)
         if self.oper != "=":
             raise ValueError("operator %s is not supported by"
                              " MonomialEquality." % self.oper)
         self.substitutions = dict(self.left.values)
         self.substitutions.update(self.right.values)
-        self.unsubbed = self._gen_unsubbed()
+        self.unsubbed = self._gen_unsubbed(self.left, self.right)
         self.nomials = [self.left, self.right]
         self.nomials.extend(self.unsubbed)
+        self._last_used_substitutions = {}
 
-    def _gen_unsubbed(self):
+    def _gen_unsubbed(self, left, right):  # pylint: disable=arguments-differ
         "Returns the unsubstituted posys <= 1."
-        l_lt_r, r_lt_l = self.left/self.right, self.right/self.left
-        try:
-            non_dimensionalize(l_lt_r)
-            non_dimensionalize(l_lt_r)
-        except DimensionalityError:
-            raise ValueError("unit mismatch: units of %s cannot "
-                             "be converted to units of %s" %
-                             (self.left, self.right))
-        return [l_lt_r, r_lt_l]
+        unsubbed = PosynomialInequality._gen_unsubbed
+        l_over_r = unsubbed(self, left, right)
+        r_over_l = unsubbed(self, right, left)
+        return l_over_r + r_over_l
 
     def __nonzero__(self):
         'A constraint not guaranteed to be satisfied  evaluates as "False".'
@@ -595,19 +515,13 @@ class MonomialEquality(PosynomialInequality):
     def sens_from_dual(self, la, nu):
         "Returns the variable/constraint sensitivities from lambda/nu"
         if not la or not nu:
-            # as_posyslt1 created no inequalities
-            return {}
-        # left, right = la
-        # constr_sens = {str(self.left): left-right,
-        #                str(self.right): right-left}
-        # Constant sensitivities
+            return {}  # as_posyslt1 created no inequalities
         var_senss = HashVector()
-        for i, m_s in enumerate(nu):
-            presub = self.unsubbed[i]
-            var_sens = {var: sum([presub.exps[i][var]*m_s[i] for i in locs])
-                        for (var, locs) in presub.varlocs.items()
-                        if var in self._last_used_substitutions}
-            var_senss += HashVector(var_sens)
+        for var in self._last_used_substitutions:
+            for i, m in enumerate(self.unsubbed):
+                if var in m.varlocs:
+                    nu_, = nu[i]
+                    var_senss[var] = m.exp[var]*nu_ + var_senss.get(var, 0)
         return var_senss
 
 
@@ -630,8 +544,7 @@ class SignomialInequality(ScalarSingleEquationConstraint):
         elif self.oper == ">=":
             pgt, plt = self.left, self.right
         else:
-            raise ValueError("operator %s is not supported by Signomial"
-                             "Constraint." % self.oper)
+            raise ValueError("operator %s is not supported." % self.oper)
         self.nomials = [self.left, self.right]
         self.unsubbed = [plt - pgt]
         self.nomials.extend(self.unsubbed)
@@ -660,22 +573,21 @@ class SignomialInequality(ScalarSingleEquationConstraint):
             raise InvalidGPConstraint("SignomialInequality could not simplify"
                                       " to a PosynomialInequality; try calling"
                                       " `.localsolve` instead of `.solve` to"
-                                      " form your Model as a SignomialProgram")
+                                      " form your Model as a"
+                                      " SequentialGeometricProgram")
 
     def as_gpconstr(self, x0, substitutions=None):
         "Returns GP approximation of an SP constraint at x0"
         siglt0, = self.unsubbed
-        if substitutions:
-            # check if it's a posynomial constraint after substitutions
+        if substitutions:  # check if it will become a posynomial constraint
             subsiglt0 = siglt0.sub(substitutions, require_positive=False)
             _, subnegy = subsiglt0.posy_negy()
             if not hasattr(subnegy, "cs") or len(subnegy.cs) == 1:
                 return self
         posy, negy = siglt0.posy_negy()
-        # assume unspecified negy variables have a value of 1.0
-        x0.update({vk: 1.0 for vk in negy.varlocs if vk not in x0})
+        # default guess of 1.0 for unspecified negy variables
+        x0.update({vk: 1.0 for vk in negy.vks if vk not in x0})
         pc = PosynomialInequality(posy, "<=", negy.mono_lower_bound(x0))
-        pc.substitutions = self.substitutions
         return pc
 
     def as_approxslt(self):
@@ -698,28 +610,28 @@ class SingleSignomialEquality(SignomialInequality):
 
     def as_posyslt1(self, substitutions=None):
         "Returns the posys <= 1 representation of this constraint."
-        # TODO: deal with substitutions
+        # TODO: check if it would be a monomial equality after substitutions
         raise InvalidGPConstraint("SignomialEquality could not simplify"
                                   " to a PosynomialInequality; try calling"
                                   "`.localsolve` instead of `.solve` to"
-                                  " form your Model as a SignomialProgram")
+                                  " form your Model as a"
+                                  " SequentialGeometricProgram")
 
     def as_gpconstr(self, x0, substitutions=None):
         "Returns GP approximation of an SP constraint at x0"
-        # TODO: deal with substitutions
+        # TODO: check if it would be a monomial equality after substitutions
         siglt0, = self.unsubbed
         posy, negy = siglt0.posy_negy()
         # assume unspecified variables have a value of 1.0
-        x0.update({vk: 1.0 for vk in siglt0.varlocs if vk not in x0})
+        x0.update({vk: 1.0 for vk in siglt0.vks if vk not in x0})
         mec = (posy.mono_lower_bound(x0) == negy.mono_lower_bound(x0))
-        mec.substitutions = self.substitutions
         return mec
 
     def as_approxslt(self):
         "Returns posynomial-less-than sides of a signomial constraint"
-        self._siglt0, = self.unsubbed  # pylint: disable=attribute-defined-outside-init
-        self._posy, self._negy = self._siglt0.posy_negy()  # pylint: disable=attribute-defined-outside-init
-        return Monomial(1), Monomial(1)
+        siglt0, = self.unsubbed
+        self._posy, self._negy = siglt0.posy_negy()  # pylint: disable=attribute-defined-outside-init
+        return Monomial(1), Monomial(1)  # no 'fixed' posy_lt for a SigEq
 
     def as_approxsgt(self, x0):
         "Returns monomial-greater-than sides, to be called after as_approxlt1"

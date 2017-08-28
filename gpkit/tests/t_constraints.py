@@ -50,9 +50,9 @@ class TestConstraint(unittest.TestCase):
 
     def test_constraintget(self):
         x = Variable("x")
-        x_ = Variable("x", model="_")
+        x_ = Variable("x", models=["_"])
         xv = VectorVariable(2, "x")
-        xv_ = VectorVariable(2, "x", model="_")
+        xv_ = VectorVariable(2, "x", models=["_"])
         self.assertEqual(Model(x, [x >= 1])["x"], x)
         with self.assertRaises(ValueError):
             _ = Model(x, [x >= 1, x_ >= 1])["x"]
@@ -73,8 +73,7 @@ class TestConstraint(unittest.TestCase):
         self.assertEqual(type(c2), PosynomialInequality)
         c1posy, = c1.as_posyslt1()
         c2posy, = c2.as_posyslt1()
-        self.assertEqual(c1posy.cs, c2posy.cs)
-        self.assertEqual(c1posy.exps, c2posy.exps)
+        self.assertEqual(c1posy.hmap, c2posy.hmap)
 
     def test_additive_scalar_gt1(self):
         """1 can't be greater than (1 + something positive)"""
