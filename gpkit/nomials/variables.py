@@ -3,7 +3,7 @@ from collections import Iterable
 import numpy as np
 from .data import NomialData
 from .array import NomialArray
-from .nomial_math import Monomial
+from .math import Monomial
 from ..varkey import VarKey
 from ..small_classes import Strings, Numbers, Quantity
 from ..small_scripts import is_sweepvar
@@ -56,21 +56,17 @@ class Variable(Monomial):
             if MODELNUMS:
                 descr["modelnums"] = descr.get("modelnums", []) + MODELNUMS
 
-        Monomial.__init__(self, **descr)
+        self.key = VarKey(**descr)
+        Monomial.__init__(self, self.key.hmap)
         # NOTE: because Signomial.__init__ will change the class
         self.__class__ = Variable
 
     __hash__ = NomialData.__hash__
 
-    @property
-    def key(self):
-        """Get the VarKey associated with this Variable"""
-        return list(self.exp)[0]
-
-    def to(self, arg):
+    def to(self, units):
         "Create new Signomial converted to new units"
          # pylint: disable=no-member
-        return Monomial(self).to(arg)
+        return Monomial(self).to(units)
 
     def sub(self, *args, **kwargs):
         # pylint: disable=arguments-differ

@@ -37,7 +37,7 @@ class CostedConstraintSet(ConstraintSet):
     def reset_varkeys(self):
         "Resets varkeys to what is in the cost and constraints"
         ConstraintSet.reset_varkeys(self)
-        self.varkeys.update(self.cost.varlocs)
+        self.varkeys.update(self.cost.vks)
 
     def rootconstr_str(self, excluded=None):
         "String showing cost, to be used when this is the top constraint"
