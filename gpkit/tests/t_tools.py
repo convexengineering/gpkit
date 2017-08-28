@@ -58,7 +58,10 @@ class TestTools(unittest.TestCase):
         "Test Taylor expansion of secant(var)"
         x = Variable('x')
         self.assertEqual(te_secant(x, 1), 1 + x**2/2.)
-        self.assertEqual(te_secant(x, 2), 1 + x**2/2. + 5*x**4/24.)
+        a = te_secant(x, 2)
+        b = 1 + x**2/2. + 5*x**4/24.
+        self.assertTrue(all([abs(val) <= 1e-10
+                             for val in (a.hmap - b.hmap).values()]))  # pylint:disable=no-member
         self.assertEqual(te_secant(x, 0), 1)
         # make sure x was not modified
         self.assertEqual(x, Variable('x'))
@@ -100,6 +103,21 @@ class TestTools(unittest.TestCase):
         self.assertEqual(DC, ['-0.2*x(1).^-1.2 + 17,...\n          ' +
                               '-3.2*x(2).^2.2', '0,...\n          -1'])
         self.assertEqual(DCeq, ['-1,...\n            0'])
+
+    def test_fmincon_generator_logspace(self):
+        "Test fmincon comparison tool (logspace)"
+        x = Variable('x')
+        y = Variable('y')
+        m = Model(x, [x**3.2 >= 17*y + y**-0.2,
+                      x >= 2,
+                      y == 4])
+        obj, c, ceq, _, _ = generate_mfiles(m, writefiles=False, logspace=True)
+        self.assertEqual(c, [('log( + 1.0*exp( +-3.2 * x(2) +-0.2 * x(1) ) + ' +
+                              '17.0*exp( +-3.2 * x(2) +1 * x(1) ) )'),
+                             'log( + 2.0*exp( +-1 * x(2) ) )'])
+        self.assertEqual(obj, 'log( + 1.0*exp( +1 * x(2) ) )')
+        self.assertEqual(ceq, ['log( + 0.25*exp( +1 * x(1) ) )'])
+
 
 TESTS = [TestTools]
 

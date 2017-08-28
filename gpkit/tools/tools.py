@@ -43,7 +43,7 @@ def te_secant(var, nterm):
         Taylor expansion of secant(x), carried to nterm terms
     """
     # The first 12 Euler Numbers
-    E2n = np.asarray([1,
+    E2n = np.asarray([1.0,
                       5,
                       61,
                       1385,
@@ -138,7 +138,7 @@ def composite_objective(*objectives, **kwargs):
     ws = VectorVariable(n-1, "w_{CO}", sweepvals, "-")
     w_s = []
     for w in ws:
-        descr = dict(w.descr)
+        descr = dict(w.key.descr)
         del descr["value"]
         descr["name"] = "v_{CO}"
         w_s.append(Variable(value=lambda const: 1-const[w.key], **descr))  # pylint: disable=cell-var-from-loop

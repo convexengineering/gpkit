@@ -160,8 +160,7 @@ class SolutionOracle(object):
         return self.__getval(key)
 
     def _is_cost(self, key):
-        if hasattr(key, "exps") and (key.exps == self.bst.costposy.exps and
-                                     key.cs == self.bst.costposy.cs):
+        if hasattr(key, "hmap") and key.hmap == self.bst.costposy.hmap:
             key = "cost"
         return key == "cost"
 
