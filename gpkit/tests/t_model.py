@@ -497,6 +497,18 @@ class TestSP(unittest.TestCase):
         first_gp_constr_posy = gp[0][0].as_posyslt1()[0]
         self.assertEqual(first_gp_constr_posy.exp[x.key], -1./3)
 
+    def test_reassigned_constant_cost(self):
+        # for issue 1131
+        x = Variable('x')
+        x_min = Variable('x_min', 1)
+        y = Variable('y')
+        with SignomialsEnabled():
+            m = Model(y, [y + 0.5 >= x, x >= x_min])
+        m.localsolve(verbosity=0, solver=self.solver)
+        del m.substitutions[x_min]
+        m.cost = 1/x_min
+        self.assertNotIn(x_min, m.sp().substitutions)
+
     def test_unbounded_debugging(self):
         "Test nearly-dual-feasible problems"
         x = Variable("x")
