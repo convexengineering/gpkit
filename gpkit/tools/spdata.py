@@ -1,7 +1,7 @@
 "Implements SPData class"
 import numpy as np
 from ..nomials import NomialData, SignomialInequality, PosynomialInequality
-from ..constraints.geometric_program import genA
+from ..constraints.gp import genA
 from ..small_scripts import mag
 
 
@@ -26,7 +26,8 @@ class SPData(NomialData):
             else:
                 raise ValueError("unknown constraint %s of type %s"
                                  % (constraint, type(constraint)))
-        NomialData.init_from_nomials(self, self.signomials)
+        # NomialData.init_from_nomials(self, self.signomials)
+        # TODO: use gp.gen() instead?
 
         # k [j]: number of monomials (columns of F) present in each constraint
         k = [len(p.cs) for p in self.signomials]

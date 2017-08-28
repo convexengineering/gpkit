@@ -249,7 +249,7 @@ class TestGP(unittest.TestCase):
         gp2 = m2.gp(verbosity=0)
         # pylint: disable=no-member
         self.assertEqual(gp1.A, gp2.A)
-        self.assertTrue((gp1.cs == gp2.cs).all())
+        self.assertTrue(gp1.cs == gp2.cs)
 
 
 class TestSP(unittest.TestCase):
@@ -350,6 +350,17 @@ class TestSP(unittest.TestCase):
         sol = m.localsolve(self.solver, verbosity=0)
         self.assertAlmostEqual(sol["variables"]["x"], 0.9, self.ndig)
 
+    def test_tautological_spconstraint(self):
+        x = Variable('x')
+        y = Variable('y')
+        z = Variable('z', 0)
+        with SignomialsEnabled():
+            m = Model(x, [x >= 1-y, y <= 0.1, y >= z])
+        with self.assertRaises(InvalidGPConstraint):
+            m.solve(verbosity=0)
+        sol = m.localsolve(self.solver, verbosity=0)
+        self.assertAlmostEqual(sol["variables"]["x"], 0.9, self.ndig)
+
     def test_relaxation(self):
         x = Variable("x")
         y = Variable("y")
@@ -424,10 +435,10 @@ class TestSP(unittest.TestCase):
     def test_sp_initial_guess_sub(self):
         x = Variable("x")
         y = Variable("y")
-        x0 = 1
+        x0 = 2
         y0 = 2
         with SignomialsEnabled():
-            constraints = [y + x >= 2, y <= x]
+            constraints = [y + x >= 4, y <= x]
         objective = x
         m = Model(objective, constraints)
         try:
@@ -435,16 +446,16 @@ class TestSP(unittest.TestCase):
                                solver=self.solver)
         except TypeError:
             self.fail("Call to local solve with only variables failed")
-        self.assertAlmostEqual(sol(x), 1, self.ndig)
-        self.assertAlmostEqual(sol["cost"], 1, self.ndig)
+        self.assertAlmostEqual(sol(x), 2, self.ndig)
+        self.assertAlmostEqual(sol["cost"], 2, self.ndig)
 
         try:
             sol = m.localsolve(x0={"x": x0, "y": y0}, verbosity=0,
                                solver=self.solver)
         except TypeError:
             self.fail("Call to local solve with only variable strings failed")
-        self.assertAlmostEqual(sol("x"), 1, self.ndig)
-        self.assertAlmostEqual(sol["cost"], 1, self.ndig)
+        self.assertAlmostEqual(sol("x"), 2, self.ndig)
+        self.assertAlmostEqual(sol["cost"], 2, self.ndig)
 
         try:
             sol = m.localsolve(x0={"x": x0, y: y0}, verbosity=0,
@@ -452,7 +463,7 @@ class TestSP(unittest.TestCase):
         except TypeError:
             self.fail("Call to local solve with a mix of variable strings "
                       "and variables failed")
-        self.assertAlmostEqual(sol["cost"], 1, self.ndig)
+        self.assertAlmostEqual(sol["cost"], 2, self.ndig)
 
     def test_small_named_signomial(self):
         x = Variable('x')

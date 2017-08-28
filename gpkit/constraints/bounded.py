@@ -5,7 +5,6 @@ import numpy as np
 from .. import Variable
 from .set import ConstraintSet
 from ..small_scripts import mag
-from ..small_classes import Quantity
 
 
 def varkey_bounds(varkeys, lower, upper):
@@ -25,12 +24,14 @@ def varkey_bounds(varkeys, lower, upper):
     constraints = []
     for varkey in varkeys:
         variable = Variable(**varkey.descr)
-        units = varkey.units if isinstance(varkey.units, Quantity) else 1
+        if variable.units:
+            variable.hmap.units = None
+            variable.units = None
         constraint = []
         if upper:
-            constraint.append(upper >= variable/units)
+            constraint.append(upper >= variable)
         if lower:
-            constraint.append(variable/units >= lower)
+            constraint.append(variable >= lower)
         constraints.append(constraint)
     return constraints
 
