@@ -150,7 +150,6 @@ class KeyDict(dict):
                 kwargs = {} if number_array else {"dtype": "object"}
                 emptyvec = np.full(key.shape, np.nan, **kwargs)
                 dict.__setitem__(self, key, emptyvec)
-# <<<<<<< HEAD
         if idx:
             if hasattr(value, "exp") and not value.exp:
                 value = value.value  # substitute constant monomials
@@ -173,22 +172,6 @@ class KeyDict(dict):
             if hasattr(value, "exp") and not value.exp:
                 value = value.value  # substitute constant monomials
             dict.__setitem__(self, key, value)
-# =======
-#         for mapkey in self.keymap[key]:
-#             if idx:
-#                 dict.__getitem__(self, mapkey)[idx] = value
-#             else:
-#                 if (dict.__contains__(self, mapkey)
-#                         and getattr(value, "shape", ())):
-#                     try:
-#                         goodvals = ~np.isnan(value)
-#                     except TypeError:
-#                         pass  # could not evaluate nan-ness! assume no nans
-#                     else:
-#                         self[mapkey][goodvals] = value[goodvals]
-#                         continue
-#                 dict.__setitem__(self, mapkey, value)
-# >>>>>>> master
 
     def update_keymap(self):
         "Updates the keymap with the keys in _unmapped_keys"
