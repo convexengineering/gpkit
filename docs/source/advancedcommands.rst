@@ -63,7 +63,7 @@ Sweep Substitutions
 -------------------
 Alternatively, or to sweep a higher-dimensional grid, Variables can swept with a substitution value takes the form ``('sweep', Iterable)``, such as ``('sweep', np.linspace(1e6, 1e7, 100))``. During variable declaration, giving an Iterable value for a Variable is assumed to be giving it a sweep value: for example, ``x = Variable("x", [1, 2, 3])`` will sweep ``x`` over three values.
 
-Vector variables may also be substituted for: ``y = VectorVariable(3, "y", ("sweep" ,[[1, 2], [1, 2], [1, 2]])`` will sweep :math:`y\ \forall~y_i\in\left\{1,2\right\}`.
+Vector variables may also be substituted for: ``{y: ("sweep" ,[[1, 2], [1, 2], [1, 2]])}`` will sweep :math:`y\ \forall~y_i\in\left\{1,2\right\}`. These sweeps cannot be specified during Variable creation.
 
 A Model with sweep substitutions will solve for all possible combinations: e.g., if there’s a variable ``x`` with value ``('sweep', [1, 3])`` and a variable ``y`` with value ``('sweep', [14, 17])`` then the gp will be solved four times, for :math:`(x,y)\in\left\{(1, 14),\ (1, 17),\ (3, 14),\ (3, 17)\right\}`. The returned solutions will be a one-dimensional array (or 2-D for vector variables), accessed in the usual way.
 
