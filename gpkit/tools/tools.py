@@ -8,9 +8,12 @@ def parse_variables(string):
     "Parses a string to determine what variables to create from it"
     idx = string.index("Variables\n")
     if idx == -1:
-        return ""
+        idx = 0
+        skiplines = 0
+    else:
+        skiplines = 2
     outstr = "from gpkit import Variable\n"
-    for line in string[idx:].split("\n")[2:]:
+    for line in string[idx:].split("\n")[skiplines:]:
         try:
             unitstart, unitend = line.index("["), line.index("]")
         except ValueError:
