@@ -12,7 +12,8 @@ class CostedConstraintSet(ConstraintSet):
     constraints : Iterable
     substitutions : dict
     """
-    def __init__(self, cost, constraints, substitutions=None):
+    def __init__(self, cost, constraints, substitutions=None,
+                 add_cost_values_to_substitutions=True):
         if isinstance(cost, np.ndarray):  # if it's a vector
             if not cost.shape:  # if it's zero-dimensional
                 cost, = cost.flatten()
@@ -20,9 +21,12 @@ class CostedConstraintSet(ConstraintSet):
                 raise ValueError("cost must be scalar, not the vector %s"
                                  % cost)
         self.cost = cost
-        subs = dict(self.cost.values)
-        if substitutions:
-            subs.update(substitutions)
+        if add_cost_values_to_substitutions:
+            subs = dict(self.cost.values)
+            if substitutions:
+                subs.update(substitutions)
+        else:
+            subs = substitutions
         ConstraintSet.__init__(self, constraints, subs)
 
     def subinplace(self, subs):
@@ -33,7 +37,7 @@ class CostedConstraintSet(ConstraintSet):
     def reset_varkeys(self):
         "Resets varkeys to what is in the cost and constraints"
         ConstraintSet.reset_varkeys(self)
-        self.varkeys.update(self.cost.varlocs)
+        self.varkeys.update(self.cost.vks)
 
     def rootconstr_str(self, excluded=None):
         "String showing cost, to be used when this is the top constraint"

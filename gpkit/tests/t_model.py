@@ -249,7 +249,7 @@ class TestGP(unittest.TestCase):
         gp2 = m2.gp(verbosity=0)
         # pylint: disable=no-member
         self.assertEqual(gp1.A, gp2.A)
-        self.assertTrue((gp1.cs == gp2.cs).all())
+        self.assertTrue(gp1.cs == gp2.cs)
 
 
 class TestSP(unittest.TestCase):
@@ -275,10 +275,11 @@ class TestSP(unittest.TestCase):
         with SignomialsEnabled():
             m = Model(x, Bounded([x + y >= 1], verbosity=0))
         sol = m.localsolve(verbosity=0)
-        if "value near lower bound" in sol["boundedness"]:
-            self.assertIn(x, sol["boundedness"]["value near lower bound"])
-        if "value near upper bound" in sol["boundedness"]:
-            self.assertIn(y, sol["boundedness"]["value near upper bound"])
+        boundedness = sol["boundedness"]
+        if "value near lower bound" in boundedness:
+            self.assertEqual(x.key, boundedness["value near lower bound"][0])
+        if "value near upper bound" in boundedness:
+            self.assertEqual(y.key, boundedness["value near upper bound"][0])
 
     def test_values_vs_subs(self):
         # Substitutions update method
@@ -346,6 +347,17 @@ class TestSP(unittest.TestCase):
         self.assertAlmostEqual(sol["variables"]["x"], 0.9, self.ndig)
         with SignomialsEnabled():
             m = Model(x, [x+y >= 1, y <= 0.1])
+        sol = m.localsolve(self.solver, verbosity=0)
+        self.assertAlmostEqual(sol["variables"]["x"], 0.9, self.ndig)
+
+    def test_tautological_spconstraint(self):
+        x = Variable('x')
+        y = Variable('y')
+        z = Variable('z', 0)
+        with SignomialsEnabled():
+            m = Model(x, [x >= 1-y, y <= 0.1, y >= z])
+        with self.assertRaises(InvalidGPConstraint):
+            m.solve(verbosity=0)
         sol = m.localsolve(self.solver, verbosity=0)
         self.assertAlmostEqual(sol["variables"]["x"], 0.9, self.ndig)
 
@@ -423,10 +435,10 @@ class TestSP(unittest.TestCase):
     def test_sp_initial_guess_sub(self):
         x = Variable("x")
         y = Variable("y")
-        x0 = 1
+        x0 = 2
         y0 = 2
         with SignomialsEnabled():
-            constraints = [y + x >= 2, y <= x]
+            constraints = [y + x >= 4, y <= x]
         objective = x
         m = Model(objective, constraints)
         try:
@@ -434,16 +446,16 @@ class TestSP(unittest.TestCase):
                                solver=self.solver)
         except TypeError:
             self.fail("Call to local solve with only variables failed")
-        self.assertAlmostEqual(sol(x), 1, self.ndig)
-        self.assertAlmostEqual(sol["cost"], 1, self.ndig)
+        self.assertAlmostEqual(sol(x), 2, self.ndig)
+        self.assertAlmostEqual(sol["cost"], 2, self.ndig)
 
         try:
             sol = m.localsolve(x0={"x": x0, "y": y0}, verbosity=0,
                                solver=self.solver)
         except TypeError:
             self.fail("Call to local solve with only variable strings failed")
-        self.assertAlmostEqual(sol("x"), 1, self.ndig)
-        self.assertAlmostEqual(sol["cost"], 1, self.ndig)
+        self.assertAlmostEqual(sol("x"), 2, self.ndig)
+        self.assertAlmostEqual(sol["cost"], 2, self.ndig)
 
         try:
             sol = m.localsolve(x0={"x": x0, y: y0}, verbosity=0,
@@ -451,7 +463,7 @@ class TestSP(unittest.TestCase):
         except TypeError:
             self.fail("Call to local solve with a mix of variable strings "
                       "and variables failed")
-        self.assertAlmostEqual(sol["cost"], 1, self.ndig)
+        self.assertAlmostEqual(sol["cost"], 2, self.ndig)
 
     def test_small_named_signomial(self):
         x = Variable('x')
@@ -484,6 +496,18 @@ class TestSP(unittest.TestCase):
         gp = m.sp().gp(x0={x: 0.5}, verbosity=0)  # pylint: disable=no-member
         first_gp_constr_posy = gp[0][0].as_posyslt1()[0]
         self.assertEqual(first_gp_constr_posy.exp[x.key], -1./3)
+
+    def test_reassigned_constant_cost(self):
+        # for issue 1131
+        x = Variable('x')
+        x_min = Variable('x_min', 1)
+        y = Variable('y')
+        with SignomialsEnabled():
+            m = Model(y, [y + 0.5 >= x, x >= x_min])
+        m.localsolve(verbosity=0, solver=self.solver)
+        del m.substitutions[x_min]
+        m.cost = 1/x_min
+        self.assertNotIn(x_min, m.sp().substitutions)
 
     def test_unbounded_debugging(self):
         "Test nearly-dual-feasible problems"

@@ -3,7 +3,7 @@ from collections import Iterable
 import numpy as np
 from .data import NomialData
 from .array import NomialArray
-from .nomial_math import Monomial
+from .math import Monomial
 from ..varkey import VarKey
 from ..small_classes import Strings, Numbers, Quantity
 from ..small_scripts import is_sweepvar
@@ -56,28 +56,20 @@ class Variable(Monomial):
             if MODELNUMS:
                 descr["modelnums"] = descr.get("modelnums", []) + MODELNUMS
 
-        Monomial.__init__(self, **descr)
+        self.key = VarKey(**descr)
+        Monomial.__init__(self, self.key.hmap)
         # NOTE: because Signomial.__init__ will change the class
         self.__class__ = Variable
 
     __hash__ = NomialData.__hash__
 
-    @property
-    def key(self):
-        """Get the VarKey associated with this Variable"""
-        return list(self.exp)[0]
-
-    @property
-    def descr(self):
-        "a Variable's descr is derived from its VarKey."
-        return self.key.descr
-
-    def to(self, arg):
+    def to(self, units):
         "Create new Signomial converted to new units"
          # pylint: disable=no-member
-        return Monomial(self).to(arg)
+        return Monomial(self).to(units)
 
     def sub(self, *args, **kwargs):
+        # pylint: disable=arguments-differ
         """Same as nomial substitution, but also allows single-argument calls
 
         Example
@@ -116,6 +108,7 @@ class ArrayVariable(NomialArray):
 
     def __new__(cls, shape, *args, **descr):
         # pylint: disable=too-many-branches, too-many-statements
+        # pylint: disable=arguments-differ
         cls = NomialArray
 
         if "idx" in descr:
@@ -153,7 +146,7 @@ class ArrayVariable(NomialArray):
             if VECTORIZATION:
                 values = np.full(shape, values, "f")
             elif not hasattr(values, "shape"):
-                values = np.array(values)  # pylint: disable=redefined-variable-type
+                values = np.array(values)
             if values.shape != shape:
                 raise ValueError("the value's shape %s is different than"
                                  " the vector's %s." % (values.shape, shape))
@@ -194,5 +187,4 @@ class VectorizableVariable(Variable, ArrayVariable):
         if VECTORIZATION:
             shape = descr.pop("shape", ())
             return ArrayVariable.__new__(cls, shape, *args, **descr)
-        else:
-            return Variable(*args, **descr)
+        return Variable(*args, **descr)

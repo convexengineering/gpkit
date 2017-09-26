@@ -9,14 +9,13 @@
 """
 from operator import eq, le, ge, xor
 import numpy as np
-from .nomial_math import Signomial
-from ..small_classes import Numbers
+from .math import Signomial, HashVector
+from ..small_classes import Numbers, HashVector
 from ..small_scripts import try_str_without, mag
 from ..constraints import ArrayConstraint
 from ..repr_conventions import _str, _repr, _repr_latex_
-from .. import ureg
 from .. import DimensionalityError
-Quantity = ureg.Quantity
+from .map import NomialMap
 
 
 @np.vectorize
@@ -61,26 +60,24 @@ class NomialArray(np.ndarray):
         if self.shape:
             return "[" + ", ".join([try_str_without(el, excluded)
                                     for el in self]) + "]"
-        else:
-            return str(self.flatten()[0])  # TODO THIS IS WEIRD
+        return str(self.flatten()[0])  # TODO THIS IS WEIRD
 
     def latex(self, matwrap=True):
         "Returns 1D latex list of contents."
-        if len(self.shape) == 0:
+        if self.ndim == 0:
             return self.flatten()[0].latex()
-        if len(self.shape) == 1:
+        if self.ndim == 1:
             return (("\\begin{bmatrix}" if matwrap else "") +
                     " & ".join(el.latex() for el in self) +
                     ("\\end{bmatrix}" if matwrap else ""))
-        elif len(self.shape) == 2:
+        elif self.ndim == 2:
             return ("\\begin{bmatrix}" +
                     " \\\\\n".join(el.latex(matwrap=False) for el in self) +
                     "\\end{bmatrix}")
-        else:
-            return None
+        return None
 
     def __hash__(self):
-        return hash(reduce(xor, map(hash, self.flat), 0))
+        return reduce(xor, map(hash, self.flat), 0)
 
     def __new__(cls, input_array):
         "Constructor. Required for objects inheriting from np.ndarray."
@@ -115,18 +112,6 @@ class NomialArray(np.ndarray):
     def __bool__(self):
         "Allows the use of NomialArrays as truth elements in python3."
         return all(bool(p) for p in self.flat)
-
-    @property
-    def c(self):
-        """The coefficient vector in the GP input data sense"""
-        try:
-            floatarray = np.array(self, dtype='float')
-            if not floatarray.shape:
-                return floatarray.flatten()[0]
-            else:
-                return floatarray
-        except TypeError:
-            raise ValueError("only a nomialarray of numbers has a 'c'")
 
     def vectorize(self, function, *args, **kwargs):
         "Apply a function to each terminal constraint, returning the array"
@@ -191,33 +176,28 @@ class NomialArray(np.ndarray):
         "Returns a sum. O(N) if no arguments are given."
         if args or kwargs or all(l == 0 for l in self.shape):
             return np.ndarray.sum(self, *args, **kwargs)
-        cs = []
-        units = self.units
-        exps = []
+        hmap = NomialMap()
+        hmap.units = self.units
         it = np.nditer(self, flags=['multi_index', 'refs_ok'])
+        empty_exp = HashVector()
         while not it.finished:
             i = it.multi_index
             it.iternext()
             if isinstance(mag(self[i]), Numbers):
-                # somehow a number got in here
                 if mag(self[i]) == 0:
                     continue
-                else:
-                    cs.append(mag(self[i]))
-                    exps.append({})
-            cs.extend(mag(self[i].cs).tolist())
-            exps.extend(self[i].exps)
-        if units:
-            cs *= units
-        return Signomial(exps, cs)
+                else:  # number manually inserted by user
+                    hmap[empty_exp] = mag(self[i]) + hmap.get(HashVector(), 0)
+            else:
+                hmap += self[i].hmap
+        return Signomial(hmap)
 
     def prod(self, *args, **kwargs):
         "Returns a product. O(N) if no arguments and only contains monomials."
         if args or kwargs or all(l == 0 for l in self.shape):
             return np.ndarray.prod(self, *args, **kwargs)
-        c = 1.0
-        exp = {}
-        units = self.units
+        c, unitpower = 1.0, 0
+        exp = HashVector()
         it = np.nditer(self, flags=['multi_index', 'refs_ok'])
         while not it.finished:
             idx = it.multi_index
@@ -226,11 +206,12 @@ class NomialArray(np.ndarray):
             if not hasattr(m_, "exp"):  # it's not a monomial, abort!
                 return np.ndarray.prod(self, *args, **kwargs)
             c = c * mag(m_.c)
+            unitpower += 1
             for key, value in m_.exp.items():
                 if key in exp:
                     exp[key] += value
                 else:
                     exp[key] = value
-        if units:
-            c *= units
-        return Signomial(exp, c)
+        hmap = NomialMap({exp: c})
+        hmap.units = self.units**unitpower if self.units else None
+        return Signomial(hmap)

@@ -1,5 +1,6 @@
 """Miscellaneous small classes"""
 from collections import namedtuple
+from operator import xor
 import numpy as np
 from . import ureg
 
@@ -38,7 +39,10 @@ def matrix_converter(name):
 class CootMatrix(CootMatrixTuple):
     "A very simple sparse matrix representation."
     def __init__(self, *args, **kwargs):
-        super(CootMatrix, self).__init__(*args, **kwargs)
+        # pylint:disable=non-parent-init-called
+        # pylint:disable=super-init-not-called
+        # TODO these pylint disables go away with removal of namedtuple
+        CootMatrixTuple.__init__(self, *args, **kwargs)
         self.shape = [(max(self.row) + 1) if self.row else 0,
                       (max(self.col) + 1) if self.col else 0]
 
@@ -197,20 +201,16 @@ class HashVector(dict):
     >>> x = gpkit.nomials.Monomial('x')
     >>> exp = gpkit.small_classes.HashVector({x: 2})
     """
-
-    def __init__(self, *args, **kwargs):
-        super(HashVector, self).__init__(*args, **kwargs)
-        self._hashvalue = None
+    def copy(self):
+        "Return a copy of this"
+        return self.__class__(super(HashVector, self).copy())
 
     def __hash__(self):
         "Allows HashVectors to be used as dictionary keys."
-        if self._hashvalue is None:
-            self._hashvalue = hash(tuple(self.items()))
+         # pylint:disable=access-member-before-definition, attribute-defined-outside-init
+        if not hasattr(self, "_hashvalue") or self._hashvalue is None:
+            self._hashvalue = reduce(xor, map(hash, self.items()), 0)
         return self._hashvalue
-
-    # temporarily disabling immutability
-    #def __setitem__(self, key, value):
-    #    raise TypeError("HashVectors are immutable.")
 
     def __neg__(self):
         "Return Hashvector with each value negated."
@@ -221,8 +221,7 @@ class HashVector(dict):
         if isinstance(other, Numbers):
             return self.__class__({key: val**other
                                    for (key, val) in self.items()})
-        else:
-            return NotImplemented
+        return NotImplemented
 
     def __mul__(self, other):
         """Accepts scalars and dicts. Returns with each value multiplied.
@@ -235,8 +234,7 @@ class HashVector(dict):
         elif isinstance(other, dict):
             keys = set(self).intersection(other)
             return self.__class__({key: self[key] * other[key] for key in keys})
-        else:
-            return NotImplemented
+        return NotImplemented
 
     def __add__(self, other):
         """Accepts scalars and dicts. Returns with each value added.
@@ -247,11 +245,11 @@ class HashVector(dict):
             return self.__class__({key: val+other
                                    for (key, val) in self.items()})
         elif isinstance(other, dict):
-            keys = set(self).union(other)
-            sums = {key: self.get(key, 0) + other.get(key, 0) for key in keys}
-            return self.__class__(sums)
-        else:
-            return NotImplemented
+            sums = self.copy()
+            for key, value in other.items():
+                sums[key] = value + sums.get(key, 0)
+            return sums
+        return NotImplemented
 
     # pylint: disable=multiple-statements
     def __sub__(self, other): return self + -other

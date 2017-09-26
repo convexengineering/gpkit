@@ -3,8 +3,8 @@ import numpy as np
 from .costed import CostedConstraintSet
 from ..nomials import Monomial
 from .prog_factories import _progify_fctry, _solve_fctry
-from .geometric_program import GeometricProgram
-from .signomial_program import SignomialProgram
+from .gp import GeometricProgram
+from .sgp import SequentialGeometricProgram
 from ..small_scripts import mag
 from ..tools.autosweep import autosweep_1d
 from ..exceptions import InvalidGPConstraint
@@ -78,9 +78,10 @@ class Model(CostedConstraintSet):
             self.reset_varkeys()
 
     gp = _progify_fctry(GeometricProgram)
-    sp = _progify_fctry(SignomialProgram)
+    sp = _progify_fctry(SequentialGeometricProgram)
     solve = _solve_fctry(_progify_fctry(GeometricProgram, "solve"))
-    localsolve = _solve_fctry(_progify_fctry(SignomialProgram, "localsolve"))
+    localsolve = _solve_fctry(_progify_fctry(SequentialGeometricProgram,
+                                             "localsolve"))
 
     def zero_lower_unbounded_variables(self):
         "Recursively substitutes 0 for variables that lack a lower bound"
@@ -143,12 +144,12 @@ class Model(CostedConstraintSet):
         from .bounded import Bounded
 
         sol = None
-        relaxedconsts = False
 
         solveargs["solver"] = solver
-        solveargs["verbosity"] = verbosity
+        solveargs["verbosity"] = verbosity - 1
 
-        print "> Trying to solve with bounded variables and relaxed constants"
+        print "< DEBUGGING >"
+        print "> Trying with bounded variables and relaxed constants:"
 
         if self.substitutions:
             constsrelaxed = ConstantsRelaxed(Bounded(self))
@@ -166,50 +167,57 @@ class Model(CostedConstraintSet):
                 sol = feas.localsolve(**solveargs)
 
             if self.substitutions:
-                for orig in (o for o, r in zip(constsrelaxed.origvars,
-                                               constsrelaxed.relaxvars)
-                             if sol(r) >= 1.01):
-                    if not relaxedconsts:
-                        if sol["boundedness"]:
-                            print("and these constants relaxed:")
-                        else:
-                            print("\nSolves with these constants relaxed:")
-                        relaxedconsts = True
-                    print("  %s: relaxed from %-.4g to %-.4g"
-                          % (orig, mag(self.substitutions[orig]),
-                             mag(sol(orig))))
-            print "> ...success!"
+                relaxed = get_relaxed([sol(r) for r in constsrelaxed.relaxvars],
+                                      constsrelaxed.origvars,
+                                      min_return=0 if sol["boundedness"] else 1)
+                if relaxed:
+                    if sol["boundedness"]:
+                        print("and these constants relaxed:")
+                    else:
+                        print("\nSolves with these constants relaxed:")
+                    for (_, orig) in relaxed:
+                        print("  %s: relaxed from %-.4g to %-.4g"
+                              % (orig, mag(self.substitutions[orig]),
+                                 mag(sol(orig))))
+                    print
+            print ">> Success!"
         except (ValueError, RuntimeWarning):
-            print("> ...does not solve with bounded variables"
-                  " and relaxed constants.")
-        print "\n> Trying to solve with relaxed constraints"
+            print(">> Failure.")
+            print "> Trying with relaxed constraints:"
 
-        try:
-            constrsrelaxed = ConstraintsRelaxed(self)
-            feas = Model(constrsrelaxed.relaxvars.prod()**30 * self.cost,
-                         constrsrelaxed)
             try:
-                sol_constraints = feas.solve(**solveargs)
-            except InvalidGPConstraint:
-                sol_constraints = feas.localsolve(**solveargs)
-
-            relaxvals = sol_constraints(constrsrelaxed.relaxvars)
-            if any(rv >= 1.01 for rv in relaxvals):
-                if sol_constraints["boundedness"]:
-                    print("and these constraints relaxed:")
-                else:
-                    print("\nSolves with relaxed constraints:")
-                    if not relaxedconsts:
-                        # then this is the only solution we have to return
-                        sol = sol_constraints
-            iterator = enumerate(zip(relaxvals, feas[0][0][0]))
-            for i, (relaxval, constraint) in iterator:
-                if relaxval >= 1.01:
-                    relax_percent = "%i%%" % (0.5+(relaxval-1)*100)
-                    print("  %i: %4s relaxed  Canonical form: %s <= %.2f)"
-                          % (i, relax_percent, constraint.right, relaxval))
-            print "> ...success!"
-        except (ValueError, RuntimeWarning):
-            print("> ...does not solve with relaxed constraints.")
-
+                constrsrelaxed = ConstraintsRelaxed(self)
+                feas = Model(constrsrelaxed.relaxvars.prod()**30 * self.cost,
+                             constrsrelaxed)
+                try:
+                    sol = feas.solve(**solveargs)
+                except InvalidGPConstraint:
+                    sol = feas.localsolve(**solveargs)
+                relaxed = get_relaxed(sol(constrsrelaxed.relaxvars),
+                                      range(len(feas[0][0][0])))
+                if relaxed:
+                    print("\nSolves with these constraints relaxed:")
+                    for relaxval, i in relaxed:
+                        constraint = feas[0][0][0][i]
+                        relax_percent = "%i%%" % (0.5+(relaxval-1)*100)
+                        print(" %3i: %5s relaxed, from %s <= 1\n"
+                              "                       to %s <= %.4g"
+                              % (i, relax_percent, constraint.right,
+                                 constraint.right, relaxval))
+                print "\n>> Success!"
+            except (ValueError, RuntimeWarning):
+                print(">> Failure")
+        print
         return sol
+
+
+def get_relaxed(relaxvals, mapped_list, min_return=1):
+    "Determines which relaxvars are considered 'relaxed'"
+    sortrelaxed = sorted(zip(relaxvals, mapped_list), key=lambda x: x[0],
+                         reverse=True)
+    # 0.01 is the min treshold to avoid having one at numerical precision
+    mostrelaxed = max(sortrelaxed[0][0], 0.01)
+    for i, (val, _) in enumerate(sortrelaxed):
+        if i > min_return-1 and val <= 1.01 and (val-1) <= (mostrelaxed-1)/10:
+            return sortrelaxed[:i]
+    return sortrelaxed

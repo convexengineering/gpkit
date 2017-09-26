@@ -52,8 +52,7 @@ class ConstraintSet(list):
     def __getitem__(self, key):
         if isinstance(key, int):
             return list.__getitem__(self, key)
-        else:
-            return self._choosevar(key, self.variables_byname(key))
+        return self._choosevar(key, self.variables_byname(key))
 
     def _choosevar(self, key, variables):
         if not variables:
@@ -310,7 +309,7 @@ def raise_elementhasnumpybools(constraint):
              " numpy.bool_")
     for side in [constraint.left, constraint.right]:
         if not (isinstance(side, Numbers)
-                or hasattr(side, "exps")
+                or hasattr(side, "hmap")
                 or hasattr(side, "__iter__")):
             cause += (", because "
                       "NomialArray comparison with %.10s %s"
