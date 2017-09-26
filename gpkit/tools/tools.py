@@ -4,9 +4,9 @@ from ..nomials import Variable, VectorVariable
 from ..nomials import NomialArray
 
 
-def parse_nomenclature(string):
+def parse_variables(string):
     "Parses a string to determine what variables to create from it"
-    idx = string.index("Nomenclature\n    ------------")
+    idx = string.index("Variables\n")
     if idx == -1:
         return ""
     outstr = "from gpkit import Variable\n"

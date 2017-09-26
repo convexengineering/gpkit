@@ -1,12 +1,12 @@
-from gpkit import Model, parse_nomenclature, Variable
+from gpkit import Model, parse_variables, Variable
 import numpy as np
 
 
 class Fuselage(Model):
     """The thing that carries the fuel, engine, and payload
 
-    Nomenclature
-    ------------
+    Variables
+    ---------
     f                [-]             Fineness
     g          9.81  [m/s^2]         Standard gravity
     k                [-]             Form factor
@@ -22,7 +22,7 @@ class Fuselage(Model):
     """
 
     def setup(self, Wfueltot):
-        exec parse_nomenclature(self.__doc__)
+        exec parse_variables(self.__doc__)
         return [
             f == l/R/2,
             k >= 1 + 60/f**3 + f/400,
@@ -32,4 +32,4 @@ class Fuselage(Model):
             W/mfac >= S*rhocfrp*t*g,
         ]
 
-Fuselage(Variable("Wfueltot", 5, "lbf"))
+print Fuselage(Variable("Wfueltot", 5, "lbf"))
