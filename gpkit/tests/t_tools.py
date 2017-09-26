@@ -36,8 +36,9 @@ class Fuselage(Model):
     W                [lbf]           Weight
     """
 
+    # pylint: disable=undefined-variable, exec-used, invalid-name
     def setup(self, Wfueltot):
-        exec parse_variables(self.__doc__) in locals()
+        exec parse_variables(self.__doc__)
         return [
             f == l/R/2,
             k >= 1 + 60/f**3 + f/400,
