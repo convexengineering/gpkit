@@ -4,6 +4,35 @@ from ..nomials import Variable, VectorVariable
 from ..nomials import NomialArray
 
 
+def parse_variables(string):
+    "Parses a string to determine what variables to create from it"
+    idx = string.index("Variables\n")
+    if idx == -1:
+        idx = 0
+        skiplines = 0
+    else:
+        skiplines = 2
+    outstr = "from gpkit import Variable\n"
+    for line in string[idx:].split("\n")[skiplines:]:
+        try:
+            unitstart, unitend = line.index("["), line.index("]")
+        except ValueError:
+            break
+        units = line[unitstart+1:unitend]
+        labelstart = unitend + 1
+        while line[labelstart] == " ":
+            labelstart += 1
+        label = line[labelstart:]
+        nameval = line[:unitstart].split()
+        if len(nameval) == 2:
+            out = "{0} = self.{0} = Variable('{0}', {1}, '{2}', '{3}')\n"
+            outstr += out.format(nameval[0], nameval[1], units, label)
+        elif len(nameval) == 1:
+            out = "{0} = self.{0} = Variable('{0}', '{1}', '{2}')\n"
+            outstr += out.format(nameval[0], units, label)
+    return outstr
+
+
 def te_exp_minus1(posy, nterm):
     """Taylor expansion of e^{posy} - 1
 
