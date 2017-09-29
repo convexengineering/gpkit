@@ -20,7 +20,7 @@ def parse_variables(string):
             break
         units = line[unitstart+1:unitend]
         labelstart = unitend + 1
-	if labelstart < len(line):
+        if labelstart < len(line):
             while line[labelstart] == " ":
                 labelstart += 1
         label = line[labelstart:]
