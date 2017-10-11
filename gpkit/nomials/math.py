@@ -7,7 +7,7 @@ from ..small_classes import HashVector
 from ..keydict import KeySet
 from ..varkey import VarKey
 from ..small_scripts import mag
-from ..exceptions import InvalidGPConstraint
+from ..exceptions import InvalidGPConstraint, DimensionalityError
 from .map import NomialMap
 from .substitution import parse_subs
 
@@ -156,6 +156,7 @@ class Signomial(Nomial):
         "Substitutes in place."
         Nomial.__init__(self, self.hmap.sub(substitutions, self.varkeys))
         self._reset()
+        self.hmap.expmap = {}
 
     def __le__(self, other):
         if isinstance(other, (Numbers, Signomial)):
@@ -419,8 +420,7 @@ class PosynomialInequality(ScalarSingleEquationConstraint):
         """
         hmap = (p_lt / m_gt).hmap
         if hmap.units:
-            raise ValueError("unit mismatch: units of %s cannot be converted"
-                             " to units of %s" % (p_lt, m_gt))
+            raise DimensionalityError(p_lt, m_gt)
         hmap = self._simplify_posy_ineq(hmap)
         if hmap is None:
             return []

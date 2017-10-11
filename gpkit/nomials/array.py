@@ -14,7 +14,7 @@ from ..small_classes import Numbers, HashVector
 from ..small_scripts import try_str_without, mag
 from ..constraints import ArrayConstraint
 from ..repr_conventions import _str, _repr, _repr_latex_
-from .. import DimensionalityError
+from ..exceptions import DimensionalityError
 from .map import NomialMap
 
 
