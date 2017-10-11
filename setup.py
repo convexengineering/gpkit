@@ -51,7 +51,7 @@ setup(
                 "programming models.",
     author="Edward Burnell and Warren Hoburg",
     author_email="gpkit@mit.edu",
-    url="https://www.github.com/hoburg/gpkit",
+    url="https://www.github.com/convexengineering/gpkit",
     install_requires=["numpy >= 1.8.1", "pint", "scipy"],
     version="0.5.3.0",
     packages=["gpkit", "gpkit._mosek", "gpkit.tests", "gpkit.interactive",

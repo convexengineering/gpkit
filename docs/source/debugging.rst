@@ -28,7 +28,7 @@ Potential errors and warnings
     - The solver could not solve the model or find a certificate of infeasibility. This may indicate a dual infeasible model, a primal infeasible model, or other numerical issues. Try debugging with the techniques in *Dual* and *Primal Infeasibility* below.
 
 - ``RuntimeWarning: Primal solution violates constraint: 1.0000149786 is greater than 1``
-    - this warning indicates that the solver-returned solution violates a constraint of the model, likely because the solver's tolerance for a final solution exceeds GPkit's tolerance during solution checking. This is sometimes seen in dual infeasible models, see *Dual Infeasibility* below. If you run into this, please note on `this GitHub issue <https://github.com/hoburg/gpkit/issues/753>`_ your solver and operating system.
+    - this warning indicates that the solver-returned solution violates a constraint of the model, likely because the solver's tolerance for a final solution exceeds GPkit's tolerance during solution checking. This is sometimes seen in dual infeasible models, see *Dual Infeasibility* below. If you run into this, please note on `this GitHub issue <https://github.com/convexengineering/gpkit/issues/753>`_ your solver and operating system.
 
 - ``RuntimeWarning: Dual cost nan does not match primal cost 1.00122315152``
     - Similarly to the above, this warning may be seen in dual infeasible models, see *Dual Infeasibility* below.
