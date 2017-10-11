@@ -1,7 +1,7 @@
 "Implements the NomialMap class"
 from collections import defaultdict
 import numpy as np
-from .. import DimensionalityError
+from ..exceptions import DimensionalityError
 from ..small_classes import HashVector, Quantity, Strings
 from ..small_scripts import mag
 from ..varkey import VarKey

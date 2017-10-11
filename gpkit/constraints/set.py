@@ -191,7 +191,7 @@ class ConstraintSet(list):
         been substituted for another), then a substitution is added, mapping
         the orphaned value to this new key; otherwise, an error is raised.
         """
-        subs = {k.key: getattr(v, "key", v) for k, v in subs.items()}
+        subs = {k: getattr(v, "key", v) for k, v in subs.items()}
         for constraint in self:
             constraint.subinplace(subs)
         for key, value in subs.items():
