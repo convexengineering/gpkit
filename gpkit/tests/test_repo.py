@@ -82,7 +82,7 @@ def git_clone(repo, branch="master"):
     "Tries several times to clone a given repository"
     cmd = ["git", "clone", "--depth", "1"]
     cmd += ["-b", branch]
-    cmd += ["https://github.com/hoburg/%s.git" % repo]
+    cmd += ["https://github.com/convexengineering/%s.git" % repo]
     call_and_retry(cmd)
 
 

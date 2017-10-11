@@ -4,7 +4,7 @@ Installation Instructions
 *********************
 
 If you encounter bugs during installation, please email ``gpkit@mit.edu``
-or `raise a GitHub issue <http://github.com/hoburg/gpkit/issues/new>`_.
+or `raise a GitHub issue <http://github.com/convexengineering/gpkit/issues/new>`_.
 
 
 Installation dependencies
@@ -113,7 +113,7 @@ Install GPkit
   - Run ``pip install gpkit`` at the command line (for system python installs, use ``sudo pip``)
   - Run ``pip install jupyter`` to install jupyter notebook (recommended)
   - Run ``jupyter nbextension enable --py widgetsnbextension`` for interactive control of models in jupyter (recommended)
-  - Run ``python -c "import gpkit.tests; gpkit.tests.run()"`` to run the tests; if any tests do not pass, please email ``gpkit@mit.edu`` or `raise a GitHub issue <http://github.com/hoburg/gpkit/issues/new>`_.
+  - Run ``python -c "import gpkit.tests; gpkit.tests.run()"`` to run the tests; if any tests do not pass, please email ``gpkit@mit.edu`` or `raise a GitHub issue <http://github.com/convexengineering/gpkit/issues/new>`_.
   - Join our `mailing list <https://mailman.mit.edu/mailman/listinfo/gpkit-users/>`_ and/or `chatroom <https://gitter.im/gpkit-users/Lobby>`_ for support and examples.
 
 
@@ -129,15 +129,15 @@ To rebuild GPkit, first try running ``python -c "from gpkit.build import rebuild
   - Run ``pip uninstall gpkit``
   - Run ``pip install --no-cache-dir --no-deps gpkit``
   - Run ``python -c "import gpkit.tests; gpkit.tests.run()"``
-  - If any tests fail, please email ``gpkit@mit.edu`` or `raise a GitHub issue <http://github.com/hoburg/gpkit/issues/new>`_.
+  - If any tests fail, please email ``gpkit@mit.edu`` or `raise a GitHub issue <http://github.com/convexengineering/gpkit/issues/new>`_.
 
 
 Bleeding-edge / developer installations
 =======================================
 
-Active developers may wish to install the `latest GPkit <http://github.com/hoburg/gpkit>`_ directly from the source code on Github. To do so,
+Active developers may wish to install the `latest GPkit <http://github.com/convexengineering/gpkit>`_ directly from the source code on Github. To do so,
 
   1. Run ``pip uninstall gpkit`` to uninstall your existing GPkit.
-  2. Run ``git clone https://github.com/hoburg/gpkit.git`` to clone the GPkit repository.
+  2. Run ``git clone https://github.com/convexengineering/gpkit.git`` to clone the GPkit repository.
   3. Run ``pip install -e gpkit`` to install that directory as your environment-wide GPkit.
   4. Run ``cd ..; python -c "import gpkit.tests; gpkit.tests.run()"`` to test your installation from a non-local directory.
