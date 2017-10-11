@@ -58,7 +58,7 @@ class Model(CostedConstraintSet):
                 args = tuple(a for a in start_args if a is not None) + args
                 cs = self.setup(*args, **kwargs)  # pylint: disable=no-member
                 if (isinstance(cs, tuple) and len(cs) == 2
-                    and isinstance(cs[1], dict)):
+                        and isinstance(cs[1], dict)):
                     constraints, substitutions = cs
                 else:
                     constraints = cs
