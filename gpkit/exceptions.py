@@ -1,6 +1,6 @@
 "GPkit-specific Exception classes"
 
-from . import DimensionalityError
+from . import DimensionalityError  # pylint: disable=unused-import
 
 
 class InvalidGPConstraint(Exception):

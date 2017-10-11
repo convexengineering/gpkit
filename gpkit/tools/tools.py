@@ -20,17 +20,17 @@ def parse_variables(string):
             break
         units = line[unitstart+1:unitend]
         labelstart = unitend + 1
-	if labelstart < len(line):
+        if labelstart < len(line):
             while line[labelstart] == " ":
                 labelstart += 1
-        label = line[labelstart:]
-        nameval = line[:unitstart].split()
-        if len(nameval) == 2:
-            out = "{0} = self.{0} = Variable('{0}', {1}, '{2}', '{3}')\n"
-            outstr += out.format(nameval[0], nameval[1], units, label)
-        elif len(nameval) == 1:
-            out = "{0} = self.{0} = Variable('{0}', '{1}', '{2}')\n"
-            outstr += out.format(nameval[0], units, label)
+            label = line[labelstart:]
+            nameval = line[:unitstart].split()
+            if len(nameval) == 2:
+                out = "{0} = self.{0} = Variable('{0}', {1}, '{2}', '{3}')\n"
+                outstr += out.format(nameval[0], nameval[1], units, label)
+            elif len(nameval) == 1:
+                out = "{0} = self.{0} = Variable('{0}', '{1}', '{2}')\n"
+                outstr += out.format(nameval[0], units, label)
     return outstr
 
 
