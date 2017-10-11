@@ -7,19 +7,9 @@ from ..small_classes import HashVector
 from ..keydict import KeySet
 from ..varkey import VarKey
 from ..small_scripts import mag
-<<<<<<< HEAD:gpkit/nomials/math.py
-from ..exceptions import InvalidGPConstraint
-from .map import NomialMap
-from .substitution import parse_subs
-from ..exceptions import DimensionalityError
-
-
-EMPTY_EXP = HashVector()
-=======
 from ..exceptions import InvalidGPConstraint, DimensionalityError
 from .map import NomialMap
 from .substitution import parse_subs
->>>>>>> maamin:gpkit/nomials/math.py
 
 
 class Signomial(Nomial):
@@ -47,13 +37,8 @@ class Signomial(Nomial):
             if hasattr(hmap, "hmap"):
                 hmap = hmap.hmap
             elif isinstance(hmap, Numbers):
-<<<<<<< HEAD:gpkit/nomials/math.py
-                hmap_ = NomialMap([(EMPTY_EXP, mag(hmap))])
-                hmap_.set_units(hmap)
-=======
                 hmap_ = NomialMap([(HashVector(), mag(hmap))])
                 hmap_.units_of_product(hmap)
->>>>>>> maamin:gpkit/nomials/math.py
                 hmap = hmap_
             elif hmap is None:
                 hmap = VarKey(**descr).hmap
@@ -62,11 +47,7 @@ class Signomial(Nomial):
             elif isinstance(hmap, dict):
                 exp = HashVector({VarKey(k): v for k, v in hmap.items()})
                 hmap = NomialMap({exp: mag(cs)})
-<<<<<<< HEAD:gpkit/nomials/math.py
-                hmap.set_units(cs)
-=======
                 hmap.units_of_product(cs)
->>>>>>> maamin:gpkit/nomials/math.py
                 hmap.remove_zeros()
         super(Signomial, self).__init__(hmap)
         if self.any_nonpositive_cs:
@@ -79,11 +60,7 @@ class Signomial(Nomial):
         else:
             self.__class__ = Posynomial
 
-<<<<<<< HEAD:gpkit/nomials/math.py
-    def diff(self, wrt):
-=======
     def diff(self, var):
->>>>>>> maamin:gpkit/nomials/math.py
         """Derivative of this with respect to a Variable
 
         Arguments
