@@ -14,5 +14,5 @@ class SignomialEquality(ConstraintSet):
         elif hasattr(right, "shape"):
             cns = array_constraint("=", SingleSignomialEquality)(right, left)
         else:
-            cns = [SingleSignomialEquality(left, right)]  # pylint: disable=redefined-variable-type
+            cns = [SingleSignomialEquality(left, right)]
         ConstraintSet.__init__(self, cns)

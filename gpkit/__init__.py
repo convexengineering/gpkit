@@ -211,6 +211,7 @@ from .constraints.sgp import SequentialGeometricProgram
 from .constraints.sigeq import SignomialEquality
 from .constraints.set import ConstraintSet
 from .constraints.model import Model
+from .tools import parse_variables
 
 
 def load_settings(path=SETTINGS_PATH):

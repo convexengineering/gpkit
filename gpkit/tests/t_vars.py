@@ -78,7 +78,6 @@ class TestVarKey(unittest.TestCase):
         for vk in (VarKey(), x, VarKey(x), VarKey(units='m')):
             self.assertTrue(hasattr(vk, 'units'))
 
-
 class TestVariable(unittest.TestCase):
     """TestCase for the Variable class"""
 
@@ -120,6 +119,19 @@ class TestVariable(unittest.TestCase):
         x = Variable("x", "s^0.5/m^0.5")
         y = Variable("y", "(m/s)^-0.5")
         self.assertEqual(x.units, y.units)
+
+    def test_to(self):
+        if gpkit.units:
+            x = Variable("x", "ft")
+            self.assertEqual(x.to("inch").c.magnitude, 12)
+
+    def test_eq_ne(self):
+        # test for #1138
+        W = Variable("W", 5, "lbf", "weight of 1 bag of sugar")
+        self.assertTrue(W != W.key)
+        self.assertTrue(W.key != W)
+        self.assertFalse(W == W.key)
+        self.assertFalse(W.key == W)
 
 
 class TestVectorVariable(unittest.TestCase):

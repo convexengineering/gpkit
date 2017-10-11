@@ -4,6 +4,36 @@ from ..nomials import Variable, VectorVariable
 from ..nomials import NomialArray
 
 
+def parse_variables(string):
+    "Parses a string to determine what variables to create from it"
+    idx = string.index("Variables\n")
+    if idx == -1:
+        idx = 0
+        skiplines = 0
+    else:
+        skiplines = 2
+    outstr = "from gpkit import Variable\n"
+    for line in string[idx:].split("\n")[skiplines:]:
+        try:
+            unitstart, unitend = line.index("["), line.index("]")
+        except ValueError:
+            break
+        units = line[unitstart+1:unitend]
+        labelstart = unitend + 1
+	if labelstart < len(line):
+            while line[labelstart] == " ":
+                labelstart += 1
+        label = line[labelstart:]
+        nameval = line[:unitstart].split()
+        if len(nameval) == 2:
+            out = "{0} = self.{0} = Variable('{0}', {1}, '{2}', '{3}')\n"
+            outstr += out.format(nameval[0], nameval[1], units, label)
+        elif len(nameval) == 1:
+            out = "{0} = self.{0} = Variable('{0}', '{1}', '{2}')\n"
+            outstr += out.format(nameval[0], units, label)
+    return outstr
+
+
 def te_exp_minus1(posy, nterm):
     """Taylor expansion of e^{posy} - 1
 
@@ -138,7 +168,7 @@ def composite_objective(*objectives, **kwargs):
     ws = VectorVariable(n-1, "w_{CO}", sweepvals, "-")
     w_s = []
     for w in ws:
-        descr = dict(w.descr)
+        descr = dict(w.key.descr)
         del descr["value"]
         descr["name"] = "v_{CO}"
         w_s.append(Variable(value=lambda const: 1-const[w.key], **descr))  # pylint: disable=cell-var-from-loop
@@ -182,10 +212,9 @@ def mdparse(filename, return_tex=False):
             elif line:
                 py_content = "# " + line
             py_lines.append(py_content)
-        if not return_tex:
-            return "\n".join(py_lines)
-        else:
+        if return_tex:
             return "\n".join(py_lines), "\n".join(texmd_lines)
+        return "\n".join(py_lines)
 
 
 def mdmake(filename, make_tex=True):

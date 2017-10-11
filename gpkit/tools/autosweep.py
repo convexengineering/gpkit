@@ -94,9 +94,9 @@ class BinarySweepTree(object):
         bst = self.min_bst(value)
         if bst.splitlb:
             if bound:
-                if bound is "lb":
+                if bound == "lb":
                     splitcost = np.exp(bst.splitlb)
-                elif bound is "ub":
+                elif bound == "ub":
                     splitcost = np.exp(bst.splitub)
             else:
                 splitcost = np.exp((bst.splitlb + bst.splitub)/2)
@@ -117,10 +117,8 @@ class BinarySweepTree(object):
         "Returns smallest bst around value."
         if not self.splits:
             return self
-        elif value <= self.splitval:
-            return self.splits[0].min_bst(value)
-        else:
-            return self.splits[1].min_bst(value)
+        choice = self.splits[0] if value <= self.splitval else self.splits[1]
+        return choice.min_bst(value)
 
     def sample_at(self, values):
         "Creates a SolutionOracle at a given range of values"
@@ -164,7 +162,7 @@ class SolutionOracle(object):
     def _is_cost(self, key):
         if hasattr(key, "hmap") and key.hmap == self.bst.costposy.hmap:
             key = "cost"
-        return key is "cost"
+        return key == "cost"
 
     def __getval(self, key):
         "Gets values from the BST and units them"
@@ -257,9 +255,8 @@ def recurse_splits(model, bst, variable, logtol, solvekwargs, sols):
                 for split in bst.splits]
         bst.tol = max(tols)
         return bst.tol
-    else:
-        bst.add_splitcost(x, lb, ub)
-        return tol
+    bst.add_splitcost(x, lb, ub)
+    return tol
 
 
 # pylint: disable=too-many-locals

@@ -67,5 +67,8 @@ def append_sub(sub, keys, constants, sweep=None, linkedsweep=None):
             linkedsweep[key] = value
         elif sweepsub:
             sweep[key] = value
-        elif not isinstance(value, np.float) or not np.isnan(value):
-            constants[key] = value
+        else:
+            try:
+                assert np.isnan(value)
+            except (AssertionError, TypeError, ValueError):
+                constants[key] = value

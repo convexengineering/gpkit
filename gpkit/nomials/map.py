@@ -12,12 +12,19 @@ DIMLESS_QUANTITY = Quantity(1, "dimensionless")
 
 
 class NomialMap(HashVector):
-    "Class for efficent algebraic represention of a nomial"
+    """Class for efficent algebraic represention of a nomial
+
+    A NomialMap is a mapping between hashvectors representing exponents
+    and their coefficients in a posynomial.
+
+    For example,  {{x : 1}: 2.0, {y: 1}: 3.0} represents 2*x + 3*y, where
+    x and y are VarKey objects.
+    """
     units = None
     expmap = None  # used for monomial-mapping postsubstitution; see .mmap()
-    csmap = None
+    csmap = None   # used for monomial-mapping postsubstitution; see .mmap()
 
-    def set_units(self, thing, thing2=None):
+    def units_of_product(self, thing, thing2=None):
         "Sets units to those of `thing*thing2`"
         if thing is None and thing2 is None:
             self.units = None
@@ -37,6 +44,8 @@ class NomialMap(HashVector):
                 self.units = Quantity(1, thing.units)
         elif hasattr(thing2, "units"):
             self.units = Quantity(1, thing2.units)
+        elif thing2 is None and isinstance(thing, Strings):
+            self.units = Quantity(1, thing)
         else:
             self.units = None
 
@@ -44,7 +53,7 @@ class NomialMap(HashVector):
         "Returns a new NomialMap of the given units"
         sunits = self.units or DIMLESS_QUANTITY
         nm = self * sunits.to(units).magnitude  # note that * creates a copy
-        nm.set_units(units)  # pylint: disable=no-member
+        nm.units_of_product(units)  # pylint: disable=no-member
         return nm
 
     def __add__(self, other):
@@ -62,12 +71,14 @@ class NomialMap(HashVector):
         If `only_check_cs` is True, checks only whether any values are zero.
         If False also checks whether any exponents in the keys are zero.
         """
-        # TODO: do this automatically during HashVector operations?
+        # TODO: do this automatically during HashVector operations
         im_a_posynomial = (len(self) > 1)
         for key in self.keys():
             value = self[key]
-            if im_a_posynomial and value == 0:
-                del self[key]  # doesn't remove a 0-monomial's only key
+            if value == 0:
+                del self[key]
+                if not im_a_posynomial:
+                    self[HashVector()] = 0.0  # don't remove 0-monomial's exp
             elif not only_check_cs:
                 zeroes = set(vk for vk, exp in key.items() if exp == 0)
                 if zeroes:
@@ -85,12 +96,13 @@ class NomialMap(HashVector):
                 exp = HashVector(exp)
                 x = exp[varkey]
                 c = self[exp] * x
-                if x is 1:
+                if x is 1:  # speed optimization
                     del exp[varkey]
                 else:
                     exp[varkey] = x-1
                 out[exp] = c
-        out.set_units(self.units, 1.0/varkey.units if varkey.units else None)
+        out.units_of_product(self.units,
+                             1.0/varkey.units if varkey.units else None)
         return out
 
     def sub(self, substitutions, varkeys, parsedsubs=False):
@@ -103,7 +115,7 @@ class NomialMap(HashVector):
 
         varkeys : (set-like)
             varkeys that are present in self
-            (externally provided to promote caching)
+            (required argument so as to require efficient code)
 
         parsedsubs : bool
             flag if the substitutions have already been parsed
@@ -114,7 +126,7 @@ class NomialMap(HashVector):
         if parsedsubs or not substitutions:
             fixed = substitutions
         else:
-            fixed = parse_subs(varkeys, substitutions)
+            fixed, _, _ = parse_subs(varkeys, substitutions)
 
         if not substitutions:
             if not self.expmap:
@@ -142,7 +154,7 @@ class NomialMap(HashVector):
                     cval = VarKey(name=cval, **descr)
                 if hasattr(cval, "hmap"):
                     expval, = cval.hmap.keys()  # TODO: catch "can't-sub-posys"
-                    cval = cval.hmap  # pylint: disable=redefined-variable-type
+                    cval = cval.hmap
                 if hasattr(cval, "to"):
                     cval = mag(cval.to(vk.units or DIMLESS_QUANTITY))
                     if isinstance(cval, NomialMap) and cval.keys() == [{}]:
@@ -166,7 +178,20 @@ class NomialMap(HashVector):
         return cp
 
     def mmap(self, orig):
-        "Maps substituted monomials back to the original nomial"
+        """Maps substituted monomials back to the original nomial
+
+        self.expmap is the map from pre- to post-substitution exponents, and
+            takes the form {original_exp: new_exp}
+
+        self.csmap is the map from pre-substitution exponents to coefficients.
+
+        m_from_ms is of the form {new_exp: [old_exps, ]}
+
+        pmap is of the form [{orig_idx1: fraction1, orig_idx2: fraction2, }, ]
+            where at the index corresponding to each new_exp is a dictionary
+            mapping the indices corresponding to the old exps to their
+            fraction of the post-substitution coefficient
+        """
         m_from_ms = defaultdict(dict)
         pmap = [{} for _ in self]
         origexps = orig.keys()

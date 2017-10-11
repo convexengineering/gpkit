@@ -49,7 +49,7 @@ class GeometricProgram(CostedConstraintSet, NomialData):
         # pylint:disable=super-init-not-called
         # initialize attributes modified by internal methods
         self.result = None
-        self.nup = None
+        self.nu_by_posy = None
         self.solver_log = None
         self.solver_out = None
 
@@ -203,9 +203,9 @@ class GeometricProgram(CostedConstraintSet, NomialData):
                 (solvername, solver_status))
 
         if solver_status.lower() == "near_dual_feas":
-            print RuntimeWarning(
-                "final status of solver '%s' was '%s', not 'optimal'.\n\n" %
-                (solvername, solver_status))
+            print(RuntimeWarning(
+                "final status of solver '%s' was '%s', not 'optimal'.\n\n"
+                % (solvername, solver_status)))
 
         self._generate_nula(solver_out)
         self.result = self._compile_result(solver_out)  # NOTE: SIDE EFFECTS
@@ -235,8 +235,8 @@ class GeometricProgram(CostedConstraintSet, NomialData):
         if "nu" in solver_out:
             # solver gave us monomial sensitivities, generate posynomial ones
             nu = np.ravel(solver_out["nu"])
-            self.nup = [nu[mi] for mi in self.m_idxs]
-            la = np.array([sum(nup) for nup in self.nup])
+            self.nu_by_posy = [nu[mi] for mi in self.m_idxs]
+            la = np.array([sum(nup) for nup in self.nu_by_posy])
         elif "la" in solver_out:
             # solver gave us posynomial sensitivities, generate monomial ones
             la = np.ravel(solver_out["la"])
@@ -246,9 +246,9 @@ class GeometricProgram(CostedConstraintSet, NomialData):
             Ax = np.ravel(self.A.dot(solver_out['primal']))
             z = Ax + np.log(self.cs)
             m_iss = [self.p_idxs == i for i in range(len(la))]
-            self.nup = [la[p_i]*np.exp(z[m_is])/sum(np.exp(z[m_is]))
-                        for p_i, m_is in enumerate(m_iss)]
-            nu = np.hstack(self.nup)
+            self.nu_by_posy = [la[p_i]*np.exp(z[m_is])/sum(np.exp(z[m_is]))
+                               for p_i, m_is in enumerate(m_iss)]
+            nu = np.hstack(self.nu_by_posy)
         else:
             raise RuntimeWarning("The dual solution was not returned.")
         solver_out["nu"], solver_out["la"] = nu, la
@@ -291,7 +291,7 @@ class GeometricProgram(CostedConstraintSet, NomialData):
 
         ## Get sensitivities
         result["sensitivities"] = {"nu": nu, "la": la}
-        var_senss = self.sens_from_dual(la[1:].tolist(), self.nup[1:])
+        var_senss = self.sens_from_dual(la[1:].tolist(), self.nu_by_posy[1:])
         # add cost's sensitivity in
         var_senss += {var: sum([self.cost.exps[i][var]*nu[i] for i in locs])
                       for (var, locs) in self.cost.varlocs.items()
@@ -342,9 +342,9 @@ class GeometricProgram(CostedConstraintSet, NomialData):
         # check dual sol
         # note: follows dual formulation in section 3.1 of
         # http://web.mit.edu/~whoburg/www/papers/hoburg_phd_thesis.pdf
-        if not _almost_equal(self.nup[0].sum(), 1.):
-            raise RuntimeWarning("Dual variables associated with objective"
-                                 " sum to %s, not 1" % self.nup[0].sum())
+        if not _almost_equal(self.nu_by_posy[0].sum(), 1.):
+            raise RuntimeWarning("Dual variables associated with objective sum"
+                                 " to %s, not 1" % self.nu_by_posy[0].sum())
         if any(nu < 0):
             if all(nu > -tol/1000.):  # HACK, see issue 528
                 print("Allowing negative dual variable(s) as small as"
@@ -356,8 +356,9 @@ class GeometricProgram(CostedConstraintSet, NomialData):
         if any(np.abs(ATnu) > tol):
             raise RuntimeWarning("sum of nu^T * A did not vanish")
         b = np.log(self.cs)
-        dual_cost = sum(self.nup[i].dot(b[mi] - np.log(self.nup[i]/la[i])
-                                        if la[i] else 0)
+        dual_cost = sum(self.nu_by_posy[i].dot(b[mi] -
+                                               np.log(self.nu_by_posy[i]/la[i])
+                                               if la[i] else 0)
                         for i, mi in enumerate(self.m_idxs))
         if not _almost_equal(np.exp(dual_cost), cost):
             raise RuntimeWarning("Dual cost %s does not match primal"
@@ -390,7 +391,7 @@ def genA(exps, varlocs):  # pylint: disable=invalid-name
         for i in varlocs[var]:
             exp = exps[i][var]
             A.append(i, j, exp)
-            if varsign is "both":
+            if varsign == "both":
                 pass
             elif varsign is None:
                 varsign = np.sign(exp)

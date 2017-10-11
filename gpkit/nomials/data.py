@@ -5,6 +5,7 @@ from ..small_classes import HashVector
 from ..keydict import KeySet, KeyDict
 from .map import NomialMap
 from ..repr_conventions import _repr
+from ..varkey import VarKey
 
 
 class NomialData(object):
@@ -27,9 +28,7 @@ class NomialData(object):
 
         self.vks = set()
         for exp in self.hmap:
-            for vk in exp:
-                if vk not in self.vks:
-                    self.vks.add(vk)
+            self.vks.update(exp)
         self.units = self.hmap.units
         self.any_nonpositive_cs = any(c <= 0 for c in self.hmap.values())
         self._reset()
@@ -94,6 +93,7 @@ class NomialData(object):
         -------
         NomialData
         """
+        # pylint:disable=len-as-condition
         varset = self.varkeys[var]
         if len(varset) > 1:
             raise ValueError("multiple variables %s found for key %s"
@@ -110,8 +110,13 @@ class NomialData(object):
         "Equality test"
         if not hasattr(other, "hmap"):
             return NotImplemented
+        if isinstance(other, VarKey):
+            return False
         if self.hmap != other.hmap:
             return False
         if self.units != other.units:
             return False
         return True
+
+    def __ne__(self, other):
+        return not self.__eq__(other)

@@ -91,8 +91,10 @@ class KeyDict(dict):
                 if key.veckey and all(k.veckey == key.veckey for k in keys):
                     key = key.veckey
                 else:
-                    raise ValueError("%s could refer to multiple keys in"
-                                     " this substitutions KeyDict." % key)
+                    raise ValueError("%s could refer to multiple keys in this"
+                                     " substitutions KeyDict. Use"
+                                     " `.variables_byname(%s)` to see all of"
+                                     " them." % (key, key))
         else:
             raise KeyError(key)
         idx = getattr(key, "idx", None)
@@ -108,7 +110,7 @@ class KeyDict(dict):
             key, idx = self.parse_and_index(key)
         except KeyError:
             return False
-        except ValueError:
+        except ValueError:  # multiple keys correspond
             return True
         if dict.__contains__(self, key):
             if idx:
@@ -132,15 +134,14 @@ class KeyDict(dict):
             del self.keymap[key]  # remove blank entry added due to defaultdict
             raise KeyError(key)
         values = []
-        for key in keys:
-            got = dict.__getitem__(self, key)
+        for k in keys:
+            got = dict.__getitem__(self, k)
             if idx:
                 got = got[idx]
             values.append(got)
         if len(values) == 1:
             return values[0]
-        else:
-            return KeyDict(zip(keys, values))
+        return KeyDict(zip(keys, values))
 
     def __setitem__(self, key, value):
         "Overloads __setitem__ and []= to work with all keys"
@@ -154,9 +155,11 @@ class KeyDict(dict):
                 kwargs = {} if number_array else {"dtype": "object"}
                 emptyvec = np.full(key.shape, np.nan, **kwargs)
                 dict.__setitem__(self, key, emptyvec)
+        if hasattr(value, "exp") and not value.exp:
+            value = value.value  # substitute constant monomials
         if idx:
-            if hasattr(value, "exp") and not value.exp:
-                value = value.value  # substitute constant monomials
+            if isinstance(value, Quantity):
+                value = value.to(key.units).magnitude
             dict.__getitem__(self, key)[idx] = value
         else:
             if (self.collapse_arrays and hasattr(key, "descr")
@@ -173,8 +176,6 @@ class KeyDict(dict):
                 else:
                     self[key][goodvals] = value[goodvals]
                     return
-            if hasattr(value, "exp") and not value.exp:
-                value = value.value  # substitute constant monomials
             dict.__setitem__(self, key, value)
 
     def update_keymap(self):
@@ -191,20 +192,20 @@ class KeyDict(dict):
         keys = self.keymap[key]
         if not keys:
             raise KeyError("key %s not found." % key)
-        for key in list(keys):
+        for k in list(keys):
             delete = True
             if idx:
-                dict.__getitem__(self, key)[idx] = np.nan
-                if np.isfinite(dict.__getitem__(self, key)).any():
+                dict.__getitem__(self, k)[idx] = np.nan
+                if np.isfinite(dict.__getitem__(self, k)).any():
                     delete = False
             if delete:
-                dict.__delitem__(self, key)
-                mapkeys = set([key])
-                if self.keymapping and hasattr(key, "keys"):
-                    mapkeys.update(key.keys)
+                dict.__delitem__(self, k)
+                mapkeys = set([k])
+                if self.keymapping and hasattr(k, "keys"):
+                    mapkeys.update(k.keys)
                 for mappedkey in mapkeys:
                     if mappedkey in self.keymap:
-                        self.keymap[mappedkey].remove(key)
+                        self.keymap[mappedkey].remove(k)
                         if not self.keymap[mappedkey]:
                             del self.keymap[mappedkey]
 

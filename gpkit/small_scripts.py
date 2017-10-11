@@ -1,14 +1,12 @@
 """Assorted helper methods"""
 from collections import Iterable
-from .small_classes import Strings, Quantity
 
 
 def try_str_without(item, excluded):
     "Try to call item.str_without(excluded); fall back to str(item)"
     if hasattr(item, "str_without"):
         return item.str_without(excluded)
-    else:
-        return str(item)
+    return str(item)
 
 
 def veckeyed(key):
@@ -22,24 +20,6 @@ def veckeyed(key):
 def mag(c):
     "Return magnitude of a Number or Quantity"
     return getattr(c, "magnitude", c)
-
-
-def unitstr(units, into="%s", options="~", dimless=""):
-    "Returns the unitstr of a given object."
-    if hasattr(units, "descr") and hasattr(units.descr, "get"):
-        units = units.descr.get("units", None)
-    if hasattr(units, "units") and isinstance(units.units, Quantity):
-        units = units.units
-    if isinstance(units, Strings):
-        return into % units or dimless
-    elif isinstance(units, Quantity):
-        rawstr = (u"{:%s}" % options).format(units.units)
-        if str(units.units) == "count":
-            # TODO remove this conditional when pint issue 356 is resolved
-            rawstr = u"count"
-        units = rawstr.replace(" ", "").replace("dimensionless", dimless)
-        return into % units or dimless
-    return dimless
 
 
 def nomial_latex_helper(c, pos_vars, neg_vars):
@@ -79,6 +59,7 @@ def is_sweepvar(sub):
     "Determines if a given substitution indicates a sweep."
     try:
         sweep, value = sub
+        # pylint:disable=literal-comparison
         if sweep is "sweep" and (isinstance(value, Iterable) or
                                  hasattr(value, "__call__")):
             return True

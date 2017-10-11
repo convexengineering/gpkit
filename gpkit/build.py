@@ -28,9 +28,8 @@ def isfile(path):
     if os.path.isfile(path):
         log("#     Found %s" % path)
         return True
-    else:
-        log("#     Could not find %s" % path)
-        return False
+    log("#     Could not find %s" % path)
+    return False
 
 
 def replacedir(path):
@@ -203,8 +202,8 @@ class Mosek(SolverBackend):
         for expopt_file in self.expopt_files:
             if not isfile(expopt_file):
                 return
-
-        global settings  # pylint: disable=global-variable-not-assigned
+        # pylint: disable=global-statement,global-variable-not-assigned
+        global settings
         settings["mosek_bin_dir"] = self.bin_dir
         os.environ['PATH'] = os.environ['PATH'] + os.pathsep + self.bin_dir
 

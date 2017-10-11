@@ -44,6 +44,7 @@ class ConstraintSet(list):
                         # so we can catch them (see above) in ConstraintSets
             if hasattr(self[i], "substitutions"):
                 self.substitutions.update(self[i].substitutions)
+                self[i].substitutions = self.substitutions
         self.reset_varkeys()
         if substitutions:
             self.substitutions.update(substitutions)
@@ -51,8 +52,7 @@ class ConstraintSet(list):
     def __getitem__(self, key):
         if isinstance(key, int):
             return list.__getitem__(self, key)
-        else:
-            return self._choosevar(key, self.variables_byname(key))
+        return self._choosevar(key, self.variables_byname(key))
 
     def _choosevar(self, key, variables):
         if not variables:
@@ -183,22 +183,22 @@ class ConstraintSet(list):
                     yield yielded_constraint
 
     def subinplace(self, subs):
-        "Substitutes in place."
+        """Substitutes in place, updating self.substitutions accordingly.
+
+        Keys substituted with `subinplace` are no longer present, so if such a
+        key is also in self.substitutions that substitution is now orphaned. If
+        `subs[key]` describes some key in the ConstraintSet (i.e. one key has
+        been substituted for another), then a substitution is added, mapping
+        the orphaned value to this new key; otherwise, an error is raised.
+        """
         subs = {k: getattr(v, "key", v) for k, v in subs.items()}
         for constraint in self:
             constraint.subinplace(subs)
-        for key in subs:
-            if key not in self.substitutions:
-                continue
-            if hasattr(subs[key], "key"):
-                self.substitutions[subs[key]] = self.substitutions[key]
+        for key, value in subs.items():
+            if key in self.substitutions:
+                valkey, _ = self.substitutions.parse_and_index(value)
+                self.substitutions[valkey] = self.substitutions[key]
                 del self.substitutions[key]
-            else:
-                raise ValueError("the substitution {%s: %s} is invalidated"
-                                 " by the subinplace {%s: %s}, because"
-                                 " %s does not have a `key` attribute"
-                                 % (key, self.substitutions[key],
-                                    key, subs[key], subs[key]))
         self.unique_varkeys = frozenset(subs[vk] if vk in subs else vk
                                         for vk in self.unique_varkeys)
         self.reset_varkeys()
@@ -214,7 +214,9 @@ class ConstraintSet(list):
     def as_posyslt1(self, substitutions=None):
         "Returns list of posynomials which must be kept <= 1"
         posylist, self.posymap = [], []
-        for constraint in self:
+        for i, constraint in enumerate(self):
+            if not hasattr(constraint, "as_posyslt1"):
+                raise_badelement(self, i, constraint)
             posys = constraint.as_posyslt1(substitutions)
             self.posymap.append(len(posys))
             posylist.extend(posys)

@@ -9,7 +9,7 @@
 """
 from operator import eq, le, ge, xor
 import numpy as np
-from .math import Signomial, EMPTY_EXP
+from .math import Signomial, HashVector
 from ..small_classes import Numbers, HashVector
 from ..small_scripts import try_str_without, mag
 from ..constraints import ArrayConstraint
@@ -60,23 +60,21 @@ class NomialArray(np.ndarray):
         if self.shape:
             return "[" + ", ".join([try_str_without(el, excluded)
                                     for el in self]) + "]"
-        else:
-            return str(self.flatten()[0])  # TODO THIS IS WEIRD
+        return str(self.flatten()[0])  # TODO THIS IS WEIRD
 
     def latex(self, matwrap=True):
         "Returns 1D latex list of contents."
-        if len(self.shape) == 0:
+        if self.ndim == 0:
             return self.flatten()[0].latex()
-        if len(self.shape) == 1:
+        if self.ndim == 1:
             return (("\\begin{bmatrix}" if matwrap else "") +
                     " & ".join(el.latex() for el in self) +
                     ("\\end{bmatrix}" if matwrap else ""))
-        elif len(self.shape) == 2:
+        elif self.ndim == 2:
             return ("\\begin{bmatrix}" +
                     " \\\\\n".join(el.latex(matwrap=False) for el in self) +
                     "\\end{bmatrix}")
-        else:
-            return None
+        return None
 
     def __hash__(self):
         return reduce(xor, map(hash, self.flat), 0)
@@ -181,6 +179,7 @@ class NomialArray(np.ndarray):
         hmap = NomialMap()
         hmap.units = self.units
         it = np.nditer(self, flags=['multi_index', 'refs_ok'])
+        empty_exp = HashVector()
         while not it.finished:
             i = it.multi_index
             it.iternext()
@@ -188,7 +187,7 @@ class NomialArray(np.ndarray):
                 if mag(self[i]) == 0:
                     continue
                 else:  # number manually inserted by user
-                    hmap[EMPTY_EXP] = mag(self[i]) + hmap.get(EMPTY_EXP, 0)
+                    hmap[empty_exp] = mag(self[i]) + hmap.get(HashVector(), 0)
             else:
                 hmap += self[i].hmap
         return Signomial(hmap)

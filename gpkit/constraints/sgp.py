@@ -56,7 +56,8 @@ class SequentialGeometricProgram(CostedConstraintSet):
     The equivalent of a Signomial objective can be constructed by constraining
     a dummy variable `z` to be greater than the desired Signomial objective `s`
     (z >= s) and then minimizing that dummy variable.""")
-        CostedConstraintSet.__init__(self, cost, constraints, substitutions)
+        CostedConstraintSet.__init__(self, cost, constraints, substitutions,
+                                     add_cost_values_to_substitutions=False)
         self.externalfn_vars = frozenset(Variable(newvariable=False, **v.descr)
                                          for v in self.varkeys if v.externalfn)
         self.not_sp = bool(self.externalfn_vars)
@@ -194,23 +195,25 @@ class SequentialGeometricProgram(CostedConstraintSet):
         if mutategp and not self.not_sp:
             if self.gps:  # update self._gp with new x0
                 self._gp.x0.update(x0)
-                negyapproxs = []
+                mono_gts = []
                 for spc in self._spconstrs:
-                    negyapproxs.extend(spc.as_approxsgt(self._gp.x0))
-                for i, negyapprox in enumerate(negyapproxs):
-                    posyapprox = self._approx_lt[i]
-                    unsubbed = posyapprox/negyapprox
+                    mono_gts.extend(spc.as_approxsgt(self._gp.x0))
+                for i, mono_gt in enumerate(mono_gts):
+                    posy_lt = self._approx_lt[i]
+                    unsubbed = posy_lt/mono_gt
                     # the index [0][1] gets the set of all sp constraints
                     self._gp[0][1][i].unsubbed = [unsubbed]
                     # TODO: cache parsed self.substitutions for each spmono
                     smap = unsubbed.hmap.sub(self.substitutions,
                                              unsubbed.varkeys)
                     self._gp.hmaps[self._numgpconstrs+i] = smap
+                    # TODO: WHY ON EARTH IS THIS LINE REQUIRED:
+                    self._gp.posynomials[self._numgpconstrs+i].hmap = smap
                 self._gp.gen()
             return self._gp
         else:
             x0 = self._fill_x0(x0)
-            gp_constrs = self.as_gpconstr(x0, self.substitutions)  # pylint: disable=redefined-variable-type
+            gp_constrs = self.as_gpconstr(x0, self.substitutions)
             if self.externalfn_vars:
                 gp_constrs.extend([v.key.externalfn(v, x0)
                                    for v in self.externalfn_vars])

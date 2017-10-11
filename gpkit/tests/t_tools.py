@@ -8,6 +8,7 @@ from gpkit.tools.tools import (composite_objective,
                                te_exp_minus1, te_secant, te_tangent)
 from gpkit.tools.fmincon import generate_mfiles
 from gpkit.small_scripts import mag
+from gpkit import parse_variables
 
 
 def assert_logtol(first, second, logtol=1e-6):
@@ -16,8 +17,43 @@ def assert_logtol(first, second, logtol=1e-6):
                                atol=logtol, rtol=0)
 
 
+class Fuselage(Model):
+    """The thing that carries the fuel, engine, and payload
+
+    Variables
+    ---------
+    f                [-]             Fineness
+    g          9.81  [m/s^2]         Standard gravity
+    k                [-]             Form factor
+    l                [ft]            Length
+    mfac       2.0   [-]             Weight margin factor
+    R                [ft]            Radius
+    rhocfrp    1.6   [g/cm^3]        Density of CFRP
+    rhofuel    6.01  [lbf/gallon]    Density of 100LL fuel
+    S                [ft^2]          Wetted area
+    t          0.024 [in]            Minimum skin thickness
+    Vol              [ft^3]          Volume
+    W                [lbf]           Weight
+    """
+
+    # pylint: disable=undefined-variable, exec-used, invalid-name
+    def setup(self, Wfueltot):
+        exec parse_variables(self.__doc__)
+        return [
+            f == l/R/2,
+            k >= 1 + 60/f**3 + f/400,
+            3*(S/np.pi)**1.6075 >= 2*(l*R*2)**1.6075 + (2*R)**(2*1.6075),
+            Vol <= 4*np.pi/3*(l/2)*R**2,
+            Vol >= Wfueltot/rhofuel,
+            W/mfac >= S*rhocfrp*t*g,
+        ]
+
+
 class TestTools(unittest.TestCase):
     """TestCase for math models"""
+
+    def test_parse_variables(self):
+        Fuselage(Variable("Wfueltot", 5, "lbf"))
 
     def test_binary_sweep_tree(self):
         bst0 = BinarySweepTree([1, 2], [{"cost": 1}, {"cost": 8}], None, None)
@@ -58,9 +94,10 @@ class TestTools(unittest.TestCase):
         "Test Taylor expansion of secant(var)"
         x = Variable('x')
         self.assertEqual(te_secant(x, 1), 1 + x**2/2.)
-        # TODO: floating point inaccuracy caused the c of x**4 to vary
-        #       slightly from the below fraction
-        # self.assertEqual(te_secant(x, 2), 1 + x**2/2. + 5*x**4/24.)
+        a = te_secant(x, 2)
+        b = 1 + x**2/2. + 5*x**4/24.
+        self.assertTrue(all([abs(val) <= 1e-10
+                             for val in (a.hmap - b.hmap).values()]))  # pylint:disable=no-member
         self.assertEqual(te_secant(x, 0), 1)
         # make sure x was not modified
         self.assertEqual(x, Variable('x'))
@@ -102,6 +139,21 @@ class TestTools(unittest.TestCase):
         self.assertEqual(DC, ['-0.2*x(1).^-1.2 + 17,...\n          ' +
                               '-3.2*x(2).^2.2', '0,...\n          -1'])
         self.assertEqual(DCeq, ['-1,...\n            0'])
+
+    def test_fmincon_generator_logspace(self):
+        "Test fmincon comparison tool (logspace)"
+        x = Variable('x')
+        y = Variable('y')
+        m = Model(x, [x**3.2 >= 17*y + y**-0.2,
+                      x >= 2,
+                      y == 4])
+        obj, c, ceq, _, _ = generate_mfiles(m, writefiles=False, logspace=True)
+        self.assertEqual(c, [('log( + 1.0*exp( +-3.2 * x(2) +-0.2 * x(1) ) + ' +
+                              '17.0*exp( +-3.2 * x(2) +1 * x(1) ) )'),
+                             'log( + 2.0*exp( +-1 * x(2) ) )'])
+        self.assertEqual(obj, 'log( + 1.0*exp( +1 * x(2) ) )')
+        self.assertEqual(ceq, ['log( + 0.25*exp( +1 * x(1) ) )'])
+
 
 TESTS = [TestTools]
 
