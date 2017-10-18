@@ -420,7 +420,10 @@ class PosynomialInequality(ScalarSingleEquationConstraint):
         """
         hmap = (p_lt / m_gt).hmap
         if hmap.units:
-            raise DimensionalityError(p_lt, m_gt)
+            try:
+                hmap = hmap.to("dimensionless")
+            except DimensionalityError:
+                raise DimensionalityError(p_lt, m_gt)
         hmap = self._simplify_posy_ineq(hmap)
         if hmap is None:
             return []
