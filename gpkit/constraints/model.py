@@ -74,13 +74,11 @@ class Model(CostedConstraintSet):
 
         cost = cost or Monomial(1)
         constraints = constraints or []
-        CostedConstraintSet.__init__(self, cost, constraints, substitutions)
         if setup_vars:
             # add all the vars created in .setup to the Model's varkeys
             # even if they aren't used in any constraints
             self.unique_varkeys = frozenset(v.key for v in setup_vars)
-            # TODO: is unique_varkeys really the right way to do this?
-            self.reset_varkeys()
+        CostedConstraintSet.__init__(self, cost, constraints, substitutions)
 
     gp = _progify_fctry(GeometricProgram)
     sp = _progify_fctry(SequentialGeometricProgram)
