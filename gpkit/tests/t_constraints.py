@@ -159,6 +159,13 @@ class TestMonomialEquality(unittest.TestCase):
         mec = (x == y)
         self.assertEqual(type(str(mec)), str)
 
+    def test_united_dimensionless(self):
+        "Check dimensionless unit-ed variables work"
+        x = Variable('x')
+        y = Variable('y', 'hr/day')
+        c = MonomialEquality(x, "=", y)
+        self.assertTrue(isinstance(c, MonomialEquality))
+
 
 class TestSignomialInequality(unittest.TestCase):
     """Test Signomial constraints"""
