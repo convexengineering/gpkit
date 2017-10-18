@@ -32,10 +32,10 @@ class Variable(Monomial):
         for arg in args:
             if isinstance(arg, Strings) and "name" not in descr:
                 descr["name"] = arg
-            elif isinstance(arg, Numbers) and "value" not in descr:
+            elif (isinstance(arg, Numbers) or hasattr(arg, "__call__")
+                  and "value" not in descr):
                 descr["value"] = arg
-            elif (((isinstance(arg, Iterable) and not isinstance(arg, Strings))
-                   or hasattr(arg, "__call__")) and "value" not in descr):
+            elif isinstance(arg, Iterable) and not isinstance(arg, Strings):
                 if is_sweepvar(arg):
                     descr["value"] = arg
                 else:
@@ -128,6 +128,8 @@ class ArrayVariable(NomialArray):
                   and not isinstance(arg, Strings)
                   and "value" not in descr):
                 descr["value"] = arg
+            elif hasattr(arg, "__call__"):
+                descr["value"] = arg
             elif isinstance(arg, Strings+(Quantity,)) and "units" not in descr:
                 descr["units"] = arg
             elif isinstance(arg, Strings) and "label" not in descr:
@@ -143,6 +145,7 @@ class ArrayVariable(NomialArray):
             value_option = "sp_init"
         if value_option:
             values = descr.pop(value_option)
+        if value_option and not hasattr(values, "__call__"):
             if VECTORIZATION:
                 values = np.full(shape, values, "f")
             elif not hasattr(values, "shape"):
@@ -159,7 +162,10 @@ class ArrayVariable(NomialArray):
             it.iternext()
             descr.update({"idx": i})
             if value_option:
-                descr.update({value_option: values[i]})
+                if hasattr(values, "__call__"):
+                    descr.update({value_option: veclinkedfn(values, i)})
+                else:
+                    descr.update({value_option: values[i]})
             vl[i] = Variable(**descr)
             vl[i].key.arraykey = arraykey
 
@@ -177,6 +183,14 @@ class ArrayVariable(NomialArray):
         obj.key = VarKey(**obj.descr)
 
         return obj
+
+
+def veclinkedfn(linkedfn, i):
+    "Generate an indexed linking function."
+    def newlinkedfn(c):
+        "Linked function that pulls out a particular index"
+        return np.array(linkedfn(c))[i]
+    return newlinkedfn
 
 
 # pylint: disable=too-many-ancestors
