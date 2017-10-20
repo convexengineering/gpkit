@@ -46,6 +46,9 @@ class ConstraintSet(list):
                 self.substitutions.update(self[i].substitutions)
                 self[i].substitutions = self.substitutions
         self.reset_varkeys()
+        self.substitutions.update({k: k.descr["value"]
+                                   for k in self.unique_varkeys
+                                   if "value" in k.descr})
         if substitutions:
             self.substitutions.update(substitutions)
 

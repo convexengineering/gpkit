@@ -5,6 +5,15 @@ from .small_classes import Numbers, Quantity
 from .small_scripts import is_sweepvar
 
 
+@np.vectorize
+def isnan(element):
+    "Determine if something of arbitrary type is a numpy nan."
+    try:
+        return np.isnan(element)
+    except TypeError:
+        return False
+
+
 def clean_value(key, value):
     """Gets the value of variable-less monomials, so that
     `x.sub({x: gpkit.units.m})` and `x.sub({x: gpkit.ureg.m})` are equivalent.
@@ -86,7 +95,7 @@ class KeyDict(dict):
             self.update_keymap()
         elif key in self.varkeys:
             keys = self.varkeys[key]
-            key = next(iter(keys))
+            origkey, key = key, next(iter(keys))
             if len(keys) > 1:
                 if key.veckey and all(k.veckey == key.veckey for k in keys):
                     key = key.veckey
@@ -94,7 +103,7 @@ class KeyDict(dict):
                     raise ValueError("%s could refer to multiple keys in this"
                                      " substitutions KeyDict. Use"
                                      " `.variables_byname(%s)` to see all of"
-                                     " them." % (key, key))
+                                     " them." % (origkey, origkey))
         else:
             raise KeyError(key)
         idx = getattr(key, "idx", None)
@@ -169,14 +178,10 @@ class KeyDict(dict):
                     and not isinstance(value[0], np.ndarray)):  # not solarray
                 value = np.array([clean_value(key, v) for v in value])
             if getattr(value, "shape", False) and dict.__contains__(self, key):
-                try:
-                    goodvals = ~np.isnan(value)
-                except TypeError:
-                    pass  # could not evaluate nan-ness! assume no nans
-                else:
-                    self[key][goodvals] = value[goodvals]
-                    return
-            dict.__setitem__(self, key, value)
+                goodvals = ~isnan(value)
+                self[key][goodvals] = value[goodvals]
+            else:
+                dict.__setitem__(self, key, value)
 
     def update_keymap(self):
         "Updates the keymap with the keys in _unmapped_keys"

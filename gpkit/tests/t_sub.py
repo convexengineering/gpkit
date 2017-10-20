@@ -12,6 +12,19 @@ from gpkit.tests.helpers import run_tests
 class TestNomialSubs(unittest.TestCase):
     """Test substitution for nomial-family objects"""
 
+    def test_vectorized_linked(self):
+        # pylint: disable=invalid-name,attribute-defined-outside-init,unused-variable
+        class VectorLinked(Model):
+            "simple vectorized link"
+            def setup(self):
+                self.y = y = Variable("y", 1)
+                self.x = x = VectorVariable(3, "x",
+                                            lambda c: c[y]+np.array([1, 2, 3]))
+        m = VectorLinked()
+        self.assertEqual(m.gp().substitutions[m.x[0].key], 2)
+        self.assertEqual(m.gp().substitutions[m.x[1].key], 3)
+        self.assertEqual(m.gp().substitutions[m.x[2].key], 4)
+
     def test_numeric(self):
         """Basic substitution of numeric value"""
         x = Variable("x")
