@@ -22,7 +22,23 @@ def test_repo(repo=".", xmloutput=False):
     print settings
     print
 
-    # install dependencies other than gpkit-models
+    # install gpkit-models
+    if "gpkit-models branch" in settings:
+        branch = settings["gpkit-models branch"]
+        if repo == ".":
+            git_clone("gpkit-models", branch=branch)
+            pip_install("gpkit-models", local=True)
+        else:
+            os.chdir("..")
+            os.chdir("gpkit-models")
+            call_and_retry(["git", "fetch", "--depth", "1", "origin",
+                            branch])
+            subprocess.call(["git", "checkout", "FETCH_HEAD"])
+            os.chdir("..")
+            pip_install("gpkit-models", local=True)
+            os.chdir(repo)
+
+    # install other dependencies
     if settings["pip install"]:
         for package in settings["pip install"].split(","):
             package = package.strip()
@@ -40,28 +56,14 @@ def test_repo(repo=".", xmloutput=False):
         os.chdir("..")
 
 
-def test_repos(repos=None, xmloutput=False, ingpkitmodels=False):
-    """Get the list of external repos to test, and test.
-
-    Arguments
-    ---------
-    xmloutput : bool
-        True if the tests should produce xml reports
-
-    ingpkitmodels : bool
-        False if you're in the gpkitmodels directory that should be considered
-        as the default. (overriden by repo-specific branch specifications)
-    """
-    if not ingpkitmodels:
-        git_clone("gpkit-models")
-        repos_list_filename = "gpkit-models"+os.sep+"EXTERNALTESTS"
-    else:
-        print "USING LOCAL DIRECTORY AS GPKITMODELS DIRECTORY"
-        repos_list_filename = "EXTERNALTESTS"
+def test_repos(repos=None, xmloutput=False):
+    "Get the list of external repos to test, and test."
+    git_clone("gpkit-models")
+    repos_list_filename = "gpkit-models"+os.sep+"EXTERNALTESTS"
     repos = [line.strip() for line in open(repos_list_filename, "r")]
     for repo in repos:
         git_clone(repo)
-        test_repo(repo, xmloutput)
+        test_repo(repo, xmloutput=xmloutput)
 
 
 def get_settings():
