@@ -67,12 +67,6 @@ Vector variables may also be substituted for: ``{y: ("sweep" ,[[1, 2], [1, 2], [
 
 A Model with sweep substitutions will solve for all possible combinations: e.g., if there’s a variable ``x`` with value ``('sweep', [1, 3])`` and a variable ``y`` with value ``('sweep', [14, 17])`` then the gp will be solved four times, for :math:`(x,y)\in\left\{(1, 14),\ (1, 17),\ (3, 14),\ (3, 17)\right\}`. The returned solutions will be a one-dimensional array (or 2-D for vector variables), accessed in the usual way.
 
-Parallel Sweeps
----------------
-During a normal sweep, each result is independent, so they can be run in parallel. To use this feature, run ``$ ipcluster start`` at a terminal: it will automatically start a number of iPython parallel computing engines equal to the number of cores on your machine, and when you next import gpkit you should see a note like ``Using parallel execution of sweeps on 4 clients``. If you do, then all sweeps performed with that import of gpkit will be parallelized.
-
-This parallelization sets the stage for gpkit solves to be outsourced to a server, which may be valuable for faster results; alternately, it could allow the use of gpkit without installing a solver.
-
 1D Autosweeps
 -------------
 If you're only sweeping over a single variable, autosweeping lets you specify a

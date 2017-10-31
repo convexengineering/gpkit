@@ -1,20 +1,19 @@
 "Scripts for generating, solving and sweeping programs"
 from time import time
 import numpy as np
-
-try:
-    from ipyparallel import Client
-    CLIENT = Client(timeout=0.01)
-    assert len(CLIENT) > 0  # pylint:disable=len-as-condition
-    POOL = CLIENT[:]
-    POOL.use_dill()
-    print("Using parallel execution of sweeps on %s clients" % len(CLIENT))
-except (ImportError, IOError, AssertionError):
-    POOL = None
-
 from ..nomials import parse_subs
 from ..solution_array import SolutionArray
 from ..keydict import KeyDict
+
+# try:
+#     from ipyparallel import Client
+#     CLIENT = Client(timeout=0.01)
+#     assert len(CLIENT) > 0  # pylint:disable=len-as-condition
+#     POOL = CLIENT[:]
+#     POOL.use_dill()
+#     print("Using parallel execution of sweeps on %s clients" % len(CLIENT))
+# except (ImportError, IOError, AssertionError):
+POOL = None  # TODO: fix or remove the above
 
 
 def _progify_fctry(program, return_attr=None):
