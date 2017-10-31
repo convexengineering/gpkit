@@ -6,7 +6,7 @@ from time import sleep
 from collections import defaultdict
 
 
-def test_repo(repo=".", xmloutput=False, ingpkitmodels=False):
+def test_repo(repo=".", xmloutput=False):
     """Test repository.
 
     If no repo name given, runs in current directory.
@@ -22,28 +22,7 @@ def test_repo(repo=".", xmloutput=False, ingpkitmodels=False):
     print settings
     print
 
-    # install gpkit-models
-    if "gpkit-models branch" in settings:
-        branch = settings["gpkit-models branch"]
-        if branch != "master":
-            if repo == "." and not ingpkitmodels:
-                git_clone("gpkit-models", branch=branch)
-                pip_install("gpkit-models", local=True)
-            else:
-                os.chdir("..")
-                if not ingpkitmodels:
-                    os.chdir("gpkit-models")
-                call_and_retry(["git", "fetch", "--depth", "1", "origin",
-                                branch])
-                subprocess.call(["git", "checkout", "FETCH_HEAD"])
-                if not ingpkitmodels:
-                    os.chdir("..")
-                    pip_install("gpkit-models", local=True)
-                else:
-                    pip_install(".", local=True)
-                os.chdir(repo)
-
-    # install other dependencies
+    # install dependencies other than gpkit-models
     if settings["pip install"]:
         for package in settings["pip install"].split(","):
             package = package.strip()
@@ -82,7 +61,7 @@ def test_repos(repos=None, xmloutput=False, ingpkitmodels=False):
     repos = [line.strip() for line in open(repos_list_filename, "r")]
     for repo in repos:
         git_clone(repo)
-        test_repo(repo, xmloutput, ingpkitmodels)
+        test_repo(repo, xmloutput)
 
 
 def get_settings():
