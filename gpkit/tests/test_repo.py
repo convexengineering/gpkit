@@ -55,9 +55,11 @@ def test_repos(repos=None, xmloutput=False, ingpkitmodels=False):
     if not ingpkitmodels:
         git_clone("gpkit-models")
         repos_list_filename = "gpkit-models"+os.sep+"EXTERNALTESTS"
+        pip_install("gpkit-models", local=True)
     else:
         print "USING LOCAL DIRECTORY AS GPKITMODELS DIRECTORY"
         repos_list_filename = "EXTERNALTESTS"
+        pip_install(".", local=True)
     repos = [line.strip() for line in open(repos_list_filename, "r")]
     for repo in repos:
         git_clone(repo)
