@@ -58,7 +58,7 @@ def test_repo(repo=".", xmloutput=False, gpkitmodels=True):
 
 def test_repos(repos=None, xmloutput=False, gpkitmodels=True):
     "Get the list of external repos to test, and test."
-    if newgpkitmodels:
+    if gpkitmodels:
         git_clone("gpkit-models")
     repos_list_filename = "gpkit-models"+os.sep+"EXTERNALTESTS"
     repos = [line.strip() for line in open(repos_list_filename, "r")]
