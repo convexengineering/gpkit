@@ -6,7 +6,7 @@ from time import sleep
 from collections import defaultdict
 
 
-def test_repo(repo=".", xmloutput=False):
+def test_repo(repo=".", xmloutput=False, gpkitmodels=True):
     """Test repository.
 
     If no repo name given, runs in current directory.
@@ -28,7 +28,7 @@ def test_repo(repo=".", xmloutput=False):
         if repo == ".":
             git_clone("gpkit-models", branch=branch)
             pip_install("gpkit-models", local=True)
-        else:
+        elif gpkitmodels:
             os.chdir("..")
             os.chdir("gpkit-models")
             call_and_retry(["git", "fetch", "--depth", "1", "origin",
@@ -56,14 +56,15 @@ def test_repo(repo=".", xmloutput=False):
         os.chdir("..")
 
 
-def test_repos(repos=None, xmloutput=False):
+def test_repos(repos=None, xmloutput=False, gpkitmodels=True):
     "Get the list of external repos to test, and test."
-    git_clone("gpkit-models")
+    if gpkitmodels:
+        git_clone("gpkit-models")
     repos_list_filename = "gpkit-models"+os.sep+"EXTERNALTESTS"
     repos = [line.strip() for line in open(repos_list_filename, "r")]
     for repo in repos:
         git_clone(repo)
-        test_repo(repo, xmloutput=xmloutput)
+        test_repo(repo, xmloutput, gpkitmodels)
 
 
 def get_settings():
