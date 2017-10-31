@@ -26,8 +26,8 @@ def test_repo(repo=".", xmloutput=False, ingpkitmodels=False):
     if "gpkit-models branch" in settings:
         branch = settings["gpkit-models branch"]
         if repo == "." and not ingpkitmodels:
-                git_clone("gpkit-models", branch=branch)
-                pip_install("gpkit-models", local=True)
+            git_clone("gpkit-models", branch=branch)
+            pip_install("gpkit-models", local=True)
         else:
             os.chdir("..")
             if not ingpkitmodels:
