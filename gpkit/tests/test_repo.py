@@ -25,19 +25,23 @@ def test_repo(repo=".", xmloutput=False, ingpkitmodels=False):
     # install gpkit-models
     if "gpkit-models branch" in settings:
         branch = settings["gpkit-models branch"]
-        if repo == "." and not ingpkitmodels:
-            git_clone("gpkit-models", branch=branch)
-            pip_install("gpkit-models", local=True)
-        else:
-            os.chdir("..")
-            if not ingpkitmodels:
-                os.chdir("gpkit-models")
-            call_and_retry(["git", "fetch", "--depth", "1", "origin",
-                            branch])
-            subprocess.call(["git", "checkout", "FETCH_HEAD"])
-            os.chdir("..")
-            pip_install("gpkit-models", local=True)
-            os.chdir(repo)
+        if branch != "master":
+            if repo == "." and not ingpkitmodels:
+                git_clone("gpkit-models", branch=branch)
+                pip_install("gpkit-models", local=True)
+            else:
+                os.chdir("..")
+                if not ingpkitmodels:
+                    os.chdir("gpkit-models")
+                call_and_retry(["git", "fetch", "--depth", "1", "origin",
+                                branch])
+                subprocess.call(["git", "checkout", "FETCH_HEAD"])
+                if not ingpkitmodels:
+                    os.chdir("..")
+                    pip_install("gpkit-models", local=True)
+                else:
+                    pip_install(".", local=True)
+                os.chdir(repo)
 
     # install other dependencies
     if settings["pip install"]:
