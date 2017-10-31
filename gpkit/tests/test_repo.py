@@ -6,7 +6,7 @@ from time import sleep
 from collections import defaultdict
 
 
-def test_repo(repo=".", xmloutput=False, gpkitmodels=True):
+def test_repo(repo=".", xmloutput=False, ingpkitmodels=False):
     """Test repository.
 
     If no repo name given, runs in current directory.
@@ -28,7 +28,7 @@ def test_repo(repo=".", xmloutput=False, gpkitmodels=True):
         if repo == ".":
             git_clone("gpkit-models", branch=branch)
             pip_install("gpkit-models", local=True)
-        elif gpkitmodels:
+        elif not ingpkitmodels:
             os.chdir("..")
             os.chdir("gpkit-models")
             call_and_retry(["git", "fetch", "--depth", "1", "origin",
@@ -56,15 +56,28 @@ def test_repo(repo=".", xmloutput=False, gpkitmodels=True):
         os.chdir("..")
 
 
-def test_repos(repos=None, xmloutput=False, gpkitmodels=True):
-    "Get the list of external repos to test, and test."
-    if gpkitmodels:
+def test_repos(repos=None, xmloutput=False, ingpkitmodels=False):
+    """Get the list of external repos to test, and test.
+
+    Arguments
+    ---------
+    xmloutput : bool
+        True if the tests should produce xml reports
+
+    ingpkitmodels : bool
+        False if you're in the gpkitmodels directory that should be considered
+        as the default. (overriden by repo-specific branch specifications)
+    """
+    if not ingpkitmodels:
         git_clone("gpkit-models")
-    repos_list_filename = "gpkit-models"+os.sep+"EXTERNALTESTS"
+    if not ingpkitmodels:
+        repos_list_filename = "gpkit-models"+os.sep+"EXTERNALTESTS"
+    else:
+        repos_list_filename = "EXTERNALTESTS"
     repos = [line.strip() for line in open(repos_list_filename, "r")]
     for repo in repos:
         git_clone(repo)
-        test_repo(repo, xmloutput, gpkitmodels)
+        test_repo(repo, xmloutput, ingpkitmodels)
 
 
 def get_settings():
