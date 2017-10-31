@@ -25,12 +25,13 @@ def test_repo(repo=".", xmloutput=False, ingpkitmodels=False):
     # install gpkit-models
     if "gpkit-models branch" in settings:
         branch = settings["gpkit-models branch"]
-        if repo == ".":
-            git_clone("gpkit-models", branch=branch)
-            pip_install("gpkit-models", local=True)
-        elif not ingpkitmodels:
+        if repo == "." and not ingpkitmodels:
+                git_clone("gpkit-models", branch=branch)
+                pip_install("gpkit-models", local=True)
+        else:
             os.chdir("..")
-            os.chdir("gpkit-models")
+            if not ingpkitmodels:
+                os.chdir("gpkit-models")
             call_and_retry(["git", "fetch", "--depth", "1", "origin",
                             branch])
             subprocess.call(["git", "checkout", "FETCH_HEAD"])
@@ -70,9 +71,9 @@ def test_repos(repos=None, xmloutput=False, ingpkitmodels=False):
     """
     if not ingpkitmodels:
         git_clone("gpkit-models")
-    if not ingpkitmodels:
         repos_list_filename = "gpkit-models"+os.sep+"EXTERNALTESTS"
     else:
+        print "USING LOCAL DIRECTORY AS GPKITMODELS DIRECTORY"
         repos_list_filename = "EXTERNALTESTS"
     repos = [line.strip() for line in open(repos_list_filename, "r")]
     for repo in repos:
