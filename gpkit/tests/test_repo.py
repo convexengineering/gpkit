@@ -11,10 +11,8 @@ def test_repo(repo=".", xmloutput=False):
 
     If no repo name given, runs in current directory.
     Otherwise, assumes is in directory above the repo
-    with a shared gpkit-models repository.
+    with a shared gplibrary repository.
     """
-    if os.path.isfile(repo+os.sep+"setup.py"):
-        pip_install(repo, local=True)
     os.chdir(repo)
     settings = get_settings()
     print
@@ -22,11 +20,17 @@ def test_repo(repo=".", xmloutput=False):
     print settings
     print
 
-    # install dependencies other than gpkit-models
+    if repo == ".":
+        git_clone("gplibrary")
+        pip_install("gplibrary", local=True)
+
+    # install dependencies other than gplibrary
     if settings["pip install"]:
         for package in settings["pip install"].split(","):
             package = package.strip()
             pip_install(package)
+    if os.path.isfile("setup.py"):
+        pip_install(".")
 
     skipsolvers = None
     if "skipsolvers" in settings:
@@ -53,9 +57,9 @@ def test_repos(repos=None, xmloutput=False, ingpkitmodels=False):
         as the default. (overriden by repo-specific branch specifications)
     """
     if not ingpkitmodels:
-        git_clone("gpkit-models")
-        repos_list_filename = "gpkit-models"+os.sep+"EXTERNALTESTS"
-        pip_install("gpkit-models", local=True)
+        git_clone("gplibrary")
+        repos_list_filename = "gplibrary"+os.sep+"EXTERNALTESTS"
+        pip_install("gplibrary", local=True)
     else:
         print "USING LOCAL DIRECTORY AS GPKITMODELS DIRECTORY"
         repos_list_filename = "EXTERNALTESTS"
@@ -92,8 +96,6 @@ def pip_install(package, local=False):
         cmd = ["pip"]
     else:
         cmd = ["python", os.environ["PIP"]]
-    if local:  # remove any other local packages of the same name...
-        subprocess.call(cmd + ["uninstall", package])
     cmd += ["install"]
     if local:
         cmd += ["--no-cache-dir", "--no-deps", "-e"]

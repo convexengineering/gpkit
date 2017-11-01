@@ -201,7 +201,7 @@ class KeyDict(dict):
             delete = True
             if idx:
                 dict.__getitem__(self, k)[idx] = np.nan
-                if np.isfinite(dict.__getitem__(self, k)).any():
+                if not isnan(dict.__getitem__(self, k)).all():
                     delete = False
             if delete:
                 dict.__delitem__(self, k)
