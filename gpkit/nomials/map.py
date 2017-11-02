@@ -62,31 +62,23 @@ class NomialMap(HashVector):
             other *= float(other.units/self.units)
         hmap = HashVector.__add__(self, other)
         hmap.units = self.units
-        hmap.remove_zeros(only_check_cs=True)   # pylint: disable=no-member, protected-access
         return hmap
 
-    def remove_zeros(self, only_check_cs=False):
+    def remove_zeros(self):
         """Removes zeroed exponents and monomials.
 
         If `only_check_cs` is True, checks only whether any values are zero.
         If False also checks whether any exponents in the keys are zero.
         """
-        # TODO: do this automatically during HashVector operations
-        im_a_posynomial = (len(self) > 1)
-        for key in self.keys():
-            value = self[key]
-            if value == 0:
+        for key, value in self.items():
+            zeroes = set(vk for vk, exp in key.items() if exp == 0)
+            if zeroes:
+                # raise ValueError(self)
                 del self[key]
-                if not im_a_posynomial:
-                    self[HashVector()] = 0.0  # don't remove 0-monomial's exp
-            elif not only_check_cs:
-                zeroes = set(vk for vk, exp in key.items() if exp == 0)
-                if zeroes:
-                    del self[key]
-                    for vk in zeroes:
-                        del key[vk]
-                    key._hashvalue = None  # reset hash # pylint: disable=protected-access
-                    self[key] = value + self.get(key, 0)
+                for vk in zeroes:
+                    key._hashvalue ^= hash((vk, key[vk]))
+                    del key[vk]
+                self[key] = value + self.get(key, 0)
 
     def diff(self, varkey):
         "Differentiates a NomialMap with respect to a varkey"
@@ -135,7 +127,7 @@ class NomialMap(HashVector):
 
         cp = NomialMap()
         cp.units = self.units
-        cp.expmap, cp.csmap = {}, {}
+        cp.expmap, cp.csmap = {}, self.copy()
         varlocs = defaultdict(set)
         for exp, c in self.items():
             new_exp = HashVector(exp)
@@ -165,16 +157,31 @@ class NomialMap(HashVector):
                 for o_exp, exp in exps:
                     x = exp[vk]
                     powval = float(cval)**x if cval != 0 or x >= 0 else np.inf
-                    cp.csmap[o_exp] = powval * cp.csmap.get(o_exp, self[o_exp])
+                    cp.csmap[o_exp] *= powval
                     if exp in cp and exp not in exps_covered:
                         c = cp.pop(exp)
+                        exp._hashvalue ^= hash((vk, x))
                         del exp[vk]
                         for key in expval:
-                            exp[key] = expval[key]*x + exp.get(key, 0)
-                        exp._hashvalue = None  # reset hash, # pylint: disable=protected-access
-                        cp[exp] = powval * c + cp.get(exp, 0)
+                            if key in exp:
+                                exp._hashvalue ^= hash((key, exp[key]))
+                                newval = expval[key]*x + exp[key]
+                            else:
+                                newval = expval[key]*x
+                            exp._hashvalue ^= hash((key, newval))
+                            exp[key] = newval
+                        value = powval * c
+                        if exp in cp:
+                            currentvalue = cp[exp]
+                            if value != -currentvalue:
+                                cp[exp] = value + currentvalue
+                            else:
+                                del cp[exp]
+                        elif value:
+                            cp[exp] = value
+                        if not cp:
+                            cp[HashVector()] = 0.0
                         exps_covered.add(exp)
-                        cp.remove_zeros(only_check_cs=True)  # pylint: disable=protected-access
         return cp
 
     def mmap(self, orig):
