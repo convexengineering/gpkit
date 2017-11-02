@@ -155,33 +155,7 @@ class NomialMap(HashVector):
                     cval, = cval.values()
                 exps_covered = set()
                 for o_exp, exp in exps:
-                    x = exp[vk]
-                    powval = float(cval)**x if cval != 0 or x >= 0 else np.inf
-                    cp.csmap[o_exp] *= powval
-                    if exp in cp and exp not in exps_covered:
-                        c = cp.pop(exp)
-                        exp._hashvalue ^= hash((vk, x))
-                        del exp[vk]
-                        for key in expval:
-                            if key in exp:
-                                exp._hashvalue ^= hash((key, exp[key]))
-                                newval = expval[key]*x + exp[key]
-                            else:
-                                newval = expval[key]*x
-                            exp._hashvalue ^= hash((key, newval))
-                            exp[key] = newval
-                        value = powval * c
-                        if exp in cp:
-                            currentvalue = cp[exp]
-                            if value != -currentvalue:
-                                cp[exp] = value + currentvalue
-                            else:
-                                del cp[exp]
-                        elif value:
-                            cp[exp] = value
-                        if not cp:
-                            cp[HashVector()] = 0.0
-                        exps_covered.add(exp)
+                    subinplace(cp, exp, o_exp, vk, cval, expval, exps_covered)
         return cp
 
     def mmap(self, orig):
@@ -211,3 +185,34 @@ class NomialMap(HashVector):
                 orig_idx = origexps.index(orig_exp)
                 pmap[selfexps.index(self_exp)][orig_idx] = fraction
         return pmap, m_from_ms
+
+
+def subinplace(cp, exp, o_exp, vk, cval, expval, exps_covered):
+    "Modifies cp by substituing cval/expval for vk in exp"
+    x = exp[vk]
+    powval = float(cval)**x if cval != 0 or x >= 0 else np.inf
+    cp.csmap[o_exp] *= powval
+    if exp in cp and exp not in exps_covered:
+        c = cp.pop(exp)
+        exp._hashvalue ^= hash((vk, x))
+        del exp[vk]
+        for key in expval:
+            if key in exp:
+                exp._hashvalue ^= hash((key, exp[key]))
+                newval = expval[key]*x + exp[key]
+            else:
+                newval = expval[key]*x
+            exp._hashvalue ^= hash((key, newval))
+            exp[key] = newval
+        value = powval * c
+        if exp in cp:
+            currentvalue = cp[exp]
+            if value != -currentvalue:
+                cp[exp] = value + currentvalue
+            else:
+                del cp[exp]
+        elif value:
+            cp[exp] = value
+        if not cp:
+            cp[HashVector()] = 0.0
+        exps_covered.add(exp)

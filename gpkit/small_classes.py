@@ -247,11 +247,14 @@ class HashVector(dict):
         elif isinstance(other, dict):
             sums = self.copy()
             for key, value in other.items():
-                svalue = sums.get(key, 0)
-                if value != -svalue:
-                    sums[key] = value + svalue
-                elif svalue:
-                    del sums[key]
+                if key in sums:
+                    svalue = sums[key]
+                    if value == -svalue:
+                        del sums[key]
+                    else:
+                        sums[key] = value + svalue
+                else:
+                    sums[key] = value
             return sums
         return NotImplemented
 
