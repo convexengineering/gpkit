@@ -253,7 +253,9 @@ class ConstraintSet(list):
             la = las[offset:offset+n_posys]
             nu = nus[offset:offset+n_posys]
             v_ss = constr.sens_from_dual(la, nu)
-            var_senss += v_ss
+            # not using HashVector addition because we want to preseve zeros
+            for key, value in v_ss.items():
+                var_senss[key] = value + var_senss.get(key, 0)
             offset += n_posys
         return var_senss
 

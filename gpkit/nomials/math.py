@@ -198,8 +198,11 @@ class Signomial(Nomial):
             for exp_s, c_s in self.hmap.items():
                 for exp_o, c_o in other.hmap.items():
                     exp = exp_s + exp_o
-                    hmap[exp] = c_s*c_o + hmap.get(exp, 0)
-            hmap.remove_zeros()
+                    new, accumulated = c_s*c_o, hmap.get(exp, 0)
+                    if new != -accumulated:
+                        hmap[exp] = accumulated + new
+                    elif accumulated:
+                        del hmap[exp]  # remove zeros created by multiplication
             hmap.units_of_product(self.hmap.units, other.hmap.units)
             return Signomial(hmap)
         return NotImplemented
