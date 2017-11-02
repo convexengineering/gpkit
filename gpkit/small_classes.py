@@ -250,7 +250,7 @@ class HashVector(dict):
                 if key in sums:
                     svalue = sums[key]
                     if value == -svalue:
-                        del sums[key]
+                        del sums[key]  # remove zeros created by addition
                     else:
                         sums[key] = value + svalue
                 else:

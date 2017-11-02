@@ -202,7 +202,7 @@ class Signomial(Nomial):
                     if new != -accumulated:
                         hmap[exp] = accumulated + new
                     elif accumulated:
-                        del hmap[exp]
+                        del hmap[exp]  # remove zeros created by multiplication
             hmap.units_of_product(self.hmap.units, other.hmap.units)
             return Signomial(hmap)
         return NotImplemented

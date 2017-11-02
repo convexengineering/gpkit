@@ -127,11 +127,12 @@ class NomialMap(HashVector):
 
         cp = NomialMap()
         cp.units = self.units
+        # csmap is modified during substitution, but keeps the same exps
         cp.expmap, cp.csmap = {}, self.copy()
         varlocs = defaultdict(set)
         for exp, c in self.items():
-            new_exp = HashVector(exp)
-            cp.expmap[exp] = new_exp
+            new_exp = exp.copy()
+            cp.expmap[exp] = new_exp  # cp modifies exps, so it needs new ones
             cp[new_exp] = c
             for vk in new_exp:
                 varlocs[vk].add((exp, new_exp))
@@ -187,6 +188,7 @@ class NomialMap(HashVector):
         return pmap, m_from_ms
 
 
+# pylint: disable=invalid-name
 def subinplace(cp, exp, o_exp, vk, cval, expval, exps_covered):
     "Modifies cp by substituing cval/expval for vk in exp"
     x = exp[vk]
@@ -194,15 +196,15 @@ def subinplace(cp, exp, o_exp, vk, cval, expval, exps_covered):
     cp.csmap[o_exp] *= powval
     if exp in cp and exp not in exps_covered:
         c = cp.pop(exp)
-        exp._hashvalue ^= hash((vk, x))
+        exp._hashvalue ^= hash((vk, x))  # remove (key, value) from _hashvalue
         del exp[vk]
         for key in expval:
             if key in exp:
-                exp._hashvalue ^= hash((key, exp[key]))
+                exp._hashvalue ^= hash((key, exp[key]))  # remove from hash
                 newval = expval[key]*x + exp[key]
             else:
                 newval = expval[key]*x
-            exp._hashvalue ^= hash((key, newval))
+            exp._hashvalue ^= hash((key, newval))  # add to hash
             exp[key] = newval
         value = powval * c
         if exp in cp:
@@ -210,9 +212,9 @@ def subinplace(cp, exp, o_exp, vk, cval, expval, exps_covered):
             if value != -currentvalue:
                 cp[exp] = value + currentvalue
             else:
-                del cp[exp]
+                del cp[exp]  # remove zeros created during substitution
         elif value:
             cp[exp] = value
-        if not cp:
+        if not cp:  # make sure it's never an empty hmap
             cp[HashVector()] = 0.0
         exps_covered.add(exp)
