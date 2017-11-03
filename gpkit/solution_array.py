@@ -197,7 +197,7 @@ class SolutionArray(DictOfLists):
     def plot(self, posys=None, axes=None):
         "Plots a sweep for each posy"
         if len(self["sweepvariables"]) != 1:
-            print "SolutionArray.plot only supports 1-dimensional sweeps"
+            print("SolutionArray.plot only supports 1-dimensional sweeps")
         if not hasattr(posys, "__len__"):
             posys = [posys]
         for i, posy in enumerate(posys):

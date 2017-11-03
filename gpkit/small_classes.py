@@ -1,5 +1,4 @@
 """Miscellaneous small classes"""
-from collections import namedtuple
 from operator import xor
 import numpy as np
 from . import ureg
@@ -12,7 +11,6 @@ except NameError:
 
 Quantity = ureg.Quantity
 Numbers = (int, float, np.number, Quantity)
-CootMatrixTuple = namedtuple('CootMatrix', ['row', 'col', 'data'])
 
 
 class Count(object):
@@ -36,15 +34,16 @@ def matrix_converter(name):
     return to_
 
 
-class CootMatrix(CootMatrixTuple):
+class CootMatrix(object):
     "A very simple sparse matrix representation."
-    def __init__(self, *args, **kwargs):
-        # pylint:disable=non-parent-init-called
-        # pylint:disable=super-init-not-called
-        # TODO these pylint disables go away with removal of namedtuple
-        CootMatrixTuple.__init__(self, *args, **kwargs)
+    def __init__(self, row, col, data):
+        self.row, self.col, self.data = row, col, data
         self.shape = [(max(self.row) + 1) if self.row else 0,
                       (max(self.col) + 1) if self.col else 0]
+
+    def __eq__(self, other):
+        return (self.row == other.row and self.col == other.col
+                and self.data == other.data and self.shape == other.shape)
 
     def append(self, row, col, data):
         "Appends entry to matrix."
@@ -207,7 +206,7 @@ class HashVector(dict):
 
     def __hash__(self):
         "Allows HashVectors to be used as dictionary keys."
-         # pylint:disable=access-member-before-definition, attribute-defined-outside-init
+        # pylint:disable=access-member-before-definition, attribute-defined-outside-init
         if not hasattr(self, "_hashvalue") or self._hashvalue is None:
             self._hashvalue = reduce(xor, map(hash, self.items()), 0)
         return self._hashvalue
