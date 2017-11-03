@@ -218,7 +218,7 @@ class GeometricProgram(CostedConstraintSet, NomialData):
                                 nu=solver_out["nu"], la=solver_out["la"])
         except RuntimeWarning as e:
             if warn_on_check:
-                print "Solution check warning:", str(e)
+                print("Solution check warning: %s" % e)
             else:
                 raise e
         if verbosity > 1:

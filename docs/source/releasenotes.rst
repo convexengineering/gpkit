@@ -3,6 +3,12 @@ Release Notes
 
 This page lists the changes made in each point version of gpkit.
 
+Version 0.6.0
+=============
+ * new much faster NomialMap data structure (#682)
+ * Many bug fixes and small improvements.
+ * 6900 lines of code, 2200 lines of tests, 2100 lines of docstring.
+
 Version 0.5.3
 =============
  * faster SP solves (#1109)

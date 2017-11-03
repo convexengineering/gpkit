@@ -12,6 +12,14 @@ gpkit.nomials.array module
     :undoc-members:
     :show-inheritance:
 
+gpkit.nomials.core module
+-------------------------
+
+.. automodule:: gpkit.nomials.core
+    :members:
+    :undoc-members:
+    :show-inheritance:
+
 gpkit.nomials.data module
 -------------------------
 
@@ -20,18 +28,18 @@ gpkit.nomials.data module
     :undoc-members:
     :show-inheritance:
 
-gpkit.nomials.nomial_core module
---------------------------------
+gpkit.nomials.map module
+------------------------
 
-.. automodule:: gpkit.nomials.nomial_core
+.. automodule:: gpkit.nomials.map
     :members:
     :undoc-members:
     :show-inheritance:
 
-gpkit.nomials.nomial_math module
---------------------------------
+gpkit.nomials.math module
+-------------------------
 
-.. automodule:: gpkit.nomials.nomial_math
+.. automodule:: gpkit.nomials.math
     :members:
     :undoc-members:
     :show-inheritance:

@@ -28,18 +28,10 @@ gpkit.constraints.costed module
     :undoc-members:
     :show-inheritance:
 
-gpkit.constraints.geometric_program module
-------------------------------------------
+gpkit.constraints.gp module
+---------------------------
 
-.. automodule:: gpkit.constraints.geometric_program
-    :members:
-    :undoc-members:
-    :show-inheritance:
-
-gpkit.constraints.linked module
--------------------------------
-
-.. automodule:: gpkit.constraints.linked
+.. automodule:: gpkit.constraints.gp
     :members:
     :undoc-members:
     :show-inheritance:
@@ -76,18 +68,18 @@ gpkit.constraints.set module
     :undoc-members:
     :show-inheritance:
 
-gpkit.constraints.sigeq module
-------------------------------
+gpkit.constraints.sgp module
+----------------------------
 
-.. automodule:: gpkit.constraints.sigeq
+.. automodule:: gpkit.constraints.sgp
     :members:
     :undoc-members:
     :show-inheritance:
 
-gpkit.constraints.signomial_program module
-------------------------------------------
+gpkit.constraints.sigeq module
+------------------------------
 
-.. automodule:: gpkit.constraints.signomial_program
+.. automodule:: gpkit.constraints.sigeq
     :members:
     :undoc-members:
     :show-inheritance:
