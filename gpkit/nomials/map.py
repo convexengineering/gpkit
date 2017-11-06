@@ -1,14 +1,14 @@
 "Implements the NomialMap class"
 from collections import defaultdict
 import numpy as np
-from .. import units
+from .. import units as ureg
 from ..exceptions import DimensionalityError
 from ..small_classes import HashVector, Quantity, Strings
 from ..small_scripts import mag
 from ..varkey import VarKey
 from .substitution import parse_subs
 
-DIMLESS_QUANTITY = Quantity(1, "dimensionless") if units else 1
+DIMLESS_QUANTITY = Quantity(1, "dimensionless") if ureg else 1
 
 
 class NomialMap(HashVector):
