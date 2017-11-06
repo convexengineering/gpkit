@@ -105,8 +105,11 @@ class ConstantsRelaxed(ConstraintSet):
         exclude = frozenset(exclude) if exclude else frozenset()
         include_only = frozenset(include_only) if include_only else frozenset()
         substitutions = KeyDict(constraints.substitutions)
-        constants, _, _ = parse_subs(constraints.varkeys,
-                                     constraints.substitutions)
+        constants, _, linked = parse_subs(constraints.varkeys, substitutions)
+        if linked:
+            kdc = KeyDict(constants)
+            constants.update({v: f(kdc) for v, f in linked.items()})
+        self.constants = constants
         relaxvars, relaxation_constraints = [], []
         self.origvars = []
         self.num = MODELNUM_LOOKUP["Relax"]
