@@ -14,12 +14,6 @@ class CostedConstraintSet(ConstraintSet):
     """
     def __init__(self, cost, constraints, substitutions=None,
                  add_cost_values_to_substitutions=True):
-        if isinstance(cost, np.ndarray):  # if it's a vector
-            if not cost.shape:  # if it's zero-dimensional
-                cost, = cost.flatten()
-            else:
-                raise ValueError("cost must be scalar, not the vector %s"
-                                 % cost)
         self.cost = cost
         if add_cost_values_to_substitutions:
             subs = dict(self.cost.values)
