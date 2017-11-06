@@ -147,7 +147,10 @@ class ArrayVariable(NomialArray):
             values = descr.pop(value_option)
         if value_option and not hasattr(values, "__call__"):
             if VECTORIZATION:
-                values = np.full(shape, values, "f")
+                if not hasattr(values, "shape"):
+                    values = np.full(shape, values, "f")
+                else:
+                    values = np.broadcast_to(values, reversed(shape)).T
             elif not hasattr(values, "shape"):
                 values = np.array(values)
             if values.shape != shape:
