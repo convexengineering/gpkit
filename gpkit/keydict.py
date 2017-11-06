@@ -173,7 +173,6 @@ class KeyDict(dict):
         else:
             if (self.collapse_arrays and hasattr(key, "descr")
                     and "shape" in key.descr  # if veckey, not
-                    and not isinstance(value, Numbers)
                     and not isinstance(value, (np.ndarray, Quantity))  # array,
                     and not is_sweepvar(value)  # not sweep, and
                     and not isinstance(value[0], np.ndarray)):  # not solarray
