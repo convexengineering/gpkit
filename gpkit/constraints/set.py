@@ -281,10 +281,7 @@ class ConstraintSet(list):
         """
         for constraint in self:
             if hasattr(constraint, "process_result"):
-                try:
-                    constraint.process_result(result)
-                except Exception, e:
-                    print repr(e)
+                constraint.process_result(result)
         for v in self.unique_varkeys:
             if not v.evalfn or v in result["variables"]:
                 continue
