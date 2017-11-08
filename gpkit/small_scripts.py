@@ -1,5 +1,15 @@
 """Assorted helper methods"""
 from collections import Iterable
+import numpy as np
+
+
+@np.vectorize
+def isnan(element):
+    "Determine if something of arbitrary type is a numpy nan."
+    try:
+        return np.isnan(element)
+    except TypeError:
+        return False
 
 
 def try_str_without(item, excluded):

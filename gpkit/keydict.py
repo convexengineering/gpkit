@@ -2,16 +2,7 @@
 from collections import defaultdict
 import numpy as np
 from .small_classes import Numbers, Quantity
-from .small_scripts import is_sweepvar
-
-
-@np.vectorize
-def isnan(element):
-    "Determine if something of arbitrary type is a numpy nan."
-    try:
-        return np.isnan(element)
-    except TypeError:
-        return False
+from .small_scripts import is_sweepvar, isnan
 
 
 def clean_value(key, value):

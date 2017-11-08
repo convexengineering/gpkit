@@ -3,7 +3,7 @@ from collections import Iterable
 import numpy as np
 from .nomials import NomialArray
 from .small_classes import DictOfLists
-from .small_scripts import mag
+from .small_scripts import mag, isnan
 from .repr_conventions import unitstr
 
 
@@ -30,7 +30,7 @@ def topsenss_filter(data, showvars, nvars=5):
     if "constants" in data.get("sensitivities", {}):
         data = data["sensitivities"]["constants"]
     mean_abs_senss = {k: np.abs(s).mean() for k, s in data.items()
-                      if not np.isnan(s).any()}
+                      if not isnan(s).any()}
     topk = [k for k, _ in sorted(mean_abs_senss.items(), key=lambda l: l[1])]
     filter_already_shown = showvars.intersection(topk)
     for k in filter_already_shown:
@@ -262,7 +262,7 @@ def results_table(data, title, minval=0, printunits=True, fixedcols=True,
     models = set()
     for i, (k, v) in enumerate(data.items()):
         v_ = mag(v)
-        notnan = ~np.isnan([v_])
+        notnan = ~isnan([v_])
         if np.any(notnan) and np.sum(np.abs(np.array([v_])[notnan])) >= minval:
             b = isinstance(v, Iterable) and bool(v.shape)
             kmodels = k.descr.get("models", [])
