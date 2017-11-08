@@ -180,7 +180,7 @@ class Model(CostedConstraintSet):
                         print("\nSolves with these constants relaxed:")
                     for (_, orig) in relaxed:
                         print("  %s: relaxed from %-.4g to %-.4g"
-                              % (orig, mag(self.substitutions[orig]),
+                              % (orig, mag(constsrelaxed.constants[orig.key]),
                                  mag(sol(orig))))
                     print
             print(">> Success!")
@@ -218,9 +218,9 @@ def get_relaxed(relaxvals, mapped_list, min_return=1):
     "Determines which relaxvars are considered 'relaxed'"
     sortrelaxed = sorted(zip(relaxvals, mapped_list), key=lambda x: x[0],
                          reverse=True)
-    # 0.01 is the min treshold to avoid having one at numerical precision
-    mostrelaxed = max(sortrelaxed[0][0], 0.01)
+    # arbitrarily 1.01 is the min that counts as "relaxed"
+    mostrelaxed = max(sortrelaxed[0][0], 1.01)
     for i, (val, _) in enumerate(sortrelaxed):
-        if i > min_return-1 and val <= 1.01 and (val-1) <= (mostrelaxed-1)/10:
+        if i >= min_return and val <= 1.01 and (val-1) <= (mostrelaxed-1)/10:
             return sortrelaxed[:i]
     return sortrelaxed

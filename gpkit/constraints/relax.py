@@ -99,14 +99,17 @@ class ConstantsRelaxed(ConstraintSet):
         in the final solution than in the original problem. Of course, this
         can also be determined by looking at the constant's new value directly.
     """
-    def __init__(self, constraints, include_only=None, exclude=None):
+    def __init__(self, constraints, include_only=None, exclude=None):  # pylint:disable=too-many-locals
         if not isinstance(constraints, ConstraintSet):
             constraints = ConstraintSet(constraints)
         exclude = frozenset(exclude) if exclude else frozenset()
         include_only = frozenset(include_only) if include_only else frozenset()
         substitutions = KeyDict(constraints.substitutions)
-        constants, _, _ = parse_subs(constraints.varkeys,
-                                     constraints.substitutions)
+        constants, _, linked = parse_subs(constraints.varkeys, substitutions)
+        if linked:
+            kdc = KeyDict(constants)
+            constants.update({v: f(kdc) for v, f in linked.items()})
+        self.constants = constants
         relaxvars, relaxation_constraints = [], []
         self.origvars = []
         self.num = MODELNUM_LOOKUP["Relax"]
@@ -115,17 +118,17 @@ class ConstantsRelaxed(ConstraintSet):
         for key, value in constants.items():
             if value == 0:
                 continue
-            if include_only and key.name not in include_only:
+            elif include_only and key.name not in include_only:
                 continue
-            if key.name in exclude:
+            elif key.name in exclude:
                 continue
             descr = dict(key.descr)
             descr.pop("value", None)
             descr["units"] = "-"
             descr["models"] = descr.pop("models", [])+["Relax"]
             descr["modelnums"] = descr.pop("modelnums", []) + [self.num]
-            relaxation = Variable(**descr)
-            relaxvars.append(relaxation)
+            relaxvar = Variable(**descr)
+            relaxvars.append(relaxvar)
             del substitutions[key]
             var = Variable(**key.descr)
             # TODO: make it easier to make copies of a variable
@@ -137,9 +140,9 @@ class ConstantsRelaxed(ConstraintSet):
             unrelaxed = Variable(**descr)
             self._unrelaxmap[unrelaxed.key] = key
             substitutions[unrelaxed] = value
-            relaxation_constraints.append([relaxation >= 1,
-                                           unrelaxed/relaxation <= var,
-                                           var <= unrelaxed*relaxation])
+            relaxation_constraints.append([relaxvar >= 1,
+                                           unrelaxed/relaxvar <= var,
+                                           var <= unrelaxed*relaxvar])
         self.relaxvars = NomialArray(relaxvars)
         ConstraintSet.__init__(self, [constraints, relaxation_constraints])
         self.substitutions = substitutions
