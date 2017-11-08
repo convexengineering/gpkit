@@ -3,6 +3,7 @@ from collections import defaultdict
 import numpy as np
 
 from .. import Variable
+from ..keydict import KeySet
 from .set import ConstraintSet
 from ..small_scripts import mag
 
@@ -86,7 +87,7 @@ class Bounded(ConstraintSet):
     def process_result(self, result):
         "Creates (and potentially prints) a dictionary of unbounded variables."
         ConstraintSet.process_result(self, result)
-        out = defaultdict(list)
+        out = defaultdict(set)
         for i, varkey in enumerate(self.bounded_varkeys):
             value = mag(result["variables"][varkey])
             if self.bound_las:
@@ -102,22 +103,22 @@ class Bounded(ConstraintSet):
             if self.lowerbound:
                 if self.bound_las:
                     if abs(lam_lt) >= 1e-7:  # arbitrary sens threshold
-                        out["sensitive to lower bound"].append(varkey)
+                        out["sensitive to lower bound"].add(varkey)
                 distance_below = np.log(value/self.lowerbound)
                 if distance_below <= 3:  # arbitrary dist threshold
-                    out["value near lower bound"].append(varkey)
+                    out["value near lower bound"].add(varkey)
             if self.upperbound:
                 if self.bound_las:
                     if abs(lam_gt) >= 1e-7:  # arbitrary sens threshold
-                        out["sensitive to upper bound"].append(varkey)
+                        out["sensitive to upper bound"].add(varkey)
                 distance_above = np.log(self.upperbound/value)
                 if distance_above <= 3:  # arbitrary dist threshold
-                    out["value near upper bound"].append(varkey)
+                    out["value near upper bound"].add(varkey)
         if self.verbosity > 0 and out:
             print
             print "Solves with these variables bounded:"
             for key, value in out.items():
-                print "% 25s: %s" % (key, value)
+                print "% 25s: %s" % (key, ", ".join(map(str, value)))
             print
         if "boundedness" not in result:
             result["boundedness"] = {}
