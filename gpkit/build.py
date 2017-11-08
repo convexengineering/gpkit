@@ -249,7 +249,7 @@ class Mosek(SolverBackend):
         if sys.platform == "darwin":
             if self.version == "7":
                 link_library = call("install_name_tool -change"
-                                    + " @loader_path/libmosek64.7.1.dylib"
+                                    + " @loader_path/libmosek64.7.1.dylib "
                                     + self.lib_path + " "
                                     + pathjoin(solib_dir, "expopt.so"))
             elif self.version == "8":
