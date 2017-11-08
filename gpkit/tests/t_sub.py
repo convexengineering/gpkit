@@ -311,7 +311,7 @@ class TestModelSubs(unittest.TestCase):
         if not isinstance(a["x"].key.units, str):
             almostequal(1/yard/a.solve(verbosity=0)["cost"], 1, 5)
             almostequal(1*cm/b.solve(verbosity=0)["cost"], 1, 5)
-            almostequal(1*cm/gpkit.ureg.yd/concat_cost, 1, 5)
+            almostequal(1*cm/yard/concat_cost, 1, 5)
         a1, b1 = Above(), Below()
         b1.subinplace({b1["x"]: a1["x"]})
         m = Model(a1["x"], [a1, b1])
