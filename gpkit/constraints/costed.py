@@ -1,5 +1,4 @@
 "Implement CostedConstraintSet"
-import numpy as np
 from .set import ConstraintSet
 
 
