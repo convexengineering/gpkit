@@ -307,16 +307,17 @@ class TestModelSubs(unittest.TestCase):
         concatm = Model(a.cost*b.cost, [a, b])
         concat_cost = concatm.solve(verbosity=0)["cost"]
         almostequal = self.assertAlmostEqual
+        yard, cm = gpkit.ureg("yard"), gpkit.ureg("cm")
         if not isinstance(a["x"].key.units, str):
-            almostequal(1/gpkit.ureg.yd/a.solve(verbosity=0)["cost"], 1, 5)
-            almostequal(1*gpkit.ureg.cm/b.solve(verbosity=0)["cost"], 1, 5)
-            almostequal(1*gpkit.ureg.cm/gpkit.ureg.yd/concat_cost, 1, 5)
+            almostequal(1/yard/a.solve(verbosity=0)["cost"], 1, 5)
+            almostequal(1*cm/b.solve(verbosity=0)["cost"], 1, 5)
+            almostequal(1*cm/gpkit.ureg.yd/concat_cost, 1, 5)
         a1, b1 = Above(), Below()
         b1.subinplace({b1["x"]: a1["x"]})
         m = Model(a1["x"], [a1, b1])
         sol = m.solve(verbosity=0)
         if not isinstance(m["x"].key.units, str):
-            almostequal(1*gpkit.ureg.cm/sol["cost"], 1, 5)
+            almostequal(1*cm/sol["cost"], 1, 5)
         a1, b1 = Above(), Below()
         a1.subinplace({a1["x"]: b1["x"]})
         m = Model(b1["x"], [a1, b1])
