@@ -145,12 +145,11 @@ class Mosek(SolverBackend):
         }
     }
 
-    def __init__(self):
-        super(Mosek, self).__init__()
-        self.expopt_files = None
-        self.bin_dir = None
-        self.flags = None
-        self.lib_path = None
+    expopt_files = None
+    bin_dir = None
+    flags = None
+    lib_path = None
+    version = None
 
     def look(self):
         "Looks in default install locations for latest mosek version."
@@ -180,8 +179,8 @@ class Mosek(SolverBackend):
             return
 
         possible_versions = [f for f in os.listdir(rootdir) if len(f) == 1]
-        version = sorted(possible_versions)[-1]
-        tools_dir = pathjoin(rootdir, version, "tools")
+        self.version = sorted(possible_versions)[-1]
+        tools_dir = pathjoin(rootdir, self.version, "tools")
         lib_dir = pathjoin(tools_dir, "platform", mosek_platform)
         h_path = pathjoin(lib_dir, "h", "mosek.h")
         self.bin_dir = pathjoin(lib_dir, "bin")
@@ -207,7 +206,7 @@ class Mosek(SolverBackend):
         settings["mosek_bin_dir"] = self.bin_dir
         os.environ['PATH'] = os.environ['PATH'] + os.pathsep + self.bin_dir
 
-        return "version %s, installed to %s" % (version, rootdir)
+        return "version %s, installed to %s" % (self.version, rootdir)
 
     def build(self):
         "Builds a dynamic library to GPKITBUILD or $HOME/.gpkit"
@@ -231,7 +230,7 @@ class Mosek(SolverBackend):
         expopt_build_files = []
         for old_location in self.expopt_files:
             new_location = pathjoin(build_dir, os.path.basename(old_location))
-            log("#     Copying %s" % old_location)
+            log("#f     Copying %s" % old_location)
             shutil.copyfile(old_location, new_location)
             if new_location[-2:] == ".c":
                 expopt_build_files.append(new_location)
@@ -247,9 +246,19 @@ class Mosek(SolverBackend):
                                 '   "' + self.lib_path + '"' +
                                 " -o " + pathjoin(solib_dir, "expopt.so"))
         if sys.platform == "darwin":
-            link_library = call("install_name_tool -change @loader_path/libmosek64.7.1.dylib "  # pylint: disable=line-too-long
-                                + self.lib_path + " "
-                                + pathjoin(solib_dir, "expopt.so"))
+            if self.version == "7":
+                link_library = call("install_name_tool -change"
+                                    + " @loader_path/libmosek64.7.1.dylib "
+                                    + self.lib_path + " "
+                                    + pathjoin(solib_dir, "expopt.so"))
+            elif self.version == "8":
+                link_library = call("install_name_tool -change"
+                                    + " libmosek64.8.1.dylib "
+                                    + self.lib_path + " "
+                                    + pathjoin(solib_dir, "expopt.so"))
+                call("install_name_tool -change libmosek64.8.1.dylib"
+                     + " @executable_path/libmosek64.8.1.dylib "
+                     + pathjoin(self.bin_dir, "mskexpopt"))
             if link_library != 0:
                 return False
 
