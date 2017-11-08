@@ -231,7 +231,7 @@ class Mosek(SolverBackend):
         expopt_build_files = []
         for old_location in self.expopt_files:
             new_location = pathjoin(build_dir, os.path.basename(old_location))
-            log("#     Copying %s" % old_location)
+            log("#f     Copying %s" % old_location)
             shutil.copyfile(old_location, new_location)
             if new_location[-2:] == ".c":
                 expopt_build_files.append(new_location)
@@ -254,9 +254,12 @@ class Mosek(SolverBackend):
                                     + pathjoin(solib_dir, "expopt.so"))
             elif self.version == "8":
                 link_library = call("install_name_tool -change"
-                                    + " libmosek64.8.1.dylib "
+                                    + " libmosek64.8.1.dylib"
                                     + self.lib_path + " "
                                     + pathjoin(solib_dir, "expopt.so"))
+                call("install_name_tool -change libmosek64.8.1.dylib"
+                     + " @executable_path/libmosek64.8.1.dylib "
+                     + pathjoin(self.bin_dir, "mskexpopt"))
             if link_library != 0:
                 return False
 
