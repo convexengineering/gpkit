@@ -29,8 +29,7 @@ def _progify_fctry(program, return_attr=None):
             attribute to return in addition to the program
         """
         if not constants:
-            constants, _, linked = parse_subs(self.varkeys,
-                                              self.substitutions, sweeps=True)
+            constants, _, linked = parse_subs(self.varkeys, self.substitutions)
             if linked:
                 kdc = KeyDict(constants)
                 constants.update({v: f(kdc) for v, f in linked.items()})
@@ -68,8 +67,7 @@ def _solve_fctry(genfunction):
          ValueError if the program is invalid.
          RuntimeWarning if an error occurs in solving or parsing the solution.
          """
-        constants, sweep, linked = parse_subs(self.varkeys,
-                                              self.substitutions, sweeps=True)
+        constants, sweep, linked = parse_subs(self.varkeys, self.substitutions)
         solution = SolutionArray()
 
         # NOTE: SIDE EFFECTS: self.program is set below
