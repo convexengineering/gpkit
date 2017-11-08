@@ -1,7 +1,7 @@
 "Tools for optimal fits to GP sweeps"
 from time import time
 import numpy as np
-from ..small_classes import Count, Quantity
+from ..small_classes import Count
 from ..small_scripts import mag
 from ..solution_array import SolutionArray
 
@@ -141,7 +141,7 @@ class BinarySweepTree(object):
         for sol in self.sollist:
             solution.append(sol.program.result)
         solution.to_united_array(unitless_keys=["sensitivities"], united=True)
-        units = Quantity(1.0, getattr(self.sols[0]["cost"], "units", None))
+        units = getattr(self.sols[0]["cost"], "units", None)
         if units:
             solution["cost"] = solution["cost"] * units
         return solution
@@ -172,19 +172,19 @@ class SolutionOracle(object):
         else:
             key_at = self.bst.posy_at
             v0 = self.bst.sols[0](key)
-        units = Quantity(1.0, getattr(v0, "units", None))
+        units = getattr(v0, "units", None)
         fit = [key_at(key, x) for x in self.sampled_at]
         return fit*units if units else np.array(fit)
 
     def cost_lb(self):
         "Gets cost lower bounds from the BST and units them"
-        units = Quantity(1.0, getattr(self.bst.sols[0]["cost"], "units", None))
+        units = getattr(self.bst.sols[0]["cost"], "units", None)
         fit = [self.bst.cost_at("cost", x, "lb") for x in self.sampled_at]
         return fit*units if units else np.array(fit)
 
     def cost_ub(self):
         "Gets cost upper bounds from the BST and units them"
-        units = Quantity(1.0, getattr(self.bst.sols[0]["cost"], "units", None))
+        units = getattr(self.bst.sols[0]["cost"], "units", None)
         fit = [self.bst.cost_at("cost", x, "ub") for x in self.sampled_at]
         return fit*units if units else np.array(fit)
 

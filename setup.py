@@ -52,7 +52,7 @@ setup(
     author="Edward Burnell and Warren Hoburg",
     author_email="gpkit@mit.edu",
     url="https://www.github.com/convexengineering/gpkit",
-    install_requires=["numpy >= 1.8.1", "pint", "scipy"],
+    install_requires=["numpy >= 1.12.1", "pint >= 0.7", "scipy"],
     version="0.6.0.0",
     packages=["gpkit", "gpkit._mosek", "gpkit.tests", "gpkit.interactive",
               "gpkit.nomials", "gpkit.constraints", "gpkit.tools"],
