@@ -1,6 +1,6 @@
 """Assorted helper methods"""
-import numpy as np
 from collections import Iterable
+import numpy as np
 
 
 @np.vectorize
