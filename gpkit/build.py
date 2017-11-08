@@ -254,7 +254,7 @@ class Mosek(SolverBackend):
                                     + pathjoin(solib_dir, "expopt.so"))
             elif self.version == "8":
                 link_library = call("install_name_tool -change"
-                                    + " libmosek64.8.1.dylib"
+                                    + " libmosek64.8.1.dylib "
                                     + self.lib_path + " "
                                     + pathjoin(solib_dir, "expopt.so"))
                 call("install_name_tool -change libmosek64.8.1.dylib"
