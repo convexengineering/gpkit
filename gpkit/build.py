@@ -180,8 +180,8 @@ class Mosek(SolverBackend):
             return
 
         possible_versions = [f for f in os.listdir(rootdir) if len(f) == 1]
-        version = sorted(possible_versions)[-1]
-        tools_dir = pathjoin(rootdir, version, "tools")
+        self.version = sorted(possible_versions)[-1]
+        tools_dir = pathjoin(rootdir, self.version, "tools")
         lib_dir = pathjoin(tools_dir, "platform", mosek_platform)
         h_path = pathjoin(lib_dir, "h", "mosek.h")
         self.bin_dir = pathjoin(lib_dir, "bin")
@@ -207,7 +207,7 @@ class Mosek(SolverBackend):
         settings["mosek_bin_dir"] = self.bin_dir
         os.environ['PATH'] = os.environ['PATH'] + os.pathsep + self.bin_dir
 
-        return "version %s, installed to %s" % (version, rootdir)
+        return "version %s, installed to %s" % (self.version, rootdir)
 
     def build(self):
         "Builds a dynamic library to GPKITBUILD or $HOME/.gpkit"
@@ -246,10 +246,19 @@ class Mosek(SolverBackend):
                                 "    " + " ".join(expopt_build_files) +
                                 '   "' + self.lib_path + '"' +
                                 " -o " + pathjoin(solib_dir, "expopt.so"))
+        print(self.version)
+        raise
         if sys.platform == "darwin":
-            link_library = call("install_name_tool -change @loader_path/libmosek64.7.1.dylib "  # pylint: disable=line-too-long
-                                + self.lib_path + " "
-                                + pathjoin(solib_dir, "expopt.so"))
+            if self.version == "7":
+                link_library = call("install_name_tool -change"
+                                    + " @loader_path/libmosek64.7.1.dylib"
+                                    + self.lib_path + " "
+                                    + pathjoin(solib_dir, "expopt.so"))
+            elif self.version == "8":
+                link_library = call("install_name_tool -change"
+                                    + " @loader_path/libmosek64.7.1.dylib"
+                                    + self.lib_path + " "
+                                    + pathjoin(solib_dir, "expopt.so"))
             if link_library != 0:
                 return False
 
