@@ -393,7 +393,7 @@ class TestModelSubs(unittest.TestCase):
 
         m = Model(z, cnstr)
         m.localsolve("mosek")
-        assert hasattr(m.substitutions["y"], "__call__")
+        self.assertTrue(m.substitutions["y"], "__call__")
 
 
 TESTS = [TestNomialSubs, TestModelSubs]
