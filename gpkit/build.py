@@ -246,8 +246,6 @@ class Mosek(SolverBackend):
                                 "    " + " ".join(expopt_build_files) +
                                 '   "' + self.lib_path + '"' +
                                 " -o " + pathjoin(solib_dir, "expopt.so"))
-        print(self.version)
-        raise
         if sys.platform == "darwin":
             if self.version == "7":
                 link_library = call("install_name_tool -change"
@@ -256,7 +254,7 @@ class Mosek(SolverBackend):
                                     + pathjoin(solib_dir, "expopt.so"))
             elif self.version == "8":
                 link_library = call("install_name_tool -change"
-                                    + " @loader_path/libmosek64.7.1.dylib"
+                                    + " libmosek64.8.1.dylib"
                                     + self.lib_path + " "
                                     + pathjoin(solib_dir, "expopt.so"))
             if link_library != 0:
