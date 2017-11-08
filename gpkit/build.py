@@ -145,12 +145,11 @@ class Mosek(SolverBackend):
         }
     }
 
-    def __init__(self):
-        super(Mosek, self).__init__()
-        self.expopt_files = None
-        self.bin_dir = None
-        self.flags = None
-        self.lib_path = None
+    expopt_files = None
+    bin_dir = None
+    flags = None
+    lib_path = None
+    version = None
 
     def look(self):
         "Looks in default install locations for latest mosek version."
