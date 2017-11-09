@@ -44,7 +44,7 @@ class TestExamples(unittest.TestCase):
     #     plt.close("all")
 
     def test_autosweep(self, example):
-        from gpkit import units, ureg
+        from gpkit import ureg
         bst1, tol1 = example.bst1, example.tol1
         bst2, tol2 = example.bst2, example.tol2
 
@@ -53,11 +53,10 @@ class TestExamples(unittest.TestCase):
         assert_logtol(sol1("l"), l_)
         assert_logtol(sol1("A"), l_**2 + 1, tol1)
         assert_logtol(sol1["cost"], (l_**2 + 1)**2, tol1)
-        if units:
-            self.assertEqual(Quantity(1.0, sol1["cost"].units),
-                             Quantity(1.0, ureg.m)**4)
-            self.assertEqual(Quantity(1.0, sol1("A").units),
-                             Quantity(1.0, ureg.m)**2)
+        self.assertEqual(Quantity(1.0, sol1["cost"].units),
+                         Quantity(1.0, ureg.m)**4)
+        self.assertEqual(Quantity(1.0, sol1("A").units),
+                         Quantity(1.0, ureg.m)**2)
 
         ndig = -int(np.log10(tol2))
         self.assertAlmostEqual(bst2.cost_at("cost", 3), 1.0, ndig)

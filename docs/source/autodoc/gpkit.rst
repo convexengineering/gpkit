@@ -35,6 +35,14 @@ gpkit.exceptions module
     :undoc-members:
     :show-inheritance:
 
+gpkit.globals module
+--------------------
+
+.. automodule:: gpkit.globals
+    :members:
+    :undoc-members:
+    :show-inheritance:
+
 gpkit.keydict module
 --------------------
 
