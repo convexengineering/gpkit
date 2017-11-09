@@ -142,7 +142,11 @@ class Model(CostedConstraintSet):
 
     # pylint: disable=too-many-locals,too-many-branches,too-many-statements
     def debug(self, solver=None, verbosity=1, **solveargs):
-        "Attempts to diagnose infeasible models."
+        """Attempts to diagnose infeasible models.
+
+        If a model debugs but errors in a process_result call, debug again
+        with `process_results=False`
+        """
         from .relax import ConstantsRelaxed, ConstraintsRelaxed
         from .bounded import Bounded
 
@@ -174,7 +178,7 @@ class Model(CostedConstraintSet):
                                       constsrelaxed.origvars,
                                       min_return=0 if sol["boundedness"] else 1)
                 if relaxed:
-                    if sol["boundedness"]:
+                    if sol.get("boundedness", None):
                         print("and these constants relaxed:")
                     else:
                         print("\nSolves with these constants relaxed:")

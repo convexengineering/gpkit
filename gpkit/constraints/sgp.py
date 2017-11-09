@@ -130,7 +130,7 @@ class SequentialGeometricProgram(CostedConstraintSet):
                                                feas_constrs,
                                                verbosity=verbosity-1)
                 self.gps.append(primal_feas)
-                result = primal_feas.solve(solver, verbosity=verbosity-1)
+                result = primal_feas.solve(solver, verbosity-1, **kwargs)
                 result["cost"] = None  # reset the cost-counting
             x0 = result["freevariables"]
             prevcost, cost = cost, result["cost"]
