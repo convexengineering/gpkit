@@ -41,6 +41,7 @@ class SequentialGeometricProgram(CostedConstraintSet):
     """
 
     def __init__(self, cost, constraints, substitutions, verbosity=1):
+        # pylint:disable=super-init-not-called
         # pylint: disable=unused-argument
         self.gps = []
         self.results = []
@@ -56,8 +57,10 @@ class SequentialGeometricProgram(CostedConstraintSet):
     The equivalent of a Signomial objective can be constructed by constraining
     a dummy variable `z` to be greater than the desired Signomial objective `s`
     (z >= s) and then minimizing that dummy variable.""")
-        CostedConstraintSet.__init__(self, cost, constraints)
-        self.substitutions = substitutions
+        self.cost = cost
+        list.__init__(self, [constraints])  # pylint:disable=non-parent-init-called
+        self.substitutions = substitutions or {}
+        self.reset_varkeys()
         self.externalfn_vars = frozenset(Variable(newvariable=False, **v.descr)
                                          for v in self.varkeys if v.externalfn)
         self.not_sp = bool(self.externalfn_vars)

@@ -54,15 +54,13 @@ class GeometricProgram(CostedConstraintSet, NomialData):
         self.solver_out = None
 
         # barebones ConstraintSet init
-        self.cost = cost
         if isinstance(cost, np.ndarray):  # if it's a vector
             if not cost.shape:  # if it's zero-dimensional
                 cost, = cost.flatten()
             else:
                 raise ValueError("cost must be scalar, not the vector %s"
                                  % cost)
-        if not isinstance(constraints, ConstraintSet):
-            constraints = ConstraintSet(constraints)
+        self.cost = cost
         list.__init__(self, [constraints])  # pylint:disable=non-parent-init-called
         self.substitutions = substitutions or {}
         for key, sub in self.substitutions.items():

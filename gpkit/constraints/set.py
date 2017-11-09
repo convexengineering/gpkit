@@ -212,7 +212,8 @@ class ConstraintSet(list):
         for constraint in self:
             if hasattr(constraint, "varkeys"):
                 self.varkeys.update(constraint.varkeys)
-        self.substitutions.varkeys = self.varkeys
+        if hasattr(self.substitutions, "varkeys"):
+            self.substitutions.varkeys = self.varkeys
 
     def as_posyslt1(self, substitutions=None):
         "Returns list of posynomials which must be kept <= 1"
