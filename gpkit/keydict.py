@@ -80,28 +80,32 @@ class KeyDict(dict):
 
     def parse_and_index(self, key):
         "Returns key if key had one, and veckey/idx for indexed veckeys."
-        if hasattr(key, "key"):
+        idx = None
+        try:
             key = key.key
-        elif not self.varkeys:
-            self.update_keymap()
-        elif key in self.varkeys:
-            keys = self.varkeys[key]
-            origkey, key = key, next(iter(keys))
-            if len(keys) > 1:
-                if key.veckey and all(k.veckey == key.veckey for k in keys):
+            if self.collapse_arrays and key.idx:
+                key, idx = key.veckey, key.idx
+        except AttributeError:
+            if not self.varkeys:
+                self.update_keymap()
+            elif key in self.varkeys:
+                keys = self.varkeys[key]
+                origkey, key = key, next(iter(keys))
+                if len(keys) > 1:
+                    if (key.veckey
+                            and all(k.veckey == key.veckey for k in keys)):
+                        key = key.veckey
+                    else:
+                        raise ValueError("%s could refer to multiple keys in"
+                                         " this substitutions KeyDict. Use"
+                                         " `.variables_byname(%s)` to see all"
+                                         " of them." % (origkey, origkey))
+            else:
+                raise KeyError(key)
+            if self.collapse_arrays:
+                idx = getattr(key, "idx", None)
+                if idx:
                     key = key.veckey
-                else:
-                    raise ValueError("%s could refer to multiple keys in this"
-                                     " substitutions KeyDict. Use"
-                                     " `.variables_byname(%s)` to see all of"
-                                     " them." % (origkey, origkey))
-        else:
-            raise KeyError(key)
-        idx = getattr(key, "idx", None)
-        if not self.collapse_arrays:
-            idx = None
-        elif idx:
-            key = key.veckey
         return key, idx
 
     def __contains__(self, key):
