@@ -1,5 +1,4 @@
 """Script for running all gpkit unit tests"""
-import gpkit
 from gpkit.tests.helpers import run_tests
 
 
@@ -60,13 +59,6 @@ def run(xmloutput=False, tests=None, unitless=True):
     if unitless:
         print("\n##################################"
               "####################################")
-        print("Running with units disabled:")
-        gpkit.disable_units()
-        if xmloutput:
-            run_tests(tests, xmloutput='test_reports_nounits')
-        else:
-            run_tests(tests, verbosity=1)
-        gpkit.enable_units()
 
 if __name__ == '__main__':
     run()

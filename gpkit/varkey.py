@@ -23,7 +23,6 @@ class VarKey(object):
     subscripts = ("models", "idx")
 
     def __init__(self, name=None, **kwargs):
-        from . import units as ureg  # update in case user disabled units
         # NOTE: Python arg handling guarantees 'name' won't appear in kwargs
         self.descr = kwargs
         if isinstance(name, VarKey):
@@ -34,18 +33,14 @@ class VarKey(object):
             self.descr["name"] = str(name)
             if "units" in self.descr:
                 units = self.descr["units"]
-                if ureg:
-                    if isinstance(units, Strings):
-                        if units in ["", "-"]:  # dimensionless
-                            del self.descr["units"]
-                        else:
-                            self.descr["units"] = Quantity(1.0, units)
-                    elif not isinstance(units, Quantity):
-                        raise ValueError("units must be either a string"
-                                         " or a Quantity from gpkit.units.")
-                else:  # units are disabled
-                    del self.descr["units"]
-                    self.descr["unitslabel"] = units
+                if isinstance(units, Strings):
+                    if units in ["", "-"]:  # dimensionless
+                        del self.descr["units"]
+                    else:
+                        self.descr["units"] = Quantity(1.0, units)
+                elif not isinstance(units, Quantity):
+                    raise ValueError("units must be either a string"
+                                     " or a Quantity from gpkit.units.")
 
             if "value" in self.descr:
                 value = self.descr["value"]
