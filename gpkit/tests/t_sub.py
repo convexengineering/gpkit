@@ -392,7 +392,7 @@ class TestModelSubs(unittest.TestCase):
             cnstr = [z + w >= y*x, w <= y]
 
         m = Model(z, cnstr)
-        m.localsolve("mosek")
+        m.localsolve(verbosity=0)
         self.assertTrue(m.substitutions["y"], "__call__")
 
 

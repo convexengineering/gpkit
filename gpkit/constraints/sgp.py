@@ -39,8 +39,7 @@ class SequentialGeometricProgram(CostedConstraintSet):
                         ])
     >>> gp.solve()
     """
-
-    def __init__(self, cost, constraints, substitutions, verbosity=1):
+    def __init__(self, cost, constraints, substitutions):
         # pylint:disable=super-init-not-called
         # pylint: disable=unused-argument
         self.gps = []
@@ -62,7 +61,7 @@ class SequentialGeometricProgram(CostedConstraintSet):
                                          for v in self.varkeys if v.externalfn)
         self.not_sp = bool(self.externalfn_vars)
         if not self.not_sp:
-            self._gp = self.init_gp(self.substitutions, verbosity)
+            self._gp = self.init_gp(self.substitutions)
             if not (self.not_sp or self._gp[1]):  # idx 0/1: gp/sp constraints
                 raise ValueError("""Model valid as a Geometric Program.
 
@@ -107,7 +106,7 @@ class SequentialGeometricProgram(CostedConstraintSet):
         self.gps = []  # NOTE: SIDE EFFECTS
         self.results = []
         if x0 and mutategp:
-            self._gp = self.init_gp(self.substitutions, verbosity, x0)
+            self._gp = self.init_gp(self.substitutions, x0)
         slackvar = Variable()
         prevcost, cost, rel_improvement = None, None, None
         while rel_improvement is None or rel_improvement > reltol:
@@ -117,7 +116,7 @@ class SequentialGeometricProgram(CostedConstraintSet):
     The last result is available in Model.program.gps[-1].result. If the gps
     appear to be converging, you may wish to increase the iteration limit by
     calling .localsolve(..., iteration_limit=NEWLIMIT).""" % len(self.gps))
-            gp = self.gp(x0, verbosity-1, mutategp)
+            gp = self.gp(x0, mutategp)
             self.gps.append(gp)  # NOTE: SIDE EFFECTS
             try:
                 result = gp.solve(solver, verbosity-1, **kwargs)
@@ -127,10 +126,9 @@ class SequentialGeometricProgram(CostedConstraintSet):
                                 [posy <= slackvar
                                  for posy in gp.posynomials[1:]])
                 primal_feas = GeometricProgram(slackvar**100 * gp.cost,
-                                               feas_constrs, None,
-                                               verbosity=verbosity-1)
+                                               feas_constrs, None)
                 self.gps.append(primal_feas)
-                result = primal_feas.solve(solver, verbosity=verbosity-1)
+                result = primal_feas.solve(solver, verbosity-1, **kwargs)
                 result["cost"] = None  # reset the cost-counting
             x0 = result["freevariables"]
             prevcost, cost = cost, result["cost"]
@@ -161,7 +159,7 @@ class SequentialGeometricProgram(CostedConstraintSet):
             # undeclared variables are handled by individual constraints
         return x0
 
-    def init_gp(self, substitutions, verbosity=1, x0=None):
+    def init_gp(self, substitutions, x0=None):
         "Generates a simplified GP representation for later modification"
         gpconstrs = []
         self._spconstrs = []
@@ -184,13 +182,12 @@ class SequentialGeometricProgram(CostedConstraintSet):
                     self.not_sp = True
                     return
         spapproxs = [p/m <= 1 for p, m in zip(self._approx_lt, approx_gt)]
-        gp = GeometricProgram(self.cost, [gpconstrs, spapproxs],
-                              substitutions, verbosity=verbosity)
+        gp = GeometricProgram(self.cost, [gpconstrs, spapproxs], substitutions)
         gp.x0 = x0
         self._numgpconstrs = len(gp.hmaps) - len(spapproxs)
         return gp
 
-    def gp(self, x0=None, verbosity=1, mutategp=False):
+    def gp(self, x0=None, mutategp=False):
         "The GP approximation of this SP at x0."
         if mutategp and not self.not_sp:
             if self.gps:  # update self._gp with new x0
@@ -216,7 +213,6 @@ class SequentialGeometricProgram(CostedConstraintSet):
             if self.externalfn_vars:
                 gp_constrs.extend([v.key.externalfn(v, x0)
                                    for v in self.externalfn_vars])
-            gp = GeometricProgram(self.cost, gp_constrs,
-                                  self.substitutions, verbosity=verbosity)
+            gp = GeometricProgram(self.cost, gp_constrs, self.substitutions)
             gp.x0 = x0  # NOTE: SIDE EFFECTS
             return gp

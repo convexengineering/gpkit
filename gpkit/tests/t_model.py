@@ -243,10 +243,10 @@ class TestGP(unittest.TestCase):
         D = Variable('D')
         mi = Variable('m_i')
         V = Variable('V', 1)
-        m1 = Model(D + V, [V >= mi + 0.4])
-        m2 = Model(D + 1, [1 >= mi + 0.4])
-        gp1 = m1.gp(verbosity=0)
-        gp2 = m2.gp(verbosity=0)
+        m1 = Model(D + V, [V >= mi + 0.4, mi >= 0.1, D >= mi**2])
+        m2 = Model(D + 1, [1 >= mi + 0.4, mi >= 0.1, D >= mi**2])
+        gp1 = m1.gp()
+        gp2 = m2.gp()
         # pylint: disable=no-member
         self.assertEqual(gp1.A, gp2.A)
         self.assertTrue(gp1.cs == gp2.cs)
@@ -277,9 +277,9 @@ class TestSP(unittest.TestCase):
         sol = m.localsolve(verbosity=0)
         boundedness = sol["boundedness"]
         if "value near lower bound" in boundedness:
-            self.assertEqual(x.key, boundedness["value near lower bound"][0])
+            self.assertIn(x.key, boundedness["value near lower bound"])
         if "value near upper bound" in boundedness:
-            self.assertEqual(y.key, boundedness["value near upper bound"][0])
+            self.assertIn(y.key, boundedness["value near upper bound"])
 
     def test_values_vs_subs(self):
         # Substitutions update method
@@ -493,7 +493,7 @@ class TestSP(unittest.TestCase):
         y = Variable('y')
         with SignomialsEnabled():
             m = Model(x, [x + y >= 1, y <= 0.5])
-        gp = m.sp().gp(x0={x: 0.5}, verbosity=0)  # pylint: disable=no-member
+        gp = m.sp().gp(x0={x: 0.5})  # pylint: disable=no-member
         first_gp_constr_posy = gp[0][0].as_posyslt1()[0]
         self.assertEqual(first_gp_constr_posy.exp[x.key], -1./3)
 
@@ -503,11 +503,11 @@ class TestSP(unittest.TestCase):
         x_min = Variable('x_min', 1)
         y = Variable('y')
         with SignomialsEnabled():
-            m = Model(y, [y + 0.5 >= x, x >= x_min])
+            m = Model(y, [y + 0.5 >= x, x >= x_min, 6 >= y])
         m.localsolve(verbosity=0, solver=self.solver)
         del m.substitutions[x_min]
         m.cost = 1/x_min
-        self.assertNotIn(x_min, m.sp(verbosity=0).substitutions)
+        self.assertNotIn(x_min, m.sp().substitutions)
 
     def test_unbounded_debugging(self):
         "Test nearly-dual-feasible problems"
@@ -520,15 +520,15 @@ class TestSP(unittest.TestCase):
         m = Model(x*y, Bounded(m, verbosity=0, lower=0.001))
         sol = m.solve(self.solver, verbosity=0)
         bounds = sol["boundedness"]
-        self.assertEqual(bounds["sensitive to lower bound"], [x.key])
+        self.assertEqual(bounds["sensitive to lower bound"], set([x.key]))
         # end test one-sided bound
         m = Model(x*y, Bounded(m, verbosity=0))
         sol = m.solve(self.solver, verbosity=0)
         bounds = sol["boundedness"]
         if "sensitive to upper bound" in bounds:
-            self.assertEqual(bounds["sensitive to upper bound"], [y.key])
+            self.assertIn(y.key, bounds["sensitive to upper bound"])
         if "sensitive to lower bound" in bounds:
-            self.assertEqual(bounds["sensitive to lower bound"], [x.key])
+            self.assertIn(x.key, bounds["sensitive to lower bound"])
 
 
 class TestModelSolverSpecific(unittest.TestCase):
