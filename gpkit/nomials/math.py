@@ -446,7 +446,7 @@ class PosynomialInequality(ScalarSingleEquationConstraint):
         out = []
         self._last_used_substitutions = {}
         for posy in posys:
-            fixed, _, _ = parse_subs(posy.varkeys, substitutions)
+            fixed, _, _ = parse_subs(posy.varkeys, substitutions, clean=True)
             self._last_used_substitutions.update(fixed)
             hmap = posy.hmap.sub(fixed, posy.varkeys, parsedsubs=True)
             self.pmap, self.mfm = hmap.mmap(posy.hmap)  # pylint: disable=attribute-defined-outside-init
