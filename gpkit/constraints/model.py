@@ -154,12 +154,14 @@ class Model(CostedConstraintSet):
 
         solveargs["solver"] = solver
         solveargs["verbosity"] = verbosity - 1
+        solveargs["process_result"] = False
 
         print("< DEBUGGING >")
         print("> Trying with bounded variables and relaxed constants:")
 
         if self.substitutions:
-            constsrelaxed = ConstantsRelaxed(Bounded(self))
+            bounded = Bounded(self)
+            constsrelaxed = ConstantsRelaxed(bounded)
             feas = Model(constsrelaxed.relaxvars.prod()**30 * self.cost,
                          constsrelaxed)
             # NOTE: It hasn't yet been seen but might be possible that
@@ -172,13 +174,13 @@ class Model(CostedConstraintSet):
                 sol = feas.solve(**solveargs)
             except InvalidGPConstraint:
                 sol = feas.localsolve(**solveargs)
-
+            bounded.process_result(sol, recurse=False)
             if self.substitutions:
                 relaxed = get_relaxed([sol(r) for r in constsrelaxed.relaxvars],
                                       constsrelaxed.origvars,
                                       min_return=0 if sol["boundedness"] else 1)
                 if relaxed:
-                    if sol.get("boundedness", None):
+                    if sol["boundedness"]:
                         print("and these constants relaxed:")
                     else:
                         print("\nSolves with these constants relaxed:")
