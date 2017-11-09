@@ -14,7 +14,6 @@ Subpackages
     gpkit.constraints
     gpkit.interactive
     gpkit.nomials
-    gpkit.tests
     gpkit.tools
 
 Submodules
@@ -40,14 +39,6 @@ gpkit.keydict module
 --------------------
 
 .. automodule:: gpkit.keydict
-    :members:
-    :undoc-members:
-    :show-inheritance:
-
-gpkit.modified_ctypesgen module
--------------------------------
-
-.. automodule:: gpkit.modified_ctypesgen
     :members:
     :undoc-members:
     :show-inheritance:
