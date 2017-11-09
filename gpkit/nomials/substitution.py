@@ -4,22 +4,28 @@ import numpy as np
 from ..small_scripts import is_sweepvar
 
 
-def parse_subs(varkeys, substitutions):
+def parse_subs(varkeys, substitutions, clean=False):
     "Seperates subs into constants, sweeps linkedsweeps actually present."
-    varkeys.update_keymap()
     constants, sweep, linkedsweep = {}, {}, {}
-    if hasattr(substitutions, "keymap"):
-        for var in varkeys.keymap:
+    if clean:
+        for var in varkeys:
             if dict.__contains__(substitutions, var):
                 sub = dict.__getitem__(substitutions, var)
-                keys = varkeys.keymap[var]
-                append_sub(sub, keys, constants, sweep, linkedsweep)
+                append_sub(sub, [var], constants, sweep, linkedsweep)
     else:
-        for var in substitutions:
-            key = getattr(var, "key", var)
-            if key in varkeys.keymap:
-                sub, keys = substitutions[var], varkeys.keymap[key]
-                append_sub(sub, keys, constants, sweep, linkedsweep)
+        varkeys.update_keymap()
+        if hasattr(substitutions, "keymap"):
+            for var in varkeys.keymap:
+                if dict.__contains__(substitutions, var):
+                    sub = dict.__getitem__(substitutions, var)
+                    keys = varkeys.keymap[var]
+                    append_sub(sub, keys, constants, sweep, linkedsweep)
+        else:
+            for var in substitutions:
+                key = getattr(var, "key", var)
+                if key in varkeys.keymap:
+                    sub, keys = substitutions[var], varkeys.keymap[key]
+                    append_sub(sub, keys, constants, sweep, linkedsweep)
     return constants, sweep, linkedsweep
 
 

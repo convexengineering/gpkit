@@ -83,10 +83,19 @@ class Bounded(ConstraintSet):
         self.bound_las = las[-n*len(self.bounded_varkeys):]
         return super(Bounded, self).sens_from_dual(las, nus)
 
-    # pylint: disable=too-many-branches
     def process_result(self, result):
-        "Creates (and potentially prints) a dictionary of unbounded variables."
+        "Add boundedness to the model's solution"
         ConstraintSet.process_result(self, result)
+        if "boundedness" not in result:
+            result["boundedness"] = {}
+        for key, value in self.check_boundaries(result).items():
+            if key not in result["boundedness"]:
+                result["boundedness"][key] = value
+            else:
+                result["boundedness"][key].update(value)
+
+    def check_boundaries(self, result):
+        "Creates (and potentially prints) a dictionary of unbounded variables."
         out = defaultdict(set)
         for i, varkey in enumerate(self.bounded_varkeys):
             value = mag(result["variables"][varkey])
@@ -120,6 +129,4 @@ class Bounded(ConstraintSet):
             for key, value in out.items():
                 print "% 25s: %s" % (key, ", ".join(map(str, value)))
             print
-        if "boundedness" not in result:
-            result["boundedness"] = {}
-        result["boundedness"].update(out)
+        return out

@@ -277,9 +277,9 @@ class TestSP(unittest.TestCase):
         sol = m.localsolve(verbosity=0)
         boundedness = sol["boundedness"]
         if "value near lower bound" in boundedness:
-            self.assertEqual(x.key, boundedness["value near lower bound"][0])
+            self.assertIn(x.key, boundedness["value near lower bound"])
         if "value near upper bound" in boundedness:
-            self.assertEqual(y.key, boundedness["value near upper bound"][0])
+            self.assertIn(y.key, boundedness["value near upper bound"])
 
     def test_values_vs_subs(self):
         # Substitutions update method
@@ -520,15 +520,15 @@ class TestSP(unittest.TestCase):
         m = Model(x*y, Bounded(m, verbosity=0, lower=0.001))
         sol = m.solve(self.solver, verbosity=0)
         bounds = sol["boundedness"]
-        self.assertEqual(bounds["sensitive to lower bound"], [x.key])
+        self.assertEqual(bounds["sensitive to lower bound"], set([x.key]))
         # end test one-sided bound
         m = Model(x*y, Bounded(m, verbosity=0))
         sol = m.solve(self.solver, verbosity=0)
         bounds = sol["boundedness"]
         if "sensitive to upper bound" in bounds:
-            self.assertEqual(bounds["sensitive to upper bound"], [y.key])
+            self.assertIn(y.key, bounds["sensitive to upper bound"])
         if "sensitive to lower bound" in bounds:
-            self.assertEqual(bounds["sensitive to lower bound"], [x.key])
+            self.assertIn(x.key, bounds["sensitive to lower bound"])
 
 
 class TestModelSolverSpecific(unittest.TestCase):

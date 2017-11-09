@@ -40,7 +40,7 @@ class SequentialGeometricProgram(CostedConstraintSet):
     >>> gp.solve()
     """
 
-    def __init__(self, cost, constraints, substitutions=None, verbosity=1):
+    def __init__(self, cost, constraints, substitutions, verbosity=1):
         # pylint: disable=unused-argument
         self.gps = []
         self.results = []
@@ -56,8 +56,8 @@ class SequentialGeometricProgram(CostedConstraintSet):
     The equivalent of a Signomial objective can be constructed by constraining
     a dummy variable `z` to be greater than the desired Signomial objective `s`
     (z >= s) and then minimizing that dummy variable.""")
-        CostedConstraintSet.__init__(self, cost, constraints, substitutions,
-                                     add_cost_values_to_substitutions=False)
+        CostedConstraintSet.__init__(self, cost, constraints)
+        self.substitutions = substitutions
         self.externalfn_vars = frozenset(Variable(newvariable=False, **v.descr)
                                          for v in self.varkeys if v.externalfn)
         self.not_sp = bool(self.externalfn_vars)
@@ -127,10 +127,10 @@ class SequentialGeometricProgram(CostedConstraintSet):
                                 [posy <= slackvar
                                  for posy in gp.posynomials[1:]])
                 primal_feas = GeometricProgram(slackvar**100 * gp.cost,
-                                               feas_constrs,
+                                               feas_constrs, None,
                                                verbosity=verbosity-1)
                 self.gps.append(primal_feas)
-                result = primal_feas.solve(solver, verbosity=verbosity-1)
+                result = primal_feas.solve(solver, verbosity-1, **kwargs)
                 result["cost"] = None  # reset the cost-counting
             x0 = result["freevariables"]
             prevcost, cost = cost, result["cost"]

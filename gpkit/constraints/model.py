@@ -142,7 +142,11 @@ class Model(CostedConstraintSet):
 
     # pylint: disable=too-many-locals,too-many-branches,too-many-statements
     def debug(self, solver=None, verbosity=1, **solveargs):
-        "Attempts to diagnose infeasible models."
+        """Attempts to diagnose infeasible models.
+
+        If a model debugs but errors in a process_result call, debug again
+        with `process_results=False`
+        """
         from .relax import ConstantsRelaxed, ConstraintsRelaxed
         from .bounded import Bounded
 
@@ -150,25 +154,27 @@ class Model(CostedConstraintSet):
 
         solveargs["solver"] = solver
         solveargs["verbosity"] = verbosity - 1
+        solveargs["process_result"] = False
 
         print("< DEBUGGING >")
         print("> Trying with bounded variables and relaxed constants:")
 
+        bounded = Bounded(self)
         if self.substitutions:
-            constsrelaxed = ConstantsRelaxed(Bounded(self))
+            constsrelaxed = ConstantsRelaxed(bounded)
             feas = Model(constsrelaxed.relaxvars.prod()**30 * self.cost,
                          constsrelaxed)
             # NOTE: It hasn't yet been seen but might be possible that
             #       the self.cost component above could cause infeasibility
         else:
-            feas = Model(self.cost, Bounded(self))
+            feas = Model(self.cost, bounded)
 
         try:
             try:
                 sol = feas.solve(**solveargs)
             except InvalidGPConstraint:
                 sol = feas.localsolve(**solveargs)
-
+            sol["boundedness"] = bounded.check_boundaries(sol)
             if self.substitutions:
                 relaxed = get_relaxed([sol(r) for r in constsrelaxed.relaxvars],
                                       constsrelaxed.origvars,
