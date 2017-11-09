@@ -11,15 +11,11 @@ class CostedConstraintSet(ConstraintSet):
     constraints : Iterable
     substitutions : dict
     """
-    def __init__(self, cost, constraints, substitutions=None,
-                 add_cost_values_to_substitutions=True):
+    def __init__(self, cost, constraints, substitutions=None):
         self.cost = cost
-        if add_cost_values_to_substitutions:
-            subs = dict(self.cost.values)
-            if substitutions:
-                subs.update(substitutions)
-        else:
-            subs = substitutions
+        subs = dict(self.cost.values)
+        if substitutions:
+            subs.update(substitutions)
         ConstraintSet.__init__(self, constraints, subs)
 
     def subinplace(self, subs):

@@ -382,6 +382,19 @@ class TestModelSubs(unittest.TestCase):
         m.substitutions["ymax"] = [0.3, 0.5, 0.8]
         m.localsolve(verbosity=0)
 
+    def test_spsubs(self):
+        x = Variable("x", 5)
+        y = Variable("y", lambda c: 2*c[x])
+        z = Variable("z")
+        w = Variable("w")
+
+        with SignomialsEnabled():
+            cnstr = [z + w >= y*x, w <= y]
+
+        m = Model(z, cnstr)
+        m.localsolve("mosek")
+        self.assertTrue(m.substitutions["y"], "__call__")
+
 
 TESTS = [TestNomialSubs, TestModelSubs]
 
