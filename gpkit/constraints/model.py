@@ -159,15 +159,15 @@ class Model(CostedConstraintSet):
         print("< DEBUGGING >")
         print("> Trying with bounded variables and relaxed constants:")
 
+        bounded = Bounded(self)
         if self.substitutions:
-            bounded = Bounded(self)
             constsrelaxed = ConstantsRelaxed(bounded)
             feas = Model(constsrelaxed.relaxvars.prod()**30 * self.cost,
                          constsrelaxed)
             # NOTE: It hasn't yet been seen but might be possible that
             #       the self.cost component above could cause infeasibility
         else:
-            feas = Model(self.cost, Bounded(self))
+            feas = Model(self.cost, bounded)
 
         try:
             try:
