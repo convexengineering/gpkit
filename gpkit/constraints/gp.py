@@ -8,7 +8,6 @@ from ..keydict import KeyDict
 from ..small_scripts import mag
 from ..solution_array import SolutionArray
 from .costed import CostedConstraintSet
-from .set import ConstraintSet
 
 
 DEFAULT_SOLVER_KWARGS = {"cvxopt": {"kktsolver": "ldl"}}
@@ -53,19 +52,8 @@ class GeometricProgram(CostedConstraintSet, NomialData):
         self.nu_by_posy = None
         self.solver_log = None
         self.solver_out = None
-
-        # barebones ConstraintSet init
-        self.cost = cost
-        if isinstance(cost, np.ndarray):  # if it's a vector
-            if not cost.shape:  # if it's zero-dimensional
-                cost, = cost.flatten()
-            else:
-                raise ValueError("cost must be scalar, not the vector %s"
-                                 % cost)
-        if not isinstance(constraints, ConstraintSet):
-            constraints = ConstraintSet(constraints)
-        list.__init__(self, [constraints])  # pylint:disable=non-parent-init-called
-        self.substitutions = substitutions or {}
+        # GPs get varkeys from NomialData._reset, in .gen()
+        self.__bare_init__(cost, constraints, substitutions, varkeys=False)
         for key, sub in self.substitutions.items():
             if hasattr(sub, "exp") and not sub.exp:
                 sub = sub.value
@@ -78,7 +66,6 @@ class GeometricProgram(CostedConstraintSet, NomialData):
                                  " not allowed in .substitutions; such"
                                  " substitutions must be done by using"
                                  " .subinplace()." % (key, sub, type(sub)))
-        # sideways NomialData init to create self.exps, self.cs, etc
         self.posynomials = [cost.sub(self.substitutions)]
         self.posynomials.extend(self.as_posyslt1(self.substitutions))
         self.hmaps = [p.hmap for p in self.posynomials]
@@ -105,7 +92,7 @@ class GeometricProgram(CostedConstraintSet, NomialData):
 
     def gen(self):
         "Generates nomial and solve data (A, p_idxs) from posynomials"
-        self._reset()
+        self._reset()  # method from NomialData
         self._exps, self._cs = [], []
         for hmap in self.hmaps:
             self._exps.extend(hmap.keys())

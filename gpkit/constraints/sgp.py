@@ -3,10 +3,10 @@ from time import time
 from ..exceptions import InvalidGPConstraint
 from ..keydict import KeyDict
 from ..nomials import Variable
-from .costed import CostedConstraintSet
 from .gp import GeometricProgram
 from ..solution_array import SolutionArray
 from ..nomials import SignomialInequality, PosynomialInequality
+from .costed import CostedConstraintSet
 
 
 # pylint: disable=too-many-instance-attributes
@@ -39,8 +39,8 @@ class SequentialGeometricProgram(CostedConstraintSet):
                         ])
     >>> gp.solve()
     """
-
     def __init__(self, cost, constraints, substitutions):
+        # pylint:disable=super-init-not-called
         # pylint: disable=unused-argument
         self.gps = []
         self.results = []
@@ -56,14 +56,13 @@ class SequentialGeometricProgram(CostedConstraintSet):
     The equivalent of a Signomial objective can be constructed by constraining
     a dummy variable `z` to be greater than the desired Signomial objective `s`
     (z >= s) and then minimizing that dummy variable.""")
-        CostedConstraintSet.__init__(self, cost, constraints)
-        self.substitutions = substitutions
+        self.__bare_init__(cost, constraints, substitutions, varkeys=True)
         self.externalfn_vars = frozenset(Variable(newvariable=False, **v.descr)
                                          for v in self.varkeys if v.externalfn)
         self.not_sp = bool(self.externalfn_vars)
         if not self.not_sp:
             self._gp = self.init_gp(self.substitutions)
-            if not (self.not_sp or self._gp[0][1]):  # [0][1]: sp constraints
+            if not (self.not_sp or self._gp[1]):  # idx 0/1: gp/sp constraints
                 raise ValueError("""Model valid as a Geometric Program.
 
     SequentialGeometricPrograms should only be created with Models containing Signomial
@@ -199,8 +198,7 @@ class SequentialGeometricProgram(CostedConstraintSet):
                 for i, mono_gt in enumerate(mono_gts):
                     posy_lt = self._approx_lt[i]
                     unsubbed = posy_lt/mono_gt
-                    # the index [0][1] gets the set of all sp constraints
-                    self._gp[0][1][i].unsubbed = [unsubbed]
+                    self._gp[1][i].unsubbed = [unsubbed]  # idx 0/1: gp/sp
                     # TODO: cache parsed self.substitutions for each spmono
                     smap = unsubbed.hmap.sub(self.substitutions,
                                              unsubbed.varkeys)
