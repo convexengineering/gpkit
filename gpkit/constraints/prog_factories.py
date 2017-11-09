@@ -18,7 +18,7 @@ POOL = None  # TODO: fix or remove the above
 
 def _progify_fctry(program, return_attr=None):
     "Generates function that returns a program() and optionally an attribute."
-    def programify(self, verbosity=1, constants=None, **kwargs):
+    def programify(self, constants=None, **kwargs):
         """Return program version of self
 
         Arguments
@@ -76,7 +76,7 @@ def _solve_fctry(genfunction):
                       constants, sweep, linked,
                       solver, verbosity, *args, **kwargs)
         else:
-            self.program, progsolve = genfunction(self, verbosity)
+            self.program, progsolve = genfunction(self)
             result = progsolve(solver, verbosity, *args, **kwargs)
             solution.append(result)
         solution.program = self.program
@@ -115,7 +115,7 @@ def run_sweep(genfunction, self, solution, skipsweepfailures,
         if linked:
             kdc = KeyDict(constants)
             constants.update({v: f(kdc) for v, f in linked.items()})
-        program, solvefn = genfunction(self, verbosity-1, constants)
+        program, solvefn = genfunction(self, constants)
         try:
             result = solvefn(solver, verbosity-1, *args, **kwargs)
             # add localmodel here

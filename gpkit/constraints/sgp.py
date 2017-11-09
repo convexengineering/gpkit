@@ -117,7 +117,7 @@ class SequentialGeometricProgram(CostedConstraintSet):
     The last result is available in Model.program.gps[-1].result. If the gps
     appear to be converging, you may wish to increase the iteration limit by
     calling .localsolve(..., iteration_limit=NEWLIMIT).""" % len(self.gps))
-            gp = self.gp(x0, verbosity-1, mutategp)
+            gp = self.gp(x0, mutategp)
             self.gps.append(gp)  # NOTE: SIDE EFFECTS
             try:
                 result = gp.solve(solver, verbosity-1, **kwargs)
@@ -188,7 +188,7 @@ class SequentialGeometricProgram(CostedConstraintSet):
         self._numgpconstrs = len(gp.hmaps) - len(spapproxs)
         return gp
 
-    def gp(self, x0=None, verbosity=1, mutategp=False):
+    def gp(self, x0=None, mutategp=False):
         "The GP approximation of this SP at x0."
         if mutategp and not self.not_sp:
             if self.gps:  # update self._gp with new x0

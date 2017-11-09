@@ -245,8 +245,8 @@ class TestGP(unittest.TestCase):
         V = Variable('V', 1)
         m1 = Model(D + V, [V >= mi + 0.4, mi >= 0.1, D >= mi**2])
         m2 = Model(D + 1, [1 >= mi + 0.4, mi >= 0.1, D >= mi**2])
-        gp1 = m1.gp(verbosity=0)
-        gp2 = m2.gp(verbosity=0)
+        gp1 = m1.gp()
+        gp2 = m2.gp()
         # pylint: disable=no-member
         self.assertEqual(gp1.A, gp2.A)
         self.assertTrue(gp1.cs == gp2.cs)
@@ -493,7 +493,7 @@ class TestSP(unittest.TestCase):
         y = Variable('y')
         with SignomialsEnabled():
             m = Model(x, [x + y >= 1, y <= 0.5])
-        gp = m.sp().gp(x0={x: 0.5}, verbosity=0)  # pylint: disable=no-member
+        gp = m.sp().gp(x0={x: 0.5})  # pylint: disable=no-member
         first_gp_constr_posy = gp[0][0].as_posyslt1()[0]
         self.assertEqual(first_gp_constr_posy.exp[x.key], -1./3)
 
@@ -507,7 +507,7 @@ class TestSP(unittest.TestCase):
         m.localsolve(verbosity=0, solver=self.solver)
         del m.substitutions[x_min]
         m.cost = 1/x_min
-        self.assertNotIn(x_min, m.sp(verbosity=0).substitutions)
+        self.assertNotIn(x_min, m.sp().substitutions)
 
     def test_unbounded_debugging(self):
         "Test nearly-dual-feasible problems"
