@@ -174,7 +174,7 @@ class Model(CostedConstraintSet):
                 sol = feas.solve(**solveargs)
             except InvalidGPConstraint:
                 sol = feas.localsolve(**solveargs)
-            bounded.process_result(sol, recurse=False)
+            sol["boundedness"] = bounded.check_boundaries(sol)
             if self.substitutions:
                 relaxed = get_relaxed([sol(r) for r in constsrelaxed.relaxvars],
                                       constsrelaxed.origvars,
