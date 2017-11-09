@@ -33,7 +33,7 @@ def _progify_fctry(program, return_attr=None):
             if linked:
                 kdc = KeyDict(constants)
                 constants.update({v: f(kdc) for v, f in linked.items()})
-        prog = program(self.cost, self, constants, verbosity, **kwargs)
+        prog = program(self.cost, self, constants, **kwargs)
         if return_attr:
             return prog, getattr(prog, return_attr)
         return prog
