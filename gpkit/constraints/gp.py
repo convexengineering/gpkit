@@ -111,7 +111,7 @@ class GeometricProgram(CostedConstraintSet, NomialData):
 
     # pylint: disable=too-many-statements, too-many-locals
     def solve(self, solver=None, verbosity=1, warn_on_check=False,
-              *args, **kwargs):
+              process_result=True, *args, **kwargs):
         """Solves a GeometricProgram and returns the solution.
 
         Arguments
@@ -230,7 +230,8 @@ class GeometricProgram(CostedConstraintSet, NomialData):
             print("solution checking took %.2g%% of solve time" %
                   ((time() - tic) / soltime * 100))
 
-        self.process_result(self.result)
+        if process_result:
+            self.process_result(self.result)
         self.result["soltime"] = soltime
         return self.result
 
