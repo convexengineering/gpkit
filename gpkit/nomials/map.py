@@ -51,9 +51,6 @@ class NomialMap(HashVector):
 
     def to(self, units):
         "Returns a new NomialMap of the given units"
-        from .. import units as ureg
-        if not ureg:
-            return self.copy()
         sunits = self.units or DIMLESS_QUANTITY
         nm = self * sunits.to(units).magnitude  # note that * creates a copy
         nm.units_of_product(units)  # pylint: disable=no-member

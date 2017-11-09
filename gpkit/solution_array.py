@@ -253,10 +253,6 @@ def results_table(data, title, minval=0, printunits=True, fixedcols=True,
     """
     if not data:
         return []
-    from . import units
-    if not units:
-        # disable units printing
-        printunits = False
     lines = []
     decorated = []
     models = set()
