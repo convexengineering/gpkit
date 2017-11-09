@@ -42,21 +42,6 @@ class TestNomialSubs(unittest.TestCase):
         self.assertEqual(q, 1 + y**4)
         self.assertEqual(x.sub({x: y}), y)
 
-    def test_string_mutation(self):
-        x = Variable("x", "m")
-        descr_before = list(x.exp)[0].descr
-        y = x.sub({"x": "y"})
-        descr_after = list(x.exp)[0].descr
-        self.assertEqual(descr_before, descr_after)
-        x_changed_descr = dict(descr_before)
-        x_changed_descr["name"] = "y"
-        y_descr = list(y.exp)[0].descr
-        self.assertEqual(x_changed_descr["name"], y_descr["name"])
-        if "units" in descr_before:
-            self.assertAlmostEqual(x_changed_descr["units"]/y_descr["units"],
-                                   1.0)
-        self.assertEqual(x.sub({"x": x}), x)
-
     def test_scalar_units(self):
         x = Variable("x", "m")
         xvk = x.key
@@ -64,7 +49,7 @@ class TestNomialSubs(unittest.TestCase):
         yvk = y.key
         units_exist = bool(x.units)
         for x_ in ["x", xvk, x]:
-            for y_ in ["y", yvk, y]:
+            for y_ in [yvk, y]:
                 if not isinstance(y_, str) and units_exist:
                     expected = 1000.0
                 else:

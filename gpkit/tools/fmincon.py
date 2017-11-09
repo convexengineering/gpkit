@@ -1,6 +1,7 @@
 "A module to facilitate testing GPkit against fmincon"
 from math import log10, floor, log
 from .. import SignomialsEnabled
+from ..varkey import VarKey
 from ..keydict import KeyDict
 from ..small_scripts import mag
 # pylint: disable=too-many-statements,too-many-locals,too-many-branches
@@ -54,9 +55,9 @@ def generate_mfiles(model, logspace=False, algorithm='interior-point',
     original_varkeys = model.varkeys
     for key in model.varkeys:
         if key not in model.substitutions:
-            newdict[key] = 'x({0})'.format(i)
-            if logspace:
-                newdict[key].replace('x', 'y')
+            descr = key.descr.copy()
+            descr["name"] = 'x(%i)' % i
+            newdict[key] = VarKey(**descr)
             newlist += [key.str_without(["units"])]
             lookup += ['x_{0}: '.format(i) + key.str_without(["units"])]
             i += 1
