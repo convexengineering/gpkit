@@ -45,7 +45,8 @@ class GeometricProgram(CostedConstraintSet, NomialData):
                         ])
     >>> gp.solve()
     """
-    def __init__(self, cost, constraints, substitutions=None, verbosity=1):
+    def __init__(self, cost, constraints, substitutions=None, verbosity=1,
+                 allow_missingbounds=False):
         # pylint:disable=super-init-not-called
         # initialize attributes modified by internal methods
         self.result = None
@@ -96,9 +97,11 @@ class GeometricProgram(CostedConstraintSet, NomialData):
             p_idxs += [i]*p_len
         self.p_idxs = np.array(p_idxs)
         # A [i, v]: sparse matrix of variable's powers in each monomial
-        if verbosity > 0:
-            for var, bound in sorted(self.missingbounds.items()):
-                print("%s has no %s bound" % (var, bound))
+        if self.missingbounds and not allow_missingbounds:
+            boundstrs = "\n".join("  %s has no %s bound" % (v, b)
+                                  for v, b in self.missingbounds.items())
+            raise ValueError("Geometric Program is not fully bounded:\n"
+                             + boundstrs)
 
     def gen(self):
         "Generates nomial and solve data (A, p_idxs) from posynomials"

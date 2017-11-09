@@ -243,8 +243,8 @@ class TestGP(unittest.TestCase):
         D = Variable('D')
         mi = Variable('m_i')
         V = Variable('V', 1)
-        m1 = Model(D + V, [V >= mi + 0.4])
-        m2 = Model(D + 1, [1 >= mi + 0.4])
+        m1 = Model(D + V, [V >= mi + 0.4, mi >= 0.1, D >= mi**2])
+        m2 = Model(D + 1, [1 >= mi + 0.4, mi >= 0.1, D >= mi**2])
         gp1 = m1.gp(verbosity=0)
         gp2 = m2.gp(verbosity=0)
         # pylint: disable=no-member
@@ -503,7 +503,7 @@ class TestSP(unittest.TestCase):
         x_min = Variable('x_min', 1)
         y = Variable('y')
         with SignomialsEnabled():
-            m = Model(y, [y + 0.5 >= x, x >= x_min])
+            m = Model(y, [y + 0.5 >= x, x >= x_min, 6 >= y])
         m.localsolve(verbosity=0, solver=self.solver)
         del m.substitutions[x_min]
         m.cost = 1/x_min
