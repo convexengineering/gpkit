@@ -213,7 +213,6 @@ class GeometricProgram(CostedConstraintSet, NomialData):
                 "final status of solver '%s' was '%s', not 'optimal'.\n\n"
                 % (solvername, solver_status)))
 
-        self._generate_nula(solver_out)
         self.result = self._compile_result(solver_out)  # NOTE: SIDE EFFECTS
         if verbosity > 1:
             print("result packing took %.2g%% of solve time" %
@@ -278,12 +277,13 @@ class GeometricProgram(CostedConstraintSet, NomialData):
         result: dict
             dict in format returned by GeometricProgram.solve()
         """
+        self._generate_nula(solver_out)
         primal = solver_out["primal"]
         nu, la = solver_out["nu"], solver_out["la"]
         # confirm lengths before calling zip
         assert len(self.varlocs) == len(primal)
         result = {"freevariables": KeyDict(zip(self.varlocs, np.exp(primal)))}
-        ## Get cost
+        # get cost #
         if "objective" in solver_out:
             result["cost"] = float(solver_out["objective"])
         else:
@@ -295,7 +295,7 @@ class GeometricProgram(CostedConstraintSet, NomialData):
                                  % cost.varkeys.keys())
             result["cost"] = mag(cost.c)
 
-        ## Get sensitivities
+        # get sensitivities #
         result["sensitivities"] = {"nu": nu, "la": la}
         var_senss = self.sens_from_dual(la[1:].tolist(), self.nu_by_posy[1:])
         # add cost's sensitivity in
