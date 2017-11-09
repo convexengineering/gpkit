@@ -150,6 +150,7 @@ class Mosek(SolverBackend):
     flags = None
     lib_path = None
     version = None
+    lib_name = None
 
     def look(self):
         "Looks in default install locations for latest mosek version."
@@ -186,6 +187,7 @@ class Mosek(SolverBackend):
         self.bin_dir = pathjoin(lib_dir, "bin")
         try:
             self.lib_path = glob.glob(self.bin_dir+os.sep+libpattern)[0]
+            self.lib_name = os.path.basename(self.lib_path)
         except IndexError:  # mosek folder found, but mosek not installed
             return
 
@@ -248,12 +250,12 @@ class Mosek(SolverBackend):
         if sys.platform == "darwin":
             if self.version == "7":
                 link_library = call("install_name_tool -change"
-                                    + " @loader_path/libmosek64.7.1.dylib "
+                                    + " @loader_path/%s " % self.lib_name
                                     + self.lib_path + " "
                                     + pathjoin(solib_dir, "expopt.so"))
             elif self.version == "8":
                 link_library = call("install_name_tool -change"
-                                    + " libmosek64.8.1.dylib "
+                                    + " %s " % self.lib_name
                                     + self.lib_path + " "
                                     + pathjoin(solib_dir, "expopt.so"))
                 call("install_name_tool -change libmosek64.8.1.dylib"

@@ -76,8 +76,8 @@ def _solve_fctry(genfunction):
                       constants, sweep, linked,
                       solver, verbosity, *args, **kwargs)
         else:
-            self.program, solvefn = genfunction(self, verbosity)
-            result = solvefn(solver, verbosity, *args, **kwargs)
+            self.program, progsolve = genfunction(self, verbosity)
+            result = progsolve(solver, verbosity, *args, **kwargs)
             solution.append(result)
         solution.program = self.program
         solution.to_united_array(unitless_keys=["sensitivities"], united=True)

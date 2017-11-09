@@ -45,7 +45,7 @@ class GeometricProgram(CostedConstraintSet, NomialData):
                         ])
     >>> gp.solve()
     """
-    def __init__(self, cost, constraints, substitutions=None, verbosity=1,
+    def __init__(self, cost, constraints, substitutions, verbosity=1,
                  allow_missingbounds=False):
         # pylint:disable=super-init-not-called
         # initialize attributes modified by internal methods
