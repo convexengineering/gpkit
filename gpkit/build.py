@@ -150,6 +150,7 @@ class Mosek(SolverBackend):
     flags = None
     lib_path = None
     version = None
+    lib_name = None
 
     def look(self):
         "Looks in default install locations for latest mosek version."
