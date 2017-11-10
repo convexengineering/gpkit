@@ -46,4 +46,4 @@ verify_model(Cube)
 print parse_variables(Cube.__doc__)
 c = Cube()
 c.cost = c.A
-print c.solve().table()
+print c.solve(verbosity=0).table()

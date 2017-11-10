@@ -6,9 +6,6 @@ h = self.h = Variable('h', 1, 'm', 'minimum height')
 from gpkit import VectorVariable
 s = self.s = VectorVariable(3, 's', 'm', 'side length')
 
-Using solver 'cvxopt'
-Solving for 4 variables.
-Solving took 0.00584 seconds.
 
 Cost
 ----
