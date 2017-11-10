@@ -1,6 +1,7 @@
 """Implement the GeometricProgram class"""
 import sys
 from time import time
+from collections import defaultdict
 import numpy as np
 from ..nomials import NomialData
 from ..small_classes import CootMatrix, SolverLog, Numbers
@@ -361,7 +362,7 @@ class GeometricProgram(CostedConstraintSet, NomialData):
             raise RuntimeWarning("Dual cost %s does not match primal"
                                  " cost %s" % (np.exp(dual_cost), cost))
 
-
+@profile
 def genA(exps, varlocs):  # pylint: disable=invalid-name
     """Generates A matrix from exps and varlocs
 
@@ -381,31 +382,66 @@ def genA(exps, varlocs):  # pylint: disable=invalid-name
             Keys: variables that lack bounds. Values: which bounds are missed.
     """
 
-    missingbounds = {}
+    mono_eqs, mono_eq_conditions = find_monomial_equalities(exps)
+
     A = CootMatrix([], [], [])
+    bounds = set()
     for j, var in enumerate(varlocs):
-        varsign = "both" if "value" in var.descr else None
         for i in varlocs[var]:
             exp = exps[i][var]
             A.append(i, j, exp)
-            if varsign == "both":
-                pass
-            elif varsign is None:
-                varsign = np.sign(exp)
-            elif np.sign(exp) != varsign:
-                varsign = "both"
+            if i not in mono_eqs:
+                if exp > 0:
+                    bounds.add((var, "ub"))
+                elif exp < 0:
+                    bounds.add((var, "lb"))
 
-        if varsign != "both":
-            if varsign == 1:
-                bound = "lower"
-            else:
-                assert varsign == -1
-                bound = "upper"
-            missingbounds[var] = bound
+    iterations = 0
+    max_iterations = 50
+    while iterations < max_iterations:
+        iterations += 1
+        a_change_was_made = False
+        for bound, conditions in mono_eq_conditions.items():
+            for condition in conditions:
+                if condition.issubset(bounds):
+                    del mono_eq_conditions[bound]
+                    bounds.add(bound)
+                    a_change_was_made = True
+                    break
+        if not a_change_was_made:
+            break
 
     # add constant terms
     for i, exp in enumerate(exps):
         if not exp:
             A.append(i, 0, 0)
 
+    missingbounds = {}
+    for var in varlocs:
+        if (var, "ub") not in bounds:
+            missingbounds[var] = "upper"
+        if (var, "lb") not in bounds:
+            missingbounds[var] = "lower"
+
     return A, missingbounds
+
+
+def find_monomial_equalities(exps):
+    mono_eq_conditions = defaultdict(set)
+    mono_eqs = set()
+    i = 0
+    while i < len(exps)-1:
+        i += 1
+        exp, exp_m1 = exps[i], exps[i-1]
+        if exp != -exp_m1:
+            continue  # not a monomial equality
+        mono_eqs.update((i, i-1))
+        i += 1  # skip over the next to avoid double-counting
+        for v1 in exp:
+            ubs = frozenset((v2, "ub" if np.sign(e) != np.sign(exp) else "lb")
+                            for v2, e in exp.items() if v1 != v2)
+            lbs = frozenset((v2, "lb" if np.sign(e) != np.sign(exp) else "ub")
+                            for v2, e in exp.items() if v1 != v2)
+            mono_eq_conditions[(v1, "ub")].add(ubs)
+            mono_eq_conditions[(v1, "lb")].add(lbs)
+    return mono_eqs, mono_eq_conditions
