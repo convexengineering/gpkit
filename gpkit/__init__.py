@@ -17,7 +17,7 @@ from .constraints.sgp import SequentialGeometricProgram
 from .constraints.sigeq import SignomialEquality
 from .constraints.set import ConstraintSet
 from .constraints.model import Model
-from .tools import parse_variables
+from .tools.docstring import parse_variables, verify_model
 
 GPBLU = "#59ade4"
 GPCOLORS = ["#59ade4", "#FA3333"]

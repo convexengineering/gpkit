@@ -98,6 +98,9 @@ class TestExamples(unittest.TestCase):
         with self.assertRaises(RuntimeWarning):
             example.m.solve(verbosity=0)
 
+    def test_docstringparsing(self, example):
+        pass
+
     def test_debug(self, example):
         pass
 
