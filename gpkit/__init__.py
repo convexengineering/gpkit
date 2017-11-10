@@ -2,7 +2,6 @@
 __version__ = "0.6.0"
 
 try:
-    import pint
     from ._pint import units, ureg, DimensionalityError
 except ImportError:  # allow readthedocs to import without pint
     pass
