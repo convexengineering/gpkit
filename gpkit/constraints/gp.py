@@ -70,20 +70,21 @@ class GeometricProgram(CostedConstraintSet, NomialData):
         self.posynomials = [cost.sub(self.substitutions)]
         self.posynomials.extend(self.as_posyslt1(self.substitutions))
         self.hmaps = [p.hmap for p in self.posynomials]
-        self.gen()
-        if any(c <= 0 for c in self._cs):
-            raise ValueError("GeometricPrograms cannot contain Signomials.")
         ## Generate various maps into the posy- and monomials
         # k [j]: number of monomials (columns of F) present in each constraint
         self.k = [len(hm) for hm in self.hmaps]
-        # p_idxs [i]: posynomial index of each monomial
-        p_idxs = []
-        # m_idxs [i]: monomial indices of each posynomial
-        self.m_idxs = []
+        p_idxs = []  # p_idxs [i]: posynomial index of each monomial
+        self.m_idxs = []  # m_idxs [i]: monomial indices of each posynomial
         for i, p_len in enumerate(self.k):
             self.m_idxs.append(list(range(len(p_idxs), len(p_idxs) + p_len)))
             p_idxs += [i]*p_len
         self.p_idxs = np.array(p_idxs)
+        # m_idxs: first exp-index of each monomial equality
+        self.meq_idxs = [sum(self.k[:i]) for i, p in enumerate(self.posynomials)
+                         if getattr(p, "_meq", False)]
+        self.gen()
+        if any(c <= 0 for c in self._cs):
+            raise ValueError("GeometricPrograms cannot contain Signomials.")
         # A [i, v]: sparse matrix of variable's powers in each monomial
         if self.missingbounds and not allow_missingbounds:
             boundstrs = "\n".join("  %s has no %s bound%s" % (v, b, x)
@@ -106,7 +107,8 @@ class GeometricProgram(CostedConstraintSet, NomialData):
                     self.varidxs[var] = len(self.varidxs)
                     self.vars.append(var)
                 var.gp_idx = self.varidxs[var]
-        self.A, self.missingbounds = genA(self.exps, self.varidxs)
+        self.A, self.missingbounds = genA(self.exps, self.varidxs,
+                                          self.meq_idxs)
 
     # pylint: disable=too-many-statements, too-many-locals
     def solve(self, solver=None, verbosity=1, warn_on_check=False,
@@ -370,7 +372,8 @@ class GeometricProgram(CostedConstraintSet, NomialData):
             raise RuntimeWarning("Dual cost %s does not match primal"
                                  " cost %s" % (np.exp(dual_cost), cost))
 
-def genA(exps, varidxs):  # pylint: disable=invalid-name
+
+def genA(exps, varidxs, meq_idxs):  # pylint: disable=invalid-name
     """Generates A matrix from exps and varidxs
 
     Arguments
@@ -389,12 +392,22 @@ def genA(exps, varidxs):  # pylint: disable=invalid-name
             Keys: variables that lack bounds. Values: which bounds are missed.
     """
 
-    mono_eqs, mono_eq_conditions = find_monomial_equalities(exps)
+    meq_bounds = defaultdict(set)
+    for i in meq_idxs:
+        exp = exps[i]
+        for v1 in exp:
+            s_exp = np.sign(exp[v1])
+            ubs = frozenset((v2, "upper" if np.sign(e) != s_exp else "lower")
+                            for v2, e in exp.items() if v1 != v2)
+            lbs = frozenset((v2, "lower" if np.sign(e) != s_exp else "upper")
+                            for v2, e in exp.items() if v1 != v2)
+            meq_bounds[(v1, "upper")].add(ubs)
+            meq_bounds[(v1, "lower")].add(lbs)
 
     A = CootMatrix([], [], [])
     bounds = set()
     for i, exp in enumerate(exps):
-        not_part_of_a_mono_eq = i not in mono_eqs
+        not_part_of_a_mono_eq = i not in meq_idxs
         for var, e in exp.items():
             A.append(i, var.gp_idx, e)
             if not_part_of_a_mono_eq:
@@ -403,7 +416,7 @@ def genA(exps, varidxs):  # pylint: disable=invalid-name
                 elif e < 0:
                     bounds.add((var, "lower"))
 
-    check_mono_eq_bounds(bounds, mono_eq_conditions)
+    check_mono_eq_bounds(bounds, meq_bounds)
 
     # add constant terms
     for i, exp in enumerate(exps):
@@ -413,51 +426,32 @@ def genA(exps, varidxs):  # pylint: disable=invalid-name
     missingbounds = {}
     for bound in ["upper", "lower"]:
         for var in varidxs:
-            if (var, bound) in mono_eq_conditions:
-                boundstr = (" but could be bounded by any of the following"
+            if (var, bound) in meq_bounds:
+                boundstr = (", but would gain it from any of the following"
                             " sets of bounds: ")
-                boundstr += ", ".join(mono_eq_conditions[(var, bound)])
+                boundstr += " or ".join(str(list(condition)) for condition
+                                        in meq_bounds[(var, bound)])
                 missingbounds[(var, bound)] = boundstr
-            if (var, bound) not in bounds:
+            elif (var, bound) not in bounds:
                 missingbounds[(var, bound)] = ""
 
     return A, missingbounds
 
 
-def find_monomial_equalities(exps):
-    "Identifies the indices and bounding options of monomial equalities"
-    mono_eq_conditions = defaultdict(set)
-    mono_eqs = set()
-    i = 0
-    while i < len(exps)-1:
-        i += 1
-        exp, exp_m1 = exps[i], exps[i-1]
-        if exp != -exp_m1:
-            continue  # not a monomial equality
-        mono_eqs.update((i, i-1))
-        i += 1  # skip over the next to avoid double-counting
-        for v1 in exp:
-            s_exp = np.sign(exp)
-            ubs = frozenset((v2, "upper" if np.sign(e) != s_exp else "lower")
-                            for v2, e in exp.items() if v1 != v2)
-            lbs = frozenset((v2, "lower" if np.sign(e) != s_exp else "upper")
-                            for v2, e in exp.items() if v1 != v2)
-            mono_eq_conditions[(v1, "upper")].add(ubs)
-            mono_eq_conditions[(v1, "lower")].add(lbs)
-    return mono_eqs, mono_eq_conditions
-
-
-def check_mono_eq_bounds(bounds, mono_eq_conditions):
+def check_mono_eq_bounds(bounds, meq_bounds):
     "Bounds variables with monomial equalities"
     iterations = 0
     max_iterations = 50
+    for bound in bounds:
+        if bound in meq_bounds:
+            del meq_bounds[bound]
     while iterations < max_iterations:
         iterations += 1
         a_change_was_made = False
-        for bound, conditions in mono_eq_conditions.items():
+        for bound, conditions in meq_bounds.items():
             for condition in conditions:
                 if condition.issubset(bounds):
-                    del mono_eq_conditions[bound]
+                    del meq_bounds[bound]
                     bounds.add(bound)
                     a_change_was_made = True
                     break

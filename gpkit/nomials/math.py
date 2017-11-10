@@ -512,6 +512,13 @@ class MonomialEquality(PosynomialInequality):
         r_over_l = unsubbed(self, right, left)
         return l_over_r + r_over_l
 
+    def as_posyslt1(self, substitutions=None):
+        "Tags posynomials for dual feasibility checking"
+        out = PosynomialInequality.as_posyslt1(self, substitutions)
+        for p in out:
+            p._meq = True
+        return out
+
     def __nonzero__(self):
         'A constraint not guaranteed to be satisfied  evaluates as "False".'
         return bool(self.left.c == self.right.c
