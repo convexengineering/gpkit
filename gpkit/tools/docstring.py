@@ -1,4 +1,5 @@
 "Docstring-parsing methods"
+from collections import defaultdict
 from ..constraints.bounded import Bounded
 from ..constraints.model import Model
 
@@ -7,11 +8,9 @@ def verify_model(cls):
     # pylint: disable=too-many-locals
     "Creates an instance of a model and verifies its docstring"
     instance = cls()
-    easy_bounds = instance.gp()
-    model = Model(None, Bounded(instance, verbosity=0))
-    boundedness = model.solve(verbosity=0)["boundedness"]
     errmessage = "while verifying %s:\n" % cls.__name__
     err = False
+    expected = defaultdict(set)
     for direction in ["upper", "lower"]:
         flag = direction[0].upper()+direction[1:]+" Unbounded\n"
         count = cls.__doc__.count(flag)
@@ -22,28 +21,36 @@ def verify_model(cls):
         idx = cls.__doc__.index(flag) + len(flag)
         idx2 = cls.__doc__[idx:].index("\n")
         idx3 = cls.__doc__[idx:][idx2+1:].index("\n")
-        ubvarstrs = cls.__doc__[idx:][idx2+1:][:idx3].strip()
-        ubexp = set()
-        if ubvarstrs:
-            for var in ubvarstrs.split(", "):
-                ubexp.add(getattr(instance, var).key)  # err if var not found
-        ubact = set()
-        for key in ["value near %s bound" % direction,
-                    "sensitive to %s bound" % direction]:
-            if key in boundedness:
-                ubact = ubact.union(boundedness[key])
-        if ubact-ubexp:
-            badvks = ", ".join(map(str, ubact-ubexp))
-            badvks += " were" if len(ubact-ubexp) > 1 else " was"
-            errmessage += ("  %s was %s-unbounded; expected"
-                           " bounded\n" % (badvks, direction))
-        if ubexp-ubact:
-            badvks = ", ".join(map(str, ubexp-ubact))
-            badvks += " were" if len(ubexp-ubact) > 1 else " was"
-            errmessage += ("  %s was %s-bounded; expected"
-                           " unbounded\n" % (badvks, direction))
-        if ubexp-ubact or ubact-ubexp:
-            err = True
+        varstrs = cls.__doc__[idx:][idx2+1:][:idx3].strip()
+        if varstrs:
+            for var in varstrs.split(", "):
+                # TODO: catch err if var not found
+                expected[direction].add(getattr(instance, var).key)
+    easy_bounds = instance.gp(allow_missingbounds=True).missingbounds
+    for vk, direction in easy_bounds.items():
+        expected[direction].discard(vk)
+    if expected["upper"] or expected["lower"]:
+        model = Model(None, Bounded(instance, verbosity=0))
+        boundedness = model.solve(verbosity=0)["boundedness"]
+        actual = defaultdict(set)
+        for direction in ["upper", "lower"]:
+            act, exp = actual[direction], expected[direction]
+            for key in ["value near %s bound" % direction,
+                        "sensitive to %s bound" % direction]:
+                if key in boundedness:
+                    act.update(boundedness[key])
+            if act-exp:
+                badvks = ", ".join(map(str, act-exp))
+                badvks += " were" if len(act-exp) > 1 else " was"
+                errmessage += ("  %s %s-unbounded; expected"
+                               " bounded\n" % (badvks, direction))
+            if exp-act:
+                badvks = ", ".join(map(str, exp-act))
+                badvks += " were" if len(exp-act) > 1 else " was"
+                errmessage += ("  %s %s-bounded; expected"
+                               " unbounded\n" % (badvks, direction))
+                if exp-act or act-exp:
+                    err = True
     if err:
         raise ValueError(errmessage)
 

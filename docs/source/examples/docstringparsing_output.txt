@@ -1,2 +1,31 @@
-HI 1
-HI 0
+from gpkit import Variable
+A = self.A = Variable('A', 'm^2', 'surface area')
+V = self.V = Variable('V', 100, 'L', 'minimum volume')
+h = self.h = Variable('h', 1, 'm', 'minimum height')
+
+from gpkit import VectorVariable
+s = self.s = VectorVariable(3, 's', 'm', 'side length')
+
+Using solver 'cvxopt'
+Solving for 4 variables.
+Solving took 0.00584 seconds.
+
+Cost
+----
+ 1.465 [m**2] 
+
+Free Variables
+--------------
+A : 1.465                             [m**2] surface area
+s : [ 0.316     0.316     1        ]  [m]    side length
+
+Constants
+---------
+V : 100  [l] minimum volume
+h : 1    [m] minimum height
+
+Sensitivities
+-------------
+V : +0.57 minimum volume
+h : +0.3  minimum height
+
