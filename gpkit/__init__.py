@@ -1,10 +1,7 @@
 "GP and SP modeling package"
 __version__ = "0.6.0"
 
-try:
-    from ._pint import units, ureg, DimensionalityError
-except ImportError:  # allow readthedocs to import without pint
-    pass
+from ._pint import units, ureg, DimensionalityError
 from .globals import settings
 from .globals import SignomialsEnabled, SIGNOMIALS_ENABLED
 from .globals import Vectorize, VECTORIZATION
