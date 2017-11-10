@@ -30,9 +30,7 @@ class ConstraintSet(list):
         # get substitutions and convert all members to ConstraintSets
         self.substitutions = KeyDict()
         for i, constraint in enumerate(self):
-            if getattr(constraint, "numpy_bools", None):
-                raise_elementhasnumpybools(constraint)
-            elif not isinstance(constraint, ConstraintSet):
+            if not isinstance(constraint, ConstraintSet):
                 if hasattr(constraint, "__iter__"):
                     list.__setitem__(self, i, ConstraintSet(constraint))
                 elif not hasattr(constraint, "varkeys"):
@@ -41,10 +39,11 @@ class ConstraintSet(list):
                     else:
                         # allow NomialArray equalities (arr == "a", etc.)
                         self.numpy_bools = True  # but mark them
-                        # so we can catch them (see above) in ConstraintSets
+                        # so we can catch them later (next line)
+            elif constraint.numpy_bools:
+                raise_elementhasnumpybools(constraint)
             if hasattr(self[i], "substitutions"):
                 self.substitutions.update(self[i].substitutions)
-                self[i].substitutions = self.substitutions
         self.reset_varkeys()
         self.substitutions.update({k: k.descr["value"]
                                    for k in self.unique_varkeys
@@ -213,7 +212,8 @@ class ConstraintSet(list):
         for constraint in self:
             if hasattr(constraint, "varkeys"):
                 self.varkeys.update(constraint.varkeys)
-        self.substitutions.varkeys = self.varkeys
+        if hasattr(self.substitutions, "varkeys"):
+            self.substitutions.varkeys = self.varkeys
 
     def as_posyslt1(self, substitutions=None):
         "Returns list of posynomials which must be kept <= 1"

@@ -1,4 +1,5 @@
 "Implement CostedConstraintSet"
+import numpy as np
 from .set import ConstraintSet
 
 
@@ -17,6 +18,23 @@ class CostedConstraintSet(ConstraintSet):
         if substitutions:
             subs.update(substitutions)
         ConstraintSet.__init__(self, constraints, subs)
+
+    def __bare_init__(self, cost, constraints, substitutions, varkeys=False):
+        if isinstance(cost, np.ndarray):  # if it's a vector
+            if not cost.shape:  # if it's zero-dimensional
+                cost, = cost.flatten()
+            else:
+                raise ValueError("cost must be scalar, not the vector %s"
+                                 % cost)
+        self.cost = cost
+        if not isinstance(constraints, ConstraintSet):
+            constraints = ConstraintSet(constraints)
+        else:
+            constraints = [constraints]
+        list.__init__(self, constraints)
+        self.substitutions = substitutions or {}
+        if varkeys:
+            self.reset_varkeys()
 
     def subinplace(self, subs):
         "Substitutes in place."
