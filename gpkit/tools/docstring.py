@@ -27,7 +27,7 @@ def verify_model(cls):
                 # TODO: catch err if var not found
                 expected[direction].add(getattr(instance, var).key)
     easy_bounds = instance.gp(allow_missingbounds=True).missingbounds
-    for vk, direction in easy_bounds.items():
+    for (vk, direction) in easy_bounds:
         expected[direction].discard(vk)
     if expected["upper"] or expected["lower"]:
         model = Model(None, Bounded(instance, verbosity=0))
