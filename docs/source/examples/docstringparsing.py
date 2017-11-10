@@ -1,4 +1,5 @@
-from gpkit import *
+"Docstring parsing example"
+from gpkit import Model, parse_variables, verify_model
 
 
 class Cube(Model):
@@ -19,19 +20,20 @@ class Cube(Model):
     ---------------------
     s       [m]    side length
 
-    The above variables are sufficient, but let's introduce more anyway:
+    Let's introduce more variables: (any line ending in "Variables" is parsed)
 
-    Other Variables
-    ---------------
+    Zoning Variables
+    ----------------
     h     1 [m]    minimum height
 
     Upper Unbounded
     ---------------
-    A, V
+    A
 
+    The ordering of these blocks doesn't affect anything; order them in the
+    way that makes the most sense to someone else reading your model.
     """
     def setup(self):
-        print parse_variables(Cube.__doc__)
         exec parse_variables(Cube.__doc__)
 
         return [A >= 2*(s[0]*s[1] + s[1]*s[2] + s[2]*s[0]),
@@ -39,8 +41,9 @@ class Cube(Model):
                 s[2] >= h]
 
 
+verify_model(Cube)
+
+print parse_variables(Cube.__doc__)
 c = Cube()
 c.cost = c.A
 print c.solve().table()
-
-verify_model(Cube)

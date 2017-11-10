@@ -1,10 +1,13 @@
+"Docstring-parsing methods"
 from ..constraints.bounded import Bounded
 from ..constraints.model import Model
 
 
 def verify_model(cls):
+    # pylint: disable=too-many-locals
     "Creates an instance of a model and verifies its docstring"
     instance = cls()
+    easy_bounds = instance.gp()
     model = Model(None, Bounded(instance, verbosity=0))
     boundedness = model.solve(verbosity=0)["boundedness"]
     errmessage = "while verifying %s:\n" % cls.__name__
@@ -15,7 +18,7 @@ def verify_model(cls):
         if count == 0:
             continue
         elif count > 1:
-            raise ValueError("multiple instances of ")
+            raise ValueError("multiple instances of %s" % flag)
         idx = cls.__doc__.index(flag) + len(flag)
         idx2 = cls.__doc__[idx:].index("\n")
         idx3 = cls.__doc__[idx:][idx2+1:].index("\n")
@@ -32,13 +35,13 @@ def verify_model(cls):
         if ubact-ubexp:
             badvks = ", ".join(map(str, ubact-ubexp))
             badvks += " were" if len(ubact-ubexp) > 1 else " was"
-            errmessage += ("  %s was %s-bounded; expected"
-                           " unbounded\n" % (badvks, direction))
+            errmessage += ("  %s was %s-unbounded; expected"
+                           " bounded\n" % (badvks, direction))
         if ubexp-ubact:
             badvks = ", ".join(map(str, ubexp-ubact))
             badvks += " were" if len(ubexp-ubact) > 1 else " was"
-            errmessage += ("  %s was %s-unbounded; expected"
-                           " bounded\n" % (badvks, direction))
+            errmessage += ("  %s was %s-bounded; expected"
+                           " unbounded\n" % (badvks, direction))
         if ubexp-ubact or ubact-ubexp:
             err = True
     if err:
@@ -46,6 +49,7 @@ def verify_model(cls):
 
 
 def parse_variables(string):
+    # pylint: disable=too-many-locals, too-many-branches, too-many-statements, too-many-nested-blocks
     "Parses a string to determine what variables to create from it"
     outstr = ""
     flag = "Variables\n"
@@ -74,10 +78,13 @@ def parse_variables(string):
                     label = line[labelstart:]
                     nameval = line[:unitstart].split()
                     if len(nameval) == 2:
-                        out = "{0} = self.{0} = Variable('{0}', {1}, '{2}', '{3}')\n"
-                        outstr += out.format(nameval[0], nameval[1], units, label)
+                        out = ("{0} = self.{0}"
+                               " = Variable('{0}', {1}, '{2}', '{3}')\n")
+                        outstr += out.format(nameval[0], nameval[1], units,
+                                             label)
                     elif len(nameval) == 1:
-                        out = "{0} = self.{0} = Variable('{0}', '{1}', '{2}')\n"
+                        out = ("{0} = self.{0}"
+                               " = Variable('{0}', '{1}', '{2}')\n")
                         outstr += out.format(nameval[0], units, label)
             string = string[len(flag):]
         string = ostring
@@ -109,10 +116,14 @@ def parse_variables(string):
                         label = line[labelstart:]
                         nameval = line[:unitstart].split()
                         if len(nameval) == 2:
-                            out = "{0} = self.{0} = VectorVariable({4}, '{0}', {1}, '{2}', '{3}')\n"
-                            outstr += out.format(nameval[0], nameval[1], units, label, length)
+                            out = ("{0} = self.{0} = VectorVariable({4},"
+                                   " '{0}', {1}, '{2}', '{3}')\n")
+                            outstr += out.format(nameval[0], nameval[1],
+                                                 units, label, length)
                         elif len(nameval) == 1:
-                            out = "{0} = self.{0} = VectorVariable({3}, '{0}', '{1}', '{2}')\n"
-                            outstr += out.format(nameval[0], units, label, length)
+                            out = ("{0} = self.{0} = VectorVariable({3},"
+                                   " '{0}', '{1}', '{2}')\n")
+                            outstr += out.format(nameval[0], units, label,
+                                                 length)
                 string = string[len(flag):]
     return outstr

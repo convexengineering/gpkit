@@ -1,9 +1,7 @@
 "Implements Bounded"
 from collections import defaultdict
 import numpy as np
-
 from .. import Variable
-from ..keydict import KeySet
 from .set import ConstraintSet
 from ..small_scripts import mag
 

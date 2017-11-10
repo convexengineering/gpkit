@@ -6,37 +6,37 @@ def import_tests():
     """Get a list of all GPkit unit test TestCases"""
     tests = []
 
-    from gpkit.tests import t_tools
+    from . import t_tools
     tests += t_tools.TESTS
 
-    from gpkit.tests import t_sub
+    from . import t_sub
     tests += t_sub.TESTS
 
-    from gpkit.tests import t_vars
+    from . import t_vars
     tests += t_vars.TESTS
 
-    from gpkit.tests import t_nomials
+    from . import t_nomials
     tests += t_nomials.TESTS
 
-    from gpkit.tests import t_constraints
+    from . import t_constraints
     tests += t_constraints.TESTS
 
-    from gpkit.tests import t_nomial_array
+    from . import t_nomial_array
     tests += t_nomial_array.TESTS
 
-    from gpkit.tests import t_model
+    from . import t_model
     tests += t_model.TESTS
 
-    from gpkit.tests import t_solution_array
+    from . import t_solution_array
     tests += t_solution_array.TESTS
 
-    from gpkit.tests import t_small
+    from . import t_small
     tests += t_small.TESTS
 
-    from gpkit.tests import t_examples
+    from . import t_examples
     tests += t_examples.TESTS
 
-    from gpkit.tests import t_keydict
+    from . import t_keydict
     tests += t_keydict.TESTS
 
     return tests
