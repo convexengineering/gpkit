@@ -57,7 +57,7 @@ setup(
     packages=["gpkit", "gpkit.tools", "gpkit.interactive", "gpkit.constraints",
               "gpkit.nomials", "gpkit.tests", "gpkit._mosek", "gpkit._pint"],
     package_data={"gpkit": ["env/*"],
-                  "gpkit._mosek": ["lib/*"]
+                  "gpkit._mosek": ["lib/*"],
                   "gpkit._pint": ["*.txt"]},
     license=LICENSE,
     long_description=LONG_DESCRIPTION,
