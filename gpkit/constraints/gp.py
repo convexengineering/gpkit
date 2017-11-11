@@ -398,7 +398,7 @@ def genA(exps, varlocs, meq_idxs):  # pylint: disable=invalid-name
     missingbounds = {}
     A = CootMatrix([], [], [])
     for j, var in enumerate(varlocs):
-        varsign = "both" if "value" in var.descr else None
+        varbounds = None
         for i in varlocs[var]:
             exp = exps[i][var]
             A.append(i, j, exp)
@@ -407,57 +407,46 @@ def genA(exps, varlocs, meq_idxs):  # pylint: disable=invalid-name
                     bounds.add((var, "upper"))
                 elif exp < 0:
                     bounds.add((var, "lower"))
-                if varsign == "both":
+                if varbounds == "both":
                     pass
-                elif varsign is None:
-                    varsign = np.sign(exp)
-                elif np.sign(exp) != varsign:
-                    varsign = "both"
-
-        if varsign != "both":
-            if varsign == 1:
+                elif varbounds is None:
+                    varbounds = np.sign(exp)
+                elif np.sign(exp) != varbounds:
+                    varbounds = "both"
+        if varbounds is not "both":
+            if varbounds == 1 or varbounds is None:
                 missingbounds[(var, "lower")] = ""
-            elif varsign == -1:
+            if varbounds == -1 or varbounds is None:
                 missingbounds[(var, "upper")] = ""
 
-    check_mono_eq_bounds(bounds, meq_bounds)
+    check_mono_eq_bounds(missingbounds, meq_bounds)
 
-    # add constant terms
+    # space the matrix out for trailing constant terms
     for i, exp in enumerate(exps):
         if not exp:
             A.append(i, 0, 0)
 
-    missingbounds = {}
-    for bound in ["upper", "lower"]:
-        for var in varlocs:
-            if (var, bound) in meq_bounds:
-                boundstr = (", but would gain it from any of the following"
-                            " sets of bounds: ")
-                boundstr += " or ".join(str(list(condition)) for condition
-                                        in meq_bounds[(var, bound)])
-                missingbounds[(var, bound)] = boundstr
-            elif (var, bound) not in bounds:
-                missingbounds[(var, bound)] = ""
-
     return A, missingbounds
 
 
-def check_mono_eq_bounds(bounds, meq_bounds):
+def check_mono_eq_bounds(missingbounds, meq_bounds):
     "Bounds variables with monomial equalities"
-    iterations = 0
-    max_iterations = 50
-    for bound in bounds:
-        if bound in meq_bounds:
-            del meq_bounds[bound]
-    while iterations < max_iterations:
-        iterations += 1
-        a_change_was_made = False
+    still_alive = True
+    while still_alive:
+        still_alive = False  # if no changes are made, the loop exits
         for bound, conditions in meq_bounds.items():
+            if bound not in missingbounds:
+                del meq_bounds[bound]
+                continue
             for condition in conditions:
-                if condition.issubset(bounds):
+                if not any(bound in missingbounds for bound in condition):
                     del meq_bounds[bound]
-                    bounds.add(bound)
-                    a_change_was_made = True
+                    del missingbounds[bound]
+                    still_alive = True
                     break
-        if not a_change_was_made:
-            break
+    for (var, bound) in meq_bounds:
+        boundstr = (", but would gain it from any of these"
+                    " sets of bounds: ")
+        boundstr += " or ".join(str(list(condition)) for condition
+                                in meq_bounds[(var, bound)])
+        missingbounds[(var, bound)] = boundstr
