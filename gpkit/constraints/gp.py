@@ -82,10 +82,9 @@ class GeometricProgram(CostedConstraintSet, NomialData):
         # m_idxs: first exp-index of each monomial equality
         self.meq_idxs = [sum(self.k[:i]) for i, p in enumerate(self.posynomials)
                          if getattr(p, "_meq", False)]
-        self.gen()
+        self.gen()  # A [i, v]: sparse matrix of powers in each monomial
         if any(c <= 0 for c in self._cs):
             raise ValueError("GeometricPrograms cannot contain Signomials.")
-        # A [i, v]: sparse matrix of variable's powers in each monomial
         if self.missingbounds and not allow_missingbounds:
             boundstrs = "\n".join("  %s has no %s bound%s" % (v, b, x)
                                   for (v, b), x in self.missingbounds.items())
@@ -99,16 +98,7 @@ class GeometricProgram(CostedConstraintSet, NomialData):
         for hmap in self.hmaps:
             self._exps.extend(hmap.keys())
             self._cs.extend(hmap.values())
-        self.varidxs = {}
-        self.vars = []
-        for exp in self.exps:
-            for var in exp:
-                if var not in self.varidxs:
-                    self.varidxs[var] = len(self.varidxs)
-                    self.vars.append(var)
-                var.gp_idx = self.varidxs[var]
-        self.A, self.missingbounds = genA(self.exps, self.varidxs,
-                                          self.meq_idxs)
+        self.A, self.missingbounds = genA(self.exps, self.varlocs, self.meq_idxs)
 
     # pylint: disable=too-many-statements, too-many-locals
     def solve(self, solver=None, verbosity=1, warn_on_check=False,
@@ -174,7 +164,7 @@ class GeometricProgram(CostedConstraintSet, NomialData):
         starttime = time()
         if verbosity > 0:
             print("Using solver '%s'" % solvername)
-            print("Solving for %i variables." % len(self.vars))
+            print("Solving for %i variables." % len(self.varlocs))
 
         default_kwargs = DEFAULT_SOLVER_KWARGS.get(solvername, {})
         for k in default_kwargs:
@@ -283,8 +273,8 @@ class GeometricProgram(CostedConstraintSet, NomialData):
         primal = solver_out["primal"]
         nu, la = solver_out["nu"], solver_out["la"]
         # confirm lengths before calling zip
-        assert len(self.vars) == len(primal)
-        result = {"freevariables": KeyDict(zip(self.vars, np.exp(primal)))}
+        assert len(self.varlocs) == len(primal)
+        result = {"freevariables": KeyDict(zip(self.varlocs, np.exp(primal)))}
         # get cost #
         if "objective" in solver_out:
             result["cost"] = float(solver_out["objective"])
@@ -373,7 +363,7 @@ class GeometricProgram(CostedConstraintSet, NomialData):
                                  " cost %s" % (np.exp(dual_cost), cost))
 
 
-def genA(exps, varidxs, meq_idxs):  # pylint: disable=invalid-name
+def genA(exps, varlocs, meq_idxs):  # pylint: disable=invalid-name
     """Generates A matrix from exps and varidxs
 
     Arguments
@@ -404,17 +394,31 @@ def genA(exps, varidxs, meq_idxs):  # pylint: disable=invalid-name
             meq_bounds[(v1, "upper")].add(ubs)
             meq_bounds[(v1, "lower")].add(lbs)
 
-    A = CootMatrix([], [], [])
     bounds = set()
-    for i, exp in enumerate(exps):
-        not_part_of_a_mono_eq = i not in meq_idxs
-        for var, e in exp.items():
-            A.append(i, var.gp_idx, e)
-            if not_part_of_a_mono_eq:
-                if e > 0:
+    missingbounds = {}
+    A = CootMatrix([], [], [])
+    for j, var in enumerate(varlocs):
+        varsign = "both" if "value" in var.descr else None
+        for i in varlocs[var]:
+            exp = exps[i][var]
+            A.append(i, j, exp)
+            if i not in meq_idxs:
+                if exp > 0:
                     bounds.add((var, "upper"))
-                elif e < 0:
+                elif exp < 0:
                     bounds.add((var, "lower"))
+                if varsign == "both":
+                    pass
+                elif varsign is None:
+                    varsign = np.sign(exp)
+                elif np.sign(exp) != varsign:
+                    varsign = "both"
+
+        if varsign != "both":
+            if varsign == 1:
+                missingbounds[(var, "lower")] = ""
+            elif varsign == -1:
+                missingbounds[(var, "upper")] = ""
 
     check_mono_eq_bounds(bounds, meq_bounds)
 
@@ -425,7 +429,7 @@ def genA(exps, varidxs, meq_idxs):  # pylint: disable=invalid-name
 
     missingbounds = {}
     for bound in ["upper", "lower"]:
-        for var in varidxs:
+        for var in varlocs:
             if (var, bound) in meq_bounds:
                 boundstr = (", but would gain it from any of the following"
                             " sets of bounds: ")
