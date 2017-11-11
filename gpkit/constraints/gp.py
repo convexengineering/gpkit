@@ -81,7 +81,7 @@ class GeometricProgram(CostedConstraintSet, NomialData):
         self.p_idxs = np.array(p_idxs)
         # m_idxs: first exp-index of each monomial equality
         self.meq_idxs = [sum(self.k[:i]) for i, p in enumerate(self.posynomials)
-                         if getattr(p, "_meq", False)]
+                         if getattr(p, "from_meq", False)]
         self.gen()  # A [i, v]: sparse matrix of powers in each monomial
         if any(c <= 0 for c in self._cs):
             raise ValueError("GeometricPrograms cannot contain Signomials.")
@@ -98,7 +98,8 @@ class GeometricProgram(CostedConstraintSet, NomialData):
         for hmap in self.hmaps:
             self._exps.extend(hmap.keys())
             self._cs.extend(hmap.values())
-        self.A, self.missingbounds = genA(self.exps, self.varlocs, self.meq_idxs)
+        self.A, self.missingbounds = genA(self.exps, self.varlocs,
+                                          self.meq_idxs)
 
     # pylint: disable=too-many-statements, too-many-locals
     def solve(self, solver=None, verbosity=1, warn_on_check=False,
