@@ -516,7 +516,7 @@ class MonomialEquality(PosynomialInequality):
         "Tags posynomials for dual feasibility checking"
         out = PosynomialInequality.as_posyslt1(self, substitutions)
         for p in out:
-            p.from_meq = True  # pylint: disable=attrivute-defined-outside-init
+            p.from_meq = True  # pylint: disable=attribute-defined-outside-init
         return out
 
     def __nonzero__(self):

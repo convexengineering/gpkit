@@ -395,7 +395,6 @@ def genA(exps, varlocs, meq_idxs):  # pylint: disable=invalid-name
             meq_bounds[(v1, "upper")].add(ubs)
             meq_bounds[(v1, "lower")].add(lbs)
 
-    bounds = set()
     missingbounds = {}
     A = CootMatrix([], [], [])
     for j, var in enumerate(varlocs):
@@ -404,17 +403,13 @@ def genA(exps, varlocs, meq_idxs):  # pylint: disable=invalid-name
             exp = exps[i][var]
             A.append(i, j, exp)
             if i not in meq_idxs:
-                if exp > 0:
-                    bounds.add((var, "upper"))
-                elif exp < 0:
-                    bounds.add((var, "lower"))
                 if varbounds == "both":
                     pass
                 elif varbounds is None:
                     varbounds = np.sign(exp)
                 elif np.sign(exp) != varbounds:
                     varbounds = "both"
-        if varbounds is not "both":
+        if varbounds != "both":
             if varbounds == 1 or varbounds is None:
                 missingbounds[(var, "lower")] = ""
             if varbounds == -1 or varbounds is None:
@@ -448,6 +443,7 @@ def check_mono_eq_bounds(missingbounds, meq_bounds):
     for (var, bound) in meq_bounds:
         boundstr = (", but would gain it from any of these"
                     " sets of bounds: ")
-        boundstr += " or ".join(str(list(condition)) for condition
-                                in meq_bounds[(var, bound)])
+        condstr_fn = lambda c: str(list(c.intersection(missingbounds)))
+        boundstr += " or ".join(condstr_fn(condition)
+                                for condition in meq_bounds[(var, bound)])
         missingbounds[(var, bound)] = boundstr
