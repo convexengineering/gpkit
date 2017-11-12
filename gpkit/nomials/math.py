@@ -565,8 +565,6 @@ class SignomialInequality(ScalarSingleEquationConstraint):
         self.substitutions.update(self.right.values)
         for key in self.substitutions:
             key.descr.pop("value", None)
-            key.descr.pop("value", None)
-
 
     def as_posyslt1(self, substitutions=None):
         "Returns the posys <= 1 representation of this constraint."
