@@ -4,6 +4,7 @@ import numpy as np
 import numpy.testing as npt
 import gpkit
 from gpkit import SignomialsEnabled
+from gpkit.exceptions import InvalidGPConstraint
 from gpkit import Variable, VectorVariable, Model, Signomial
 from gpkit.small_scripts import mag
 from gpkit.tests.helpers import run_tests
@@ -194,7 +195,7 @@ class TestModelSubs(unittest.TestCase):
             m.substitutions[ymax] = 0.2
             self.assertAlmostEqual(m.localsolve(verbosity=0)["cost"], 0.8, 3)
             m = gpkit.Model(x, [x >= 1-y, y <= ymax])
-            self.assertAlmostEqual(m.localsolve(verbosity=0)["cost"], 0.9, 3)
+            self.assertRaises(ValueError, m.sp)  # because there's no sub
 
     def test_united_sub_sweep(self):
         A = Variable("A", "USD")

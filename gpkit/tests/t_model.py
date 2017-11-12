@@ -138,8 +138,8 @@ class TestGP(unittest.TestCase):
         self.assertAlmostEqual(senss[W_payload], 0.39, 2)
 
     def test_zero_lower_unbounded(self):
-        x = Variable('x', value=4)
-        y = Variable('y', value=0)
+        x = Variable('x', 4)
+        y = Variable('y', 0)
         z = Variable('z')
         t1 = Variable('t1')
         t2 = Variable('t2')
@@ -149,7 +149,7 @@ class TestGP(unittest.TestCase):
                          t2 >= y])
         prob.zero_lower_unbounded_variables()
         sol = prob.solve(verbosity=0)
-        self.assertAlmostEqual(sol["cost"]/x.value, 1, self.ndig)
+        self.assertAlmostEqual(sol["cost"]/4, 1, self.ndig)
         self.assertAlmostEqual(sol("t2"), 0, self.ndig)
 
     def test_mdd_example(self):
@@ -331,6 +331,10 @@ class TestSP(unittest.TestCase):
             with SignomialsEnabled():
                 m = Model(x, [x + z >= y])
                 m.localsolve()
+
+        # refresh the substitutions
+        y = Variable('y', 1)
+        z = Variable('z', 4)
 
         with SignomialsEnabled():
             m = Model(x, [x + y >= z])
