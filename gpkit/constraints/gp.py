@@ -446,7 +446,7 @@ def check_mono_eq_bounds(missingbounds, meq_bounds):
         for condition in list(meq_bounds[(var, bound)]):
             meq_bounds[(var, bound)].remove(condition)
             newcond = condition.intersection(missingbounds)
-            if newcond and not any(newcond.issubset(c)
+            if newcond and not any(c.issubset(newcond)
                                    for c in meq_bounds[(var, bound)]):
                 meq_bounds[(var, bound)].add(newcond)
         boundstr += " or ".join(str(list(condition))
