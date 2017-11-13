@@ -443,7 +443,12 @@ def check_mono_eq_bounds(missingbounds, meq_bounds):
     for (var, bound) in meq_bounds:
         boundstr = (", but would gain it from any of these"
                     " sets of bounds: ")
-        condstr_fn = lambda c: str(list(c.intersection(missingbounds)))
-        boundstr += " or ".join(condstr_fn(condition)
+        for condition in list(meq_bounds[(var, bound)]):
+            meq_bounds[(var, bound)].remove(condition)
+            newcond = condition.intersection(missingbounds)
+            if newcond and not any(newcond.issubset(c)
+                                   for c in meq_bounds[(var, bound)]):
+                meq_bounds[(var, bound)].add(newcond)
+        boundstr += " or ".join(str(list(condition))
                                 for condition in meq_bounds[(var, bound)])
         missingbounds[(var, bound)] = boundstr
