@@ -388,6 +388,13 @@ class PosynomialInequality(ScalarSingleEquationConstraint):
         self.nomials = [self.left, self.right, self.p_lt, self.m_gt]
         self.nomials.extend(self.unsubbed)
         self._last_used_substitutions = {}
+        self.bounded = set()
+        for exp in self.unsubbed[0].hmap:
+            for key, e in exp.items():
+                if e > 0:
+                    self.bounded.add((key, "upper"))
+                if e < 0:
+                    self.bounded.add((key, "lower"))
 
     def _simplify_posy_ineq(self, hmap, pmap=None, allow_tautological=True):
         "Simplify a posy <= 1 by moving constants to the right side."
@@ -488,6 +495,7 @@ class PosynomialInequality(ScalarSingleEquationConstraint):
         "The GP version of a Posynomial constraint is itself"
         return self
 
+fset = frozenset
 
 class MonomialEquality(PosynomialInequality):
     "A Constraint of the form Monomial == Monomial."
@@ -504,6 +512,19 @@ class MonomialEquality(PosynomialInequality):
         self.nomials = [self.left, self.right]
         self.nomials.extend(self.unsubbed)
         self._last_used_substitutions = {}
+        self.meq_bounded = {}
+        if self.unsubbed:
+            exp = self.unsubbed[0].hmap.keys()[0]
+            for k, e in exp.items():
+                s_e = np.sign(e)
+                ubs = fset((k2, "upper" if np.sign(e) != s_e else "lower")
+                           for k2, e in exp.items() if k != k2)
+                lbs = fset((k2, "lower" if np.sign(e) != s_e else "upper")
+                           for k2, e in exp.items() if k != k2)
+                if ubs:
+                    self.meq_bounded[(k, "upper")] = frozenset([ubs])
+                if lbs:
+                    self.meq_bounded[(k, "lower")] = frozenset([lbs])
 
     def _gen_unsubbed(self, left, right):  # pylint: disable=arguments-differ
         "Returns the unsubstituted posys <= 1."

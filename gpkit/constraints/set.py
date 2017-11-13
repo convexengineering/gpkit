@@ -1,4 +1,5 @@
 "Implements ConstraintSet"
+from collections import defaultdict
 import numpy as np
 
 from ..small_classes import HashVector, Numbers
@@ -29,6 +30,8 @@ class ConstraintSet(list):
 
         # get substitutions and convert all members to ConstraintSets
         self.substitutions = KeyDict()
+        self.bounded = set()
+        self.meq_bounded = defaultdict(set)
         for i, constraint in enumerate(self):
             if not isinstance(constraint, ConstraintSet):
                 if hasattr(constraint, "__iter__"):
@@ -42,8 +45,14 @@ class ConstraintSet(list):
                         # so we can catch them later (next line)
             elif constraint.numpy_bools:
                 raise_elementhasnumpybools(constraint)
-            if hasattr(self[i], "substitutions"):
-                self.substitutions.update(self[i].substitutions)
+            for attr in ["substitutions", "bounded"]:
+                if hasattr(self[i], attr):
+                    getattr(self, attr).update(getattr(self[i], attr))
+            if hasattr(self[i], "meq_bounded"):
+                for bound, solutionset in self[i].meq_bounded.items():
+                    self.meq_bounded[bound].update(solutionset)
+        for key, value in self.meq_bounded.items():
+            self.meq_bounded[key] = frozenset(value)
         self.reset_varkeys()
         self.substitutions.update({k: k.descr["value"]
                                    for k in self.unique_varkeys
