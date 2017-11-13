@@ -37,7 +37,7 @@ class SPData(NomialData):
             p_idxs += [i]*p_len
         self.p_idxs = np.array(p_idxs)
         # A [i, v]: sparse matrix of variable's powers in each monomial
-        self.A, _ = genA(self.exps, self.varlocs)
+        self.A, _ = genA(self.exps, self.varlocs, [])
         # NOTE: NomialData might be refactored to include the above
 
         self.varsols = np.array([mag(model.solution(var))

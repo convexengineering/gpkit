@@ -5,6 +5,7 @@ from .. import units as ureg_at_init
 from ..exceptions import DimensionalityError
 from ..small_classes import HashVector, Quantity, Strings
 from ..small_scripts import mag
+from ..varkey import VarKey
 from .substitution import parse_subs
 
 DIMLESS_QUANTITY = Quantity(1, "dimensionless") if ureg_at_init else 1
@@ -140,6 +141,10 @@ class NomialMap(HashVector):
             if vk in fixed:
                 expval = []
                 exps, cval = varlocs[vk], fixed[vk]
+                if isinstance(cval, Strings):
+                    descr = dict(vk.descr)
+                    del descr["name"]
+                    cval = VarKey(name=cval, **descr)
                 if hasattr(cval, "hmap"):
                     expval, = cval.hmap.keys()  # TODO: catch "can't-sub-posys"
                     cval = cval.hmap

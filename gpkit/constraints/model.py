@@ -92,7 +92,7 @@ class Model(CostedConstraintSet):
         while zeros:
             # pylint: disable=no-member
             gp = self.gp(allow_missingbounds=True)
-            zeros = {var: 0 for var, bound in gp.missingbounds.items()
+            zeros = {var: 0 for (var, bound) in gp.missingbounds
                      if bound == "lower"}
             self.substitutions.update(zeros)
 
