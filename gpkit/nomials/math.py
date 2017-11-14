@@ -511,7 +511,7 @@ class MonomialEquality(PosynomialInequality):
         self.nomials.extend(self.unsubbed)
         self._last_used_substitutions = {}
         self.meq_bounded = {}
-        if self.unsubbed:
+        if self.unsubbed and len(self.varkeys) > 1:
             exp = self.unsubbed[0].hmap.keys()[0]
             for key, e in exp.items():
                 s_e = np.sign(e)
@@ -519,10 +519,8 @@ class MonomialEquality(PosynomialInequality):
                                 for k, e in exp.items() if k != key)
                 lbs = frozenset((k, "lower" if np.sign(e) != s_e else "upper")
                                 for k, e in exp.items() if k != key)
-                if ubs:
-                    self.meq_bounded[(key, "upper")] = frozenset([ubs])
-                if lbs:
-                    self.meq_bounded[(key, "lower")] = frozenset([lbs])
+                self.meq_bounded[(key, "upper")] = frozenset([ubs])
+                self.meq_bounded[(key, "lower")] = frozenset([lbs])
 
     def _gen_unsubbed(self, left, right):  # pylint: disable=arguments-differ
         "Returns the unsubstituted posys <= 1."

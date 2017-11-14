@@ -99,7 +99,8 @@ class Model(CostedConstraintSet):
             self.unique_varkeys = frozenset(v.key for v in setup_vars)
         CostedConstraintSet.__init__(self, cost, constraints, substitutions)
         if hasattr(self, "setup"):
-            self.verify_docstring()
+            if "SKIP VERIFICATION" not in self.__class__.__doc__:
+                self.verify_docstring()
 
     gp = _progify_fctry(GeometricProgram)
     sp = _progify_fctry(SequentialGeometricProgram)

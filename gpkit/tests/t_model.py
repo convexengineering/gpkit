@@ -548,9 +548,7 @@ class TestModelSolverSpecific(unittest.TestCase):
 class Thing(Model):
     """a thing, for model testing
 
-    Upper Unbounded
-    ---------------
-    a, b
+    SKIP VERIFICATION
 
     """
     def setup(self, length):
