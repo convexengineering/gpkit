@@ -82,7 +82,7 @@ def parse_variables(string):
                 if labelstart < len(line):
                     while line[labelstart] == " ":
                         labelstart += 1
-                    label = line[labelstart:]
+                    label = line[labelstart:].replace("'", "\\'")
                     nameval = line[:unitstart].split()
                     if len(nameval) == 2:
                         out = ("{0} = self.{0}"
@@ -120,7 +120,7 @@ def parse_variables(string):
                     if labelstart < len(line):
                         while line[labelstart] == " ":
                             labelstart += 1
-                        label = line[labelstart:]
+                        label = line[labelstart:].replace("'", "\\'")
                         nameval = line[:unitstart].split()
                         if len(nameval) == 2:
                             out = ("{0} = self.{0} = VectorVariable({4},"

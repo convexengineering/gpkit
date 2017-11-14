@@ -544,10 +544,16 @@ class TestModelSolverSpecific(unittest.TestCase):
 
 
 class Thing(Model):
-    "a thing, for model testing"
+    """a thing, for model testing
+
+    Upper Unbounded
+    ---------------
+    a, b
+
+    """
     def setup(self, length):
-        a = VectorVariable(length, "a", "g/m")
-        b = VectorVariable(length, "b", "m")
+        a = self.a = VectorVariable(length, "a", "g/m")
+        b = self.b = VectorVariable(length, "b", "m")
         c = Variable("c", 17/4., "g")
         return [a >= c/b]
 
@@ -579,13 +585,13 @@ class BoxAreaBounds(Model):
 
     Lower Unbounded
     ---------------
-    V
+    h, d, w
     """
     def setup(self, box):
         A_wall = Variable("A_{wall}", 100, "m^2", "Upper limit, wall area")
         A_floor = Variable("A_{floor}", 50, "m^2", "Upper limit, floor area")
 
-        self.V = box.V
+        self.h, self.d, self.w = box.h, box.d, box.w
 
         return [2*box.h*box.w + 2*box.h*box.d <= A_wall,
                 box.w*box.d <= A_floor]

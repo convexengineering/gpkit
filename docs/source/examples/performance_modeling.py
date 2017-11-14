@@ -93,7 +93,7 @@ class FlightSegment(Model):
         self.aircraftp = aircraft.dynamic(aircraft, self.flightstate)
 
         self.c = aircraft.wing.c
-        self.W = self.aircraftp.W
+        self.W = aircraft.W
         self.Wburn = self.aircraftp.Wburn
         self.Wfuel = self.aircraftp.Wfuel
 
@@ -115,11 +115,12 @@ class Mission(Model):
         with Vectorize(4):  # four flight segments
             self.fs = FlightSegment(aircraft)
 
+        self.W = aircraft.W
+        self.c = aircraft.wing.c
+
         Wburn = self.fs.aircraftp.Wburn
         Wfuel = self.fs.aircraftp.Wfuel
         self.takeoff_fuel = Wfuel[0]
-        self.W = aircraft.W
-        self.c = aircraft.wing.c
 
         return self.fs, [Wfuel[:-1] >= Wfuel[1:] + Wburn[:-1],
                          Wfuel[-1] >= Wburn[-1]]
