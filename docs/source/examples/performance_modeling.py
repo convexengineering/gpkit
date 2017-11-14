@@ -20,9 +20,7 @@ class Aircraft(Model):
         self.wing = Wing()
         self.components = [self.fuse, self.wing]
 
-        return self.components, [
-            W >= sum(c.topvar("W") for c in self.components)
-            ]
+        return self.components, W >= sum(c.W for c in self.components)
 
     def dynamic(self, state):
         "This component's performance model for a given state."
