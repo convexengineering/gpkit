@@ -9,6 +9,25 @@ from ..small_scripts import mag
 from ..tools.autosweep import autosweep_1d
 from ..exceptions import InvalidGPConstraint
 from .. import NamedVariables
+from ..tools.docstring import expected_unbounded
+
+
+def add_meq_bounds(bounded, meq_bounded):
+    "Iterates through meq_bounds until convergence"
+    still_alive = True
+    while still_alive:
+        still_alive = False  # if no changes are made, the loop exits
+        for bound, conditions in meq_bounded.items():
+            if bound in bounded:
+                del meq_bounded[bound]
+                continue
+            meq_bounded[bound] = set(conditions)
+            for condition in conditions:
+                if condition.issubset(bounded):
+                    del meq_bounded[bound]
+                    bounded.add(bound)
+                    still_alive = True
+                    break
 
 
 class Model(CostedConstraintSet):
@@ -80,115 +99,72 @@ class Model(CostedConstraintSet):
             self.unique_varkeys = frozenset(v.key for v in setup_vars)
         CostedConstraintSet.__init__(self, cost, constraints, substitutions)
         if hasattr(self, "setup"):
-            bounded = self.bounded.copy()
-            meq_bounded = dict(self.meq_bounded)
-            for key in self.varkeys:
-                if key in self.substitutions:
-                    for bound in ("upper", "lower"):
-                        bounded.add((key, bound))
-            exp_unbounded = set()
-            for direction in ["upper", "lower"]:
-                flag = direction[0].upper()+direction[1:]+" Unbounded\n"
-                count = self.__class__.__doc__.count(flag)
-                if count == 0:
-                    continue
-                elif count > 1:
-                    raise ValueError("multiple instances of %s" % flag)
-                idx = self.__class__.__doc__.index(flag) + len(flag)
-                idx2 = self.__class__.__doc__[idx:].index("\n")
-                idx3 = self.__class__.__doc__[idx:][idx2+1:].index("\n")
-                varstrs = self.__class__.__doc__[idx:][idx2+1:][:idx3].strip()
-                if varstrs:
-                    for var in varstrs.split(", "):
-                        variables = getattr(self, var)
-                        if not hasattr(variables, "__len__"):
-                            variables = [variables]
-                        for var in variables:
-                            exp_unbounded.add((var.key, direction))
-            still_alive = True
-            while still_alive:
-                still_alive = False  # if no changes are made, the loop exits
-                for bound, conditions in meq_bounded.items():
-                    if bound in bounded:
-                        del meq_bounded[bound]
-                        continue
-                    meq_bounded[bound] = set(conditions)
-                    for condition in conditions:
-                        if condition.issubset(bounded):
-                            del meq_bounded[bound]
-                            bounded.add(bound)
-                            still_alive = True
-                            break
-            unexpectedly_bounded = bounded.intersection(exp_unbounded)
-            errmessage = "while verifying %s:\n" % self.__class__.__name__
-            if unexpectedly_bounded:
-                for direction in ["lower", "upper"]:
-                    badvks = ", ".join(str(v) for v, d in unexpectedly_bounded
-                                       if d == direction)
-                    if not badvks:
-                        continue
-                    badvks += " were" if len(unexpectedly_bounded) > 1 else " was"
-                    errmessage += ("    %s %s-bounded; expected"
-                                   " unbounded\n" % (badvks, direction))
-                raise ValueError(errmessage)
-            else:
-                bounded.update(exp_unbounded)  # treat as bounded, repeat
-            still_alive = True
-            while still_alive:
-                still_alive = False  # if no changes are made, the loop exits
-                for bound, conditions in meq_bounded.items():
-                    if bound in bounded:
-                        del meq_bounded[bound]
-                        continue
-                    meq_bounded[bound] = set(conditions)
-                    for condition in conditions:
-                        if condition.issubset(bounded):
-                            del meq_bounded[bound]
-                            bounded.add(bound)
-                            still_alive = True
-                            break
-            self.missingbounds = {}
-            for bound in meq_bounded:
-                boundstr = (", but would gain it from any of these"
-                            " sets of bounds: ")
-                for condition in list(meq_bounded[bound]):
-                    meq_bounded[bound].remove(condition)
-                    newcond = set(condition)
-                    newcond.difference_update(bounded)
-                    if newcond and not any(c.issubset(newcond)
-                                           for c in meq_bounded[bound]):
-                        meq_bounded[bound].add(frozenset(newcond))
-                boundstr += " or ".join(str(list(condition))
-                                        for condition in meq_bounded[bound])
-                self.missingbounds[bound] = boundstr
-            if len(bounded)+len(self.missingbounds) != 2*len(self.varkeys):
-                for key in self.varkeys:
-                    for bound in ("upper", "lower"):
-                        if (key, bound) not in bounded:
-                            if (key, bound) not in self.missingbounds:
-                                self.missingbounds[(key, bound)] = ""
-            err = False
-            errmessage = ""
-            if self.missingbounds:
-                boundstrs = "\n".join("  %s has no %s bound%s" % (v, b, x)
-                                      for (v, b), x in self.missingbounds.items())
-                docstring = "The docstring for %s could include the following (it may not need all of them):\n" % self.__class__.__name__
-                for direction in ["upper", "lower"]:
-                    missingbounds = [k for (k, b) in self.missingbounds if b == direction]
-                    if missingbounds:
-                        docstring += """
-    %s Unbounded
-    ---------------
-    %s
-    """ % (direction.title(), ", ".join(set(k.name for k in missingbounds)))
-                raise ValueError("named Model is not fully bounded:\n"
-                                 + boundstrs + "\n\n" + docstring)
+            self.verify_docstring()
 
     gp = _progify_fctry(GeometricProgram)
     sp = _progify_fctry(SequentialGeometricProgram)
     solve = _solve_fctry(_progify_fctry(GeometricProgram, "solve"))
     localsolve = _solve_fctry(_progify_fctry(SequentialGeometricProgram,
                                              "localsolve"))
+
+    def verify_docstring(self):  # pylint:disable=too-many-locals,too-many-branches
+        "Verifies docstring bounds are sufficient but not excessive."
+        err = "while verifying %s:\n" % self.__class__.__name__
+        bounded, meq_bounded = self.bounded.copy(), self.meq_bounded.copy()
+        for key in self.varkeys:  # add substitutions to bounded
+            if key in self.substitutions:
+                for bound in ("upper", "lower"):
+                    bounded.add((key, bound))
+        add_meq_bounds(bounded, meq_bounded)  # add meqs to bounded
+        # now we'll check the docstring
+        exp_unbounds = expected_unbounded(self, self.__class__.__doc__)
+        unexp_bounds = bounded.intersection(exp_unbounds)
+        if unexp_bounds:  # anything bounded that shouldn't be? err!
+            for direction in ["lower", "upper"]:
+                badvks = [v for v, d in unexp_bounds if d == direction]
+                if not badvks:
+                    continue
+                badvks = ", ".join(str(v) for v in badvks)
+                badvks += (" were" if len(badvks) > 1 else " was")
+                err += ("    %s %s-bounded; expected %s-unbounded"
+                        "\n" % (badvks, direction, direction))
+            raise ValueError(err)
+        bounded.update(exp_unbounds)  # if not, treat expected as bounded
+        add_meq_bounds(bounded, meq_bounded)  # and add more meqs
+        self.missingbounds = {}  # now let's figure out what's missing
+        for bound in meq_bounded:  # first add the un-dealt-with meq bounds
+            for condition in list(meq_bounded[bound]):
+                meq_bounded[bound].remove(condition)
+                newcond = condition - bounded
+                if newcond and not any(c.issubset(newcond)
+                                       for c in meq_bounded[bound]):
+                    meq_bounded[bound].add(newcond)
+            bsets = " or ".join(str(list(c)) for c in meq_bounded[bound])
+            self.missingbounds[bound] = (", but would gain it from any of"
+                                         " these sets of bounds: " + bsets)
+        # then add everything that's not in bounded
+        if len(bounded)+len(self.missingbounds) != 2*len(self.varkeys):
+            for key in self.varkeys:
+                for bound in ("upper", "lower"):
+                    if (key, bound) not in bounded:
+                        if (key, bound) not in self.missingbounds:
+                            self.missingbounds[(key, bound)] = ""
+        if self.missingbounds:  # anything unbounded? err!
+            boundstrs = "\n".join("  %s has no %s bound%s" % (v, b, x)
+                                  for (v, b), x
+                                  in self.missingbounds.items())
+            docstring = ("To fix this add the following to %s's"
+                         " docstring (you may not need it all):"
+                         " \n" % self.__class__.__name__)
+            for direction in ["upper", "lower"]:
+                mb = [k for (k, b) in self.missingbounds if b == direction]
+                if mb:
+                    docstring += """
+%s Unbounded
+---------------
+%s
+""" % (direction.title(), ", ".join(set(k.name for k in mb)))
+            raise ValueError(err + boundstrs + "\n\n" + docstring)
 
     def zero_lower_unbounded_variables(self):
         "Recursively substitutes 0 for variables that lack a lower bound"

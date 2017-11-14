@@ -495,8 +495,6 @@ class PosynomialInequality(ScalarSingleEquationConstraint):
         "The GP version of a Posynomial constraint is itself"
         return self
 
-fset = frozenset
-
 class MonomialEquality(PosynomialInequality):
     "A Constraint of the form Monomial == Monomial."
 
@@ -515,16 +513,16 @@ class MonomialEquality(PosynomialInequality):
         self.meq_bounded = {}
         if self.unsubbed:
             exp = self.unsubbed[0].hmap.keys()[0]
-            for k, e in exp.items():
+            for key, e in exp.items():
                 s_e = np.sign(e)
-                ubs = fset((k2, "upper" if np.sign(e) != s_e else "lower")
-                           for k2, e in exp.items() if k != k2)
-                lbs = fset((k2, "lower" if np.sign(e) != s_e else "upper")
-                           for k2, e in exp.items() if k != k2)
+                ubs = frozenset((k, "upper" if np.sign(e) != s_e else "lower")
+                                for k, e in exp.items() if k != key)
+                lbs = frozenset((k, "lower" if np.sign(e) != s_e else "upper")
+                                for k, e in exp.items() if k != key)
                 if ubs:
-                    self.meq_bounded[(k, "upper")] = frozenset([ubs])
+                    self.meq_bounded[(key, "upper")] = frozenset([ubs])
                 if lbs:
-                    self.meq_bounded[(k, "lower")] = frozenset([lbs])
+                    self.meq_bounded[(key, "lower")] = frozenset([lbs])
 
     def _gen_unsubbed(self, left, right):  # pylint: disable=arguments-differ
         "Returns the unsubstituted posys <= 1."

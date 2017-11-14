@@ -11,6 +11,8 @@ from gpkit import NamedVariables, units, parse_variables
 NDIGS = {"cvxopt": 4, "mosek": 5, "mosek_cli": 5}
 # name: decimal places of accuracy
 
+# pylint: disable=invalid-name,attribute-defined-outside-init,unused-variable,undefined-variable,exec-used
+
 
 class TestGP(unittest.TestCase):
     """

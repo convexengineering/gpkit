@@ -25,7 +25,7 @@ class BoundsChecking(Model):
 
     Lower Unbounded
     ---------------
-    D, Ap, nu
+    D
 
     """
     def setup(self):

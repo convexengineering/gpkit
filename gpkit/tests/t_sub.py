@@ -8,12 +8,13 @@ from gpkit import Variable, VectorVariable, Model, Signomial
 from gpkit.small_scripts import mag
 from gpkit.tests.helpers import run_tests
 
+# pylint: disable=invalid-name,attribute-defined-outside-init,unused-variable
+
 
 class TestNomialSubs(unittest.TestCase):
     """Test substitution for nomial-family objects"""
 
     def test_vectorized_linked(self):
-        # pylint: disable=invalid-name,attribute-defined-outside-init,unused-variable
         class VectorLinked(Model):
             "simple vectorized link"
             def setup(self):

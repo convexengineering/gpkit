@@ -1,6 +1,6 @@
 """Modular aircraft concept"""
 import numpy as np
-from gpkit import Model, Variable, Vectorize, parse_variables
+from gpkit import Model, Vectorize, parse_variables
 
 
 class AircraftP(Model):
@@ -26,14 +26,13 @@ class AircraftP(Model):
         self.perf_models = [self.wing_aero]
 
         W = self.W = aircraft.W
-        c = self.c = aircraft.wing.c
+        self.c = aircraft.wing.c
         S = aircraft.wing.S
 
         V = state.V
         rho = state.rho
 
         D = self.wing_aero.D
-        Re = self.wing_aero.Re
         CL = self.wing_aero.CL
 
         return [W + Wfuel <= 0.5*rho*CL*S*V**2,
