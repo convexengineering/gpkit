@@ -6,7 +6,7 @@ from gpkit import (Model, Monomial, settings, VectorVariable, Variable,
 from gpkit.constraints.bounded import Bounded
 from gpkit.small_classes import CootMatrix
 from gpkit.exceptions import InvalidGPConstraint
-from gpkit import NamedVariables, units
+from gpkit import NamedVariables, units, parse_variables
 
 NDIGS = {"cvxopt": 4, "mosek": 5, "mosek_cli": 5}
 # name: decimal places of accuracy
@@ -553,22 +553,42 @@ class Thing(Model):
 
 
 class Box(Model):
-    "simple box for model testing"
+    """simple box for model testing
+
+    Variables
+    ---------
+    h  [m]     height
+    w  [m]     width
+    d  [m]     depth
+    V  [m**3]  volume
+
+    Upper Unbounded
+    ---------------
+    w, d, h
+
+    Lower Unbounded
+    ---------------
+    w, d, h
+    """
     def setup(self):
-        h = Variable("h", "m", "height")
-        w = Variable("w", "m", "width")
-        d = Variable("d", "m", "depth")
-        V = Variable("V", "m**3", "volume")
+        exec parse_variables(Box.__doc__)
         return [V == h*w*d]
 
 class BoxAreaBounds(Model):
-    "for testing functionality of separate analysis models"
+    """for testing functionality of separate analysis models
+
+    Lower Unbounded
+    ---------------
+    V
+    """
     def setup(self, box):
         A_wall = Variable("A_{wall}", 100, "m^2", "Upper limit, wall area")
         A_floor = Variable("A_{floor}", 50, "m^2", "Upper limit, floor area")
 
-        return [2*box["h"]*box["w"] + 2*box["h"]*box["d"] <= A_wall,
-                box["w"]*box["d"] <= A_floor]
+        self.V = box.V
+
+        return [2*box.h*box.w + 2*box.h*box.d <= A_wall,
+                box.w*box.d <= A_floor]
 
 
 class TestModelNoSolve(unittest.TestCase):

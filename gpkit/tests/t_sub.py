@@ -273,17 +273,27 @@ class TestModelSubs(unittest.TestCase):
 
     def test_model_composition_units(self):
         class Above(Model):
-            "A simple upper bound on x"
+            """A simple upper bound on x
+
+            Lower Unbounded
+            ---------------
+            x
+            """
             def setup(self):
-                x = Variable("x", "ft")
+                x = self.x = Variable("x", "ft")
                 x_max = Variable("x_{max}", 1, "yard")
                 self.cost = 1/x
                 return [x <= x_max]
 
         class Below(Model):
-            "A simple lower bound on x"
+            """A simple lower bound on x
+
+            Upper Unbounded
+            ---------------
+            x
+            """
             def setup(self):
-                x = Variable("x", "m")
+                x = self.x = Variable("x", "m")
                 x_min = Variable("x_{min}", 1, "cm")
                 self.cost = x
                 return [x >= x_min]
@@ -318,18 +328,28 @@ class TestModelSubs(unittest.TestCase):
 
     def test_getkey(self):
         class Top(Model):
-            "Some high level model"
+            """Some high level model
+
+            Upper Unbounded
+            ---------------
+            y
+            """
             def setup(self):
-                y = Variable('y')
+                y = self.y = Variable('y')
                 s = Sub()
                 sy = s["y"]
                 self.cost = y
                 return [s, y >= sy, sy >= 1]
 
         class Sub(Model):
-            "A simple sub model"
+            """A simple sub model
+
+            Upper Unbounded
+            ---------------
+            y
+            """
             def setup(self):
-                y = Variable('y')
+                y = self.y = Variable('y')
                 self.cost = y
                 return [y >= 2]
 
@@ -338,17 +358,29 @@ class TestModelSubs(unittest.TestCase):
 
     def test_model_recursion(self):
         class Top(Model):
-            "Some high level model"
+            """Some high level model
+
+            Upper Unbounded
+            ---------------
+            x
+
+            """
             def setup(self):
                 sub = Sub()
-                x = Variable("x")
+                x = self.x = Variable("x")
                 self.cost = x
                 return sub, [x >= sub["y"], sub["y"] >= 1]
 
         class Sub(Model):
-            "A simple sub model"
+            """A simple sub model
+
+            Upper Unbounded
+            ---------------
+            y
+
+            """
             def setup(self):
-                y = Variable('y')
+                y = self.y = Variable('y')
                 self.cost = y
                 return [y >= 2]
 

@@ -79,51 +79,14 @@ class Model(CostedConstraintSet):
             # even if they aren't used in any constraints
             self.unique_varkeys = frozenset(v.key for v in setup_vars)
         CostedConstraintSet.__init__(self, cost, constraints, substitutions)
-        self.missingbounds = {}
         if hasattr(self, "setup"):
-            bounded = set(self.bounded)
-            self.bounded.difference_update(self.bounded)
+            bounded = self.bounded.copy()
+            meq_bounded = dict(self.meq_bounded)
             for key in self.varkeys:
                 if key in self.substitutions:
                     for bound in ("upper", "lower"):
                         bounded.add((key, bound))
-            still_alive = True
-            while still_alive:
-                still_alive = False  # if no changes are made, the loop exits
-                for bound, conditions in self.meq_bounded.items():
-                    if bound in bounded:
-                        del self.meq_bounded[bound]
-                        continue
-                    self.meq_bounded[bound] = set(conditions)
-                    for condition in conditions:
-                        if condition.issubset(bounded):
-                            del self.meq_bounded[bound]
-                            bounded.add(bound)
-                            still_alive = True
-                            break
-            for bound in self.meq_bounded:
-                boundstr = (", but would gain it from any of these"
-                            " sets of bounds: ")
-                for condition in list(self.meq_bounded[bound]):
-                    self.meq_bounded[bound].remove(condition)
-                    newcond = set(condition)
-                    newcond.difference_update(bounded)
-                    if newcond and not any(c.issubset(newcond)
-                                           for c in self.meq_bounded[bound]):
-                        self.meq_bounded[bound].add(frozenset(newcond))
-                boundstr += " or ".join(str(list(condition))
-                                        for condition in self.meq_bounded[bound])
-                self.missingbounds[bound] = boundstr
-            if len(bounded)+len(self.missingbounds) != 2*len(self.varkeys):
-                for key in self.varkeys:
-                    for bound in ("upper", "lower"):
-                        if (key, bound) not in bounded:
-                            if (key, bound) not in self.missingbounds:
-                                self.missingbounds[(key, bound)] = ""
-            err = False
-            errmessage = ""
-            expected_but_not_seen = set()
-            seen_but_not_expected = set(self.missingbounds)
+            exp_unbounded = set()
             for direction in ["upper", "lower"]:
                 flag = direction[0].upper()+direction[1:]+" Unbounded\n"
                 count = self.__class__.__doc__.count(flag)
@@ -137,30 +100,87 @@ class Model(CostedConstraintSet):
                 varstrs = self.__class__.__doc__[idx:][idx2+1:][:idx3].strip()
                 if varstrs:
                     for var in varstrs.split(", "):
-                        bound = (getattr(self, var).key, direction)
-                        # TODO: catch err if var not found
-                        if bound in self.missingbounds:
-                            seen_but_not_expected.remove(bound)
-                        else:
-                            expected_but_not_seen.add(bound)
-            print "sbne", seen_but_not_expected
-            print "ebns", expected_but_not_seen
-            if expected_but_not_seen or seen_but_not_expected:
+                        variables = getattr(self, var)
+                        if not hasattr(variables, "__len__"):
+                            variables = [variables]
+                        for var in variables:
+                            exp_unbounded.add((var.key, direction))
+            still_alive = True
+            while still_alive:
+                still_alive = False  # if no changes are made, the loop exits
+                for bound, conditions in meq_bounded.items():
+                    if bound in bounded:
+                        del meq_bounded[bound]
+                        continue
+                    meq_bounded[bound] = set(conditions)
+                    for condition in conditions:
+                        if condition.issubset(bounded):
+                            del meq_bounded[bound]
+                            bounded.add(bound)
+                            still_alive = True
+                            break
+            unexpectedly_bounded = bounded.intersection(exp_unbounded)
+            errmessage = "while verifying %s:\n" % self.__class__.__name__
+            if unexpectedly_bounded:
+                for direction in ["lower", "upper"]:
+                    badvks = ", ".join(str(v) for v, d in unexpectedly_bounded
+                                       if d == direction)
+                    if not badvks:
+                        continue
+                    badvks += " were" if len(unexpectedly_bounded) > 1 else " was"
+                    errmessage += ("    %s %s-bounded; expected"
+                                   " unbounded\n" % (badvks, direction))
+                raise ValueError(errmessage)
+            else:
+                bounded.update(exp_unbounded)  # treat as bounded, repeat
+            still_alive = True
+            while still_alive:
+                still_alive = False  # if no changes are made, the loop exits
+                for bound, conditions in meq_bounded.items():
+                    if bound in bounded:
+                        del meq_bounded[bound]
+                        continue
+                    meq_bounded[bound] = set(conditions)
+                    for condition in conditions:
+                        if condition.issubset(bounded):
+                            del meq_bounded[bound]
+                            bounded.add(bound)
+                            still_alive = True
+                            break
+            self.missingbounds = {}
+            for bound in meq_bounded:
+                boundstr = (", but would gain it from any of these"
+                            " sets of bounds: ")
+                for condition in list(meq_bounded[bound]):
+                    meq_bounded[bound].remove(condition)
+                    newcond = set(condition)
+                    newcond.difference_update(bounded)
+                    if newcond and not any(c.issubset(newcond)
+                                           for c in meq_bounded[bound]):
+                        meq_bounded[bound].add(frozenset(newcond))
+                boundstr += " or ".join(str(list(condition))
+                                        for condition in meq_bounded[bound])
+                self.missingbounds[bound] = boundstr
+            if len(bounded)+len(self.missingbounds) != 2*len(self.varkeys):
+                for key in self.varkeys:
+                    for bound in ("upper", "lower"):
+                        if (key, bound) not in bounded:
+                            if (key, bound) not in self.missingbounds:
+                                self.missingbounds[(key, bound)] = ""
+            err = False
+            errmessage = ""
+            if self.missingbounds:
                 boundstrs = "\n".join("  %s has no %s bound%s" % (v, b, x)
                                       for (v, b), x in self.missingbounds.items())
-                docstring = """
-The docstring for %s should include:
-
-    Upper Unbounded
+                docstring = "The docstring for %s could include the following (it may not need all of them):\n" % self.__class__.__name__
+                for direction in ["upper", "lower"]:
+                    missingbounds = [k for (k, b) in self.missingbounds if b == direction]
+                    if missingbounds:
+                        docstring += """
+    %s Unbounded
     ---------------
     %s
-
-    Lower Unbounded
-    ---------------
-    %s
-""" % (self.__class__.__name__,
-       ", ".join(k.str_without("models") for (k, b) in self.missingbounds if b == "upper"),
-       ", ".join(k.str_without("models") for (k, b) in self.missingbounds if b == "lower"))
+    """ % (direction.title(), ", ".join(set(k.name for k in missingbounds)))
                 raise ValueError("named Model is not fully bounded:\n"
                                  + boundstrs + "\n\n" + docstring)
 
