@@ -18,6 +18,17 @@ def expected_unbounded(instance, doc):
         varstrs = doc[idx:][idx2+1:][:idx3].strip()
         if varstrs:
             for var in varstrs.split(", "):
+                if " (if " in var:  # it's a conditional!
+                    var, condition = var.split(" (if ")
+                    assert condition[-1] == ")"
+                    condition = condition[:-1]
+                    invert = condition[:4] == "not "
+                    if invert:
+                        condition = condition[4:]
+                        if getattr(instance, condition):
+                            continue
+                    elif not getattr(instance, condition):
+                        continue
                 # TODO: catch err if var not found?
                 variables = getattr(instance, var)
                 if not hasattr(variables, "shape"):
