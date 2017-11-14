@@ -1,11 +1,11 @@
 
   # minimize
-        F_BoundsChecking
+        F
   # subject to
-        F_BoundsChecking >= D_BoundsChecking + T_BoundsChecking
-        D_BoundsChecking = Ap_BoundsChecking*V_BoundsChecking**2*rf_BoundsChecking
-        Ap_BoundsChecking = nu_BoundsChecking
-        T_BoundsChecking = V_BoundsChecking*mf_BoundsChecking
-        mf_BoundsChecking >= mb_BoundsChecking + mi_BoundsChecking
-        mf_BoundsChecking = V_BoundsChecking*rf_BoundsChecking
-        Fs_BoundsChecking <= mi_BoundsChecking
+        F >= D + T
+        D = Ap*V**2*rf
+        Ap = nu
+        T = V*mf
+        mf >= mb + mi
+        mf = V*rf
+        Fs <= mi

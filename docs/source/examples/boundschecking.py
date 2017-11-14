@@ -42,7 +42,7 @@ class BoundsChecking(Model):
 
 
 m = BoundsChecking()
-print m
+print m.str_without(["models"])
 try:
     m.solve()
 except ValueError:
