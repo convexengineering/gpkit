@@ -1,4 +1,5 @@
 "Docstring-parsing methods"
+import numpy as np
 
 
 def expected_unbounded(instance, doc):
@@ -19,10 +20,13 @@ def expected_unbounded(instance, doc):
             for var in varstrs.split(", "):
                 # TODO: catch err if var not found?
                 variables = getattr(instance, var)
-                if not hasattr(variables, "__len__"):
-                    variables = [variables]
-                for v in variables:
-                    exp_unbounded.add((v.key, direction))
+                if not hasattr(variables, "shape"):
+                    variables = np.array([variables])
+                it = np.nditer(variables, flags=['multi_index', 'refs_ok'])
+                while not it.finished:
+                    i = it.multi_index
+                    it.iternext()
+                    exp_unbounded.add((variables[i].key, direction))
     return exp_unbounded
 
 
