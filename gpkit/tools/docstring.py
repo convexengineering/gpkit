@@ -4,6 +4,7 @@ import numpy as np
 
 def expected_unbounded(instance, doc):
     "Gets expected-unbounded variables from a string"
+    # pylint: disable=too-many-locals,too-many-nested-blocks
     exp_unbounded = set()
     for direction in ["upper", "lower"]:
         flag = direction[0].upper()+direction[1:]+" Unbounded\n"
