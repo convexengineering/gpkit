@@ -1,58 +1,45 @@
 "Docstring-parsing methods"
-from collections import defaultdict
-from ..constraints.bounded import Bounded
-from ..constraints.model import Model
+import numpy as np
 
 
-def verify_model(cls):
-    # pylint: disable=too-many-locals
-    "Creates an instance of a model and verifies its docstring"
-    instance = cls()
-    errmessage = "while verifying %s:\n" % cls.__name__
-    err = False
-    expected = defaultdict(set)
+def expected_unbounded(instance, doc):
+    "Gets expected-unbounded variables from a string"
+    # pylint: disable=too-many-locals,too-many-nested-blocks
+    exp_unbounded = set()
     for direction in ["upper", "lower"]:
         flag = direction[0].upper()+direction[1:]+" Unbounded\n"
-        count = cls.__doc__.count(flag)
+        count = doc.count(flag)
         if count == 0:
             continue
         elif count > 1:
             raise ValueError("multiple instances of %s" % flag)
-        idx = cls.__doc__.index(flag) + len(flag)
-        idx2 = cls.__doc__[idx:].index("\n")
-        idx3 = cls.__doc__[idx:][idx2+1:].index("\n")
-        varstrs = cls.__doc__[idx:][idx2+1:][:idx3].strip()
+        idx = doc.index(flag) + len(flag)
+        idx2 = doc[idx:].index("\n")
+        idx3 = doc[idx:][idx2+1:].index("\n")
+        varstrs = doc[idx:][idx2+1:][:idx3].strip()
         if varstrs:
             for var in varstrs.split(", "):
-                # TODO: catch err if var not found
-                expected[direction].add(getattr(instance, var).key)
-    easy_bounds = instance.gp(allow_missingbounds=True).missingbounds
-    for vk, direction in easy_bounds.items():
-        expected[direction].discard(vk)
-    if expected["upper"] or expected["lower"]:
-        model = Model(None, Bounded(instance, verbosity=0))
-        boundedness = model.solve(verbosity=0)["boundedness"]
-        actual = defaultdict(set)
-        for direction in ["upper", "lower"]:
-            act, exp = actual[direction], expected[direction]
-            for key in ["value near %s bound" % direction,
-                        "sensitive to %s bound" % direction]:
-                if key in boundedness:
-                    act.update(boundedness[key])
-            if act-exp:
-                badvks = ", ".join(map(str, act-exp))
-                badvks += " were" if len(act-exp) > 1 else " was"
-                errmessage += ("  %s %s-unbounded; expected"
-                               " bounded\n" % (badvks, direction))
-            if exp-act:
-                badvks = ", ".join(map(str, exp-act))
-                badvks += " were" if len(exp-act) > 1 else " was"
-                errmessage += ("  %s %s-bounded; expected"
-                               " unbounded\n" % (badvks, direction))
-                if exp-act or act-exp:
-                    err = True
-    if err:
-        raise ValueError(errmessage)
+                if " (if " in var:  # it's a conditional!
+                    var, condition = var.split(" (if ")
+                    assert condition[-1] == ")"
+                    condition = condition[:-1]
+                    invert = condition[:4] == "not "
+                    if invert:
+                        condition = condition[4:]
+                        if getattr(instance, condition):
+                            continue
+                    elif not getattr(instance, condition):
+                        continue
+                # TODO: catch err if var not found?
+                variables = getattr(instance, var)
+                if not hasattr(variables, "shape"):
+                    variables = np.array([variables])
+                it = np.nditer(variables, flags=['multi_index', 'refs_ok'])
+                while not it.finished:
+                    i = it.multi_index
+                    it.iternext()
+                    exp_unbounded.add((variables[i].key, direction))
+    return exp_unbounded
 
 
 def parse_variables(string):
@@ -82,7 +69,7 @@ def parse_variables(string):
                 if labelstart < len(line):
                     while line[labelstart] == " ":
                         labelstart += 1
-                    label = line[labelstart:]
+                    label = line[labelstart:].replace("'", "\\'")
                     nameval = line[:unitstart].split()
                     if len(nameval) == 2:
                         out = ("{0} = self.{0}"
@@ -120,7 +107,7 @@ def parse_variables(string):
                     if labelstart < len(line):
                         while line[labelstart] == " ":
                             labelstart += 1
-                        label = line[labelstart:]
+                        label = line[labelstart:].replace("'", "\\'")
                         nameval = line[:unitstart].split()
                         if len(nameval) == 2:
                             out = ("{0} = self.{0} = VectorVariable({4},"

@@ -5,36 +5,36 @@ Cost
 
 Free Variables
 --------------
-         | Aircraft
-       W : 290                                         [lbf] weight
+      | Aircraft
+    W : 290                                         [lbf] weight
 
-         | Aircraft/Wing
-       W : 190                                         [lbf] weight
-       c : 2.653                                       [ft]  mean chord
+      | Aircraft/Wing
+    W : 190                                         [lbf] weight
+    c : 2.653                                       [ft]  mean chord
 
-         | Mission/FlightSegment/AircraftP
-W_{burn} : [ 0.487     0.486     0.485     0.485    ]  [lbf] segment fuel burn
-W_{fuel} : [ 1.94      1.46      0.97      0.485    ]  [lbf] fuel weight
+      | Mission/FlightSegment/AircraftP
+Wburn : [ 0.487     0.486     0.485     0.485    ]  [lbf] segment fuel burn
+Wfuel : [ 1.94      1.46      0.97      0.485    ]  [lbf] fuel weight
 
-         | Mission/FlightSegment/AircraftP/WingAero
-       D : [ 4.87      4.86      4.85      4.85     ]  [lbf] drag force
+      | Mission/FlightSegment/AircraftP/WingAero
+    D : [ 4.87      4.86      4.85      4.85     ]  [lbf] drag force
 
 Sensitivities
 -------------
-     | Aircraft/Fuselage
-   W : +0.25            weight
+    | Aircraft/Fuselage
+  W : +0.25            weight
 
-     | Aircraft/Wing
-   S : +0.68            surface area
-\rho : +0.48            areal density
-   A : -0.31            aspect ratio
+    | Aircraft/Wing
+  S : +0.68            surface area
+rho : +0.48            areal density
+  A : -0.31            aspect ratio
 
 Next Largest Sensitivities
 --------------------------
-     | Mission/FlightSegment/AircraftP/WingAero
-   e : [ -0.093    -0.092    -0.092    -0.092   ] Oswald efficiency
+    | Mission/FlightSegment/AircraftP/WingAero
+  e : [ -0.093    -0.092    -0.092    -0.092   ] Oswald efficiency
 
-     | Mission/FlightSegment/FlightState
-   V : [ +0.1      +0.1      +0.1      +0.1     ] true airspeed
-\rho : [ +0.034    +0.034    +0.035    +0.035   ] air density
+    | Mission/FlightSegment/FlightState
+  V : [ +0.1      +0.1      +0.1      +0.1     ] true airspeed
+rho : [ +0.034    +0.034    +0.035    +0.035   ] air density
 
