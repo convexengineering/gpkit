@@ -395,6 +395,9 @@ class PosynomialInequality(ScalarSingleEquationConstraint):
                     self.bounded.add((key, "upper"))
                 if e < 0:
                     self.bounded.add((key, "lower"))
+        for key in self.substitutions:
+            for bound in ("upper", "lower"):
+                self.bounded.add((key, bound))
 
     def _simplify_posy_ineq(self, hmap, pmap=None, allow_tautological=True):
         "Simplify a posy <= 1 by moving constants to the right side."
@@ -510,10 +513,15 @@ class MonomialEquality(PosynomialInequality):
         self.nomials = [self.left, self.right]
         self.nomials.extend(self.unsubbed)
         self._last_used_substitutions = {}
+        self.bounded = set()
         self.meq_bounded = {}
         if self.unsubbed and len(self.varkeys) > 1:
             exp = self.unsubbed[0].hmap.keys()[0]
             for key, e in exp.items():
+                if key in self.substitutions:
+                    for bound in ("upper", "lower"):
+                        self.bounded.add((key, bound))
+                    continue
                 s_e = np.sign(e)
                 ubs = frozenset((k, "upper" if np.sign(e) != s_e else "lower")
                                 for k, e in exp.items() if k != key)

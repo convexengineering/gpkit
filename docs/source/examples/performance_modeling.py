@@ -11,13 +11,22 @@ class AircraftP(Model):
     Wfuel  [lbf]  fuel weight
     Wburn  [lbf]  segment fuel burn
 
+    Upper Bounded by aircraft
+    -------------------------
+    c, A
+
+    Lower Bounded by aircraft
+    -------------------------
+    W
+
     Upper Unbounded
-    ---------------  # c will be bounded by Aircraft
-    Wburn, c
+    ---------------
+    Wburn
 
     Lower Unbounded
-    ---------------  # W will be bounded by Aircraft
-    Wfuel, W
+    ---------------
+    Wfuel
+
     """
     def setup(self, aircraft, state):
         exec parse_variables(AircraftP.__doc__)
@@ -27,6 +36,7 @@ class AircraftP(Model):
 
         W = self.W = aircraft.W
         self.c = aircraft.wing.c
+        self.A = aircraft.wing.A
         S = aircraft.wing.S
 
         V = state.V
@@ -49,12 +59,18 @@ class Aircraft(Model):
     Upper Unbounded
     ---------------
     W
+
+    Lower Unbounded
+    ---------------
+    c, S
     """
     def setup(self):
         exec parse_variables(Aircraft.__doc__)
         self.fuse = Fuselage()
         self.wing = Wing()
         self.components = [self.fuse, self.wing]
+        self.c = self.wing.c
+        self.S = self.wing.S
 
         return self.components, W >= sum(c.W for c in self.components)
 
@@ -78,21 +94,28 @@ class FlightState(Model):
 class FlightSegment(Model):
     """Combines a context (flight state) and a component (the aircraft)
 
+    Upper Bounded by aircraft
+    -------------------------
+    c, A
+
+    Lower Bounded by aircraft
+    -------------------------
+    W
+
     Upper Unbounded
-    ---------------  # c will be bounded by Aircraft
-    c, Wburn
+    ---------------
+    Wburn
 
     Lower Unbounded
-    ---------------  # W will be bounded by Aircraft
-    W, Wfuel
+    ---------------
+    Wfuel
 
     """
     def setup(self, aircraft):
         self.flightstate = FlightState()
         self.aircraftp = aircraft.dynamic(aircraft, self.flightstate)
 
-        self.c = aircraft.wing.c
-        self.W = aircraft.W
+        self.aircraft = aircraft
         self.Wburn = self.aircraftp.Wburn
         self.Wfuel = self.aircraftp.Wfuel
 
@@ -102,20 +125,19 @@ class FlightSegment(Model):
 class Mission(Model):
     """A sequence of flight segments
 
-    Upper Unbounded
-    ---------------  # c will be bounded by Aircraft
-    c
+    Upper Bounded by aircraft
+    -------------------------
+    c, A
 
-    Lower Unbounded
-    ---------------  # W will be bounded by Aircraft
+    Lower Bounded by aircraft
+    -------------------------
     W
     """
     def setup(self, aircraft):
         with Vectorize(4):  # four flight segments
             self.fs = FlightSegment(aircraft)
 
-        self.W = aircraft.W
-        self.c = aircraft.wing.c
+        self.aircraft = aircraft
 
         Wburn = self.fs.aircraftp.Wburn
         Wfuel = self.fs.aircraftp.Wfuel
@@ -136,23 +158,31 @@ class WingAero(Model):
     Re      [-]    Reynold's number
     D       [lbf]  drag force
 
+    Upper Bounded by wing
+    ---------------------
+    A, c
 
     Upper Unbounded
-    ---------------  # c will be bounded by Aircraft
-    D, c
+    ---------------
+    D
 
     Lower Unbounded
     ---------------
-    CL
+    CL, S
     """
     def setup(self, wing, state):
         exec parse_variables(WingAero.__doc__)
-        self.c = wing.c
-
+        self.wing = wing
+        c = wing.c
+        A = wing.A
+        S = self.S = wing.S
+        rho = state.rho
+        V = state.V
+        mu = state.mu
         return [
-            CD >= (0.074/Re**0.2 + CL**2/np.pi/wing.A/e),
-            Re == state.rho*state.V*wing.c/state.mu,
-            D >= 0.5*state.rho*state.V**2*CD*wing.S]
+            CD >= 0.074/Re**0.2 + CL**2/np.pi/A/e,
+            Re == rho*V*c/mu,
+            D >= 0.5*rho*V**2*CD*S]
 
 
 class Wing(Model):
@@ -161,7 +191,7 @@ class Wing(Model):
     Variables
     ---------
     W        [lbf]       weight
-    S    190 [ft^2]      surface area
+    S        [ft^2]      surface area
     rho    1 [lbf/ft^2]  areal density
     A     27 [-]         aspect ratio
     c        [ft]        mean chord
@@ -169,6 +199,10 @@ class Wing(Model):
     Upper Unbounded
     ---------------
     W
+
+    Lower Unbounded
+    ---------------
+    c, S
     """
     def setup(self):
         exec parse_variables(Wing.__doc__)

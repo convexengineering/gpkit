@@ -17,7 +17,7 @@ class NomialData(object):
     units: pint.UnitsContainer
     """
     # pylint: disable=too-many-instance-attributes
-    _hashvalue = _varlocs = _exps = _cs = _varkeys = _values = None
+    _hashvalue = _varlocs = _exps = _cs = _varkeys = None
 
     def _reset(self):
         for attr in "hashvalue varlocs exps cs varkeys values".split():
@@ -74,12 +74,10 @@ class NomialData(object):
         return self._varkeys
 
     @property
-    def values(self):
+    def values(self):  # TODO: if it's none presume it stays that way?
         "The NomialData's values, created when necessary."
-        if self._values is None:
-            self._values = KeyDict({k: k.descr["value"] for k in self.vks
-                                    if "value" in k.descr})
-        return self._values
+        return KeyDict({k: k.descr["value"] for k in self.vks
+                        if "value" in k.descr})
 
     def diff(self, var):
         """Derivative of this with respect to a Variable
