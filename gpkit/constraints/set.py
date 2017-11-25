@@ -8,6 +8,24 @@ from ..small_scripts import try_str_without
 from ..repr_conventions import _str, _repr, _repr_latex_
 
 
+def add_meq_bounds(bounded, meq_bounded):
+    "Iterates through meq_bounds until convergence"
+    still_alive = True
+    while still_alive:
+        still_alive = False  # if no changes are made, the loop exits
+        for bound, conditions in meq_bounded.items():
+            if bound in bounded:
+                del meq_bounded[bound]
+                continue
+            meq_bounded[bound] = set(conditions)
+            for condition in conditions:
+                if condition.issubset(bounded):
+                    del meq_bounded[bound]
+                    bounded.add(bound)
+                    still_alive = True
+                    break
+
+
 def _sort_by_name_and_idx(var):
     "return tuplef for Variable sorting"
     return (var.key.str_without(["units", "idx"]), var.key.idx)
@@ -51,14 +69,20 @@ class ConstraintSet(list):
             if hasattr(self[i], "meq_bounded"):
                 for bound, solutionset in self[i].meq_bounded.items():
                     self.meq_bounded[bound].update(solutionset)
-        for key, value in self.meq_bounded.items():
-            self.meq_bounded[key] = frozenset(value)
         self.reset_varkeys()
         self.substitutions.update({k: k.descr["value"]
                                    for k in self.unique_varkeys
                                    if "value" in k.descr})
         if substitutions:
             self.substitutions.update(substitutions)
+        for key in self.substitutions:
+            key.descr.pop("value", None)
+        for key in self.varkeys:
+            if key in self.substitutions:
+                for direction in ("upper", "lower"):
+                    self.bounded.add((key, direction))
+        if self.meq_bounded:
+            add_meq_bounds(self.bounded, self.meq_bounded)
 
     def __getitem__(self, key):
         if isinstance(key, int):

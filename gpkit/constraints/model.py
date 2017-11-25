@@ -10,24 +10,7 @@ from ..tools.autosweep import autosweep_1d
 from ..exceptions import InvalidGPConstraint
 from .. import NamedVariables
 from ..tools.docstring import expected_unbounded
-
-
-def add_meq_bounds(bounded, meq_bounded):
-    "Iterates through meq_bounds until convergence"
-    still_alive = True
-    while still_alive:
-        still_alive = False  # if no changes are made, the loop exits
-        for bound, conditions in meq_bounded.items():
-            if bound in bounded:
-                del meq_bounded[bound]
-                continue
-            meq_bounded[bound] = set(conditions)
-            for condition in conditions:
-                if condition.issubset(bounded):
-                    del meq_bounded[bound]
-                    bounded.add(bound)
-                    still_alive = True
-                    break
+from .set import add_meq_bounds
 
 
 class Model(CostedConstraintSet):
@@ -112,10 +95,26 @@ class Model(CostedConstraintSet):
         "Verifies docstring bounds are sufficient but not excessive."
         err = "while verifying %s:\n" % self.__class__.__name__
         bounded, meq_bounded = self.bounded.copy(), self.meq_bounded.copy()
-        for key in self.varkeys:  # add substitutions to bounded
-            if key in self.substitutions:
-                for bound in ("upper", "lower"):
-                    bounded.add((key, bound))
+        flag = "Bounded by"
+        doc = self.__class__.__doc__
+        count = doc.count(flag)
+        if count:
+            idx = doc.index(flag) + len(flag)
+        for i in range(count):
+            idx2 = doc[idx:].index("\n")
+            attr = doc[idx+1:idx+idx2]
+            subinst = getattr(self, attr)
+            idx3 = doc[idx:][idx2+1:].index("\n")
+            idx4 = doc[idx:][idx2+1:][idx3+1:].index("\n")
+            varstrs = doc[idx:][idx2+1:][idx3+1:][:idx4].strip()
+            variables = set(varstrs.split(", "))
+            for (key, direction) in subinst.bounded:
+                # TODO: error when the right bound is not found!
+                if key.name in varstrs:  # TODO: check attributes
+                    bounded.add((key, direction))
+            if i != count-1:
+                idx = idx + idx2 + idx3 + idx4 + 4
+                idx += doc[idx:].index(flag) + len(flag)
         add_meq_bounds(bounded, meq_bounded)  # add meqs to bounded
         # now we'll check the docstring
         exp_unbounds = expected_unbounded(self, self.__class__.__doc__)
@@ -151,6 +150,7 @@ class Model(CostedConstraintSet):
                         if (key, bound) not in self.missingbounds:
                             self.missingbounds[(key, bound)] = ""
         if self.missingbounds:  # anything unbounded? err!
+            print self.substitutions
             boundstrs = "\n".join("  %s has no %s bound%s" % (v, b, x)
                                   for (v, b), x
                                   in self.missingbounds.items())

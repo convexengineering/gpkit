@@ -384,8 +384,6 @@ class PosynomialInequality(ScalarSingleEquationConstraint):
         self.p_lt, self.m_gt = p_lt, m_gt
         self.substitutions = dict(p_lt.values)
         self.substitutions.update(m_gt.values)
-        for key in self.substitutions:
-            key.descr.pop("value", None)
         self.unsubbed = self._gen_unsubbed(p_lt, m_gt)
         self.nomials = [self.left, self.right, self.p_lt, self.m_gt]
         self.nomials.extend(self.unsubbed)
@@ -397,6 +395,9 @@ class PosynomialInequality(ScalarSingleEquationConstraint):
                     self.bounded.add((key, "upper"))
                 if e < 0:
                     self.bounded.add((key, "lower"))
+        for key in self.substitutions:
+            for bound in ("upper", "lower"):
+                self.bounded.add((key, bound))
 
     def _simplify_posy_ineq(self, hmap, pmap=None, allow_tautological=True):
         "Simplify a posy <= 1 by moving constants to the right side."
@@ -508,16 +509,19 @@ class MonomialEquality(PosynomialInequality):
                              " MonomialEquality." % self.oper)
         self.substitutions = dict(self.left.values)
         self.substitutions.update(self.right.values)
-        for key in self.substitutions:
-            key.descr.pop("value", None)
         self.unsubbed = self._gen_unsubbed(self.left, self.right)
         self.nomials = [self.left, self.right]
         self.nomials.extend(self.unsubbed)
         self._last_used_substitutions = {}
+        self.bounded = set()
         self.meq_bounded = {}
         if self.unsubbed and len(self.varkeys) > 1:
             exp = self.unsubbed[0].hmap.keys()[0]
             for key, e in exp.items():
+                if key in self.substitutions:
+                    for bound in ("upper", "lower"):
+                        self.bounded.add((key, bound))
+                    continue
                 s_e = np.sign(e)
                 ubs = frozenset((k, "upper" if np.sign(e) != s_e else "lower")
                                 for k, e in exp.items() if k != key)
@@ -587,8 +591,6 @@ class SignomialInequality(ScalarSingleEquationConstraint):
         self.nomials.extend(self.unsubbed)
         self.substitutions = dict(self.left.values)
         self.substitutions.update(self.right.values)
-        for key in self.substitutions:
-            key.descr.pop("value", None)
 
     def as_posyslt1(self, substitutions=None):
         "Returns the posys <= 1 representation of this constraint."
