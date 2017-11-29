@@ -34,11 +34,11 @@ def add_filetest(testclass, path):
             if dirname:
                 os.chdir(os.path.dirname(path))
             mod = __import__(os.path.basename(path)[:-3])
+            if not hasattr(mod, "test"):
+                self.fail("file '%s' had no `test` function." % path)
+            mod.test()
         finally:
             os.chdir(top_level)
-        if not hasattr(mod, "test"):
-            self.fail("file '%s' had no `test` function." % path)
-        mod.test()
 
     setattr(testclass, "test_"+clean(path), test_fn)
 
