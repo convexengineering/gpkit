@@ -248,11 +248,14 @@ class ConstraintSet(list):
         """
         var_senss = HashVector()
         offset = 0
+        self.lasum = 0
         for i, constr in enumerate(self):
             n_posys = self.posymap[i]
             la = las[offset:offset+n_posys]
             nu = nus[offset:offset+n_posys]
             v_ss = constr.sens_from_dual(la, nu)
+            constr.v_ss = v_ss
+            self.lasum += constr.lasum
             # not using HashVector addition because we want to preseve zeros
             for key, value in v_ss.items():
                 var_senss[key] = value + var_senss.get(key, 0)

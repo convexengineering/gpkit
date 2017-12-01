@@ -463,9 +463,11 @@ class PosynomialInequality(ScalarSingleEquationConstraint):
 
     def sens_from_dual(self, la, nu):
         "Returns the variable/constraint sensitivities from lambda/nu"
+        self.lasum = 0
         if not la or not nu:
             return {}  # as_posyslt1 created no inequalities
         la, = la
+        self.lasum = la
         nu, = nu
         presub, = self.unsubbed
         if hasattr(self, "pmap"):
@@ -479,7 +481,7 @@ class PosynomialInequality(ScalarSingleEquationConstraint):
                     nu_[idx] += percentage * la*scale
             nu = nu_
         var_senss = {}  # Constant sensitivities
-        for var in self._last_used_substitutions:
+        for var in self.varkeys:
             locs = presub.varlocs[var]
             var_senss[var] = sum([presub.exps[i][var]*nu[i] for i in locs])
         return var_senss
@@ -530,10 +532,11 @@ class MonomialEquality(PosynomialInequality):
 
     def sens_from_dual(self, la, nu):
         "Returns the variable/constraint sensitivities from lambda/nu"
+        self.lasum = 0  # don't count equality sensitivities
         if not la or not nu:
             return {}  # as_posyslt1 created no inequalities
         var_senss = HashVector()
-        for var in self._last_used_substitutions:
+        for var in self.varkeys:
             for i, m in enumerate(self.unsubbed):
                 if var in m.varlocs:
                     nu_, = nu[i]
