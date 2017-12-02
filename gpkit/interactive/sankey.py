@@ -5,8 +5,8 @@ from gpkit import GPCOLORS
 
 
 def getcolor(value):
-    if abs(value) < 1e-10:
-        return "black"
+    if abs(value) < 1e-7:
+        return "#cfcfcf"
     return GPCOLORS[1 if value > 0 else 0]
 
 
@@ -19,17 +19,18 @@ class Sankey(object):
 
     def constrlinks(self, constrset, target=None):
         if target is None:  # set final target
-            target = "/".join("%s.%i" % (m, n) if n else m
-                              for m, n in [zip(*constrset.naming)[-1]])
+            target = constrset.name or "[Model]"
+            if constrset.num:
+                target += ".%i" % constrset.num
         for constr in constrset:
             if isinstance(constr, ConstraintSet):
                 if isinstance(constr, Model):
-                    value = constr.lasum
-                    source = "/".join("%s.%i" % (m, n) if n else m
-                                      for m, n in [zip(*constr.naming)[-1]])
+                    value = -constr.lasum  # negative to get blue color
+                    source = constr.name
+                    source += ".%i" % constr.num if constr.num else ""
                     self.links.append({"target": target, "source": source,
                                        "value": abs(value),
-                                       "color": GPCOLORS[0]})
+                                       "color": getcolor(value)})
                     self.constrlinks(constr, source)
                 else:
                     self.constrlinks(constr, target)
@@ -37,8 +38,9 @@ class Sankey(object):
     def varlinks(self, constrset, target=None, printing=True):
         if target is None:  # set final target as the variable itself
             value = constrset.v_ss[self.var.key] or 1e-30  # if it's zero
-            target = "/".join("%s.%i" % (m, n) if n else m
-                              for m, n in [zip(*constrset.naming)[-1]])
+            target = constrset.name or "[Model]"
+            if constrset.num:
+                target += ".%i" % constrset.num
             source = (self.var.key.str_without(["models"])
                       + self.var.key.unitstr(into=" [%s]", dimless=" [-]"))
             self.counter = Count()
@@ -58,11 +60,11 @@ class Sankey(object):
             if self.var.key not in constr.v_ss:
                 continue
             value = constr.v_ss[self.var.key] or 1e-30
-            # TODO: add filter-by-abs argument
+            # TODO: add filter-by-abs argument?
             if isinstance(constr, ConstraintSet):
                 if isinstance(constr, Model):
-                    source = "/".join("%s.%i" % (m, n) if n else m
-                                      for m, n in [zip(*constr.naming)[-1]])
+                    source = constr.name
+                    source += ".%i" % constr.num if constr.num else ""
                     self.links.append({"target": target, "source": source,
                                        "value": abs(value),
                                        "color": getcolor(value)})
@@ -105,8 +107,8 @@ class Sankey(object):
             if any(l["value"] > minflow for l in s.links):
                 linkcount[key] = (s.counter.next(), s)
             s.links = []
-        return [v[1] for k, v in sorted(linkcount.items(),
-                                        key=lambda t: t[1][0], reverse=True)]
+        return [v[1] for k, v in
+                sorted(linkcount.items(), key=lambda t: t[1][0], reverse=True)]
 
     @classmethod
     def of_highest_flow_vars(cls, model, minflow=0.01):
@@ -118,5 +120,5 @@ class Sankey(object):
             if maxflow > minflow:
                 linkcount[key] = (maxflow, s)
             s.links = []
-        return [v[1] for k, v in sorted(linkcount.items(),
-                                        key=lambda t: t[1][0], reverse=True)]
+        return [v[1] for k, v in
+                sorted(linkcount.items(), key=lambda t: t[1][0], reverse=True)]

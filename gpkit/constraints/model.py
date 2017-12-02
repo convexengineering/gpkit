@@ -64,7 +64,7 @@ class Model(CostedConstraintSet):
                     constraints = cs
                 from .. import NAMEDVARS, MODELS, MODELNUMS
                 setup_vars = NAMEDVARS[tuple(MODELS), tuple(MODELNUMS)]
-                self.name, self.num = MODELS[:-1], MODELNUMS[:-1]
+                self.name, self.num = MODELS[-1], MODELNUMS[-1]
                 self.naming = (tuple(MODELS), tuple(MODELNUMS))
             cost = self.cost
         else:
