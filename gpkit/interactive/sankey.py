@@ -1,7 +1,8 @@
 from ipysankeywidget import SankeyWidget
 from gpkit import ConstraintSet, Model
+from gpkit.nomials.math import MonomialEquality
 from gpkit.small_classes import Count
-from gpkit import GPCOLORS
+from gpkit import GPCOLORS, Variable
 
 
 def getcolor(value):
@@ -11,11 +12,13 @@ def getcolor(value):
 
 
 class Sankey(object):
-    def __init__(self, model, var=None):
+    def __init__(self, model):
         self.links = []
         self.counter = None
         self.model = model
-        self.var = var
+        self.constr_name = {}
+        self.nodes = []
+        self.var_eqs = set()
 
     def constrlinks(self, constrset, target=None):
         if target is None:  # set final target
@@ -35,31 +38,33 @@ class Sankey(object):
                 else:
                     self.constrlinks(constr, target)
 
-    def varlinks(self, constrset, target=None, printing=True):
+    def varlinks(self, constrset, vk, target=None, printing=True, addvarlink=True):
         if target is None:  # set final target as the variable itself
-            value = constrset.v_ss[self.var.key] or 1e-30  # if it's zero
+            value = constrset.v_ss[vk] or 1e-30  # if it's zero
             target = constrset.name or "[Model]"
             if constrset.num:
                 target += ".%i" % constrset.num
-            source = (self.var.key.str_without(["models"])
-                      + self.var.key.unitstr(into=" [%s]", dimless=" [-]"))
-            self.counter = Count()
+            source = str(vk)
+            shortname = (vk.str_without(["models"])
+                         + vk.unitstr(into=" [%s]", dimless=" [-]"))
+            self.nodes.append({"id": source,
+                               "title": shortname})
             self.links.append({"target": source, "source": target,
                                "value": abs(value), "color": getcolor(value)})
-            if self.var.key in self.model.solution["sensitivities"]["cost"]:
+            if vk in self.model.solution["sensitivities"]["cost"]:
                 cost_senss = self.model.solution["sensitivities"]["cost"]
-                value = cost_senss[self.var.key]
-                self.links.append({"target": source, "source": "(objective)",
+                value = cost_senss[vk]
+                self.links.append({"target": "(objective)", "source": source,
                                    "value": abs(value),
                                    "color": getcolor(value)})
                 if printing:
                     print ("(objective) adds %+.3g to the overall sensitivity"
-                           " of %s" % (value, self.var.key))
+                           " of %s" % (value, vk))
                     print "(objective) is", self.model.cost, "\n"
         for constr in constrset:
-            if self.var.key not in constr.v_ss:
+            if vk not in constr.v_ss:
                 continue
-            value = constr.v_ss[self.var.key] or 1e-30
+            value = constr.v_ss[vk] or 1e-30
             # TODO: add filter-by-abs argument?
             if isinstance(constr, ConstraintSet):
                 if isinstance(constr, Model):
@@ -68,35 +73,60 @@ class Sankey(object):
                     self.links.append({"target": target, "source": source,
                                        "value": abs(value),
                                        "color": getcolor(value)})
-                    self.varlinks(constr, source, printing)
+                    self.varlinks(constr, vk, source, printing)
                 else:
-                    self.varlinks(constr, target, printing)
+                    self.varlinks(constr, vk, target, printing)
             else:
-                source = "(%s)" % ("abcdefgijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQ"
-                                   "RSTUVWXYZ"[self.counter.next()])
+                flowvalue = abs(value)
+                flowcolor = getcolor(value)
+                if (isinstance(constr, MonomialEquality)
+                        and constr.left.hmap.keys()[0].values() == [1]
+                        and constr.right.hmap.keys()[0].values() == [1]):
+                    leftkey = constr.left.hmap.keys()[0].keys()[0]
+                    if vk != leftkey:
+                        vk2 = leftkey
+                    else:
+                        vk2 = constr.right.hmap.keys()[0].keys()[0]
+                    if vk2 in self.var_eqs:
+                        continue
+                    self.var_eqs.update([vk2, vk])
+                    self.varlinks(self.model, vk2, printing=printing)
+                    flowvalue = 1e-30  # since it's just pass-through
+                    flowcolor = "black"  # to highlight it
+                if constr not in self.constr_name:
+                    source = "(%s)" % ("abcdefgijklmnopqrstuvwxyzABCDEFGHIJKLM"
+                                       "NOPQRSTUVWXYZ"[self.counter.next()])
+                    self.constr_name[constr] = source
+                else:
+                    source = self.constr_name[constr]
                 self.links.append({"target": target, "source": source,
-                                   "value": abs(value),
-                                   "color": getcolor(value)})
+                                   "value": flowvalue,
+                                   "color": flowcolor})
                 if printing:
                     print ("%s adds %+.3g to the overall sensitivity of %s"
-                           % (source, value, self.var.key))
+                           % (source, value, vk))
                     print source, "is", constr.str_without("units"), "\n"
 
-    def widget(self, flowright=False, width=900, height=400, **kwargs):
-        margins = dict(top=0, bottom=0, left=100, right=25)
-        margins.update(kwargs)
-        if self.var:
-            self.varlinks(self.model)
-        else:
+    def diagram(self, variables=None, flowright=False, width=900, height=400,
+                top=0, bottom=0, left=100, right=25):
+        self.counter = Count()
+        self.links = []
+        if not variables:
             self.constrlinks(self.model)
+        else:
+            if not hasattr(variables, "__len__"):
+                variables = [variables]
+            for var in variables:
+                self.varlinks(self.model, var.key)
         if flowright:
             r, l = margins["right"], margins["left"]
             margins["left"], margins["right"] = r, l
         else:
             for link in self.links:
                 link["source"], link["target"] = link["target"], link["source"]
-        return SankeyWidget(links=self.links, margins=margins,
-                            width=width, height=height)
+        margins = dict(top=top, bottom=bottom, left=left, right=right)
+        return SankeyWidget(nodes=self.nodes, links=self.links,
+                            margins=margins, width=width, height=height)
 
     @classmethod
     def of_vars_in_most_constraints(cls, model, minflow=0.01):
