@@ -292,11 +292,11 @@ class GeometricProgram(CostedConstraintSet, NomialData):
         result["sensitivities"] = {"nu": nu, "la": la}
         var_senss = self.sens_from_dual(la[1:].tolist(), self.nu_by_posy[1:])
         # add cost's sensitivity in
-        var_senss += {var: sum([self.cost.exps[i][var]*nu[i] for i in locs])
-                      for (var, locs) in self.cost.varlocs.items()
-                      if (var in self.cost.vks
-                          and var not in self.posynomials[0].vks)}
+        cost_senss = {var: sum([self.cost.exps[i][var]*nu[i] for i in locs])
+                      for (var, locs) in self.cost.varlocs.items()}
+        var_senss += cost_senss
 
+        result["sensitivities"]["cost"] = cost_senss
         result["sensitivities"]["constants"] = KeyDict(var_senss)
         result["constants"] = KeyDict(self.substitutions)
         result["variables"] = KeyDict(result["freevariables"])
