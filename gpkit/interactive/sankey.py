@@ -54,7 +54,7 @@ class Sankey(object):
             if vk in self.model.solution["sensitivities"]["cost"]:
                 cost_senss = self.model.solution["sensitivities"]["cost"]
                 value = cost_senss[vk]
-                self.links.append({"target": "(objective)", "source": source,
+                self.links.append({"target": source, "source": "(objective)",
                                    "value": abs(value),
                                    "color": getcolor(value)})
                 if printing:
