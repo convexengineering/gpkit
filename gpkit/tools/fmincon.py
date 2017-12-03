@@ -3,6 +3,9 @@ from math import log10, floor, log
 from .. import SignomialsEnabled
 from ..keydict import KeyDict
 from ..small_scripts import mag
+from ..nomials.variables import Variable
+from ..constraints.geometric_program import GeometricProgram
+import numpy as np
 # pylint: disable=too-many-statements,too-many-locals,too-many-branches
 
 def generate_mfiles(model, logspace=False, algorithm='interior-point',
@@ -78,8 +81,13 @@ def generate_mfiles(model, logspace=False, algorithm='interior-point',
 
     if logspace:
         for constraint in constraints:
-            expdicttuple = constraint.as_posyslt1()[0].exps
-            clist = mag(constraint.as_posyslt1()[0].cs)
+            if isinstance(constraint.right.value, np.float64):
+                if float(constraint.right.value) == 1.0:
+                    expdicttuple = constraint.left.exps
+                    clist = mag(constraint.left.cs)
+            else:
+                expdicttuple = constraint.as_posyslt1()[0].exps
+                clist = mag(constraint.as_posyslt1()[0].cs)
 
             constraintstring = ['log(']
             for expdict, C in zip(expdicttuple, clist):
@@ -89,10 +97,12 @@ def generate_mfiles(model, logspace=False, algorithm='interior-point',
                 constraintstring += [')']
             constraintstring += [')']
 
+            joinedconstraintstring = ' '.join(constraintstring)
+
             if constraint.oper == '=':
-                ceq += [' '.join(constraintstring)]
+                ceq += [joinedconstraintstring]
             else:
-                c += [' '.join(constraintstring)]
+                c += [joinedconstraintstring]
     else:
         with SignomialsEnabled():
             for constraint in constraints:
@@ -118,19 +128,26 @@ def generate_mfiles(model, logspace=False, algorithm='interior-point',
                 else:
                     dceq += [",...\n            ".join(cdm)]
 
+    if not logspace:
+        xpositiveconstraint = "    -x'\n"
+        xpositivesens = ";...\n          ones(size(x))"
+    else:
+        xpositiveconstraint = ''
+        xpositivesens = ''
+
     # String for the constraint function .m file
     confunstr = ("function [c, ceq, DC, DCeq] = confun(x)\n" +
                  "% Nonlinear inequality constraints\n" +
                  "c = [\n    " +
                  "\n    ".join(c).replace('**', '.^') +
-                 "\n    ];\n\n" +
+                 "\n{0}    ];\n\n".format(xpositiveconstraint) +
                  "ceq = [\n      " +
                  "\n      ".join(ceq).replace('**', '.^') +
                  "\n      ];\n" +
                  "if nargout > 2\n    " +
                  "DC = [\n          " +
                  ";\n          ".join(dc) +
-                 "\n         ]';\n    " +
+                 "{0}\n         ]';\n    ".format(xpositivesens) +
                  "DCeq = [\n            " +
                  ";\n            ".join(dceq) +
                  "\n           ]';\n" +
@@ -220,10 +237,11 @@ def generate_mfiles(model, logspace=False, algorithm='interior-point',
 
 def make_initial_guess(model, newlist, guess='ones', logspace=False):
     """Returns initial guess"""
-    try:
-        sol = model.solve(verbosity=0)
-    except TypeError:
-        sol = model.localsolve(verbosity=0)
+    if not isinstance(guess, list) and not isinstance(guess, KeyDict):
+        try:
+            sol = model.solve(verbosity=0)
+        except:
+            sol = model.localsolve(verbosity=0)
 
     if guess == "ones":
         nvars = len(sol['freevariables'])
@@ -235,15 +253,19 @@ def make_initial_guess(model, newlist, guess='ones', logspace=False):
         x0string = ["x0 = ["]
         i = 1
         for vk in newlist:
-            xf = mag(sol['freevariables'][vk])
             if guess == "almost-exact-solution":
+                xf = mag(sol['freevariables'][vk])
                 x0 = round(xf, -int(floor(log10(abs(xf))))) # rounds to 1sf
             elif guess == "order-of-magnitude-floor":
+                xf = mag(sol['freevariables'][vk])
                 x0 = 10**floor(log10(xf))
             elif guess == "order-of-magnitude-round":
+                xf = mag(sol['freevariables'][vk])
                 x0 = 10**round(log10(xf))
             elif isinstance(guess, list):
                 x0 = guess[i-1]
+            elif isinstance(guess, KeyDict):
+                x0 = guess[vk]
             else:
                 raise Exception("Unexpected guess type")
 
