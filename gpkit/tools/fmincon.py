@@ -129,8 +129,8 @@ def generate_mfiles(model, logspace=False, algorithm='interior-point',
                     dceq += [",...\n            ".join(cdm)]
 
     if not logspace:
-        xpositiveconstraint = "    -x'\n"
-        xpositivesens = ";...\n          ones(size(x))"
+        xpositiveconstraint = "    -x\n"
+        xpositivesens = ";...\n          -eye(numel(x))"
     else:
         xpositiveconstraint = ''
         xpositivesens = ''
@@ -273,6 +273,6 @@ def make_initial_guess(model, newlist, guess='ones', logspace=False):
                 x0 = log(x0)
             x0string += [str(x0) + ", "]
             i += 1
-        x0string += ["];\n"]
+        x0string += ["]';\n"]
 
     return "".join(x0string)
