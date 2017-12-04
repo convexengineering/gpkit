@@ -192,9 +192,15 @@ def generate_mfiles(model, logspace=False, algorithm='interior-point',
     if logspace:
         fval = "exp(fval)"
         solval = "exp(x(i))"
+        logsolution = ("\nfid = fopen('logsolution.txt', 'w');\n" +
+                       "for i = 1:numel(x)\n" +
+                       "    fprintf(fid, '%.3g\\n', x(i));\nend\n" +
+                       "fclose(fid);")
     else:
         fval = "fval"
         solval = "x(i)"
+        logsolution = ""
+
     mainfunstr = (x0string +
                   "options = optimset('fmincon');\n" +
                   "options.Algorithm = '{0}';\n".format(algorithm) +
@@ -219,7 +225,7 @@ def generate_mfiles(model, logspace=False, algorithm='interior-point',
                   "fid = fopen('solution.txt', 'w');\n" +
 		  "for i = 1:numel(x)\n" +
                   "    fprintf(fid, '%.3g\\n', {0});\nend\n".format(solval) +
-                  "fclose(fid);")
+                  "fclose(fid);" + logsolution)
 
     if writefiles:
         # Write the constraint function .m file
