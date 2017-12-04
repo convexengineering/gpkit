@@ -57,7 +57,6 @@ def append_sub(sub, keys, constants, sweep, linkedsweep):
                 idx = (slice(None),)+key.descr["idx"]
                 value = sub[idx]
             else:
-                print type(sub), sub, sub.shape, hasattr(sub, "shape"), hasattr(sub, "__len__"), key, key.shape
                 raise ValueError("cannot substitute array of shape %s for"
                                  " variable %s of shape %s." %
                                  (sub.shape, key.str_without("model"),
