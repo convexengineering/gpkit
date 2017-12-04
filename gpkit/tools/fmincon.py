@@ -213,6 +213,9 @@ def generate_mfiles(model, logspace=False, algorithm='interior-point',
                   "fid = fopen('cost.txt', 'w');\n" +
                   "fprintf(fid, '%.5g', {0});\n".format(fval) +
                   "if exitflag == -2\n\tfprintf(fid, '(i)');\nend\n" +
+                  "fclose(fid);\n" +
+                  "fid = fopen('solution.txt', 'w');\n" +
+		  "for i = 1:numel(x)\n    fprintf(fid, '%.3g\\n', x(i));\nend\n" +
                   "fclose(fid);")
 
     if writefiles:
