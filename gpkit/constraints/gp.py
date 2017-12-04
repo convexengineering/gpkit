@@ -291,7 +291,7 @@ class GeometricProgram(CostedConstraintSet, NomialData):
         # get sensitivities #
         result["sensitivities"] = {"nu": nu, "la": la}
         var_senss = self.sens_from_dual(la[1:].tolist(), self.nu_by_posy[1:])
-        # add cost's sensitivity in
+        # add cost's sensitivity in (nu could be self.nu_by_posy[0])
         cost_senss = {var: sum([self.cost.exps[i][var]*nu[i] for i in locs])
                       for (var, locs) in self.cost.varlocs.items()}
         var_senss += cost_senss
