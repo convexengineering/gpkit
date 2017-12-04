@@ -35,7 +35,7 @@ def append_sub(sub, keys, constants, sweep, linkedsweep):
     if sweepsub:
         _, sub = sub  # _ catches the "sweep" marker
     for key in keys:
-        if not key.shape or not isinstance(sub, Iterable):
+        if not key.shape or not getattr(sub, "shape", hasattr(sub, "__len__")):
             value = sub
         else:
             sub = np.array(sub) if not hasattr(sub, "shape") else sub
@@ -57,6 +57,7 @@ def append_sub(sub, keys, constants, sweep, linkedsweep):
                 idx = (slice(None),)+key.descr["idx"]
                 value = sub[idx]
             else:
+                print type(sub), sub, sub.shape, hasattr(sub, "shape"), hasattr(sub, "__len__"), key, key.shape
                 raise ValueError("cannot substitute array of shape %s for"
                                  " variable %s of shape %s." %
                                  (sub.shape, key.str_without("model"),
