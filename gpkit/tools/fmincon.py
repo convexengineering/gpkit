@@ -223,9 +223,11 @@ def generate_mfiles(model, logspace=False, algorithm='interior-point',
                   "if exitflag == -2\n\tfprintf(fid, '(i)');\nend\n" +
                   "fclose(fid);\n" +
                   "fid = fopen('solution.txt', 'w');\n" +
+                  "fid2 = fopen('initialguess.txt', 'w');\n" +
 		  "for i = 1:numel(x)\n" +
-                  "    fprintf(fid, '%.3g\\n', {0});\nend\n".format(solval) +
-                  "fclose(fid);" + logsolution)
+                  "    fprintf(fid, '%.3g\\n', {0});\n".format(solval) +
+                  "    fprintf(fid2, '%.3g\\n', x0(i));\nend\n" +
+                  "fclose(fid);\nfclose(fid2);" + logsolution)
 
     if writefiles:
         # Write the constraint function .m file
