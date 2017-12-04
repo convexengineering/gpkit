@@ -1,5 +1,4 @@
 "Scripts to parse and collate substitutions"
-from collections import Iterable
 import numpy as np
 from ..small_scripts import is_sweepvar
 
