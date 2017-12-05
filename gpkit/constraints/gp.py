@@ -296,8 +296,11 @@ class GeometricProgram(CostedConstraintSet, NomialData):
                       for (var, locs) in self.cost.varlocs.items()}
         var_senss += cost_senss
 
+        const_senss = {k: v for k, v in var_senss.items()
+                       if k in self.substitutions}
         result["sensitivities"]["cost"] = cost_senss
-        result["sensitivities"]["constants"] = KeyDict(var_senss)
+        result["sensitivities"]["variables"] = KeyDict(var_senss)
+        result["sensitivities"]["constants"] = KeyDict(const_senss)
         result["constants"] = KeyDict(self.substitutions)
         result["variables"] = KeyDict(result["freevariables"])
         result["variables"].update(result["constants"])
