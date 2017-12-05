@@ -1,10 +1,29 @@
 "Implements ConstraintSet"
+from collections import defaultdict
 import numpy as np
 
 from ..small_classes import HashVector, Numbers
 from ..keydict import KeySet, KeyDict
 from ..small_scripts import try_str_without
 from ..repr_conventions import _str, _repr, _repr_latex_
+
+
+def add_meq_bounds(bounded, meq_bounded):
+    "Iterates through meq_bounds until convergence"
+    still_alive = True
+    while still_alive:
+        still_alive = False  # if no changes are made, the loop exits
+        for bound, conditions in meq_bounded.items():
+            if bound in bounded:
+                del meq_bounded[bound]
+                continue
+            meq_bounded[bound] = set(conditions)
+            for condition in conditions:
+                if condition.issubset(bounded):
+                    del meq_bounded[bound]
+                    bounded.add(bound)
+                    still_alive = True
+                    break
 
 
 def _sort_by_name_and_idx(var):
@@ -29,6 +48,8 @@ class ConstraintSet(list):
 
         # get substitutions and convert all members to ConstraintSets
         self.substitutions = KeyDict()
+        self.bounded = set()
+        self.meq_bounded = defaultdict(set)
         for i, constraint in enumerate(self):
             if not isinstance(constraint, ConstraintSet):
                 if hasattr(constraint, "__iter__"):
@@ -42,14 +63,26 @@ class ConstraintSet(list):
                         # so we can catch them later (next line)
             elif constraint.numpy_bools:
                 raise_elementhasnumpybools(constraint)
-            if hasattr(self[i], "substitutions"):
-                self.substitutions.update(self[i].substitutions)
+            for attr in ["substitutions", "bounded"]:
+                if hasattr(self[i], attr):
+                    getattr(self, attr).update(getattr(self[i], attr))
+            if hasattr(self[i], "meq_bounded"):
+                for bound, solutionset in self[i].meq_bounded.items():
+                    self.meq_bounded[bound].update(solutionset)
         self.reset_varkeys()
         self.substitutions.update({k: k.descr["value"]
                                    for k in self.unique_varkeys
                                    if "value" in k.descr})
         if substitutions:
             self.substitutions.update(substitutions)
+        for key in self.substitutions:
+            key.descr.pop("value", None)
+        for key in self.varkeys:
+            if key in self.substitutions:
+                for direction in ("upper", "lower"):
+                    self.bounded.add((key, direction))
+        if self.meq_bounded:
+            add_meq_bounds(self.bounded, self.meq_bounded)
 
     def __getitem__(self, key):
         if isinstance(key, int):

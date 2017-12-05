@@ -12,8 +12,11 @@ m.debug()
 
 print "# Now let's try a model unsolvable with relaxed constants\n"
 
+# note: have to redeclare constants or pass in substitutions dict
+x_min = Variable("x_min", 2, "ft")
 Model(x, [x <= units("inch"), x >= units("yard")]).debug()
 
 print "# And one that's only unbounded\n"
 
-Model(x/y, [x >= x_min]).debug()
+# note: have to redeclare constants or pass in substitutions dict
+Model(x/y, [x >= x_min], {x_min: 2}).debug()
