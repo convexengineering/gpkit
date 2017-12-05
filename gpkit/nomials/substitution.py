@@ -1,5 +1,4 @@
 "Scripts to parse and collate substitutions"
-from collections import Iterable
 import numpy as np
 from ..small_scripts import is_sweepvar
 
@@ -35,7 +34,7 @@ def append_sub(sub, keys, constants, sweep, linkedsweep):
     if sweepsub:
         _, sub = sub  # _ catches the "sweep" marker
     for key in keys:
-        if not key.shape or not isinstance(sub, Iterable):
+        if not key.shape or not getattr(sub, "shape", hasattr(sub, "__len__")):
             value = sub
         else:
             sub = np.array(sub) if not hasattr(sub, "shape") else sub
