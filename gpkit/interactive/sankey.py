@@ -2,6 +2,7 @@
 import string
 from ipysankeywidget import SankeyWidget
 from gpkit import ConstraintSet, Model
+from gpkit.nomials.math import MonomialEquality
 from gpkit.small_classes import Count
 from gpkit import GPCOLORS
 
@@ -105,7 +106,8 @@ class Sankey(object):
                         and len(getattr(constr.right, "hmap", [])) == 1
                         and constr.left.hmap.keys()[0].values() == [1]
                         and constr.right.hmap.keys()[0].values() == [1]
-                        and value):  # TODO: does any nonzero sensitivity work?
+                        and (abs(value) >= INSENSITIVE
+                             or isinstance(constr, MonomialEquality))):
                     leftkey = constr.left.hmap.keys()[0].keys()[0]
                     if key != leftkey:
                         key2 = leftkey
