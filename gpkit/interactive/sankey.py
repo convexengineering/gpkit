@@ -1,6 +1,6 @@
 "implements Sankey"
 import string
-from ipysankeywidget import SankeyWidget
+from ipysankeywidget import SankeyWidget  # pylint: disable=import-error
 from gpkit import ConstraintSet, Model
 from gpkit.nomials.math import MonomialEquality
 from gpkit.small_classes import Count
@@ -142,6 +142,7 @@ class Sankey(object):
                                    "value": abs(value or 1e-30),
                                    "color": flowcolor})
 
+    # pylint: disable=too-many-arguments
     def diagram(self, variables=None, flowright=False, width=900, height=400,
                 top=0, bottom=0, left=100, right=25, printing=True):
         "creates links and an ipython widget to show them"
