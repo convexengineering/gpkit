@@ -274,6 +274,8 @@ class GeometricProgram(CostedConstraintSet, NomialData):
         primal = solver_out["primal"]
         nu, la = solver_out["nu"], solver_out["la"]
         # confirm lengths before calling zip
+        if not self.varlocs and len(primal) == 1 and primal[0] == 0:
+            primal = []  # an empty result, as returned by MOSEK
         assert len(self.varlocs) == len(primal)
         result = {"freevariables": KeyDict(zip(self.varlocs, np.exp(primal)))}
         # get cost #
