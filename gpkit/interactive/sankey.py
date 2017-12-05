@@ -2,7 +2,6 @@
 import string
 from ipysankeywidget import SankeyWidget
 from gpkit import ConstraintSet, Model
-from gpkit.nomials.math import MonomialEquality
 from gpkit.small_classes import Count
 from gpkit import GPCOLORS
 
@@ -48,7 +47,7 @@ class Sankey(object):
                 else:
                     self.constrlinks(constr, target)
 
-    # pylint: disable=invalid-name
+    # pylint: disable=invalid-name, too-many-locals, too-many-branches, too-many-statements
     def varlinks(self, constrset, key, target=None, printing=True):
         "adds links of a given variable in self.model to self.links"
         if target is None:  # set final target as the variable itself
@@ -165,6 +164,7 @@ class Sankey(object):
 
     @property
     def variable_properties(self):
+        "Gets and caches properties for contained variables"
         if not self._varprops:
             varprops = {}
             var_eqs = set()
