@@ -24,7 +24,7 @@ class Sankey(object):
         self.links = []
         self.counter = None
         if isinstance(model, Model):
-            if not model.progam:
+            if model.program is None:
                 raise ValueError("Model must be solved before a Sankey"
                                  " diagram can be made.")
             if isinstance(model.program, GeometricProgram):
@@ -32,7 +32,8 @@ class Sankey(object):
             elif isinstance(model.program, SequentialGeometricProgram):
                 model = model.program.gps[-1]
         if not isinstance(model, GeometricProgram):
-            raise ValueError("could not find a GP in `model`.")
+            raise ValueError("did not find a GeometricProgram in the `model`"
+                             " argument: try passing a particular GP.")
         self.gp = model
         self.constr_name = {}
         self.nodes = []
