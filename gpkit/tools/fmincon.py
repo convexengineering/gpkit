@@ -225,7 +225,7 @@ def generate_mfiles(model, logspace=False, algorithm='interior-point',
                   "fid = fopen('solution.txt', 'w');\n" +
                   "fid2 = fopen('initialguess.txt', 'w');\n" +
 		  "for i = 1:numel(x)\n" +
-                  "    fprintf(fid, '%.3g\\n', {0});\n".format(solval) +
+                  "    fprintf(fid, '%.4g\\n', {0});\n".format(solval) +
                   "    fprintf(fid2, '%.3g\\n', x0(i));\nend\n" +
                   "fclose(fid);\nfclose(fid2);" + logsolution)
 
