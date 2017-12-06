@@ -39,7 +39,7 @@ class Sankey(object):
     def constrlinks(self, constrset, target=None):
         "adds links of a given constraint set to self.links"
         if target is None:  # set final target
-            target = getattr(constrset, "name", None) or "[GP]"
+            target = getattr(constrset, "name", None) or "Model"
             if getattr(constrset, "num", None):
                 target += ".%i" % constrset.num
         for constr in constrset:
@@ -61,7 +61,7 @@ class Sankey(object):
         "adds links of a given variable in self.gp to self.links"
         if target is None:  # set final target as the variable itself
             value = constrset.v_ss[key]  # if it's zero
-            target = getattr(constrset, "name", None) or "[GP]"
+            target = getattr(constrset, "name", None) or "Model"
             if getattr(constrset, "num", None):
                 target += ".%i" % constrset.num
             source = str(key)
@@ -160,12 +160,12 @@ class Sankey(object):
         self.counter = Count()
         self.links = []
         if not variables:
-            self.constrlinks(self.gp)
+            self.constrlinks(self.gp[0])
         else:
             if not getattr(variables, "__len__", False):
                 variables = [variables]
             for var in variables:
-                self.varlinks(self.gp, var.key, printing=printing)
+                self.varlinks(self.gp[0], var.key, printing=printing)
         if flowright:
             r, l = margins["right"], margins["left"]
             margins["left"], margins["right"] = r, l
