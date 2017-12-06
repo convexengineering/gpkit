@@ -24,6 +24,9 @@ class Sankey(object):
         self.links = []
         self.counter = None
         if isinstance(model, Model):
+            if not model.progam:
+                raise ValueError("Model must be solved before a Sankey"
+                                 " diagram can be made.")
             if isinstance(model.program, GeometricProgram):
                 model = model.program
             elif isinstance(model.program, SequentialGeometricProgram):
@@ -110,12 +113,11 @@ class Sankey(object):
                            % (source, value, key))
                     print source, "is", constr.str_without("units"), "\n"
                 flowcolor = getcolor(value)
-                if (len(getattr(constr.left, "hmap", [])) == 1
-                        and len(getattr(constr.right, "hmap", [])) == 1
-                        and constr.left.hmap.keys()[0].values() == [1]
-                        and constr.right.hmap.keys()[0].values() == [1]
-                        and (abs(value) >= INSENSITIVE
-                             or isinstance(constr, MonomialEquality))):
+                if ((isinstance(constr, MonomialEquality)
+                     or abs(value) >= INSENSITIVE)
+                        and all(len(getattr(p, "hmap", [])) == 1
+                                and p.hmap.keys()[0].values() == [1]
+                                for p in [constr.left, constr.right])):
                     leftkey = constr.left.hmap.keys()[0].keys()[0]
                     if key != leftkey:
                         key2 = leftkey

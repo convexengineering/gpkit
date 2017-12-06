@@ -50,6 +50,7 @@ class GeometricProgram(CostedConstraintSet, NomialData):
         # pylint:disable=super-init-not-called
         # initialize attributes modified by internal methods
         self.result = None
+        self.v_ss = None
         self.nu_by_posy = None
         self.solver_log = None
         self.solver_out = None

@@ -12,6 +12,7 @@ def _sort_by_name_and_idx(var):
     return (var.key.str_without(["units", "idx"]), var.key.idx)
 
 
+# pylint: disable=too-many-instance-attributes
 class ConstraintSet(list):
     "Recursive container for ConstraintSets and Inequalities"
     varkeys = None
@@ -268,11 +269,7 @@ class ConstraintSet(list):
 
         When x0 is none, may return a default guess."""
         gpconstrs = [constr.as_gpconstr(x0, substitutions) for constr in self]
-        cs = ConstraintSet(gpconstrs, substitutions)
-        if hasattr(self, "name"):
-            cs.name = self.name
-            cs.num = self.num
-        return cs
+        return ConstraintSet(gpconstrs, substitutions)
 
     def process_result(self, result):
         """Does arbitrary computation / manipulation of a program's result

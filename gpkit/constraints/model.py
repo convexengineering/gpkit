@@ -86,6 +86,13 @@ class Model(CostedConstraintSet):
     localsolve = _solve_fctry(_progify_fctry(SequentialGeometricProgram,
                                              "localsolve"))
 
+    def as_gpconstr(self, x0, substitutions=None):
+        "Returns approximating constraint, keeping name and num"
+        cs = CostedConstraintSet.as_gpconstr(self, x0, substitutions)
+        cs.name = self.name
+        cs.num = self.num
+        return cs
+
     def zero_lower_unbounded_variables(self):
         "Recursively substitutes 0 for variables that lack a lower bound"
         zeros = True
