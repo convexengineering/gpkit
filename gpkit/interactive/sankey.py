@@ -1,5 +1,5 @@
 "implements Sankey"
-import string
+from collections import defaultdict
 from ipysankeywidget import SankeyWidget  # pylint: disable=import-error
 from gpkit import ConstraintSet, Model
 from gpkit import GeometricProgram, SequentialGeometricProgram
@@ -13,16 +13,16 @@ INSENSITIVE = 1e-7
 
 def getcolor(value):
     "color scheme for sensitivities"
-    if abs(value or 1e-30) < INSENSITIVE:
+    if abs(value) < INSENSITIVE:
         return "#cfcfcf"
-    return GPCOLORS[1 if value > 0 else 0]
+    return GPCOLORS[0 if value < 0 else 1]
 
 
 class Sankey(object):
     "diagrams of sensitivity flow"
     def __init__(self, model):
-        self.links = []
-        self.counter = None
+        self.links = defaultdict(float)
+        self.counter = Count()
         if isinstance(model, Model):
             if model.program is None:
                 raise ValueError("Model must be solved before a Sankey"
@@ -49,13 +49,10 @@ class Sankey(object):
         for constr in constrset:
             if isinstance(constr, ConstraintSet):
                 if getattr(constr, "name", None):
-                    # value is negative so that the plot is GPBLU
-                    value = -constr.relax_sensitivity
                     source = constr.name
                     source += ".%i" % constr.num if constr.num else ""
-                    self.links.append({"target": target, "source": source,
-                                       "value": abs(value or 1e-30),
-                                       "color": getcolor(value)})
+                    # value is negative so that the plot is GPBLU
+                    self.links[source, target] -= constr.relax_sensitivity
                     self.constrlinks(constr, source)
                 else:
                     self.constrlinks(constr, target)
@@ -71,18 +68,12 @@ class Sankey(object):
             source = str(key)
             shortname = (key.str_without(["models"])
                          + key.unitstr(into=" [%s]", dimless=" [-]"))
-            self.nodes.append({"id": source,
-                               "title": shortname})
-            self.links.append({"target": source, "source": target,
-                               "value": abs(value or 1e-30),
-                               "color": getcolor(value)})
+            self.nodes.append({"id": source, "title": shortname})
+            self.links[target, source] += value
             if key in self.gp.result["sensitivities"]["cost"]:
                 cost_senss = self.gp.result["sensitivities"]["cost"]
                 value = -cost_senss[key]  # sensitivites flow _from_ cost
-                self.links.append({"target": "(objective)", "source": source,
-                                   "signed_value": value,
-                                   "value": abs(value or 1e-30),
-                                   "color": getcolor(value)})
+                self.links[source, "(objective)"] += value
                 if printing:
                     print ("(objective) adds %+.3g to the sensitivity"
                            " of %s" % (-value, key))
@@ -91,21 +82,18 @@ class Sankey(object):
             if key not in constr.v_ss:
                 continue
             value = constr.v_ss[key]
-            # TODO: add filter-by-abs argument?
             if isinstance(constr, ConstraintSet):
                 if getattr(constr, "name", None):
                     source = constr.name
                     source += ".%i" % constr.num if constr.num else ""
-                    self.links.append({"target": target, "source": source,
-                                       "signed_value": value,
-                                       "value": abs(value or 1e-30),
-                                       "color": getcolor(value)})
+                    self.links[source, target] += value
                     self.varlinks(constr, key, source, printing)
                 else:
                     self.varlinks(constr, key, target, printing)
             else:
                 if constr not in self.constr_name:
-                    source = "(%s)" % string.ascii_letters[self.counter.next()]
+                    # use zero width space for low alphabetization priority
+                    source = unichr(self.counter.next()+9398)
                     self.constr_name[constr] = source
                 else:
                     source = self.constr_name[constr]
@@ -113,7 +101,6 @@ class Sankey(object):
                     print ("%s adds %+.3g to the overall sensitivity of %s"
                            % (source, value, key))
                     print source, "is", constr.str_without("units"), "\n"
-                flowcolor = getcolor(value)
                 if ((isinstance(constr, MonomialEquality)
                      or abs(value) >= INSENSITIVE)
                         and all(len(getattr(p, "hmap", [])) == 1
@@ -124,44 +111,19 @@ class Sankey(object):
                         key2 = leftkey
                     else:
                         key2 = constr.right.hmap.keys()[0].keys()[0]
-                    if key2 in self.var_eqs:
-                        continue
-                    self.var_eqs.update([key2, key])
-                    value = 0  # since it's just pass-through
-                    flowcolor = "black"  # to highlight it
-                    # now to remove duplicate flows!
-                    # TODO: does this only need to be done for constants?
-                    nlinks = len(self.links)
-                    self.varlinks(self.gp, key2, printing=printing)
-                    newlinks = len(self.links) - nlinks
-                    newlinkmap = {}
-                    for link in self.links[-newlinks:]:
-                        s, t = link["source"], link["target"]
-                        newlinkmap[(s, t)] = link
-                        if (s, t) == (source, target):
-                            break
-                    for link in reversed(self.links[:nlinks]):
-                        linkkey = (link["source"], link["target"])
-                        if linkkey in newlinkmap:
-                            self.links.remove(newlinkmap[linkkey])
-                            newval = newlinkmap.pop(linkkey)["signed_value"]
-                            link["signed_value"] += newval
-                            link["value"] = abs(link["signed_value"] or 1e-30)
-                            link["color"] = getcolor(link["signed_value"])
-                        if not newlinkmap:
-                            break
-                self.links.append({"target": target, "source": source,
-                                   "signed_value": value,
-                                   "value": abs(value or 1e-30),
-                                   "color": flowcolor})
+                    if key2 not in self.var_eqs:  # not already been added
+                        self.var_eqs.update([key2, key])
+                        self.varlinks(self.gp[0], key2, printing=printing)
+                        self.nodes.append({"id": source,
+                                           "passthrough": constr})
+                self.links[source, target] += value
 
     # pylint: disable=too-many-arguments
     def diagram(self, variables=None, flowright=False, width=900, height=400,
-                top=0, bottom=0, left=100, right=25, printing=True):
+                top=0, bottom=0, left=120, right=55, printing=True):
         "creates links and an ipython widget to show them"
         margins = dict(top=top, bottom=bottom, left=left, right=right)
-        self.counter = Count()
-        self.links = []
+        self.__init__(self.gp)
         if not variables:
             self.constrlinks(self.gp[0])
         else:
@@ -169,13 +131,29 @@ class Sankey(object):
                 variables = [variables]
             for var in variables:
                 self.varlinks(self.gp[0], var.key, printing=printing)
+            lookup = {key: i for i, key in
+                      enumerate(sorted(map(str, self.var_eqs)))}
+            for node in self.nodes:
+                if "passthrough" in node:
+                    cn = node.pop("passthrough")
+                    l_idx = lookup[str(cn.left.hmap.keys()[0].keys()[0])]
+                    r_idx = lookup[str(cn.right.hmap.keys()[0].keys()[0])]
+                    op = {"=": "=", ">=": u"\u2265", "<=": u"\u2264"}[cn.oper]
+                    node["title"] = (node["id"]+u"\u2009"+unichr(l_idx+0x2776)
+                                     + op + unichr(r_idx+0x2776))
+                elif node["id"] in lookup:
+                    node["title"] += " " + unichr(0x2776+lookup[node["id"]])
         if flowright:
             r, l = margins["right"], margins["left"]
             margins["left"], margins["right"] = r, l
-        else:
-            for link in self.links:
-                link["source"], link["target"] = link["target"], link["source"]
-        return SankeyWidget(nodes=self.nodes, links=self.links,
+        links = []
+        for (source, target), value in self.links.items():
+            if not flowright:
+                source, target = target, source
+            links.append({"source": source, "target": target,
+                          "value": abs(value) or 1e-30,
+                          "color": getcolor(value)})
+        return SankeyWidget(nodes=self.nodes, links=links,
                             margins=margins, width=width, height=height)
 
     @property
@@ -187,15 +165,14 @@ class Sankey(object):
             for key in self.gp.v_ss:
                 if key in var_eqs:
                     continue
-                self.links = []
-                self.counter = Count()
+                self.__init__(self.gp)
                 self.varlinks(self.gp, key, printing=False)
-                maxflow = max(l["value"] for l in self.links)
+                maxflow = max(self.links.values())
                 if maxflow > 0.01:  # TODO: arbitrary threshold
                     varprops[key] = {"constraints": self.counter.next(),
                                      "maxflow": maxflow}
                 var_eqs.update(self.var_eqs)
-                self.__init__(self.gp)
+            self.__init__(self.gp)
             self._varprops = varprops
         return self._varprops
 
