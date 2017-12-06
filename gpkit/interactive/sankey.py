@@ -92,7 +92,7 @@ class Sankey(object):
                     self.varlinks(constr, key, target, printing)
             else:
                 if constr not in self.constr_name:
-                    # use zero width space for low alphabetization priority
+                    # use unicode's circled letters for constraint labels
                     source = unichr(self.counter.next()+9398)
                     self.constr_name[constr] = source
                 else:
@@ -131,18 +131,21 @@ class Sankey(object):
                 variables = [variables]
             for var in variables:
                 self.varlinks(self.gp[0], var.key, printing=printing)
+            # if var_eqs were found, label them on the diagram
             lookup = {key: i for i, key in
                       enumerate(sorted(map(str, self.var_eqs)))}
             for node in self.nodes:
-                if "passthrough" in node:
+                if node["id"] in lookup:
+                    # use inverted circled numbers to id the variables...
+                    node["title"] += " " + unichr(0x2776+lookup[node["id"]])
+                elif "passthrough" in node:
                     cn = node.pop("passthrough")
                     l_idx = lookup[str(cn.left.hmap.keys()[0].keys()[0])]
                     r_idx = lookup[str(cn.right.hmap.keys()[0].keys()[0])]
                     op = {"=": "=", ">=": u"\u2265", "<=": u"\u2264"}[cn.oper]
+                    # ...so that e.g. (1) >= (2) can label the constraints
                     node["title"] = (node["id"]+u"\u2009"+unichr(l_idx+0x2776)
                                      + op + unichr(r_idx+0x2776))
-                elif node["id"] in lookup:
-                    node["title"] += " " + unichr(0x2776+lookup[node["id"]])
         if flowright:
             r, l = margins["right"], margins["left"]
             margins["left"], margins["right"] = r, l

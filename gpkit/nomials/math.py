@@ -534,8 +534,10 @@ class MonomialEquality(PosynomialInequality):
 
     def sens_from_dual(self, la, nu):
         "Returns the variable/constraint sensitivities from lambda/nu"
+        self.relax_sensitivity = 0
         if not la or not nu:
             return {}  # as_posyslt1 created no inequalities
+        self.relax_sensitivity = sum(la)
         var_senss = HashVector()
         for var in self.varkeys:
             for i, m in enumerate(self.unsubbed):
