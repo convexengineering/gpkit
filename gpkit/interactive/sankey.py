@@ -2,6 +2,7 @@
 import string
 from ipysankeywidget import SankeyWidget  # pylint: disable=import-error
 from gpkit import ConstraintSet, Model
+from gpkit import GeometricProgram, SequentialGeometricProgram
 from gpkit.nomials.math import MonomialEquality
 from gpkit.small_classes import Count
 from gpkit import GPCOLORS
@@ -22,7 +23,14 @@ class Sankey(object):
     def __init__(self, model):
         self.links = []
         self.counter = None
-        self.model = model
+        if isinstance(model, Model):
+            if isinstance(model.program, GeometricProgram):
+                model = model.program
+            elif isinstance(model.program, SequentialGeometricProgram):
+                model = model.program.gps[-1]
+        if not isinstance(model, GeometricProgram):
+            raise ValueError("could not find a GP in `model`.")
+        self.gp = model
         self.constr_name = {}
         self.nodes = []
         self.var_eqs = set()
@@ -31,12 +39,12 @@ class Sankey(object):
     def constrlinks(self, constrset, target=None):
         "adds links of a given constraint set to self.links"
         if target is None:  # set final target
-            target = constrset.name or "[Model]"
-            if constrset.num:
+            target = getattr(constrset, "name", None) or "[GP]"
+            if getattr(constrset, "num", None):
                 target += ".%i" % constrset.num
         for constr in constrset:
             if isinstance(constr, ConstraintSet):
-                if isinstance(constr, Model):
+                if getattr(constr, "name", None):
                     # value is negative so that the plot is GPBLU
                     value = -constr.relax_sensitivity
                     source = constr.name
@@ -50,11 +58,11 @@ class Sankey(object):
 
     # pylint: disable=invalid-name, too-many-locals, too-many-branches, too-many-statements
     def varlinks(self, constrset, key, target=None, printing=True):
-        "adds links of a given variable in self.model to self.links"
+        "adds links of a given variable in self.gp to self.links"
         if target is None:  # set final target as the variable itself
             value = constrset.v_ss[key]  # if it's zero
-            target = constrset.name or "[Model]"
-            if constrset.num:
+            target = getattr(constrset, "name", None) or "[GP]"
+            if getattr(constrset, "num", None):
                 target += ".%i" % constrset.num
             source = str(key)
             shortname = (key.str_without(["models"])
@@ -64,24 +72,24 @@ class Sankey(object):
             self.links.append({"target": source, "source": target,
                                "value": abs(value or 1e-30),
                                "color": getcolor(value)})
-            if key in self.model.solution["sensitivities"]["cost"]:
-                cost_senss = self.model.solution["sensitivities"]["cost"]
+            if key in self.gp.result["sensitivities"]["cost"]:
+                cost_senss = self.gp.result["sensitivities"]["cost"]
                 value = -cost_senss[key]  # sensitivites flow _from_ cost
                 self.links.append({"target": "(objective)", "source": source,
                                    "signed_value": value,
                                    "value": abs(value or 1e-30),
                                    "color": getcolor(value)})
                 if printing:
-                    print ("(objective) adds %+.3g to the overall sensitivity"
+                    print ("(objective) adds %+.3g to the sensitivity"
                            " of %s" % (-value, key))
-                    print "(objective) is", self.model.cost, "\n"
+                    print "(objective) is", self.gp.cost, "\n"
         for constr in constrset:
             if key not in constr.v_ss:
                 continue
             value = constr.v_ss[key]
             # TODO: add filter-by-abs argument?
             if isinstance(constr, ConstraintSet):
-                if isinstance(constr, Model):
+                if getattr(constr, "name", None):
                     source = constr.name
                     source += ".%i" % constr.num if constr.num else ""
                     self.links.append({"target": target, "source": source,
@@ -121,7 +129,7 @@ class Sankey(object):
                     # now to remove duplicate flows!
                     # TODO: does this only need to be done for constants?
                     nlinks = len(self.links)
-                    self.varlinks(self.model, key2, printing=printing)
+                    self.varlinks(self.gp, key2, printing=printing)
                     newlinks = len(self.links) - nlinks
                     newlinkmap = {}
                     for link in self.links[-newlinks:]:
@@ -135,8 +143,10 @@ class Sankey(object):
                             self.links.remove(newlinkmap[linkkey])
                             newval = newlinkmap.pop(linkkey)["signed_value"]
                             link["signed_value"] += newval
-                            link["value"] = abs(link["signed_value"])
+                            link["value"] = abs(link["signed_value"] or 1e-30)
                             link["color"] = getcolor(link["signed_value"])
+                        if not newlinkmap:
+                            break
                 self.links.append({"target": target, "source": source,
                                    "signed_value": value,
                                    "value": abs(value or 1e-30),
@@ -150,12 +160,12 @@ class Sankey(object):
         self.counter = Count()
         self.links = []
         if not variables:
-            self.constrlinks(self.model)
+            self.constrlinks(self.gp)
         else:
             if not getattr(variables, "__len__", False):
                 variables = [variables]
             for var in variables:
-                self.varlinks(self.model, var.key, printing=printing)
+                self.varlinks(self.gp, var.key, printing=printing)
         if flowright:
             r, l = margins["right"], margins["left"]
             margins["left"], margins["right"] = r, l
@@ -171,18 +181,18 @@ class Sankey(object):
         if not self._varprops:
             varprops = {}
             var_eqs = set()
-            for key in self.model.v_ss:
+            for key in self.gp.v_ss:
                 if key in var_eqs:
                     continue
                 self.links = []
                 self.counter = Count()
-                self.varlinks(self.model, key, printing=False)
+                self.varlinks(self.gp, key, printing=False)
                 maxflow = max(l["value"] for l in self.links)
                 if maxflow > 0.01:  # TODO: arbitrary threshold
                     varprops[key] = {"constraints": self.counter.next(),
                                      "maxflow": maxflow}
                 var_eqs.update(self.var_eqs)
-                self.__init__(self.model)
+                self.__init__(self.gp)
             self._varprops = varprops
         return self._varprops
 

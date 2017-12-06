@@ -268,7 +268,11 @@ class ConstraintSet(list):
 
         When x0 is none, may return a default guess."""
         gpconstrs = [constr.as_gpconstr(x0, substitutions) for constr in self]
-        return ConstraintSet(gpconstrs, substitutions)
+        cs = ConstraintSet(gpconstrs, substitutions)
+        if hasattr(self, "name"):
+            cs.name = self.name
+            cs.num = self.num
+        return cs
 
     def process_result(self, result):
         """Does arbitrary computation / manipulation of a program's result
