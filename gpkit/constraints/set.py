@@ -12,6 +12,7 @@ def _sort_by_name_and_idx(var):
     return (var.key.str_without(["units", "idx"]), var.key.idx)
 
 
+# pylint: disable=too-many-instance-attributes
 class ConstraintSet(list):
     "Recursive container for ConstraintSets and Inequalities"
     varkeys = None
@@ -25,6 +26,7 @@ class ConstraintSet(list):
 
         # initializations for attributes used elsewhere
         self.posymap = []
+        self.relax_sensitivity = 0
         self.numpy_bools = False
 
         # get substitutions and convert all members to ConstraintSets
@@ -248,11 +250,14 @@ class ConstraintSet(list):
         """
         var_senss = HashVector()
         offset = 0
+        self.relax_sensitivity = 0
         for i, constr in enumerate(self):
             n_posys = self.posymap[i]
             la = las[offset:offset+n_posys]
             nu = nus[offset:offset+n_posys]
             v_ss = constr.sens_from_dual(la, nu)
+            constr.v_ss = v_ss
+            self.relax_sensitivity += constr.relax_sensitivity
             # not using HashVector addition because we want to preseve zeros
             for key, value in v_ss.items():
                 var_senss[key] = value + var_senss.get(key, 0)

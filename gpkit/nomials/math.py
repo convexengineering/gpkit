@@ -388,6 +388,7 @@ class PosynomialInequality(ScalarSingleEquationConstraint):
         self.nomials = [self.left, self.right, self.p_lt, self.m_gt]
         self.nomials.extend(self.unsubbed)
         self._last_used_substitutions = {}
+        self.relax_sensitivity = 0
 
     def _simplify_posy_ineq(self, hmap, pmap=None, allow_tautological=True):
         "Simplify a posy <= 1 by moving constants to the right side."
@@ -463,9 +464,11 @@ class PosynomialInequality(ScalarSingleEquationConstraint):
 
     def sens_from_dual(self, la, nu):
         "Returns the variable/constraint sensitivities from lambda/nu"
+        self.relax_sensitivity = 0
         if not la or not nu:
             return {}  # as_posyslt1 created no inequalities
         la, = la
+        self.relax_sensitivity = la
         nu, = nu
         presub, = self.unsubbed
         if hasattr(self, "pmap"):
@@ -479,7 +482,7 @@ class PosynomialInequality(ScalarSingleEquationConstraint):
                     nu_[idx] += percentage * la*scale
             nu = nu_
         var_senss = {}  # Constant sensitivities
-        for var in self._last_used_substitutions:
+        for var in self.varkeys:
             locs = presub.varlocs[var]
             var_senss[var] = sum([presub.exps[i][var]*nu[i] for i in locs])
         return var_senss
@@ -504,6 +507,7 @@ class MonomialEquality(PosynomialInequality):
         self.nomials = [self.left, self.right]
         self.nomials.extend(self.unsubbed)
         self._last_used_substitutions = {}
+        self.relax_sensitivity = 0  # don't count equality sensitivities
 
     def _gen_unsubbed(self, left, right):  # pylint: disable=arguments-differ
         "Returns the unsubstituted posys <= 1."
@@ -530,10 +534,12 @@ class MonomialEquality(PosynomialInequality):
 
     def sens_from_dual(self, la, nu):
         "Returns the variable/constraint sensitivities from lambda/nu"
+        self.relax_sensitivity = 0
         if not la or not nu:
             return {}  # as_posyslt1 created no inequalities
+        self.relax_sensitivity = sum(la)
         var_senss = HashVector()
-        for var in self._last_used_substitutions:
+        for var in self.varkeys:
             for i, m in enumerate(self.unsubbed):
                 if var in m.varlocs:
                     nu_, = nu[i]

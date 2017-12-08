@@ -64,7 +64,7 @@ class Model(CostedConstraintSet):
                     constraints = cs
                 from .. import NAMEDVARS, MODELS, MODELNUMS
                 setup_vars = NAMEDVARS[tuple(MODELS), tuple(MODELNUMS)]
-                self.name, self.num = MODELS[:-1], MODELNUMS[:-1]
+                self.name, self.num = MODELS[-1], MODELNUMS[-1]
                 self.naming = (tuple(MODELS), tuple(MODELNUMS))
             cost = self.cost
         else:
@@ -85,6 +85,13 @@ class Model(CostedConstraintSet):
     solve = _solve_fctry(_progify_fctry(GeometricProgram, "solve"))
     localsolve = _solve_fctry(_progify_fctry(SequentialGeometricProgram,
                                              "localsolve"))
+
+    def as_gpconstr(self, x0, substitutions=None):
+        "Returns approximating constraint, keeping name and num"
+        cs = CostedConstraintSet.as_gpconstr(self, x0, substitutions)
+        cs.name = self.name
+        cs.num = self.num
+        return cs
 
     def zero_lower_unbounded_variables(self):
         "Recursively substitutes 0 for variables that lack a lower bound"
