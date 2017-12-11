@@ -200,13 +200,18 @@ def generate_mfiles(model, logspace=False, algorithm='interior-point',
         solval = "x(i)"
         logsolution = ""
 
+    gradobj = gradobj.replace('on', 'true')
+    gradobj = gradobj.replace('off', 'false')
+    gradconstr = gradconstr.replace('on', 'true')
+    gradconstr = gradconstr.replace('off', 'false')
+
     mainfunstr = (x0string +
                   "options = optimset('fmincon');\n" +
                   "options.Algorithm = '{0}';\n".format(algorithm) +
                   "options.MaxFunEvals = Inf;\n" +
-                  "options.MaxIter = Inf;\n" +
-                  "options.GradObj = '{0}';\n".format(gradobj) +
-                  "options.GradConstr = '{0}';\n".format(gradconstr) +
+                  "options.MaxIter = 100000;\n" +
+                  "options.SpecifyObjectiveGradient = {0};\n".format(gradobj) +
+                  "options.SpecifyConstraintGradient = {0};\n".format(gradconstr) +
                   "tic;\n" +
                   "[x,fval, exitflag, output] = ...\n" +
                   "fmincon(@objfun,x0,[],[],[],[],[],[],@confun,options);\n" +
