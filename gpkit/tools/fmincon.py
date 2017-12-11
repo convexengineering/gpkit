@@ -171,8 +171,7 @@ def generate_mfiles(model, logspace=False, algorithm='interior-point',
         # Differentiate the objective function w.r.t each variable
         for key in original_varkeys:
             if key not in model.substitutions:
-                costdiff = cost.diff(key)
-                costdiff.subinplace(newdict)
+                costdiff = cost.diff(newdict[key])
                 objdiff += [costdiff.str_without(["units", "models"]).replace(
                     '**', '.^')]
 
