@@ -212,7 +212,7 @@ def generate_mfiles(model, logspace=False, algorithm='interior-point',
                   "options.MaxIter = 100000;\n" +
                   "options.SpecifyObjectiveGradient = {0};\n".format(gradobj) +
                   "options.SpecifyConstraintGradient = {0};\n".format(gradconstr) +
-                  "options.CheckGradients = true;\n"
+#                  "options.CheckGradients = true;\n" +
                   "tic;\n" +
                   "[x,fval, exitflag, output] = ...\n" +
                   "fmincon(@objfun,x0,[],[],[],[],[],[],@confun,options);\n" +
