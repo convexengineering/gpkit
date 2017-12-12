@@ -225,6 +225,7 @@ def generate_mfiles(model, logspace=False, algorithm='interior-point',
                   "fid = fopen('cost.txt', 'w');\n" +
                   "fprintf(fid, '%.5g', {0});\n".format(fval) +
                   "if exitflag == -2\n\tfprintf(fid, '(i)');\nend\n" +
+                  "if exitflag == 0\n\tfprintf(fid, '(e)');\nend\n" +
                   "fclose(fid);\n" +
                   "fid = fopen('solution.txt', 'w');\n" +
                   "fid2 = fopen('initialguess.txt', 'w');\n" +
