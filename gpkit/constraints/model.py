@@ -82,7 +82,8 @@ class Model(CostedConstraintSet):
             self.unique_varkeys = frozenset(v.key for v in setup_vars)
         CostedConstraintSet.__init__(self, cost, constraints, substitutions)
         if hasattr(self, "setup"):
-            if "SKIP VERIFICATION" not in self.__class__.__doc__:
+            if ("Bounded by" in self.__class__.__doc__ and
+                    "SKIP VERIFICATION" not in self.__class__.__doc__):
                 self.verify_docstring()
 
     gp = _progify_fctry(GeometricProgram)
@@ -150,7 +151,6 @@ class Model(CostedConstraintSet):
                         if (key, bound) not in self.missingbounds:
                             self.missingbounds[(key, bound)] = ""
         if self.missingbounds:  # anything unbounded? err!
-            print self.substitutions
             boundstrs = "\n".join("  %s has no %s bound%s" % (v, b, x)
                                   for (v, b), x
                                   in self.missingbounds.items())

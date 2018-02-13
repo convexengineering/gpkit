@@ -389,12 +389,13 @@ class PosynomialInequality(ScalarSingleEquationConstraint):
         self.nomials.extend(self.unsubbed)
         self._last_used_substitutions = {}
         self.bounded = set()
-        for exp in self.unsubbed[0].hmap:
-            for key, e in exp.items():
-                if e > 0:
-                    self.bounded.add((key, "upper"))
-                if e < 0:
-                    self.bounded.add((key, "lower"))
+        if self.unsubbed:
+            for exp in self.unsubbed[0].hmap:
+                for key, e in exp.items():
+                    if e > 0:
+                        self.bounded.add((key, "upper"))
+                    if e < 0:
+                        self.bounded.add((key, "lower"))
         for key in self.substitutions:
             for bound in ("upper", "lower"):
                 self.bounded.add((key, bound))
@@ -591,6 +592,17 @@ class SignomialInequality(ScalarSingleEquationConstraint):
         self.nomials.extend(self.unsubbed)
         self.substitutions = dict(self.left.values)
         self.substitutions.update(self.right.values)
+        self.bounded = set()
+        if self.unsubbed:
+            for exp, c in self.unsubbed[0].hmap.items():
+                for key, e in exp.items():
+                    if e*c > 0:
+                        self.bounded.add((key, "upper"))
+                    if e*c < 0:
+                        self.bounded.add((key, "lower"))
+        for key in self.substitutions:
+            for bound in ("upper", "lower"):
+                self.bounded.add((key, bound))
 
     def as_posyslt1(self, substitutions=None):
         "Returns the posys <= 1 representation of this constraint."

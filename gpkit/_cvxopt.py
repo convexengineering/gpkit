@@ -62,7 +62,7 @@ def gp118(K, F, g, G=None, h=None, A=None, b=None, kktsolver=None, **kwargs):
     # pylint: disable=no-member
     # pylint: disable=bad-indentation
     # pylint: disable=missing-docstring
-    
+
     """
     This is GPkit's local copy of the gp method from cvxopt 1.1.8
     This is a patch for users with cvxopt < 1.1.8, for which gp
@@ -74,17 +74,17 @@ def gp118(K, F, g, G=None, h=None, A=None, b=None, kktsolver=None, **kwargs):
 
         minimize    log sum exp (F0*x+g0)
         subject to  log sum exp (Fi*x+gi) <= 0,  i=1,...,m
-                    G*x <= h      
+                    G*x <= h
                     A*x = b
 
     Input arguments.
 
         K is a list of positive integers [K0, K1, K2, ..., Km].
 
-        F is a sum(K)xn dense or sparse 'd' matrix with block rows F0, 
+        F is a sum(K)xn dense or sparse 'd' matrix with block rows F0,
         F1, ..., Fm.  Each Fi is Kixn.
 
-        g is a sum(K)x1 dense or sparse 'd' matrix with blocks g0, g1, 
+        g is a sum(K)x1 dense or sparse 'd' matrix with blocks g0, g1,
         g2, ..., gm.  Each gi is Kix1.
 
         G is an mxn dense or sparse 'd' matrix.
@@ -95,7 +95,7 @@ def gp118(K, F, g, G=None, h=None, A=None, b=None, kktsolver=None, **kwargs):
 
         b is a px1 dense 'd' matrix.
 
-        The default values for G, h, A and b are empty matrices with 
+        The default values for G, h, A and b are empty matrices with
         zero rows.
 
 
@@ -107,30 +107,30 @@ def gp118(K, F, g, G=None, h=None, A=None, b=None, kktsolver=None, **kwargs):
         'primal slack', 'dual slack'.
 
         The 'status' field has values 'optimal' or 'unknown'.
-        If status is 'optimal', x, snl, sl, y, znl, zl  are approximate 
+        If status is 'optimal', x, snl, sl, y, znl, zl  are approximate
         solutions of the primal and dual optimality conditions
 
-            f(x)[1:] + snl = 0,  G*x + sl = h,  A*x = b 
-            Df(x)'*[1; znl] + G'*zl + A'*y + c = 0 
+            f(x)[1:] + snl = 0,  G*x + sl = h,  A*x = b
+            Df(x)'*[1; znl] + G'*zl + A'*y + c = 0
             snl >= 0,  znl >= 0,  sl >= 0,  zl >= 0
             snl'*znl + sl'* zl = 0,
 
-        where fk(x) = log sum exp (Fk*x + gk). 
+        where fk(x) = log sum exp (Fk*x + gk).
 
         If status is 'unknown', x, snl, sl, y, znl, zl are the last
-        iterates before termination.  They satisfy snl > 0, znl > 0, 
+        iterates before termination.  They satisfy snl > 0, znl > 0,
         sl > 0, zl > 0, but are not necessarily feasible.
 
         The values of the other fields are the values returned by cpl()
         applied to the epigraph form problem
 
-            minimize   t 
+            minimize   t
             subjec to  f0(x) <= t
                        fk(x) <= 0, k = 1, ..., mnl
                        G*x <= h
                        A*x = b.
 
-        Termination with status 'unknown' indicates that the algorithm 
+        Termination with status 'unknown' indicates that the algorithm
         failed to find a solution that satisfies the specified tolerances.
         In some cases, the returned solution may be fairly accurate.  If
         the primal and dual infeasibilities, the gap, and the relative gap
@@ -152,12 +152,12 @@ def gp118(K, F, g, G=None, h=None, A=None, b=None, kktsolver=None, **kwargs):
 
     options = kwargs.get('options', {}) # GPkit: changed globals to {}
 
-    import math 
+    import math
     from cvxopt import base, blas, misc
     from cvxopt.cvxprog import cp # added for GPkit
 
 
-    if type(K) is not list or [ k for k in K if type(k) is not int 
+    if type(K) is not list or [ k for k in K if type(k) is not int
         or k <= 0 ]:
         raise TypeError("'K' must be a list of positive integers")
     mnl = len(K)-1
@@ -167,7 +167,7 @@ def gp118(K, F, g, G=None, h=None, A=None, b=None, kktsolver=None, **kwargs):
         F.size[0] != l:
         raise TypeError("'F' must be a dense or sparse 'd' matrix "\
             "with %d rows" %l)
-    if type(g) is not matrix or g.typecode != 'd' or g.size != (l,1): 
+    if type(g) is not matrix or g.typecode != 'd' or g.size != (l,1):
         raise TypeError("'g' must be a dene 'd' matrix of "\
             "size (%d,1)" %l)
     n = F.size[1]
@@ -191,7 +191,7 @@ def gp118(K, F, g, G=None, h=None, A=None, b=None, kktsolver=None, **kwargs):
         raise TypeError("'A' must be a dense or sparse 'd' matrix "\
             "with %d columns" %n)
     p = A.size[0]
-    if type(b) is not matrix or b.typecode != 'd' or b.size != (p,1): 
+    if type(b) is not matrix or b.typecode != 'd' or b.size != (p,1):
         raise TypeError("'b' must be a dense 'd' matrix of "\
             "size (%d,1)" %p)
 
@@ -199,14 +199,14 @@ def gp118(K, F, g, G=None, h=None, A=None, b=None, kktsolver=None, **kwargs):
     u = matrix(0.0, (max(K),1))
     Fsc = matrix(0.0, (max(K),n))
 
-    cs1 = [ sum(K[:i]) for i in range(mnl+1) ] 
+    cs1 = [ sum(K[:i]) for i in range(mnl+1) ]
     cs2 = [ cs1[i] + K[i] for i in range(mnl+1) ]
     ind = list(zip(range(mnl+1), cs1, cs2))
 
     def Fgp(x = None, z = None):
 
         if x is None: return mnl, matrix(0.0, (n,1))
-	
+
         f = matrix(0.0, (mnl+1,1))
         Df = matrix(0.0, (mnl+1,n))
 
@@ -218,7 +218,7 @@ def gp118(K, F, g, G=None, h=None, A=None, b=None, kktsolver=None, **kwargs):
 
         for i, start, stop in ind:
 
-            # yi := exp(yi) = exp(Fi*x+gi) 
+            # yi := exp(yi) = exp(Fi*x+gi)
             ymax = max(y[start:stop])
             y[start:stop] = base.exp(y[start:stop] - ymax)
 
@@ -229,20 +229,20 @@ def gp118(K, F, g, G=None, h=None, A=None, b=None, kktsolver=None, **kwargs):
             # yi := yi / sum(yi) = exp(Fi*x+gi) / sum(exp(Fi*x+gi))
             blas.scal(1.0/ysum, y, n=stop-start, offset=start)
 
-            # gradfi := Fi' * yi 
+            # gradfi := Fi' * yi
             #        = Fi' * exp(Fi*x+gi) / sum(exp(Fi*x+gi))
             base.gemv(F, y, Df, trans='T', m=stop-start, incy=mnl+1,
                 offsetA=start, offsetx=start, offsety=i)
 
             if z is not None:
 
-                # Hi = Fi' * (diag(yi) - yi*yi') * Fi 
+                # Hi = Fi' * (diag(yi) - yi*yi') * Fi
                 #    = Fisc' * Fisc
-                # where 
+                # where
                 # Fisc = diag(yi)^1/2 * (I - 1*yi') * Fi
                 #      = diag(yi)^1/2 * (Fi - 1*gradfi')
 
-                Fsc[:K[i], :] = F[start:stop, :] 
+                Fsc[:K[i], :] = F[start:stop, :]
                 for k in range(start,stop):
                    blas.axpy(Df, Fsc, n=n, alpha=-1.0, incx=mnl+1,
                        incy=Fsc.size[0], offsetx=i, offsety=k-start)
