@@ -119,7 +119,13 @@ class KeyDict(dict):
         if dict.__contains__(self, key):
             if idx:
                 try:
-                    return not np.isnan(dict.__getitem__(self, key)[idx])
+                    try:
+                        return not np.isnan(dict.__getitem__(self, key)[idx])
+                    except IndexError:
+                        raise IndexError("key %s with idx %s is out of bounds"
+                                         " for value %s" %
+                                         (key, idx,
+                                          dict.__getitem__(self, key)))
                 except TypeError:
                     raise TypeError("%s has an idx, but its value in this"
                                     " KeyDict is the scalar %s."
