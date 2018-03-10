@@ -197,13 +197,17 @@ class ConstraintSet(list):
         """
         subs = {getattr(k, "key", k): getattr(v, "key", v)
                 for k, v in subs.items()}
+        subkeys = frozenset(subs)
         for constraint in self:
-            constraint.subinplace(subs)
-        for key, value in subs.items():
-            if key in self.substitutions:
-                valkey, _ = self.substitutions.parse_and_index(value)
-                self.substitutions[valkey] = self.substitutions[key]
-                del self.substitutions[key]
+            csubs = {k: v for k, v in subs.items() if k in constraint.varkeys}
+            if csubs:
+                constraint.subinplace(csubs)
+        if subkeys.intersection(self.substitutions):
+            for key, value in subs.items():
+                if key in self.substitutions:
+                    valkey, _ = self.substitutions.parse_and_index(value)
+                    self.substitutions[valkey] = self.substitutions[key]
+                    del self.substitutions[key]
         self.unique_varkeys = frozenset(subs[vk] if vk in subs else vk
                                         for vk in self.unique_varkeys)
         self.reset_varkeys()

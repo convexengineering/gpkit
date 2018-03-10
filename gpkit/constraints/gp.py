@@ -104,7 +104,7 @@ class GeometricProgram(CostedConstraintSet, NomialData):
 
     # pylint: disable=too-many-statements, too-many-locals
     def solve(self, solver=None, verbosity=1, warn_on_check=False,
-              process_result=True, *args, **kwargs):
+              process_result=True, **kwargs):
         """Solves a GeometricProgram and returns the solution.
 
         Arguments
@@ -168,9 +168,8 @@ class GeometricProgram(CostedConstraintSet, NomialData):
             print("Using solver '%s'" % solvername)
             print("Solving for %i variables." % len(self.varlocs))
 
-        default_kwargs = DEFAULT_SOLVER_KWARGS.get(solvername, {})
-        for k in default_kwargs:
-            kwargs.setdefault(k, default_kwargs[k])
+        solver_kwargs = DEFAULT_SOLVER_KWARGS.get(solvername, {})
+        solver_kwargs.update(kwargs)
 
         # NOTE: SIDE EFFECTS AS WE LOG SOLVER'S STDOUT AND OUTPUT
         original_stdout = sys.stdout
@@ -178,7 +177,7 @@ class GeometricProgram(CostedConstraintSet, NomialData):
         try:
             sys.stdout = self.solver_log   # CAPTURED
             solver_out = solverfn(c=self.cs, A=self.A, p_idxs=self.p_idxs,
-                                  k=self.k, *args, **kwargs)
+                                  k=self.k, **solver_kwargs)
             self.solver_out = solver_out
         finally:
             sys.stdout = original_stdout
