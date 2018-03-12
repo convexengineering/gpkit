@@ -28,3 +28,33 @@ Most Sensitive
 
 SWEEP
 =====
+
+Cost
+----
+ [ 338       294       396       326       ] [N] 
+
+Sweep Variables
+---------------
+      V : [ 45        45        55        55       ]  [m/s] cruising speed
+V_{min} : [ 20        25        20        25       ]  [m/s] takeoff speed
+
+Free Variables
+--------------
+  A : [ 6.2       8.84      4.77      7.16     ]         aspect ratio
+C_D : [ 0.0146    0.0196    0.0123    0.0157   ]         Drag coefficient of wing
+C_L : [ 0.296     0.463     0.198     0.31     ]         Lift coefficent of wing
+C_f : [ 0.00333   0.00361   0.00314   0.00342  ]         skin friction coefficient
+  D : [ 338       294       396       326      ]  [N]    total drag force
+ Re : [ 5.38e+06  3.63e+06  7.24e+06  4.75e+06 ]         Reynold's number
+  S : [ 18.6      12.1      17.3      11.2     ]  [m**2] total wing area
+  W : [ 6.85e+03  6.97e+03  6.4e+03   6.44e+03 ]  [N]    total aircraft weight
+W_w : [ 1.91e+03  2.03e+03  1.46e+03  1.5e+03  ]  [N]    wing weight
+
+Most Sensitive
+--------------
+                W_0 : [ +0.92     +0.95     +0.85     +0.85    ] aircraft weight excluding wing
+            V_{min} : [ -0.82     -0.41     -1        -0.71    ] takeoff speed
+                  V : [ +0.59     +0.25     +0.97     +0.75    ] cruising speed
+(\frac{S}{S_{wet}}) : [ +0.56     +0.45     +0.63     +0.54    ] wetted area ratio
+                  k : [ +0.56     +0.45     +0.63     +0.54    ] form factor
+
