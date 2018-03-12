@@ -69,7 +69,6 @@ class Bounded(ConstraintSet):
         self.verbosity = verbosity
         self.lowerbound = lower if (lower or upper) else eps
         self.upperbound = upper if (lower or upper) else 1/eps
-        vks = set(v for v in constraints.varkeys if "T_in_Layer" in str(v))
         self.bounded_varkeys = tuple(vk for vk in constraints.varkeys
                                      if vk not in constraints.substitutions)
         bounding_constraints = varkey_bounds(self.bounded_varkeys,
