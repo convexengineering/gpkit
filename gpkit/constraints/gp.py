@@ -115,7 +115,7 @@ class GeometricProgram(CostedConstraintSet, NomialData):
             If set to a function, passes that function cs, A, p_idxs, and k.
         verbosity : int (optional)
             If greater than 0, prints solver name and solve time.
-        *args, **kwargs :
+        **kwargs :
             Passed to solver constructor and solver function.
 
 
@@ -150,7 +150,7 @@ class GeometricProgram(CostedConstraintSet, NomialData):
                 solverfn = cvxoptimize
             elif solver == "mosek_cli":
                 from .._mosek import cli_expopt
-                solverfn = cli_expopt.imize_fn(*args, **kwargs)
+                solverfn = cli_expopt.imize_fn(**kwargs)
             elif solver == "mosek":
                 from .._mosek import expopt
                 solverfn = expopt.imize
