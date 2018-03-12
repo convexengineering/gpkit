@@ -64,5 +64,5 @@ N = 2
 sweeps = {V_min: ("sweep", np.linspace(20, 25, N)),
           V: ("sweep", np.linspace(45, 55, N)), }
 m.substitutions.update(sweeps)
-sweepsol = m.solve("cvxopt", verbosity=0)
+sweepsol = m.solve(verbosity=0)
 print(sweepsol.summary())
