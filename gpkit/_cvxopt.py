@@ -3,6 +3,8 @@ from cvxopt import spmatrix, matrix, log
 from cvxopt.solvers import gp
 from cvxopt.info import version as cvxopt_version
 
+# pylint:disable=c-extension-no-member
+
 
 def cvxoptimize(c, A, k, *args, **kwargs):
     """Interface to the CVXOPT solver

@@ -296,7 +296,11 @@ class GeometricProgram(CostedConstraintSet, NomialData):
         # add cost's sensitivity in (nu could be self.nu_by_posy[0])
         cost_senss = {var: sum([self.cost.exps[i][var]*nu[i] for i in locs])
                       for (var, locs) in self.cost.varlocs.items()}
-        var_senss = self.v_ss + cost_senss
+
+        # not using HashVector addition because we want to preseve zeros
+        var_senss = self.v_ss.copy()
+        for key, value in cost_senss.items():
+            var_senss[key] = value + var_senss.get(key, 0)
 
         const_senss = {k: v for k, v in var_senss.items()
                        if k in self.substitutions}

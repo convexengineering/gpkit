@@ -1,2 +1,2 @@
-Optimal cost:  1.0
-Optimal x val: 1.0
+Optimal cost:  1.0000000000039595
+Optimal x val: 1.0000000000039595
