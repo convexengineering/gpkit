@@ -12,6 +12,8 @@ def clean_value(key, value):
     Also converts any quantities to the key's units, because quantities
     can't/shouldn't be stored as elements of numpy arrays.
     """
+    if hasattr(value, "__len__"):
+        return [clean_value(key, v) for v in value]
     if hasattr(value, "exp") and not value.exp:
         value = value.value
     if hasattr(value, "units") and not hasattr(value, "hmap"):
@@ -167,20 +169,18 @@ class KeyDict(dict):
                 dict.__setitem__(self, key, emptyvec)
         if hasattr(value, "exp") and not value.exp:
             value = value.value  # substitute constant monomials
+        if isinstance(value, Quantity):
+            value = value.to(key.units).magnitude
         if idx:
-            if isinstance(value, Quantity):
-                value = value.to(key.units).magnitude
             dict.__getitem__(self, key)[idx] = value
         else:
             if (self.collapse_arrays and hasattr(key, "descr")
-                    and "shape" in key.descr  # if veckey, not
-                    and not isinstance(value, (np.ndarray, Quantity))  # array,
-                    and not is_sweepvar(value)):  # not sweep, and
-                if not hasattr(value, "__len__"):  # cast it to an array!
-                    if isinstance(value, Quantity):
-                        value = value.to(key.units).magnitude
+                    and "shape" in key.descr  # if veckey, and
+                    and not isinstance(value, np.ndarray)  # not an array, and
+                    and not is_sweepvar(value)):  # not a sweep, then
+                if not hasattr(value, "__len__"):  # fill an array with it, or
                     value = np.full(key.shape, value, "f")
-                elif not isinstance(value[0], np.ndarray):  # not solarray
+                elif not isinstance(value[0], np.ndarray):  # clean it up!
                     value = np.array([clean_value(key, v) for v in value])
             if getattr(value, "shape", False) and dict.__contains__(self, key):
                 goodvals = ~isnan(value)

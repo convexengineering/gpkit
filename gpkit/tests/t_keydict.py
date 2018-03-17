@@ -33,7 +33,8 @@ class TestKeyDict(unittest.TestCase):
             _ = kd["waldo"]
             # issue 893: failed __getitem__ caused state change
         self.assertNotIn("waldo", kd)
-        kd.update({"waldo": 5})
+        waldo = Variable("waldo")
+        kd.update({waldo: 5})
         res = kd["waldo"]
         self.assertEqual(res, 5)
         self.assertIn("waldo", kd)
