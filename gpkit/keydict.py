@@ -180,7 +180,8 @@ class KeyDict(dict):
                     and not is_sweepvar(value)):  # not a sweep, then
                 if not hasattr(value, "__len__"):  # fill an array with it, or
                     value = np.full(key.shape, value, "f")
-                elif not isinstance(value[0], np.ndarray):  # clean it up!
+                # if it's not a list of arrays (as in a sol), clean it up!
+                elif not isinstance(value[0], np.ndarray):
                     value = np.array([clean_value(key, v) for v in value])
             if getattr(value, "shape", False) and dict.__contains__(self, key):
                 goodvals = ~isnan(value)
