@@ -153,7 +153,7 @@ class KeyDict(dict):
             values.append(got)
         if len(values) == 1:
             return values[0]
-        return KeyDict(zip(keys, values))
+        return dict(zip(keys, values))
 
     def __setitem__(self, key, value):
         "Overloads __setitem__ and []= to work with all keys"
