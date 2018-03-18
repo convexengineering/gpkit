@@ -37,7 +37,7 @@ class ConstraintSet(list):
     varkeys = None
     unique_varkeys = frozenset()
 
-    def __init__(self, constraints, substitutions=None):
+    def __init__(self, constraints, substitutions=None):  # pylint: disable=too-many-branches
         if isinstance(constraints, ConstraintSet):
             # stick it in a list to maintain hierarchy
             constraints = [constraints]
@@ -79,12 +79,12 @@ class ConstraintSet(list):
             self.substitutions.update(substitutions)
         for key in self.substitutions:
             key.descr.pop("value", None)
+        # TODO: the loop above and below have to be separate...for vectors?
         for key in self.varkeys:
             if key in self.substitutions:
                 for direction in ("upper", "lower"):
                     self.bounded.add((key, direction))
-        if self.meq_bounded:
-            add_meq_bounds(self.bounded, self.meq_bounded)
+        add_meq_bounds(self.bounded, self.meq_bounded)
 
     def __getitem__(self, key):
         if isinstance(key, int):

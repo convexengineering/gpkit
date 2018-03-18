@@ -151,7 +151,7 @@ class TestGP(unittest.TestCase):
                          t2 >= y])
         prob.zero_lower_unbounded_variables()
         sol = prob.solve(verbosity=0)
-        self.assertAlmostEqual(sol["cost"]/x.value, 1, self.ndig)
+        self.assertAlmostEqual(sol["cost"]/4, 1, self.ndig)
         self.assertAlmostEqual(sol("t2"), 0, self.ndig)
 
     def test_mdd_example(self):
@@ -336,6 +336,8 @@ class TestSP(unittest.TestCase):
 
         with SignomialsEnabled():
             m = Model(x, [x + y >= z])
+            m.substitutions[y] = 1
+            m.substitutions[z] = 4
         self.assertAlmostEqual(m.solve(self.solver, verbosity=0)["cost"], 3)
 
     def test_trivial_sp(self):

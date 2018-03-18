@@ -195,6 +195,10 @@ class TestModelSubs(unittest.TestCase):
             m.substitutions[ymax] = 0.2
             self.assertAlmostEqual(m.localsolve(verbosity=0)["cost"], 0.8, 3)
             m = gpkit.Model(x, [x >= 1-y, y <= ymax])
+            with self.assertRaises(ValueError):  # from unbounded ymax
+                m.localsolve(verbosity=0)
+            m = gpkit.Model(x, [x >= 1-y, y <= ymax])
+            m.substitutions[ymax] = 0.1  # the original value does not persist
             self.assertAlmostEqual(m.localsolve(verbosity=0)["cost"], 0.9, 3)
 
     def test_united_sub_sweep(self):

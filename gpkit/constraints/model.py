@@ -81,8 +81,9 @@ class Model(CostedConstraintSet):
             # even if they aren't used in any constraints
             self.unique_varkeys = frozenset(v.key for v in setup_vars)
         CostedConstraintSet.__init__(self, cost, constraints, substitutions)
-        if hasattr(self, "setup"):
-            if ("Bounded by" in self.__class__.__doc__ and
+        if hasattr(self, "setup") and self.__class__.__doc__:
+            if (("Unbounded" in self.__class__.__doc__ or
+                 "Bounded by" in self.__class__.__doc__) and
                     "SKIP VERIFICATION" not in self.__class__.__doc__):
                 self.verify_docstring()
 
@@ -92,7 +93,7 @@ class Model(CostedConstraintSet):
     localsolve = _solve_fctry(_progify_fctry(SequentialGeometricProgram,
                                              "localsolve"))
 
-    def verify_docstring(self):  # pylint:disable=too-many-locals,too-many-branches
+    def verify_docstring(self):  # pylint:disable=too-many-locals,too-many-branches,too-many-statements
         "Verifies docstring bounds are sufficient but not excessive."
         err = "while verifying %s:\n" % self.__class__.__name__
         bounded, meq_bounded = self.bounded.copy(), self.meq_bounded.copy()
@@ -108,7 +109,6 @@ class Model(CostedConstraintSet):
             idx3 = doc[idx:][idx2+1:].index("\n")
             idx4 = doc[idx:][idx2+1:][idx3+1:].index("\n")
             varstrs = doc[idx:][idx2+1:][idx3+1:][:idx4].strip()
-            variables = set(varstrs.split(", "))
             for (key, direction) in subinst.bounded:
                 # TODO: error when the right bound is not found!
                 if key.name in varstrs:  # TODO: check attributes
@@ -118,7 +118,7 @@ class Model(CostedConstraintSet):
                 idx += doc[idx:].index(flag) + len(flag)
         add_meq_bounds(bounded, meq_bounded)  # add meqs to bounded
         # now we'll check the docstring
-        exp_unbounds = expected_unbounded(self, self.__class__.__doc__)
+        exp_unbounds = expected_unbounded(self, doc)
         unexp_bounds = bounded.intersection(exp_unbounds)
         if unexp_bounds:  # anything bounded that shouldn't be? err!
             for direction in ["lower", "upper"]:

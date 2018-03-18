@@ -119,7 +119,8 @@ class KeyDict(dict):
         if dict.__contains__(self, key):
             if idx:
                 try:
-                    return not isnan(dict.__getitem__(self, key)[idx])
+                    value = dict.__getitem__(self, key)[idx]
+                    return True if is_sweepvar(value) else not isnan(value)
                 except TypeError:
                     raise TypeError("%s has an idx, but its value in this"
                                     " KeyDict is the scalar %s."
