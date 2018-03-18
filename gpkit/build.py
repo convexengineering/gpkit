@@ -102,9 +102,9 @@ class MosekCLI(SolverBackend):
             log("#   Trying to run mskexpopt...")
             if call("mskexpopt") in (1052, 28):  # 28 for MacOSX
                 return "in system path"
-        except:  # pylint: disable=bare-except
-            # exception type varies by operating system
-            return
+        except:   # pylint: disable=bare-except
+            pass  # exception type varies by operating system
+        return None
 
 
 class CVXopt(SolverBackend):
@@ -119,7 +119,7 @@ class CVXopt(SolverBackend):
             import cvxopt  # pylint: disable=unused-variable
             return "in Python path"
         except ImportError:
-            return
+            pass
 
 
 class Mosek(SolverBackend):
@@ -174,10 +174,10 @@ class Mosek(SolverBackend):
         else:
             log("# Build script does not support"
                 " your platform (%s)" % sys.platform)
-            return
+            return None
 
         if not os.path.isdir(rootdir):
-            return
+            return None
 
         possible_versions = [f for f in os.listdir(rootdir) if len(f) == 1]
         self.version = sorted(possible_versions)[-1]
@@ -189,10 +189,10 @@ class Mosek(SolverBackend):
             self.lib_path = glob.glob(self.bin_dir+os.sep+libpattern)[0]
             self.lib_name = os.path.basename(self.lib_path)
         except IndexError:  # mosek folder found, but mosek not installed
-            return
+            return None
 
         if not isfile(h_path) or not isfile(self.lib_path):
-            return
+            return None
 
         expopt_dir = pathjoin(tools_dir, "examples", "c")
         expopt_filenames = ["scopt-ext.c", "expopt.c", "dgopt.c",
@@ -202,7 +202,7 @@ class Mosek(SolverBackend):
         self.expopt_files += [h_path]
         for expopt_file in self.expopt_files:
             if not isfile(expopt_file):
-                return
+                return None
         # pylint: disable=global-statement,global-variable-not-assigned
         global settings
         settings["mosek_bin_dir"] = self.bin_dir
@@ -217,7 +217,7 @@ class Mosek(SolverBackend):
             import ctypesgencore  # pylint: disable=unused-variable
         except ImportError:
             log("## SKIPPING MOSEK INSTALL: CTYPESGENCORE WAS NOT FOUND")
-            return
+            return None
 
         lib_dir = replacedir(pathjoin("gpkit", "_mosek", "lib"))
         if "GPKITBUILD" in os.environ:

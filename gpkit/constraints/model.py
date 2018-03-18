@@ -105,13 +105,11 @@ class Model(CostedConstraintSet):
 
     def subconstr_str(self, excluded=None):
         "The collapsed appearance of a ConstraintBase"
-        if self.name:
-            return "%s_%s" % (self.name, self.num)
+        return "%s_%s" % (self.name, self.num) if self.name else None
 
     def subconstr_latex(self, excluded=None):
         "The collapsed appearance of a ConstraintBase"
-        if self.name:
-            return "%s_{%s}" % (self.name, self.num)
+        return "%s_{%s}" % (self.name, self.num) if self.name else None
 
     def sweep(self, sweeps, **solveargs):
         "Sweeps {var: values} pairs in sweeps. Returns swept solutions."

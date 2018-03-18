@@ -43,7 +43,7 @@ def _progify_fctry(program, return_attr=None):
 def _solve_fctry(genfunction):
     "Returns function for making/solving/sweeping a program."
     def solvefn(self, solver=None, verbosity=1, skipsweepfailures=False,
-                *args, **kwargs):
+                **kwargs):
         """Forms a mathematical program and attempts to solve it.
 
          Arguments
@@ -55,7 +55,7 @@ def _solve_fctry(genfunction):
              Is decremented by one and then passed to programs.
          skipsweepfailures : bool (optional)
              If True, when a solve errors during a sweep, skip it.
-         *args, **kwargs : Passed to solver
+         **kwargs : Passed to solver
 
          Returns
          -------
@@ -74,10 +74,10 @@ def _solve_fctry(genfunction):
         if sweep:
             run_sweep(genfunction, self, solution, skipsweepfailures,
                       constants, sweep, linked,
-                      solver, verbosity, *args, **kwargs)
+                      solver, verbosity, **kwargs)
         else:
             self.program, progsolve = genfunction(self)
-            result = progsolve(solver, verbosity, *args, **kwargs)
+            result = progsolve(solver, verbosity, **kwargs)
             solution.append(result)
         solution.program = self.program
         solution.to_united_array(unitless_keys=["sensitivities"], united=True)
@@ -92,7 +92,7 @@ def _solve_fctry(genfunction):
 # pylint: disable=too-many-locals,too-many-arguments
 def run_sweep(genfunction, self, solution, skipsweepfailures,
               constants, sweep, linked,
-              solver, verbosity, *args, **kwargs):
+              solver, verbosity, **kwargs):
     "Runs through a sweep."
     if len(sweep) == 1:
         sweep_grids = np.array(list(sweep.values()))
@@ -117,7 +117,7 @@ def run_sweep(genfunction, self, solution, skipsweepfailures,
             constants.update({v: f(kdc) for v, f in linked.items()})
         program, solvefn = genfunction(self, constants)
         try:
-            result = solvefn(solver, verbosity-1, *args, **kwargs)
+            result = solvefn(solver, verbosity-1, **kwargs)
             # add localmodel here
             return program, result
         except (RuntimeWarning, ValueError):
