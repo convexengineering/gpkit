@@ -77,8 +77,10 @@ class ConstraintSet(list):
                                    if "value" in k.descr})
         if substitutions:
             self.substitutions.update(substitutions)
-        for key in self.substitutions:
-            key.descr.pop("value", None)
+        # TODO: UNCOMMENT THE BELOW TO START POPPING SUBSTITUTIONS
+        # for key in self.substitutions:
+        #     if not key.constant:
+        #         key.descr.pop("value", None)
         # TODO: the loop above and below have to be separate...for vectors?
         for key in self.varkeys:
             if key in self.substitutions:

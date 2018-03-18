@@ -1,5 +1,6 @@
 "Docstring-parsing methods"
 import numpy as np
+import re
 
 
 def expected_unbounded(instance, doc):
@@ -15,8 +16,10 @@ def expected_unbounded(instance, doc):
             raise ValueError("multiple instances of %s" % flag)
         idx = doc.index(flag) + len(flag)
         idx2 = doc[idx:].index("\n")
-        idx3 = doc[idx:][idx2+1:].index("\n")
+        idx3 = doc[idx:][idx2+1:].index("\n\n")
         varstrs = doc[idx:][idx2+1:][:idx3].strip()
+        varstrs = varstrs.replace("\n", ", ")  # cross newlines
+        varstrs = re.sub(" +", " ", varstrs)   # multiple-whitespace removal
         if varstrs:
             for var in varstrs.split(", "):
                 if " (if " in var:  # it's a conditional!
@@ -30,8 +33,16 @@ def expected_unbounded(instance, doc):
                             continue
                     elif not getattr(instance, condition):
                         continue
-                # TODO: catch err if var not found?
-                variables = getattr(instance, var)
+                try:
+                    obj = instance
+                    for subdot in var.split("."):
+                        obj = getattr(obj, subdot)
+                    variables = obj
+                except AttributeError:
+                    raise AttributeError("`%s` is noted in %s as "
+                                         "unbounded, but is not "
+                                         "an attribute of that model."
+                                         % (var, instance.__class__.__name__))
                 if not hasattr(variables, "shape"):
                     variables = np.array([variables])
                 it = np.nditer(variables, flags=['multi_index', 'refs_ok'])
@@ -46,9 +57,42 @@ def parse_variables(string):
     # pylint: disable=too-many-locals, too-many-branches, too-many-statements, too-many-nested-blocks
     "Parses a string to determine what variables to create from it"
     outstr = ""
+    ostring = string
+    flag = "Constants\n"
+    count = string.count(flag)
+    if count:
+        outstr += "from gpkit import Variable\n"
+        for _ in range(count):
+            idx = string.index(flag)
+            string = string[idx:]
+            if idx == -1:
+                idx = 0
+                skiplines = 0
+            else:
+                skiplines = 2
+            for line in string.split("\n")[skiplines:]:
+                try:
+                    unitstart, unitend = line.index("["), line.index("]")
+                except ValueError:
+                    break
+                units = line[unitstart+1:unitend]
+                labelstart = unitend + 1
+                if labelstart < len(line):
+                    while line[labelstart] == " ":
+                        labelstart += 1
+                    label = line[labelstart:].replace("'", "\\'")
+                    nameval = line[:unitstart].split()
+                    if len(nameval) != 2:
+                        raise ValueError("constant %s did not have a value!"
+                                         % nameval[0])
+                    out = ("{0} = self.{0}"
+                           " = Variable('{0}', {1}, '{2}', '{3}',"
+                           "constant=True)\n")
+                    outstr += out.format(nameval[0], nameval[1], units, label)
+            string = string[len(flag):]
+    string = ostring
     flag = "Variables\n"
     count = string.count(flag)
-    ostring = string
     if count:
         outstr += "from gpkit import Variable\n"
         for _ in range(count):
