@@ -50,6 +50,7 @@ class GeometricProgram(CostedConstraintSet, NomialData):
         # pylint:disable=super-init-not-called
         # initialize attributes modified by internal methods
         self.result = None
+        self.v_ss = None
         self.nu_by_posy = None
         self.solver_log = None
         self.solver_out = None
@@ -292,14 +293,17 @@ class GeometricProgram(CostedConstraintSet, NomialData):
 
         # get sensitivities #
         result["sensitivities"] = {"nu": nu, "la": la}
-        var_senss = self.sens_from_dual(la[1:].tolist(), self.nu_by_posy[1:])
-        # add cost's sensitivity in
-        var_senss += {var: sum([self.cost.exps[i][var]*nu[i] for i in locs])
-                      for (var, locs) in self.cost.varlocs.items()
-                      if (var in self.cost.vks
-                          and var not in self.posynomials[0].vks)}
+        self.v_ss = self.sens_from_dual(la[1:].tolist(), self.nu_by_posy[1:])
+        # add cost's sensitivity in (nu could be self.nu_by_posy[0])
+        cost_senss = {var: sum([self.cost.exps[i][var]*nu[i] for i in locs])
+                      for (var, locs) in self.cost.varlocs.items()}
+        var_senss = self.v_ss + cost_senss
 
-        result["sensitivities"]["constants"] = KeyDict(var_senss)
+        const_senss = {k: v for k, v in var_senss.items()
+                       if k in self.substitutions}
+        result["sensitivities"]["cost"] = cost_senss
+        result["sensitivities"]["variables"] = KeyDict(var_senss)
+        result["sensitivities"]["constants"] = KeyDict(const_senss)
         result["constants"] = KeyDict(self.substitutions)
         result["variables"] = KeyDict(result["freevariables"])
         result["variables"].update(result["constants"])

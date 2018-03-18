@@ -12,14 +12,6 @@ gpkit.interactive.chartjs module
     :undoc-members:
     :show-inheritance:
 
-gpkit.interactive.linking_diagram module
-----------------------------------------
-
-.. automodule:: gpkit.interactive.linking_diagram
-    :members:
-    :undoc-members:
-    :show-inheritance:
-
 gpkit.interactive.plot_sweep module
 -----------------------------------
 
@@ -44,10 +36,10 @@ gpkit.interactive.ractor module
     :undoc-members:
     :show-inheritance:
 
-gpkit.interactive.sensitivity_map module
-----------------------------------------
+gpkit.interactive.sankey module
+-------------------------------
 
-.. automodule:: gpkit.interactive.sensitivity_map
+.. automodule:: gpkit.interactive.sankey
     :members:
     :undoc-members:
     :show-inheritance:

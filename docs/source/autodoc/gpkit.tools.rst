@@ -12,6 +12,14 @@ gpkit.tools.autosweep module
     :undoc-members:
     :show-inheritance:
 
+gpkit.tools.docstring module
+----------------------------
+
+.. automodule:: gpkit.tools.docstring
+    :members:
+    :undoc-members:
+    :show-inheritance:
+
 gpkit.tools.fmincon module
 --------------------------
 
