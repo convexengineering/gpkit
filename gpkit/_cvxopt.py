@@ -3,6 +3,8 @@ from cvxopt import spmatrix, matrix, log
 from cvxopt.solvers import gp
 from cvxopt.info import version as cvxopt_version
 
+# pylint:disable=c-extension-no-member
+
 
 def cvxoptimize(c, A, k, *args, **kwargs):
     """Interface to the CVXOPT solver
@@ -62,7 +64,6 @@ def gp118(K, F, g, G=None, h=None, A=None, b=None, kktsolver=None, **kwargs):
     # pylint: disable=no-member
     # pylint: disable=bad-indentation
     # pylint: disable=missing-docstring
-
     """
     This is GPkit's local copy of the gp method from cvxopt 1.1.8
     This is a patch for users with cvxopt < 1.1.8, for which gp

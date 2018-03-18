@@ -180,7 +180,7 @@ class SequentialGeometricProgram(CostedConstraintSet):
                     approx_gt.extend(cs.as_approxsgt(x0))
                 else:
                     self.not_sp = True
-                    return
+                    return None  # TODO: cleanup SP/GP flag syntax
         spapproxs = [p/m <= 1 for p, m in zip(self._approx_lt, approx_gt)]
         gp = GeometricProgram(self.cost, [gpconstrs, spapproxs], substitutions)
         gp.x0 = x0

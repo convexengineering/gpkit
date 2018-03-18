@@ -104,7 +104,7 @@ class GeometricProgram(CostedConstraintSet, NomialData):
 
     # pylint: disable=too-many-statements, too-many-locals
     def solve(self, solver=None, verbosity=1, warn_on_check=False,
-              process_result=True, *args, **kwargs):
+              process_result=True, **kwargs):
         """Solves a GeometricProgram and returns the solution.
 
         Arguments
@@ -115,7 +115,7 @@ class GeometricProgram(CostedConstraintSet, NomialData):
             If set to a function, passes that function cs, A, p_idxs, and k.
         verbosity : int (optional)
             If greater than 0, prints solver name and solve time.
-        *args, **kwargs :
+        **kwargs :
             Passed to solver constructor and solver function.
 
 
@@ -150,7 +150,7 @@ class GeometricProgram(CostedConstraintSet, NomialData):
                 solverfn = cvxoptimize
             elif solver == "mosek_cli":
                 from .._mosek import cli_expopt
-                solverfn = cli_expopt.imize_fn(*args, **kwargs)
+                solverfn = cli_expopt.imize_fn(**kwargs)
             elif solver == "mosek":
                 from .._mosek import expopt
                 solverfn = expopt.imize
@@ -168,9 +168,8 @@ class GeometricProgram(CostedConstraintSet, NomialData):
             print("Using solver '%s'" % solvername)
             print("Solving for %i variables." % len(self.varlocs))
 
-        default_kwargs = DEFAULT_SOLVER_KWARGS.get(solvername, {})
-        for k in default_kwargs:
-            kwargs.setdefault(k, default_kwargs[k])
+        solver_kwargs = DEFAULT_SOLVER_KWARGS.get(solvername, {})
+        solver_kwargs.update(kwargs)
 
         # NOTE: SIDE EFFECTS AS WE LOG SOLVER'S STDOUT AND OUTPUT
         original_stdout = sys.stdout
@@ -178,7 +177,7 @@ class GeometricProgram(CostedConstraintSet, NomialData):
         try:
             sys.stdout = self.solver_log   # CAPTURED
             solver_out = solverfn(c=self.cs, A=self.A, p_idxs=self.p_idxs,
-                                  k=self.k, *args, **kwargs)
+                                  k=self.k, **solver_kwargs)
             self.solver_out = solver_out
         finally:
             sys.stdout = original_stdout
@@ -297,7 +296,11 @@ class GeometricProgram(CostedConstraintSet, NomialData):
         # add cost's sensitivity in (nu could be self.nu_by_posy[0])
         cost_senss = {var: sum([self.cost.exps[i][var]*nu[i] for i in locs])
                       for (var, locs) in self.cost.varlocs.items()}
-        var_senss = self.v_ss + cost_senss
+
+        # not using HashVector addition because we want to preseve zeros
+        var_senss = self.v_ss.copy()
+        for key, value in cost_senss.items():
+            var_senss[key] = value + var_senss.get(key, 0)
 
         const_senss = {k: v for k, v in var_senss.items()
                        if k in self.substitutions}
