@@ -105,9 +105,9 @@ class DictOfLists(dict):
         "Indexes into each list independently."
         return self.__class__(_index_dict(i, self, self.__class__()))
 
-    def to_united_array(self, unitless_keys=(), united=False):
-        "Converts all lists into array, potentially grabbing units from keys."
-        _enray_and_unit_dict(self, self, unitless_keys, united)
+    def to_arrays(self):
+        "Converts all lists into array."
+        _enray(self, self)
 
     def classify(self, cls):
         "Converts dictionaries whose first key isn't a string to given class."
@@ -161,25 +161,16 @@ def _index_dict(idx, d_in, d_out):
     return d_out
 
 
-def _enray_and_unit_dict(d_in, d_out, unitless_keys=(), united=False):
+def _enray(d_in, d_out):
     "Recursively turns lists into numpy arrays."
     for k, v in d_in.items():
         if isinstance(v, dict):
-            subunited = united and k not in unitless_keys
-            d_out[k] = _enray_and_unit_dict(v, v.__class__(),
-                                            unitless_keys, subunited)
+            d_out[k] = _enray(v, v.__class__())
         else:
-            if hasattr(v[0], "units") and united:
-                # if the first element of the list already has units,
-                # ensure unit consistency across the entire list
-                v = [e.to(k.units).magnitude for e in v]*k.units
-            else:
-                v = np.array(v)
-                if (united and hasattr(k, "units")
-                        and isinstance(k.units, Quantity)):
-                    v = v*k.units
             if len(v) == 1:
                 v = v[0]
+            else:
+                v = np.array(v)
             d_out[k] = v
     # assert set(i.keys()) == set(o.keys())  # keys change with swept varkeys
     return d_out

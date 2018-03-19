@@ -105,7 +105,19 @@ class SolutionArray(DictOfLists):
     def subinto(self, posy):
         "Returns NomialArray of each solution substituted into posy."
         if posy in self["variables"]:
-            return self["variables"][posy]
+            got = self["variables"][posy]
+            # if uniting on get ever becomes a speed hit, cache the results
+            if isinstance(got, dict):
+                for key, value in got.items():
+                    if key.units:
+                        got[key] = value*key.units
+            else:
+                if hasattr(posy, "units"):
+                    units = posy.units
+                else:
+                    units = list(self["variables"].keymap[posy])[0].units
+                got = got*units if units else got
+            return got
         elif not hasattr(posy, "sub"):
             raise ValueError("no variable '%s' found in the solution" % posy)
         elif len(self) > 1:

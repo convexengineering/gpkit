@@ -266,9 +266,7 @@ class TestModelSubs(unittest.TestCase):
         eqns = phys_constraints
         m = Model(objective, eqns)
         sol = m.solve(verbosity=0)
-        solv = sol['variables']
-        a = solv["xi"]
-        b = xi_dist*gpkit.ureg.N
+        a, b = sol("xi"), xi_dist*gpkit.ureg.N
         self.assertTrue(all(abs(a-b)/(a+b) < 1e-7))
 
     def test_model_composition_units(self):
