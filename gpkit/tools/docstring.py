@@ -16,7 +16,10 @@ def expected_unbounded(instance, doc):
             raise ValueError("multiple instances of %s" % flag)
         idx = doc.index(flag) + len(flag)
         idx2 = doc[idx:].index("\n")
-        idx3 = doc[idx:][idx2+1:].index("\n\n")
+        try:
+            idx3 = doc[idx:][idx2+1:].index("\n\n")
+        except ValueError:
+            idx3 = doc[idx:][idx2+1:].index("\n")
         varstrs = doc[idx:][idx2+1:][:idx3].strip()
         varstrs = varstrs.replace("\n", ", ")  # cross newlines
         varstrs = re.sub(" +", " ", varstrs)   # multiple-whitespace removal

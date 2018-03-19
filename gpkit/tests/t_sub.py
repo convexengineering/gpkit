@@ -194,11 +194,12 @@ class TestModelSubs(unittest.TestCase):
             m = gpkit.Model(x, [x >= 1-y, y <= ymax])
             m.substitutions[ymax] = 0.2
             self.assertAlmostEqual(m.localsolve(verbosity=0)["cost"], 0.8, 3)
+            # uncomment the lines below if values don't persist
+            # m = gpkit.Model(x, [x >= 1-y, y <= ymax])
+            # with self.assertRaises(ValueError):  # from unbounded ymax
+            #     m.localsolve(verbosity=0)
             m = gpkit.Model(x, [x >= 1-y, y <= ymax])
-            with self.assertRaises(ValueError):  # from unbounded ymax
-                m.localsolve(verbosity=0)
-            m = gpkit.Model(x, [x >= 1-y, y <= ymax])
-            m.substitutions[ymax] = 0.1  # the original value does not persist
+            # m.substitutions[ymax] = 0.1
             self.assertAlmostEqual(m.localsolve(verbosity=0)["cost"], 0.9, 3)
 
     def test_united_sub_sweep(self):
@@ -271,9 +272,7 @@ class TestModelSubs(unittest.TestCase):
         eqns = phys_constraints
         m = Model(objective, eqns)
         sol = m.solve(verbosity=0)
-        solv = sol['variables']
-        a = solv["xi"]
-        b = xi_dist*gpkit.ureg.N
+        a, b = sol("xi"), xi_dist*gpkit.ureg.N
         self.assertTrue(all(abs(a-b)/(a+b) < 1e-7))
 
     def test_model_composition_units(self):

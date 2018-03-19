@@ -101,9 +101,11 @@ class TestGP(unittest.TestCase):
         sol = prob.solve(solver=self.solver, verbosity=0)
         almostequal = self.assertAlmostEqual
         almostequal(0.000553226/R.units/sol["cost"], 1, self.ndig)
-        almostequal(340.29*a0.units/sol["constants"]["a0"], 1, self.ndig)
-        almostequal(340.29*a0.units/sol["variables"]["a0"], 1, self.ndig)
-        almostequal(1807.58*R.units/sol["freevariables"]["R"], 1, self.ndig)
+        almostequal(340.29/sol["constants"]["a0"], 1, self.ndig)
+        almostequal(340.29/sol["variables"]["a0"], 1, self.ndig)
+        almostequal(340.29*a0.units/sol("a0"), 1, self.ndig)
+        almostequal(1807.58/sol["freevariables"]["R"], 1, self.ndig)
+        almostequal(1807.58*R.units/sol("R"), 1, self.ndig)
 
     def test_trivial_vector_gp(self):
         """

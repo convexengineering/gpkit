@@ -140,7 +140,7 @@ class BinarySweepTree(object):
         solution = SolutionArray()
         for sol in self.sollist:
             solution.append(sol.program.result)
-        solution.to_united_array(unitless_keys=["sensitivities"], united=True)
+        solution.to_arrays()
         units = getattr(self.sols[0]["cost"], "units", None)
         if units:
             solution["cost"] = solution["cost"] * units
