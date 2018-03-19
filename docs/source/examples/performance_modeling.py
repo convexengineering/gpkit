@@ -11,30 +11,24 @@ class AircraftP(Model):
     Wfuel  [lbf]  fuel weight
     Wburn  [lbf]  segment fuel burn
 
-    Upper Bounded by aircraft
-    -------------------------
-    c, A
-
-    Lower Bounded by aircraft
-    -------------------------
-    W
-
     Upper Unbounded
     ---------------
-    Wburn
+    Wburn, aircraft.c
 
     Lower Unbounded
     ---------------
-    Wfuel
+    Wfuel, aircraft.W
 
     """
     def setup(self, aircraft, state):
-        exec parse_variables(AircraftP.__doc__)
         self.aircraft = aircraft
+        self.state = state
+        exec parse_variables(AircraftP.__doc__)
+
         self.wing_aero = aircraft.wing.dynamic(aircraft.wing, state)
         self.perf_models = [self.wing_aero]
 
-        W = self.W = aircraft.W
+        W = aircraft.W
         self.c = aircraft.wing.c
         self.A = aircraft.wing.A
         S = aircraft.wing.S
@@ -94,28 +88,21 @@ class FlightState(Model):
 class FlightSegment(Model):
     """Combines a context (flight state) and a component (the aircraft)
 
-    Upper Bounded by aircraft
-    -------------------------
-    c, A
-
-    Lower Bounded by aircraft
-    -------------------------
-    W
-
     Upper Unbounded
     ---------------
-    Wburn
+    Wburn, aircraft.c
 
     Lower Unbounded
     ---------------
-    Wfuel
+    Wfuel, aircraft.W
 
     """
     def setup(self, aircraft):
+        self.aircraft = aircraft
+
         self.flightstate = FlightState()
         self.aircraftp = aircraft.dynamic(aircraft, self.flightstate)
 
-        self.aircraft = aircraft
         self.Wburn = self.aircraftp.Wburn
         self.Wfuel = self.aircraftp.Wfuel
 
@@ -125,19 +112,19 @@ class FlightSegment(Model):
 class Mission(Model):
     """A sequence of flight segments
 
-    Upper Bounded by aircraft
-    -------------------------
-    c, A
+    Upper Unbounded
+    ---------------
+    aircraft.c
 
-    Lower Bounded by aircraft
-    -------------------------
-    W
+    Lower Unbounded
+    ---------------
+    aircraft.W
     """
     def setup(self, aircraft):
+        self.aircraft = aircraft
+
         with Vectorize(4):  # four flight segments
             self.fs = FlightSegment(aircraft)
-
-        self.aircraft = aircraft
 
         Wburn = self.fs.aircraftp.Wburn
         Wfuel = self.fs.aircraftp.Wfuel
@@ -158,27 +145,25 @@ class WingAero(Model):
     Re      [-]    Reynold's number
     D       [lbf]  drag force
 
-    Upper Bounded by wing
-    ---------------------
-    A, c
-
     Upper Unbounded
     ---------------
-    D
+    D, wing.c
 
     Lower Unbounded
     ---------------
-    CL, S
+    CL, wing.S
     """
     def setup(self, wing, state):
-        exec parse_variables(WingAero.__doc__)
         self.wing = wing
+        exec parse_variables(WingAero.__doc__)
+
         c = wing.c
         A = wing.A
-        S = self.S = wing.S
+        S = wing.S
         rho = state.rho
         V = state.V
         mu = state.mu
+
         return [
             CD >= 0.074/Re**0.2 + CL**2/np.pi/A/e,
             Re == rho*V*c/mu,
