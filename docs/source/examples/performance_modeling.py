@@ -1,117 +1,213 @@
 """Modular aircraft concept"""
 import numpy as np
-from gpkit import Model, Variable, Vectorize
-
-
-class Aircraft(Model):
-    "The vehicle model"
-    def setup(self):
-        self.fuse = Fuselage()
-        self.wing = Wing()
-        self.components = [self.fuse, self.wing]
-
-        W = Variable("W", "lbf", "weight")
-
-        return self.components, [
-            W >= sum(c.topvar("W") for c in self.components)
-            ]
-
-    def dynamic(self, state):
-        "This component's performance model for a given state."
-        return AircraftP(self, state)
+from gpkit import Model, Vectorize, parse_variables
 
 
 class AircraftP(Model):
-    "Aircraft flight physics: weight <= lift, fuel burn"
+    """Aircraft flight physics: weight <= lift, fuel burn
+
+    Variables
+    ---------
+    Wfuel  [lbf]  fuel weight
+    Wburn  [lbf]  segment fuel burn
+
+    Upper Unbounded
+    ---------------
+    Wburn, aircraft.c
+
+    Lower Unbounded
+    ---------------
+    Wfuel, aircraft.W
+
+    """
     def setup(self, aircraft, state):
         self.aircraft = aircraft
-        self.wing_aero = aircraft.wing.dynamic(state)
-        self.perf_models = [self.wing_aero]
-        Wfuel = Variable("W_{fuel}", "lbf", "fuel weight")
-        Wburn = Variable("W_{burn}", "lbf", "segment fuel burn")
+        self.state = state
+        exec parse_variables(AircraftP.__doc__)
 
-        return self.perf_models, [
-            aircraft.topvar("W") + Wfuel <= (0.5*state["\\rho"]*state["V"]**2
-                                             * self.wing_aero["C_L"]
-                                             * aircraft.wing["S"]),
-            Wburn >= 0.1*self.wing_aero["D"]
-            ]
+        self.wing_aero = aircraft.wing.dynamic(aircraft.wing, state)
+        self.perf_models = [self.wing_aero]
+
+        W = aircraft.W
+        self.c = aircraft.wing.c
+        self.A = aircraft.wing.A
+        S = aircraft.wing.S
+
+        V = state.V
+        rho = state.rho
+
+        D = self.wing_aero.D
+        CL = self.wing_aero.CL
+
+        return [W + Wfuel <= 0.5*rho*CL*S*V**2,
+                Wburn >= 0.1*D], self.perf_models
+
+
+class Aircraft(Model):
+    """The vehicle model
+
+    Variables
+    ---------
+    W  [lbf]  weight
+
+    Upper Unbounded
+    ---------------
+    W
+
+    Lower Unbounded
+    ---------------
+    c, S
+    """
+    def setup(self):
+        exec parse_variables(Aircraft.__doc__)
+        self.fuse = Fuselage()
+        self.wing = Wing()
+        self.components = [self.fuse, self.wing]
+        self.c = self.wing.c
+        self.S = self.wing.S
+
+        return self.components, W >= sum(c.W for c in self.components)
+
+    dynamic = AircraftP
 
 
 class FlightState(Model):
-    "Context for evaluating flight physics"
+    """Context for evaluating flight physics
+
+    Variables
+    ---------
+    V    40        [knots]    true airspeed
+    mu    1.628e-5 [N*s/m^2]  dynamic viscosity
+    rho   0.74     [kg/m^3]   air density
+
+    """
     def setup(self):
-        Variable("V", 40, "knots", "true airspeed")
-        Variable("\\mu", 1.628e-5, "N*s/m^2", "dynamic viscosity")
-        Variable("\\rho", 0.74, "kg/m^3", "air density")
+        exec parse_variables(FlightState.__doc__)
 
 
 class FlightSegment(Model):
-    "Combines a context (flight state) and a component (the aircraft)"
+    """Combines a context (flight state) and a component (the aircraft)
+
+    Upper Unbounded
+    ---------------
+    Wburn, aircraft.c
+
+    Lower Unbounded
+    ---------------
+    Wfuel, aircraft.W
+
+    """
     def setup(self, aircraft):
+        self.aircraft = aircraft
+
         self.flightstate = FlightState()
-        self.aircraftp = aircraft.dynamic(self.flightstate)
+        self.aircraftp = aircraft.dynamic(aircraft, self.flightstate)
+
+        self.Wburn = self.aircraftp.Wburn
+        self.Wfuel = self.aircraftp.Wfuel
+
         return self.flightstate, self.aircraftp
 
 
 class Mission(Model):
-    "A sequence of flight segments"
+    """A sequence of flight segments
+
+    Upper Unbounded
+    ---------------
+    aircraft.c
+
+    Lower Unbounded
+    ---------------
+    aircraft.W
+    """
     def setup(self, aircraft):
+        self.aircraft = aircraft
+
         with Vectorize(4):  # four flight segments
             self.fs = FlightSegment(aircraft)
 
-        Wburn = self.fs.aircraftp["W_{burn}"]
-        Wfuel = self.fs.aircraftp["W_{fuel}"]
+        Wburn = self.fs.aircraftp.Wburn
+        Wfuel = self.fs.aircraftp.Wfuel
         self.takeoff_fuel = Wfuel[0]
 
         return self.fs, [Wfuel[:-1] >= Wfuel[1:] + Wburn[:-1],
                          Wfuel[-1] >= Wburn[-1]]
 
 
-class Wing(Model):
-    "Aircraft wing model"
-    def dynamic(self, state):
-        "Returns this component's performance model for a given state."
-        return WingAero(self, state)
-
-    def setup(self):
-        W = Variable("W", "lbf", "weight")
-        S = Variable("S", 190, "ft^2", "surface area")
-        rho = Variable("\\rho", 1, "lbf/ft^2", "areal density")
-        A = Variable("A", 27, "-", "aspect ratio")
-        c = Variable("c", "ft", "mean chord")
-
-        return [W >= S*rho,
-                c == (S/A)**0.5]
-
-
 class WingAero(Model):
-    "Wing aerodynamics"
+    """Wing aerodynamics
+
+    Variables
+    ---------
+    CD      [-]    drag coefficient
+    CL      [-]    lift coefficient
+    e   0.9 [-]    Oswald efficiency
+    Re      [-]    Reynold's number
+    D       [lbf]  drag force
+
+    Upper Unbounded
+    ---------------
+    D, wing.c
+
+    Lower Unbounded
+    ---------------
+    CL, wing.S
+    """
     def setup(self, wing, state):
-        CD = Variable("C_D", "-", "drag coefficient")
-        CL = Variable("C_L", "-", "lift coefficient")
-        e = Variable("e", 0.9, "-", "Oswald efficiency")
-        Re = Variable("Re", "-", "Reynold's number")
-        D = Variable("D", "lbf", "drag force")
+        self.wing = wing
+        exec parse_variables(WingAero.__doc__)
+
+        c = wing.c
+        A = wing.A
+        S = wing.S
+        rho = state.rho
+        V = state.V
+        mu = state.mu
 
         return [
-            CD >= (0.074/Re**0.2 + CL**2/np.pi/wing["A"]/e),
-            Re == state["\\rho"]*state["V"]*wing["c"]/state["\\mu"],
-            D >= 0.5*state["\\rho"]*state["V"]**2*CD*wing["S"],
-            ]
+            CD >= 0.074/Re**0.2 + CL**2/np.pi/A/e,
+            Re == rho*V*c/mu,
+            D >= 0.5*rho*V**2*CD*S]
+
+
+class Wing(Model):
+    """Aircraft wing model
+
+    Variables
+    ---------
+    W        [lbf]       weight
+    S        [ft^2]      surface area
+    rho    1 [lbf/ft^2]  areal density
+    A     27 [-]         aspect ratio
+    c        [ft]        mean chord
+
+    Upper Unbounded
+    ---------------
+    W
+
+    Lower Unbounded
+    ---------------
+    c, S
+    """
+    def setup(self):
+        exec parse_variables(Wing.__doc__)
+        return [W >= S*rho, c == (S/A)**0.5]
+
+    dynamic = WingAero
 
 
 class Fuselage(Model):
-    "The thing that carries the fuel, engine, and payload"
+    """The thing that carries the fuel, engine, and payload
+
+    A full model is left as an exercise for the reader.
+
+    Variables
+    ---------
+    W  100 [lbf]  weight
+
+    """
     def setup(self):
-        # fuselage needs an external dynamic drag model,
-        # left as an exercise for the reader
-        # V = Variable("V", 16, "gal", "volume")
-        # d = Variable("d", 12, "in", "diameter")
-        # S = Variable("S", "ft^2", "wetted area")
-        # cd = Variable("c_d", .0047, "-", "drag coefficient")
-        # CDA = Variable("CDA", "ft^2", "drag area")
-        Variable("W", 100, "lbf", "weight")
+        exec parse_variables(Fuselage.__doc__)
 
 AC = Aircraft()
 MISSION = Mission(AC)
