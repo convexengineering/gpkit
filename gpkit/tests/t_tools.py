@@ -24,7 +24,7 @@ class OnlyVectorParse(Model):
     x    [-]    just another variable
     """
     def setup(self):
-        exec parse_variables(OnlyVectorParse.__doc__)
+        exec parse_variables(OnlyVectorParse.__doc__)  # pylint: disable=exec-used
 
 
 class Fuselage(Model):
@@ -68,6 +68,7 @@ class TestTools(unittest.TestCase):
     """TestCase for math models"""
 
     def test_vector_only_parse(self):
+        # pylint: disable=no-member
         m = OnlyVectorParse()
         self.assertTrue(hasattr(m, "x"))
         self.assertIsInstance(m.x, NomialArray)
