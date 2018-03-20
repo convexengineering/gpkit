@@ -176,6 +176,8 @@ class Mosek(SolverBackend):
                 " your platform (%s)" % sys.platform)
             return None
 
+        if "MSKHOME" in os.environ:  # allow specification of root dir
+            rootdir = os.environ["MSKHOME"]
         if not os.path.isdir(rootdir):
             return None
 
