@@ -2,7 +2,7 @@
 import unittest
 import numpy as np
 from numpy import log
-from gpkit import Variable, VectorVariable, Model
+from gpkit import Variable, VectorVariable, Model, NomialArray
 from gpkit.tools.autosweep import BinarySweepTree
 from gpkit.tools.tools import (composite_objective,
                                te_exp_minus1, te_secant, te_tangent)
@@ -15,6 +15,16 @@ def assert_logtol(first, second, logtol=1e-6):
     "Asserts that the logs of two arrays have a given abstol"
     np.testing.assert_allclose(log(mag(first)), log(mag(second)),
                                atol=logtol, rtol=0)
+
+
+class OnlyVectorParse(Model):
+    """
+    Variables of length 3
+    ---------------------
+    x    [-]    just another variable
+    """
+    def setup(self):
+        exec parse_variables(OnlyVectorParse.__doc__)
 
 
 class Fuselage(Model):
@@ -51,6 +61,13 @@ class Fuselage(Model):
 
 class TestTools(unittest.TestCase):
     """TestCase for math models"""
+
+    def test_vector_only_parse(self):
+        m = OnlyVectorParse()
+        self.assertTrue(hasattr(m, "x"))
+        self.assertIsInstance(m.x, NomialArray)
+        self.assertEqual(len(m.x), 3)
+
 
     def test_parse_variables(self):
         Fuselage(Variable("Wfueltot", 5, "lbf"))
