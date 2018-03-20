@@ -34,6 +34,11 @@ class Fuselage(Model):
     t          0.024 [in]            Minimum skin thickness
     Vol              [ft^3]          Volume
     W                [lbf]           Weight
+
+    Upper Unbounded
+    ---------------
+    k, W
+
     """
 
     # pylint: disable=undefined-variable, exec-used, invalid-name

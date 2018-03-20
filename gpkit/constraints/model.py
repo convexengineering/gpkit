@@ -9,6 +9,8 @@ from ..small_scripts import mag
 from ..tools.autosweep import autosweep_1d
 from ..exceptions import InvalidGPConstraint
 from .. import NamedVariables
+from ..tools.docstring import expected_unbounded
+from .set import add_meq_bounds
 
 
 class Model(CostedConstraintSet):
@@ -79,12 +81,91 @@ class Model(CostedConstraintSet):
             # even if they aren't used in any constraints
             self.unique_varkeys = frozenset(v.key for v in setup_vars)
         CostedConstraintSet.__init__(self, cost, constraints, substitutions)
+        if hasattr(self, "setup") and self.__class__.__doc__:
+            if (("Unbounded" in self.__class__.__doc__ or
+                 "Bounded by" in self.__class__.__doc__) and
+                    "SKIP VERIFICATION" not in self.__class__.__doc__):
+                self.verify_docstring()
 
     gp = _progify_fctry(GeometricProgram)
     sp = _progify_fctry(SequentialGeometricProgram)
     solve = _solve_fctry(_progify_fctry(GeometricProgram, "solve"))
     localsolve = _solve_fctry(_progify_fctry(SequentialGeometricProgram,
                                              "localsolve"))
+
+    def verify_docstring(self):  # pylint:disable=too-many-locals,too-many-branches,too-many-statements
+        "Verifies docstring bounds are sufficient but not excessive."
+        err = "while verifying %s:\n" % self.__class__.__name__
+        bounded, meq_bounded = self.bounded.copy(), self.meq_bounded.copy()
+        flag = "Bounded by"
+        doc = self.__class__.__doc__
+        count = doc.count(flag)
+        if count:
+            idx = doc.index(flag) + len(flag)
+        for i in range(count):
+            idx2 = doc[idx:].index("\n")
+            attr = doc[idx+1:idx+idx2]
+            subinst = getattr(self, attr)
+            idx3 = doc[idx:][idx2+1:].index("\n")
+            idx4 = doc[idx:][idx2+1:][idx3+1:].index("\n")
+            varstrs = doc[idx:][idx2+1:][idx3+1:][:idx4].strip()
+            for (key, direction) in subinst.bounded:
+                # TODO: error when the right bound is not found!
+                if key.name in varstrs:  # TODO: check attributes
+                    bounded.add((key, direction))
+            if i != count-1:
+                idx = idx + idx2 + idx3 + idx4 + 4
+                idx += doc[idx:].index(flag) + len(flag)
+        add_meq_bounds(bounded, meq_bounded)  # add meqs to bounded
+        # now we'll check the docstring
+        exp_unbounds = expected_unbounded(self, doc)
+        unexp_bounds = bounded.intersection(exp_unbounds)
+        if unexp_bounds:  # anything bounded that shouldn't be? err!
+            for direction in ["lower", "upper"]:
+                badvks = [v for v, d in unexp_bounds if d == direction]
+                if not badvks:
+                    continue
+                badvks = ", ".join(str(v) for v in badvks)
+                badvks += (" were" if len(badvks) > 1 else " was")
+                err += ("    %s %s-bounded; expected %s-unbounded"
+                        "\n" % (badvks, direction, direction))
+            raise ValueError(err)
+        bounded.update(exp_unbounds)  # if not, treat expected as bounded
+        add_meq_bounds(bounded, meq_bounded)  # and add more meqs
+        self.missingbounds = {}  # now let's figure out what's missing
+        for bound in meq_bounded:  # first add the un-dealt-with meq bounds
+            for condition in list(meq_bounded[bound]):
+                meq_bounded[bound].remove(condition)
+                newcond = condition - bounded
+                if newcond and not any(c.issubset(newcond)
+                                       for c in meq_bounded[bound]):
+                    meq_bounded[bound].add(newcond)
+            bsets = " or ".join(str(list(c)) for c in meq_bounded[bound])
+            self.missingbounds[bound] = (", but would gain it from any of"
+                                         " these sets of bounds: " + bsets)
+        # then add everything that's not in bounded
+        if len(bounded)+len(self.missingbounds) != 2*len(self.varkeys):
+            for key in self.varkeys:
+                for bound in ("upper", "lower"):
+                    if (key, bound) not in bounded:
+                        if (key, bound) not in self.missingbounds:
+                            self.missingbounds[(key, bound)] = ""
+        if self.missingbounds:  # anything unbounded? err!
+            boundstrs = "\n".join("  %s has no %s bound%s" % (v, b, x)
+                                  for (v, b), x
+                                  in self.missingbounds.items())
+            docstring = ("To fix this add the following to %s's"
+                         " docstring (you may not need it all):"
+                         " \n" % self.__class__.__name__)
+            for direction in ["upper", "lower"]:
+                mb = [k for (k, b) in self.missingbounds if b == direction]
+                if mb:
+                    docstring += """
+%s Unbounded
+---------------
+%s
+""" % (direction.title(), ", ".join(set(k.name for k in mb)))
+            raise ValueError(err + boundstrs + "\n\n" + docstring)
 
     def as_gpconstr(self, x0, substitutions=None):
         "Returns approximating constraint, keeping name and num"
