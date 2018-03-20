@@ -1,5 +1,5 @@
 "Docstring parsing example"
-from gpkit import Model, parse_variables, verify_model
+from gpkit import Model, parse_variables
 
 
 class Cube(Model):
@@ -40,8 +40,6 @@ class Cube(Model):
                 s.prod() >= V,
                 s[2] >= h]
 
-
-verify_model(Cube)
 
 print parse_variables(Cube.__doc__)
 c = Cube()

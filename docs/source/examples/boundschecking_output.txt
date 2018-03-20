@@ -3,9 +3,9 @@
         F
   # subject to
         F >= D + T
-        D = A_p*V**2*r_f
-        A_p = \nu
-        T = V*m_f
-        m_f >= m_b + m_i
-        m_f = V*r_f
-        Fs <= m_i
+        D = Ap*V**2*rf
+        Ap = nu
+        T = V*mf
+        mf >= mb + mi
+        mf = V*rf
+        Fs <= mi
