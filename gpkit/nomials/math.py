@@ -181,7 +181,11 @@ class Signomial(Nomial):
                 other_hmap = NomialMap({HashVector(): mag(other)})
                 other_hmap.units_of_product(other)
         if other_hmap:
-            return Signomial(self.hmap + other_hmap)
+            try:
+                return Signomial(self.hmap + other_hmap)
+            except DimensionalityError:
+                raise ValueError("'%s' and '%s' have incompatible units for"
+                                 " addition." % (self, other))
         return NotImplemented
 
     def __mul__(self, other):
