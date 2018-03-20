@@ -2,9 +2,14 @@
 from gpkit import Model, Variable, Vectorize
 
 class Test(Model):
-    "A simple scalar model"
+    """A simple scalar model
+
+    Upper Unbounded
+    ---------------
+    x
+    """
     def setup(self):
-        x = Variable("x")
+        x = self.x = Variable("x")
         return [x >= 1]
 
 print "SCALAR"

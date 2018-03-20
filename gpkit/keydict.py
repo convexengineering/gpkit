@@ -121,17 +121,17 @@ class KeyDict(dict):
         if dict.__contains__(self, key):
             if idx:
                 try:
-                    try:
-                        return not np.isnan(dict.__getitem__(self, key)[idx])
-                    except IndexError:
-                        raise IndexError("key %s with idx %s is out of bounds"
-                                         " for value %s" %
-                                         (key, idx,
-                                          dict.__getitem__(self, key)))
+                    value = dict.__getitem__(self, key)[idx]
+                    return True if is_sweepvar(value) else not isnan(value)
                 except TypeError:
                     raise TypeError("%s has an idx, but its value in this"
                                     " KeyDict is the scalar %s."
                                     % (key, dict.__getitem__(self, key)))
+                except IndexError:
+                    raise IndexError("key %s with idx %s is out of bounds"
+                                     " for value %s" %
+                                     (key, idx,
+                                      dict.__getitem__(self, key)))
             return True
         elif key in self.keymap:
             return True
