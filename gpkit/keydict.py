@@ -170,7 +170,7 @@ class KeyDict(dict):
         if hasattr(value, "exp") and not value.exp:
             value = value.value  # substitute constant monomials
         if isinstance(value, Quantity):
-            value = value.to(key.units).magnitude
+            value = value.to(key.units or "dimensionless").magnitude
         if idx:
             dict.__getitem__(self, key)[idx] = value
         else:
