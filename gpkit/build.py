@@ -290,6 +290,9 @@ def rebuild():
 
 def build_gpkit():
     "Builds GPkit"
+    filedirectory = __file__.replace("build.py", "")
+    os.cwd(filedirectory)
+
     if isfile("__init__.py"):
         #call("ls")
         log("#     Don't want to be in a folder with __init__.py, going up!")
