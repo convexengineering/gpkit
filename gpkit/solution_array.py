@@ -2,9 +2,11 @@
 from collections import Iterable
 import numpy as np
 from .nomials import NomialArray
-from .small_classes import DictOfLists
+from .small_classes import DictOfLists, Quantity
 from .small_scripts import mag, isnan
 from .repr_conventions import unitstr
+
+DIMENSIONLESS = Quantity(1, "dimensionless")
 
 
 def senss_table(data, showvars=(), title="Sensitivities", **kwargs):
@@ -109,14 +111,13 @@ class SolutionArray(DictOfLists):
             # if uniting on get ever becomes a speed hit, cache the results
             if isinstance(got, dict):
                 for key, value in got.items():
-                    if key.units:
-                        got[key] = value*key.units
+                    got[key] = value*(key.units or DIMENSIONLESS)
             else:
                 if hasattr(posy, "units"):
                     units = posy.units
                 else:
                     units = list(self["variables"].keymap[posy])[0].units
-                got = got*units if units else got
+                got = got*(units or DIMENSIONLESS)
             return got
         elif not hasattr(posy, "sub"):
             raise ValueError("no variable '%s' found in the solution" % posy)
