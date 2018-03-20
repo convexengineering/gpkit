@@ -6,7 +6,7 @@ from .small_classes import DictOfLists, Quantity
 from .small_scripts import mag, isnan
 from .repr_conventions import unitstr
 
-DIMENSIONLESS = Quantity("dimensionless")
+DIMENSIONLESS = Quantity(1, "dimensionless")
 
 
 def senss_table(data, showvars=(), title="Sensitivities", **kwargs):
