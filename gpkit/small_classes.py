@@ -2,7 +2,7 @@
 from operator import xor
 import numpy as np
 from . import ureg
-from functools import reduce
+from functools import reduce  # pylint: disable=redefined-builtin
 
 try:
     isinstance("", basestring)
