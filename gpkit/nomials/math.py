@@ -329,8 +329,8 @@ class Monomial(Posynomial):
         if isinstance(other, MONS):
             try:  # if both are monomials, return a constraint
                 return MonomialEquality(self, "=", other)
-            except ValueError, e:  # units mismatch or infeasible constraint
-                print "Infeasible monomial equality:", e
+            except ValueError as e:  # units mismatch or infeasible constraint
+                print("Infeasible monomial equality: %s" % e)
                 return False
         return super(Monomial, self).__eq__(other)
 
