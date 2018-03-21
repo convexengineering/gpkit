@@ -169,6 +169,27 @@ class TestMonomialEquality(unittest.TestCase):
 
 class TestSignomialInequality(unittest.TestCase):
     """Test Signomial constraints"""
+    def test_becomes_posy_sensitivities(self):
+        # pylint: disable=invalid-name
+        # model from #1165
+        ujet = Variable("ujet")
+        PK = Variable("PK")
+
+        # Constants
+        Dp = Variable("Dp", 0.662)
+        fBLI = Variable("fBLI", 0.4)
+        fsurf = Variable("fsurf", 0.836)
+        mdot = Variable("mdot", 1/0.7376)
+
+        with SignomialsEnabled():
+            m = Model(PK, [mdot*ujet + fBLI*Dp >= 1,
+                           PK >= 0.5*mdot*ujet*(2 + ujet) + fBLI*fsurf*Dp])
+        var_senss = m.solve(verbosity=0)["sensitivities"]["constants"]
+        self.assertAlmostEqual(var_senss[Dp], -0.16, 2)
+        self.assertAlmostEqual(var_senss[fBLI], -0.16, 2)
+        self.assertAlmostEqual(var_senss[fsurf], 0.19, 2)
+        self.assertAlmostEqual(var_senss[mdot], -0.17, 2)
+
     def test_init(self):
         "Test initialization and types"
         D = Variable('D', units="N")
@@ -186,7 +207,6 @@ class TestSignomialInequality(unittest.TestCase):
         # make sure that the error type doesn't change on our users
         with self.assertRaises(InvalidGPConstraint):
             _ = sc.as_posyslt1()
-
 
 class TestTight(unittest.TestCase):
     """Test tight constraint set"""

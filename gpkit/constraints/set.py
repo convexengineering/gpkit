@@ -266,7 +266,7 @@ class ConstraintSet(list):
             posylist.extend(posys)
         return posylist
 
-    def sens_from_dual(self, las, nus):
+    def sens_from_dual(self, las, nus, result):
         """Computes constraint and variable sensitivities from dual solution
 
         Arguments
@@ -293,7 +293,7 @@ class ConstraintSet(list):
             n_posys = self.posymap[i]
             la = las[offset:offset+n_posys]
             nu = nus[offset:offset+n_posys]
-            v_ss = constr.sens_from_dual(la, nu)
+            v_ss = constr.sens_from_dual(la, nu, result)
             constr.v_ss = v_ss
             self.relax_sensitivity += constr.relax_sensitivity
             # not using HashVector addition because we want to preseve zeros
