@@ -56,12 +56,72 @@ def expected_unbounded(instance, doc):
     return exp_unbounded
 
 
+def parse_variables(string):
+    "Parses a string to determine what variables to create from it"
+    out = "from gpkit import Variable, VectorVariable\n"
+    out += check_and_parse_flag(string, "Constants\n", constant_declare)
+    out += check_and_parse_flag(string, "Variables\n")
+    out += check_and_parse_flag(string, "Variables of length", vv_declare)
+    return out
+
+
+def vv_declare(string, flag, idx2, countstr):
+    "Turns Variable declarations into VectorVariable ones"
+    length = string[len(flag):idx2].strip()
+    return countstr.replace("Variable(", "VectorVariable(%s, " % length)
+
+
+def constant_declare(string, flag, idx2, countstr):  # pylint: disable=unused-argument
+    "Turns Variable declarations into Constant ones"
+    return countstr.replace("')", "', constant=True)")
+
+
+def check_and_parse_flag(string, flag, declaration_func=None):
+    "Checks for instances of flag in string and parses them."
+    overallstr = ""
+    for _ in range(string.count(flag)):
+        countstr = ""
+        idx = string.index(flag)
+        string = string[idx:]
+        if idx == -1:
+            idx = 0
+            skiplines = 0
+        else:
+            skiplines = 2
+        idx2 = 0 if "\n" in flag else string.index("\n")
+        for line in string[idx2:].split("\n")[skiplines:]:
+            if not line.strip():  # whitespace only
+                break
+            try:
+                units = line[line.index("[")+1:line.index("]")]
+            except ValueError:
+                raise ValueError("A unit declaration bracketed by [] was"
+                                 " not found on the line reading:\n"
+                                 "    %s" % line)
+            nameval = line[:line.index("[")].split()
+            labelstart = line.index("]") + 1
+            if labelstart >= len(line):
+                label = ""
+            else:
+                while line[labelstart] == " ":
+                    labelstart += 1
+                label = line[labelstart:].replace("'", "\\'")
+            countstr += variable_declaration(nameval, units, label, line)
+        if declaration_func is None:
+            overallstr += countstr
+        else:
+            overallstr += declaration_func(string, flag, idx2, countstr)
+        string = string[idx2+len(flag):]
+    return overallstr
+
+
 PARSETIP = ("Is this line following the format `Name (optional Value) [Units]"
             " (Optional Description)` without any whitespace in the Name or"
             " Value fields?")
 
 
 def variable_declaration(nameval, units, label, line):
+    "Turns parsed output into a Variable declaration"
     if len(nameval) > 2:
         raise ValueError("while parsing the line '%s', additional fields"
                          " (separated by whitespace) were found between Value"
@@ -81,64 +141,3 @@ except Exception, e:
                      " while executing the parsed line `{0}`. {1}")
 """.format(out, PARSETIP)
     return out
-
-
-def parse_variables(string):
-    "Parses a string to determine what variables to create from it"
-    out = "from gpkit import Variable, VectorVariable\n"
-    out += check_and_parse_flag(string, "Constants\n", constant_declare)
-    out += check_and_parse_flag(string, "Variables\n")
-    out += check_and_parse_flag(string, "Variables of length", vv_declare)
-    return out
-
-
-def vv_declare(string, flag, idx2, countstr):
-    length = string[len(flag):idx2].strip()
-    return countstr.replace("Variable(", "VectorVariable(%s, " % length)
-
-
-def constant_declare(string, flag, idx2, countstr):
-    return countstr.replace("')", "', constant=True)")
-
-
-def check_and_parse_flag(string, flag, declaration_func=None):
-    overallstr = ""
-    count = string.count(flag)
-    for _ in range(count):
-        countstr = ""
-        idx = string.index(flag)
-        string = string[idx:]
-        if "\n" not in flag:
-            idx2 = string.index("\n")
-        else:
-            idx2 = 0
-        if idx == -1:
-            idx = 0
-            skiplines = 0
-        else:
-            skiplines = 2
-        for line in string[idx2:].split("\n")[skiplines:]:
-            if not line.strip():  # whitespace only
-                break
-            try:
-                unitstart, unitend = line.index("["), line.index("]")
-            except ValueError:
-                raise ValueError("A unit declaration bracketed by [] was"
-                                 " not found on the line reading:\n"
-                                 "    %s" % line)
-            units = line[unitstart+1:unitend]
-            labelstart = unitend + 1
-            if labelstart < len(line):
-                while line[labelstart] == " ":
-                    labelstart += 1
-                label = line[labelstart:].replace("'", "\\'")
-            else:
-                label = ""
-            nameval = line[:unitstart].split()
-            countstr += variable_declaration(nameval, units, label, line)
-        if declaration_func is None:
-            overallstr += countstr
-        else:
-            overallstr += declaration_func(string, flag, idx2, countstr)
-        string = string[idx2+len(flag):]
-    return overallstr
