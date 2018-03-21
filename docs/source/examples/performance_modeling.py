@@ -13,7 +13,7 @@ class AircraftP(Model):
 
     Upper Unbounded
     ---------------
-    Wburn, aircraft.c
+    Wburn, aircraft.wing.c, aircraft.wing.A
 
     Lower Unbounded
     ---------------
@@ -29,8 +29,6 @@ class AircraftP(Model):
         self.perf_models = [self.wing_aero]
 
         W = aircraft.W
-        self.c = aircraft.wing.c
-        self.A = aircraft.wing.A
         S = aircraft.wing.S
 
         V = state.V
@@ -56,15 +54,13 @@ class Aircraft(Model):
 
     Lower Unbounded
     ---------------
-    c, S
+    wing.c, wing.S
     """
     def setup(self):
         exec parse_variables(Aircraft.__doc__)
         self.fuse = Fuselage()
         self.wing = Wing()
         self.components = [self.fuse, self.wing]
-        self.c = self.wing.c
-        self.S = self.wing.S
 
         return self.components, W >= sum(c.W for c in self.components)
 
@@ -90,7 +86,7 @@ class FlightSegment(Model):
 
     Upper Unbounded
     ---------------
-    Wburn, aircraft.c
+    Wburn, aircraft.wing.c, aircraft.wing.A
 
     Lower Unbounded
     ---------------
@@ -114,7 +110,7 @@ class Mission(Model):
 
     Upper Unbounded
     ---------------
-    aircraft.c
+    aircraft.wing.c, aircraft.wing.A
 
     Lower Unbounded
     ---------------
@@ -147,7 +143,7 @@ class WingAero(Model):
 
     Upper Unbounded
     ---------------
-    D, wing.c
+    D, wing.c, wing.A
 
     Lower Unbounded
     ---------------
