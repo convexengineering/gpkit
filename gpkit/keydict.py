@@ -188,7 +188,7 @@ class KeyDict(dict):
                 if self[key].dtype != value.dtype:
                     # e.g., we're replacing a number with a linked function
                     dict.__setitem__(self, key, np.array(self[key],
-                                     dtype=value.dtype))
+                                                         dtype=value.dtype))
                 self[key][goodvals] = value[goodvals]
             else:
                 dict.__setitem__(self, key, value)
