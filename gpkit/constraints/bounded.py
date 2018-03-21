@@ -75,11 +75,11 @@ class Bounded(ConstraintSet):
                                              self.lowerbound, self.upperbound)
         super(Bounded, self).__init__([constraints, bounding_constraints])
 
-    def sens_from_dual(self, las, nus):
+    def sens_from_dual(self, las, nus, result):
         "Return sensitivities while capturing the relevant lambdas"
         n = bool(self.lowerbound) + bool(self.upperbound)
         self.bound_las = las[-n*len(self.bounded_varkeys):]
-        return super(Bounded, self).sens_from_dual(las, nus)
+        return super(Bounded, self).sens_from_dual(las, nus, result)
 
     def process_result(self, result):
         "Add boundedness to the model's solution"
