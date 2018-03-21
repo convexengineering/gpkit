@@ -8,7 +8,7 @@ from ..small_scripts import mag
 from ..varkey import VarKey
 from .substitution import parse_subs
 
-DIMLESS_QUANTITY = Quantity(1, "dimensionless") if ureg_at_init else 1
+DIMLESS_QUANTITY = Quantity(1, "dimensionless")
 
 
 class NomialMap(HashVector):

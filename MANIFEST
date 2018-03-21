@@ -20,11 +20,10 @@ gpkit/constraints/tight.py
 gpkit/exceptions.py
 gpkit/interactive/__init__.py
 gpkit/interactive/chartjs.py
-gpkit/interactive/linking_diagram.py
+gpkit/interactive/sankey.py
 gpkit/interactive/plotting.py
 gpkit/interactive/plot_sweep.py
 gpkit/interactive/ractor.py
-gpkit/interactive/sensitivity_map.py
 gpkit/interactive/widgets.py
 gpkit/keydict.py
 gpkit/modified_ctypesgen.py
@@ -36,7 +35,9 @@ gpkit/nomials/math.py
 gpkit/nomials/map.py
 gpkit/nomials/substitution.py
 gpkit/nomials/variables.py
-gpkit/pint/usd_cpi.txt
+gpkit/_pint/__init__.py
+gpkit/_pint/usd_cpi.txt
+gpkit/globals.py
 gpkit/repr_conventions.py
 gpkit/small_classes.py
 gpkit/small_scripts.py
@@ -60,6 +61,7 @@ gpkit/tests/t_vars.py
 gpkit/tests/test_repo.py
 gpkit/tools/__init__.py
 gpkit/tools/autosweep.py
+gpkit/tools/docstring.py
 gpkit/tools/fmincon.py
 gpkit/tools/spdata.py
 gpkit/tools/tools.py
