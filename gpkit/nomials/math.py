@@ -491,7 +491,7 @@ class PosynomialInequality(ScalarSingleEquationConstraint):
             return self._was_sig_now_posy_senss(nu, result)
         presub, = self.unsubbed
         if hasattr(self, "pmap"):
-            nu_ = np.zeros(len(presub.cs))
+            nu_ = np.zeros(len(presub.hmap))
             for i, mmap in enumerate(self.pmap):
                 for idx, percentage in mmap.items():
                     nu_[idx] += percentage*nu[i]

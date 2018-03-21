@@ -179,8 +179,8 @@ class NomialMap(HashVector):
         """
         m_from_ms = defaultdict(dict)
         pmap = [{} for _ in self]
-        origexps = orig.keys()
-        selfexps = self.keys()
+        origexps = list(orig.keys())
+        selfexps = list(self.keys())
         for orig_exp, self_exp in self.expmap.items():
             total_c = self.get(self_exp, None)
             if total_c:

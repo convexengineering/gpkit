@@ -2,6 +2,7 @@
 from operator import xor
 import numpy as np
 from . import ureg
+from functools import reduce
 
 try:
     isinstance("", basestring)
