@@ -57,114 +57,87 @@ def expected_unbounded(instance, doc):
 
 
 def parse_variables(string):
-    # pylint: disable=too-many-locals, too-many-branches, too-many-statements, too-many-nested-blocks
     "Parses a string to determine what variables to create from it"
-    outstr = ""
-    ostring = string
-    flag = "Constants\n"
-    count = string.count(flag)
-    if count:
-        outstr += "from gpkit import Variable\n"
-        for _ in range(count):
-            idx = string.index(flag)
-            string = string[idx:]
-            if idx == -1:
-                idx = 0
-                skiplines = 0
+    out = "from gpkit import Variable, VectorVariable\n"
+    out += check_and_parse_flag(string, "Constants\n", constant_declare)
+    out += check_and_parse_flag(string, "Variables\n")
+    out += check_and_parse_flag(string, "Variables of length", vv_declare)
+    return out
+
+
+def vv_declare(string, flag, idx2, countstr):
+    "Turns Variable declarations into VectorVariable ones"
+    length = string[len(flag):idx2].strip()
+    return countstr.replace("Variable(", "VectorVariable(%s, " % length)
+
+
+def constant_declare(string, flag, idx2, countstr):  # pylint: disable=unused-argument
+    "Turns Variable declarations into Constant ones"
+    return countstr.replace("')", "', constant=True)")
+
+
+def check_and_parse_flag(string, flag, declaration_func=None):
+    "Checks for instances of flag in string and parses them."
+    overallstr = ""
+    for _ in range(string.count(flag)):
+        countstr = ""
+        idx = string.index(flag)
+        string = string[idx:]
+        if idx == -1:
+            idx = 0
+            skiplines = 0
+        else:
+            skiplines = 2
+        idx2 = 0 if "\n" in flag else string.index("\n")
+        for line in string[idx2:].split("\n")[skiplines:]:
+            if not line.strip():  # whitespace only
+                break
+            try:
+                units = line[line.index("[")+1:line.index("]")]
+            except ValueError:
+                raise ValueError("A unit declaration bracketed by [] was"
+                                 " not found on the line reading:\n"
+                                 "    %s" % line)
+            nameval = line[:line.index("[")].split()
+            labelstart = line.index("]") + 1
+            if labelstart >= len(line):
+                label = ""
             else:
-                skiplines = 2
-            for line in string.split("\n")[skiplines:]:
-                try:
-                    unitstart, unitend = line.index("["), line.index("]")
-                except ValueError:
-                    break
-                units = line[unitstart+1:unitend]
-                labelstart = unitend + 1
-                if labelstart < len(line):
-                    while line[labelstart] == " ":
-                        labelstart += 1
-                    label = line[labelstart:].replace("'", "\\'")
-                    nameval = line[:unitstart].split()
-                    if len(nameval) != 2:
-                        raise ValueError("constant %s did not have a value!"
-                                         % nameval[0])
-                    out = ("{0} = self.{0}"
-                           " = Variable('{0}', {1}, '{2}', '{3}',"
-                           "constant=True)\n")
-                    outstr += out.format(nameval[0], nameval[1], units, label)
-            string = string[len(flag):]
-    string = ostring
-    flag = "Variables\n"
-    count = string.count(flag)
-    if count:
-        outstr += "from gpkit import Variable\n"
-        for _ in range(count):
-            idx = string.index(flag)
-            string = string[idx:]
-            if idx == -1:
-                idx = 0
-                skiplines = 0
-            else:
-                skiplines = 2
-            for line in string.split("\n")[skiplines:]:
-                try:
-                    unitstart, unitend = line.index("["), line.index("]")
-                except ValueError:
-                    break
-                units = line[unitstart+1:unitend]
-                labelstart = unitend + 1
-                if labelstart < len(line):
-                    while line[labelstart] == " ":
-                        labelstart += 1
-                    label = line[labelstart:].replace("'", "\\'")
-                    nameval = line[:unitstart].split()
-                    if len(nameval) == 2:
-                        out = ("{0} = self.{0}"
-                               " = Variable('{0}', {1}, '{2}', '{3}')\n")
-                        outstr += out.format(nameval[0], nameval[1], units,
-                                             label)
-                    elif len(nameval) == 1:
-                        out = ("{0} = self.{0}"
-                               " = Variable('{0}', '{1}', '{2}')\n")
-                        outstr += out.format(nameval[0], units, label)
-            string = string[len(flag):]
-    string = ostring
-    flag = "Variables of length"
-    count = string.count(flag)
-    if count:
-        outstr += "\nfrom gpkit import VectorVariable\n"
-        for _ in range(count):
-            idx = string.index(flag)
-            string = string[idx:]
-            idx2 = string.index("\n")
-            length = string[len(flag):idx2].strip()
-            string = string[idx2:]
-            if idx == -1:
-                idx = 0
-                skiplines = 0
-            else:
-                skiplines = 2
-            for line in string.split("\n")[skiplines:]:
-                try:
-                    unitstart, unitend = line.index("["), line.index("]")
-                except ValueError:
-                    break
-                units = line[unitstart+1:unitend]
-                labelstart = unitend + 1
-                if labelstart < len(line):
-                    while line[labelstart] == " ":
-                        labelstart += 1
-                    label = line[labelstart:].replace("'", "\\'")
-                    nameval = line[:unitstart].split()
-                    if len(nameval) == 2:
-                        out = ("{0} = self.{0} = VectorVariable({4},"
-                               " '{0}', {1}, '{2}', '{3}')\n")
-                        outstr += out.format(nameval[0], nameval[1],
-                                             units, label, length)
-                    elif len(nameval) == 1:
-                        out = ("{0} = self.{0} = VectorVariable({3},"
-                               " '{0}', '{1}', '{2}')\n")
-                        outstr += out.format(nameval[0], units, label,
-                                             length)
-            string = string[len(flag):]
-    return outstr
+                while line[labelstart] == " ":
+                    labelstart += 1
+                label = line[labelstart:].replace("'", "\\'")
+            countstr += variable_declaration(nameval, units, label, line)
+        if declaration_func is None:
+            overallstr += countstr
+        else:
+            overallstr += declaration_func(string, flag, idx2, countstr)
+        string = string[idx2+len(flag):]
+    return overallstr
+
+
+PARSETIP = ("Is this line following the format `Name (optional Value) [Units]"
+            " (Optional Description)` without any whitespace in the Name or"
+            " Value fields?")
+
+
+def variable_declaration(nameval, units, label, line):
+    "Turns parsed output into a Variable declaration"
+    if len(nameval) > 2:
+        raise ValueError("while parsing the line '%s', additional fields"
+                         " (separated by whitespace) were found between Value"
+                         " '%s' and the Units `%s`. %s"
+                         % (line, nameval[1], units, PARSETIP))
+    elif len(nameval) == 2:
+        out = ("{0} = self.{0} = Variable('{0}', {1}, '{2}', '{3}')")
+        out = out.format(nameval[0], nameval[1], units, label)
+    elif len(nameval) == 1:
+        out = ("{0} = self.{0} = Variable('{0}', '{1}', '{2}')")
+        out = out.format(nameval[0], units, label)
+    out = """
+try:
+    {0}
+except Exception, e:
+    raise ValueError("`"+e.__class__.__name__+": "+str(e)+"` was raised"
+                     " while executing the parsed line `{0}`. {1}")
+""".format(out, PARSETIP)
+    return out
