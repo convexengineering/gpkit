@@ -5,7 +5,7 @@ from gpkit import Variable, VectorVariable, Model, SignomialsEnabled
 import gpkit
 from gpkit.solution_array import results_table
 from gpkit.varkey import VarKey
-from gpkit.small_classes import Strings
+from gpkit.small_classes import Strings, Quantity
 
 
 class TestSolutionArray(unittest.TestCase):
@@ -32,7 +32,8 @@ class TestSolutionArray(unittest.TestCase):
         prob = Model(sum(x), [x >= 2.5])
         sol = prob.solve(verbosity=0)
         solx = sol(x)
-        self.assertEqual(type(solx), np.ndarray)
+        self.assertEqual(type(solx), Quantity)
+        self.assertEqual(type(sol["variables"][x]), np.ndarray)
         self.assertEqual(solx.shape, (n,))
         self.assertTrue((abs(solx - 2.5*np.ones(n)) < 1e-7).all())
 
