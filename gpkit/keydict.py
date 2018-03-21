@@ -185,6 +185,10 @@ class KeyDict(dict):
                     value = np.array([clean_value(key, v) for v in value])
             if getattr(value, "shape", False) and dict.__contains__(self, key):
                 goodvals = ~isnan(value)
+                if self[key].dtype != value.dtype:
+                    # e.g., we're replacing a number with a linked function
+                    dict.__setitem__(self, key, np.array(self[key],
+                                                         dtype=value.dtype))
                 self[key][goodvals] = value[goodvals]
             else:
                 dict.__setitem__(self, key, value)
