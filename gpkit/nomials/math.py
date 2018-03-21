@@ -544,7 +544,7 @@ class PosynomialInequality(ScalarSingleEquationConstraint):
 
     def as_gpconstr(self, x0, substitutions):  # pylint: disable=unused-argument
         "The GP version of a Posynomial constraint is itself"
-        return self
+        return self.__class__(self.left, self.oper, self.right)  # a copy
 
 class MonomialEquality(PosynomialInequality):
     "A Constraint of the form Monomial == Monomial."
