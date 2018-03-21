@@ -6,7 +6,7 @@ from .small_classes import DictOfLists, Quantity
 from .small_scripts import mag, isnan
 from .repr_conventions import unitstr
 
-DIMENSIONLESS = Quantity(1, "dimensionless")
+DIMLESS_QUANTITY = Quantity(1, "dimensionless")
 
 
 def senss_table(data, showvars=(), title="Sensitivities", **kwargs):
@@ -111,13 +111,13 @@ class SolutionArray(DictOfLists):
             # if uniting on get ever becomes a speed hit, cache the results
             if isinstance(got, dict):
                 for key, value in got.items():
-                    got[key] = value*(key.units or DIMENSIONLESS)
+                    got[key] = value*(key.units or DIMLESS_QUANTITY)
             else:
                 if hasattr(posy, "units"):
                     units = posy.units
                 else:
                     units = list(self["variables"].keymap[posy])[0].units
-                got = got*(units or DIMENSIONLESS)
+                got = got*(units or DIMLESS_QUANTITY)
             return got
         elif not hasattr(posy, "sub"):
             raise ValueError("no variable '%s' found in the solution" % posy)

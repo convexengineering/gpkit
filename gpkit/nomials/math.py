@@ -329,8 +329,8 @@ class Monomial(Posynomial):
         if isinstance(other, MONS):
             try:  # if both are monomials, return a constraint
                 return MonomialEquality(self, "=", other)
-            except ValueError, e:  # units mismatch or infeasible constraint
-                print "Infeasible monomial equality:", e
+            except ValueError as e:  # units mismatch or infeasible constraint
+                print("Infeasible monomial equality: %s" % e)
                 return False
         return super(Monomial, self).__eq__(other)
 
@@ -491,7 +491,7 @@ class PosynomialInequality(ScalarSingleEquationConstraint):
             return self._was_sig_now_posy_senss(nu, result)
         presub, = self.unsubbed
         if hasattr(self, "pmap"):
-            nu_ = np.zeros(len(presub.cs))
+            nu_ = np.zeros(len(presub.hmap))
             for i, mmap in enumerate(self.pmap):
                 for idx, percentage in mmap.items():
                     nu_[idx] += percentage*nu[i]

@@ -1,14 +1,13 @@
 "Implements the NomialMap class"
 from collections import defaultdict
 import numpy as np
-from .. import units as ureg_at_init
 from ..exceptions import DimensionalityError
 from ..small_classes import HashVector, Quantity, Strings
 from ..small_scripts import mag
 from ..varkey import VarKey
 from .substitution import parse_subs
 
-DIMLESS_QUANTITY = Quantity(1, "dimensionless") if ureg_at_init else 1
+DIMLESS_QUANTITY = Quantity(1, "dimensionless")
 
 
 class NomialMap(HashVector):
@@ -179,8 +178,8 @@ class NomialMap(HashVector):
         """
         m_from_ms = defaultdict(dict)
         pmap = [{} for _ in self]
-        origexps = orig.keys()
-        selfexps = self.keys()
+        origexps = list(orig.keys())
+        selfexps = list(self.keys())
         for orig_exp, self_exp in self.expmap.items():
             total_c = self.get(self_exp, None)
             if total_c:

@@ -3,6 +3,18 @@ Release Notes
 
 This page lists the changes made in each point version of gpkit.
 
+Version 0.7.0
+=============
+ * Variable's values are now used only in their first ConstraintSet; in other ConstraintSets they're free variables
+ * Variable values can be preserved by setting ``constant=True`` during variable declaration
+ * MOSEK home directory can be set by a ``MSKHOME`` environment variable at build time
+ * ``sol(var)`` now always returns Pint Quantities, even if the variable is dimensionless
+ * ``sol[...][var]``, on the other hand, now always returns floats / numpy arrays of floats
+ * Optional boundedness checking in docstring (see usage in `docs <http://gpkit.readthedocs.io/en/latest/modelbuilding.html#multipoint-analysis-modeling>`_)
+ * Automatic boundedness checking for GPs
+ * `Sankey diagrams <http://gpkit.readthedocs.io/en/latest/visint.html>`_
+ * Many other fixes
+
 Version 0.6.0
 =============
  * new much faster NomialMap data structure (#682)

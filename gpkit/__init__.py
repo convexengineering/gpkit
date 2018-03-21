@@ -1,5 +1,5 @@
 "GP and SP modeling package"
-__version__ = "0.6.0"
+__version__ = "0.7.0"
 
 from ._pint import units, ureg, DimensionalityError
 from .globals import settings
