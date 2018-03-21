@@ -77,19 +77,19 @@ def variable_declaration(nameval, units, label, line):
 try:
     {0}
 except Exception, e:
-    raise ValueError("`"+e.__class__.__name__+": "+str(e)+"` was raised while executing the parsed line `{0}`. {1}")
+    raise ValueError("`"+e.__class__.__name__+": "+str(e)+"` was raised"
+                     " while executing the parsed line `{0}`. {1}")
 """.format(out, PARSETIP)
     return out
 
+
 def parse_variables(string):
-    # pylint: disable=too-many-locals, too-many-branches, too-many-statements, too-many-nested-blocks
     "Parses a string to determine what variables to create from it"
-    outstr = "from gpkit import Variable, VectorVariable\n"
-    ostring = string
-    outstr += check_and_parse_flag(ostring, "Constants\n", constant_declare)
-    outstr += check_and_parse_flag(ostring, "Variables\n")
-    outstr += check_and_parse_flag(ostring, "Variables of length", vv_declare)
-    return outstr
+    out = "from gpkit import Variable, VectorVariable\n"
+    out += check_and_parse_flag(string, "Constants\n", constant_declare)
+    out += check_and_parse_flag(string, "Variables\n")
+    out += check_and_parse_flag(string, "Variables of length", vv_declare)
+    return out
 
 
 def vv_declare(string, flag, idx2, countstr):
@@ -118,7 +118,7 @@ def check_and_parse_flag(string, flag, declaration_func=None):
         else:
             skiplines = 2
         for line in string[idx2:].split("\n")[skiplines:]:
-            if not line:
+            if not line.strip():  # whitespace only
                 break
             try:
                 unitstart, unitend = line.index("["), line.index("]")
