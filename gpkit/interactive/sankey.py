@@ -1,6 +1,7 @@
 "implements Sankey"
 from collections import defaultdict
 from ipysankeywidget import SankeyWidget  # pylint: disable=import-error
+from ipywidgets import Layout
 from gpkit import ConstraintSet, Model
 from gpkit import GeometricProgram, SequentialGeometricProgram
 from gpkit.nomials.math import MonomialEquality
@@ -70,6 +71,8 @@ class Sankey(object):
                          + key.unitstr(into=" [%s]", dimless=" [-]"))
             self.nodes.append({"id": source, "title": shortname})
             self.links[target, source] += value
+            # make sure to show connections
+            self.links[target, source] = max(self.links[target, source], 1e-15)
             if key in self.gp.result["sensitivities"]["cost"]:
                 cost_senss = self.gp.result["sensitivities"]["cost"]
                 value = -cost_senss[key]  # sensitivites flow _from_ cost
@@ -139,6 +142,9 @@ class Sankey(object):
                     # use inverted circled numbers to id the variables...
                     node["title"] += " " + unichr(0x2776+lookup[node["id"]])
                 elif "passthrough" in node:
+                    for nodes in self.links:
+                        if node["id"] in nodes:  # make sure to show connections
+                            self.links[nodes] = max(self.links[nodes], 1e-15)
                     cn = node.pop("passthrough")
                     l_idx = lookup[str(cn.left.hmap.keys()[0].keys()[0])]
                     r_idx = lookup[str(cn.right.hmap.keys()[0].keys()[0])]
@@ -157,7 +163,9 @@ class Sankey(object):
                           "value": abs(value) or 1e-30,
                           "color": getcolor(value)})
         return SankeyWidget(nodes=self.nodes, links=links,
-                            margins=margins, width=width, height=height)
+                            layout=Layout(width=str(width),
+                                          height=str(height)),
+                            margins=margins)
 
     @property
     def variable_properties(self):
