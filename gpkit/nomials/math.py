@@ -1,4 +1,5 @@
 """Signomial, Posynomial, Monomial, Constraint, & MonoEQCOnstraint classes"""
+from collections import defaultdict
 import numpy as np
 from .core import Nomial
 from ..constraints import SingleEquationConstraint
@@ -477,7 +478,7 @@ class PosynomialInequality(ScalarSingleEquationConstraint):
                                      % (self, substitutions))
         return out
 
-    def sens_from_dual(self, la, nu):
+    def sens_from_dual(self, la, nu, result):
         "Returns the variable/constraint sensitivities from lambda/nu"
         self.relax_sensitivity = 0
         if not la or not nu:
@@ -485,6 +486,8 @@ class PosynomialInequality(ScalarSingleEquationConstraint):
         la, = la
         self.relax_sensitivity = la
         nu, = nu
+        if hasattr(self, "_was_signomial_equality"):  # a bit more complicated
+            return self._was_sig_now_posy_senss(nu, result)
         presub, = self.unsubbed
         if hasattr(self, "pmap"):
             nu_ = np.zeros(len(presub.cs))
@@ -500,6 +503,42 @@ class PosynomialInequality(ScalarSingleEquationConstraint):
         for var in self.varkeys:
             locs = presub.varlocs[var]
             var_senss[var] = sum([presub.exps[i][var]*nu[i] for i in locs])
+        return var_senss
+
+    def _was_sig_now_posy_senss(self, nu, result):
+        """ We want to do the following chain:
+               dlog(Obj)/dlog(monomial[i])    = nu[i]
+               * dlog(monomial)/d(monomial)   = 1/(monomial value)
+               * d(monomial)/d(var)           = see below
+               * d(var)/dlog(var)             = var
+               = dlog(Obj)/dlog(var)
+            each final monomial is really
+               (coeff signomial)/(negy signomial)
+            and by the chain rule d(monomial)/d(var) =
+               d(coeff)/d(var)*1/negy + d(1/negy)/d(var)*coeff
+               = d(coeff)/d(var)*1/negy - d(negy)/d(var)*coeff*1/negy**2
+        """
+        # pylint: disable=no-member
+        def subval(posy):
+            "Substitute solution into a posynomial and return the result"
+            hmap = posy.sub(result["variables"],
+                            require_positive=False).hmap
+            assert len(hmap) == 1 and not hmap.keys()[0]  # constant
+            return hmap.values()[0]
+        var_senss = HashVector()
+        invnegy_val = 1/subval(self._negysig)
+        for i, nu_i in enumerate(nu):
+            mon = self._mons[i]
+            inv_mon_val = 1/subval(mon)
+            coeff = self._coeffsigs[mon.exp]
+            for var in self._sigvars[mon.exp]:
+                d_mon_d_var = (subval(coeff.diff(var))*invnegy_val
+                               - (subval(self._negysig.diff(var))
+                                  * subval(coeff) * invnegy_val**2))
+                var_val = result["variables"][var]
+                sens = (nu_i*inv_mon_val*d_mon_d_var*var_val)
+                assert isinstance(sens, float)
+                var_senss[var] = sens + var_senss.get(var, 0)
         return var_senss
 
     def as_gpconstr(self, x0, substitutions):  # pylint: disable=unused-argument
@@ -562,7 +601,7 @@ class MonomialEquality(PosynomialInequality):
         'A constraint not guaranteed to be satisfied  evaluates as "False".'
         return self.__nonzero__()
 
-    def sens_from_dual(self, la, nu):
+    def sens_from_dual(self, la, nu, result):
         "Returns the variable/constraint sensitivities from lambda/nu"
         self.relax_sensitivity = 0
         if not la or not nu:
@@ -628,6 +667,26 @@ class SignomialInequality(ScalarSingleEquationConstraint):
                              " constraint %s %s %s after substitution." %
                              (self, posy, "<=", negy))
         elif not hasattr(negy, "cs") or len(negy.cs) == 1:
+            # all but one of the negy terms becomes compatible with the posy
+            siglt0_us, = self.unsubbed
+            siglt0_hmap = siglt0_us.hmap.sub(substitutions, siglt0_us.varkeys)
+            negy_hmap = NomialMap()
+            posy_hmaps = defaultdict(NomialMap)
+            for o_exp, exp in siglt0_hmap.expmap.items():
+                if exp == negy.exp:
+                    negy_hmap[o_exp] = -siglt0_us.hmap[o_exp]
+                else:
+                    posy_hmaps[exp-negy.exp][o_exp] = siglt0_us.hmap[o_exp]
+            # pylint: disable=attribute-defined-outside-init
+            self._mons = [Monomial(NomialMap({k: v}))
+                          for k, v in (posy/negy).hmap.items()]
+            self._negysig = Signomial(negy_hmap, require_positive=False)
+            self._coeffsigs = {exp: Signomial(hmap, require_positive=False)
+                               for exp, hmap in posy_hmaps.items()}
+            self._sigvars = {exp: (self._negysig.varkeys.keys()
+                                   + sig.varkeys.keys())
+                             for exp, sig in self._coeffsigs.items()}
+            self._was_signomial_equality = True
             self.__class__ = PosynomialInequality
             self.__init__(posy, "<=", negy)
             return self.as_posyslt1(substitutions)

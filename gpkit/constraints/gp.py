@@ -291,8 +291,12 @@ class GeometricProgram(CostedConstraintSet, NomialData):
             result["cost"] = mag(cost.c)
 
         # get sensitivities #
+        result["constants"] = KeyDict(self.substitutions)
+        result["variables"] = KeyDict(result["freevariables"])
+        result["variables"].update(result["constants"])
         result["sensitivities"] = {"nu": nu, "la": la}
-        self.v_ss = self.sens_from_dual(la[1:].tolist(), self.nu_by_posy[1:])
+        self.v_ss = self.sens_from_dual(la[1:].tolist(), self.nu_by_posy[1:],
+                                        result)
         # add cost's sensitivity in (nu could be self.nu_by_posy[0])
         cost_senss = {var: sum([self.cost.exps[i][var]*nu[i] for i in locs])
                       for (var, locs) in self.cost.varlocs.items()}
@@ -307,9 +311,6 @@ class GeometricProgram(CostedConstraintSet, NomialData):
         result["sensitivities"]["cost"] = cost_senss
         result["sensitivities"]["variables"] = KeyDict(var_senss)
         result["sensitivities"]["constants"] = KeyDict(const_senss)
-        result["constants"] = KeyDict(self.substitutions)
-        result["variables"] = KeyDict(result["freevariables"])
-        result["variables"].update(result["constants"])
         return SolutionArray(result)
 
     # TODO: set tol by solver? or otherwise return it to 1e-5 for mosek
