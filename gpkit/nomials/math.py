@@ -479,7 +479,7 @@ class PosynomialInequality(ScalarSingleEquationConstraint):
                                      % (self, substitutions))
         return out
 
-    def sens_from_dual(self, la, nu, result):
+    def sens_from_dual(self, la, nu, result):  # pylint: disable=unused-argument
         "Returns the variable/constraint sensitivities from lambda/nu"
         self.relax_sensitivity = 0
         if not la or not nu:
@@ -487,8 +487,6 @@ class PosynomialInequality(ScalarSingleEquationConstraint):
         la, = la
         self.relax_sensitivity = la
         nu, = nu
-        if hasattr(self, "_was_signomial_equality"):  # a bit more complicated
-            return self._was_sig_now_posy_senss(nu, result)
         presub, = self.unsubbed
         if hasattr(self, "pmap"):
             nu_ = np.zeros(len(presub.hmap))
@@ -504,42 +502,6 @@ class PosynomialInequality(ScalarSingleEquationConstraint):
         for var in self.varkeys:
             locs = presub.varlocs[var]
             var_senss[var] = sum([presub.exps[i][var]*nu[i] for i in locs])
-        return var_senss
-
-    def _was_sig_now_posy_senss(self, nu, result):
-        """ We want to do the following chain:
-               dlog(Obj)/dlog(monomial[i])    = nu[i]
-               * dlog(monomial)/d(monomial)   = 1/(monomial value)
-               * d(monomial)/d(var)           = see below
-               * d(var)/dlog(var)             = var
-               = dlog(Obj)/dlog(var)
-            each final monomial is really
-               (coeff signomial)/(negy signomial)
-            and by the chain rule d(monomial)/d(var) =
-               d(coeff)/d(var)*1/negy + d(1/negy)/d(var)*coeff
-               = d(coeff)/d(var)*1/negy - d(negy)/d(var)*coeff*1/negy**2
-        """
-        # pylint: disable=no-member
-        def subval(posy):
-            "Substitute solution into a posynomial and return the result"
-            hmap = posy.sub(result["variables"],
-                            require_positive=False).hmap
-            assert len(hmap) == 1 and not hmap.keys()[0]  # constant
-            return hmap.values()[0]
-        var_senss = HashVector()
-        invnegy_val = 1/subval(self._negysig)
-        for i, nu_i in enumerate(nu):
-            mon = self._mons[i]
-            inv_mon_val = 1/subval(mon)
-            coeff = self._coeffsigs[mon.exp]
-            for var in self._sigvars[mon.exp]:
-                d_mon_d_var = (subval(coeff.diff(var))*invnegy_val
-                               - (subval(self._negysig.diff(var))
-                                  * subval(coeff) * invnegy_val**2))
-                var_val = result["variables"][var]
-                sens = (nu_i*inv_mon_val*d_mon_d_var*var_val)
-                assert isinstance(sens, float)
-                var_senss[var] = sens + var_senss.get(var, 0)
         return var_senss
 
     def as_gpconstr(self, x0, substitutions):  # pylint: disable=unused-argument
@@ -669,6 +631,7 @@ class SignomialInequality(ScalarSingleEquationConstraint):
                              (self, posy, "<=", negy))
         elif not hasattr(negy, "cs") or len(negy.cs) == 1:
             # all but one of the negy terms becomes compatible with the posy
+            p_ineq = PosynomialInequality(posy, "<=", negy)
             siglt0_us, = self.unsubbed
             siglt0_hmap = siglt0_us.hmap.sub(substitutions, siglt0_us.varkeys)
             negy_hmap = NomialMap()
@@ -687,10 +650,7 @@ class SignomialInequality(ScalarSingleEquationConstraint):
             self._sigvars = {exp: (self._negysig.varkeys.keys()
                                    + sig.varkeys.keys())
                              for exp, sig in self._coeffsigs.items()}
-            self._was_signomial_equality = True
-            self.__class__ = PosynomialInequality
-            self.__init__(posy, "<=", negy)
-            return self.as_posyslt1(substitutions)
+            return p_ineq.as_posyslt1(substitutions)
 
         else:
             raise InvalidGPConstraint("SignomialInequality could not simplify"
@@ -698,6 +658,51 @@ class SignomialInequality(ScalarSingleEquationConstraint):
                                       " `.localsolve` instead of `.solve` to"
                                       " form your Model as a"
                                       " SequentialGeometricProgram")
+
+    def sens_from_dual(self, la, nu, result):
+        """ We want to do the following chain:
+               dlog(Obj)/dlog(monomial[i])    = nu[i]
+               * dlog(monomial)/d(monomial)   = 1/(monomial value)
+               * d(monomial)/d(var)           = see below
+               * d(var)/dlog(var)             = var
+               = dlog(Obj)/dlog(var)
+            each final monomial is really
+               (coeff signomial)/(negy signomial)
+            and by the chain rule d(monomial)/d(var) =
+               d(coeff)/d(var)*1/negy + d(1/negy)/d(var)*coeff
+               = d(coeff)/d(var)*1/negy - d(negy)/d(var)*coeff*1/negy**2
+        """
+        # pylint: disable=too-many-locals, attribute-defined-outside-init
+        self.relax_sensitivity = 0
+        if not la or not nu:
+            return {}  # as_posyslt1 created no inequalities
+        la, = la
+        self.relax_sensitivity = la
+        nu, = nu
+
+        # pylint: disable=no-member
+        def subval(posy):
+            "Substitute solution into a posynomial and return the result"
+            hmap = posy.sub(result["variables"],
+                            require_positive=False).hmap
+            assert len(hmap) == 1 and not hmap.keys()[0]  # constant
+            return hmap.values()[0]
+
+        var_senss = HashVector()
+        invnegy_val = 1/subval(self._negysig)
+        for i, nu_i in enumerate(nu):
+            mon = self._mons[i]
+            inv_mon_val = 1/subval(mon)
+            coeff = self._coeffsigs[mon.exp]
+            for var in self._sigvars[mon.exp]:
+                d_mon_d_var = (subval(coeff.diff(var))*invnegy_val
+                               - (subval(self._negysig.diff(var))
+                                  * subval(coeff) * invnegy_val**2))
+                var_val = result["variables"][var]
+                sens = (nu_i*inv_mon_val*d_mon_d_var*var_val)
+                assert isinstance(sens, float)
+                var_senss[var] = sens + var_senss.get(var, 0)
+        return var_senss
 
     def as_gpconstr(self, x0, substitutions=None):
         "Returns GP approximation of an SP constraint at x0"
