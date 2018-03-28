@@ -306,8 +306,19 @@ class GeometricProgram(CostedConstraintSet, NomialData):
         for key, value in cost_senss.items():
             var_senss[key] = value + var_senss.get(key, 0)
 
+        # calculate linked
+        for key in var_senss.keys():
+            if key.gradients:
+                senss = var_senss.pop(key)
+                val = result["constants"][key]
+                for c, grad in key.gradients.items():
+                    delta = senss*grad*val/result["constants"][c]
+                    csenss = var_senss.get(c, 0)
+                    var_senss[c] = delta + csenss
+
         const_senss = {k: v for k, v in var_senss.items()
-                       if k in self.substitutions}
+                       if k in result["constants"]}
+
         result["sensitivities"]["cost"] = cost_senss
         result["sensitivities"]["variables"] = KeyDict(var_senss)
         result["sensitivities"]["constants"] = KeyDict(const_senss)

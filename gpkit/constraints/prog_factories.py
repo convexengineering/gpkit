@@ -1,6 +1,7 @@
 "Scripts for generating, solving and sweeping programs"
 from time import time
 import numpy as np
+from ad import adnumber
 from ..nomials import parse_subs
 from ..solution_array import SolutionArray
 from ..keydict import KeyDict
@@ -31,8 +32,29 @@ def _progify_fctry(program, return_attr=None):
         if not constants:
             constants, _, linked = parse_subs(self.varkeys, self.substitutions)
             if linked:
-                kdc = KeyDict(constants)
-                constants.update({v: f(kdc) for v, f in linked.items()})
+                kdc = KeyDict({k: adnumber(v) for k, v in constants.items()})
+                print kdc
+                kdc.log_gets = True
+                array_calulated, logged_array_gets = {}, {}
+                for v, f in linked.items():
+                    if v.veckey and v.veckey.original_fn:
+                        if v.veckey not in array_calulated:
+                            ofn = v.veckey.original_fn
+                            array_calulated[v.veckey] = np.array(ofn(kdc))
+                            logged_array_gets[v.veckey] = kdc.logged_gets
+                        logged_gets = logged_array_gets[v.veckey]
+                        out = array_calulated[v.veckey][v.idx]
+                    else:
+                        logged_gets = kdc.logged_gets
+                        out = f(kdc)
+                    constants[v] = out.x
+                    v.descr["gradients"] = {}
+                    for key in logged_gets:
+                        if key.shape:
+                            v.gradients[key] = np.array(out.gradient(kdc[key]))
+                        else:
+                            v.gradients[key] = out.d(kdc[key])
+                    kdc.logged_gets = set()
         prog = program(self.cost, self, constants, **kwargs)
         if return_attr:
             return prog, getattr(prog, return_attr)
@@ -118,7 +140,6 @@ def run_sweep(genfunction, self, solution, skipsweepfailures,
         program, solvefn = genfunction(self, constants)
         try:
             result = solvefn(solver, verbosity-1, **kwargs)
-            # add localmodel here
             return program, result
         except (RuntimeWarning, ValueError):
             return program, None

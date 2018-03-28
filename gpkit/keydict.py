@@ -54,6 +54,8 @@ class KeyDict(dict):
     """
     collapse_arrays = True
     keymapping = True
+    log_gets = False
+    logged_gets = set()
 
     def __init__(self, *args, **kwargs):
         "Passes through to dict.__init__ via the `update()` method"
@@ -151,6 +153,8 @@ class KeyDict(dict):
             if idx:
                 got = got[idx]
             values.append(got)
+            if self.log_gets:
+                self.logged_gets.add(k)
         if len(values) == 1:
             return values[0]
         return dict(zip(keys, values))
