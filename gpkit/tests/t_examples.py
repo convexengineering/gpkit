@@ -77,8 +77,6 @@ class TestExamples(unittest.TestCase):
         _ = model["E"]
         with self.assertRaises(ValueError):
             _ = model["m"]  # multiple variables called m
-        with self.assertRaises(KeyError):
-            _ = model.topvar("E") # try to get a topvar in a submodel
 
     def test_performance_modeling(self, example):
         pass

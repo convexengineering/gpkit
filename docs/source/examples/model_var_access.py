@@ -64,5 +64,5 @@ class PowerSystem(Model):
 
 PS = PowerSystem()
 print "Getting the only var 'E': ", PS["E"]
-print "The top-level var 'm': ", PS.topvar("m")
+print "The top-level var 'm': ", PS.m
 print "All the variables 'm': ", PS.variables_byname("m")

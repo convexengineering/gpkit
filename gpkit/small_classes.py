@@ -110,20 +110,6 @@ class DictOfLists(dict):
         "Converts all lists into array."
         _enray(self, self)
 
-    def classify(self, cls):
-        "Converts dictionaries whose first key isn't a string to given class."
-        _classify(self, cls)
-
-
-def _classify(d_in, cls):
-    "Converts dictionaries whose first key isn't a string to given class."
-    for k, v in d_in.items():
-        if isinstance(v, dict) and v:
-            if isinstance(v.keys()[0], Strings):
-                _classify(v, cls)
-            else:
-                d_in[k] = cls(v)
-
 
 def _enlist_dict(d_in, d_out):
     "Recursively copies d_in into d_out, placing non-dict items into lists."

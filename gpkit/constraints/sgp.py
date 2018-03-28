@@ -209,7 +209,7 @@ class SequentialGeometricProgram(CostedConstraintSet):
             return self._gp
         else:
             x0 = self._fill_x0(x0)
-            gp_constrs = self.as_gpconstr(x0, self.substitutions)
+            gp_constrs = self.as_gpconstr(x0)
             if self.externalfn_vars:
                 gp_constrs.extend([v.key.externalfn(v, x0)
                                    for v in self.externalfn_vars])

@@ -305,19 +305,19 @@ class GeometricProgram(CostedConstraintSet, NomialData):
         for key, value in cost_senss.items():
             var_senss[key] = value + var_senss.get(key, 0)
         # carry linked sensitivities over to their constants
-        for v in var_senss.keys():  # pylint: disable=invalid-name
+        for v in var_senss.keys():
             if v.gradients:
-                dlogO_dlogv = var_senss.pop(v)
+                dlogcost_dlogv = var_senss.pop(v)
                 val = result["constants"][v]
                 for c, dv_dc in v.gradients.items():
                     dlogv_dlogc = dv_dc * result["constants"][c]/val
                     accum = var_senss.get(c, 0)
-                    var_senss[c] = dlogO_dlogv*dlogv_dlogc + accum
+                    var_senss[c] = dlogcost_dlogv*dlogv_dlogc + accum
                     if v in cost_senss:
                         if c in self.cost.varkeys:
-                            dlogO_dlogv = cost_senss.pop(v)
+                            dlogcost_dlogv = cost_senss.pop(v)
                             accum = cost_senss.get(c, 0)
-                            cost_senss[c] = dlogO_dlogv*dlogv_dlogc + accum
+                            cost_senss[c] = dlogcost_dlogv*dlogv_dlogc + accum
 
         result["sensitivities"]["cost"] = cost_senss
         result["sensitivities"]["variables"] = KeyDict(var_senss)
