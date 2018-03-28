@@ -307,13 +307,22 @@ class GeometricProgram(CostedConstraintSet, NomialData):
             var_senss[key] = value + var_senss.get(key, 0)
 
         # calculate linked
-        for key in var_senss.keys():
-            if key.gradients:
-                senss = var_senss.pop(key)
-                val = result["constants"][key]
-                for c, grad in key.gradients.items():
-                    c_val = result["constants"][c]
-                    var_senss[c] = senss*grad*val/c_val + var_senss.get(c, 0)
+        for v in var_senss.keys():
+            if v.gradients:
+                dlogO_dlogv = var_senss.pop(v)
+                val = result["constants"][v]
+                for c, dv_dc in v.gradients.items():
+                    # grad is dv/dc
+                    # to get dlog(v)/dlog(c), multiply by c_val/val
+                    # then dlog(cost)/dlog(c) is that times the senss
+                    dlogv_dlogc = dv_dc * result["constants"][c]/val
+                    accum = var_senss.get(c, 0)
+                    var_senss[c] = dlogO_dlogv*dlogv_dlogc + accum
+                    if v in cost_senss:
+                        if c in self.cost.varkeys:
+                            dlogO_dlogv = cost_senss.pop(v)
+                            accum = cost_senss.get(c, 0)
+                            cost_senss[c] = dlogO_dlogv*dlogv_dlogc + accum
 
         const_senss = {k: v for k, v in var_senss.items()
                        if k in result["constants"]}
