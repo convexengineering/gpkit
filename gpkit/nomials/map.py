@@ -4,7 +4,6 @@ import numpy as np
 from ..exceptions import DimensionalityError
 from ..small_classes import HashVector, Quantity, Strings
 from ..small_scripts import mag
-from ..varkey import VarKey
 from .substitution import parse_subs
 
 DIMLESS_QUANTITY = Quantity(1, "dimensionless")
