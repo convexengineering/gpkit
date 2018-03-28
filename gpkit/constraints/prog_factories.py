@@ -6,15 +6,43 @@ from ..nomials import parse_subs
 from ..solution_array import SolutionArray
 from ..keydict import KeyDict
 
-# try:
-#     from ipyparallel import Client
-#     CLIENT = Client(timeout=0.01)
-#     assert len(CLIENT) > 0  # pylint:disable=len-as-condition
-#     POOL = CLIENT[:]
-#     POOL.use_dill()
-#     print("Using parallel execution of sweeps on %s clients" % len(CLIENT))
-# except (ImportError, IOError, AssertionError):
-POOL = None  # TODO: fix or remove the above
+POOL = None  # TODO: add parallel sweeps
+
+
+def evaluate_linked(constants, linked):
+    "Evaluates the values and gradients of linked variables."
+    kdc = KeyDict({k: adnumber(v) for k, v in constants.items()})
+    kdc.log_gets = True
+    array_calulated, logged_array_gets = {}, {}
+    try:
+        for v, f in linked.items():
+            if v.veckey and v.veckey.original_fn:
+                if v.veckey not in array_calulated:
+                    ofn = v.veckey.original_fn
+                    array_calulated[v.veckey] = np.array(ofn(kdc))
+                    logged_array_gets[v.veckey] = kdc.logged_gets
+                logged_gets = logged_array_gets[v.veckey]
+                out = array_calulated[v.veckey][v.idx]
+            else:
+                logged_gets = kdc.logged_gets
+                out = f(kdc)
+            constants[v] = out.x
+            v.descr["gradients"] = {}
+            for key in logged_gets:
+                if key.shape:
+                    grad = out.gradient(kdc[key])
+                    v.gradients[key] = np.array(grad)
+                else:
+                    v.gradients[key] = out.d(kdc[key])
+            kdc.logged_gets = set()
+    except NotImplementedError:  # can't auto-diff
+        print("Couldn't auto-differentiate linked variable %s,"
+              " so we won't use auto-differentation to transfer"
+              " linked-variable sensitivities to constants." % v)
+        kdc = KeyDict(constants)
+        constants.update({v: f(kdc) for v, f in linked.items()})
+        for v in linked:
+            v.descr.pop("gradients", None)
 
 
 def _progify_fctry(program, return_attr=None):
@@ -32,38 +60,7 @@ def _progify_fctry(program, return_attr=None):
         if not constants:
             constants, _, linked = parse_subs(self.varkeys, self.substitutions)
             if linked:
-                kdc = KeyDict({k: adnumber(v) for k, v in constants.items()})
-                kdc.log_gets = True
-                array_calulated, logged_array_gets = {}, {}
-                try:
-                    for v, f in linked.items():
-                        if v.veckey and v.veckey.original_fn:
-                            if v.veckey not in array_calulated:
-                                ofn = v.veckey.original_fn
-                                array_calulated[v.veckey] = np.array(ofn(kdc))
-                                logged_array_gets[v.veckey] = kdc.logged_gets
-                            logged_gets = logged_array_gets[v.veckey]
-                            out = array_calulated[v.veckey][v.idx]
-                        else:
-                            logged_gets = kdc.logged_gets
-                            out = f(kdc)
-                        constants[v] = out.x
-                        v.descr["gradients"] = {}
-                        for key in logged_gets:
-                            if key.shape:
-                                grad = out.gradient(kdc[key])
-                                v.gradients[key] = np.array(grad)
-                            else:
-                                v.gradients[key] = out.d(kdc[key])
-                        kdc.logged_gets = set()
-                except NotImplementedError:  # can't auto-diff
-                    print("Couldn't auto-differentiate linked variable %s,"
-                          " so we won't use auto-differentation to transfer"
-                          " linked-variable sensitivities to constants." % v)
-                    kdc = KeyDict(constants)
-                    constants.update({v: f(kdc) for v, f in linked.items()})
-                    for v in linked:
-                        v.descr.pop("gradients", None)
+                evaluate_linked(constants, linked)
         prog = program(self.cost, self, constants, **kwargs)
         if return_attr:
             return prog, getattr(prog, return_attr)

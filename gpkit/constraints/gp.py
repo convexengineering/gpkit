@@ -312,9 +312,8 @@ class GeometricProgram(CostedConstraintSet, NomialData):
                 senss = var_senss.pop(key)
                 val = result["constants"][key]
                 for c, grad in key.gradients.items():
-                    delta = senss*grad*val/result["constants"][c]
-                    csenss = var_senss.get(c, 0)
-                    var_senss[c] = delta + csenss
+                    c_val = result["constants"][c]
+                    var_senss[c] = senss*grad*val/c_val + var_senss.get(c, 0)
 
         const_senss = {k: v for k, v in var_senss.items()
                        if k in result["constants"]}

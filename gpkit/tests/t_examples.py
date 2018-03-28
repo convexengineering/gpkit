@@ -15,6 +15,7 @@ def assert_logtol(first, second, logtol=1e-6):
                                atol=logtol, rtol=0)
 
 
+# pylint: disable=too-many-public-methods
 class TestExamples(unittest.TestCase):
     """
     To test a new example, add a function called `test_$EXAMPLENAME`, where
