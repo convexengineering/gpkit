@@ -300,21 +300,16 @@ class GeometricProgram(CostedConstraintSet, NomialData):
         # add cost's sensitivity in (nu could be self.nu_by_posy[0])
         cost_senss = {var: sum([self.cost.exps[i][var]*nu[i] for i in locs])
                       for (var, locs) in self.cost.varlocs.items()}
-
         # not using HashVector addition because we want to preseve zeros
         var_senss = self.v_ss.copy()
         for key, value in cost_senss.items():
             var_senss[key] = value + var_senss.get(key, 0)
-
-        # calculate linked
-        for v in var_senss.keys():
+        # carry linked sensitivities over to their constants
+        for v in var_senss.keys():  # pylint: disable=invalid-name
             if v.gradients:
                 dlogO_dlogv = var_senss.pop(v)
                 val = result["constants"][v]
                 for c, dv_dc in v.gradients.items():
-                    # grad is dv/dc
-                    # to get dlog(v)/dlog(c), multiply by c_val/val
-                    # then dlog(cost)/dlog(c) is that times the senss
                     dlogv_dlogc = dv_dc * result["constants"][c]/val
                     accum = var_senss.get(c, 0)
                     var_senss[c] = dlogO_dlogv*dlogv_dlogc + accum
@@ -324,11 +319,10 @@ class GeometricProgram(CostedConstraintSet, NomialData):
                             accum = cost_senss.get(c, 0)
                             cost_senss[c] = dlogO_dlogv*dlogv_dlogc + accum
 
-        const_senss = {k: v for k, v in var_senss.items()
-                       if k in result["constants"]}
-
         result["sensitivities"]["cost"] = cost_senss
         result["sensitivities"]["variables"] = KeyDict(var_senss)
+        const_senss = {k: v for k, v in var_senss.items()
+                       if k in result["constants"]}
         result["sensitivities"]["constants"] = KeyDict(const_senss)
         return SolutionArray(result)
 

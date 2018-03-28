@@ -14,10 +14,11 @@ def evaluate_linked(constants, linked):
     "Evaluates the values and gradients of linked variables."
     kdc = KeyDict({k: adnumber(maybe_flatten(v))
                    for k, v in constants.items()})
+    kdc_plain = KeyDict(constants)
     kdc.log_gets = True
     array_calulated, logged_array_gets = {}, {}
-    try:
-        for v, f in linked.items():
+    for v, f in linked.items():
+        try:
             if v.veckey and v.veckey.original_fn:
                 if v.veckey not in array_calulated:
                     ofn = v.veckey.original_fn
@@ -36,15 +37,12 @@ def evaluate_linked(constants, linked):
                     v.gradients[key] = np.array(grad)
                 else:
                     v.gradients[key] = out.d(kdc[key])
-            kdc.logged_gets = set()
-    except NotImplementedError:  # can't auto-diff
-        print("Couldn't auto-differentiate linked variable %s,"
-              " so we won't use auto-differentation to transfer"
-              " linked-variable sensitivities to constants." % v)
-        kdc = KeyDict(constants)
-        constants.update({v: f(kdc) for v, f in linked.items()})
-        for v in linked:
+        except Exception:  # can't auto-diff # pylint: disable=broad-except
+            print("Couldn't auto-differentiate linked variable %s." % v)
+            constants[v] = f(kdc_plain)
             v.descr.pop("gradients", None)
+        finally:
+            kdc.logged_gets = set()
 
 
 def _progify_fctry(program, return_attr=None):

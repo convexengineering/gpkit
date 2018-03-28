@@ -16,8 +16,7 @@ def maybe_flatten(value):
     "Extract values from 0-d numpy arrays, if necessary"
     if hasattr(value, "shape") and not value.shape:
         return value.flatten()[0]  # 0-d numpy arrays
-    else:
-        return value
+    return value
 
 
 def try_str_without(item, excluded):
