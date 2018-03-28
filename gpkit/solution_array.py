@@ -17,7 +17,7 @@ def senss_table(data, showvars=(), title="Sensitivities", **kwargs):
         data = {k: data[k] for k in showvars if k in data}
     return results_table(data, title, sortbyvals=True,
                          valfmt="%+-.2g ", vecfmt="%+-8.2g",
-                         printunits=False, **kwargs)
+                         printunits=False, minval=1e-3, **kwargs)
 
 
 def topsenss_table(data, showvars, nvars=5, **kwargs):
@@ -285,6 +285,7 @@ def results_table(data, title, minval=0, printunits=True, fixedcols=True,
                 decorated.append((model, b, (varfmt % s), i, k, v))
             else:  # for consistent sorting, add small offset to negative vals
                 val = np.mean(np.abs(v)) - (1e-9 if np.mean(v) < 0 else 0)
+                val -= hash(k.name)*1e-30
                 decorated.append((model, -val, b, (varfmt % s), i, k, v))
     if included_models:
         included_models = set(included_models)
@@ -319,6 +320,7 @@ def results_table(data, title, minval=0, printunits=True, fixedcols=True,
             valstr = "[ %s%s ] " % ("  ".join(vals), ellipsis)
         else:
             valstr = valfmt % mag(val)
+        valstr = valstr.replace("+nan", " - ")
         valstr = valstr.replace("nan", " - ")
         if not latex:
             lines.append([varstr, valstr, units, label])

@@ -157,7 +157,6 @@ class ArrayVariable(NomialArray):
                 raise ValueError("the value's shape %s is different than"
                                  " the vector's %s." % (values.shape, shape))
 
-        arraykey = VarKey(**descr)
         vl = np.empty(shape, dtype="object")
         it = np.nditer(vl, flags=['multi_index', 'refs_ok'])
         while not it.finished:
@@ -170,7 +169,8 @@ class ArrayVariable(NomialArray):
                 else:
                     descr.update({value_option: values[i]})
             vl[i] = Variable(**descr)
-            vl[i].key.arraykey = arraykey
+            if value_option and hasattr(values, "__call__"):
+                vl[i].key.veckey.descr["original_fn"] = values
 
         if descr.pop("newvariable", True):
             from .. import MODELS, MODELNUMS

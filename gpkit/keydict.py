@@ -62,6 +62,8 @@ class KeyDict(dict):
         self.keymap = defaultdict(set)
         self._unmapped_keys = set()
         self.update(*args, **kwargs)
+        self.log_gets = False
+        self.logged_gets = set()
 
     def get(self, key, alternative=KeyError):
         if key not in self:
@@ -151,6 +153,8 @@ class KeyDict(dict):
             if idx:
                 got = got[idx]
             values.append(got)
+            if self.log_gets:
+                self.logged_gets.add(k)
         if len(values) == 1:
             return values[0]
         return dict(zip(keys, values))

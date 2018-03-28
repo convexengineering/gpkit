@@ -15,6 +15,7 @@ def assert_logtol(first, second, logtol=1e-6):
                                atol=logtol, rtol=0)
 
 
+# pylint: disable=too-many-public-methods
 class TestExamples(unittest.TestCase):
     """
     To test a new example, add a function called `test_$EXAMPLENAME`, where
@@ -78,6 +79,9 @@ class TestExamples(unittest.TestCase):
             _ = model["m"]  # multiple variables called m
 
     def test_performance_modeling(self, example):
+        pass
+
+    def test_sp_to_gp_sweep(self, example):
         pass
 
     def test_boundschecking(self, example):
