@@ -1,7 +1,6 @@
 "Scripts for generating, solving and sweeping programs"
 from time import time
 import numpy as np
-from ad import adnumber
 from ..nomials import parse_subs
 from ..solution_array import SolutionArray
 from ..keydict import KeyDict
@@ -9,16 +8,25 @@ from ..small_scripts import maybe_flatten
 
 POOL = None  # TODO: add parallel sweeps
 
+try:
+    from ad import adnumber
+except ImportError:
+    adnumber = None
+    print("Couldn't import ad; automatic differentiation of linked variables"
+          " is disabled.")
+
 
 def evaluate_linked(constants, linked):
     "Evaluates the values and gradients of linked variables."
-    kdc = KeyDict({k: adnumber(maybe_flatten(v))
-                   for k, v in constants.items()})
+    if adnumber:
+        kdc = KeyDict({k: adnumber(maybe_flatten(v))
+                       for k, v in constants.items()})
+        kdc.log_gets = True
     kdc_plain = KeyDict(constants)
-    kdc.log_gets = True
     array_calulated, logged_array_gets = {}, {}
     for v, f in linked.items():
         try:
+            assert adnumber  # trigger exit if ad not found
             if v.veckey and v.veckey.original_fn:
                 if v.veckey not in array_calulated:
                     ofn = v.veckey.original_fn
@@ -38,11 +46,13 @@ def evaluate_linked(constants, linked):
                 else:
                     v.gradients[key] = out.d(kdc[key])
         except Exception:  # can't auto-diff # pylint: disable=broad-except
-            print("Couldn't auto-differentiate linked variable %s." % v)
+            if adnumber:
+                print("Couldn't auto-differentiate linked variable %s." % v)
             constants[v] = f(kdc_plain)
             v.descr.pop("gradients", None)
         finally:
-            kdc.logged_gets = set()
+            if adnumber:
+                kdc.logged_gets = set()
 
 
 def _progify_fctry(program, return_attr=None):
