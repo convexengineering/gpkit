@@ -82,6 +82,9 @@ class TestExamples(unittest.TestCase):
     def test_performance_modeling(self, example):
         pass
 
+    def test_sp_to_gp_sweep(self, example):
+        pass
+
     def test_boundschecking(self, example):
         pass
 
