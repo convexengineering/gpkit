@@ -97,27 +97,7 @@ class Model(CostedConstraintSet):
         "Verifies docstring bounds are sufficient but not excessive."
         err = "while verifying %s:\n" % self.__class__.__name__
         bounded, meq_bounded = self.bounded.copy(), self.meq_bounded.copy()
-        flag = "Bounded by"
         doc = self.__class__.__doc__
-        count = doc.count(flag)
-        if count:
-            idx = doc.index(flag) + len(flag)
-        for i in range(count):
-            idx2 = doc[idx:].index("\n")
-            attr = doc[idx+1:idx+idx2]
-            subinst = getattr(self, attr)
-            idx3 = doc[idx:][idx2+1:].index("\n")
-            idx4 = doc[idx:][idx2+1:][idx3+1:].index("\n")
-            varstrs = doc[idx:][idx2+1:][idx3+1:][:idx4].strip()
-            for (key, direction) in subinst.bounded:
-                # TODO: error when the right bound is not found!
-                if key.name in varstrs:  # TODO: check attributes
-                    bounded.add((key, direction))
-            if i != count-1:
-                idx = idx + idx2 + idx3 + idx4 + 4
-                idx += doc[idx:].index(flag) + len(flag)
-        add_meq_bounds(bounded, meq_bounded)  # add meqs to bounded
-        # now we'll check the docstring
         exp_unbounds = expected_unbounded(self, doc)
         unexp_bounds = bounded.intersection(exp_unbounds)
         if unexp_bounds:  # anything bounded that shouldn't be? err!
@@ -167,11 +147,10 @@ class Model(CostedConstraintSet):
 """ % (direction.title(), ", ".join(set(k.name for k in mb)))
             raise ValueError(err + boundstrs + "\n\n" + docstring)
 
-    def as_gpconstr(self, x0, substitutions=None):
+    def as_gpconstr(self, x0):
         "Returns approximating constraint, keeping name and num"
-        cs = CostedConstraintSet.as_gpconstr(self, x0, substitutions)
-        cs.name = self.name
-        cs.num = self.num
+        cs = CostedConstraintSet.as_gpconstr(self, x0)
+        cs.name, cs.num = self.name, self.num
         return cs
 
     def zero_lower_unbounded_variables(self):

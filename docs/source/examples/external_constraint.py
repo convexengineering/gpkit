@@ -18,7 +18,7 @@ class ExternalConstraint(object):
         "Ensures this is treated as an SGP constraint"
         raise InvalidGPConstraint("ExternalConstraint cannot solve as a GP.")
 
-    def as_gpconstr(self, x0, _):
+    def as_gpconstr(self, x0):
         "Returns locally-approximating GP constraint"
 
         # Unpacking the GPkit variables

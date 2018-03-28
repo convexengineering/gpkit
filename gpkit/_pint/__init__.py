@@ -11,20 +11,13 @@ ureg.define("nautical_mile = 1852 m = nmi")
 class GPkitUnits(object):
     "Return monomials instead of Quantitites"
 
-    def __init__(self):
-        self.Quantity = ureg.Quantity  # pylint: disable=invalid-name
-        if hasattr(ureg, "__nonzero__"):
-            # that is, if it's a DummyUnits object
-            self.__nonzero__ = ureg.__nonzero__
-            self.__bool__ = ureg.__bool__
-
     def __getattr__(self, attr):
         from .. import Monomial
-        return Monomial(self.Quantity(1, getattr(ureg, attr)))
+        return Monomial(ureg.Quantity(1, getattr(ureg, attr)))
 
     def __call__(self, arg):
         from .. import Monomial
-        return Monomial(self.Quantity(1, ureg(arg)))
+        return Monomial(ureg.Quantity(1, ureg(arg)))
 
 
 units = GPkitUnits()
