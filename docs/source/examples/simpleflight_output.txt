@@ -22,8 +22,8 @@ Most Sensitive
 --------------
                 W_0 : +1    aircraft weight excluding wing
                   e : -0.48 Oswald efficiency factor
-(\frac{S}{S_{wet}}) : +0.43 wetted area ratio
                   k : +0.43 form factor
+(\frac{S}{S_{wet}}) : +0.43 wetted area ratio
             V_{min} : -0.37 takeoff speed
 
 SWEEP
@@ -55,6 +55,6 @@ Most Sensitive
                 W_0 : [ +0.92     +0.95     +0.85     +0.85    ] aircraft weight excluding wing
             V_{min} : [ -0.82     -0.41     -1        -0.71    ] takeoff speed
                   V : [ +0.59     +0.25     +0.97     +0.75    ] cruising speed
-(\frac{S}{S_{wet}}) : [ +0.56     +0.45     +0.63     +0.54    ] wetted area ratio
                   k : [ +0.56     +0.45     +0.63     +0.54    ] form factor
+(\frac{S}{S_{wet}}) : [ +0.56     +0.45     +0.63     +0.54    ] wetted area ratio
 
