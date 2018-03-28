@@ -54,8 +54,6 @@ class KeyDict(dict):
     """
     collapse_arrays = True
     keymapping = True
-    log_gets = False
-    logged_gets = set()
 
     def __init__(self, *args, **kwargs):
         "Passes through to dict.__init__ via the `update()` method"
@@ -64,6 +62,8 @@ class KeyDict(dict):
         self.keymap = defaultdict(set)
         self._unmapped_keys = set()
         self.update(*args, **kwargs)
+        self.log_gets = False
+        self.logged_gets = set()
 
     def get(self, key, alternative=KeyError):
         if key not in self:

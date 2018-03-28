@@ -33,28 +33,37 @@ def _progify_fctry(program, return_attr=None):
             constants, _, linked = parse_subs(self.varkeys, self.substitutions)
             if linked:
                 kdc = KeyDict({k: adnumber(v) for k, v in constants.items()})
-                print kdc
                 kdc.log_gets = True
                 array_calulated, logged_array_gets = {}, {}
-                for v, f in linked.items():
-                    if v.veckey and v.veckey.original_fn:
-                        if v.veckey not in array_calulated:
-                            ofn = v.veckey.original_fn
-                            array_calulated[v.veckey] = np.array(ofn(kdc))
-                            logged_array_gets[v.veckey] = kdc.logged_gets
-                        logged_gets = logged_array_gets[v.veckey]
-                        out = array_calulated[v.veckey][v.idx]
-                    else:
-                        logged_gets = kdc.logged_gets
-                        out = f(kdc)
-                    constants[v] = out.x
-                    v.descr["gradients"] = {}
-                    for key in logged_gets:
-                        if key.shape:
-                            v.gradients[key] = np.array(out.gradient(kdc[key]))
+                try:
+                    for v, f in linked.items():
+                        if v.veckey and v.veckey.original_fn:
+                            if v.veckey not in array_calulated:
+                                ofn = v.veckey.original_fn
+                                array_calulated[v.veckey] = np.array(ofn(kdc))
+                                logged_array_gets[v.veckey] = kdc.logged_gets
+                            logged_gets = logged_array_gets[v.veckey]
+                            out = array_calulated[v.veckey][v.idx]
                         else:
-                            v.gradients[key] = out.d(kdc[key])
-                    kdc.logged_gets = set()
+                            logged_gets = kdc.logged_gets
+                            out = f(kdc)
+                        constants[v] = out.x
+                        v.descr["gradients"] = {}
+                        for key in logged_gets:
+                            if key.shape:
+                                grad = out.gradient(kdc[key])
+                                v.gradients[key] = np.array(grad)
+                            else:
+                                v.gradients[key] = out.d(kdc[key])
+                        kdc.logged_gets = set()
+                except NotImplementedError:  # can't auto-diff
+                    print("Couldn't auto-differentiate linked variable %s,"
+                          " so we won't use auto-differentation to transfer"
+                          " linked-variable sensitivities to constants." % v)
+                    kdc = KeyDict(constants)
+                    constants.update({v: f(kdc) for v, f in linked.items()})
+                    for v in linked:
+                        v.descr.pop("gradients", None)
         prog = program(self.cost, self, constants, **kwargs)
         if return_attr:
             return prog, getattr(prog, return_attr)
