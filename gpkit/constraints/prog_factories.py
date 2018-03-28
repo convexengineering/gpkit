@@ -5,13 +5,15 @@ from ad import adnumber
 from ..nomials import parse_subs
 from ..solution_array import SolutionArray
 from ..keydict import KeyDict
+from ..small_scripts import maybe_flatten
 
 POOL = None  # TODO: add parallel sweeps
 
 
 def evaluate_linked(constants, linked):
     "Evaluates the values and gradients of linked variables."
-    kdc = KeyDict({k: adnumber(v) for k, v in constants.items()})
+    kdc = KeyDict({k: adnumber(maybe_flatten(v))
+                   for k, v in constants.items()})
     kdc.log_gets = True
     array_calulated, logged_array_gets = {}, {}
     try:
