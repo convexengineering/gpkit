@@ -45,14 +45,6 @@ class SingleEquationConstraint(object):
         latexright = trycall(self.right, "latex", excluded, str(self.right))
         return ("%s %s %s" % (latexleft, latex_oper, latexright))
 
-    def sub(self, subs):
-        "Returns a substituted version of this constraint."
-        subbedleft = trycall(self.left, "sub", subs, self.left)
-        subbedright = trycall(self.right, "sub", subs, self.right)
-        subbed = self.func_opers[self.oper](subbedleft, subbedright)
-        subbed.substitutions = self.substitutions
-        return subbed
-
     def process_result(self, result):
         "Process solver results"
         pass

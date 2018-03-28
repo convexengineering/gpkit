@@ -143,10 +143,6 @@ class NomialMap(HashVector):
             if vk in fixed:
                 expval = []
                 exps, cval = varlocs[vk], fixed[vk]
-                if isinstance(cval, Strings):
-                    descr = dict(vk.descr)
-                    del descr["name"]
-                    cval = VarKey(name=cval, **descr)
                 if hasattr(cval, "hmap"):
                     expval, = cval.hmap.keys()  # TODO: catch "can't-sub-posys"
                     cval = cval.hmap
