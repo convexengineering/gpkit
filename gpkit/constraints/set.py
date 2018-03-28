@@ -115,16 +115,6 @@ class ConstraintSet(list):
                          " variables_byname('%s') to see all of them"
                          % (key, key))
 
-    def topvar(self, key):
-        "If a variable by a given name exists in the top model, return it"
-        # TODO: could this be done with unique_varkeys?
-        if not self.naming:  # pylint: disable=no-member
-            raise TypeError("constraintsets must be named to have top-level"
-                            " named variables.")
-        topvars = [var for var in self.variables_byname(key)
-                   if var.key.naming == self.naming]  # pylint: disable=no-member
-        return self._choosevar(key, topvars)
-
     def variables_byname(self, key):
         "Get all variables with a given name"
         from ..nomials import Variable
@@ -302,12 +292,11 @@ class ConstraintSet(list):
             offset += n_posys
         return var_senss
 
-    def as_gpconstr(self, x0, substitutions=None):
+    def as_gpconstr(self, x0):
         """Returns GPConstraint approximating this constraint at x0
 
         When x0 is none, may return a default guess."""
-        gpconstrs = [constr.as_gpconstr(x0, substitutions) for constr in self]
-        return ConstraintSet(gpconstrs, substitutions)
+        return ConstraintSet([constr.as_gpconstr(x0) for constr in self])
 
     def process_result(self, result):
         """Does arbitrary computation / manipulation of a program's result

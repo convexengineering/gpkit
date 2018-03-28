@@ -147,11 +147,10 @@ class Model(CostedConstraintSet):
 """ % (direction.title(), ", ".join(set(k.name for k in mb)))
             raise ValueError(err + boundstrs + "\n\n" + docstring)
 
-    def as_gpconstr(self, x0, substitutions=None):
+    def as_gpconstr(self, x0):
         "Returns approximating constraint, keeping name and num"
-        cs = CostedConstraintSet.as_gpconstr(self, x0, substitutions)
-        cs.name = self.name
-        cs.num = self.num
+        cs = CostedConstraintSet.as_gpconstr(self, x0)
+        cs.name, cs.num = self.name, self.num
         return cs
 
     def zero_lower_unbounded_variables(self):

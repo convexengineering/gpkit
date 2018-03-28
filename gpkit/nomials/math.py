@@ -542,7 +542,7 @@ class PosynomialInequality(ScalarSingleEquationConstraint):
                 var_senss[var] = sens + var_senss.get(var, 0)
         return var_senss
 
-    def as_gpconstr(self, x0, substitutions):  # pylint: disable=unused-argument
+    def as_gpconstr(self, x0):  # pylint: disable=unused-argument
         "The GP version of a Posynomial constraint is itself"
         return self.__class__(self.left, self.oper, self.right)  # a copy
 
@@ -699,14 +699,9 @@ class SignomialInequality(ScalarSingleEquationConstraint):
                                       " form your Model as a"
                                       " SequentialGeometricProgram")
 
-    def as_gpconstr(self, x0, substitutions=None):
+    def as_gpconstr(self, x0):
         "Returns GP approximation of an SP constraint at x0"
         siglt0, = self.unsubbed
-        if substitutions:  # check if it will become a posynomial constraint
-            subsiglt0 = siglt0.sub(substitutions, require_positive=False)
-            _, subnegy = subsiglt0.posy_negy()
-            if not hasattr(subnegy, "cs") or len(subnegy.cs) == 1:
-                return self
         posy, negy = siglt0.posy_negy()
         # default guess of 1.0 for unspecified negy variables
         x0.update({vk: 1.0 for vk in negy.vks if vk not in x0})
@@ -740,7 +735,7 @@ class SingleSignomialEquality(SignomialInequality):
                                   " form your Model as a"
                                   " SequentialGeometricProgram")
 
-    def as_gpconstr(self, x0, substitutions=None):
+    def as_gpconstr(self, x0):
         "Returns GP approximation of an SP constraint at x0"
         # TODO: check if it would be a monomial equality after substitutions
         siglt0, = self.unsubbed
