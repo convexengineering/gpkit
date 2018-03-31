@@ -192,6 +192,7 @@ def veclinkedfn(linkedfn, i):
     "Generate an indexed linking function."
     def newlinkedfn(c):
         "Linked function that pulls out a particular index"
+        print i, np.array(linkedfn(c))
         return np.array(linkedfn(c))[i]
     return newlinkedfn
 
