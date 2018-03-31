@@ -20,7 +20,7 @@ def test_repo(repo=".", xmloutput=False):
     print settings
     print
 
-    if repo == ".":
+    if repo == "." and not os.path.isdir("gpkitmodels"):
         git_clone("gplibrary")
         pip_install("gplibrary", local=True)
 
