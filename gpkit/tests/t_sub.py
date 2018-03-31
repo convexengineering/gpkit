@@ -2,8 +2,8 @@
 import unittest
 import numpy as np
 import numpy.testing as npt
-import gpkit
 from ad import adnumber, ADV
+import gpkit
 from gpkit import SignomialsEnabled
 from gpkit import Variable, VectorVariable, Model, Signomial
 from gpkit.small_scripts import mag
@@ -25,8 +25,7 @@ class TestNomialSubs(unittest.TestCase):
                     "linked vector function"
                     if isinstance(c[y], ADV):
                         return np.array(c[y])+adnumber([1, 2, 3])
-                    else:
-                        return c[y]+np.array([1, 2, 3])
+                    return c[y]+np.array([1, 2, 3])
                 self.x = x = VectorVariable(3, "x", vectorlink)
         m = VectorLinked()
         self.assertEqual(m.gp().substitutions[m.x[0].key], 2)
