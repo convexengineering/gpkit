@@ -104,7 +104,7 @@ Windows
         - Request an `academic license file <http://license.mosek.com/academic>`_ and put it in ``C:\Users\(your_username)\mosek\``
         - Make sure ``gcc`` is on your system path.
             - To do this, type ``gcc`` into a command prompt.
-            - If you get ``executable not found``, then install the 64-bit version (x86_64 installer architecture dropdown option) of `mingw <http://sourceforge.net/projects/mingw-w64/>`_.
+            - If you get ``executable not found``, then install the 64-bit version (x86_64 installer architecture dropdown option) with GCC version 6.4.0 or older of `mingw <http://sourceforge.net/projects/mingw-w64/>`_.
             - Make sure the ``mingw`` bin directory is on your system path (you may have to add it manually).
 
 
