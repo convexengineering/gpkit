@@ -61,9 +61,9 @@ class KeyDict(dict):
         self.varkeys = None
         self.keymap = defaultdict(set)
         self._unmapped_keys = set()
-        self.update(*args, **kwargs)
         self.log_gets = False
         self.logged_gets = set()
+        self.update(*args, **kwargs)
 
     def get(self, key, alternative=KeyError):
         if key not in self:
