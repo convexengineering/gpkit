@@ -30,6 +30,13 @@
 # -*- coding: us-ascii -*-
 # vim:ts=4:sw=4:softtabstop=4:smarttab:expandtab
 
+import os
+import sys
+
+f = open("ctypesgen.log", "w")
+sys.stdout = f
+sys.stderr = f
+
 def find_names_in_modules(modules):
     names = set()
     for module in modules:
