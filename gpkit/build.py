@@ -152,7 +152,7 @@ class Mosek(SolverBackend):
     version = None
     lib_name = None
 
-    def look(self):
+    def look(self):  # pylint: disable=too-many-return-statements
         "Looks in default install locations for latest mosek version."
         if sys.platform == "win32":
             rootdir = "C:\\Program Files\\Mosek"
