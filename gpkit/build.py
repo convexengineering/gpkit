@@ -178,13 +178,17 @@ class Mosek(SolverBackend):
 
         if "MSKHOME" in os.environ:  # allow specification of root dir
             rootdir = os.environ["MSKHOME"]
+            log("# Using MSKHOME environment variable (value %s) instead of"
+                " OS-default MOSEK home directory" % rootdir)
         if not os.path.isdir(rootdir):
+            log("# the expected MOSEK directory of %s was not found" % rootdir)
             return None
 
         possible_versions = [f for f in os.listdir(rootdir) if len(f) == 1]
         if not possible_versions:
-            raise ValueError("no mosek version folders (e.g. '7', '8')"
-                             " were found in the mosek directory " + rootdir)
+            log("# no mosek version folders (e.g. '7', '8')"
+                " were found in the mosek directory " + rootdir)
+            return None
         self.version = sorted(possible_versions)[-1]
         tools_dir = pathjoin(rootdir, self.version, "tools")
         lib_dir = pathjoin(tools_dir, "platform", mosek_platform)
