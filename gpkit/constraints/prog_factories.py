@@ -45,9 +45,14 @@ def evaluate_linked(constants, linked):
                     v.gradients[key] = np.array(grad)
                 else:
                     v.gradients[key] = out.d(kdc[key])
-        except Exception:  # can't auto-diff # pylint: disable=broad-except
+        except Exception:  # pylint: disable=broad-except
+            from .. import settings
+            if settings.get("ad_errors_raise", None):
+                raise
             if adnumber:
-                print("Couldn't auto-differentiate linked variable %s." % v)
+                print("Couldn't auto-differentiate linked variable %s.\n  "
+                      "(to raise the error directly for debugging purposes,"
+                      " set gpkit.settings[\"ad_errors_raise\"] to True)" % v)
             constants[v] = f(kdc_plain)
             v.descr.pop("gradients", None)
         finally:

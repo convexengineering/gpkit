@@ -28,6 +28,9 @@ accepting ``model.substitutions`` (for details, see `Substitutions`_ below).
     npt.assert_allclose(sol(t_day) + sol(t_night), 24)
 
 
+These functions are automatically differentiated with the `ad <https://pypi.org/project/ad/>`_ package to provide more accurate sensitivities. In some cases may require using functions from the ``ad.admath`` instead of their python or numpy equivalents; the `ad documentation <https://pypi.org/project/ad/>`_ contains details on how to do this.
+
+
 Evaluated Free Variables
 ------------------------
 
