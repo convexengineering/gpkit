@@ -186,8 +186,8 @@ class Mosek(SolverBackend):
 
         possible_versions = [f for f in os.listdir(rootdir) if len(f) == 1]
         if not possible_versions:
-            log("# no mosek version folders (e.g. '7', '8')"
-                " were found in the mosek directory " + rootdir)
+            log("# no mosek version folders (e.g. '7', '8') were found"
+                " in the mosek directory \"%s\"" % rootdir)
             return None
         self.version = sorted(possible_versions)[-1]
         tools_dir = pathjoin(rootdir, self.version, "tools")
