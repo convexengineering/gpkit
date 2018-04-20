@@ -152,7 +152,7 @@ class Mosek(SolverBackend):
     version = None
     lib_name = None
 
-    def look(self):
+    def look(self):  # pylint: disable=too-many-return-statements
         "Looks in default install locations for latest mosek version."
         if sys.platform == "win32":
             rootdir = "C:\\Program Files\\Mosek"
@@ -178,10 +178,17 @@ class Mosek(SolverBackend):
 
         if "MSKHOME" in os.environ:  # allow specification of root dir
             rootdir = os.environ["MSKHOME"]
+            log("# Using MSKHOME environment variable (value %s) instead of"
+                " OS-default MOSEK home directory" % rootdir)
         if not os.path.isdir(rootdir):
+            log("# the expected MOSEK directory of %s was not found" % rootdir)
             return None
 
         possible_versions = [f for f in os.listdir(rootdir) if len(f) == 1]
+        if not possible_versions:
+            log("# no mosek version folders (e.g. '7', '8') were found"
+                " in the mosek directory \"%s\"" % rootdir)
+            return None
         self.version = sorted(possible_versions)[-1]
         tools_dir = pathjoin(rootdir, self.version, "tools")
         lib_dir = pathjoin(tools_dir, "platform", mosek_platform)
