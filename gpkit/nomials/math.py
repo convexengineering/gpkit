@@ -122,7 +122,18 @@ class Signomial(Nomial):
                                            parsedsubs=True).values()
             e = val*diff/c0
             exp[vk] = e
-            c /= val**e
+            try:
+                c /= val**e
+            except OverflowError:
+                raise OverflowError("While approximating the variable %s"
+                                    " with a local value of %s, %s/(%s**%s)"
+                                    " overflowed. Try reducing the variable's"
+                                    " value by changing its unit prefix, or"
+                                    " specify x0 values for any free variables"
+                                    " it's multiplied or divided by in"
+                                    " the posynomial %s"
+                                    " whose expected value is far from 1."
+                                    % (vk, val, c, val, e, self))
         hmap = NomialMap({exp: c})
         hmap.units = self.units
         hmap.remove_zeros()
