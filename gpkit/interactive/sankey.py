@@ -9,7 +9,7 @@ from gpkit.small_classes import Count
 from gpkit import GPCOLORS
 
 
-INSENSITIVE = 1e-7
+INSENSITIVE = 1e-2
 
 
 def getcolor(value):
