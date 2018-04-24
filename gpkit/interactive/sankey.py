@@ -152,6 +152,9 @@ class Sankey(object):
                     # ...so that e.g. (1) >= (2) can label the constraints
                     node["title"] = (node["id"]+u"\u2009"+unichr(l_idx+0x2776)
                                      + op + unichr(r_idx+0x2776))
+        for link, value in self.links.items():
+            if abs(value) < 1e-15:
+                self.links[link] = 1e-15 if value >= 0 else -1e-15
         if flowright:
             r, l = margins["right"], margins["left"]
             margins["left"], margins["right"] = r, l
