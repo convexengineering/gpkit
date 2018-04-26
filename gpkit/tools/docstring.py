@@ -56,12 +56,14 @@ def expected_unbounded(instance, doc):
     return exp_unbounded
 
 
-def parse_variables(string):
+def parse_variables(string, errorcatch=True):
     "Parses a string to determine what variables to create from it"
     out = "from gpkit import Variable, VectorVariable\n"
-    out += check_and_parse_flag(string, "Constants\n", constant_declare)
-    out += check_and_parse_flag(string, "Variables\n")
-    out += check_and_parse_flag(string, "Variables of length", vv_declare)
+    out += check_and_parse_flag(string, "Constants\n", errorcatch,
+                                constant_declare)
+    out += check_and_parse_flag(string, "Variables\n", errorcatch)
+    out += check_and_parse_flag(string, "Variables of length", errorcatch,
+                                vv_declare)
     return out
 
 
@@ -71,12 +73,13 @@ def vv_declare(string, flag, idx2, countstr):
     return countstr.replace("Variable(", "VectorVariable(%s, " % length)
 
 
-def constant_declare(string, flag, idx2, countstr):  # pylint: disable=unused-argument
+# pylint: disable=unused-argument
+def constant_declare(string, flag, idx2, countstr):
     "Turns Variable declarations into Constant ones"
     return countstr.replace("')", "', constant=True)")
 
 
-def check_and_parse_flag(string, flag, declaration_func=None):
+def check_and_parse_flag(string, flag, errorcatch, declaration_func=None):
     "Checks for instances of flag in string and parses them."
     overallstr = ""
     for _ in range(string.count(flag)):
@@ -106,7 +109,8 @@ def check_and_parse_flag(string, flag, declaration_func=None):
                 while line[labelstart] == " ":
                     labelstart += 1
                 label = line[labelstart:].replace("'", "\\'")
-            countstr += variable_declaration(nameval, units, label, line)
+            countstr += variable_declaration(nameval, units, label, line,
+                                             errorcatch)
         if declaration_func is None:
             overallstr += countstr
         else:
@@ -120,7 +124,7 @@ PARSETIP = ("Is this line following the format `Name (optional Value) [Units]"
             " Value fields?")
 
 
-def variable_declaration(nameval, units, label, line):
+def variable_declaration(nameval, units, label, line, errorcatch=True):
     "Turns parsed output into a Variable declaration"
     if len(nameval) > 2:
         raise ValueError("while parsing the line '%s', additional fields"
@@ -133,11 +137,14 @@ def variable_declaration(nameval, units, label, line):
     elif len(nameval) == 1:
         out = ("{0} = self.{0} = Variable('{0}', '{1}', '{2}')")
         out = out.format(nameval[0], units, label)
-    out = """
+    if errorcatch:
+        out = """
 try:
     {0}
 except Exception, e:
     raise ValueError("`"+e.__class__.__name__+": "+str(e)+"` was raised"
                      " while executing the parsed line `{0}`. {1}")
 """.format(out, PARSETIP)
+    else:
+        out = out + "\n"
     return out
