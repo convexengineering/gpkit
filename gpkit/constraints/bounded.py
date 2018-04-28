@@ -72,6 +72,8 @@ class Bounded(ConstraintSet):
         constrained_varkeys = set()
         for constraint in constraints.flat(constraintsets=False):
             constrained_varkeys.update(constraint.varkeys)
+        if hasattr(constraints, "cost"):
+            constrained_varkeys.update(constraints.cost.varkeys)
         self.bound_varkeys = frozenset(vk for vk in constrained_varkeys
                                        if vk not in constraints.substitutions)
         bounding_constraints = varkey_bounds(self.bound_varkeys,
