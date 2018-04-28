@@ -28,7 +28,7 @@ def try_str_without(item, excluded):
 
 def veckeyed(key):
     "Return a veckey version of a VarKey"
-    vecdescr = dict(key.descr)
+    vecdescr = key.descr.copy()
     for metadata in ["idx", "value"]:
         vecdescr.pop(metadata, None)
     return key.__class__(**vecdescr)

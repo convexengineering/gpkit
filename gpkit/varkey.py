@@ -19,42 +19,29 @@ class VarKey(object):
     -------
     VarKey with the given name and descr.
     """
-    new_unnamed_id = Count().next
+    unique_id = Count().next
     subscripts = ("models", "idx")
-    @profile
     def __init__(self, name=None, **kwargs):
         # NOTE: Python arg handling guarantees 'name' won't appear in kwargs
-        self.descr = kwargs
         if isinstance(name, VarKey):
-            self.descr.update(name.descr)
+            self.descr = name.descr
         else:
-            if name is None:
-                name = "\\fbox{%s}" % VarKey.new_unnamed_id()
-            self.descr["name"] = str(name)
-            if "unitrepr" in self.descr:
-                self.descr["units"] = self.descr["unitrepr"]
-            self.descr["unitrepr"] = "None"
-            if "units" in self.descr:
-                units = self.descr["units"]
-                if isinstance(units, Strings):
-                    if units in ["", "-", "None"]:  # dimensionless
-                        del self.descr["units"]
-                        self.descr["unitrepr"] = "None"
-                    else:
-                        self.descr["units"] = qty(units)
-                        self.descr["unitrepr"] = units
-                else:
-                    raise ValueError("units must be given as a string")
+            self.descr = kwargs
+            self.descr["name"] = str(name or "\\fbox{%s}" % VarKey.unique_id())
+            unitrepr = self.unitrepr or self.units
+            if unitrepr in ["", "-", None, "-"]:  # dimensionless
+                self.descr["units"] = None
+                self.descr["unitrepr"] = "-"
+            else:
+                self.descr["units"] = qty(unitrepr)
+                self.descr["unitrepr"] = unitrepr
 
-            if isinstance(self.value, Quantity):
-                raise ValueError("values may not be united")
-
-        selfstr = str(self)
-        self.hashstr = selfstr + self.descr["unitrepr"]
-        self._hashvalue = hash(self.hashstr)
         self.key = self
-        self.keys = set([self.name, selfstr,
-                         self.str_without(["modelnums"])])
+        cleanstr = self.str_without(["modelnums"])
+        selfstr = cleanstr + str(self.modelnums) + self.unitrepr
+        self.eqstr = selfstr + self.descr["unitrepr"]
+        self._hashvalue = hash(self.eqstr)
+        self.keys = set((self.name, selfstr, cleanstr))
 
         if "idx" in self.descr:
             self.veckey = veckeyed(self)
@@ -135,7 +122,7 @@ class VarKey(object):
     def __eq__(self, other):
         if not hasattr(other, "descr"):
             return False
-        return self.hashstr == other.hashstr
+        return self.eqstr == other.eqstr
 
     def __ne__(self, other):
         return not self.__eq__(other)

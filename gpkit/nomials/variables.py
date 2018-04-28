@@ -17,7 +17,7 @@ class Variable(Monomial):
     *args : list
         may contain "name" (Strings)
                     "value" (Numbers + Quantity) or (Iterable) for a sweep
-                    "units" (Strings + Quantity)
+                    "units" (Strings)
              and/or "label" (Strings)
     **descr : dict
         VarKey description
@@ -39,7 +39,7 @@ class Variable(Monomial):
                     descr["value"] = arg
                 else:
                     descr["value"] = ("sweep", arg)
-            elif isinstance(arg, Strings+(Quantity,)) and "units" not in descr:
+            elif isinstance(arg, Strings) and "units" not in descr:
                 descr["units"] = arg
             elif isinstance(arg, Strings) and "label" not in descr:
                 descr["label"] = arg
@@ -94,7 +94,7 @@ class ArrayVariable(NomialArray):
     *args :
         may contain "name" (Strings)
                     "value" (Iterable)
-                    "units" (Strings + Quantity)
+                    "units" (Strings)
              and/or "label" (Strings)
     **descr :
         VarKey description
@@ -129,13 +129,13 @@ class ArrayVariable(NomialArray):
                 descr["value"] = arg
             elif hasattr(arg, "__call__"):
                 descr["value"] = arg
-            elif isinstance(arg, Strings+(Quantity,)) and "units" not in descr:
+            elif isinstance(arg, Strings) and "units" not in descr:
                 descr["units"] = arg
             elif isinstance(arg, Strings) and "label" not in descr:
                 descr["label"] = arg
 
         if "name" not in descr:
-            descr["name"] = "\\fbox{%s}" % VarKey.new_unnamed_id()
+            descr["name"] = "\\fbox{%s}" % VarKey.unique_id()
 
         value_option = None
         if "value" in descr:

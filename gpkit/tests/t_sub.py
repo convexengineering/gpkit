@@ -239,13 +239,13 @@ class TestModelSubs(unittest.TestCase):
         m = Model(x, [x >= y.prod()])
         m.substitutions.update({y: ('sweep', [[2, 3], [5, 7], [9, 11]])})
         a = m.solve(verbosity=0)["cost"]
-        b = [6, 14, 22, 15, 35, 55, 27, 63, 99]
+        b = [6, 15, 27, 14, 35, 63, 22, 55, 99]
         # below line fails with changing dictionary keys in py3
         self.assertTrue(all(abs(a-b)/(a+b) < 1e-7))
         m = Model(x, [x >= y.prod()])
         m.substitutions.update({y: ('sweep', [[2, 3], [5, 7, 11]])})
         a = m.solve(verbosity=0)["cost"]
-        b = [10, 14, 22, 15, 21, 33]
+        b = [10, 15, 14, 21, 22, 33]
         self.assertTrue(all(abs(a-b)/(a+b) < 1e-7))
         m = Model(x, [x >= y.prod()])
         m.substitutions.update({y: ('sweep', [[2, 3, 9], [5, 7, 11]])})

@@ -106,23 +106,33 @@ class ConstantsRelaxed(ConstraintSet):
         include_only = frozenset(include_only) if include_only else frozenset()
         substitutions = KeyDict(constraints.substitutions)
         constants, _, linked = parse_subs(constraints.varkeys, substitutions)
+        constrained_varkeys = set()
+        for constraint in constraints.flat(constraintsets=False):
+            constrained_varkeys.update(constraint.varkeys)
+        if hasattr(constraints, "cost"):
+            constrained_varkeys.update(constraints.cost.varkeys)
         if linked:
             kdc = KeyDict(constants)
-            constants.update({v: f(kdc) for v, f in linked.items()})
-        self.constants = constants
+            combined = {k: f(kdc) for k, f in linked.items()
+                        if k in constrained_varkeys}
+            combined.update({k: v for k, v in constants.items()
+                             if k in constrained_varkeys})
+        else:
+            combined = constants
+        self.constants = KeyDict(combined)
         relaxvars, relaxation_constraints = [], []
         self.origvars = []
         self.num = MODELNUM_LOOKUP["Relax"]
         self._unrelaxmap = {}
         MODELNUM_LOOKUP["Relax"] += 1
-        for key, value in constants.items():
+        for key, value in combined.items():
             if value == 0:
                 continue
             elif include_only and key.name not in include_only:
                 continue
             elif key.name in exclude:
                 continue
-            descr = dict(key.descr)
+            descr = key.descr.copy()
             descr.pop("value", None)
             descr["unitrepr"] = "-"
             descr["models"] = descr.pop("models", [])+["Relax"]
@@ -133,7 +143,7 @@ class ConstantsRelaxed(ConstraintSet):
             var = Variable(**key.descr)
             # TODO: make it easier to make copies of a variable
             self.origvars.append(var)
-            descr = dict(key.descr)
+            descr = key.descr.copy()
             descr["name"] += "_{before}"
             descr["models"] = descr.pop("models", [])+["Relax"]
             descr["modelnums"] = descr.pop("modelnums", []) + [self.num]
