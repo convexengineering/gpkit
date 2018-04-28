@@ -1,6 +1,5 @@
 """Defines the VarKey class"""
 from .small_classes import HashVector, Count, qty
-from .small_scripts import veckeyed
 from .repr_conventions import unitstr
 
 
@@ -29,7 +28,7 @@ class VarKey(object):
             self.descr = kwargs
             self.descr["name"] = str(name or "\\fbox{%s}" % VarKey.unique_id())
             unitrepr = self.unitrepr or self.units
-            if unitrepr in ["", "-", None, "-"]:  # dimensionless
+            if unitrepr in ["", "-", None]:  # dimensionless
                 self.descr["units"] = None
                 self.descr["unitrepr"] = "-"
             else:
@@ -44,7 +43,6 @@ class VarKey(object):
         self.keys = set((self.name, selfstr, cleanstr))
 
         if "idx" in self.descr:
-            self.veckey = veckeyed(self)
             self.keys.add(self.veckey)
             self.keys.add(self.str_without(["idx"]))
             self.keys.add(self.str_without(["idx", "modelnums"]))

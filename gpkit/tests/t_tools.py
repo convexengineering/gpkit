@@ -4,8 +4,7 @@ import numpy as np
 from numpy import log
 from gpkit import Variable, VectorVariable, Model, NomialArray
 from gpkit.tools.autosweep import BinarySweepTree
-from gpkit.tools.tools import (composite_objective,
-                               te_exp_minus1, te_secant, te_tangent)
+from gpkit.tools.tools import te_exp_minus1, te_secant, te_tangent
 from gpkit.tools.fmincon import generate_mfiles
 from gpkit.small_scripts import mag
 from gpkit import parse_variables
@@ -85,12 +84,15 @@ class TestTools(unittest.TestCase):
         assert_logtol(bst0.sample_at([1, 1.25, 1.5, 1.75, 2])["cost"],
                       [1, 2.144, 4, 5.799, 8], 1e-3)
 
-    def test_composite_objective(self):
+    def test_dual_objective(self):
         L = Variable("L")
         W = Variable("W")
         eqns = [L >= 1, W >= 1,
                 L*W == 10]
-        obj = composite_objective(L+W, W**-1 * L**-3, sub={L: 1, W: 1})
+        N = 4
+        ws = Variable("w_{CO}", ("sweep", np.linspace(1./N, 1-1./N, N)), "-")
+        w_s = Variable("v_{CO}", lambda c: 1-c[ws], "-")
+        obj = ws*(L+W) + w_s*(W**-1 * L**-3)
         m = Model(obj, eqns)
         sol = m.solve(verbosity=0)
         a = sol["cost"]

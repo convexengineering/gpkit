@@ -79,8 +79,10 @@ class ConstraintSet(list):
             self.substitutions.update(substitutions)
         for key in self.varkeys:
             if key in self.substitutions:
-                if not key.constant:
-                    key.descr.pop("value", None)
+                if key.value is not None and not key.constant:
+                    del key.descr["value"]
+                    if key.veckey and key.veckey.value is not None:
+                        del key.veckey.descr["value"]
                 for direction in ("upper", "lower"):
                     self.bounded.add((key, direction))
         add_meq_bounds(self.bounded, self.meq_bounded)

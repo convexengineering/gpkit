@@ -156,34 +156,34 @@ class ArrayVariable(NomialArray):
                 raise ValueError("the value's shape %s is different than"
                                  " the vector's %s." % (values.shape, shape))
 
+        vecdescr = descr.copy()
+        from .. import MODELS, MODELNUMS
+        if MODELS:
+            vecdescr["models"] = vecdescr.get("models", []) + MODELS
+        if MODELNUMS:
+            vecdescr["modelnums"] = vecdescr.get("modelnums", []) + MODELNUMS
+        if value_option:
+            if hasattr(values, "__call__"):
+                vecdescr["original_fn"] = values
+            vecdescr[value_option] = values
+        veckey = VarKey(**vecdescr)
+
+        descr["veckey"] = veckey
         vl = np.empty(shape, dtype="object")
         it = np.nditer(vl, flags=['multi_index', 'refs_ok'])
         while not it.finished:
             i = it.multi_index
             it.iternext()
-            descr.update({"idx": i})
+            descr["idx"] = i
             if value_option:
                 if hasattr(values, "__call__"):
-                    descr.update({value_option: veclinkedfn(values, i)})
+                    descr[value_option] = veclinkedfn(values, i)
                 else:
-                    descr.update({value_option: values[i]})
+                    descr[value_option] = values[i]
             vl[i] = Variable(**descr)
-            if value_option and hasattr(values, "__call__"):
-                vl[i].key.veckey.descr["original_fn"] = values
-
-        if descr.pop("newvariable", True):
-            from .. import MODELS, MODELNUMS
-
-            if MODELS:
-                descr["models"] = descr.get("models", []) + MODELS
-            if MODELNUMS:
-                descr["modelnums"] = descr.get("modelnums", []) + MODELNUMS
 
         obj = np.asarray(vl).view(cls)
-        obj.descr = descr
-        obj.descr.pop("idx", None)
-        obj.key = VarKey(**obj.descr)
-
+        obj.key = veckey
         return obj
 
 

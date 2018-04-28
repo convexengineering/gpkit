@@ -217,37 +217,3 @@ After creating a Model, it may be useful to "free" a fixed variable and resolve.
 Note that ``del m.substitutions["y"]`` affects ``m`` but not ``y.key``.
 ``y.value`` will still be 3, and if ``y`` is used in a new model,
 it will still carry the value of 3.
-
-
-Composite Objectives
-====================
-
-Given :math:`n` posynomial objectives :math:`g_i`, you can sweep out the problem's Pareto frontier with the composite objective:
-
-:math:`g_0 w_0 \prod_{i\not=0} v_i + g_1 w_1 \prod_{i\not=1} v_i +  ... + g_n \prod_i v_i`
-
-where :math:`i \in 0 ... n-1` and :math:`v_i = 1- w_i` and :math:`w_i \in [0, 1]`
-
-GPkit has the helper function ``composite_objective`` for constructing these.
-
-.. code-block:: python
-
-    import numpy as np
-    import gpkit
-
-    L, W = gpkit.Variable("L"), gpkit.Variable("W")
-
-    eqns = [L >= 1, W >= 1, L*W == 10]
-
-    co_sweep = [0] + np.logspace(-6, 0, 10).tolist()
-
-    obj = gpkit.tools.composite_objective(L+W, W**-1 * L**-3,
-                                          normsub={L:10, W: 10},
-                                          sweep=co_sweep)
-
-    m = gpkit.Model(obj, eqns)
-    m.solve()
-
-The ``normsub`` argument specifies an expected value for your solution to normalize the different :math:`g_i` (you can also do this by hand). The feasibility of the problem should not depend on the normalization, but the spacing of the sweep will.
-
-The ``sweep`` argument specifies what points between 0 and 1 you wish to sample the weights at. If you want different resolutions or spacings for different weights, the ``sweeps`` argument accepts a list of sweep arrays.

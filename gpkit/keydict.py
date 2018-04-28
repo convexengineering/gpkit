@@ -4,6 +4,8 @@ import numpy as np
 from .small_classes import Numbers, Quantity
 from .small_scripts import is_sweepvar, isnan
 
+DIMLESS_QUANTITY = Quantity(1, "dimensionless")
+
 
 def clean_value(key, value):
     """Gets the value of variable-less monomials, so that
@@ -139,6 +141,20 @@ class KeyDict(dict):
             return True
         else:
             return False
+
+    def __call__(self, key):
+        got = self[key]
+        # if uniting ever becomes a speed hit, cache the results
+        if isinstance(got, dict):
+            for k, v in got.items():
+                got[k] = v*(k.units or DIMLESS_QUANTITY)
+        else:
+            if not hasattr(key, "units"):
+                parsedkey, _ = self.parse_and_index(key)
+                keys = self.keymap[parsedkey]
+                key, = keys
+            got = Quantity(got, key.units or DIMLESS_QUANTITY)
+        return got
 
     def __getitem__(self, key):
         "Overloads __getitem__ and [] access to work with all keys"
