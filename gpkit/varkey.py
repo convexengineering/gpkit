@@ -1,5 +1,5 @@
 """Defines the VarKey class"""
-from .small_classes import Strings, Quantity, HashVector, Count
+from .small_classes import Strings, Quantity, HashVector, Count, genQuantity
 from .small_scripts import veckeyed
 from .repr_conventions import unitstr
 
@@ -37,7 +37,7 @@ class VarKey(object):
                     if units in ["", "-"]:  # dimensionless
                         del self.descr["units"]
                     else:
-                        self.descr["units"] = Quantity(1.0, units)
+                        self.descr["units"] = genQuantity(units)
                 elif not isinstance(units, Quantity):
                     raise ValueError("units must be either a string"
                                      " or a Quantity from gpkit.units.")
@@ -49,7 +49,7 @@ class VarKey(object):
                         # convert to explicitly given units, if any
                         value = value.to(self.descr["units"])
                     else:
-                        self.descr["units"] = Quantity(1.0, value.units)
+                        self.descr["units"] = genQuantity(value.units)
                     self.descr["value"] = value.magnitude
 
             self.descr["unitrepr"] = repr(self.units)

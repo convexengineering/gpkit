@@ -27,7 +27,6 @@ class Variable(Monomial):
     Monomials containing a VarKey with the name '$name',
     where $name is the vector's name and i is the VarKey's index.
     """
-
     def __init__(self, *args, **descr):
         for arg in args:
             if isinstance(arg, Strings) and "name" not in descr:

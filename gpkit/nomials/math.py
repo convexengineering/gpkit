@@ -395,7 +395,6 @@ class PosynomialInequality(ScalarSingleEquationConstraint):
     Stored in the posylt1_rep attribute as a single Posynomial (self <= 1)
     Usually initialized via operator overloading, e.g. cc = (y**2 >= 1 + x)
     """
-
     def __init__(self, left, oper, right):
         ScalarSingleEquationConstraint.__init__(self, left, oper, right)
         if self.oper == "<=":
@@ -467,11 +466,11 @@ class PosynomialInequality(ScalarSingleEquationConstraint):
         hmap.units = None
         if m_gt.units != p_lt.units:
             if m_gt.units and p_lt.units:
-                units = p_lt.units/m_gt.units
+                conversion = m_gt.units/p_lt.units
             else:
-                units = p_lt.units or 1/m_gt.units
+                conversion = m_gt.units or 1/p_lt.units
             try:
-                m_c /= float(units)
+                m_c *= float(conversion)
             except DimensionalityError:
                 raise DimensionalityError(p_lt, m_gt)
         for exp in hmap.keys():

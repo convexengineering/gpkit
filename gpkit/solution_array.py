@@ -2,11 +2,11 @@
 from collections import Iterable
 import numpy as np
 from .nomials import NomialArray
-from .small_classes import DictOfLists, Quantity
+from .small_classes import DictOfLists, genQuantity
 from .small_scripts import mag, isnan
 from .repr_conventions import unitstr
 
-DIMLESS_QUANTITY = Quantity(1, "dimensionless")
+DIMLESS_QUANTITY = genQuantity("dimensionless")
 
 
 def senss_table(data, showvars=(), title="Sensitivities", **kwargs):
