@@ -463,13 +463,13 @@ class PosynomialInequality(ScalarSingleEquationConstraint):
             m_c, = m_gt.hmap.values()
         except ValueError:
             raise TypeError("greater-than side '%s' is not monomial." % m_gt)
-        hmap = NomialMap(p_lt.hmap)
+        hmap = p_lt.hmap.copy()
         hmap.units = None
         if m_gt.units != p_lt.units:
             if m_gt.units and p_lt.units:
                 units = p_lt.units/m_gt.units
             else:
-                units = m_gt.units or p_lt.units
+                units = p_lt.units or 1/m_gt.units
             try:
                 m_c /= float(units)
             except DimensionalityError:

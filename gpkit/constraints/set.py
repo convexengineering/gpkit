@@ -221,6 +221,8 @@ class ConstraintSet(list):
                 for k, v in subs.items()}
         subkeys = frozenset(subs)
         for constraint in self:
+            if isinstance(constraint.varkeys, set):
+                constraint.varkeys = KeySet(constraint.varkeys)
             csubs = {k: v for k, v in subs.items() if k in constraint.varkeys}
             if csubs:
                 constraint.subinplace(csubs)
