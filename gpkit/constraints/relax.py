@@ -130,6 +130,7 @@ class ConstantsRelaxed(ConstraintSet):
                 continue
             descr = key.descr.copy()
             descr.pop("value", None)
+            descr.pop("veckey", None)
             descr["unitrepr"] = "-"
             descr["models"] = descr.pop("models", [])+["Relax"]
             descr["modelnums"] = descr.pop("modelnums", []) + [self.num]
@@ -140,6 +141,7 @@ class ConstantsRelaxed(ConstraintSet):
             # TODO: make it easier to make copies of a variable
             self.origvars.append(var)
             descr = key.descr.copy()
+            descr.pop("veckey", None)
             descr["name"] += "_{before}"
             descr["models"] = descr.pop("models", [])+["Relax"]
             descr["modelnums"] = descr.pop("modelnums", []) + [self.num]

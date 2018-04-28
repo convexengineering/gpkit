@@ -20,6 +20,7 @@ class VarKey(object):
     """
     unique_id = Count().next
     subscripts = ("models", "idx")
+
     def __init__(self, name=None, **kwargs):
         # NOTE: Python arg handling guarantees 'name' won't appear in kwargs
         if isinstance(name, VarKey):
@@ -43,6 +44,10 @@ class VarKey(object):
         self.keys = set((self.name, selfstr, cleanstr))
 
         if "idx" in self.descr:
+            if "veckey" not in self.descr:
+                vecdescr = self.descr.copy()
+                del vecdescr["idx"]
+                self.veckey = VarKey(**vecdescr)
             self.keys.add(self.veckey)
             self.keys.add(self.str_without(["idx"]))
             self.keys.add(self.str_without(["idx", "modelnums"]))
