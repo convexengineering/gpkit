@@ -106,11 +106,7 @@ class ConstantsRelaxed(ConstraintSet):
         include_only = frozenset(include_only) if include_only else frozenset()
         substitutions = KeyDict(constraints.substitutions)
         constants, _, linked = parse_subs(constraints.varkeys, substitutions)
-        constrained_varkeys = set()
-        for constraint in constraints.flat(constraintsets=False):
-            constrained_varkeys.update(constraint.varkeys)
-        if hasattr(constraints, "cost"):
-            constrained_varkeys.update(constraints.cost.varkeys)
+        constrained_varkeys = constraints.constrained_varkeys()
         if linked:
             kdc = KeyDict(constants)
             combined = {k: f(kdc) for k, f in linked.items()

@@ -1,5 +1,5 @@
 """Defines the VarKey class"""
-from .small_classes import Strings, Quantity, HashVector, Count, qty
+from .small_classes import HashVector, Count, qty
 from .small_scripts import veckeyed
 from .repr_conventions import unitstr
 

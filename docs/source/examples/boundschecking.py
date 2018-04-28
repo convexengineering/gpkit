@@ -55,4 +55,4 @@ assert {(m.D.key, 'lower'): bplate + "[(%s, 'lower')]" % m.Ap,
         (m.Ap.key, 'lower'): bplate + ("[(%s, 'lower')]"
                                        " or [(%s, 'lower')]" % (m.nu, m.D)),
         (m.nu.key, 'lower'): bplate + "[(%s, 'lower')]" % m.Ap
-        } == gp.missingbounds
+       } == gp.missingbounds

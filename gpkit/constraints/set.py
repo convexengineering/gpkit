@@ -121,6 +121,13 @@ class ConstraintSet(list):
         variables.sort(key=_sort_by_name_and_idx)
         return variables
 
+    def constrained_varkeys(self):
+        "Return all varkeys in non-ConstraintSet constraints"
+        constrained_varkeys = set()
+        for constraint in self.flat(constraintsets=False):
+            constrained_varkeys.update(constraint.varkeys)
+        return constrained_varkeys
+
     def __setitem__(self, key, value):
         self.substitutions.update(value.substitutions)
         list.__setitem__(self, key, value)
