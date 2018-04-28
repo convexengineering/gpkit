@@ -1,5 +1,5 @@
 """Defines the VarKey class"""
-from .small_classes import Strings, Quantity, HashVector, Count, genQuantity
+from .small_classes import Strings, Quantity, HashVector, Count, qty
 from .small_scripts import veckeyed
 from .repr_conventions import unitstr
 
@@ -21,7 +21,7 @@ class VarKey(object):
     """
     new_unnamed_id = Count().next
     subscripts = ("models", "idx")
-
+    @profile
     def __init__(self, name=None, **kwargs):
         # NOTE: Python arg handling guarantees 'name' won't appear in kwargs
         self.descr = kwargs
@@ -31,28 +31,23 @@ class VarKey(object):
             if name is None:
                 name = "\\fbox{%s}" % VarKey.new_unnamed_id()
             self.descr["name"] = str(name)
+            if "unitrepr" in self.descr:
+                self.descr["units"] = self.descr["unitrepr"]
+            self.descr["unitrepr"] = "None"
             if "units" in self.descr:
                 units = self.descr["units"]
                 if isinstance(units, Strings):
-                    if units in ["", "-"]:  # dimensionless
+                    if units in ["", "-", "None"]:  # dimensionless
                         del self.descr["units"]
+                        self.descr["unitrepr"] = "None"
                     else:
-                        self.descr["units"] = genQuantity(units)
-                elif not isinstance(units, Quantity):
-                    raise ValueError("units must be either a string"
-                                     " or a Quantity from gpkit.units.")
+                        self.descr["units"] = qty(units)
+                        self.descr["unitrepr"] = units
+                else:
+                    raise ValueError("units must be given as a string")
 
-            if "value" in self.descr:
-                value = self.descr["value"]
-                if isinstance(value, Quantity):
-                    if "units" in self.descr:
-                        # convert to explicitly given units, if any
-                        value = value.to(self.descr["units"])
-                    else:
-                        self.descr["units"] = genQuantity(value.units)
-                    self.descr["value"] = value.magnitude
-
-            self.descr["unitrepr"] = repr(self.units)
+            if isinstance(self.value, Quantity):
+                raise ValueError("values may not be united")
 
         selfstr = str(self)
         self.hashstr = selfstr + self.descr["unitrepr"]

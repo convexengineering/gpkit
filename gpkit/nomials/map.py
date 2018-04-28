@@ -2,11 +2,11 @@
 from collections import defaultdict
 import numpy as np
 from ..exceptions import DimensionalityError
-from ..small_classes import HashVector, Quantity, Strings, genQuantity
+from ..small_classes import HashVector, Quantity, Strings, qty
 from ..small_scripts import mag
 from .substitution import parse_subs
 
-DIMLESS_QUANTITY = genQuantity("dimensionless")
+DIMLESS_QUANTITY = qty("dimensionless")
 
 
 class NomialMap(HashVector):
@@ -28,7 +28,7 @@ class NomialMap(HashVector):
             self.units = None
         elif hasattr(thing, "units"):
             if hasattr(thing2, "units"):
-                self.units = genQuantity((thing*thing2).units)
+                self.units = qty((thing*thing2).units)
                 try:  # faster than "if self.units.dimensionless"
                     conversion = float(self.units)
                     self.units = None
@@ -39,11 +39,11 @@ class NomialMap(HashVector):
             elif not isinstance(thing, Quantity):
                 self.units = thing.units
             else:
-                self.units = genQuantity(thing.units)
+                self.units = qty(thing.units)
         elif hasattr(thing2, "units"):
-            self.units = genQuantity(thing2.units)
+            self.units = qty(thing2.units)
         elif thing2 is None and isinstance(thing, Strings):
-            self.units = genQuantity(thing)
+            self.units = qty(thing)
         else:
             self.units = None
 

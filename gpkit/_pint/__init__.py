@@ -11,22 +11,22 @@ Quantity = ureg.Quantity
 QTY_CACHE = {}
 
 
-def genQuantity(units):
-    if units not in QTY_CACHE:
-        QTY_CACHE[units] = Quantity(1, units)
-    return QTY_CACHE[units]
+def qty(unit):
+    "Returns a Quantity, caching the result for future retrievals"
+    if unit not in QTY_CACHE:
+        QTY_CACHE[unit] = Quantity(1, unit)
+    return QTY_CACHE[unit]
 
 
 class GPkitUnits(object):
     "Return monomials instead of Quantitites"
 
-    def __getattr__(self, attr):
-        from .. import Monomial
-        return Monomial(genQuantity(attr))
-
     def __call__(self, arg):
         from .. import Monomial
-        return Monomial(genQuantity(arg))
+        return Monomial(qty(arg))
+
+    def __getattr__(self, attr):
+        return self(attr)
 
 
 units = GPkitUnits()

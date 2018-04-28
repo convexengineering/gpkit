@@ -2,7 +2,7 @@
 from collections import defaultdict
 import numpy as np
 from ..small_classes import HashVector
-from ..keydict import KeySet, KeyDict
+from ..keydict import KeySet
 from .map import NomialMap
 from ..repr_conventions import _repr
 from ..varkey import VarKey

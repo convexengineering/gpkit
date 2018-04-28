@@ -124,7 +124,7 @@ class ConstantsRelaxed(ConstraintSet):
                 continue
             descr = dict(key.descr)
             descr.pop("value", None)
-            descr["units"] = "-"
+            descr["unitrepr"] = "-"
             descr["models"] = descr.pop("models", [])+["Relax"]
             descr["modelnums"] = descr.pop("modelnums", []) + [self.num]
             relaxvar = Variable(**descr)
