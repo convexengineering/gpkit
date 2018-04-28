@@ -119,7 +119,8 @@ class SequentialGeometricProgram(CostedConstraintSet):
             gp = self.gp(x0, mutategp)
             self.gps.append(gp)  # NOTE: SIDE EFFECTS
             try:
-                result = gp.solve(solver, verbosity-1, **kwargs)
+                result = gp.solve(solver, verbosity-1,
+                                  warn_on_check=True, **kwargs)
                 self.results.append(result)
             except (RuntimeWarning, ValueError):
                 feas_constrs = ([slackvar >= 1] +
