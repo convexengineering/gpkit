@@ -20,8 +20,12 @@ class NomialData(object):
     _hashvalue = _varlocs = _exps = _cs = _varkeys = None
 
     def _reset(self):
-        for attr in "hashvalue varlocs exps cs varkeys values".split():
-            setattr(self, "_"+attr, None)
+        self._hashvalue = \
+            self._varlocs = \
+            self._exps = \
+            self._cs = \
+            self._varkeys = \
+            self._values = None
 
     def __init__(self, hmap):
         self.hmap = hmap

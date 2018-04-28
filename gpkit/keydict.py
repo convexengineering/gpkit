@@ -235,7 +235,11 @@ class KeySet(KeyDict):
 
     def add(self, item):
         "Adds an item to the keyset"
-        self[item] = None
+        key, _ = self.parse_and_index(item)
+        if key not in self.keymap:
+            self.keymap[key].add(key)
+            self._unmapped_keys.add(key)
+            dict.__setitem__(self, key, None)
 
     def update(self, *args, **kwargs):
         "Iterates through the dictionary created by args and kwargs"
@@ -250,7 +254,3 @@ class KeySet(KeyDict):
         "Gets the keys corresponding to a particular key."
         key, _ = self.parse_and_index(key)
         return self.keymap[key]
-
-    def __setitem__(self, key, value):
-        "Assigns the key itself every time."
-        KeyDict.__setitem__(self, key, None)
