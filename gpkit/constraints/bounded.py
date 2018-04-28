@@ -69,16 +69,21 @@ class Bounded(ConstraintSet):
         self.verbosity = verbosity
         self.lowerbound = lower if (lower or upper) else eps
         self.upperbound = upper if (lower or upper) else 1/eps
-        self.bounded_varkeys = tuple(vk for vk in constraints.varkeys
-                                     if vk not in constraints.substitutions)
-        bounding_constraints = varkey_bounds(self.bounded_varkeys,
+        constrained_varkeys = set()
+        for constraint in constraints.flat(constraintsets=False):
+            constrained_varkeys.update(constraint.varkeys)
+        if hasattr(constraints, "cost"):
+            constrained_varkeys.update(constraints.cost.varkeys)
+        self.bound_varkeys = frozenset(vk for vk in constrained_varkeys
+                                       if vk not in constraints.substitutions)
+        bounding_constraints = varkey_bounds(self.bound_varkeys,
                                              self.lowerbound, self.upperbound)
         super(Bounded, self).__init__([constraints, bounding_constraints])
 
     def sens_from_dual(self, las, nus, result):
         "Return sensitivities while capturing the relevant lambdas"
         n = bool(self.lowerbound) + bool(self.upperbound)
-        self.bound_las = las[-n*len(self.bounded_varkeys):]
+        self.bound_las = las[-n*len(self.bound_varkeys):]
         return super(Bounded, self).sens_from_dual(las, nus, result)
 
     def process_result(self, result):
@@ -95,7 +100,7 @@ class Bounded(ConstraintSet):
     def check_boundaries(self, result):
         "Creates (and potentially prints) a dictionary of unbounded variables."
         out = defaultdict(set)
-        for i, varkey in enumerate(self.bounded_varkeys):
+        for i, varkey in enumerate(self.bound_varkeys):
             value = mag(result["variables"][varkey])
             if self.bound_las:
                 # TODO: support sensitive-to bounds for SPs
