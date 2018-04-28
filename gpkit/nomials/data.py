@@ -80,8 +80,8 @@ class NomialData(object):
     @property
     def values(self):  # TODO: if it's none presume it stays that way?
         "The NomialData's values, created when necessary."
-        return KeyDict({k: k.descr["value"] for k in self.vks
-                        if "value" in k.descr})
+        return {k: k.descr["value"] for k in self.vks
+                if "value" in k.descr}
 
     def diff(self, var):
         """Derivative of this with respect to a Variable

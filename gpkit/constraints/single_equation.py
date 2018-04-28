@@ -18,7 +18,6 @@ class SingleEquationConstraint(object):
         self.left = left
         self.oper = oper
         self.right = right
-        self.substitutions = {}
 
     def str_without(self, excluded=None):
         "String representation without attributes in excluded list"
