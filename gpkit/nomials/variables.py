@@ -156,17 +156,18 @@ class ArrayVariable(NomialArray):
                 raise ValueError("the value's shape %s is different than"
                                  " the vector's %s." % (values.shape, shape))
 
-        vecdescr = descr.copy()
-        from .. import MODELS, MODELNUMS
-        if MODELS:
-            vecdescr["models"] = vecdescr.get("models", []) + MODELS
-        if MODELNUMS:
-            vecdescr["modelnums"] = vecdescr.get("modelnums", []) + MODELNUMS
+        vdescr = descr.copy()
+        if descr.pop("newvariable", True):
+            from .. import MODELS, MODELNUMS
+            if MODELS:
+                vdescr["models"] = vdescr.get("models", []) + MODELS
+            if MODELNUMS:
+                vdescr["modelnums"] = vdescr.get("modelnums", []) + MODELNUMS
         if value_option:
             if hasattr(values, "__call__"):
-                vecdescr["original_fn"] = values
-            vecdescr[value_option] = values
-        veckey = VarKey(**vecdescr)
+                vdescr["original_fn"] = values
+            vdescr[value_option] = values
+        veckey = VarKey(**vdescr)
 
         descr["veckey"] = veckey
         vl = np.empty(shape, dtype="object")
