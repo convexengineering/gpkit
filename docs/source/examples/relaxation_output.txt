@@ -78,12 +78,12 @@ With constants relaxed individually
   # subject to
         x <= x_max
         x >= x_min
-        x_min_Relax.2 >= 1
-        x_min >= x_min_Relax.2**-1*x_min_{before}_Relax.2
-        x_min <= x_min_Relax.2*x_min_{before}_Relax.2
         x_max_Relax.2 >= 1
         x_max >= x_max_Relax.2**-1*x_max_{before}_Relax.2
         x_max <= x_max_Relax.2*x_max_{before}_Relax.2
+        x_min_Relax.2 >= 1
+        x_min >= x_min_Relax.2**-1*x_min_{before}_Relax.2
+        x_min <= x_min_Relax.2*x_min_{before}_Relax.2
 
 Cost
 ----

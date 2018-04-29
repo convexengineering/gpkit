@@ -369,10 +369,17 @@ class ScalarSingleEquationConstraint(SingleEquationConstraint):
     nomials = []
 
     def __init__(self, left, oper, right):
+        lr = [left, right]
+        self.varkeys = set()
+        self.substitutions = {}
+        for i, sig in enumerate(lr):
+            if isinstance(sig, Signomial):
+                self.varkeys.update(sig.vks)
+                self.substitutions.update(sig.values)
+            else:
+                lr[i] = Signomial(sig)
         super(ScalarSingleEquationConstraint,
-              self).__init__(Signomial(left), oper, Signomial(right))
-        self.varkeys = KeySet(self.left.vks)
-        self.varkeys.update(self.right.vks)
+              self).__init__(lr[0], oper, lr[1])
 
     def subinplace(self, substitutions):
         "Modifies the constraint in place with substitutions."
@@ -388,7 +395,6 @@ class PosynomialInequality(ScalarSingleEquationConstraint):
     Stored in the posylt1_rep attribute as a single Posynomial (self <= 1)
     Usually initialized via operator overloading, e.g. cc = (y**2 >= 1 + x)
     """
-
     def __init__(self, left, oper, right):
         ScalarSingleEquationConstraint.__init__(self, left, oper, right)
         if self.oper == "<=":
@@ -399,8 +405,6 @@ class PosynomialInequality(ScalarSingleEquationConstraint):
             raise ValueError("operator %s is not supported." % self.oper)
 
         self.p_lt, self.m_gt = p_lt, m_gt
-        self.substitutions = dict(p_lt.values)
-        self.substitutions.update(m_gt.values)
         self.unsubbed = self._gen_unsubbed(p_lt, m_gt)
         self.nomials = [self.left, self.right, self.p_lt, self.m_gt]
         self.nomials.extend(self.unsubbed)
@@ -449,16 +453,28 @@ class PosynomialInequality(ScalarSingleEquationConstraint):
         p_lt : posynomial
             the left-hand side of (posynomial < monomial)
 
-        m_gt : posynomial
+        m_gt : monomial
             the right-hand side of (posynomial < monomial)
 
         """
-        hmap = (p_lt / m_gt).hmap
-        if hmap.units:
+        try:
+            m_exp, = m_gt.hmap.keys()
+            m_c, = m_gt.hmap.values()
+        except ValueError:
+            raise TypeError("greater-than side '%s' is not monomial." % m_gt)
+        hmap = p_lt.hmap.copy()
+        hmap.units = None
+        if m_gt.units != p_lt.units:
+            if m_gt.units and p_lt.units:
+                conversion = m_gt.units/p_lt.units
+            else:
+                conversion = m_gt.units or 1/p_lt.units
             try:
-                hmap = hmap.to("dimensionless")
+                m_c *= float(conversion)
             except DimensionalityError:
                 raise DimensionalityError(p_lt, m_gt)
+        for exp in hmap.keys():
+            hmap[exp-m_exp] = hmap.pop(exp)/m_c
         hmap = self._simplify_posy_ineq(hmap)
         if hmap is None:
             return []
@@ -528,8 +544,6 @@ class MonomialEquality(PosynomialInequality):
         if self.oper != "=":
             raise ValueError("operator %s is not supported by"
                              " MonomialEquality." % self.oper)
-        self.substitutions = dict(self.left.values)
-        self.substitutions.update(self.right.values)
         self.unsubbed = self._gen_unsubbed(self.left, self.right)
         self.nomials = [self.left, self.right]
         self.nomials.extend(self.unsubbed)
@@ -613,8 +627,6 @@ class SignomialInequality(ScalarSingleEquationConstraint):
         self.nomials = [self.left, self.right]
         self.unsubbed = [plt - pgt]
         self.nomials.extend(self.unsubbed)
-        self.substitutions = dict(self.left.values)
-        self.substitutions.update(self.right.values)
         self.bounded = set()
         if self.unsubbed:
             for exp, c in self.unsubbed[0].hmap.items():

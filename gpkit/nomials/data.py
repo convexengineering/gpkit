@@ -2,7 +2,7 @@
 from collections import defaultdict
 import numpy as np
 from ..small_classes import HashVector
-from ..keydict import KeySet, KeyDict
+from ..keydict import KeySet
 from .map import NomialMap
 from ..repr_conventions import _repr
 from ..varkey import VarKey
@@ -20,8 +20,12 @@ class NomialData(object):
     _hashvalue = _varlocs = _exps = _cs = _varkeys = None
 
     def _reset(self):
-        for attr in "hashvalue varlocs exps cs varkeys values".split():
-            setattr(self, "_"+attr, None)
+        self._hashvalue = \
+            self._varlocs = \
+            self._exps = \
+            self._cs = \
+            self._varkeys = \
+            self._values = None
 
     def __init__(self, hmap):
         self.hmap = hmap
@@ -76,8 +80,8 @@ class NomialData(object):
     @property
     def values(self):  # TODO: if it's none presume it stays that way?
         "The NomialData's values, created when necessary."
-        return KeyDict({k: k.descr["value"] for k in self.vks
-                        if "value" in k.descr})
+        return {k: k.descr["value"] for k in self.vks
+                if "value" in k.descr}
 
     def diff(self, var):
         """Derivative of this with respect to a Variable

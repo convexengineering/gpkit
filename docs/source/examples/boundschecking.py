@@ -38,7 +38,8 @@ class BoundsChecking(Model):
             T == mf*V,
             mf >= mi + mb,
             mf == rf*V,
-            Fs <= mi]
+            Fs <= mi
+        ]
 
 
 m = BoundsChecking()
@@ -52,6 +53,6 @@ gp = m.gp(allow_missingbounds=True)
 bplate = ", but would gain it from any of these sets of bounds: "
 assert {(m.D.key, 'lower'): bplate + "[(%s, 'lower')]" % m.Ap,
         (m.Ap.key, 'lower'): bplate + ("[(%s, 'lower')]"
-                                       " or [(%s, 'lower')]" % (m.D, m.nu)),
+                                       " or [(%s, 'lower')]" % (m.nu, m.D)),
         (m.nu.key, 'lower'): bplate + "[(%s, 'lower')]" % m.Ap
        } == gp.missingbounds

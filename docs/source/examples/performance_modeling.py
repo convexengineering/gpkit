@@ -17,7 +17,7 @@ class AircraftP(Model):
 
     Lower Unbounded
     ---------------
-    Wfuel, aircraft.W
+    Wfuel, aircraft.W, state.mu
 
     """
     def setup(self, aircraft, state):
@@ -72,7 +72,7 @@ class FlightState(Model):
 
     Variables
     ---------
-    V    40        [knots]    true airspeed
+    V     40       [knots]    true airspeed
     mu    1.628e-5 [N*s/m^2]  dynamic viscosity
     rho   0.74     [kg/m^3]   air density
 
@@ -143,14 +143,15 @@ class WingAero(Model):
 
     Upper Unbounded
     ---------------
-    D, wing.c, wing.A
+    D, Re, wing.A, state.mu
 
     Lower Unbounded
     ---------------
-    CL, wing.S
+    CL, wing.S, state.mu, state.rho, state.V
     """
     def setup(self, wing, state):
         self.wing = wing
+        self.state = state
         exec parse_variables(WingAero.__doc__)
 
         c = wing.c
@@ -204,6 +205,7 @@ class Fuselage(Model):
     """
     def setup(self):
         exec parse_variables(Fuselage.__doc__)
+
 
 AC = Aircraft()
 MISSION = Mission(AC)

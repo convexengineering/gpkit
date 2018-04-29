@@ -250,7 +250,7 @@ class Model(CostedConstraintSet):
                     else:
                         print("\nSolves with these constants relaxed:")
                     for (_, orig) in relaxed:
-                        print("  %s: relaxed from %-.4g to %-.4g"
+                        print("  %s: relaxed from %-.7g to %-.7g"
                               % (orig, mag(constsrelaxed.constants[orig.key]),
                                  mag(sol(orig))))
                     print

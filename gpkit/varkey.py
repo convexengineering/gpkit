@@ -1,6 +1,5 @@
 """Defines the VarKey class"""
-from .small_classes import Strings, Quantity, HashVector, Count
-from .small_scripts import veckeyed
+from .small_classes import HashVector, Count, qty
 from .repr_conventions import unitstr
 
 
@@ -19,50 +18,36 @@ class VarKey(object):
     -------
     VarKey with the given name and descr.
     """
-    new_unnamed_id = Count().next
+    unique_id = Count().next
     subscripts = ("models", "idx")
 
     def __init__(self, name=None, **kwargs):
         # NOTE: Python arg handling guarantees 'name' won't appear in kwargs
-        self.descr = kwargs
         if isinstance(name, VarKey):
-            self.descr.update(name.descr)
+            self.descr = name.descr
         else:
-            if name is None:
-                name = "\\fbox{%s}" % VarKey.new_unnamed_id()
-            self.descr["name"] = str(name)
-            if "units" in self.descr:
-                units = self.descr["units"]
-                if isinstance(units, Strings):
-                    if units in ["", "-"]:  # dimensionless
-                        del self.descr["units"]
-                    else:
-                        self.descr["units"] = Quantity(1.0, units)
-                elif not isinstance(units, Quantity):
-                    raise ValueError("units must be either a string"
-                                     " or a Quantity from gpkit.units.")
+            self.descr = kwargs
+            self.descr["name"] = str(name or "\\fbox{%s}" % VarKey.unique_id())
+            unitrepr = self.unitrepr or self.units
+            if unitrepr in ["", "-", None]:  # dimensionless
+                self.descr["units"] = None
+                self.descr["unitrepr"] = "-"
+            else:
+                self.descr["units"] = qty(unitrepr)
+                self.descr["unitrepr"] = unitrepr
 
-            if "value" in self.descr:
-                value = self.descr["value"]
-                if isinstance(value, Quantity):
-                    if "units" in self.descr:
-                        # convert to explicitly given units, if any
-                        value = value.to(self.descr["units"])
-                    else:
-                        self.descr["units"] = Quantity(1.0, value.units)
-                    self.descr["value"] = value.magnitude
-
-            self.descr["unitrepr"] = repr(self.units)
-
-        selfstr = str(self)
-        self.hashstr = selfstr + self.descr["unitrepr"]
-        self._hashvalue = hash(self.hashstr)
         self.key = self
-        self.keys = set([self.name, selfstr,
-                         self.str_without(["modelnums"])])
+        cleanstr = self.str_without(["modelnums"])
+        selfstr = cleanstr + str(self.modelnums) + self.unitrepr
+        self.eqstr = selfstr + self.descr["unitrepr"]
+        self._hashvalue = hash(self.eqstr)
+        self.keys = set((self.name, selfstr, cleanstr))
 
         if "idx" in self.descr:
-            self.veckey = veckeyed(self)
+            if "veckey" not in self.descr:
+                vecdescr = self.descr.copy()
+                del vecdescr["idx"]
+                self.veckey = VarKey(**vecdescr)
             self.keys.add(self.veckey)
             self.keys.add(self.str_without(["idx"]))
             self.keys.add(self.str_without(["idx", "modelnums"]))
@@ -140,7 +125,7 @@ class VarKey(object):
     def __eq__(self, other):
         if not hasattr(other, "descr"):
             return False
-        return self.hashstr == other.hashstr
+        return self.eqstr == other.eqstr
 
     def __ne__(self, other):
         return not self.__eq__(other)

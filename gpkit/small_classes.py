@@ -1,7 +1,7 @@
 """Miscellaneous small classes"""
 from operator import xor
 import numpy as np
-from . import ureg
+from ._pint import Quantity, qty  # pylint: disable=unused-import
 from functools import reduce  # pylint: disable=redefined-builtin
 
 try:
@@ -10,7 +10,6 @@ try:
 except NameError:
     Strings = (str,)
 
-Quantity = ureg.Quantity
 Numbers = (int, float, np.number, Quantity)
 
 

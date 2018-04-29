@@ -5,7 +5,7 @@ from .data import NomialData
 from .array import NomialArray
 from .math import Monomial
 from ..varkey import VarKey
-from ..small_classes import Strings, Numbers, Quantity
+from ..small_classes import Strings, Numbers
 from ..small_scripts import is_sweepvar
 
 
@@ -17,7 +17,7 @@ class Variable(Monomial):
     *args : list
         may contain "name" (Strings)
                     "value" (Numbers + Quantity) or (Iterable) for a sweep
-                    "units" (Strings + Quantity)
+                    "units" (Strings)
              and/or "label" (Strings)
     **descr : dict
         VarKey description
@@ -27,7 +27,6 @@ class Variable(Monomial):
     Monomials containing a VarKey with the name '$name',
     where $name is the vector's name and i is the VarKey's index.
     """
-
     def __init__(self, *args, **descr):
         for arg in args:
             if isinstance(arg, Strings) and "name" not in descr:
@@ -40,7 +39,7 @@ class Variable(Monomial):
                     descr["value"] = arg
                 else:
                     descr["value"] = ("sweep", arg)
-            elif isinstance(arg, Strings+(Quantity,)) and "units" not in descr:
+            elif isinstance(arg, Strings) and "units" not in descr:
                 descr["units"] = arg
             elif isinstance(arg, Strings) and "label" not in descr:
                 descr["label"] = arg
@@ -95,7 +94,7 @@ class ArrayVariable(NomialArray):
     *args :
         may contain "name" (Strings)
                     "value" (Iterable)
-                    "units" (Strings + Quantity)
+                    "units" (Strings)
              and/or "label" (Strings)
     **descr :
         VarKey description
@@ -130,13 +129,13 @@ class ArrayVariable(NomialArray):
                 descr["value"] = arg
             elif hasattr(arg, "__call__"):
                 descr["value"] = arg
-            elif isinstance(arg, Strings+(Quantity,)) and "units" not in descr:
+            elif isinstance(arg, Strings) and "units" not in descr:
                 descr["units"] = arg
             elif isinstance(arg, Strings) and "label" not in descr:
                 descr["label"] = arg
 
         if "name" not in descr:
-            descr["name"] = "\\fbox{%s}" % VarKey.new_unnamed_id()
+            descr["name"] = "\\fbox{%s}" % VarKey.unique_id()
 
         value_option = None
         if "value" in descr:
@@ -157,34 +156,35 @@ class ArrayVariable(NomialArray):
                 raise ValueError("the value's shape %s is different than"
                                  " the vector's %s." % (values.shape, shape))
 
+        vdescr = descr.copy()
+        if descr.pop("newvariable", True):
+            from .. import MODELS, MODELNUMS
+            if MODELS:
+                vdescr["models"] = vdescr.get("models", []) + MODELS
+            if MODELNUMS:
+                vdescr["modelnums"] = vdescr.get("modelnums", []) + MODELNUMS
+        if value_option:
+            if hasattr(values, "__call__"):
+                vdescr["original_fn"] = values
+            vdescr[value_option] = values
+        veckey = VarKey(**vdescr)
+
+        descr["veckey"] = veckey
         vl = np.empty(shape, dtype="object")
         it = np.nditer(vl, flags=['multi_index', 'refs_ok'])
         while not it.finished:
             i = it.multi_index
             it.iternext()
-            descr.update({"idx": i})
+            descr["idx"] = i
             if value_option:
                 if hasattr(values, "__call__"):
-                    descr.update({value_option: veclinkedfn(values, i)})
+                    descr[value_option] = veclinkedfn(values, i)
                 else:
-                    descr.update({value_option: values[i]})
+                    descr[value_option] = values[i]
             vl[i] = Variable(**descr)
-            if value_option and hasattr(values, "__call__"):
-                vl[i].key.veckey.descr["original_fn"] = values
-
-        if descr.pop("newvariable", True):
-            from .. import MODELS, MODELNUMS
-
-            if MODELS:
-                descr["models"] = descr.get("models", []) + MODELS
-            if MODELNUMS:
-                descr["modelnums"] = descr.get("modelnums", []) + MODELNUMS
 
         obj = np.asarray(vl).view(cls)
-        obj.descr = descr
-        obj.descr.pop("idx", None)
-        obj.key = VarKey(**obj.descr)
-
+        obj.key = veckey
         return obj
 
 

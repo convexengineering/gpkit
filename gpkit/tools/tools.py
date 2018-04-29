@@ -1,7 +1,5 @@
 """Non-application-specific convenience methods for GPkit"""
 import numpy as np
-from ..nomials import Variable, VectorVariable
-from ..nomials import NomialArray
 
 
 def te_exp_minus1(posy, nterm):
@@ -112,41 +110,6 @@ def te_tangent(var, nterm):
         res += ((-1)**(i-1) * 2**(2*i) * (2**(2*i) - 1) *
                 B2n[i-1] / factorial_denom * var**(2*i-1))
     return res
-
-
-# pylint: disable=too-many-locals
-def composite_objective(*objectives, **kwargs):
-    "Creates a cost function that sweeps between multiple objectives."
-    objectives = list(objectives)
-    n = len(objectives)
-    k = kwargs.get("k", 4)
-    if "sweep" in kwargs:
-        sweeps = [kwargs["sweep"]]*(n-1)
-    elif "sweeps" in kwargs:
-        sweeps = kwargs["sweeps"]
-    else:
-        kf = 1/float(k)
-        sweeps = [np.linspace(kf, 1-kf, k)]*(n-1)
-    if "normsub" in kwargs:
-        normalization = [p.sub(kwargs["normsub"]) for p in objectives]
-    else:
-        normalization = [1]*n
-
-    sweepvals = np.empty(n-1, dtype="object")
-    for i in range(n-1):
-        sweepvals[i] = ("sweep", sweeps[i])
-    ws = VectorVariable(n-1, "w_{CO}", sweepvals, "-")
-    w_s = []
-    for w in ws:
-        descr = dict(w.key.descr)
-        del descr["value"]
-        descr["name"] = "v_{CO}"
-        w_s.append(Variable(value=lambda const: 1-const[w.key], **descr))  # pylint: disable=cell-var-from-loop
-    w_s = normalization[-1]*NomialArray(w_s)*objectives[-1]
-    objective = w_s.prod()
-    for i, obj in enumerate(objectives[:-1]):
-        objective += ws[i]*w_s[:i].prod()*w_s[i+1:].prod()*obj/normalization[i]
-    return objective
 
 
 def mdparse(filename, return_tex=False):

@@ -77,12 +77,12 @@ class ConstraintSet(list):
                                    if "value" in k.descr})
         if substitutions:
             self.substitutions.update(substitutions)
-        for key in self.substitutions:
-            if not key.constant:
-                key.descr.pop("value", None)
-        # TODO: the loop above and below have to be separate...for vectors?
         for key in self.varkeys:
             if key in self.substitutions:
+                if key.value is not None and not key.constant:
+                    del key.descr["value"]
+                    if key.veckey and key.veckey.value is not None:
+                        del key.veckey.descr["value"]
                 for direction in ("upper", "lower"):
                     self.bounded.add((key, direction))
         add_meq_bounds(self.bounded, self.meq_bounded)
@@ -122,6 +122,13 @@ class ConstraintSet(list):
                      for key in self.varkeys[key]]
         variables.sort(key=_sort_by_name_and_idx)
         return variables
+
+    def constrained_varkeys(self):
+        "Return all varkeys in non-ConstraintSet constraints"
+        constrained_varkeys = set()
+        for constraint in self.flat(constraintsets=False):
+            constrained_varkeys.update(constraint.varkeys)
+        return constrained_varkeys
 
     def __setitem__(self, key, value):
         self.substitutions.update(value.substitutions)
@@ -223,6 +230,8 @@ class ConstraintSet(list):
                 for k, v in subs.items()}
         subkeys = frozenset(subs)
         for constraint in self:
+            if isinstance(constraint.varkeys, set):
+                constraint.varkeys = KeySet(constraint.varkeys)
             csubs = {k: v for k, v in subs.items() if k in constraint.varkeys}
             if csubs:
                 constraint.subinplace(csubs)
@@ -238,10 +247,11 @@ class ConstraintSet(list):
 
     def reset_varkeys(self):
         "Goes through constraints and collects their varkeys."
-        self.varkeys = KeySet(self.unique_varkeys)
+        varkeys = set(self.unique_varkeys)
         for constraint in self:
             if hasattr(constraint, "varkeys"):
-                self.varkeys.update(constraint.varkeys)
+                varkeys.update(constraint.varkeys)
+        self.varkeys = KeySet(varkeys)
         if hasattr(self.substitutions, "varkeys"):
             self.substitutions.varkeys = self.varkeys
 

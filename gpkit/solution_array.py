@@ -2,11 +2,9 @@
 from collections import Iterable
 import numpy as np
 from .nomials import NomialArray
-from .small_classes import DictOfLists, Quantity
+from .small_classes import DictOfLists
 from .small_scripts import mag, isnan
 from .repr_conventions import unitstr
-
-DIMLESS_QUANTITY = Quantity(1, "dimensionless")
 
 
 def senss_table(data, showvars=(), title="Sensitivities", **kwargs):
@@ -107,18 +105,7 @@ class SolutionArray(DictOfLists):
     def subinto(self, posy):
         "Returns NomialArray of each solution substituted into posy."
         if posy in self["variables"]:
-            got = self["variables"][posy]
-            # if uniting on get ever becomes a speed hit, cache the results
-            if isinstance(got, dict):
-                for key, value in got.items():
-                    got[key] = value*(key.units or DIMLESS_QUANTITY)
-            else:
-                if hasattr(posy, "units"):
-                    units = posy.units
-                else:
-                    units = list(self["variables"].keymap[posy])[0].units
-                got = got*(units or DIMLESS_QUANTITY)
-            return got
+            return self["variables"](posy)
         elif not hasattr(posy, "sub"):
             raise ValueError("no variable '%s' found in the solution" % posy)
         elif len(self) > 1:

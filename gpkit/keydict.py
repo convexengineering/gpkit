@@ -4,6 +4,8 @@ import numpy as np
 from .small_classes import Numbers, Quantity
 from .small_scripts import is_sweepvar, isnan
 
+DIMLESS_QUANTITY = Quantity(1, "dimensionless")
+
 
 def clean_value(key, value):
     """Gets the value of variable-less monomials, so that
@@ -140,6 +142,20 @@ class KeyDict(dict):
         else:
             return False
 
+    def __call__(self, key):
+        got = self[key]
+        # if uniting ever becomes a speed hit, cache the results
+        if isinstance(got, dict):
+            for k, v in got.items():
+                got[k] = v*(k.units or DIMLESS_QUANTITY)
+        else:
+            if not hasattr(key, "units"):
+                parsedkey, _ = self.parse_and_index(key)
+                keys = self.keymap[parsedkey]
+                key, = keys
+            got = Quantity(got, key.units or DIMLESS_QUANTITY)
+        return got
+
     def __getitem__(self, key):
         "Overloads __getitem__ and [] access to work with all keys"
         key, idx = self.parse_and_index(key)
@@ -235,7 +251,11 @@ class KeySet(KeyDict):
 
     def add(self, item):
         "Adds an item to the keyset"
-        self[item] = None
+        key, _ = self.parse_and_index(item)
+        if key not in self.keymap:
+            self.keymap[key].add(key)
+            self._unmapped_keys.add(key)
+            dict.__setitem__(self, key, None)
 
     def update(self, *args, **kwargs):
         "Iterates through the dictionary created by args and kwargs"
@@ -250,7 +270,3 @@ class KeySet(KeyDict):
         "Gets the keys corresponding to a particular key."
         key, _ = self.parse_and_index(key)
         return self.keymap[key]
-
-    def __setitem__(self, key, value):
-        "Assigns the key itself every time."
-        KeyDict.__setitem__(self, key, None)

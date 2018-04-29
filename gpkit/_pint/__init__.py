@@ -6,18 +6,27 @@ ureg = UnitRegistry()  # pylint: disable=invalid-name
 ureg.load_definitions(os.sep.join([os.path.dirname(__file__), "usd_cpi.txt"]))
 # next line patches https://github.com/hgrecco/pint/issues/366
 ureg.define("nautical_mile = 1852 m = nmi")
+Quantity = ureg.Quantity
+
+QTY_CACHE = {}
+
+
+def qty(unit):
+    "Returns a Quantity, caching the result for future retrievals"
+    if unit not in QTY_CACHE:
+        QTY_CACHE[unit] = Quantity(1, unit)
+    return QTY_CACHE[unit]
 
 
 class GPkitUnits(object):
     "Return monomials instead of Quantitites"
 
-    def __getattr__(self, attr):
-        from .. import Monomial
-        return Monomial(ureg.Quantity(1, getattr(ureg, attr)))
-
     def __call__(self, arg):
         from .. import Monomial
-        return Monomial(ureg.Quantity(1, ureg(arg)))
+        return Monomial(qty(arg))
+
+    def __getattr__(self, attr):
+        return self(attr)
 
 
 units = GPkitUnits()

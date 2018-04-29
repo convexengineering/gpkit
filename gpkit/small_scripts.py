@@ -26,14 +26,6 @@ def try_str_without(item, excluded):
     return str(item)
 
 
-def veckeyed(key):
-    "Return a veckey version of a VarKey"
-    vecdescr = dict(key.descr)
-    for metadata in ["idx", "value"]:
-        vecdescr.pop(metadata, None)
-    return key.__class__(**vecdescr)
-
-
 def mag(c):
     "Return magnitude of a Number or Quantity"
     return getattr(c, "magnitude", c)
