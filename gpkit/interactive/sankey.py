@@ -1,5 +1,6 @@
 "implements Sankey"
 from collections import defaultdict
+import numpy as np
 from ipysankeywidget import SankeyWidget  # pylint: disable=import-error
 from ipywidgets import Layout
 from gpkit import ConstraintSet, Model
@@ -71,8 +72,6 @@ class Sankey(object):
                          + key.unitstr(into=" [%s]", dimless=" [-]"))
             self.nodes.append({"id": source, "title": shortname})
             self.links[target, source] += value
-            # make sure to show connections
-            self.links[target, source] = max(self.links[target, source], 1e-15)
             if key in self.gp.result["sensitivities"]["cost"]:
                 cost_senss = self.gp.result["sensitivities"]["cost"]
                 value = -cost_senss[key]  # sensitivites flow _from_ cost
@@ -142,9 +141,6 @@ class Sankey(object):
                     # use inverted circled numbers to id the variables...
                     node["title"] += " " + unichr(0x2776+lookup[node["id"]])
                 elif "passthrough" in node:
-                    for nodes in self.links:
-                        if node["id"] in nodes:  # make sure to show connections
-                            self.links[nodes] = max(self.links[nodes], 1e-15)
                     cn = node.pop("passthrough")
                     l_idx = lookup[str(cn.left.hmap.keys()[0].keys()[0])]
                     r_idx = lookup[str(cn.right.hmap.keys()[0].keys()[0])]
@@ -152,18 +148,16 @@ class Sankey(object):
                     # ...so that e.g. (1) >= (2) can label the constraints
                     node["title"] = (node["id"]+u"\u2009"+unichr(l_idx+0x2776)
                                      + op + unichr(r_idx+0x2776))
-        for link, value in self.links.items():
-            if abs(value) < 1e-15:
-                self.links[link] = 1e-15 if value >= 0 else -1e-15
         if flowright:
             r, l = margins["right"], margins["left"]
             margins["left"], margins["right"] = r, l
         links = []
+        maxflow = np.abs(self.links.values()).max()
         for (source, target), value in self.links.items():
             if not flowright:
                 source, target = target, source
             links.append({"source": source, "target": target,
-                          "value": abs(value) or 1e-30,
+                          "value": max(abs(value), maxflow/1e5),
                           "color": getcolor(value)})
         return SankeyWidget(nodes=self.nodes, links=links,
                             layout=Layout(width=str(width),
