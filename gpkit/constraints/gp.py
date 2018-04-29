@@ -11,13 +11,7 @@ from ..solution_array import SolutionArray
 from .costed import CostedConstraintSet
 
 
-DEFAULT_SOLVER_KWARGS = {"cvxopt": {"kktsolver": "ldl",
-                                    "options": {
-                                        "refinement": 0,  # default 1
-                                        "feastol": 1e-7,  # default 1e-7
-                                        "reltol": 1e-6,   # default 1e-6
-                                        "abstol": 1e-7    # default 1e-7
-                                    }}}
+DEFAULT_SOLVER_KWARGS = {"cvxopt": {"kktsolver": "ldl"}}
 
 
 class GeometricProgram(CostedConstraintSet, NomialData):
