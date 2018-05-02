@@ -57,8 +57,8 @@ class SequentialGeometricProgram(CostedConstraintSet):
     a dummy variable `z` to be greater than the desired Signomial objective `s`
     (z >= s) and then minimizing that dummy variable.""")
         self.__bare_init__(cost, constraints, substitutions, varkeys=True)
-        self.externalfn_vars = frozenset(Variable(newvariable=False, **v.descr)
-                                         for v in self.varkeys if v.externalfn)
+        self.externalfn_vars = frozenset(Variable(v) for v in self.varkeys
+                                         if v.externalfn)
         self.not_sp = bool(self.externalfn_vars)
         if not self.not_sp:
             self._gp = self.init_gp(self.substitutions)

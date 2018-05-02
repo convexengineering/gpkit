@@ -9,6 +9,17 @@ from ..small_classes import Strings, Numbers
 from ..small_scripts import is_sweepvar
 
 
+def addmodelstodescr(descr, addtonamedvars=None):
+    "Add models to descr, optionally adding the second argument to NAMEDVARS"
+    from .. import MODELS, MODELNUMS, NAMEDVARS
+    if not MODELS or not MODELNUMS:
+        return
+    if addtonamedvars:
+        NAMEDVARS[tuple(MODELS), tuple(MODELNUMS)].append(addtonamedvars)
+    descr["models"] = descr.get("models", []) + MODELS
+    descr["modelnums"] = descr.get("modelnums", []) + MODELNUMS
+
+
 class Variable(Monomial):
     """A described singlet Monomial.
 
@@ -28,43 +39,36 @@ class Variable(Monomial):
     where $name is the vector's name and i is the VarKey's index.
     """
     def __init__(self, *args, **descr):
-        for arg in args:
-            if isinstance(arg, Strings) and "name" not in descr:
-                descr["name"] = arg
-            elif (isinstance(arg, Numbers) or hasattr(arg, "__call__")
-                  and "value" not in descr):
-                descr["value"] = arg
-            elif isinstance(arg, Iterable) and not isinstance(arg, Strings):
-                if is_sweepvar(arg):
+        if len(args) == 1 and isinstance(args[0], VarKey):
+            self.key = args[0]
+        else:
+            for arg in args:
+                if isinstance(arg, Strings) and "name" not in descr:
+                    descr["name"] = arg
+                elif (isinstance(arg, Numbers) or hasattr(arg, "__call__")
+                      and "value" not in descr):
                     descr["value"] = arg
-                else:
-                    descr["value"] = ("sweep", arg)
-            elif isinstance(arg, Strings) and "units" not in descr:
-                descr["units"] = arg
-            elif isinstance(arg, Strings) and "label" not in descr:
-                descr["label"] = arg
-
-        if descr.pop("newvariable", True):
-            from .. import MODELS, MODELNUMS, NAMEDVARS
-
-            if MODELS and MODELNUMS:
-                NAMEDVARS[tuple(MODELS), tuple(MODELNUMS)].append(self)
-
-            if MODELS:
-                descr["models"] = descr.get("models", []) + MODELS
-            if MODELNUMS:
-                descr["modelnums"] = descr.get("modelnums", []) + MODELNUMS
-
-        self.key = VarKey(**descr)
+                elif (isinstance(arg, Iterable)
+                      and not isinstance(arg, Strings)):
+                    if is_sweepvar(arg):
+                        descr["value"] = arg
+                    else:
+                        descr["value"] = ("sweep", arg)
+                elif isinstance(arg, Strings) and "units" not in descr:
+                    descr["units"] = arg
+                elif isinstance(arg, Strings) and "label" not in descr:
+                    descr["label"] = arg
+            addmodelstodescr(descr, addtonamedvars=self)
+            self.key = VarKey(**descr)
         Monomial.__init__(self, self.key.hmap)
-        # NOTE: because Signomial.__init__ will change the class
+        # NOTE: needed because Signomial.__init__ will change the class
         self.__class__ = Variable
 
     __hash__ = NomialData.__hash__
 
     def to(self, units):
         "Create new Signomial converted to new units"
-         # pylint: disable=no-member
+        # pylint: disable=no-member
         return Monomial(self).to(units)
 
     def sub(self, *args, **kwargs):
@@ -157,12 +161,7 @@ class ArrayVariable(NomialArray):
                                  " the vector's %s." % (values.shape, shape))
 
         vdescr = descr.copy()
-        if descr.pop("newvariable", True):
-            from .. import MODELS, MODELNUMS
-            if MODELS:
-                vdescr["models"] = vdescr.get("models", []) + MODELS
-            if MODELNUMS:
-                vdescr["modelnums"] = vdescr.get("modelnums", []) + MODELNUMS
+        addmodelstodescr(vdescr)
         if value_option:
             if hasattr(values, "__call__"):
                 vdescr["original_fn"] = values
