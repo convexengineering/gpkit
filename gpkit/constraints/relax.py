@@ -129,22 +129,20 @@ class ConstantsRelaxed(ConstraintSet):
             elif key.name in exclude:
                 continue
             descr = key.descr.copy()
+            descr.pop("value", None)
             descr.pop("veckey", None)
-            descr["unitrepr"] = "-"
             descr["models"] = descr.pop("models", [])+["Relax"]
             descr["modelnums"] = descr.pop("modelnums", []) + [self.num]
-            relaxvar = Variable(**descr)
+            relaxvardescr = descr.copy()
+            relaxvardescr["unitrepr"] = "-"
+            relaxvar = Variable(**relaxvardescr)
             relaxvars.append(relaxvar)
             del substitutions[key]
             var = Variable(**key.descr)
-            # TODO: make it easier to make copies of a variable
             self.origvars.append(var)
-            descr = key.descr.copy()
-            descr.pop("veckey", None)
-            descr["name"] += "_{before}"
-            descr["models"] = descr.pop("models", [])+["Relax"]
-            descr["modelnums"] = descr.pop("modelnums", []) + [self.num]
-            unrelaxed = Variable(**descr)
+            unrelaxeddescr = descr.copy()
+            unrelaxeddescr["name"] += "_{before}"
+            unrelaxed = Variable(**unrelaxeddescr)
             self._unrelaxmap[unrelaxed.key] = key
             substitutions[unrelaxed] = value
             relaxation_constraints.append([relaxvar >= 1,
