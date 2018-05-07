@@ -58,6 +58,18 @@ class VarKey(object):
     def __repr__(self):
         return self.str_without()
 
+    def __getstate__(self):
+        "Stores varkey as its metadata dictionary"
+        state = self.descr.copy()
+        state.pop("units", None)
+        # state.pop("veckey", None)
+        state.pop("original_fn", None)
+        return state
+
+    def __setstate__(self, newstate):
+        "Restores varkey from its metadata dictionary"
+        self.__init__(**newstate)
+
     def str_without(self, excluded=None):
         "Returns string without certain fields (such as 'models')."
         if excluded is None:
