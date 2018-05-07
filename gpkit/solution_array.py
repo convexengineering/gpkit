@@ -3,7 +3,7 @@ from collections import Iterable
 import cPickle as pickle
 import numpy as np
 from .nomials import NomialArray
-from .small_classes import DictOfLists
+from .small_classes import DictOfLists, Strings
 from .small_scripts import mag, isnan
 from .repr_conventions import unitstr
 
@@ -15,7 +15,7 @@ def senss_table(data, showvars=(), title="Sensitivities", **kwargs):
     if showvars:
         data = {k: data[k] for k in showvars if k in data}
     return results_table(data, title, sortbyvals=True,
-                         valfmt="%+-.2g ", vecfmt="%+-8.2g",
+                         valfmt="%+-.2g  ", vecfmt="%+-8.2g",
                          printunits=False, minval=1e-3, **kwargs)
 
 
@@ -23,7 +23,7 @@ def topsenss_table(data, showvars, nvars=5, **kwargs):
     "Returns top sensitivity table lines"
     data, filtered = topsenss_filter(data, showvars, nvars)
     title = "Most Sensitive" if not filtered else "Next Largest Sensitivities"
-    return senss_table(data, title=title, **kwargs)
+    return senss_table(data, title=title, hidebelowminval=True, **kwargs)
 
 
 def topsenss_filter(data, showvars, nvars=5):
@@ -102,6 +102,81 @@ class SolutionArray(DictOfLists):
     def __call__(self, posy):
         posy_subbed = self.subinto(posy)
         return getattr(posy_subbed, "c", posy_subbed)
+
+    def diff(self, sol, min_percent=0.1,
+             show_sensitivities=True, min_senss_delta=0.01):
+        """Outputs differences between this solution and another
+
+        Arguments
+        ---------
+        sol : solution or string
+            Strings are treated as paths to valid pickled solutions
+        min_percent : float
+            The smallest percentage difference in the result to consider
+        show_sensitivities : boolean
+            if True, also computer sensitivity deltas
+        min_senss_delta : float
+            The smallest absolute difference in sensitivities to consider
+
+        Returns
+        -------
+        str
+        """
+        if isinstance(sol, Strings):
+            sol = pickle.load(open(sol))
+        selfvars = set(self["variables"])
+        solvars = set(sol["variables"])
+        sol_diff = {
+            key: 100*((sol(key)/self(key)).to("dimensionless").magnitude - 1)
+            for key in selfvars.intersection(solvars)
+        }
+        lines = results_table(sol_diff, "Solution difference", sortbyvals=True,
+                              valfmt="%+6.1f%%  ", vecfmt="%+6.1f%% ",
+                              printunits=False, minval=min_percent,
+                              hidebelowminval=True)
+        if len(lines) > 3:
+            lines.insert(1, "(positive means the argument is bigger)")
+        elif sol_diff:
+            values = np.array(sol_diff.values())
+            i = np.unravel_index(np.argmax(np.abs(values)), values.shape)
+            lines.insert(2, "The largest difference is only %g%%" % values[i])
+
+        if show_sensitivities:
+            senss_delta = {
+                key: (sol["sensitivities"]["variables"][key]
+                      - self["sensitivities"]["variables"][key])
+                for key in selfvars.intersection(solvars)
+            }
+
+            primal_lines = len(lines)
+            lines += results_table(senss_delta, "Solution sensitivity delta",
+                                   sortbyvals=True,
+                                   valfmt="%+-.2g  ", vecfmt="%+-8.2g",
+                                   printunits=False, minval=min_senss_delta,
+                                   hidebelowminval=True)
+            if len(lines) > primal_lines + 3:
+                lines.insert(
+                    primal_lines + 1,
+                    "(positive means the argument has a higher sensitivity)")
+            elif senss_delta:
+                values = np.array(senss_delta.values())
+                i = np.unravel_index(np.argmax(np.abs(values)), values.shape)
+                lines.insert(
+                    primal_lines + 2,
+                    "The largest sensitivity delta is only %g" % values[i])
+
+        if selfvars-solvars:
+            lines.append("Variable(s) of this solution"
+                         " which are not in the argument:")
+            lines.append("\n".join("  %s" % key for key in selfvars-solvars))
+            lines.append("")
+        if solvars-selfvars:
+            lines.append("Variable(s) of the argument"
+                         " which are not in this solution:")
+            lines.append("\n".join("  %s" % key for key in solvars-selfvars))
+            lines.append("")
+
+        return "\n".join(lines)
 
     def save(self, filename="gpkit_solution.p"):
         """Pickles the solution and saves it to a file.
@@ -241,7 +316,7 @@ class SolutionArray(DictOfLists):
 def results_table(data, title, minval=0, printunits=True, fixedcols=True,
                   varfmt="%s : ", valfmt="%-.4g ", vecfmt="%-8.3g",
                   included_models=None, excluded_models=None, latex=False,
-                  sortbyvals=False, **_):  # **_ catches unused tablefn args
+                  sortbyvals=False, hidebelowminval=False, **_):
     """
     Pretty string representation of a dict of VarKeys
     Iterable values are handled specially (partial printing)
@@ -277,9 +352,12 @@ def results_table(data, title, minval=0, printunits=True, fixedcols=True,
     decorated = []
     models = set()
     for i, (k, v) in enumerate(data.items()):
-        v_ = mag(v)
-        notnan = ~isnan([v_])
-        if np.any(notnan) and np.sum(np.abs(np.array([v_])[notnan])) >= minval:
+        v_arr = np.array([v])
+        notnan = ~isnan(v_arr)
+        if notnan.any() and np.sum(np.abs(v_arr[notnan])) >= minval:
+            if minval and hidebelowminval and len(notnan.shape) > 1:
+                less_than_min = np.abs(v[~isnan(v)]) <= minval
+                v[np.logical_and(~isnan(v), less_than_min)] = 0
             b = isinstance(v, Iterable) and bool(v.shape)
             kmodels = k.descr.get("models", [])
             kmodelnums = k.descr.get("modelnums", [])
@@ -322,13 +400,15 @@ def results_table(data, title, minval=0, printunits=True, fixedcols=True,
         label = var.descr.get('label', '')
         units = var.unitstr(" [%s] ") if printunits else ""
         if isvector:
-            vals = [vecfmt % v for v in mag(val).flatten()[:4]]
+            vals = [vecfmt % v for v in val.flatten()[:4]]
             ellipsis = " ..." if len(val) > 4 else ""
             valstr = "[ %s%s ] " % ("  ".join(vals), ellipsis)
         else:
-            valstr = valfmt % mag(val)
+            valstr = valfmt % val
         valstr = valstr.replace("+nan", " - ")
         valstr = valstr.replace("nan", " - ")
+        valstr = valstr.replace("+0 ", " 0 ")
+        valstr = valstr.replace("+0.0% ", " 0.0% ")
         if not latex:
             lines.append([varstr, valstr, units, label])
         else:
