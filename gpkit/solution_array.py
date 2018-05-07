@@ -1,5 +1,6 @@
 """Defines SolutionArray class"""
 from collections import Iterable
+import cPickle as pickle
 import numpy as np
 from .nomials import NomialArray
 from .small_classes import DictOfLists
@@ -113,7 +114,6 @@ class SolutionArray(DictOfLists):
         >>> import cPickle as pickle
         >>> pickle.load(open("gpkit_solution.p"))
         """
-        import cPickle as pickle
         program = self.program
         self.program = None
         cost = self["cost"]
