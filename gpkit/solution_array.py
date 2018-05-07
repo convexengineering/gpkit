@@ -171,12 +171,13 @@ class SolutionArray(DictOfLists):
                     continue
                 strs += ["\n%s\n----" % "Cost"]
                 if len(self) > 1:
-                    costs = ["%-8.3g" % c for c in mag(cost[:4])]
+                    costs = ["%-8.3g" % c for c in cost[:4]]
                     strs += [" [ %s %s ]" % ("  ".join(costs),
                                              "..." if len(self) > 4 else "")]
                 else:
-                    strs += [" %-.4g" % mag(cost)]
-                strs[-1] += unitstr(cost, into=" [%s] ", dimless="")
+                    strs += [" %-.4g" % cost]
+                if "costunits" in self:
+                    strs[-1] += " [%s]" % self["costunits"]
                 strs += [""]
             elif table in TABLEFNS:
                 strs += TABLEFNS[table](self, showvars, **kwargs)

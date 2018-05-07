@@ -54,7 +54,7 @@ class TestExamples(unittest.TestCase):
         assert_logtol(sol1("l"), l_)
         assert_logtol(sol1("A"), l_**2 + 1, tol1)
         assert_logtol(sol1["cost"], (l_**2 + 1)**2, tol1)
-        self.assertEqual(Quantity(1.0, sol1["cost"].units),
+        self.assertEqual(Quantity(1.0, (sol1("A")**2).units),
                          Quantity(1.0, ureg.m)**4)
         self.assertEqual(Quantity(1.0, sol1("A").units),
                          Quantity(1.0, ureg.m)**2)

@@ -27,7 +27,7 @@ except Exception, e:
 
 Cost
 ----
- 1.465 [m**2] 
+ 1.465 [m**2]
 
 Free Variables
 --------------
