@@ -122,10 +122,7 @@ def _solve_fctry(genfunction):
             self.program, progsolve = genfunction(self)
             result = progsolve(solver, verbosity, **kwargs)
             solution.append(result)
-        solution.program = self.program
         solution.to_arrays()
-        if self.cost.units:
-            solution["cost"] = solution["cost"] * self.cost.units
         self.solution = solution  # NOTE: SIDE EFFECTS
         # TODO: run process_result here, seperately for each i in a sweep?
         return solution
