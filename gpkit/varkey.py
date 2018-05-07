@@ -59,16 +59,17 @@ class VarKey(object):
         return self.str_without()
 
     def __getstate__(self):
-        "Stores varkey as its metadata dictionary"
+        "Stores varkey as its metadata dictionary, removing functions"
         state = self.descr.copy()
-        state.pop("units", None)
-        # state.pop("veckey", None)
-        state.pop("original_fn", None)
+        state.pop("units", None)  # not necessary, but saves space
+        for key, value in state.items():
+            if getattr(value, "__call__", None):
+                state[key] = str(value)
         return state
 
-    def __setstate__(self, newstate):
+    def __setstate__(self, state):
         "Restores varkey from its metadata dictionary"
-        self.__init__(**newstate)
+        self.__init__(**state)
 
     def str_without(self, excluded=None):
         "Returns string without certain fields (such as 'models')."
@@ -88,6 +89,8 @@ class VarKey(object):
         return string
 
     def __getattr__(self, attr):
+        if attr[:2] == "__":
+            raise AttributeError(attr)
         return self.descr.get(attr, None)
 
     unitstr = unitstr
