@@ -178,6 +178,9 @@ class KeyDict(dict):
     def __setitem__(self, key, value):
         "Overloads __setitem__ and []= to work with all keys"
         # pylint: disable=too-many-boolean-expressions
+        if not hasattr(self, "keymap"):  # we're unpickling
+            dict.__setitem__(self, key, value)
+            return
         key, idx = self.parse_and_index(key)
         if key not in self.keymap:
             self.keymap[key].add(key)

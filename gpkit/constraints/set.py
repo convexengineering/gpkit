@@ -135,6 +135,9 @@ class ConstraintSet(list):
         self.reset_varkeys()
 
     def append(self, value):
+        if not hasattr(self, "substitutions"):  # we're unpickling
+            list.append(self, value)
+            return
         if hasattr(value, "__iter__") and not isinstance(value, ConstraintSet):
             value = ConstraintSet(value)
         self.substitutions.update(value.substitutions)
