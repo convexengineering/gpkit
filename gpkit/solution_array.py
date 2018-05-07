@@ -103,8 +103,8 @@ class SolutionArray(DictOfLists):
         posy_subbed = self.subinto(posy)
         return getattr(posy_subbed, "c", posy_subbed)
 
-    def diff(self, sol, min_percent=0.1,
-             show_sensitivities=True, min_senss_delta=0.01):
+    def diff(self, sol, min_percent=1.0,
+             show_sensitivities=True, min_senss_delta=0.1):
         """Outputs differences between this solution and another
 
         Arguments
@@ -132,14 +132,13 @@ class SolutionArray(DictOfLists):
         }
         lines = results_table(sol_diff, "Solution difference", sortbyvals=True,
                               valfmt="%+6.1f%%  ", vecfmt="%+6.1f%% ",
-                              printunits=False, minval=min_percent,
-                              hidebelowminval=True)
+                              printunits=False, minval=min_percent)
         if len(lines) > 3:
             lines.insert(1, "(positive means the argument is bigger)")
         elif sol_diff:
             values = np.array(sol_diff.values())
             i = np.unravel_index(np.argmax(np.abs(values)), values.shape)
-            lines.insert(2, "The largest difference is only %g%%" % values[i])
+            lines.insert(2, "The largest difference is %g%%" % values[i])
 
         if show_sensitivities:
             senss_delta = {
@@ -151,9 +150,8 @@ class SolutionArray(DictOfLists):
             primal_lines = len(lines)
             lines += results_table(senss_delta, "Solution sensitivity delta",
                                    sortbyvals=True,
-                                   valfmt="%+-.2g  ", vecfmt="%+-8.2g",
-                                   printunits=False, minval=min_senss_delta,
-                                   hidebelowminval=True)
+                                   valfmt="%+-6.2f  ", vecfmt="%+-6.2f",
+                                   printunits=False, minval=min_senss_delta)
             if len(lines) > primal_lines + 3:
                 lines.insert(
                     primal_lines + 1,
@@ -163,7 +161,7 @@ class SolutionArray(DictOfLists):
                 i = np.unravel_index(np.argmax(np.abs(values)), values.shape)
                 lines.insert(
                     primal_lines + 2,
-                    "The largest sensitivity delta is only %g" % values[i])
+                    "The largest sensitivity delta is %+g" % values[i])
 
         if selfvars-solvars:
             lines.append("Variable(s) of this solution"
@@ -176,7 +174,10 @@ class SolutionArray(DictOfLists):
             lines.append("\n".join("  %s" % key for key in solvars-selfvars))
             lines.append("")
 
-        return "\n".join(lines)
+        out = "\n".join(lines)
+        out = out.replace("+0.", " +.")
+        out = out.replace("-0.", " -.")
+        return out
 
     def save(self, filename="gpkit_solution.p"):
         """Pickles the solution and saves it to a file.
@@ -408,7 +409,10 @@ def results_table(data, title, minval=0, printunits=True, fixedcols=True,
         valstr = valstr.replace("+nan", " - ")
         valstr = valstr.replace("nan", " - ")
         valstr = valstr.replace("+0 ", " 0 ")
-        valstr = valstr.replace("+0.0% ", " 0.0% ")
+        valstr = valstr.replace("+0.00 ", " 0.00 ")
+        valstr = valstr.replace("-0.00 ", " 0.00 ")
+        valstr = valstr.replace("+0.0% ", " 0.0  ")
+        valstr = valstr.replace("-0.0% ", " 0.0  ")
         if not latex:
             lines.append([varstr, valstr, units, label])
         else:

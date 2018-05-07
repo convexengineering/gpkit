@@ -89,8 +89,6 @@ class VarKey(object):
         return string
 
     def __getattr__(self, attr):
-        if attr[:2] == "__":
-            raise AttributeError(attr)
         return self.descr.get(attr, None)
 
     unitstr = unitstr
