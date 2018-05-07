@@ -136,6 +136,7 @@ class TestExamples(unittest.TestCase):
         pass
 
     def test_simpleflight(self, example):
+        self.assertTrue(example.sol.almost_equal(example.sol_loaded))
         for sol in [example.sol, example.sol_loaded]:
             freevarcheck = {
                 "A": 8.46,

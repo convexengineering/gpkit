@@ -103,6 +103,20 @@ class SolutionArray(DictOfLists):
         posy_subbed = self.subinto(posy)
         return getattr(posy_subbed, "c", posy_subbed)
 
+    def almost_equal(self, sol, reltol=1e-3, sens_abstol=0.01):
+        "Checks for almost-equality between two solutions"
+        selfvars = set(self["variables"])
+        solvars = set(sol["variables"])
+        if selfvars != solvars:
+            return False
+        for key in selfvars:
+            if abs(self(key)/sol(key) - 1) >= reltol:
+                return False
+            if abs(sol["sensitivities"]["variables"][key]
+                   - self["sensitivities"]["variables"][key]) >= sens_abstol:
+                return False
+        return True
+
     def diff(self, sol, min_percent=1.0,
              show_sensitivities=True, min_senss_delta=0.1):
         """Outputs differences between this solution and another
@@ -127,7 +141,7 @@ class SolutionArray(DictOfLists):
         selfvars = set(self["variables"])
         solvars = set(sol["variables"])
         sol_diff = {
-            key: 100*((sol(key)/self(key)).to("dimensionless").magnitude - 1)
+            key: 100*(sol(key)/self(key) - 1)
             for key in selfvars.intersection(solvars)
         }
         lines = results_table(sol_diff, "Solution difference", sortbyvals=True,
