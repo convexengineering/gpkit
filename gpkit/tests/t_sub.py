@@ -169,13 +169,12 @@ class TestModelSubs(unittest.TestCase):
             v_min = VectorVariable(1, "v_min", "km")
             m = Model(v.prod(), [v >= v_min],
                       {v_min: [2*gpkit.units("nmi")]})
-            vprod = m.solve(verbosity=0)(v).prod()
-            self.assertEqual(vprod, m.solution(v.prod()))
-            self.assertAlmostEqual(vprod/(3.704*gpkit.ureg("km")), 1)
+            cost = m.solve(verbosity=0)["cost"]
+            self.assertAlmostEqual(cost/(3.704*gpkit.ureg("km")), 1.0)
             m = Model(v.prod(), [v >= v_min],
                       {v_min: np.array([2])*gpkit.units("nmi")})
-            vprod = m.solve(verbosity=0)(v).prod()
-            self.assertAlmostEqual(vprod/(3.704*gpkit.ureg("km")), 1)
+            cost = m.solve(verbosity=0)["cost"]
+            self.assertAlmostEqual(cost/(3.704*gpkit.ureg("km")), 1.0)
 
     def test_phantoms(self):
         x = Variable("x")
@@ -217,7 +216,7 @@ class TestModelSubs(unittest.TestCase):
         m.substitutions.update({A: 500*gpkit.units("USD"),
                                 h: 35*gpkit.units("USD"),
                                 Q: ("sweep", [50, 100, 500])})
-        firstcost = m.solve(verbosity=0)(Y)[0]
+        firstcost = m.solve(verbosity=0)["cost"][0]
         self.assertAlmostEqual(1760*gpkit.ureg("USD")/firstcost, 1, 5)
 
     def test_skipfailures(self):
@@ -314,25 +313,24 @@ class TestModelSubs(unittest.TestCase):
         concatm = Model(a.cost*b.cost, [a, b])
         concat_cost = concatm.solve(verbosity=0)["cost"]
         almostequal = self.assertAlmostEqual
-        yard, ft = gpkit.ureg("yard"), gpkit.ureg("ft")
-        meter, cm = gpkit.ureg("meter"), gpkit.ureg("cm")
+        yard, cm = gpkit.ureg("yard"), gpkit.ureg("cm")
         if not isinstance(a["x"].key.units, str):
-            almostequal(a.solve(verbosity=0)["cost"], ft/yard, 5)
-            almostequal(b.solve(verbosity=0)["cost"], cm/meter, 5)
+            almostequal(1/yard/a.solve(verbosity=0)["cost"], 1, 5)
+            almostequal(1*cm/b.solve(verbosity=0)["cost"], 1, 5)
             almostequal(1*cm/yard/concat_cost, 1, 5)
         a1, b1 = Above(), Below()
         b1.subinplace({b1["x"]: a1["x"]})
         m = Model(a1["x"], [a1, b1])
         sol = m.solve(verbosity=0)
         if not isinstance(m["x"].key.units, str):
-            almostequal(sol["cost"], cm/ft, 5)
+            almostequal(1*cm/sol["cost"], 1, 5)
         a1, b1 = Above(), Below()
         a1.subinplace({a1["x"]: b1["x"]})
         m = Model(b1["x"], [a1, b1])
         m.cost = m["x"]
         sol = m.solve(verbosity=0)
         if not isinstance(m["x"].key.units, str):
-            almostequal(sol["cost"], cm/meter, 5)
+            almostequal(1*gpkit.ureg.cm/sol["cost"], 1, 5)
         self.assertIn(m["x"], sol["variables"])
         self.assertIn(a1["x"], sol["variables"])
         self.assertIn(b1["x"], sol["variables"])

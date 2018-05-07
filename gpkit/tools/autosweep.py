@@ -42,7 +42,7 @@ class BinarySweepTree(object):
             raise ValueError("bounds[0] must be smaller than bounds[1].")
         self.bounds = bounds
         self.sols = sols
-        self.costs = np.log([sol["cost"] for sol in sols])
+        self.costs = np.log([mag(sol["cost"]) for sol in sols])
         self.splits = None
         self.splitval = None
         self.splitlb = None
@@ -139,9 +139,11 @@ class BinarySweepTree(object):
         "Returns a solution array of all the solutions in an autosweep"
         solution = SolutionArray()
         for sol in self.sollist:
-            solution.append(sol)
+            solution.append(sol.program.result)
         solution.to_arrays()
-        solution["costunits"] = solution["costunits"][0]
+        units = getattr(self.sols[0]["cost"], "units", None)
+        if units:
+            solution["cost"] = solution["cost"] * units
         return solution
 
 
@@ -246,8 +248,7 @@ def recurse_splits(model, bst, variable, logtol, solvekwargs, sols):
     tol = (ub-lb)/2.0
     if tol >= logtol:
         model.substitutions.update({variable: x})
-        model.solve(**solvekwargs)
-        bst.add_split(x, model.program.result)
+        bst.add_split(x, model.solve(**solvekwargs))
         sols()
         tols = [recurse_splits(model, split, variable, logtol, solvekwargs,
                                sols)

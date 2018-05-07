@@ -5,7 +5,6 @@ from ..nomials import parse_subs
 from ..solution_array import SolutionArray
 from ..keydict import KeyDict
 from ..small_scripts import maybe_flatten
-from ..repr_conventions import unitstr
 
 POOL = None  # TODO: add parallel sweeps
 
@@ -123,9 +122,10 @@ def _solve_fctry(genfunction):
             self.program, progsolve = genfunction(self)
             result = progsolve(solver, verbosity, **kwargs)
             solution.append(result)
+        solution.program = self.program
         solution.to_arrays()
         if self.cost.units:
-            solution["costunits"] = unitstr(self.cost)
+            solution["cost"] = solution["cost"] * self.cost.units
         self.solution = solution  # NOTE: SIDE EFFECTS
         # TODO: run process_result here, seperately for each i in a sweep?
         return solution

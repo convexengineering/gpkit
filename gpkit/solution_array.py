@@ -102,6 +102,16 @@ class SolutionArray(DictOfLists):
         posy_subbed = self.subinto(posy)
         return getattr(posy_subbed, "c", posy_subbed)
 
+    def save(self, filename="gpkit_solution.p"):
+        import cPickle as pickle
+        program = self.program
+        self.program = None
+        cost = self["cost"]
+        self["cost"] = mag(cost)
+        pickle.dump(self, open(filename, "w"))
+        self["cost"] = cost
+        self.program = program
+
     def subinto(self, posy):
         "Returns NomialArray of each solution substituted into posy."
         if posy in self["variables"]:
@@ -171,13 +181,12 @@ class SolutionArray(DictOfLists):
                     continue
                 strs += ["\n%s\n----" % "Cost"]
                 if len(self) > 1:
-                    costs = ["%-8.3g" % c for c in cost[:4]]
+                    costs = ["%-8.3g" % c for c in mag(cost[:4])]
                     strs += [" [ %s %s ]" % ("  ".join(costs),
                                              "..." if len(self) > 4 else "")]
                 else:
-                    strs += [" %-.4g" % cost]
-                if "costunits" in self:
-                    strs[-1] += " [%s]" % self["costunits"]
+                    strs += [" %-.4g" % mag(cost)]
+                strs[-1] += unitstr(cost, into=" [%s] ", dimless="")
                 strs += [""]
             elif table in TABLEFNS:
                 strs += TABLEFNS[table](self, showvars, **kwargs)

@@ -7,7 +7,7 @@ Warning: Constraint [V_{f_{avail}} [m**3]... >= V_f [m**3]...] is not tight beca
 
 Cost
 ----
- [ 4.63e+03  6.23e+03  7.36e+03  ] [N]
+ [ 4.63e+03  6.23e+03  7.36e+03  ] [N] 
 
 Sweep Variables
 ---------------

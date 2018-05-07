@@ -3,7 +3,7 @@ SINGLE
 
 Cost
 ----
- 303.1 [N]
+ 303.1 [N] 
 
 Free Variables
 --------------
@@ -31,7 +31,7 @@ SWEEP
 
 Cost
 ----
- [ 338       294       396       326       ] [N]
+ [ 338       294       396       326       ] [N] 
 
 Sweep Variables
 ---------------
