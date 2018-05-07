@@ -103,6 +103,16 @@ class SolutionArray(DictOfLists):
         return getattr(posy_subbed, "c", posy_subbed)
 
     def save(self, filename="gpkit_solution.p"):
+        """Pickles the solution and saves it to a file.
+
+        The saved solution is identical except for two things:
+            - the cost is made unitless
+            - the solution's 'program' attribute is removed
+
+        Solution can then be loaded with e.g.:
+        >>> import cPickle as pickle
+        >>> pickle.load(open("gpkit_solution.p"))
+        """
         import cPickle as pickle
         program = self.program
         self.program = None
