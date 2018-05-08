@@ -38,8 +38,9 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE."""
 
 # create blank settings file to replace anything cached
-with open(os.sep.join(["gpkit", "env", "settings"]), "w") as f:
-    f.write("installed_solvers :  ")
+print os.listdir(".")
+# with open(os.sep.join(["gpkit", "env", "settings"]), "w") as f:
+#     f.write("installed_solvers :  ")
 
 setup(
     name="gpkit",

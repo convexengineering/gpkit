@@ -229,14 +229,14 @@ class Mosek(SolverBackend):
             return None
 
         lib_dir = replacedir(pathjoin("_mosek", "lib"))
+        open(pathjoin(lib_dir, "__init__.py"), 'w').close()
+        build_dir = replacedir(pathjoin("_mosek", "build"))
+
         if "GPKITBUILD" in os.environ:
             solib_dir = replacedir(os.environ["GPKITBUILD"])
         else:
-            solib_dir = replacedir(pathjoin(os.path.expanduser("~"), ".gpkit"))
-        f = open(pathjoin(lib_dir, "__init__.py"), 'w')
-        f.close()
+            solib_dir = os.path.abspath(build_dir)
 
-        build_dir = replacedir(pathjoin("_mosek", "build"))
         log("#\n#   Copying expopt library files to", build_dir)
         expopt_build_files = []
         for old_location in self.expopt_files:
@@ -275,11 +275,9 @@ class Mosek(SolverBackend):
             return False
 
         log("#\n#   Building Python bindings for expopt and Mosek...")
-        # mosek_h_path = pathjoin(lib_dir, "mosek_h.py")
         built_expopt_h = call("python modified_ctypesgen.py -a" +
                               " -l " + pathjoin(solib_dir, "expopt.so").replace("\\", "/") +   # pylint: disable=line-too-long
                               ' -l "' + self.lib_path.replace("\\", "/") + '"' +
-                              # ' -o "' + mosek_h_path.replace("\\", "/") + '"'+
                               " -o "+pathjoin(lib_dir, "expopt_h.py") +
                               "    "+pathjoin(build_dir, "expopt.h"))
 
