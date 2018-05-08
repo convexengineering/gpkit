@@ -2,7 +2,7 @@
 import sys
 from .small_classes import Quantity
 
-if sys.stdout.encoding.lower().startswith('utf-'):
+if sys.stdout.encoding and sys.stdout.encoding.lower().startswith('utf-'):
     DEFAULT_UNIT_PRINTING = ":P~"
 else:
     DEFAULT_UNIT_PRINTING = ":~"
