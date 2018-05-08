@@ -370,7 +370,7 @@ class SolutionArray(DictOfLists):
                                              "..." if len(self) > 4 else "")]
                 else:
                     strs += [" %-.4g" % mag(cost)]
-                strs[-1] += unitstr(cost, into=" [%s] ", dimless="")
+                strs[-1] += unitstr(cost, into=" [%s]", dimless="")
                 strs += [""]
             elif table in TABLEFNS:
                 strs += TABLEFNS[table](self, showvars, **kwargs)

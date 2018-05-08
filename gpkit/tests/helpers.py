@@ -3,7 +3,7 @@ import unittest
 import sys
 import os
 import importlib
-import codecs
+from ..repr_conventions import DEFAULT_UNIT_PRINTING
 
 
 def generate_example_tests(path, testclasses, solvers=None, newtest_fn=None):
@@ -157,11 +157,14 @@ class StdoutCaptured(object):
     def __enter__(self):
         "Capture stdout"
         self.original_stdout = sys.stdout
-        logfile = (codecs.open(self.logfilepath, mode="w", encoding="utf-8")
+        self.original_unit_printing = DEFAULT_UNIT_PRINTING[0]
+        DEFAULT_UNIT_PRINTING[0] = ":~"
+        logfile = (open(self.logfilepath, mode="w")
                    if self.logfilepath else NullFile())
         sys.stdout = logfile
 
     def __exit__(self, *args):
         "Return stdout"
         sys.stdout.close()
+        DEFAULT_UNIT_PRINTING[0] = self.original_unit_printing
         sys.stdout = self.original_stdout

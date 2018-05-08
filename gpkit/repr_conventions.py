@@ -4,9 +4,9 @@ from .small_classes import Quantity
 
 try:
     sys.stdout.write(u"\u200b")
-    DEFAULT_UNIT_PRINTING = ":P~"
+    DEFAULT_UNIT_PRINTING = [":P~"]
 except UnicodeEncodeError:
-    DEFAULT_UNIT_PRINTING = ":~"
+    DEFAULT_UNIT_PRINTING = [":~"]
 
 
 def _repr(self):
@@ -26,7 +26,7 @@ def _repr_latex_(self):
 
 def unitstr(units, into="%s", options=None, dimless=""):
     "Returns the string corresponding to an object's units."
-    options = options or DEFAULT_UNIT_PRINTING
+    options = options or DEFAULT_UNIT_PRINTING[0]
     if hasattr(units, "units") and isinstance(units.units, Quantity):
         units = units.units
     if not isinstance(units, Quantity):

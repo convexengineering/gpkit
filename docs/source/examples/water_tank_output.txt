@@ -1,13 +1,13 @@
 
 Cost
 ----
- 1.293 [m²] 
+ 1.293 [m**2]
 
 Free Variables
 --------------
-A : 1.293                             [m²] Surface Area of the Tank
-V : 0.1                               [m³] Volume of the Tank
-d : [ 0.464     0.464     0.464    ]  [m]  Dimension Vector
+A : 1.293                             [m**2] Surface Area of the Tank
+V : 0.1                               [m**3] Volume of the Tank
+d : [ 0.464     0.464     0.464    ]  [m]    Dimension Vector
 
 Sensitivities
 -------------
