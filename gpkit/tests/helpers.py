@@ -153,6 +153,7 @@ class StdoutCaptured(object):
     def __init__(self, logfilepath=None):
         self.logfilepath = logfilepath
         self.original_stdout = None
+        self.original_unit_printing = None
 
     def __enter__(self):
         "Capture stdout"
