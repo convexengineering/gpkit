@@ -1,5 +1,11 @@
 "Repository for representation standards"
+import sys
 from .small_classes import Quantity
+
+if sys.stdout.encoding.lower().startswith('utf-'):
+    DEFAULT_UNIT_PRINTING = ":P~"
+else:
+    DEFAULT_UNIT_PRINTING = ":~"
 
 
 def _repr(self):
@@ -17,8 +23,9 @@ def _repr_latex_(self):
     return "$$"+self.latex()+"$$"
 
 
-def unitstr(units, into="%s", options=":P~", dimless=""):
+def unitstr(units, into="%s", options=None, dimless=""):
     "Returns the string corresponding to an object's units."
+    options = options or DEFAULT_UNIT_PRINTING
     if hasattr(units, "units") and isinstance(units.units, Quantity):
         units = units.units
     if not isinstance(units, Quantity):
