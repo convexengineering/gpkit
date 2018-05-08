@@ -1,15 +1,15 @@
 
 Cost
 ----
- 1.62 [m] 
+ 1.621 [m] 
 
 Free Variables
 --------------
     dx : 1.2                                                             [m]   Length of an element
-     M : [ 1.98e+03  1.27e+03  713       317       79.2      0        ]  [N·m] Internal moment
-     V : [ 660       528       396       264       132       0        ]  [N]   Internal shear
-\theta : [ 0         0.177     0.285     0.341     0.363     0.367    ]        Slope
-     w : [ 0         0.106     0.384     0.759     1.18      1.62     ]  [m]   Displacement
+     M : [ 1.98e+03  1.27e+03  713       317       79.2      0.0002   ]  [N·m] Internal moment
+     V : [ 660       528       396       264       132       0.0002   ]  [N]   Internal shear
+\theta : [ 0.0002    0.177     0.285     0.341     0.363     0.367    ]        Slope
+     w : [ 0.0002    0.107     0.384     0.76      1.18      1.62     ]  [m]   Displacement
 
 Most Sensitive
 --------------

@@ -2,7 +2,6 @@
 from collections import Iterable
 import cPickle as pickle
 import numpy as np
-from . import nearzero
 from .nomials import NomialArray
 from .small_classes import DictOfLists, Strings
 from .small_scripts import mag, isnan
@@ -459,12 +458,6 @@ def results_table(data, title, printunits=True, fixedcols=True,
             if minval and hidebelowminval and len(notnan.shape) > 1:
                 less_than_min = np.abs(v) <= minval
                 v[np.logical_and(~isnan(v), less_than_min)] = 0
-            elif np.any(np.abs(v_arr[notnan] - nearzero) <= 1e-20):
-                if hasattr(v, "shape"):
-                    nearzero_idxs = (np.abs(v-nearzero) <= 1e-25)
-                    v[np.logical_and(~isnan(v), nearzero_idxs)] = 0
-                else:
-                    v = 0
             b = isinstance(v, Iterable) and bool(v.shape)
             kmodels = k.descr.get("models", [])
             kmodelnums = k.descr.get("modelnums", [])

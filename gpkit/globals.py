@@ -2,8 +2,6 @@
 import os
 from collections import defaultdict
 
-nearzero = 1.1373712581e-20  # pylint: disable=invalid-name
-
 
 def load_settings(path=None):
     "Load the settings file at SETTINGS_PATH; return settings dict"

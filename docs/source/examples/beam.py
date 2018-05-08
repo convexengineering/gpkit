@@ -3,8 +3,11 @@ A simple beam example with fixed geometry. Solves the discretized
 Euler-Bernoulli beam equations for a constant distributed load
 """
 import numpy as np
-from gpkit import Variable, VectorVariable, Model, ureg, nearzero
+from gpkit import Variable, VectorVariable, Model, ureg
 from gpkit.small_scripts import mag
+
+eps = 2e-4   # has to be quite small for consistent cvxopt printouts;
+             # normally you'd set this to something more like 1e-20
 
 
 class Beam(Model):
@@ -32,13 +35,13 @@ class Beam(Model):
         q = VectorVariable(N, "q", 100*np.ones(N), "N/m",
                            "Distributed load at each point")
         V = VectorVariable(N, "V", "N", "Internal shear")
-        V_tip = Variable("V_{tip}", nearzero, "N", "Tip loading")
+        V_tip = Variable("V_{tip}", eps, "N", "Tip loading")
         M = VectorVariable(N, "M", "N*m", "Internal moment")
-        M_tip = Variable("M_{tip}", nearzero, "N*m", "Tip moment")
+        M_tip = Variable("M_{tip}", eps, "N*m", "Tip moment")
         th = VectorVariable(N, "\\theta", "-", "Slope")
-        th_base = Variable("\\theta_{base}", nearzero, "-", "Base angle")
+        th_base = Variable("\\theta_{base}", eps, "-", "Base angle")
         w = VectorVariable(N, "w", "m", "Displacement")
-        w_base = Variable("w_{base}", nearzero, "m", "Base deflection")
+        w_base = Variable("w_{base}", eps, "m", "Base deflection")
         # below: trapezoidal integration to form a piecewise-linear
         #        approximation of loading, shear, and so on
         # shear and moment increase from tip to base (left > right)
