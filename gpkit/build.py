@@ -228,7 +228,7 @@ class Mosek(SolverBackend):
             log("## SKIPPING MOSEK INSTALL: CTYPESGENCORE WAS NOT FOUND")
             return None
 
-        lib_dir = replacedir(pathjoin("gpkit", "_mosek", "lib"))
+        lib_dir = replacedir(pathjoin("_mosek", "lib"))
         if "GPKITBUILD" in os.environ:
             solib_dir = replacedir(os.environ["GPKITBUILD"])
         else:
@@ -236,7 +236,7 @@ class Mosek(SolverBackend):
         f = open(pathjoin(lib_dir, "__init__.py"), 'w')
         f.close()
 
-        build_dir = replacedir(pathjoin("gpkit", "_mosek", "build"))
+        build_dir = replacedir(pathjoin("_mosek", "build"))
         log("#\n#   Copying expopt library files to", build_dir)
         expopt_build_files = []
         for old_location in self.expopt_files:
@@ -276,7 +276,7 @@ class Mosek(SolverBackend):
 
         log("#\n#   Building Python bindings for expopt and Mosek...")
         # mosek_h_path = pathjoin(lib_dir, "mosek_h.py")
-        built_expopt_h = call("python gpkit/modified_ctypesgen.py -a" +
+        built_expopt_h = call("python modified_ctypesgen.py -a" +
                               " -l " + pathjoin(solib_dir, "expopt.so").replace("\\", "/") +   # pylint: disable=line-too-long
                               ' -l "' + self.lib_path.replace("\\", "/") + '"' +
                               # ' -o "' + mosek_h_path.replace("\\", "/") + '"'+
@@ -294,7 +294,6 @@ def build():
     import gpkit
     log("# Moving to the directory from which GPkit was imported.")
     os.chdir(gpkit.__path__[0])
-    os.chdir("..")
 
     log("Started building gpkit...\n")
 
@@ -319,7 +318,7 @@ def build():
     log("\nFound the following solvers: " + settings["installed_solvers"])
 
     # Write settings
-    envpath = pathjoin("gpkit", "env")
+    envpath = pathjoin("env")
     replacedir(envpath)
     log("Replaced the directory gpkit/env\n")
     settingspath = envpath + os.sep + "settings"

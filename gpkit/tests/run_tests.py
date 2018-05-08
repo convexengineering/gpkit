@@ -42,7 +42,7 @@ def import_tests():
     return tests
 
 
-def run(xmloutput=False, tests=None, verbosity=2):
+def run(xmloutput=False, tests=None, verbosity=1):
     """Run all gpkit unit tests.
 
     Arguments
