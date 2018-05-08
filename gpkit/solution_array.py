@@ -225,6 +225,7 @@ class SolutionArray(DictOfLists):
         self.program = program
 
     def __name_vars(self, minimize_names):
+        "Returns list of variables, optionally with minimal unique names"
         names = {}
         for key in self["variables"]:
             firstname = key.str_without(["models"])
@@ -237,13 +238,15 @@ class SolutionArray(DictOfLists):
                     names[str(oldkey)] = [oldkey]
         return names
 
-    def savemat(self, filename="gpkit_solution.mat", minimize_names=False):
+    def savemat(self, filename="gpkit_solution.mat", minimize_names=True):
+        "Saves primal solution as matlab file"
         from scipy.io import savemat
         savemat(filename,
                 {name: self["variables"][key]
                  for name, (key,) in self.__name_vars(minimize_names).items()})
 
-    def toDataFrame(self, minimize_names=False):
+    def toDataFrame(self, minimize_names=True):
+        "Returns primal solution as pandas dataframe"
         import pandas as pd
         names = self.__name_vars(minimize_names)
         rows = []
@@ -264,7 +267,8 @@ class SolutionArray(DictOfLists):
             rows.append(row)
         return pd.DataFrame(rows, columns=cols)
 
-    def savecsv(self, filename="gpkit_solution.csv", minimize_names=False):
+    def savecsv(self, filename="gpkit_solution.csv", minimize_names=True):
+        "Saves primal solution as csv"
         df = self.toDataFrame(minimize_names)
         df.to_csv(filename, index=False, encoding="utf-8")
 

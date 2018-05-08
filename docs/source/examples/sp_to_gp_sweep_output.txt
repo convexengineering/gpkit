@@ -1,8 +1,8 @@
-Warning: Constraint [V_{f_{avail}} [m³]... >= V_f [m³]...] is not tight because the left hand side evaluated to 0.588622416204 meter ** 3 but the right hand side evaluated to 0.577460580538 meter ** 3 (Allowable error: 0.0001%, Actual error: 1.9%)
+Warning: Constraint [V_{f_{avail}} [m³]... >= V_f [m³]...] is not tight because the left hand side evaluated to 0.6 meter ** 3 but the right hand side evaluated to 0.577460612445 meter ** 3 (Allowable error: 0.0001%, Actual error: 3.9%)
 
-Warning: Constraint [V_{f_{avail}} [m³]... >= V_f [m³]...] is not tight because the left hand side evaluated to 0.788360644367 meter ** 3 but the right hand side evaluated to 0.776890631957 meter ** 3 (Allowable error: 0.0001%, Actual error: 1.5%)
+Warning: Constraint [V_{f_{avail}} [m³]... >= V_f [m³]...] is not tight because the left hand side evaluated to 0.8 meter ** 3 but the right hand side evaluated to 0.776890569044 meter ** 3 (Allowable error: 0.0001%, Actual error: 3%)
 
-Warning: Constraint [V_{f_{avail}} [m³]... >= V_f [m³]...] is not tight because the left hand side evaluated to 0.958462517649 meter ** 3 but the right hand side evaluated to 0.918650397739 meter ** 3 (Allowable error: 0.0001%, Actual error: 4.3%)
+Warning: Constraint [V_{f_{avail}} [m³]... >= V_f [m³]...] is not tight because the left hand side evaluated to 1.0 meter ** 3 but the right hand side evaluated to 0.918650381853 meter ** 3 (Allowable error: 0.0001%, Actual error: 8.9%)
 
 
 Cost
@@ -27,7 +27,7 @@ Free Variables
    T_{flight} : [ 16.6      13.4      12.3     ]  [hr]  flight time
             V : [ 50.3      62.1      67.9     ]  [m/s] cruising speed
           V_f : [ 0.577     0.777     0.919    ]  [m³]  fuel volume
-V_{f_{avail}} : [ 0.589     0.788     0.958    ]  [m³]  fuel volume available
+V_{f_{avail}} : [ 0.6       0.8       1        ]  [m³]  fuel volume available
             W : [ 1.35e+04  1.45e+04  1.59e+04 ]  [N]   total aircraft weight
           W_f : [ 4.63e+03  6.23e+03  7.36e+03 ]  [N]   fuel weight
           W_w : [ 2.65e+03  2.05e+03  2.29e+03 ]  [N]   wing weight
