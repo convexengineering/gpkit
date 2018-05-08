@@ -2,10 +2,22 @@
 from collections import Iterable
 import cPickle as pickle
 import numpy as np
+from . import nearzero
 from .nomials import NomialArray
 from .small_classes import DictOfLists, Strings
 from .small_scripts import mag, isnan
 from .repr_conventions import unitstr
+
+
+VALSTR_REPLACES = [
+    ("+nan", " - "),
+    ("nan", " - "),
+    ("+0 ", " 0 "),
+    ("+0.00 ", " 0.00 "),
+    ("-0.00 ", " 0.00 "),
+    ("+0.0% ", " 0.0  "),
+    ("-0.0% ", " 0.0  ")
+]
 
 
 def senss_table(data, showvars=(), title="Sensitivities", **kwargs):
@@ -233,17 +245,19 @@ class SolutionArray(DictOfLists):
                 showvars_out.update(keys)
         return showvars_out
 
-    def summary(self, showvars=(), ntopsenss=5):
+    def summary(self, showvars=(), ntopsenss=5, **kwargs):
         "Print summary table, showing top sensitivities and no constants"
         showvars = self._parse_showvars(showvars)
-        out = self.table(showvars, ["cost", "sweepvariables", "freevariables"])
+        out = self.table(showvars, ["cost", "sweepvariables", "freevariables"],
+                         **kwargs)
         constants_in_showvars = showvars.intersection(self["constants"])
         senss_tables = []
         if len(self["constants"]) < ntopsenss+2 or constants_in_showvars:
             senss_tables.append("sensitivities")
         if len(self["constants"]) >= ntopsenss+2:
             senss_tables.append("topsensitivities")
-        senss_str = self.table(showvars, senss_tables, nvars=ntopsenss)
+        senss_str = self.table(showvars, senss_tables, nvars=ntopsenss,
+                                **kwargs)
         if senss_str:
             out += "\n" + senss_str
         return out
@@ -331,7 +345,7 @@ class SolutionArray(DictOfLists):
 def results_table(data, title, minval=0, printunits=True, fixedcols=True,
                   varfmt="%s : ", valfmt="%-.4g ", vecfmt="%-8.3g",
                   included_models=None, excluded_models=None, latex=False,
-                  sortbyvals=False, hidebelowminval=False, **_):
+                  sortbyvals=False, hidebelowminval=False, columns=None, **_):
     """
     Pretty string representation of a dict of VarKeys
     Iterable values are handled specially (partial printing)
@@ -371,8 +385,14 @@ def results_table(data, title, minval=0, printunits=True, fixedcols=True,
         notnan = ~isnan(v_arr)
         if notnan.any() and np.sum(np.abs(v_arr[notnan])) >= minval:
             if minval and hidebelowminval and len(notnan.shape) > 1:
-                less_than_min = np.abs(v[~isnan(v)]) <= minval
+                less_than_min = np.abs(v) <= minval
                 v[np.logical_and(~isnan(v), less_than_min)] = 0
+            elif np.any(np.abs(v_arr[notnan] - nearzero) <= 1e-20):
+                if hasattr(v, "shape"):
+                    nearzero_idxs = (np.abs(v-nearzero) <= 1e-25)
+                    v[np.logical_and(~isnan(v), nearzero_idxs)] = 0
+                else:
+                    v = 0
             b = isinstance(v, Iterable) and bool(v.shape)
             kmodels = k.descr.get("models", [])
             kmodelnums = k.descr.get("modelnums", [])
@@ -415,20 +435,49 @@ def results_table(data, title, minval=0, printunits=True, fixedcols=True,
         label = var.descr.get('label', '')
         units = var.unitstr(" [%s] ") if printunits else ""
         if isvector:
-            vals = [vecfmt % v for v in val.flatten()[:4]]
-            ellipsis = " ..." if len(val) > 4 else ""
-            valstr = "[ %s%s ] " % ("  ".join(vals), ellipsis)
+            # TODO: pretty n-dimensional printing?
+            if columns is not None:
+                ncols = columns
+            elif len(val.shape) > 1:
+                horiz_dim = None
+                for i, dim_size in enumerate(val.shape):
+                    if dim_size <= 5:  # arbitrary max ncols
+                        horiz_dim = i
+                if horiz_dim is None:
+                    ncols = 5
+                else:  # orient the matrix to show that order
+                    ncols = val.shape[horiz_dim]
+                    dim_order = range(len(val.shape)-1)
+                    dim_order.insert(horiz_dim, len(val.shape)-1)
+                    val = val.transpose(dim_order)
+            elif len(val) <= 5:
+                ncols = len(val)
+            else:
+                ncols = 1
+            flatval = val.flatten()
+            vals = [vecfmt % v for v in flatval[:ncols]]
+            bracket = " ] " if len(flatval) <= ncols else ""
+            valstr = "[ %s%s" % ("  ".join(vals), bracket)
         else:
             valstr = valfmt % val
-        valstr = valstr.replace("+nan", " - ")
-        valstr = valstr.replace("nan", " - ")
-        valstr = valstr.replace("+0 ", " 0 ")
-        valstr = valstr.replace("+0.00 ", " 0.00 ")
-        valstr = valstr.replace("-0.00 ", " 0.00 ")
-        valstr = valstr.replace("+0.0% ", " 0.0  ")
-        valstr = valstr.replace("-0.0% ", " 0.0  ")
+        for before, after in VALSTR_REPLACES:
+            valstr = valstr.replace(before, after)
         if not latex:
             lines.append([varstr, valstr, units, label])
+            if isvector and len(flatval) > ncols:
+                values_remaining = len(flatval) - ncols
+                while values_remaining > 0:
+                    idx = len(flatval)-values_remaining
+                    vals = [vecfmt % v for v in flatval[idx:idx+ncols]]
+                    values_remaining -= ncols
+                    valstr = "  " + "  ".join(vals)
+                    for before, after in VALSTR_REPLACES:
+                        valstr = valstr.replace(before, after)
+                    if values_remaining <= 0:
+                        spaces = (-values_remaining
+                                  * len(valstr)/(values_remaining + ncols))
+                        valstr = valstr + " "*spaces + " ] "
+                    lines.append(["", valstr, "", ""])
         else:
             varstr = "$%s$" % varstr.replace(" : ", "")
             if latex == 1:  # normal results table

@@ -2,7 +2,7 @@
 __version__ = "0.7.0"
 
 from ._pint import units, ureg, DimensionalityError
-from .globals import settings
+from .globals import settings, nearzero
 from .globals import SignomialsEnabled, SIGNOMIALS_ENABLED
 from .globals import Vectorize, VECTORIZATION
 from .globals import (NamedVariables, MODELS, MODELNUMS, MODELNUM_LOOKUP,
