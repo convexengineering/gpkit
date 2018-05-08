@@ -38,11 +38,12 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE."""
 
 # create blank settings file to replace anything cached
-env = os.sep.join([os.path.dirname(__file__), "gpkit", "env"])
-if not os.path.isdir(env):
-    os.mkdir(env)
-with open(env + os.sep + "settings", "w") as f:
-    f.write("installed_solvers :  ")
+settings = os.sep.join([os.path.dirname(__file__), "gpkit", "env", "settings"])
+try:
+    with open(settings, "w") as f:
+        f.write("installed_solvers :  ")
+except IOError:
+    pass
 
 setup(
     name="gpkit",
