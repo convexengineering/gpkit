@@ -1,9 +1,10 @@
 "global mutable variables"
 import os
 from collections import defaultdict
+from . import build
 
 
-def load_settings(path=None):
+def load_settings(path=None, firstattempt=True):
     "Load the settings file at SETTINGS_PATH; return settings dict"
     if path is None:
         path = os.sep.join([os.path.dirname(__file__), "env", "settings"])
@@ -18,8 +19,30 @@ def load_settings(path=None):
                 if len(value) == 1 and name != "installed_solvers":
                     settings_[name] = value[0]
     except IOError:
-        print("Could not load settings file.")
         settings_ = {"installed_solvers": [""]}
+    if settings_["installed_solvers"] == [""]:
+        if firstattempt:
+            print("Found no installed solvers, beginning a build.")
+            build()
+            settings_ = load_settings(path, firstattempt=False)
+            if settings_["installed_solvers"] != [""]:
+                settings_["just built!"] = True
+            else:
+                print("""
+=============
+Build failed!  :(
+=============
+You may need to install a solver and then `import gpkit` again;
+see https://gpkit.readthedocs.io/en/latest/installation.html
+for troubleshooting details.
+
+But before you go, please post the output above
+(starting from "Found no installed solvers, beginning a build.")
+to gpkit@mit.edu or https://github.com/convexengineering/gpkit/issues/new
+so we can prevent others from having to see this message.
+
+        Thanks!  :)
+""")
     settings_["default_solver"] = settings_["installed_solvers"][0]
     settings_["latex_modelname"] = True
     return settings_

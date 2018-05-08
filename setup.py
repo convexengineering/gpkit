@@ -1,13 +1,5 @@
 """Standard Python setup script for gpkit"""
-from __future__ import print_function
-
-import sys
-
-# custom build script
-if sys.argv[1] not in ["clean", "uninstall", "sdist"]:
-    from gpkit.build import build_gpkit
-    build_gpkit()
-
+import os
 from distutils.core import setup
 
 LONG_DESCRIPTION = """
@@ -45,6 +37,10 @@ LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE."""
 
+# create blank settings file to replace anything cached
+with open(os.sep.join(["gpkit", "env", "settings"]), "w") as f:
+    f.write("installed_solvers :  ")
+
 setup(
     name="gpkit",
     description="Package for defining and manipulating geometric "
@@ -52,12 +48,12 @@ setup(
     author="Edward Burnell",
     author_email="gpkit@mit.edu",
     url="https://www.github.com/convexengineering/gpkit",
-    install_requires=["numpy >= 1.12.1", "pint >= 0.7", "scipy", "ad"],
+    install_requires=["numpy >= 1.12.1", "pint >= 0.7", "scipy", "ad",
+                      "ctypesgen", "cvxopt"],
     version="0.7.0.0",
     packages=["gpkit", "gpkit.tools", "gpkit.interactive", "gpkit.constraints",
               "gpkit.nomials", "gpkit.tests", "gpkit._mosek", "gpkit._pint"],
-    package_data={"gpkit": ["env/*"],
-                  "gpkit._mosek": ["lib/*"],
+    package_data={"gpkit": ["env/settings"],
                   "gpkit._pint": ["*.txt"]},
     license=LICENSE,
     long_description=LONG_DESCRIPTION,
