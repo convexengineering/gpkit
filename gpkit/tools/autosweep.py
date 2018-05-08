@@ -146,7 +146,7 @@ class BinarySweepTree(object):
             solution["cost"] = solution["cost"] * units
         return solution
 
-    def save(self, filename="gpkit_autosweep.p"):
+    def save(self, filename="autosweep.p"):
         """Pickles the autosweep and saves it to a file.
 
         The saved autosweep is identical except for two things:
@@ -155,7 +155,7 @@ class BinarySweepTree(object):
 
         Solution can then be loaded with e.g.:
         >>> import cPickle as pickle
-        >>> pickle.load(open("gpkit_autosweep.p"))
+        >>> pickle.load(open("autosweep.p"))
         """
         import cPickle as pickle
         programs = []

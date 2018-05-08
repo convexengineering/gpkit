@@ -213,8 +213,8 @@ MISSION = Mission(AC)
 M = Model(MISSION.takeoff_fuel, [MISSION, AC])
 sol = M.solve(verbosity=0)
 # save solution to a file and retrieve it
-sol.save("gpkit_solution.p")
-sol_loaded = pickle.load(open("gpkit_solution.p"))
+sol.save("solution.p")
+sol_loaded = pickle.load(open("solution.p"))
 
 vars_of_interest = set(AC.varkeys)
 vars_of_interest.update(MISSION.fs.aircraftp.unique_varkeys)

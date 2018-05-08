@@ -205,7 +205,7 @@ class SolutionArray(DictOfLists):
         out = out.replace("-0.", " -.")
         return out
 
-    def save(self, filename="gpkit_solution.p"):
+    def save(self, filename="solution.p"):
         """Pickles the solution and saves it to a file.
 
         The saved solution is identical except for two things:
@@ -214,7 +214,7 @@ class SolutionArray(DictOfLists):
 
         Solution can then be loaded with e.g.:
         >>> import cPickle as pickle
-        >>> pickle.load(open("gpkit_solution.p"))
+        >>> pickle.load(open("solution.p"))
         """
         program = self.program
         self.program = None
@@ -224,11 +224,13 @@ class SolutionArray(DictOfLists):
         self["cost"] = cost
         self.program = program
 
-    def __name_vars(self, min_data):
+    def __varnames(self, include, min_data):
         "Returns list of variables, optionally with minimal unique names"
         keymap = self["variables"].keymap
         names = {}
-        for key in self["variables"]:
+        for key in (include or self["variables"]):
+            if include:
+                key, _ = self["variables"].parse_and_index(key)
             keys = keymap[key.name]
             if len(keys) == 1 and min_data:
                 names[key.name] = key
@@ -239,21 +241,21 @@ class SolutionArray(DictOfLists):
                     names.update((str(k), k) for k in keys)
         return names
 
-    def savemat(self, filename="gpkit_solution.mat", min_data=True):
+    def savemat(self, filename="solution.mat", include=None, min_data=True):
         "Saves primal solution as matlab file"
         from scipy.io import savemat
         savemat(filename,
                 {name: self["variables"][key]
-                 for name, key in self.__name_vars(min_data).items()})
+                 for name, key in self.__varnames(include, min_data).items()})
 
-    def todataframe(self, min_data=False):
+    def todataframe(self, include=None, min_data=False):
         "Returns primal solution as pandas dataframe"
         import pandas as pd
         rows = []
         cols = ["Name", "Index", "Value"]
         if not min_data:
             cols += ["Units", "Label", "Models", "Model Numbers", "Other"]
-        for name, key in sorted(self.__name_vars(min_data).items(),
+        for name, key in sorted(self.__varnames(include, min_data).items(),
                                 key=lambda k: k[0]):
             value = self["variables"][key]
             if key.shape:
@@ -287,9 +289,9 @@ class SolutionArray(DictOfLists):
                 ])
         return pd.DataFrame(rows, columns=cols)
 
-    def savecsv(self, filename="gpkit_solution.csv", min_data=False):
+    def savecsv(self, filename="solution.csv", include=None, min_data=False):
         "Saves primal solution as csv"
-        df = self.todataframe(min_data)
+        df = self.todataframe(include, min_data)
         df.to_csv(filename, index=False, encoding="utf-8")
 
 
