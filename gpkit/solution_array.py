@@ -250,7 +250,7 @@ class SolutionArray(DictOfLists):
 
     def todataframe(self, include=None, min_data=False):
         "Returns primal solution as pandas dataframe"
-        import pandas as pd
+        import pandas as pd  # pylint:disable=import-error
         rows = []
         cols = ["Name", "Index", "Value"]
         if not min_data:
