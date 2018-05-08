@@ -291,6 +291,7 @@ def build():
     "Builds GPkit"
     import gpkit
     log("# Moving to the directory from which GPkit was imported.")
+    start_dir = os.getcwd()
     os.chdir(gpkit.__path__[0])
 
     log("Started building gpkit...\n")
@@ -326,3 +327,5 @@ def build():
 
     with open(pathjoin(envpath, "build.log"), "w") as f:
         f.write(LOGSTR)
+
+    os.chdir(start_dir)
