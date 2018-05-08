@@ -39,9 +39,9 @@ SOFTWARE."""
 
 # create blank settings file to replace anything cached
 env = os.sep.join([os.path.dirname(__file__), "gpkit", "env"])
-if not os.isdir(env):
+if not os.path.isdir(env):
     os.mkdir(env)
-with open(env + os.sep + settings, "w") as f:
+with open(env + os.sep + "settings", "w") as f:
     f.write("installed_solvers :  ")
 
 setup(
