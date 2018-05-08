@@ -224,53 +224,74 @@ class SolutionArray(DictOfLists):
         self["cost"] = cost
         self.program = program
 
-    def __name_vars(self, minimize_names):
+    def __name_vars(self, min_data):
         "Returns list of variables, optionally with minimal unique names"
+        keymap = self["variables"].keymap
         names = {}
         for key in self["variables"]:
-            firstname = key.str_without(["models"])
-            if minimize_names and firstname not in names:
-                names[firstname] = [key]
-            else:
-                names[str(key)] = [key]
-                if firstname in names:
-                    oldkey, = names[firstname]
-                    names[str(oldkey)] = [oldkey]
+            keys = keymap[key.name]
+            if len(keys) == 1 and min_data:
+                names[key.name] = key
+            elif key.cleanstr not in names and str(key) not in names:
+                if len(keymap[key.cleanstr]) == 1 and min_data:
+                    names.update((k.cleanstr, k) for k in keys)
+                else:
+                    names.update((str(k), k) for k in keys)
         return names
 
-    def savemat(self, filename="gpkit_solution.mat", minimize_names=True):
+    def savemat(self, filename="gpkit_solution.mat", min_data=True):
         "Saves primal solution as matlab file"
         from scipy.io import savemat
         savemat(filename,
                 {name: self["variables"][key]
-                 for name, (key,) in self.__name_vars(minimize_names).items()})
+                 for name, key in self.__name_vars(min_data).items()})
 
-    def toDataFrame(self, minimize_names=True):
+    def todataframe(self, min_data=False):
         "Returns primal solution as pandas dataframe"
         import pandas as pd
-        names = self.__name_vars(minimize_names)
         rows = []
-        cols = ["Name", "Value", "Units", "Description", "Other Metadata"]
-        for name, (veckey,) in names.items():
-            keys = self["variables"].keymap[veckey]
-            for key in keys:
+        cols = ["Name", "Index", "Value"]
+        if not min_data:
+            cols += ["Units", "Label", "Models", "Model Numbers", "Other"]
+        for name, key in sorted(self.__name_vars(min_data).items(),
+                                key=lambda k: k[0]):
+            value = self["variables"][key]
+            if key.shape:
+                idxs = []
+                it = np.nditer(np.empty(key.shape), flags=['multi_index'])
+                while not it.finished:
+                    idx = it.multi_index
+                    idxs.append(idx[0] if len(idx) == 1 else idx)
+                    it.iternext()
+            else:
+                idxs = [None]
+            for idx in idxs:
                 row = [
-                    name if not key.idx else name + "_%s" % key.idx,
-                    self["variables"][key],
+                    name if min_data else key.name,
+                    "" if idx is None else idx,
+                    value if idx is None else value[idx],
+                ]
+                rows.append(row)
+                if min_data:
+                    continue
+                row.extend([
                     key.unitstr(),
                     key.label or "",
+                    key.models or "",
+                    key.modelnums or "",
                     ", ".join("%s=%s" % (k, v) for (k, v) in key.descr.items()
-                              if k not in ["units", "unitrepr", "idx", "name",
-                                           "veckey", "original_fn", "value",
-                                           "label"])
-                ]
-            rows.append(row)
+                              if k not in ["name", "units", "unitrepr",
+                                           "idx", "shape", "veckey",
+                                           "value", "original_fn",
+                                           "models", "modelnums", "label"])
+                ])
         return pd.DataFrame(rows, columns=cols)
 
-    def savecsv(self, filename="gpkit_solution.csv", minimize_names=True):
+    def savecsv(self, filename="gpkit_solution.csv", min_data=False):
         "Saves primal solution as csv"
-        df = self.toDataFrame(minimize_names)
+        df = self.todataframe(min_data)
         df.to_csv(filename, index=False, encoding="utf-8")
+
 
     def subinto(self, posy):
         "Returns NomialArray of each solution substituted into posy."

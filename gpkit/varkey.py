@@ -3,7 +3,7 @@ from .small_classes import HashVector, Count, qty
 from .repr_conventions import unitstr
 
 
-class VarKey(object):
+class VarKey(object):  # pylint:disable=too-many-instance-attributes
     """An object to correspond to each 'variable name'.
 
     Arguments
@@ -37,11 +37,10 @@ class VarKey(object):
                 self.descr["unitrepr"] = unitrepr
 
         self.key = self
-        cleanstr = self.str_without(["modelnums"])
-        selfstr = cleanstr + str(self.modelnums) + self.unitrepr
-        self.eqstr = selfstr + self.descr["unitrepr"]
+        self.cleanstr = self.str_without(["modelnums"])
+        self.eqstr = self.cleanstr + str(self.modelnums) + self.unitrepr
         self._hashvalue = hash(self.eqstr)
-        self.keys = set((self.name, selfstr, cleanstr))
+        self.keys = set((self.name, self.cleanstr))
 
         if "idx" in self.descr:
             if "veckey" not in self.descr:
