@@ -95,7 +95,7 @@ class VarKey(object):
 
     def latex_unitstr(self):
         "Returns latex unitstr"
-        us = self.unitstr(r"~\mathrm{%s}", "L~")
+        us = self.unitstr(r"~\mathrm{%s}", ":L~")
         utf = us.replace("frac", "tfrac").replace(r"\cdot", r"\cdot ")
         return utf if utf != r"~\mathrm{-}" else ""
 

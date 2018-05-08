@@ -3,6 +3,7 @@ import unittest
 import sys
 import os
 import importlib
+import codecs
 
 
 def generate_example_tests(path, testclasses, solvers=None, newtest_fn=None):
@@ -156,8 +157,8 @@ class StdoutCaptured(object):
     def __enter__(self):
         "Capture stdout"
         self.original_stdout = sys.stdout
-        logfile = (open(self.logfilepath, "w") if self.logfilepath
-                   else NullFile())
+        logfile = (codecs.open(self.logfilepath, mode="w", encoding="utf-8")
+                   if self.logfilepath else NullFile())
         sys.stdout = logfile
 
     def __exit__(self, *args):

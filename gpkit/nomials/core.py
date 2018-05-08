@@ -58,7 +58,7 @@ class Nomial(NomialData):
         if "units" in excluded:
             return " + ".join(sorted(mstrs))
 
-        units = self.unitstr(r"\mathrm{~\left[ %s \right]}", "L~")
+        units = self.unitstr(r"\mathrm{~\left[ %s \right]}", ":L~")
         units_tf = units.replace("frac", "tfrac").replace(r"\cdot", r"\cdot ")
         return " + ".join(sorted(mstrs)) + units_tf
 

@@ -224,6 +224,50 @@ class SolutionArray(DictOfLists):
         self["cost"] = cost
         self.program = program
 
+    def __name_vars(self, minimize_names):
+        names = {}
+        for key in self["variables"]:
+            firstname = key.str_without(["models"])
+            if minimize_names and firstname not in names:
+                names[firstname] = [key]
+            else:
+                names[str(key)] = [key]
+                if firstname in names:
+                    oldkey, = names[firstname]
+                    names[str(oldkey)] = [oldkey]
+        return names
+
+    def savemat(self, filename="gpkit_solution.mat", minimize_names=False):
+        from scipy.io import savemat
+        savemat(filename,
+                {name: self["variables"][key]
+                 for name, (key,) in self.__name_vars(minimize_names).items()})
+
+    def toDataFrame(self, minimize_names=False):
+        import pandas as pd
+        names = self.__name_vars(minimize_names)
+        rows = []
+        cols = ["Name", "Value", "Units", "Description", "Other Metadata"]
+        for name, (veckey,) in names.items():
+            keys = self["variables"].keymap[veckey]
+            for key in keys:
+                row = [
+                    name if not key.idx else name + "_%s" % key.idx,
+                    self["variables"][key],
+                    key.unitstr(),
+                    key.label or "",
+                    ", ".join("%s=%s" % (k, v) for (k, v) in key.descr.items()
+                              if k not in ["units", "unitrepr", "idx", "name",
+                                           "veckey", "original_fn", "value",
+                                           "label"])
+                ]
+            rows.append(row)
+        return pd.DataFrame(rows, columns=cols)
+
+    def savecsv(self, filename="gpkit_solution.csv", minimize_names=False):
+        df = self.toDataFrame(minimize_names)
+        df.to_csv(filename, index=False, encoding="utf-8")
+
     def subinto(self, posy):
         "Returns NomialArray of each solution substituted into posy."
         if posy in self["variables"]:
