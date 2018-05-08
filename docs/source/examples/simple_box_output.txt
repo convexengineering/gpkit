@@ -1,7 +1,7 @@
 
 Cost
 ----
- 0.003674 [1/m**3] 
+ 0.003674 [1/m**3]
 
 Free Variables
 --------------
@@ -20,6 +20,6 @@ A_{floor} : 50   [m**2] upper limit, floor area
 
 Sensitivities
 -------------
-A_{wall} : -1.5 upper limit, wall area
-   alpha : +0.5 lower limit, wall aspect ratio
+A_{wall} : -1.5  upper limit, wall area
+   alpha : +0.5  lower limit, wall aspect ratio
 

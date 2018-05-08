@@ -181,7 +181,8 @@ class GeometricProgram(CostedConstraintSet, NomialData):
             self.solver_out = solver_out
         finally:
             sys.stdout = original_stdout
-         # STDOUT HAS BEEN RETURNED. ENDING SIDE EFFECTS.
+        # STDOUT HAS BEEN RETURNED. ENDING SIDE EFFECTS.
+        self.solver_log = "\n".join(self.solver_log)
 
         soltime = time() - starttime
         if verbosity > 0:

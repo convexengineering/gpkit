@@ -3,7 +3,7 @@ from .small_classes import HashVector, Count, qty
 from .repr_conventions import unitstr
 
 
-class VarKey(object):
+class VarKey(object):  # pylint:disable=too-many-instance-attributes
     """An object to correspond to each 'variable name'.
 
     Arguments
@@ -37,11 +37,10 @@ class VarKey(object):
                 self.descr["unitrepr"] = unitrepr
 
         self.key = self
-        cleanstr = self.str_without(["modelnums"])
-        selfstr = cleanstr + str(self.modelnums) + self.unitrepr
-        self.eqstr = selfstr + self.descr["unitrepr"]
+        self.cleanstr = self.str_without(["modelnums"])
+        self.eqstr = self.cleanstr + str(self.modelnums) + self.unitrepr
         self._hashvalue = hash(self.eqstr)
-        self.keys = set((self.name, selfstr, cleanstr))
+        self.keys = set((self.name, self.cleanstr))
 
         if "idx" in self.descr:
             if "veckey" not in self.descr:
@@ -57,6 +56,19 @@ class VarKey(object):
 
     def __repr__(self):
         return self.str_without()
+
+    def __getstate__(self):
+        "Stores varkey as its metadata dictionary, removing functions"
+        state = self.descr.copy()
+        state.pop("units", None)  # not necessary, but saves space
+        for key, value in state.items():
+            if getattr(value, "__call__", None):
+                state[key] = str(value)
+        return state
+
+    def __setstate__(self, state):
+        "Restores varkey from its metadata dictionary"
+        self.__init__(**state)
 
     def str_without(self, excluded=None):
         "Returns string without certain fields (such as 'models')."
@@ -82,7 +94,7 @@ class VarKey(object):
 
     def latex_unitstr(self):
         "Returns latex unitstr"
-        us = self.unitstr(r"~\mathrm{%s}", "L~")
+        us = self.unitstr(r"~\mathrm{%s}", ":L~")
         utf = us.replace("frac", "tfrac").replace(r"\cdot", r"\cdot ")
         return utf if utf != r"~\mathrm{-}" else ""
 

@@ -9,7 +9,7 @@ Table of solutions used in the autosweep:
 
 Cost
 ----
- [ 0.333     1         123       ] [m**4] 
+ [ 0.333     1         123       ] [m**4]
 
 Free Variables
 --------------

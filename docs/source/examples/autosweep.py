@@ -1,4 +1,5 @@
 "Show autosweep_1d functionality"
+import cPickle as pickle
 import numpy as np
 import gpkit
 from gpkit import units, Variable, Model
@@ -28,6 +29,9 @@ assert (sol1["cost"] == sol1(A**2)).all()
 # the cost estimate is the logspace mean of its upper and lower bounds
 np.testing.assert_allclose((np.log(mag(cost_lb)) + np.log(mag(cost_ub)))/2,
                            np.log(mag(cost_estimate)))
+# save autosweep to a file and retrieve it
+bst1.save("autosweep.p")
+bst1_loaded = pickle.load(open("autosweep.p"))
 
 # this problem is two intersecting lines in logspace
 m2 = Model(A**2, [A >= (l/3)**2, A >= (l/3)**0.5 * units.m**1.5])

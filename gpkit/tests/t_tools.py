@@ -158,12 +158,12 @@ class TestTools(unittest.TestCase):
                       x >= 2,
                       y == 4])
         obj, c, ceq, DC, DCeq = generate_mfiles(m, writefiles=False)
-        self.assertEqual(obj, 'x(2)')
-        self.assertEqual(c, ['-x(2)**3.2 + 17*x(1) + x(1)**-0.2', '-x(2) + 2'])
-        self.assertEqual(ceq, ['-x(1) + 4'])
-        self.assertEqual(DC, ['-0.2*x(1).^-1.2 + 17,...\n          ' +
-                              '-3.2*x(2).^2.2', '0,...\n          -1'])
-        self.assertEqual(DCeq, ['-1,...\n            0'])
+        self.assertEqual(obj, 'x(1)')
+        self.assertEqual(c, ['-x(1)**3.2 + 17*x(2) + x(2)**-0.2', '-x(1) + 2'])
+        self.assertEqual(ceq, ['-x(2) + 4'])
+        self.assertEqual(DC, ['-3.2*x(1).^2.2,...\n          ' +
+                              '-0.2*x(2).^-1.2 + 17', '-1,...\n          0'])
+        self.assertEqual(DCeq, ['0,...\n            -1'])
 
     def test_fmincon_generator_logspace(self):
         "Test fmincon comparison tool (logspace)"
@@ -174,11 +174,11 @@ class TestTools(unittest.TestCase):
                       y == 4])
         obj, c, ceq, _, _ = generate_mfiles(m, writefiles=False, logspace=True)
         self.assertEqual(c, [
-            ('log( + 17.0*exp( +1 * x(1) +-3.2 * x(2) ) +'
-             ' 1.0*exp( +-0.2 * x(1) +-3.2 * x(2) ) )'),
-            'log( + 2.0*exp( +-1 * x(2) ) )'])
-        self.assertEqual(obj, 'log( + 1.0*exp( +1 * x(2) ) )')
-        self.assertEqual(ceq, ['log( + 0.25*exp( +1 * x(1) ) )'])
+            ('log( + 17.0*exp( +-3.2 * x(1) +1 * x(2) )'
+             ' + 1.0*exp( +-3.2 * x(1) +-0.2 * x(2) ) )'),
+            'log( + 2.0*exp( +-1 * x(1) ) )'])
+        self.assertEqual(obj, 'log( + 1.0*exp( +1 * x(1) ) )')
+        self.assertEqual(ceq, ['log( + 0.25*exp( +1 * x(2) ) )'])
 
 
 TESTS = [TestTools]

@@ -1,7 +1,7 @@
 
 Cost
 ----
- 1.293 [m**2] 
+ 1.293 [m**2]
 
 Free Variables
 --------------
@@ -11,6 +11,6 @@ d : [ 0.464     0.464     0.464    ]  [m]    Dimension Vector
 
 Sensitivities
 -------------
-   M : +0.67 Mass of Water in the Tank
-\rho : -0.67 Density of Water in the Tank
+   M : +0.67  Mass of Water in the Tank
+\rho : -0.67  Density of Water in the Tank
 

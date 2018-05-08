@@ -146,6 +146,30 @@ class BinarySweepTree(object):
             solution["cost"] = solution["cost"] * units
         return solution
 
+    def save(self, filename="autosweep.p"):
+        """Pickles the autosweep and saves it to a file.
+
+        The saved autosweep is identical except for two things:
+            - the cost is made unitless
+            - each solution's 'program' attribute is removed
+
+        Solution can then be loaded with e.g.:
+        >>> import cPickle as pickle
+        >>> pickle.load(open("autosweep.p"))
+        """
+        import cPickle as pickle
+        programs = []
+        costs = []
+        for sol in self.sollist:
+            programs.append(sol.program)
+            sol.program = None
+            costs.append(sol["cost"])
+            sol["cost"] = mag(sol["cost"])
+        pickle.dump(self, open(filename, "w"))
+        for i, sol in enumerate(self.sollist):
+            sol["cost"] = costs[i]
+            sol.program = programs[i]
+
 
 class SolutionOracle(object):
     "Acts like a SolutionArray for autosweeps"

@@ -6,6 +6,9 @@ import numpy as np
 from gpkit import Variable, VectorVariable, Model, ureg
 from gpkit.small_scripts import mag
 
+eps = 2e-4   # has to be quite small for consistent cvxopt printouts;
+             # normally you'd set this to something more like 1e-20
+
 
 class Beam(Model):
     """Discretization of the Euler beam equations for a distributed load.
@@ -32,13 +35,13 @@ class Beam(Model):
         q = VectorVariable(N, "q", 100*np.ones(N), "N/m",
                            "Distributed load at each point")
         V = VectorVariable(N, "V", "N", "Internal shear")
-        V_tip = Variable("V_{tip}", 0, "N", "Tip loading")
+        V_tip = Variable("V_{tip}", eps, "N", "Tip loading")
         M = VectorVariable(N, "M", "N*m", "Internal moment")
-        M_tip = Variable("M_{tip}", 0, "N*m", "Tip moment")
+        M_tip = Variable("M_{tip}", eps, "N*m", "Tip moment")
         th = VectorVariable(N, "\\theta", "-", "Slope")
-        th_base = Variable("\\theta_{base}", 0, "-", "Base angle")
+        th_base = Variable("\\theta_{base}", eps, "-", "Base angle")
         w = VectorVariable(N, "w", "m", "Displacement")
-        w_base = Variable("w_{base}", 0, "m", "Base deflection")
+        w_base = Variable("w_{base}", eps, "m", "Base deflection")
         # below: trapezoidal integration to form a piecewise-linear
         #        approximation of loading, shear, and so on
         # shear and moment increase from tip to base (left > right)
@@ -58,9 +61,8 @@ class Beam(Model):
 
 
 b = Beam(N=6, substitutions={"L": 6, "EI": 1.1e4, "q": 110*np.ones(6)})
-b.zero_lower_unbounded_variables()
 sol = b.solve(verbosity=0)
-print sol.summary()
+print sol.summary(maxcolumns=6)
 w_gp = sol("w")  # deflection along beam
 
 L, EI, q = sol("L"), sol("EI"), sol("q")

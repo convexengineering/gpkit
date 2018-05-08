@@ -153,16 +153,6 @@ class Model(CostedConstraintSet):
         cs.name, cs.num = self.name, self.num
         return cs
 
-    def zero_lower_unbounded_variables(self):
-        "Recursively substitutes 0 for variables that lack a lower bound"
-        zeros = True
-        while zeros:
-            # pylint: disable=no-member
-            gp = self.gp(allow_missingbounds=True)
-            zeros = {var: 0 for (var, bound) in gp.missingbounds
-                     if bound == "lower"}
-            self.substitutions.update(zeros)
-
     def subconstr_str(self, excluded=None):
         "The collapsed appearance of a ConstraintBase"
         return "%s_%s" % (self.name, self.num) if self.name else None
@@ -250,7 +240,7 @@ class Model(CostedConstraintSet):
                     else:
                         print("\nSolves with these constants relaxed:")
                     for (_, orig) in relaxed:
-                        print("  %s: relaxed from %-.7g to %-.7g"
+                        print("  %s: relaxed from %-.4g to %-.4g"
                               % (orig, mag(constsrelaxed.constants[orig.key]),
                                  mag(sol(orig))))
                     print
