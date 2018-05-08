@@ -63,4 +63,4 @@ def run(filename="TESTS", xmloutput=False, skipsolvers=None):
         # Dummy test in case all installed solvers are skipped.
         tests[0].test_dummy = lambda self: None
     from gpkit.tests.run_tests import run as run_
-    run_(tests=tests, unitless=False, xmloutput=xmloutput)
+    run_(tests=tests, xmloutput=xmloutput)

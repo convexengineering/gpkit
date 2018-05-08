@@ -228,20 +228,20 @@ class Mosek(SolverBackend):
             log("## SKIPPING MOSEK INSTALL: CTYPESGENCORE WAS NOT FOUND")
             return None
 
-        lib_dir = replacedir(pathjoin("gpkit", "_mosek", "lib"))
+        lib_dir = replacedir(pathjoin("_mosek", "lib"))
+        open(pathjoin(lib_dir, "__init__.py"), 'w').close()
+        build_dir = replacedir(pathjoin("_mosek", "build"))
+
         if "GPKITBUILD" in os.environ:
             solib_dir = replacedir(os.environ["GPKITBUILD"])
         else:
-            solib_dir = replacedir(pathjoin(os.path.expanduser("~"), ".gpkit"))
-        f = open(pathjoin(lib_dir, "__init__.py"), 'w')
-        f.close()
+            solib_dir = os.path.abspath(build_dir)
 
-        build_dir = replacedir(pathjoin("gpkit", "_mosek", "build"))
         log("#\n#   Copying expopt library files to", build_dir)
         expopt_build_files = []
         for old_location in self.expopt_files:
             new_location = pathjoin(build_dir, os.path.basename(old_location))
-            log("#f     Copying %s" % old_location)
+            log("#     Copying %s" % old_location)
             shutil.copyfile(old_location, new_location)
             if new_location[-2:] == ".c":
                 expopt_build_files.append(new_location)
@@ -275,11 +275,9 @@ class Mosek(SolverBackend):
             return False
 
         log("#\n#   Building Python bindings for expopt and Mosek...")
-        # mosek_h_path = pathjoin(lib_dir, "mosek_h.py")
-        built_expopt_h = call("python gpkit/modified_ctypesgen.py -a" +
+        built_expopt_h = call("python modified_ctypesgen.py -a" +
                               " -l " + pathjoin(solib_dir, "expopt.so").replace("\\", "/") +   # pylint: disable=line-too-long
                               ' -l "' + self.lib_path.replace("\\", "/") + '"' +
-                              # ' -o "' + mosek_h_path.replace("\\", "/") + '"'+
                               " -o "+pathjoin(lib_dir, "expopt_h.py") +
                               "    "+pathjoin(build_dir, "expopt.h"))
 
@@ -288,23 +286,13 @@ class Mosek(SolverBackend):
 
         return True
 
-def rebuild():
-    "Changes to the installed gpkit directory and runs build_gpkit()"
+
+def build():
+    "Builds GPkit"
     import gpkit
     log("# Moving to the directory from which GPkit was imported.")
+    start_dir = os.getcwd()
     os.chdir(gpkit.__path__[0])
-    build_gpkit()
-
-
-def build_gpkit():
-    "Builds GPkit"
-    print(__file__, os.path.dirname(__file__))
-    os.chdir(os.path.dirname(__file__))
-
-    if isfile("__init__.py"):
-        #call("ls")
-        log("#     Don't want to be in a folder with __init__.py, going up!")
-        os.chdir("..")
 
     log("Started building gpkit...\n")
 
@@ -329,14 +317,15 @@ def build_gpkit():
     log("\nFound the following solvers: " + settings["installed_solvers"])
 
     # Write settings
-    envpath = pathjoin("gpkit", "env")
+    envpath = "env"
     replacedir(envpath)
-    log("Replaced the directory gpkit/env\n")
-    settingspath = envpath + os.sep + "settings"
+    settingspath = pathjoin(envpath, "settings")
     with open(settingspath, "w") as f:
         for setting, value in settings.items():
             f.write("%s : %s\n" % (setting, value))
         f.write("\n")
 
-    with open("gpkit/build.log", "w") as f:
+    with open(pathjoin(envpath, "build.log"), "w") as f:
         f.write(LOGSTR)
+
+    os.chdir(start_dir)

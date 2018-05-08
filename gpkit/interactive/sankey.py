@@ -3,11 +3,11 @@ from collections import defaultdict
 import numpy as np
 from ipysankeywidget import SankeyWidget  # pylint: disable=import-error
 from ipywidgets import Layout
-from gpkit import ConstraintSet, Model
-from gpkit import GeometricProgram, SequentialGeometricProgram
-from gpkit.nomials.math import MonomialEquality
-from gpkit.small_classes import Count
-from gpkit import GPCOLORS
+from .. import ConstraintSet, Model
+from .. import GeometricProgram, SequentialGeometricProgram
+from ..nomials.math import MonomialEquality
+from ..small_classes import Count
+from .. import GPCOLORS
 
 
 INSENSITIVE = 1e-2

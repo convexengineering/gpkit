@@ -42,7 +42,7 @@ def import_tests():
     return tests
 
 
-def run(xmloutput=False, tests=None, unitless=True):
+def run(xmloutput=False, tests=None, verbosity=1):
     """Run all gpkit unit tests.
 
     Arguments
@@ -55,10 +55,7 @@ def run(xmloutput=False, tests=None, unitless=True):
     if xmloutput:
         run_tests(tests, xmloutput='test_reports')
     else:
-        run_tests(tests)
-    if unitless:
-        print("\n##################################"
-              "####################################")
+        run_tests(tests, verbosity=verbosity)
 
 if __name__ == '__main__':
     run()
