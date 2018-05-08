@@ -342,10 +342,11 @@ class SolutionArray(DictOfLists):
 
 # pylint: disable=too-many-statements,too-many-arguments
 # pylint: disable=too-many-branches,too-many-locals
-def results_table(data, title, minval=0, printunits=True, fixedcols=True,
+def results_table(data, title, printunits=True, fixedcols=True,
                   varfmt="%s : ", valfmt="%-.4g ", vecfmt="%-8.3g",
                   included_models=None, excluded_models=None, latex=False,
-                  sortbyvals=False, hidebelowminval=False, columns=None, **_):
+                  minval=0, sortbyvals=False, hidebelowminval=False,
+                  columns=None, maxcolumns=5, **_):
     """
     Pretty string representation of a dict of VarKeys
     Iterable values are handled specially (partial printing)
@@ -438,22 +439,18 @@ def results_table(data, title, minval=0, printunits=True, fixedcols=True,
             # TODO: pretty n-dimensional printing?
             if columns is not None:
                 ncols = columns
-            elif len(val.shape) > 1:
-                horiz_dim = None
-                for i, dim_size in enumerate(val.shape):
-                    if dim_size <= 5:  # arbitrary max ncols
-                        horiz_dim = i
-                if horiz_dim is None:
-                    ncols = 5
-                else:  # orient the matrix to show that order
-                    ncols = val.shape[horiz_dim]
-                    dim_order = range(len(val.shape)-1)
-                    dim_order.insert(horiz_dim, len(val.shape)-1)
-                    val = val.transpose(dim_order)
-            elif len(val) <= 5:
-                ncols = len(val)
             else:
+                last_dim_index = len(val.shape)-1
+                horiz_dim = last_dim_index  # default alignment
                 ncols = 1
+                for i, dim_size in enumerate(val.shape):
+                    if dim_size >= ncols and dim_size <= maxcolumns:
+                        horiz_dim = i
+                        ncols = dim_size
+                # align the array with horiz_dim by making it the last one
+                dim_order = range(last_dim_index)
+                dim_order.insert(horiz_dim, last_dim_index)
+                val = val.transpose(dim_order)
             flatval = val.flatten()
             vals = [vecfmt % v for v in flatval[:ncols]]
             bracket = " ] " if len(flatval) <= ncols else ""
@@ -476,7 +473,7 @@ def results_table(data, title, minval=0, printunits=True, fixedcols=True,
                     if values_remaining <= 0:
                         spaces = (-values_remaining
                                   * len(valstr)/(values_remaining + ncols))
-                        valstr = valstr + " "*spaces + " ] "
+                        valstr = valstr + "  ]" + " "*spaces
                     lines.append(["", valstr, "", ""])
         else:
             varstr = "$%s$" % varstr.replace(" : ", "")
