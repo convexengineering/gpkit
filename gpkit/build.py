@@ -241,7 +241,7 @@ class Mosek(SolverBackend):
         expopt_build_files = []
         for old_location in self.expopt_files:
             new_location = pathjoin(build_dir, os.path.basename(old_location))
-            log("#f     Copying %s" % old_location)
+            log("#     Copying %s" % old_location)
             shutil.copyfile(old_location, new_location)
             if new_location[-2:] == ".c":
                 expopt_build_files.append(new_location)
@@ -316,14 +316,13 @@ def build():
     log("\nFound the following solvers: " + settings["installed_solvers"])
 
     # Write settings
-    envpath = pathjoin("env")
+    envpath = "env"
     replacedir(envpath)
-    log("Replaced the directory gpkit/env\n")
-    settingspath = envpath + os.sep + "settings"
+    settingspath = pathjoin(envpath, "settings")
     with open(settingspath, "w") as f:
         for setting, value in settings.items():
             f.write("%s : %s\n" % (setting, value))
         f.write("\n")
 
-    with open(envpath + os.sep + "build.log", "w") as f:
+    with open(pathjoin(envpath, "build.log"), "w") as f:
         f.write(LOGSTR)
