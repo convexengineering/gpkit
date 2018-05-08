@@ -2,7 +2,7 @@
 import os
 from collections import defaultdict
 
-nearzero = 1.1373712581e-20
+nearzero = 1.1373712581e-20  # pylint: disable=invalid-name
 
 
 def load_settings(path=None):

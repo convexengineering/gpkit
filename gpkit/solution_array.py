@@ -257,7 +257,7 @@ class SolutionArray(DictOfLists):
         if len(self["constants"]) >= ntopsenss+2:
             senss_tables.append("topsensitivities")
         senss_str = self.table(showvars, senss_tables, nvars=ntopsenss,
-                                **kwargs)
+                               **kwargs)
         if senss_str:
             out += "\n" + senss_str
         return out
