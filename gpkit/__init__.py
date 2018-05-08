@@ -24,7 +24,7 @@ GPBLU = "#59ade4"
 GPCOLORS = ["#59ade4", "#FA3333"]
 
 if "just built!" in settings:
-    from tests.run_tests import run
+    from .tests.run_tests import run
     run(verbosity=1)
     print("""
 GPkit is now installed with solver(s) %s
