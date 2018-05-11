@@ -5,6 +5,7 @@ from gpkit.nomials import SignomialInequality, PosynomialInequality
 from gpkit.nomials import MonomialEquality
 from gpkit import Model
 from gpkit.constraints.tight import Tight
+from gpkit.constraints.loose import Loose
 from gpkit.tests.helpers import run_tests
 from gpkit.exceptions import InvalidGPConstraint
 from gpkit.constraints.relax import ConstraintsRelaxed
@@ -208,6 +209,37 @@ class TestSignomialInequality(unittest.TestCase):
         with self.assertRaises(InvalidGPConstraint):
             _ = sc.as_posyslt1()
 
+
+class TestLoose(unittest.TestCase):
+    """Test loose constraint set"""
+
+    def test_posyconstr_in_gp(self):
+        """Tests loose constraint set with solve()"""
+        x = Variable('x')
+        x_min = Variable('x_{min}', 2)
+        m = Model(x, [Loose([x >= x_min], raiseerror=True),
+                      x >= 1])
+        with self.assertRaises(ValueError):
+            m.solve(verbosity=0)
+        m.substitutions[x_min] = 0.5
+        self.assertAlmostEqual(m.solve(verbosity=0)["cost"], 1)
+
+    def test_posyconstr_in_sp(self):
+        x = Variable('x')
+        y = Variable('y')
+        x_min = Variable('x_min', 1)
+        y_min = Variable('y_min', 2)
+        with SignomialsEnabled():
+            sig_constraint = (x + y >= 3.5)
+        m = Model(x*y, [Loose([x >= y], raiseerror=True),
+                        x >= x_min, y >= y_min, sig_constraint])
+        with self.assertRaises(ValueError):
+            m.localsolve(verbosity=0)
+        m.substitutions[x_min] = 2
+        m.substitutions[y_min] = 1
+        self.assertAlmostEqual(m.localsolve(verbosity=0)["cost"], 2.5, 5)
+
+
 class TestTight(unittest.TestCase):
     """Test tight constraint set"""
 
@@ -263,7 +295,7 @@ class TestBounded(unittest.TestCase):
 
 
 TESTS = [TestConstraint, TestMonomialEquality, TestSignomialInequality,
-         TestTight, TestBounded]
+         TestTight, TestLoose, TestBounded]
 
 if __name__ == '__main__':
     run_tests(TESTS)

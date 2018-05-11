@@ -555,7 +555,8 @@ def results_table(data, title, printunits=True, fixedcols=True,
                 raise ValueError("Unexpected latex option, %s." % latex)
     if not latex:
         if lines:
-            maxlens = np.max([list(map(len, line)) for line in lines], axis=0)
+            maxlens = np.max([list(map(len, line)) for line in lines
+                              if line[0] != ("modelname",)], axis=0)
             if not fixedcols:
                 maxlens = [maxlens[0], 0, 0, 0]
             dirs = ['>', '<', '<', '<']

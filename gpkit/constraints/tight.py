@@ -9,9 +9,8 @@ class Tight(ConstraintSet):
     "ConstraintSet whose inequalities must result in an equality."
     reltol = 1e-6
 
-    def __init__(self, constraints, substitutions=None, reltol=None,
-                 raiseerror=False):
-        super(Tight, self).__init__(constraints, substitutions)
+    def __init__(self, constraints, reltol=None, raiseerror=False):
+        super(Tight, self).__init__(constraints)
         if reltol:
             self.reltol = reltol
         self.raiseerror = raiseerror

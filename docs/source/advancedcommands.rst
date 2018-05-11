@@ -92,7 +92,7 @@ Tight ConstraintSets
 Tight ConstraintSets will warn if any inequalities they contain are not
 tight (that is, the right side does not equal the left side) after solving. This
 is useful when you know that a constraint _should_ be tight for a given model,
-but reprenting it as an equality would be non-convex.
+but representing it as an equality would be non-convex.
 
 .. code-block:: python
 
@@ -103,6 +103,27 @@ but reprenting it as an equality would be non-convex.
     x = Variable('x')
     x_min = Variable('x_{min}', 2)
     m = Model(x, [Tight([x >= 1], reltol=1e-3),  # set the specific tolerance
+                  x >= x_min])
+    m.solve(verbosity=0)  # prints warning
+
+
+Loose ConstraintSets
+====================
+
+Loose ConstraintSets will warn if any GP-compatible constraints they contain are
+loose (that is, their sensitivity is below some threshold) after solving. This
+is useful when you know that a constraint _should_ be inactive for a given model,
+but represents an important model assumption.
+
+.. code-block:: python
+
+    from gpkit import Variable, Model
+    from gpkit.constraints.tight import Loose
+
+    Tight.reltol = 1e-4  # set the global tolerance of Tight
+    x = Variable('x')
+    x_min = Variable('x_{min}', 2)
+    m = Model(x, [Loose([x >= 1], senstol=1e-4),  # set the specific tolerance
                   x >= x_min])
     m.solve(verbosity=0)  # prints warning
 
