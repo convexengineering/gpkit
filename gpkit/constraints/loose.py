@@ -1,6 +1,5 @@
 "Implements Loose"
 from .set import ConstraintSet
-from ..nomials import SignomialInequality
 
 
 class Loose(ConstraintSet):
@@ -12,11 +11,6 @@ class Loose(ConstraintSet):
         if senstol:
             self.senstol = senstol
         self.raiseerror = raiseerror
-
-    def sens_from_dual(self, las, nus, result):
-        "Return sensitivities while capturing the relevant lambdas"
-        self.las = las
-        return super(Loose, self).sens_from_dual(las, nus, result)
 
     def process_result(self, result):
         "Checks that all constraints are satisfied with equality"
