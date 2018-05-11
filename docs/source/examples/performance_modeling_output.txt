@@ -23,11 +23,11 @@ Wfuel : [ 1.09      0.817     0.544     0.272    ]  [lbf]   fuel weight
 Sensitivities
 -------------
     | Aircraft/Fuselage
-  W : +0.97            weight
+  W : +0.97  weight
 
     | Aircraft/Wing
-  A : -0.67            aspect ratio
-rho : +0.43            areal density
+  A : -0.67  aspect ratio
+rho : +0.43  areal density
 
 Next Largest Sensitivities
 --------------------------
