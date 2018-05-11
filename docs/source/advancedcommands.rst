@@ -122,8 +122,8 @@ it represents an important model assumption (such as a fit only valid over a par
 
     Tight.reltol = 1e-4  # set the global tolerance of Tight
     x = Variable('x')
-    x_min = Variable('x_{min}', 2)
-    m = Model(x, [Loose([x >= 1], senstol=1e-4),  # set the specific tolerance
+    x_min = Variable('x_{min}', 1)
+    m = Model(x, [Loose([x >= 2], senstol=1e-4),  # set the specific tolerance
                   x >= x_min])
     m.solve(verbosity=0)  # prints warning
 
