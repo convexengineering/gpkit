@@ -91,7 +91,7 @@ Tight ConstraintSets
 
 Tight ConstraintSets will warn if any inequalities they contain are not
 tight (that is, the right side does not equal the left side) after solving. This
-is useful when you know that a constraint _should_ be tight for a given model,
+is useful when you know that a constraint *should* be tight for a given model,
 but representing it as an equality would be non-convex.
 
 .. code-block:: python
@@ -111,9 +111,9 @@ Loose ConstraintSets
 ====================
 
 Loose ConstraintSets will warn if any GP-compatible constraints they contain are
-loose (that is, their sensitivity is below some threshold) after solving. This
-is useful when you know that a constraint _should_ be inactive for a given model,
-but represents an important model assumption.
+not loose (that is, their sensitivity is above some threshold after solving). This
+is useful when you want a constraint to be inactive for a given model because
+it represents an important model assumption (such as a fit only valid over a particular interval).
 
 .. code-block:: python
 
