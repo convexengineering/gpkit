@@ -30,14 +30,14 @@ Code in this section uses the `CE solar model <https://github.com/convexengineer
 
 ::
 
-    (objective) adds +1 to the sensitivity of Wtotal_Mission/Aircraft
-    (objective) is Wtotal_Mission/Aircraft [lbf]
+    (objective) adds +1 to the sensitivity of Wtotal_Aircraft
+    (objective) is Wtotal_Aircraft [lbf] 
 
-    Ⓐ adds +2.71 to the overall sensitivity of Wtotal_Mission/Aircraft
-    Ⓐ is Wtotal_Mission/Aircraft <= 0.5*CL_Mission/FlightSegment/AircraftPerf/WingAero*S_Mission/Aircraft/Wing/Planform.2*V_Mission/FlightSegment/FlightState**2*rho_Mission/FlightSegment/FlightState
+    Ⓐ adds +0.0075 to the overall sensitivity of Wtotal_Aircraft
+    Ⓐ is Wtotal_Aircraft <= 0.5*CL_Mission/Climb/AircraftDrag/WingAero_(0,)*S_Aircraft/Wing/Planform.2*V_Mission/Climb_(0, 0)**2*rho_Mission/Climb_(0, 0) 
 
-    Ⓑ adds -3.71 to the overall sensitivity of Wtotal_Mission/Aircraft
-    Ⓑ is Wtotal_Mission/Aircraft >= W_Mission/Aircraft/Battery + W_Mission/Aircraft/Empennage + W_Mission/Aircraft/Motor + W_Mission/Aircraft/SolarCells + W_Mission/Aircraft/Wing + Wavn_Mission/Aircraft + Wpay_Mission/Aircraft
+    Ⓑ adds +0.0117 to the overall sensitivity of Wtotal_Aircraft
+    Ⓑ is Wtotal_Aircraft <= 0.5*CL_Mission/Climb/AircraftDrag/WingAero_(1,)*S_Aircraft/Wing/Planform.2*V_Mission/Climb_(0, 1)**2*rho_Mission/Climb_(0, 1) 
 
 
 Explanation
