@@ -16,12 +16,12 @@ Code in this section uses the `CE solar model <https://github.com/convexengineer
 
 .. code:: python
 
-    from solar import Mission
-    M = Mission(latitude=[20], sp=False)
-    M.cost = M.solar.Wtotal
-    del M.substitutions[M.solar.wing.planform.tau]
-    sol = M.solve("mosek")
-
+    from solar import *
+    Vehicle = Aircraft(Npod=1, sp = False)
+    M = Mission(Vehicle, latitude=[20])
+    M.cost = M[M.aircraft.Wtotal]
+    sol = M.solve()
+    
     from gpkit.interactive.sankey import Sankey
     Sankey(M).diagram(M.solar.Wtotal)
 
