@@ -21,9 +21,9 @@ Code in this section uses the `CE solar model <https://github.com/convexengineer
     M = Mission(Vehicle, latitude=[20])
     M.cost = M[M.aircraft.Wtotal]
     sol = M.solve()
-    
+
     from gpkit.interactive.sankey import Sankey
-    Sankey(M).diagram(M.solar.Wtotal)
+    Sankey(M).diagram(M.aircraft.Wtotal)
 
 .. figure:: figures/sankey/solar_wtotal.svg
     :width: 700 px
