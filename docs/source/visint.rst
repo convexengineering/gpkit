@@ -76,9 +76,9 @@ pressures on wingspan:
 
 .. code:: python
 
-    Sankey(M).sorted_by("constraints", 1)
+    Sankey(M).diagram(M.aircraft.b)
 
-.. figure:: figures/sankey/solar_constraints1.svg
+.. figure:: figures/sankey/solar_b.svg
     :width: 700 px
 
 Fixed
