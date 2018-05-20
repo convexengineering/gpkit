@@ -8,7 +8,7 @@ from .sgp import SequentialGeometricProgram
 from ..small_scripts import mag
 from ..tools.autosweep import autosweep_1d
 from ..exceptions import InvalidGPConstraint
-from .. import NamedVariables
+from .. import settings, NamedVariables
 from ..tools.docstring import expected_unbounded
 from .set import add_meq_bounds
 
@@ -83,9 +83,14 @@ class Model(CostedConstraintSet):
         CostedConstraintSet.__init__(self, cost, constraints, substitutions)
         if hasattr(self, "setup") and self.__class__.__doc__:
             if (("Unbounded" in self.__class__.__doc__ or
-                 "Bounded by" in self.__class__.__doc__) and
-                    "SKIP VERIFICATION" not in self.__class__.__doc__):
-                self.verify_docstring()
+                 "Bounded by" in self.__class__.__doc__)):
+                try:
+                    self.verify_docstring()
+                except (ValueError, AttributeError) as e:
+                    if settings.get("warn_on_unbounded_models", False):
+                        print("Boundedness verification warning: %s" % e)
+                    else:
+                        raise e
 
     gp = _progify_fctry(GeometricProgram)
     sp = _progify_fctry(SequentialGeometricProgram)
