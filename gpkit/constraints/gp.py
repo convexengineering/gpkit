@@ -102,6 +102,13 @@ class GeometricProgram(CostedConstraintSet, NomialData):
         self.A, self.missingbounds = genA(self.exps, self.varlocs,
                                           self.meq_idxs)
 
+    @property
+    def varkeys(self):
+        "The NomialData's varkeys, created when necessary for a substitution."
+        if self._varkeys is None:
+            self._varkeys = KeySet(self.varlocs)
+        return self._varkeys
+
     # pylint: disable=too-many-statements, too-many-locals
     def solve(self, solver=None, verbosity=1, warn_on_check=False,
               process_result=True, **kwargs):
