@@ -5,7 +5,7 @@ from collections import defaultdict
 import numpy as np
 from ..nomials import NomialData
 from ..small_classes import CootMatrix, SolverLog, Numbers
-from ..keydict import KeyDict
+from ..keydict import KeyDict, KeySet
 from ..small_scripts import mag
 from ..solution_array import SolutionArray
 from .costed import CostedConstraintSet
