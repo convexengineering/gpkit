@@ -128,6 +128,7 @@ class SolutionArray(DictOfLists):
                 return False
         return True
 
+    # pylint: disable=too-many-locals, too-many-branches
     def diff(self, sol, min_percent=1.0,
              show_sensitivities=True, min_senss_delta=0.1):
         """Outputs differences between this solution and another
@@ -152,7 +153,8 @@ class SolutionArray(DictOfLists):
         selfvars = set(self["variables"])
         solvars = set(sol["variables"])
         sol_diff = {
-            key: 100*(sol(key)/self(key) - 1)
+            key: (100*(sol(key)/self(key) - 1)
+                  if key.shape or self(key) != 0 else np.inf)
             for key in selfvars.intersection(solvars)
         }
         lines = results_table(sol_diff, "Solution difference", sortbyvals=True,
@@ -188,11 +190,19 @@ class SolutionArray(DictOfLists):
                     primal_lines + 1,
                     "(positive means the argument has a higher sensitivity)")
             elif senss_delta:
-                values = np.array(senss_delta.values())
-                i = np.unravel_index(np.argmax(np.abs(values)), values.shape)
+                absmaxvalue, maxvalue = 0, 0
+                for valarray in senss_delta.values():
+                    if not getattr(valarray, "shape", None):
+                        value = valarray
+                    else:
+                        value = valarray[np.argmax(np.abs(valarray))]
+                    absvalue = abs(value)
+                    if absvalue > absmaxvalue:
+                        maxvalue = value
+                        absmaxvalue = absvalue
                 lines.insert(
                     primal_lines + 2,
-                    "The largest sensitivity delta is %+g" % values[i])
+                    "The largest sensitivity delta is %+g" % maxvalue)
 
         if selfvars-solvars:
             lines.append("Variable(s) of this solution"
