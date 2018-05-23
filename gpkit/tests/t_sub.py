@@ -4,7 +4,7 @@ import numpy as np
 import numpy.testing as npt
 from ad import adnumber, ADV
 import gpkit
-from gpkit import SignomialsEnabled
+from gpkit import SignomialsEnabled, reset_modelnumbers
 from gpkit import Variable, VectorVariable, Model, Signomial
 from gpkit.small_scripts import mag
 from gpkit.tests.helpers import run_tests
@@ -318,13 +318,16 @@ class TestModelSubs(unittest.TestCase):
             almostequal(1/yard/a.solve(verbosity=0)["cost"], 1, 5)
             almostequal(1*cm/b.solve(verbosity=0)["cost"], 1, 5)
             almostequal(1*cm/yard/concat_cost, 1, 5)
+        reset_modelnumbers()
         a1, b1 = Above(), Below()
+        self.assertEqual(a1["x"].key.modelnums, [0])
         b1.subinplace({b1["x"]: a1["x"]})
         m = Model(a1["x"], [a1, b1])
         sol = m.solve(verbosity=0)
         if not isinstance(m["x"].key.units, str):
             almostequal(1*cm/sol["cost"], 1, 5)
         a1, b1 = Above(), Below()
+        self.assertEqual(a1["x"].key.modelnums, [1])
         a1.subinplace({a1["x"]: b1["x"]})
         m = Model(b1["x"], [a1, b1])
         m.cost = m["x"]
