@@ -166,11 +166,17 @@ class SolutionArray(DictOfLists):
             lines.insert(2, "The largest difference is %g%%" % values[i])
 
         if show_sensitivities:
-            senss_delta = {
-                key: (sol["sensitivities"]["variables"][key]
-                      - self["sensitivities"]["variables"][key])
-                for key in selfvars.intersection(solvars)
-            }
+            senss_delta = {}
+            for key in selfvars.intersection(solvars):
+                if key in sol["sensitivities"]["variables"]:
+                    senss_delta[key] = (
+                        sol["sensitivities"]["variables"][key]
+                        - self["sensitivities"]["variables"][key])
+                elif key in sol["sensitivities"]["variables"]:
+                    print ("Key %s is not in this solution's sensitivities"
+                           " but is in those of the argument.")
+                else:  # for variables that just aren't in any constraints
+                    senss_delta[key] = 0
 
             primal_lines = len(lines)
             lines += results_table(senss_delta, "Solution sensitivity delta",
