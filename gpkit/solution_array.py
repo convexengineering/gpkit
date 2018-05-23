@@ -128,7 +128,7 @@ class SolutionArray(DictOfLists):
                 return False
         return True
 
-    # pylint: disable=too-many-locals, too-many-branches
+    # pylint: disable=too-many-locals, too-many-branches, too-many-statements
     def diff(self, sol, min_percent=1.0,
              show_sensitivities=True, min_senss_delta=0.1):
         """Outputs differences between this solution and another
