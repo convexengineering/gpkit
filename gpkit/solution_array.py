@@ -152,11 +152,15 @@ class SolutionArray(DictOfLists):
             sol = pickle.load(open(sol))
         selfvars = set(self["variables"])
         solvars = set(sol["variables"])
-        sol_diff = {
-            key: (100*(sol(key)/self(key) - 1)
-                  if key.shape or self(key) != 0 else np.inf)
-            for key in selfvars.intersection(solvars)
-        }
+        sol_diff = {}
+        for key in selfvars.intersection(solvars):
+            selfval, otherval = self(key), sol(key)
+            if hasattr(selfval, "shape") or selfval != 0:
+                sol_diff[key] = 100*(otherval/selfval - 1)
+            elif otherval == 0:  # both are scalar zeroes
+                sol_diff[key] = 0
+            else:  # just selfval is a scalar zero
+                sol_diff[key] = otherval*np.inf
         lines = results_table(sol_diff, "Solution difference", sortbyvals=True,
                               valfmt="%+6.1f%%  ", vecfmt="%+6.1f%% ",
                               printunits=False, minval=min_percent)
