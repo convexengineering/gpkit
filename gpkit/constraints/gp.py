@@ -104,7 +104,7 @@ class GeometricProgram(CostedConstraintSet, NomialData):
 
     @property
     def varkeys(self):
-        "The NomialData's varkeys, created when necessary for a substitution."
+        "The GP's varkeys, created when necessary."
         if self._varkeys is None:
             self._varkeys = KeySet(self.varlocs)
         return self._varkeys
