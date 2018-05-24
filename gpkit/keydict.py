@@ -5,6 +5,7 @@ from .small_classes import Numbers, Quantity
 from .small_scripts import is_sweepvar, isnan
 
 DIMLESS_QUANTITY = Quantity(1, "dimensionless")
+INT_DTYPE = np.dtype(int)
 
 
 def clean_value(key, value):
@@ -211,6 +212,8 @@ class KeyDict(dict):
                                                          dtype=value.dtype))
                 self[key][goodvals] = value[goodvals]
             else:
+                if hasattr(value, "dtype") and value.dtype == INT_DTYPE:
+                    value = np.array(value, "f")
                 dict.__setitem__(self, key, value)
 
     def update_keymap(self):

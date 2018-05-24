@@ -128,6 +128,7 @@ class SolutionArray(DictOfLists):
                 return False
         return True
 
+    # pylint: disable=too-many-locals, too-many-branches, too-many-statements
     def diff(self, sol, min_percent=1.0,
              show_sensitivities=True, min_senss_delta=0.1):
         """Outputs differences between this solution and another
@@ -151,10 +152,15 @@ class SolutionArray(DictOfLists):
             sol = pickle.load(open(sol))
         selfvars = set(self["variables"])
         solvars = set(sol["variables"])
-        sol_diff = {
-            key: 100*(sol(key)/self(key) - 1)
-            for key in selfvars.intersection(solvars)
-        }
+        sol_diff = {}
+        for key in selfvars.intersection(solvars):
+            selfval, otherval = self(key), sol(key)
+            if hasattr(selfval, "shape") or selfval != 0:
+                sol_diff[key] = 100*(otherval/selfval - 1)
+            elif otherval == 0:  # both are scalar zeroes
+                sol_diff[key] = 0
+            else:  # just selfval is a scalar zero
+                sol_diff[key] = otherval*np.inf
         lines = results_table(sol_diff, "Solution difference", sortbyvals=True,
                               valfmt="%+6.1f%%  ", vecfmt="%+6.1f%% ",
                               printunits=False, minval=min_percent)
@@ -166,11 +172,17 @@ class SolutionArray(DictOfLists):
             lines.insert(2, "The largest difference is %g%%" % values[i])
 
         if show_sensitivities:
-            senss_delta = {
-                key: (sol["sensitivities"]["variables"][key]
-                      - self["sensitivities"]["variables"][key])
-                for key in selfvars.intersection(solvars)
-            }
+            senss_delta = {}
+            for key in selfvars.intersection(solvars):
+                if key in sol["sensitivities"]["variables"]:
+                    senss_delta[key] = (
+                        sol["sensitivities"]["variables"][key]
+                        - self["sensitivities"]["variables"][key])
+                elif key in sol["sensitivities"]["variables"]:
+                    print ("Key %s is not in this solution's sensitivities"
+                           " but is in those of the argument.")
+                else:  # for variables that just aren't in any constraints
+                    senss_delta[key] = 0
 
             primal_lines = len(lines)
             lines += results_table(senss_delta, "Solution sensitivity delta",
@@ -182,11 +194,19 @@ class SolutionArray(DictOfLists):
                     primal_lines + 1,
                     "(positive means the argument has a higher sensitivity)")
             elif senss_delta:
-                values = np.array(senss_delta.values())
-                i = np.unravel_index(np.argmax(np.abs(values)), values.shape)
+                absmaxvalue, maxvalue = 0, 0
+                for valarray in senss_delta.values():
+                    if not getattr(valarray, "shape", None):
+                        value = valarray
+                    else:
+                        value = valarray[np.argmax(np.abs(valarray))]
+                    absvalue = abs(value)
+                    if absvalue > absmaxvalue:
+                        maxvalue = value
+                        absmaxvalue = absvalue
                 lines.insert(
                     primal_lines + 2,
-                    "The largest sensitivity delta is %+g" % values[i])
+                    "The largest sensitivity delta is %+g" % maxvalue)
 
         if selfvars-solvars:
             lines.append("Variable(s) of this solution"
