@@ -89,7 +89,7 @@ can how that sensitivity comes together:
 
 .. code:: python
 
-    Sankey(M).diagram(M.mission[0].loading[1].vgust)
+Sankey(M).diagram(M['vgust'])
 
 .. figure:: figures/sankey/solar_vgust.svg
     :width: 700 px
@@ -106,9 +106,9 @@ for this are shown next to their labels.
 
 .. code:: python
 
-    Sankey(M).diagram(M["CLstall"])
+    Sankey(M).diagram(M["CL"])
 
-.. figure:: figures/sankey/solar_clstall.svg
+.. figure:: figures/sankey/solar_cl.svg
     :width: 700 px
 
 
