@@ -12,7 +12,7 @@ Requirements
 Example
 -------
 
-Code in this section uses the `CE solar model <https://github.com/convexengineering/solar>`__
+Code in this section uses the `CE solar model <https://github.com/convexengineering/solar/tree/gpkitdocs>`__
 
 .. code:: python
 
