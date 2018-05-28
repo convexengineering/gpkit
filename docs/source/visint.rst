@@ -106,9 +106,9 @@ for this are shown next to their labels.
 
 .. code:: python
 
-    Sankey(M).diagram(M["CL"])
+    Sankey(M).sorted_by('constraints', 11)
 
-.. figure:: figures/sankey/solar_cl.svg
+.. figure:: figures/sankey/solar_tmin.svg
     :width: 700 px
 
 
