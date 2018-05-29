@@ -12,32 +12,32 @@ Requirements
 Example
 -------
 
-Code in this section uses the `CE solar model <https://github.com/convexengineering/solar>`__
+Code in this section uses the `CE solar model <https://github.com/convexengineering/solar/tree/gpkitdocs>`__
 
 .. code:: python
 
-    from solar import Mission
-    M = Mission(latitude=[20], sp=False)
-    M.cost = M.solar.Wtotal
-    del M.substitutions[M.solar.wing.planform.tau]
-    sol = M.solve("mosek")
+    from solar import *
+    Vehicle = Aircraft(Npod=1, sp = False)
+    M = Mission(Vehicle, latitude=[20])
+    M.cost = M[M.aircraft.Wtotal]
+    sol = M.solve()
 
     from gpkit.interactive.sankey import Sankey
-    Sankey(M).diagram(M.solar.Wtotal)
+    Sankey(M).diagram(M.aircraft.Wtotal)
 
 .. figure:: figures/sankey/solar_wtotal.svg
     :width: 700 px
 
 ::
 
-    (objective) adds +1 to the sensitivity of Wtotal_Mission/Aircraft
-    (objective) is Wtotal_Mission/Aircraft [lbf]
+    (objective) adds +1 to the sensitivity of Wtotal_Aircraft
+    (objective) is Wtotal_Aircraft [lbf] 
 
-    Ⓐ adds +2.71 to the overall sensitivity of Wtotal_Mission/Aircraft
-    Ⓐ is Wtotal_Mission/Aircraft <= 0.5*CL_Mission/FlightSegment/AircraftPerf/WingAero*S_Mission/Aircraft/Wing/Planform.2*V_Mission/FlightSegment/FlightState**2*rho_Mission/FlightSegment/FlightState
+    Ⓐ adds +0.0075 to the overall sensitivity of Wtotal_Aircraft
+    Ⓐ is Wtotal_Aircraft <= 0.5*CL_Mission/Climb/AircraftDrag/WingAero_(0,)*S_Aircraft/Wing/Planform.2*V_Mission/Climb_(0, 0)**2*rho_Mission/Climb_(0, 0) 
 
-    Ⓑ adds -3.71 to the overall sensitivity of Wtotal_Mission/Aircraft
-    Ⓑ is Wtotal_Mission/Aircraft >= W_Mission/Aircraft/Battery + W_Mission/Aircraft/Empennage + W_Mission/Aircraft/Motor + W_Mission/Aircraft/SolarCells + W_Mission/Aircraft/Wing + Wavn_Mission/Aircraft + Wpay_Mission/Aircraft
+    Ⓑ adds +0.0117 to the overall sensitivity of Wtotal_Aircraft
+    Ⓑ is Wtotal_Aircraft <= 0.5*CL_Mission/Climb/AircraftDrag/WingAero_(1,)*S_Aircraft/Wing/Planform.2*V_Mission/Climb_(0, 1)**2*rho_Mission/Climb_(0, 1) 
 
 
 Explanation
@@ -76,9 +76,9 @@ pressures on wingspan:
 
 .. code:: python
 
-    Sankey(M).sorted_by("constraints", 1)
+    Sankey(M).diagram(M.aircraft.b)
 
-.. figure:: figures/sankey/solar_constraints1.svg
+.. figure:: figures/sankey/solar_b.svg
     :width: 700 px
 
 Fixed
@@ -89,7 +89,7 @@ can how that sensitivity comes together:
 
 .. code:: python
 
-    Sankey(M).diagram(M.mission[0].loading[1].vgust)
+Sankey(M).diagram(M['vgust'])
 
 .. figure:: figures/sankey/solar_vgust.svg
     :width: 700 px
@@ -106,9 +106,9 @@ for this are shown next to their labels.
 
 .. code:: python
 
-    Sankey(M).diagram(M["CLstall"])
+    Sankey(M).sorted_by('constraints', 11)
 
-.. figure:: figures/sankey/solar_clstall.svg
+.. figure:: figures/sankey/solar_tmin.svg
     :width: 700 px
 
 
