@@ -158,3 +158,4 @@ class ConstantsRelaxed(ConstraintSet):
         for const, origvar in self._unrelaxmap.items():
             csenss[origvar] = csenss[const]
             del csenss[const]
+            
