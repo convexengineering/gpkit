@@ -1,9 +1,11 @@
+"Implements the relaxed constants SP solution algorithm"
+
 from gpkit import Model
 from gpkit.constraints.relax import ConstantsRelaxed
 
 def relaxed_constants(model, include_only=None, exclude=None):
     """
-    Method to precondition an SP so it solves with a relaxed constants algorithim
+    Method to precondition an SP so it solves with a relaxed constants algorithm
 
     ARGUMENTS
     ---------
@@ -33,7 +35,8 @@ def post_process(sol):
     """
     print "Checking for relaxed constants..."
     for i in range(len(sol.program.gps)):
-        varkeys = [k for k in sol.program.gps[i].varlocs if "Relax" in k.models and sol.program.gps[i].result(k) >= 1.00001]
+        varkeys = [k for k in sol.program.gps[i].varlocs if "Relax" in k.models and 
+                        sol.program.gps[i].result(k) >= 1.00001]
         if varkeys:
             print "GP iteration %s has relaxed constants" % i
             print sol.program.gps[i].result.table(varkeys)
