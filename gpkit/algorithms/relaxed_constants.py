@@ -36,8 +36,8 @@ def post_process(sol):
     print "Checking for relaxed constants..."
     for i in range(len(sol.program.gps)):
         varkeys = [k for k in sol.program.gps[i].varlocs
-                    if "Relax" in k.models 
-                    and sol.program.gps[i].result(k) >= 1.00001]
+                   if "Relax" in k.models
+                   and sol.program.gps[i].result(k) >= 1.00001]
         if varkeys:
             print "GP iteration %s has relaxed constants" % i
             print sol.program.gps[i].result.table(varkeys)
