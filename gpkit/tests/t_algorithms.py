@@ -27,7 +27,7 @@ class TestRelaxed(unittest.TestCase):
         RCm = RelaxedConstantsModel(m)
         sol = m.localsolve()
         RCsol = RCm.localsolve()
-        self.assertAlmostEqual(sol['cost'], RCsol['cost'])
+        self.assertAlmostEqual(sol['cost'], RCsol['cost'], 3)
 
 TESTS = [TestRelaxed]
 

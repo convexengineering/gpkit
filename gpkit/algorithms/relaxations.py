@@ -4,7 +4,7 @@ from gpkit import Model
 from gpkit.constraints.relax import ConstantsRelaxed
 
 class RelaxedConstantsModel(Model):
-    def setup(self, model, include_only=None, exclude_only=None):
+    def __init__(self, model, include_only=None, exclude_only=None):
         """
         Creating an identical model with relaxed constants
 
@@ -20,11 +20,11 @@ class RelaxedConstantsModel(Model):
         self.exclude_only = exclude_only
         if model.substitutions:
             constsrelaxed = ConstantsRelaxed(model, self.include_only, self.exclude_only)
-            feas = Model(constsrelaxed.relaxvars.prod()**20 * model.cost,
-                         constsrelaxed)
+            cost = constsrelaxed.relaxvars.prod()**20 * model.cost
         else:
-            feas = Model(model.cost, model)
-        return feas
+            constsrelaxed = model
+            cost = model.cost
+        Model.__init__(self, cost, constsrelaxed)
 
 # class RelaxedConstraintsModel(Model):
 #     def setup(self, model):
