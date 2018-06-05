@@ -1,27 +1,33 @@
-"""Unit tests for algorithms using SimPleAC and """
+"""Unit tests for relaxation algorithms"""
 import unittest
 
-from gpkit import Variable, Model, VectorVariable
-from gpkit.algorithms.relaxations import ConstraintsRelaxed, ConstantsRelaxed
-import gpkit
+from gpkit import Variable, Model, SignomialsEnabled
+from gpkit.algorithms.relaxations import RelaxedConstantsModel
 from gpkit.tests.helpers import run_tests
-
-# Importing testing models
-#from gpkitmodels.SP.SimPleAC.SimPleAC import SimPleAC
 
 
 class TestRelaxed(unittest.TestCase):
+    """Tests for different relaxations"""
     def dummytest(self):
-        self.assertAlmostEqual(1,1)
+        self.assertAlmostEqual(1, 1)
 
-#     """Tests for different relaxations"""
-#     def test_SP_relaxation(self):
-#         m = SimPleAC()
-#         m.cost = m['W_f']
-#         RelaxedConstraints = ConstraintsRelaxed(m)
-#         RelaxedConstants = R
-#
-#         self.assertAlmostEqual(m2.solve(verbosity=0)(x), 3, 5)
+    def test_constants_relaxation(self):
+        ujet = Variable("ujet")
+        PK = Variable("PK")
+
+        # Constants
+        Dp = Variable("Dp", 0.662)
+        fBLI = Variable("fBLI")
+        fsurf = Variable("fsurf", 0.836)
+        mdot = Variable("mdot", 1/0.7376)
+
+        with SignomialsEnabled():
+            m = Model(PK, [mdot*ujet + fBLI*Dp >= 1,
+                           PK >= 0.5*mdot*ujet*(2 + ujet) + fBLI*fsurf*Dp])
+        RCm = RelaxedConstantsModel(m)
+        sol = m.localsolve()
+        RCsol = RCm.localsolve()
+        self.assertAlmostEqual(sol['cost'], RCsol['cost'])
 
 TESTS = [TestRelaxed]
 
