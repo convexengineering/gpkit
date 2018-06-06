@@ -2,7 +2,7 @@
 import unittest
 from gpkit import Variable, SignomialsEnabled, Posynomial, VectorVariable
 from gpkit.nomials import SignomialInequality, PosynomialInequality
-from gpkit.nomials import MonomialEquality, NomialArray
+from gpkit.nomials import MonomialEquality
 from gpkit import Model
 from gpkit.constraints.tight import Tight
 from gpkit.constraints.loose import Loose
@@ -55,7 +55,7 @@ class TestConstraint(unittest.TestCase):
         y = Variable('y')
         z = Variable('z')
         with SignomialsEnabled():
-            m = Model(x, [x+y >= z],{z:2})
+            m = Model(x, [x+y >= z], {z:2})
         r1 = ConstantsRelaxed(m)
         r2 = ConstraintsRelaxed(m)
         r3 = ConstraintsRelaxedEqually(m)

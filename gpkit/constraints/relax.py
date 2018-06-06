@@ -79,7 +79,7 @@ class ConstraintsRelaxed(ConstraintSet):
         relconstrs = []
         N = len(constraints)
         with NamedVariables("Relax"):
-            self.relaxvars = VectorVariable(N,"C")
+            self.relaxvars = VectorVariable(N, "C")
         i = Count()
         with SignomialsEnabled():
             for constr in constraints.flat(constraintsets=False):
