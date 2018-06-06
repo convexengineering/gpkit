@@ -30,13 +30,24 @@ class ConstraintsRelaxedEqually(ConstraintSet):
         if not isinstance(constraints, ConstraintSet):
             constraints = ConstraintSet(constraints)
         substitutions = dict(constraints.substitutions)
-        posynomials = constraints.as_posyslt1()
+        relconstrs = []
         with NamedVariables("Relax"):
             self.relaxvar = Variable("C")
-        ConstraintSet.__init__(self,
-                               [[p <= self.relaxvar for p in posynomials],
-                                self.relaxvar >= 1], substitutions)
+        for constr in constraints.flat(constraintsets=False):
+            if constr.oper == ">=":
+                relconstrs.append(self.relaxvar*constr.left >= constr.right)
+            elif constr.oper == "<=":
+                relconstrs.append(constr.left <= self.relaxvar*constr.right)
+            elif constr.oper == "=":
+                relconstrs.append(constr.left <= self.relaxvar*constr.right)
+                relconstrs.append(self.relaxvar*constr.left >= constr.right)
+            else:
+                raise ValueError("Constraint had unknown operator %s."
+                                 " Cannot relax the constraint %s"
+                                 % constr.oper, constr)
 
+        ConstraintSet.__init__(self, [relconstrs,
+                                      self.relaxvar >= 1], substitutions)
 
 class ConstraintsRelaxed(ConstraintSet):
     """Relax constraints, as in Eqn. 11 of [Boyd2007].
