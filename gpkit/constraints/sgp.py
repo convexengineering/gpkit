@@ -135,18 +135,13 @@ class SequentialGeometricProgram(CostedConstraintSet):
             prevcost, cost = cost, result["cost"]
             if prevcost is None or cost is None:
                 rel_improvement = None
-            elif prevcost < 0.99*cost:  # cost is increasing? blame SigEqs
-                raise RuntimeWarning("SP is not converging! Last GP iteration "
-                                     "had a higher cost (%.2g) than the"
-                                     " previous one (%.2g),"
-                                     " so solving has been halted, and results"
-                                     " for each iteration stored in"
-                                     " (Model).program.results."
-                                     " If your model contains"
-                                     " SignomialEqualities, note that"
-                                     " convergence is not guaranteed: try"
-                                     " replacing any SigEqs you can and"
-                                     " solving again." % (cost, prevcost))
+            elif prevcost < 0.99*cost:
+                print("SP is not converging! Last GP iteration had a higher"
+                      " cost (%.2g) than the previous one (%.2g). Results for"
+                      " each iteration are in (Model).program.results. If your"
+                      " model contains SignomialEqualities, note that"
+                      " convergence is not guaranteed: try replacing any"
+                      " SigEqs you can and solving again." % (cost, prevcost))
             else:
                 rel_improvement = abs(prevcost-cost)/(prevcost + cost)
         # solved successfully!
