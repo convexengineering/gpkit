@@ -2,13 +2,14 @@
 import unittest
 from gpkit import Variable, SignomialsEnabled, Posynomial, VectorVariable
 from gpkit.nomials import SignomialInequality, PosynomialInequality
-from gpkit.nomials import MonomialEquality
+from gpkit.nomials import MonomialEquality, NomialArray
 from gpkit import Model
 from gpkit.constraints.tight import Tight
 from gpkit.constraints.loose import Loose
 from gpkit.tests.helpers import run_tests
 from gpkit.exceptions import InvalidGPConstraint
-from gpkit.constraints.relax import ConstraintsRelaxed
+from gpkit.constraints.relax import ConstraintsRelaxed, \
+                                    ConstraintsRelaxedEqually, ConstantsRelaxed
 from gpkit.constraints.bounded import Bounded
 import gpkit
 
@@ -48,6 +49,19 @@ class TestConstraint(unittest.TestCase):
         rc = ConstraintsRelaxed(m)
         m2 = Model(rc.relaxvars.prod() * x**0.01, rc)
         self.assertAlmostEqual(m2.solve(verbosity=0)(x), 3, 5)
+
+    def test_sp_relaxation(self):
+        x = Variable('x')
+        y = Variable('y')
+        z = Variable('z')
+        with SignomialsEnabled():
+            m = Model(x, [x+y >= z],{z:2})
+        r1 = ConstantsRelaxed(m)
+        r2 = ConstraintsRelaxed(m)
+        r3 = ConstraintsRelaxedEqually(m)
+        self.assertEqual(len(r1.varkeys), 5)
+        self.assertEqual(len(r2.varkeys), 4)
+        self.assertEqual(len(r3.varkeys), 4)
 
     def test_constraintget(self):
         x = Variable("x")
