@@ -11,6 +11,7 @@ from .repr_conventions import unitstr
 VALSTR_REPLACES = [
     ("+nan", " - "),
     ("nan", " - "),
+    ("-nan", " - "),
     ("+0 ", " 0 "),
     ("+0.00 ", " 0.00 "),
     ("-0.00 ", " 0.00 "),

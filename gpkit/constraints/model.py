@@ -61,18 +61,17 @@ class Model(CostedConstraintSet):
                 cs = self.setup(*args, **kwargs)  # pylint: disable=no-member
                 if (isinstance(cs, tuple) and len(cs) == 2
                         and isinstance(cs[1], dict)):
-                    constraints, substitutions = cs
+                    constraints, substitutions = cs  # TODO: remove
                 else:
                     constraints = cs
                 from .. import NAMEDVARS, MODELS, MODELNUMS
                 setup_vars = NAMEDVARS[tuple(MODELS), tuple(MODELNUMS)]
                 self.name, self.num = MODELS[-1], MODELNUMS[-1]
                 self.naming = (tuple(MODELS), tuple(MODELNUMS))
-            cost = self.cost
-        else:
-            if args and not substitutions:
-                # backwards compatibility: substitutions as third arg
-                substitutions, = args
+            cost = self.cost  # TODO: remove
+        elif args and not substitutions:
+            # backwards compatibility: substitutions as third arg
+            substitutions, = args
 
         cost = cost or Monomial(1)
         constraints = constraints or []
