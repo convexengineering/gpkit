@@ -258,11 +258,11 @@ class Model(CostedConstraintSet):
                 except InvalidGPConstraint:
                     sol = feas.localsolve(**solveargs)
                 relaxed = get_relaxed(sol(constrsrelaxed.relaxvars),
-                                      range(len(feas[0][0][0])))
+                                      range(len(feas[0][0])))
                 if relaxed:
                     print("\nSolves with these constraints relaxed:")
                     for relaxval, i in relaxed:
-                        constraint = feas[0][0][0][i]
+                        constraint = feas[0][0][i]
                         relax_percent = "%i%%" % (0.5+(relaxval-1)*100)
                         print(" %3i: %5s relaxed, from %s <= 1\n"
                               "                       to %s <= %.4g"
