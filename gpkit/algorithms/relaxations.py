@@ -4,22 +4,23 @@ from gpkit import Model
 from gpkit.constraints.relax import ConstantsRelaxed
 
 class RelaxedConstantsModel(Model):
+    """
+    Creating an identical model with relaxed constants
+
+    ARGUMENTS
+    ---------
+    model: the model to solve with relaxed constants
+
+    RETURNS
+    -------
+    feas: the input model with relaxed constants and a new objective
+    """
     def __init__(self, model, include_only=None, exclude_only=None):
-        """
-        Creating an identical model with relaxed constants
-
-        ARGUMENTS
-        ---------
-        model: the model to solve with relaxed constants
-
-        RETURNS
-        -------
-        feas: the input model with relaxed constants and a new objective
-        """
         self.include_only = include_only
         self.exclude_only = exclude_only
         if model.substitutions:
-            constsrelaxed = ConstantsRelaxed(model, self.include_only, self.exclude_only)
+            constsrelaxed = ConstantsRelaxed(model, self.include_only,
+                                             self.exclude_only)
             cost = constsrelaxed.relaxvars.prod()**20 * model.cost
         else:
             constsrelaxed = model

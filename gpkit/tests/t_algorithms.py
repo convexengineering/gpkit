@@ -8,9 +8,6 @@ from gpkit.tests.helpers import run_tests
 
 class TestRelaxed(unittest.TestCase):
     """Tests for different relaxations"""
-    def dummytest(self):
-        self.assertAlmostEqual(1, 1)
-
     def test_constants_relaxation(self):
         ujet = Variable("ujet")
         PK = Variable("PK")
