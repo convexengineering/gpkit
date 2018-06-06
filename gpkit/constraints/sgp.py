@@ -133,7 +133,7 @@ class SequentialGeometricProgram(CostedConstraintSet):
                 result["cost"] = None  # reset the cost-counting
             x0 = result["freevariables"]
             prevcost, cost = cost, result["cost"]
-            if cost >= prevcost:  # cost is increasing? blame SigEqs
+            if prevcost <= cost:  # cost is increasing? blame SigEqs
                 raise RuntimeWarning("SP is not converging! Last GP iteration "
                                      "had a higher cost than the previous one,"
                                      " so solving has been halted, and results"
