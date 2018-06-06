@@ -133,9 +133,12 @@ class SequentialGeometricProgram(CostedConstraintSet):
                 result["cost"] = None  # reset the cost-counting
             x0 = result["freevariables"]
             prevcost, cost = cost, result["cost"]
-            if prevcost <= cost:  # cost is increasing? blame SigEqs
+            if prevcost is None or cost is None:
+                rel_improvement = None
+            elif prevcost < 0.99*cost:  # cost is increasing? blame SigEqs
                 raise RuntimeWarning("SP is not converging! Last GP iteration "
-                                     "had a higher cost than the previous one,"
+                                     "had a higher cost (%.2g) than the"
+                                     " previous one (%.2g),"
                                      " so solving has been halted, and results"
                                      " for each iteration stored in"
                                      " (Model).program.results."
@@ -143,11 +146,9 @@ class SequentialGeometricProgram(CostedConstraintSet):
                                      " SignomialEqualities, note that"
                                      " convergence is not guaranteed: try"
                                      " replacing any SigEqs you can and"
-                                     " solving again.")
-            elif prevcost and cost:
-                rel_improvement = abs(prevcost-cost)/(prevcost + cost)
+                                     " solving again." % (cost, prevcost))
             else:
-                rel_improvement = None
+                rel_improvement = abs(prevcost-cost)/(prevcost + cost)
         # solved successfully!
         soltime = time() - starttime
         if verbosity > 0:
