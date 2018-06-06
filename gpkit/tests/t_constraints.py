@@ -3,8 +3,8 @@ import unittest
 from gpkit import Variable, SignomialsEnabled, Posynomial, VectorVariable
 from gpkit.nomials import SignomialInequality, PosynomialInequality
 from gpkit.nomials import MonomialEquality, NomialArray
-from gpkit import Model
-from gpkit.constraints.tight import Tight
+from gpkit import Model, ConstraintSet
+\from gpkit.constraints.tight import Tight
 from gpkit.constraints.loose import Loose
 from gpkit.tests.helpers import run_tests
 from gpkit.exceptions import InvalidGPConstraint
@@ -16,6 +16,16 @@ import gpkit
 
 class TestConstraint(unittest.TestCase):
     """Tests for Constraint class"""
+
+    def test_uninited_element(self):
+        x = Variable("x")
+
+        class SelfPass(Model):
+            "A model which contains itself!"
+            def setup(self):
+                ConstraintSet([self, x <= 1])
+
+        self.assertRaises(ValueError, SelfPass)
 
     def test_bad_elements(self):
         x = Variable("x")

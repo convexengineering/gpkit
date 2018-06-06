@@ -63,7 +63,11 @@ class ConstraintSet(list):
                         # allow NomialArray equalities (arr == "a", etc.)
                         self.numpy_bools = True  # but mark them
                         # so we can catch them later (next line)
-            elif constraint.numpy_bools:
+            elif not hasattr(constraint, "numpy_bools"):
+                raise ValueError("a ConstraintSet of type %s was included in"
+                                 " another ConstraintSet before being"
+                                 " initialized." % type(constraint))
+            elif constraint.numpy_bools:  # not initialized??
                 raise_elementhasnumpybools(constraint)
             for attr in ["substitutions", "bounded"]:
                 if hasattr(self[i], attr):
