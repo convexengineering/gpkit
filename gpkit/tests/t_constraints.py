@@ -2,7 +2,7 @@
 import unittest
 from gpkit import Variable, SignomialsEnabled, Posynomial, VectorVariable
 from gpkit.nomials import SignomialInequality, PosynomialInequality
-from gpkit.nomials import MonomialEquality, NomialArray
+from gpkit.nomials import MonomialEquality
 from gpkit import Model, ConstraintSet
 from gpkit.constraints.tight import Tight
 from gpkit.constraints.loose import Loose
