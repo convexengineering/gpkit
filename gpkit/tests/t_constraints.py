@@ -20,6 +20,8 @@ class TestConstraint(unittest.TestCase):
         x = Variable("x")
 
         class SelfPass(Model):
+            "A model which contains itself!"
+            
             def setup(self):
                 ConstraintSet([self, x <= 1])
 
