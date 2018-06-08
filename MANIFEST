@@ -43,7 +43,6 @@ gpkit/small_classes.py
 gpkit/small_scripts.py
 gpkit/solution_array.py
 gpkit/tests/__init__.py
-gpkit/tests/diff_output.py
 gpkit/tests/from_paths.py
 gpkit/tests/helpers.py
 gpkit/tests/run_tests.py

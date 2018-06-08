@@ -3,7 +3,8 @@ from .set import ConstraintSet
 from ..nomials import Variable, VectorVariable, parse_subs, NomialArray
 from ..keydict import KeyDict
 from .. import NamedVariables, MODELNUM_LOOKUP
-
+from ..small_classes import Count
+from gpkit import SignomialsEnabled
 
 class ConstraintsRelaxedEqually(ConstraintSet):
     """Relax constraints the same amount, as in Eqn. 10 of [Boyd2007].
@@ -30,13 +31,25 @@ class ConstraintsRelaxedEqually(ConstraintSet):
         if not isinstance(constraints, ConstraintSet):
             constraints = ConstraintSet(constraints)
         substitutions = dict(constraints.substitutions)
-        posynomials = constraints.as_posyslt1()
+        relcons = []
         with NamedVariables("Relax"):
             self.relaxvar = Variable("C")
-        ConstraintSet.__init__(self,
-                               [[p <= self.relaxvar for p in posynomials],
-                                self.relaxvar >= 1], substitutions)
+        with SignomialsEnabled():
+            for constr in constraints.flat(constraintsets=False):
+                if constr.oper == ">=":
+                    relcons.append(self.relaxvar*constr.left >= constr.right)
+                elif constr.oper == "<=":
+                    relcons.append(constr.left <= self.relaxvar*constr.right)
+                elif constr.oper == "=":
+                    relcons.append(constr.left <= self.relaxvar*constr.right)
+                    relcons.append(self.relaxvar*constr.left >= constr.right)
+                else:
+                    raise ValueError("Constraint had unknown operator %s."
+                                     " Cannot relax the constraint %s"
+                                     % constr.oper, constr)
 
+        ConstraintSet.__init__(self, [relcons,
+                                      self.relaxvar >= 1], substitutions)
 
 class ConstraintsRelaxed(ConstraintSet):
     """Relax constraints, as in Eqn. 11 of [Boyd2007].
@@ -45,7 +58,6 @@ class ConstraintsRelaxed(ConstraintSet):
     ---------
     constraints : iterable
         Constraints which will be relaxed (made easier).
-
 
     Attributes
     ----------
@@ -64,14 +76,31 @@ class ConstraintsRelaxed(ConstraintSet):
         if not isinstance(constraints, ConstraintSet):
             constraints = ConstraintSet(constraints)
         substitutions = dict(constraints.substitutions)
-        posynomials = constraints.as_posyslt1()
-        N = len(posynomials)
+        relconstrs = []
+        N = len(constraints)
         with NamedVariables("Relax"):
             self.relaxvars = VectorVariable(N, "C")
-        ConstraintSet.__init__(self,
-                               [[posynomials <= self.relaxvars],
-                                self.relaxvars >= 1],
-                               substitutions)
+        i = Count()
+        with SignomialsEnabled():
+            for constr in constraints.flat(constraintsets=False):
+                if constr.oper == ">=":
+                    relconstrs.append(self.relaxvars[i.next()]*constr.left >=
+                                      constr.right)
+                elif constr.oper == "<=":
+                    relconstrs.append(constr.left <=
+                                      self.relaxvars[i.next()]*constr.right)
+                elif constr.oper == "=":
+                    relconstrs.append(constr.left <=
+                                      self.relaxvars[i.next()]*constr.right)
+                    relconstrs.append(self.relaxvars[i.count]*constr.left >=
+                                      constr.right)
+                else:
+                    raise ValueError("Constraint had unknown operator %s."
+                                     " Cannot relax the constraint %s"
+                                     % constr.oper, constr)
+
+        ConstraintSet.__init__(self, [relconstrs,
+                                      self.relaxvars >= 1], substitutions)
 
 
 class ConstantsRelaxed(ConstraintSet):

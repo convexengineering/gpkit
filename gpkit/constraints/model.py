@@ -61,18 +61,17 @@ class Model(CostedConstraintSet):
                 cs = self.setup(*args, **kwargs)  # pylint: disable=no-member
                 if (isinstance(cs, tuple) and len(cs) == 2
                         and isinstance(cs[1], dict)):
-                    constraints, substitutions = cs
+                    constraints, substitutions = cs  # TODO: remove
                 else:
                     constraints = cs
                 from .. import NAMEDVARS, MODELS, MODELNUMS
                 setup_vars = NAMEDVARS[tuple(MODELS), tuple(MODELNUMS)]
                 self.name, self.num = MODELS[-1], MODELNUMS[-1]
                 self.naming = (tuple(MODELS), tuple(MODELNUMS))
-            cost = self.cost
-        else:
-            if args and not substitutions:
-                # backwards compatibility: substitutions as third arg
-                substitutions, = args
+            cost = self.cost  # TODO: remove
+        elif args and not substitutions:
+            # backwards compatibility: substitutions as third arg
+            substitutions, = args
 
         cost = cost or Monomial(1)
         constraints = constraints or []
@@ -258,11 +257,11 @@ class Model(CostedConstraintSet):
                 except InvalidGPConstraint:
                     sol = feas.localsolve(**solveargs)
                 relaxed = get_relaxed(sol(constrsrelaxed.relaxvars),
-                                      range(len(feas[0][0][0])))
+                                      range(len(feas[0][0])))
                 if relaxed:
                     print("\nSolves with these constraints relaxed:")
                     for relaxval, i in relaxed:
-                        constraint = feas[0][0][0][i]
+                        constraint = feas[0][0][i]
                         relax_percent = "%i%%" % (0.5+(relaxval-1)*100)
                         print(" %3i: %5s relaxed, from %s <= 1\n"
                               "                       to %s <= %.4g"
