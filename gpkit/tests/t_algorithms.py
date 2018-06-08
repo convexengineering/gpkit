@@ -22,8 +22,8 @@ class TestRelaxed(unittest.TestCase):
             m = Model(PK, [mdot*ujet + fBLI*Dp >= 1,
                            PK >= 0.5*mdot*ujet*(2 + ujet) + fBLI*fsurf*Dp])
         RCm = RelaxedConstantsModel(m)
-        sol = m.localsolve()
-        RCsol = RCm.localsolve()
+        sol = m.localsolve(verbosity=0)
+        RCsol = RCm.localsolve(verbosity=0)
         self.assertAlmostEqual(sol['cost'], RCsol['cost'], 3)
 
 TESTS = [TestRelaxed]
