@@ -8,8 +8,8 @@ from gpkit.constraints.tight import Tight
 from gpkit.constraints.loose import Loose
 from gpkit.tests.helpers import run_tests
 from gpkit.exceptions import InvalidGPConstraint
-from gpkit.constraints.relax import ConstraintsRelaxed, \
-                                    ConstraintsRelaxedEqually, ConstantsRelaxed
+from gpkit.constraints.relax import ConstraintsRelaxed, ConstraintsRelaxedEqually
+from gpkit.constraints.relax import ConstantsRelaxed
 from gpkit.constraints.bounded import Bounded
 import gpkit
 
@@ -61,6 +61,7 @@ class TestConstraint(unittest.TestCase):
         self.assertAlmostEqual(m2.solve(verbosity=0)(x), 3, 5)
 
     def test_sp_relaxation(self):
+        w = Variable('w')
         x = Variable('x')
         y = Variable('y')
         z = Variable('z')
@@ -68,10 +69,10 @@ class TestConstraint(unittest.TestCase):
             m = Model(x, [x+y >= z], {z:2})
         r1 = ConstantsRelaxed(m)
         r2 = ConstraintsRelaxed(m)
-        r3 = ConstraintsRelaxedEqually(m)
+        r3 = ConstraintsRelaxedEqually([m, w >= x**2/z])
         self.assertEqual(len(r1.varkeys), 5)
         self.assertEqual(len(r2.varkeys), 4)
-        self.assertEqual(len(r3.varkeys), 4)
+        self.assertEqual(len(r3.varkeys), 5)
 
     def test_constraintget(self):
         x = Variable("x")
