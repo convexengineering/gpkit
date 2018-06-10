@@ -253,6 +253,10 @@ class Signomial(Nomial):
         from .. import SIGNOMIALS_ENABLED
         return other + -self if SIGNOMIALS_ENABLED else NotImplemented
 
+    def relaxed(self, relaxvar):
+        "Returns the relaxation of the constraint in a list."
+        with SignomialsEnabled():
+            return self.relaxed(relaxvar)
 
 class Posynomial(Signomial):
     """A Signomial with strictly positive cs
@@ -391,18 +395,17 @@ class ScalarSingleEquationConstraint(SingleEquationConstraint):
 
     def relaxed(self, relaxvar):
         "Returns the relaxation of the constraint in a list."
-        with SignomialsEnabled():
-            if self.oper == ">=":
-                return [relaxvar*self.left >= self.right]
-            elif self.oper == "<=":
-                return [self.left <= relaxvar*self.right]
-            elif self.oper == "=":
-                return [self.left <= relaxvar*self.right,
-                        relaxvar*self.left >= self.right]
-            else:
-                raise ValueError("Constraint had unknown operator %s."
-                                 " Cannot relax the constraint %s"
-                                 % self.oper, self)
+        if self.oper == ">=":
+            return [relaxvar*self.left >= self.right]
+        elif self.oper == "<=":
+            return [self.left <= relaxvar*self.right]
+        elif self.oper == "=":
+            return [self.left <= relaxvar*self.right,
+                    relaxvar*self.left >= self.right]
+        else:
+            raise ValueError("Constraint had unknown operator %s."
+                             " Cannot relax the constraint %s"
+                             % self.oper, self)
 
 
 # pylint: disable=too-many-instance-attributes

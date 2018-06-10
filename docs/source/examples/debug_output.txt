@@ -18,8 +18,8 @@ and these constants relaxed:
 > Trying with relaxed constraints:
 
 Solves with these constraints relaxed:
-   1: 3500% relaxed, from 3*x**-1 <= 1
-                       to 3*x**-1 <= 36
+   1: 3500% relaxed, from 1 [yd] <= 1
+                       to 1 [yd] <= 36
 
 >> Success!
 
