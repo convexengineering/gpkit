@@ -8,7 +8,8 @@ from gpkit.constraints.tight import Tight
 from gpkit.constraints.loose import Loose
 from gpkit.tests.helpers import run_tests
 from gpkit.exceptions import InvalidGPConstraint
-from gpkit.constraints.relax import ConstraintsRelaxed, ConstraintsRelaxedEqually
+from gpkit.constraints.relax import ConstraintsRelaxed
+from gpkit.constraints.relax import ConstraintsRelaxedEqually
 from gpkit.constraints.relax import ConstantsRelaxed
 from gpkit.constraints.bounded import Bounded
 import gpkit
