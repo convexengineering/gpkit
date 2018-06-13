@@ -38,7 +38,8 @@ Windows
         - Make sure ``gcc`` is on your system path.
             - To do this, type ``gcc`` into a command prompt.
             - If you get ``executable not found``, then install the 64-bit version (x86_64 installer architecture dropdown option) with GCC version 6.4.0 or older of `mingw <http://sourceforge.net/projects/mingw-w64/>`_.
-            - Make sure the ``mingw`` bin directory is on your system path (you may have to add it manually).
+            - In an Anaconda command prompt (or equivalent), run ``cd C:\Program Files\mingw-64\x86_64-6.4.0-posix-seh-rt_v5-rev0\`` (or whatever corresponds to the correct installation directory; note that if mingw is in ``Program Files (x86)`` instead of ``Program Files`` you've installed the 32-bit version by mistake)
+            - Run ``mingw-64`` to add it to your executable path. For step 3 of the install process you'll need to run ``pip install gpkit`` from this prompt.
 
 Debugging your installation
 ===========================
