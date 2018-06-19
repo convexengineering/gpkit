@@ -18,8 +18,8 @@ and these constants relaxed:
 > Trying with relaxed constraints:
 
 Solves with these constraints relaxed:
-   1: 3500% relaxed, from 1 [yd] <= 1
-                       to 1 [yd] <= 36
+   1: 3500% relaxed, from x [ft] >= 1 [yd] 
+                     to C_Relax.1_(1,)*x [ft] >= 1 [yd] 
 
 >> Success!
 

@@ -38,7 +38,7 @@ Most Sensitive
 --------------
               Range : [ +1.4      +1.1      +1.2     ] aircraft range
                TSFC : [ +1.4      +1.1      +1.2     ] thrust specific fuel consumption
-                  k : [ +0.85     +0.71     +0.74    ] form factor
 (\frac{S}{S_{wet}}) : [ +0.85     +0.71     +0.74    ] wetted area ratio
+                  k : [ +0.85     +0.71     +0.74    ] form factor
             V_{min} : [ -1.4       0         0       ] takeoff speed
 
