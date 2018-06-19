@@ -262,11 +262,14 @@ class Model(CostedConstraintSet):
                     print("\nSolves with these constraints relaxed:")
                     for relaxval, i in relaxed:
                         constraint = feas[0][0][i][0]
+                        origconstraint = constrsrelaxed.origconstrs[i]
                         relax_percent = "%i%%" % (0.5+(relaxval-1)*100)
-                        print(" %3i: %5s relaxed, from %s <= 1\n"
-                              "                       to %s <= %.4g"
-                              % (i, relax_percent, constraint.right,
-                                 constraint.right, relaxval))
+                        print(" %3i: %5s relaxed, from %s %s %s \n"
+                              "                     to %s %s %s "
+                              % (i, relax_percent, origconstraint.left,
+                                 origconstraint.oper, origconstraint.right,
+                                 constraint.left, constraint.oper,
+                                 constraint.right))
                 print("\n>> Success!")
             except (ValueError, RuntimeWarning):
                 print(">> Failure")

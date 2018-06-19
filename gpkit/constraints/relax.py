@@ -31,10 +31,12 @@ class ConstraintsRelaxedEqually(ConstraintSet):
             constraints = ConstraintSet(constraints)
         substitutions = dict(constraints.substitutions)
         relconstraints = []
+        self.origconstrs = []
         with NamedVariables("Relax"):
             self.relaxvar = Variable("C")
         with SignomialsEnabled():
             for constraint in constraints.flat(constraintsets=False):
+                self.origconstrs.append(constraint)
                 relconstraints.append(constraint.relaxed(self.relaxvar))
         ConstraintSet.__init__(self, [relconstraints,
                                       self.relaxvar >= 1], substitutions)
@@ -65,11 +67,13 @@ class ConstraintsRelaxed(ConstraintSet):
             constraints = ConstraintSet(constraints)
         substitutions = dict(constraints.substitutions)
         relconstraints = []
+        self.origconstrs = []
         with NamedVariables("Relax"):
             self.relaxvars = VectorVariable(len(constraints), "C")
         with SignomialsEnabled():
             for i, constraint in enumerate(
                     constraints.flat(constraintsets=False)):
+                self.origconstrs.append(constraint)
                 relconstraints.append(constraint.relaxed(self.relaxvars[i]))
         ConstraintSet.__init__(self, [relconstraints,
                                       self.relaxvars >= 1], substitutions)
