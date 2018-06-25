@@ -490,8 +490,7 @@ def results_table(data, title, printunits=True, fixedcols=True,
             if not sortbyvals:
                 decorated.append((model, b, (varfmt % s), i, k, v))
             else:  # for consistent sorting, add small offset to negative vals
-                val = np.mean(np.abs(v)) - (1e-9 if np.mean(v) < 0 else 0)
-                #val -= hash(k.name)*1e-30
+                val = np.mean(np.abs(v)) - (1e-7 if np.mean(v) < 0 else 0)
                 decorated.append((model, -val, b, (varfmt % s), i, k, v))
     if included_models:
         included_models = set(included_models)
