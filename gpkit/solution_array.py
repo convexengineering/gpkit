@@ -269,8 +269,8 @@ class SolutionArray(DictOfLists):
         rows = []
         cols = ["Name", "Index", "Value", "Units", "Label",
                 "Models", "Model Numbers", "Other"]
-        for name, key in sorted(self.varnames(include).items(),
-                                key=lambda k: k[0]):
+        for _, key in sorted(self.varnames(include).items(),
+                             key=lambda k: k[0]):
             value = self["variables"][key]
             if key.shape:
                 idxs = []
