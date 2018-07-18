@@ -244,39 +244,33 @@ class SolutionArray(DictOfLists):
         self["cost"] = cost
         self.program = program
 
-    def __varnames(self, include, min_data):
+    def varnames(self, include):
         "Returns list of variables, optionally with minimal unique names"
+        self["variables"].update_keymap()
         keymap = self["variables"].keymap
         names = {}
         for key in (include or self["variables"]):
             if include:
                 key, _ = self["variables"].parse_and_index(key)
             keys = keymap[key.name]
-            if len(keys) == 1 and min_data:
-                names[key.name] = key
-            elif key.cleanstr not in names and str(key) not in names:
-                if len(keymap[key.cleanstr]) == 1 and min_data:
-                    names.update((k.cleanstr, k) for k in keys)
-                else:
-                    names.update((str(k), k) for k in keys)
+            names.update((str(k), k) for k in keys)
         return names
 
-    def savemat(self, filename="solution.mat", include=None, min_data=True):
+    def savemat(self, filename="solution.mat", include=None):
         "Saves primal solution as matlab file"
         from scipy.io import savemat
         savemat(filename,
-                {name: self["variables"][key]
-                 for name, key in self.__varnames(include, min_data).items()})
+                {name.replace("/", "_"): self["variables"][key]
+                 for name, key in self.varnames(include).items()})
 
-    def todataframe(self, include=None, min_data=False):
+    def todataframe(self, include=None):
         "Returns primal solution as pandas dataframe"
         import pandas as pd  # pylint:disable=import-error
         rows = []
-        cols = ["Name", "Index", "Value"]
-        if not min_data:
-            cols += ["Units", "Label", "Models", "Model Numbers", "Other"]
-        for name, key in sorted(self.__varnames(include, min_data).items(),
-                                key=lambda k: k[0]):
+        cols = ["Name", "Index", "Value", "Units", "Label",
+                "Models", "Model Numbers", "Other"]
+        for _, key in sorted(self.varnames(include).items(),
+                             key=lambda k: k[0]):
             value = self["variables"][key]
             if key.shape:
                 idxs = []
@@ -289,13 +283,11 @@ class SolutionArray(DictOfLists):
                 idxs = [None]
             for idx in idxs:
                 row = [
-                    name if min_data else key.name,
+                    key.name,
                     "" if idx is None else idx,
                     value if idx is None else value[idx],
                 ]
                 rows.append(row)
-                if min_data:
-                    continue
                 row.extend([
                     key.unitstr(),
                     key.label or "",
@@ -309,11 +301,10 @@ class SolutionArray(DictOfLists):
                 ])
         return pd.DataFrame(rows, columns=cols)
 
-    def savecsv(self, filename="solution.csv", include=None, min_data=False):
+    def savecsv(self, filename="solution.csv", include=None):
         "Saves primal solution as csv"
-        df = self.todataframe(include, min_data)
+        df = self.todataframe(include)
         df.to_csv(filename, index=False, encoding="utf-8")
-
 
     def subinto(self, posy):
         "Returns NomialArray of each solution substituted into posy."
