@@ -13,8 +13,8 @@ With constraints relaxed equally
   # minimize
         C_Relax
   # subject to
-        C_Relax >= x*x_max**-1
-        C_Relax >= x**-1*x_min
+        x <= C_Relax*x_max
+        x_min <= C_Relax*x
         C_Relax >= 1
 
 Cost
@@ -45,7 +45,8 @@ With constraints relaxed individually
   # minimize
         C_Relax.1_(0,)*C_Relax.1_(1,)*x**0.01
   # subject to
-        C_Relax.1 >= [gpkit.Monomial(x*x_max**-1), gpkit.Monomial(x**-1*x_min)]
+        x <= C_Relax.1_(0,)*x_max
+        x_min <= C_Relax.1_(1,)*x
         C_Relax.1 >= 1
 
 Cost

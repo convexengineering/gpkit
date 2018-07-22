@@ -3,7 +3,7 @@ from .set import ConstraintSet
 from ..nomials import Variable, VectorVariable, parse_subs, NomialArray
 from ..keydict import KeyDict
 from .. import NamedVariables, MODELNUM_LOOKUP
-
+from gpkit import SignomialsEnabled
 
 class ConstraintsRelaxedEqually(ConstraintSet):
     """Relax constraints the same amount, as in Eqn. 10 of [Boyd2007].
@@ -30,13 +30,16 @@ class ConstraintsRelaxedEqually(ConstraintSet):
         if not isinstance(constraints, ConstraintSet):
             constraints = ConstraintSet(constraints)
         substitutions = dict(constraints.substitutions)
-        posynomials = constraints.as_posyslt1()
+        relconstraints = []
+        self.origconstrs = []
         with NamedVariables("Relax"):
             self.relaxvar = Variable("C")
-        ConstraintSet.__init__(self,
-                               [[p <= self.relaxvar for p in posynomials],
-                                self.relaxvar >= 1], substitutions)
-
+        with SignomialsEnabled():
+            for constraint in constraints.flat(constraintsets=False):
+                self.origconstrs.append(constraint)
+                relconstraints.append(constraint.relaxed(self.relaxvar))
+        ConstraintSet.__init__(self, [relconstraints,
+                                      self.relaxvar >= 1], substitutions)
 
 class ConstraintsRelaxed(ConstraintSet):
     """Relax constraints, as in Eqn. 11 of [Boyd2007].
@@ -45,7 +48,6 @@ class ConstraintsRelaxed(ConstraintSet):
     ---------
     constraints : iterable
         Constraints which will be relaxed (made easier).
-
 
     Attributes
     ----------
@@ -64,15 +66,17 @@ class ConstraintsRelaxed(ConstraintSet):
         if not isinstance(constraints, ConstraintSet):
             constraints = ConstraintSet(constraints)
         substitutions = dict(constraints.substitutions)
-        posynomials = constraints.as_posyslt1()
-        N = len(posynomials)
+        relconstraints = []
+        self.origconstrs = []
         with NamedVariables("Relax"):
-            self.relaxvars = VectorVariable(N, "C")
-        ConstraintSet.__init__(self,
-                               [[posynomials <= self.relaxvars],
-                                self.relaxvars >= 1],
-                               substitutions)
-
+            self.relaxvars = VectorVariable(len(constraints), "C")
+        with SignomialsEnabled():
+            for i, constraint in enumerate(
+                    constraints.flat(constraintsets=False)):
+                self.origconstrs.append(constraint)
+                relconstraints.append(constraint.relaxed(self.relaxvars[i]))
+        ConstraintSet.__init__(self, [relconstraints,
+                                      self.relaxvars >= 1], substitutions)
 
 class ConstantsRelaxed(ConstraintSet):
     """Relax constants in a constraintset.

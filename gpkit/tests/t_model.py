@@ -7,6 +7,9 @@ from gpkit.constraints.bounded import Bounded
 from gpkit.small_classes import CootMatrix
 from gpkit.exceptions import InvalidGPConstraint
 from gpkit import NamedVariables, units, parse_variables
+from gpkit.constraints.relax import ConstraintsRelaxed
+from gpkit.constraints.relax import ConstraintsRelaxedEqually
+from gpkit.constraints.relax import ConstantsRelaxed
 
 NDIGS = {"cvxopt": 4, "mosek": 5, "mosek_cli": 5}
 # name: decimal places of accuracy
@@ -246,6 +249,38 @@ class TestSP(unittest.TestCase):
     name = "TestSP_"
     solver = None
     ndig = None
+
+    def test_sp_relaxation(self):
+        w = Variable('w')
+        x = Variable('x')
+        y = Variable('y')
+        z = Variable('z')
+        with SignomialsEnabled():
+            m = Model(x, [x+y >= w, x+y <= z/2, y <= x, y >= 1], {z: 3, w: 3})
+        r1 = ConstantsRelaxed(m)
+        self.assertEqual(len(r1.varkeys), 8)
+        mr1 = Model(x*r1.relaxvars.prod()**10, r1)
+        cost1 = mr1.localsolve(verbosity=0)["cost"]
+        self.assertAlmostEqual(cost1/1024, 1, self.ndig)
+        m.debug(verbosity=0)
+        with SignomialsEnabled():
+            m = Model(x, [x+y >= z, x+y <= z/2, y <= x, y >= 1], {z: 3})
+        if self.solver != "cvxopt":
+            m.debug(verbosity=0)
+        r2 = ConstraintsRelaxed(m)
+        self.assertEqual(len(r2.varkeys), 7)
+        mr2 = Model(x*r2.relaxvars.prod()**10, r2)
+        cost2 = mr2.localsolve(verbosity=0)["cost"]
+        self.assertAlmostEqual(cost2/1024, 1, self.ndig)
+        with SignomialsEnabled():
+            m = Model(x, [x+y >= z, x+y <= z/2, y <= x, y >= 1], {z: 3})
+        if self.solver != "cvxopt":
+            m.debug(verbosity=0)
+        r3 = ConstraintsRelaxedEqually(m)
+        self.assertEqual(len(r3.varkeys), 4)
+        mr3 = Model(x*r3.relaxvar**10, r3)
+        cost3 = mr3.localsolve(verbosity=0)["cost"]
+        self.assertAlmostEqual(cost3/(32*0.8786796585), 1, self.ndig)
 
     def test_sp_bounded(self):
         x = Variable("x")
