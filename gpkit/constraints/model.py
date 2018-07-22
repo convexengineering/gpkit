@@ -210,8 +210,9 @@ class Model(CostedConstraintSet):
         solveargs["verbosity"] = verbosity - 1
         solveargs["process_result"] = False
 
-        print("< DEBUGGING >")
-        print("> Trying with bounded variables and relaxed constants:")
+        if verbosity:
+            print("< DEBUGGING >")
+            print("> Trying with bounded variables and relaxed constants:")
 
         bounded = Bounded(self)
         if self.substitutions:
@@ -233,7 +234,7 @@ class Model(CostedConstraintSet):
                 relaxed = get_relaxed([sol(r) for r in constsrelaxed.relaxvars],
                                       constsrelaxed.origvars,
                                       min_return=0 if sol["boundedness"] else 1)
-                if relaxed:
+                if verbosity and relaxed:
                     if sol["boundedness"]:
                         print("and these constants relaxed:")
                     else:
@@ -243,10 +244,12 @@ class Model(CostedConstraintSet):
                               % (orig, mag(constsrelaxed.constants[orig.key]),
                                  mag(sol(orig))))
                     print
-            print(">> Success!")
+            if verbosity:
+                print(">> Success!")
         except (ValueError, RuntimeWarning):
-            print(">> Failure.")
-            print("> Trying with relaxed constraints:")
+            if verbosity:
+                print(">> Failure.")
+                print("> Trying with relaxed constraints:")
 
             try:
                 constrsrelaxed = ConstraintsRelaxed(self)
@@ -258,7 +261,7 @@ class Model(CostedConstraintSet):
                     sol = feas.localsolve(**solveargs)
                 relaxed = get_relaxed(sol(constrsrelaxed.relaxvars),
                                       range(len(feas[0][0])))
-                if relaxed:
+                if verbosity and relaxed:
                     print("\nSolves with these constraints relaxed:")
                     for relaxval, i in relaxed:
                         constraint = feas[0][0][i][0]
@@ -274,10 +277,13 @@ class Model(CostedConstraintSet):
                               % (i, relax_percent, origconstraint.left,
                                  origconstraint.oper, origconstraint.right,
                                  conleft, constraint.oper, conright))
-                print("\n>> Success!")
+                if verbosity:
+                    print("\n>> Success!")
             except (ValueError, RuntimeWarning):
-                print(">> Failure")
-        print
+                if verbosity:
+                    print(">> Failure")
+        if verbosity:
+            print
         return sol
 
 
