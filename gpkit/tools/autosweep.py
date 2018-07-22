@@ -4,6 +4,7 @@ import numpy as np
 from ..small_classes import Count
 from ..small_scripts import mag
 from ..solution_array import SolutionArray
+from ..exceptions import InvalidGPConstraint
 
 
 # pylint: disable=too-many-instance-attributes
@@ -251,7 +252,10 @@ def autosweep_1d(model, logtol, sweepvar, bounds, **solvekwargs):
     firstsols = []
     for bound in bounds:
         model.substitutions.update({sweepvar: bound})
-        firstsols.append(model.solve(**solvekwargs))
+        try:
+            firstsols.append(model.solve(**solvekwargs))
+        except InvalidGPConstraint:
+            raise InvalidGPConstraint("only GPs can be autoswept.")
         sols()
     bst = BinarySweepTree(bounds, firstsols, sweepvar, model.cost)
     tol = recurse_splits(model, bst, sweepvar, logtol, solvekwargs, sols)
