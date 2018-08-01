@@ -286,6 +286,39 @@ class Model(CostedConstraintSet):
             print
         return sol
 
+class SameModel(Model):
+    """
+    copies a model with its original substitutions only while flattenning the constraints.
+    """
+
+    def setup(self, model):
+        """
+        :param model: the original model
+        :return: the new model
+        """
+        all_constraints = model.flat(constraintsets=False)
+        constraints = []
+        for cs in all_constraints:
+            if isinstance(cs, MonomialEquality):
+                constraints += [cs]
+            elif isinstance(cs, PosynomialInequality):
+                constraints += [cs.as_posyslt1()[0] <= 1]
+        self.cost = model.cost
+        return constraints
+
+
+class EqualModel(Model):
+	"""
+	copies a model with all its substitutions while accounting for model heirarchy.
+	"""
+    def setup(self, model):
+        """
+        :param model: the original model
+        :return: the new model
+        """
+        subs = model.substitutions
+        self.cost = model.cost
+        return model, subs
 
 def get_relaxed(relaxvals, mapped_list, min_return=1):
     "Determines which relaxvars are considered 'relaxed'"
