@@ -64,7 +64,7 @@ def insenss_table(data, _, maxval=0.1, **kwargs):
 TABLEFNS = {"sensitivities": senss_table,
             "topsensitivities": topsenss_table,
             "insensitivities": insenss_table,
-            }
+           }
 
 
 def reldiff(val1, val2):
@@ -73,8 +73,7 @@ def reldiff(val1, val2):
         return val2/val1 - 1  # numpy division will warn but return infs
     elif val2.magnitude == 0:  # both are scalar zeroes
         return 0
-    else:  # just val1 is a scalar zero
-        return np.inf
+    return np.inf  # just val1 is a scalar zero
 
 
 class SolutionArray(DictOfLists):
