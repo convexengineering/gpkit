@@ -60,10 +60,20 @@ def insenss_table(data, _, maxval=0.1, **kwargs):
     data = {k: s for k, s in data.items() if np.mean(np.abs(s)) < maxval}
     return senss_table(data, title="Insensitive Fixed Variables", **kwargs)
 
+
 TABLEFNS = {"sensitivities": senss_table,
             "topsensitivities": topsenss_table,
             "insensitivities": insenss_table,
            }
+
+
+def reldiff(val1, val2):
+    "Relative difference between val1 and val2 (positive if val2 is larger)"
+    if hasattr(val1, "shape") or val1.magnitude != 0:
+        return val2/val1 - 1  # numpy division will warn but return infs
+    elif val2.magnitude == 0:  # both are scalar zeroes
+        return 0
+    return np.inf  # just val1 is a scalar zero
 
 
 class SolutionArray(DictOfLists):
@@ -122,7 +132,7 @@ class SolutionArray(DictOfLists):
         if selfvars != solvars:
             return False
         for key in selfvars:
-            if abs(self(key)/sol(key) - 1) >= reltol:
+            if abs(reldiff(self(key), sol(key))) >= reltol:
                 return False
             if abs(sol["sensitivities"]["variables"][key]
                    - self["sensitivities"]["variables"][key]) >= sens_abstol:
@@ -155,13 +165,7 @@ class SolutionArray(DictOfLists):
         solvars = set(sol["variables"])
         sol_diff = {}
         for key in selfvars.intersection(solvars):
-            selfval, otherval = self(key), sol(key)
-            if hasattr(selfval, "shape") or selfval != 0:
-                sol_diff[key] = 100*(otherval/selfval - 1)
-            elif otherval == 0:  # both are scalar zeroes
-                sol_diff[key] = 0
-            else:  # just selfval is a scalar zero
-                sol_diff[key] = otherval*np.inf
+            sol_diff[key] = 100*reldiff(self(key), sol(key))
         lines = results_table(sol_diff, "Solution difference", sortbyvals=True,
                               valfmt="%+6.1f%%  ", vecfmt="%+6.1f%% ",
                               printunits=False, minval=min_percent)

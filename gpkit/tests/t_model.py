@@ -185,6 +185,7 @@ class TestGP(unittest.TestCase):
         sol = Model(1/L, constr).solve(self.solver, verbosity=0)
         self.assertAlmostEqual(sol(L), 10, self.ndig)
         self.assertAlmostEqual(sol["cost"], 0.1, self.ndig)
+        self.assertTrue(sol.almost_equal(sol))
 
     def test_singular(self):
         """
