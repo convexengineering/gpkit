@@ -193,15 +193,15 @@ class SolutionArray(DictOfLists):
             senss_delta = {}
             for key in selfvars.intersection(solvars):
                 if key in sol["sensitivities"]["variables"]:
-                    val2 = sol["sensitivities"]["variables"][key]
                     val1 = self["sensitivities"]["variables"][key]
+                    val2 = sol["sensitivities"]["variables"][key]
                     if hasattr(val1, "shape") and val1.shape:
                         val1_dims = len(val1.shape)
                         if (hasattr(val2, "shape")
                                 and val2.shape[:val1_dims] == val1.shape):
                             val1 = np.tile(val1,
                                            val2.shape[val1_dims:]+(1,)).T
-                    senss_delta[key] = val1 - val2
+                    senss_delta[key] = val2 - val1
                 elif key in sol["sensitivities"]["variables"]:
                     print ("Key %s is not in this solution's sensitivities"
                            " but is in those of the argument.")
