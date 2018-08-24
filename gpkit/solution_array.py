@@ -69,8 +69,11 @@ TABLEFNS = {"sensitivities": senss_table,
 
 def reldiff(val1, val2):
     "Relative difference between val1 and val2 (positive if val2 is larger)"
-    if hasattr(val1, "shape") or val1.magnitude != 0:
-        return val2/val1 - 1  # numpy division will warn but return infs
+    if hasattr(val1, "shape") or hasattr(val2, "shape") or val1.magnitude != 0:
+        if hasattr(val1, "shape") and val1.shape:
+            if val2.shape[:len(val1.shape)] == val1.shape:
+                val1 = np.tile(val1.magnitude, val2.shape[len(val1.shape):]+(1,)).T * val1.units
+        return (val2/val1 - 1).to("dimensionless").magnitude  # numpy division will warn but return infs
     elif val2.magnitude == 0:  # both are scalar zeroes
         return 0
     return np.inf  # just val1 is a scalar zero
@@ -172,7 +175,13 @@ class SolutionArray(DictOfLists):
         if len(lines) > 3:
             lines.insert(1, "(positive means the argument is bigger)")
         elif sol_diff:
-            values = np.array(sol_diff.values())
+            values = []
+            for v in sol_diff.values():
+                if hasattr(v, "shape"):
+                    values.extend(v.flatten().tolist())
+                else:
+                    values.append(v)
+            values = np.array(values)
             i = np.unravel_index(np.argmax(np.abs(values)), values.shape)
             lines.insert(2, "The largest difference is %g%%" % values[i])
 
@@ -180,9 +189,12 @@ class SolutionArray(DictOfLists):
             senss_delta = {}
             for key in selfvars.intersection(solvars):
                 if key in sol["sensitivities"]["variables"]:
-                    senss_delta[key] = (
-                        sol["sensitivities"]["variables"][key]
-                        - self["sensitivities"]["variables"][key])
+                    val2 = sol["sensitivities"]["variables"][key]
+                    val1 = self["sensitivities"]["variables"][key]
+                    if hasattr(val1, "shape") and val1.shape:
+                        if val2.shape[:len(val1.shape)] == val1.shape:
+                            val1 = np.tile(val1, val2.shape[len(val1.shape):]+(1,)).T
+                    senss_delta[key] = val1 - val2
                 elif key in sol["sensitivities"]["variables"]:
                     print ("Key %s is not in this solution's sensitivities"
                            " but is in those of the argument.")
