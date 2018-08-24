@@ -84,17 +84,17 @@ V_{min} : [  +10.0%    +10.0%    -12.0%    -12.0%  ] takeoff speed
 Solution sensitivity delta
 (positive means the argument has a higher sensitivity)
 --------------------------
-                  V : [  -.59    -.97    -.25    -.75  ] cruising speed
-            V_{min} : [  +.45    +.67    +.05    +.34  ] takeoff speed
-          C_{L,max} : [  +.23    +.34    +.02    +.17  ] max CL with flaps down
-                  e : [  -.15    -.25    -.06    -.19  ] Oswald efficiency factor
-                W_0 : [  +.09    +.17    +.06    +.16  ] aircraft weight excluding wing
-               \rho : [  -.05    -.13    -.10    -.19  ] density of air
-     W_{W_{coeff1}} : [  +.11    +.18    +.04    +.14  ] Wing Weight Coefficent 1
-            N_{ult} : [  +.11    +.18    +.04    +.14  ] ultimate load factor
-               \tau : [  -.11    -.18    -.04    -.14  ] airfoil thickness to chord ratio
-                  k : [  -.13    -.20    -.02    -.11  ] form factor
-(\frac{S}{S_{wet}}) : [  -.13    -.20    -.02    -.11  ] wetted area ratio
-             (CDA0) : [  -.02    -.05    -.04    -.09  ] fuselage drag area
-     W_{W_{coeff2}} : [  -.01    0.00    +.04    +.05  ] Wing Weight Coefficent 2
+                  V : [  +.59    +.97    +.25    +.75  ] cruising speed
+            V_{min} : [  -.45    -.67    -.05    -.34  ] takeoff speed
+          C_{L,max} : [  -.23    -.34    -.02    -.17  ] max CL with flaps down
+                  e : [  +.15    +.25    +.06    +.19  ] Oswald efficiency factor
+                W_0 : [  -.09    -.17    -.06    -.16  ] aircraft weight excluding wing
+               \rho : [  +.05    +.13    +.10    +.19  ] density of air
+               \tau : [  +.11    +.18    +.04    +.14  ] airfoil thickness to chord ratio
+     W_{W_{coeff1}} : [  -.11    -.18    -.04    -.14  ] Wing Weight Coefficent 1
+            N_{ult} : [  -.11    -.18    -.04    -.14  ] ultimate load factor
+                  k : [  +.13    +.20    +.02    +.11  ] form factor
+(\frac{S}{S_{wet}}) : [  +.13    +.20    +.02    +.11  ] wetted area ratio
+             (CDA0) : [  +.02    +.05    +.04    +.09  ] fuselage drag area
+     W_{W_{coeff2}} : [  +.01    0.00    -.04    -.05  ] Wing Weight Coefficent 2
 
