@@ -72,8 +72,11 @@ def reldiff(val1, val2):
     if hasattr(val1, "shape") or hasattr(val2, "shape") or val1.magnitude != 0:
         if hasattr(val1, "shape") and val1.shape:
             if val2.shape[:len(val1.shape)] == val1.shape:
-                val1 = np.tile(val1.magnitude, val2.shape[len(val1.shape):]+(1,)).T * val1.units
-        return (val2/val1 - 1).to("dimensionless").magnitude  # numpy division will warn but return infs
+                val1 = np.tile(val1.magnitude,
+                               val2.shape[len(val1.shape):]+(1,)).T
+                val1 = val1 * val1.units
+        # numpy division will warn but return infs
+        return (val2/val1 - 1).to("dimensionless").magnitude
     elif val2.magnitude == 0:  # both are scalar zeroes
         return 0
     return np.inf  # just val1 is a scalar zero
@@ -193,7 +196,8 @@ class SolutionArray(DictOfLists):
                     val1 = self["sensitivities"]["variables"][key]
                     if hasattr(val1, "shape") and val1.shape:
                         if val2.shape[:len(val1.shape)] == val1.shape:
-                            val1 = np.tile(val1, val2.shape[len(val1.shape):]+(1,)).T
+                            val1 = np.tile(val1,
+                                           val2.shape[len(val1.shape):]+(1,)).T
                     senss_delta[key] = val1 - val2
                 elif key in sol["sensitivities"]["variables"]:
                     print ("Key %s is not in this solution's sensitivities"
