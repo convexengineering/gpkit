@@ -275,6 +275,7 @@ class Mosek(SolverBackend):
             return False
 
         log("#\n#   Building Python bindings for expopt and Mosek...")
+        log("#   (if this fails on Windows, check that you installed the right version of mingw)")
         built_expopt_h = call("python modified_ctypesgen.py -a" +
                               " -l " + pathjoin(solib_dir, "expopt.so").replace("\\", "/") +   # pylint: disable=line-too-long
                               ' -l "' + self.lib_path.replace("\\", "/") + '"' +
