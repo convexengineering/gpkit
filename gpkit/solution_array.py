@@ -148,7 +148,7 @@ class SolutionArray(DictOfLists):
 
     # pylint: disable=too-many-locals, too-many-branches, too-many-statements
     def diff(self, sol, min_percent=1.0,
-             show_sensitivities=True, min_senss_delta=0.1):
+             show_sensitivities=True, min_senss_delta=0.1, showvars=None):
         """Outputs differences between this solution and another
 
         Arguments
@@ -169,6 +169,8 @@ class SolutionArray(DictOfLists):
         if isinstance(sol, Strings):
             sol = pickle.load(open(sol))
         selfvars = set(self["variables"])
+        if showvars:
+            selfvars = {k: selfvars[k] for k in showvars if k in selfvars}
         solvars = set(sol["variables"])
         sol_diff = {}
         for key in selfvars.intersection(solvars):
@@ -237,7 +239,7 @@ class SolutionArray(DictOfLists):
                          " which are not in the argument:")
             lines.append("\n".join("  %s" % key for key in selfvars-solvars))
             lines.append("")
-        if solvars-selfvars:
+        if solvars-selfvars and not showvars:
             lines.append("Variable(s) of the argument"
                          " which are not in this solution:")
             lines.append("\n".join("  %s" % key for key in solvars-selfvars))
