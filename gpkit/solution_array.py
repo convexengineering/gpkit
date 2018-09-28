@@ -67,7 +67,7 @@ TABLEFNS = {"sensitivities": senss_table,
            }
 
 
-def reldiff(val1, val2):
+def reldiff(val2, val1):
     "Relative difference between val1 and val2 (positive if val2 is larger)"
     if hasattr(val1, "shape") or hasattr(val2, "shape") or val1.magnitude != 0:
         if hasattr(val1, "shape") and val1.shape:
@@ -177,7 +177,7 @@ class SolutionArray(DictOfLists):
                               valfmt="%+6.1f%%  ", vecfmt="%+6.1f%% ",
                               printunits=False, minval=min_percent)
         if len(lines) > 3:
-            lines.insert(1, "(positive means the argument is bigger)")
+            lines.insert(1, "(positive means the argument is smaller)")
         elif sol_diff:
             values = []
             for v in sol_diff.values():
@@ -193,8 +193,8 @@ class SolutionArray(DictOfLists):
             senss_delta = {}
             for key in selfvars.intersection(solvars):
                 if key in sol["sensitivities"]["variables"]:
-                    val1 = self["sensitivities"]["variables"][key]
-                    val2 = sol["sensitivities"]["variables"][key]
+                    val1 = sol["sensitivities"]["variables"][key]
+                    val2 = self["sensitivities"]["variables"][key]
                     if hasattr(val1, "shape") and val1.shape:
                         val1_dims = len(val1.shape)
                         if (hasattr(val2, "shape")
@@ -216,7 +216,7 @@ class SolutionArray(DictOfLists):
             if len(lines) > primal_lines + 3:
                 lines.insert(
                     primal_lines + 1,
-                    "(positive means the argument has a higher sensitivity)")
+                    "(positive means the argument has a lower sensitivity)")
             elif senss_delta:
                 absmaxvalue, maxvalue = 0, 0
                 for valarray in senss_delta.values():
