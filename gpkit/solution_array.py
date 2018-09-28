@@ -336,10 +336,19 @@ class SolutionArray(DictOfLists):
         if showvars:
             data = {k: data[k] for k in showvars if k in data}
         # if the columns don't capture any dimensions, skip them
-        minspan = min((min((di for di in v.shape if di != 1))
-                       for v in data.values() if getattr(v, "shape", None)))
-        if minspan > valcols:
+        minspan, maxspan = None, 1
+        for v in data.values():
+            if getattr(v, "shape", None):
+                minspan_ = min((di for di in v.shape if di != 1))
+                maxspan_ = min((di for di in v.shape if di != 1))
+                if minspan is None or minspan_ < minspan:
+                    minspan = minspan_
+                if maxspan is None or maxspan_ > maxspan:
+                    maxspan = maxspan_
+        if minspan is not None and minspan > valcols:
             valcols = 1
+        if maxspan < valcols:
+            valcols = maxspan
         lines = results_table(data, "", rawlines=True, maxcolumns=valcols,
                               **kwargs)
         with open(filename, "w") as f:
