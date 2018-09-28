@@ -331,6 +331,7 @@ class SolutionArray(DictOfLists):
 
     def saveprettycsv(self, showvars=None, filename="solution.csv", valcols=5,
                       **kwargs):
+        "Saves primal solution as a CSV sorted by modelname, like the tables."
         data = self["variables"]
         if showvars:
             data = {k: data[k] for k in showvars if k in data}
