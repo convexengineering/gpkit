@@ -329,6 +329,36 @@ class SolutionArray(DictOfLists):
         df = self.todataframe(include)
         df.to_csv(filename, index=False, encoding="utf-8")
 
+    def saveprettycsv(self, showvars=None, filename="solution.csv", valcols=5,
+                      **kwargs):
+        data = self["variables"]
+        if showvars:
+            data = {k: data[k] for k in showvars if k in data}
+        # if the columns don't capture any dimensions, skip them
+        minspan = min((min((di for di in v.shape if di != 1))
+                       for v in data.values() if getattr(v, "shape", None)))
+        if minspan > valcols:
+            valcols = 1
+        lines = results_table(data, "", rawlines=True, maxcolumns=valcols,
+                              **kwargs)
+        with open(filename, "w") as f:
+            f.write("Model Name,Variable Name,Value(s)" + ","*valcols
+                    + "Units,Description\n")
+            for line in lines:
+                if line[0] == ("modelname",):
+                    f.write(line[1])
+                elif not line[1]:  # spacer line
+                    f.write("\n")
+                else:
+                    f.write("," + line[0].replace(" : ", "") + ",")
+                    vals = line[1].replace("[", "").replace("]", "").strip()
+                    for el in vals.split():
+                        f.write(el + ",")
+                    f.write(","*(valcols - len(vals.split())))
+                    f.write((line[2].replace("[", "").replace("]", "").strip()
+                             + ",").encode("utf8"))
+                    f.write(line[3].strip() + "\n")
+
     def subinto(self, posy):
         "Returns NomialArray of each solution substituted into posy."
         if posy in self["variables"]:
@@ -451,7 +481,7 @@ def results_table(data, title, printunits=True, fixedcols=True,
                   varfmt="%s : ", valfmt="%-.4g ", vecfmt="%-8.3g",
                   included_models=None, excluded_models=None, latex=False,
                   minval=0, sortbyvals=False, hidebelowminval=False,
-                  columns=None, maxcolumns=5, **_):
+                  columns=None, maxcolumns=5, rawlines=False, **_):
     """
     Pretty string representation of a dict of VarKeys
     Iterable values are handled specially (partial printing)
@@ -588,6 +618,8 @@ def results_table(data, title, printunits=True, fixedcols=True,
                 coltitles = [title, "Value", "Units"]
             else:
                 raise ValueError("Unexpected latex option, %s." % latex)
+    if rawlines:
+        return lines
     if not latex:
         if lines:
             maxlens = np.max([list(map(len, line)) for line in lines
