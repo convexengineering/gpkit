@@ -337,6 +337,7 @@ class ConstraintSet(list):
             result["variables"][v] = val
 
     def as_view(self):
+        "Return a ConstraintSetView of this ConstraintSet."
         return ConstraintSetView(self)
 
 
