@@ -355,7 +355,8 @@ class ConstraintSetView(object):
         "Appends the index to its own and returns a new view."
         if not isinstance(index, tuple):
             index = (index,)
-        return ConstraintSetView(self.constraintset, self.index+index)
+        # indexes are preprended to match Vectorize convention
+        return ConstraintSetView(self.constraintset, index + self.index)
 
     def __getattr__(self, attr):
         """Returns attribute from the base ConstraintSets
@@ -372,7 +373,11 @@ class ConstraintSetView(object):
                 raise ValueError("attribute %s with value %s did not have"
                                  " a shape, so ConstraintSetView cannot"
                                  " return an indexed view." % (attr, value))
-            return value[self.index]
+            index = self.index
+            newdims = len(value.shape) - len(self.index)
+            if newdims > 0:  # indexes are put last to match Vectorize
+                index = (slice(None),)*newdims + index
+            return value[index]
         else:
             raise AttributeError("the underlying ConstraintSet does not have"
                                  "attribute %s." % attr)
