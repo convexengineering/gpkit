@@ -67,6 +67,12 @@ TABLEFNS = {"sensitivities": senss_table,
            }
 
 
+def biggestvalue(x):
+    "Returns the biggest absolute value in x"
+    if hasattr(x, "shape"):
+        return abs(x).max()
+    return abs(x)
+
 def reldiff(val1, val2):
     "Relative difference between val1 and val2 (positive if val2 is larger)"
     if hasattr(val1, "shape") or hasattr(val2, "shape") or val1.magnitude != 0:
@@ -132,19 +138,27 @@ class SolutionArray(DictOfLists):
         posy_subbed = self.subinto(posy)
         return getattr(posy_subbed, "c", posy_subbed)
 
-    def almost_equal(self, sol, reltol=1e-3, sens_abstol=0.01):
-        "Checks for almost-equality between two solutions"
+    def sorted_diffs(self, sol, reltol=1e-2):
+        "Return a sorted list of primal differences between two solutions"
+        if isinstance(sol, Strings):
+            sol = pickle.load(open(sol))
+        diffs = []
         selfvars = set(self["variables"])
         solvars = set(sol["variables"])
-        if selfvars != solvars:
-            return False
+        for key in selfvars.difference(solvars):
+            diffs.append((key, -np.inf))
+        for key in solvars.difference(selfvars):
+            diffs.append((key, np.inf))
         for key in selfvars:
-            if abs(reldiff(self(key), sol(key))) >= reltol:
-                return False
-            if abs(sol["sensitivities"]["variables"][key]
-                   - self["sensitivities"]["variables"][key]) >= sens_abstol:
-                return False
-        return True
+            diffval = reldiff(self(key), sol(key))
+            if biggestvalue(diffval) >= reltol:
+                diffs.append((key, diffval))
+        return sorted(diffs, key=lambda x: biggestvalue(x[1]),
+                      reverse=True)
+
+    def almost_equal(self, sol, reltol=1e-3):
+        "Checks for almost-equality between two solutions"
+        return not self.sorted_diffs(sol, reltol)
 
     # pylint: disable=too-many-locals, too-many-branches, too-many-statements
     def diff(self, sol, min_percent=1.0,
