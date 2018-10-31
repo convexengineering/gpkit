@@ -161,7 +161,7 @@ class SolutionArray(DictOfLists):
         return not self.sorted_diffs(sol, reltol)
 
     # pylint: disable=too-many-locals, too-many-branches, too-many-statements
-    def diff(self, sol, min_percent=1.0,
+    def diff(self, sol, showvars=None, min_percent=1.0,
              show_sensitivities=True, min_senss_delta=0.1):
         """Outputs differences between this solution and another
 
@@ -184,6 +184,13 @@ class SolutionArray(DictOfLists):
             sol = pickle.load(open(sol))
         selfvars = set(self["variables"])
         solvars = set(sol["variables"])
+        if showvars:
+            for k in showvars:
+                if not hasattr(k, "key"):
+                    raise ValueError("the `showvars` argument only accepts"
+                                     " iterables containing VarKeys")
+            selfvars = set([k for k in showvars if k in self["variables"]])
+            solvars = set([k for k in showvars if k in sol["variables"]])
         sol_diff = {}
         for key in selfvars.intersection(solvars):
             sol_diff[key] = 100*reldiff(self(key), sol(key))
@@ -192,6 +199,8 @@ class SolutionArray(DictOfLists):
                               printunits=False, minval=min_percent)
         if len(lines) > 3:
             lines.insert(1, "(positive means the argument is bigger)")
+        if showvars:
+            lines.insert(1, "[only showing variables given in `showvars`]")
         elif sol_diff:
             values = []
             for v in sol_diff.values():
