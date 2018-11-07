@@ -1,7 +1,7 @@
 """Tests for Monomial, Posynomial, and Signomial classes"""
 import math
 import unittest
-from gpkit import Variable, Monomial, Posynomial, Signomial, SignomialsEnabled
+from gpkit import Model, Variable, Monomial, Posynomial, Signomial, SignomialsEnabled
 from gpkit import VectorVariable, NomialArray
 from gpkit.nomials import NomialMap
 from gpkit.small_classes import HashVector
@@ -234,6 +234,15 @@ class TestSignomial(unittest.TestCase):
             self.assertEqual(Signomial(-3), -3)
             self.assertNotEqual(Signomial(-3), 3)
 
+    def test_tautological(self):
+        x = Variable('x')
+        y = Variable('y')
+        z = Variable('z')
+        with SignomialsEnabled():
+            m1 = Model(x, [x + y >= z, x >= y])
+            m2 = Model(x, [x + 1 >= 0, x >= y])
+        m1.substitutions.update({'z': 0, 'y': 1})
+        m2.substitutions.update({'y': 1})
 
 class TestPosynomial(unittest.TestCase):
     """TestCase for the Posynomial class"""

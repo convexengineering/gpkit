@@ -663,15 +663,15 @@ class SignomialInequality(ScalarSingleEquationConstraint):
         siglt0, = self.unsubbed
         siglt0 = siglt0.sub(substitutions, require_positive=False)
         posy, negy = siglt0.posy_negy()
-        if posy is 0:
-            raise ValueError("SignomialConstraint %s became the tautological"
-                             " constraint %s %s %s after substitution." %
-                             (self, posy, "<=", negy))
-        elif negy is 0:
+        if negy is 0:
             raise ValueError("SignomialConstraint %s became the infeasible"
                              " constraint %s %s %s after substitution." %
                              (self, posy, "<=", negy))
         elif not hasattr(negy, "cs") or len(negy.cs) == 1:
+            if posy is 0:
+                print("SignomialConstraint %s became the tautological"
+                             " constraint %s %s %s after substitution." %
+                             (self, posy, "<=", negy))
             # all but one of the negy terms becomes compatible with the posy
             p_ineq = PosynomialInequality(posy, "<=", negy)
             siglt0_us, = self.unsubbed
