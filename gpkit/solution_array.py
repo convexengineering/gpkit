@@ -339,7 +339,7 @@ class SolutionArray(DictOfLists):
         minspan, maxspan = None, 1
         for v in data.values():
             if (getattr(v, "shape", None)
-                and not all(di == 1 for di in v.shape)):
+                    and not all(di == 1 for di in v.shape)):
                 minspan_ = min((di for di in v.shape if di != 1))
                 maxspan_ = min((di for di in v.shape if di != 1))
                 if minspan is None or minspan_ < minspan:
