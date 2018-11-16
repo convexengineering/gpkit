@@ -336,6 +336,52 @@ class ConstraintSet(list):
             result["freevariables"][v] = val
             result["variables"][v] = val
 
+    def as_view(self):
+        "Return a ConstraintSetView of this ConstraintSet."
+        return ConstraintSetView(self)
+
+
+class ConstraintSetView(object):
+    "Class to access particular views on a set's variables"
+
+    def __init__(self, constraintset, index=()):
+        self.constraintset = constraintset
+        try:
+            self.index = tuple(index)
+        except TypeError:  # probably not iterable
+            self.index = (index,)
+
+    def __getitem__(self, index):
+        "Appends the index to its own and returns a new view."
+        if not isinstance(index, tuple):
+            index = (index,)
+        # indexes are preprended to match Vectorize convention
+        return ConstraintSetView(self.constraintset, index + self.index)
+
+    def __getattr__(self, attr):
+        """Returns attribute from the base ConstraintSets
+
+        If it's a another ConstraintSet, return the matching View;
+        if it's an array, return it at the specified index;
+        otherwise, raise an error.
+        """
+        if hasattr(self.constraintset, attr):
+            value = getattr(self.constraintset, attr)
+            if isinstance(value, ConstraintSet):
+                return ConstraintSetView(value, self.index)
+            if not hasattr(value, "shape"):
+                raise ValueError("attribute %s with value %s did not have"
+                                 " a shape, so ConstraintSetView cannot"
+                                 " return an indexed view." % (attr, value))
+            index = self.index
+            newdims = len(value.shape) - len(self.index)
+            if newdims > 0:  # indexes are put last to match Vectorize
+                index = (slice(None),)*newdims + index
+            return value[index]
+        else:
+            raise AttributeError("the underlying ConstraintSet does not have"
+                                 "attribute %s." % attr)
+
 
 def raise_badelement(cns, i, constraint):
     "Identify the bad element and raise a ValueError"
