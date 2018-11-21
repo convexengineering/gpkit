@@ -2,7 +2,7 @@
 from collections import defaultdict
 import numpy as np
 from .small_classes import Numbers, Quantity
-from .small_scripts import is_sweepvar, isnan
+from .small_scripts import is_sweepvar, isnan, SweepValue
 
 DIMLESS_QUANTITY = Quantity(1, "dimensionless")
 INT_DTYPE = np.dtype(int)
@@ -193,6 +193,10 @@ class KeyDict(dict):
         if isinstance(value, Quantity):
             value = value.to(key.units or "dimensionless").magnitude
         if idx:
+            if is_sweepvar(value):
+                dict.__setitem__(self, key,
+                                 np.array(dict.__getitem__(self, key), object))
+                value = SweepValue(value[1])
             dict.__getitem__(self, key)[idx] = value
         else:
             if (self.collapse_arrays and hasattr(key, "descr")
