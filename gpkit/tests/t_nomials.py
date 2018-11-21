@@ -1,8 +1,8 @@
 """Tests for Monomial, Posynomial, and Signomial classes"""
 import math
 import unittest
-from gpkit import Model, Variable, Monomial, Posynomial, Signomial, SignomialsEnabled
-from gpkit import VectorVariable, NomialArray
+from gpkit import Model, Variable, Monomial, Posynomial, Signomial
+from gpkit import VectorVariable, NomialArray, SignomialsEnabled
 from gpkit.nomials import NomialMap
 from gpkit.small_classes import HashVector
 import gpkit
