@@ -64,17 +64,35 @@ def nomial_latex_helper(c, pos_vars, neg_vars):
     return mstr
 
 
+class SweepValue(object):
+    "Object to represent a swept substitution."
+    def __init__(self, value):
+        self.value = value
+
+
 def is_sweepvar(sub):
     "Determines if a given substitution indicates a sweep."
+    return splitsweep(sub)[0]
+
+
+def get_sweepval(sub):
+    "Returns a given substitution's indicated sweep, or None."
+    return splitsweep(sub)[1]
+
+
+def splitsweep(sub):
+    "Splits a substitution into (is_sweepvar, sweepval)"
+    if isinstance(sub, SweepValue):
+        return True, sub.value
     try:
         sweep, value = sub
         # pylint:disable=literal-comparison
         if sweep is "sweep" and (isinstance(value, Iterable) or
                                  hasattr(value, "__call__")):
-            return True
+            return True, value
     except (TypeError, ValueError):
         pass
-    return False
+    return False, None
 
 
 def latex_num(c):
