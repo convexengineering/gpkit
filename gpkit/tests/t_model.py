@@ -352,16 +352,16 @@ class TestSP(unittest.TestCase):
         y = Variable('y', 1)
         z = Variable('z', 4)
 
-        with self.assertRaises(ValueError):
-            with SignomialsEnabled():
-                m = Model(x, [x + z >= y])
-                m.localsolve()
+        with SignomialsEnabled():
+            m = Model(x, [x + z >= y])
+            self.assertRaises(ValueError, m.localsolve(verbosity=0))
 
         with SignomialsEnabled():
             m = Model(x, [x + y >= z])
             m.substitutions[y] = 1
             m.substitutions[z] = 4
-        self.assertAlmostEqual(m.solve(self.solver, verbosity=0)["cost"], 3)
+        sol = m.solve(self.solver, verbosity=0)
+        self.assertAlmostEqual(sol["cost"], 3)
 
     def test_trivial_sp(self):
         x = Variable('x')
