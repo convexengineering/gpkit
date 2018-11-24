@@ -654,6 +654,7 @@ class SignomialInequality(ScalarSingleEquationConstraint):
             print ("Warning: SignomialConstraint %s became the tautological"
                    " constraint %s %s %s after substitution." %
                    (self, posy, "<=", negy))
+            return []
         elif negy is 0:
             raise ValueError("SignomialConstraint %s became the infeasible"
                              " constraint %s %s %s after substitution." %
