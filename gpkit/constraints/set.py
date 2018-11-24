@@ -36,8 +36,13 @@ class ConstraintSet(list):
     "Recursive container for ConstraintSets and Inequalities"
     varkeys = None
     unique_varkeys = frozenset()
+    # idxlookup holds the names of the top-level constraintsets
+    idxlookup = None
 
     def __init__(self, constraints, substitutions=None):  # pylint: disable=too-many-branches
+        if isinstance(constraints, dict):
+            self.idxlookup = {k: i for i, k in enumerate(constraints)}
+            constraints = constraints.values()
         if isinstance(constraints, ConstraintSet):
             # stick it in a list to maintain hierarchy
             constraints = [constraints]
@@ -92,6 +97,8 @@ class ConstraintSet(list):
         add_meq_bounds(self.bounded, self.meq_bounded)
 
     def __getitem__(self, key):
+        if self.idxlookup and key in self.idxlookup:
+            key = self.idxlookup[key]
         if isinstance(key, int):
             return list.__getitem__(self, key)
         return self._choosevar(key, self.variables_byname(key))
@@ -134,6 +141,8 @@ class ConstraintSet(list):
         return constrained_varkeys
 
     def __setitem__(self, key, value):
+        if self.idxlookup and key in self.idxlookup:
+            key = self.idxlookup[key]
         self.substitutions.update(value.substitutions)
         list.__setitem__(self, key, value)
         self.reset_varkeys()
