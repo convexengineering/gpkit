@@ -220,34 +220,6 @@ class ConstraintSet(list):
                 for yielded_constraint in subgenerator:
                     yield yielded_constraint
 
-    def subinplace(self, subs):
-        """Substitutes in place, updating self.substitutions accordingly.
-
-        Keys substituted with `subinplace` are no longer present, so if such a
-        key is also in self.substitutions that substitution is now orphaned. If
-        `subs[key]` describes some key in the ConstraintSet (i.e. one key has
-        been substituted for another), then a substitution is added, mapping
-        the orphaned value to this new key; otherwise, an error is raised.
-        """
-        subs = {getattr(k, "key", k): getattr(v, "key", v)
-                for k, v in subs.items()}
-        subkeys = frozenset(subs)
-        for constraint in self:
-            if isinstance(constraint.varkeys, set):
-                constraint.varkeys = KeySet(constraint.varkeys)
-            csubs = {k: v for k, v in subs.items() if k in constraint.varkeys}
-            if csubs:
-                constraint.subinplace(csubs)
-        if subkeys.intersection(self.substitutions):
-            for key, value in subs.items():
-                if key in self.substitutions:
-                    valkey, _ = self.substitutions.parse_and_index(value)
-                    self.substitutions[valkey] = self.substitutions[key]
-                    del self.substitutions[key]
-        self.unique_varkeys = frozenset(subs[vk] if vk in subs else vk
-                                        for vk in self.unique_varkeys)
-        self.reset_varkeys()
-
     def reset_varkeys(self):
         "Goes through constraints and collects their varkeys."
         varkeys = set(self.unique_varkeys)

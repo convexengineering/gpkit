@@ -5,7 +5,6 @@ from numpy import log
 from gpkit import Variable, VectorVariable, Model, NomialArray
 from gpkit.tools.autosweep import BinarySweepTree
 from gpkit.tools.tools import te_exp_minus1, te_secant, te_tangent
-from gpkit.tools.fmincon import generate_mfiles
 from gpkit.small_scripts import mag
 from gpkit import parse_variables
 
@@ -149,36 +148,6 @@ class TestTools(unittest.TestCase):
         self.assertEqual(te_tangent(y, 0), 0)
         # make sure y was not modified
         self.assertEqual(y, VectorVariable(3, 'y'))
-
-    def test_fmincon_generator(self):
-        """Test fmincon comparison tool"""
-        x = Variable('x')
-        y = Variable('y')
-        m = Model(x, [x**3.2 >= 17*y + y**-0.2,
-                      x >= 2,
-                      y == 4])
-        obj, c, ceq, DC, DCeq = generate_mfiles(m, writefiles=False)
-        self.assertEqual(obj, 'x(1)')
-        self.assertEqual(c, ['-x(1)**3.2 + 17*x(2) + x(2)**-0.2', '-x(1) + 2'])
-        self.assertEqual(ceq, ['-x(2) + 4'])
-        self.assertEqual(DC, ['-3.2*x(1).^2.2,...\n          ' +
-                              '-0.2*x(2).^-1.2 + 17', '-1,...\n          0'])
-        self.assertEqual(DCeq, ['0,...\n            -1'])
-
-    def test_fmincon_generator_logspace(self):
-        "Test fmincon comparison tool (logspace)"
-        x = Variable('x')
-        y = Variable('y')
-        m = Model(x, [x**3.2 >= 17*y + y**-0.2,
-                      x >= 2,
-                      y == 4])
-        obj, c, ceq, _, _ = generate_mfiles(m, writefiles=False, logspace=True)
-        self.assertEqual(c, [
-            ('log( + 17.0*exp( +-3.2 * x(1) +1 * x(2) )'
-             ' + 1.0*exp( +-3.2 * x(1) +-0.2 * x(2) ) )'),
-            'log( + 2.0*exp( +-1 * x(1) ) )'])
-        self.assertEqual(obj, 'log( + 1.0*exp( +1 * x(1) ) )')
-        self.assertEqual(ceq, ['log( + 0.25*exp( +1 * x(2) ) )'])
 
 
 TESTS = [TestTools]

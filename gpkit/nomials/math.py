@@ -165,12 +165,6 @@ class Signomial(Nomial):
         return Signomial(self.hmap.sub(substitutions, self.varkeys),
                          require_positive=require_positive)
 
-    def subinplace(self, substitutions):
-        "Substitutes in place."
-        Nomial.__init__(self, self.hmap.sub(substitutions, self.varkeys))
-        self._reset()
-        self.hmap.expmap = {}
-
     def __le__(self, other):
         if isinstance(other, (Numbers, Signomial)):
             return SignomialInequality(self, "<=", other)
@@ -385,13 +379,6 @@ class ScalarSingleEquationConstraint(SingleEquationConstraint):
                 lr[i] = Signomial(sig)
         super(ScalarSingleEquationConstraint,
               self).__init__(lr[0], oper, lr[1])
-
-    def subinplace(self, substitutions):
-        "Modifies the constraint in place with substitutions."
-        for nomial in self.nomials:
-            nomial.subinplace(substitutions)
-        self.varkeys = KeySet(self.left.vks)
-        self.varkeys.update(self.right.vks)
 
     def relaxed(self, relaxvar):
         "Returns the relaxation of the constraint in a list."
