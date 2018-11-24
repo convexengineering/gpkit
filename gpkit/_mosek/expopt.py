@@ -32,7 +32,7 @@ class ModuleShortener(object):
     Arguments
     ---------
     stub : str
-      String to append to all getattrs (the string "MSK_" above)
+      String to append to all getattrs (the string "MSK" above)
     module : str
       Module to be shortened (the first "MSK" object above)
     """

@@ -45,7 +45,6 @@ def imize_fn(path=None, clearfiles=True):
 
         Definitions
         -----------
-        "[a,b] array of floats" indicates array-like data with shape [a,b]
         n is the number of monomials in the gp
         m is the number of variables in the gp
         p is the number of posynomials in the gp
@@ -79,7 +78,6 @@ def imize_fn(path=None, clearfiles=True):
             If the format of mskexpopt's output file is unexpected.
 
         """
-
         write_output_file(filename, c, A, p_idxs)
 
         # run mskexpopt and print stdout
@@ -98,8 +96,8 @@ def imize_fn(path=None, clearfiles=True):
             assert_line(f, "\n")
             assert_line(f, "PRIMAL VARIABLES\n")
             assert_line(f, "INDEX   ACTIVITY\n")
-            primal_vals = list(read_vals(f))
-            # read_vals reads the next blank line
+            primal_vals = read_vals(f)
+            # read_vals reads the dividing blank line as well
             assert_line(f, "DUAL VARIABLES\n")
             assert_line(f, "INDEX   ACTIVITY\n")
             dual_vals = read_vals(f)
