@@ -651,9 +651,9 @@ class SignomialInequality(ScalarSingleEquationConstraint):
         siglt0 = siglt0.sub(substitutions, require_positive=False)
         posy, negy = siglt0.posy_negy()
         if posy is 0:
-            raise ValueError("SignomialConstraint %s became the tautological"
-                             " constraint %s %s %s after substitution." %
-                             (self, posy, "<=", negy))
+            print ("Warning: SignomialConstraint %s became the tautological"
+                   " constraint %s %s %s after substitution." %
+                   (self, posy, "<=", negy))
         elif negy is 0:
             raise ValueError("SignomialConstraint %s became the infeasible"
                              " constraint %s %s %s after substitution." %

@@ -352,11 +352,6 @@ class TestSP(unittest.TestCase):
         y = Variable('y', 1)
         z = Variable('z', 4)
 
-        with self.assertRaises(ValueError):
-            with SignomialsEnabled():
-                m = Model(x, [x + z >= y])
-                m.localsolve()
-
         with SignomialsEnabled():
             m = Model(x, [x + y >= z])
             m.substitutions[y] = 1
