@@ -248,7 +248,7 @@ class SolutionArray(DictOfLists):
         out = out.replace("-0.", " -.")
         return out
 
-    def save(self, filename="solution.p"):
+    def save(self, filename="solution.pkl"):
         """Pickles the solution and saves it to a file.
 
         The saved solution is identical except for two things:
@@ -257,7 +257,7 @@ class SolutionArray(DictOfLists):
 
         Solution can then be loaded with e.g.:
         >>> import cPickle as pickle
-        >>> pickle.load(open("solution.p"))
+        >>> pickle.load(open("solution.pkl"))
         """
         program = self.program
         self.program = None

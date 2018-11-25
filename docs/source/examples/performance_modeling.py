@@ -234,8 +234,8 @@ MISSION = Mission(AC)
 M = Model(MISSION.takeoff_fuel, [MISSION, AC])
 sol = M.solve(verbosity=0)
 # save solution to a file and retrieve it
-sol.save("solution.p")
-sol_loaded = pickle.load(open("solution.p"))
+sol.save("solution.pkl")
+sol_loaded = pickle.load(open("solution.pkl"))
 
 vars_of_interest = set(AC.varkeys)
 # note that there's two ways to access submodels
