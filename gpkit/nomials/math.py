@@ -6,7 +6,6 @@ from ..constraints import SingleEquationConstraint
 from ..globals import SignomialsEnabled
 from ..small_classes import Strings, Numbers
 from ..small_classes import HashVector
-from ..keydict import KeySet
 from ..varkey import VarKey
 from ..small_scripts import mag
 from ..exceptions import InvalidGPConstraint, DimensionalityError
