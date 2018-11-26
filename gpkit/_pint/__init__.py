@@ -15,6 +15,7 @@ except ImportError:  # pint is not installed; provide dummy imports
     DimensionalityError = None
 
 QTY_CACHE = {}
+MON_CACHE = {}
 
 
 def qty(unit):
@@ -25,13 +26,17 @@ def qty(unit):
 
 
 class GPkitUnits(object):
-    "Return monomials instead of Quantitites"
+    "Return Monomials instead of Quantitites"
 
     def __call__(self, arg):
+        "Returns a unit Monomial, caching the result for future retrievals"
         from .. import Monomial
-        return Monomial(qty(arg))
+        if arg not in MON_CACHE:
+            MON_CACHE[arg] = Monomial(qty(arg))
+        return MON_CACHE[arg]
 
     def __getattr__(self, attr):
+        "Turns an attribute get into a function call"
         return self(attr)
 
 

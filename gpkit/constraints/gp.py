@@ -65,9 +65,8 @@ class GeometricProgram(CostedConstraintSet, NomialData):
             # only allow Numbers and ndarrays
             if not isinstance(sub, (Numbers, np.ndarray)):
                 raise ValueError("substitution {%s: %s} with value type %s is"
-                                 " not allowed in .substitutions; such"
-                                 " substitutions must be done by using"
-                                 " .subinplace()." % (key, sub, type(sub)))
+                                 " not allowed in .substitutions."
+                                 % (key, sub, type(sub)))
         self.posynomials = [cost.sub(self.substitutions)]
         self.posynomials.extend(self.as_posyslt1(self.substitutions))
         self.hmaps = [p.hmap for p in self.posynomials]

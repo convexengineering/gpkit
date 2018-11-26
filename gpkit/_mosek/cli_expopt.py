@@ -36,8 +36,9 @@ def imize_fn(path=None, clearfiles=True):
         path = tempfile.mkdtemp()
     filename = path + os.sep + "gpkit_mosek"
     if "mosek_bin_dir" in settings:
-        os.environ['PATH'] = ":".join([os.environ['PATH'],
-                                       settings["mosek_bin_dir"]])
+        if settings["mosek_bin_dir"] not in os.environ["PATH"]:
+            os.environ["PATH"] = (os.environ["PATH"]
+                                  + ":" + settings["mosek_bin_dir"])
 
     # pylint: disable=unused-argument
     def imize(c, A, p_idxs, *args, **kwargs):
@@ -45,7 +46,6 @@ def imize_fn(path=None, clearfiles=True):
 
         Definitions
         -----------
-        "[a,b] array of floats" indicates array-like data with shape [a,b]
         n is the number of monomials in the gp
         m is the number of variables in the gp
         p is the number of posynomials in the gp
@@ -79,7 +79,6 @@ def imize_fn(path=None, clearfiles=True):
             If the format of mskexpopt's output file is unexpected.
 
         """
-
         write_output_file(filename, c, A, p_idxs)
 
         # run mskexpopt and print stdout
@@ -98,8 +97,8 @@ def imize_fn(path=None, clearfiles=True):
             assert_line(f, "\n")
             assert_line(f, "PRIMAL VARIABLES\n")
             assert_line(f, "INDEX   ACTIVITY\n")
-            primal_vals = list(read_vals(f))
-            # read_vals reads the next blank line
+            primal_vals = read_vals(f)
+            # read_vals reads the dividing blank line as well
             assert_line(f, "DUAL VARIABLES\n")
             assert_line(f, "INDEX   ACTIVITY\n")
             dual_vals = read_vals(f)

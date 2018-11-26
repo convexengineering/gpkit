@@ -352,16 +352,54 @@ class TestSP(unittest.TestCase):
         y = Variable('y', 1)
         z = Variable('z', 4)
 
-        with self.assertRaises(ValueError):
-            with SignomialsEnabled():
-                m = Model(x, [x + z >= y])
-                m.localsolve()
+        import sys
+        from cStringIO import StringIO
+        old_stdout = sys.stdout
+        sys.stdout = stringout = StringIO()
+
+        with SignomialsEnabled():
+            m = Model(x, [x + z >= y])
+            with self.assertRaises(ValueError):
+                m.localsolve(verbosity=0)
 
         with SignomialsEnabled():
             m = Model(x, [x + y >= z])
             m.substitutions[y] = 1
             m.substitutions[z] = 4
-        self.assertAlmostEqual(m.solve(self.solver, verbosity=0)["cost"], 3)
+        sol = m.solve(self.solver, verbosity=0)
+        self.assertAlmostEqual(sol["cost"], 3)
+
+        sys.stdout = old_stdout
+        self.assertEqual(stringout.getvalue(), (
+            "Warning: SignomialConstraint x + z >= y became the tautological"
+            " constraint 0 <= 3 + x after substitution.\n"
+            "Warning: SignomialConstraint x + z >= y became the tautological"
+            " constraint 0 <= 3 + x after substitution.\n"))
+
+    def test_tautological(self):
+        x = Variable('x')
+        y = Variable('y')
+        z = Variable('z')
+
+        import sys
+        from cStringIO import StringIO
+        old_stdout = sys.stdout
+        sys.stdout = stringout = StringIO()
+
+        with SignomialsEnabled():
+            m1 = Model(x, [x + y >= z, x >= y])
+            m2 = Model(x, [x + 1 >= 0, x >= y])
+        m1.substitutions.update({'z': 0, 'y': 1})
+        m2.substitutions.update({'y': 1})
+        self.assertAlmostEqual(m1.solve(self.solver, verbosity=0)["cost"],
+                               m2.solve(self.solver, verbosity=0)["cost"])
+
+        sys.stdout = old_stdout
+        self.assertEqual(stringout.getvalue(), (
+            "Warning: SignomialConstraint x + y >= z became the tautological"
+            " constraint 0 <= 1 + x after substitution.\n"
+            "Warning: SignomialConstraint 1 + x >= 0 became the tautological"
+            " constraint 0 <= 1 + x after substitution.\n"))
 
     def test_trivial_sp(self):
         x = Variable('x')

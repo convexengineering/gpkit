@@ -15,5 +15,3 @@ class ArrayConstraint(SingleEquationConstraint, ConstraintSet):
     def __init__(self, constraints, left, oper, right):
         SingleEquationConstraint.__init__(self, left, oper, right)
         ConstraintSet.__init__(self, constraints)
-
-    subinplace = ConstraintSet.subinplace

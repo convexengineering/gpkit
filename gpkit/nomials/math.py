@@ -6,7 +6,6 @@ from ..constraints import SingleEquationConstraint
 from ..globals import SignomialsEnabled
 from ..small_classes import Strings, Numbers
 from ..small_classes import HashVector
-from ..keydict import KeySet
 from ..varkey import VarKey
 from ..small_scripts import mag
 from ..exceptions import InvalidGPConstraint, DimensionalityError
@@ -164,12 +163,6 @@ class Signomial(Nomial):
         """
         return Signomial(self.hmap.sub(substitutions, self.varkeys),
                          require_positive=require_positive)
-
-    def subinplace(self, substitutions):
-        "Substitutes in place."
-        Nomial.__init__(self, self.hmap.sub(substitutions, self.varkeys))
-        self._reset()
-        self.hmap.expmap = {}
 
     def __le__(self, other):
         if isinstance(other, (Numbers, Signomial)):
@@ -385,13 +378,6 @@ class ScalarSingleEquationConstraint(SingleEquationConstraint):
                 lr[i] = Signomial(sig)
         super(ScalarSingleEquationConstraint,
               self).__init__(lr[0], oper, lr[1])
-
-    def subinplace(self, substitutions):
-        "Modifies the constraint in place with substitutions."
-        for nomial in self.nomials:
-            nomial.subinplace(substitutions)
-        self.varkeys = KeySet(self.left.vks)
-        self.varkeys.update(self.right.vks)
 
     def relaxed(self, relaxvar):
         "Returns the relaxation of the constraint in a list."
@@ -664,9 +650,10 @@ class SignomialInequality(ScalarSingleEquationConstraint):
         siglt0 = siglt0.sub(substitutions, require_positive=False)
         posy, negy = siglt0.posy_negy()
         if posy is 0:
-            raise ValueError("SignomialConstraint %s became the tautological"
-                             " constraint %s %s %s after substitution." %
-                             (self, posy, "<=", negy))
+            print ("Warning: SignomialConstraint %s became the tautological"
+                   " constraint %s %s %s after substitution." %
+                   (self, posy, "<=", negy))
+            return []
         elif negy is 0:
             raise ValueError("SignomialConstraint %s became the infeasible"
                              " constraint %s %s %s after substitution." %
