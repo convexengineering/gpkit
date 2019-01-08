@@ -160,6 +160,9 @@ class GeometricProgram(CostedConstraintSet, NomialData):
             elif solver == "mosek":
                 from .._mosek import expopt
                 solverfn = expopt.imize
+            elif solver == "mosek9":
+                from .._mosek import expopt9
+                solverfn = expopt9.imize
             elif hasattr(solver, "__call__"):
                 solverfn = solver
                 solver = solver.__name__

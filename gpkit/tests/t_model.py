@@ -11,7 +11,7 @@ from gpkit.constraints.relax import ConstraintsRelaxed
 from gpkit.constraints.relax import ConstraintsRelaxedEqually
 from gpkit.constraints.relax import ConstantsRelaxed
 
-NDIGS = {"cvxopt": 4, "mosek": 5, "mosek_cli": 5}
+NDIGS = {"cvxopt": 4, "mosek": 5, "mosek9": 4, "mosek_cli": 5}
 # name: decimal places of accuracy
 
 # pylint: disable=invalid-name,attribute-defined-outside-init,unused-variable,undefined-variable,exec-used
