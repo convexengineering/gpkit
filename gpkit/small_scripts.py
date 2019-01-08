@@ -5,6 +5,7 @@ import numpy as np
 
 def appendsolwarning(msg, result, category="uncategorized",
                      printwarning=False):
+    "Append a particular category of warnings to a solution."
     if printwarning:
         print "Warning: %s\n" % msg
     if "warnings" not in result:
