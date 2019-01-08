@@ -283,7 +283,8 @@ class SolutionArray(DictOfLists):
         "Saves primal solution as matlab file"
         from scipy.io import savemat
         savemat(filename,
-                {name.replace("/", "_"): self["variables"][key]
+                {name.replace("/", "_").replace(".", "__"):
+                 float(self["variables"][key])
                  for name, key in self.varnames(include).items()})
 
     def todataframe(self, include=None):
