@@ -3,6 +3,16 @@ from collections import Iterable
 import numpy as np
 
 
+def appendsolwarning(msg, result, category="uncategorized",
+                     printwarning=False):
+    if printwarning:
+        print "Warning: %s\n" % msg
+    if "warnings" not in result:
+        result["warnings"] = {}
+    if "loose" not in result["warnings"]:
+        result["warnings"][category] = []
+    result["warnings"][category].append(msg)
+
 @np.vectorize
 def isnan(element):
     "Determine if something of arbitrary type is a numpy nan."

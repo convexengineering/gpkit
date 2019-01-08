@@ -1,5 +1,6 @@
 "Implements Loose"
 from .set import ConstraintSet
+from ..small_scripts import appendsolwarning
 
 
 class Loose(ConstraintSet):
@@ -32,11 +33,4 @@ class Loose(ConstraintSet):
                         constraint.relax_sensitivity, self.senstol))
                 if self.raiseerror:
                     raise ValueError(msg)
-                else:
-                    if self.printwarning:
-                        print "Warning: %s\n" % msg
-                    if "warnings" not in result:
-                        result["warnings"] = {}
-                    if "loose" not in result["warnings"]:
-                        result["warnings"]["loose"] = []
-                    result["warnings"]["loose"].append(msg)
+                appendsolwarning(msg, result, "loose", self.printwarning)

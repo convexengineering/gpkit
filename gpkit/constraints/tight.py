@@ -2,6 +2,7 @@
 from .set import ConstraintSet
 from ..nomials import PosynomialInequality, SignomialInequality
 from ..small_scripts import mag
+from ..small_scripts import appendsolwarning
 from .. import SignomialsEnabled
 
 
@@ -48,11 +49,4 @@ class Tight(ConstraintSet):
                         self.reltol*100, mag(rel_diff)*100))
                 if self.raiseerror:
                     raise ValueError(msg)
-                else:
-                    if self.printwarning:
-                        print "Warning: %s\n" % msg
-                    if "warnings" not in result:
-                        result["warnings"] = {}
-                    if "tight" not in result["warnings"]:
-                        result["warnings"]["tight"] = []
-                    result["warnings"]["tight"].append(msg)
+                appendsolwarning(msg, result, "tight", self.printwarning)
