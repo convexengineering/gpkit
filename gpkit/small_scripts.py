@@ -10,7 +10,7 @@ def appendsolwarning(msg, result, category="uncategorized",
         print "Warning: %s\n" % msg
     if "warnings" not in result:
         result["warnings"] = {}
-    if "loose" not in result["warnings"]:
+    if category not in result["warnings"]:
         result["warnings"][category] = []
     result["warnings"][category].append(msg)
 
