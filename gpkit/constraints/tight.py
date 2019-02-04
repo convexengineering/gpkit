@@ -2,6 +2,7 @@
 from .set import ConstraintSet
 from ..nomials import PosynomialInequality, SignomialInequality
 from ..small_scripts import mag
+from ..small_scripts import appendsolwarning
 from .. import SignomialsEnabled
 
 
@@ -9,11 +10,13 @@ class Tight(ConstraintSet):
     "ConstraintSet whose inequalities must result in an equality."
     reltol = 1e-6
 
-    def __init__(self, constraints, reltol=None, raiseerror=False):
+    def __init__(self, constraints, reltol=None, raiseerror=False,
+                 printwarning=False):
         super(Tight, self).__init__(constraints)
         if reltol:
             self.reltol = reltol
         self.raiseerror = raiseerror
+        self.printwarning = printwarning
 
     def process_result(self, result):
         "Checks that all constraints are satisfied with equality"
@@ -40,11 +43,10 @@ class Tight(ConstraintSet):
                 msg = ("Constraint [%.100s... %s %.100s...] is not tight"
                        " because the left hand side evaluated to %s but"
                        " the right hand side evaluated to %s"
-                       " (Allowable error: %s%%, Actual error: %.2g%%)\n" %
+                       " (Allowable error: %s%%, Actual error: %.2g%%)" %
                        (constraint.left, constraint.oper, constraint.right,
                         leftsubbed, rightsubbed,
                         self.reltol*100, mag(rel_diff)*100))
                 if self.raiseerror:
                     raise ValueError(msg)
-                else:
-                    print "Warning: %s" % msg
+                appendsolwarning(msg, result, "tight", self.printwarning)
