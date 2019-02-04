@@ -124,6 +124,15 @@ class TestConstraint(unittest.TestCase):
         c2 = (1 + x**2 <= y)  # same as c
         self.assertEqual(c2.as_posyslt1(), c.as_posyslt1())
 
+    def test_sub_tol(self):
+        """ Test PosyIneq feasibility tolerance under substitutions"""
+        x = Variable('x')
+        y = Variable('y')
+        PosynomialInequality.feastol = 1e-5
+        m = Model(x, [x >= y], {x: 1., y: 1.0001})
+        self.assertRaises(ValueError, m.solve())
+        PosynomialInequality.feastol = 1e-3
+        self.assertEqual(m.substitutions('x'), m.solve()('x'))
 
 class TestMonomialEquality(unittest.TestCase):
     """Test monomial equality constraint class"""
