@@ -24,7 +24,7 @@ def format_and_label_axes(var, posys, axes, ylabel=True):
         if ylabel:
             if hasattr(posy, "key"):
                 ylabel = (posy.key.descr.get("label", posy.key.name)
-                          + " " + posy.key.unitstr(dimless="-"))
+                          + " [%s]" % posy.key.unitstr(dimless="-"))
             else:
                 ylabel = str(posy)
             ax.set_ylabel(ylabel)
@@ -42,7 +42,7 @@ def format_and_label_axes(var, posys, axes, ylabel=True):
             i.set_color("0.6")
             i.set_linestyle("dotted")
     xlabel = (var.key.descr.get("label", var.key.name)
-              + " " + var.key.unitstr(dimless="-"))
+              + " [%s]" % var.key.unitstr(dimless="-"))
     ax.set_xlabel(xlabel)  # pylint: disable=undefined-loop-variable
     plt.locator_params(nbins=4)
     plt.subplots_adjust(wspace=0.15)

@@ -132,6 +132,7 @@ class ConstantsRelaxed(ConstraintSet):
                 continue
             elif key.name in exclude:
                 continue
+            key.descr.pop("gradients", None)
             descr = key.descr.copy()
             descr.pop("value", None)
             descr.pop("veckey", None)
