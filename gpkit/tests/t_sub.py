@@ -130,28 +130,12 @@ class TestNomialSubs(unittest.TestCase):
 class TestModelSubs(unittest.TestCase):
     """Test substitution for Model objects"""
 
-    def test_bad_subinplace(self):
-        x = Variable("x")
-        y = Variable("y")
-        z = Variable("z")
-        # good
-        m = Model(x*y, [x >= 1, y >= z], {z: 2})
-        m.subinplace({y: x})
-        self.assertAlmostEqual(m.solve(verbosity=0)["cost"], 4, 5)
-        # bad
-        m = Model(x, [y >= 1], {y: 2})
-        with self.assertRaises((KeyError, ValueError)):
-            m.subinplace({y: 3})
-
     def test_bad_gp_sub(self):
         x = Variable("x")
         y = Variable("y")
         m = Model(x, [y >= 1], {y: x})
         with self.assertRaises(ValueError):
             m.solve()
-        m = Model(x, [y >= 1])
-        m.subinplace({y: x})
-        self.assertAlmostEqual(m.solve(verbosity=0)["cost"], 1)
 
     def test_quantity_sub(self):
         if gpkit.units:
@@ -321,20 +305,16 @@ class TestModelSubs(unittest.TestCase):
         reset_modelnumbers()
         a1, b1 = Above(), Below()
         self.assertEqual(a1["x"].key.modelnums, [0])
-        b1.subinplace({b1["x"]: a1["x"]})
-        m = Model(a1["x"], [a1, b1])
+        m = Model(a1["x"], [a1, b1, b1["x"] == a1["x"]])
         sol = m.solve(verbosity=0)
-        if not isinstance(m["x"].key.units, str):
+        if not isinstance(a1["x"].key.units, str):
             almostequal(1*cm/sol["cost"], 1, 5)
         a1, b1 = Above(), Below()
         self.assertEqual(a1["x"].key.modelnums, [1])
-        a1.subinplace({a1["x"]: b1["x"]})
-        m = Model(b1["x"], [a1, b1])
-        m.cost = m["x"]
+        m = Model(b1["x"], [a1, b1, b1["x"] == a1["x"]])
         sol = m.solve(verbosity=0)
-        if not isinstance(m["x"].key.units, str):
+        if not isinstance(b1["x"].key.units, str):
             almostequal(1*gpkit.ureg.cm/sol["cost"], 1, 5)
-        self.assertIn(m["x"], sol["variables"])
         self.assertIn(a1["x"], sol["variables"])
         self.assertIn(b1["x"], sol["variables"])
         self.assertNotIn(a["x"], sol["variables"])

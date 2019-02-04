@@ -38,8 +38,13 @@ class AircraftP(Model):
         D = self.wing_aero.D
         CL = self.wing_aero.CL
 
-        return [W + Wfuel <= 0.5*rho*CL*S*V**2,
-                Wburn >= 0.1*D], self.perf_models
+        return {
+            "lift":
+                W + Wfuel <= 0.5*rho*CL*S*V**2,
+            "fuel burn rate":
+                Wburn >= 0.1*D,
+            "performance":
+                self.perf_models}
 
 
 class Aircraft(Model):
@@ -63,7 +68,11 @@ class Aircraft(Model):
         self.wing = Wing()
         self.components = [self.fuse, self.wing]
 
-        return self.components, W >= sum(c.W for c in self.components)
+        return {
+            "definition of W":
+                W >= sum(c.W for c in self.components),
+            "components":
+                self.components}
 
     dynamic = AircraftP
 
@@ -103,7 +112,8 @@ class FlightSegment(Model):
         self.Wburn = self.aircraftp.Wburn
         self.Wfuel = self.aircraftp.Wfuel
 
-        return self.flightstate, self.aircraftp
+        return {"flightstate": self.flightstate,
+                "aircraft performance": self.aircraftp}
 
 
 class Mission(Model):
@@ -127,8 +137,13 @@ class Mission(Model):
         Wfuel = self.fs.aircraftp.Wfuel
         self.takeoff_fuel = Wfuel[0]
 
-        return self.fs, [Wfuel[:-1] >= Wfuel[1:] + Wburn[:-1],
-                         Wfuel[-1] >= Wburn[-1]]
+        return {
+            "definition of Wburn":
+                Wfuel[:-1] >= Wfuel[1:] + Wburn[:-1],
+            "require fuel for the last leg":
+                Wfuel[-1] >= Wburn[-1],
+            "flight segment":
+                self.fs}
 
 
 class WingAero(Model):
@@ -162,10 +177,13 @@ class WingAero(Model):
         V = state.V
         mu = state.mu
 
-        return [
-            CD >= 0.074/Re**0.2 + CL**2/np.pi/A/e,
-            Re == rho*V*c/mu,
-            D >= 0.5*rho*V**2*CD*S]
+        return {
+            "drag model":
+                CD >= 0.074/Re**0.2 + CL**2/np.pi/A/e,
+            "definition of Re":
+                Re == rho*V*c/mu,
+            "definition of D":
+                D >= 0.5*rho*V**2*CD*S}
 
 
 class Wing(Model):
@@ -189,7 +207,10 @@ class Wing(Model):
     """
     def setup(self):
         exec parse_variables(Wing.__doc__)
-        return [W >= S*rho, c == (S/A)**0.5]
+        return {"parametrization of wing weight":
+                    W >= S*rho,
+                "definition of mean chord":
+                    c == (S/A)**0.5}
 
     dynamic = WingAero
 
@@ -213,10 +234,13 @@ MISSION = Mission(AC)
 M = Model(MISSION.takeoff_fuel, [MISSION, AC])
 sol = M.solve(verbosity=0)
 # save solution to a file and retrieve it
-sol.save("solution.p")
-sol_loaded = pickle.load(open("solution.p"))
+sol.save("solution.pkl")
+sol_loaded = pickle.load(open("solution.pkl"))
 
 vars_of_interest = set(AC.varkeys)
+# note that there's two ways to access submodels
+assert (MISSION["flight segment"]["aircraft performance"]
+        is MISSION.fs.aircraftp)
 vars_of_interest.update(MISSION.fs.aircraftp.unique_varkeys)
 vars_of_interest.add("D")
 print sol.summary(vars_of_interest)

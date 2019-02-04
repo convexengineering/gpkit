@@ -180,6 +180,7 @@ class TestMonomialEquality(unittest.TestCase):
 
 class TestSignomialInequality(unittest.TestCase):
     """Test Signomial constraints"""
+
     def test_becomes_posy_sensitivities(self):
         # pylint: disable=invalid-name
         # model from #1165

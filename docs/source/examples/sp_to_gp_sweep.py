@@ -86,7 +86,7 @@ def SimPleAC():
             # linear with b and tau, quadratic with chord
             V_f_wing**2 <= 0.0009*S**3/A*tau**2,
             V_f_avail <= V_f_wing + V_f_fuse,  # [SP]
-            Tight([V_f_avail >= V_f])]
+            Tight([V_f_avail >= V_f], printwarning=True)]
 
     # Wing weight model
     constraints += [

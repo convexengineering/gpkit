@@ -271,7 +271,7 @@ class SolutionArray(DictOfLists):
         out = out.replace("-0.", " -.")
         return out
 
-    def save(self, filename="solution.p"):
+    def save(self, filename="solution.pkl"):
         """Pickles the solution and saves it to a file.
 
         The saved solution is identical except for two things:
@@ -280,7 +280,7 @@ class SolutionArray(DictOfLists):
 
         Solution can then be loaded with e.g.:
         >>> import cPickle as pickle
-        >>> pickle.load(open("solution.p"))
+        >>> pickle.load(open("solution.pkl"))
         """
         program = self.program
         self.program = None
@@ -306,7 +306,8 @@ class SolutionArray(DictOfLists):
         "Saves primal solution as matlab file"
         from scipy.io import savemat
         savemat(filename,
-                {name.replace("/", "_"): self["variables"][key]
+                {name.replace("/", "_").replace(".", "__"):
+                 float(self["variables"][key])
                  for name, key in self.varnames(include).items()})
 
     def todataframe(self, include=None):
@@ -361,7 +362,8 @@ class SolutionArray(DictOfLists):
         # if the columns don't capture any dimensions, skip them
         minspan, maxspan = None, 1
         for v in data.values():
-            if getattr(v, "shape", None):
+            if (getattr(v, "shape", None)
+                    and not all(di == 1 for di in v.shape)):
                 minspan_ = min((di for di in v.shape if di != 1))
                 maxspan_ = min((di for di in v.shape if di != 1))
                 if minspan is None or minspan_ < minspan:

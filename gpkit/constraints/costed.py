@@ -33,11 +33,6 @@ class CostedConstraintSet(ConstraintSet):
         if varkeys:
             self.reset_varkeys()
 
-    def subinplace(self, subs):
-        "Substitutes in place."
-        self.cost = self.cost.sub(subs)
-        ConstraintSet.subinplace(self, subs)
-
     def constrained_varkeys(self):
         "Return all varkeys in the cost and non-ConstraintSet constraints"
         constrained_varkeys = ConstraintSet.constrained_varkeys(self)
