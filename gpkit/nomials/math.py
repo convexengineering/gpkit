@@ -445,7 +445,8 @@ class PosynomialInequality(ScalarSingleEquationConstraint):
             const_idx = hmap.keys().index(empty_exp)
             self.const_mmap = self.pmap.pop(const_idx)  # pylint: disable=attribute-defined-outside-init
             self.const_coeff = coeff  # pylint: disable=attribute-defined-outside-init
-        if (allow_tautological and (coeff >= -1.*self.feastol or np.isnan(coeff))
+        if (allow_tautological and
+                (coeff >= -1.*self.feastol or np.isnan(coeff))
                 and len(hmap) == 1):  # a tautological monomial!
             return None  # ValueError("tautological constraint: %s" % self)
         elif coeff <= -1.*self.feastol:
