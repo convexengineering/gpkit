@@ -406,7 +406,7 @@ class PosynomialInequality(ScalarSingleEquationConstraint):
     # TODO: 1e-3 is currently an arbitrary tolerance. It follows
     #       gp.check_result()'s default (1e-3) but that seems quite lax!
 
-    def __init__(self, left, oper, right, feastol = None):
+    def __init__(self, left, oper, right, feastol=None):
         ScalarSingleEquationConstraint.__init__(self, left, oper, right)
         if feastol:
             self.feastol = feastol
@@ -445,10 +445,10 @@ class PosynomialInequality(ScalarSingleEquationConstraint):
             const_idx = hmap.keys().index(empty_exp)
             self.const_mmap = self.pmap.pop(const_idx)  # pylint: disable=attribute-defined-outside-init
             self.const_coeff = coeff  # pylint: disable=attribute-defined-outside-init
-        if (allow_tautological and (coeff >= -self.feastol or np.isnan(coeff))
+        if (allow_tautological and (coeff >= -1.*self.feastol or np.isnan(coeff))
                 and len(hmap) == 1):  # a tautological monomial!
             return None  # ValueError("tautological constraint: %s" % self)
-        elif coeff <= -self.feastol:
+        elif coeff <= -1.*self.feastol:
             raise ValueError("The constraint %s is infeasible by"
                              " %f%%" % (self, -coeff*100))
         scaled = hmap/coeff
