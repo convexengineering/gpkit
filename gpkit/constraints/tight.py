@@ -11,12 +11,15 @@ class Tight(ConstraintSet):
     reltol = 1e-6
 
     def __init__(self, constraints, reltol=None, raiseerror=False,
-                 printwarning=False):
+                 printwarning=False, **kwargs):
         super(Tight, self).__init__(constraints)
         if reltol:
             self.reltol = reltol
         self.raiseerror = raiseerror
         self.printwarning = printwarning
+        if kwargs is not None:
+            for key, value in kwargs.items():
+                setattr(self, key, value)
 
     def process_result(self, result):
         "Checks that all constraints are satisfied with equality"
