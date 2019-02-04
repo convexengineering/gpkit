@@ -147,8 +147,9 @@ class SolutionArray(DictOfLists):
         return True
 
     # pylint: disable=too-many-locals, too-many-branches, too-many-statements
-    def diff(self, sol, min_percent=1.0,
-             show_sensitivities=True, min_senss_delta=0.1):
+    def diff(self, sol, showvars=None, min_percent=1.0,
+             show_sensitivities=True, min_senss_delta=0.1,
+             sortbymodel=True):
         """Outputs differences between this solution and another
 
         Arguments
@@ -170,12 +171,30 @@ class SolutionArray(DictOfLists):
             sol = pickle.load(open(sol))
         selfvars = set(self["variables"])
         solvars = set(sol["variables"])
+        if showvars:
+            showkeys = set()
+            for k in showvars:
+                if not hasattr(k, "key"):
+                    raise ValueError("the `showvars` argument only accepts"
+                                     " iterables containing VarKeys")
+                if k.key.veckey:
+                    showkeys.add(k.key.veckey)
+                else:
+                    showkeys.add(k.key)
+            selfvars = set([k for k in showkeys
+                            if k in self["variables"]])
+            solvars = set([k for k in showkeys
+                           if k in sol["variables"]])
         sol_diff = {}
         for key in selfvars.intersection(solvars):
             sol_diff[key] = 100*reldiff(self(key), sol(key))
         lines = results_table(sol_diff, "Solution difference", sortbyvals=True,
                               valfmt="%+6.1f%%  ", vecfmt="%+6.1f%% ",
-                              printunits=False, minval=min_percent)
+                              printunits=False, minval=min_percent,
+                              sortbymodel=sortbymodel)
+        if showvars:
+            lines[0] += " for variables given in `showvars`"
+            lines[1] += "----------------------------------"
         if len(lines) > 3:
             lines.insert(1, "(positive means the argument is bigger)")
         elif sol_diff:
@@ -212,7 +231,11 @@ class SolutionArray(DictOfLists):
             lines += results_table(senss_delta, "Solution sensitivity delta",
                                    sortbyvals=True,
                                    valfmt="%+-6.2f  ", vecfmt="%+-6.2f",
-                                   printunits=False, minval=min_senss_delta)
+                                   printunits=False, minval=min_senss_delta,
+                                   sortbymodel=sortbymodel)
+            if showvars:
+                lines[primal_lines] += " for variables given in `showvars`"
+                lines[primal_lines + 1] += "----------------------------------"
             if len(lines) > primal_lines + 3:
                 lines.insert(
                     primal_lines + 1,
@@ -493,7 +516,8 @@ def results_table(data, title, printunits=True, fixedcols=True,
                   varfmt="%s : ", valfmt="%-.4g ", vecfmt="%-8.3g",
                   included_models=None, excluded_models=None, latex=False,
                   minval=0, sortbyvals=False, hidebelowminval=False,
-                  columns=None, maxcolumns=5, rawlines=False, **_):
+                  columns=None, maxcolumns=5, rawlines=False,
+                  sortbymodel=True, **_):
     """
     Pretty string representation of a dict of VarKeys
     Iterable values are handled specially (partial printing)
@@ -541,6 +565,8 @@ def results_table(data, title, printunits=True, fixedcols=True,
             model = "/".join([kstr + (".%i" % knum if knum != 0 else "")
                               for kstr, knum in zip(kmodels, kmodelnums)
                               if kstr])
+            if not sortbymodel:
+                model = "null"
             models.add(model)
             s = k.str_without("models")
             if not sortbyvals:
