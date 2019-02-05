@@ -128,8 +128,9 @@ class TestConstraint(unittest.TestCase):
         """ Test PosyIneq feasibility tolerance under substitutions"""
         x = Variable('x')
         y = Variable('y')
+        z = Variable('z')
         PosynomialInequality.feastol = 1e-5
-        m = Model(x, [x >= y], {x: 1., y: 1.0001})
+        m = Model(z, [x == z, x >= y], {x: 1., y: 1.0001})
         self.assertRaises(ValueError, m.solve, verbosity=0)
         PosynomialInequality.feastol = 1e-3
         self.assertEqual(m.substitutions('x'), m.solve(verbosity=0)('x'))
