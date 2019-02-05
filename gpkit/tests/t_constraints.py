@@ -130,7 +130,7 @@ class TestConstraint(unittest.TestCase):
         y = Variable('y')
         PosynomialInequality.feastol = 1e-5
         m = Model(x, [x >= y], {x: 1., y: 1.0001})
-        self.assertRaises(ValueError, m.solve())
+        self.assertRaises(ValueError, m.solve, verbosity=0)
         PosynomialInequality.feastol = 1e-3
         self.assertEqual(m.substitutions('x'), m.solve()('x'))
 
