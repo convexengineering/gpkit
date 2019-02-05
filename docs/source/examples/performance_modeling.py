@@ -242,5 +242,10 @@ vars_of_interest = set(AC.varkeys)
 assert (MISSION["flight segment"]["aircraft performance"]
         is MISSION.fs.aircraftp)
 vars_of_interest.update(MISSION.fs.aircraftp.unique_varkeys)
-vars_of_interest.add("D")
+vars_of_interest.add(M["D"])
 print sol.summary(vars_of_interest)
+
+MISSION["flight segment"]["aircraft performance"]["fuel burn rate"] = (
+    MISSION.fs.aircraftp.Wburn >= 0.2*MISSION.fs.aircraftp.wing_aero.D)
+sol = M.solve(verbosity=0)
+print(sol.diff("solution.pkl", showvars=vars_of_interest, sortbymodel=False))
