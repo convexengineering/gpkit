@@ -284,7 +284,7 @@ class SolutionArray(DictOfLists):
         from scipy.io import savemat
         savemat(filename,
                 {name.replace("/", "_").replace(".", "__"):
-                 float(self["variables"][key])
+                 np.array(self["variables"][key], "f")
                  for name, key in self.varnames(include).items()})
 
     def todataframe(self, include=None):
