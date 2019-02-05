@@ -132,7 +132,7 @@ class TestConstraint(unittest.TestCase):
         m = Model(x, [x >= y], {x: 1., y: 1.0001})
         self.assertRaises(ValueError, m.solve, verbosity=0)
         PosynomialInequality.feastol = 1e-3
-        self.assertEqual(m.substitutions('x'), m.solve()('x'))
+        self.assertEqual(m.substitutions('x'), m.solve(verbosity=0)('x'))
 
 class TestMonomialEquality(unittest.TestCase):
     """Test monomial equality constraint class"""
