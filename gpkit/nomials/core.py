@@ -75,7 +75,7 @@ class Nomial(NomialData):
         """
         p = self.sub(self.values)  # pylint: disable=not-callable
         if len(p.hmap) == 1 and not p.vks:
-            return p.c
+            return p.cs[0]
         return p
 
     def prod(self):

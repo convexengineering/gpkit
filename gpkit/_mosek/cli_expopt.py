@@ -82,9 +82,11 @@ def imize_fn(path=None, clearfiles=True):
         write_output_file(filename, c, A, p_idxs)
 
         # run mskexpopt and print stdout
-        for logline in check_output(["mskexpopt", filename]).split(b"\n"):
+        solution_filename = filename + ".sol"
+        for logline in check_output(["mskexpopt", filename,
+                                     "-sol", solution_filename]).split(b"\n"):
             print(logline)
-        with open(filename+".sol") as f:
+        with open(solution_filename) as f:
             status = f.readline().split("PROBLEM STATUS      : ")
             if len(status) != 2:
                 raise RuntimeWarning("could not read mskexpopt output status")

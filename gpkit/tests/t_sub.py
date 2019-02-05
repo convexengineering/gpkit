@@ -125,6 +125,7 @@ class TestNomialSubs(unittest.TestCase):
             subbed = sc.sub({a: 2.0})
             self.assertTrue(isinstance(subbed, Signomial))
             self.assertEqual(subbed, 2*x - y - D)
+            _ = a.sub({a: -1}).value  # fix monomial assumptions
 
 
 class TestModelSubs(unittest.TestCase):
