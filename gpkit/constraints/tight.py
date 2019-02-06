@@ -11,7 +11,7 @@ class Tight(ConstraintSet):
     reltol = 1e-6
 
     def __init__(self, constraints, reltol=None, raiseerror=False,
-                 printwarning=False, **kwargs):
+                 printwarning=False):
         super(Tight, self).__init__(constraints)
         if reltol:
             self.reltol = reltol
