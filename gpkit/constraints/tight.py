@@ -17,9 +17,6 @@ class Tight(ConstraintSet):
             self.reltol = reltol
         self.raiseerror = raiseerror
         self.printwarning = printwarning
-        if kwargs is not None:
-            for key, value in kwargs.items():
-                setattr(self, key, value)
 
     def process_result(self, result):
         "Checks that all constraints are satisfied with equality"
