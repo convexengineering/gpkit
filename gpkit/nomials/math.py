@@ -394,7 +394,7 @@ class ScalarSingleEquationConstraint(SingleEquationConstraint):
                              % self.oper, self)
 
 
-# pylint: disable=too-many-instance-attributes
+# pylint: disable=too-many-instance-attributes, invalid-unary-operand-type
 class PosynomialInequality(ScalarSingleEquationConstraint):
     """A constraint of the general form monomial >= posynomial
     Stored in the posylt1_rep attribute as a single Posynomial (self <= 1)
@@ -445,11 +445,10 @@ class PosynomialInequality(ScalarSingleEquationConstraint):
             const_idx = hmap.keys().index(empty_exp)
             self.const_mmap = self.pmap.pop(const_idx)  # pylint: disable=attribute-defined-outside-init
             self.const_coeff = coeff  # pylint: disable=attribute-defined-outside-init
-        if (allow_tautological and
-                (coeff >= -1.*self.feastol or np.isnan(coeff))
+        if (allow_tautological and (coeff >= -self.feastol or np.isnan(coeff))
                 and len(hmap) == 1):  # a tautological monomial!
-            return None  # ValueError("tautological constraint: %s" % self)
-        elif coeff <= -1.*self.feastol:
+            return None  # was ValueError("tautological constraint: %s" % self)
+        elif coeff <= -self.feastol:
             raise ValueError("The constraint %s is infeasible by"
                              " %f%%" % (self, -coeff*100))
         scaled = hmap/coeff
