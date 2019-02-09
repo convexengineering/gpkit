@@ -248,7 +248,6 @@ class SolutionArray(DictOfLists):
                     else:
                         flatvalarray = valarray.flatten()
                         value = flatvalarray[np.argmax(np.abs(valarray))]
-                        print value
                     absvalue = abs(value)
                     if absvalue > absmaxvalue:
                         maxvalue = value
