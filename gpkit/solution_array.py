@@ -72,7 +72,7 @@ def reldiff(val1, val2):
     if hasattr(val1, "shape") or hasattr(val2, "shape") or val1.magnitude != 0:
         if hasattr(val1, "shape") and val1.shape:
             val1_dims = len(val1.shape)
-            if (hasattr(val2, "shape")
+            if (hasattr(val2, "shape") and val1.shape != val2.shape
                     and val2.shape[:val1_dims] == val1.shape):
                 val1_ = np.tile(val1.magnitude, val2.shape[val1_dims:]+(1,)).T
                 val1 = val1_ * val1.units
@@ -216,7 +216,7 @@ class SolutionArray(DictOfLists):
                     val2 = sol["sensitivities"]["variables"][key]
                     if hasattr(val1, "shape") and val1.shape:
                         val1_dims = len(val1.shape)
-                        if (hasattr(val2, "shape")
+                        if (hasattr(val2, "shape") and val1.shape != val2.shape
                                 and val2.shape[:val1_dims] == val1.shape):
                             val1 = np.tile(val1,
                                            val2.shape[val1_dims:]+(1,)).T
@@ -246,7 +246,8 @@ class SolutionArray(DictOfLists):
                     if not getattr(valarray, "shape", None):
                         value = valarray
                     else:
-                        value = valarray[np.argmax(np.abs(valarray))]
+                        flatvalarray = valarray.flatten()
+                        value = flatvalarray[np.argmax(np.abs(valarray))]
                     absvalue = abs(value)
                     if absvalue > absmaxvalue:
                         maxvalue = value
