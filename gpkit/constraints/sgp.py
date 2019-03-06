@@ -190,6 +190,8 @@ class SequentialGeometricProgram(CostedConstraintSet):
                     self.not_sp = True
                     return None  # TODO: cleanup SP/GP flag syntax
         spapproxs = [p/m <= 1 for p, m in zip(self._approx_lt, approx_gt)]
+        for pconstr, spconstr in zip(spapproxs, self._spconstrs):
+            pconstr.sp_ineq_parent = spconstr
         gp = GeometricProgram(self.cost, [gpconstrs, spapproxs], substitutions)
         gp.x0 = x0
         self._numgpconstrs = len(gp.hmaps) - len(spapproxs)

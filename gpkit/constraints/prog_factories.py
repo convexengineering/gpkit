@@ -123,6 +123,7 @@ def _solve_fctry(genfunction):
             result = progsolve(solver, verbosity, **kwargs)
             solution.append(result)
         solution.program = self.program
+        solution.model = self
         solution.to_arrays()
         if self.cost.units:
             solution["cost"] = solution["cost"] * self.cost.units

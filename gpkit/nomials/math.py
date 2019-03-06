@@ -376,6 +376,8 @@ class ScalarSingleEquationConstraint(SingleEquationConstraint):
                 self.substitutions.update(sig.values)
             else:
                 lr[i] = Signomial(sig)
+        from .. import MODELS, MODELNUMS
+        self.naming = (tuple(MODELS), tuple(MODELNUMS))
         super(ScalarSingleEquationConstraint,
               self).__init__(lr[0], oper, lr[1])
 
@@ -524,6 +526,8 @@ class PosynomialInequality(ScalarSingleEquationConstraint):
             return {}  # as_posyslt1 created no inequalities
         la, = la
         self.relax_sensitivity = la
+        if hasattr(self, "sp_ineq_parent"):
+            self.sp_ineq_parent.relax_sensitivity = la
         nu, = nu
         presub, = self.unsubbed
         if hasattr(self, "pmap"):

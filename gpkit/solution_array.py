@@ -1,5 +1,5 @@
 """Defines SolutionArray class"""
-from collections import Iterable
+from collections import Iterable, defaultdict
 import cPickle as pickle
 import numpy as np
 from .nomials import NomialArray
@@ -61,10 +61,116 @@ def insenss_table(data, _, maxval=0.1, **kwargs):
     return senss_table(data, title="Insensitive Fixed Variables", **kwargs)
 
 
+def tight_table(self, _, ntightconstrs=5, tight_senss=1e-2):
+        "Return constraint tightness lines"
+        title = "Tightest Constraints"
+        tightnesses = [(-c.relax_sensitivity, c)
+                       for c in self.model.flat(constraintsets=False)
+                       if c.relax_sensitivity >= tight_senss]
+        if not tightnesses:
+            lines = ["No constraints had a sensitivity above %+5.1g."
+                     % min_senss]
+        else:
+            data = sorted(tightnesses)[:ntightconstrs]
+            lines = constrsens_table(data)
+        return [title] + ["-"*len(title)] + lines + [""]
+
+
+def loose_table(self, _, loose_senss=1e-5):
+        "Return constraint tightness lines"
+        title = "Loose Constraints"
+        tightnesses = [(-c.relax_sensitivity, c)
+                       for c in self.model.flat(constraintsets=False)
+                       if c.relax_sensitivity <= loose_senss]
+        if not tightnesses:
+            lines = ["No constraints had a sensitivity below %+6.2g."
+                     % min_senss]
+        else:
+            data = sorted(tightnesses, reverse=True)
+            lines = constrsens_table(data)
+        return [title] + ["-"*len(title)] + lines + [""]
+
+
+def constrsens_table(data):
+        models = set()
+        decorated = []
+        for sens, c in data:
+            if c.naming:
+                model = "/".join([kstr + (".%i" % knum if knum != 0 else "")
+                                  for kstr, knum in zip(*c.naming) if kstr])
+            else:
+                model = ""
+            models.add(model)
+            decorated.append((model, sens, c))
+        decorated.sort()
+        print decorated
+        oldmodel = None
+        lines = []
+        for varlist in decorated:
+            model, senss, constraint = varlist
+            if model not in models:
+                continue
+            if model != oldmodel and len(models) > 1:
+                if oldmodel is not None:
+                    lines.append(["", ""])
+                if model != "":
+                    lines.append([("modelname",), model])
+                oldmodel = model
+            constrstr = "%s" % constraint.str_without("units")
+            constrstr = constrstr.replace("%s" % model, "")
+            minstep = 70
+            # TODO: also [^*]*[^*]
+            idx = minstep + 5 + constrstr[minstep+4:].find(" ")
+            if len(constrstr) - idx < 10:
+                idx = len(constrstr)
+            lines.append(["%+6.2g : " % -senss, "%s" % constrstr[:idx]])
+            while idx < len(constrstr):
+                step = minstep + 1 + constrstr[minstep:].find(" ")
+                if len(constrstr) - (idx+step) < 10:
+                    step = len(constrstr) - idx
+                lines.append(["", "    %s" % constrstr[idx:idx+step]])
+                idx += step
+
+        maxlens = np.max([list(map(len, line)) for line in lines
+                          if line[0] != ("modelname",)], axis=0)
+        dirs = ['>', '<']
+        # check lengths before using zip
+        assert len(list(dirs)) == len(list(maxlens))
+        fmts = [u'{0:%s%s}' % (direc, L) for direc, L in zip(dirs, maxlens)]
+        for i, line in enumerate(lines):
+            if line[0] == ("modelname",):
+                line = [fmts[0].format(" | "), line[1]]
+            else:
+                line = [fmt.format(s) for fmt, s in zip(fmts, line)]
+            lines[i] = "".join(line).rstrip()
+        return lines
+
+
+def warnings_table(self, _):
+    title = "Warnings"
+    lines = [title] + ["-"*len(title)]
+    for type in self["warnings"]:
+        lines += [type + " |"]
+        for msg in self["warnings"][type]:
+            step = 70
+            idx = step + 4
+            if len(msg) - idx < 10:
+                idx = len(msg)
+            lines.append(" "*len(type) + " : %s" % msg[:idx])
+            while idx < len(msg):
+                lines.append(" "*len(type) + "       %s" % msg[idx:idx+step])
+                idx += step
+        lines += [""]
+    return lines
+
+
 TABLEFNS = {"sensitivities": senss_table,
-            "topsensitivities": topsenss_table,
+            "top sensitivities": topsenss_table,
             "insensitivities": insenss_table,
-           }
+            "tightest constraints": tight_table,
+            "loose constraints": loose_table,
+            "warnings": warnings_table,
+            }
 
 
 def reldiff(val1, val2):
@@ -426,7 +532,7 @@ class SolutionArray(DictOfLists):
         if len(self["constants"]) < ntopsenss+2 or constants_in_showvars:
             senss_tables.append("sensitivities")
         if len(self["constants"]) >= ntopsenss+2:
-            senss_tables.append("topsensitivities")
+            senss_tables.append("top sensitivities")
         senss_str = self.table(showvars, senss_tables, nvars=ntopsenss,
                                **kwargs)
         if senss_str:
