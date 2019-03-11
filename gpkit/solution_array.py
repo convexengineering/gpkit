@@ -425,34 +425,38 @@ class SolutionArray(DictOfLists):
         out = out.replace("-0.", " -.")
         return out
 
+    def pickle_prep(self):
+        "After calling this, the SolutionArray is ready to pickle"
+        program, model = self.program, self.model
+        self.program, self.model = None, None
+        cost = self["cost"]
+        self["cost"] = mag(cost)
+        warnings = {}
+        if "warnings" in self:
+            for wtype in self["warnings"]:  # remove data
+                warnings[wtype] = self["warnings"][wtype]
+                self["warnings"][wtype] = [
+                    (msg, None) for (msg, _) in self["warnings"][wtype]
+                ]
+        return program, model, cost, warnings
+
     def save(self, filename="solution.pkl"):
         """Pickles the solution and saves it to a file.
 
         The saved solution is identical except for two things:
             - the cost is made unitless
             - the solution's 'program' attribute is removed
+            - the solution's 'model' attribute is removed
+            - the data field is removed from the solution's warnings
+                (the "message" field is preserved)
 
         Solution can then be loaded with e.g.:
         >>> import cPickle as pickle
         >>> pickle.load(open("solution.pkl"))
         """
-        program, model = self.program, self.model
-        self.program, self.model = None, None
-        cost = self["cost"]
-        self["cost"] = mag(cost)
-        if "warnings" in self:
-            oldwarnings = {}
-            for wtype in ["Tight", "Loose"]:
-                wtype = "Unexpectedly %s Constraints" % wtype
-                if wtype in self["warnings"]:
-                    oldwarnings[wtype] = self["warnings"].pop(wtype)
-                    self["warnings"][wtype] = [
-                        (msg, None) for (msg, _) in oldwarnings[wtype]
-                    ]
+        program, model, cost, warnings = self.pickle_prep()
         pickle.dump(self, open(filename, "w"))
-        self["cost"] = cost
-        if "warnings" in self:
-            self["warnings"].update(oldwarnings)
+        self["cost"], self["warnings"] = cost, warnings
         self.program, self.model = program, model
 
     def varnames(self, include):
