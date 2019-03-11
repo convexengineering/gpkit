@@ -14,3 +14,9 @@ Sensitivities
    M : +0.67  Mass of Water in the Tank
 \rho : -0.67  Density of Water in the Tank
 
+Tightest Constraints
+--------------------
+  +2.2 : V = d_(0,)*d_(1,)*d_(2,)
+  +2.2 : M = V*\rho
+    +1 : A >= 2*d_(0,)*d_(1,) + 2*d_(0,)*d_(2,) + 2*d_(1,)*d_(2,)
+

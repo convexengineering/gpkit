@@ -152,6 +152,9 @@ class SequentialGeometricProgram(CostedConstraintSet):
         self.process_result(result)
         self.result = SolutionArray(result.copy())  # NOTE: SIDE EFFECTS
         self.result["soltime"] = soltime
+        if self.externalfn_vars:
+            for v in self.externalfn_vars:
+                self[0].insert(0, v.key.externalfn)  # for constraint senss
         return self.result
 
     def _fill_x0(self, x0):
@@ -190,6 +193,8 @@ class SequentialGeometricProgram(CostedConstraintSet):
                     self.not_sp = True
                     return None  # TODO: cleanup SP/GP flag syntax
         spapproxs = [p/m <= 1 for p, m in zip(self._approx_lt, approx_gt)]
+        for pconstr, spconstr in zip(spapproxs, self._spconstrs):
+            pconstr.sgp_parent = spconstr
         gp = GeometricProgram(self.cost, [gpconstrs, spapproxs], substitutions)
         gp.x0 = x0
         self._numgpconstrs = len(gp.hmaps) - len(spapproxs)
@@ -219,8 +224,10 @@ class SequentialGeometricProgram(CostedConstraintSet):
             x0 = self._fill_x0(x0)
             gp_constrs = self.as_gpconstr(x0)
             if self.externalfn_vars:
-                gp_constrs.extend([v.key.externalfn(v, x0)
-                                   for v in self.externalfn_vars])
+                for v in self.externalfn_vars:
+                    posyconstr = v.key.externalfn(v, x0)
+                    posyconstr.sgp_parent = v.key.externalfn
+                    gp_constrs.append(posyconstr)
             gp = GeometricProgram(self.cost, gp_constrs, self.substitutions)
             gp.x0 = x0  # NOTE: SIDE EFFECTS
             return gp

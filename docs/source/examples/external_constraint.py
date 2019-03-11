@@ -38,4 +38,6 @@ class ExternalConstraint(object):
             res = external_code(x_star)
 
         # Return linearized constraint
-        return (y >= res*x/x_star)
+        posynomial_constraint = (y >= res*x/x_star)
+        posynomial_constraint.sgp_parent = self
+        return posynomial_constraint

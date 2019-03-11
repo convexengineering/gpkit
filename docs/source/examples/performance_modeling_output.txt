@@ -38,6 +38,29 @@ Next Largest Sensitivities
   V : [ -0.22     -0.21     -0.21     -0.21    ] true airspeed
 rho : [ -0.12     -0.11     -0.11     -0.11    ] air density
 
+Tightest Constraints
+--------------------
+       | Aircraft/Wing
+  +3.4 : c_ = A_**-0.5*S_**0.5
+
+       | Mission/FlightSegment/AircraftP/WingAero
+  +3.4 : Re__(3,) = 0.157*V_Mission/FlightSegment/FlightState_(3,)*c_Aircraft/Wing
+           *mu_Mission/FlightSegment/FlightState_(3,)**-1
+           *rho_Mission/FlightSegment/FlightState_(3,)
+  +3.4 : Re__(2,) = 0.157*V_Mission/FlightSegment/FlightState_(2,)*c_Aircraft/Wing
+           *mu_Mission/FlightSegment/FlightState_(2,)**-1
+           *rho_Mission/FlightSegment/FlightState_(2,)
+  +3.4 : Re__(0,) = 0.157*V_Mission/FlightSegment/FlightState_(0,)*c_Aircraft/Wing
+           *mu_Mission/FlightSegment/FlightState_(0,)**-1
+           *rho_Mission/FlightSegment/FlightState_(0,)
+  +3.4 : Re__(1,) = 0.157*V_Mission/FlightSegment/FlightState_(1,)*c_Aircraft/Wing
+           *mu_Mission/FlightSegment/FlightState_(1,)**-1
+           *rho_Mission/FlightSegment/FlightState_(1,)
+
+All Loose Constraints
+---------------------
+No constraints had a sensitivity below +1e-05.
+
 Solution difference for variables given in `showvars`
 (positive means the argument is bigger)
 -----------------------------------------------------

@@ -17,3 +17,11 @@ Most Sensitive
 EI : -1
  q : [ +0.0072   +0.042    +0.12     +0.23     +0.37     +0.22    ] Distributed load at each point
 
+Tightest Constraints
+--------------------
++5.5e+02 : L = 5*dx
+      +1 : w_(5,) >= 0.5*\theta_(4,)*dx + 0.5*\theta_(5,)*dx + w_(4,)
+   +0.74 : \theta_(2,) >= 0.5*EI**-1*M_(1,)*dx + 0.5*EI**-1*M_(2,)*dx + \theta_(1,)
+   +0.73 : w_(4,) >= 0.5*\theta_(3,)*dx + 0.5*\theta_(4,)*dx + w_(3,)
+   +0.64 : M_(1,) >= 0.5*V_(1,)*dx + 0.5*V_(2,)*dx + M_(2,)
+
