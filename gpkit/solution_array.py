@@ -69,7 +69,7 @@ def tight_table(self, _, ntightconstrs=5, tight_senss=1e-2, **kwargs):
     if not self.model:
         return []
     title = "Tightest Constraints"
-    data = [(int(-1e3*c.relax_sensitivity), "%+6.2g" % c.relax_sensitivity, c)
+    data = [(-int(1e3*c.relax_sensitivity), "%+6.2g" % c.relax_sensitivity, c)
             for c in self.model.flat(constraintsets=False)
             if c.relax_sensitivity >= tight_senss]
     if not data:
@@ -190,7 +190,7 @@ def warnings_table(self, _, **kwargs):
             if len(data_vec) > 1:
                 lines += ["| for sweep %i |" % i]
             if wtype == "Unexpectedly Tight Constraints" and data[0][1]:
-                data = [(int(-1e5*c.relax_sensitivity),
+                data = [(-int(1e5*c.relax_sensitivity),
                          "%+6.2g" % c.relax_sensitivity, c) for _, c in data]
                 data = sorted(data)
                 lines += constraint_table(data, **kwargs)
