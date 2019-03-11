@@ -40,8 +40,8 @@ class Tight(ConstraintSet):
                         leftsubbed = constraint.left.sub(variables).value
                         rightsubbed = constraint.right.sub(variables).value
             if rel_diff >= self.reltol:
-                msg = ("Constraint [%.100s... %s %.100s...] is not tight"
-                       " because the left hand side evaluated to %s but"
+                msg = ("Constraint [%.100s... %s %.100s...] is not tight:"
+                       " the left hand side evaluated to %s but"
                        " the right hand side evaluated to %s"
                        " (Allowable error: %s%%, Actual error: %.2g%%)" %
                        (constraint.left, constraint.oper, constraint.right,
@@ -49,4 +49,12 @@ class Tight(ConstraintSet):
                         self.reltol*100, mag(rel_diff)*100))
                 if self.raiseerror:
                     raise ValueError(msg)
-                appendsolwarning(msg, result, "tight", self.printwarning)
+                if hasattr(leftsubbed, "magnitude"):
+                    rightsubbed = rightsubbed.to(leftsubbed.units).magnitude
+                    leftsubbed = leftsubbed.magnitude
+                constraint.tightvalues = (leftsubbed, constraint.oper,
+                                          rightsubbed)
+                constraint.rel_diff = rel_diff
+                appendsolwarning(msg, constraint,
+                                 result, "Unexpectedly Loose Constraints",
+                                 self.printwarning)

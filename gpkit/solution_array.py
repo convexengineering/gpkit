@@ -61,53 +61,59 @@ def insenss_table(data, _, maxval=0.1, **kwargs):
     return senss_table(data, title="Insensitive Fixed Variables", **kwargs)
 
 
-def tight_table(self, _, ntightconstrs=5, tight_senss=1e-2):
+def tight_table(self, _, ntightconstrs=5, tight_senss=1e-2, showmodels=True):
         "Return constraint tightness lines"
         title = "Tightest Constraints"
-        tightnesses = [(-c.relax_sensitivity, c)
+        tightnesses = [(-c.relax_sensitivity,
+                        "%+6.2g" % c.relax_sensitivity, c)
                        for c in self.model.flat(constraintsets=False)
                        if c.relax_sensitivity >= tight_senss]
         if not tightnesses:
             lines = ["No constraints had a sensitivity above %+5.1g."
-                     % min_senss]
+                     % tight_senss]
         else:
             data = sorted(tightnesses)[:ntightconstrs]
-            lines = constrsens_table(data)
+            lines = constrsens_table(data, showmodels)
         return [title] + ["-"*len(title)] + lines + [""]
 
 
-def loose_table(self, _, loose_senss=1e-5):
+def loose_table(self, _, loose_senss=1e-5, showmodels=True):
         "Return constraint tightness lines"
-        title = "Loose Constraints"
-        tightnesses = [(-c.relax_sensitivity, c)
+        title = "All Loose Constraints"
+        tightnesses = [(c.relax_sensitivity,
+                        "%+6.2g" % c.relax_sensitivity, c)
                        for c in self.model.flat(constraintsets=False)
                        if c.relax_sensitivity <= loose_senss]
         if not tightnesses:
             lines = ["No constraints had a sensitivity below %+6.2g."
-                     % min_senss]
+                     % loose_senss]
         else:
-            data = sorted(tightnesses, reverse=True)
-            lines = constrsens_table(data)
+            data = sorted(tightnesses)
+            lines = constrsens_table(data, showmodels)
         return [title] + ["-"*len(title)] + lines + [""]
 
 
-def constrsens_table(data):
-        models = set()
+def constrsens_table(data, showmodels):
+        models = {}
         decorated = []
-        for sens, c in data:
-            if c.naming:
+        for sortby, openingstr, c in data:
+            if showmodels and c.naming:
                 model = "/".join([kstr + (".%i" % knum if knum != 0 else "")
                                   for kstr, knum in zip(*c.naming) if kstr])
             else:
                 model = ""
-            models.add(model)
-            decorated.append((model, sens, c))
+            if model not in models:
+                models[model] = len(models)
+            decorated.append((models[model], model, sortby, openingstr, c))
         decorated.sort()
-        print decorated
         oldmodel = None
         lines = []
         for varlist in decorated:
-            model, senss, constraint = varlist
+            _, model, _, openingstr, constraint = varlist
+            if showmodels:
+                constrstr = str(constraint)
+            else:
+                constrstr = constraint.str_without(["units", "models"])
             if model not in models:
                 continue
             if model != oldmodel and len(models) > 1:
@@ -116,20 +122,30 @@ def constrsens_table(data):
                 if model != "":
                     lines.append([("modelname",), model])
                 oldmodel = model
-            constrstr = "%s" % constraint.str_without("units")
-            constrstr = constrstr.replace("%s" % model, "")
-            minstep = 70
-            # TODO: also [^*]*[^*]
-            idx = minstep + 5 + constrstr[minstep+4:].find(" ")
-            if len(constrstr) - idx < 10:
-                idx = len(constrstr)
-            lines.append(["%+6.2g : " % -senss, "%s" % constrstr[:idx]])
-            while idx < len(constrstr):
-                step = minstep + 1 + constrstr[minstep:].find(" ")
-                if len(constrstr) - (idx+step) < 10:
-                    step = len(constrstr) - idx
-                lines.append(["", "    %s" % constrstr[idx:idx+step]])
-                idx += step
+            constrstr = constrstr.replace(model, "")
+            minlen, maxlen = 25, 80
+            import re
+            pattern = re.compile(r"([^*]\*[^*])|( \+ )|( >= )|( <= )|( = )")
+            segments = [s for s in pattern.split(constrstr) if s]
+            splitlines = []
+            line = ""
+            next_idx = 0
+            while next_idx < len(segments):
+                segment = segments[next_idx]
+                next_idx += 1
+                if pattern.match(segment):
+                    segments[next_idx] = segment[1:] + segments[next_idx]
+                    segment = segment[0]
+                elif len(line) + len(segment) > maxlen and len(line) > minlen:
+                    splitlines.append(line)
+                    line = "  "
+                line += segment
+                while len(line) > maxlen:
+                    splitlines.append(line[:maxlen])
+                    line = "  " + line[maxlen:]
+            splitlines.append(line)
+            lines += [(openingstr + " : ", splitlines[0])]
+            lines += [("", l) for l in splitlines[1:]]
 
         maxlens = np.max([list(map(len, line)) for line in lines
                           if line[0] != ("modelname",)], axis=0)
@@ -146,20 +162,29 @@ def constrsens_table(data):
         return lines
 
 
-def warnings_table(self, _):
+def warnings_table(self, _, showmodels=True):
     title = "Warnings"
-    lines = [title] + ["-"*len(title)]
+    lines = [title, "="*len(title)]
+    if "warnings" not in self:
+        return []
     for type in self["warnings"]:
-        lines += [type + " |"]
-        for msg in self["warnings"][type]:
-            step = 70
-            idx = step + 4
-            if len(msg) - idx < 10:
-                idx = len(msg)
-            lines.append(" "*len(type) + " : %s" % msg[:idx])
-            while idx < len(msg):
-                lines.append(" "*len(type) + "       %s" % msg[idx:idx+step])
-                idx += step
+        lines += [type] + ["-"*len(type)]
+        if (type == "Unexpectedly Tight Constraints" and
+                self["warnings"][type][0][1] is not None):
+            tightnesses = [(-c.relax_sensitivity,
+                            "%+6.2g" % c.relax_sensitivity, c)
+                           for _, c in self["warnings"][type]]
+            data = sorted(tightnesses)
+            lines += constrsens_table(data, showmodels)
+        elif (type == "Unexpectedly Loose Constraints" and
+              self["warnings"][type][0][1] is not None):
+            tightnesses = [(-c.rel_diff, "%.4g %s %.4g" % c.tightvalues, c)
+                           for _, c in self["warnings"][type]]
+            data = sorted(tightnesses)
+            lines += constrsens_table(data, showmodels)
+        else:
+            for msg, _ in self["warnings"][type]:
+                lines += [msg, ""]
         lines += [""]
     return lines
 
@@ -389,13 +414,24 @@ class SolutionArray(DictOfLists):
         >>> import cPickle as pickle
         >>> pickle.load(open("solution.pkl"))
         """
-        program = self.program
-        self.program = None
+        program, model = self.program, self.model
+        self.program, self.model = None, None
         cost = self["cost"]
         self["cost"] = mag(cost)
+        if "warnings" in self:
+            oldwarnings = {}
+            for warning_type in ["Tight", "Loose"]:
+                warning_type = "Unexpectedly %s Constraints" % warning_type
+                if warning_type in self["warnings"]:
+                    oldwarnings[warning_type] = self["warnings"].pop(warning_type)
+                    self["warnings"][warning_type] = [
+                        (msg, None) for (msg, data) in oldwarnings[warning_type]
+                    ]
         pickle.dump(self, open(filename, "w"))
         self["cost"] = cost
-        self.program = program
+        if "warnings" in self:
+            self["warnings"].update(oldwarnings)
+        self.program, self.model = program, model
 
     def varnames(self, include):
         "Returns list of variables, optionally with minimal unique names"
@@ -540,7 +576,7 @@ class SolutionArray(DictOfLists):
         return out
 
     def table(self, showvars=(),
-              tables=("cost", "sweepvariables", "freevariables",
+              tables=("cost", "warnings", "sweepvariables", "freevariables",
                       "constants", "sensitivities"), **kwargs):
         """A table representation of this SolutionArray
 
