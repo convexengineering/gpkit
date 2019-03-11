@@ -1,4 +1,5 @@
 """Defines SolutionArray class"""
+import re
 from collections import Iterable
 import cPickle as pickle
 import numpy as np
@@ -7,6 +8,8 @@ from .small_classes import DictOfLists, Strings
 from .small_scripts import mag, isnan
 from .repr_conventions import unitstr
 
+
+CONSTRSPLITPATTERN = re.compile(r"([^*]\*[^*])|( \+ )|( >= )|( <= )|( = )")
 
 VALSTR_REPLACES = [
     ("+nan", " - "),
@@ -101,27 +104,31 @@ def constraint_table(data, sortbymodels=True, showmodels=True, **_):
     "Creates lines for tables where the right side is a constraint."
     models = {}
     decorated = []
-    for sortby, openingstr, c in data:
-        if sortbymodels and getattr(c, "naming", None):
+    for sortby, openingstr, constraint in data:
+        if sortbymodels and getattr(constraint, "naming", None):
             model = "/".join([kstr + (".%i" % knum if knum != 0 else "")
-                              for kstr, knum in zip(*c.naming) if kstr])
+                              for kstr, knum in zip(*constraint.naming)
+                              if kstr])
         else:
             model = ""
         if model not in models:
             models[model] = len(models)
-        decorated.append((models[model], model, sortby, openingstr, c))
-    decorated.sort()
-    oldmodel = None
-    lines = []
-    for varlist in decorated:
-        _, model, _, openingstr, constraint = varlist
-        if showmodels and len(models) > 1:
+        if showmodels:
             constrstr = str(constraint)
+            if " at 0x" in constrstr:  # don't print memory addresses
+                constrstr = constrstr[:constrstr.find(" at 0x")] + ">"
         else:
             try:
                 constrstr = constraint.str_without(["units", "models"])
             except AttributeError:
                 constrstr = str(constraint)
+        sortby = sortby + hash(constrstr)*1e-30
+        decorated.append((models[model], model, sortby, openingstr, constrstr))
+    decorated.sort()
+    oldmodel = None
+    lines = []
+    for varlist in decorated:
+        _, model, _, openingstr, constrstr = varlist
         if model not in models:
             continue
         if model != oldmodel and len(models) > 1:
@@ -130,18 +137,19 @@ def constraint_table(data, sortbymodels=True, showmodels=True, **_):
             if model != "":
                 lines.append([("modelname",), model])
             oldmodel = model
-        constrstr = constrstr.replace(model, "")
+        if model and len(models) == 1:  # fully remove
+            constrstr = constrstr.replace("_"+model, "")
+        else:  # partially remove
+            constrstr = constrstr.replace(model, "")
         minlen, maxlen = 25, 80
-        import re
-        pattern = re.compile(r"([^*]\*[^*])|( \+ )|( >= )|( <= )|( = )")
-        segments = [s for s in pattern.split(constrstr) if s]
+        segments = [s for s in CONSTRSPLITPATTERN.split(constrstr) if s]
         splitlines = []
         line = ""
         next_idx = 0
         while next_idx < len(segments):
             segment = segments[next_idx]
             next_idx += 1
-            if pattern.match(segment) and next_idx < len(segments):
+            if CONSTRSPLITPATTERN.match(segment) and next_idx < len(segments):
                 segments[next_idx] = segment[1:] + segments[next_idx]
                 segment = segment[0]
             elif len(line) + len(segment) > maxlen and len(line) > minlen:

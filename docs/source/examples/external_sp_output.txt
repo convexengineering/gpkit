@@ -10,5 +10,5 @@ y : 0.7071
 
 Tightest Constraints
 --------------------
-    +1 : <external_constraint.ExternalConstraint object at 0x7fe4316aec10>
+    +1 : <external_constraint.ExternalConstraint object>
 

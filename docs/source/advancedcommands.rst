@@ -205,11 +205,6 @@ contains ConstraintSets, it and all its elements share pointers to the same subs
 so that updating any one of them will update all of them.
 
 
-Substituting with replacement
-------------------------------
-
-Any of the substitutions above can be run with ``p.subinplace(*args)`` to substitute directly into the object in question.
-
 Fixed Variables
 ---------------
 
