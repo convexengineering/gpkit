@@ -70,7 +70,8 @@ def tight_table(self, _, ntightconstrs=5, tight_senss=1e-2, **kwargs):
         return []
     title = "Tightest Constraints"
 
-    data = [(-int(1e3*c.relax_sensitivity), "%+6.2g" % c.relax_sensitivity, c)
+    data = [(-float("%+6.2g" % c.relax_sensitivity),
+             "%+6.2g" % c.relax_sensitivity, c)
             for c in self.model.flat(constraintsets=False)
             if c.relax_sensitivity >= tight_senss]
     if not data:
