@@ -75,6 +75,7 @@ Most Sensitive
 (\frac{S}{S_{wet}}) : [ +0.56     +0.63     +0.45     +0.54    ] wetted area ratio
 
 Tightest Constraints
+(for the last sweep only)
 --------------------
     +1 : W >= W_0 + W_w
     +1 : D >= 0.5*C_D*S*V**2*\rho

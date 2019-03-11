@@ -69,6 +69,7 @@ def tight_table(self, _, ntightconstrs=5, tight_senss=1e-2, **kwargs):
     if not self.model:
         return []
     title = "Tightest Constraints"
+
     data = [(-int(1e3*c.relax_sensitivity), "%+6.2g" % c.relax_sensitivity, c)
             for c in self.model.flat(constraintsets=False)
             if c.relax_sensitivity >= tight_senss]
@@ -78,7 +79,10 @@ def tight_table(self, _, ntightconstrs=5, tight_senss=1e-2, **kwargs):
     else:
         data = sorted(data)[:ntightconstrs]
         lines = constraint_table(data, **kwargs)
-    return [title] + ["-"*len(title)] + lines + [""]
+    lines = [title] + ["-"*len(title)] + lines + [""]
+    if "sweepvariables" in self:
+        lines.insert(1, "(for the last sweep only)")
+    return lines
 
 
 def loose_table(self, _, loose_senss=1e-5, **kwargs):
@@ -131,8 +135,7 @@ def constraint_table(data, sortbymodels=True, showmodels=True, **_):
         if model != oldmodel and len(models) > 1:
             if oldmodel is not None:
                 lines.append(["", ""])
-            if model != "":
-                lines.append([("modelname",), model])
+            lines.append([("modelname",), model])
             oldmodel = model
         if model and len(models) == 1:  # fully remove
             constrstr = constrstr.replace("_"+model, "")

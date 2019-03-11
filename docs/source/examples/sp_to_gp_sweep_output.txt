@@ -1,9 +1,3 @@
-Warning: Constraint [V_{f_{avail}} [m**3]... >= V_f [m**3]...] is not tight: the left hand side evaluated to 0.588622416204 meter ** 3 but the right hand side evaluated to 0.577460580538 meter ** 3 (Allowable error: 0.0001%, Actual error: 1.9%)
-
-Warning: Constraint [V_{f_{avail}} [m**3]... >= V_f [m**3]...] is not tight: the left hand side evaluated to 0.788360644367 meter ** 3 but the right hand side evaluated to 0.776890631957 meter ** 3 (Allowable error: 0.0001%, Actual error: 1.5%)
-
-Warning: Constraint [V_{f_{avail}} [m**3]... >= V_f [m**3]...] is not tight: the left hand side evaluated to 0.958462517649 meter ** 3 but the right hand side evaluated to 0.918650397739 meter ** 3 (Allowable error: 0.0001%, Actual error: 4.3%)
-
 
 Cost
 ----
@@ -56,6 +50,7 @@ Most Sensitive
             V_{min} : [ -1.4       0         0       ] takeoff speed
 
 Tightest Constraints
+(for the last sweep only)
 --------------------
   +3.4 : L/D = C_D**-1*C_L
   +3.2 : V_f = W_f*\rho_f**-1*g**-1

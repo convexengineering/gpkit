@@ -3,8 +3,6 @@ Cost
 ----
  1.091 [lbf]
 
-Warnings
-========
 Free Variables
 --------------
       | Aircraft

@@ -38,7 +38,6 @@ class ConstraintSet(list):
     unique_varkeys = frozenset()
     # idxlookup holds the names of the top-level constraintsets
     idxlookup = None
-    parent = None
 
     def __init__(self, constraints, substitutions=None):  # pylint: disable=too-many-branches
         if isinstance(constraints, dict):
@@ -75,8 +74,6 @@ class ConstraintSet(list):
                                  " initialized." % type(constraint))
             elif constraint.numpy_bools:  # not initialized??
                 raise_elementhasnumpybools(constraint)
-            if not isinstance(constraint, np.bool_):
-                self[i].parent = self
             for attr in ["substitutions", "bounded"]:
                 if hasattr(self[i], attr):
                     getattr(self, attr).update(getattr(self[i], attr))
