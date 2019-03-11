@@ -61,7 +61,8 @@ def insenss_table(data, _, maxval=0.1, **kwargs):
     return senss_table(data, title="Insensitive Fixed Variables", **kwargs)
 
 
-def tight_table(self, _, ntightconstrs=5, tight_senss=1e-2, showmodels=True):
+def tight_table(self, _, ntightconstrs=5, tight_senss=1e-2, showmodels=True,
+                sortbymodels=True):
         "Return constraint tightness lines"
         title = "Tightest Constraints"
         tightnesses = [(-c.relax_sensitivity,
@@ -73,11 +74,11 @@ def tight_table(self, _, ntightconstrs=5, tight_senss=1e-2, showmodels=True):
                      % tight_senss]
         else:
             data = sorted(tightnesses)[:ntightconstrs]
-            lines = constrsens_table(data, showmodels)
+            lines = constrsens_table(data, sortbymodels, showmodels)
         return [title] + ["-"*len(title)] + lines + [""]
 
 
-def loose_table(self, _, loose_senss=1e-5, showmodels=True):
+def loose_table(self, _, loose_senss=1e-5, showmodels=True, sortbymodels=True):
         "Return constraint tightness lines"
         title = "All Loose Constraints"
         tightnesses = [(c.relax_sensitivity,
@@ -89,15 +90,15 @@ def loose_table(self, _, loose_senss=1e-5, showmodels=True):
                      % loose_senss]
         else:
             data = sorted(tightnesses)
-            lines = constrsens_table(data, showmodels)
+            lines = constrsens_table(data, sortbymodels, showmodels)
         return [title] + ["-"*len(title)] + lines + [""]
 
 
-def constrsens_table(data, showmodels):
+def constrsens_table(data, sortbymodels, showmodels):
         models = {}
         decorated = []
         for sortby, openingstr, c in data:
-            if showmodels and c.naming:
+            if sortbymodels and c.naming:
                 model = "/".join([kstr + (".%i" % knum if knum != 0 else "")
                                   for kstr, knum in zip(*c.naming) if kstr])
             else:
@@ -162,7 +163,7 @@ def constrsens_table(data, showmodels):
         return lines
 
 
-def warnings_table(self, _, showmodels=True):
+def warnings_table(self, _, showmodels=True, sortbymodels=True):
     title = "Warnings"
     lines = [title, "="*len(title)]
     if "warnings" not in self:
@@ -175,13 +176,13 @@ def warnings_table(self, _, showmodels=True):
                             "%+6.2g" % c.relax_sensitivity, c)
                            for _, c in self["warnings"][type]]
             data = sorted(tightnesses)
-            lines += constrsens_table(data, showmodels)
+            lines += constrsens_table(data, sortbymodels, showmodels)
         elif (type == "Unexpectedly Loose Constraints" and
               self["warnings"][type][0][1] is not None):
             tightnesses = [(-c.rel_diff, "%.4g %s %.4g" % c.tightvalues, c)
                            for _, c in self["warnings"][type]]
             data = sorted(tightnesses)
-            lines += constrsens_table(data, showmodels)
+            lines += constrsens_table(data, sortbymodels, showmodels)
         else:
             for msg, _ in self["warnings"][type]:
                 lines += [msg, ""]
