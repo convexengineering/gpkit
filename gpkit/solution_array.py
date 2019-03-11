@@ -84,8 +84,7 @@ def loose_table(self, _, loose_senss=1e-5, **kwargs):
     if not self.model:
         return []
     title = "All Loose Constraints"
-    tightnesses = [(c.relax_sensitivity,
-                    "%+6.2g" % c.relax_sensitivity, c)
+    tightnesses = [(c.relax_sensitivity, "", c)
                    for c in self.model.flat(constraintsets=False)
                    if c.relax_sensitivity <= loose_senss]
     if not tightnesses:
@@ -98,7 +97,7 @@ def loose_table(self, _, loose_senss=1e-5, **kwargs):
 
 
 # pylint: disable=too-many-branches,too-many-locals,too-many-statements
-def constraint_table(data, sortbymodels, showmodels, **_):
+def constraint_table(data, sortbymodels=True, showmodels=True, **_):
     "Creates lines for tables where the right side is a constraint."
     models = {}
     decorated = []
