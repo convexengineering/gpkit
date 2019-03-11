@@ -179,7 +179,7 @@ def warnings_table(self, _, **kwargs):
     "Makes a table for all warnings in the solution."
     title = "Warnings"
     lines = [title, "="*len(title)]
-    if "warnings" not in self:
+    if "warnings" not in self or not self["warnings"]:
         return []
     for wtype in self["warnings"]:
         lines += [wtype] + ["-"*len(wtype)]
