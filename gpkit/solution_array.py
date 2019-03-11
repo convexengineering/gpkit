@@ -69,15 +69,14 @@ def tight_table(self, _, ntightconstrs=5, tight_senss=1e-2, **kwargs):
     if not self.model:
         return []
     title = "Tightest Constraints"
-    tightnesses = [(-c.relax_sensitivity,
-                    "%+6.2g" % c.relax_sensitivity, c)
-                   for c in self.model.flat(constraintsets=False)
-                   if c.relax_sensitivity >= tight_senss]
-    if not tightnesses:
+    data = [(int(-1e3*c.relax_sensitivity), "%+6.2g" % c.relax_sensitivity, c)
+            for c in self.model.flat(constraintsets=False)
+            if c.relax_sensitivity >= tight_senss]
+    if not data:
         lines = ["No constraints had a sensitivity above %+5.1g."
                  % tight_senss]
     else:
-        data = sorted(tightnesses)[:ntightconstrs]
+        data = sorted(data)[:ntightconstrs]
         lines = constraint_table(data, **kwargs)
     return [title] + ["-"*len(title)] + lines + [""]
 
@@ -87,14 +86,12 @@ def loose_table(self, _, loose_senss=1e-5, **kwargs):
     if not self.model:
         return []
     title = "All Loose Constraints"
-    tightnesses = [(c.relax_sensitivity, "", c)
-                   for c in self.model.flat(constraintsets=False)
-                   if c.relax_sensitivity <= loose_senss]
-    if not tightnesses:
+    data = [(0, "", c) for c in self.model.flat(constraintsets=False)
+            if c.relax_sensitivity <= loose_senss]
+    if not data:
         lines = ["No constraints had a sensitivity below %+6.2g."
                  % loose_senss]
     else:
-        data = sorted(tightnesses)
         lines = constraint_table(data, **kwargs)
     return [title] + ["-"*len(title)] + lines + [""]
 
@@ -193,15 +190,14 @@ def warnings_table(self, _, **kwargs):
             if len(data_vec) > 1:
                 lines += ["| for sweep %i |" % i]
             if wtype == "Unexpectedly Tight Constraints" and data[0][1]:
-                tightnesses = [(-c.relax_sensitivity,
-                                "%+6.2g" % c.relax_sensitivity, c)
-                               for _, c in data]
-                data = sorted(tightnesses)
+                data = [(int(-1e5*c.relax_sensitivity),
+                         "%+6.2g" % c.relax_sensitivity, c) for _, c in data]
+                data = sorted(data)
                 lines += constraint_table(data, **kwargs)
             elif wtype == "Unexpectedly Loose Constraints" and data[0][1]:
-                tightnesses = [(-c.rel_diff, "%.4g %s %.4g" % c.tightvalues, c)
-                               for _, c in data]
-                data = sorted(tightnesses)
+                data = [(-int(1e5*c.rel_diff),
+                         "%.4g %s %.4g" % c.tightvalues, c) for _, c in data]
+                data = sorted(data)
                 lines += constraint_table(data, **kwargs)
             else:
                 for msg, _ in data:
