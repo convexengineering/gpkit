@@ -123,13 +123,12 @@ def constraint_table(data, sortbymodels=True, showmodels=True, **_):
                 constrstr = constraint.str_without(["units", "models"])
             except AttributeError:
                 constrstr = str(constraint)
-        sortby = sortby + hash(constrstr)*1e-30
-        decorated.append((models[model], model, sortby, openingstr, constrstr))
+        decorated.append((models[model], model, sortby, constrstr, openingstr))
     decorated.sort()
     oldmodel = None
     lines = []
     for varlist in decorated:
-        _, model, _, openingstr, constrstr = varlist
+        _, model, _, constrstr, openingstr = varlist
         if model not in models:
             continue
         if model != oldmodel and len(models) > 1:
