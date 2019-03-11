@@ -244,6 +244,7 @@ assert (MISSION["flight segment"]["aircraft performance"]
 vars_of_interest.update(MISSION.fs.aircraftp.unique_varkeys)
 vars_of_interest.add(M["D"])
 print sol.summary(vars_of_interest)
+print sol.table(tables=["loose constraints"])
 
 MISSION["flight segment"]["aircraft performance"]["fuel burn rate"] = (
     MISSION.fs.aircraftp.Wburn >= 0.2*MISSION.fs.aircraftp.wing_aero.D)

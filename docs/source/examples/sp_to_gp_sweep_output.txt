@@ -1,13 +1,26 @@
-Warning: Constraint [V_{f_{avail}} [m**3]... >= V_f [m**3]...] is not tight because the left hand side evaluated to 0.588622416204 meter ** 3 but the right hand side evaluated to 0.577460580538 meter ** 3 (Allowable error: 0.0001%, Actual error: 1.9%)
+Warning: Constraint [V_{f_{avail}} [m**3]... >= V_f [m**3]...] is not tight: the left hand side evaluated to 0.588622416204 meter ** 3 but the right hand side evaluated to 0.577460580538 meter ** 3 (Allowable error: 0.0001%, Actual error: 1.9%)
 
-Warning: Constraint [V_{f_{avail}} [m**3]... >= V_f [m**3]...] is not tight because the left hand side evaluated to 0.788360644367 meter ** 3 but the right hand side evaluated to 0.776890631957 meter ** 3 (Allowable error: 0.0001%, Actual error: 1.5%)
+Warning: Constraint [V_{f_{avail}} [m**3]... >= V_f [m**3]...] is not tight: the left hand side evaluated to 0.788360644367 meter ** 3 but the right hand side evaluated to 0.776890631957 meter ** 3 (Allowable error: 0.0001%, Actual error: 1.5%)
 
-Warning: Constraint [V_{f_{avail}} [m**3]... >= V_f [m**3]...] is not tight because the left hand side evaluated to 0.958462517649 meter ** 3 but the right hand side evaluated to 0.918650397739 meter ** 3 (Allowable error: 0.0001%, Actual error: 4.3%)
+Warning: Constraint [V_{f_{avail}} [m**3]... >= V_f [m**3]...] is not tight: the left hand side evaluated to 0.958462517649 meter ** 3 but the right hand side evaluated to 0.918650397739 meter ** 3 (Allowable error: 0.0001%, Actual error: 4.3%)
 
 
 Cost
 ----
  [ 4.63e+03  6.23e+03  7.36e+03  ] [N]
+
+Warnings
+========
+Unexpectedly Loose Constraints
+------------------------------
+| for sweep 0 |
+0.9585 >= 0.9187 : V_{f_{avail}} >= V_f
+
+| for sweep 1 |
+0.9585 >= 0.9187 : V_{f_{avail}} >= V_f
+
+| for sweep 2 |
+0.9585 >= 0.9187 : V_{f_{avail}} >= V_f
 
 Sweep Variables
 ---------------
@@ -41,4 +54,12 @@ Most Sensitive
                   k : [ +0.85     +0.71     +0.74    ] form factor
 (\frac{S}{S_{wet}}) : [ +0.85     +0.71     +0.74    ] wetted area ratio
             V_{min} : [ -1.4       0         0       ] takeoff speed
+
+Tightest Constraints
+--------------------
+  +3.4 : L/D = C_D**-1*C_L
+  +3.2 : V_f = W_f*\rho_f**-1*g**-1
+  +1.2 : T_{flight} >= Range*V**-1
+  +1.2 : C_D >= (CDA0)*S**-1 + (\frac{S}{S_{wet}})*C_f*k + 0.318*A**-1*C_L**2*e**-1
+  +1.2 : D >= 0.5*C_D*S*V**2*\rho
 

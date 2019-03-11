@@ -436,6 +436,7 @@ class PosynomialInequality(ScalarSingleEquationConstraint):
             for bound in ("upper", "lower"):
                 self.bounded.add((key, bound))
         self.relax_sensitivity = 0
+        self.sgp_parent = None
 
     def _simplify_posy_ineq(self, hmap, pmap=None, allow_tautological=True):
         "Simplify a posy <= 1 by moving constants to the right side."
@@ -526,8 +527,8 @@ class PosynomialInequality(ScalarSingleEquationConstraint):
             return {}  # as_posyslt1 created no inequalities
         la, = la
         self.relax_sensitivity = la
-        if hasattr(self, "sp_ineq_parent"):
-            self.sp_ineq_parent.relax_sensitivity = la
+        if self.sgp_parent:
+            self.sgp_parent.relax_sensitivity = la
         nu, = nu
         presub, = self.unsubbed
         if hasattr(self, "pmap"):

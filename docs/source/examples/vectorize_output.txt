@@ -8,6 +8,10 @@ Free Variables
 --------------
 x : 1
 
+Tightest Constraints
+--------------------
+    +1 : x >= 1
+
 __________
 
 VECTORIZED
@@ -19,4 +23,12 @@ Cost
 Free Variables
 --------------
 x : [ 1         2         1        ]
+
+Tightest Constraints
+--------------------
+       | Test.1
+    +1 : x__(0,) >= 1
+    +1 : x__(2,) >= 1
+
+    +1 : x_Test.1_(1,) >= 2
 
