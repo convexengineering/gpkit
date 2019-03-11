@@ -61,8 +61,7 @@ def insenss_table(data, _, maxval=0.1, **kwargs):
     return senss_table(data, title="Insensitive Fixed Variables", **kwargs)
 
 
-def tight_table(self, _, ntightconstrs=5, tight_senss=1e-2, showmodels=True,
-                sortbymodels=True, **kwargs):
+def tight_table(self, _, ntightconstrs=5, tight_senss=1e-2, **kwargs):
     "Return constraint tightness lines"
     if not self.model:
         return []
@@ -76,12 +75,11 @@ def tight_table(self, _, ntightconstrs=5, tight_senss=1e-2, showmodels=True,
                  % tight_senss]
     else:
         data = sorted(tightnesses)[:ntightconstrs]
-        lines = constraint_table(data, sortbymodels, showmodels)
+        lines = constraint_table(data, **kwargs)
     return [title] + ["-"*len(title)] + lines + [""]
 
 
-def loose_table(self, _, loose_senss=1e-5, showmodels=True,
-                sortbymodels=True, **kwargs):
+def loose_table(self, _, loose_senss=1e-5, **kwargs):
     "Return constraint tightness lines"
     if not self.model:
         return []
@@ -95,12 +93,12 @@ def loose_table(self, _, loose_senss=1e-5, showmodels=True,
                  % loose_senss]
     else:
         data = sorted(tightnesses)
-        lines = constraint_table(data, sortbymodels, showmodels)
+        lines = constraint_table(data, **kwargs)
     return [title] + ["-"*len(title)] + lines + [""]
 
 
 # pylint: disable=too-many-branches,too-many-locals,too-many-statements
-def constraint_table(data, sortbymodels, showmodels):
+def constraint_table(data, sortbymodels, showmodels, **_):
     "Creates lines for tables where the right side is a constraint."
     models = {}
     decorated = []
@@ -173,7 +171,7 @@ def constraint_table(data, sortbymodels, showmodels):
     return lines
 
 
-def warnings_table(self, _, showmodels=True, sortbymodels=True, **kwargs):
+def warnings_table(self, _, **kwargs):
     "Makes a table for all warnings in the solution."
     title = "Warnings"
     lines = [title, "="*len(title)]
@@ -192,12 +190,12 @@ def warnings_table(self, _, showmodels=True, sortbymodels=True, **kwargs):
                                 "%+6.2g" % c.relax_sensitivity, c)
                                for _, c in data]
                 data = sorted(tightnesses)
-                lines += constraint_table(data, sortbymodels, showmodels)
+                lines += constraint_table(data, **kwargs)
             elif wtype == "Unexpectedly Loose Constraints" and data[0][1]:
                 tightnesses = [(-c.rel_diff, "%.4g %s %.4g" % c.tightvalues, c)
                                for _, c in data]
                 data = sorted(tightnesses)
-                lines += constraint_table(data, sortbymodels, showmodels)
+                lines += constraint_table(data, **kwargs)
             else:
                 for msg, _ in data:
                     lines += [msg, ""]
