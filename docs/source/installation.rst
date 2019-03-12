@@ -47,7 +47,7 @@ Debugging your installation
 You may need to rebuild GPkit if any of the following occur:
   - You install MOSEK after installing GPkit
   - You see ``Could not load settings file.`` when importing GPkit, or
-  - ``Could not load MOSEK library: ImportError('$HOME/.gpkit/expopt.so not found.')``
+  - ``Could not load MOSEK library: ImportError('expopt.so not found.')``
 
 To rebuild GPkit run ``python -c "from gpkit.build import rebuild; rebuild()"``.
 
