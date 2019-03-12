@@ -3,6 +3,15 @@ Release Notes
 
 This page lists the changes made in each point version of gpkit.
 
+Version 0.8.0
+=============
+ * Much cruft removal, various speedups and fixes
+ * Auto-differentiation of linked sensitivities
+ * Simpler installation process
+ * Solution differencing and pickling
+ * Tight/Loose warnings in solution and in solution tables
+ * Tight/loose constraints in solution tables
+
 Version 0.7.0
 =============
  * Variable's values are now used only in their first ConstraintSet; in other ConstraintSets they're free variables
