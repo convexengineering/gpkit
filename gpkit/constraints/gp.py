@@ -316,6 +316,8 @@ class GeometricProgram(CostedConstraintSet, NomialData):
             if v.gradients:
                 dlogcost_dlogv = var_senss.pop(v)
                 val = result["constants"][v]
+                if val == 0:
+                    continue
                 for c, dv_dc in v.gradients.items():
                     dlogv_dlogc = dv_dc * result["constants"][c]/val
                     accum = var_senss.get(c, 0)
