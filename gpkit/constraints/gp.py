@@ -316,10 +316,14 @@ class GeometricProgram(CostedConstraintSet, NomialData):
             if v.gradients:
                 dlogcost_dlogv = var_senss.pop(v)
                 val = result["constants"][v]
-                if val == 0:
-                    continue
                 for c, dv_dc in v.gradients.items():
-                    dlogv_dlogc = dv_dc * result["constants"][c]/val
+                    if val != 0:
+                        dlogv_dlogc = dv_dc * result["constants"][c]/val
+                    else:  # make nans / infs explicitly to avoid warning below
+                        if dlogcost_dlogv == 0:
+                            dlogv_dlogc = np.nan
+                        else:
+                            dlogv_dlogc = np.inf * dv_dc*result["constants"][c]
                     accum = var_senss.get(c, 0)
                     var_senss[c] = dlogcost_dlogv*dlogv_dlogc + accum
                     if v in cost_senss:
