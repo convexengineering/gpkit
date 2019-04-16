@@ -323,18 +323,10 @@ class SolutionArray(DictOfLists):
         selfvars = set(self["variables"])
         solvars = set(sol["variables"])
         if showvars:
-            showkeys = set()
-            for k in showvars:
-                if not hasattr(k, "key"):
-                    raise ValueError("the `showvars` argument only accepts"
-                                     " iterables containing VarKeys")
-                if k.key.veckey:
-                    showkeys.add(k.key.veckey)
-                else:
-                    showkeys.add(k.key)
-            selfvars = set([k for k in showkeys
+            showvars = self._parse_showvars(showvars)
+            selfvars = set([k for k in showvars
                             if k in self["variables"]])
-            solvars = set([k for k in showkeys
+            solvars = set([k for k in showvars
                            if k in sol["variables"]])
         sol_diff = {}
         for key in selfvars.intersection(solvars):
@@ -525,6 +517,7 @@ class SolutionArray(DictOfLists):
         "Saves primal solution as a CSV sorted by modelname, like the tables."
         data = self["variables"]
         if showvars:
+            showvars = self._parse_showvars(showvars)
             data = {k: data[k] for k in showvars if k in data}
         # if the columns don't capture any dimensions, skip them
         minspan, maxspan = None, 1
@@ -647,6 +640,7 @@ class SolutionArray(DictOfLists):
             elif table in self:
                 data = self[table]
                 if showvars:
+                    showvars = self._parse_showvars(showvars)
                     data = {k: data[k] for k in showvars if k in data}
                 strs += var_table(data, self.table_titles[table], **kwargs)
         if kwargs.get("latex", None):
