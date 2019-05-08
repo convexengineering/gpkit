@@ -9,8 +9,8 @@ from gpkit.constraints.tight import Tight
 x = Variable("x", "m", "Swept Variable")
 y = Variable("y", "m^2", "Cost")
 m = Model(y, [
-        y >= (x/2)**-0.5 * units.m**2.5 + 1*units.m**2,
-        Tight([y >= (x/2)**2])
+    y >= (x/2)**-0.5 * units.m**2.5 + 1*units.m**2,
+    Tight([y >= (x/2)**2])
     ])
 
 # arguments are: model, swept: values, posnomial for y-axis
