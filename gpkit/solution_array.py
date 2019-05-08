@@ -424,9 +424,10 @@ class SolutionArray(DictOfLists):
         warnings = {}
         if "warnings" in self:
             for wtype in self["warnings"]:
+                warnings[wtype] = self["warnings"][wtype]
                 warnarray = np.array(self["warnings"][wtype])
                 warnarray[:, :, 1] = None  # remove pointer to exact constraint
-                warnings[wtype] = warnarray.tolist()
+                self["warnings"][wtype] = warnarray.tolist()
         return program, model, cost, warnings
 
     def save(self, filename="solution.pkl"):
