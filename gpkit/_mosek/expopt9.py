@@ -36,7 +36,7 @@ def logsumexp(M, A, x, b):
                                           Domain.inPExpCone())
     return a, b
 
-@profile
+
 def imize(c, A, k, *args, **kwargs):
     with Model('gpkitmodel') as M:  # save M somewhere
         A = np.array(A.todense(), "double")
