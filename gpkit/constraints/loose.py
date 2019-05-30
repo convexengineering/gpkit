@@ -26,11 +26,13 @@ class Loose(ConstraintSet):
                        % (constraint.left, constraint.oper, constraint.right))
                 continue
             if constraint.relax_sensitivity >= self.senstol:
-                msg = ("Constraint [%.100s... %s %.100s...] is not loose"
-                       " because it has a sensitivity of %+.4g."
+                msg = ("Constraint [%.100s... %s %.100s...] is not loose:"
+                       " it has a sensitivity of %+.4g."
                        " (Allowable sensitivity: %.4g)" %
                        (constraint.left, constraint.oper, constraint.right,
                         constraint.relax_sensitivity, self.senstol))
                 if self.raiseerror:
                     raise ValueError(msg)
-                appendsolwarning(msg, result, "loose", self.printwarning)
+                appendsolwarning(msg, constraint,
+                                 result, "Unexpectedly Tight Constraints",
+                                 self.printwarning)

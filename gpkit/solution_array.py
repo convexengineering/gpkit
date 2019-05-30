@@ -1,4 +1,5 @@
 """Defines SolutionArray class"""
+import re
 from collections import Iterable
 import cPickle as pickle
 import numpy as np
@@ -7,6 +8,8 @@ from .small_classes import DictOfLists, Strings
 from .small_scripts import mag, isnan
 from .repr_conventions import unitstr
 
+
+CONSTRSPLITPATTERN = re.compile(r"([^*]\*[^*])|( \+ )|( >= )|( <= )|( = )")
 
 VALSTR_REPLACES = [
     ("+nan", " - "),
@@ -26,9 +29,9 @@ def senss_table(data, showvars=(), title="Sensitivities", **kwargs):
         data = data["sensitivities"]["constants"]
     if showvars:
         data = {k: data[k] for k in showvars if k in data}
-    return results_table(data, title, sortbyvals=True,
-                         valfmt="%+-.2g  ", vecfmt="%+-8.2g",
-                         printunits=False, minval=1e-3, **kwargs)
+    return var_table(data, title, sortbyvals=True,
+                     valfmt="%+-.2g  ", vecfmt="%+-8.2g",
+                     printunits=False, minval=1e-3, **kwargs)
 
 
 def topsenss_table(data, showvars, nvars=5, **kwargs):
@@ -61,9 +64,156 @@ def insenss_table(data, _, maxval=0.1, **kwargs):
     return senss_table(data, title="Insensitive Fixed Variables", **kwargs)
 
 
+def tight_table(self, _, ntightconstrs=5, tight_senss=1e-2, **kwargs):
+    "Return constraint tightness lines"
+    if not self.model:
+        return []
+    title = "Tightest Constraints"
+    data = [(-float("%+6.2g" % c.relax_sensitivity) + 1e-30*hash(str(c)),
+             "%+6.2g" % c.relax_sensitivity, c)
+            for c in self.model.flat(constraintsets=False)
+            if c.relax_sensitivity >= tight_senss]
+    if not data:
+        lines = ["No constraints had a sensitivity above %+5.1g."
+                 % tight_senss]
+    else:
+        data = sorted(data)[:ntightconstrs]
+        lines = constraint_table(data, **kwargs)
+    lines = [title] + ["-"*len(title)] + lines + [""]
+    if "sweepvariables" in self:
+        lines.insert(1, "(for the last sweep only)")
+    return lines
+
+
+def loose_table(self, _, loose_senss=1e-5, **kwargs):
+    "Return constraint tightness lines"
+    if not self.model:
+        return []
+    title = "All Loose Constraints"
+    data = [(0, "", c) for c in self.model.flat(constraintsets=False)
+            if c.relax_sensitivity <= loose_senss]
+    if not data:
+        lines = ["No constraints had a sensitivity below %+6.2g."
+                 % loose_senss]
+    else:
+        lines = constraint_table(data, **kwargs)
+    return [title] + ["-"*len(title)] + lines + [""]
+
+
+# pylint: disable=too-many-branches,too-many-locals,too-many-statements
+def constraint_table(data, sortbymodels=True, showmodels=True, **_):
+    "Creates lines for tables where the right side is a constraint."
+    models = {}
+    decorated = []
+    for sortby, openingstr, constraint in data:
+        if sortbymodels and getattr(constraint, "naming", None):
+            model = "/".join([kstr + (".%i" % knum if knum != 0 else "")
+                              for kstr, knum in zip(*constraint.naming)
+                              if kstr])
+        else:
+            model = ""
+        if model not in models:
+            models[model] = len(models)
+        if showmodels:
+            constrstr = str(constraint)
+            if " at 0x" in constrstr:  # don't print memory addresses
+                constrstr = constrstr[:constrstr.find(" at 0x")] + ">"
+        else:
+            try:
+                constrstr = constraint.str_without(["units", "models"])
+            except AttributeError:
+                constrstr = str(constraint)
+        decorated.append((models[model], model, sortby, constrstr, openingstr))
+    decorated.sort()
+    oldmodel = None
+    lines = []
+    for varlist in decorated:
+        _, model, _, constrstr, openingstr = varlist
+        if model not in models:
+            continue
+        if model != oldmodel and len(models) > 1:
+            if oldmodel is not None:
+                lines.append(["", ""])
+            lines.append([("modelname",), model])
+            oldmodel = model
+        if model and len(models) == 1:  # fully remove
+            constrstr = constrstr.replace("_"+model, "")
+        else:  # partially remove
+            constrstr = constrstr.replace(model, "")
+        minlen, maxlen = 25, 80
+        segments = [s for s in CONSTRSPLITPATTERN.split(constrstr) if s]
+        splitlines = []
+        line = ""
+        next_idx = 0
+        while next_idx < len(segments):
+            segment = segments[next_idx]
+            next_idx += 1
+            if CONSTRSPLITPATTERN.match(segment) and next_idx < len(segments):
+                segments[next_idx] = segment[1:] + segments[next_idx]
+                segment = segment[0]
+            elif len(line) + len(segment) > maxlen and len(line) > minlen:
+                splitlines.append(line)
+                line = "  "
+            line += segment
+            while len(line) > maxlen:
+                splitlines.append(line[:maxlen])
+                line = "  " + line[maxlen:]
+        splitlines.append(line)
+        lines += [(openingstr + " : ", splitlines[0])]
+        lines += [("", l) for l in splitlines[1:]]
+
+    maxlens = np.max([list(map(len, line)) for line in lines
+                      if line[0] != ("modelname",)], axis=0)
+    dirs = ['>', '<']
+    # check lengths before using zip
+    assert len(list(dirs)) == len(list(maxlens))
+    fmts = [u'{0:%s%s}' % (direc, L) for direc, L in zip(dirs, maxlens)]
+    for i, line in enumerate(lines):
+        if line[0] == ("modelname",):
+            line = [fmts[0].format(" | "), line[1]]
+        else:
+            line = [fmt.format(s) for fmt, s in zip(fmts, line)]
+        lines[i] = "".join(line).rstrip()
+    return lines
+
+
+def warnings_table(self, _, **kwargs):
+    "Makes a table for all warnings in the solution."
+    title = "Warnings"
+    lines = [title, "="*len(title)]
+    if "warnings" not in self or not self["warnings"]:
+        return []
+    for wtype in self["warnings"]:
+        lines += [wtype] + ["-"*len(wtype)]
+        data_vec = self["warnings"][wtype]
+        if not hasattr(data_vec, "shape"):
+            data_vec = [data_vec]
+        for i, data in enumerate(data_vec):
+            if len(data_vec) > 1:
+                lines += ["| for sweep %i |" % i]
+            if wtype == "Unexpectedly Tight Constraints" and data[0][1]:
+                data = [(-int(1e5*c.relax_sensitivity),
+                         "%+6.2g" % c.relax_sensitivity, c) for _, c in data]
+                data = sorted(data)
+                lines += constraint_table(data, **kwargs)
+            elif wtype == "Unexpectedly Loose Constraints" and data[0][1]:
+                data = [(-int(1e5*c.rel_diff),
+                         "%.4g %s %.4g" % c.tightvalues, c) for _, c in data]
+                data = sorted(data)
+                lines += constraint_table(data, **kwargs)
+            else:
+                for msg, _ in data:
+                    lines += [msg, ""]
+            lines += [""]
+    return lines
+
+
 TABLEFNS = {"sensitivities": senss_table,
-            "topsensitivities": topsenss_table,
+            "top sensitivities": topsenss_table,
             "insensitivities": insenss_table,
+            "tightest constraints": tight_table,
+            "loose constraints": loose_table,
+            "warnings": warnings_table,
            }
 
 
@@ -72,7 +222,7 @@ def reldiff(val1, val2):
     if hasattr(val1, "shape") or hasattr(val2, "shape") or val1.magnitude != 0:
         if hasattr(val1, "shape") and val1.shape:
             val1_dims = len(val1.shape)
-            if (hasattr(val2, "shape")
+            if (hasattr(val2, "shape") and val1.shape != val2.shape
                     and val2.shape[:val1_dims] == val1.shape):
                 val1_ = np.tile(val1.magnitude, val2.shape[val1_dims:]+(1,)).T
                 val1 = val1_ * val1.units
@@ -115,6 +265,7 @@ class SolutionArray(DictOfLists):
     >>> assert all(np.array(senss) == 1)
     """
     program = None
+    model = None
     table_titles = {"sweepvariables": "Sweep Variables",
                     "freevariables": "Free Variables",
                     "constants": "Constants",
@@ -147,8 +298,9 @@ class SolutionArray(DictOfLists):
         return True
 
     # pylint: disable=too-many-locals, too-many-branches, too-many-statements
-    def diff(self, sol, min_percent=1.0,
-             show_sensitivities=True, min_senss_delta=0.1):
+    def diff(self, sol, showvars=None, min_percent=1.0,
+             show_sensitivities=True, min_senss_delta=0.1,
+             sortbymodel=True):
         """Outputs differences between this solution and another
 
         Arguments
@@ -170,12 +322,22 @@ class SolutionArray(DictOfLists):
             sol = pickle.load(open(sol))
         selfvars = set(self["variables"])
         solvars = set(sol["variables"])
+        if showvars:
+            showvars = self._parse_showvars(showvars)
+            selfvars = set([k for k in showvars
+                            if k in self["variables"]])
+            solvars = set([k for k in showvars
+                           if k in sol["variables"]])
         sol_diff = {}
         for key in selfvars.intersection(solvars):
             sol_diff[key] = 100*reldiff(self(key), sol(key))
-        lines = results_table(sol_diff, "Solution difference", sortbyvals=True,
-                              valfmt="%+6.1f%%  ", vecfmt="%+6.1f%% ",
-                              printunits=False, minval=min_percent)
+        lines = var_table(sol_diff, "Solution difference", sortbyvals=True,
+                          valfmt="%+6.1f%%  ", vecfmt="%+6.1f%% ",
+                          printunits=False, minval=min_percent,
+                          sortbymodel=sortbymodel)
+        if showvars:
+            lines[0] += " for variables given in `showvars`"
+            lines[1] += "----------------------------------"
         if len(lines) > 3:
             lines.insert(1, "(positive means the argument is bigger)")
         elif sol_diff:
@@ -197,22 +359,26 @@ class SolutionArray(DictOfLists):
                     val2 = sol["sensitivities"]["variables"][key]
                     if hasattr(val1, "shape") and val1.shape:
                         val1_dims = len(val1.shape)
-                        if (hasattr(val2, "shape")
+                        if (hasattr(val2, "shape") and val1.shape != val2.shape
                                 and val2.shape[:val1_dims] == val1.shape):
                             val1 = np.tile(val1,
                                            val2.shape[val1_dims:]+(1,)).T
                     senss_delta[key] = val2 - val1
                 elif key in sol["sensitivities"]["variables"]:
-                    print ("Key %s is not in this solution's sensitivities"
-                           " but is in those of the argument.")
+                    print("Key %s is not in this solution's sensitivities"
+                          " but is in those of the argument.")
                 else:  # for variables that just aren't in any constraints
                     senss_delta[key] = 0
 
             primal_lines = len(lines)
-            lines += results_table(senss_delta, "Solution sensitivity delta",
-                                   sortbyvals=True,
-                                   valfmt="%+-6.2f  ", vecfmt="%+-6.2f",
-                                   printunits=False, minval=min_senss_delta)
+            lines += var_table(senss_delta, "Solution sensitivity delta",
+                               sortbyvals=True,
+                               valfmt="%+-6.2f  ", vecfmt="%+-6.2f",
+                               printunits=False, minval=min_senss_delta,
+                               sortbymodel=sortbymodel)
+            if showvars:
+                lines[primal_lines] += " for variables given in `showvars`"
+                lines[primal_lines + 1] += "----------------------------------"
             if len(lines) > primal_lines + 3:
                 lines.insert(
                     primal_lines + 1,
@@ -223,7 +389,8 @@ class SolutionArray(DictOfLists):
                     if not getattr(valarray, "shape", None):
                         value = valarray
                     else:
-                        value = valarray[np.argmax(np.abs(valarray))]
+                        flatvalarray = valarray.flatten()
+                        value = flatvalarray[np.argmax(np.abs(valarray))]
                     absvalue = abs(value)
                     if absvalue > absmaxvalue:
                         maxvalue = value
@@ -248,24 +415,39 @@ class SolutionArray(DictOfLists):
         out = out.replace("-0.", " -.")
         return out
 
+    def pickle_prep(self):
+        "After calling this, the SolutionArray is ready to pickle"
+        program, model = self.program, self.model
+        self.program, self.model = None, None
+        cost = self["cost"]
+        self["cost"] = mag(cost)
+        warnings = {}
+        if "warnings" in self:
+            for wtype in self["warnings"]:  # remove data
+                warnings[wtype] = self["warnings"][wtype]
+                self["warnings"][wtype] = [
+                    (msg, None) for (msg, _) in self["warnings"][wtype]
+                ]
+        return program, model, cost, warnings
+
     def save(self, filename="solution.pkl"):
         """Pickles the solution and saves it to a file.
 
         The saved solution is identical except for two things:
             - the cost is made unitless
             - the solution's 'program' attribute is removed
+            - the solution's 'model' attribute is removed
+            - the data field is removed from the solution's warnings
+                (the "message" field is preserved)
 
         Solution can then be loaded with e.g.:
         >>> import cPickle as pickle
         >>> pickle.load(open("solution.pkl"))
         """
-        program = self.program
-        self.program = None
-        cost = self["cost"]
-        self["cost"] = mag(cost)
+        program, model, cost, warnings = self.pickle_prep()
         pickle.dump(self, open(filename, "w"))
-        self["cost"] = cost
-        self.program = program
+        self["cost"], self["warnings"] = cost, warnings
+        self.program, self.model = program, model
 
     def varnames(self, include):
         "Returns list of variables, optionally with minimal unique names"
@@ -284,7 +466,7 @@ class SolutionArray(DictOfLists):
         from scipy.io import savemat
         savemat(filename,
                 {name.replace("/", "_").replace(".", "__"):
-                 float(self["variables"][key])
+                 np.array(self["variables"][key], "f")
                  for name, key in self.varnames(include).items()})
 
     def todataframe(self, include=None):
@@ -335,6 +517,7 @@ class SolutionArray(DictOfLists):
         "Saves primal solution as a CSV sorted by modelname, like the tables."
         data = self["variables"]
         if showvars:
+            showvars = self._parse_showvars(showvars)
             data = {k: data[k] for k in showvars if k in data}
         # if the columns don't capture any dimensions, skip them
         minspan, maxspan = None, 1
@@ -351,8 +534,8 @@ class SolutionArray(DictOfLists):
             valcols = 1
         if maxspan < valcols:
             valcols = maxspan
-        lines = results_table(data, "", rawlines=True, maxcolumns=valcols,
-                              **kwargs)
+        lines = var_table(data, "", rawlines=True, maxcolumns=valcols,
+                          **kwargs)
         with open(filename, "w") as f:
             f.write("Model Name,Variable Name,Value(s)" + ","*valcols
                     + "Units,Description\n")
@@ -395,14 +578,16 @@ class SolutionArray(DictOfLists):
     def summary(self, showvars=(), ntopsenss=5, **kwargs):
         "Print summary table, showing top sensitivities and no constants"
         showvars = self._parse_showvars(showvars)
-        out = self.table(showvars, ["cost", "sweepvariables", "freevariables"],
+        out = self.table(showvars, ["cost", "warnings",
+                                    "sweepvariables", "freevariables"],
                          **kwargs)
         constants_in_showvars = showvars.intersection(self["constants"])
         senss_tables = []
         if len(self["constants"]) < ntopsenss+2 or constants_in_showvars:
             senss_tables.append("sensitivities")
         if len(self["constants"]) >= ntopsenss+2:
-            senss_tables.append("topsensitivities")
+            senss_tables.append("top sensitivities")
+        senss_tables.append("tightest constraints")
         senss_str = self.table(showvars, senss_tables, nvars=ntopsenss,
                                **kwargs)
         if senss_str:
@@ -410,8 +595,9 @@ class SolutionArray(DictOfLists):
         return out
 
     def table(self, showvars=(),
-              tables=("cost", "sweepvariables", "freevariables",
-                      "constants", "sensitivities"), **kwargs):
+              tables=("cost", "warnings", "sweepvariables", "freevariables",
+                      "constants", "sensitivities", "tightest constraints"),
+              **kwargs):
         """A table representation of this SolutionArray
 
         Arguments
@@ -454,8 +640,9 @@ class SolutionArray(DictOfLists):
             elif table in self:
                 data = self[table]
                 if showvars:
+                    showvars = self._parse_showvars(showvars)
                     data = {k: data[k] for k in showvars if k in data}
-                strs += results_table(data, self.table_titles[table], **kwargs)
+                strs += var_table(data, self.table_titles[table], **kwargs)
         if kwargs.get("latex", None):
             preamble = "\n".join(("% \\documentclass[12pt]{article}",
                                   "% \\usepackage{booktabs}",
@@ -489,11 +676,12 @@ class SolutionArray(DictOfLists):
 
 # pylint: disable=too-many-statements,too-many-arguments
 # pylint: disable=too-many-branches,too-many-locals
-def results_table(data, title, printunits=True, fixedcols=True,
-                  varfmt="%s : ", valfmt="%-.4g ", vecfmt="%-8.3g",
-                  included_models=None, excluded_models=None, latex=False,
-                  minval=0, sortbyvals=False, hidebelowminval=False,
-                  columns=None, maxcolumns=5, rawlines=False, **_):
+def var_table(data, title, printunits=True, fixedcols=True,
+              varfmt="%s : ", valfmt="%-.4g ", vecfmt="%-8.3g",
+              included_models=None, excluded_models=None, latex=False,
+              minval=0, sortbyvals=False, hidebelowminval=False,
+              columns=None, maxcolumns=5, rawlines=False,
+              sortbymodel=True, **_):
     """
     Pretty string representation of a dict of VarKeys
     Iterable values are handled specially (partial printing)
@@ -541,6 +729,8 @@ def results_table(data, title, printunits=True, fixedcols=True,
             model = "/".join([kstr + (".%i" % knum if knum != 0 else "")
                               for kstr, knum in zip(kmodels, kmodelnums)
                               if kstr])
+            if not sortbymodel:
+                model = "null"
             models.add(model)
             s = k.str_without("models")
             if not sortbyvals:

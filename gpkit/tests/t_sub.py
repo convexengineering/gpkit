@@ -125,6 +125,7 @@ class TestNomialSubs(unittest.TestCase):
             subbed = sc.sub({a: 2.0})
             self.assertTrue(isinstance(subbed, Signomial))
             self.assertEqual(subbed, 2*x - y - D)
+            _ = a.sub({a: -1}).value  # fix monomial assumptions
 
 
 class TestModelSubs(unittest.TestCase):
@@ -247,7 +248,8 @@ class TestModelSubs(unittest.TestCase):
         npt.assert_allclose(sol["sensitivities"]["constants"][t_day],
                             [-1./3, -0.5, -0.6, +1], 1e-5)
         self.assertEqual(len(sol["cost"]), 4)
-        npt.assert_allclose(sol(t_day) + sol(t_night), 24)
+        npt.assert_allclose([float(l) for l in
+                             (sol(t_day) + sol(t_night))/gpkit.ureg.hours], 24)
 
     def test_vector_init(self):
         N = 6

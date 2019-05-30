@@ -3,7 +3,7 @@ from collections import Iterable
 import numpy as np
 
 
-def appendsolwarning(msg, result, category="uncategorized",
+def appendsolwarning(msg, data, result, category="uncategorized",
                      printwarning=False):
     "Append a particular category of warnings to a solution."
     if printwarning:
@@ -12,7 +12,7 @@ def appendsolwarning(msg, result, category="uncategorized",
         result["warnings"] = {}
     if category not in result["warnings"]:
         result["warnings"][category] = []
-    result["warnings"][category].append(msg)
+    result["warnings"][category].append((msg, data))
 
 @np.vectorize
 def isnan(element):

@@ -44,7 +44,7 @@ class Model(CostedConstraintSet):
     # name and num identify a model uniquely
     name = None
     num = None
-    # naming holds the name and num evironment in which a model was created
+    # naming holds the name and num environment in which a model was created
     # this includes its own name and num, and those of models containing it
     naming = None
     program = None

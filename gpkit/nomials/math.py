@@ -376,6 +376,8 @@ class ScalarSingleEquationConstraint(SingleEquationConstraint):
                 self.substitutions.update(sig.values)
             else:
                 lr[i] = Signomial(sig)
+        from .. import MODELS, MODELNUMS
+        self.naming = (tuple(MODELS), tuple(MODELNUMS))
         super(ScalarSingleEquationConstraint,
               self).__init__(lr[0], oper, lr[1])
 
@@ -394,14 +396,22 @@ class ScalarSingleEquationConstraint(SingleEquationConstraint):
                              % self.oper, self)
 
 
-# pylint: disable=too-many-instance-attributes
+# pylint: disable=too-many-instance-attributes, invalid-unary-operand-type
 class PosynomialInequality(ScalarSingleEquationConstraint):
     """A constraint of the general form monomial >= posynomial
     Stored in the posylt1_rep attribute as a single Posynomial (self <= 1)
     Usually initialized via operator overloading, e.g. cc = (y**2 >= 1 + x)
     """
-    def __init__(self, left, oper, right):
+
+    # constraint feasibility tolerance under substitutions
+    feastol = 1e-3
+    # TODO: 1e-3 is currently an arbitrary tolerance. It follows
+    #       gp.check_result()'s default (1e-3) but that seems quite lax!
+
+    def __init__(self, left, oper, right, feastol=None):
         ScalarSingleEquationConstraint.__init__(self, left, oper, right)
+        if feastol:
+            self.feastol = feastol
         if self.oper == "<=":
             p_lt, m_gt = self.left, self.right
         elif self.oper == ">=":
@@ -426,6 +436,7 @@ class PosynomialInequality(ScalarSingleEquationConstraint):
             for bound in ("upper", "lower"):
                 self.bounded.add((key, bound))
         self.relax_sensitivity = 0
+        self.sgp_parent = None
 
     def _simplify_posy_ineq(self, hmap, pmap=None, allow_tautological=True):
         "Simplify a posy <= 1 by moving constants to the right side."
@@ -437,12 +448,10 @@ class PosynomialInequality(ScalarSingleEquationConstraint):
             const_idx = hmap.keys().index(empty_exp)
             self.const_mmap = self.pmap.pop(const_idx)  # pylint: disable=attribute-defined-outside-init
             self.const_coeff = coeff  # pylint: disable=attribute-defined-outside-init
-        # TODO: 1e-6 is currently an arbitrary tolerance. It could follow
-        #       gp.check_result()'s default (1e-3) but that seeems quite lax!
-        if (allow_tautological and (coeff >= -1e-6 or np.isnan(coeff))
+        if (allow_tautological and (coeff >= -self.feastol or np.isnan(coeff))
                 and len(hmap) == 1):  # a tautological monomial!
-            return None  # ValueError("tautological constraint: %s" % self)
-        elif coeff <= -1e-6:
+            return None  # was ValueError("tautological constraint: %s" % self)
+        elif coeff <= -self.feastol:
             raise ValueError("The constraint %s is infeasible by"
                              " %f%%" % (self, -coeff*100))
         scaled = hmap/coeff
@@ -518,6 +527,8 @@ class PosynomialInequality(ScalarSingleEquationConstraint):
             return {}  # as_posyslt1 created no inequalities
         la, = la
         self.relax_sensitivity = la
+        if self.sgp_parent:
+            self.sgp_parent.relax_sensitivity = la
         nu, = nu
         presub, = self.unsubbed
         if hasattr(self, "pmap"):

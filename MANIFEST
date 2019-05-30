@@ -10,6 +10,7 @@ gpkit/constraints/bounded.py
 gpkit/constraints/costed.py
 gpkit/constraints/gp.py
 gpkit/constraints/model.py
+gpkit/constraints/loose.py
 gpkit/constraints/prog_factories.py
 gpkit/constraints/relax.py
 gpkit/constraints/set.py
@@ -61,7 +62,6 @@ gpkit/tests/test_repo.py
 gpkit/tools/__init__.py
 gpkit/tools/autosweep.py
 gpkit/tools/docstring.py
-gpkit/tools/fmincon.py
 gpkit/tools/spdata.py
 gpkit/tools/tools.py
 gpkit/varkey.py
