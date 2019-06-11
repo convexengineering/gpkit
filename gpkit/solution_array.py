@@ -509,18 +509,13 @@ class SolutionArray(DictOfLists):
                 ])
         return pd.DataFrame(rows, columns=cols)
 
-    def savecsv(self, filename="solution.csv", include=None):
-        "Saves primal solution as csv"
-        df = self.todataframe(include)
-        df.to_csv(filename, index=False, encoding="utf-8")
-
     def savetxt(self, filename="solution.txt", *args, **kwargs):
         "Saves solution table as a text file"
         with open(filename, "w") as f:
             f.write(self.table(*args, **kwargs).encode("utf-8"))
 
-    def saveprettycsv(self, showvars=None, filename="solution.csv", valcols=5,
-                      **kwargs):
+    def savecsv(self, showvars=None, filename="solution.csv", valcols=5,
+                **kwargs):
         "Saves primal solution as a CSV sorted by modelname, like the tables."
         data = self["variables"]
         if showvars:
