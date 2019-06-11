@@ -4,7 +4,7 @@ from .small_classes import Quantity
 
 try:
     sys.stdout.write(u"\u200b")
-    DEFAULT_UNIT_PRINTING = [":P~"]
+    DEFAULT_UNIT_PRINTING = [":~"]
 except UnicodeEncodeError:
     DEFAULT_UNIT_PRINTING = [":~"]
 

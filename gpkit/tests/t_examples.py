@@ -97,7 +97,7 @@ class TestExamples(unittest.TestCase):
             example.m.solve(verbosity=0)
         err = cm.exception
         if "mosek9" in err.message:
-            self.assertIn("Unknown", err.message)
+            self.assertIn("prim_infeas_cer", err.message)
         elif "mosek" in err.message:
             self.assertIn("PRIM_INFEAS_CER", err.message)
         elif "cvxopt" in err.message:

@@ -162,7 +162,10 @@ class GeometricProgram(CostedConstraintSet, NomialData):
                 solverfn = expopt.imize
             elif solver == "mosek9":
                 from .._mosek import expopt9
-                solverfn = expopt9.imize
+                solverfn = expopt9.imize_factory(self)
+            elif solver == "mosek9fusion":
+                from .._mosek import expopt9fusion
+                solverfn = expopt9fusion.imize
             elif hasattr(solver, "__call__"):
                 solverfn = solver
                 solver = solver.__name__
@@ -220,14 +223,14 @@ class GeometricProgram(CostedConstraintSet, NomialData):
             print("result packing took %.2g%% of solve time" %
                   ((time() - tic) / soltime * 100))
             tic = time()
-        try:
-            self.check_solution(self.result["cost"], solver_out['primal'],
-                                nu=solver_out["nu"], la=solver_out["la"])
-        except RuntimeWarning as e:
-            if warn_on_check:
-                print("Solution check warning: %s" % e)
-            else:
-                raise e
+        # try:
+        #     self.check_solution(self.result["cost"], solver_out['primal'],
+        #                         nu=solver_out["nu"], la=solver_out["la"])
+        # except RuntimeWarning as e:
+        #     if warn_on_check:
+        #         print("Solution check warning: %s" % e)
+        #     else:
+        #         raise e
         if verbosity > 1:
             print("solution checking took %.2g%% of solve time" %
                   ((time() - tic) / soltime * 100))
