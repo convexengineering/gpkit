@@ -233,8 +233,13 @@ AC = Aircraft()
 MISSION = Mission(AC)
 M = Model(MISSION.takeoff_fuel, [MISSION, AC])
 sol = M.solve(verbosity=0)
-# save solution to a file and retrieve it
+# save solution to some files
+sol.savemat()
+sol.savecsv()
+sol.saveprettycsv()
+sol.savetxt()
 sol.save("solution.pkl")
+# retrieve solution from a file
 sol_loaded = pickle.load(open("solution.pkl"))
 
 vars_of_interest = set(AC.varkeys)
