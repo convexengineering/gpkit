@@ -236,7 +236,6 @@ sol = M.solve(verbosity=0)
 # save solution to some files
 sol.savemat()
 sol.savecsv()
-sol.saveprettycsv()
 sol.savetxt()
 sol.save("solution.pkl")
 # retrieve solution from a file
