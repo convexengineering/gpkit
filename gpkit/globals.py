@@ -103,16 +103,17 @@ NAMEDVARS = defaultdict(list)
 
 def reset_modelnumbers():
     "Zeroes all model number counters"
-    for key in MODELNUM_LOOKUP:
-        MODELNUM_LOOKUP[key] = 0
+    for key in list(MODELNUM_LOOKUP):
+        del MODELNUM_LOOKUP[key]
 
 
 def begin_variable_naming(model):
     "Appends a model name and num to the environment."
     MODELS.append(model)
-    num = MODELNUM_LOOKUP[model]
+    namingbut1 = (tuple(MODELS), tuple(MODELNUMS))
+    num = MODELNUM_LOOKUP[namingbut1]
+    MODELNUM_LOOKUP[namingbut1] += 1
     MODELNUMS.append(num)
-    MODELNUM_LOOKUP[model] += 1
     return num, (tuple(MODELS), tuple(MODELNUMS))
 
 
