@@ -110,7 +110,7 @@ class GeometricProgram(CostedConstraintSet, NomialData):
 
     # pylint: disable=too-many-statements, too-many-locals
     def solve(self, solver=None, verbosity=1, warn_on_check=False,
-              process_result=True, **kwargs):
+              process_result=True, gen_result=True, **kwargs):
         """Solves a GeometricProgram and returns the solution.
 
         Arguments
@@ -212,6 +212,17 @@ class GeometricProgram(CostedConstraintSet, NomialData):
                 "final status of solver '%s' was '%s', not 'optimal'.\n\n"
                 % (solvername, solver_status)))
 
+        solver_out["soltime"] = soltime
+        if gen_result:
+            return self._generate_result(solver_out, warn_on_check, verbosity,
+                                         process_result)
+        else:
+            solver_out["gen_result"] = lambda: self._generate_result(solver_out, dual_check=False)
+            return solver_out
+
+    def _generate_result(self, solver_out, warn_on_check=True, verbosity=0,
+                         process_result=True, dual_check=True, ):
+        soltime = solver_out["soltime"]
         self.result = self._compile_result(solver_out)  # NOTE: SIDE EFFECTS
         if verbosity > 1:
             print("result packing took %.2g%% of solve time" %
@@ -222,7 +233,9 @@ class GeometricProgram(CostedConstraintSet, NomialData):
                                 nu=solver_out["nu"], la=solver_out["la"])
         except RuntimeWarning as e:
             if warn_on_check:
-                print("Solution check warning: %s" % e)
+                e = str(e)
+                if dual_check or ("Dual" not in e and "nu" not in e):
+                    print("Solution check warning: %s" % e)
             else:
                 raise e
         if verbosity > 1:
@@ -400,6 +413,7 @@ class GeometricProgram(CostedConstraintSet, NomialData):
                                  " cost %s" % (np.exp(dual_cost), cost))
 
 
+# @profile
 def genA(exps, varlocs, meq_idxs):  # pylint: disable=invalid-name
     """Generates A matrix from exps and varidxs
 

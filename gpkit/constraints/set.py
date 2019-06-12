@@ -39,6 +39,7 @@ class ConstraintSet(list):
     # idxlookup holds the names of the top-level constraintsets
     idxlookup = None
 
+    # @profile
     def __init__(self, constraints, substitutions=None):  # pylint: disable=too-many-branches
         if isinstance(constraints, dict):
             self.idxlookup = {k: i for i, k in enumerate(constraints)}

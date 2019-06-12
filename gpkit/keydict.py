@@ -85,6 +85,7 @@ class KeyDict(dict):
                 v = v.copy()
             self[k] = v
 
+    # @profile
     def parse_and_index(self, key):
         "Returns key if key had one, and veckey/idx for indexed veckeys."
         idx = None

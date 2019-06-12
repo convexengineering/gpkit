@@ -1,5 +1,6 @@
 """Implement the SequentialGeometricProgram class"""
 from time import time
+import numpy as np
 from ..exceptions import InvalidGPConstraint
 from ..keydict import KeyDict
 from ..nomials import Variable
@@ -7,6 +8,7 @@ from .gp import GeometricProgram
 from ..solution_array import SolutionArray
 from ..nomials import SignomialInequality, PosynomialInequality
 from .costed import CostedConstraintSet
+from ..small_scripts import mag
 
 
 # pylint: disable=too-many-instance-attributes
@@ -43,7 +45,8 @@ class SequentialGeometricProgram(CostedConstraintSet):
         # pylint:disable=super-init-not-called
         # pylint: disable=unused-argument
         self.gps = []
-        self.results = []
+        self.solver_outs = []
+        self._results = []
         self.result = None
         self._spconstrs = []
         self._approx_lt = []
@@ -104,7 +107,8 @@ class SequentialGeometricProgram(CostedConstraintSet):
         if verbosity > 0:
             print("Beginning signomial solve.")
         self.gps = []  # NOTE: SIDE EFFECTS
-        self.results = []
+        self.solver_outs = []
+        self._results = []
         if x0 and mutategp:
             self._gp = self.init_gp(self.substitutions, x0)
         slackvar = Variable()
@@ -119,9 +123,15 @@ class SequentialGeometricProgram(CostedConstraintSet):
             gp = self.gp(x0, mutategp)
             self.gps.append(gp)  # NOTE: SIDE EFFECTS
             try:
-                result = gp.solve(solver, verbosity-1,
-                                  warn_on_check=True, **kwargs)
-                self.results.append(result)
+                solver_out = gp.solve(solver, verbosity-1,
+                                      warn_on_check=True,
+                                      gen_result=False, **kwargs)
+                self.solver_outs.append(solver_out)
+                x0 = KeyDict(zip(gp.varlocs, np.exp(solver_out["primal"])))
+                if "objective" in solver_out:
+                    cost = float(solver_out["objective"])
+                else:
+                    cost = mag(gp.posynomials[0].sub(x0).c)
             except (RuntimeWarning, ValueError):
                 feas_constrs = ([slackvar >= 1] +
                                 [posy <= slackvar
@@ -129,10 +139,11 @@ class SequentialGeometricProgram(CostedConstraintSet):
                 primal_feas = GeometricProgram(slackvar**100 * gp.cost,
                                                feas_constrs, None)
                 self.gps.append(primal_feas)
-                result = primal_feas.solve(solver, verbosity-1, **kwargs)
-                result["cost"] = None  # reset the cost-counting
-            x0 = result["freevariables"]
-            prevcost, cost = cost, result["cost"]
+                solver_out = primal_feas.solve(solver, verbosity-1,
+                                               gen_result=False, **kwargs)
+                x0 = KeyDict(zip(primal_feas.varlocs,
+                                 np.exp(solver_out["primal"])))
+                cost = None  # reset the cost-counting
             if prevcost is None or cost is None:
                 rel_improvement = None
             elif prevcost < (1-reltol)*cost:
@@ -144,18 +155,25 @@ class SequentialGeometricProgram(CostedConstraintSet):
                       " SigEqs you can and solving again." % (cost, prevcost))
             else:
                 rel_improvement = abs(prevcost-cost)/(prevcost + cost)
+            prevcost = cost
         # solved successfully!
+        self.result = gp._generate_result(solver_out, verbosity)
         soltime = time() - starttime
         if verbosity > 0:
             print("Solving took %i GP solves" % len(self.gps)
                   + " and %.3g seconds." % soltime)
-        self.process_result(result)
-        self.result = SolutionArray(result.copy())  # NOTE: SIDE EFFECTS
+        self.process_result(self.result)
         self.result["soltime"] = soltime
         if self.externalfn_vars:
             for v in self.externalfn_vars:
                 self[0].insert(0, v.key.externalfn)  # for constraint senss
         return self.result
+
+    @property
+    def results(self):
+        if not self._results:
+            self._results = [so["gen_result"]() for so in self.solver_outs]
+        return self._results
 
     def _fill_x0(self, x0):
         "Returns a copy of x0 with subsitutions and sp_inits added."
