@@ -5,7 +5,6 @@ from ..exceptions import InvalidGPConstraint
 from ..keydict import KeyDict
 from ..nomials import Variable
 from .gp import GeometricProgram
-from ..solution_array import SolutionArray
 from ..nomials import SignomialInequality, PosynomialInequality
 from .costed import CostedConstraintSet
 from ..small_scripts import mag
@@ -157,7 +156,7 @@ class SequentialGeometricProgram(CostedConstraintSet):
                 rel_improvement = abs(prevcost-cost)/(prevcost + cost)
             prevcost = cost
         # solved successfully!
-        self.result = gp._generate_result(solver_out, verbosity)
+        self.result = gp.generate_result(solver_out, verbosity)
         soltime = time() - starttime
         if verbosity > 0:
             print("Solving took %i GP solves" % len(self.gps)
@@ -171,6 +170,7 @@ class SequentialGeometricProgram(CostedConstraintSet):
 
     @property
     def results(self):
+        "Creates and caches results from the raw solver_outs"
         if not self._results:
             self._results = [so["gen_result"]() for so in self.solver_outs]
         return self._results

@@ -193,7 +193,6 @@ class GeometricProgram(CostedConstraintSet, NomialData):
         soltime = time() - starttime
         if verbosity > 0:
             print("Solving took %.3g seconds." % (soltime,))
-            tic = time()
 
         # allow mosek's NEAR_DUAL_FEAS solution status, because our check
         # will catch anything that's not actually near enough.
@@ -214,14 +213,16 @@ class GeometricProgram(CostedConstraintSet, NomialData):
 
         solver_out["soltime"] = soltime
         if gen_result:
-            return self._generate_result(solver_out, warn_on_check, verbosity,
-                                         process_result)
-        else:
-            solver_out["gen_result"] = lambda: self._generate_result(solver_out, dual_check=False)
-            return solver_out
+            return self.generate_result(solver_out, warn_on_check, verbosity,
+                                        process_result)
+        solver_out["gen_result"] = \
+            lambda: self.generate_result(solver_out, dual_check=False)
+        return solver_out
 
-    def _generate_result(self, solver_out, warn_on_check=True, verbosity=0,
-                         process_result=True, dual_check=True, ):
+    def generate_result(self, solver_out, warn_on_check=True, verbosity=0,
+                        process_result=True, dual_check=True):
+        "Generates a full SolutionArray and checks it."
+        tic = time()
         soltime = solver_out["soltime"]
         self.result = self._compile_result(solver_out)  # NOTE: SIDE EFFECTS
         if verbosity > 1:
