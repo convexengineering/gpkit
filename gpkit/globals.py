@@ -102,7 +102,7 @@ NAMEDVARS = defaultdict(list)
 
 
 def reset_modelnumbers():
-    "Zeroes all model number counters"
+    "Clear all model number counters"
     for key in list(MODELNUM_LOOKUP):
         del MODELNUM_LOOKUP[key]
 
