@@ -49,7 +49,7 @@ class GeometricProgram(CostedConstraintSet, NomialData):
                  allow_missingbounds=False):
         # pylint:disable=super-init-not-called
         # initialize attributes modified by internal methods
-        self.result = None
+        self._result = None
         self.v_ss = None
         self.nu_by_posy = None
         self.solver_log = None
@@ -219,12 +219,20 @@ class GeometricProgram(CostedConstraintSet, NomialData):
             lambda: self.generate_result(solver_out, dual_check=False)
         return solver_out
 
+    @property
+    def result(self):
+        "Creates and caches a result from the raw solver_out"
+        if not self._result:
+            self._result = self.generate_result(self.solver_out)
+        return self._result
+
     def generate_result(self, solver_out, warn_on_check=True, verbosity=0,
                         process_result=True, dual_check=True):
         "Generates a full SolutionArray and checks it."
-        tic = time()
+        if verbosity > 1:
+            tic = time()
         soltime = solver_out["soltime"]
-        self.result = self._compile_result(solver_out)  # NOTE: SIDE EFFECTS
+        self._result = self._compile_result(solver_out)  # NOTE: SIDE EFFECTS
         if verbosity > 1:
             print("result packing took %.2g%% of solve time" %
                   ((time() - tic) / soltime * 100))
