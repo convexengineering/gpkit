@@ -4,3 +4,4 @@ cat gpkit/env/settings
 python -c "import gpkit.tests; gpkit.tests.run()"
 mv settings gpkit/env
 rm *.pkl
+rm solution.*
