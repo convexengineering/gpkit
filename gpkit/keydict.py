@@ -85,15 +85,15 @@ class KeyDict(dict):
                 v = v.copy()
             self[k] = v
 
-    # @profile
     def parse_and_index(self, key):
         "Returns key if key had one, and veckey/idx for indexed veckeys."
-        idx = None
         try:
             key = key.key
             if self.collapse_arrays and key.idx:
-                key, idx = key.veckey, key.idx
+                return key.veckey, key.idx
+            return key, None
         except AttributeError:
+            idx = None
             if not self.varkeys:
                 self.update_keymap()
             elif key in self.varkeys:
@@ -114,7 +114,7 @@ class KeyDict(dict):
                 idx = getattr(key, "idx", None)
                 if idx:
                     key = key.veckey
-        return key, idx
+            return key, idx
 
     def __contains__(self, key):
         "In a winding way, figures out if a key is in the KeyDict"
@@ -267,9 +267,15 @@ class KeySet(KeyDict):
 
     def update(self, *args, **kwargs):
         "Iterates through the dictionary created by args and kwargs"
-        if len(args) == 1:  # set-like interface
-            for item in args[0]:
-                self.add(item)
+        if len(args) == 1:
+            iter, = args
+            if isinstance(iter, KeySet):  # assume unmapped
+                dict.update(self, iter)
+                self.keymap.update(iter.keymap)
+                self._unmapped_keys.update(iter._unmapped_keys)
+            else:  # set-like interface
+                for item in iter:
+                    self.add(item)
         else:  # dict-like interface
             for k in dict(*args, **kwargs):
                 self.add(k)

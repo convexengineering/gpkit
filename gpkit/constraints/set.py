@@ -86,27 +86,20 @@ class ConstraintSet(list):
                                    if "value" in k.descr})
         if substitutions:
             self.substitutions.update(substitutions)
-        # add scalar subs to bounds / remove values
-        sub_veckeys = set()
-        for key in self.substitutions:
-            if key.shape and not key.idx:
-                sub_veckeys.add(key)
-            else:
+        updated_veckeys = False
+        for subkey in self.substitutions:
+            if not updated_veckeys and subkey.shape and not subkey.idx:
+                for key in self.varkeys:
+                    if key.veckey:
+                        self.varkeys.keymap[key.veckey].add(key)
+                updated_veckeys = True
+            for key in self.varkeys[subkey]:
                 if key.value is not None and not key.constant:
                     del key.descr["value"]
+                    if key.veckey and key.veckey.value is not None:
+                        del key.veckey.descr["value"]
                 for direction in ("upper", "lower"):
                     self.bounded.add((key, direction))
-        # add vector subs to bounds / remove values
-        if sub_veckeys:
-            for key in self.varkeys:
-                if (key.veckey and key.veckey in sub_veckeys and
-                        key in self.substitutions):
-                    if key.value is not None and not key.constant:
-                        del key.descr["value"]
-                        if key.veckey.value is not None:
-                            del key.veckey.descr["value"]
-                    for direction in ("upper", "lower"):
-                        self.bounded.add((key, direction))
         add_meq_bounds(self.bounded, self.meq_bounded)
 
     def __getitem__(self, key):
@@ -242,14 +235,12 @@ class ConstraintSet(list):
                 for yielded_constraint in subgenerator:
                     yield yielded_constraint
 
-    # @profile
     def reset_varkeys(self):
         "Goes through constraints and collects their varkeys."
-        varkeys = set(self.unique_varkeys)
+        self.varkeys = KeySet(self.unique_varkeys)
         for constraint in self:
             if hasattr(constraint, "varkeys"):
-                varkeys.update(constraint.varkeys)
-        self.varkeys = KeySet(varkeys)
+                self.varkeys.update(constraint.varkeys)
         if hasattr(self.substitutions, "varkeys"):
             self.substitutions.varkeys = self.varkeys
 

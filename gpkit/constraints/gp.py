@@ -80,8 +80,8 @@ class GeometricProgram(CostedConstraintSet, NomialData):
             p_idxs += [i]*p_len
         self.p_idxs = np.array(p_idxs)
         # m_idxs: first exp-index of each monomial equality
-        self.meq_idxs = [sum(self.k[:i]) for i, p in enumerate(self.posynomials)
-                         if getattr(p, "from_meq", False)]
+        self.meq_idxs = {sum(self.k[:i]) for i, p in enumerate(self.posynomials)
+                         if getattr(p, "from_meq", False)}
         self.gen()  # A [i, v]: sparse matrix of powers in each monomial
         if any(c <= 0 for c in self._cs):
             raise ValueError("GeometricPrograms cannot contain Signomials.")
@@ -422,7 +422,6 @@ class GeometricProgram(CostedConstraintSet, NomialData):
                                  " cost %s" % (np.exp(dual_cost), cost))
 
 
-# @profile
 def genA(exps, varlocs, meq_idxs):  # pylint: disable=invalid-name
     """Generates A matrix from exps and varidxs
 
