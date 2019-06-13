@@ -223,10 +223,14 @@ class KeyDict(dict):
 
     def update_keymap(self):
         "Updates the keymap with the keys in unmapped_keys"
+        copied = set()  # have to copy bc update leaves duplicate sets
         while self.keymapping and self.unmapped_keys:
             key = self.unmapped_keys.pop()
             if hasattr(key, "keys"):
                 for mapkey in key.keys:
+                    if mapkey not in copied and mapkey in self.keymap:
+                        self.keymap[mapkey] = set(self.keymap[mapkey])
+                        copied.add(mapkey)
                     self.keymap[mapkey].add(key)
 
     def __delitem__(self, key):
