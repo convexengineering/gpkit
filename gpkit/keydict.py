@@ -63,7 +63,7 @@ class KeyDict(dict):
         # pylint: disable=super-init-not-called
         self.varkeys = None
         self.keymap = defaultdict(set)
-        self.unmapped_keys = set()
+        self._unmapped_keys = set()
         self.log_gets = False
         self.logged_gets = set()
         self.update(*args, **kwargs)
@@ -183,7 +183,7 @@ class KeyDict(dict):
         key, idx = self.parse_and_index(key)
         if key not in self.keymap:
             self.keymap[key].add(key)
-            self.unmapped_keys.add(key)
+            self._unmapped_keys.add(key)
             if idx:
                 number_array = isinstance(value, Numbers)
                 kwargs = {} if number_array else {"dtype": "object"}
@@ -222,10 +222,10 @@ class KeyDict(dict):
                 dict.__setitem__(self, key, value)
 
     def update_keymap(self):
-        "Updates the keymap with the keys in unmapped_keys"
+        "Updates the keymap with the keys in _unmapped_keys"
         copied = set()  # have to copy bc update leaves duplicate sets
-        while self.keymapping and self.unmapped_keys:
-            key = self.unmapped_keys.pop()
+        while self.keymapping and self._unmapped_keys:
+            key = self._unmapped_keys.pop()
             if hasattr(key, "keys"):
                 for mapkey in key.keys:
                     if mapkey not in copied and mapkey in self.keymap:
@@ -266,7 +266,7 @@ class KeySet(KeyDict):
         key, _ = self.parse_and_index(item)
         if key not in self.keymap:
             self.keymap[key].add(key)
-            self.unmapped_keys.add(key)
+            self._unmapped_keys.add(key)
             dict.__setitem__(self, key, None)
 
     def update(self, *args, **kwargs):
@@ -276,7 +276,8 @@ class KeySet(KeyDict):
             if isinstance(arg, KeySet):  # assume unmapped
                 dict.update(self, arg)
                 self.keymap.update(arg.keymap)
-                self.unmapped_keys.update(arg.unmapped_keys)
+                # pylint: disable=protected-access
+                self._unmapped_keys.update(arg._unmapped_keys)
             else:  # set-like interface
                 for item in arg:
                     self.add(item)
