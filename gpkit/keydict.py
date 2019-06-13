@@ -63,7 +63,7 @@ class KeyDict(dict):
         # pylint: disable=super-init-not-called
         self.varkeys = None
         self.keymap = defaultdict(set)
-        self._unmapped_keys = set()
+        self.unmapped_keys = set()
         self.log_gets = False
         self.logged_gets = set()
         self.update(*args, **kwargs)
@@ -183,7 +183,7 @@ class KeyDict(dict):
         key, idx = self.parse_and_index(key)
         if key not in self.keymap:
             self.keymap[key].add(key)
-            self._unmapped_keys.add(key)
+            self.unmapped_keys.add(key)
             if idx:
                 number_array = isinstance(value, Numbers)
                 kwargs = {} if number_array else {"dtype": "object"}
@@ -222,9 +222,9 @@ class KeyDict(dict):
                 dict.__setitem__(self, key, value)
 
     def update_keymap(self):
-        "Updates the keymap with the keys in _unmapped_keys"
-        while self.keymapping and self._unmapped_keys:
-            key = self._unmapped_keys.pop()
+        "Updates the keymap with the keys in unmapped_keys"
+        while self.keymapping and self.unmapped_keys:
+            key = self.unmapped_keys.pop()
             if hasattr(key, "keys"):
                 for mapkey in key.keys:
                     self.keymap[mapkey].add(key)
@@ -262,19 +262,19 @@ class KeySet(KeyDict):
         key, _ = self.parse_and_index(item)
         if key not in self.keymap:
             self.keymap[key].add(key)
-            self._unmapped_keys.add(key)
+            self.unmapped_keys.add(key)
             dict.__setitem__(self, key, None)
 
     def update(self, *args, **kwargs):
         "Iterates through the dictionary created by args and kwargs"
         if len(args) == 1:
-            iter, = args
-            if isinstance(iter, KeySet):  # assume unmapped
-                dict.update(self, iter)
-                self.keymap.update(iter.keymap)
-                self._unmapped_keys.update(iter._unmapped_keys)
+            arg, = args
+            if isinstance(arg, KeySet):  # assume unmapped
+                dict.update(self, arg)
+                self.keymap.update(arg.keymap)
+                self.unmapped_keys.update(arg.unmapped_keys)
             else:  # set-like interface
-                for item in iter:
+                for item in arg:
                     self.add(item)
         else:  # dict-like interface
             for k in dict(*args, **kwargs):
