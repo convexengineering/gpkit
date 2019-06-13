@@ -86,8 +86,14 @@ class ConstraintSet(list):
                                    if "value" in k.descr})
         if substitutions:
             self.substitutions.update(substitutions)
-        for key in self.varkeys:
-            if key in self.substitutions:
+        updated_veckeys = False
+        for subkey in self.substitutions:
+            if not updated_veckeys and subkey.shape and not subkey.idx:
+                for key in self.varkeys:
+                    if key.veckey:
+                        self.varkeys.keymap[key.veckey].add(key)
+                updated_veckeys = True
+            for key in self.varkeys[subkey]:
                 if key.value is not None and not key.constant:
                     del key.descr["value"]
                     if key.veckey and key.veckey.value is not None:
@@ -231,11 +237,10 @@ class ConstraintSet(list):
 
     def reset_varkeys(self):
         "Goes through constraints and collects their varkeys."
-        varkeys = set(self.unique_varkeys)
+        self.varkeys = KeySet(self.unique_varkeys)
         for constraint in self:
             if hasattr(constraint, "varkeys"):
-                varkeys.update(constraint.varkeys)
-        self.varkeys = KeySet(varkeys)
+                self.varkeys.update(constraint.varkeys)
         if hasattr(self.substitutions, "varkeys"):
             self.substitutions.varkeys = self.varkeys
 

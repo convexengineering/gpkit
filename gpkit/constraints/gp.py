@@ -49,7 +49,7 @@ class GeometricProgram(CostedConstraintSet, NomialData):
                  allow_missingbounds=False):
         # pylint:disable=super-init-not-called
         # initialize attributes modified by internal methods
-        self.result = None
+        self._result = None
         self.v_ss = None
         self.nu_by_posy = None
         self.solver_log = None
@@ -80,8 +80,8 @@ class GeometricProgram(CostedConstraintSet, NomialData):
             p_idxs += [i]*p_len
         self.p_idxs = np.array(p_idxs)
         # m_idxs: first exp-index of each monomial equality
-        self.meq_idxs = [sum(self.k[:i]) for i, p in enumerate(self.posynomials)
-                         if getattr(p, "from_meq", False)]
+        self.meq_idxs = {sum(self.k[:i]) for i, p in enumerate(self.posynomials)
+                         if getattr(p, "from_meq", False)}
         self.gen()  # A [i, v]: sparse matrix of powers in each monomial
         if any(c <= 0 for c in self._cs):
             raise ValueError("GeometricPrograms cannot contain Signomials.")
@@ -110,7 +110,7 @@ class GeometricProgram(CostedConstraintSet, NomialData):
 
     # pylint: disable=too-many-statements, too-many-locals
     def solve(self, solver=None, verbosity=1, warn_on_check=False,
-              process_result=True, **kwargs):
+              process_result=True, gen_result=True, **kwargs):
         """Solves a GeometricProgram and returns the solution.
 
         Arguments
@@ -193,7 +193,6 @@ class GeometricProgram(CostedConstraintSet, NomialData):
         soltime = time() - starttime
         if verbosity > 0:
             print("Solving took %.3g seconds." % (soltime,))
-            tic = time()
 
         # allow mosek's NEAR_DUAL_FEAS solution status, because our check
         # will catch anything that's not actually near enough.
@@ -212,7 +211,28 @@ class GeometricProgram(CostedConstraintSet, NomialData):
                 "final status of solver '%s' was '%s', not 'optimal'.\n\n"
                 % (solvername, solver_status)))
 
-        self.result = self._compile_result(solver_out)  # NOTE: SIDE EFFECTS
+        solver_out["soltime"] = soltime
+        if gen_result:
+            return self.generate_result(solver_out, warn_on_check, verbosity,
+                                        process_result)
+        solver_out["gen_result"] = \
+            lambda: self.generate_result(solver_out, dual_check=False)
+        return solver_out
+
+    @property
+    def result(self):
+        "Creates and caches a result from the raw solver_out"
+        if not self._result:
+            self._result = self.generate_result(self.solver_out)
+        return self._result
+
+    def generate_result(self, solver_out, warn_on_check=True, verbosity=0,
+                        process_result=True, dual_check=True):
+        "Generates a full SolutionArray and checks it."
+        if verbosity > 1:
+            tic = time()
+        soltime = solver_out["soltime"]
+        self._result = self._compile_result(solver_out)  # NOTE: SIDE EFFECTS
         if verbosity > 1:
             print("result packing took %.2g%% of solve time" %
                   ((time() - tic) / soltime * 100))
@@ -222,7 +242,9 @@ class GeometricProgram(CostedConstraintSet, NomialData):
                                 nu=solver_out["nu"], la=solver_out["la"])
         except RuntimeWarning as e:
             if warn_on_check:
-                print("Solution check warning: %s" % e)
+                e = str(e)
+                if dual_check or ("Dual" not in e and "nu" not in e):
+                    print("Solution check warning: %s" % e)
             else:
                 raise e
         if verbosity > 1:

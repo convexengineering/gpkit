@@ -5,6 +5,7 @@ from ..keydict import KeyDict
 from .. import NamedVariables, MODELNUM_LOOKUP
 from gpkit import SignomialsEnabled
 
+
 class ConstraintsRelaxedEqually(ConstraintSet):
     """Relax constraints the same amount, as in Eqn. 10 of [Boyd2007].
 
@@ -40,6 +41,7 @@ class ConstraintsRelaxedEqually(ConstraintSet):
                 relconstraints.append(constraint.relaxed(self.relaxvar))
         ConstraintSet.__init__(self, [relconstraints,
                                       self.relaxvar >= 1], substitutions)
+
 
 class ConstraintsRelaxed(ConstraintSet):
     """Relax constraints, as in Eqn. 11 of [Boyd2007].
@@ -78,6 +80,7 @@ class ConstraintsRelaxed(ConstraintSet):
         ConstraintSet.__init__(self, [relconstraints,
                                       self.relaxvars >= 1], substitutions)
 
+
 class ConstantsRelaxed(ConstraintSet):
     """Relax constants in a constraintset.
 
@@ -103,7 +106,8 @@ class ConstantsRelaxed(ConstraintSet):
         in the final solution than in the original problem. Of course, this
         can also be determined by looking at the constant's new value directly.
     """
-    def __init__(self, constraints, include_only=None, exclude=None):  # pylint:disable=too-many-locals
+    # pylint:disable=too-many-locals
+    def __init__(self, constraints, include_only=None, exclude=None):
         if not isinstance(constraints, ConstraintSet):
             constraints = ConstraintSet(constraints)
         exclude = frozenset(exclude) if exclude else frozenset()
@@ -122,7 +126,7 @@ class ConstantsRelaxed(ConstraintSet):
         self.constants = KeyDict(combined)
         relaxvars, relaxation_constraints = [], []
         self.origvars = []
-        self.num = MODELNUM_LOOKUP["Relax"]
+        self.num = MODELNUM_LOOKUP[(("Relax",), ())]
         self._unrelaxmap = {}
         MODELNUM_LOOKUP["Relax"] += 1
         for key, value in combined.items():
