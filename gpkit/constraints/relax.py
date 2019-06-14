@@ -125,9 +125,8 @@ class ConstantsRelaxed(ConstraintSet):
         else:
             combined = constants
         self.constants = KeyDict(combined)
-        relaxvars, relaxation_constraints = [], []
-        self.origvars = []
-        _, self.naming = begin_variable_naming("Relax")
+        relaxvars, relaxation_constraints, self.origvars = [], [], []
+        num, self.naming = begin_variable_naming("Relax")
         end_variable_naming()
         self._unrelaxmap = {}
         for key, value in combined.items():
@@ -141,7 +140,8 @@ class ConstantsRelaxed(ConstraintSet):
             descr = key.descr.copy()
             descr.pop("value", None)
             descr.pop("veckey", None)
-            descr["models"], descr["modelnums"] = self.naming
+            descr["models"] = descr.pop("models", [])+["Relax"]
+            descr["modelnums"] = descr.pop("modelnums", []) + [num]
             relaxvardescr = descr.copy()
             relaxvardescr["unitrepr"] = "-"
             relaxvar = Variable(**relaxvardescr)
