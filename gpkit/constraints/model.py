@@ -31,19 +31,12 @@ class Model(CostedConstraintSet):
         This dictionary will be substituted into the problem before solving,
         and also allows the declaration of sweeps and linked sweeps.
 
-    name : str (optional)
-        Allows "naming" a model in a way similar to inherited instances,
-        and overrides the inherited name if there is one.
-
     Attributes with side effects
     ----------------------------
     `program` is set during a solve
     `solution` is set at the end of a solve
     """
 
-    # name and num identify a model uniquely
-    name = None
-    num = None
     # naming holds the name and num environment in which a model was created
     # this includes its own name and num, and those of models containing it
     naming = None
@@ -65,9 +58,8 @@ class Model(CostedConstraintSet):
                 else:
                     constraints = cs
                 from .. import NAMEDVARS, MODELS, MODELNUMS
-                setup_vars = NAMEDVARS[tuple(MODELS), tuple(MODELNUMS)]
-                self.name, self.num = MODELS[-1], MODELNUMS[-1]
                 self.naming = (tuple(MODELS), tuple(MODELNUMS))
+                setup_vars = NAMEDVARS[self.naming]
             cost = self.cost  # TODO: remove
         elif args and not substitutions:
             # backwards compatibility: substitutions as third arg
@@ -149,16 +141,18 @@ class Model(CostedConstraintSet):
     def as_gpconstr(self, x0):
         "Returns approximating constraint, keeping name and num"
         cs = CostedConstraintSet.as_gpconstr(self, x0)
-        cs.name, cs.num = self.name, self.num
+        cs.naming = self.naming
         return cs
 
     def subconstr_str(self, excluded=None):
-        "The collapsed appearance of a ConstraintBase"
-        return "%s_%s" % (self.name, self.num) if self.name else None
+        "The collapsed appearance of a Model"
+        if self.naming:
+            return "%s_%s" % (self.naming[0][-1], self.naming[1][-1])
 
     def subconstr_latex(self, excluded=None):
-        "The collapsed appearance of a ConstraintBase"
-        return "%s_{%s}" % (self.name, self.num) if self.name else None
+        "The collapsed appearance of a Model"
+        if self.naming:
+            return "%s_{%s}" % (self.naming[0][-1], self.naming[1][-1])
 
     def sweep(self, sweeps, **solveargs):
         "Sweeps {var: values} pairs in sweeps. Returns swept solutions."
