@@ -13,8 +13,10 @@ With constraints relaxed equally
   # minimize
         C_Relax
   # subject to
+    "relaxed constraints":
         x <= C_Relax*x_max
         x_min <= C_Relax*x
+    "minimum relaxation":
         C_Relax >= 1
 
 Cost
@@ -50,8 +52,10 @@ With constraints relaxed individually
   # minimize
         C_Relax.1_(0,)*C_Relax.1_(1,)*x**0.01
   # subject to
+    "relaxed constraints":
         x <= C_Relax.1_(0,)*x_max
         x_min <= C_Relax.1_(1,)*x
+    "minimum relaxation":
         C_Relax.1 >= 1
 
 Cost
@@ -88,8 +92,10 @@ With constants relaxed individually
   # minimize
         x**0.01*x_max_Relax.2*x_min_Relax.2
   # subject to
+    "original constraints":
         x <= x_max
         x >= x_min
+    "relaxation constraints":
         x_max_Relax.2 >= 1
         x_max >= x_max_Relax.2**-1*x_max_{before}_Relax.2
         x_max <= x_max_Relax.2*x_max_{before}_Relax.2

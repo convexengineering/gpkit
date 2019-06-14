@@ -40,8 +40,8 @@ class ConstraintsRelaxedEqually(ConstraintSet):
                 self.origconstrs.append(constraint)
                 relconstraints.append(constraint.relaxed(self.relaxvar))
         ConstraintSet.__init__(self, {
-                "relaxed constraints": relconstraints,
-                "minimum relaxation": self.relaxvar >= 1}, substitutions)
+            "relaxed constraints": relconstraints,
+            "minimum relaxation": self.relaxvar >= 1}, substitutions)
 
 
 class ConstraintsRelaxed(ConstraintSet):
@@ -78,8 +78,8 @@ class ConstraintsRelaxed(ConstraintSet):
                 self.origconstrs.append(constraint)
                 relconstraints.append(constraint.relaxed(self.relaxvars[i]))
         ConstraintSet.__init__(self, {
-                "relaxed constraints": relconstraints,
-                "minimum relaxation": self.relaxvars >= 1}, substitutions)
+            "relaxed constraints": relconstraints,
+            "minimum relaxation": self.relaxvars >= 1}, substitutions)
 
 
 class ConstantsRelaxed(ConstraintSet):
@@ -127,7 +127,7 @@ class ConstantsRelaxed(ConstraintSet):
         self.constants = KeyDict(combined)
         relaxvars, relaxation_constraints = [], []
         self.origvars = []
-        num, self.naming = begin_variable_naming("Relax")
+        _, self.naming = begin_variable_naming("Relax")
         end_variable_naming()
         self._unrelaxmap = {}
         for key, value in combined.items():
