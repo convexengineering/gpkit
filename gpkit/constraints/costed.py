@@ -24,6 +24,9 @@ class CostedConstraintSet(ConstraintSet):
 
     def __bare_init__(self, cost, constraints, substitutions, varkeys=False):
         self.cost = cost
+        if isinstance(constraints, dict):
+            self.idxlookup = {k: i for i, k in enumerate(constraints)}
+            constraints = constraints.values()
         if not isinstance(constraints, ConstraintSet):
             constraints = ConstraintSet(constraints)
         else:
