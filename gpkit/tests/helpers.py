@@ -55,9 +55,9 @@ def new_test(name, solver, import_dict, path, testfn=None):
         # No docstring because it'd be uselessly the same for each example
 
         import gpkit
-        # clear MODELNUMS to ensure determinate script-like output!
-        for key in set(gpkit.MODELNUM_LOOKUP):
-            del gpkit.MODELNUM_LOOKUP[key]
+        # clear MODELNUMS to ensure deterministic script-like output!
+        for key in set(gpkit.globals.MODELNUM_LOOKUP):
+            del gpkit.globals.MODELNUM_LOOKUP[key]
 
         with NewDefaultSolver(solver):
             testfn(name, import_dict, path)(self)
