@@ -1,5 +1,5 @@
 "Implements Bounded"
-from collections import defaultdict
+from collections import defaultdict, OrderedDict
 import numpy as np
 from .. import Variable
 from .set import ConstraintSet
@@ -43,23 +43,22 @@ class Bounded(ConstraintSet):
     constraints : iterable
         constraints whose varkeys will be bounded
 
-    substitutions : dict
-        as in ConstraintSet.__init__
-
-    verbosity : int
+    verbosity : int (1)
         how detailed of a warning to print
             0: nothing
             1: print warnings
 
-    eps : float
+    eps : float (1e-30)
         default lower bound is eps, upper bound is 1/eps
 
-    lower : float
+    lower : float (None)
         lower bound for all varkeys, replaces eps
 
-    upper : float
+    upper : float (None)
         upper bound for all varkeys, replaces 1/eps
     """
+    sens_threshold = 1e-7
+    logtol_threshold = 3
 
     def __init__(self, constraints, verbosity=1,
                  eps=1e-30, lower=None, upper=None):
@@ -74,7 +73,10 @@ class Bounded(ConstraintSet):
                                        if vk not in constraints.substitutions)
         bounding_constraints = varkey_bounds(self.bound_varkeys,
                                              self.lowerbound, self.upperbound)
-        super(Bounded, self).__init__([constraints, bounding_constraints])
+        # OrderedDict to keep them in order for sens_from_dual
+        super(Bounded, self).__init__(OrderedDict([
+            ("original constraints", constraints),
+            ("variable bounds", bounding_constraints)]))
 
     def sens_from_dual(self, las, nus, result):
         "Return sensitivities while capturing the relevant lambdas"
@@ -110,17 +112,17 @@ class Bounded(ConstraintSet):
                     lam_gt = self.bound_las[i]
             if self.lowerbound:
                 if self.bound_las:
-                    if abs(lam_lt) >= 1e-7:  # arbitrary sens threshold
+                    if abs(lam_lt) >= self.sens_threshold:
                         out["sensitive to lower bound"].add(varkey)
                 distance_below = np.log(value/self.lowerbound)
-                if distance_below <= 3:  # arbitrary dist threshold
+                if distance_below <= self.logtol_threshold:
                     out["value near lower bound"].add(varkey)
             if self.upperbound:
                 if self.bound_las:
-                    if abs(lam_gt) >= 1e-7:  # arbitrary sens threshold
+                    if abs(lam_gt) >= self.sens_threshold:
                         out["sensitive to upper bound"].add(varkey)
                 distance_above = np.log(self.upperbound/value)
-                if distance_above <= 3:  # arbitrary dist threshold
+                if distance_above <= self.logtol_threshold:
                     out["value near upper bound"].add(varkey)
         if self.verbosity > 0 and out:
             print
