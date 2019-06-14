@@ -1,4 +1,5 @@
 """Signomial, Posynomial, Monomial, Constraint, & MonoEQCOnstraint classes"""
+from __future__ import print_function
 from collections import defaultdict
 import numpy as np
 from .core import Nomial
@@ -568,7 +569,7 @@ class MonomialEquality(PosynomialInequality):
         self.meq_bounded = {}
         self.relax_sensitivity = 0  # don't count equality sensitivities
         if self.unsubbed and len(self.varkeys) > 1:
-            exp = self.unsubbed[0].hmap.keys()[0]
+            exp, = list(self.unsubbed[0].hmap.keys())
             for key, e in exp.items():
                 if key in self.substitutions:
                     for bound in ("upper", "lower"):
@@ -687,8 +688,8 @@ class SignomialInequality(ScalarSingleEquationConstraint):
             self._negysig = Signomial(negy_hmap, require_positive=False)
             self._coeffsigs = {exp: Signomial(hmap, require_positive=False)
                                for exp, hmap in posy_hmaps.items()}
-            self._sigvars = {exp: (self._negysig.varkeys.keys()
-                                   + sig.varkeys.keys())
+            self._sigvars = {exp: (list(self._negysig.varkeys.keys())
+                                   + list(sig.varkeys.keys()))
                              for exp, sig in self._coeffsigs.items()}
             return p_ineq.as_posyslt1(substitutions)
 
@@ -725,7 +726,7 @@ class SignomialInequality(ScalarSingleEquationConstraint):
             "Substitute solution into a posynomial and return the result"
             hmap = posy.sub(result["variables"],
                             require_positive=False).hmap
-            assert len(hmap) == 1 and not hmap.keys()[0]  # constant
+            assert len(hmap) == 1 and not list(hmap.keys())[0]  # constant
             return hmap.values()[0]
 
         var_senss = HashVector()

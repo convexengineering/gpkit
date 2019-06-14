@@ -1,4 +1,5 @@
 "Implements Ractor-based interactive CADtoons"
+from __future__ import print_function
 from string import Template
 import itertools
 import numpy as np
@@ -26,7 +27,7 @@ def ractorpy(model, update_py, ranges, constraint_js="",
         live = "<script>" + update_py(sol) + "\n" + constraint_js + "</script>"
         display(HTML(live))
         if showtables:
-            print sol.table(showtables)
+            print(sol.table(showtables))
     return model.interact(ranges, ractivefn)
 
 

@@ -640,7 +640,7 @@ class Box(Model):
     w, d, h
     """
     def setup(self):
-        exec parse_variables(Box.__doc__)
+        exec(parse_variables(Box.__doc__))
         return [V == h*w*d]
 
 class BoxAreaBounds(Model):

@@ -22,7 +22,7 @@ class OnlyVectorParse(Model):
     x    [-]    just another variable
     """
     def setup(self):
-        exec parse_variables(OnlyVectorParse.__doc__)  # pylint: disable=exec-used
+        exec(parse_variables(OnlyVectorParse.__doc__))  # pylint: disable=exec-used
 
 
 class Fuselage(Model):
@@ -51,7 +51,7 @@ class Fuselage(Model):
 
     # pylint: disable=undefined-variable, exec-used, invalid-name
     def setup(self, Wfueltot):
-        exec parse_variables(self.__doc__)
+        exec(parse_variables(self.__doc__))
         return [
             f == l/R/2,
             k >= 1 + 60/f**3 + f/400,

@@ -9,7 +9,7 @@ with ``sol1.almost_equal(sol2)`` and/or ``print sol1.diff(sol2)``, as shown belo
 
 .. code-block:: python
 
-    import cPickle as pickle
+    import pickle
     ...  # build the model
     sol = m.solve()
     # uncomment the line below to verify a new model

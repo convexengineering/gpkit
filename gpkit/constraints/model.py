@@ -1,4 +1,5 @@
 "Implements Model"
+from __future__ import print_function
 import numpy as np
 from .costed import CostedConstraintSet
 from ..nomials import Monomial
@@ -239,7 +240,7 @@ class Model(CostedConstraintSet):
                         print("  %s: relaxed from %-.4g to %-.4g"
                               % (orig, mag(constsrelaxed.constants[orig.key]),
                                  mag(sol(orig))))
-                    print
+                    print("")
             if verbosity:
                 print(">> Success!")
         except (ValueError, RuntimeWarning):
@@ -279,7 +280,7 @@ class Model(CostedConstraintSet):
                 if verbosity:
                     print(">> Failure")
         if verbosity:
-            print
+            print("")
         return sol
 
 

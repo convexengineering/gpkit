@@ -1,4 +1,5 @@
 "Implements SPData class"
+from __future__ import print_function
 import numpy as np
 from ..nomials import NomialData, SignomialInequality, PosynomialInequality
 from ..constraints.gp import genA
@@ -52,7 +53,7 @@ class SPData(NomialData):
         try:
             import h5py  # pylint:disable=import-error
         except ImportError as ie:
-            print "SPData.save requires the h5py library."
+            print("SPData.save requires the h5py library.")
             raise ie
         h5f = h5py.File(filename, 'w')
         try:

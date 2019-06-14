@@ -141,7 +141,7 @@ def variable_declaration(nameval, units, label, line, errorcatch=True):
         out = """
 try:
     {0}
-except Exception, e:
+except Exception as e:
     raise ValueError("`"+e.__class__.__name__+": "+str(e)+"` was raised"
                      " while executing the parsed line `{0}`. {1}")
 """.format(out, PARSETIP)

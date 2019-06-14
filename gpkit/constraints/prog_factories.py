@@ -1,4 +1,5 @@
 "Scripts for generating, solving and sweeping programs"
+from __future__ import print_function
 from time import time
 import numpy as np
 from ..nomials import parse_subs
@@ -151,7 +152,7 @@ def run_sweep(genfunction, self, solution, skipsweepfailures,
     self.program = []
     for i in range(N_passes):
         constants.update({var: sweep_vect[i]
-                         for (var, sweep_vect) in sweep_vects.items()})
+                          for (var, sweep_vect) in sweep_vects.items()})
         if linked:
             kdc = KeyDict(constants)
             constants.update({v: f(kdc) for v, f in linked.items()})

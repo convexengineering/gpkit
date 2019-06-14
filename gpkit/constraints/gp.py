@@ -1,4 +1,5 @@
 """Implement the GeometricProgram class"""
+from __future__ import print_function
 import sys
 from time import time
 from collections import defaultdict
@@ -458,10 +459,11 @@ def check_mono_eq_bounds(missingbounds, meq_bounds):
     still_alive = True
     while still_alive:
         still_alive = False  # if no changes are made, the loop exits
-        for bound, conditions in meq_bounds.items():
+        for bound in list(meq_bounds):
             if bound not in missingbounds:
                 del meq_bounds[bound]
                 continue
+            conditions = meq_bounds[bound]
             for condition in conditions:
                 if not any(bound in missingbounds for bound in condition):
                     del meq_bounds[bound]

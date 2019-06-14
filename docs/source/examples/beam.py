@@ -62,7 +62,7 @@ class Beam(Model):
 
 b = Beam(N=6, substitutions={"L": 6, "EI": 1.1e4, "q": 110*np.ones(6)})
 sol = b.solve(verbosity=0)
-print sol.summary(maxcolumns=6)
+print(sol.summary(maxcolumns=6))
 w_gp = sol("w")  # deflection along beam
 
 L, EI, q = sol("L"), sol("EI"), sol("q")

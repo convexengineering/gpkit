@@ -1,4 +1,5 @@
 "implements Sankey"
+from __future__ import print_function
 from collections import defaultdict
 import numpy as np
 from ipysankeywidget import SankeyWidget  # pylint: disable=import-error
@@ -79,7 +80,7 @@ class Sankey(object):
                 if printing:
                     print ("(objective) adds %+.3g to the sensitivity"
                            " of %s" % (-value, key))
-                    print "(objective) is", self.gp.cost, "\n"
+                    print("(objective) is", self.gp.cost, "\n")
         for constr in constrset:
             if key not in constr.v_ss:
                 continue
@@ -95,14 +96,14 @@ class Sankey(object):
             else:
                 if constr not in self.constr_name:
                     # use unicode's circled letters for constraint labels
-                    source = unichr(self.counter.next()+9398)
+                    source = unichr(next(self.counter)+9398)
                     self.constr_name[constr] = source
                 else:
                     source = self.constr_name[constr]
                 if printing:
                     print ("%s adds %+.3g to the overall sensitivity of %s"
                            % (source, value, key))
-                    print source, "is", constr.str_without("units"), "\n"
+                    print(source, "is", constr.str_without("units"), "\n")
                 if ((isinstance(constr, MonomialEquality)
                      or abs(value) >= INSENSITIVE)
                         and all(len(getattr(p, "hmap", [])) == 1
@@ -177,7 +178,7 @@ class Sankey(object):
                 self.varlinks(self.gp, key, printing=False)
                 maxflow = max(self.links.values())
                 if maxflow > 0.01:  # TODO: arbitrary threshold
-                    varprops[key] = {"constraints": self.counter.next(),
+                    varprops[key] = {"constraints": next(self.counter),
                                      "maxflow": maxflow}
                 var_eqs.update(self.var_eqs)
             self.__init__(self.gp)

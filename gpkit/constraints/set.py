@@ -13,11 +13,11 @@ def add_meq_bounds(bounded, meq_bounded):
     still_alive = True
     while still_alive:
         still_alive = False  # if no changes are made, the loop exits
-        for bound, conditions in meq_bounded.items():
+        for bound in list(meq_bounded):
             if bound in bounded:
                 del meq_bounded[bound]
                 continue
-            meq_bounded[bound] = set(conditions)
+            conditions = meq_bounded[bound]
             for condition in conditions:
                 if condition.issubset(bounded):
                     del meq_bounded[bound]

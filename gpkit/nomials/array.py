@@ -7,6 +7,7 @@
     >>> px = gpkit.NomialArray([1, x, x**2])
 
 """
+from __future__ import print_function
 from operator import eq, le, ge, xor
 import numpy as np
 from .math import Signomial, HashVector

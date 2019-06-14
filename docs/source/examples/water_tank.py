@@ -13,4 +13,4 @@ constraints = (A >= 2*(d[0]*d[1] + d[0]*d[2] + d[1]*d[2]),
 
 m = Model(A, constraints)
 sol = m.solve(verbosity=0)
-print sol.summary()
+print(sol.summary())

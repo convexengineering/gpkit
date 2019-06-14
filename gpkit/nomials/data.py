@@ -58,7 +58,7 @@ class NomialData(object):
     def cs(self):
         "Create cs or return cached cs"
         if self._cs is None:
-            self._cs = np.array(self.hmap.values())
+            self._cs = np.array(list(self.hmap.values()))
             if self.hmap.units:
                 self._cs = self._cs*self.hmap.units
         return self._cs

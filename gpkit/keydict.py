@@ -1,5 +1,5 @@
 "Implements KeyDict and KeySet classes"
-from collections import defaultdict
+from collections import defaultdict, Hashable
 import numpy as np
 from .small_classes import Numbers, Quantity
 from .small_scripts import is_sweepvar, isnan, SweepValue
@@ -57,6 +57,7 @@ class KeyDict(dict):
     """
     collapse_arrays = True
     keymapping = True
+    keymap = []
 
     def __init__(self, *args, **kwargs):
         "Passes through to dict.__init__ via the `update()` method"
@@ -116,7 +117,7 @@ class KeyDict(dict):
                     key = key.veckey
             return key, idx
 
-    def __contains__(self, key):
+    def __contains__(self, key):  # pylint:disable=too-many-return-statements
         "In a winding way, figures out if a key is in the KeyDict"
         try:
             key, idx = self.parse_and_index(key)
@@ -124,6 +125,8 @@ class KeyDict(dict):
             return False
         except ValueError:  # multiple keys correspond
             return True
+        if not isinstance(key, Hashable):
+            return False
         if dict.__contains__(self, key):
             if idx:
                 try:
@@ -182,6 +185,8 @@ class KeyDict(dict):
         # pylint: disable=too-many-boolean-expressions
         key, idx = self.parse_and_index(key)
         if key not in self.keymap:
+            if not self.keymap:
+                self.__init__(self)
             self.keymap[key].add(key)
             self._unmapped_keys.add(key)
             if idx:

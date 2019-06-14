@@ -1,4 +1,5 @@
 "global mutable variables"
+from __future__ import print_function
 import os
 from collections import defaultdict
 from . import build
