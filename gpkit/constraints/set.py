@@ -142,7 +142,7 @@ class ConstraintSet(list):
     def constrained_varkeys(self):
         "Return all varkeys in non-ConstraintSet constraints"
         constrained_varkeys = set()
-        for constraint in self.flat(constraintsets=False):
+        for constraint in self.flat():
             constrained_varkeys.update(constraint.varkeys)
         return constrained_varkeys
 
@@ -223,7 +223,7 @@ class ConstraintSet(list):
         "The collapsed appearance of a ConstraintSet"
         pass
 
-    def flat(self, constraintsets=True):
+    def flat(self, constraintsets=False):
         "Yields contained constraints, optionally including constraintsets."
         for constraint in self:
             if not isinstance(constraint, ConstraintSet):

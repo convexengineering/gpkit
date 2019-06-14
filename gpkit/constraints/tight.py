@@ -24,7 +24,7 @@ class Tight(ConstraintSet):
         "Checks that all constraints are satisfied with equality"
         super(Tight, self).process_result(result)
         variables = result["variables"]
-        for constraint in self.flat(constraintsets=False):
+        for constraint in self.flat():
             rel_diff = 0
             if isinstance(constraint, PosynomialInequality):
                 leftsubbed = constraint.left.sub(variables).value

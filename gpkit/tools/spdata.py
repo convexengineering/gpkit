@@ -19,7 +19,7 @@ class SPData(NomialData):
             raise ValueError("You need to solve the model first.")
 
         self.signomials = [model.cost]
-        for constraint in model.flat(constraintsets=False):
+        for constraint in model.flat():
             if isinstance(constraint, (SignomialInequality,
                                        PosynomialInequality)):
                 self.signomials.extend(constraint.unsubbed)

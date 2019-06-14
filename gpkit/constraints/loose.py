@@ -18,7 +18,7 @@ class Loose(ConstraintSet):
     def process_result(self, result):
         "Checks that all constraints are satisfied with equality"
         super(Loose, self).process_result(result)
-        for constraint in self.flat(constraintsets=False):
+        for constraint in self.flat():
             if not hasattr(constraint, "relax_sensitivity"):
                 print ("Constraint [%.100s... %s %.100s...] does not have a"
                        " `relax_sensitivity` parameter and can't be checked"

@@ -195,7 +195,7 @@ class SequentialGeometricProgram(CostedConstraintSet):
         self._approx_lt = []
         approx_gt = []
         x0 = self._fill_x0(x0)
-        for cs in self.flat(constraintsets=False):
+        for cs in self.flat():
             try:
                 if not isinstance(cs, PosynomialInequality):
                     cs.as_posyslt1(substitutions)  # is it gp-compatible?
