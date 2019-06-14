@@ -148,11 +148,13 @@ class Model(CostedConstraintSet):
         "The collapsed appearance of a Model"
         if self.naming:
             return "%s_%s" % (self.naming[0][-1], self.naming[1][-1])
+        return None
 
     def subconstr_latex(self, excluded=None):
         "The collapsed appearance of a Model"
         if self.naming:
             return "%s_{%s}" % (self.naming[0][-1], self.naming[1][-1])
+        return None
 
     def sweep(self, sweeps, **solveargs):
         "Sweeps {var: values} pairs in sweeps. Returns swept solutions."
@@ -285,7 +287,7 @@ def get_relaxed(relaxvals, mapped_list, min_return=1):
     "Determines which relaxvars are considered 'relaxed'"
     sortrelaxed = sorted(zip(relaxvals, mapped_list), key=lambda x: x[0],
                          reverse=True)
-    # arbitrarily 1.01 is the min that counts as "relaxed"
+    # arbitrarily, 1.01 is the point at which we count something as "relaxed"
     mostrelaxed = max(sortrelaxed[0][0], 1.01)
     for i, (val, _) in enumerate(sortrelaxed):
         if i >= min_return and val <= 1.01 and (val-1) <= (mostrelaxed-1)/10:
