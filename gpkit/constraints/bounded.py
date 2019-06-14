@@ -43,18 +43,18 @@ class Bounded(ConstraintSet):
     constraints : iterable
         constraints whose varkeys will be bounded
 
-    verbosity : int (1)
+    verbosity : int (default 1)
         how detailed of a warning to print
             0: nothing
             1: print warnings
 
-    eps : float (1e-30)
+    eps : float (default 1e-30)
         default lower bound is eps, upper bound is 1/eps
 
-    lower : float (None)
+    lower : float (default None)
         lower bound for all varkeys, replaces eps
 
-    upper : float (None)
+    upper : float (default None)
         upper bound for all varkeys, replaces 1/eps
     """
     sens_threshold = 1e-7
