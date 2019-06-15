@@ -212,7 +212,7 @@ class GeometricProgram(CostedConstraintSet, NomialData):
             tic = time()
 
         try:
-            tol = SOLUTION_TOL[solver_out["solver"]]
+            tol = SOLUTION_TOL.get(solver_out["solver"], 1e-5)
             self.check_solution(result["cost"], solver_out['primal'],
                                 solver_out["nu"], solver_out["la"], tol)
         except RuntimeWarning as e:

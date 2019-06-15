@@ -106,12 +106,7 @@ class VarKey(GPkitObject):  # pylint:disable=too-many-instance-attributes
             if subscript in self.descr and subscript not in excluded:
                 substring = self.descr[subscript]
                 if subscript == "lineage":
-                    if self.lineage and "modelnums" not in excluded:
-                        substring = ["%s.%s" % (ss, mn) if mn > 0 else ss
-                                     for ss, mn in self.lineage]
-                    else:  # just the model names
-                        substring = zip(*substring)[0]
-                    substring = "/".join(substring)
+                    substring = self.lineagestr("modelnums" not in excluded)
                 string = "{%s}_{%s}" % (string, substring)
                 if subscript == "idx":
                     if len(self.descr["idx"]) == 1:
