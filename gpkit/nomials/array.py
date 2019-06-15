@@ -30,8 +30,6 @@ def array_constraint(symbol, func):
 
     def wrapped_func(self, other):
         "Creates array constraint from vectorized operator."
-        if not self.shape:
-            return func(self.flatten()[0], other)
         result = vecfunc(self, other)
         left = self.key if hasattr(self, "key") else self
         right = other.key if hasattr(other, "key") else other
