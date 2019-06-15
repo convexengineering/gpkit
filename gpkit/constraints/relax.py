@@ -140,7 +140,7 @@ class ConstantsRelaxed(ConstraintSet):
             descr = key.descr.copy()
             descr.pop("value", None)
             descr.pop("veckey", None)
-            descr["lineage"] = descr.pop("lineage", [])+[self.lineage[-1]]
+            descr["lineage"] = descr.pop("lineage", ())+(self.lineage[-1],)
             relaxvardescr = descr.copy()
             relaxvardescr["unitrepr"] = "-"
             relaxvar = Variable(**relaxvardescr)

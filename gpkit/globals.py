@@ -59,14 +59,13 @@ class SignomialsEnabled(object):
 
     Example
     -------
-    >>> import gpkit
-    >>> x = gpkit.Variable("x")
-    >>> y = gpkit.Variable("y", 0.1)
-    >>> with SignomialsEnabled():
-    >>>     constraints = [x >= 1-y]
-    >>> gpkit.Model(x, constraints).localsolve()
+        >>> import gpkit
+        >>> x = gpkit.Variable("x")
+        >>> y = gpkit.Variable("y", 0.1)
+        >>> with SignomialsEnabled():
+        >>>     constraints = [x >= 1-y]
+        >>> gpkit.Model(x, constraints).localsolve()
     """
-    # pylint: disable=global-statement
     def __enter__(self):
         SIGNOMIALS_ENABLED.add(True)
 

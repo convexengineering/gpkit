@@ -5,7 +5,7 @@ import numpy as np
 from ..small_classes import HashVector, Numbers
 from ..keydict import KeySet, KeyDict
 from ..small_scripts import try_str_without
-from ..repr_conventions import _str, _repr, _repr_latex_
+from ..repr_conventions import GPkitObject
 
 
 def add_meq_bounds(bounded, meq_bounded):
@@ -31,7 +31,7 @@ def _sort_by_name_and_idx(var):
 
 
 # pylint: disable=too-many-instance-attributes
-class ConstraintSet(list):
+class ConstraintSet(list, GPkitObject):
     "Recursive container for ConstraintSets and Inequalities"
     varkeys = None
     unique_varkeys = frozenset()
@@ -246,10 +246,6 @@ class ConstraintSet(list):
                 v = v.veckey
             val = v.evalfn(result["variables"])
             result["variables"][v] = result["freevariables"][v] = val
-
-    __str__ = _str
-    __repr__ = _repr
-    _repr_latex_ = _repr_latex_
 
     def str_without(self, excluded=None):
         "String representation of a ConstraintSet."

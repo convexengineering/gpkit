@@ -69,9 +69,7 @@ def tight_table(self, _, ntightconstrs=5, tight_senss=1e-2, **kwargs):
     if not self.model:
         return []
     title = "Tightest Constraints"
-    data = [(-float("%+6.2g" % c.relax_sensitivity) + 1e-30*hash(str(c)),
-             "%+6.2g" % c.relax_sensitivity, c)
-            for c in self.model.flat()
+    data = [(0, "%+6.2g" % c.relax_sensitivity, c) for c in self.model.flat()
             if c.relax_sensitivity >= tight_senss]
     if not data:
         lines = ["No constraints had a sensitivity above %+5.1g."
@@ -497,8 +495,7 @@ class SolutionArray(DictOfLists):
                 row.extend([
                     key.unitstr(),
                     key.label or "",
-                    key.models or "",
-                    key.modelnums or "",
+                    key.lineage or "",
                     ", ".join("%s=%s" % (k, v) for (k, v) in key.descr.items()
                               if k not in ["name", "units", "unitrepr",
                                            "idx", "shape", "veckey",

@@ -12,7 +12,7 @@ class TestKeyDict(unittest.TestCase):
 
     def test_setattr(self):
         kd = KeyDict()
-        x = Variable("x", models=["test"])
+        x = Variable("x", lineage=(("test", 0),))
         kd[x] = 1
         self.assertIn(x, kd)
         self.assertEqual(set(kd), set([x.key]))

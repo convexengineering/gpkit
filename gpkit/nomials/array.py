@@ -14,7 +14,7 @@ from .math import Signomial
 from ..small_classes import Numbers, HashVector, EMPTY_HV
 from ..small_scripts import try_str_without, mag
 from ..constraints import ArrayConstraint
-from ..repr_conventions import _str, _repr, _repr_latex_
+from ..repr_conventions import GPkitObject
 from ..exceptions import DimensionalityError
 
 
@@ -37,7 +37,7 @@ def array_constraint(symbol, func):
     return wrapped_func
 
 
-class NomialArray(np.ndarray):
+class NomialArray(np.ndarray, GPkitObject):
     """A Numpy array with elementwise inequalities and substitutions.
 
     Arguments
@@ -48,10 +48,6 @@ class NomialArray(np.ndarray):
     -------
     >>> px = gpkit.NomialArray([1, x, x**2])
     """
-
-    __str__ = _str
-    __repr__ = _repr
-    _repr_latex_ = _repr_latex_
 
     def str_without(self, excluded=None):
         "Returns string without certain fields (such as 'models')."

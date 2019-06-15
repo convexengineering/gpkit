@@ -1,8 +1,7 @@
 "Implements the GPkit interface to CVXOPT"
+import numpy as np
 from cvxopt import spmatrix, matrix, log
 from cvxopt.solvers import gp
-
-# pylint:disable=c-extension-no-member
 
 
 def cvxoptimize(c, A, k, *args, **kwargs):
@@ -39,8 +38,6 @@ def cvxoptimize(c, A, k, *args, **kwargs):
     g = log(matrix(c))
     F = spmatrix(A.data, A.row, A.col, tc='d')
     solution = gp(k, F, g, *args, **kwargs)
-    import numpy as np
-    primal = np.array(solution['x'])[:, 0]
     return dict(status=solution['status'],
-                primal=primal,
+                primal=np.ravel(solution['x']),
                 la=solution['znl'])

@@ -154,7 +154,7 @@ def modelcontrolpanel(model, showvars=(), fns_of_sol=None, **solvekwargs):
 
     def append_plotfn():
         "Creates and adds plotfn to fn_of_sols"
-        from . import plot_1dsweepgrid
+        from .plot_sweep import plot_1dsweepgrid
         yvars = [model.cost]
         for varname in y_axes.value.split("  "):  # pylint: disable=no-member
             varname = varname.strip()

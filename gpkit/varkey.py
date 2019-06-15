@@ -1,9 +1,9 @@
 """Defines the VarKey class"""
 from .small_classes import HashVector, Count, qty
-from .repr_conventions import unitstr, lineagestr
+from .repr_conventions import GPkitObject
 
 
-class VarKey(object):  # pylint:disable=too-many-instance-attributes
+class VarKey(GPkitObject):  # pylint:disable=too-many-instance-attributes
     """An object to correspond to each 'variable name'.
 
     Arguments
@@ -71,7 +71,7 @@ class VarKey(object):  # pylint:disable=too-many-instance-attributes
         self.__init__(**state)
 
     def str_without(self, excluded=None):
-        "Returns string without certain fields (such as 'models')."
+        "Returns string without certain fields (such as 'lineage')."
         if excluded is None:
             excluded = []
         string = self.name
@@ -79,15 +79,16 @@ class VarKey(object):  # pylint:disable=too-many-instance-attributes
             if self.descr.get(subscript) and subscript not in excluded:
                 substring = self.descr[subscript]
                 if subscript == "lineage":
-                    substring = lineagestr(self.lineage,
-                                           "modelnums" not in excluded)
+                    substring = self.lineagestr("modelnums" not in excluded)
                 string += "_%s" % (substring,)
         return string
 
     def __getattr__(self, attr):
         return self.descr.get(attr, None)
 
-    unitstr = unitstr
+    @property
+    def models(self):
+        return zip(*self.lineage)[0]
 
     def latex_unitstr(self):
         "Returns latex unitstr"

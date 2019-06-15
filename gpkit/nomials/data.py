@@ -4,11 +4,11 @@ import numpy as np
 from ..small_classes import EMPTY_HV
 from ..keydict import KeySet
 from .map import NomialMap
-from ..repr_conventions import _repr
+from ..repr_conventions import GPkitObject
 from ..varkey import VarKey
 
 
-class NomialData(object):
+class NomialData(GPkitObject):
     """Object for holding cs, exps, and other basic 'nomial' properties.
 
     cs: array (coefficient of each monomial term)
@@ -61,8 +61,6 @@ class NomialData(object):
             if self.hmap.units:
                 self._cs = self._cs*self.hmap.units
         return self._cs
-
-    __repr__ = _repr
 
     def __hash__(self):
         if self._hashvalue is None:
