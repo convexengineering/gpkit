@@ -79,8 +79,9 @@ class ConstraintSet(list):
                 for bound, solutionset in self[i].meq_bounded.items():
                     self.meq_bounded[bound].update(solutionset)
         self.reset_varkeys()
-        self.substitutions.update({k: k.value for k in self.unique_varkeys
-                                   if k.value})
+        self.substitutions.update({k: k.descr["value"]
+                                   for k in self.unique_varkeys
+                                   if "value" in k.descr})
         if substitutions:
             self.substitutions.update(substitutions)
         updated_veckeys = False  # vector subs need to find each indexed varkey
