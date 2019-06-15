@@ -9,13 +9,13 @@
 """
 from operator import eq, le, ge, xor
 import numpy as np
+from .map import NomialMap
 from .math import Signomial, HashVector
 from ..small_classes import Numbers, HashVector
 from ..small_scripts import try_str_without, mag
 from ..constraints import ArrayConstraint
 from ..repr_conventions import _str, _repr, _repr_latex_
 from ..exceptions import DimensionalityError
-from .map import NomialMap
 
 
 @np.vectorize
@@ -58,7 +58,7 @@ class NomialArray(np.ndarray):
         if self.shape:
             return "[" + ", ".join([try_str_without(el, excluded)
                                     for el in self]) + "]"
-        return str(self.flatten()[0])  # TODO THIS IS WEIRD
+        return try_str_without(self.flatten()[0], excluded)
 
     def latex(self, matwrap=True):
         "Returns 1D latex list of contents."
@@ -72,17 +72,17 @@ class NomialArray(np.ndarray):
             return ("\\begin{bmatrix}" +
                     " \\\\\n".join(el.latex(matwrap=False) for el in self) +
                     "\\end{bmatrix}")
-        return None
+        else:
+            raise TypeError("latex generation is not supported for arrays"
+                            " of more than two dimensions.")
 
     def __hash__(self):
         return reduce(xor, map(hash, self.flat), 0)
 
     def __new__(cls, input_array):
         "Constructor. Required for objects inheriting from np.ndarray."
-        # Input array is an already formed ndarray instance
-        # cast to be our class type
-        obj = np.asarray(input_array).view(cls)
-        return obj
+        # Input is an already formed ndarray instance cast to our class type
+        return np.asarray(input_array).view(cls)
 
     def __array_finalize__(self, obj):
         "Finalizer. Required for objects inheriting from np.ndarray."
@@ -109,23 +109,22 @@ class NomialArray(np.ndarray):
 
     def __bool__(self):
         "Allows the use of NomialArrays as truth elements in python3."
-        return all(bool(p) for p in self.flat)
-
-    def vectorize(self, function, *args, **kwargs):
-        "Apply a function to each terminal constraint, returning the array"
-        return vec_recurse(self, function, *args, **kwargs)
 
     __eq__ = array_constraint("=", eq)
     __le__ = array_constraint("<=", le)
     __ge__ = array_constraint(">=", ge)
 
     def __ne__(self, other):
-        "Does type checking, then applies 'not ==' in a vectorized fashion."
+        "Checks type, then checks 'not =='."
         return not isinstance(other, self.__class__) or not all(self == other)
 
     def outer(self, other):
         "Returns the array and argument's outer product."
         return NomialArray(np.outer(self, other))
+
+    def vectorize(self, function, *args, **kwargs):
+        "Apply a function to each terminal constraint, returning the array"
+        return vec_recurse(self, function, *args, **kwargs)
 
     def sub(self, subs, require_positive=True):
         "Substitutes into the array"
@@ -143,32 +142,6 @@ class NomialArray(np.ndarray):
                   (isinstance(el, Numbers) and not (el == 0 or np.isnan(el)))):
                 raise DimensionalityError(el_units, units)
         return units
-
-    def padleft(self, padding):
-        "Returns ({padding}, self[0], self[1] ... self[N])"
-        if self.ndim != 1:
-            raise NotImplementedError("unimplemented for ndim=%s" % self.ndim)
-        padded = NomialArray(np.hstack((padding, self)))
-        _ = padded.units  # check that the units are consistent
-        return padded
-
-    def padright(self, padding):
-        "Returns (self[0], self[1] ... self[N], {padding})"
-        if self.ndim != 1:
-            raise NotImplementedError("unimplemented for ndim=%s" % self.ndim)
-        padded = NomialArray(np.hstack((self, padding)))
-        _ = padded.units  # check that the units are consistent
-        return padded
-
-    @property
-    def left(self):
-        "Returns (0, self[0], self[1] ... self[N-1])"
-        return self.padleft(0)[:-1]
-
-    @property
-    def right(self):
-        "Returns (self[1], self[2] ... self[N], 0)"
-        return self.padright(0)[1:]
 
     def sum(self, *args, **kwargs):
         "Returns a sum. O(N) if no arguments are given."

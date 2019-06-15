@@ -259,8 +259,8 @@ class ConstraintSet(list):
         if "root" not in excluded:
             excluded.append("root")
             lines.append("")
-            if hasattr(self, "rootconstr_str"):  # pylint:disable=no-member
-                lines.append(self.rootconstr_str(excluded))
+            if hasattr(self, "rootconstr_str"):
+                lines.append(self.rootconstr_str(excluded))  # pylint: disable=no-member
         if self.idxlookup:
             named_constraints = {v: k for k, v in self.idxlookup.items()}
         for i, constraint in enumerate(self):
@@ -284,8 +284,8 @@ class ConstraintSet(list):
         if root:
             excluded.append("root")
             lines.append("\\begin{array}{ll} \\text{}")
-            if hasattr(self, "rootconstr_latex"):  # pylint:disable=no-member
-                lines.append(self.rootconstr_latex(excluded))
+            if hasattr(self, "rootconstr_latex"):
+                lines.append(self.rootconstr_latex(excluded))  # pylint: disable=no-member
         for constraint in self:
             if hasattr(constraint, "subconstr_latex"):
                 cstr = constraint.subconstr_latex(excluded)
