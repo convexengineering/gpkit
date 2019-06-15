@@ -12,6 +12,7 @@ from .costed import CostedConstraintSet
 
 
 DEFAULT_SOLVER_KWARGS = {"cvxopt": {"kktsolver": "ldl"}}
+SOLUTION_TOL = {"cvxopt": 1e-3, "mosek_cli": 1e-4, "mosek": 1e-5}
 
 
 def _get_solver(solver, kwargs):
@@ -168,7 +169,7 @@ class GeometricProgram(CostedConstraintSet, NomialData):
         # STDOUT HAS BEEN RETURNED. ENDING SIDE EFFECTS.
         self.solver_log = "\n".join(self.solver_log)
 
-        solver_out["solver"] = solver
+        solver_out["solver"] = solvername
         solver_out["soltime"] = time() - starttime
         if verbosity > 0:
             print("Solving took %.3g seconds." % (solver_out["soltime"],))
@@ -211,10 +212,7 @@ class GeometricProgram(CostedConstraintSet, NomialData):
             tic = time()
 
         try:
-            if solver_out["solver"] == "cvxopt":
-                tol = 1e-3  # cvxopt is...not as precise
-            else:
-                tol = 1e-5
+            tol = SOLUTION_TOL[solver_out["solver"]]
             self.check_solution(result["cost"], solver_out['primal'],
                                 solver_out["nu"], solver_out["la"], tol)
         except RuntimeWarning as e:

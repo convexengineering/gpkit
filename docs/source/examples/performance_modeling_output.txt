@@ -40,9 +40,6 @@ rho : [ -0.12     -0.11     -0.11     -0.11    ] air density
 
 Tightest Constraints
 --------------------
-       | Aircraft/Wing
-  +3.4 : c_ = A_**-0.5*S_**0.5
-
        | Mission/FlightSegment/AircraftP/WingAero
   +3.4 : Re__(0,) = 0.157*V_Mission/FlightSegment/FlightState_(0,)*c_Aircraft/Wing
            *mu_Mission/FlightSegment/FlightState_(0,)**-1
@@ -56,6 +53,9 @@ Tightest Constraints
   +3.4 : Re__(3,) = 0.157*V_Mission/FlightSegment/FlightState_(3,)*c_Aircraft/Wing
            *mu_Mission/FlightSegment/FlightState_(3,)**-1
            *rho_Mission/FlightSegment/FlightState_(3,)
+
+       | Aircraft/Wing
+  +3.4 : c_ = A_**-0.5*S_**0.5
 
 All Loose Constraints
 ---------------------

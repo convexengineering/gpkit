@@ -69,10 +69,9 @@ def tight_table(self, _, ntightconstrs=5, tight_senss=1e-2, **kwargs):
     if not self.model:
         return []
     title = "Tightest Constraints"
-    data = [(-float("%+6.2g" % c.relax_sensitivity), c,
-             "%+6.2g" % c.relax_sensitivity)
-            for c in self.model.flat()
-            if c.relax_sensitivity >= tight_senss]
+    data = [((-float("%+6.2g" % c.relax_sensitivity), str(c)),
+             "%+6.2g" % c.relax_sensitivity, c)
+            for c in self.model.flat() if c.relax_sensitivity >= tight_senss]
     if not data:
         lines = ["No constraints had a sensitivity above %+5.1g."
                  % tight_senss]
@@ -90,8 +89,8 @@ def loose_table(self, _, loose_senss=1e-5, **kwargs):
     if not self.model:
         return []
     title = "All Loose Constraints"
-    data = [(0, c, "") for c in self.model.flat()
-            if c.relax_sensitivity <= loose_senss]
+    data = [(0, "", c)
+            for c in self.model.flat() if c.relax_sensitivity <= loose_senss]
     if not data:
         lines = ["No constraints had a sensitivity below %+6.2g."
                  % loose_senss]
@@ -105,7 +104,7 @@ def constraint_table(data, sortbymodel=True, showmodels=True, **_):
     "Creates lines for tables where the right side is a constraint."
     models = {}
     decorated = []
-    for sortby, constraint, openingstr in data:
+    for sortby, openingstr, constraint in data:
         if sortbymodel and hasattr(constraint, "lineage"):
             model = lineagestr(constraint.lineage)
         else:
@@ -190,13 +189,13 @@ def warnings_table(self, _, **kwargs):
             if len(data_vec) > 1:
                 lines += ["| for sweep %i |" % i]
             if wtype == "Unexpectedly Tight Constraints" and data[0][1]:
-                data = [(-int(1e5*c.relax_sensitivity), c,
-                         "%+6.2g" % c.relax_sensitivity) for _, c in data]
+                data = [(-int(1e5*c.relax_sensitivity),
+                         "%+6.2g" % c.relax_sensitivity, c) for _, c in data]
                 data = sorted(data)
                 lines += constraint_table(data, **kwargs)
             elif wtype == "Unexpectedly Loose Constraints" and data[0][1]:
-                data = [(-int(1e5*c.rel_diff), c,
-                         "%.4g %s %.4g" % c.tightvalues) for _, c in data]
+                data = [(-int(1e5*c.rel_diff),
+                         "%.4g %s %.4g" % c.tightvalues, c) for _, c in data]
                 data = sorted(data)
                 lines += constraint_table(data, **kwargs)
             else:
