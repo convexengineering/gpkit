@@ -54,7 +54,7 @@ Tightest Constraints
 --------------------
   +3.4 : L/D = C_D**-1*C_L
   +3.2 : V_f = W_f*\rho_f**-1*g**-1
+  +1.2 : C_D >= (CDA0)*S**-1 + (\frac{S}{S_{wet}})*C_f*k + 0.318*A**-1*C_L**2*e**-1
   +1.2 : T_{flight} >= Range*V**-1
-  +1.2 : D >= 0.5*C_D*S*V**2*\rho
   +1.2 : W_f >= D*TSFC*T_{flight}
 
