@@ -5,7 +5,7 @@ from .core import Nomial
 from ..constraints import SingleEquationConstraint
 from ..globals import SignomialsEnabled
 from ..small_classes import Strings, Numbers
-from ..small_classes import HashVector
+from ..small_classes import HashVector, EMPTY_HV
 from ..varkey import VarKey
 from ..small_scripts import mag
 from ..exceptions import InvalidGPConstraint, DimensionalityError
@@ -38,7 +38,7 @@ class Signomial(Nomial):
             if hasattr(hmap, "hmap"):
                 hmap = hmap.hmap
             elif isinstance(hmap, Numbers):
-                hmap_ = NomialMap([(HashVector(), mag(hmap))])
+                hmap_ = NomialMap([(EMPTY_HV, mag(hmap))])
                 hmap_.units_of_product(hmap)
                 hmap = hmap_
             elif hmap is None:
@@ -110,7 +110,7 @@ class Signomial(Nomial):
             if hasattr(value, "units"):
                 x0[key] = value.to(key.units).magnitude
         psub = self.hmap.sub(x0, self.varkeys, parsedsubs=True)
-        if len(psub) > 1 or HashVector() not in psub:
+        if len(psub) > 1 or EMPTY_HV not in psub:
             raise ValueError("Variables %s remained after substituting x0=%s"
                              " into %s" % (list(psub.vks), x0, self))
         c0, = psub.values()
@@ -184,7 +184,7 @@ class Signomial(Nomial):
             if not other:  # other is zero
                 return Signomial(self.hmap)
             else:
-                other_hmap = NomialMap({HashVector(): mag(other)})
+                other_hmap = NomialMap({EMPTY_HV: mag(other)})
                 other_hmap.units_of_product(other)
         if other_hmap:
             try:
@@ -322,7 +322,7 @@ class Monomial(Posynomial):
     def __pow__(self, expo):
         if isinstance(expo, Numbers):
             (exp, c), = self.hmap.items()
-            exp = exp*expo if expo else HashVector()
+            exp = exp*expo if expo else EMPTY_HV
             # TODO: c should already be a float
             hmap = NomialMap({exp: float(c)**expo})
             if not (expo and self.hmap.units):
@@ -373,7 +373,7 @@ class ScalarSingleEquationConstraint(SingleEquationConstraint):
         for i, sig in enumerate(lr):
             if isinstance(sig, Signomial):
                 self.varkeys.update(sig.vks)
-                self.substitutions.update(sig.values)
+                self.substitutions.update(sig.varkeyvalues())
             else:
                 lr[i] = Signomial(sig)
         from .. import MODELS, MODELNUMS
@@ -440,12 +440,11 @@ class PosynomialInequality(ScalarSingleEquationConstraint):
 
     def _simplify_posy_ineq(self, hmap, pmap=None, allow_tautological=True):
         "Simplify a posy <= 1 by moving constants to the right side."
-        empty_exp = HashVector()
-        if empty_exp not in hmap:
+        if EMPTY_HV not in hmap:
             return hmap
-        coeff = 1 - hmap[empty_exp]
+        coeff = 1 - hmap[EMPTY_HV]
         if pmap is not None:  # note constant term's mmap
-            const_idx = hmap.keys().index(empty_exp)
+            const_idx = hmap.keys().index(EMPTY_HV)
             self.const_mmap = self.pmap.pop(const_idx)  # pylint: disable=attribute-defined-outside-init
             self.const_coeff = coeff  # pylint: disable=attribute-defined-outside-init
         if (allow_tautological and (coeff >= -self.feastol or np.isnan(coeff))
@@ -456,7 +455,7 @@ class PosynomialInequality(ScalarSingleEquationConstraint):
                              " %f%%" % (self, -coeff*100))
         scaled = hmap/coeff
         scaled.units = hmap.units
-        del scaled[empty_exp]
+        del scaled[EMPTY_HV]
         return scaled
 
     def _gen_unsubbed(self, p_lt, m_gt):

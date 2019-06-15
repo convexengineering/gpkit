@@ -1,7 +1,7 @@
 """Machinery for exps, cs, varlocs data -- common to nomials and programs"""
 from collections import defaultdict
 import numpy as np
-from ..small_classes import HashVector
+from ..small_classes import EMPTY_HV
 from ..keydict import KeySet
 from .map import NomialMap
 from ..repr_conventions import _repr
@@ -29,7 +29,6 @@ class NomialData(object):
 
     def __init__(self, hmap):
         self.hmap = hmap
-
         self.vks = set()
         for exp in self.hmap:
             self.vks.update(exp)
@@ -77,9 +76,8 @@ class NomialData(object):
             self._varkeys = KeySet(self.vks)
         return self._varkeys
 
-    @property
-    def values(self):  # TODO: if it's none presume it stays that way?
-        "The NomialData's values, created when necessary."
+    def varkeyvalues(self):  # TODO: if it's none presume it stays that way?
+        "Returns the NomialData's keys' values"
         return {k: k.descr["value"] for k in self.vks
                 if "value" in k.descr}
 
@@ -101,8 +99,9 @@ class NomialData(object):
             raise ValueError("multiple variables %s found for key %s"
                              % (list(varset), var))
         elif len(varset) == 0:
-            hmap = NomialMap({HashVector(): 0})
-            hmap.units = None
+            hmap = NomialMap({EMPTY_HV: 0})
+            hmap.units_of_product(self.units,
+                                  1.0/var.units if var.units else None)
         else:
             var, = varset
             hmap = self.hmap.diff(var)

@@ -2,7 +2,7 @@
 from collections import defaultdict
 import numpy as np
 from ..exceptions import DimensionalityError
-from ..small_classes import HashVector, Quantity, Strings, qty
+from ..small_classes import HashVector, Quantity, Strings, qty, EMPTY_HV
 from ..small_scripts import mag
 from .substitution import parse_subs
 
@@ -213,5 +213,5 @@ def subinplace(cp, exp, o_exp, vk, cval, expval, exps_covered):
         elif value:
             cp[exp] = value
         if not cp:  # make sure it's never an empty hmap
-            cp[HashVector()] = 0.0
+            cp[EMPTY_HV] = 0.0
         exps_covered.add(exp)

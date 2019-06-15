@@ -10,8 +10,8 @@
 from operator import eq, le, ge, xor
 import numpy as np
 from .map import NomialMap
-from .math import Signomial, HashVector
-from ..small_classes import Numbers, HashVector
+from .math import Signomial
+from ..small_classes import Numbers, HashVector, EMPTY_HV
 from ..small_scripts import try_str_without, mag
 from ..constraints import ArrayConstraint
 from ..repr_conventions import _str, _repr, _repr_latex_
@@ -150,7 +150,7 @@ class NomialArray(np.ndarray):
         hmap = NomialMap()
         hmap.units = self.units
         it = np.nditer(self, flags=['multi_index', 'refs_ok'])
-        empty_exp = HashVector()
+        empty_exp = EMPTY_HV
         while not it.finished:
             i = it.multi_index
             it.iternext()
@@ -158,7 +158,7 @@ class NomialArray(np.ndarray):
                 if mag(self[i]) == 0:
                     continue
                 else:  # number manually inserted by user
-                    hmap[empty_exp] = mag(self[i]) + hmap.get(HashVector(), 0)
+                    hmap[empty_exp] = mag(self[i]) + hmap.get(EMPTY_HV, 0)
             else:
                 hmap += self[i].hmap
         return Signomial(hmap)
