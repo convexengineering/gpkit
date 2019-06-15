@@ -88,6 +88,7 @@ class VarKey(GPkitObject):  # pylint:disable=too-many-instance-attributes
 
     @property
     def models(self):
+        "Returns a tuple of just the names of models in self.lineage"
         return zip(*self.lineage)[0]
 
     def latex_unitstr(self):
