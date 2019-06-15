@@ -46,10 +46,9 @@ class Signomial(Nomial):
             elif isinstance(hmap, Strings):
                 hmap = VarKey(hmap, **descr).hmap
             elif isinstance(hmap, dict):
-                exp = HashVector({VarKey(k): v for k, v in hmap.items()})
+                exp = HashVector({VarKey(k): v for k, v in hmap.items() if v})
                 hmap = NomialMap({exp: mag(cs)})
                 hmap.units_of_product(cs)
-                hmap.remove_zeros()
         super(Signomial, self).__init__(hmap)
         if self.any_nonpositive_cs:
             from .. import SIGNOMIALS_ENABLED
@@ -121,7 +120,8 @@ class Signomial(Nomial):
             diff, = self.hmap.diff(vk).sub(x0, self.varkeys,
                                            parsedsubs=True).values()
             e = val*diff/c0
-            exp[vk] = e
+            if e:
+                exp[vk] = e
             try:
                 c /= val**e
             except OverflowError:
@@ -136,7 +136,6 @@ class Signomial(Nomial):
                                     % (vk, val, c, val, e, self))
         hmap = NomialMap({exp: c})
         hmap.units = self.units
-        hmap.remove_zeros()
         return Monomial(hmap)
 
     def sub(self, substitutions, require_positive=True):

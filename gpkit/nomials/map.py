@@ -23,7 +23,7 @@ class NomialMap(HashVector):
     csmap = None   # used for monomial-mapping postsubstitution; see .mmap()
 
     def units_of_product(self, thing, thing2=None):
-        "Sets units to those of `thing*thing2`"
+        "Sets units to those of `thing*thing2`. Ugly optimized code."
         if thing is None and thing2 is None:
             self.units = None
         elif hasattr(thing, "units"):
@@ -65,22 +65,6 @@ class NomialMap(HashVector):
         hmap.units = self.units
         return hmap
 
-    def remove_zeros(self):
-        """Removes zeroed exponents and monomials.
-
-        If `only_check_cs` is True, checks only whether any values are zero.
-        If False also checks whether any exponents in the keys are zero.
-        """
-        for key, value in self.items():
-            zeroes = set(vk for vk, exp in key.items() if exp == 0)
-            if zeroes:
-                # raise ValueError(self)
-                del self[key]
-                for vk in zeroes:
-                    key._hashvalue ^= hash((vk, key[vk]))
-                    del key[vk]
-                self[key] = value + self.get(key, 0)
-
     def diff(self, varkey):
         "Differentiates a NomialMap with respect to a varkey"
         out = NomialMap()
@@ -89,7 +73,7 @@ class NomialMap(HashVector):
                 exp = HashVector(exp)
                 x = exp[varkey]
                 c = self[exp] * x
-                if x is 1:  # speed optimization
+                if x is 1:
                     del exp[varkey]
                 else:
                     exp[varkey] = x-1
@@ -121,7 +105,7 @@ class NomialMap(HashVector):
         else:
             fixed, _, _ = parse_subs(varkeys, substitutions)
 
-        if not substitutions:
+        if not fixed:
             if not self.expmap:
                 self.expmap, self.csmap = {exp: exp for exp in self}, {}
             return self
@@ -136,24 +120,22 @@ class NomialMap(HashVector):
             cp.expmap[exp] = new_exp  # cp modifies exps, so it needs new ones
             cp[new_exp] = c
             for vk in new_exp:
-                varlocs[vk].add((exp, new_exp))
+                if vk in fixed:
+                    varlocs[vk].add((exp, new_exp))
 
         for vk in varlocs:
-            if vk in fixed:
-                expval = []
-                exps, cval = varlocs[vk], fixed[vk]
-                if hasattr(cval, "hmap"):
-                    expval, = cval.hmap.keys()  # TODO: catch "can't-sub-posys"
-                    cval = cval.hmap
-                if hasattr(cval, "to"):
-                    cval = mag(cval.to(vk.units or DIMLESS_QUANTITY))
-                    if isinstance(cval, NomialMap) and cval.keys() == [{}]:
-                        cval, = cval.values()
-                if expval:
+            expval = []
+            exps, cval = varlocs[vk], fixed[vk]
+            if hasattr(cval, "hmap"):
+                expval, = cval.hmap.keys()  # TODO: catch "can't-sub-posys"
+                cval = cval.hmap
+            if hasattr(cval, "to"):
+                cval = mag(cval.to(vk.units or DIMLESS_QUANTITY))
+                if expval or isinstance(cval, NomialMap):
                     cval, = cval.values()
-                exps_covered = set()
-                for o_exp, exp in exps:
-                    subinplace(cp, exp, o_exp, vk, cval, expval, exps_covered)
+            exps_covered = set()
+            for o_exp, exp in exps:
+                subinplace(cp, exp, o_exp, vk, cval, expval, exps_covered)
         return cp
 
     def mmap(self, orig):
@@ -212,6 +194,6 @@ def subinplace(cp, exp, o_exp, vk, cval, expval, exps_covered):
                 del cp[exp]  # remove zeros created during substitution
         elif value:
             cp[exp] = value
-        if not cp:  # make sure it's never an empty hmap
-            cp[EMPTY_HV] = 0.0
         exps_covered.add(exp)
+    if not cp:  # make sure it's never an empty hmap
+        cp[EMPTY_HV] = 0.0
