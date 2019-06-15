@@ -4,7 +4,7 @@ from ..small_scripts import splitsweep
 
 
 def parse_subs(varkeys, substitutions, clean=False):
-    "Seperates subs into constants, sweeps linkedsweeps actually present."
+    "Seperates subs into the constants, sweeps, linkedsweeps actually present."
     constants, sweep, linkedsweep = {}, {}, {}
     if clean:
         for var in varkeys:
