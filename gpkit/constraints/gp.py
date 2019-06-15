@@ -4,7 +4,7 @@ from time import time
 from collections import defaultdict
 import numpy as np
 from ..nomials import NomialData
-from ..small_classes import CootMatrix, SolverLog, Numbers
+from ..small_classes import CootMatrix, SolverLog, Numbers, FixedScalar
 from ..keydict import KeyDict, KeySet
 from ..small_scripts import mag
 from ..solution_array import SolutionArray
@@ -73,7 +73,7 @@ class GeometricProgram(CostedConstraintSet, NomialData):
         # GPs have the varkeys property instead, see below
         self.__bare_init__(cost, constraints, substitutions, varkeys=False)
         for key, sub in self.substitutions.items():
-            if hasattr(sub, "exp") and not sub.exp:
+            if isinstance(sub, FixedScalar):
                 sub = sub.value
                 if hasattr(sub, "units"):
                     sub = sub.to(key.units or "dimensionless").magnitude

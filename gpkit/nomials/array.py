@@ -174,7 +174,7 @@ class NomialArray(np.ndarray):
             idx = it.multi_index
             it.iternext()
             m_ = self[idx]
-            if not hasattr(m_, "exp"):  # it's not a monomial, abort!
+            if not hasattr(m_, "hmap") and len(m_.hmap) == 1:
                 return np.ndarray.prod(self, *args, **kwargs)
             c = c * mag(m_.c)
             unitpower += 1

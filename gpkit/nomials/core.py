@@ -1,6 +1,6 @@
 "The shared non-mathematical backbone of all Nomials"
 from .data import NomialData
-from ..small_classes import Numbers
+from ..small_classes import Numbers, FixedScalar
 from ..small_scripts import nomial_latex_helper
 from ..repr_conventions import _str, _repr, _repr_latex_, unitstr
 
@@ -41,10 +41,8 @@ class Nomial(NomialData):
             units = ""
         return " + ".join(sorted(mstrs)) + units
 
-    def latex(self, excluded=None):
+    def latex(self, excluded=()):
         "Latex representation, parsing `excluded` just as .str_without does"
-        if excluded is None:
-            excluded = []
         mstrs = []
         for exp, c in self.hmap.items():
             pos_vars, neg_vars = [], []
@@ -57,7 +55,6 @@ class Nomial(NomialData):
 
         if "units" in excluded:
             return " + ".join(sorted(mstrs))
-
         units = self.unitstr(r"\mathrm{~\left[ %s \right]}", ":L~")
         units_tf = units.replace("frac", "tfrac").replace(r"\cdot", r"\cdot ")
         return " + ".join(sorted(mstrs)) + units_tf
@@ -73,10 +70,10 @@ class Nomial(NomialData):
         float, if no symbolic variables remain after substitution
         (Monomial, Posynomial, or Nomial), otherwise.
         """
+        if isinstance(self, FixedScalar):
+            return self.cs[0]
         p = self.sub(self.values)  # pylint: disable=not-callable
-        if len(p.hmap) == 1 and not p.vks:
-            return p.cs[0]
-        return p
+        return p.cs[0] if isinstance(p, FixedScalar) else p
 
     def prod(self):
         "Return self for compatibility with NomialArray"
@@ -88,19 +85,16 @@ class Nomial(NomialData):
 
     def to(self, units):
         "Create new Signomial converted to new units"
-         # pylint: disable=no-member
-        return self.__class__(self.hmap.to(units))
-
-    def __ne__(self, other):
-        return not self.__eq__(other)
+        return self.__class__(self.hmap.to(units))  # pylint: disable=no-member
 
     def __eq__(self, other):
         "True if self and other are algbraically identical."
         if isinstance(other, Numbers):
-            return (len(self.hmap) == 1 and  # single term
-                    not self.vks and         # constant
-                    self.cs[0] == other)     # the right constant
+            return isinstance(self, FixedScalar) and self.value == other
         return super(Nomial, self).__eq__(other)
+
+    def __ne__(self, other):
+        return not self.__eq__(other)
 
     def __radd__(self, other):
         return self + other

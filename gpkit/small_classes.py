@@ -13,6 +13,17 @@ except NameError:
 Numbers = (int, float, np.number, Quantity)
 
 
+class FixedScalarMeta(type):
+    "Metaclass to implement instance checking for fixed scalars"
+    def __instancecheck__(cls, obj):
+        return hasattr(obj, "hmap") and len(obj.hmap) == 1 and not obj.vks
+
+
+class FixedScalar(object):
+    "Instances of this class are scalar Nomials with no variables"
+    __metaclass__ = FixedScalarMeta
+
+
 class Count(object):
     "Like python 2's itertools.count, for Python 3 compatibility."
 
