@@ -259,14 +259,14 @@ class ConstraintSet(list):
         if "root" not in excluded:
             excluded.append("root")
             lines.append("")
-            root_str = self.rootconstr_str(excluded)
-            if root_str:
-                lines.append(root_str)
+            if hasattr(self, "rootconstr_str"):  # pylint:disable=no-member
+                lines.append(self.rootconstr_str(excluded))
         if self.idxlookup:
             named_constraints = {v: k for k, v in self.idxlookup.items()}
         for i, constraint in enumerate(self):
-            cstr = constraint.subconstr_str(excluded)
-            if cstr is None:
+            if hasattr(constraint, "subconstr_str"):
+                cstr = constraint.subconstr_str(excluded)
+            else:
                 cstr = try_str_without(constraint, excluded)
             if cstr[:4] != " "*4:  # require indentation
                 cstr = " "*8 + cstr
@@ -284,12 +284,12 @@ class ConstraintSet(list):
         if root:
             excluded.append("root")
             lines.append("\\begin{array}{ll} \\text{}")
-            root_latex = self.rootconstr_latex(excluded)
-            if root_latex:
-                lines.append(root_latex)
+            if hasattr(self, "rootconstr_latex"):  # pylint:disable=no-member
+                lines.append(self.rootconstr_latex(excluded))
         for constraint in self:
-            cstr = constraint.subconstr_latex(excluded)
-            if cstr is None:
+            if hasattr(constraint, "subconstr_latex"):
+                cstr = constraint.subconstr_latex(excluded)
+            else:
                 cstr = constraint.latex(excluded)
             if cstr[:6] != "    & ":  # require indentation
                 cstr = "    & " + cstr + " \\\\"
@@ -297,22 +297,6 @@ class ConstraintSet(list):
         if root:
             lines.append("\\end{array}")
         return "\n".join(lines)
-
-    def rootconstr_str(self, excluded=None):
-        "The header of a ConstraintSet (shown if it's the top constraint)"
-        pass
-
-    def rootconstr_latex(self, excluded=None):
-        "The header of a ConstraintSet (shown if it's the top constraint)"
-        pass
-
-    def subconstr_str(self, excluded=None):
-        "The collapsed appearance of a ConstraintSet"
-        pass
-
-    def subconstr_latex(self, excluded=None):
-        "The collapsed appearance of a ConstraintSet"
-        pass
 
     def as_view(self):
         "Return a ConstraintSetView of this ConstraintSet."

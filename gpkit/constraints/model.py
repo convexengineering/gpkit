@@ -148,13 +148,13 @@ class Model(CostedConstraintSet):
         "The collapsed appearance of a Model"
         if self.naming:
             return "%s_%s" % (self.naming[0][-1], self.naming[1][-1])
-        return None
+        return self.str_without(excluded)
 
     def subconstr_latex(self, excluded=None):
         "The collapsed appearance of a Model"
         if self.naming:
             return "%s_{%s}" % (self.naming[0][-1], self.naming[1][-1])
-        return None
+        return self.latex(excluded)
 
     def sweep(self, sweeps, **solveargs):
         "Sweeps {var: values} pairs in sweeps. Returns swept solutions."

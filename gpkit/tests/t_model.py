@@ -627,16 +627,18 @@ class TestModelSolverSpecific(unittest.TestCase):
 
 
 class Thing(Model):
-    """a thing, for model testing
-
-    SKIP VERIFICATION
-
-    """
+    "a thing, for model testing"
     def setup(self, length):
         a = self.a = VectorVariable(length, "a", "g/m")
         b = self.b = VectorVariable(length, "b", "m")
         c = Variable("c", 17/4., "g")
         return [a >= c/b]
+
+
+class Thing2(Model):
+    "another thing for model testing"
+    def setup(self):
+        return [Thing(2), Model()]
 
 
 class Box(Model):
@@ -661,6 +663,7 @@ class Box(Model):
         exec parse_variables(Box.__doc__)
         return [V == h*w*d]
 
+
 class BoxAreaBounds(Model):
     """for testing functionality of separate analysis models
 
@@ -684,6 +687,11 @@ class TestModelNoSolve(unittest.TestCase):
         t = Thing(2)
         for vk in t.varkeys:
             self.assertEqual(vk.models, ["Thing"])
+
+    def test_modelcontainmentprinting(self):
+        t = Thing2()
+        self.assertIsInstance(t.str_without(), str)
+        self.assertIsInstance(t.latex(), str)
 
     def test_no_naming_on_var_access(self):
         # make sure that analysis models don't add their names to
