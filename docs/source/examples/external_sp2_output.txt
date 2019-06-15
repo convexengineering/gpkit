@@ -11,4 +11,5 @@ y : 0.7071
 Tightest Constraints
 --------------------
     +1 : <function y_ext>
+    +1 : x >= 0.785
 

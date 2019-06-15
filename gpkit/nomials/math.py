@@ -170,11 +170,9 @@ class Signomial(Nomial):
 
     def __ge__(self, other):
         if isinstance(other, (Numbers, Signomial)):
-            # by default all constraints take the form left >= right
             return SignomialInequality(self, ">=", other)
         return NotImplemented
 
-    # posynomial arithmetic
     def __add__(self, other):
         if isinstance(other, np.ndarray):
             return np.array(self) + other
@@ -186,11 +184,7 @@ class Signomial(Nomial):
                 other_hmap = NomialMap({EMPTY_HV: mag(other)})
                 other_hmap.units_of_product(other)
         if other_hmap:
-            try:
-                return Signomial(self.hmap + other_hmap)
-            except DimensionalityError:
-                raise ValueError("'%s' and '%s' have incompatible units for"
-                                 " addition." % (self, other))
+            return Signomial(self.hmap + other_hmap)
         return NotImplemented
 
     def __mul__(self, other):
@@ -250,23 +244,13 @@ class Signomial(Nomial):
         with SignomialsEnabled():
             return self.relaxed(relaxvar)
 
-class Posynomial(Signomial):
-    """A Signomial with strictly positive cs
 
-    Arguments
-    ---------
-    Same as Signomial.
-    Note: Posynomial historically supported several different init formats
-          These will be deprecated in the future, replaced with a single
-          __init__ syntax, same as Signomial.
-    """
+class Posynomial(Signomial):
+    "A Signomial with strictly positive cs"
     def __le__(self, other):
         if isinstance(other, Numbers + (Monomial,)):
             return PosynomialInequality(self, "<=", other)
-        # fall back on other's __ge__
         return NotImplemented
-
-    # Posynomial.__ge__ falls back on Signomial.__ge__
 
     def mono_lower_bound(self, x0):
         """Monomial lower bound at a point x0
@@ -284,15 +268,7 @@ class Posynomial(Signomial):
 
 
 class Monomial(Posynomial):
-    """A Posynomial with only one term
-
-    Arguments
-    ---------
-    Same as Signomial.
-    Note: Monomial historically supported several different init formats
-          These will be deprecated in the future, replaced with a single
-          __init__ syntax, same as Signomial.
-    """
+    "A Posynomial with only one term"
 
     @property
     def exp(self):
@@ -322,16 +298,13 @@ class Monomial(Posynomial):
         if isinstance(expo, Numbers):
             (exp, c), = self.hmap.items()
             exp = exp*expo if expo else EMPTY_HV
-            # TODO: c should already be a float
-            hmap = NomialMap({exp: float(c)**expo})
-            if not (expo and self.hmap.units):
-                hmap.units = None
-            else:
+            hmap = NomialMap({exp: c**expo})
+            if expo and self.hmap.units:
                 hmap.units = self.hmap.units**expo
+            else:
+                hmap.units = None
             return Monomial(hmap)
         return NotImplemented
-
-    # inherit __ne__ from Signomial
 
     def __eq__(self, other):
         if isinstance(other, MONS):
@@ -342,16 +315,14 @@ class Monomial(Posynomial):
                 return False
         return super(Monomial, self).__eq__(other)
 
-    # Monomial.__le__ falls back on Posynomial.__le__
-
     def __ge__(self, other):
         if isinstance(other, Numbers + (Posynomial,)):
             return PosynomialInequality(self, ">=", other)
-        # fall back on other's __ge__
         return NotImplemented
 
     def mono_approximation(self, x0):
         return self
+
 
 MONS = Numbers + (Monomial,)
 
@@ -402,15 +373,11 @@ class PosynomialInequality(ScalarSingleEquationConstraint):
     Usually initialized via operator overloading, e.g. cc = (y**2 >= 1 + x)
     """
 
-    # constraint feasibility tolerance under substitutions
     feastol = 1e-3
-    # TODO: 1e-3 is currently an arbitrary tolerance. It follows
-    #       gp.check_result()'s default (1e-3) but that seems quite lax!
+    # NOTE: follows .check_result's min default, but 1e-3 seems a bit lax...
 
-    def __init__(self, left, oper, right, feastol=None):
+    def __init__(self, left, oper, right):
         ScalarSingleEquationConstraint.__init__(self, left, oper, right)
-        if feastol:
-            self.feastol = feastol
         if self.oper == "<=":
             p_lt, m_gt = self.left, self.right
         elif self.oper == ">=":
@@ -437,7 +404,7 @@ class PosynomialInequality(ScalarSingleEquationConstraint):
         self.relax_sensitivity = 0
         self.sgp_parent = None
 
-    def _simplify_posy_ineq(self, hmap, pmap=None, allow_tautological=True):
+    def _simplify_posy_ineq(self, hmap, pmap=None):
         "Simplify a posy <= 1 by moving constants to the right side."
         if EMPTY_HV not in hmap:
             return hmap
@@ -446,10 +413,9 @@ class PosynomialInequality(ScalarSingleEquationConstraint):
             const_idx = hmap.keys().index(EMPTY_HV)
             self.const_mmap = self.pmap.pop(const_idx)  # pylint: disable=attribute-defined-outside-init
             self.const_coeff = coeff  # pylint: disable=attribute-defined-outside-init
-        if (allow_tautological and (coeff >= -self.feastol or np.isnan(coeff))
-                and len(hmap) == 1):  # a tautological monomial!
-            return None  # was ValueError("tautological constraint: %s" % self)
-        elif coeff <= -self.feastol:
+        if coeff >= -self.feastol and len(hmap) == 1:
+            return None   # a tautological monomial!
+        elif coeff < -self.feastol:
             raise ValueError("The constraint %s is infeasible by"
                              " %f%%" % (self, -coeff*100))
         scaled = hmap/coeff
@@ -475,7 +441,6 @@ class PosynomialInequality(ScalarSingleEquationConstraint):
         except ValueError:
             raise TypeError("greater-than side '%s' is not monomial." % m_gt)
         hmap = p_lt.hmap.copy()
-        hmap.units = None
         if m_gt.units != p_lt.units:
             if m_gt.units and p_lt.units:
                 conversion = m_gt.units/p_lt.units
@@ -497,7 +462,6 @@ class PosynomialInequality(ScalarSingleEquationConstraint):
         """
         posys = self.unsubbed
         if not substitutions:
-            # just return the pre-generated posynomial representation
             return posys
 
         out = []
@@ -515,7 +479,7 @@ class PosynomialInequality(ScalarSingleEquationConstraint):
             if p.any_nonpositive_cs:
                 raise RuntimeWarning("PosynomialInequality %s became Signomial"
                                      " after substitution %s"
-                                     % (self, substitutions))
+                                     % (self, fixed))
         return out
 
     def sens_from_dual(self, la, nu, result):  # pylint: disable=unused-argument
@@ -547,7 +511,8 @@ class PosynomialInequality(ScalarSingleEquationConstraint):
 
     def as_gpconstr(self, x0):  # pylint: disable=unused-argument
         "The GP version of a Posynomial constraint is itself"
-        return self.__class__(self.left, self.oper, self.right)  # a copy
+        return self
+
 
 class MonomialEquality(PosynomialInequality):
     "A Constraint of the form Monomial == Monomial."
@@ -595,7 +560,7 @@ class MonomialEquality(PosynomialInequality):
         return out
 
     def __nonzero__(self):
-        'A constraint not guaranteed to be satisfied  evaluates as "False".'
+        'A constraint not guaranteed to be satisfied evaluates as "False".'
         return bool(self.left.c == self.right.c
                     and self.left.exp == self.right.exp)
 
@@ -620,11 +585,8 @@ class MonomialEquality(PosynomialInequality):
 
 class SignomialInequality(ScalarSingleEquationConstraint):
     """A constraint of the general form posynomial >= posynomial
-    Stored internally (exps, cs) as a single Signomial (0 >= self)
-    Usually initialized via operator overloading, e.g. cc = (y**2 >= 1 + x - y)
-    Additionally retains input format (lhs vs rhs) in self.left and self.right
-    Form is self.left >= self.right.
-    """
+
+    Stored internally (exps, cs) as a single Signomial (0 >= self)"""
 
     def __init__(self, left, oper, right):
         ScalarSingleEquationConstraint.__init__(self, left, oper, right)
@@ -748,8 +710,7 @@ class SignomialInequality(ScalarSingleEquationConstraint):
         posy, negy = siglt0.posy_negy()
         # default guess of 1.0 for unspecified negy variables
         x0.update({vk: 1.0 for vk in negy.vks if vk not in x0})
-        pc = PosynomialInequality(posy, "<=", negy.mono_lower_bound(x0))
-        return pc
+        return PosynomialInequality(posy, "<=", negy.mono_lower_bound(x0))
 
     def as_approxslt(self):
         "Returns posynomial-less-than sides of a signomial constraint"
@@ -780,7 +741,6 @@ class SingleSignomialEquality(SignomialInequality):
 
     def as_gpconstr(self, x0):
         "Returns GP approximation of an SP constraint at x0"
-        # TODO: check if it would be a monomial equality after substitutions
         siglt0, = self.unsubbed
         posy, negy = siglt0.posy_negy()
         # assume unspecified variables have a value of 1.0
