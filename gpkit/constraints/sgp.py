@@ -67,9 +67,9 @@ class SequentialGeometricProgram(CostedConstraintSet):
             if self._gp and not self._gp["SP approximations"]:
                 raise ValueError("""Model valid as a Geometric Program.
 
-    SequentialGeometricPrograms should only be created with Models containing Signomial
-    Constraints, since Models without Signomials have global solutions and can
-    be solved with 'Model.solve()'.""")
+    SequentialGeometricPrograms should only be created with Models containing
+    Signomial Constraints, since Models without Signomials have global
+    solutions and can be solved with 'Model.solve()'.""")
 
     # pylint: disable=too-many-locals
     def localsolve(self, solver=None, verbosity=1, x0=None, reltol=1e-4,
