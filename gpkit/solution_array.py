@@ -6,7 +6,7 @@ import numpy as np
 from .nomials import NomialArray
 from .small_classes import DictOfLists, Strings
 from .small_scripts import mag, isnan
-from .repr_conventions import unitstr
+from .repr_conventions import unitstr, lineagestr
 
 
 CONSTRSPLITPATTERN = re.compile(r"([^*]\*[^*])|( \+ )|( >= )|( <= )|( = )")
@@ -101,15 +101,13 @@ def loose_table(self, _, loose_senss=1e-5, **kwargs):
 
 
 # pylint: disable=too-many-branches,too-many-locals,too-many-statements
-def constraint_table(data, sortbymodels=True, showmodels=True, **_):
+def constraint_table(data, sortbymodel=True, showmodels=True, **_):
     "Creates lines for tables where the right side is a constraint."
     models = {}
     decorated = []
     for sortby, openingstr, constraint in data:
-        if sortbymodels and getattr(constraint, "naming", None):
-            model = "/".join([kstr + (".%i" % knum if knum != 0 else "")
-                              for kstr, knum in zip(*constraint.naming)
-                              if kstr])
+        if sortbymodel and hasattr(constraint, "lineage"):
+            model = lineagestr(constraint.lineage)
         else:
             model = ""
         if model not in models:
@@ -120,7 +118,7 @@ def constraint_table(data, sortbymodels=True, showmodels=True, **_):
                 constrstr = constrstr[:constrstr.find(" at 0x")] + ">"
         else:
             try:
-                constrstr = constraint.str_without(["units", "models"])
+                constrstr = constraint.str_without(["units", "lineage"])
             except AttributeError:
                 constrstr = str(constraint)
         decorated.append((models[model], model, sortby, constrstr, openingstr))
@@ -476,7 +474,7 @@ class SolutionArray(DictOfLists):
         import pandas as pd  # pylint:disable=import-error
         rows = []
         cols = ["Name", "Index", "Value", "Units", "Label",
-                "Models", "Model Numbers", "Other"]
+                "Lineage", "Other"]
         for _, key in sorted(self.varnames(include).items(),
                              key=lambda k: k[0]):
             value = self["variables"][key]
@@ -505,7 +503,7 @@ class SolutionArray(DictOfLists):
                               if k not in ["name", "units", "unitrepr",
                                            "idx", "shape", "veckey",
                                            "value", "original_fn",
-                                           "models", "modelnums", "label"])
+                                           "lineage", "label"])
                 ])
         return pd.DataFrame(rows, columns=cols)
 
@@ -726,15 +724,9 @@ def var_table(data, title, printunits=True, fixedcols=True,
                 less_than_min = np.abs(v) <= minval
                 v[np.logical_and(~isnan(v), less_than_min)] = 0
             b = isinstance(v, Iterable) and bool(v.shape)
-            kmodels = k.descr.get("models", [])
-            kmodelnums = k.descr.get("modelnums", [])
-            model = "/".join([kstr + (".%i" % knum if knum != 0 else "")
-                              for kstr, knum in zip(kmodels, kmodelnums)
-                              if kstr])
-            if not sortbymodel:
-                model = "null"
+            model = lineagestr(k.lineage) if sortbymodel else ""
             models.add(model)
-            s = k.str_without("models")
+            s = k.str_without("lineage")
             if not sortbyvals:
                 decorated.append((model, b, (varfmt % s), i, k, v))
             else:  # for consistent sorting, add small offset to negative vals

@@ -64,8 +64,7 @@ def new_test(name, solver, import_dict, path, testfn=None):
 
         # check all other global state besides MODELNUM_LOOKUP
         #   is falsy (which should mean blank)
-        for globname, global_thing in [("models", gpkit.MODELS),
-                                       ("modelnums", gpkit.MODELNUMS),
+        for globname, global_thing in [("lineage", gpkit.LINEAGE),
                                        ("vectorization", gpkit.VECTORIZATION),
                                        ("namedvars", gpkit.NAMEDVARS)]:
             if global_thing:

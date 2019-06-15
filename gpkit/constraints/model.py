@@ -37,9 +37,9 @@ class Model(CostedConstraintSet):
     `solution` is set at the end of a solve
     """
 
-    # naming holds the name and num environment in which a model was created
-    # this includes its own name and num, and those of models containing it
-    naming = None
+    # lineage holds the (name, num) environment in which a model was created:
+    # this includes its own (name, num), and those of models above it
+    lineage = None
     program = None
     solution = None
 
@@ -48,7 +48,8 @@ class Model(CostedConstraintSet):
         substitutions = kwargs.pop("substitutions", None)  # reserved keyword
         if hasattr(self, "setup"):
             self.cost = None
-            with NamedVariables(self.__class__.__name__):
+            with NamedVariables(self.__class__.__name__) as (self.lineage,
+                                                             setup_vars):
                 start_args = [cost, constraints]
                 args = tuple(a for a in start_args if a is not None) + args
                 cs = self.setup(*args, **kwargs)  # pylint: disable=no-member
@@ -57,9 +58,6 @@ class Model(CostedConstraintSet):
                     constraints, substitutions = cs  # TODO: remove
                 else:
                     constraints = cs
-                from .. import NAMEDVARS, MODELS, MODELNUMS
-                self.naming = (tuple(MODELS), tuple(MODELNUMS))
-                setup_vars = NAMEDVARS[self.naming]
             cost = self.cost  # TODO: remove
         elif args and not substitutions:
             # backwards compatibility: substitutions as third arg
@@ -141,19 +139,19 @@ class Model(CostedConstraintSet):
     def as_gpconstr(self, x0):
         "Returns approximating constraint, keeping name and num"
         cs = CostedConstraintSet.as_gpconstr(self, x0)
-        cs.naming = self.naming
+        cs.lineage = self.lineage
         return cs
 
     def subconstr_str(self, excluded=None):
         "The collapsed appearance of a Model"
-        if self.naming:
-            return "%s_%s" % (self.naming[0][-1], self.naming[1][-1])
+        if self.lineage:
+            return "%s_%s" % self.lineage[-1]
         return self.str_without(excluded)
 
     def subconstr_latex(self, excluded=None):
         "The collapsed appearance of a Model"
-        if self.naming:
-            return "%s_{%s}" % (self.naming[0][-1], self.naming[1][-1])
+        if self.lineage:
+            return "%s_{%s}" % self.lineage[-1]
         return self.latex(excluded)
 
     def sweep(self, sweeps, **solveargs):

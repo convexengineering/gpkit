@@ -4,7 +4,7 @@ from .small_classes import Quantity
 
 try:
     sys.stdout.write(u"\u200b")
-    DEFAULT_UNIT_PRINTING = [":P~"]
+    DEFAULT_UNIT_PRINTING = [":~"]
 except UnicodeEncodeError:
     DEFAULT_UNIT_PRINTING = [":~"]
 
@@ -22,6 +22,12 @@ def _str(self):
 def _repr_latex_(self):
     "Returns default latex for automatic iPython Notebook rendering."
     return "$$"+self.latex()+"$$"
+
+
+def lineagestr(lineage, modelnums=True):
+    "Returns properly formatted lineage string"
+    return "/".join(["%s.%i" % (name, num) if (num and modelnums) else name
+                     for name, num in lineage]) if lineage else ""
 
 
 def unitstr(units, into="%s", options=None, dimless=""):

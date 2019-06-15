@@ -58,7 +58,7 @@ def modelinteract(model, fns_of_sol, ranges=None, **solvekwargs):
             if ranges and ranges[k]:
                 vmin, vmax = ranges[k]
             vstep = (vmax-vmin)/24.0
-            varkey_latex = "$"+k.latex(excluded=["models"])+"$"
+            varkey_latex = "$"+k.latex(excluded=["lineage"])+"$"
             floatslider = widgets.FloatSlider(min=vmin, max=vmax,
                                               step=vstep, value=v,
                                               description=varkey_latex)

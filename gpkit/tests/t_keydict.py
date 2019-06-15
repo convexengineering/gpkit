@@ -19,7 +19,7 @@ class TestKeyDict(unittest.TestCase):
 
     def test_getattr(self):
         kd = KeyDict()
-        x = Variable("x", models=["motor"])
+        x = Variable("x", lineage=[("motor", 0)])
         kd[x] = 52
         self.assertEqual(kd[x], 52)
         self.assertEqual(kd[x.key], 52)

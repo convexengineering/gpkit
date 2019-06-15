@@ -1,6 +1,6 @@
 """Defines the VarKey class"""
 from .small_classes import HashVector, Count, qty
-from .repr_conventions import unitstr
+from .repr_conventions import unitstr, lineagestr
 
 
 class VarKey(object):  # pylint:disable=too-many-instance-attributes
@@ -19,7 +19,7 @@ class VarKey(object):  # pylint:disable=too-many-instance-attributes
     VarKey with the given name and descr.
     """
     unique_id = Count().next
-    subscripts = ("models", "idx")
+    subscripts = ("lineage", "idx")
 
     def __init__(self, name=None, **kwargs):
         # NOTE: Python arg handling guarantees 'name' won't appear in kwargs
@@ -38,7 +38,7 @@ class VarKey(object):  # pylint:disable=too-many-instance-attributes
 
         self.key = self
         self.cleanstr = self.str_without(["modelnums"])
-        self.eqstr = self.cleanstr + str(self.modelnums) + self.unitrepr
+        self.eqstr = self.cleanstr + str(self.lineage) + self.unitrepr
         self._hashvalue = hash(self.eqstr)
         self.keys = set((self.name, self.cleanstr))
 
@@ -78,12 +78,9 @@ class VarKey(object):  # pylint:disable=too-many-instance-attributes
         for subscript in self.subscripts:
             if self.descr.get(subscript) and subscript not in excluded:
                 substring = self.descr[subscript]
-                if subscript == "models":
-                    if self.modelnums and "modelnums" not in excluded:
-                        substring = ["%s.%s" % (ss, mn) if mn > 0 else ss
-                                     for ss, mn
-                                     in zip(substring, self.modelnums)]
-                    substring = "/".join(substring)
+                if subscript == "lineage":
+                    substring = lineagestr(self.lineage,
+                                           "modelnums" not in excluded)
                 string += "_%s" % (substring,)
         return string
 
@@ -98,13 +95,6 @@ class VarKey(object):  # pylint:disable=too-many-instance-attributes
         utf = us.replace("frac", "tfrac").replace(r"\cdot", r"\cdot ")
         return utf if utf != r"~\mathrm{-}" else ""
 
-    @property
-    def naming(self):
-        "Returns this varkey's naming tuple"
-        # TODO: store naming (as special object?) instead of models/modelnums
-        return (tuple(self.descr["models"]),
-                tuple(self.descr["modelnums"]))
-
     def latex(self, excluded=None):
         "Returns latex representation."
         if excluded is None:
@@ -113,12 +103,13 @@ class VarKey(object):  # pylint:disable=too-many-instance-attributes
         for subscript in self.subscripts:
             if subscript in self.descr and subscript not in excluded:
                 substring = self.descr[subscript]
-                if subscript == "models":
-                    if self.modelnums and "modelnums" not in excluded:
+                if subscript == "lineage":
+                    if self.lineage and "modelnums" not in excluded:
                         substring = ["%s.%s" % (ss, mn) if mn > 0 else ss
-                                     for ss, mn
-                                     in zip(substring, self.modelnums)]
-                    substring = ", ".join(substring)
+                                     for ss, mn in self.lineage]
+                    else:  # just the model names
+                        substring = zip(*substring)[0]
+                    substring = "/".join(substring)
                 string = "{%s}_{%s}" % (string, substring)
                 if subscript == "idx":
                     if len(self.descr["idx"]) == 1:

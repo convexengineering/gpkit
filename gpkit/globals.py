@@ -93,8 +93,7 @@ class Vectorize(object):
         VECTORIZATION.pop(0)
 
 
-MODELS = []     # the current model hierarchy
-MODELNUMS = []  # modelnumbers corresponding to MODELS, above
+LINEAGE = []  # the current model nesting
 # lookup table for the number of models of each name that have been made
 MODELNUM_LOOKUP = defaultdict(int)
 # the list of variables named in the current MODELS/MODELNUM environment
@@ -107,21 +106,18 @@ def reset_modelnumbers():
         del MODELNUM_LOOKUP[key]
 
 
-def begin_variable_naming(model):
+def begin_variable_naming(name):
     "Appends a model name and num to the environment."
-    MODELS.append(model)
-    namingbut1 = (tuple(MODELS), tuple(MODELNUMS))
-    num = MODELNUM_LOOKUP[namingbut1]
-    MODELNUM_LOOKUP[namingbut1] += 1
-    MODELNUMS.append(num)
-    return num, (tuple(MODELS), tuple(MODELNUMS))
+    num = MODELNUM_LOOKUP[(tuple(LINEAGE), name)]
+    MODELNUM_LOOKUP[(tuple(LINEAGE), name)] += 1
+    LINEAGE.append((name, num))
+    return tuple(LINEAGE)
 
 
 def end_variable_naming():
     "Pops a model name and num from the environment."
-    NAMEDVARS.pop((tuple(MODELS), tuple(MODELNUMS)), None)
-    MODELS.pop()
-    MODELNUMS.pop()
+    NAMEDVARS.pop(tuple(LINEAGE), None)
+    LINEAGE.pop()
 
 
 class NamedVariables(object):
@@ -133,7 +129,8 @@ class NamedVariables(object):
 
     def __enter__(self):
         "Enters a named environment."
-        begin_variable_naming(self.model)
+        lineage = begin_variable_naming(self.model)
+        return lineage, NAMEDVARS[lineage]
 
     def __exit__(self, type_, val, traceback):
         "Leaves a named environment."

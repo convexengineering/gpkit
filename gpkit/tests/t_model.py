@@ -686,7 +686,7 @@ class TestModelNoSolve(unittest.TestCase):
     def test_modelname_added(self):
         t = Thing(2)
         for vk in t.varkeys:
-            self.assertEqual(vk.models, ["Thing"])
+            self.assertEqual(vk.lineage, [("Thing", 0)])
 
     def test_modelcontainmentprinting(self):
         t = Thing2()

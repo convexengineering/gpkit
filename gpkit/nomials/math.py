@@ -346,8 +346,8 @@ class ScalarSingleEquationConstraint(SingleEquationConstraint):
                 self.substitutions.update(sig.varkeyvalues())
             else:
                 lr[i] = Signomial(sig)
-        from .. import MODELS, MODELNUMS
-        self.naming = (tuple(MODELS), tuple(MODELNUMS))
+        from .. import LINEAGE
+        self.lineage = tuple(LINEAGE)
         super(ScalarSingleEquationConstraint,
               self).__init__(lr[0], oper, lr[1])
 

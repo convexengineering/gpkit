@@ -253,8 +253,7 @@ class ConstraintSet(list):
 
     def str_without(self, excluded=None):
         "String representation of a ConstraintSet."
-        if not excluded:
-            excluded = ["units"]
+        excluded = excluded or ["units"]
         lines = []
         if "root" not in excluded:
             excluded.append("root")
@@ -277,8 +276,7 @@ class ConstraintSet(list):
 
     def latex(self, excluded=None):
         "LaTeX representation of a ConstraintSet."
-        if not excluded:
-            excluded = ["units"]
+        excluded = excluded or ["units"]
         lines = []
         root = "root" not in excluded
         if root:

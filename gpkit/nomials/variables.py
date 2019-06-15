@@ -11,13 +11,11 @@ from ..small_scripts import is_sweepvar
 
 def addmodelstodescr(descr, addtonamedvars=None):
     "Add models to descr, optionally adding the second argument to NAMEDVARS"
-    from .. import MODELS, MODELNUMS, NAMEDVARS
-    if not MODELS or not MODELNUMS:
-        return
-    if addtonamedvars:
-        NAMEDVARS[tuple(MODELS), tuple(MODELNUMS)].append(addtonamedvars)
-    descr["models"] = descr.get("models", []) + MODELS
-    descr["modelnums"] = descr.get("modelnums", []) + MODELNUMS
+    from .. import LINEAGE, NAMEDVARS
+    if LINEAGE:
+        descr["lineage"] = descr.get("lineage", []) + LINEAGE
+        if addtonamedvars:
+            NAMEDVARS[tuple(LINEAGE)].append(addtonamedvars)
 
 
 class Variable(Monomial):

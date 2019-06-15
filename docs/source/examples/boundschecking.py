@@ -43,7 +43,7 @@ class BoundsChecking(Model):
 
 
 m = BoundsChecking()
-print m.str_without(["models"])
+print m.str_without(["lineage"])
 try:
     m.solve()
 except ValueError:

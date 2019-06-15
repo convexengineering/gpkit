@@ -2,7 +2,7 @@
 from .set import ConstraintSet
 from ..nomials import Variable, VectorVariable, parse_subs, NomialArray
 from ..keydict import KeyDict
-from .. import NamedVariables, begin_variable_naming, end_variable_naming
+from .. import NamedVariables
 from gpkit import SignomialsEnabled
 
 
@@ -126,8 +126,8 @@ class ConstantsRelaxed(ConstraintSet):
             combined = constants
         self.constants = KeyDict(combined)
         relaxvars, relaxation_constraints, self.origvars = [], [], []
-        num, self.naming = begin_variable_naming("Relax")
-        end_variable_naming()
+        with NamedVariables("Relax") as (self.lineage, _):
+            pass
         self._unrelaxmap = {}
         for key, value in combined.items():
             if value == 0:
@@ -140,8 +140,7 @@ class ConstantsRelaxed(ConstraintSet):
             descr = key.descr.copy()
             descr.pop("value", None)
             descr.pop("veckey", None)
-            descr["models"] = descr.pop("models", [])+["Relax"]
-            descr["modelnums"] = descr.pop("modelnums", []) + [num]
+            descr["lineage"] = descr.pop("lineage", [])+[self.lineage[-1]]
             relaxvardescr = descr.copy()
             relaxvardescr["unitrepr"] = "-"
             relaxvar = Variable(**relaxvardescr)
