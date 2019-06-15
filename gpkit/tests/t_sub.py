@@ -306,13 +306,13 @@ class TestModelSubs(unittest.TestCase):
             almostequal(1*cm/yard/concat_cost, 1, 5)
         reset_modelnumbers()
         a1, b1 = Above(), Below()
-        self.assertEqual(a1["x"].key.lineage, [("Above", 0)])
+        self.assertEqual(a1["x"].key.lineage, (("Above", 0),))
         m = Model(a1["x"], [a1, b1, b1["x"] == a1["x"]])
         sol = m.solve(verbosity=0)
         if not isinstance(a1["x"].key.units, str):
             almostequal(1*cm/sol["cost"], 1, 5)
         a1, b1 = Above(), Below()
-        self.assertEqual(a1["x"].key.lineage, [("Above", 1)])
+        self.assertEqual(a1["x"].key.lineage, (("Above", 1),))
         m = Model(b1["x"], [a1, b1, b1["x"] == a1["x"]])
         sol = m.solve(verbosity=0)
         if not isinstance(b1["x"].key.units, str):
