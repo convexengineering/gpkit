@@ -66,7 +66,7 @@ def new_test(name, solver, import_dict, path, testfn=None):
                 ("model numbers", gpkit.globals.NamedVariables.modelnums),
                 ("lineage", gpkit.NamedVariables.lineage),
                 ("signomials enabled", gpkit.SignomialsEnabled),
-                ("signomials enabled base", gpkit.SignomialsEnabled._true),
+                ("signomials enabled base", gpkit.SignomialsEnabled._true),  # pylint: disable=protected-access
                 ("vectorization", gpkit.Vectorize.vectorization),
                 ("namedvars", gpkit.NamedVariables.namedvars)]:
             if global_thing:
