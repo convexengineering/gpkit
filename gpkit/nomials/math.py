@@ -248,6 +248,8 @@ class Posynomial(Signomial):
             return PosynomialInequality(self, "<=", other)
         return NotImplemented
 
+    # Posynomial.__ge__ falls back on Signomial.__ge__
+
     def mono_lower_bound(self, x0):
         """Monomial lower bound at a point x0
 
@@ -316,6 +318,8 @@ class Monomial(Posynomial):
             return PosynomialInequality(self, ">=", other)
         return NotImplemented
 
+    # Monomial.__le__ falls back on Posynomial.__le__
+
     def mono_approximation(self, x0):
         return self
 
@@ -370,7 +374,7 @@ class PosynomialInequality(ScalarSingleEquationConstraint):
     """
 
     feastol = 1e-3
-    # NOTE: follows .check_result's min default, but 1e-3 seems a bit lax...
+    # NOTE: follows .check_result's maz default, but 1e-3 seems a bit lax...
 
     def __init__(self, left, oper, right):
         ScalarSingleEquationConstraint.__init__(self, left, oper, right)

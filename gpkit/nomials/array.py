@@ -105,6 +105,7 @@ class NomialArray(np.ndarray, GPkitObject):
 
     def __bool__(self):
         "Allows the use of NomialArrays as truth elements in python3."
+        return all(bool(p) for p in self.flat)
 
     __eq__ = array_constraint("=", eq)
     __le__ = array_constraint("<=", le)
