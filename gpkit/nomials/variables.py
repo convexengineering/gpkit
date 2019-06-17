@@ -4,6 +4,7 @@ import numpy as np
 from .data import NomialData
 from .array import NomialArray
 from .math import Monomial
+from ..globals import NamedVariables, Vectorize
 from ..varkey import VarKey
 from ..small_classes import Strings, Numbers
 from ..small_scripts import is_sweepvar
@@ -11,12 +12,10 @@ from ..small_scripts import is_sweepvar
 
 def addmodelstodescr(descr, addtonamedvars=None):
     "Add models to descr, optionally adding the second argument to NAMEDVARS"
-    from .. import LINEAGE, NAMEDVARS
-    if LINEAGE:
-        lineage = tuple(LINEAGE)
-        descr["lineage"] = descr.get("lineage", ()) + lineage
+    if NamedVariables.lineage:
+        descr["lineage"] = descr.get("lineage", ()) + NamedVariables.lineage
         if addtonamedvars:
-            NAMEDVARS[lineage].append(addtonamedvars)
+            NamedVariables.namedvars[NamedVariables.lineage].append(addtonamedvars)
 
 
 class Variable(Monomial):
@@ -111,9 +110,8 @@ class ArrayVariable(NomialArray):  # pylint: disable=too-many-locals
             raise KeyError("the description field 'idx' is reserved")
 
         shape = (shape,) if isinstance(shape, Numbers) else tuple(shape)
-        from .. import VECTORIZATION
-        if VECTORIZATION:
-            shape = shape + tuple(VECTORIZATION)
+        if Vectorize.vectorization:
+            shape += Vectorize.vectorization
 
         descr["shape"] = shape
 
@@ -142,7 +140,7 @@ class ArrayVariable(NomialArray):  # pylint: disable=too-many-locals
         if value_option:
             values = descr.pop(value_option)
         if value_option and not hasattr(values, "__call__"):
-            if VECTORIZATION:
+            if Vectorize.vectorization:
                 if not hasattr(values, "shape"):
                     values = np.full(shape, values, "f")
                 else:
@@ -191,8 +189,7 @@ def veclinkedfn(linkedfn, i):
 class VectorizableVariable(Variable, ArrayVariable):  # pylint: disable=too-many-ancestors
     "A Variable outside a vectorized environment, an ArrayVariable within."
     def __new__(cls, *args, **descr):
-        from .. import VECTORIZATION
-        if VECTORIZATION:
+        if Vectorize.vectorization:
             shape = descr.pop("shape", ())
             return ArrayVariable.__new__(cls, shape, *args, **descr)
         return Variable(*args, **descr)

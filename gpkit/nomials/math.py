@@ -51,8 +51,7 @@ class Signomial(Nomial):
                 hmap.units_of_product(cs)
         super(Signomial, self).__init__(hmap)
         if self.any_nonpositive_cs:
-            from .. import SIGNOMIALS_ENABLED
-            if require_positive and not SIGNOMIALS_ENABLED:
+            if require_positive and not SignomialsEnabled:
                 raise ValueError("each c must be positive.")
             self.__class__ = Signomial
         elif len(self.hmap) == 1:
@@ -228,16 +227,13 @@ class Signomial(Nomial):
         return NotImplemented
 
     def __neg__(self):
-        from .. import SIGNOMIALS_ENABLED
-        return -1*self if SIGNOMIALS_ENABLED else NotImplemented
+        return -1*self if SignomialsEnabled else NotImplemented
 
     def __sub__(self, other):
-        from .. import SIGNOMIALS_ENABLED
-        return self + -other if SIGNOMIALS_ENABLED else NotImplemented
+        return self + -other if SignomialsEnabled else NotImplemented
 
     def __rsub__(self, other):
-        from .. import SIGNOMIALS_ENABLED
-        return other + -self if SIGNOMIALS_ENABLED else NotImplemented
+        return other + -self if SignomialsEnabled else NotImplemented
 
     def relaxed(self, relaxvar):
         "Returns the relaxation of the constraint in a list."
@@ -346,8 +342,8 @@ class ScalarSingleEquationConstraint(SingleEquationConstraint):
                 self.substitutions.update(sig.varkeyvalues())
             else:
                 lr[i] = Signomial(sig)
-        from .. import LINEAGE
-        self.lineage = tuple(LINEAGE)
+        from .. import NamedVariables
+        self.lineage = tuple(NamedVariables.lineage)
         super(ScalarSingleEquationConstraint,
               self).__init__(lr[0], oper, lr[1])
 
@@ -590,8 +586,7 @@ class SignomialInequality(ScalarSingleEquationConstraint):
 
     def __init__(self, left, oper, right):
         ScalarSingleEquationConstraint.__init__(self, left, oper, right)
-        from .. import SIGNOMIALS_ENABLED
-        if not SIGNOMIALS_ENABLED:
+        if not SignomialsEnabled:
             raise TypeError("Cannot initialize SignomialInequality"
                             " outside of a SignomialsEnabled environment.")
         if self.oper == "<=":

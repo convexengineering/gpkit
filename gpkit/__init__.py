@@ -3,10 +3,7 @@ __version__ = "0.8.0"
 
 from .build import build
 from ._pint import units, ureg, DimensionalityError
-from .globals import settings
-from .globals import SignomialsEnabled, SIGNOMIALS_ENABLED
-from .globals import Vectorize, VECTORIZATION
-from .globals import NamedVariables, NAMEDVARS, LINEAGE, reset_modelnumbers
+from .globals import settings, SignomialsEnabled, Vectorize, NamedVariables
 from .varkey import VarKey
 from .nomials import Monomial, Posynomial, Signomial, NomialArray
 from .nomials import VectorizableVariable as Variable

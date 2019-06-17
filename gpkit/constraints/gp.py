@@ -71,7 +71,7 @@ class GeometricProgram(CostedConstraintSet, NomialData):
         self.nu_by_posy = None
         self.solver_log = None
         self.solver_out = None
-        # GPs have the varkeys property instead, see below
+        # GPs have a unique varkeys property instead of relying on inheritance
         self.__bare_init__(cost, constraints, substitutions, varkeys=False)
         for key, sub in self.substitutions.items():
             if isinstance(sub, FixedScalar):

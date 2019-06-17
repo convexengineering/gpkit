@@ -4,7 +4,7 @@ import numpy as np
 import numpy.testing as npt
 from ad import adnumber, ADV
 import gpkit
-from gpkit import SignomialsEnabled, reset_modelnumbers
+from gpkit import SignomialsEnabled, NamedVariables
 from gpkit import Variable, VectorVariable, Model, Signomial
 from gpkit.small_scripts import mag
 from gpkit.tests.helpers import run_tests
@@ -304,7 +304,7 @@ class TestModelSubs(unittest.TestCase):
             almostequal(1/yard/a.solve(verbosity=0)["cost"], 1, 5)
             almostequal(1*cm/b.solve(verbosity=0)["cost"], 1, 5)
             almostequal(1*cm/yard/concat_cost, 1, 5)
-        reset_modelnumbers()
+        NamedVariables.reset_modelnumbers()
         a1, b1 = Above(), Below()
         self.assertEqual(a1["x"].key.lineage, (("Above", 0),))
         m = Model(a1["x"], [a1, b1, b1["x"] == a1["x"]])

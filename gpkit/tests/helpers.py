@@ -56,17 +56,18 @@ def new_test(name, solver, import_dict, path, testfn=None):
 
         import gpkit
         # clear MODELNUMS to ensure deterministic script-like output!
-        for key in set(gpkit.globals.MODELNUM_LOOKUP):
-            del gpkit.globals.MODELNUM_LOOKUP[key]
+        for key in set(gpkit.globals.NamedVariables.modelnums):
+            del gpkit.globals.NamedVariables.modelnums[key]
 
         with NewDefaultSolver(solver):
             testfn(name, import_dict, path)(self)
 
         # check all other global state besides MODELNUM_LOOKUP
         #   is falsy (which should mean blank)
-        for globname, global_thing in [("lineage", gpkit.LINEAGE),
-                                       ("vectorization", gpkit.VECTORIZATION),
-                                       ("namedvars", gpkit.NAMEDVARS)]:
+        for globname, global_thing in [
+                ("lineage", gpkit.NamedVariables.lineage),
+                ("vectorization", gpkit.Vectorize.vectorization),
+                ("namedvars", gpkit.NamedVariables.namedvars)]:
             if global_thing:
                 raise ValueError("global attribute %s should have been"
                                  " falsy after the test, but was instead %s"
