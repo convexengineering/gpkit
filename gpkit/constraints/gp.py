@@ -44,34 +44,6 @@ def _get_solver(solver, kwargs):
     return solverfn, solver
 
 
-def _get_solver(solver, kwargs):
-    """Get the solverfn and solvername associated with solver"""
-    if solver is None:
-        from .. import settings
-        solver = settings.get("default_solver", None)
-        if not solver:
-            raise ValueError(
-                "No solver was given; perhaps gpkit was not properly"
-                " installed, or found no solvers during the"
-                " installation process.")
-
-    if solver == "cvxopt":
-        from .._cvxopt import cvxoptimize
-        solverfn = cvxoptimize
-    elif solver == "mosek_cli":
-        from .._mosek import cli_expopt
-        solverfn = cli_expopt.imize_fn(**kwargs)
-    elif solver == "mosek":
-        from .._mosek import expopt
-        solverfn = expopt.imize
-    elif hasattr(solver, "__call__"):
-        solverfn = solver
-        solver = solver.__name__
-    else:
-        raise ValueError("Unknown solver '%s'." % solver)
-    return solverfn, solver
-
-
 class GeometricProgram(CostedConstraintSet, NomialData):
     # pylint: disable=too-many-instance-attributes
     """Standard mathematical representation of a GP.
