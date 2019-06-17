@@ -374,7 +374,7 @@ class PosynomialInequality(ScalarSingleEquationConstraint):
     """
 
     feastol = 1e-3
-    # NOTE: follows .check_result's maz default, but 1e-3 seems a bit lax...
+    # NOTE: follows .check_result's max default, but 1e-3 seems a bit lax...
 
     def __init__(self, left, oper, right):
         ScalarSingleEquationConstraint.__init__(self, left, oper, right)
