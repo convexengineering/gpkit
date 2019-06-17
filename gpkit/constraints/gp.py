@@ -5,7 +5,7 @@ from time import time
 from collections import defaultdict
 import numpy as np
 from ..nomials import NomialData
-from ..small_classes import CootMatrix, SolverLog, Numbers
+from ..small_classes import CootMatrix, SolverLog, Numbers, FixedScalar
 from ..keydict import KeyDict, KeySet
 from ..small_scripts import mag
 from ..solution_array import SolutionArray
@@ -13,6 +13,35 @@ from .costed import CostedConstraintSet
 
 
 DEFAULT_SOLVER_KWARGS = {"cvxopt": {"kktsolver": "ldl"}}
+SOLUTION_TOL = {"cvxopt": 1e-3, "mosek_cli": 1e-4, "mosek": 1e-5}
+
+
+def _get_solver(solver, kwargs):
+    """Get the solverfn and solvername associated with solver"""
+    if solver is None:
+        from .. import settings
+        solver = settings.get("default_solver", None)
+        if not solver:
+            raise ValueError(
+                "No solver was given; perhaps gpkit was not properly"
+                " installed, or found no solvers during the"
+                " installation process.")
+
+    if solver == "cvxopt":
+        from .._cvxopt import cvxoptimize
+        solverfn = cvxoptimize
+    elif solver == "mosek_cli":
+        from .._mosek import cli_expopt
+        solverfn = cli_expopt.imize_fn(**kwargs)
+    elif solver == "mosek":
+        from .._mosek import expopt
+        solverfn = expopt.imize
+    elif hasattr(solver, "__call__"):
+        solverfn = solver
+        solver = solver.__name__
+    else:
+        raise ValueError("Unknown solver '%s'." % solver)
+    return solverfn, solver
 
 
 def _get_solver(solver, kwargs):
@@ -71,10 +100,10 @@ class GeometricProgram(CostedConstraintSet, NomialData):
         self.nu_by_posy = None
         self.solver_log = None
         self.solver_out = None
-        # GPs have the varkeys property instead, see below
+        # GPs have a unique varkeys property instead of relying on inheritance
         self.__bare_init__(cost, constraints, substitutions, varkeys=False)
         for key, sub in self.substitutions.items():
-            if hasattr(sub, "exp") and not sub.exp:
+            if isinstance(sub, FixedScalar):
                 sub = sub.value
                 if hasattr(sub, "units"):
                     sub = sub.to(key.units or "dimensionless").magnitude
@@ -169,7 +198,7 @@ class GeometricProgram(CostedConstraintSet, NomialData):
         # STDOUT HAS BEEN RETURNED. ENDING SIDE EFFECTS.
         self.solver_log = "\n".join(self.solver_log)
 
-        solver_out["solver"] = solver
+        solver_out["solver"] = solvername
         solver_out["soltime"] = time() - starttime
         if verbosity > 0:
             print("Solving took %.3g seconds." % (solver_out["soltime"],))
@@ -212,10 +241,7 @@ class GeometricProgram(CostedConstraintSet, NomialData):
             tic = time()
 
         try:
-            if solver_out["solver"] == "cvxopt":
-                tol = 1e-3  # cvxopt is...not as precise
-            else:
-                tol = 1e-5
+            tol = SOLUTION_TOL.get(solver_out["solver"], 1e-5)
             self.check_solution(result["cost"], solver_out['primal'],
                                 solver_out["nu"], solver_out["la"], tol)
         except RuntimeWarning as e:

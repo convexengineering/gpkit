@@ -80,20 +80,6 @@ class TestNomialArray(unittest.TestCase):
             constraints = (c == 1)
         self.assertEqual(len(constraints), 5)
 
-    def test_left_right(self):
-        x = VectorVariable(10, 'x')
-        xL = x.left
-        xR = x.right
-        self.assertEqual(xL[0], 0)
-        self.assertEqual(xL[1], x[0])
-        self.assertEqual(xR[-1], 0)
-        self.assertEqual(xR[0], x[1])
-        self.assertEqual((xL + xR)[1:-1], x[2:] + x[:-2])
-
-        x = VectorVariable((2, 3), 'x')
-        self.assertRaises(NotImplementedError, lambda: x.left)
-        self.assertRaises(NotImplementedError, lambda: x.right)
-
     def test_sum(self):
         x = VectorVariable(5, 'x')
         p = x.sum()

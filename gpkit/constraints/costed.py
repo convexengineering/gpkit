@@ -17,13 +17,16 @@ class CostedConstraintSet(ConstraintSet):
         self.cost = maybe_flatten(cost)
         if isinstance(self.cost, np.ndarray):  # if it's still a vector
             raise ValueError("cost must be scalar, not the vector %s" % cost)
-        subs = dict(self.cost.values)
+        subs = dict(self.cost.varkeyvalues())
         if substitutions:
             subs.update(substitutions)
         ConstraintSet.__init__(self, constraints, subs)
 
     def __bare_init__(self, cost, constraints, substitutions, varkeys=False):
         self.cost = cost
+        if isinstance(constraints, dict):
+            self.idxlookup = {k: i for i, k in enumerate(constraints)}
+            constraints = constraints.values()
         if not isinstance(constraints, ConstraintSet):
             constraints = ConstraintSet(constraints)
         else:

@@ -1,9 +1,9 @@
 """Defines the VarKey class"""
 from .small_classes import HashVector, Count, qty
-from .repr_conventions import unitstr
+from .repr_conventions import GPkitObject
 
 
-class VarKey(object):  # pylint:disable=too-many-instance-attributes
+class VarKey(GPkitObject):  # pylint:disable=too-many-instance-attributes
     """An object to correspond to each 'variable name'.
 
     Arguments
@@ -19,7 +19,7 @@ class VarKey(object):  # pylint:disable=too-many-instance-attributes
     VarKey with the given name and descr.
     """
     unique_id = Count().next
-    subscripts = ("models", "idx")
+    subscripts = ("lineage", "idx")
 
     def __init__(self, name=None, **kwargs):
         # NOTE: Python arg handling guarantees 'name' won't appear in kwargs
@@ -37,10 +37,10 @@ class VarKey(object):  # pylint:disable=too-many-instance-attributes
                 self.descr["unitrepr"] = unitrepr
 
         self.key = self
-        self.cleanstr = self.str_without(["modelnums"])
-        self.eqstr = self.cleanstr + str(self.modelnums) + self.unitrepr
+        fullstr = self.str_without(["modelnums"])
+        self.eqstr = fullstr + str(self.lineage) + self.unitrepr
         self._hashvalue = hash(self.eqstr)
-        self.keys = set((self.name, self.cleanstr))
+        self.keys = set((self.name, fullstr))
 
         if "idx" in self.descr:
             if "veckey" not in self.descr:
@@ -70,27 +70,24 @@ class VarKey(object):  # pylint:disable=too-many-instance-attributes
         "Restores varkey from its metadata dictionary"
         self.__init__(**state)
 
-    def str_without(self, excluded=None):
-        "Returns string without certain fields (such as 'models')."
-        if excluded is None:
-            excluded = []
+    def str_without(self, excluded=()):
+        "Returns string without certain fields (such as 'lineage')."
         string = self.name
         for subscript in self.subscripts:
             if self.descr.get(subscript) and subscript not in excluded:
                 substring = self.descr[subscript]
-                if subscript == "models":
-                    if self.modelnums and "modelnums" not in excluded:
-                        substring = ["%s.%s" % (ss, mn) if mn > 0 else ss
-                                     for ss, mn
-                                     in zip(substring, self.modelnums)]
-                    substring = "/".join(substring)
+                if subscript == "lineage":
+                    substring = self.lineagestr("modelnums" not in excluded)
                 string += "_%s" % (substring,)
         return string
 
     def __getattr__(self, attr):
         return self.descr.get(attr, None)
 
-    unitstr = unitstr
+    @property
+    def models(self):
+        "Returns a tuple of just the names of models in self.lineage"
+        return zip(*self.lineage)[0]
 
     def latex_unitstr(self):
         "Returns latex unitstr"
@@ -98,27 +95,14 @@ class VarKey(object):  # pylint:disable=too-many-instance-attributes
         utf = us.replace("frac", "tfrac").replace(r"\cdot", r"\cdot ")
         return utf if utf != r"~\mathrm{-}" else ""
 
-    @property
-    def naming(self):
-        "Returns this varkey's naming tuple"
-        # TODO: store naming (as special object?) instead of models/modelnums
-        return (tuple(self.descr["models"]),
-                tuple(self.descr["modelnums"]))
-
-    def latex(self, excluded=None):
+    def latex(self, excluded=()):
         "Returns latex representation."
-        if excluded is None:
-            excluded = []
         string = self.name
         for subscript in self.subscripts:
             if subscript in self.descr and subscript not in excluded:
                 substring = self.descr[subscript]
-                if subscript == "models":
-                    if self.modelnums and "modelnums" not in excluded:
-                        substring = ["%s.%s" % (ss, mn) if mn > 0 else ss
-                                     for ss, mn
-                                     in zip(substring, self.modelnums)]
-                    substring = ", ".join(substring)
+                if subscript == "lineage":
+                    substring = self.lineagestr("modelnums" not in excluded)
                 string = "{%s}_{%s}" % (string, substring)
                 if subscript == "idx":
                     if len(self.descr["idx"]) == 1:

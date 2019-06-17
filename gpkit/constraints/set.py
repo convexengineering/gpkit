@@ -5,7 +5,7 @@ import numpy as np
 from ..small_classes import HashVector, Numbers
 from ..keydict import KeySet, KeyDict
 from ..small_scripts import try_str_without
-from ..repr_conventions import _str, _repr, _repr_latex_
+from ..repr_conventions import GPkitObject
 
 
 def add_meq_bounds(bounded, meq_bounded):
@@ -13,13 +13,12 @@ def add_meq_bounds(bounded, meq_bounded):
     still_alive = True
     while still_alive:
         still_alive = False  # if no changes are made, the loop exits
-        for bound in list(meq_bounded):
-            if bound in bounded:
+        for bound, conditions in meq_bounded.items():
+            if bound in bounded:  # bound exists in an inequality
                 del meq_bounded[bound]
                 continue
-            conditions = meq_bounded[bound]
             for condition in conditions:
-                if condition.issubset(bounded):
+                if condition.issubset(bounded):  # bound's condition is met
                     del meq_bounded[bound]
                     bounded.add(bound)
                     still_alive = True
@@ -27,12 +26,12 @@ def add_meq_bounds(bounded, meq_bounded):
 
 
 def _sort_by_name_and_idx(var):
-    "return tuplef for Variable sorting"
+    "return tuple for Variable sorting"
     return (var.key.str_without(["units", "idx"]), var.key.idx)
 
 
 # pylint: disable=too-many-instance-attributes
-class ConstraintSet(list):
+class ConstraintSet(list, GPkitObject):
     "Recursive container for ConstraintSets and Inequalities"
     varkeys = None
     unique_varkeys = frozenset()
@@ -44,8 +43,7 @@ class ConstraintSet(list):
             self.idxlookup = {k: i for i, k in enumerate(constraints)}
             constraints = constraints.values()
         if isinstance(constraints, ConstraintSet):
-            # stick it in a list to maintain hierarchy
-            constraints = [constraints]
+            constraints = [constraints]  # put it one level down
         list.__init__(self, constraints)
 
         # initializations for attributes used elsewhere
@@ -72,7 +70,7 @@ class ConstraintSet(list):
                 raise ValueError("a ConstraintSet of type %s was included in"
                                  " another ConstraintSet before being"
                                  " initialized." % type(constraint))
-            elif constraint.numpy_bools:  # not initialized??
+            elif constraint.numpy_bools:
                 raise_elementhasnumpybools(constraint)
             for attr in ["substitutions", "bounded"]:
                 if hasattr(self[i], attr):
@@ -86,7 +84,7 @@ class ConstraintSet(list):
                                    if "value" in k.descr})
         if substitutions:
             self.substitutions.update(substitutions)
-        updated_veckeys = False
+        updated_veckeys = False  # vector subs need to find each indexed varkey
         for subkey in self.substitutions:
             if not updated_veckeys and subkey.shape and not subkey.idx:
                 for key in self.varkeys:
@@ -112,8 +110,7 @@ class ConstraintSet(list):
     def _choosevar(self, key, variables):
         if not variables:
             raise KeyError(key)
-        if variables[0].key.veckey:
-            # maybe it's all one vector variable!
+        if variables[0].key.veckey:  # maybe it's all one vector variable?
             from ..nomials import NomialArray
             vk = variables[0].key.veckey
             arr = NomialArray(np.full(vk.shape, np.nan, dtype="object"))
@@ -152,76 +149,6 @@ class ConstraintSet(list):
         self.substitutions.update(value.substitutions)
         list.__setitem__(self, key, value)
         self.reset_varkeys()
-
-    def append(self, value):
-        if hasattr(value, "__iter__") and not isinstance(value, ConstraintSet):
-            value = ConstraintSet(value)
-        self.substitutions.update(value.substitutions)
-        list.append(self, value)
-        self.reset_varkeys()
-
-    __str__ = _str
-    __repr__ = _repr
-    _repr_latex_ = _repr_latex_
-
-    def str_without(self, excluded=None):
-        "String representation of a ConstraintSet."
-        if not excluded:
-            excluded = ["units"]
-        lines = []
-        if "root" not in excluded:
-            excluded.append("root")
-            lines.append("")
-            root_str = self.rootconstr_str(excluded)
-            if root_str:
-                lines.append(root_str)
-        for constraint in self:
-            cstr = constraint.subconstr_str(excluded)
-            if cstr is None:
-                cstr = try_str_without(constraint, excluded)
-            if cstr[:8] != "        ":  # require indentation
-                cstr = "        " + cstr
-            lines.append(cstr)
-        return "\n".join(lines)
-
-    def latex(self, excluded=None):
-        "LaTeX representation of a ConstraintSet."
-        if not excluded:
-            excluded = ["units"]
-        lines = []
-        root = "root" not in excluded
-        if root:
-            excluded.append("root")
-            lines.append("\\begin{array}{ll} \\text{}")
-            root_latex = self.rootconstr_latex(excluded)
-            if root_latex:
-                lines.append(root_latex)
-        for constraint in self:
-            cstr = constraint.subconstr_latex(excluded)
-            if cstr is None:
-                cstr = constraint.latex(excluded)
-            if cstr[:6] != "    & ":  # require indentation
-                cstr = "    & " + cstr + " \\\\"
-            lines.append(cstr)
-        if root:
-            lines.append("\\end{array}")
-        return "\n".join(lines)
-
-    def rootconstr_str(self, excluded=None):
-        "The appearance of a ConstraintSet in addition to its contents"
-        pass
-
-    def rootconstr_latex(self, excluded=None):
-        "The appearance of a ConstraintSet in addition to its contents"
-        pass
-
-    def subconstr_str(self, excluded=None):
-        "The collapsed appearance of a ConstraintSet"
-        pass
-
-    def subconstr_latex(self, excluded=None):
-        "The collapsed appearance of a ConstraintSet"
-        pass
 
     def flat(self, constraintsets=False):
         "Yields contained constraints, optionally including constraintsets."
@@ -282,11 +209,10 @@ class ConstraintSet(list):
             n_posys = self.posymap[i]
             la = las[offset:offset+n_posys]
             nu = nus[offset:offset+n_posys]
-            v_ss = constr.sens_from_dual(la, nu, result)
-            constr.v_ss = v_ss
+            constr.v_ss = constr.sens_from_dual(la, nu, result)
             self.relax_sensitivity += constr.relax_sensitivity
             # not using HashVector addition because we want to preseve zeros
-            for key, value in v_ss.items():
+            for key, value in constr.v_ss.items():
                 var_senss[key] = value + var_senss.get(key, 0)
             offset += n_posys
         return var_senss
@@ -319,8 +245,52 @@ class ConstraintSet(list):
             if v.veckey:
                 v = v.veckey
             val = v.evalfn(result["variables"])
-            result["freevariables"][v] = val
-            result["variables"][v] = val
+            result["variables"][v] = result["freevariables"][v] = val
+
+    def str_without(self, excluded=None):
+        "String representation of a ConstraintSet."
+        excluded = excluded or ["units"]
+        lines = []
+        if "root" not in excluded:
+            excluded.append("root")
+            lines.append("")
+            if hasattr(self, "rootconstr_str"):
+                lines.append(self.rootconstr_str(excluded))  # pylint: disable=no-member
+        if self.idxlookup:
+            named_constraints = {v: k for k, v in self.idxlookup.items()}
+        for i, constraint in enumerate(self):
+            if hasattr(constraint, "subconstr_str"):
+                cstr = constraint.subconstr_str(excluded)
+            else:
+                cstr = try_str_without(constraint, excluded)
+            if cstr[:4] != " "*4:  # require indentation
+                cstr = " "*8 + cstr
+            if self.idxlookup and i in named_constraints:
+                cstr = " "*4 + "\"%s\":\n" % named_constraints[i] + cstr
+            lines.append(cstr)
+        return "\n".join(lines)
+
+    def latex(self, excluded=None):
+        "LaTeX representation of a ConstraintSet."
+        excluded = excluded or ["units"]
+        lines = []
+        root = "root" not in excluded
+        if root:
+            excluded.append("root")
+            lines.append("\\begin{array}{ll} \\text{}")
+            if hasattr(self, "rootconstr_latex"):
+                lines.append(self.rootconstr_latex(excluded))  # pylint: disable=no-member
+        for constraint in self:
+            if hasattr(constraint, "subconstr_latex"):
+                cstr = constraint.subconstr_latex(excluded)
+            else:
+                cstr = constraint.latex(excluded)
+            if cstr[:6] != "    & ":  # require indentation
+                cstr = "    & " + cstr + " \\\\"
+            lines.append(cstr)
+        if root:
+            lines.append("\\end{array}")
+        return "\n".join(lines)
 
     def as_view(self):
         "Return a ConstraintSetView of this ConstraintSet."

@@ -3,61 +3,67 @@ A simple beam example with fixed geometry. Solves the discretized
 Euler-Bernoulli beam equations for a constant distributed load
 """
 import numpy as np
-from gpkit import Variable, VectorVariable, Model, ureg
+from gpkit import parse_variables, Model, ureg
 from gpkit.small_scripts import mag
 
-eps = 2e-4   # has to be quite small for consistent cvxopt printouts;
-             # normally you'd set this to something more like 1e-20
+eps = 2e-4   # has to be quite large for consistent cvxopt printouts;
+             #  normally you'd set this to something more like 1e-20
 
 
 class Beam(Model):
     """Discretization of the Euler beam equations for a distributed load.
 
-    Arguments
+    Variables
     ---------
-    N : int
-        Number of finite elements that compose the beam.
-    L : float
-        [m] Length of beam.
-    EI : float
-        [N m^2] Elastic modulus times cross-section's area moment of inertia.
-    q : float or N-vector of floats
-        [N/m] Loading density: can be specified as constants or as an array.
+    EI    [N*m^2]   Bending stiffness
+    dx    [m]       Length of an element
+    L   5 [m]       Overall beam length
+
+    Boundary Condition Variables
+    ----------------------------
+    V_tip     eps [N]     Tip loading
+    M_tip     eps [N*m]   Tip moment
+    th_base   eps [-]     Base angle
+    w_base    eps [m]     Base deflection
+
+    Node Variables of length N
+    --------------------------
+    q  100*np.ones(N) [N/m]    Distributed load
+    V                 [N]      Internal shear
+    M                 [N*m]    Internal moment
+    th                [-]      Slope
+    w                 [m]      Displacement
 
     Upper Unbounded
     ---------------
     w_tip
+
     """
     def setup(self, N=4):
-        EI = Variable("EI", 1e4, "N*m^2")
-        dx = Variable("dx", "m", "Length of an element")
-        L = Variable("L", 5, "m", "Overall beam length")
-        q = VectorVariable(N, "q", 100*np.ones(N), "N/m",
-                           "Distributed load at each point")
-        V = VectorVariable(N, "V", "N", "Internal shear")
-        V_tip = Variable("V_{tip}", eps, "N", "Tip loading")
-        M = VectorVariable(N, "M", "N*m", "Internal moment")
-        M_tip = Variable("M_{tip}", eps, "N*m", "Tip moment")
-        th = VectorVariable(N, "\\theta", "-", "Slope")
-        th_base = Variable("\\theta_{base}", eps, "-", "Base angle")
-        w = VectorVariable(N, "w", "m", "Displacement")
-        w_base = Variable("w_{base}", eps, "m", "Base deflection")
-        # below: trapezoidal integration to form a piecewise-linear
-        #        approximation of loading, shear, and so on
-        # shear and moment increase from tip to base (left > right)
-        shear_eq = (V >= V.right + 0.5*dx*(q + q.right))
-        shear_eq[-1] = (V[-1] >= V_tip)  # tip boundary condition
-        moment_eq = (M >= M.right + 0.5*dx*(V + V.right))
-        moment_eq[-1] = (M[-1] >= M_tip)
-        # slope and displacement increase from base to tip (right > left)
-        theta_eq = (th >= th.left + 0.5*dx*(M + M.left)/EI)
-        theta_eq[0] = (th[0] >= th_base)  # base boundary condition
-        displ_eq = (w >= w.left + 0.5*dx*(th + th.left))
-        displ_eq[0] = (w[0] >= w_base)
+        exec parse_variables(self.__doc__)
         # minimize tip displacement (the last w)
         self.cost = self.w_tip = w[-1]
-        return [shear_eq, moment_eq, theta_eq, displ_eq,
-                L == (N-1)*dx]
+        return {
+            "definition of dx": L == (N-1)*dx,
+            "boundary_conditions": [
+                V[-1] >= V_tip,
+                M[-1] >= M_tip,
+                th[0] >= th_base,
+                w[0] >= w_base
+                ],
+            # below: trapezoidal integration to form a piecewise-linear
+            #        approximation of loading, shear, and so on
+            # shear and moment increase from tip to base (left > right)
+            "shear integration":
+                V[:-1] >= V[1:] + 0.5*dx*(q[:-1] + q[1:]),
+            "moment integration":
+                M[:-1] >= M[1:] + 0.5*dx*(V[:-1] + V[1:]),
+            # slope and displacement increase from base to tip (right > left)
+            "theta integration":
+                th[1:] >= th[:-1] + 0.5*dx*(M[1:] + M[:-1])/EI,
+            "displacement integration":
+                w[1:] >= w[:-1] + 0.5*dx*(th[1:] + th[:-1])
+            }
 
 
 b = Beam(N=6, substitutions={"L": 6, "EI": 1.1e4, "q": 110*np.ones(6)})
@@ -69,7 +75,6 @@ L, EI, q = sol("L"), sol("EI"), sol("q")
 x = np.linspace(0, mag(L), len(q))*ureg.m  # position along beam
 q = q[0]  # assume uniform loading for the check below
 w_exact = q/(24.*EI) * x**2 * (x**2 - 4*L*x + 6*L**2)  # analytic soln
-
 assert max(abs(w_gp - w_exact)) <= 1.1*ureg.cm
 
 PLOT = False

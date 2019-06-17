@@ -52,7 +52,14 @@ so we can prevent others from having to see this message.
 settings = load_settings()
 
 
-SIGNOMIALS_ENABLED = set()  # the current signomial permissions
+class SignomialsEnabledMeta(type):
+    "Metaclass to implement falsiness for SignomialsEnabled"
+
+    def __nonzero__(cls):
+        return 1 if cls._true else 0
+
+    def __bool__(cls):
+        return cls._true
 
 
 class SignomialsEnabled(object):
@@ -60,82 +67,66 @@ class SignomialsEnabled(object):
 
     Example
     -------
-    >>> import gpkit
-    >>> x = gpkit.Variable("x")
-    >>> y = gpkit.Variable("y", 0.1)
-    >>> with SignomialsEnabled():
-    >>>     constraints = [x >= 1-y]
-    >>> gpkit.Model(x, constraints).localsolve()
+        >>> import gpkit
+        >>> x = gpkit.Variable("x")
+        >>> y = gpkit.Variable("y", 0.1)
+        >>> with SignomialsEnabled():
+        >>>     constraints = [x >= 1-y]
+        >>> gpkit.Model(x, constraints).localsolve()
     """
-    # pylint: disable=global-statement
+    __metaclass__ = SignomialsEnabledMeta
+    _true = False  # the current signomial permissions
+
     def __enter__(self):
-        SIGNOMIALS_ENABLED.add(True)
+        SignomialsEnabled._true = True
 
     def __exit__(self, type_, val, traceback):
-        SIGNOMIALS_ENABLED.remove(True)
-
-
-VECTORIZATION = []  # the current vectorization shape
+        SignomialsEnabled._true = False
 
 
 class Vectorize(object):
     """Creates an environment in which all variables are
        exended in an additional dimension.
     """
+    vectorization = ()  # the current vectorization shape
+
     def __init__(self, dimension_length):
         self.dimension_length = dimension_length
 
     def __enter__(self):
         "Enters a vectorized environment."
-        VECTORIZATION.insert(0, self.dimension_length)
+        Vectorize.vectorization = (self.dimension_length,) + self.vectorization
 
     def __exit__(self, type_, val, traceback):
         "Leaves a vectorized environment."
-        VECTORIZATION.pop(0)
-
-
-MODELS = []     # the current model hierarchy
-MODELNUMS = []  # modelnumbers corresponding to MODELS, above
-# lookup table for the number of models of each name that have been made
-MODELNUM_LOOKUP = defaultdict(int)
-# the list of variables named in the current MODELS/MODELNUM environment
-NAMEDVARS = defaultdict(list)
-
-
-def reset_modelnumbers():
-    "Clear all model number counters"
-    for key in list(MODELNUM_LOOKUP):
-        del MODELNUM_LOOKUP[key]
-
-
-def begin_variable_naming(model):
-    "Appends a model name and num to the environment."
-    MODELS.append(model)
-    namingbut1 = (tuple(MODELS), tuple(MODELNUMS))
-    num = MODELNUM_LOOKUP[namingbut1]
-    MODELNUM_LOOKUP[namingbut1] += 1
-    MODELNUMS.append(num)
-    return num, (tuple(MODELS), tuple(MODELNUMS))
-
-
-def end_variable_naming():
-    "Pops a model name and num from the environment."
-    NAMEDVARS.pop((tuple(MODELS), tuple(MODELNUMS)), None)
-    MODELS.pop()
-    MODELNUMS.pop()
+        Vectorize.vectorization = self.vectorization[1:]
 
 
 class NamedVariables(object):
     """Creates an environment in which all variables have
        a model name and num appended to their varkeys.
     """
-    def __init__(self, model):
-        self.model = model
+    lineage = ()  # the current model nesting
+    modelnums = defaultdict(int)  # the number of models of each lineage
+    namedvars = defaultdict(list)  # variables created in the current nesting
+
+    @classmethod
+    def reset_modelnumbers(cls):
+        "Clear all model number counters"
+        for key in list(cls.modelnums):
+            del cls.modelnums[key]
+
+    def __init__(self, name):
+        self.name = name
 
     def __enter__(self):
         "Enters a named environment."
-        begin_variable_naming(self.model)
+        num = self.modelnums[(self.lineage, self.name)]
+        self.modelnums[(self.lineage, self.name)] += 1
+        NamedVariables.lineage += ((self.name, num),)  # NOTE: Class reference
+        return self.lineage, self.namedvars[self.lineage]
 
     def __exit__(self, type_, val, traceback):
         "Leaves a named environment."
-        end_variable_naming()
+        del self.namedvars[self.lineage]
+        NamedVariables.lineage = self.lineage[:-1]   # NOTE: Class reference

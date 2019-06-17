@@ -8,8 +8,7 @@ from ..solution_array import SolutionArray
 from ..exceptions import InvalidGPConstraint
 
 
-# pylint: disable=too-many-instance-attributes
-class BinarySweepTree(object):
+class BinarySweepTree(object):  # pylint: disable=too-many-instance-attributes
     """Spans a line segment. May contain two subtrees that divide the segment.
 
     Attributes
@@ -156,8 +155,8 @@ class BinarySweepTree(object):
             - each solution's 'program' attribute is removed
 
         Solution can then be loaded with e.g.:
-        >>> import pickle
-        >>> pickle.load(open("autosweep.p"))
+            >>> import cPickle as pickle
+            >>> pickle.load(open("autosweep.p"))
         """
         import pickle
         programs = []
@@ -187,7 +186,7 @@ class SolutionOracle(object):
 
     def _is_cost(self, key):
         if hasattr(key, "hmap") and key.hmap == self.bst.costposy.hmap:
-            key = "cost"
+            return True
         return key == "cost"
 
     def __getval(self, key):
@@ -288,8 +287,7 @@ def recurse_splits(model, bst, variable, logtol, solvekwargs, sols):
     return tol
 
 
-# pylint: disable=too-many-locals
-def get_tol(costs, bounds, sols, variable):
+def get_tol(costs, bounds, sols, variable):  # pylint: disable=too-many-locals
     "Gets the intersection point and corresponding bounds from two solutions."
     y0, y1 = costs
     x0, x1 = np.log(bounds)
@@ -302,7 +300,7 @@ def get_tol(costs, bounds, sols, variable):
     if denom == 0:
         # mosek runs into this on perfect straight lines, num also equal to 0
         # mosek_cli also runs into this on near-straight lines, num ~= 0
-        interp = -1  # fflag interp as out-of bounds
+        interp = -1  # flag interp as out-of bounds
     else:
         x = num/denom
         lb = y0 + s0*(x-x0)
