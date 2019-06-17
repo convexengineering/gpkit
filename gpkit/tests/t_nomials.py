@@ -372,7 +372,6 @@ class TestPosynomial(unittest.TestCase):
         y = Variable('y')
         p = y**2 + 1
         self.assertEqual(y.mono_lower_bound({y: 1}), y)
-        # TODO: remove pylint warning below after Nomials refactor
         # pylint is confused because it thinks p is a Signomial
         # pylint: disable=no-member
         self.assertEqual(p.mono_lower_bound({y: 1}), 2*y)

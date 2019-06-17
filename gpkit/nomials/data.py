@@ -74,7 +74,7 @@ class NomialData(GPkitObject):
             self._varkeys = KeySet(self.vks)
         return self._varkeys
 
-    def varkeyvalues(self):  # TODO: if it's none presume it stays that way?
+    def varkeyvalues(self):
         "Returns the NomialData's keys' values"
         return {k: k.descr["value"] for k in self.vks
                 if "value" in k.descr}

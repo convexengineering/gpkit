@@ -24,8 +24,6 @@ def unitstr(units, into="%s", options=None, dimless=""):
     if not isinstance(units, Quantity):
         return dimless
     rawstr = (u"{%s}" % options).format(units.units)
-    if str(units.units) == "count":
-        rawstr = u"count"  # TODO: remove when pint issue #356 is resolved
     units = rawstr.replace(" ", "").replace("dimensionless", dimless)
     return into % units or dimless
 

@@ -552,7 +552,7 @@ class TestSP(unittest.TestCase):
         x = Variable('x')
         z = Variable('z')
         local_ndig = 4
-        nonzero_adder = 0.1  # TODO: support reaching zero, issue #348
+        nonzero_adder = 0.1
         with SignomialsEnabled():
             J = 0.01*(x - 1)**2 + nonzero_adder
             with NamedVariables("SmallSignomial"):

@@ -55,17 +55,18 @@ def new_test(name, solver, import_dict, path, testfn=None):
         # No docstring because it'd be uselessly the same for each example
 
         import gpkit
-        # clear MODELNUMS to ensure deterministic script-like output!
-        for key in set(gpkit.globals.NamedVariables.modelnums):
-            del gpkit.globals.NamedVariables.modelnums[key]
-
         with NewDefaultSolver(solver):
             testfn(name, import_dict, path)(self)
 
-        # check all other global state besides MODELNUM_LOOKUP
-        #   is falsy (which should mean blank)
+        # clear modelnums to ensure deterministic script-like output!
+        gpkit.globals.NamedVariables.reset_modelnumbers()
+
+        # check all global state is falsy
         for globname, global_thing in [
+                ("model numbers", gpkit.globals.NamedVariables.modelnums),
                 ("lineage", gpkit.NamedVariables.lineage),
+                ("signomials enabled", gpkit.SignomialsEnabled),
+                ("signomials enabled base", gpkit.SignomialsEnabled._true),
                 ("vectorization", gpkit.Vectorize.vectorization),
                 ("namedvars", gpkit.NamedVariables.namedvars)]:
             if global_thing:

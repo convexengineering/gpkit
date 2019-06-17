@@ -127,7 +127,7 @@ class NomialMap(HashVector):
             expval = []
             exps, cval = varlocs[vk], fixed[vk]
             if hasattr(cval, "hmap"):
-                expval, = cval.hmap.keys()  # TODO: catch "can't-sub-posys"
+                expval, = cval.hmap.keys()  # NOTE: fails on posynomials
                 cval = cval.hmap
             if hasattr(cval, "to"):
                 cval = mag(cval.to(vk.units or DIMLESS_QUANTITY))

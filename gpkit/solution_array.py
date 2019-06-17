@@ -621,8 +621,7 @@ class SolutionArray(DictOfLists):
             if table == "cost":
                 cost = self["cost"]
                 # pylint: disable=unsubscriptable-object
-                if kwargs.get("latex", None):
-                    # TODO should probably print a small latex cost table here
+                if kwargs.get("latex", None):  # cost is not printed for latex
                     continue
                 strs += ["\n%s\n----" % "Cost"]
                 if len(self) > 1:
@@ -759,7 +758,6 @@ def var_table(data, title, printunits=True, fixedcols=True,
         label = var.descr.get('label', '')
         units = var.unitstr(" [%s] ") if printunits else ""
         if isvector:
-            # TODO: pretty n-dimensional printing?
             if columns is not None:
                 ncols = columns
             else:

@@ -55,10 +55,10 @@ class Model(CostedConstraintSet):
                 cs = self.setup(*args, **kwargs)  # pylint: disable=no-member
                 if (isinstance(cs, tuple) and len(cs) == 2
                         and isinstance(cs[1], dict)):
-                    constraints, substitutions = cs  # TODO: remove
+                    constraints, substitutions = cs
                 else:
                     constraints = cs
-            cost = self.cost  # TODO: remove
+            cost = self.cost
         elif args and not substitutions:
             # backwards compatibility: substitutions as third arg
             substitutions, = args
