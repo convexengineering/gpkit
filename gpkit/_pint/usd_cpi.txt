@@ -1,6 +1,8 @@
-# source: http://www.bls.gov/cpi/cpid1607.pdf, table 24 (page 71)
+# source: https://www.bls.gov/cpi/tables/supplemental-files/home.htm
+#         Historical CPI-U, May 2019 [page 4]
 CPI = [money]
-USD2017 = CPI/245.120 = USD
+USD2018 = CPI/251.107 = USD
+USD2017 = CPI/245.120
 USD2016 = CPI/240.007
 USD2015 = CPI/237.017
 USD2014 = CPI/236.736

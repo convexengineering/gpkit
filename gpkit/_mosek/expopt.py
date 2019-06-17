@@ -245,6 +245,11 @@ def imize(c, A, p_idxs, *args, **kwargs):
     MSK._deleteenv(ptr(env))
 
     status = MSK._SOL_STA_LOOKUPTABLE[solsta.value]
+    # Allow mosek's NEAR_DUAL_FEAS solution status, because our check in gp.py
+    #   will catch solutions that don't actually meet our tolerance
+    # TODO: when we standardize solver status responses, revisit this.
+    if status == "NEAR_DUAL_FEAS":
+        status = "OPTIMAL"
     return dict(status=status,
                 objective=objval.value,
                 primal=list(xx),

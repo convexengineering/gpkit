@@ -1,7 +1,7 @@
 "Implements KeyDict and KeySet classes"
 from collections import defaultdict
 import numpy as np
-from .small_classes import Numbers, Quantity
+from .small_classes import Numbers, Quantity, FixedScalar
 from .small_scripts import is_sweepvar, isnan, SweepValue
 
 DIMLESS_QUANTITY = Quantity(1, "dimensionless")
@@ -17,7 +17,7 @@ def clean_value(key, value):
     """
     if hasattr(value, "__len__"):
         return [clean_value(key, v) for v in value]
-    if hasattr(value, "exp") and not value.exp:
+    if isinstance(value, FixedScalar):
         value = value.value
     if hasattr(value, "units") and not hasattr(value, "hmap"):
         value = value.to(key.units or "dimensionless").magnitude
@@ -189,7 +189,7 @@ class KeyDict(dict):
                 kwargs = {} if number_array else {"dtype": "object"}
                 emptyvec = np.full(key.shape, np.nan, **kwargs)
                 dict.__setitem__(self, key, emptyvec)
-        if hasattr(value, "exp") and not value.exp:
+        if isinstance(value, FixedScalar):
             value = value.value  # substitute constant monomials
         if isinstance(value, Quantity):
             value = value.to(key.units or "dimensionless").magnitude
@@ -276,8 +276,7 @@ class KeySet(KeyDict):
             if isinstance(arg, KeySet):  # assume unmapped
                 dict.update(self, arg)
                 self.keymap.update(arg.keymap)
-                # pylint: disable=protected-access
-                self._unmapped_keys.update(arg._unmapped_keys)
+                self._unmapped_keys.update(arg._unmapped_keys)  # pylint: disable=protected-access
             else:  # set-like interface
                 for item in arg:
                     self.add(item)

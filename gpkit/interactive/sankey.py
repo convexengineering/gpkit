@@ -68,7 +68,7 @@ class Sankey(object):
             if getattr(constrset, "num", None):
                 target += ".%i" % constrset.num
             source = str(key)
-            shortname = (key.str_without(["models"])
+            shortname = (key.str_without(["lineage"])
                          + key.unitstr(into=" [%s]", dimless=" [-]"))
             self.nodes.append({"id": source, "title": shortname})
             self.links[target, source] += value

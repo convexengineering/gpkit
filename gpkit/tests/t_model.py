@@ -52,8 +52,26 @@ class TestGP(unittest.TestCase):
 
     def test_sigeq(self):
         x = Variable("x")
-        y = VectorVariable(1, "y")  # test vector input to sigeq
+        y = VectorVariable(1, "y")
         c = Variable("c")
+        # test left vector input to sigeq
+        with SignomialsEnabled():
+            m = Model(c, [c >= (x + 0.25)**2 + (y - 0.5)**2,
+                          SignomialEquality(x**2 + x, y)])
+        sol = m.localsolve(solver=self.solver, verbosity=0)
+        self.assertAlmostEqual(sol("x"), 0.1639472, self.ndig)
+        self.assertAlmostEqual(sol("y"), 0.1908254, self.ndig)
+        self.assertAlmostEqual(sol("c"), 0.2669448, self.ndig)
+        # test right vector input to sigeq
+        with SignomialsEnabled():
+            m = Model(c, [c >= (x + 0.25)**2 + (y - 0.5)**2,
+                          SignomialEquality(y, x**2 + x)])
+        sol = m.localsolve(solver=self.solver, verbosity=0)
+        self.assertAlmostEqual(sol("x"), 0.1639472, self.ndig)
+        self.assertAlmostEqual(sol("y"), 0.1908254, self.ndig)
+        self.assertAlmostEqual(sol("c"), 0.2669448, self.ndig)
+        # test scalar input to sigeq
+        y = Variable("y")
         with SignomialsEnabled():
             m = Model(c, [c >= (x + 0.25)**2 + (y - 0.5)**2,
                           SignomialEquality(x**2 + x, y)])
@@ -534,7 +552,7 @@ class TestSP(unittest.TestCase):
         x = Variable('x')
         z = Variable('z')
         local_ndig = 4
-        nonzero_adder = 0.1  # TODO: support reaching zero, issue #348
+        nonzero_adder = 0.1
         with SignomialsEnabled():
             J = 0.01*(x - 1)**2 + nonzero_adder
             with NamedVariables("SmallSignomial"):
@@ -609,16 +627,18 @@ class TestModelSolverSpecific(unittest.TestCase):
 
 
 class Thing(Model):
-    """a thing, for model testing
-
-    SKIP VERIFICATION
-
-    """
+    "a thing, for model testing"
     def setup(self, length):
         a = self.a = VectorVariable(length, "a", "g/m")
         b = self.b = VectorVariable(length, "b", "m")
         c = Variable("c", 17/4., "g")
         return [a >= c/b]
+
+
+class Thing2(Model):
+    "another thing for model testing"
+    def setup(self):
+        return [Thing(2), Model()]
 
 
 class Box(Model):
@@ -643,6 +663,7 @@ class Box(Model):
         exec parse_variables(Box.__doc__)
         return [V == h*w*d]
 
+
 class BoxAreaBounds(Model):
     """for testing functionality of separate analysis models
 
@@ -665,7 +686,12 @@ class TestModelNoSolve(unittest.TestCase):
     def test_modelname_added(self):
         t = Thing(2)
         for vk in t.varkeys:
-            self.assertEqual(vk.models, ["Thing"])
+            self.assertEqual(vk.lineage, (("Thing", 0),))
+
+    def test_modelcontainmentprinting(self):
+        t = Thing2()
+        self.assertIsInstance(t.str_without(), str)
+        self.assertIsInstance(t.latex(), str)
 
     def test_no_naming_on_var_access(self):
         # make sure that analysis models don't add their names to

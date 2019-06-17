@@ -14,6 +14,7 @@ def appendsolwarning(msg, data, result, category="uncategorized",
         result["warnings"][category] = []
     result["warnings"][category].append((msg, data))
 
+
 @np.vectorize
 def isnan(element):
     "Determine if something of arbitrary type is a numpy nan."

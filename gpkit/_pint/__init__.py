@@ -2,12 +2,9 @@
 import os
 try:
     from pint import UnitRegistry, DimensionalityError
-
     ureg = UnitRegistry()  # pylint: disable=invalid-name
     ureg.load_definitions(os.sep.join([os.path.dirname(__file__),
                                        "usd_cpi.txt"]))
-    # next line patches https://github.com/hgrecco/pint/issues/366
-    ureg.define("nautical_mile = 1852 m = nmi")
     Quantity = ureg.Quantity
 except ImportError:  # pint is not installed; provide dummy imports
     ureg = None  # pylint: disable=invalid-name

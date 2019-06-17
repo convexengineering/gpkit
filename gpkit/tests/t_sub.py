@@ -4,7 +4,7 @@ import numpy as np
 import numpy.testing as npt
 from ad import adnumber, ADV
 import gpkit
-from gpkit import SignomialsEnabled, reset_modelnumbers
+from gpkit import SignomialsEnabled, NamedVariables
 from gpkit import Variable, VectorVariable, Model, Signomial
 from gpkit.small_scripts import mag
 from gpkit.tests.helpers import run_tests
@@ -163,8 +163,8 @@ class TestModelSubs(unittest.TestCase):
 
     def test_phantoms(self):
         x = Variable("x")
-        x_ = Variable("x", 1, models=["test"])
-        xv = VectorVariable(2, "x", [1, 1], models=["vec"])
+        x_ = Variable("x", 1, lineage=[("test", 0)])
+        xv = VectorVariable(2, "x", [1, 1], lineage=[("vec", 0)])
         m = Model(x, [x >= x_, x_ == xv.prod()])
         m.solve(verbosity=0)
         with self.assertRaises(ValueError):
@@ -304,15 +304,15 @@ class TestModelSubs(unittest.TestCase):
             almostequal(1/yard/a.solve(verbosity=0)["cost"], 1, 5)
             almostequal(1*cm/b.solve(verbosity=0)["cost"], 1, 5)
             almostequal(1*cm/yard/concat_cost, 1, 5)
-        reset_modelnumbers()
+        NamedVariables.reset_modelnumbers()
         a1, b1 = Above(), Below()
-        self.assertEqual(a1["x"].key.modelnums, [0])
+        self.assertEqual(a1["x"].key.lineage, (("Above", 0),))
         m = Model(a1["x"], [a1, b1, b1["x"] == a1["x"]])
         sol = m.solve(verbosity=0)
         if not isinstance(a1["x"].key.units, str):
             almostequal(1*cm/sol["cost"], 1, 5)
         a1, b1 = Above(), Below()
-        self.assertEqual(a1["x"].key.modelnums, [1])
+        self.assertEqual(a1["x"].key.lineage, (("Above", 1),))
         m = Model(b1["x"], [a1, b1, b1["x"] == a1["x"]])
         sol = m.solve(verbosity=0)
         if not isinstance(b1["x"].key.units, str):

@@ -4,7 +4,7 @@ from time import time
 from collections import defaultdict
 import numpy as np
 from ..nomials import NomialData
-from ..small_classes import CootMatrix, SolverLog, Numbers
+from ..small_classes import CootMatrix, SolverLog, Numbers, FixedScalar
 from ..keydict import KeyDict, KeySet
 from ..small_scripts import mag
 from ..solution_array import SolutionArray
@@ -12,23 +12,40 @@ from .costed import CostedConstraintSet
 
 
 DEFAULT_SOLVER_KWARGS = {"cvxopt": {"kktsolver": "ldl"}}
+SOLUTION_TOL = {"cvxopt": 1e-3, "mosek_cli": 1e-4, "mosek": 1e-5}
+
+
+def _get_solver(solver, kwargs):
+    """Get the solverfn and solvername associated with solver"""
+    if solver is None:
+        from .. import settings
+        solver = settings.get("default_solver", None)
+        if not solver:
+            raise ValueError(
+                "No solver was given; perhaps gpkit was not properly"
+                " installed, or found no solvers during the"
+                " installation process.")
+
+    if solver == "cvxopt":
+        from .._cvxopt import cvxoptimize
+        solverfn = cvxoptimize
+    elif solver == "mosek_cli":
+        from .._mosek import cli_expopt
+        solverfn = cli_expopt.imize_fn(**kwargs)
+    elif solver == "mosek":
+        from .._mosek import expopt
+        solverfn = expopt.imize
+    elif hasattr(solver, "__call__"):
+        solverfn = solver
+        solver = solver.__name__
+    else:
+        raise ValueError("Unknown solver '%s'." % solver)
+    return solverfn, solver
 
 
 class GeometricProgram(CostedConstraintSet, NomialData):
     # pylint: disable=too-many-instance-attributes
     """Standard mathematical representation of a GP.
-
-    Arguments
-    ---------
-    cost : Constraint
-        Posynomial to minimize when solving
-    constraints : list of Posynomials
-        Constraints to maintain when solving (implicitly Posynomials <= 1)
-        GeometricProgram does not accept equality constraints (e.g. x == 1);
-         instead use two inequality constraints (e.g. x <= 1, 1/x <= 1)
-    verbosity : int (optional)
-        If verbosity is greater than zero, warns about missing bounds
-        on creation.
 
     Attributes with side effects
     ----------------------------
@@ -42,7 +59,7 @@ class GeometricProgram(CostedConstraintSet, NomialData):
                         x,
                         [   # subject to
                             1/x  # <= 1, implicitly
-                        ])
+                        ], {})
     >>> gp.solve()
     """
     def __init__(self, cost, constraints, substitutions,
@@ -54,10 +71,10 @@ class GeometricProgram(CostedConstraintSet, NomialData):
         self.nu_by_posy = None
         self.solver_log = None
         self.solver_out = None
-        # GPs get varkeys from NomialData._reset, in .gen()
+        # GPs have a unique varkeys property instead of relying on inheritance
         self.__bare_init__(cost, constraints, substitutions, varkeys=False)
         for key, sub in self.substitutions.items():
-            if hasattr(sub, "exp") and not sub.exp:
+            if isinstance(sub, FixedScalar):
                 sub = sub.value
                 if hasattr(sub, "units"):
                     sub = sub.to(key.units or "dimensionless").magnitude
@@ -83,8 +100,8 @@ class GeometricProgram(CostedConstraintSet, NomialData):
         self.meq_idxs = {sum(self.k[:i]) for i, p in enumerate(self.posynomials)
                          if getattr(p, "from_meq", False)}
         self.gen()  # A [i, v]: sparse matrix of powers in each monomial
-        if any(c <= 0 for c in self._cs):
-            raise ValueError("GeometricPrograms cannot contain Signomials.")
+        if any(c <= 0 for c in self.cs):
+            raise ValueError("a GeometricProgram cannot contain Signomials.")
         if self.missingbounds and not allow_missingbounds:
             boundstrs = "\n".join("  %s has no %s bound%s" % (v, b, x)
                                   for (v, b), x in self.missingbounds.items())
@@ -119,7 +136,7 @@ class GeometricProgram(CostedConstraintSet, NomialData):
             By default uses one of the solvers found during installation.
             If set to "mosek", "mosek_cli", or "cvxopt", uses that solver.
             If set to a function, passes that function cs, A, p_idxs, and k.
-        verbosity : int (optional)
+        verbosity : int (default 1)
             If greater than 0, prints solver name and solve time.
         **kwargs :
             Passed to solver constructor and solver function.
@@ -127,47 +144,9 @@ class GeometricProgram(CostedConstraintSet, NomialData):
 
         Returns
         -------
-        result : dict
-            A dictionary containing the translated solver result; keys below.
-
-            cost : float
-                The value of the objective at the solution.
-            variables : dict
-                The value of each variable at the solution.
-            sensitivities : dict
-                monomials : array of floats
-                    Each monomial's dual variable value at the solution.
-                posynomials : array of floats
-                    Each posynomials's dual variable value at the solution.
+        result : SolutionArray
         """
-        def _get_solver(solver):
-            """Get the solverfn and solvername associated with solver"""
-            if solver is None:
-                from .. import settings
-                solver = settings.get("default_solver", None)
-                if not solver:
-                    raise ValueError(
-                        "No solver was given; perhaps gpkit was not properly"
-                        " installed, or found no solvers during the"
-                        " installation process.")
-
-            if solver == "cvxopt":
-                from .._cvxopt import cvxoptimize
-                solverfn = cvxoptimize
-            elif solver == "mosek_cli":
-                from .._mosek import cli_expopt
-                solverfn = cli_expopt.imize_fn(**kwargs)
-            elif solver == "mosek":
-                from .._mosek import expopt
-                solverfn = expopt.imize
-            elif hasattr(solver, "__call__"):
-                solverfn = solver
-                solver = solver.__name__
-            else:
-                raise ValueError("Unknown solver '%s'." % solver)
-            return solverfn, solver
-
-        solverfn, solvername = _get_solver(solver)
+        solverfn, solvername = _get_solver(solver, kwargs)
 
         starttime = time()
         if verbosity > 0:
@@ -190,15 +169,13 @@ class GeometricProgram(CostedConstraintSet, NomialData):
         # STDOUT HAS BEEN RETURNED. ENDING SIDE EFFECTS.
         self.solver_log = "\n".join(self.solver_log)
 
-        soltime = time() - starttime
+        solver_out["solver"] = solvername
+        solver_out["soltime"] = time() - starttime
         if verbosity > 0:
-            print("Solving took %.3g seconds." % (soltime,))
+            print("Solving took %.3g seconds." % (solver_out["soltime"],))
 
-        # allow mosek's NEAR_DUAL_FEAS solution status, because our check
-        # will catch anything that's not actually near enough.
-        # TODO: implement this in the mosek / mosek_cli interfaces, not here.
         solver_status = str(solver_out.get("status", None))
-        if solver_status.lower() not in ["optimal", "near_dual_feas"]:
+        if solver_status.lower() != "optimal":
             raise RuntimeWarning(
                 "final status of solver '%s' was '%s', not 'optimal'.\n\n"
                 "The solver's result is stored in model.program.solver_out. "
@@ -206,15 +183,11 @@ class GeometricProgram(CostedConstraintSet, NomialData):
                 "program._compile_result(program.solver_out)." %
                 (solvername, solver_status))
 
-        if solver_status.lower() == "near_dual_feas":
-            print(RuntimeWarning(
-                "final status of solver '%s' was '%s', not 'optimal'.\n\n"
-                % (solvername, solver_status)))
+        if gen_result:  # NOTE: SIDE EFFECTS
+            self._result = self.generate_result(solver_out, warn_on_check,
+                                                verbosity, process_result)
+            return self.result
 
-        solver_out["soltime"] = soltime
-        if gen_result:
-            return self.generate_result(solver_out, warn_on_check, verbosity,
-                                        process_result)
         solver_out["gen_result"] = \
             lambda: self.generate_result(solver_out, dual_check=False)
         return solver_out
@@ -232,14 +205,16 @@ class GeometricProgram(CostedConstraintSet, NomialData):
         if verbosity > 1:
             tic = time()
         soltime = solver_out["soltime"]
-        self._result = self._compile_result(solver_out)  # NOTE: SIDE EFFECTS
+        result = self._compile_result(solver_out)  # NOTE: SIDE EFFECTS
         if verbosity > 1:
             print("result packing took %.2g%% of solve time" %
                   ((time() - tic) / soltime * 100))
             tic = time()
+
         try:
-            self.check_solution(self.result["cost"], solver_out['primal'],
-                                nu=solver_out["nu"], la=solver_out["la"])
+            tol = SOLUTION_TOL.get(solver_out["solver"], 1e-5)
+            self.check_solution(result["cost"], solver_out['primal'],
+                                solver_out["nu"], solver_out["la"], tol)
         except RuntimeWarning as e:
             if warn_on_check:
                 e = str(e)
@@ -250,15 +225,16 @@ class GeometricProgram(CostedConstraintSet, NomialData):
         if verbosity > 1:
             print("solution checking took %.2g%% of solve time" %
                   ((time() - tic) / soltime * 100))
+            tic = time()
 
         if process_result:
-            self.process_result(self.result)
-        self.result["soltime"] = soltime
-        return self.result
+            self.process_result(result)
+        if verbosity > 1:
+            print("processing results took %.2g%% of solve time" %
+                  ((time() - tic) / soltime * 100))
+        return result
 
     def _generate_nula(self, solver_out):
-        solver_out["primal"] = np.ravel(solver_out['primal'])
-
         if "nu" in solver_out:
             # solver gave us monomial sensitivities, generate posynomial ones
             nu = np.ravel(solver_out["nu"])
@@ -318,19 +294,19 @@ class GeometricProgram(CostedConstraintSet, NomialData):
                 raise ValueError("cost contains unsolved variables %s"
                                  % cost.varkeys.keys())
             result["cost"] = mag(cost.c)
-
-        # get sensitivities #
+        # get variables #
         result["constants"] = KeyDict(self.substitutions)
         result["variables"] = KeyDict(result["freevariables"])
         result["variables"].update(result["constants"])
+        # get sensitivities #
         result["sensitivities"] = {"nu": nu, "la": la}
         self.v_ss = self.sens_from_dual(la[1:].tolist(), self.nu_by_posy[1:],
                                         result)
         # add cost's sensitivity in (nu could be self.nu_by_posy[0])
         cost_senss = {var: sum([self.cost.exps[i][var]*nu[i] for i in locs])
                       for (var, locs) in self.cost.varlocs.items()}
-        # not using HashVector addition because we want to preseve zeros
         var_senss = self.v_ss.copy()
+        # not using HashVector addition because we want to preseve zeros
         for key, value in cost_senss.items():
             var_senss[key] = value + var_senss.get(key, 0)
         # carry linked sensitivities over to their constants
@@ -341,11 +317,11 @@ class GeometricProgram(CostedConstraintSet, NomialData):
                 for c, dv_dc in v.gradients.items():
                     if val != 0:
                         dlogv_dlogc = dv_dc * result["constants"][c]/val
-                    else:  # make nans / infs explicitly to avoid warning below
-                        if dlogcost_dlogv == 0:
-                            dlogv_dlogc = np.nan
-                        else:
-                            dlogv_dlogc = np.inf * dv_dc*result["constants"][c]
+                    # make nans / infs explicitly to avoid warnings
+                    elif dlogcost_dlogv == 0:
+                        dlogv_dlogc = np.nan
+                    else:
+                        dlogv_dlogc = np.inf * dv_dc*result["constants"][c]
                     accum = var_senss.get(c, 0)
                     var_senss[c] = dlogcost_dlogv*dlogv_dlogc + accum
                     if v in cost_senss:
@@ -356,13 +332,12 @@ class GeometricProgram(CostedConstraintSet, NomialData):
 
         result["sensitivities"]["cost"] = cost_senss
         result["sensitivities"]["variables"] = KeyDict(var_senss)
-        const_senss = {k: v for k, v in var_senss.items()
-                       if k in result["constants"]}
-        result["sensitivities"]["constants"] = KeyDict(const_senss)
+        result["sensitivities"]["constants"] = KeyDict(
+            {k: v for k, v in var_senss.items() if k in result["constants"]})
+        result["soltime"] = solver_out["soltime"]
         return SolutionArray(result)
 
-    # TODO: set tol by solver? or otherwise return it to 1e-5 for mosek
-    def check_solution(self, cost, primal, nu, la, tol=1e-3, abstol=1e-20):
+    def check_solution(self, cost, primal, nu, la, tol, abstol=1e-20):
         """Run a series of checks to mathematically confirm sol solves this GP
 
         Arguments
@@ -423,14 +398,7 @@ class GeometricProgram(CostedConstraintSet, NomialData):
 
 
 def genA(exps, varlocs, meq_idxs):  # pylint: disable=invalid-name
-    """Generates A matrix from exps and varidxs
-
-    Arguments
-    ---------
-        exps : list of Hashvectors
-            Exponents for each monomial in a GP
-        varidxs : dict
-            Locations of each variable in exps
+    """Generates A matrix
 
     Returns
     -------

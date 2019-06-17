@@ -2,7 +2,7 @@
 from .set import ConstraintSet
 from ..nomials import Variable, VectorVariable, parse_subs, NomialArray
 from ..keydict import KeyDict
-from .. import NamedVariables, MODELNUM_LOOKUP
+from .. import NamedVariables
 from gpkit import SignomialsEnabled
 
 
@@ -36,11 +36,12 @@ class ConstraintsRelaxedEqually(ConstraintSet):
         with NamedVariables("Relax"):
             self.relaxvar = Variable("C")
         with SignomialsEnabled():
-            for constraint in constraints.flat(constraintsets=False):
+            for constraint in constraints.flat():
                 self.origconstrs.append(constraint)
                 relconstraints.append(constraint.relaxed(self.relaxvar))
-        ConstraintSet.__init__(self, [relconstraints,
-                                      self.relaxvar >= 1], substitutions)
+        ConstraintSet.__init__(self, {
+            "relaxed constraints": relconstraints,
+            "minimum relaxation": self.relaxvar >= 1}, substitutions)
 
 
 class ConstraintsRelaxed(ConstraintSet):
@@ -73,12 +74,12 @@ class ConstraintsRelaxed(ConstraintSet):
         with NamedVariables("Relax"):
             self.relaxvars = VectorVariable(len(constraints), "C")
         with SignomialsEnabled():
-            for i, constraint in enumerate(
-                    constraints.flat(constraintsets=False)):
+            for i, constraint in enumerate(constraints.flat()):
                 self.origconstrs.append(constraint)
                 relconstraints.append(constraint.relaxed(self.relaxvars[i]))
-        ConstraintSet.__init__(self, [relconstraints,
-                                      self.relaxvars >= 1], substitutions)
+        ConstraintSet.__init__(self, {
+            "relaxed constraints": relconstraints,
+            "minimum relaxation": self.relaxvars >= 1}, substitutions)
 
 
 class ConstantsRelaxed(ConstraintSet):
@@ -89,11 +90,11 @@ class ConstantsRelaxed(ConstraintSet):
     constraints : iterable
         Constraints which will be relaxed (made easier).
 
-    include_only : set
-        if declared, variable names must be on this list to be relaxed
+    include_only : set (optional)
+        variable names must be in this set to be relaxed
 
-    exclude : set
-        if declared, variable names on this list will never be relaxed
+    exclude : set (optional)
+        variable names in this set will never be relaxed
 
 
     Attributes
@@ -124,11 +125,10 @@ class ConstantsRelaxed(ConstraintSet):
         else:
             combined = constants
         self.constants = KeyDict(combined)
-        relaxvars, relaxation_constraints = [], []
-        self.origvars = []
-        self.num = MODELNUM_LOOKUP[(("Relax",), ())]
+        relaxvars, relaxation_constraints, self.origvars = [], [], []
+        with NamedVariables("Relax") as (self.lineage, _):
+            pass
         self._unrelaxmap = {}
-        MODELNUM_LOOKUP["Relax"] += 1
         for key, value in combined.items():
             if value == 0:
                 continue
@@ -140,8 +140,7 @@ class ConstantsRelaxed(ConstraintSet):
             descr = key.descr.copy()
             descr.pop("value", None)
             descr.pop("veckey", None)
-            descr["models"] = descr.pop("models", [])+["Relax"]
-            descr["modelnums"] = descr.pop("modelnums", []) + [self.num]
+            descr["lineage"] = descr.pop("lineage", ())+(self.lineage[-1],)
             relaxvardescr = descr.copy()
             relaxvardescr["unitrepr"] = "-"
             relaxvar = Variable(**relaxvardescr)
@@ -158,7 +157,9 @@ class ConstantsRelaxed(ConstraintSet):
                                            unrelaxed/relaxvar <= var,
                                            var <= unrelaxed*relaxvar])
         self.relaxvars = NomialArray(relaxvars)
-        ConstraintSet.__init__(self, [constraints, relaxation_constraints])
+        ConstraintSet.__init__(self, {
+            "original constraints": constraints,
+            "relaxation constraints": relaxation_constraints})
         self.substitutions = substitutions
 
     def process_result(self, result):

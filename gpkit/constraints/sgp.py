@@ -1,6 +1,7 @@
 """Implement the SequentialGeometricProgram class"""
 from time import time
 import numpy as np
+from collections import OrderedDict
 from ..exceptions import InvalidGPConstraint
 from ..keydict import KeyDict
 from ..nomials import Variable
@@ -42,7 +43,6 @@ class SequentialGeometricProgram(CostedConstraintSet):
     """
     def __init__(self, cost, constraints, substitutions):
         # pylint:disable=super-init-not-called
-        # pylint: disable=unused-argument
         self.gps = []
         self.solver_outs = []
         self._results = []
@@ -61,15 +61,15 @@ class SequentialGeometricProgram(CostedConstraintSet):
         self.__bare_init__(cost, constraints, substitutions, varkeys=True)
         self.externalfn_vars = frozenset(Variable(v) for v in self.varkeys
                                          if v.externalfn)
-        self.not_sp = bool(self.externalfn_vars)
-        if not self.not_sp:
+        self.externalfns = bool(self.externalfn_vars)
+        if not self.externalfns:
             self._gp = self.init_gp(self.substitutions)
-            if not (self.not_sp or self._gp[1]):  # idx 0/1: gp/sp constraints
+            if self._gp and not self._gp["SP approximations"]:
                 raise ValueError("""Model valid as a Geometric Program.
 
-    SequentialGeometricPrograms should only be created with Models containing Signomial
-    Constraints, since Models without Signomials have global solutions and can
-    be solved with 'Model.solve()'.""")
+    SequentialGeometricPrograms should only be created with Models containing
+    Signomial Constraints, since Models without Signomials have global
+    solutions and can be solved with 'Model.solve()'.""")
 
     # pylint: disable=too-many-locals
     def localsolve(self, solver=None, verbosity=1, x0=None, reltol=1e-4,
@@ -108,7 +108,9 @@ class SequentialGeometricProgram(CostedConstraintSet):
         self.gps = []  # NOTE: SIDE EFFECTS
         self.solver_outs = []
         self._results = []
-        if x0 and mutategp:
+        # if there's external functions we can't mutate the GP
+        mutategp = mutategp and not self.externalfns
+        if x0 and not mutategp:
             self._gp = self.init_gp(self.substitutions, x0)
         slackvar = Variable()
         prevcost, cost, rel_improvement = None, None, None
@@ -190,12 +192,9 @@ class SequentialGeometricProgram(CostedConstraintSet):
 
     def init_gp(self, substitutions, x0=None):
         "Generates a simplified GP representation for later modification"
-        gpconstrs = []
-        self._spconstrs = []
-        self._approx_lt = []
-        approx_gt = []
+        gpconstrs, self._spconstrs, self._approx_lt, approx_gt = [], [], [], []
         x0 = self._fill_x0(x0)
-        for cs in self.flat(constraintsets=False):
+        for cs in self.flat():
             try:
                 if not isinstance(cs, PosynomialInequality):
                     cs.as_posyslt1(substitutions)  # is it gp-compatible?
@@ -208,36 +207,36 @@ class SequentialGeometricProgram(CostedConstraintSet):
                     x0.update({vk: 1.0 for vk in cs.varkeys if vk not in x0})
                     approx_gt.extend(cs.as_approxsgt(x0))
                 else:
-                    self.not_sp = True
-                    return None  # TODO: cleanup SP/GP flag syntax
+                    self.externalfns = True
+                    return None
         spapproxs = [p/m <= 1 for p, m in zip(self._approx_lt, approx_gt)]
         for pconstr, spconstr in zip(spapproxs, self._spconstrs):
             pconstr.sgp_parent = spconstr
-        gp = GeometricProgram(self.cost, [gpconstrs, spapproxs], substitutions)
+        gp = GeometricProgram(self.cost, OrderedDict((
+            ("GP constraints", gpconstrs),
+            ("SP approximations", spapproxs))), substitutions)
         gp.x0 = x0
         self._numgpconstrs = len(gp.hmaps) - len(spapproxs)
         return gp
 
     def gp(self, x0=None, mutategp=False):
         "The GP approximation of this SP at x0."
-        if mutategp and not self.not_sp:
-            if self.gps:  # update self._gp with new x0
-                self._gp.x0.update(x0)
-                mono_gts = []
-                for spc in self._spconstrs:
-                    mono_gts.extend(spc.as_approxsgt(self._gp.x0))
-                for i, mono_gt in enumerate(mono_gts):
-                    posy_lt = self._approx_lt[i]
-                    unsubbed = posy_lt/mono_gt
-                    self._gp[1][i].unsubbed = [unsubbed]  # idx 0/1: gp/sp
-                    # TODO: cache parsed self.substitutions for each spmono
-                    smap = unsubbed.hmap.sub(self.substitutions,
-                                             unsubbed.varkeys)
-                    self._gp.hmaps[self._numgpconstrs+i] = smap
-                    # TODO: WHY ON EARTH IS THIS LINE REQUIRED:
-                    self._gp.posynomials[self._numgpconstrs+i].hmap = smap
-                self._gp.gen()
-            return self._gp
+        if mutategp:
+            if not self.gps:
+                return self._gp  # we've already generated the first gp
+            gp = self._gp        # otherwise, update it with a new x0
+            gp.x0.update(x0)
+            mono_gts = []
+            for spc in self._spconstrs:
+                mono_gts.extend(spc.as_approxsgt(gp.x0))
+            for i, mono_gt in enumerate(mono_gts):
+                posy_lt = self._approx_lt[i]
+                unsubbed = posy_lt/mono_gt
+                gp["SP approximations"][i].unsubbed = [unsubbed]
+                smap = unsubbed.hmap.sub(self.substitutions,
+                                         unsubbed.varkeys)
+                gp.hmaps[self._numgpconstrs+i] = smap
+            gp.gen()
         else:
             x0 = self._fill_x0(x0)
             gp_constrs = self.as_gpconstr(x0)
@@ -248,4 +247,4 @@ class SequentialGeometricProgram(CostedConstraintSet):
                     gp_constrs.append(posyconstr)
             gp = GeometricProgram(self.cost, gp_constrs, self.substitutions)
             gp.x0 = x0  # NOTE: SIDE EFFECTS
-            return gp
+        return gp

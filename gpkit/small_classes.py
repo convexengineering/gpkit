@@ -13,6 +13,17 @@ except NameError:
 Numbers = (int, float, np.number, Quantity)
 
 
+class FixedScalarMeta(type):
+    "Metaclass to implement instance checking for fixed scalars"
+    def __instancecheck__(cls, obj):
+        return hasattr(obj, "hmap") and len(obj.hmap) == 1 and not obj.vks
+
+
+class FixedScalar(object):
+    "Instances of this class are scalar Nomials with no variables"
+    __metaclass__ = FixedScalarMeta
+
+
 class Count(object):
     "Like python 2's itertools.count, for Python 3 compatibility."
 
@@ -96,8 +107,7 @@ class DictOfLists(dict):
         "Appends a dict (of dicts) of lists to all held lists."
         if not hasattr(self, 'initialized'):
             _enlist_dict(sol, self)
-            # pylint: disable=attribute-defined-outside-init
-            self.initialized = True
+            self.initialized = True  # pylint: disable=attribute-defined-outside-init
         else:
             _append_dict(sol, self)
 
@@ -127,9 +137,7 @@ def _append_dict(d_in, d_out):
         if isinstance(v, dict):
             d_out[k] = _append_dict(v, d_out[k])
         else:
-            # consider appending nan / nanvector for new / missed keys
             d_out[k].append(v)
-    # assert set(i.keys()) == set(o.keys())  # keys change with swept varkeys
     return d_out
 
 
@@ -143,7 +151,6 @@ def _index_dict(idx, d_in, d_out):
                 d_out[k] = v[idx]
             except IndexError:  # if not an array, return as is
                 d_out[k] = v
-    # assert set(i.keys()) == set(o.keys())  # keys change with swept varkeys
     return d_out
 
 
@@ -158,7 +165,6 @@ def _enray(d_in, d_out):
             else:
                 v = np.array(v)
             d_out[k] = v
-    # assert set(i.keys()) == set(o.keys())  # keys change with swept varkeys
     return d_out
 
 
@@ -181,9 +187,9 @@ class HashVector(dict):
         "Return a copy of this"
         return self.__class__(super(HashVector, self).copy())
 
+    # pylint:disable=access-member-before-definition, attribute-defined-outside-init
     def __hash__(self):
         "Allows HashVectors to be used as dictionary keys."
-        # pylint:disable=access-member-before-definition, attribute-defined-outside-init
         if not hasattr(self, "_hashvalue") or self._hashvalue is None:
             self._hashvalue = reduce(xor, map(hash, self.items()), 0)
         return self._hashvalue
@@ -241,3 +247,6 @@ class HashVector(dict):
     def __div__(self, other): return self * other**-1
     def __rdiv__(self, other): return other * self**-1
     def __rmul__(self, other): return self * other
+
+
+EMPTY_HV = HashVector()
