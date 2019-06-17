@@ -227,13 +227,13 @@ class Signomial(Nomial):
         return NotImplemented
 
     def __neg__(self):
-        return -1*self if SignomialsEnabled else NotImplemented
+        return -1*self if SignomialsEnabled else NotImplemented  # pylint: disable=using-constant-test
 
     def __sub__(self, other):
-        return self + -other if SignomialsEnabled else NotImplemented
+        return self + -other if SignomialsEnabled else NotImplemented  # pylint: disable=using-constant-test
 
     def __rsub__(self, other):
-        return other + -self if SignomialsEnabled else NotImplemented
+        return other + -self if SignomialsEnabled else NotImplemented  # pylint: disable=using-constant-test
 
     def relaxed(self, relaxvar):
         "Returns the relaxation of the constraint in a list."

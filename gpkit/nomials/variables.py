@@ -13,9 +13,9 @@ from ..small_scripts import is_sweepvar
 def addmodelstodescr(descr, addtonamedvars=None):
     "Add models to descr, optionally adding the second argument to NAMEDVARS"
     if NamedVariables.lineage:
-        descr["lineage"] = descr.get("lineage", ()) + NamedVariables.lineage
+        descr["lineage"] = NamedVariables.lineage
         if addtonamedvars:
-            NamedVariables.namedvars[NamedVariables.lineage].append(addtonamedvars)
+            NamedVariables.namedvars[descr["lineage"]].append(addtonamedvars)
 
 
 class Variable(Monomial):

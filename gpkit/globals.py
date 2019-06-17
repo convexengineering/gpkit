@@ -94,12 +94,11 @@ class Vectorize(object):
 
     def __enter__(self):
         "Enters a vectorized environment."
-        # NOTE: Class reference
         Vectorize.vectorization = (self.dimension_length,) + self.vectorization
 
     def __exit__(self, type_, val, traceback):
         "Leaves a vectorized environment."
-        Vectorize.vectorization = self.vectorization[1:]  # NOTE: Class reference
+        Vectorize.vectorization = self.vectorization[1:]
 
 
 class NamedVariables(object):
