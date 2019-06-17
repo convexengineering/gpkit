@@ -5,6 +5,9 @@ import os
 import importlib
 from ..repr_conventions import DEFAULT_UNIT_PRINTING
 
+if sys.version_info >= (3, 0):
+    reload = importlib.reload  # pylint: disable=redefined-builtin,invalid-name,no-member
+
 
 def generate_example_tests(path, testclasses, solvers=None, newtest_fn=None):
     """
@@ -91,7 +94,7 @@ def logged_example_testcase(name, imported, path):
             if name not in imported:
                 imported[name] = importlib.import_module(name)
             else:
-                importlib.reload(imported[name])
+                reload(imported[name])
         getattr(self, name)(imported[name])
     return test
 

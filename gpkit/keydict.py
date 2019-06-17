@@ -57,7 +57,7 @@ class KeyDict(dict):
     """
     collapse_arrays = True
     keymapping = True
-    keymap = frozenset()  # to check if init is run after pickling
+    keymap = []  # to check if init is run after pickling
 
     def __init__(self, *args, **kwargs):
         "Passes through to dict.__init__ via the `update()` method"
