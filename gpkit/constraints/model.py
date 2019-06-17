@@ -254,12 +254,13 @@ class Model(CostedConstraintSet):
                     sol = feas.solve(**solveargs)
                 except InvalidGPConstraint:
                     sol = feas.localsolve(**solveargs)
+                relaxed_constraints = feas[0]["relaxed constraints"]
                 relaxed = get_relaxed(sol(constrsrelaxed.relaxvars),
-                                      range(len(feas[0][0])))
+                                      range(len(relaxed_constraints)))
                 if verbosity and relaxed:
                     print("\nSolves with these constraints relaxed:")
                     for relaxval, i in relaxed:
-                        constraint = feas[0][0][i][0]
+                        constraint = relaxed_constraints[i][0]
                         # substitutions of the final relax value
                         conleft = constraint.left.sub(
                             {constrsrelaxed.relaxvars[i]: relaxval})

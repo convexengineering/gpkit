@@ -52,7 +52,7 @@ class Signomial(Nomial):
                 hmap.units_of_product(cs)
         super(Signomial, self).__init__(hmap)
         if self.any_nonpositive_cs:
-            if require_positive and not SignomialsEnabled:
+            if require_positive and not SignomialsEnabled.status:
                 raise ValueError("each c must be positive.")
             self.__class__ = Signomial
         elif len(self.hmap) == 1:
@@ -228,13 +228,13 @@ class Signomial(Nomial):
         return NotImplemented
 
     def __neg__(self):
-        return -1*self if SignomialsEnabled else NotImplemented  # pylint: disable=using-constant-test
+        return -1*self if SignomialsEnabled.status else NotImplemented
 
     def __sub__(self, other):
-        return self + -other if SignomialsEnabled else NotImplemented  # pylint: disable=using-constant-test
+        return self + -other if SignomialsEnabled.status else NotImplemented
 
     def __rsub__(self, other):
-        return other + -self if SignomialsEnabled else NotImplemented  # pylint: disable=using-constant-test
+        return other + -self if SignomialsEnabled.status else NotImplemented
 
     def relaxed(self, relaxvar):
         "Returns the relaxation of the constraint in a list."
@@ -591,7 +591,7 @@ class SignomialInequality(ScalarSingleEquationConstraint):
 
     def __init__(self, left, oper, right):
         ScalarSingleEquationConstraint.__init__(self, left, oper, right)
-        if not SignomialsEnabled:
+        if not SignomialsEnabled.status:
             raise TypeError("Cannot initialize SignomialInequality"
                             " outside of a SignomialsEnabled environment.")
         if self.oper == "<=":
@@ -685,8 +685,9 @@ class SignomialInequality(ScalarSingleEquationConstraint):
             "Substitute solution into a posynomial and return the result"
             hmap = posy.sub(result["variables"],
                             require_positive=False).hmap
-            assert len(hmap) == 1 and not list(hmap.keys())[0]  # constant
-            return hmap.values()[0]
+            (key, value), = hmap.items()
+            assert not key  # constant
+            return value
 
         var_senss = HashVector()
         invnegy_val = 1/subval(self._negysig)

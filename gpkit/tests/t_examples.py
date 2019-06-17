@@ -2,7 +2,7 @@
 import unittest
 import os
 import numpy as np
-import cPickle as pickle
+import pickle
 
 from gpkit import settings
 from gpkit.tests.helpers import generate_example_tests

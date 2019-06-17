@@ -65,8 +65,7 @@ def new_test(name, solver, import_dict, path, testfn=None):
         for globname, global_thing in [
                 ("model numbers", gpkit.globals.NamedVariables.modelnums),
                 ("lineage", gpkit.NamedVariables.lineage),
-                ("signomials enabled", gpkit.SignomialsEnabled),
-                ("signomials enabled base", gpkit.SignomialsEnabled._true),  # pylint: disable=protected-access
+                ("signomials enabled", gpkit.SignomialsEnabled.status),
                 ("vectorization", gpkit.Vectorize.vectorization),
                 ("namedvars", gpkit.NamedVariables.namedvars)]:
             if global_thing:
@@ -92,7 +91,7 @@ def logged_example_testcase(name, imported, path):
             if name not in imported:
                 imported[name] = importlib.import_module(name)
             else:
-                reload(imported[name])
+                importlib.reload(imported[name])
         getattr(self, name)(imported[name])
     return test
 

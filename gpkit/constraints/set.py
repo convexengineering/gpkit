@@ -13,7 +13,7 @@ def add_meq_bounds(bounded, meq_bounded):
     still_alive = True
     while still_alive:
         still_alive = False  # if no changes are made, the loop exits
-        for bound, conditions in meq_bounded.items():
+        for bound, conditions in list(meq_bounded.items()):
             if bound in bounded:  # bound exists in an inequality
                 del meq_bounded[bound]
                 continue

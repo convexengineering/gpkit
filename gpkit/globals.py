@@ -51,17 +51,6 @@ so we can prevent others from having to see this message.
 
 settings = load_settings()
 
-
-class SignomialsEnabledMeta(type):
-    "Metaclass to implement falsiness for SignomialsEnabled"
-
-    def __nonzero__(cls):
-        return 1 if cls._true else 0
-
-    def __bool__(cls):
-        return cls._true
-
-
 class SignomialsEnabled(object):
     """Class to put up and tear down signomial support in an instance of GPkit.
 
@@ -74,14 +63,13 @@ class SignomialsEnabled(object):
         >>>     constraints = [x >= 1-y]
         >>> gpkit.Model(x, constraints).localsolve()
     """
-    __metaclass__ = SignomialsEnabledMeta
-    _true = False  # the current signomial permissions
+    status = False  # the current signomial permissions
 
     def __enter__(self):
-        SignomialsEnabled._true = True
+        SignomialsEnabled.status = True
 
     def __exit__(self, type_, val, traceback):
-        SignomialsEnabled._true = False
+        SignomialsEnabled.status = False
 
 
 class Vectorize(object):
