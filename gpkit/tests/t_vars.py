@@ -29,6 +29,7 @@ class TestVarKey(unittest.TestCase):
         self.assertRaises(TypeError, lambda: VarKey('x', name='y'))
         # pylint: disable=redundant-keyword-arg
         self.assertRaises(TypeError, lambda: VarKey(x, name='y'))
+        self.assertIsInstance(x.latex(), str)
 
     def test_eq_neq(self):
         """Test boolean equality operators"""

@@ -232,6 +232,9 @@ class TestModelSubs(unittest.TestCase):
         a = m.solve(verbosity=0)["cost"]
         b = [10, 15, 14, 21, 22, 33]
         self.assertTrue(all(abs(a-b)/(a+b) < 1e-7))
+        for i, bi in enumerate(b):
+            ai = m.solution.atindex(i)["cost"]
+            self.assertTrue(abs(ai-bi)/(ai+bi) < 1e-7)
         m = Model(x, [x >= y.prod()])
         m.substitutions.update({y: ('sweep', [[2, 3, 9], [5, 7, 11]])})
         self.assertRaises(ValueError, m.solve, verbosity=0)

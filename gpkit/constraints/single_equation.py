@@ -21,12 +21,7 @@ class SingleEquationConstraint(GPkitObject):
 
     def latex(self, excluded=("units")):
         "Latex representation without attributes in excluded list"
-        latex_oper = self.latex_opers[self.oper]
-        latexleft = trycall(self.left, "latex", excluded, str(self.left))
-        latexright = trycall(self.right, "latex", excluded, str(self.right))
-        return ("%s %s %s" % (latexleft, latex_oper, latexright))
-
-
-def trycall(obj, attr, arg, default):
-    "Try to call method of an object, returning `default` if it does not exist"
-    return default if not hasattr(obj, attr) else getattr(obj, attr)(arg)
+        return ("%s %s %s" % (
+            try_str_without(self.left, excluded, latex=True),
+            self.latex_opers[self.oper],
+            try_str_without(self.right, excluded, latex=True)))

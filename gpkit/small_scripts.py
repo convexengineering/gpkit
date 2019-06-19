@@ -31,9 +31,11 @@ def maybe_flatten(value):
     return value
 
 
-def try_str_without(item, excluded):
+def try_str_without(item, excluded, latex=False):
     "Try to call item.str_without(excluded); fall back to str(item)"
-    if hasattr(item, "str_without"):
+    if latex and hasattr(item, "latex"):
+        return item.latex(excluded)
+    elif hasattr(item, "str_without"):
         return item.str_without(excluded)
     return str(item)
 

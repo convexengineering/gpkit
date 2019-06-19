@@ -36,8 +36,6 @@ class NomialMap(HashVector):
                         self[key] *= conversion
                 except DimensionalityError:
                     pass
-            elif not isinstance(thing, Quantity):
-                self.units = thing.units
             else:
                 self.units = qty(thing.units)
         elif hasattr(thing2, "units"):
@@ -59,7 +57,7 @@ class NomialMap(HashVector):
         if self.units != other.units:
             try:
                 other *= float(other.units/self.units)
-            except TypeError:  # if one of those units is None
+            except (TypeError, AttributeError):  # if one of those is None
                 raise DimensionalityError(self.units, other.units)
         hmap = HashVector.__add__(self, other)
         hmap.units = self.units

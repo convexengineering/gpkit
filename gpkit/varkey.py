@@ -112,9 +112,6 @@ class VarKey(GPkitObject):  # pylint:disable=too-many-instance-attributes
             string = "\\vec{%s}" % string  # add vector arrow for veckeys
         return string
 
-    def _repr_latex_(self):
-        return "$$"+self.latex()+"$$"
-
     def __hash__(self):
         return self._hashvalue
 
@@ -124,6 +121,6 @@ class VarKey(GPkitObject):  # pylint:disable=too-many-instance-attributes
         return self.eqstr == other.eqstr
 
     def __ne__(self, other):
-        return not self.__eq__(other)
+        return not self == other
 
 from .nomials import NomialMap  # pylint: disable=wrong-import-position

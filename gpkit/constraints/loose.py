@@ -10,8 +10,7 @@ class Loose(ConstraintSet):
     def __init__(self, constraints, senstol=None, raiseerror=False,
                  printwarning=False):
         super(Loose, self).__init__(constraints)
-        if senstol:
-            self.senstol = senstol
+        self.senstol = senstol or self.senstol
         self.raiseerror = raiseerror
         self.printwarning = printwarning
 

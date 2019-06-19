@@ -83,6 +83,13 @@ class TestMonomial(unittest.TestCase):
         self.assertEqual(type(xstr), str)
         self.assertTrue('S' in xstr and 'rho' in xstr)
 
+    def test_add(self):
+        x = Monomial("x")
+        y = Monomial("y", units="ft")
+        if gpkit.units:
+            with self.assertRaises(gpkit.DimensionalityError):
+                p = x + y
+
     def test_eq_ne(self):
         "Test equality and inequality comparators"
         # simple one
@@ -160,6 +167,9 @@ class TestMonomial(unittest.TestCase):
         n_hat = [1, 0]
         p = n_hat[0]*x0 + n_hat[1]*x1
         self.assertEqual(p, x0)
+
+        if gpkit.units:
+            self.assertNotEqual((x+1), (x+1)*gpkit.units("m"))
 
     def test_pow(self):
         "Test Monomial exponentiation"
@@ -256,6 +266,7 @@ class TestPosynomial(unittest.TestCase):
         # check arithmetic
         p2 = 3.14*x*y**2 + y/2 + x**3*6*y + 2
         self.assertEqual(p, p2)
+        self.assertEqual(p, sum(ms))
 
         hmap = NomialMap({HashVector({'m': 1, 'v': 2}): 0.5,
                           HashVector({'m': 1, 'g': 1, 'h': 1}): 1})

@@ -313,6 +313,12 @@ class TestBounded(unittest.TestCase):
         bm = Model(m.cost, Bounded(m))
         sol = bm.solve(verbosity=0)
         self.assertAlmostEqual(sol["cost"], 1.0)
+        bm = Model(m.cost, Bounded(m, lower=1e-10))
+        sol = bm.solve(verbosity=0)
+        self.assertAlmostEqual(sol["cost"], 1.0)
+        bm = Model(m.cost, Bounded(m, upper=1e10))
+        sol = bm.solve(verbosity=0)
+        self.assertAlmostEqual(sol["cost"], 1.0)
 
 
 TESTS = [TestConstraint, TestMonomialEquality, TestSignomialInequality,
