@@ -5,6 +5,7 @@ from gpkit import Variable, Monomial, Posynomial, Signomial, SignomialsEnabled
 from gpkit import VectorVariable, NomialArray
 from gpkit.nomials import NomialMap
 from gpkit.small_classes import HashVector
+from gpkit.exceptions import InvalidPosynomial
 import gpkit
 
 
@@ -43,10 +44,10 @@ class TestMonomial(unittest.TestCase):
         self.assertTrue(crazy_varkey in m.exp)
 
         # non-positive c raises
-        self.assertRaises(ValueError, Monomial, -2)
-        self.assertRaises(ValueError, Monomial, -1.)
-        self.assertRaises(ValueError, Monomial, 0)
-        self.assertRaises(ValueError, Monomial, 0.0)
+        self.assertRaises(InvalidPosynomial, Monomial, -2)
+        self.assertRaises(InvalidPosynomial, Monomial, -1.)
+        self.assertRaises(InvalidPosynomial, Monomial, 0)
+        self.assertRaises(InvalidPosynomial, Monomial, 0.0)
 
         # can create nameless Monomials
         x1 = Monomial()
@@ -88,7 +89,7 @@ class TestMonomial(unittest.TestCase):
         y = Monomial("y", units="ft")
         if gpkit.units:
             with self.assertRaises(gpkit.DimensionalityError):
-                p = x + y
+                _ = x + y
 
     def test_eq_ne(self):
         "Test equality and inequality comparators"

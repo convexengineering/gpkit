@@ -9,6 +9,7 @@ from ..keydict import KeyDict, KeySet
 from ..small_scripts import mag
 from ..solution_array import SolutionArray
 from .costed import CostedConstraintSet
+from ..exceptions import InvalidPosynomial, InvalidGPConstraint
 
 
 DEFAULT_SOLVER_KWARGS = {"cvxopt": {"kktsolver": "ldl"}}
@@ -84,8 +85,12 @@ class GeometricProgram(CostedConstraintSet, NomialData):
                 raise ValueError("substitution {%s: %s} with value type %s is"
                                  " not allowed in .substitutions."
                                  % (key, sub, type(sub)))
-        self.posynomials = [cost.sub(self.substitutions)]
-        self.posynomials.extend(self.as_posyslt1(self.substitutions))
+        try:
+            self.posynomials = [cost.sub(self.substitutions)]
+            self.posynomials.extend(self.as_posyslt1(self.substitutions))
+        except InvalidPosynomial:
+            raise InvalidGPConstraint(
+                    "a GeometricProgram cannot contain Signomials.")
         self.hmaps = [p.hmap for p in self.posynomials]
         ## Generate various maps into the posy- and monomials
         # k [j]: number of monomials (columns of F) present in each constraint
@@ -100,8 +105,6 @@ class GeometricProgram(CostedConstraintSet, NomialData):
         self.meq_idxs = {sum(self.k[:i]) for i, p in enumerate(self.posynomials)
                          if getattr(p, "from_meq", False)}
         self.gen()  # A [i, v]: sparse matrix of powers in each monomial
-        if any(c <= 0 for c in self.cs):
-            raise ValueError("a GeometricProgram cannot contain Signomials.")
         if self.missingbounds and not allow_missingbounds:
             boundstrs = "\n".join("  %s has no %s bound%s" % (v, b, x)
                                   for (v, b), x in self.missingbounds.items())

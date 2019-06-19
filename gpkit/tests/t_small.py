@@ -30,9 +30,9 @@ class TestHashVector(unittest.TestCase):
         hv = HashVector(x=4, y=0, z=1)
         self.assertEqual(hv**0.5, {'x': 2, 'y': 0, 'z': 1})
         with self.assertRaises(TypeError):
-            hv**hv
+            _ = hv**hv
         with self.assertRaises(TypeError):
-            hv**"a"
+            _ = hv**"a"
 
     def test_mul_add(self):
         """Test multiplication and addition"""
@@ -44,12 +44,12 @@ class TestHashVector(unittest.TestCase):
         self.assertEqual(r, HashVector(x=0, y=0))
         self.assertTrue(isinstance(r, HashVector))
         with self.assertRaises(TypeError):
-            r*"a"
+            _ = r*"a"
         r = a - 2
         self.assertEqual(r, HashVector(x=-1, y=5))
         self.assertTrue(isinstance(r, HashVector))
         with self.assertRaises(TypeError):
-            r + "a"
+            _ = r + "a"
         # multiplication and addition by dicts
         self.assertEqual(a + b, a)
         self.assertEqual(a + b + c, HashVector(x=4, y=7, z=4))
@@ -74,7 +74,7 @@ class TestCootMatrix(unittest.TestCase):
             A.append(-1, -1, 3)
         self.assertTrue(
             (A.todense() == np.array([[1, 0], [-0.5, 0],
-                                     [-1, 0], [0, -1]])).all())
+                                      [-1, 0], [0, -1]])).all())
 
 
 class TestSmallScripts(unittest.TestCase):

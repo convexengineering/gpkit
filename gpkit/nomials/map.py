@@ -2,7 +2,7 @@
 from collections import defaultdict
 import numpy as np
 from ..exceptions import DimensionalityError
-from ..small_classes import HashVector, Quantity, Strings, qty, EMPTY_HV
+from ..small_classes import HashVector, Strings, qty, EMPTY_HV
 from ..small_scripts import mag
 from .substitution import parse_subs
 

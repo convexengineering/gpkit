@@ -1,3 +1,4 @@
+Infeasible monomial equality: Cannot convert from 'M [kg]' to 'V [m**3]'
 
 Cost
 ----
