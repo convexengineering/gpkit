@@ -199,6 +199,8 @@ class Signomial(Nomial):
                     new, accumulated = c_s*c_o, hmap.get(exp, 0)
                     if new != -accumulated:
                         hmap[exp] = accumulated + new
+                    elif accumulated:
+                        del hmap[exp]
             hmap.units_of_product(self.hmap.units, other.hmap.units)
             return Signomial(hmap)
         return NotImplemented
@@ -349,8 +351,8 @@ class ScalarSingleEquationConstraint(SingleEquationConstraint):
         elif self.oper == "=":
             return [self.left <= relaxvar*self.right,
                     relaxvar*self.left >= self.right]
-        raise ValueError("Constraint had unknown operator %s."
-                         " Cannot relax the constraint %s" % self.oper, self)
+        raise ValueError(
+            "Constraint %s had unknown operator %s." % self.oper, self)
 
 
 # pylint: disable=too-many-instance-attributes, invalid-unary-operand-type

@@ -229,6 +229,12 @@ class TestSignomial(unittest.TestCase):
             self.assertEqual((1 - x/y**2).latex(), "-\\frac{x}{y^{2}} + 1")
         self.assertRaises(TypeError, lambda: x-y)
 
+    def test_mult(self):
+        "Test Signomial multiplication"
+        x = Variable("x")
+        with SignomialsEnabled():
+            self.assertEqual((x+1)*(x-1), x**2 - 1)
+
     def test_eq_ne(self):
         "Test Signomial equality and inequality operators"
         x = Variable('x')

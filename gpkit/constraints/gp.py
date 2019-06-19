@@ -9,7 +9,7 @@ from ..keydict import KeyDict
 from ..small_scripts import mag
 from ..solution_array import SolutionArray
 from .costed import CostedConstraintSet
-from ..exceptions import InvalidPosynomial, InvalidGPConstraint
+from ..exceptions import InvalidPosynomial
 
 
 DEFAULT_SOLVER_KWARGS = {"cvxopt": {"kktsolver": "ldl"}}
@@ -86,10 +86,9 @@ class GeometricProgram(CostedConstraintSet, NomialData):
                                  % (key, sub, type(sub)))
         try:
             self.posynomials = [cost.sub(self.substitutions)]
-            self.posynomials.extend(self.as_posyslt1(self.substitutions))
         except InvalidPosynomial:
-            raise InvalidGPConstraint(
-                "a GeometricProgram cannot contain Signomials.")
+            raise InvalidPosynomial("cost must be a Posynomial")
+        self.posynomials.extend(self.as_posyslt1(self.substitutions))
         self.hmaps = [p.hmap for p in self.posynomials]
         ## Generate various maps into the posy- and monomials
         # k [j]: number of monomials (columns of F) present in each constraint
