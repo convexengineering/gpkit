@@ -5,7 +5,7 @@ from collections import defaultdict
 import numpy as np
 from ..nomials import NomialData
 from ..small_classes import CootMatrix, SolverLog, Numbers, FixedScalar
-from ..keydict import KeyDict, KeySet
+from ..keydict import KeyDict
 from ..small_scripts import mag
 from ..solution_array import SolutionArray
 from .costed import CostedConstraintSet
@@ -72,7 +72,6 @@ class GeometricProgram(CostedConstraintSet, NomialData):
         self.nu_by_posy = None
         self.solver_log = None
         self.solver_out = None
-        # GPs have a unique varkeys property instead of relying on inheritance
         self.__bare_init__(cost, constraints, substitutions, varkeys=False)
         for key, sub in self.substitutions.items():
             if isinstance(sub, FixedScalar):
@@ -90,7 +89,7 @@ class GeometricProgram(CostedConstraintSet, NomialData):
             self.posynomials.extend(self.as_posyslt1(self.substitutions))
         except InvalidPosynomial:
             raise InvalidGPConstraint(
-                    "a GeometricProgram cannot contain Signomials.")
+                "a GeometricProgram cannot contain Signomials.")
         self.hmaps = [p.hmap for p in self.posynomials]
         ## Generate various maps into the posy- and monomials
         # k [j]: number of monomials (columns of F) present in each constraint
@@ -120,13 +119,6 @@ class GeometricProgram(CostedConstraintSet, NomialData):
             self._cs.extend(hmap.values())
         self.A, self.missingbounds = genA(self.exps, self.varlocs,
                                           self.meq_idxs)
-
-    @property
-    def varkeys(self):
-        "The GP's varkeys, created when necessary."
-        if self._varkeys is None:
-            self._varkeys = KeySet(self.varlocs)
-        return self._varkeys
 
     # pylint: disable=too-many-statements, too-many-locals
     def solve(self, solver=None, verbosity=1, warn_on_check=False,

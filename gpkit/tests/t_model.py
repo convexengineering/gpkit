@@ -278,6 +278,8 @@ class TestSP(unittest.TestCase):
             m = Model(x, [x+y >= w, x+y <= z/2, y <= x, y >= 1], {z: 3, w: 3})
         r1 = ConstantsRelaxed(m)
         self.assertEqual(len(r1.varkeys), 8)
+        with self.assertRaises(ValueError):
+            mr1 = Model(x*r1.relaxvars, r1)  # no 'prod'
         mr1 = Model(x*r1.relaxvars.prod()**10, r1)
         cost1 = mr1.localsolve(verbosity=0)["cost"]
         self.assertAlmostEqual(cost1/1024, 1, self.ndig)
@@ -713,6 +715,7 @@ class TestModelNoSolve(unittest.TestCase):
 
     def test_modelcontainmentprinting(self):
         t = Thing2()
+        self.assertEqual(t["c"].key.models, ("Thing2", "Thing"))
         self.assertIsInstance(t.str_without(), str)
         self.assertIsInstance(t.latex(), str)
 

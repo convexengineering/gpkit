@@ -74,7 +74,7 @@ class VarKey(GPkitObject):  # pylint:disable=too-many-instance-attributes
         "Returns string without certain fields (such as 'lineage')."
         string = self.name
         for subscript in self.subscripts:
-            if self.descr.get(subscript) and subscript not in excluded:
+            if subscript in self.descr and subscript not in excluded:
                 substring = self.descr[subscript]
                 if subscript == "lineage":
                     substring = self.lineagestr("modelnums" not in excluded)
@@ -98,18 +98,16 @@ class VarKey(GPkitObject):  # pylint:disable=too-many-instance-attributes
     def latex(self, excluded=()):
         "Returns latex representation."
         string = self.name
+        if self.shape and not self.idx:
+            string = "\\vec{%s}" % string  # add vector arrow for veckeys
         for subscript in self.subscripts:
             if subscript in self.descr and subscript not in excluded:
                 substring = self.descr[subscript]
                 if subscript == "lineage":
                     substring = self.lineagestr("modelnums" not in excluded)
+                elif subscript == "idx" and len(self.idx) == 1:
+                    substring = self.idx[0]  # drop the tuple comma in 1D
                 string = "{%s}_{%s}" % (string, substring)
-                if subscript == "idx":
-                    if len(self.descr["idx"]) == 1:
-                        # drop the comma for 1-d vectors
-                        string = string[:-3]+string[-2:]
-        if self.shape and not self.idx:
-            string = "\\vec{%s}" % string  # add vector arrow for veckeys
         return string
 
     def __hash__(self):

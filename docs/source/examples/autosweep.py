@@ -13,8 +13,6 @@ m1 = Model(A**2, [A >= l**2 + units.m**2])
 tol1 = 1e-3
 bst1 = autosweep_1d(m1, tol1, l, [1, 10], verbosity=0)
 print "Solved after %2i passes, cost logtol +/-%.3g" % (bst1.nsols, bst1.tol)
-# test Model method
-solm = m1.autosweep({l: [1, 10]}, tol1, verbosity=0)
 # autosweep solution accessing
 l_vals = np.linspace(1, 10, 10)
 sol1 = bst1.sample_at(l_vals)
@@ -39,7 +37,9 @@ bst1_loaded = pickle.load(open("autosweep.pkl"))
 m2 = Model(A**2, [A >= (l/3)**2, A >= (l/3)**0.5 * units.m**1.5])
 tol2 = {"mosek": 1e-12, "cvxopt": 1e-7,
         "mosek_cli": 1e-6}[gpkit.settings["default_solver"]]
-bst2 = autosweep_1d(m2, tol2, l, [1, 10], verbosity=0)
+# test Model method
+sol2 = m2.autosweep({l: [1, 10]}, tol2, verbosity=0)
+bst2 = sol2.bst
 print "Solved after %2i passes, cost logtol +/-%.3g" % (bst2.nsols, bst2.tol)
 print "Table of solutions used in the autosweep:"
 print bst2.solarray.table()

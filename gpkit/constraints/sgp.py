@@ -178,15 +178,13 @@ class SequentialGeometricProgram(CostedConstraintSet):
         return self._results
 
     def _fill_x0(self, x0):
-        "Returns a copy of x0 with subsitutions and sp_inits added."
+        "Returns a copy of x0 with subsitutions added."
         x0 = KeyDict(x0) if x0 else KeyDict()
         for key in self.varkeys:
             if key in x0:
                 continue  # already specified by input dict
             elif key in self.substitutions:
                 x0[key] = self.substitutions[key]
-            elif key.sp_init:
-                x0[key] = key.sp_init
             # undeclared variables are handled by individual constraints
         return x0
 

@@ -10,14 +10,11 @@ class Tight(ConstraintSet):
     "ConstraintSet whose inequalities must result in an equality."
     reltol = 1e-6
 
-    def __init__(self, constraints, reltol=None, raiseerror=False,
-                 printwarning=False, **kwargs):
+    def __init__(self, constraints, reltol=None, raiseerror=False, **kwargs):
         super(Tight, self).__init__(constraints)
         self.reltol = reltol or self.reltol
         self.raiseerror = raiseerror
-        self.printwarning = printwarning
-        for key, value in kwargs.items():
-            setattr(self, key, value)
+        self.__dict__.update(kwargs)  # NOTE: for Berk's use in labelling
 
     def process_result(self, result):
         "Checks that all constraints are satisfied with equality"
@@ -57,5 +54,4 @@ class Tight(ConstraintSet):
                                           rightsubbed)
                 constraint.rel_diff = rel_diff
                 appendsolwarning(msg, constraint,
-                                 result, "Unexpectedly Loose Constraints",
-                                 self.printwarning)
+                                 result, "Unexpectedly Loose Constraints")

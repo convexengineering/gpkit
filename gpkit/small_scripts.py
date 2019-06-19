@@ -3,11 +3,8 @@ from collections import Iterable
 import numpy as np
 
 
-def appendsolwarning(msg, data, result, category="uncategorized",
-                     printwarning=False):
+def appendsolwarning(msg, data, result, category="uncategorized"):
     "Append a particular category of warnings to a solution."
-    if printwarning:
-        print "Warning: %s\n" % msg
     if "warnings" not in result:
         result["warnings"] = {}
     if category not in result["warnings"]:
