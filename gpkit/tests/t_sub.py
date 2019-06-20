@@ -188,7 +188,6 @@ class TestModelSubs(unittest.TestCase):
 
     def test_vector_sweep(self):
         """Test sweep involving VectorVariables"""
-        # TODO: python3 / rand salt fluctuations
         x = Variable("x")
         x_min = Variable("x_min", 1)
         y = VectorVariable(2, "y")
@@ -196,7 +195,6 @@ class TestModelSubs(unittest.TestCase):
         m.substitutions.update({y: ('sweep', [[2, 3], [5, 7], [9, 11]])})
         a = m.solve(verbosity=0)["cost"]
         b = [6, 15, 27, 14, 35, 63, 22, 55, 99]
-        # below line fails with changing dictionary keys in py3
         self.assertTrue(all(abs(a-b)/(a+b) < 1e-7))
         x_min = Variable("x_min", 1)  # constant to check array indexing
         m = Model(x, [x >= y.prod(), x >= x_min])
