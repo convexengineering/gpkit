@@ -54,7 +54,7 @@ setup(
     url="https://www.github.com/convexengineering/gpkit",
     install_requires=["numpy >= 1.12.1", "pint >= 0.8.1", "scipy", "ad",
                       "cvxopt >= 1.1.8", "six"],
-    version="0.9.0.0",
+    version="0.9.0.1",
     packages=["gpkit", "gpkit.tools", "gpkit.interactive", "gpkit.constraints",
               "gpkit.nomials", "gpkit.tests", "gpkit._mosek", "gpkit._pint"],
     package_data={"gpkit": ["env/settings"],

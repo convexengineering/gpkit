@@ -154,18 +154,18 @@ class Mosek(SolverBackend):
 
     def look(self):  # pylint: disable=too-many-return-statements
         "Looks in default install locations for latest mosek version."
-        if sys.platform == "win32":
+        if sys.platform[:3] == "win":
             rootdir = "C:\\Program Files\\Mosek"
             mosek_platform = "win64x86"
             libpattern = "mosek64_?_?.dll"
             self.flags = "-Wl,--export-all-symbols,-R"
-        elif sys.platform == "darwin":
+        elif sys.platform[:6] == "darwin":
             rootdir = pathjoin(os.path.expanduser("~"), "mosek")
             mosek_platform = "osx64x86"
             libpattern = "libmosek64.?.?.dylib"
             self.flags = "-Wl,-rpath"
 
-        elif sys.platform == "linux2":
+        elif sys.platform[:5] == "linux":
             rootdir = pathjoin(os.path.expanduser("~"), "mosek")
             mosek_platform = "linux64x86"
             libpattern = "libmosek64.so"
