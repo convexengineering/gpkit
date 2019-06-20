@@ -1,4 +1,5 @@
 "Scripts for generating, solving and sweeping programs"
+from __future__ import print_function
 from time import time
 import numpy as np
 from ..nomials import parse_subs
@@ -20,7 +21,7 @@ def evaluate_linked(constants, linked):
         kdc = KeyDict({k: adnumber(maybe_flatten(v))
                        for k, v in constants.items()})
         kdc.log_gets = True
-    kdc_plain = KeyDict(constants)
+    kdc_plain = None
     array_calulated, logged_array_gets = {}, {}
     for v, f in linked.items():
         try:
@@ -51,6 +52,8 @@ def evaluate_linked(constants, linked):
                 print("Couldn't auto-differentiate linked variable %s.\n  "
                       "(to raise the error directly for debugging purposes,"
                       " set gpkit.settings[\"ad_errors_raise\"] to True)" % v)
+            if kdc_plain is None:
+                kdc_plain = KeyDict(constants)
             constants[v] = f(kdc_plain)
             v.descr.pop("gradients", None)
         finally:
@@ -135,14 +138,17 @@ def run_sweep(genfunction, self, solution, skipsweepfailures,
               constants, sweep, linked,
               solver, verbosity, **kwargs):
     "Runs through a sweep."
+    # sort sweeps by the eqstr of their varkey
+    sweepvars, sweepvals = zip(*sorted(list(sweep.items()),
+                                       key=lambda vkval: vkval[0].eqstr))
     if len(sweep) == 1:
-        sweep_grids = np.array(list(sweep.values()))
+        sweep_grids = np.array(list(sweepvals))
     else:
-        sweep_grids = np.meshgrid(*list(sweep.values()))
+        sweep_grids = np.meshgrid(*list(sweepvals))
 
     N_passes = sweep_grids[0].size
     sweep_vects = {var: grid.reshape(N_passes)
-                   for (var, grid) in zip(sweep, sweep_grids)}
+                   for (var, grid) in zip(sweepvars, sweep_grids)}
 
     if verbosity > 0:
         print("Solving over %i passes." % N_passes)
@@ -170,15 +176,12 @@ def run_sweep(genfunction, self, solution, skipsweepfailures,
 
     solution["sweepvariables"] = KeyDict()
     ksweep = KeyDict(sweep)
-    delvars = set()
-    for var, val in solution["constants"].items():
+    for var, val in list(solution["constants"].items()):
         if var in ksweep:
             solution["sweepvariables"][var] = val
-            delvars.add(var)
-        else:
+            del solution["constants"][var]
+        elif var not in linked:
             solution["constants"][var] = [val[0]]
-    for var in delvars:
-        del solution["constants"][var]
 
     if verbosity > 0:
         soltime = time() - tic

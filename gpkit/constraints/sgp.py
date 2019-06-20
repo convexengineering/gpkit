@@ -1,4 +1,5 @@
 """Implement the SequentialGeometricProgram class"""
+from __future__ import print_function
 from time import time
 import numpy as np
 from collections import OrderedDict
@@ -128,7 +129,7 @@ class SequentialGeometricProgram(CostedConstraintSet):
                                       warn_on_check=True,
                                       gen_result=False, **kwargs)
                 self.solver_outs.append(solver_out)
-                x0 = KeyDict(zip(gp.varlocs, np.exp(solver_out["primal"])))
+                x0 = dict(zip(gp.varlocs, np.exp(solver_out["primal"])))
                 if "objective" in solver_out:
                     cost = float(solver_out["objective"])
                 else:

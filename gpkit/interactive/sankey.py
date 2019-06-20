@@ -1,4 +1,5 @@
 "implements Sankey"
+from __future__ import print_function
 from collections import defaultdict
 import numpy as np
 from ipysankeywidget import SankeyWidget  # pylint: disable=import-error
@@ -79,7 +80,7 @@ class Sankey(object):
                 if printing:
                     print ("(objective) adds %+.3g to the sensitivity"
                            " of %s" % (-value, key))
-                    print "(objective) is", self.gp.cost, "\n"
+                    print("(objective) is", self.gp.cost, "\n")
         for constr in constrset:
             if key not in constr.v_ss:
                 continue
@@ -102,7 +103,7 @@ class Sankey(object):
                 if printing:
                     print ("%s adds %+.3g to the overall sensitivity of %s"
                            % (source, value, key))
-                    print source, "is", constr.str_without("units"), "\n"
+                    print(source, "is", constr.str_without("units"), "\n")
                 if ((isinstance(constr, MonomialEquality)
                      or abs(value) >= INSENSITIVE)
                         and all(len(getattr(p, "hmap", [])) == 1

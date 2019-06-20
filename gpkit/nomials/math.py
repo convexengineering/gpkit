@@ -1,4 +1,5 @@
 """Signomial, Posynomial, Monomial, Constraint, & MonoEQCOnstraint classes"""
+from __future__ import print_function, unicode_literals
 from collections import defaultdict
 import numpy as np
 from .core import Nomial
@@ -47,7 +48,8 @@ class Signomial(Nomial):
             elif isinstance(hmap, Strings):
                 hmap = VarKey(hmap, **descr).hmap
             elif isinstance(hmap, dict):
-                exp = HashVector({VarKey(k): v for k, v in hmap.items() if v})
+                exp = HashVector({VarKey(k): v
+                                  for k, v in hmap.items() if v})
                 hmap = NomialMap({exp: mag(cs)})
                 hmap.units_of_product(cs)
         super(Signomial, self).__init__(hmap)
@@ -399,7 +401,7 @@ class PosynomialInequality(ScalarSingleEquationConstraint):
             return hmap
         coeff = 1 - hmap[EMPTY_HV]
         if pmap is not None:  # note constant term's mmap
-            const_idx = hmap.keys().index(EMPTY_HV)
+            const_idx = list(hmap.keys()).index(EMPTY_HV)
             self.const_mmap = self.pmap.pop(const_idx)  # pylint: disable=attribute-defined-outside-init
             self.const_coeff = coeff  # pylint: disable=attribute-defined-outside-init
         if coeff >= -self.feastol and len(hmap) == 1:
@@ -439,7 +441,7 @@ class PosynomialInequality(ScalarSingleEquationConstraint):
             except DimensionalityError:
                 raise DimensionalityError(p_lt, m_gt)
         hmap = p_lt.hmap.copy()
-        for exp in hmap.keys():
+        for exp in list(hmap):
             hmap[exp-m_exp] = hmap.pop(exp)/m_c
         hmap = self._simplify_posy_ineq(hmap)
         if hmap is None:
@@ -492,11 +494,9 @@ class PosynomialInequality(ScalarSingleEquationConstraint):
                 for idx, percentage in self.const_mmap.items():
                     nu_[idx] += percentage * la*scale
             nu = nu_
-        var_senss = {}  # Constant sensitivities
-        for var in self.varkeys:
-            locs = presub.varlocs[var]
-            var_senss[var] = sum([presub.exps[i][var]*nu[i] for i in locs])
-        return var_senss
+        return {var: sum([presub.exps[i][var]*nu[i]
+                          for i in presub.varlocs[var]])
+                for var in self.varkeys}  # Constant sensitivities
 
     def as_gpconstr(self, x0):  # pylint: disable=unused-argument
         "The GP version of a Posynomial constraint is itself"
@@ -518,7 +518,7 @@ class MonomialEquality(PosynomialInequality):
         self.meq_bounded = {}
         self.relax_sensitivity = 0  # don't count equality sensitivities
         if self.unsubbed and len(self.varkeys) > 1:
-            exp = self.unsubbed[0].hmap.keys()[0]
+            exp, = list(self.unsubbed[0].hmap.keys())
             for key, e in exp.items():
                 if key in self.substitutions:
                     for bound in ("upper", "lower"):
@@ -561,7 +561,7 @@ class MonomialEquality(PosynomialInequality):
         if not la or not nu:
             return {}  # as_posyslt1 created no inequalities
         self.relax_sensitivity = la[0] - la[1]
-        var_senss = HashVector()
+        var_senss = {}
         for var in self.varkeys:
             for i, m in enumerate(self.unsubbed):
                 if var in m.varlocs:
@@ -632,8 +632,8 @@ class SignomialInequality(ScalarSingleEquationConstraint):
             self._negysig = Signomial(negy_hmap, require_positive=False)
             self._coeffsigs = {exp: Signomial(hmap, require_positive=False)
                                for exp, hmap in posy_hmaps.items()}
-            self._sigvars = {exp: (self._negysig.varkeys.keys()
-                                   + sig.varkeys.keys())
+            self._sigvars = {exp: (list(self._negysig.varkeys.keys())
+                                   + list(sig.varkeys.keys()))
                              for exp, sig in self._coeffsigs.items()}
             return p_ineq.as_posyslt1(substitutions)
 
@@ -670,10 +670,11 @@ class SignomialInequality(ScalarSingleEquationConstraint):
             "Substitute solution into a posynomial and return the result"
             hmap = posy.sub(result["variables"],
                             require_positive=False).hmap
-            assert len(hmap) == 1 and not hmap.keys()[0]  # constant
-            return hmap.values()[0]
+            (key, value), = hmap.items()
+            assert not key  # constant
+            return value
 
-        var_senss = HashVector()
+        var_senss = {}
         invnegy_val = 1/subval(self._negysig)
         for i, nu_i in enumerate(nu):
             mon = self._mons[i]

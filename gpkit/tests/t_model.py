@@ -1,5 +1,6 @@
 """Tests for GP and SP classes"""
 import unittest
+import sys
 import numpy as np
 from gpkit import (Model, Monomial, settings, VectorVariable, Variable,
                    SignomialsEnabled, ArrayVariable, SignomialEquality)
@@ -60,7 +61,7 @@ class TestGP(unittest.TestCase):
                           SignomialEquality(x**2 + x, y)])
         sol = m.localsolve(solver=self.solver, verbosity=0, mutategp=False)
         self.assertAlmostEqual(sol("x"), 0.1639472, self.ndig)
-        self.assertAlmostEqual(sol("y"), 0.1908254, self.ndig)
+        self.assertAlmostEqual(sol("y")[0], 0.1908254, self.ndig)
         self.assertAlmostEqual(sol("c"), 0.2669448, self.ndig)
         # test right vector input to sigeq
         with SignomialsEnabled():
@@ -68,7 +69,7 @@ class TestGP(unittest.TestCase):
                           SignomialEquality(y, x**2 + x)])
         sol = m.localsolve(solver=self.solver, verbosity=0)
         self.assertAlmostEqual(sol("x"), 0.1639472, self.ndig)
-        self.assertAlmostEqual(sol("y"), 0.1908254, self.ndig)
+        self.assertAlmostEqual(sol("y")[0], 0.1908254, self.ndig)
         self.assertAlmostEqual(sol("c"), 0.2669448, self.ndig)
         # test scalar input to sigeq
         y = Variable("y")
@@ -372,8 +373,7 @@ class TestSP(unittest.TestCase):
         y = Variable('y', 1)
         z = Variable('z', 4)
 
-        import sys
-        from cStringIO import StringIO
+        from io import StringIO
         old_stdout = sys.stdout
         sys.stdout = stringout = StringIO()
 
@@ -401,8 +401,7 @@ class TestSP(unittest.TestCase):
         y = Variable('y')
         z = Variable('z')
 
-        import sys
-        from cStringIO import StringIO
+        from io import StringIO
         old_stdout = sys.stdout
         sys.stdout = stringout = StringIO()
 
@@ -685,7 +684,7 @@ class Box(Model):
     w, d, h
     """
     def setup(self):
-        exec parse_variables(Box.__doc__)
+        exec(parse_variables(Box.__doc__))
         return [V == h*w*d]
 
 
@@ -722,11 +721,15 @@ class TestModelNoSolve(unittest.TestCase):
     def test_no_naming_on_var_access(self):
         # make sure that analysis models don't add their names to
         # variables looked up from other models
-        box = Box()
-        area_bounds = BoxAreaBounds(box)
-        M = Model(box["V"], [box, area_bounds])
-        for var in ("h", "w", "d"):
-            self.assertEqual(len(M.variables_byname(var)), 1)
+        if sys.version_info >= (3, 0):
+            with self.assertRaises(FutureWarning):
+                box = Box()
+        else:
+            box = Box()
+            area_bounds = BoxAreaBounds(box)
+            M = Model(box["V"], [box, area_bounds])
+            for var in ("h", "w", "d"):
+                self.assertEqual(len(M.variables_byname(var)), 1)
 
 
 TESTS = [TestModelSolverSpecific, TestModelNoSolve]

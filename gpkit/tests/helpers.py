@@ -5,6 +5,9 @@ import os
 import importlib
 from ..repr_conventions import DEFAULT_UNIT_PRINTING
 
+if sys.version_info >= (3, 0):
+    reload = importlib.reload  # pylint: disable=redefined-builtin,invalid-name,no-member
+
 
 def generate_example_tests(path, testclasses, solvers=None, newtest_fn=None):
     """
@@ -56,7 +59,10 @@ def new_test(name, solver, import_dict, path, testfn=None):
 
         import gpkit
         with NewDefaultSolver(solver):
-            testfn(name, import_dict, path)(self)
+            try:
+                testfn(name, import_dict, path)(self)
+            except FutureWarning as fw:
+                print(fw)
 
         # clear modelnums to ensure deterministic script-like output!
         gpkit.globals.NamedVariables.reset_modelnumbers()
@@ -66,7 +72,6 @@ def new_test(name, solver, import_dict, path, testfn=None):
                 ("model numbers", gpkit.globals.NamedVariables.modelnums),
                 ("lineage", gpkit.NamedVariables.lineage),
                 ("signomials enabled", gpkit.SignomialsEnabled),
-                ("signomials enabled base", gpkit.SignomialsEnabled._true),  # pylint: disable=protected-access
                 ("vectorization", gpkit.Vectorize.vectorization),
                 ("namedvars", gpkit.NamedVariables.namedvars)]:
             if global_thing:

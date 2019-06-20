@@ -1,5 +1,5 @@
 "Implements KeyDict and KeySet classes"
-from collections import defaultdict
+from collections import defaultdict, Hashable
 import numpy as np
 from .small_classes import Numbers, Quantity, FixedScalar
 from .small_scripts import is_sweepvar, isnan, SweepValue
@@ -57,6 +57,7 @@ class KeyDict(dict):
     """
     collapse_arrays = True
     keymapping = True
+    keymap = []
 
     def __init__(self, *args, **kwargs):
         "Passes through to dict.__init__ via the `update()` method"
@@ -66,6 +67,7 @@ class KeyDict(dict):
         self._unmapped_keys = set()
         self.log_gets = False
         self.logged_gets = set()
+        self.owned = set()
         self.update(*args, **kwargs)
 
     def get(self, key, alternative=KeyError):
@@ -75,15 +77,21 @@ class KeyDict(dict):
             return alternative
         return self[key]
 
+    def _copyonwrite(self, key):
+        "Copys arrays before they are written to"
+        if key not in self.owned:
+            dict.__setitem__(self, key, dict.__getitem__(self, key).copy())
+            self.owned.add(key)
+
     def update(self, *args, **kwargs):
         "Iterates through the dictionary created by args and kwargs"
-        for k, v in dict(*args, **kwargs).items():
-            if hasattr(v, "copy"):
-                # We don't want just a reference (for e.g. numpy arrays)
-                #   KeyDict values are expected to be immutable (Numbers)
-                #   or to have a copy attribute.
-                v = v.copy()
-            self[k] = v
+        if not self and len(args) == 1 and isinstance(args[0], KeyDict):
+            dict.update(self, args[0])
+            self.keymap.update(args[0].keymap)
+            self._unmapped_keys.update(args[0]._unmapped_keys)  # pylint:disable=protected-access
+        else:
+            for k, v in dict(*args, **kwargs).items():
+                self[k] = v
 
     def parse_and_index(self, key):
         "Returns key if key had one, and veckey/idx for indexed veckeys."
@@ -116,7 +124,7 @@ class KeyDict(dict):
                     key = key.veckey
             return key, idx
 
-    def __contains__(self, key):
+    def __contains__(self, key):  # pylint:disable=too-many-return-statements
         "In a winding way, figures out if a key is in the KeyDict"
         try:
             key, idx = self.parse_and_index(key)
@@ -124,6 +132,8 @@ class KeyDict(dict):
             return False
         except ValueError:  # multiple keys correspond
             return True
+        if not isinstance(key, Hashable):
+            return False
         if dict.__contains__(self, key):
             if idx:
                 try:
@@ -167,6 +177,8 @@ class KeyDict(dict):
             raise KeyError(key)
         values = []
         for k in keys:
+            if not idx and k.shape:
+                self._copyonwrite(k)
             got = dict.__getitem__(self, k)
             if idx:
                 got = got[idx]
@@ -182,6 +194,8 @@ class KeyDict(dict):
         # pylint: disable=too-many-boolean-expressions
         key, idx = self.parse_and_index(key)
         if key not in self.keymap:
+            if not hasattr(self, "_unmapped_keys"):
+                self.__init__()  # py3's pickle sets items before init... :(
             self.keymap[key].add(key)
             self._unmapped_keys.add(key)
             if idx:
@@ -189,6 +203,7 @@ class KeyDict(dict):
                 kwargs = {} if number_array else {"dtype": "object"}
                 emptyvec = np.full(key.shape, np.nan, **kwargs)
                 dict.__setitem__(self, key, emptyvec)
+                self.owned.add(key)
         if isinstance(value, FixedScalar):
             value = value.value  # substitute constant monomials
         if isinstance(value, Quantity):
@@ -197,7 +212,9 @@ class KeyDict(dict):
             if is_sweepvar(value):
                 dict.__setitem__(self, key,
                                  np.array(dict.__getitem__(self, key), object))
+                self.owned.add(key)
                 value = SweepValue(value[1])
+            self._copyonwrite(key)
             dict.__getitem__(self, key)[idx] = value
         else:
             if (self.collapse_arrays and hasattr(key, "descr")
@@ -211,15 +228,19 @@ class KeyDict(dict):
                     value = np.array([clean_value(key, v) for v in value])
             if getattr(value, "shape", False) and dict.__contains__(self, key):
                 goodvals = ~isnan(value)
-                if self[key].dtype != value.dtype:
+                present_value = dict.__getitem__(self, key)
+                if present_value.dtype != value.dtype:
                     # e.g., we're replacing a number with a linked function
-                    dict.__setitem__(self, key, np.array(self[key],
+                    dict.__setitem__(self, key, np.array(present_value,
                                                          dtype=value.dtype))
+                    self.owned.add(key)
+                self._copyonwrite(key)
                 self[key][goodvals] = value[goodvals]
             else:
                 if hasattr(value, "dtype") and value.dtype == INT_DTYPE:
                     value = np.array(value, "f")
                 dict.__setitem__(self, key, value)
+                self.owned.add(key)
 
     def update_keymap(self):
         "Updates the keymap with the keys in _unmapped_keys"
@@ -238,7 +259,8 @@ class KeyDict(dict):
         key, idx = self.parse_and_index(key)
         keys = self.keymap[key]
         if not keys:
-            raise KeyError("key %s not found." % key)
+            raise KeyError(key)
+        copied = set()  # have to copy bc update leaves duplicate sets
         for k in list(keys):
             delete = True
             if idx:
@@ -250,11 +272,15 @@ class KeyDict(dict):
                 mapkeys = set([k])
                 if self.keymapping and hasattr(k, "keys"):
                     mapkeys.update(k.keys)
-                for mappedkey in mapkeys:
-                    if mappedkey in self.keymap:
-                        self.keymap[mappedkey].remove(k)
-                        if not self.keymap[mappedkey]:
-                            del self.keymap[mappedkey]
+                for mapkey in mapkeys:
+                    if mapkey in self.keymap:
+                        if len(self.keymap[mapkey]) == 1:
+                            del self.keymap[mapkey]
+                            continue
+                        if mapkey not in copied:
+                            self.keymap[mapkey] = set(self.keymap[mapkey])
+                            copied.add(mapkey)
+                        self.keymap[mapkey].remove(k)
 
 
 class KeySet(KeyDict):

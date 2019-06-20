@@ -1,5 +1,6 @@
 """Unit tests for Constraint, MonomialEquality and SignomialInequality"""
 import unittest
+import sys
 from gpkit import Variable, SignomialsEnabled, Posynomial, VectorVariable
 from gpkit.nomials import SignomialInequality, PosynomialInequality
 from gpkit.nomials import MonomialEquality
@@ -39,9 +40,10 @@ class TestConstraint(unittest.TestCase):
         v = VectorVariable(2, "v")
         with self.assertRaises(ValueError):
             _ = Model(x, [v == "A"])
-        with self.assertRaises(ValueError):
+        err = TypeError if sys.version_info >= (3, 0) else ValueError
+        with self.assertRaises(err):
             _ = Model(x, [v <= ["A", "B"]])
-        with self.assertRaises(ValueError):
+        with self.assertRaises(err):
             _ = Model(x, [v >= ["A", "B"]])
 
     def test_evalfn(self):

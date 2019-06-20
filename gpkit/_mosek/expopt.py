@@ -11,6 +11,7 @@
         If the local MOSEK library could not be loaded
 
 """
+from __future__ import print_function
 
 from ctypes import pointer as ptr
 from ctypes import POINTER as ptr_factory
@@ -117,7 +118,7 @@ def printcb(void, msg):  # pylint: disable=unused-argument
     result : int
       0 indicates success
     """
-    print msg[:-1]
+    print(msg[:-1])
     return 0
 
 

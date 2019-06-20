@@ -118,18 +118,14 @@ class ConstantsRelaxed(ConstraintSet):
         constrained_varkeys = constraints.constrained_varkeys()
         if linked:
             kdc = KeyDict(constants)
-            combined = {k: f(kdc) for k, f in linked.items()
-                        if k in constrained_varkeys}
-            combined.update({k: v for k, v in constants.items()
-                             if k in constrained_varkeys})
-        else:
-            combined = constants
-        self.constants = KeyDict(combined)
+            constants.update({k: f(kdc) for k, f in linked.items()
+                              if k in constrained_varkeys})
+        self.constants = constants
         relaxvars, relaxation_constraints, self.origvars = [], [], []
         with NamedVariables("Relax") as (self.lineage, _):
             pass
         self._unrelaxmap = {}
-        for key, value in combined.items():
+        for key, value in constants.items():
             if value == 0:
                 continue
             elif include_only and key.name not in include_only:
@@ -138,7 +134,6 @@ class ConstantsRelaxed(ConstraintSet):
                 continue
             key.descr.pop("gradients", None)
             descr = key.descr.copy()
-            descr.pop("value", None)
             descr.pop("veckey", None)
             descr["lineage"] = descr.pop("lineage", ())+(self.lineage[-1],)
             relaxvardescr = descr.copy()

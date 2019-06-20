@@ -1,4 +1,5 @@
 "Tools for optimal fits to GP sweeps"
+from __future__ import print_function
 from time import time
 import numpy as np
 from ..small_classes import Count
@@ -83,7 +84,7 @@ class BinarySweepTree(object):  # pylint: disable=too-many-instance-attributes
         bst = self.min_bst(value)
         lo, hi = bst.bounds
         loval, hival = [sol(posy) for sol in bst.sols]
-        lo, hi, loval, hival = np.log(map(mag, [lo, hi, loval, hival]))
+        lo, hi, loval, hival = np.log(list(map(mag, [lo, hi, loval, hival])))
         interp = (hi-np.log(value))/float(hi-lo)
         return np.exp(interp*loval + (1-interp)*hival)
 
@@ -109,7 +110,7 @@ class BinarySweepTree(object):  # pylint: disable=too-many-instance-attributes
         else:
             lo, hi = bst.bounds
             loval, hival = [sol["cost"] for sol in bst.sols]
-        lo, hi, loval, hival = np.log(map(mag, [lo, hi, loval, hival]))
+        lo, hi, loval, hival = np.log(list(map(mag, [lo, hi, loval, hival])))
         interp = (hi-np.log(value))/float(hi-lo)
         return np.exp(interp*loval + (1-interp)*hival)
 
@@ -157,7 +158,7 @@ class BinarySweepTree(object):  # pylint: disable=too-many-instance-attributes
             >>> import cPickle as pickle
             >>> pickle.load(open("autosweep.p"))
         """
-        import cPickle as pickle
+        import pickle
         programs = []
         costs = []
         for sol in self.sollist:
@@ -165,7 +166,7 @@ class BinarySweepTree(object):  # pylint: disable=too-many-instance-attributes
             sol.program = None
             costs.append(sol["cost"])
             sol["cost"] = mag(sol["cost"])
-        pickle.dump(self, open(filename, "w"))
+        pickle.dump(self, open(filename, "wb"))
         for i, sol in enumerate(self.sollist):
             sol["cost"] = costs[i]
             sol.program = programs[i]

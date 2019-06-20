@@ -18,21 +18,23 @@ GPkit interfaces with two off the shelf solvers: cvxopt, and MOSEK.
 Cvxopt is open source and installed by default; MOSEK requires a commercial licence or (free)
 academic license.
 
+Before any of the steps below, if you are using Python 2 run ``pip install ctypesgen``.
+
 Mac OS X
   - If ``which gcc`` does not return anything, install the `Apple Command Line Tools <https://developer.apple.com/downloads/index.action?=command%20line%20tools>`_.
-  - Download `MOSEK <https://www.mosek.com/downloads/>`_, then:
+  - Download `MOSEK 8 <https://www.mosek.com/downloads/>`_, then:
       - Move the ``mosek`` folder to your home directory
       - Follow `these steps for Mac <http://docs.mosek.com/7.0/toolsinstall/Mac_OS_X_installation.html>`_.
       - Request an `academic license file <http://license.mosek.com/academic>`_ and put it in ``~/mosek/``
 
 Linux
-  - Download `MOSEK <https://www.mosek.com/downloads/>`_, then:
+  - Download `MOSEK 8 <https://www.mosek.com/downloads/>`_, then:
       - Move the ``mosek`` folder to your home directory
       - Follow `these steps for Linux <http://docs.mosek.com/7.0/toolsinstall/Linux_UNIX_installation_instructions.html>`_.
       - Request an `academic license file <http://license.mosek.com/academic>`_ and put it in ``~/mosek/``
 
 Windows
-    - Download `MOSEK <https://www.mosek.com/downloads/>`_, then:
+    - Download `MOSEK 8 <https://www.mosek.com/downloads/>`_, then:
         - Follow `these steps for Windows <http://docs.mosek.com/7.0/toolsinstall/Windows_installation.html>`_.
         - Request an `academic license file <http://license.mosek.com/academic>`_ and put it in ``C:\Users\(your_username)\mosek\``
         - Make sure ``gcc`` is on your system path.

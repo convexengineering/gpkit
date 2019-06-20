@@ -1,5 +1,8 @@
 "global mutable variables"
+from __future__ import print_function
+from six import with_metaclass
 import os
+import sys
 from collections import defaultdict
 from . import build
 
@@ -18,6 +21,9 @@ def load_settings(path=None, firstattempt=True):
                 # unless they're the solver list
                 if len(value) == 1 and name != "installed_solvers":
                     settings_[name] = value[0]
+                if sys.version_info >= (3, 0) and name == "installed_solvers":
+                    if "mosek" in value:
+                        value.remove("mosek")
     except IOError:
         settings_ = {"installed_solvers": [""]}
     if settings_["installed_solvers"] == [""]:
@@ -61,7 +67,7 @@ class SignomialsEnabledMeta(type):
         return cls._true
 
 
-class SignomialsEnabled(object):
+class SignomialsEnabled(with_metaclass(SignomialsEnabledMeta)):  # pylint: disable=no-init
     """Class to put up and tear down signomial support in an instance of GPkit.
 
     Example
@@ -73,7 +79,6 @@ class SignomialsEnabled(object):
         >>>     constraints = [x >= 1-y]
         >>> gpkit.Model(x, constraints).localsolve()
     """
-    __metaclass__ = SignomialsEnabledMeta
     _true = False  # the current signomial permissions
 
     def __enter__(self):

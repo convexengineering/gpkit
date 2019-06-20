@@ -1,5 +1,6 @@
 """Miscellaneous small classes"""
 from operator import xor
+from six import with_metaclass
 import numpy as np
 from ._pint import Quantity, qty  # pylint: disable=unused-import
 from functools import reduce  # pylint: disable=redefined-builtin
@@ -19,9 +20,8 @@ class FixedScalarMeta(type):
         return hasattr(obj, "hmap") and len(obj.hmap) == 1 and not obj.vks
 
 
-class FixedScalar(object):
+class FixedScalar(with_metaclass(FixedScalarMeta)):  # pylint: disable=no-init
     "Instances of this class are scalar Nomials with no variables"
-    __metaclass__ = FixedScalarMeta
 
 
 class Count(object):
@@ -183,16 +183,19 @@ class HashVector(dict):
     >>> x = gpkit.nomials.Monomial('x')
     >>> exp = gpkit.small_classes.HashVector({x: 2})
     """
-    def copy(self):
-        "Return a copy of this"
-        return self.__class__(super(HashVector, self).copy())
+    hashvalue = None
 
-    # pylint:disable=access-member-before-definition, attribute-defined-outside-init
     def __hash__(self):
         "Allows HashVectors to be used as dictionary keys."
-        if not hasattr(self, "_hashvalue") or self._hashvalue is None:
-            self._hashvalue = reduce(xor, map(hash, self.items()), 0)
-        return self._hashvalue
+        if self.hashvalue is None:
+            self.hashvalue = reduce(xor, map(hash, self.items()), 0)
+        return self.hashvalue
+
+    def copy(self):
+        "Return a copy of this"
+        hv = self.__class__(self)
+        hv.hashvalue = self.hashvalue
+        return hv
 
     def __neg__(self):
         "Return Hashvector with each value negated."
@@ -237,6 +240,7 @@ class HashVector(dict):
                         sums[key] = value + svalue
                 else:
                     sums[key] = value
+            sums.hashvalue = None
             return sums
         return NotImplemented
 
@@ -245,6 +249,7 @@ class HashVector(dict):
     def __rsub__(self, other): return other + -self
     def __radd__(self, other): return self + other
     def __div__(self, other): return self * other**-1
+    def __truediv__(self, other): return self * other**-1
     def __rdiv__(self, other): return other * self**-1
     def __rmul__(self, other): return self * other
 

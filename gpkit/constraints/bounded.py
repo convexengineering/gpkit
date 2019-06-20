@@ -1,4 +1,5 @@
 "Implements Bounded"
+from __future__ import print_function
 from collections import defaultdict, OrderedDict
 import numpy as np
 from .. import Variable
@@ -121,9 +122,9 @@ class Bounded(ConstraintSet):
                 if distance_above <= self.logtol_threshold:
                     out["value near upper bound"].add(varkey)
         if self.verbosity > 0 and out:
-            print
-            print "Solves with these variables bounded:"
+            print("")
+            print("Solves with these variables bounded:")
             for key, value in out.items():
-                print "% 25s: %s" % (key, ", ".join(map(str, value)))
-            print
+                print("% 25s: %s" % (key, ", ".join(map(str, value))))
+            print("")
         return out

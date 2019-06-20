@@ -1,4 +1,5 @@
 "Runs each file listed in pwd/TESTS as a test"
+from __future__ import print_function
 
 import unittest
 import os
@@ -25,7 +26,7 @@ def clean(string):
 def add_filetest(testclass, path):
     "Add test that imports the given path and runs its test() function"
     path = path.strip()
-    print "adding test for", repr(path)
+    print("adding test for", repr(path))
 
     def test_fn(self):
         top_level = os.getcwd()

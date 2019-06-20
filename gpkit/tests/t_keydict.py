@@ -43,7 +43,7 @@ class TestKeyDict(unittest.TestCase):
         kd = KeyDict()
         kd["a string key"] = "a string value"
         self.assertTrue(isinstance(kd, dict))
-        self.assertEqual(kd.keys(), ["a string key"])
+        self.assertEqual(list(kd.keys()), ["a string key"])
 
     def test_vector(self):
         v = VectorVariable(3, "v")

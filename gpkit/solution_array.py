@@ -1,7 +1,8 @@
 """Defines SolutionArray class"""
+from __future__ import print_function
 import re
 from collections import Iterable
-import cPickle as pickle
+import pickle
 import numpy as np
 from .nomials import NomialArray
 from .small_classes import DictOfLists, Strings
@@ -314,7 +315,7 @@ class SolutionArray(DictOfLists):
         str
         """
         if isinstance(sol, Strings):
-            sol = pickle.load(open(sol))
+            sol = pickle.load(open(sol, "rb"))
         selfvars = set(self["variables"])
         solvars = set(sol["variables"])
         if showvars:
@@ -438,11 +439,11 @@ class SolutionArray(DictOfLists):
                 (the "message" field is preserved)
 
         Solution can then be loaded with e.g.:
-        >>> import cPickle as pickle
+        >>> import pickle
         >>> pickle.load(open("solution.pkl"))
         """
         program, model, cost, warnings = self.pickle_prep()
-        pickle.dump(self, open(filename, "w"))
+        pickle.dump(self, open(filename, "wb"))
         self["cost"], self["warnings"] = cost, warnings
         self.program, self.model = program, model
 
@@ -759,7 +760,7 @@ def var_table(data, title, printunits=True, latex=False, rawlines=False,
                 if dim_size >= ncols and dim_size <= maxcolumns:
                     horiz_dim, ncols = dim_idx, dim_size
             # align the array with horiz_dim by making it the last one
-            dim_order = range(last_dim_index)
+            dim_order = list(range(last_dim_index))
             dim_order.insert(horiz_dim, last_dim_index)
             flatval = val.transpose(dim_order).flatten()
             vals = [vecfmt % v for v in flatval[:ncols]]

@@ -57,15 +57,13 @@ class NomialData(GPkitObject):
     def cs(self):
         "Create cs or return cached cs"
         if self._cs is None:
-            self._cs = np.array(self.hmap.values())
+            self._cs = np.array(list(self.hmap.values()))
             if self.hmap.units:
                 self._cs = self._cs*self.hmap.units
         return self._cs
 
     def __hash__(self):
-        if self._hashvalue is None:
-            self._hashvalue = hash(hash(self.hmap) + hash(str(self.hmap.units)))
-        return self._hashvalue
+        return hash(self.hmap)
 
     @property
     def varkeys(self):

@@ -2,7 +2,7 @@
 from collections import defaultdict
 import numpy as np
 
-from ..small_classes import HashVector, Numbers
+from ..small_classes import Numbers
 from ..keydict import KeySet, KeyDict
 from ..small_scripts import try_str_without
 from ..repr_conventions import GPkitObject
@@ -13,7 +13,7 @@ def add_meq_bounds(bounded, meq_bounded):
     still_alive = True
     while still_alive:
         still_alive = False  # if no changes are made, the loop exits
-        for bound, conditions in meq_bounded.items():
+        for bound, conditions in list(meq_bounded.items()):
             if bound in bounded:  # bound exists in an inequality
                 del meq_bounded[bound]
                 continue
@@ -27,7 +27,7 @@ def add_meq_bounds(bounded, meq_bounded):
 
 def _sort_by_name_and_idx(var):
     "return tuple for Variable sorting"
-    return (var.key.str_without(["units", "idx"]), var.key.idx)
+    return (var.key.str_without(["units", "idx"]), var.key.idx or ())
 
 
 # pylint: disable=too-many-instance-attributes
@@ -202,7 +202,7 @@ class ConstraintSet(list, GPkitObject):
         var_senss : dict
             The variable sensitivities of this constraint
         """
-        var_senss = HashVector()
+        var_senss = {}
         offset = 0
         self.relax_sensitivity = 0
         for i, constr in enumerate(self):
@@ -211,7 +211,6 @@ class ConstraintSet(list, GPkitObject):
             nu = nus[offset:offset+n_posys]
             constr.v_ss = constr.sens_from_dual(la, nu, result)
             self.relax_sensitivity += constr.relax_sensitivity
-            # not using HashVector addition because we want to preseve zeros
             for key, value in constr.v_ss.items():
                 var_senss[key] = value + var_senss.get(key, 0)
             offset += n_posys
