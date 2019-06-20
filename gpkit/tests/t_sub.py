@@ -41,44 +41,12 @@ class TestNomialSubs(unittest.TestCase):
         self.assertEqual(p.sub({x.key: 3}), 9)
         self.assertEqual(p.sub({"x": 3}), 9)
 
-    def test_basic(self):
-        """Basic substitution, symbolic"""
-        x = Variable('x')
-        y = Variable('y')
-        p = 1 + x**2
-        q = p.sub({x: y**2})
-        self.assertEqual(q, 1 + y**4)
-        self.assertEqual(x.sub({x: y}), y)
-
-    def test_scalar_units(self):
-        x = Variable("x", "m")
-        xvk = x.key
-        y = Variable("y", "km")
-        yvk = y.key
-        units_exist = bool(x.units)
-        for x_ in ["x", xvk, x]:
-            for y_ in [yvk, y]:
-                if not isinstance(y_, str) and units_exist:
-                    expected = 1000.0
-                else:
-                    expected = 1.0
-                self.assertAlmostEqual(expected, mag(x.sub({x_: y_}).c))
-        if units_exist:
-            z = Variable("z", "s")
-            self.assertRaises(ValueError, y.sub, {y: z})
-
     def test_dimensionless_units(self):
         x = Variable('x', 3, 'ft')
         y = Variable('y', 1, 'm')
         if x.units is not None:
             # units are enabled
             self.assertAlmostEqual((x/y).value, 0.9144)
-
-    def test_unitless_monomial_sub(self):
-        "Tests that dimensionless and undimensioned subs can interact."
-        x = Variable("x", "-")
-        y = Variable("y")
-        self.assertEqual(x.sub({x: y}), y)
 
     def test_vector(self):
         x = Variable("x")
@@ -100,14 +68,11 @@ class TestNomialSubs(unittest.TestCase):
         y = Variable('y')
         m = x*y**2
         self.assertEqual(x.sub(3), 3)
-        self.assertEqual(x.sub(y), y)
-        self.assertEqual(x.sub(m), m)
         # make sure x was not mutated
         self.assertEqual(x, Variable('x'))
         self.assertNotEqual(x.sub(3), Variable('x'))
         # also make sure the old way works
         self.assertEqual(x.sub({x: 3}), 3)
-        self.assertEqual(x.sub({x: y}), y)
         # and for vectors
         xvec = VectorVariable(3, 'x')
         self.assertEqual(xvec[1].sub(3), 3)
