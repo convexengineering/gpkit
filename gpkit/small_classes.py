@@ -1,5 +1,7 @@
 """Miscellaneous small classes"""
 from operator import xor
+from collections import OrderedDict
+from six import with_metaclass
 import numpy as np
 from ._pint import Quantity, qty  # pylint: disable=unused-import
 from functools import reduce  # pylint: disable=redefined-builtin
@@ -19,9 +21,8 @@ class FixedScalarMeta(type):
         return hasattr(obj, "hmap") and len(obj.hmap) == 1 and not obj.vks
 
 
-class FixedScalar(object):
+class FixedScalar(with_metaclass(FixedScalarMeta)):  # pylint: disable=no-init
     "Instances of this class are scalar Nomials with no variables"
-    __metaclass__ = FixedScalarMeta
 
 
 class Count(object):
@@ -183,14 +184,20 @@ class HashVector(dict):
     >>> x = gpkit.nomials.Monomial('x')
     >>> exp = gpkit.small_classes.HashVector({x: 2})
     """
+    _hashvalue = None
+
     def copy(self):
         "Return a copy of this"
-        return self.__class__(super(HashVector, self).copy())
+        hv = self.__class__(super(HashVector, self).copy())
+        # if self._hashvalue is not None:
+            # assert self._hashvalue == reduce(xor, map(hash, self.items()), 0)
+            # assert hash(self) == hash(hv)
+        return hv
 
     # pylint:disable=access-member-before-definition, attribute-defined-outside-init
     def __hash__(self):
         "Allows HashVectors to be used as dictionary keys."
-        if not hasattr(self, "_hashvalue") or self._hashvalue is None:
+        if self._hashvalue is None:
             self._hashvalue = reduce(xor, map(hash, self.items()), 0)
         return self._hashvalue
 
@@ -245,6 +252,7 @@ class HashVector(dict):
     def __rsub__(self, other): return other + -self
     def __radd__(self, other): return self + other
     def __div__(self, other): return self * other**-1
+    def __truediv__(self, other): return self * other**-1
     def __rdiv__(self, other): return other * self**-1
     def __rmul__(self, other): return self * other
 

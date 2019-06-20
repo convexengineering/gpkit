@@ -496,7 +496,8 @@ class PosynomialInequality(ScalarSingleEquationConstraint):
                     if np.isnan(nu_[idx]):
                         nu_[idx] = 0
                     nu_[idx] += percentage * la*scale
-            assert ~np.isnan(nu_).all()  # mmap/const_mmap missed some
+            # TODO: this check may be better done in mmap?
+            assert not np.isnan(nu_).any()  # mmap/const_mmap missed some
             nu = nu_
         var_senss = {}  # Constant sensitivities
         for var in self.varkeys:

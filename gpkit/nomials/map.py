@@ -114,6 +114,10 @@ class NomialMap(HashVector):
         cp.expmap, cp.csmap = {}, self.copy()
         varlocs = defaultdict(set)
         for exp, c in self.items():
+            # exp._hashvalue = None
+            # hash(exp)
+            # from operator import xor
+            # assert exp._hashvalue == reduce(xor, map(hash, exp.items()), 0)
             new_exp = exp.copy()
             cp.expmap[exp] = new_exp  # cp modifies exps, so it needs new ones
             cp[new_exp] = c
@@ -121,19 +125,29 @@ class NomialMap(HashVector):
                 if vk in fixed:
                     varlocs[vk].add((exp, new_exp))
 
+        # for exp in cp:
+        #     assert id(exp) == id(cp.expmap[exp])
+        # print(cp)
+        # print(cp.expmap)
+        squished = set()
         for vk in varlocs:
             expval = []
             exps, cval = varlocs[vk], fixed[vk]
+            # TODO: remove this subinplace section
             if hasattr(cval, "hmap"):
                 expval, = cval.hmap.keys()  # NOTE: fails on posynomials
                 cval = cval.hmap
             if hasattr(cval, "to"):
                 cval = mag(cval.to(vk.units or DIMLESS_QUANTITY))
+                # TODO: remove this, or does it catch constant monomials?
                 if expval or isinstance(cval, NomialMap):
                     cval, = cval.values()
+                # TODO: uncomment this
+                # else:
+                #     cval = cval.magnitude
             exps_covered = set()
             for o_exp, exp in exps:
-                subinplace(cp, exp, o_exp, vk, cval, expval, exps_covered)
+                out = subinplace(cp, exp, o_exp, vk, cval, expval, exps_covered, squished)
         return cp
 
     def mmap(self, orig):
@@ -162,11 +176,12 @@ class NomialMap(HashVector):
                 m_from_ms[self_exp][orig_exp] = fraction
                 orig_idx = origexps.index(orig_exp)
                 pmap[selfexps.index(self_exp)][orig_idx] = fraction
+        # print("pmap", pmap)
         return pmap, m_from_ms
 
 
 # pylint: disable=invalid-name
-def subinplace(cp, exp, o_exp, vk, cval, expval, exps_covered):
+def subinplace(cp, exp, o_exp, vk, cval, expval, exps_covered, squished):
     "Modifies cp by substituing cval/expval for vk in exp"
     x = exp[vk]
     powval = float(cval)**x if cval != 0 or x >= 0 else np.inf
@@ -175,6 +190,7 @@ def subinplace(cp, exp, o_exp, vk, cval, expval, exps_covered):
         c = cp.pop(exp)
         exp._hashvalue ^= hash((vk, x))  # remove (key, value) from _hashvalue
         del exp[vk]
+        # TODO: remove this subinplace section
         for key in expval:
             if key in exp:
                 exp._hashvalue ^= hash((key, exp[key]))  # remove from hash
@@ -185,6 +201,7 @@ def subinplace(cp, exp, o_exp, vk, cval, expval, exps_covered):
             exp[key] = newval
         value = powval * c
         if exp in cp:
+            squished.add(exp.copy())
             currentvalue = cp[exp]
             if value != -currentvalue:
                 cp[exp] = value + currentvalue
@@ -192,6 +209,10 @@ def subinplace(cp, exp, o_exp, vk, cval, expval, exps_covered):
                 del cp[exp]  # remove zeros created during substitution
         elif value:
             cp[exp] = value
-        exps_covered.add(exp)
-    if not cp:  # make sure it's never an empty hmap
-        cp[EMPTY_HV] = 0.0
+        exps_covered.add(exp)  # TODO: does exps_covered actually do anything?
+        if not cp:  # make sure it's never an empty hmap
+            cp[EMPTY_HV] = 0.0
+        return exp
+    elif exp in squished:
+        exp._hashvalue ^= hash((vk, x))  # remove (key, value) from _hashvalue
+        del exp[vk]
