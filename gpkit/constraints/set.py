@@ -2,7 +2,7 @@
 from collections import defaultdict
 import numpy as np
 
-from ..small_classes import HashVector, Numbers
+from ..small_classes import Numbers
 from ..keydict import KeySet, KeyDict
 from ..small_scripts import try_str_without
 from ..repr_conventions import GPkitObject
@@ -89,7 +89,7 @@ class ConstraintSet(list, GPkitObject):
             if not updated_veckeys and subkey.shape and not subkey.idx:
                 for key in self.varkeys:
                     if key.veckey:
-                        self.varkeys.keymap[key.veckey].add(key)
+                        self.varkeys.keymap[key.veckey].add(key)  # pylint: disable=unsubscriptable-object
                 updated_veckeys = True
             for key in self.varkeys[subkey]:
                 if key.value is not None and not key.constant:
@@ -202,7 +202,7 @@ class ConstraintSet(list, GPkitObject):
         var_senss : dict
             The variable sensitivities of this constraint
         """
-        var_senss = HashVector()
+        var_senss = {}
         offset = 0
         self.relax_sensitivity = 0
         for i, constr in enumerate(self):
@@ -211,7 +211,6 @@ class ConstraintSet(list, GPkitObject):
             nu = nus[offset:offset+n_posys]
             constr.v_ss = constr.sens_from_dual(la, nu, result)
             self.relax_sensitivity += constr.relax_sensitivity
-            # not using HashVector addition because we want to preseve zeros
             for key, value in constr.v_ss.items():
                 var_senss[key] = value + var_senss.get(key, 0)
             offset += n_posys

@@ -64,7 +64,7 @@ class NomialData(GPkitObject):
 
     def __hash__(self):
         if self._hashvalue is None:
-            self._hashvalue = hash(hash(self.hmap) + hash(str(self.hmap.units)))
+            self._hashvalue = hash(self.hmap)
         return self._hashvalue
 
     @property

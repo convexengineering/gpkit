@@ -301,7 +301,6 @@ class GeometricProgram(CostedConstraintSet, NomialData):
         cost_senss = {var: sum([self.cost.exps[i][var]*nu[i] for i in locs])
                       for (var, locs) in self.cost.varlocs.items()}
         var_senss = self.v_ss.copy()
-        # not using HashVector addition because we want to preseve zeros
         for key, value in cost_senss.items():
             var_senss[key] = value + var_senss.get(key, 0)
         # carry linked sensitivities over to their constants

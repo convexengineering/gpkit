@@ -48,7 +48,8 @@ class Signomial(Nomial):
             elif isinstance(hmap, Strings):
                 hmap = VarKey(hmap, **descr).hmap
             elif isinstance(hmap, dict):
-                exp = HashVector({VarKey(k): v for k, v in hmap.items() if v})
+                exp = HashVector({VarKey(k): v
+                                  for k, v in hmap.items() if v})
                 hmap = NomialMap({exp: mag(cs)})
                 hmap.units_of_product(cs)
         super(Signomial, self).__init__(hmap)
@@ -484,26 +485,18 @@ class PosynomialInequality(ScalarSingleEquationConstraint):
         nu, = nu
         presub, = self.unsubbed
         if hasattr(self, "pmap"):
-            nu_ = np.full(len(presub.hmap), np.nan, "f")
+            nu_ = np.zeros(len(presub.hmap))
             for i, mmap in enumerate(self.pmap):
                 for idx, percentage in mmap.items():
-                    if np.isnan(nu_[idx]):
-                        nu_[idx] = 0
                     nu_[idx] += percentage*nu[i]
             if hasattr(self, "const_mmap"):
                 scale = (1-self.const_coeff)/self.const_coeff
                 for idx, percentage in self.const_mmap.items():
-                    if np.isnan(nu_[idx]):
-                        nu_[idx] = 0
                     nu_[idx] += percentage * la*scale
-            # TODO: this check may be better done in mmap?
-            assert not np.isnan(nu_).any()  # mmap/const_mmap missed some
             nu = nu_
-        var_senss = {}  # Constant sensitivities
-        for var in self.varkeys:
-            locs = presub.varlocs[var]
-            var_senss[var] = sum([presub.exps[i][var]*nu[i] for i in locs])
-        return var_senss
+        return {var: sum([presub.exps[i][var]*nu[i]
+                          for i in presub.varlocs[var]])
+                for var in self.varkeys}  # Constant sensitivities
 
     def as_gpconstr(self, x0):  # pylint: disable=unused-argument
         "The GP version of a Posynomial constraint is itself"
@@ -568,7 +561,7 @@ class MonomialEquality(PosynomialInequality):
         if not la or not nu:
             return {}  # as_posyslt1 created no inequalities
         self.relax_sensitivity = la[0] - la[1]
-        var_senss = HashVector()
+        var_senss = {}
         for var in self.varkeys:
             for i, m in enumerate(self.unsubbed):
                 if var in m.varlocs:
@@ -681,7 +674,7 @@ class SignomialInequality(ScalarSingleEquationConstraint):
             assert not key  # constant
             return value
 
-        var_senss = HashVector()
+        var_senss = {}
         invnegy_val = 1/subval(self._negysig)
         for i, nu_i in enumerate(nu):
             mon = self._mons[i]

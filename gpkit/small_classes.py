@@ -1,6 +1,5 @@
 """Miscellaneous small classes"""
 from operator import xor
-from collections import OrderedDict
 from six import with_metaclass
 import numpy as np
 from ._pint import Quantity, qty  # pylint: disable=unused-import
@@ -184,22 +183,19 @@ class HashVector(dict):
     >>> x = gpkit.nomials.Monomial('x')
     >>> exp = gpkit.small_classes.HashVector({x: 2})
     """
-    _hashvalue = None
+    hashvalue = None
+
+    def __hash__(self):
+        "Allows HashVectors to be used as dictionary keys."
+        if self.hashvalue is None:
+            self.hashvalue = reduce(xor, map(hash, self.items()), 0)
+        return self.hashvalue
 
     def copy(self):
         "Return a copy of this"
-        hv = self.__class__(super(HashVector, self).copy())
-        # if self._hashvalue is not None:
-            # assert self._hashvalue == reduce(xor, map(hash, self.items()), 0)
-            # assert hash(self) == hash(hv)
+        hv = self.__class__(self)
+        hv.hashvalue = self.hashvalue
         return hv
-
-    # pylint:disable=access-member-before-definition, attribute-defined-outside-init
-    def __hash__(self):
-        "Allows HashVectors to be used as dictionary keys."
-        if self._hashvalue is None:
-            self._hashvalue = reduce(xor, map(hash, self.items()), 0)
-        return self._hashvalue
 
     def __neg__(self):
         "Return Hashvector with each value negated."
@@ -244,6 +240,7 @@ class HashVector(dict):
                         sums[key] = value + svalue
                 else:
                     sums[key] = value
+            sums.hashvalue = None
             return sums
         return NotImplemented
 
