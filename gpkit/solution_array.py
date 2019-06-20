@@ -127,8 +127,6 @@ def constraint_table(data, sortbymodel=True, showmodels=True, **_):
     lines = []
     for varlist in decorated:
         _, model, _, constrstr, openingstr = varlist
-        if model not in models:
-            continue
         if model != oldmodel and len(models) > 1:
             if oldmodel is not None:
                 lines.append(["", ""])
@@ -674,40 +672,37 @@ class SolutionArray(DictOfLists):
 
 # pylint: disable=too-many-statements,too-many-arguments
 # pylint: disable=too-many-branches,too-many-locals
-def var_table(data, title, printunits=True, fixedcols=True,
+def var_table(data, title, printunits=True, latex=False, rawlines=False,
               varfmt="%s : ", valfmt="%-.4g ", vecfmt="%-8.3g",
-              included_models=None, excluded_models=None, latex=False,
               minval=0, sortbyvals=False, hidebelowminval=False,
-              columns=None, maxcolumns=5, rawlines=False,
-              sortbymodel=True, **_):
+              included_models=None, excluded_models=None, sortbymodel=True,
+              maxcolumns=5, **_):
     """
     Pretty string representation of a dict of VarKeys
     Iterable values are handled specially (partial printing)
 
     Arguments
     ---------
-    data: dict whose keys are VarKey's
+    data : dict whose keys are VarKey's
         data to represent in table
-    title: string
-    minval: float
-        skip values with all(abs(value)) < minval
-    printunits: bool
-    fixedcols: bool
-        if True, print rhs (val, units, label) in fixed-width cols
-    varfmt: string
-        format for variable names
-    valfmt: string
-        format for scalar values
-    vecfmt: string
-        format for vector values
-    latex: int
+    title : string
+    printunits : bool
+    latex : int
         If > 0, return latex format (options 1-3); otherwise plain text
-    included_models: Iterable of strings
-        If specified, the models (by name) to include
-    excluded_models: Iterable of strings
-        If specified, model names to exclude
+    varfmt : string
+        format for variable names
+    valfmt : string
+        format for scalar values
+    vecfmt : string
+        format for vector values
+    minval : float
+        skip values with all(abs(value)) < minval
     sortbyvals : boolean
         If true, rows are sorted by their average value instead of by name.
+    included_models : Iterable of strings
+        If specified, the models (by name) to include
+    excluded_models : Iterable of strings
+        If specified, model names to exclude
     """
     if not data:
         return []
@@ -750,30 +745,24 @@ def var_table(data, title, printunits=True, fixedcols=True,
             if oldmodel is not None:
                 lines.append(["", "", "", ""])
             if model != "":
-                if not latex:
-                    lines.append([("modelname",), model, "", ""])
+                if latex:
+                    lines.append(
+                        [r"\multicolumn{3}{l}{\textbf{" + model + r"}} \\"])
                 else:
-                    lines.append([r"\multicolumn{3}{l}{\textbf{" +
-                                  model + r"}} \\"])
+                    lines.append([("modelname",), model, "", ""])
             oldmodel = model
         label = var.descr.get('label', '')
         units = var.unitstr(" [%s] ") if printunits else ""
         if isvector:
-            if columns is not None:
-                ncols = columns
-            else:
-                last_dim_index = len(val.shape)-1
-                horiz_dim = last_dim_index  # default alignment
-                ncols = 1
-                for i, dim_size in enumerate(val.shape):
-                    if dim_size >= ncols and dim_size <= maxcolumns:
-                        horiz_dim = i
-                        ncols = dim_size
-                # align the array with horiz_dim by making it the last one
-                dim_order = list(range(last_dim_index))
-                dim_order.insert(horiz_dim, last_dim_index)
-                val = val.transpose(dim_order)
-            flatval = val.flatten()
+            last_dim_index = len(val.shape)-1
+            horiz_dim, ncols = last_dim_index, 1  # starting values
+            for dim_idx, dim_size in enumerate(val.shape):
+                if dim_size >= ncols and dim_size <= maxcolumns:
+                    horiz_dim, ncols = dim_idx, dim_size
+            # align the array with horiz_dim by making it the last one
+            dim_order = list(range(last_dim_index))
+            dim_order.insert(horiz_dim, last_dim_index)
+            flatval = val.transpose(dim_order).flatten()
             vals = [vecfmt % v for v in flatval[:ncols]]
             bracket = " ] " if len(flatval) <= ncols else ""
             valstr = "[ %s%s" % ("  ".join(vals), bracket)
@@ -817,8 +806,6 @@ def var_table(data, title, printunits=True, fixedcols=True,
         if lines:
             maxlens = np.max([list(map(len, line)) for line in lines
                               if line[0] != ("modelname",)], axis=0)
-            if not fixedcols:
-                maxlens = [maxlens[0], 0, 0, 0]
             dirs = ['>', '<', '<', '<']
             # check lengths before using zip
             assert len(list(dirs)) == len(list(maxlens))

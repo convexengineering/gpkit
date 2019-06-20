@@ -1,3 +1,4 @@
+Infeasible monomial equality: Cannot convert from 'M [kg]' to 'V [m**3]'
 
 Cost
 ----
@@ -16,7 +17,7 @@ Sensitivities
 
 Tightest Constraints
 --------------------
-  +2.2 : M = V*\rho
-  +2.2 : V = d_(0,)*d_(1,)*d_(2,)
     +1 : A >= 2*d_(0,)*d_(1,) + 2*d_(0,)*d_(2,) + 2*d_(1,)*d_(2,)
+ +0.67 : M = V*\rho
+ +0.67 : V = d_(0,)*d_(1,)*d_(2,)
 

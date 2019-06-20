@@ -5,6 +5,7 @@ from gpkit import Variable, Monomial, Posynomial, Signomial, SignomialsEnabled
 from gpkit import VectorVariable, NomialArray
 from gpkit.nomials import NomialMap
 from gpkit.small_classes import HashVector
+from gpkit.exceptions import InvalidPosynomial
 import gpkit
 
 
@@ -43,10 +44,10 @@ class TestMonomial(unittest.TestCase):
         self.assertTrue(crazy_varkey in m.exp)
 
         # non-positive c raises
-        self.assertRaises(ValueError, Monomial, -2)
-        self.assertRaises(ValueError, Monomial, -1.)
-        self.assertRaises(ValueError, Monomial, 0)
-        self.assertRaises(ValueError, Monomial, 0.0)
+        self.assertRaises(InvalidPosynomial, Monomial, -2)
+        self.assertRaises(InvalidPosynomial, Monomial, -1.)
+        self.assertRaises(InvalidPosynomial, Monomial, 0)
+        self.assertRaises(InvalidPosynomial, Monomial, 0.0)
 
         # can create nameless Monomials
         x1 = Monomial()
@@ -82,6 +83,13 @@ class TestMonomial(unittest.TestCase):
         xstr = str(x)
         self.assertEqual(type(xstr), str)
         self.assertTrue('S' in xstr and 'rho' in xstr)
+
+    def test_add(self):
+        x = Monomial("x")
+        y = Monomial("y", units="ft")
+        if gpkit.units:
+            with self.assertRaises(gpkit.DimensionalityError):
+                _ = x + y
 
     def test_eq_ne(self):
         "Test equality and inequality comparators"
@@ -161,6 +169,9 @@ class TestMonomial(unittest.TestCase):
         p = n_hat[0]*x0 + n_hat[1]*x1
         self.assertEqual(p, x0)
 
+        if gpkit.units:
+            self.assertNotEqual((x+1), (x+1)*gpkit.units("m"))
+
     def test_pow(self):
         "Test Monomial exponentiation"
         x = Monomial({'x': 1, 'y': -1}, 4)
@@ -218,6 +229,12 @@ class TestSignomial(unittest.TestCase):
             self.assertEqual((1 - x/y**2).latex(), "-\\frac{x}{y^{2}} + 1")
         self.assertRaises(TypeError, lambda: x-y)
 
+    def test_mult(self):
+        "Test Signomial multiplication"
+        x = Variable("x")
+        with SignomialsEnabled():
+            self.assertEqual((x+1)*(x-1), x**2 - 1)
+
     def test_eq_ne(self):
         "Test Signomial equality and inequality operators"
         x = Variable('x')
@@ -256,6 +273,7 @@ class TestPosynomial(unittest.TestCase):
         # check arithmetic
         p2 = 3.14*x*y**2 + y/2 + x**3*6*y + 2
         self.assertEqual(p, p2)
+        self.assertEqual(p, sum(ms))
 
         hmap = NomialMap({HashVector({'m': 1, 'v': 2}): 0.5,
                           HashVector({'m': 1, 'g': 1, 'h': 1}): 1})

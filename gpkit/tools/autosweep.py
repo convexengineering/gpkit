@@ -236,11 +236,6 @@ class SolutionOracle(object):
             axes, = axes
         return plt.gcf(), axes
 
-    @property
-    def solarray(self):
-        "Returns a solution array of all the solutions in an autosweep"
-        return self.bst.solarray
-
 
 def autosweep_1d(model, logtol, sweepvar, bounds, **solvekwargs):
     "Autosweep a model over one sweepvar"

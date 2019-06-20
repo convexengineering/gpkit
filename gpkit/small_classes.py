@@ -149,7 +149,7 @@ def _index_dict(idx, d_in, d_out):
         else:
             try:
                 d_out[k] = v[idx]
-            except IndexError:  # if not an array, return as is
+            except (IndexError, TypeError):  # if not an array, return as is
                 d_out[k] = v
     return d_out
 

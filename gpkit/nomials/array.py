@@ -52,26 +52,26 @@ class NomialArray(np.ndarray, GPkitObject):
 
     def str_without(self, excluded=None):
         "Returns string without certain fields (such as 'models')."
-        if self.shape:
-            return "[" + ", ".join([try_str_without(el, excluded)
-                                    for el in self]) + "]"
-        return try_str_without(self.flatten()[0], excluded)
+        if not self.shape:
+            return try_str_without(self.flatten()[0], excluded)
+        return "[%s]" % ", ".join([try_str_without(el, excluded)
+                                   for el in self])
 
-    def latex(self, matwrap=True):
+    def latex(self, excluded=(), matwrap=True):
         "Returns 1D latex list of contents."
         if self.ndim == 0:
-            return self.flatten()[0].latex()
+            return try_str_without(self.flatten()[0], excluded, latex=True)
         if self.ndim == 1:
             return (("\\begin{bmatrix}" if matwrap else "") +
-                    " & ".join(el.latex() for el in self) +
+                    " & ".join(try_str_without(el, excluded, latex=True)
+                               for el in self) +
                     ("\\end{bmatrix}" if matwrap else ""))
         elif self.ndim == 2:
             return ("\\begin{bmatrix}" +
                     " \\\\\n".join(el.latex(matwrap=False) for el in self) +
                     "\\end{bmatrix}")
-        else:
-            raise TypeError("latex generation is not supported for arrays"
-                            " of more than two dimensions.")
+        raise TypeError("latex generation not supported for NomialArrays"
+                        " of more than two dimensions.")
 
     def __hash__(self):
         return reduce(xor, map(hash, self.flat), 0)
@@ -91,30 +91,12 @@ class NomialArray(np.ndarray, GPkitObject):
         See http://docs.scipy.org/doc/numpy/user/basics.subclassing.html"""
         if out_arr.ndim:
             return np.ndarray.__array_wrap__(self, out_arr, context)
-        try:
-            val = out_arr.item()
-            return np.float(val) if isinstance(val, np.generic) else val
-        except:
-            print("Something went wrong. I'd like to raise a RuntimeWarning,"
-                  " but you wouldn't see it because numpy seems to catch all"
-                  " Exceptions coming from __array_wrap__.")
-            raise
-
-    def __nonzero__(self):
-        "Allows the use of NomialArrays as truth elements."
-        return all(bool(p) for p in self.flat)
-
-    def __bool__(self):
-        "Allows the use of NomialArrays as truth elements in python3."
-        return all(bool(p) for p in self.flat)
+        val = out_arr.item()
+        return np.float(val) if isinstance(val, np.generic) else val
 
     __eq__ = array_constraint("=", eq)
     __le__ = array_constraint("<=", le)
     __ge__ = array_constraint(">=", ge)
-
-    def __ne__(self, other):
-        "Checks type, then checks 'not =='."
-        return not isinstance(other, self.__class__) or not all(self == other)
 
     def outer(self, other):
         "Returns the array and argument's outer product."
@@ -148,17 +130,14 @@ class NomialArray(np.ndarray, GPkitObject):
         hmap = NomialMap()
         hmap.units = self.units
         it = np.nditer(self, flags=['multi_index', 'refs_ok'])
-        empty_exp = EMPTY_HV
         while not it.finished:
-            i = it.multi_index
+            m = self[it.multi_index]
             it.iternext()
-            if isinstance(mag(self[i]), Numbers):
-                if mag(self[i]) == 0:
-                    continue
-                else:  # number manually inserted by user
-                    hmap[empty_exp] = mag(self[i]) + hmap.get(EMPTY_HV, 0)
+            if isinstance(mag(m), Numbers):
+                if mag(m):
+                    hmap[EMPTY_HV] = mag(m) + hmap.get(EMPTY_HV, 0)
             else:
-                hmap += self[i].hmap
+                hmap += m.hmap
         return Signomial(hmap)
 
     def prod(self, *args, **kwargs):
@@ -169,18 +148,14 @@ class NomialArray(np.ndarray, GPkitObject):
         exp = HashVector()
         it = np.nditer(self, flags=['multi_index', 'refs_ok'])
         while not it.finished:
-            idx = it.multi_index
+            m = self[it.multi_index]
             it.iternext()
-            m_ = self[idx]
-            if not hasattr(m_, "hmap") and len(m_.hmap) == 1:
+            if not hasattr(m, "hmap") and len(m.hmap) == 1:
                 return np.ndarray.prod(self, *args, **kwargs)
-            c = c * mag(m_.c)
+            c *= mag(m.c)
             unitpower += 1
-            for key, value in m_.exp.items():
-                if key in exp:
-                    exp[key] += value
-                else:
-                    exp[key] = value
+            exp += m.exp
         hmap = NomialMap({exp: c})
-        hmap.units = self.units**unitpower if self.units else None
+        units = self.units
+        hmap.units = units**unitpower if units else None
         return Signomial(hmap)

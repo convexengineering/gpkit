@@ -82,13 +82,10 @@ class Nomial(NomialData):
         return self.__class__(self.hmap.to(units))  # pylint: disable=no-member
 
     def __eq__(self, other):
-        "True if self and other are algbraically identical."
+        "True if self and other are algebraically identical."
         if isinstance(other, Numbers):
             return isinstance(self, FixedScalar) and self.value == other
         return super(Nomial, self).__eq__(other)
-
-    def __ne__(self, other):
-        return not self.__eq__(other)
 
     def __radd__(self, other):
         return self + other

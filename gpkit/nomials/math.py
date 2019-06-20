@@ -9,7 +9,8 @@ from ..small_classes import Strings, Numbers
 from ..small_classes import HashVector, EMPTY_HV
 from ..varkey import VarKey
 from ..small_scripts import mag
-from ..exceptions import InvalidGPConstraint, DimensionalityError
+from ..exceptions import (InvalidGPConstraint, InvalidPosynomial,
+                          DimensionalityError)
 from .map import NomialMap
 from .substitution import parse_subs
 
@@ -53,7 +54,7 @@ class Signomial(Nomial):
         super(Signomial, self).__init__(hmap)
         if self.any_nonpositive_cs:
             if require_positive and not SignomialsEnabled.status:
-                raise ValueError("each c must be positive.")
+                raise InvalidPosynomial("each c must be positive.")
             self.__class__ = Signomial
         elif len(self.hmap) == 1:
             self.__class__ = Monomial
@@ -105,9 +106,6 @@ class Signomial(Nomial):
         Monomial (unless self(x0) < 0, in which case a Signomial is returned)
         """
         x0, _, _ = parse_subs(self.varkeys, x0)  # use only varkey keys
-        for key, value in x0.items():
-            if hasattr(value, "units"):
-                x0[key] = value.to(key.units).magnitude
         psub = self.hmap.sub(x0, self.varkeys, parsedsubs=True)
         if len(psub) > 1 or EMPTY_HV not in psub:
             raise ValueError("Variables %s remained after substituting x0=%s"
@@ -125,15 +123,13 @@ class Signomial(Nomial):
             try:
                 c /= val**e
             except OverflowError:
-                raise OverflowError("While approximating the variable %s"
-                                    " with a local value of %s, %s/(%s**%s)"
-                                    " overflowed. Try reducing the variable's"
-                                    " value by changing its unit prefix, or"
-                                    " specify x0 values for any free variables"
-                                    " it's multiplied or divided by in"
-                                    " the posynomial %s"
-                                    " whose expected value is far from 1."
-                                    % (vk, val, c, val, e, self))
+                raise OverflowError(
+                    "While approximating the variable %s with a local value of"
+                    " %s, %s/(%s**%s) overflowed. Try reducing the variable's"
+                    " value by changing its unit prefix, or specify x0 values"
+                    " for any free variables it's multiplied or divided by in"
+                    " the posynomial %s whose expected value is far from 1."
+                    % (vk, val, c, val, e, self))
         hmap = NomialMap({exp: c})
         hmap.units = self.units
         return Monomial(hmap)
@@ -205,7 +201,7 @@ class Signomial(Nomial):
                     if new != -accumulated:
                         hmap[exp] = accumulated + new
                     elif accumulated:
-                        del hmap[exp]  # remove zeros created by multiplication
+                        del hmap[exp]
             hmap.units_of_product(self.hmap.units, other.hmap.units)
             return Signomial(hmap)
         return NotImplemented
@@ -235,11 +231,6 @@ class Signomial(Nomial):
 
     def __rsub__(self, other):
         return other + -self if SignomialsEnabled.status else NotImplemented
-
-    def relaxed(self, relaxvar):
-        "Returns the relaxation of the constraint in a list."
-        with SignomialsEnabled():
-            return self.relaxed(relaxvar)
 
 
 class Posynomial(Signomial):
@@ -308,7 +299,7 @@ class Monomial(Posynomial):
     def __eq__(self, other):
         if isinstance(other, MONS):
             try:  # if both are monomials, return a constraint
-                return MonomialEquality(self, "=", other)
+                return MonomialEquality(self, other)
             except ValueError as e:  # units mismatch or infeasible constraint
                 print("Infeasible monomial equality: %s" % e)
                 return False
@@ -361,10 +352,8 @@ class ScalarSingleEquationConstraint(SingleEquationConstraint):
         elif self.oper == "=":
             return [self.left <= relaxvar*self.right,
                     relaxvar*self.left >= self.right]
-        else:
-            raise ValueError("Constraint had unknown operator %s."
-                             " Cannot relax the constraint %s"
-                             % self.oper, self)
+        raise ValueError(
+            "Constraint %s had unknown operator %s." % self.oper, self)
 
 
 # pylint: disable=too-many-instance-attributes, invalid-unary-operand-type
@@ -441,7 +430,6 @@ class PosynomialInequality(ScalarSingleEquationConstraint):
             m_c, = m_gt.hmap.values()
         except ValueError:
             raise TypeError("greater-than side '%s' is not monomial." % m_gt)
-        hmap = p_lt.hmap.copy()
         if m_gt.units != p_lt.units:
             if m_gt.units and p_lt.units:
                 conversion = m_gt.units/p_lt.units
@@ -451,6 +439,7 @@ class PosynomialInequality(ScalarSingleEquationConstraint):
                 m_c *= float(conversion)
             except DimensionalityError:
                 raise DimensionalityError(p_lt, m_gt)
+        hmap = p_lt.hmap.copy()
         for exp in hmap.keys():
             hmap[exp-m_exp] = hmap.pop(exp)/m_c
         hmap = self._simplify_posy_ineq(hmap)
@@ -475,9 +464,9 @@ class PosynomialInequality(ScalarSingleEquationConstraint):
             hmap = self._simplify_posy_ineq(hmap, self.pmap)
             if hmap is None:
                 continue
-            p = Posynomial(hmap)
+            p = Posynomial(hmap, require_positive=False)
             out.append(p)
-            if p.any_nonpositive_cs:
+            if p.any_nonpositive_cs:  # the positivity check skipped above
                 raise RuntimeWarning("PosynomialInequality %s became Signomial"
                                      " after substitution %s"
                                      % (self, fixed))
@@ -517,13 +506,11 @@ class PosynomialInequality(ScalarSingleEquationConstraint):
 
 class MonomialEquality(PosynomialInequality):
     "A Constraint of the form Monomial == Monomial."
+    oper = "="
 
-    def __init__(self, left, oper, right):
+    def __init__(self, left, right):
         # pylint: disable=super-init-not-called,non-parent-init-called
-        ScalarSingleEquationConstraint.__init__(self, left, oper, right)
-        if self.oper != "=":
-            raise ValueError("operator %s is not supported by"
-                             " MonomialEquality." % self.oper)
+        ScalarSingleEquationConstraint.__init__(self, left, self.oper, right)
         self.unsubbed = self._gen_unsubbed(self.left, self.right)
         self.nomials = [self.left, self.right]
         self.nomials.extend(self.unsubbed)
@@ -574,7 +561,7 @@ class MonomialEquality(PosynomialInequality):
         self.relax_sensitivity = 0
         if not la or not nu:
             return {}  # as_posyslt1 created no inequalities
-        self.relax_sensitivity = sum(la)
+        self.relax_sensitivity = la[0] - la[1]
         var_senss = HashVector()
         for var in self.varkeys:
             for i, m in enumerate(self.unsubbed):
@@ -622,13 +609,12 @@ class SignomialInequality(ScalarSingleEquationConstraint):
         posy, negy = siglt0.posy_negy()
         if posy is 0:
             print ("Warning: SignomialConstraint %s became the tautological"
-                   " constraint %s %s %s after substitution." %
-                   (self, posy, "<=", negy))
+                   " constraint 0 <= %s after substitution." % (self, negy))
             return []
         elif negy is 0:
             raise ValueError("SignomialConstraint %s became the infeasible"
-                             " constraint %s %s %s after substitution." %
-                             (self, posy, "<=", negy))
+                             " constraint %s <= 0 after substitution." %
+                             (self, posy))
         elif not hasattr(negy, "cs") or len(negy.cs) == 1:
             # all but one of the negy terms becomes compatible with the posy
             p_ineq = PosynomialInequality(posy, "<=", negy)

@@ -12,6 +12,11 @@ class TestVarKey(unittest.TestCase):
 
     def test_init(self):
         """Test VarKey initialization"""
+        # test no-name init
+        _ = ArrayVariable(1)
+        # test protected field
+        with self.assertRaises(ValueError):
+            _ = ArrayVariable(1, idx=5)
         # test type
         x = VarKey('x')
         self.assertEqual(type(x), VarKey)
@@ -29,6 +34,8 @@ class TestVarKey(unittest.TestCase):
         self.assertRaises(TypeError, lambda: VarKey('x', name='y'))
         # pylint: disable=redundant-keyword-arg
         self.assertRaises(TypeError, lambda: VarKey(x, name='y'))
+        self.assertIsInstance(x.latex(), str)
+        self.assertIsInstance(x.latex_unitstr(), str)
 
     def test_eq_neq(self):
         """Test boolean equality operators"""
