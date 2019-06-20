@@ -5,10 +5,11 @@ from collections import defaultdict
 import numpy as np
 from ..nomials import NomialData
 from ..small_classes import CootMatrix, SolverLog, Numbers, FixedScalar
-from ..keydict import KeyDict, KeySet
+from ..keydict import KeyDict
 from ..small_scripts import mag
 from ..solution_array import SolutionArray
 from .costed import CostedConstraintSet
+from ..exceptions import InvalidPosynomial
 
 
 DEFAULT_SOLVER_KWARGS = {"cvxopt": {"kktsolver": "ldl"}}
@@ -71,7 +72,6 @@ class GeometricProgram(CostedConstraintSet, NomialData):
         self.nu_by_posy = None
         self.solver_log = None
         self.solver_out = None
-        # GPs have a unique varkeys property instead of relying on inheritance
         self.__bare_init__(cost, constraints, substitutions, varkeys=False)
         for key, sub in self.substitutions.items():
             if isinstance(sub, FixedScalar):
@@ -84,7 +84,10 @@ class GeometricProgram(CostedConstraintSet, NomialData):
                 raise ValueError("substitution {%s: %s} with value type %s is"
                                  " not allowed in .substitutions."
                                  % (key, sub, type(sub)))
-        self.posynomials = [cost.sub(self.substitutions)]
+        try:
+            self.posynomials = [cost.sub(self.substitutions)]
+        except InvalidPosynomial:
+            raise InvalidPosynomial("cost must be a Posynomial")
         self.posynomials.extend(self.as_posyslt1(self.substitutions))
         self.hmaps = [p.hmap for p in self.posynomials]
         ## Generate various maps into the posy- and monomials
@@ -100,8 +103,6 @@ class GeometricProgram(CostedConstraintSet, NomialData):
         self.meq_idxs = {sum(self.k[:i]) for i, p in enumerate(self.posynomials)
                          if getattr(p, "from_meq", False)}
         self.gen()  # A [i, v]: sparse matrix of powers in each monomial
-        if any(c <= 0 for c in self.cs):
-            raise ValueError("a GeometricProgram cannot contain Signomials.")
         if self.missingbounds and not allow_missingbounds:
             boundstrs = "\n".join("  %s has no %s bound%s" % (v, b, x)
                                   for (v, b), x in self.missingbounds.items())
@@ -117,13 +118,6 @@ class GeometricProgram(CostedConstraintSet, NomialData):
             self._cs.extend(hmap.values())
         self.A, self.missingbounds = genA(self.exps, self.varlocs,
                                           self.meq_idxs)
-
-    @property
-    def varkeys(self):
-        "The GP's varkeys, created when necessary."
-        if self._varkeys is None:
-            self._varkeys = KeySet(self.varlocs)
-        return self._varkeys
 
     # pylint: disable=too-many-statements, too-many-locals
     def solve(self, solver=None, verbosity=1, warn_on_check=False,

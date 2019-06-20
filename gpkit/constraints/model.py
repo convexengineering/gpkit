@@ -168,9 +168,7 @@ class Model(CostedConstraintSet):
                 self.substitutions[sweepvar] = original_val
             else:
                 del self.substitutions[sweepvar]
-        if len(sols) == 1:
-            return sols[0]
-        return sols
+        return sols if len(sols) > 1 else sols[0]
 
     def autosweep(self, sweeps, tol=0.01, samplepoints=100, **solveargs):
         """Autosweeps {var: (start, end)} pairs in sweeps to tol.
@@ -184,9 +182,7 @@ class Model(CostedConstraintSet):
             start, end = sweepvals
             bst = autosweep_1d(self, tol, sweepvar, [start, end], **solveargs)
             sols.append(bst.sample_at(np.linspace(start, end, samplepoints)))
-        if len(sols) == 1:
-            return sols[0]
-        return sols
+        return sols if len(sols) > 1 else sols[0]
 
     # pylint: disable=too-many-locals,too-many-branches,too-many-statements
     def debug(self, solver=None, verbosity=1, **solveargs):

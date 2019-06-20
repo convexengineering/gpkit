@@ -58,7 +58,7 @@ class TestGP(unittest.TestCase):
         with SignomialsEnabled():
             m = Model(c, [c >= (x + 0.25)**2 + (y - 0.5)**2,
                           SignomialEquality(x**2 + x, y)])
-        sol = m.localsolve(solver=self.solver, verbosity=0)
+        sol = m.localsolve(solver=self.solver, verbosity=0, mutategp=False)
         self.assertAlmostEqual(sol("x"), 0.1639472, self.ndig)
         self.assertAlmostEqual(sol("y"), 0.1908254, self.ndig)
         self.assertAlmostEqual(sol("c"), 0.2669448, self.ndig)
@@ -278,6 +278,8 @@ class TestSP(unittest.TestCase):
             m = Model(x, [x+y >= w, x+y <= z/2, y <= x, y >= 1], {z: 3, w: 3})
         r1 = ConstantsRelaxed(m)
         self.assertEqual(len(r1.varkeys), 8)
+        with self.assertRaises(ValueError):
+            mr1 = Model(x*r1.relaxvars, r1)  # no 'prod'
         mr1 = Model(x*r1.relaxvars.prod()**10, r1)
         cost1 = mr1.localsolve(verbosity=0)["cost"]
         self.assertAlmostEqual(cost1/1024, 1, self.ndig)
@@ -418,6 +420,17 @@ class TestSP(unittest.TestCase):
             " constraint 0 <= 1 + x after substitution.\n"
             "Warning: SignomialConstraint 1 + x >= 0 became the tautological"
             " constraint 0 <= 1 + x after substitution.\n"))
+
+    def test_impossible(self):
+        x = Variable('x')
+        y = Variable('y')
+        z = Variable('z')
+
+        with SignomialsEnabled():
+            m1 = Model(x, [x + y >= z, x >= y])
+        m1.substitutions.update({'x': 0, 'y': 0})
+        with self.assertRaises(ValueError):
+            _ = m1.localsolve()
 
     def test_trivial_sp(self):
         x = Variable('x')
@@ -580,6 +593,18 @@ class TestSP(unittest.TestCase):
         first_gp_constr_posy = gp[0][0].as_posyslt1()[0]
         self.assertEqual(first_gp_constr_posy.exp[x.key], -1./3)
 
+    def test_becomes_signomial(self):
+        "Test that a GP does not become an SP after substitutions"
+        x = Variable('x')
+        c = Variable('c')
+        y = Variable('y')
+        m = Model(x, [y >= 1 + c*x, y <= 0.5], {c: -1})
+        with self.assertRaises(RuntimeWarning):
+            with SignomialsEnabled():
+                _ = m.gp()
+        with self.assertRaises(RuntimeWarning):
+            _ = m.localsolve()
+
     def test_reassigned_constant_cost(self):
         # for issue 1131
         x = Variable('x')
@@ -690,6 +715,7 @@ class TestModelNoSolve(unittest.TestCase):
 
     def test_modelcontainmentprinting(self):
         t = Thing2()
+        self.assertEqual(t["c"].key.models, ("Thing2", "Thing"))
         self.assertIsInstance(t.str_without(), str)
         self.assertIsInstance(t.latex(), str)
 

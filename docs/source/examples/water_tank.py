@@ -7,6 +7,9 @@ A = Variable("A", "m^2", "Surface Area of the Tank")
 V = Variable("V", "m^3", "Volume of the Tank")
 d = VectorVariable(3, "d", "m", "Dimension Vector")
 
+# because its units are incorrect the line below will print a warning
+bad_monomial_equality = (M == V)
+
 constraints = (A >= 2*(d[0]*d[1] + d[0]*d[2] + d[1]*d[2]),
                V == d[0]*d[1]*d[2],
                M == V*rho)

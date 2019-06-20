@@ -7,13 +7,10 @@ class Loose(ConstraintSet):
     "ConstraintSet whose inequalities must result in an equality."
     senstol = 1e-5
 
-    def __init__(self, constraints, senstol=None, raiseerror=False,
-                 printwarning=False):
+    def __init__(self, constraints, senstol=None, raiseerror=False):
         super(Loose, self).__init__(constraints)
-        if senstol:
-            self.senstol = senstol
+        self.senstol = senstol or self.senstol
         self.raiseerror = raiseerror
-        self.printwarning = printwarning
 
     def process_result(self, result):
         "Checks that all constraints are satisfied with equality"
@@ -34,5 +31,4 @@ class Loose(ConstraintSet):
                 if self.raiseerror:
                     raise ValueError(msg)
                 appendsolwarning(msg, constraint,
-                                 result, "Unexpectedly Tight Constraints",
-                                 self.printwarning)
+                                 result, "Unexpectedly Tight Constraints")

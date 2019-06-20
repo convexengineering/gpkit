@@ -28,6 +28,7 @@ class TestNomialSubs(unittest.TestCase):
                     return c[y]+np.array([1, 2, 3])
                 self.x = x = VectorVariable(3, "x", vectorlink)
         m = VectorLinked()
+        self.assertEqual(m.substitutions[m.x[0].key](m.substitutions), 2)
         self.assertEqual(m.gp().substitutions[m.x[0].key], 2)
         self.assertEqual(m.gp().substitutions[m.x[1].key], 3)
         self.assertEqual(m.gp().substitutions[m.x[2].key], 4)
@@ -213,13 +214,17 @@ class TestModelSubs(unittest.TestCase):
         sol.table()
         self.assertEqual(len(sol), 1)
 
-        m.substitutions[x_min][1][0] = 5
+        with self.assertRaises(RuntimeWarning):
+            sol = m.solve(verbosity=0, skipsweepfailures=False)
+
+        m.substitutions[x_min][1][0] = 5  # so no sweeps solve
         with self.assertRaises(RuntimeWarning):
             sol = m.solve(verbosity=0, skipsweepfailures=True)
 
     def test_vector_sweep(self):
         """Test sweep involving VectorVariables"""
         x = Variable("x")
+        x_min = Variable("x_min", 1)
         y = VectorVariable(2, "y")
         m = Model(x, [x >= y.prod()])
         m.substitutions.update({y: ('sweep', [[2, 3], [5, 7], [9, 11]])})
@@ -227,11 +232,18 @@ class TestModelSubs(unittest.TestCase):
         b = [6, 15, 27, 14, 35, 63, 22, 55, 99]
         # below line fails with changing dictionary keys in py3
         self.assertTrue(all(abs(a-b)/(a+b) < 1e-7))
-        m = Model(x, [x >= y.prod()])
+        x_min = Variable("x_min", 1)  # constant to check array indexing
+        m = Model(x, [x >= y.prod(), x >= x_min])
         m.substitutions.update({y: ('sweep', [[2, 3], [5, 7, 11]])})
-        a = m.solve(verbosity=0)["cost"]
+        sol = m.solve(verbosity=0)
+        a = sol["cost"]
         b = [10, 15, 14, 21, 22, 33]
         self.assertTrue(all(abs(a-b)/(a+b) < 1e-7))
+        self.assertEqual(sol["constants"][x_min], 1)
+        for i, bi in enumerate(b):
+            self.assertEqual(sol.atindex(i)["constants"][x_min], 1)
+            ai = m.solution.atindex(i)["cost"]
+            self.assertTrue(abs(ai-bi)/(ai+bi) < 1e-7)
         m = Model(x, [x >= y.prod()])
         m.substitutions.update({y: ('sweep', [[2, 3, 9], [5, 7, 11]])})
         self.assertRaises(ValueError, m.solve, verbosity=0)

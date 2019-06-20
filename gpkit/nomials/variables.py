@@ -107,7 +107,7 @@ class ArrayVariable(NomialArray):  # pylint: disable=too-many-locals
         cls = NomialArray
 
         if "idx" in descr:
-            raise KeyError("the description field 'idx' is reserved")
+            raise ValueError("the description field 'idx' is reserved")
 
         shape = (shape,) if isinstance(shape, Numbers) else tuple(shape)
         if Vectorize.vectorization:
@@ -135,8 +135,6 @@ class ArrayVariable(NomialArray):  # pylint: disable=too-many-locals
         value_option = None
         if "value" in descr:
             value_option = "value"
-        elif "sp_init" in descr:
-            value_option = "sp_init"
         if value_option:
             values = descr.pop(value_option)
         if value_option and not hasattr(values, "__call__"):

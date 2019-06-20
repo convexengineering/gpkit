@@ -146,14 +146,14 @@ class TestMonomialEquality(unittest.TestCase):
         # operator overloading
         mec = (x == y**2)
         # __init__
-        mec2 = MonomialEquality(x, "=", y**2)
+        mec2 = MonomialEquality(x, y**2)
         self.assertTrue(mono in mec.as_posyslt1())
         self.assertTrue(mono in mec2.as_posyslt1())
         x = Variable("x", "ft")
         y = Variable("y")
         if gpkit.units:
-            self.assertRaises(ValueError, MonomialEquality, x, "=", y)
-            self.assertRaises(ValueError, MonomialEquality, y, "=", x)
+            self.assertRaises(ValueError, MonomialEquality, x, y)
+            self.assertRaises(ValueError, MonomialEquality, y, x)
 
     def test_inheritance(self):
         """Make sure MonomialEquality inherits from the right things"""
@@ -170,7 +170,7 @@ class TestMonomialEquality(unittest.TestCase):
 
         def constr():
             """method that should raise a TypeError"""
-            MonomialEquality(x*y, "=", x+y)
+            MonomialEquality(x*y, x+y)
         self.assertRaises(TypeError, constr)
 
     def test_str(self):
@@ -184,7 +184,7 @@ class TestMonomialEquality(unittest.TestCase):
         "Check dimensionless unit-ed variables work"
         x = Variable('x')
         y = Variable('y', 'hr/day')
-        c = MonomialEquality(x, "=", y)
+        c = MonomialEquality(x, y)
         self.assertTrue(isinstance(c, MonomialEquality))
 
 
@@ -196,13 +196,10 @@ class TestSignomialInequality(unittest.TestCase):
         # model from #1165
         ujet = Variable("ujet")
         PK = Variable("PK")
-
-        # Constants
         Dp = Variable("Dp", 0.662)
         fBLI = Variable("fBLI", 0.4)
         fsurf = Variable("fsurf", 0.836)
         mdot = Variable("mdot", 1/0.7376)
-
         with SignomialsEnabled():
             m = Model(PK, [mdot*ujet + fBLI*Dp >= 1,
                            PK >= 0.5*mdot*ujet*(2 + ujet) + fBLI*fsurf*Dp])
@@ -212,10 +209,40 @@ class TestSignomialInequality(unittest.TestCase):
         self.assertAlmostEqual(var_senss[fsurf], 0.19, 2)
         self.assertAlmostEqual(var_senss[mdot], -0.17, 2)
 
+        # Linked variable
+        Dp = Variable("Dp", 0.662)
+        mDp = Variable("-Dp", lambda c: -c[Dp])
+        fBLI = Variable("fBLI", 0.4)
+        fsurf = Variable("fsurf", 0.836)
+        mdot = Variable("mdot", 1/0.7376)
+        m = Model(PK, [mdot*ujet >= 1 + fBLI*mDp,
+                       PK >= 0.5*mdot*ujet*(2 + ujet) + fBLI*fsurf*Dp])
+        var_senss = m.solve(verbosity=0)["sensitivities"]["constants"]
+        self.assertAlmostEqual(var_senss[Dp], -0.16, 2)
+        self.assertAlmostEqual(var_senss[fBLI], -0.16, 2)
+        self.assertAlmostEqual(var_senss[fsurf], 0.19, 2)
+        self.assertAlmostEqual(var_senss[mdot], -0.17, 2)
+
+        # fixed negative variable
+        Dp = Variable("Dp", 0.662)
+        mDp = Variable("-Dp", -0.662)
+        fBLI = Variable("fBLI", 0.4)
+        fsurf = Variable("fsurf", 0.836)
+        mdot = Variable("mdot", 1/0.7376)
+        m = Model(PK, [mdot*ujet >= 1 + fBLI*mDp,
+                       PK >= 0.5*mdot*ujet*(2 + ujet) + fBLI*fsurf*Dp])
+        var_senss = m.solve(verbosity=0)["sensitivities"]["constants"]
+        self.assertAlmostEqual(var_senss[Dp] + var_senss[mDp], -0.16, 2)
+        self.assertAlmostEqual(var_senss[fBLI], -0.16, 2)
+        self.assertAlmostEqual(var_senss[fsurf], 0.19, 2)
+        self.assertAlmostEqual(var_senss[mdot], -0.17, 2)
+
     def test_init(self):
         "Test initialization and types"
         D = Variable('D', units="N")
         x1, x2, x3 = (Variable("x_%s" % i, units="N") for i in range(3))
+        with self.assertRaises(TypeError):
+            sc = (D >= x1 + x2 - x3)
         with SignomialsEnabled():
             sc = (D >= x1 + x2 - x3)
         self.assertTrue(isinstance(sc, SignomialInequality))
@@ -311,6 +338,12 @@ class TestBounded(unittest.TestCase):
         y = Variable("y")
         m = Model(x, [x >= y], {"y": 1})
         bm = Model(m.cost, Bounded(m))
+        sol = bm.solve(verbosity=0)
+        self.assertAlmostEqual(sol["cost"], 1.0)
+        bm = Model(m.cost, Bounded(m, lower=1e-10))
+        sol = bm.solve(verbosity=0)
+        self.assertAlmostEqual(sol["cost"], 1.0)
+        bm = Model(m.cost, Bounded(m, upper=1e10))
         sol = bm.solve(verbosity=0)
         self.assertAlmostEqual(sol["cost"], 1.0)
 

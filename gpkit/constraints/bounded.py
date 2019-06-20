@@ -89,11 +89,7 @@ class Bounded(ConstraintSet):
         ConstraintSet.process_result(self, result)
         if "boundedness" not in result:
             result["boundedness"] = {}
-        for key, value in self.check_boundaries(result).items():
-            if key not in result["boundedness"]:
-                result["boundedness"][key] = value
-            else:
-                result["boundedness"][key].update(value)
+        result["boundedness"].update(self.check_boundaries(result))
 
     def check_boundaries(self, result):
         "Creates (and potentially prints) a dictionary of unbounded variables."
