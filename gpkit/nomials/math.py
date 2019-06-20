@@ -429,7 +429,6 @@ class PosynomialInequality(ScalarSingleEquationConstraint):
             m_c, = m_gt.hmap.values()
         except ValueError:
             raise TypeError("greater-than side '%s' is not monomial." % m_gt)
-        hmap = p_lt.hmap.copy()
         if m_gt.units != p_lt.units:
             if m_gt.units and p_lt.units:
                 conversion = m_gt.units/p_lt.units
@@ -439,6 +438,7 @@ class PosynomialInequality(ScalarSingleEquationConstraint):
                 m_c *= float(conversion)
             except DimensionalityError:
                 raise DimensionalityError(p_lt, m_gt)
+        hmap = p_lt.hmap.copy()
         for exp in hmap.keys():
             hmap[exp-m_exp] = hmap.pop(exp)/m_c
         hmap = self._simplify_posy_ineq(hmap)
@@ -560,7 +560,7 @@ class MonomialEquality(PosynomialInequality):
         self.relax_sensitivity = 0
         if not la or not nu:
             return {}  # as_posyslt1 created no inequalities
-        self.relax_sensitivity = sum(la)
+        self.relax_sensitivity = la[0] - la[1]
         var_senss = HashVector()
         for var in self.varkeys:
             for i, m in enumerate(self.unsubbed):

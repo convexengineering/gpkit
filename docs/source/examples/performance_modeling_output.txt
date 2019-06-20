@@ -40,22 +40,19 @@ rho : [ -0.12     -0.11     -0.11     -0.11    ] air density
 
 Tightest Constraints
 --------------------
-       | Mission/FlightSegment/AircraftP/WingAero
-  +3.4 : Re__(0,) = 0.157*V_Mission/FlightSegment/FlightState_(0,)*c_Aircraft/Wing
-           *mu_Mission/FlightSegment/FlightState_(0,)**-1
-           *rho_Mission/FlightSegment/FlightState_(0,)
-  +3.4 : Re__(1,) = 0.157*V_Mission/FlightSegment/FlightState_(1,)*c_Aircraft/Wing
-           *mu_Mission/FlightSegment/FlightState_(1,)**-1
-           *rho_Mission/FlightSegment/FlightState_(1,)
-  +3.4 : Re__(2,) = 0.157*V_Mission/FlightSegment/FlightState_(2,)*c_Aircraft/Wing
-           *mu_Mission/FlightSegment/FlightState_(2,)**-1
-           *rho_Mission/FlightSegment/FlightState_(2,)
-  +3.4 : Re__(3,) = 0.157*V_Mission/FlightSegment/FlightState_(3,)*c_Aircraft/Wing
-           *mu_Mission/FlightSegment/FlightState_(3,)**-1
-           *rho_Mission/FlightSegment/FlightState_(3,)
+       | Aircraft
+  +1.4 : W_ >= W_/Fuselage + W_/Wing
+
+       | Mission
+    +1 : Wfuel_/FlightSegment/AircraftP_(0,) >= Wburn_/FlightSegment/AircraftP_(0,)
+           + Wfuel_/FlightSegment/AircraftP_(1,)
+ +0.75 : Wfuel_/FlightSegment/AircraftP_(1,) >= Wburn_/FlightSegment/AircraftP_(1,)
+           + Wfuel_/FlightSegment/AircraftP_(2,)
+  +0.5 : Wfuel_/FlightSegment/AircraftP_(2,) >= Wburn_/FlightSegment/AircraftP_(2,)
+           + Wfuel_/FlightSegment/AircraftP_(3,)
 
        | Aircraft/Wing
-  +3.4 : c_ = A_**-0.5*S_**0.5
+ +0.43 : W_ >= S_*rho_
 
 All Loose Constraints
 ---------------------
