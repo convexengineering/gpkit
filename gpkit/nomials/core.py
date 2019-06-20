@@ -53,7 +53,17 @@ class Nomial(NomialData):
         units_tf = units.replace("frac", "tfrac").replace(r"\cdot", r"\cdot ")
         return " + ".join(sorted(mstrs)) + units_tf
 
-    __hash__ = NomialData.__hash__  # required by Python 3
+    def prod(self):
+        "Return self for compatibility with NomialArray"
+        return self
+
+    def sum(self):
+        "Return self for compatibility with NomialArray"
+        return self
+
+    def to(self, units):
+        "Create new Signomial converted to new units"
+        return self.__class__(self.hmap.to(units))  # pylint: disable=no-member
 
     @property
     def value(self):
@@ -69,30 +79,19 @@ class Nomial(NomialData):
         p = self.sub(self.varkeyvalues())  # pylint: disable=not-callable
         return p.cs[0] if isinstance(p, FixedScalar) else p
 
-    def prod(self):
-        "Return self for compatibility with NomialArray"
-        return self
-
-    def sum(self):
-        "Return self for compatibility with NomialArray"
-        return self
-
-    def to(self, units):
-        "Create new Signomial converted to new units"
-        return self.__class__(self.hmap.to(units))  # pylint: disable=no-member
-
     def __eq__(self, other):
         "True if self and other are algebraically identical."
         if isinstance(other, Numbers):
             return isinstance(self, FixedScalar) and self.value == other
         return super(Nomial, self).__eq__(other)
 
-    def __radd__(self, other):
-        return self + other
+    # pylint: disable=multiple-statements
+    def __ne__(self, other): return not Nomial.__eq__(self, other)
 
-    def __rmul__(self, other):
-        return self * other
+    # required by Python 3
+    __hash__ = NomialData.__hash__
+    def __truediv__(self, other): return self.__div__(other)   # pylint: disable=not-callable
 
-    def __truediv__(self, other):
-        "For the / operator in Python 3.x"
-        return self.__div__(other)   # pylint: disable=not-callable
+    # for arithmetic consistency
+    def __radd__(self, other): return self + other
+    def __rmul__(self, other): return self * other

@@ -1,5 +1,5 @@
 """Signomial, Posynomial, Monomial, Constraint, & MonoEQCOnstraint classes"""
-from __future__ import print_function
+from __future__ import print_function, unicode_literals
 from collections import defaultdict
 import numpy as np
 from .core import Nomial
@@ -53,7 +53,7 @@ class Signomial(Nomial):
                 hmap.units_of_product(cs)
         super(Signomial, self).__init__(hmap)
         if self.any_nonpositive_cs:
-            if require_positive and not SignomialsEnabled.status:
+            if require_positive and not SignomialsEnabled:
                 raise InvalidPosynomial("each c must be positive.")
             self.__class__ = Signomial
         elif len(self.hmap) == 1:
@@ -224,13 +224,13 @@ class Signomial(Nomial):
         return NotImplemented
 
     def __neg__(self):
-        return -1*self if SignomialsEnabled.status else NotImplemented
+        return -1*self if SignomialsEnabled else NotImplemented  # pylint: disable=using-constant-test
 
     def __sub__(self, other):
-        return self + -other if SignomialsEnabled.status else NotImplemented
+        return self + -other if SignomialsEnabled else NotImplemented  # pylint: disable=using-constant-test
 
     def __rsub__(self, other):
-        return other + -self if SignomialsEnabled.status else NotImplemented
+        return other + -self if SignomialsEnabled else NotImplemented  # pylint: disable=using-constant-test
 
 
 class Posynomial(Signomial):
@@ -400,7 +400,7 @@ class PosynomialInequality(ScalarSingleEquationConstraint):
             return hmap
         coeff = 1 - hmap[EMPTY_HV]
         if pmap is not None:  # note constant term's mmap
-            const_idx = hmap.keys().index(EMPTY_HV)
+            const_idx = list(hmap.keys()).index(EMPTY_HV)
             self.const_mmap = self.pmap.pop(const_idx)  # pylint: disable=attribute-defined-outside-init
             self.const_coeff = coeff  # pylint: disable=attribute-defined-outside-init
         if coeff >= -self.feastol and len(hmap) == 1:
@@ -440,7 +440,7 @@ class PosynomialInequality(ScalarSingleEquationConstraint):
             except DimensionalityError:
                 raise DimensionalityError(p_lt, m_gt)
         hmap = p_lt.hmap.copy()
-        for exp in hmap.keys():
+        for exp in list(hmap):
             hmap[exp-m_exp] = hmap.pop(exp)/m_c
         hmap = self._simplify_posy_ineq(hmap)
         if hmap is None:
@@ -484,14 +484,19 @@ class PosynomialInequality(ScalarSingleEquationConstraint):
         nu, = nu
         presub, = self.unsubbed
         if hasattr(self, "pmap"):
-            nu_ = np.zeros(len(presub.hmap))
+            nu_ = np.full(len(presub.hmap), np.nan, "f")
             for i, mmap in enumerate(self.pmap):
                 for idx, percentage in mmap.items():
+                    if np.isnan(nu_[idx]):
+                        nu_[idx] = 0
                     nu_[idx] += percentage*nu[i]
             if hasattr(self, "const_mmap"):
                 scale = (1-self.const_coeff)/self.const_coeff
                 for idx, percentage in self.const_mmap.items():
+                    if np.isnan(nu_[idx]):
+                        nu_[idx] = 0
                     nu_[idx] += percentage * la*scale
+            assert ~np.isnan(nu_).all()  # mmap/const_mmap missed some
             nu = nu_
         var_senss = {}  # Constant sensitivities
         for var in self.varkeys:
@@ -578,7 +583,7 @@ class SignomialInequality(ScalarSingleEquationConstraint):
 
     def __init__(self, left, oper, right):
         ScalarSingleEquationConstraint.__init__(self, left, oper, right)
-        if not SignomialsEnabled.status:
+        if not SignomialsEnabled:
             raise TypeError("Cannot initialize SignomialInequality"
                             " outside of a SignomialsEnabled environment.")
         if self.oper == "<=":

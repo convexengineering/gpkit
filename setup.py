@@ -53,7 +53,7 @@ setup(
     author_email="gpkit@mit.edu",
     url="https://www.github.com/convexengineering/gpkit",
     install_requires=["numpy >= 1.12.1", "pint >= 0.8.1", "scipy", "ad",
-                      "ctypesgen", "cvxopt >= 1.1.8", "future"],
+                      "ctypesgen", "cvxopt >= 1.1.8", "six"],
     version="0.8.0.0",
     packages=["gpkit", "gpkit.tools", "gpkit.interactive", "gpkit.constraints",
               "gpkit.nomials", "gpkit.tests", "gpkit._mosek", "gpkit._pint"],

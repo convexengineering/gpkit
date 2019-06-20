@@ -112,11 +112,11 @@ class TestExamples(unittest.TestCase):
     def test_primal_infeasible_ex1(self, example):
         with self.assertRaises(RuntimeWarning) as cm:
             example.m.solve(verbosity=0)
-        err = cm.exception
-        if "mosek" in err.message:
-            self.assertIn("PRIM_INFEAS_CER", err.message)
-        elif "cvxopt" in err.message:
-            self.assertIn("unknown", err.message)
+        err = str(cm.exception)
+        if "mosek" in err:
+            self.assertIn("PRIM_INFEAS_CER", err)
+        elif "cvxopt" in err:
+            self.assertIn("unknown", err)
 
     def test_primal_infeasible_ex2(self, example):
         with self.assertRaises(RuntimeWarning):

@@ -96,7 +96,7 @@ class Sankey(object):
             else:
                 if constr not in self.constr_name:
                     # use unicode's circled letters for constraint labels
-                    source = unichr(next(self.counter)+9398)
+                    source = unichr(self.counter.next()+9398)
                     self.constr_name[constr] = source
                 else:
                     source = self.constr_name[constr]
@@ -178,7 +178,7 @@ class Sankey(object):
                 self.varlinks(self.gp, key, printing=False)
                 maxflow = max(self.links.values())
                 if maxflow > 0.01:  # TODO: arbitrary threshold
-                    varprops[key] = {"constraints": next(self.counter),
+                    varprops[key] = {"constraints": self.counter.next(),
                                      "maxflow": maxflow}
                 var_eqs.update(self.var_eqs)
             self.__init__(self.gp)

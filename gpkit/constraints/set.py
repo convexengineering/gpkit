@@ -27,7 +27,7 @@ def add_meq_bounds(bounded, meq_bounded):
 
 def _sort_by_name_and_idx(var):
     "return tuple for Variable sorting"
-    return (var.key.str_without(["units", "idx"]), var.key.idx)
+    return (var.key.str_without(["units", "idx"]), var.key.idx or ())
 
 
 # pylint: disable=too-many-instance-attributes

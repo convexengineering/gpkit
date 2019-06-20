@@ -60,7 +60,7 @@ class TestGP(unittest.TestCase):
                           SignomialEquality(x**2 + x, y)])
         sol = m.localsolve(solver=self.solver, verbosity=0, mutategp=False)
         self.assertAlmostEqual(sol("x"), 0.1639472, self.ndig)
-        self.assertAlmostEqual(sol("y"), 0.1908254, self.ndig)
+        self.assertAlmostEqual(sol("y")[0], 0.1908254, self.ndig)
         self.assertAlmostEqual(sol("c"), 0.2669448, self.ndig)
         # test right vector input to sigeq
         with SignomialsEnabled():
@@ -68,7 +68,7 @@ class TestGP(unittest.TestCase):
                           SignomialEquality(y, x**2 + x)])
         sol = m.localsolve(solver=self.solver, verbosity=0)
         self.assertAlmostEqual(sol("x"), 0.1639472, self.ndig)
-        self.assertAlmostEqual(sol("y"), 0.1908254, self.ndig)
+        self.assertAlmostEqual(sol("y")[0], 0.1908254, self.ndig)
         self.assertAlmostEqual(sol("c"), 0.2669448, self.ndig)
         # test scalar input to sigeq
         y = Variable("y")
@@ -373,7 +373,7 @@ class TestSP(unittest.TestCase):
         z = Variable('z', 4)
 
         import sys
-        from cStringIO import StringIO
+        from io import StringIO
         old_stdout = sys.stdout
         sys.stdout = stringout = StringIO()
 
@@ -402,7 +402,7 @@ class TestSP(unittest.TestCase):
         z = Variable('z')
 
         import sys
-        from cStringIO import StringIO
+        from io import StringIO
         old_stdout = sys.stdout
         sys.stdout = stringout = StringIO()
 

@@ -68,7 +68,7 @@ def new_test(name, solver, import_dict, path, testfn=None):
         for globname, global_thing in [
                 ("model numbers", gpkit.globals.NamedVariables.modelnums),
                 ("lineage", gpkit.NamedVariables.lineage),
-                ("signomials enabled", gpkit.SignomialsEnabled.status),
+                ("signomials enabled", gpkit.SignomialsEnabled),
                 ("vectorization", gpkit.Vectorize.vectorization),
                 ("namedvars", gpkit.NamedVariables.namedvars)]:
             if global_thing:

@@ -305,25 +305,24 @@ class GeometricProgram(CostedConstraintSet, NomialData):
         for key, value in cost_senss.items():
             var_senss[key] = value + var_senss.get(key, 0)
         # carry linked sensitivities over to their constants
-        for v in var_senss.keys():
-            if v.gradients:
-                dlogcost_dlogv = var_senss.pop(v)
-                val = result["constants"][v]
-                for c, dv_dc in v.gradients.items():
-                    if val != 0:
-                        dlogv_dlogc = dv_dc * result["constants"][c]/val
-                    # make nans / infs explicitly to avoid warnings
-                    elif dlogcost_dlogv == 0:
-                        dlogv_dlogc = np.nan
-                    else:
-                        dlogv_dlogc = np.inf * dv_dc*result["constants"][c]
-                    accum = var_senss.get(c, 0)
-                    var_senss[c] = dlogcost_dlogv*dlogv_dlogc + accum
-                    if v in cost_senss:
-                        if c in self.cost.varkeys:
-                            dlogcost_dlogv = cost_senss.pop(v)
-                            accum = cost_senss.get(c, 0)
-                            cost_senss[c] = dlogcost_dlogv*dlogv_dlogc + accum
+        for v in list(v for v in var_senss if v.gradients):
+            dlogcost_dlogv = var_senss.pop(v)
+            val = result["constants"][v]
+            for c, dv_dc in v.gradients.items():
+                if val != 0:
+                    dlogv_dlogc = dv_dc * result["constants"][c]/val
+                # make nans / infs explicitly to avoid warnings
+                elif dlogcost_dlogv == 0:
+                    dlogv_dlogc = np.nan
+                else:
+                    dlogv_dlogc = np.inf * dv_dc*result["constants"][c]
+                accum = var_senss.get(c, 0)
+                var_senss[c] = dlogcost_dlogv*dlogv_dlogc + accum
+                if v in cost_senss:
+                    if c in self.cost.varkeys:
+                        dlogcost_dlogv = cost_senss.pop(v)
+                        accum = cost_senss.get(c, 0)
+                        cost_senss[c] = dlogcost_dlogv*dlogv_dlogc + accum
 
         result["sensitivities"]["cost"] = cost_senss
         result["sensitivities"]["variables"] = KeyDict(var_senss)
