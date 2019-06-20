@@ -138,7 +138,6 @@ class ConstantsRelaxed(ConstraintSet):
                 continue
             key.descr.pop("gradients", None)
             descr = key.descr.copy()
-            descr.pop("value", None)
             descr.pop("veckey", None)
             descr["lineage"] = descr.pop("lineage", ())+(self.lineage[-1],)
             relaxvardescr = descr.copy()

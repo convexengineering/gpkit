@@ -57,7 +57,7 @@ class KeyDict(dict):
     """
     collapse_arrays = True
     keymapping = True
-    keymap = []  # to check if init is run after pickling
+    keymap = []
 
     def __init__(self, *args, **kwargs):
         "Passes through to dict.__init__ via the `update()` method"
@@ -78,13 +78,14 @@ class KeyDict(dict):
 
     def update(self, *args, **kwargs):
         "Iterates through the dictionary created by args and kwargs"
-        for k, v in dict(*args, **kwargs).items():
-            if hasattr(v, "copy"):
-                # We don't want just a reference (for e.g. numpy arrays)
-                #   KeyDict values are expected to be immutable (Numbers)
-                #   or to have a copy attribute.
-                v = v.copy()
-            self[k] = v
+        if (self.varkeys is None and len(args) == 1 and
+                isinstance(args[0], KeyDict)):
+            dict.update(self, args[0])
+            self.keymap.update(args[0].keymap)
+            self._unmapped_keys.update(args[0]._unmapped_keys)  # pylint:disable=protected-access
+        else:
+            for k, v in dict(*args, **kwargs).items():
+                self[k] = v
 
     def parse_and_index(self, key):
         "Returns key if key had one, and veckey/idx for indexed veckeys."
@@ -185,8 +186,8 @@ class KeyDict(dict):
         # pylint: disable=too-many-boolean-expressions
         key, idx = self.parse_and_index(key)
         if key not in self.keymap:
-            if not self.keymap:
-                self.__init__(self)
+            if not hasattr(self, "_unmapped_keys"):
+                self.__init__()  # py3's pickle sets items before init... :(
             self.keymap[key].add(key)
             self._unmapped_keys.add(key)
             if idx:
@@ -243,7 +244,8 @@ class KeyDict(dict):
         key, idx = self.parse_and_index(key)
         keys = self.keymap[key]
         if not keys:
-            raise KeyError("key %s not found." % key)
+            raise KeyError(key)
+        copied = set()  # have to copy bc update leaves duplicate sets
         for k in list(keys):
             delete = True
             if idx:
@@ -255,11 +257,15 @@ class KeyDict(dict):
                 mapkeys = set([k])
                 if self.keymapping and hasattr(k, "keys"):
                     mapkeys.update(k.keys)
-                for mappedkey in mapkeys:
-                    if mappedkey in self.keymap:
-                        self.keymap[mappedkey].remove(k)
-                        if not self.keymap[mappedkey]:
-                            del self.keymap[mappedkey]
+                for mapkey in mapkeys:
+                    if mapkey in self.keymap:
+                        if len(self.keymap[mapkey]) == 1:
+                            del self.keymap[mapkey]
+                            continue
+                        if mapkey not in copied:
+                            self.keymap[mapkey] = set(self.keymap[mapkey])
+                            copied.add(mapkey)
+                        self.keymap[mapkey].remove(k)
 
 
 class KeySet(KeyDict):

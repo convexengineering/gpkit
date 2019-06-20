@@ -188,6 +188,7 @@ class TestModelSubs(unittest.TestCase):
 
     def test_vector_sweep(self):
         """Test sweep involving VectorVariables"""
+        # TODO: python3 / rand salt fluctuations
         x = Variable("x")
         x_min = Variable("x_min", 1)
         y = VectorVariable(2, "y")

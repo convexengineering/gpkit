@@ -89,7 +89,7 @@ class ConstraintSet(list, GPkitObject):
             if not updated_veckeys and subkey.shape and not subkey.idx:
                 for key in self.varkeys:
                     if key.veckey:
-                        self.varkeys.keymap[key.veckey].add(key)  # pylint: disable=unsubscriptable-object
+                        self.varkeys.keymap[key.veckey].add(key)
                 updated_veckeys = True
             for key in self.varkeys[subkey]:
                 if key.value is not None and not key.constant:
