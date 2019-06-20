@@ -21,7 +21,7 @@ def evaluate_linked(constants, linked):
         kdc = KeyDict({k: adnumber(maybe_flatten(v))
                        for k, v in constants.items()})
         kdc.log_gets = True
-    kdc_plain = KeyDict(constants)
+    kdc_plain = None
     array_calulated, logged_array_gets = {}, {}
     for v, f in linked.items():
         try:
@@ -52,6 +52,8 @@ def evaluate_linked(constants, linked):
                 print("Couldn't auto-differentiate linked variable %s.\n  "
                       "(to raise the error directly for debugging purposes,"
                       " set gpkit.settings[\"ad_errors_raise\"] to True)" % v)
+            if kdc_plain is None:
+                kdc_plain = KeyDict(constants)
             constants[v] = f(kdc_plain)
             v.descr.pop("gradients", None)
         finally:

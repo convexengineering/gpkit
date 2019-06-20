@@ -67,6 +67,7 @@ class KeyDict(dict):
         self._unmapped_keys = set()
         self.log_gets = False
         self.logged_gets = set()
+        self.owned = set()
         self.update(*args, **kwargs)
 
     def get(self, key, alternative=KeyError):
@@ -76,10 +77,15 @@ class KeyDict(dict):
             return alternative
         return self[key]
 
+    def _copyonwrite(self, key):
+        "Copys arrays before they are written to"
+        if key not in self.owned:
+            dict.__setitem__(self, key, dict.__getitem__(self, key).copy())
+            self.owned.add(key)
+
     def update(self, *args, **kwargs):
         "Iterates through the dictionary created by args and kwargs"
-        if (self.varkeys is None and len(args) == 1 and
-                isinstance(args[0], KeyDict)):
+        if not self and len(args) == 1 and isinstance(args[0], KeyDict):
             dict.update(self, args[0])
             self.keymap.update(args[0].keymap)
             self._unmapped_keys.update(args[0]._unmapped_keys)  # pylint:disable=protected-access
@@ -171,6 +177,8 @@ class KeyDict(dict):
             raise KeyError(key)
         values = []
         for k in keys:
+            if not idx and k.shape:
+                self._copyonwrite(k)
             got = dict.__getitem__(self, k)
             if idx:
                 got = got[idx]
@@ -195,6 +203,7 @@ class KeyDict(dict):
                 kwargs = {} if number_array else {"dtype": "object"}
                 emptyvec = np.full(key.shape, np.nan, **kwargs)
                 dict.__setitem__(self, key, emptyvec)
+                self.owned.add(key)
         if isinstance(value, FixedScalar):
             value = value.value  # substitute constant monomials
         if isinstance(value, Quantity):
@@ -203,7 +212,9 @@ class KeyDict(dict):
             if is_sweepvar(value):
                 dict.__setitem__(self, key,
                                  np.array(dict.__getitem__(self, key), object))
+                self.owned.add(key)
                 value = SweepValue(value[1])
+            self._copyonwrite(key)
             dict.__getitem__(self, key)[idx] = value
         else:
             if (self.collapse_arrays and hasattr(key, "descr")
@@ -217,15 +228,19 @@ class KeyDict(dict):
                     value = np.array([clean_value(key, v) for v in value])
             if getattr(value, "shape", False) and dict.__contains__(self, key):
                 goodvals = ~isnan(value)
-                if self[key].dtype != value.dtype:
+                present_value = dict.__getitem__(self, key)
+                if present_value.dtype != value.dtype:
                     # e.g., we're replacing a number with a linked function
-                    dict.__setitem__(self, key, np.array(self[key],
+                    dict.__setitem__(self, key, np.array(present_value,
                                                          dtype=value.dtype))
+                    self.owned.add(key)
+                self._copyonwrite(key)
                 self[key][goodvals] = value[goodvals]
             else:
                 if hasattr(value, "dtype") and value.dtype == INT_DTYPE:
                     value = np.array(value, "f")
                 dict.__setitem__(self, key, value)
+                self.owned.add(key)
 
     def update_keymap(self):
         "Updates the keymap with the keys in _unmapped_keys"
