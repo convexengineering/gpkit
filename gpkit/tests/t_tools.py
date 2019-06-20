@@ -1,5 +1,6 @@
 """Tests for tools module"""
 import unittest
+import sys
 import numpy as np
 from numpy import log
 from gpkit import Variable, VectorVariable, Model, NomialArray
@@ -67,14 +68,21 @@ class TestTools(unittest.TestCase):
 
     def test_vector_only_parse(self):
         # pylint: disable=no-member
-        m = OnlyVectorParse()
-        self.assertTrue(hasattr(m, "x"))
-        self.assertIsInstance(m.x, NomialArray)
-        self.assertEqual(len(m.x), 3)
-
+        if sys.version_info >= (3, 0):
+            with self.assertRaises(FutureWarning):
+                m = OnlyVectorParse()
+        else:
+            m = OnlyVectorParse()
+            self.assertTrue(hasattr(m, "x"))
+            self.assertIsInstance(m.x, NomialArray)
+            self.assertEqual(len(m.x), 3)
 
     def test_parse_variables(self):
-        Fuselage(Variable("Wfueltot", 5, "lbf"))
+        if sys.version_info >= (3, 0):
+            with self.assertRaises(FutureWarning):
+                Fuselage(Variable("Wfueltot", 5, "lbf"))
+        else:
+            Fuselage(Variable("Wfueltot", 5, "lbf"))
 
     def test_binary_sweep_tree(self):
         bst0 = BinarySweepTree([1, 2], [{"cost": 1}, {"cost": 8}], None, None)

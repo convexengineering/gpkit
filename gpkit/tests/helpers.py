@@ -59,7 +59,10 @@ def new_test(name, solver, import_dict, path, testfn=None):
 
         import gpkit
         with NewDefaultSolver(solver):
-            testfn(name, import_dict, path)(self)
+            try:
+                testfn(name, import_dict, path)(self)
+            except FutureWarning as fw:
+                print(fw)
 
         # clear modelnums to ensure deterministic script-like output!
         gpkit.globals.NamedVariables.reset_modelnumbers()
