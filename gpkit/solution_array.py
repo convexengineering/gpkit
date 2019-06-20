@@ -126,8 +126,6 @@ def constraint_table(data, sortbymodel=True, showmodels=True, **_):
     lines = []
     for varlist in decorated:
         _, model, _, constrstr, openingstr = varlist
-        if model not in models:
-            continue
         if model != oldmodel and len(models) > 1:
             if oldmodel is not None:
                 lines.append(["", ""])
