@@ -417,7 +417,7 @@ class TestSP(unittest.TestCase):
         self.assertEqual(stringout.getvalue(), (
             "Warning: SignomialConstraint x + y >= z became the tautological"
             " constraint 0 <= 1 + x after substitution.\n"
-            "Warning: SignomialConstraint 1 + x >= 0 became the tautological"
+            "Warning: SignomialConstraint x + 1 >= 0 became the tautological"
             " constraint 0 <= 1 + x after substitution.\n"))
 
     def test_impossible(self):

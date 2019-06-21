@@ -4,7 +4,7 @@ from .small_classes import Quantity
 
 try:
     sys.stdout.write(u"\u200b")
-    DEFAULT_UNIT_PRINTING = [":P~"]
+    DEFAULT_UNIT_PRINTING = [":~"]
 except UnicodeEncodeError:
     DEFAULT_UNIT_PRINTING = [":~"]
 
@@ -12,7 +12,7 @@ except UnicodeEncodeError:
 def lineagestr(lineage, modelnums=True):
     "Returns properly formatted lineage string"
     lineage = getattr(lineage, "lineage", None) or lineage
-    return "/".join(["%s.%i" % (name, num) if (num and modelnums) else name
+    return ".".join(["%s%i" % (name, num) if (num and modelnums) else name
                      for name, num in lineage]) if lineage else ""
 
 

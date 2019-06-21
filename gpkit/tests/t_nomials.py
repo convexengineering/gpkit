@@ -225,7 +225,7 @@ class TestSignomial(unittest.TestCase):
         x = Monomial('x')
         y = Monomial('y')
         with SignomialsEnabled():
-            self.assertEqual(str(1 - x - y**2 - 1), "-x + -y**2")
+            self.assertEqual(str(1 - x - y**2 - 1), "1 - x - y^2 - 1")
             self.assertEqual((1 - x/y**2).latex(), "-\\frac{x}{y^{2}} + 1")
         self.assertRaises(TypeError, lambda: x-y)
 

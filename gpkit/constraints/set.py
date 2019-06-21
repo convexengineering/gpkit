@@ -1,7 +1,6 @@
 "Implements ConstraintSet"
 from collections import defaultdict
 import numpy as np
-
 from ..small_classes import Numbers
 from ..keydict import KeySet, KeyDict
 from ..small_scripts import try_str_without

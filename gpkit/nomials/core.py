@@ -1,18 +1,19 @@
+# -*- coding: utf-8 -*-
 "The shared non-mathematical backbone of all Nomials"
+import numpy as np
 from .data import NomialData
 from ..small_classes import Numbers, FixedScalar
-from ..small_scripts import nomial_latex_helper
+from ..small_scripts import nomial_latex_helper, try_str_without
 
 
 class Nomial(NomialData):
     "Shared non-mathematical properties of all nomials"
     __div__ = None
     sub = None
+    aststr = None
 
-    def str_without(self, excluded=None):
+    def str_without(self, excluded=()):
         "String representation, excluding fields ('units', varkey attributes)"
-        if excluded is None:
-            excluded = []
         mstrs = []
         for exp, c in self.hmap.items():
             varstrs = []
@@ -20,7 +21,7 @@ class Nomial(NomialData):
                 if x != 0:
                     varstr = var.str_without(excluded)
                     if x != 1:
-                        varstr += "**%.2g" % x
+                        varstr += "^%.2g" % x
                     varstrs.append(varstr)
             varstrs.sort()
             cstr = "%.3g" % c
@@ -33,6 +34,57 @@ class Nomial(NomialData):
             units = self.unitstr(" [%s]")
         else:
             units = ""
+        if self.ast:
+            aststr = None
+            oper, values = self.ast
+            values_ = []
+            for val in values:
+                excluded = set(excluded)
+                excluded.add("units")
+                if isinstance(val, Numbers):
+                    if val > np.pi/12 and val < 100*np.pi and abs(12*val/np.pi % 1) <= 1e-2:
+                        if val > 3.1:
+                            val = "%.3gPI" % (val/np.pi)
+                            if val == "1PI":
+                                val = "PI"
+                        else:
+                            val = "(PI/%.3g)" % (np.pi/val)
+                    else:
+                        val = "%.3g" % val
+                values_.append(val)
+            left, right = tuple(values_)
+            if oper == "add":
+                left = try_str_without(left, excluded)
+                right = try_str_without(right, excluded)
+                if right[0] == "-":
+                    aststr = "%s - %s" % (left, right[1:])
+                else:
+                    aststr = "%s + %s" % (left, right)
+            elif oper == "mul":
+                if left == "1":
+                    aststr = try_str_without(right, excluded)
+                elif right == "1":
+                    aststr = try_str_without(left, excluded)
+                else:
+                    if len(getattr(left, "hmap", [])) > 1:
+                        left = "(%s)" % try_str_without(left, excluded)
+                    if len(getattr(right, "hmap", [])) > 1:
+                        right = "(%s)" % try_str_without(right, excluded)
+                    left = try_str_without(left, excluded)
+                    right = try_str_without(right, excluded)
+                    aststr = "%s*%s" % (left, right)
+            elif oper == "div":
+                left = try_str_without(left, excluded)
+                right = try_str_without(right, excluded)
+                if right == "1":
+                    aststr = left
+                else:
+                    aststr = "%s/%s" % (left, right)
+            elif oper == "neg":
+                aststr = "-%s" % try_str_without(left, excluded)
+            else:
+                raise ValueError(oper)
+            return aststr + units
         return " + ".join(sorted(mstrs)) + units
 
     def latex(self, excluded=()):
@@ -93,5 +145,5 @@ class Nomial(NomialData):
     def __truediv__(self, other): return self.__div__(other)   # pylint: disable=not-callable
 
     # for arithmetic consistency
-    def __radd__(self, other): return self + other
-    def __rmul__(self, other): return self * other
+    def __radd__(self, other): return self.__add__(other, rev=True)
+    def __rmul__(self, other): return self.__mul__(other, rev=True)

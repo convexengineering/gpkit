@@ -25,6 +25,6 @@ A_{wall} : -1.5  upper limit, wall area
 
 Tightest Constraints
 --------------------
-  +1.5 : A_{wall} >= 2*d*h + 2*h*w
-  +0.5 : alpha <= h*w**-1
+  +1.5 : A_{wall} >= 2*h*w + 2*h*d
+  +0.5 : alpha <= h/w
 

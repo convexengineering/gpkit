@@ -8,7 +8,7 @@ from ..globals import SignomialsEnabled
 from ..small_classes import Strings, Numbers
 from ..small_classes import HashVector, EMPTY_HV
 from ..varkey import VarKey
-from ..small_scripts import mag
+from ..small_scripts import mag, try_str_without
 from ..exceptions import (InvalidGPConstraint, InvalidPosynomial,
                           DimensionalityError)
 from .map import NomialMap
@@ -61,6 +61,7 @@ class Signomial(Nomial):
             self.__class__ = Monomial
         else:
             self.__class__ = Posynomial
+        self.ast = ()
 
     def diff(self, var):
         """Derivative of this with respect to a Variable
@@ -170,7 +171,7 @@ class Signomial(Nomial):
             return SignomialInequality(self, ">=", other)
         return NotImplemented
 
-    def __add__(self, other):
+    def __add__(self, other, rev=False):
         if isinstance(other, np.ndarray):
             return np.array(self) + other
         other_hmap = getattr(other, "hmap", None)
@@ -181,10 +182,18 @@ class Signomial(Nomial):
                 other_hmap = NomialMap({EMPTY_HV: mag(other)})
                 other_hmap.units_of_product(other)
         if other_hmap:
-            return Signomial(self.hmap + other_hmap)
+            astorder = (self, other)
+            if rev:
+                astorder = tuple(reversed(astorder))
+            out = Signomial(self.hmap + other_hmap)
+            out.ast = ("add", astorder)
+            return out
         return NotImplemented
 
-    def __mul__(self, other):
+    def __mul__(self, other, rev=False):
+        astorder = (self, other)
+        if rev:
+            astorder = tuple(reversed(astorder))
         if isinstance(other, np.ndarray):
             return np.array(self)*other
         elif isinstance(other, Numbers):
@@ -192,7 +201,9 @@ class Signomial(Nomial):
                 return other
             hmap = mag(other)*self.hmap
             hmap.units_of_product(self.hmap.units, other)
-            return Signomial(hmap)
+            out = Signomial(hmap)
+            out.ast = ("mul", astorder)
+            return out
         elif isinstance(other, Signomial):
             hmap = NomialMap()
             for exp_s, c_s in self.hmap.items():
@@ -204,13 +215,17 @@ class Signomial(Nomial):
                     elif accumulated:
                         del hmap[exp]
             hmap.units_of_product(self.hmap.units, other.hmap.units)
-            return Signomial(hmap)
+            out = Signomial(hmap)
+            out.ast = ("mul", astorder)
+            return out
         return NotImplemented
 
     def __div__(self, other):
         "Support the / operator in Python 2.x"
         if isinstance(other, Numbers):
-            return self*other**-1
+            out = self*other**-1
+            out.ast = ("div", (self, other))
+            return out
         elif isinstance(other, Monomial):
             return other.__rdiv__(self)
         return NotImplemented
@@ -225,7 +240,11 @@ class Signomial(Nomial):
         return NotImplemented
 
     def __neg__(self):
-        return -1*self if SignomialsEnabled else NotImplemented  # pylint: disable=using-constant-test
+        if SignomialsEnabled:
+            out = -1*self
+            out.ast = ("neg", (self, None))
+            return out
+        return NotImplemented
 
     def __sub__(self, other):
         return self + -other if SignomialsEnabled else NotImplemented  # pylint: disable=using-constant-test
@@ -278,10 +297,12 @@ class Monomial(Posynomial):
     def __rdiv__(self, other):
         "Divide other by this Monomial"
         if isinstance(other, Numbers + (Signomial,)):
-            return other * self**-1
+            out = other * self**-1
+            out.ast = ("div", (other, self))
+            return out
         return NotImplemented
 
-    def __rtruediv__(self, other):
+    def __rtruediv__(self, other, rev=True):
         "__rdiv__ for python 3.x"
         return self.__rdiv__(other)
 
