@@ -87,15 +87,12 @@ Tightest Constraints
   +1.4 : W.. >= W...Fuselage + W...Wing
 
        | Mission
-    +1 : Wfuel...FlightSegment.AircraftP[0] >= Wfuel...FlightSegment.AircraftP[1]
-           + Wburn...FlightSegment.AircraftP[0]
- +0.75 : Wfuel...FlightSegment.AircraftP[1] >= Wfuel...FlightSegment.AircraftP[2]
-           + Wburn...FlightSegment.AircraftP[1]
-  +0.5 : Wfuel...FlightSegment.AircraftP[2] >= Wfuel...FlightSegment.AircraftP[3]
-           + Wburn...FlightSegment.AircraftP[2]
+    +1 : Wfuel[0] >= Wfuel[1] + Wburn[0]
+ +0.75 : Wfuel[1] >= Wfuel[2] + Wburn[1]
+  +0.5 : Wfuel[2] >= Wfuel[3] + Wburn[2]
 
        | Aircraft.Wing
- +0.43 : W.. >= S..*rho..
+ +0.43 : W.. >= S*rho..
 
 All Loose Constraints
 ---------------------

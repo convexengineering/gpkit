@@ -48,8 +48,8 @@ x_min : +0.5
 
 Tightest Constraints
 --------------------
-  +0.5 : x <= C.Relax*x_max
-  +0.5 : x_min <= C.Relax*x
+  +0.5 : x <= C*x_max
+  +0.5 : x_min <= C*x
 
 
 With constraints relaxed individually
@@ -90,9 +90,9 @@ x_min : +1
 
 Tightest Constraints
 --------------------
-    +1 : x_min <= C.Relax1[1]*x
- +0.99 : x <= C.Relax1[0]*x_max
- +0.01 : C.Relax1[0] >= 1
+    +1 : x_min <= C[1]*x
+ +0.99 : x <= C[0]*x_max
+ +0.01 : C[0] >= 1
 
 
 With constants relaxed individually
@@ -145,8 +145,8 @@ x_min : +1
 Tightest Constraints
 --------------------
     +1 : x >= x_min
-    +1 : x_min >= x_min_{prelax}.Relax2/x_min.Relax2
+    +1 : x_min >= x_min_{prelax}/x_min
  +0.99 : x <= x_max
- +0.99 : x_max <= x_max_{prelax}.Relax2*x_max.Relax2
+ +0.99 : x_max <= x_max_{prelax}*x_max
 
 

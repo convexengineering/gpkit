@@ -113,14 +113,15 @@ def constraint_table(data, sortbymodel=True, showmodels=True, **_):
         if model not in models:
             models[model] = len(models)
         if showmodels:
+            excluded = ("units", "unnecessary lineage")
+        else:
+            excluded = ("units", "lineage")
+        try:
+            constrstr = constraint.str_without(excluded)
+        except AttributeError:
             constrstr = str(constraint)
             if " at 0x" in constrstr:  # don't print memory addresses
                 constrstr = constrstr[:constrstr.find(" at 0x")] + ">"
-        else:
-            try:
-                constrstr = constraint.str_without(("units", "lineage"))
-            except AttributeError:
-                constrstr = str(constraint)
         decorated.append((models[model], model, sortby, constrstr, openingstr))
     decorated.sort()
     oldmodel = None
@@ -262,10 +263,22 @@ class SolutionArray(DictOfLists):
     """
     program = None
     model = None
+    _name_collision_varkeys = None
     table_titles = {"sweepvariables": "Sweep Variables",
                     "freevariables": "Free Variables",
                     "constants": "Constants",
                     "variables": "Variables"}
+
+    def name_collision_varkeys(self):
+        "Returns the set of contained varkeys whose names are not unique"
+        if self._name_collision_varkeys is None:
+            self._name_collision_varkeys = set()
+            keymap = self["variables"].keymap
+            for key in list(keymap):
+                if hasattr(key, "key") and not (key.shape and not key.idx):
+                    if len(keymap[key.str_without(["lineage"])]) > 1:
+                        self._name_collision_varkeys.add(key)
+        return self._name_collision_varkeys
 
     def __len__(self):
         try:
@@ -614,6 +627,8 @@ class SolutionArray(DictOfLists):
         -------
         str
         """
+        for key in self.name_collision_varkeys():
+            key.descr["necessarylineage"] = True
         showvars = self._parse_showvars(showvars)
         strs = []
         for table in tables:
@@ -646,6 +661,8 @@ class SolutionArray(DictOfLists):
                                   "% \\usepackage{amsmath}",
                                   "% \\begin{document}\n"))
             strs = [preamble] + strs + ["% \\end{document}"]
+        for key in self.name_collision_varkeys():
+            del key.descr["necessarylineage"]
         return "\n".join(strs)
 
     def plot(self, posys=None, axes=None):
