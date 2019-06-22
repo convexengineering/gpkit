@@ -1,5 +1,5 @@
 """Defines SolutionArray class"""
-from __future__ import print_function, unicode_literals
+from __future__ import print_function
 import re
 from collections import Iterable
 import pickle
@@ -113,14 +113,11 @@ def constraint_table(data, sortbymodel=True, showmodels=True, **_):
         if model not in models:
             models[model] = len(models)
         if showmodels:
-            constrstr = str(constraint)
+            constrstr = constraint.str_without()
             if " at 0x" in constrstr:  # don't print memory addresses
                 constrstr = constrstr[:constrstr.find(" at 0x")] + ">"
         else:
-            try:
-                constrstr = constraint.str_without(("units", "lineage"))
-            except AttributeError:
-                constrstr = str(constraint)
+            constrstr = constraint.str_without(("units", "lineage"))
         decorated.append((models[model], model, sortby, constrstr, openingstr))
     decorated.sort()
     oldmodel = None
@@ -160,10 +157,10 @@ def constraint_table(data, sortbymodel=True, showmodels=True, **_):
 
     maxlens = np.max([list(map(len, line)) for line in lines
                       if line[0] != ("modelname",)], axis=0)
-    dirs = ['>', '<']
+    dirs = [">", "<"]
     # check lengths before using zip
     assert len(list(dirs)) == len(list(maxlens))
-    fmts = [u'{0:%s%s}' % (direc, L) for direc, L in zip(dirs, maxlens)]
+    fmts = [u"{0:%s%s}" % (direc, L) for direc, L in zip(dirs, maxlens)]
     for i, line in enumerate(lines):
         if line[0] == ("modelname",):
             line = [fmts[0].format(" | "), line[1]]
@@ -806,10 +803,10 @@ def var_table(data, title, printunits=True, latex=False, rawlines=False,
         if lines:
             maxlens = np.max([list(map(len, line)) for line in lines
                               if line[0] != ("modelname",)], axis=0)
-            dirs = ['>', '<', '<', '<']
+            dirs = [">", "<", "<", "<"]
             # check lengths before using zip
             assert len(list(dirs)) == len(list(maxlens))
-            fmts = [u'{0:%s%s}' % (direc, L) for direc, L in zip(dirs, maxlens)]
+            fmts = [u"{0:%s%s}" % (direc, L) for direc, L in zip(dirs, maxlens)]
         for i, line in enumerate(lines):
             if line[0] == ("modelname",):
                 line = [fmts[0].format(" | "), line[1]]

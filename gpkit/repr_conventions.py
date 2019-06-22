@@ -1,22 +1,18 @@
 # -*- coding: utf-8 -*-
 "Repository for representation standards"
-from __future__ import print_function, unicode_literals
+from __future__ import print_function
 import sys
-import codecs
 import numpy as np
 from .small_classes import Quantity, Numbers
 from .small_scripts import try_str_without
 
-UTF8Writer = codecs.getwriter("utf8")
-sys.stdout = UTF8Writer(sys.stdout)
 
 try:
     print("​", end="")  # zero-width space
     DEFAULT_UNIT_PRINTING = [":P~"]
-    unicode_enabled = False
 except UnicodeEncodeError:
     DEFAULT_UNIT_PRINTING = [":~"]
-    unicode_enabled = False
+unicode_pi = True  # fails on some external models if True
 
 
 def lineagestr(lineage, modelnums=True):
@@ -41,7 +37,7 @@ def unitstr(units, into="%s", options=None, dimless=""):
 def strify(val, excluded):
     if isinstance(val, Numbers):
         if val > np.pi/12 and val < 100*np.pi and abs(12*val/np.pi % 1) <= 1e-2:
-            pi_str = "π" if unicode_enabled else "PI"
+            pi_str = "π" if unicode_pi else "PI"
             if val > 3.1:
                 val = "%.3g%s" % (val/np.pi, pi_str)
                 if val == "1%s" % pi_str:

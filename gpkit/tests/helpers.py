@@ -170,7 +170,10 @@ class StdoutCaptured(object):
         DEFAULT_UNIT_PRINTING[0] = ":P~"
         logfile = (open(self.logfilepath, mode="w")
                    if self.logfilepath else NullFile())
-        sys.stdout = UTF8Writer(logfile)
+        if sys.version_info >= (3, 0):
+            sys.stdout = logfile
+        else:
+            sys.stdout = UTF8Writer(logfile)
 
     def __exit__(self, *args):
         "Return stdout"
