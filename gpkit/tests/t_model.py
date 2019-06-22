@@ -13,7 +13,7 @@ from gpkit.constraints.relax import ConstraintsRelaxedEqually
 from gpkit.constraints.relax import ConstantsRelaxed
 
 if sys.version_info >= (3, 0):
-    unicode = str
+    unicode = str  # pylint:disable=redefined-builtin,invalid-name
 
 NDIGS = {"cvxopt": 4, "mosek": 5, "mosek_cli": 5}
 # name: decimal places of accuracy

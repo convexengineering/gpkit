@@ -263,7 +263,7 @@ class ConstraintSet(list, GPkitObject):
         "Returns namespaced string."
         return ("<gpkit.%s object containing %i top-level constraint(s)"
                 " and %i variable(s)>" % (self.__class__.__name__,
-                                        len(self), len(self.varkeys)))
+                                          len(self), len(self.varkeys)))
 
     def name_collision_varkeys(self):
         "Returns the set of contained varkeys whose names are not unique"
@@ -278,7 +278,8 @@ class ConstraintSet(list, GPkitObject):
         "Lines representation of a ConstraintSet."
         root = "root" not in excluded
         rootlines, lines = [], []
-        indent = " "*2 if len(self) > 1 else ""
+        indent = " "*2 if (len(self) > 1
+                           or getattr(self, "lineage", None)) else ""
         if root:
             excluded += ("root",)
             if "unnecessary lineage" in excluded:
@@ -290,18 +291,20 @@ class ConstraintSet(list, GPkitObject):
             named_constraints = {v: k for k, v in self.idxlookup.items()}
         for i, constraint in enumerate(self):
             clines = try_str_without(constraint, excluded).split("\n")
-            if getattr(constraint, "lineage", None) and isinstance(constraint, ConstraintSet):
+            if (getattr(constraint, "lineage", None)
+                    and isinstance(constraint, ConstraintSet)):
                 name, num = constraint.lineage[-1]
                 if not any(clines):
                     clines = [indent + "(no constraints)"]
                 if lines:
                     lines.append("")
                 lines.append(name if not num else name + str(num))
-            elif "constraint names" not in excluded and self.idxlookup and i in named_constraints:
+            elif ("constraint names" not in excluded
+                  and self.idxlookup and i in named_constraints):
                 lines.append("\"%s\":" % named_constraints[i])
-                for i, line in enumerate(clines):
-                    if clines[i][:len(indent)] != indent:
-                        clines[i] = indent + line  # must be indented
+                for j, line in enumerate(clines):
+                    if clines[j][:len(indent)] != indent:
+                        clines[j] = indent + line  # must be indented
             lines.extend(clines)
         if root:
             indent = " "

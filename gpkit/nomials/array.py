@@ -11,7 +11,6 @@ from operator import eq, le, ge, xor
 from functools import reduce  # pylint: disable=redefined-builtin
 import numpy as np
 from .map import NomialMap
-from .math import Signomial
 from ..small_classes import Numbers, HashVector, EMPTY_HV
 from ..small_scripts import try_str_without, mag
 from ..constraints import ArrayConstraint
@@ -60,7 +59,6 @@ class NomialArray(GPkitObject, np.ndarray):
     -------
     >>> px = gpkit.NomialArray([1, x, x**2])
     """
-    ast = None
 
     def __mul__(self, other, rev=False):
         astorder = (self, other)
@@ -70,7 +68,6 @@ class NomialArray(GPkitObject, np.ndarray):
         out.ast = ("mul", astorder)
         return out
 
-    def __rmul__(self, other): return self.__mul__(other, rev=True)
 
     def __div__(self, other, rev=False):
         astorder = (self, other)
@@ -94,6 +91,8 @@ class NomialArray(GPkitObject, np.ndarray):
         out.ast = ("add", astorder)
         return out
 
+    # pylint: disable=multiple-statements
+    def __rmul__(self, other): return self.__mul__(other, rev=True)
     def __radd__(self, other): return self.__add__(other, rev=True)
 
     def __pow__(self, expo):
@@ -112,7 +111,7 @@ class NomialArray(GPkitObject, np.ndarray):
         if not getattr(out, "shape", None):
             return out
         out = (out)
-        # print(repr(idxs))  # TODO: too many Number calls to this, maybe skip numbers?
+        # print(repr(idxs))
         out.ast = ("index", (self, idxs))
         return out
 
@@ -215,7 +214,7 @@ class NomialArray(GPkitObject, np.ndarray):
 
     def prod(self, *args, **kwargs):
         "Returns a product. O(N) if no arguments and only contains monomials."
-        if args or kwargs or all(l == 0 for l in self.shape):
+        if args or kwargs or all(dim_len == 0 for dim_len in self.shape):
             return np.ndarray.prod(self, *args, **kwargs)
         c, unitpower = 1.0, 0
         exp = HashVector()
@@ -234,3 +233,6 @@ class NomialArray(GPkitObject, np.ndarray):
         out = Signomial(hmap)
         out.ast = ("prod", (self, None))
         return out
+
+
+from .math import Signomial  # pylint: disable=wrong-import-position

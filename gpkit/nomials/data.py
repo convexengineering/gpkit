@@ -24,8 +24,7 @@ class NomialData(GPkitObject):
             self._varlocs = \
             self._exps = \
             self._cs = \
-            self._varkeys = \
-            self._values = None
+            self._varkeys = None
 
     def __init__(self, hmap):
         self.hmap = hmap

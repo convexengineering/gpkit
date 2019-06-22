@@ -6,7 +6,7 @@ from gpkit import Monomial, Posynomial, NomialArray, VectorVariable
 import gpkit
 
 if sys.version_info >= (3, 0):
-    unicode = str
+    unicode = str  # pylint:disable=redefined-builtin,invalid-name
 
 
 class TestNomialArray(unittest.TestCase):

@@ -12,7 +12,7 @@ try:
     DEFAULT_UNIT_PRINTING = [":P~"]
 except UnicodeEncodeError:
     DEFAULT_UNIT_PRINTING = [":~"]
-unicode_pi = False  # fails on some external models if True
+UNICODE_PI = False  # fails on some external models if True
 
 
 def lineagestr(lineage, modelnums=True):
@@ -37,7 +37,7 @@ def unitstr(units, into="%s", options=None, dimless=""):
 def strify(val, excluded):
     if isinstance(val, Numbers):
         if val > np.pi/12 and val < 100*np.pi and abs(12*val/np.pi % 1) <= 1e-2:
-            pi_str = "π" if unicode_pi else "PI"
+            pi_str = "π" if UNICODE_PI else "PI"
             if val > 3.1:
                 val = "%.3g%s" % (val/np.pi, pi_str)
                 if val == "1%s" % pi_str:
@@ -53,22 +53,23 @@ def strify(val, excluded):
 def parenthesize(string):
     if string[0] == "(" and string[-1] == ")":
         return string
-    else:
-        return "(%s)" % string
+    return "(%s)" % string
 
 class GPkitObject(object):
     "This class combines various printing methods for easier adoption."
     lineagestr = lineagestr
     unitstr = unitstr
     cached_strs = None
+    ast = None
 
+    # pylint: disable=too-many-branches, too-many-statements
     def parse_ast(self, excluded=("units")):
         if self.cached_strs is None:
             self.cached_strs = {}
         elif frozenset(excluded) in self.cached_strs:
             return self.cached_strs[frozenset(excluded)]
         aststr = None
-        oper, values = self.ast
+        oper, values = self.ast  # pylint: disable=unpacking-non-sequence
         excluded = set(excluded)
         excluded.add("units")
         left, right = values
@@ -114,9 +115,9 @@ class GPkitObject(object):
             aststr = "%s^%s" % (maybe_left, right)
             if maybe_left == "1":
                 aststr = "1"
-        elif oper == "prod":  # TODO: really you only want to do these if it makes the overall thing shorter
+        elif oper == "prod":  # TODO: only do if it makes a shorter string
             aststr = "%s.prod()" % strify(left, excluded)
-        elif oper == "sum":
+        elif oper == "sum":  # TODO: only do if it makes a shorter string
             left = strify(left, excluded)
             if "*" in left or " - " in left or "/" in left or " - " in left:
                 left = parenthesize(left)

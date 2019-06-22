@@ -8,7 +8,7 @@ import gpkit
 from gpkit.nomials import Variable as PlainVariable
 
 if sys.version_info >= (3, 0):
-    unicode = str
+    unicode = str  # pylint:disable=redefined-builtin,invalid-name
 
 
 class TestVarKey(unittest.TestCase):

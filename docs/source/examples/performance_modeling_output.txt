@@ -69,8 +69,8 @@ Sensitivities
   W : +0.97  weight
 
     | Aircraft.Wing
-  A : -0.67  aspect ratio
 rho : +0.43  areal density
+  A : -0.67  aspect ratio
 
 Next Largest Sensitivities
 --------------------------
@@ -78,8 +78,8 @@ Next Largest Sensitivities
   e : [ -0.18     -0.18     -0.18     -0.18    ] Oswald efficiency
 
     | Mission.FlightSegment.FlightState
-  V : [ -0.22     -0.21     -0.21     -0.21    ] true airspeed
 rho : [ -0.12     -0.11     -0.11     -0.11    ] air density
+  V : [ -0.22     -0.21     -0.21     -0.21    ] true airspeed
 
 Tightest Constraints
 --------------------
@@ -104,9 +104,9 @@ No constraints had a sensitivity below +1e-05.
 Solution difference for variables given in `showvars`
 (positive means the argument is bigger)
 -----------------------------------------------------
-Wburn : [  -50.5%    -50.4%    -50.3%    -50.1%  ] segment fuel burn
-Wfuel : [  -50.3%    -50.3%    -50.2%    -50.1%  ] fuel weight
     D : [   -1.1%      -.8%      -.5%      -.3%  ] drag force
+Wfuel : [  -50.3%    -50.3%    -50.2%    -50.1%  ] fuel weight
+Wburn : [  -50.5%    -50.4%    -50.3%    -50.1%  ] segment fuel burn
 
 Solution sensitivity delta for variables given in `showvars`
 ------------------------------------------------------------

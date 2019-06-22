@@ -1,22 +1,20 @@
 "The shared non-mathematical backbone of all Nomials"
 from __future__ import print_function, unicode_literals
-import numpy as np
 from .data import NomialData
 from ..small_classes import Numbers, FixedScalar
-from ..small_scripts import nomial_latex_helper, try_str_without
+from ..small_scripts import nomial_latex_helper
 
 
 class Nomial(NomialData):
     "Shared non-mathematical properties of all nomials"
     __div__ = None
     sub = None
-    aststr = None
 
     def str_without(self, excluded=()):
         "String representation, excluding fields ('units', varkey attributes)"
         units = "" if "units" in excluded else self.unitstr(" [%s]")
         if hasattr(self, "key"):
-            return self.key.str_without(excluded) + units
+            return self.key.str_without(excluded) + units  # pylint: disable=no-member
         elif self.ast:
             return self.parse_ast(excluded) + units
         else:
@@ -96,5 +94,5 @@ class Nomial(NomialData):
     def __truediv__(self, other): return self.__div__(other)   # pylint: disable=not-callable
 
     # for arithmetic consistency
-    def __radd__(self, other): return self.__add__(other, rev=True)
-    def __rmul__(self, other): return self.__mul__(other, rev=True)
+    def __radd__(self, other): return self.__add__(other, rev=True)   # pylint: disable=no-member
+    def __rmul__(self, other): return self.__mul__(other, rev=True)   # pylint: disable=no-member

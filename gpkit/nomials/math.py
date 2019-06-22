@@ -3,12 +3,13 @@ from __future__ import print_function, unicode_literals
 from collections import defaultdict
 import numpy as np
 from .core import Nomial
+from .array import NomialArray
 from ..constraints import SingleEquationConstraint
 from ..globals import SignomialsEnabled
 from ..small_classes import Strings, Numbers
 from ..small_classes import HashVector, EMPTY_HV
 from ..varkey import VarKey
-from ..small_scripts import mag, try_str_without
+from ..small_scripts import mag
 from ..exceptions import (InvalidGPConstraint, InvalidPosynomial,
                           DimensionalityError)
 from .map import NomialMap
@@ -193,7 +194,6 @@ class Signomial(Nomial):
         if rev:
             astorder = tuple(reversed(astorder))
         if isinstance(other, np.ndarray):
-            from .array import NomialArray
             s = NomialArray(self)
             s.ast = self.ast
             return s*other
@@ -242,7 +242,7 @@ class Signomial(Nomial):
         return NotImplemented
 
     def __neg__(self):
-        if SignomialsEnabled:
+        if SignomialsEnabled:  # pylint: disable=using-constant-test
             out = -1*self
             out.ast = ("neg", (self, None))
             return out

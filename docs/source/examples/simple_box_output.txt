@@ -20,8 +20,8 @@ A_{floor} : 50   [m²] upper limit, floor area
 
 Sensitivities
 -------------
-A_{wall} : -1.5  upper limit, wall area
    alpha : +0.5  lower limit, wall aspect ratio
+A_{wall} : -1.5  upper limit, wall area
 
 Tightest Constraints
 --------------------

@@ -10,7 +10,7 @@ from gpkit.exceptions import InvalidPosynomial
 import gpkit
 
 if sys.version_info >= (3, 0):
-    unicode = str
+    unicode = str  # pylint:disable=redefined-builtin,invalid-name
 
 
 class TestMonomial(unittest.TestCase):

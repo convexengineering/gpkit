@@ -14,7 +14,7 @@ from gpkit.constraints.bounded import Bounded
 import gpkit
 
 if sys.version_info >= (3, 0):
-    unicode = str
+    unicode = str  # pylint:disable=redefined-builtin,invalid-name
 
 
 class TestConstraint(unittest.TestCase):

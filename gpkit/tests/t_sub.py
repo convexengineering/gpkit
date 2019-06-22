@@ -13,7 +13,7 @@ from gpkit.tests.helpers import run_tests
 # pylint: disable=invalid-name,attribute-defined-outside-init,unused-variable
 
 if sys.version_info >= (3, 0):
-    unicode = str
+    unicode = str  # pylint:disable=redefined-builtin,invalid-name
 
 
 class TestNomialSubs(unittest.TestCase):

@@ -231,7 +231,7 @@ class Fuselage(Model):
 AC = Aircraft()
 MISSION = Mission(AC)
 M = Model(MISSION.takeoff_fuel, [MISSION, AC])
-print(M.str_without())
+print(M)
 sol = M.solve(verbosity=0)
 # save solution to some files
 sol.savemat()
