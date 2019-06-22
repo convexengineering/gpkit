@@ -724,8 +724,7 @@ def var_table(data, title, printunits=True, latex=False, rawlines=False,
                 decorated.append((model, b, (varfmt % s), i, k, v))
             else:  # for consistent sorting, add small offset to negative vals
                 val = np.mean(np.abs(v)) - (1e-9 if np.mean(v) < 0 else 0)
-                val -= hash(k.name)*1e-30
-                decorated.append((model, -val, b, (varfmt % s), i, k, v))
+                decorated.append((model, -val, k.name, b, (varfmt % s), i, k, v))
     if included_models:
         included_models = set(included_models)
         included_models.add("")
@@ -738,7 +737,7 @@ def var_table(data, title, printunits=True, latex=False, rawlines=False,
         if not sortbyvals:
             model, isvector, varstr, _, var, val = varlist
         else:
-            model, _, isvector, varstr, _, var, val = varlist
+            model, _, _, isvector, varstr, _, var, val = varlist
         if model not in models:
             continue
         if model != oldmodel and len(models) > 1:

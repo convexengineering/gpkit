@@ -1,10 +1,11 @@
 "Implements ConstraintSet"
-from collections import defaultdict
+from collections import defaultdict, OrderedDict
 import numpy as np
 from ..small_classes import Numbers
 from ..keydict import KeySet, KeyDict
 from ..small_scripts import try_str_without
 from ..repr_conventions import GPkitObject
+from .single_equation import SingleEquationConstraint
 
 
 def add_meq_bounds(bounded, meq_bounded):
@@ -29,6 +30,13 @@ def _sort_by_name_and_idx(var):
     return (var.key.str_without(["units", "idx"]), var.key.idx or ())
 
 
+def _sort_constrs(item):
+    "return tuple for Constraint sorting"
+    label, constraint = item
+    return (not isinstance(constraint, SingleEquationConstraint),
+            hasattr(constraint, "lineage") and constraint.lineage, label)
+
+
 # pylint: disable=too-many-instance-attributes
 class ConstraintSet(list, GPkitObject):
     "Recursive container for ConstraintSets and Inequalities"
@@ -39,11 +47,15 @@ class ConstraintSet(list, GPkitObject):
     _name_collision_varkeys = None
 
     def __init__(self, constraints, substitutions=None):  # pylint: disable=too-many-branches
-        if isinstance(constraints, dict):
-            self.idxlookup = {k: i for i, k in enumerate(constraints)}
-            constraints = constraints.values()
         if isinstance(constraints, ConstraintSet):
             constraints = [constraints]  # put it one level down
+        elif isinstance(constraints, dict):
+            if isinstance(constraints, OrderedDict):
+                items = constraints.items()
+            else:
+                items = sorted(list(constraints.items()), key=_sort_constrs)
+            self.idxlookup = {k: i for i, (k, _) in enumerate(items)}
+            constraints = list(zip(*items))[1]
         list.__init__(self, constraints)
 
         # initializations for attributes used elsewhere

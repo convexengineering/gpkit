@@ -6,25 +6,25 @@ Cost
 Constraints
 -----------
  Mission
-   "require fuel for the last leg":
-     Wfuel[3] >= Wburn[3]
    "definition of Wburn":
      Wfuel[:3] >= Wfuel[1:] + Wburn[:3]
+   "require fuel for the last leg":
+     Wfuel[3] >= Wburn[3]
    
    FlightSegment
      AircraftP
+       "fuel burn rate":
+         Wburn[:] >= 0.1*D[:]
+       "lift":
+         W.Aircraft + Wfuel[:] <= 0.5*rho[:]*CL[:]*S*V[:]^2
        "performance":
          WingAero
          "definition of D":
            D[:] >= 0.5*rho[:]*V[:]^2*CD[:]*S
-         "drag model":
-           CD[:] >= 0.074/Re[:]^0.2 + CL[:]^2/PI/A/e[:]
          "definition of Re":
            Re[:] = rho[:]*V[:]*c/mu[:]
-       "lift":
-         W.Aircraft + Wfuel[:] <= 0.5*rho[:]*CL[:]*S*V[:]^2
-       "fuel burn rate":
-         Wburn[:] >= 0.1*D[:]
+         "drag model":
+           CD[:] >= 0.074/Re[:]^0.2 + CL[:]^2/PI/A/e[:]
      
      FlightState
        (no constraints)
@@ -37,10 +37,10 @@ Constraints
        (no constraints)
      
      Wing
-       "parametrization of wing weight":
-         W.Aircraft.Wing >= S*rho.Aircraft.Wing
        "definition of mean chord":
          c = (S/A)^0.5
+       "parametrization of wing weight":
+         W.Aircraft.Wing >= S*rho.Aircraft.Wing
 
 Cost
 ----
