@@ -1,10 +1,14 @@
 """Test VarKey, Variable, VectorVariable, and ArrayVariable classes"""
 import unittest
+import sys
 import numpy as np
 from gpkit import (Monomial, NomialArray, Variable, VarKey,
                    VectorVariable, ArrayVariable)
 import gpkit
 from gpkit.nomials import Variable as PlainVariable
+
+if sys.version_info >= (3, 0):
+    unicode = str
 
 
 class TestVarKey(unittest.TestCase):

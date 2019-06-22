@@ -1,8 +1,12 @@
 """Tests for NomialArray class"""
 import unittest
+import sys
 import numpy as np
 from gpkit import Monomial, Posynomial, NomialArray, VectorVariable
 import gpkit
+
+if sys.version_info >= (3, 0):
+    unicode = str
 
 
 class TestNomialArray(unittest.TestCase):

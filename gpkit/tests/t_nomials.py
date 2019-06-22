@@ -1,5 +1,6 @@
 """Tests for Monomial, Posynomial, and Signomial classes"""
 import math
+import sys
 import unittest
 from gpkit import Variable, Monomial, Posynomial, Signomial, SignomialsEnabled
 from gpkit import VectorVariable, NomialArray
@@ -7,6 +8,9 @@ from gpkit.nomials import NomialMap
 from gpkit.small_classes import HashVector
 from gpkit.exceptions import InvalidPosynomial
 import gpkit
+
+if sys.version_info >= (3, 0):
+    unicode = str
 
 
 class TestMonomial(unittest.TestCase):

@@ -12,7 +12,7 @@ try:
     DEFAULT_UNIT_PRINTING = [":P~"]
 except UnicodeEncodeError:
     DEFAULT_UNIT_PRINTING = [":~"]
-unicode_pi = True  # fails on some external models if True
+unicode_pi = False  # fails on some external models if True
 
 
 def lineagestr(lineage, modelnums=True):

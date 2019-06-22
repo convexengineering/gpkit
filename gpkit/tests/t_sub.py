@@ -1,5 +1,6 @@
 """Test substitution capability across gpkit"""
 import unittest
+import sys
 import numpy as np
 import numpy.testing as npt
 from ad import adnumber, ADV
@@ -10,6 +11,9 @@ from gpkit.small_scripts import mag
 from gpkit.tests.helpers import run_tests
 
 # pylint: disable=invalid-name,attribute-defined-outside-init,unused-variable
+
+if sys.version_info >= (3, 0):
+    unicode = str
 
 
 class TestNomialSubs(unittest.TestCase):

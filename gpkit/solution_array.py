@@ -113,11 +113,14 @@ def constraint_table(data, sortbymodel=True, showmodels=True, **_):
         if model not in models:
             models[model] = len(models)
         if showmodels:
-            constrstr = constraint.str_without()
+            constrstr = str(constraint)
             if " at 0x" in constrstr:  # don't print memory addresses
                 constrstr = constrstr[:constrstr.find(" at 0x")] + ">"
         else:
-            constrstr = constraint.str_without(("units", "lineage"))
+            try:
+                constrstr = constraint.str_without(("units", "lineage"))
+            except AttributeError:
+                constrstr = str(constraint)
         decorated.append((models[model], model, sortby, constrstr, openingstr))
     decorated.sort()
     oldmodel = None

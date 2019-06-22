@@ -13,6 +13,9 @@ from gpkit.constraints.relax import ConstraintsRelaxed
 from gpkit.constraints.bounded import Bounded
 import gpkit
 
+if sys.version_info >= (3, 0):
+    unicode = str
+
 
 class TestConstraint(unittest.TestCase):
     """Tests for Constraint class"""
