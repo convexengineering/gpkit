@@ -1,24 +1,67 @@
 
 Cost
 ----
+ Wfuel[0]
+
+Constraints
+-----------
+ Mission
+   "require fuel for the last leg":
+     Wfuel[3] >= Wburn[3]
+   "definition of Wburn":
+     Wfuel[:3] >= Wfuel[1:] + Wburn[:3]
+   
+   FlightSegment
+     AircraftP
+       "performance":
+         WingAero
+         "definition of D":
+           D[:] >= 0.5*rho[:]*V[:]^2*CD[:]*S
+         "drag model":
+           CD[:] >= 0.074/Re[:]^0.2 + CL[:]^2/PI/A/e[:]
+         "definition of Re":
+           Re[:] = rho[:]*V[:]*c/mu[:]
+       "lift":
+         W.Aircraft + Wfuel[:] <= 0.5*rho[:]*CL[:]*S*V[:]^2
+       "fuel burn rate":
+         Wburn[:] >= 0.1*D[:]
+     
+     FlightState
+       (no constraints)
+ 
+ Aircraft
+   "definition of W":
+     W.Aircraft >= W.Aircraft.Fuselage + W.Aircraft.Wing
+   "components":
+     Fuselage
+       (no constraints)
+     
+     Wing
+       "parametrization of wing weight":
+         W.Aircraft.Wing >= S*rho.Aircraft.Wing
+       "definition of mean chord":
+         c = (S/A)^0.5
+
+Cost
+----
  1.091 [lbf]
 
 Free Variables
 --------------
       | Aircraft
-    W : 144.1                                       [lbf]   weight
+    W : 144.1                                       [lbf] weight
 
       | Aircraft.Wing
-    S : 44.14                                       [ft**2] surface area
-    W : 44.14                                       [lbf]   weight
-    c : 1.279                                       [ft]    mean chord
+    S : 44.14                                       [ft²] surface area
+    W : 44.14                                       [lbf] weight
+    c : 1.279                                       [ft]  mean chord
 
       | Mission.FlightSegment.AircraftP
-Wburn : [ 0.274     0.273     0.272     0.272    ]  [lbf]   segment fuel burn
-Wfuel : [ 1.09      0.817     0.544     0.272    ]  [lbf]   fuel weight
+Wburn : [ 0.274     0.273     0.272     0.272    ]  [lbf] segment fuel burn
+Wfuel : [ 1.09      0.817     0.544     0.272    ]  [lbf] fuel weight
 
       | Mission.FlightSegment.AircraftP.WingAero
-    D : [ 2.74      2.73      2.72      2.72     ]  [lbf]   drag force
+    D : [ 2.74      2.73      2.72      2.72     ]  [lbf] drag force
 
 Sensitivities
 -------------
@@ -41,18 +84,18 @@ rho : [ -0.12     -0.11     -0.11     -0.11    ] air density
 Tightest Constraints
 --------------------
        | Aircraft
-  +1.4 : W_ >= W_.Fuselage + W_.Wing
+  +1.4 : W.. >= W...Fuselage + W...Wing
 
        | Mission
-    +1 : Wfuel_.FlightSegment.AircraftP_(0,) >= Wfuel_.FlightSegment.AircraftP_(1,)
-           + Wburn_.FlightSegment.AircraftP_(0,)
- +0.75 : Wfuel_.FlightSegment.AircraftP_(1,) >= Wfuel_.FlightSegment.AircraftP_(2,)
-           + Wburn_.FlightSegment.AircraftP_(1,)
-  +0.5 : Wfuel_.FlightSegment.AircraftP_(2,) >= Wfuel_.FlightSegment.AircraftP_(3,)
-           + Wburn_.FlightSegment.AircraftP_(2,)
+    +1 : Wfuel...FlightSegment.AircraftP[0] >= Wfuel...FlightSegment.AircraftP[1]
+           + Wburn...FlightSegment.AircraftP[0]
+ +0.75 : Wfuel...FlightSegment.AircraftP[1] >= Wfuel...FlightSegment.AircraftP[2]
+           + Wburn...FlightSegment.AircraftP[1]
+  +0.5 : Wfuel...FlightSegment.AircraftP[2] >= Wfuel...FlightSegment.AircraftP[3]
+           + Wburn...FlightSegment.AircraftP[2]
 
        | Aircraft.Wing
- +0.43 : W_ >= S_*rho_
+ +0.43 : W.. >= S..*rho..
 
 All Loose Constraints
 ---------------------

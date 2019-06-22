@@ -1,4 +1,5 @@
 """Defines the VarKey class"""
+from __future__ import unicode_literals
 from .small_classes import HashVector, Count, qty
 from .repr_conventions import GPkitObject
 
@@ -19,6 +20,7 @@ class VarKey(GPkitObject):  # pylint:disable=too-many-instance-attributes
     VarKey with the given name and descr.
     """
     unique_id = Count().next
+    vars_of_a_name = {}
     subscripts = ("lineage", "idx")
 
     def __init__(self, name=None, **kwargs):
@@ -27,7 +29,7 @@ class VarKey(GPkitObject):  # pylint:disable=too-many-instance-attributes
             self.descr = name.descr
         else:
             self.descr = kwargs
-            self.descr["name"] = str(name or "\\fbox{%s}" % VarKey.unique_id())
+            self.descr["name"] = name or "\\fbox{%s}" % VarKey.unique_id()
             unitrepr = self.unitrepr or self.units
             if unitrepr in ["", "-", None]:  # dimensionless
                 self.descr["units"] = None
@@ -72,14 +74,16 @@ class VarKey(GPkitObject):  # pylint:disable=too-many-instance-attributes
 
     def str_without(self, excluded=()):
         "Returns string without certain fields (such as 'lineage')."
-        string = self.name
-        for subscript in self.subscripts:
-            if subscript in self.descr and subscript not in excluded:
-                substring = self.descr[subscript]
-                if subscript == "lineage":
-                    substring = self.lineagestr("modelnums" not in excluded)
-                string += "_%s" % (substring,)
-        return string
+        name = self.name
+        if ("lineage" not in excluded and self.lineage
+                and ("unnecessary lineage" not in excluded
+                     or self.necessarylineage)):
+            name += "." + self.lineagestr("modelnums" not in excluded)
+        if "idx" not in excluded and self.idx:
+            name += "[%s]" % ",".join(map(str, self.idx))
+        elif "vec" not in excluded and self.shape:
+            name += "[:]"
+        return name
 
     def __getattr__(self, attr):
         return self.descr.get(attr, None)

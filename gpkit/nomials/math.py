@@ -172,8 +172,6 @@ class Signomial(Nomial):
         return NotImplemented
 
     def __add__(self, other, rev=False):
-        if isinstance(other, np.ndarray):
-            return np.array(self) + other
         other_hmap = getattr(other, "hmap", None)
         if isinstance(other, Numbers):
             if not other:  # other is zero
@@ -195,8 +193,11 @@ class Signomial(Nomial):
         if rev:
             astorder = tuple(reversed(astorder))
         if isinstance(other, np.ndarray):
-            return np.array(self)*other
-        elif isinstance(other, Numbers):
+            from .array import NomialArray
+            s = NomialArray(self)
+            s.ast = self.ast
+            return s*other
+        if isinstance(other, Numbers):
             if not other:  # other is zero
                 return other
             hmap = mag(other)*self.hmap
@@ -236,6 +237,7 @@ class Signomial(Nomial):
             while expo > 0:
                 p *= self
                 expo -= 1
+            p.ast = ("pow", (self, expo))
             return p
         return NotImplemented
 
@@ -315,7 +317,9 @@ class Monomial(Posynomial):
                 hmap.units = self.hmap.units**expo
             else:
                 hmap.units = None
-            return Monomial(hmap)
+            out = Monomial(hmap)
+            out.ast = ("pow", (self, expo))
+            return out
         return NotImplemented
 
     def __eq__(self, other):
@@ -330,6 +334,8 @@ class Monomial(Posynomial):
     def __ge__(self, other):
         if isinstance(other, Numbers + (Posynomial,)):
             return PosynomialInequality(self, ">=", other)
+        # elif isinstance(other, np.ndarray):
+        #     return other.__le__(self, rev=True)
         return NotImplemented
 
     # Monomial.__le__ falls back on Posynomial.__le__

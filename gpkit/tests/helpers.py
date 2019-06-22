@@ -1,6 +1,7 @@
 """Convenience classes and functions for unit testing"""
 import unittest
 import sys
+import codecs
 import os
 import importlib
 from ..repr_conventions import DEFAULT_UNIT_PRINTING
@@ -8,6 +9,7 @@ from ..repr_conventions import DEFAULT_UNIT_PRINTING
 if sys.version_info >= (3, 0):
     reload = importlib.reload  # pylint: disable=redefined-builtin,invalid-name,no-member
 
+UTF8Writer = codecs.getwriter('utf8')
 
 def generate_example_tests(path, testclasses, solvers=None, newtest_fn=None):
     """
@@ -165,10 +167,10 @@ class StdoutCaptured(object):
         "Capture stdout"
         self.original_stdout = sys.stdout
         self.original_unit_printing = DEFAULT_UNIT_PRINTING[0]
-        DEFAULT_UNIT_PRINTING[0] = ":~"
+        DEFAULT_UNIT_PRINTING[0] = ":P~"
         logfile = (open(self.logfilepath, mode="w")
                    if self.logfilepath else NullFile())
-        sys.stdout = logfile
+        sys.stdout = UTF8Writer(logfile)
 
     def __exit__(self, *args):
         "Return stdout"

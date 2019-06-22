@@ -49,7 +49,7 @@ def evaluate_linked(constants, linked):
             if settings.get("ad_errors_raise", None):
                 raise
             if adnumber:
-                print("Couldn't auto-differentiate linked variable %s.\n  "
+                print("Couldn't auto-differentiate linked variable %s\n  "
                       "(to raise the error directly for debugging purposes,"
                       " set gpkit.settings[\"ad_errors_raise\"] to True)" % v)
             if kdc_plain is None:

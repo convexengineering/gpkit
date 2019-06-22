@@ -110,6 +110,8 @@ class GeometricProgram(CostedConstraintSet, NomialData):
             raise ValueError("Geometric Program is not fully bounded:\n"
                              + boundstrs)
 
+    varkeys = NomialData.varkeys
+
     def gen(self):
         "Generates nomial and solve data (A, p_idxs) from posynomials"
         self._reset()  # method from NomialData
@@ -117,6 +119,7 @@ class GeometricProgram(CostedConstraintSet, NomialData):
         for hmap in self.hmaps:
             self._exps.extend(hmap.keys())
             self._cs.extend(hmap.values())
+        self.vks = self.varlocs
         self.A, self.missingbounds = genA(self.exps, self.varlocs,
                                           self.meq_idxs)
 

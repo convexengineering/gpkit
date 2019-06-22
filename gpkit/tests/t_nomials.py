@@ -65,14 +65,14 @@ class TestMonomial(unittest.TestCase):
         "Simple tests for __repr__, which prints more than str"
         m = Monomial({'x': 2, 'y': -1}, 5)
         r = m.__repr__()
-        self.assertEqual(type(r), str)
+        self.assertEqual(type(r), unicode)
         self.assertEqual(Monomial('x').__repr__(), 'gpkit.Monomial(x)')
 
     def test_latex(self):
         "Test latex string creation"
         x = Variable("x")
         m = Monomial({'x': 2, 'y': -1}, 5).latex()
-        self.assertEqual(type(m), str)
+        self.assertEqual(type(m), unicode)
         self.assertEqual((5*x).latex(), '5x')
 
     def test_str_with_units(self):
@@ -80,8 +80,8 @@ class TestMonomial(unittest.TestCase):
         S = Variable('S', units='m^2')
         rho = Variable('rho', units='kg/m^3')
         x = rho*S
-        xstr = str(x)
-        self.assertEqual(type(xstr), str)
+        xstr = x.str_without()
+        self.assertEqual(type(xstr), unicode)
         self.assertTrue('S' in xstr and 'rho' in xstr)
 
     def test_add(self):

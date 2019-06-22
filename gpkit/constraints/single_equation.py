@@ -6,7 +6,6 @@ from ..repr_conventions import GPkitObject
 
 class SingleEquationConstraint(GPkitObject):
     "Constraint expressible in a single equation."
-
     latex_opers = {"<=": "\\leq", ">=": "\\geq", "=": "="}
     func_opers = {"<=": le, ">=": ge, "=": eq}
 

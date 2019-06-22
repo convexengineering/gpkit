@@ -41,9 +41,9 @@ class TestGP(unittest.TestCase):
         prob = Model(cost=(x + 2*y),
                      constraints=[x*y >= 1])
         sol = prob.solve(solver=self.solver, verbosity=0)
-        self.assertEqual(type(prob.latex()), str)
+        self.assertEqual(type(prob.latex()), unicode)
         # pylint: disable=protected-access
-        self.assertEqual(type(prob._repr_latex_()), str)
+        self.assertEqual(type(prob._repr_latex_()), unicode)
         self.assertAlmostEqual(sol("x"), np.sqrt(2.), self.ndig)
         self.assertAlmostEqual(sol("y"), 1/np.sqrt(2.), self.ndig)
         self.assertAlmostEqual(sol("x") + 2*sol("y"),
@@ -715,8 +715,8 @@ class TestModelNoSolve(unittest.TestCase):
     def test_modelcontainmentprinting(self):
         t = Thing2()
         self.assertEqual(t["c"].key.models, ("Thing2", "Thing"))
-        self.assertIsInstance(t.str_without(), str)
-        self.assertIsInstance(t.latex(), str)
+        self.assertIsInstance(t.str_without(), unicode)
+        self.assertIsInstance(t.latex(), unicode)
 
     def test_no_naming_on_var_access(self):
         # make sure that analysis models don't add their names to

@@ -121,7 +121,7 @@ class ConstantsRelaxed(ConstraintSet):
             constants.update({k: f(kdc) for k, f in linked.items()
                               if k in constrained_varkeys})
         self.constants = constants
-        relaxvars, relaxation_constraints, self.origvars = [], [], []
+        relaxvars, self.origvars, relaxation_constraints = [], [], {}
         with NamedVariables("Relax") as (self.lineage, _):
             pass
         self._unrelaxmap = {}
@@ -144,13 +144,13 @@ class ConstantsRelaxed(ConstraintSet):
             var = Variable(**key.descr)
             self.origvars.append(var)
             unrelaxeddescr = descr.copy()
-            unrelaxeddescr["name"] += "_{before}"
+            unrelaxeddescr["name"] += "_{prelax}"
             unrelaxed = Variable(**unrelaxeddescr)
             self._unrelaxmap[unrelaxed.key] = key
             substitutions[unrelaxed] = value
-            relaxation_constraints.append([relaxvar >= 1,
-                                           unrelaxed/relaxvar <= var,
-                                           var <= unrelaxed*relaxvar])
+            relaxation_constraints[str(key)] = [relaxvar >= 1,
+                                                unrelaxed/relaxvar <= var,
+                                                var <= unrelaxed*relaxvar]
         self.relaxvars = NomialArray(relaxvars)
         ConstraintSet.__init__(self, {
             "original constraints": constraints,

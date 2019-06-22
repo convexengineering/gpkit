@@ -35,7 +35,7 @@ class TestVarKey(unittest.TestCase):
         # pylint: disable=redundant-keyword-arg
         self.assertRaises(TypeError, lambda: VarKey(x, name='y'))
         self.assertIsInstance(x.latex(), str)
-        self.assertIsInstance(x.latex_unitstr(), str)
+        self.assertIsInstance(x.latex_unitstr(), unicode)
 
     def test_eq_neq(self):
         """Test boolean equality operators"""
@@ -64,10 +64,6 @@ class TestVarKey(unittest.TestCase):
         for k in ('x', '$x$', 'var_name', 'var name', r"\theta", r'$\pi_{10}$'):
             var = VarKey(k)
             self.assertEqual(repr(var), k)
-        # not sure what this means, but I want to know if it changes
-        for num in (2, 2.0):
-            v = VarKey(num)
-            self.assertEqual(v, VarKey(str(num)))
 
     def test_dict_key(self):
         """make sure variables are well-behaved dict keys"""
@@ -197,9 +193,7 @@ class TestArrayVariable(unittest.TestCase):
     def test_str(self):
         """Make sure string looks something like a numpy array"""
         x = ArrayVariable((2, 4), 'x')
-        strx = str(x)
-        self.assertEqual(strx.count("["), 3)
-        self.assertEqual(strx.count("]"), 3)
+        self.assertEqual(str(x), "x[:]")
 
 
 class TestVectorize(unittest.TestCase):

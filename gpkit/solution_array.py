@@ -118,7 +118,7 @@ def constraint_table(data, sortbymodel=True, showmodels=True, **_):
                 constrstr = constrstr[:constrstr.find(" at 0x")] + ">"
         else:
             try:
-                constrstr = constraint.str_without(["units", "lineage"])
+                constrstr = constraint.str_without(("units", "lineage"))
             except AttributeError:
                 constrstr = str(constraint)
         decorated.append((models[model], model, sortby, constrstr, openingstr))
@@ -133,9 +133,9 @@ def constraint_table(data, sortbymodel=True, showmodels=True, **_):
             lines.append([("modelname",), model])
             oldmodel = model
         if model and len(models) == 1:  # fully remove
-            constrstr = constrstr.replace("_"+model, "")
-        else:  # partially remove
-            constrstr = constrstr.replace(model, "")
+            constrstr = constrstr.replace("."+model, "")
+        elif model:  # partially remove
+            constrstr = constrstr.replace(model, ".")
         minlen, maxlen = 25, 80
         segments = [s for s in CONSTRSPLITPATTERN.split(constrstr) if s]
         splitlines = []
@@ -719,7 +719,7 @@ def var_table(data, title, printunits=True, latex=False, rawlines=False,
             b = isinstance(v, Iterable) and bool(v.shape)
             model = lineagestr(k.lineage) if sortbymodel else ""
             models.add(model)
-            s = k.str_without("lineage")
+            s = k.str_without(("lineage", "vec"))
             if not sortbyvals:
                 decorated.append((model, b, (varfmt % s), i, k, v))
             else:  # for consistent sorting, add small offset to negative vals

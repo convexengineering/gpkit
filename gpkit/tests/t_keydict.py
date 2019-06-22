@@ -24,8 +24,8 @@ class TestKeyDict(unittest.TestCase):
         self.assertEqual(kd[x], 52)
         self.assertEqual(kd[x.key], 52)
         self.assertEqual(kd["x"], 52)
-        self.assertEqual(kd["x_motor"], 52)
-        self.assertNotIn("x_someothermodelname", kd)
+        self.assertEqual(kd["x.motor"], 52)
+        self.assertNotIn("x.someothermodelname", kd)
 
     def test_failed_getattr(self):
         kd = KeyDict()

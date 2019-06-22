@@ -143,18 +143,6 @@ class Model(CostedConstraintSet):
         cs.lineage = self.lineage
         return cs
 
-    def subconstr_str(self, excluded=None):
-        "The collapsed appearance of a Model"
-        if self.lineage:
-            return "%s_%s" % self.lineage[-1]
-        return self.str_without(excluded)
-
-    def subconstr_latex(self, excluded=None):
-        "The collapsed appearance of a Model"
-        if self.lineage:
-            return "%s_{%s}" % self.lineage[-1]
-        return self.latex(excluded)
-
     def sweep(self, sweeps, **solveargs):
         "Sweeps {var: values} pairs in sweeps. Returns swept solutions."
         sols = []
