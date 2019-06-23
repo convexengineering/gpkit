@@ -69,15 +69,24 @@ class Signomial(Nomial):
 
         Arguments
         ---------
-        var (Variable):
-        Variable to take derivative with respect to
+        var : Variable key
+            Variable to take derivative with respect to
 
         Returns
         -------
         Signomial (or Posynomial or Monomial)
         """
-        # pylint: disable=unexpected-keyword-arg
-        return Signomial(Nomial.diff(self, var), require_positive=False)
+        varset = self.varkeys[var]
+        if len(varset) > 1:
+            raise ValueError("multiple variables %s found for key %s"
+                             % (list(varset), var))
+        elif not varset:
+            diff = NomialMap({EMPTY_HV: 0.0})
+            diff.units = None
+        else:
+            var, = varset
+            diff = self.hmap.diff(var)
+        return Signomial(diff, require_positive=False)
 
     def posy_negy(self):
         """Get the positive and negative parts, both as Posynomials
@@ -110,12 +119,11 @@ class Signomial(Nomial):
         """
         x0, _, _ = parse_subs(self.varkeys, x0)  # use only varkey keys
         psub = self.hmap.sub(x0, self.varkeys, parsedsubs=True)
-        if len(psub) > 1 or EMPTY_HV not in psub:
+        if EMPTY_HV not in psub or len(psub) > 1:
             raise ValueError("Variables %s remained after substituting x0=%s"
-                             " into %s" % (list(psub.vks), x0, self))
+                             " into %s" % (psub, x0, self))
         c0, = psub.values()
-        exp = HashVector()
-        c = c0
+        c, exp = c0, HashVector()
         for vk in self.vks:
             val = float(x0[vk])
             diff, = self.hmap.diff(vk).sub(x0, self.varkeys,

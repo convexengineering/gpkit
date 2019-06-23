@@ -19,13 +19,6 @@ class NomialData(GPkitObject):
     # pylint: disable=too-many-instance-attributes
     _hashvalue = _varlocs = _exps = _cs = _varkeys = None
 
-    def _reset(self):
-        self._hashvalue = \
-            self._varlocs = \
-            self._exps = \
-            self._cs = \
-            self._varkeys = None
-
     def __init__(self, hmap):
         self.hmap = hmap
         self.vks = set()
@@ -33,6 +26,10 @@ class NomialData(GPkitObject):
             self.vks.update(exp)
         self.units = self.hmap.units
         self.any_nonpositive_cs = any(c <= 0 for c in self.hmap.values())
+
+    def to(self, units):
+        "Create new Signomial converted to new units"
+        return self.__class__(self.hmap.to(units))  # pylint: disable=no-member
 
     @property
     def varlocs(self):
@@ -72,34 +69,7 @@ class NomialData(GPkitObject):
 
     def varkeyvalues(self):
         "Returns the NomialData's keys' values"
-        return {k: k.descr["value"] for k in self.vks
-                if "value" in k.descr}
-
-    def diff(self, var):
-        """Derivative of this with respect to a Variable
-
-        Arguments
-        ---------
-        var (Variable):
-            Variable to take derivative with respect to
-
-        Returns
-        -------
-        NomialData
-        """
-        # pylint:disable=len-as-condition
-        varset = self.varkeys[var]
-        if len(varset) > 1:
-            raise ValueError("multiple variables %s found for key %s"
-                             % (list(varset), var))
-        elif len(varset) == 0:
-            hmap = NomialMap({EMPTY_HV: 0})
-            hmap.units_of_product(self.units,
-                                  1.0/var.units if var.units else None)
-        else:
-            var, = varset
-            hmap = self.hmap.diff(var)
-        return NomialData(hmap)
+        return {k: k.descr["value"] for k in self.vks if "value" in k.descr}
 
     def __eq__(self, other):
         "Equality test"

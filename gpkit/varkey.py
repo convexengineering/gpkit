@@ -25,18 +25,15 @@ class VarKey(GPkitObject):  # pylint:disable=too-many-instance-attributes
 
     def __init__(self, name=None, **kwargs):
         # NOTE: Python arg handling guarantees 'name' won't appear in kwargs
-        if isinstance(name, VarKey):
-            self.descr = name.descr
+        self.descr = kwargs
+        self.descr["name"] = name or "\\fbox{%s}" % VarKey.unique_id()
+        unitrepr = self.unitrepr or self.units
+        if unitrepr in ["", "-", None]:  # dimensionless
+            self.descr["units"] = None
+            self.descr["unitrepr"] = "-"
         else:
-            self.descr = kwargs
-            self.descr["name"] = name or "\\fbox{%s}" % VarKey.unique_id()
-            unitrepr = self.unitrepr or self.units
-            if unitrepr in ["", "-", None]:  # dimensionless
-                self.descr["units"] = None
-                self.descr["unitrepr"] = "-"
-            else:
-                self.descr["units"] = qty(unitrepr)
-                self.descr["unitrepr"] = unitrepr
+            self.descr["units"] = qty(unitrepr)
+            self.descr["unitrepr"] = unitrepr
 
         self.key = self
         fullstr = self.str_without(["modelnums"])
@@ -45,12 +42,7 @@ class VarKey(GPkitObject):  # pylint:disable=too-many-instance-attributes
         self.keys = set((self.name, fullstr))
 
         if "idx" in self.descr:
-            if "veckey" not in self.descr:
-                vecdescr = self.descr.copy()
-                del vecdescr["idx"]
-                self.veckey = VarKey(**vecdescr)
             self.keys.add(self.veckey)
-            self.keys.add(self.str_without(["idx"]))
             self.keys.add(self.str_without(["idx", "modelnums"]))
 
         self.hmap = NomialMap({HashVector({self: 1}): 1.0})

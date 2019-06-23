@@ -57,26 +57,6 @@ class TestHashVector(unittest.TestCase):
         self.assertEqual(a * {'x': 6, 'k': 4}, HashVector(x=6))
 
 
-class TestCootMatrix(unittest.TestCase):
-    """TestCase for the CootMatrix class"""
-    def test_shape(self):
-        A = CootMatrix([], [], [])
-        self.assertEqual(A.shape, [0, 0])
-        A.append(0, 0, 1)
-        self.assertEqual(A.shape, [1, 1])
-        A.append(1, 0, -0.5)
-        self.assertEqual(A.shape, [2, 1])
-        A.append(2, 0, -1)
-        self.assertEqual(A.shape, [3, 1])
-        A.append(3, 1, -1)
-        self.assertEqual(A.shape, [4, 2])
-        with self.assertRaises(ValueError):
-            A.append(-1, -1, 3)
-        self.assertTrue(
-            (A.todense() == np.array([[1, 0], [-0.5, 0],
-                                      [-1, 0], [0, -1]])).all())
-
-
 class TestSmallScripts(unittest.TestCase):
     """TestCase for gpkit.small_scripts"""
     def test_unitstr(self):
@@ -98,7 +78,7 @@ class TestSmallScripts(unittest.TestCase):
             self.assertEqual(gpkit.units("nautical_mile"), gpkit.units("nmi"))
 
 
-TESTS = [TestHashVector, TestCootMatrix, TestSmallScripts]
+TESTS = [TestHashVector, TestSmallScripts]
 
 
 if __name__ == '__main__':

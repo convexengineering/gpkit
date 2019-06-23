@@ -62,10 +62,6 @@ class Nomial(NomialData):
         "Return self for compatibility with NomialArray"
         return self
 
-    def to(self, units):
-        "Create new Signomial converted to new units"
-        return self.__class__(self.hmap.to(units))  # pylint: disable=no-member
-
     @property
     def value(self):
         """Self, with values substituted for variables that have values

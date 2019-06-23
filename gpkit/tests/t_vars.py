@@ -27,7 +27,7 @@ class TestVarKey(unittest.TestCase):
         # test no args
         x = VarKey()
         self.assertEqual(type(x), VarKey)
-        y = VarKey(x)
+        y = VarKey(**x.descr)
         self.assertEqual(x, y)
         # test special 'name' keyword overwriting behavior
         x = VarKey('x', flavour='vanilla')
@@ -36,8 +36,6 @@ class TestVarKey(unittest.TestCase):
         self.assertEqual(x.name, 'x')
         # pylint: disable=redundant-keyword-arg
         self.assertRaises(TypeError, lambda: VarKey('x', name='y'))
-        # pylint: disable=redundant-keyword-arg
-        self.assertRaises(TypeError, lambda: VarKey(x, name='y'))
         self.assertIsInstance(x.latex(), str)
         self.assertIsInstance(x.latex_unitstr(), unicode)
 
@@ -82,8 +80,8 @@ class TestVarKey(unittest.TestCase):
     def test_units_attr(self):
         """Make sure VarKey objects have a units attribute"""
         x = VarKey('x')
-        for vk in (VarKey(), x, VarKey(x), VarKey(units='m')):
-            self.assertTrue(hasattr(vk, 'units'))
+        for vk in (VarKey(), x, VarKey(**x.descr), VarKey(units='m')):
+            self.assertTrue("units" in vk.descr)
 
 class TestVariable(unittest.TestCase):
     """TestCase for the Variable class"""

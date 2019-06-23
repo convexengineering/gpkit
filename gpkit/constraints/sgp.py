@@ -49,6 +49,7 @@ class SequentialGeometricProgram(CostedConstraintSet):
         self._results = []
         self.result = None
         self._spconstrs = []
+        self._spvars = set()
         self._approx_lt = []
         self._numgpconstrs = None
         self._gp = None
@@ -143,8 +144,8 @@ class SequentialGeometricProgram(CostedConstraintSet):
                 self.gps.append(primal_feas)
                 solver_out = primal_feas.solve(solver, verbosity-1,
                                                gen_result=False, **kwargs)
-                x0 = KeyDict(zip(primal_feas.varlocs,
-                                 np.exp(solver_out["primal"])))
+                x0 = dict(zip(primal_feas.varlocs,
+                              np.exp(solver_out["primal"])))
                 cost = None  # reset the cost-counting
             if prevcost is None or cost is None:
                 rel_improvement = None
@@ -160,12 +161,11 @@ class SequentialGeometricProgram(CostedConstraintSet):
             prevcost = cost
         # solved successfully!
         self.result = gp.generate_result(solver_out, verbosity)
-        soltime = time() - starttime
+        self.result["soltime"] = time() - starttime
         if verbosity > 0:
             print("Solving took %i GP solves" % len(self.gps)
-                  + " and %.3g seconds." % soltime)
+                  + " and %.3g seconds." % self.result["soltime"])
         self.process_result(self.result)
-        self.result["soltime"] = soltime
         if self.externalfn_vars:
             for v in self.externalfn_vars:
                 self[0].insert(0, v.key.externalfn)  # for constraint senss
@@ -205,6 +205,7 @@ class SequentialGeometricProgram(CostedConstraintSet):
                     # assume unspecified negy variables have a value of 1.0
                     x0.update({vk: 1.0 for vk in cs.varkeys if vk not in x0})
                     approx_gt.extend(cs.as_approxsgt(x0))
+                    self._spvars.update(cs.varkeys)
                 else:
                     self.externalfns = True
                     return None
@@ -224,17 +225,15 @@ class SequentialGeometricProgram(CostedConstraintSet):
             if not self.gps:
                 return self._gp  # we've already generated the first gp
             gp = self._gp        # otherwise, update it with a new x0
-            gp.x0.update(x0)
+            gp.x0.update({k: v for (k, v) in x0.items() if k in self._spvars})
             mono_gts = []
             for spc in self._spconstrs:
                 mono_gts.extend(spc.as_approxsgt(gp.x0))
             for i, mono_gt in enumerate(mono_gts):
-                posy_lt = self._approx_lt[i]
-                unsubbed = posy_lt/mono_gt
+                unsubbed = self._approx_lt[i]/mono_gt
                 gp["SP approximations"][i].unsubbed = [unsubbed]
-                smap = unsubbed.hmap.sub(self.substitutions,
-                                         unsubbed.varkeys)
-                gp.hmaps[self._numgpconstrs+i] = smap
+                gp.hmaps[self._numgpconstrs+i] = unsubbed.hmap.sub(
+                    self.substitutions, unsubbed.varkeys)
             gp.gen()
         else:
             x0 = self._fill_x0(x0)

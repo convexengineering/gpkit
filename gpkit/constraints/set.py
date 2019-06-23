@@ -34,7 +34,7 @@ def _sort_constrs(item):
     "return tuple for Constraint sorting"
     label, constraint = item
     return (not isinstance(constraint, SingleEquationConstraint),
-            hasattr(constraint, "lineage") and constraint.lineage, label)
+            hasattr(constraint, "lineage") and bool(constraint.lineage), label)
 
 
 # pylint: disable=too-many-instance-attributes

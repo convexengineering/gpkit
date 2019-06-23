@@ -69,11 +69,13 @@ class NomialMap(HashVector):
     def diff(self, varkey):
         "Differentiates a NomialMap with respect to a varkey"
         out = NomialMap()
+        out.units_of_product(self.units,
+                             1/varkey.units if varkey.units else None)
         for exp in self:
             if varkey in exp:
-                exp = exp.copy()
                 x = exp[varkey]
                 c = self[exp] * x
+                exp = exp.copy()
                 if x is 1:
                     exp.hashvalue ^= hash((varkey, 1))
                     del exp[varkey]
@@ -81,8 +83,6 @@ class NomialMap(HashVector):
                     exp.hashvalue ^= hash((varkey, x)) ^ hash((varkey, x-1))
                     exp[varkey] = x-1
                 out[exp] = c
-        out.units_of_product(self.units,
-                             1.0/varkey.units if varkey.units else None)
         return out
 
     def sub(self, substitutions, varkeys, parsedsubs=False):

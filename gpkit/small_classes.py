@@ -49,24 +49,10 @@ class CootMatrix(object):
     "A very simple sparse matrix representation."
     def __init__(self, row, col, data):
         self.row, self.col, self.data = row, col, data
-        self.shape = [(max(self.row) + 1) if self.row else 0,
-                      (max(self.col) + 1) if self.col else 0]
 
     def __eq__(self, other):
         return (self.row == other.row and self.col == other.col
-                and self.data == other.data and self.shape == other.shape)
-
-    def append(self, row, col, data):
-        "Appends entry to matrix."
-        if row < 0 or col < 0:
-            raise ValueError("Only positive indices allowed")
-        if row >= self.shape[0]:
-            self.shape[0] = row + 1
-        if col >= self.shape[1]:
-            self.shape[1] = col + 1
-        self.row.append(row)
-        self.col.append(col)
-        self.data.append(data)
+                and self.data == other.data)
 
     tocoo = matrix_converter("coo")
     tocsc = matrix_converter("csc")
