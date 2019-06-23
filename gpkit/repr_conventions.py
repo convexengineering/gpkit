@@ -11,10 +11,10 @@ from .small_scripts import try_str_without
 try:
     print("​", end="")  # zero-width space
     DEFAULT_UNIT_PRINTING = [":P~"]
-    pi_str = "PI"  # fails on some external models if it's "π"
+    PI_STR = "PI"  # fails on some external models if it's "π"
 except UnicodeEncodeError:
     DEFAULT_UNIT_PRINTING = [":~"]
-    pi_str = "PI"
+    PI_STR = "PI"
 
 
 def lineagestr(lineage, modelnums=True):
@@ -42,11 +42,11 @@ def strify(val, excluded):
         if (val > np.pi/12 and val < 100*np.pi       # within bounds?
                 and abs(12*val/np.pi % 1) <= 1e-2):  # nice multiple of PI?
             if val > 3.1:                            # product of PI
-                val = "%.3g%s" % (val/np.pi, pi_str)
-                if val == "1%s" % pi_str:
-                    val = pi_str
+                val = "%.3g%s" % (val/np.pi, PI_STR)
+                if val == "1%s" % PI_STR:
+                    val = PI_STR
             else:                                   # division of PI
-                val = "(%s/%.3g)" % (pi_str, np.pi/val)
+                val = "(%s/%.3g)" % (PI_STR, np.pi/val)
         else:
             val = "%.3g" % val
     else:
