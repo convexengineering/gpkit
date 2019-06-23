@@ -2,6 +2,7 @@
 "Repository for representation standards"
 from __future__ import print_function
 import sys
+import re
 import numpy as np
 from .small_classes import Quantity, Numbers
 from .small_scripts import try_str_without
@@ -10,9 +11,10 @@ from .small_scripts import try_str_without
 try:
     print("​", end="")  # zero-width space
     DEFAULT_UNIT_PRINTING = [":P~"]
+    pi_str = "PI"  # fails on some external models if it's "π"
 except UnicodeEncodeError:
     DEFAULT_UNIT_PRINTING = [":~"]
-UNICODE_PI = False  # fails on some external models if True
+    pi_str = "PI"
 
 
 def lineagestr(lineage, modelnums=True):
@@ -35,14 +37,15 @@ def unitstr(units, into="%s", options=None, dimless=""):
 
 
 def strify(val, excluded):
+    "Turns a value into as pretty a string as possible."
     if isinstance(val, Numbers):
-        if val > np.pi/12 and val < 100*np.pi and abs(12*val/np.pi % 1) <= 1e-2:
-            pi_str = "π" if UNICODE_PI else "PI"
-            if val > 3.1:
+        if (val > np.pi/12 and val < 100*np.pi       # within bounds?
+                and abs(12*val/np.pi % 1) <= 1e-2):  # nice multiple of PI?
+            if val > 3.1:                            # product of PI
                 val = "%.3g%s" % (val/np.pi, pi_str)
                 if val == "1%s" % pi_str:
                     val = pi_str
-            else:
+            else:                                   # division of PI
                 val = "(%s/%.3g)" % (pi_str, np.pi/val)
         else:
             val = "%.3g" % val
@@ -50,10 +53,19 @@ def strify(val, excluded):
         val = try_str_without(val, excluded)
     return val
 
-def parenthesize(string):
-    if string[0] == "(" and string[-1] == ")":
-        return string
-    return "(%s)" % string
+
+INSIDE_PARENS = re.compile(r"\(.*\)")
+
+
+def parenthesize(string, addi=True, mult=True):
+    "Parenthesizes a string if it needs it and isn't already."
+    parensless = string if "(" not in string else INSIDE_PARENS.sub("", string)
+    bare_addi = (" + " in parensless or " - " in parensless)
+    bare_mult = ("*" in parensless or "/" in parensless)
+    if parensless and (addi and bare_addi) or (mult and bare_mult):
+        return "(%s)" % string
+    return string
+
 
 class GPkitObject(object):
     "This class combines various printing methods for easier adoption."
@@ -64,6 +76,7 @@ class GPkitObject(object):
 
     # pylint: disable=too-many-branches, too-many-statements
     def parse_ast(self, excluded=("units")):
+        "Turns the AST of this object's construction into a faithful string"
         if self.cached_strs is None:
             self.cached_strs = {}
         elif frozenset(excluded) in self.cached_strs:
@@ -72,83 +85,68 @@ class GPkitObject(object):
         oper, values = self.ast  # pylint: disable=unpacking-non-sequence
         excluded = set(excluded)
         excluded.add("units")
-        left, right = values
         if oper == "add":
-            left = strify(left, excluded)
-            right = strify(right, excluded)
+            left = strify(values[0], excluded)
+            right = strify(values[1], excluded)
             if right[0] == "-":
                 aststr = "%s - %s" % (left, right[1:])
             else:
                 aststr = "%s + %s" % (left, right)
         elif oper == "mul":
-            maybe_left = strify(left, excluded)
-            maybe_right = strify(right, excluded)
-            if maybe_left == "1":
-                aststr = maybe_right
-            elif maybe_right == "1":
-                aststr = maybe_left
+            left = parenthesize(strify(values[0], excluded), mult=False)
+            right = parenthesize(strify(values[1], excluded), mult=False)
+            if left == "1":
+                aststr = right
+            elif right == "1":
+                aststr = left
             else:
-                if len(getattr(left, "hmap", [])) > 1:
-                    left = parenthesize(strify(left, excluded))
-                if len(getattr(right, "hmap", [])) > 1:
-                    right = parenthesize(strify(right, excluded))
-                left = strify(left, excluded)
-                right = strify(right, excluded)
                 aststr = "%s*%s" % (left, right)
         elif oper == "div":
-            left = strify(left, excluded)
-            right = strify(right, excluded)
+            left = parenthesize(strify(values[0], excluded), mult=False)
+            right = parenthesize(strify(values[1], excluded))
             if right == "1":
                 aststr = left
             else:
-                if "*" in right or "/" in right:
-                    right = parenthesize(right)
-                if " + " in left or " - " in left:
-                    left = parenthesize(left)
                 aststr = "%s/%s" % (left, right)
         elif oper == "neg":
-            aststr = "-%s" % strify(left, excluded)
+            aststr = "-%s" % parenthesize(strify(values, excluded), mult=False)
         elif oper == "pow":
-            maybe_left = strify(left, excluded)
-            if "*" in maybe_left or " + " in maybe_left or "/" in maybe_left or " - " in maybe_left:
-                maybe_left = parenthesize(maybe_left)
-            aststr = "%s^%s" % (maybe_left, right)
-            if maybe_left == "1":
+            left = parenthesize(strify(values[0], excluded))
+            if left == "1":
                 aststr = "1"
-        elif oper == "prod":  # TODO: only do if it makes a shorter string
-            aststr = "%s.prod()" % strify(left, excluded)
-        elif oper == "sum":  # TODO: only do if it makes a shorter string
-            left = strify(left, excluded)
-            if "*" in left or " - " in left or "/" in left or " - " in left:
-                left = parenthesize(left)
-            aststr = "%s.sum()" % left
-        elif oper == "index":  # TODO: label vectorization idxs
-            left = strify(left, excluded)
-            if "*" in left or " - " in left or "/" in left or " - " in left:
-                left = parenthesize(left)
             else:
-                left = left.replace("[:]", "")
-            if isinstance(right, tuple):
+                aststr = "%s^%s" % (left, values[1])
+        elif oper == "prod":  # TODO: only do if it makes a shorter string
+            aststr = "%s.prod()" % parenthesize(strify(values[0], excluded))
+        elif oper == "sum":  # TODO: only do if it makes a shorter string
+            aststr = "%s.sum()" % parenthesize(strify(values[0], excluded))
+        elif oper == "index":  # TODO: label vectorization idxs
+            left = parenthesize(strify(values[0], excluded))
+            idx = values[1]
+            if left[-3:] == "[:]":  # pure variable access
+                left = left[:-3]
+            if isinstance(idx, tuple):
                 elstrs = []
-                for el in right:
+                for el in idx:
                     if isinstance(el, slice):
                         start = el.start or ""
-                        stop = el.stop if el.stop and el.stop != sys.maxint else ""
+                        stop = (el.stop if el.stop and el.stop != sys.maxint
+                                else "")
                         step = ":%s" % el.step if el.step is not None else ""
                         elstrs.append("%s:%s%s" % (start, stop, step))
                     elif isinstance(el, Numbers):
                         elstrs.append("%s" % el)
-                right = ",".join(elstrs)
-            elif isinstance(right, slice):
-                start = right.start or ""
-                stop = right.stop if right.stop != sys.maxint else ""
-                step = ":%s" % right.step if right.step is not None else ""
-                right = "%s:%s%s" % (start, stop, step)
-            elif isinstance(right, Numbers):
-                right = "%s" % right
+                idx = ",".join(elstrs)
+            elif isinstance(idx, slice):
+                start = idx.start or ""
+                stop = idx.stop if idx.stop != sys.maxint else ""
+                step = ":%s" % idx.step if idx.step is not None else ""
+                idx = "%s:%s%s" % (start, stop, step)
+            elif isinstance(idx, Numbers):
+                idx = "%s" % idx
             else:
-                raise ValueError(repr(right))
-            aststr = "%s[%s]" % (left, right)
+                raise ValueError(repr(idx))
+            aststr = "%s[%s]" % (left, idx)
         else:
             raise ValueError(oper)
         self.cached_strs[frozenset(excluded)] = aststr

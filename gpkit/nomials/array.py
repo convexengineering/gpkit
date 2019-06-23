@@ -103,7 +103,7 @@ class NomialArray(GPkitObject, np.ndarray):
 
     def __neg__(self):
         out = (np.ndarray.__neg__(self))
-        out.ast = ("neg", (self, None))
+        out.ast = ("neg", self)
         return out
 
     def __getitem__(self, idxs):

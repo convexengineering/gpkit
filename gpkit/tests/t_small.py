@@ -1,7 +1,6 @@
 """Tests for small_classes.py and small_scripts.py"""
 import unittest
-import numpy as np
-from gpkit.small_classes import HashVector, CootMatrix
+from gpkit.small_classes import HashVector
 from gpkit.repr_conventions import unitstr
 import gpkit
 

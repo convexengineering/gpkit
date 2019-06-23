@@ -252,7 +252,7 @@ class Signomial(Nomial):
     def __neg__(self):
         if SignomialsEnabled:  # pylint: disable=using-constant-test
             out = -1*self
-            out.ast = ("neg", (self, None))
+            out.ast = ("neg", self)
             return out
         return NotImplemented
 

@@ -404,9 +404,44 @@ def genA(exps, varlocs, meq_idxs):  # pylint: disable=invalid-name
         missingbounds : dict
             Keys: variables that lack bounds. Values: which bounds are missed.
     """
+    missingbounds = {}
+    row, col, data = [], [], []
+    for j, var in enumerate(varlocs):
+        upperbound, lowerbound = False, False
+        row.extend(varlocs[var])
+        col.extend([j]*len(varlocs[var]))
+        data.extend(exps[i][var] for i in varlocs[var])
+        for i in varlocs[var]:
+            if i not in meq_idxs:
+                if upperbound and lowerbound:
+                    break
+                elif exps[i][var] > 0:  # pylint:disable=simplifiable-if-statement
+                    upperbound = True
+                else:
+                    lowerbound = True
+        if not upperbound:
+            missingbounds[(var, "upper")] = ""
+        if not lowerbound:
+            missingbounds[(var, "lower")] = ""
+
+    check_mono_eq_bounds(missingbounds, gen_mono_eq_bounds(exps, meq_idxs))
+
+    # space the matrix out for trailing constant terms
+    for i, exp in enumerate(exps):
+        if not exp:
+            row.append(i)
+            col.append(0)
+            data.append(0)
+    A = CootMatrix(row, col, data)
+
+    return A, missingbounds
+
+
+def gen_mono_eq_bounds(exps, meq_idxs):  # pylint: disable=too-many-locals
+    "Generate conditional monomial equality bounds"
     meq_bounds = defaultdict(set)
-    for idx, i in enumerate(meq_idxs):
-        if idx % 2:  # skip the second index of a meq
+    for i in meq_idxs:
+        if i % 2:  # skip the second index of a meq
             continue
         p_upper, p_lower, n_upper, n_lower = set(), set(), set(), set()
         for key, x in exps[i].items():
@@ -428,38 +463,7 @@ def genA(exps, varlocs, meq_idxs):  # pylint: disable=invalid-name
             for key, _ in keys:
                 meq_bounds[(key, "upper")].add(ub.difference([(key, "lower")]))
                 meq_bounds[(key, "lower")].add(lb.difference([(key, "upper")]))
-
-    missingbounds = {}
-    row, col, data = [], [], []
-    for j, var in enumerate(varlocs):
-        upperbound, lowerbound = False, False
-        row.extend(varlocs[var])
-        col.extend([j]*len(varlocs[var]))
-        data.extend(exps[i][var] for i in varlocs[var])
-        for i in varlocs[var]:
-            if i not in meq_idxs:
-                if upperbound and lowerbound:
-                    break
-                if exps[i][var] > 0:
-                    upperbound = True
-                else:
-                    lowerbound = True
-        if not upperbound:
-            missingbounds[(var, "upper")] = ""
-        if not lowerbound:
-            missingbounds[(var, "lower")] = ""
-
-    check_mono_eq_bounds(missingbounds, meq_bounds)
-
-    # space the matrix out for trailing constant terms
-    for i, exp in enumerate(exps):
-        if not exp:
-            row.append(i)
-            col.append(0)
-            data.append(0)
-    A = CootMatrix(row, col, data)
-
-    return A, missingbounds
+    return meq_bounds
 
 
 def check_mono_eq_bounds(missingbounds, meq_bounds):

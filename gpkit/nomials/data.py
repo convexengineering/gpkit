@@ -1,9 +1,7 @@
 """Machinery for exps, cs, varlocs data -- common to nomials and programs"""
 from collections import defaultdict
 import numpy as np
-from ..small_classes import EMPTY_HV
 from ..keydict import KeySet
-from .map import NomialMap
 from ..repr_conventions import GPkitObject
 from ..varkey import VarKey
 
