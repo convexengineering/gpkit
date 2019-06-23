@@ -39,6 +39,60 @@ class TestVarKey(unittest.TestCase):
         self.assertIsInstance(x.latex(), str)
         self.assertIsInstance(x.latex_unitstr(), unicode)
 
+    def test_ast(self):
+        t = Variable("t")
+        u = Variable("u")
+        v = Variable("v")
+        w = Variable("w")
+        x = VectorVariable(3, "x")
+        y = VectorVariable(3, "y")
+        z = VectorVariable(3, "z")
+        a = VectorVariable((3, 2), "a")
+        b = VectorVariable((3, 2), "b")
+
+        print w >= x
+        self.assertEqual(str(3*(x + y)*z), "3*(x[:] + y[:])*z[:]")
+        nni = 3
+        ii = np.tile(np.arange(1., nni+1.), a.shape[1:]+(1,)).T
+        self.assertEqual(str(w*NomialArray(ii)/nni),
+                         "w*[[1.0, 1.0], [2.0, 2.0], [3.0, 3.0]]/3")
+        self.assertEqual(str(NomialArray(ii)*w/nni),
+                         "[[1.0, 1.0], [2.0, 2.0], [3.0, 3.0]]*w/3")
+        self.assertEqual(str(w*ii/nni), "w*[[1. 1.]\n [2. 2.]\n [3. 3.]]/3")
+        self.assertEqual(str(w*(ii/nni)), """w*[[0.33333333 0.33333333]
+ [0.66666667 0.66666667]
+ [1.         1.        ]]""")
+        self.assertEqual(str(w >= (x[0]*t + x[1]*u)/v), "w >= (x[0]*t + x[1]*u)/v")
+        self.assertEqual(str(x), "x[:]")
+        self.assertEqual(str(x*2), "x[:]*2")
+        self.assertEqual(str(2*x), "2*x[:]")
+        self.assertEqual(str(x + 2), "x[:] + 2")
+        self.assertEqual(str(2 + x), "2 + x[:]")
+        self.assertEqual(str(x/2), "x[:]/2")
+        self.assertEqual(str(2/x), "2/x[:]")
+        self.assertEqual(str(x**3), "x[:]^3")
+        self.assertEqual(str(-x), "-x[:]")
+        self.assertEqual(str(x/y/z), "x[:]/y[:]/z[:]")
+        self.assertEqual(str(x/(y/z)), "x[:]/(y[:]/z[:])")
+        self.assertEqual(str(x >= y), "x[:] >= y[:]")
+        self.assertEqual(str(x >= y + z), "x[:] >= y[:] + z[:]")
+        self.assertEqual(str(x[:2]), "x[:2]")
+        self.assertEqual(str(x[:]), "x[:]")
+        self.assertEqual(str(x[1:]), "x[1:]")
+        self.assertEqual(str(y * [1, 2, 3]), "y[:]*[1, 2, 3]")
+        self.assertEqual(str(x[:2] == (y*[1, 2, 3])[:2]),
+                         "x[:2] = (y[:]*[1, 2, 3])[:2]")
+        self.assertEqual(str(y + [1, 2, 3]), "y[:] + [1, 2, 3]")
+        self.assertEqual(str(x == y + [1, 2, 3]), "x[:] = y[:] + [1, 2, 3]")
+        self.assertEqual(str(x >= y + [1, 2, 3]), "x[:] >= y[:] + [1, 2, 3]")
+        self.assertEqual(str(a[:, 0]), "a[:,0]")
+        self.assertEqual(str(a[2, :]), "a[2,:]")
+        g = 1 + 3*a[2, 0]**2
+        gstrbefore = str(g)
+        g.ast = None
+        gstrafter = str(g)
+        self.assertEqual(gstrbefore, gstrafter)
+
     def test_eq_neq(self):
         """Test boolean equality operators"""
         # no args

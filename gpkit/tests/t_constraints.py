@@ -160,6 +160,12 @@ class TestMonomialEquality(unittest.TestCase):
             self.assertRaises(ValueError, MonomialEquality, x, y)
             self.assertRaises(ValueError, MonomialEquality, y, x)
 
+    def test_vector(self):
+        "Monomial Equalities with VectorVariables"
+        x = VectorVariable(3, "x")
+        self.assertFalse(x == 3)
+        self.assertTrue(x == x)
+
     def test_inheritance(self):
         """Make sure MonomialEquality inherits from the right things"""
         F = Variable('F')

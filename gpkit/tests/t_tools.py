@@ -135,9 +135,9 @@ class TestTools(unittest.TestCase):
         self.assertEqual(x, Variable('x'))
         # try for VectorVariable too
         y = VectorVariable(3, 'y')
-        self.assertEqual(te_secant(y, 1), 1 + y**2/2.)
-        self.assertEqual(te_secant(y, 2), 1 + y**2/2. + 5*y**4/24.)
-        self.assertEqual(te_secant(y, 0), 1)
+        self.assertTrue(te_secant(y, 0) == 1)  # truthy bc monomial constraint
+        self.assertTrue(all(te_secant(y, 1) == 1 + y**2/2.))
+        self.assertTrue(all(te_secant(y, 2) == 1 + y**2/2. + 5*y**4/24.))
         # make sure y was not modified
         self.assertEqual(y, VectorVariable(3, 'y'))
 
