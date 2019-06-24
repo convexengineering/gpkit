@@ -1,5 +1,4 @@
 """Defines the VarKey class"""
-from __future__ import unicode_literals
 from .small_classes import HashVector, Count, qty
 from .repr_conventions import GPkitObject
 

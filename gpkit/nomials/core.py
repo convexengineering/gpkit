@@ -1,5 +1,5 @@
 "The shared non-mathematical backbone of all Nomials"
-from __future__ import print_function, unicode_literals
+from __future__ import print_function
 from .data import NomialData
 from ..small_classes import Numbers, FixedScalar
 from ..small_scripts import nomial_latex_helper
