@@ -1,5 +1,5 @@
 """Signomial, Posynomial, Monomial, Constraint, & MonoEQCOnstraint classes"""
-from __future__ import print_function, unicode_literals
+from __future__ import print_function
 from collections import defaultdict
 import numpy as np
 from .core import Nomial

@@ -131,7 +131,8 @@ class NomialMap(HashVector):
             exps, cval = varlocs[vk], fixed[vk]
             if hasattr(cval, "hmap"):
                 if any(cval.hmap.keys()):
-                    raise("Monomial substitutions are no longer supported.")
+                    raise ValueError("Monomial substitutions are not"
+                                     " supported.")
                 cval, = cval.hmap.to(vk.units or DIMLESS_QUANTITY).values()
             elif hasattr(cval, "to"):
                 cval = cval.to(vk.units or DIMLESS_QUANTITY).magnitude

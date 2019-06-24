@@ -19,13 +19,13 @@ class TestKeyDict(unittest.TestCase):
 
     def test_getattr(self):
         kd = KeyDict()
-        x = Variable("x", lineage=[("motor", 0)])
+        x = Variable("x", lineage=[("Motor", 0)])
         kd[x] = 52
         self.assertEqual(kd[x], 52)
         self.assertEqual(kd[x.key], 52)
         self.assertEqual(kd["x"], 52)
-        self.assertEqual(kd["x.motor"], 52)
-        self.assertNotIn("x.someothermodelname", kd)
+        self.assertEqual(kd["Motor.x"], 52)
+        self.assertNotIn("x.Someothermodelname", kd)
 
     def test_failed_getattr(self):
         kd = KeyDict()

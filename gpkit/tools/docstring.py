@@ -1,7 +1,7 @@
 "Docstring-parsing methods"
-import numpy as np
 import re
 import sys
+import numpy as np
 
 
 def expected_unbounded(instance, doc):

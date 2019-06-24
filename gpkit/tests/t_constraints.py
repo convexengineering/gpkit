@@ -97,7 +97,7 @@ class TestConstraint(unittest.TestCase):
 
         def constr():
             """method that should raise a ValueError"""
-            return (1 >= 5*x + 1.1)
+            return 1 >= 5*x + 1.1
         self.assertRaises(ValueError, constr)
 
     def test_init(self):

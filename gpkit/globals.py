@@ -1,9 +1,9 @@
 "global mutable variables"
 from __future__ import print_function
-from six import with_metaclass
 import os
 import sys
 from collections import defaultdict
+from six import with_metaclass
 from . import build
 
 

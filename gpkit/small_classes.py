@@ -1,9 +1,9 @@
 """Miscellaneous small classes"""
 from operator import xor
+from functools import reduce  # pylint: disable=redefined-builtin
 from six import with_metaclass
 import numpy as np
 from ._pint import Quantity, qty  # pylint: disable=unused-import
-from functools import reduce  # pylint: disable=redefined-builtin
 
 try:
     isinstance("", basestring)

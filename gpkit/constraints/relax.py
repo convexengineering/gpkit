@@ -2,8 +2,7 @@
 from .set import ConstraintSet
 from ..nomials import Variable, VectorVariable, parse_subs, NomialArray
 from ..keydict import KeyDict
-from .. import NamedVariables
-from gpkit import SignomialsEnabled
+from .. import NamedVariables, SignomialsEnabled
 
 
 class ConstraintsRelaxedEqually(ConstraintSet):
