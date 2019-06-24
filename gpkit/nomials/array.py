@@ -127,21 +127,12 @@ class NomialArray(GPkitObject, np.ndarray):
             [try_str_without(np.ndarray.__getitem__(self, i), excluded)
              for i in range(self.shape[0])])
 
-    def latex(self, excluded=(), matwrap=True):
-        "Returns 1D latex list of contents."
-        if self.ndim == 0:
-            return try_str_without(self.flatten()[0], excluded, latex=True)
-        if self.ndim == 1:
-            return (("\\begin{bmatrix}" if matwrap else "") +
-                    " & ".join(try_str_without(el, excluded, latex=True)
-                               for el in self) +
-                    ("\\end{bmatrix}" if matwrap else ""))
-        elif self.ndim == 2:
-            return ("\\begin{bmatrix}" +
-                    " \\\\\n".join(el.latex(matwrap=False) for el in self) +
-                    "\\end{bmatrix}")
-        raise TypeError("latex generation not supported for NomialArrays"
-                        " of more than two dimensions.")
+    def latex(self, excluded=()):
+        "Returns latex representation without certain fields."
+        units = self.latex_unitstr() if "units" not in excluded else ""
+        if hasattr(self, "key"):
+            return self.key.latex(excluded) + units
+        return np.ndarray.__str__(self)
 
     def __hash__(self):
         return reduce(xor, map(hash, self.flat), 0)

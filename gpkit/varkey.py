@@ -91,26 +91,20 @@ class VarKey(GPkitObject):  # pylint:disable=too-many-instance-attributes
         "Returns a tuple of just the names of models in self.lineage"
         return list(zip(*self.lineage))[0]
 
-    def latex_unitstr(self):
-        "Returns latex unitstr"
-        us = self.unitstr(r"~\mathrm{%s}", ":L~")
-        utf = us.replace("frac", "tfrac").replace(r"\cdot", r"\cdot ")
-        return utf if utf != r"~\mathrm{-}" else ""
-
     def latex(self, excluded=()):
         "Returns latex representation."
-        string = self.name
-        if self.shape and not self.idx:
-            string = "\\vec{%s}" % string  # add vector arrow for veckeys
-        for subscript in self.subscripts:
-            if subscript in self.descr and subscript not in excluded:
-                substring = self.descr[subscript]
-                if subscript == "lineage":
-                    substring = self.lineagestr("modelnums" not in excluded)
-                elif subscript == "idx" and len(self.idx) == 1:
-                    substring = self.idx[0]  # drop the tuple comma in 1D
-                string = "{%s}_{%s}" % (string, substring)
-        return string
+        name = self.name
+        if ("lineage" not in excluded and self.lineage
+                and ("unnecessary lineage" not in excluded
+                     or self.necessarylineage)):
+            name = "{%s}_{%s}" % (name,
+                                  self.lineagestr("modelnums" not in excluded))
+        if "idx" not in excluded:
+            if self.idx:
+                name = "{%s}_{%s}" % (name, ",".join(map(str, self.idx)))
+            elif "vec" not in excluded and self.shape:
+                name = "\\vec{%s}"
+        return name
 
     def __hash__(self):
         return self._hashvalue

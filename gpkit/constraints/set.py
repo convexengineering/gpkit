@@ -317,21 +317,17 @@ class ConstraintSet(list, GPkitObject):
         "String representation of a ConstraintSet."
         return "\n".join(self.lines_without(excluded))
 
-    def latex(self, excluded=None):
+    def latex(self, excluded=("units",)):
         "LaTeX representation of a ConstraintSet."
-        excluded = excluded or ["units"]
         lines = []
         root = "root" not in excluded
         if root:
-            excluded += ["root"]
+            excluded += ("root",)
             lines.append("\\begin{array}{ll} \\text{}")
             if hasattr(self, "rootconstr_latex"):
                 lines.append(self.rootconstr_latex(excluded))  # pylint: disable=no-member
         for constraint in self:
-            if hasattr(constraint, "subconstr_latex"):
-                cstr = constraint.subconstr_latex(excluded)
-            else:
-                cstr = constraint.latex(excluded)
+            cstr = try_str_without(constraint, excluded, latex=True)
             if cstr[:6] != "    & ":  # require indentation
                 cstr = "    & " + cstr + " \\\\"
             lines.append(cstr)

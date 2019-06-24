@@ -37,7 +37,7 @@ class TestVarKey(unittest.TestCase):
         # pylint: disable=redundant-keyword-arg
         self.assertRaises(TypeError, lambda: VarKey('x', name='y'))
         self.assertIsInstance(x.latex(), str)
-        self.assertIsInstance(x.latex_unitstr(), unicode)
+        self.assertIsInstance(x.latex_unitstr(), str)
 
     def test_ast(self):
         t = Variable("t")

@@ -50,7 +50,6 @@ so we can prevent others from having to see this message.
         Thanks!  :)
 """)
     settings_["default_solver"] = settings_["installed_solvers"][0]
-    settings_["latex_modelname"] = True
     return settings_
 
 

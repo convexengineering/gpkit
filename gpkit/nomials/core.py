@@ -38,6 +38,7 @@ class Nomial(NomialData):
 
     def latex(self, excluded=()):
         "Latex representation, parsing `excluded` just as .str_without does"
+        # TODO: add ast parsing here
         mstrs = []
         for exp, c in self.hmap.items():
             pos_vars, neg_vars = [], []

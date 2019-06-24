@@ -163,3 +163,9 @@ class GPkitObject(object):
     def _repr_latex_(self):
         "Returns default latex for automatic iPython Notebook rendering."
         return "$$"+self.latex()+"$$"  # pylint: disable=no-member
+
+    def latex_unitstr(self):
+        "Returns latex unitstr"
+        us = self.unitstr(r"~\mathrm{%s}", ":L~")
+        utf = us.replace("frac", "tfrac").replace(r"\cdot", r"\cdot ")
+        return utf if utf != r"~\mathrm{-}" else ""

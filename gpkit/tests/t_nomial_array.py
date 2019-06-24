@@ -61,7 +61,7 @@ class TestNomialArray(unittest.TestCase):
         self.assertIsInstance(v.str_without(), str)  # TODO: hmmm
         self.assertIsInstance(v.latex(), str)
         self.assertIsInstance(p.str_without(), unicode)
-        self.assertIsInstance(p.latex(), unicode)
+        self.assertIsInstance(p.latex(), str)
 
     def test_constraint_gen(self):
         x = VectorVariable(3, 'x', label='dummy variable')
