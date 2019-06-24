@@ -17,7 +17,7 @@ class TestNomialArray(unittest.TestCase):
     def test_shape(self):
         x = VectorVariable((2, 3), 'x')
         self.assertEqual(x.shape, (2, 3))
-        self.assertIsInstance(x.str_without(), str)
+        self.assertIsInstance(x.str_without(), unicode)
         self.assertIsInstance(x.latex(), unicode)
 
     def test_ndim(self):

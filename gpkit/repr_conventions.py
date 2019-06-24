@@ -8,13 +8,12 @@ from .small_classes import Quantity, Numbers
 from .small_scripts import try_str_without
 
 
-try:
-    print("​", end="")  # zero-width space
-    DEFAULT_UNIT_PRINTING = [":P~"]
-    PI_STR = "PI"  # fails on some external models if it's "π"
-except UnicodeEncodeError:
-    DEFAULT_UNIT_PRINTING = [":~"]
-    PI_STR = "PI"
+if sys.version_info >= (3, 0):
+    unichr = chr  # pylint: disable=redefined-builtin,invalid-name
+
+
+PI_STR = "PI"  # fails on some external models if it's "π"
+UNICODE_EXPONENTS = False
 
 
 def lineagestr(lineage, modelnums=True):
@@ -25,9 +24,8 @@ def lineagestr(lineage, modelnums=True):
                      for name, num in lineage]) if lineage else ""
 
 
-def unitstr(units, into="%s", options=None, dimless=""):
+def unitstr(units, into="%s", options=":P~", dimless=""):
     "Returns the string corresponding to an object's units."
-    options = options or DEFAULT_UNIT_PRINTING[0]
     if hasattr(units, "units") and isinstance(units.units, Quantity):
         units = units.units
     if not isinstance(units, Quantity):
@@ -113,10 +111,16 @@ class GPkitObject(object):
             aststr = "-%s" % parenthesize(strify(values, excluded), mult=False)
         elif oper == "pow":
             left = parenthesize(strify(values[0], excluded))
+            x = values[1]
             if left == "1":
                 aststr = "1"
+            elif UNICODE_EXPONENTS and int(x) == x and x >= 2 and x <= 9:
+                if int(x) in (2, 3):
+                    aststr = "%s%s" % (left, unichr(176+x))
+                elif int(x) in (4, 5, 6, 7, 8, 9):
+                    aststr = "%s%s" % (left, unichr(8304+x))
             else:
-                aststr = "%s^%s" % (left, values[1])
+                aststr = "%s^%s" % (left, x)
         elif oper == "prod":  # TODO: only do if it makes a shorter string
             aststr = "%s.prod()" % parenthesize(strify(values[0], excluded))
         elif oper == "sum":  # TODO: only do if it makes a shorter string
@@ -140,7 +144,7 @@ class GPkitObject(object):
                 idx = ",".join(elstrs)
             elif isinstance(idx, slice):
                 start = idx.start or ""
-                stop = idx.stop if idx.stop < 1e6 else ""
+                stop = idx.stop if idx.stop and idx.stop < 1e6 else ""
                 step = ":%s" % idx.step if idx.step is not None else ""
                 idx = "%s:%s%s" % (start, stop, step)
             elif isinstance(idx, Numbers):

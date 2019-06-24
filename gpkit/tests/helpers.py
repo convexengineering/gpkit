@@ -5,7 +5,6 @@ import sys
 import codecs
 import os
 import importlib
-from ..repr_conventions import DEFAULT_UNIT_PRINTING
 
 if sys.version_info >= (3, 0):
     reload = importlib.reload  # pylint: disable=redefined-builtin,invalid-name,no-member
@@ -166,8 +165,6 @@ class StdoutCaptured(object):
     def __enter__(self):
         "Capture stdout"
         self.original_stdout = sys.stdout
-        self.original_unit_printing = DEFAULT_UNIT_PRINTING[0]
-        DEFAULT_UNIT_PRINTING[0] = ":P~"
         logfile = (open(self.logfilepath, mode="w")
                    if self.logfilepath else NullFile())
         if sys.version_info >= (3, 0):
@@ -178,5 +175,4 @@ class StdoutCaptured(object):
     def __exit__(self, *args):
         "Return stdout"
         sys.stdout.close()
-        DEFAULT_UNIT_PRINTING[0] = self.original_unit_printing
         sys.stdout = self.original_stdout
