@@ -45,11 +45,11 @@ class NomialMap(HashVector):
         else:
             self.units = None
 
-    def to(self, units):
+    def to(self, to_units):
         "Returns a new NomialMap of the given units"
         sunits = self.units or DIMLESS_QUANTITY
-        nm = self * sunits.to(units).magnitude  # note that * creates a copy
-        nm.units_of_product(units)  # pylint: disable=no-member
+        nm = self * sunits.to(to_units).magnitude  # note that * creates a copy
+        nm.units_of_product(to_units)  # pylint: disable=no-member
         return nm
 
     def __add__(self, other):

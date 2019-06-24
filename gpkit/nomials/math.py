@@ -11,8 +11,7 @@ from ..small_classes import Strings, Numbers
 from ..small_classes import HashVector, EMPTY_HV
 from ..varkey import VarKey
 from ..small_scripts import mag
-from ..exceptions import (InvalidGPConstraint, InvalidPosynomial,
-                          DimensionalityError)
+from ..exceptions import InvalidGPConstraint, InvalidPosynomial
 from .map import NomialMap
 from .substitution import parse_subs
 
