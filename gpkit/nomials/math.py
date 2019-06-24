@@ -4,6 +4,7 @@ from collections import defaultdict
 import numpy as np
 from .core import Nomial
 from .array import NomialArray
+from .. import units
 from ..constraints import SingleEquationConstraint
 from ..globals import SignomialsEnabled
 from ..small_classes import Strings, Numbers
@@ -466,22 +467,12 @@ class PosynomialInequality(ScalarSingleEquationConstraint):
             m_c, = m_gt.hmap.values()
         except ValueError:
             raise TypeError("greater-than side '%s' is not monomial." % m_gt)
-        if m_gt.units != p_lt.units:
-            if m_gt.units and p_lt.units:
-                conversion = m_gt.units/p_lt.units
-            else:
-                conversion = m_gt.units or 1/p_lt.units
-            try:
-                m_c *= float(conversion)
-            except DimensionalityError:
-                raise DimensionalityError(p_lt, m_gt)
+        m_c *= units.of_division(m_gt, p_lt)
         hmap = p_lt.hmap.copy()
         for exp in list(hmap):
             hmap[exp-m_exp] = hmap.pop(exp)/m_c
         hmap = self._simplify_posy_ineq(hmap)
-        if hmap is None:
-            return []
-        return [Posynomial(hmap)]
+        return [Posynomial(hmap)] if hmap else []
 
     def as_posyslt1(self, substitutions=None):
         """Returns the posys <= 1 representation of this constraint.

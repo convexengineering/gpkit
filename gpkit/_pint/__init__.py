@@ -12,7 +12,6 @@ except ImportError:  # pint is not installed; provide dummy imports
     DimensionalityError = None
 
 QTY_CACHE = {}
-MON_CACHE = {}
 
 
 def qty(unit):
@@ -24,17 +23,47 @@ def qty(unit):
 
 class GPkitUnits(object):
     "Return Monomials instead of Quantitites"
+    division_cache = {}
+    multiplication_cache = {}
+    monomial_cache = {}
 
     def __call__(self, arg):
         "Returns a unit Monomial, caching the result for future retrievals"
         from .. import Monomial
-        if arg not in MON_CACHE:
-            MON_CACHE[arg] = Monomial(qty(arg))
-        return MON_CACHE[arg]
+        if arg not in self.monomial_cache:
+            self.monomial_cache[arg] = Monomial(qty(arg))
+        return self.monomial_cache[arg]
 
     def __getattr__(self, attr):
         "Turns an attribute get into a function call"
         return self(attr)
+
+    def of_division(self, numerator, denominator):
+        "Cached unit division. Requires Quantity inputs."
+        if numerator.units is denominator.units:
+            return 1
+        key = (id(numerator.units), id(denominator.units))
+        if key not in self.division_cache:
+            if numerator.units and denominator.units:
+                conversion = numerator.units/denominator.units
+            else:
+                conversion = numerator.units or 1/denominator.units
+            try:
+                self.division_cache[key] = float(conversion)
+            except DimensionalityError:
+                raise DimensionalityError(numerator, denominator)
+        return self.division_cache[key]
+
+    def of_product(self, thing1, thing2):
+        "Cached unit division. Requires united inputs."
+        units = qty((thing1*thing2).units)  # TODO: qty shouldn't be necessary
+        key = id(units)
+        if key not in self.multiplication_cache:
+            try:
+                self.multiplication_cache[key] = (None, float(units))
+            except DimensionalityError:
+                self.multiplication_cache[key] = (units, None)
+        return self.multiplication_cache[key]
 
 
 units = GPkitUnits()

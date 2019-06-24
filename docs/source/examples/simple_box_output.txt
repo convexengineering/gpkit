@@ -1,7 +1,7 @@
 
 Cost
 ----
- 0.003674 [1/m³]
+ 0.003674 [1/m**3]
 
 Free Variables
 --------------
@@ -11,12 +11,12 @@ w : 4.081  [m] width
 
 Constants
 ---------
-A_{floor} : 50   [m²] upper limit, floor area
- A_{wall} : 200  [m²] upper limit, wall area
-    alpha : 2         lower limit, wall aspect ratio
-     beta : 10        upper limit, wall aspect ratio
-    delta : 10        upper limit, floor aspect ratio
-    gamma : 2         lower limit, floor aspect ratio
+A_{floor} : 50   [m**2] upper limit, floor area
+ A_{wall} : 200  [m**2] upper limit, wall area
+    alpha : 2           lower limit, wall aspect ratio
+     beta : 10          upper limit, wall aspect ratio
+    delta : 10          upper limit, floor aspect ratio
+    gamma : 2           lower limit, floor aspect ratio
 
 Sensitivities
 -------------

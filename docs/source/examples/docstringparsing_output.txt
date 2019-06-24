@@ -27,12 +27,12 @@ except Exception as e:
 
 Cost
 ----
- 1.465 [m²]
+ 1.465 [m**2]
 
 Free Variables
 --------------
-A : 1.465                             [m²] surface area
-s : [ 0.316     0.316     1        ]  [m]  side length
+A : 1.465                             [m**2] surface area
+s : [ 0.316     0.316     1        ]  [m]    side length
 
 Constants
 ---------

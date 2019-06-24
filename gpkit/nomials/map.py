@@ -1,6 +1,7 @@
 "Implements the NomialMap class"
 from collections import defaultdict
 import numpy as np
+from .. import units
 from ..exceptions import DimensionalityError
 from ..small_classes import HashVector, Strings, qty, EMPTY_HV
 from .substitution import parse_subs
@@ -31,14 +32,10 @@ class NomialMap(HashVector):
             self.units = None
         elif hasattr(thing, "units"):
             if hasattr(thing2, "units"):
-                self.units = qty((thing*thing2).units)
-                try:  # faster than "if self.units.dimensionless"
-                    conversion = float(self.units)
-                    self.units = None
+                self.units, dimless_convert = units.of_product(thing, thing2)
+                if dimless_convert:
                     for key in self:
-                        self[key] *= conversion
-                except DimensionalityError:
-                    pass
+                        self[key] *= dimless_convert
             else:
                 self.units = qty(thing.units)
         elif hasattr(thing2, "units"):
