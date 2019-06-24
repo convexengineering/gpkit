@@ -139,7 +139,7 @@ class GPkitObject(object):
                 idx = ",".join(elstrs)
             elif isinstance(idx, slice):
                 start = idx.start or ""
-                stop = idx.stop if idx.stop != sys.maxint else ""
+                stop = idx.stop if idx.stop < 1e6 else ""
                 step = ":%s" % idx.step if idx.step is not None else ""
                 idx = "%s:%s%s" % (start, stop, step)
             elif isinstance(idx, Numbers):
