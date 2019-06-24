@@ -14,6 +14,7 @@ if sys.version_info >= (3, 0):
 
 PI_STR = "PI"  # fails on some external models if it's "π"
 UNICODE_EXPONENTS = False
+UNIT_FORMATTING = ":~"  # ":P~" for unicode exponents in units
 
 
 def lineagestr(lineage, modelnums=True):
@@ -24,7 +25,7 @@ def lineagestr(lineage, modelnums=True):
                      for name, num in lineage]) if lineage else ""
 
 
-def unitstr(units, into="%s", options=":P~", dimless=""):
+def unitstr(units, into="%s", options=UNIT_FORMATTING, dimless=""):
     "Returns the string corresponding to an object's units."
     if hasattr(units, "units") and isinstance(units.units, Quantity):
         units = units.units
