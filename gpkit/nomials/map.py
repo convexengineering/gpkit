@@ -1,4 +1,5 @@
 "Implements the NomialMap class"
+from __future__ import unicode_literals
 from collections import defaultdict
 import numpy as np
 from .. import units

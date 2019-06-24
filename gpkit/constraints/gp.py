@@ -1,5 +1,6 @@
 """Implement the GeometricProgram class"""
 from __future__ import print_function
+# unicode_literals here interfere with the boundschecking example
 import sys
 from time import time
 from collections import defaultdict

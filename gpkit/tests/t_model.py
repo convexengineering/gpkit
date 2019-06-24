@@ -741,7 +741,7 @@ MULTI_SOLVER_TESTS = [TestGP, TestSP]
 for testcase in MULTI_SOLVER_TESTS:
     for solver in settings["installed_solvers"]:
         if solver:
-            test = type(testcase.__name__+"_"+solver,
+            test = type(str(testcase.__name__+"_"+solver),
                         (testcase,), {})
             setattr(test, "solver", solver)
             setattr(test, "ndig", NDIGS[solver])

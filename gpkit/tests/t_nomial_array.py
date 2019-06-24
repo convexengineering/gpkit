@@ -17,7 +17,7 @@ class TestNomialArray(unittest.TestCase):
     def test_shape(self):
         x = VectorVariable((2, 3), 'x')
         self.assertEqual(x.shape, (2, 3))
-        self.assertIsInstance(x.str_without(), unicode)
+        self.assertIsInstance(x.str_without(), str)
         self.assertIsInstance(x.latex(), unicode)
 
     def test_ndim(self):
@@ -58,7 +58,7 @@ class TestNomialArray(unittest.TestCase):
         # division with monomials
         p2 = NomialArray([x_0/m, x_1/m, x_2/m]).T
         self.assertEqual(x/m, p2)
-        self.assertIsInstance(v.str_without(), str)  # TODO: hmmm
+        self.assertIsInstance(v.str_without(), unicode)
         self.assertIsInstance(v.latex(), str)
         self.assertIsInstance(p.str_without(), unicode)
         self.assertIsInstance(p.latex(), str)

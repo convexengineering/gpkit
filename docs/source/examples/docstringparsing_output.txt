@@ -27,12 +27,12 @@ except Exception as e:
 
 Cost
 ----
- 1.465 [m**2]
+ 1.465 [m²]
 
 Free Variables
 --------------
-A : 1.465                             [m**2] surface area
-s : [ 0.316     0.316     1        ]  [m]    side length
+A : 1.465                             [m²] surface area
+s : [ 0.316     0.316     1        ]  [m]  side length
 
 Constants
 ---------
@@ -41,8 +41,8 @@ h : 1    [m] minimum height
 
 Sensitivities
 -------------
-h : +0.3   minimum height
 V : +0.57  minimum volume
+h : +0.3   minimum height
 
 Tightest Constraints
 --------------------

@@ -85,8 +85,8 @@ x_min : 2
 
 Sensitivities
 -------------
-x_max : -0.99
 x_min : +1
+x_max : -0.99
 
 Tightest Constraints
 --------------------
@@ -139,8 +139,8 @@ x_min_{prelax} : 2
 
 Sensitivities
 -------------
-x_max : -0.99
 x_min : +1
+x_max : -0.99
 
 Tightest Constraints
 --------------------

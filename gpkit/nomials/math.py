@@ -1,5 +1,5 @@
 """Signomial, Posynomial, Monomial, Constraint, & MonoEQCOnstraint classes"""
-from __future__ import print_function
+from __future__ import print_function, unicode_literals
 from collections import defaultdict
 import numpy as np
 from .core import Nomial
@@ -632,8 +632,8 @@ class SignomialInequality(ScalarSingleEquationConstraint):
         siglt0 = siglt0.sub(substitutions, require_positive=False)
         posy, negy = siglt0.posy_negy()
         if posy is 0:
-            print ("Warning: SignomialConstraint %s became the tautological"
-                   " constraint 0 <= %s after substitution." % (self, negy))
+            print("Warning: SignomialConstraint %s became the tautological"
+                  " constraint 0 <= %s after substitution." % (self, negy))
             return []
         elif negy is 0:
             raise ValueError("SignomialConstraint %s became the infeasible"

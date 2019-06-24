@@ -7,6 +7,7 @@
     >>> px = gpkit.NomialArray([1, x, x**2])
 
 """
+from __future__ import unicode_literals
 from operator import eq, le, ge, xor
 from functools import reduce  # pylint: disable=redefined-builtin
 import numpy as np

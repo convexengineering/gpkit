@@ -1,4 +1,5 @@
 "Implements ArrayConstraint"
+from __future__ import unicode_literals
 from .set import ConstraintSet
 from .single_equation import SingleEquationConstraint
 

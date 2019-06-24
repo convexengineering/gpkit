@@ -93,16 +93,15 @@ class VarKey(GPkitObject):  # pylint:disable=too-many-instance-attributes
     def latex(self, excluded=()):
         "Returns latex representation."
         name = self.name
+        if "vec" not in excluded and "idx" not in excluded and self.shape:
+            name = "\\vec{%s}" % name
+        if "idx" not in excluded and self.idx:
+            name = "{%s}_{%s}" % (name, ",".join(map(str, self.idx)))
         if ("lineage" not in excluded and self.lineage
                 and ("unnecessary lineage" not in excluded
                      or self.necessarylineage)):
             name = "{%s}_{%s}" % (name,
                                   self.lineagestr("modelnums" not in excluded))
-        if "idx" not in excluded:
-            if self.idx:
-                name = "{%s}_{%s}" % (name, ",".join(map(str, self.idx)))
-            elif "vec" not in excluded and self.shape:
-                name = "\\vec{%s}"
         return name
 
     def __hash__(self):

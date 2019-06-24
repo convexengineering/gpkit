@@ -49,19 +49,19 @@ Cost
 Free Variables
 --------------
       | Aircraft
-    W : 144.1                                       [lbf]   weight
+    W : 144.1                                       [lbf] weight
 
       | Aircraft.Wing
-    S : 44.14                                       [ft**2] surface area
-    W : 44.14                                       [lbf]   weight
-    c : 1.279                                       [ft]    mean chord
+    S : 44.14                                       [ft²] surface area
+    W : 44.14                                       [lbf] weight
+    c : 1.279                                       [ft]  mean chord
 
       | Mission.FlightSegment.AircraftP
-Wburn : [ 0.274     0.273     0.272     0.272    ]  [lbf]   segment fuel burn
-Wfuel : [ 1.09      0.817     0.544     0.272    ]  [lbf]   fuel weight
+Wburn : [ 0.274     0.273     0.272     0.272    ]  [lbf] segment fuel burn
+Wfuel : [ 1.09      0.817     0.544     0.272    ]  [lbf] fuel weight
 
       | Mission.FlightSegment.AircraftP.WingAero
-    D : [ 2.74      2.73      2.72      2.72     ]  [lbf]   drag force
+    D : [ 2.74      2.73      2.72      2.72     ]  [lbf] drag force
 
 Sensitivities
 -------------
@@ -69,8 +69,8 @@ Sensitivities
   W : +0.97  weight
 
     | Aircraft.Wing
-rho : +0.43  areal density
   A : -0.67  aspect ratio
+rho : +0.43  areal density
 
 Next Largest Sensitivities
 --------------------------
@@ -78,13 +78,13 @@ Next Largest Sensitivities
   e : [ -0.18     -0.18     -0.18     -0.18    ] Oswald efficiency
 
     | Mission.FlightSegment.FlightState
-rho : [ -0.12     -0.11     -0.11     -0.11    ] air density
   V : [ -0.22     -0.21     -0.21     -0.21    ] true airspeed
+rho : [ -0.12     -0.11     -0.11     -0.11    ] air density
 
 Tightest Constraints
 --------------------
        | Aircraft
-  +1.4 : ..W >= ..Fuselage.W + ..Wing.W
+  +1.4 : .W >= .Fuselage.W + .Wing.W
 
        | Mission
     +1 : Wfuel[0] >= Wfuel[1] + Wburn[0]
@@ -92,7 +92,7 @@ Tightest Constraints
   +0.5 : Wfuel[2] >= Wfuel[3] + Wburn[2]
 
        | Aircraft.Wing
- +0.43 : ..W >= S*..rho
+ +0.43 : .W >= S*.rho
 
 All Loose Constraints
 ---------------------
@@ -101,9 +101,9 @@ No constraints had a sensitivity below +1e-05.
 Solution difference for variables given in `showvars`
 (positive means the argument is bigger)
 -----------------------------------------------------
-    D : [   -1.1%      -.8%      -.5%      -.3%  ] drag force
-Wfuel : [  -50.3%    -50.3%    -50.2%    -50.1%  ] fuel weight
 Wburn : [  -50.5%    -50.4%    -50.3%    -50.1%  ] segment fuel burn
+Wfuel : [  -50.3%    -50.3%    -50.2%    -50.1%  ] fuel weight
+    D : [   -1.1%      -.8%      -.5%      -.3%  ] drag force
 
 Solution sensitivity delta for variables given in `showvars`
 ------------------------------------------------------------

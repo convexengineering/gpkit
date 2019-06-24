@@ -10,7 +10,6 @@ from ..repr_conventions import DEFAULT_UNIT_PRINTING
 if sys.version_info >= (3, 0):
     reload = importlib.reload  # pylint: disable=redefined-builtin,invalid-name,no-member
 
-UTF8Writer = codecs.getwriter('utf8')
 
 def generate_example_tests(path, testclasses, solvers=None, newtest_fn=None):
     """
@@ -168,13 +167,13 @@ class StdoutCaptured(object):
         "Capture stdout"
         self.original_stdout = sys.stdout
         self.original_unit_printing = DEFAULT_UNIT_PRINTING[0]
-        DEFAULT_UNIT_PRINTING[0] = ":~"
+        DEFAULT_UNIT_PRINTING[0] = ":P~"
         logfile = (open(self.logfilepath, mode="w")
                    if self.logfilepath else NullFile())
         if sys.version_info >= (3, 0):
             sys.stdout = logfile
         else:
-            sys.stdout = UTF8Writer(logfile)
+            sys.stdout = codecs.getwriter("UTF-8")(logfile)
 
     def __exit__(self, *args):
         "Return stdout"

@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 "Repository for representation standards"
-from __future__ import print_function
+from __future__ import unicode_literals, print_function
 import sys
 import re
 import numpy as np
@@ -10,7 +10,7 @@ from .small_scripts import try_str_without
 
 try:
     print("​", end="")  # zero-width space
-    DEFAULT_UNIT_PRINTING = [":~"]
+    DEFAULT_UNIT_PRINTING = [":P~"]
     PI_STR = "PI"  # fails on some external models if it's "π"
 except UnicodeEncodeError:
     DEFAULT_UNIT_PRINTING = [":~"]
@@ -19,7 +19,8 @@ except UnicodeEncodeError:
 
 def lineagestr(lineage, modelnums=True):
     "Returns properly formatted lineage string"
-    lineage = getattr(lineage, "lineage", None) or lineage
+    if not isinstance(lineage, tuple):
+        lineage = getattr(lineage, "lineage", None)
     return ".".join(["%s%i" % (name, num) if (num and modelnums) else name
                      for name, num in lineage]) if lineage else ""
 
@@ -31,7 +32,7 @@ def unitstr(units, into="%s", options=None, dimless=""):
         units = units.units
     if not isinstance(units, Quantity):
         return dimless
-    rawstr = (u"{%s}" % options).format(units.units)
+    rawstr = ("{%s}" % options).format(units.units)
     units = rawstr.replace(" ", "").replace("dimensionless", dimless)
     return into % units or dimless
 

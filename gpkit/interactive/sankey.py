@@ -1,5 +1,5 @@
 "implements Sankey"
-from __future__ import print_function
+from __future__ import unicode_literals, print_function
 from collections import defaultdict
 import numpy as np
 from ipywidgets import Layout

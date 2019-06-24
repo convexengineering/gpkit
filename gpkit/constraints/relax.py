@@ -1,4 +1,5 @@
 """Models for assessing primal feasibility"""
+from __future__ import unicode_literals
 from .set import ConstraintSet
 from ..nomials import Variable, VectorVariable, parse_subs, NomialArray
 from ..keydict import KeyDict

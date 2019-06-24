@@ -1,4 +1,5 @@
 "Implements ConstraintSet"
+from __future__ import unicode_literals
 from collections import defaultdict, OrderedDict
 import numpy as np
 from ..small_classes import Numbers
