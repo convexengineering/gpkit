@@ -2,8 +2,8 @@
 from __future__ import print_function
 from collections import defaultdict
 import numpy as np
-from ipysankeywidget import SankeyWidget  # pylint: disable=import-error
 from ipywidgets import Layout
+from ipysankeywidget import SankeyWidget  # pylint: disable=import-error
 from .. import ConstraintSet, Model
 from .. import GeometricProgram, SequentialGeometricProgram
 from ..nomials.math import MonomialEquality
