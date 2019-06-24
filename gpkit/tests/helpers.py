@@ -168,7 +168,7 @@ class StdoutCaptured(object):
         "Capture stdout"
         self.original_stdout = sys.stdout
         self.original_unit_printing = DEFAULT_UNIT_PRINTING[0]
-        DEFAULT_UNIT_PRINTING[0] = ":P~"
+        DEFAULT_UNIT_PRINTING[0] = ":~"
         logfile = (open(self.logfilepath, mode="w")
                    if self.logfilepath else NullFile())
         if sys.version_info >= (3, 0):
