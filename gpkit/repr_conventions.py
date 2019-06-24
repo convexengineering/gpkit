@@ -10,7 +10,7 @@ from .small_scripts import try_str_without
 
 try:
     print("​", end="")  # zero-width space
-    DEFAULT_UNIT_PRINTING = [":P~"]
+    DEFAULT_UNIT_PRINTING = [":~"]
     PI_STR = "PI"  # fails on some external models if it's "π"
 except UnicodeEncodeError:
     DEFAULT_UNIT_PRINTING = [":~"]

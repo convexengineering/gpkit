@@ -48,7 +48,6 @@ class TestVarKey(unittest.TestCase):
         y = VectorVariable(3, "y")
         z = VectorVariable(3, "z")
         a = VectorVariable((3, 2), "a")
-        b = VectorVariable((3, 2), "b")
 
         print w >= x
         self.assertEqual(str(3*(x + y)*z), "3*(x[:] + y[:])*z[:]")
@@ -62,7 +61,8 @@ class TestVarKey(unittest.TestCase):
         self.assertEqual(str(w*(ii/nni)), """w*[[0.33333333 0.33333333]
  [0.66666667 0.66666667]
  [1.         1.        ]]""")
-        self.assertEqual(str(w >= (x[0]*t + x[1]*u)/v), "w >= (x[0]*t + x[1]*u)/v")
+        self.assertEqual(str(w >= (x[0]*t + x[1]*u)/v),
+                         "w >= (x[0]*t + x[1]*u)/v")
         self.assertEqual(str(x), "x[:]")
         self.assertEqual(str(x*2), "x[:]*2")
         self.assertEqual(str(2*x), "2*x[:]")

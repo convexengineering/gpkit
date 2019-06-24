@@ -16,7 +16,7 @@ Constraints
        "fuel burn rate":
          Wburn[:] >= 0.1*D[:]
        "lift":
-         W.Aircraft + Wfuel[:] <= 0.5*rho[:]*CL[:]*S*V[:]^2
+         Aircraft.W + Wfuel[:] <= 0.5*rho[:]*CL[:]*S*V[:]^2
        "performance":
          WingAero
          "definition of D":
@@ -31,7 +31,7 @@ Constraints
  
  Aircraft
    "definition of W":
-     W.Aircraft >= W.Aircraft.Fuselage + W.Aircraft.Wing
+     Aircraft.W >= Aircraft.Fuselage.W + Aircraft.Wing.W
    "components":
      Fuselage
        (no constraints)
@@ -40,7 +40,7 @@ Constraints
        "definition of mean chord":
          c = (S/A)^0.5
        "parametrization of wing weight":
-         W.Aircraft.Wing >= S*rho.Aircraft.Wing
+         Aircraft.Wing.W >= S*Aircraft.Wing.rho
 
 Cost
 ----
@@ -84,7 +84,7 @@ rho : [ -0.12     -0.11     -0.11     -0.11    ] air density
 Tightest Constraints
 --------------------
        | Aircraft
-  +1.4 : W.. >= W...Fuselage + W...Wing
+  +1.4 : ..W >= ..Fuselage.W + ..Wing.W
 
        | Mission
     +1 : Wfuel[0] >= Wfuel[1] + Wburn[0]
@@ -92,7 +92,7 @@ Tightest Constraints
   +0.5 : Wfuel[2] >= Wfuel[3] + Wburn[2]
 
        | Aircraft.Wing
- +0.43 : W.. >= S*rho..
+ +0.43 : ..W >= S*..rho
 
 All Loose Constraints
 ---------------------

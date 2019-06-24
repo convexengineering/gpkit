@@ -100,7 +100,7 @@ With constants relaxed individually
 
 Cost
 ----
- [x_max.Relax2, x_min.Relax2].prod()*x^0.01
+ [Relax2.x_max, Relax2.x_min].prod()*x^0.01
 
 Constraints
 -----------
@@ -110,13 +110,13 @@ Constraints
      x >= x_min
    "relaxation constraints":
      "x_max":
-       x_max.Relax2 >= 1
-       x_max >= x_max_{prelax}/x_max.Relax2
-       x_max <= x_max_{prelax}*x_max.Relax2
+       Relax2.x_max >= 1
+       x_max >= x_max_{prelax}/Relax2.x_max
+       x_max <= x_max_{prelax}*Relax2.x_max
      "x_min":
-       x_min.Relax2 >= 1
-       x_min >= x_min_{prelax}/x_min.Relax2
-       x_min <= x_min_{prelax}*x_min.Relax2
+       Relax2.x_min >= 1
+       x_min >= x_min_{prelax}/Relax2.x_min
+       x_min <= x_min_{prelax}*Relax2.x_min
 
 Cost
 ----

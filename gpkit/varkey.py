@@ -36,14 +36,19 @@ class VarKey(GPkitObject):  # pylint:disable=too-many-instance-attributes
             self.descr["unitrepr"] = unitrepr
 
         self.key = self
-        fullstr = self.str_without(["modelnums"])
+        fullstr = self.str_without(["modelnums", "vec"])
         self.eqstr = fullstr + str(self.lineage) + self.unitrepr
         self._hashvalue = hash(self.eqstr)
         self.keys = set((self.name, fullstr))
 
         if "idx" in self.descr:
-            self.keys.add(self.veckey)
-            self.keys.add(self.str_without(["idx", "modelnums"]))
+            if "veckey" not in self.descr:
+                vecdescr = self.descr.copy()
+                del vecdescr["idx"]
+                self.veckey = VarKey(**vecdescr)
+            else:
+                self.keys.add(self.veckey)
+                self.keys.add(self.str_without(["idx", "modelnums"]))
 
         self.hmap = NomialMap({HashVector({self: 1}): 1.0})
         self.hmap.units = self.units
@@ -70,11 +75,12 @@ class VarKey(GPkitObject):  # pylint:disable=too-many-instance-attributes
         if ("lineage" not in excluded and self.lineage
                 and ("unnecessary lineage" not in excluded
                      or self.necessarylineage)):
-            name += "." + self.lineagestr("modelnums" not in excluded)
-        if "idx" not in excluded and self.idx:
-            name += "[%s]" % ",".join(map(str, self.idx))
-        elif "vec" not in excluded and self.shape:
-            name += "[:]"
+            name = self.lineagestr("modelnums" not in excluded) + "." + name
+        if "idx" not in excluded:
+            if self.idx:
+                name += "[%s]" % ",".join(map(str, self.idx))
+            elif "vec" not in excluded and self.shape:
+                name += "[:]"
         return name
 
     def __getattr__(self, attr):
