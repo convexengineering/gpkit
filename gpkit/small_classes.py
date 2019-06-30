@@ -1,9 +1,10 @@
 """Miscellaneous small classes"""
+from __future__ import unicode_literals
 from operator import xor
+from functools import reduce  # pylint: disable=redefined-builtin
 from six import with_metaclass
 import numpy as np
 from ._pint import Quantity, qty  # pylint: disable=unused-import
-from functools import reduce  # pylint: disable=redefined-builtin
 
 try:
     isinstance("", basestring)
@@ -55,18 +56,6 @@ class CootMatrix(object):
     def __eq__(self, other):
         return (self.row == other.row and self.col == other.col
                 and self.data == other.data and self.shape == other.shape)
-
-    def append(self, row, col, data):
-        "Appends entry to matrix."
-        if row < 0 or col < 0:
-            raise ValueError("Only positive indices allowed")
-        if row >= self.shape[0]:
-            self.shape[0] = row + 1
-        if col >= self.shape[1]:
-            self.shape[1] = col + 1
-        self.row.append(row)
-        self.col.append(col)
-        self.data.append(data)
 
     tocoo = matrix_converter("coo")
     tocsc = matrix_converter("csc")

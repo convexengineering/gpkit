@@ -1,4 +1,5 @@
 "Implements SingleEquationConstraint"
+from __future__ import unicode_literals
 from operator import le, ge, eq
 from ..small_scripts import try_str_without
 from ..repr_conventions import GPkitObject
@@ -6,7 +7,6 @@ from ..repr_conventions import GPkitObject
 
 class SingleEquationConstraint(GPkitObject):
     "Constraint expressible in a single equation."
-
     latex_opers = {"<=": "\\leq", ">=": "\\geq", "=": "="}
     func_opers = {"<=": le, ">=": ge, "=": eq}
 

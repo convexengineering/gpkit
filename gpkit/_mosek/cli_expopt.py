@@ -5,7 +5,7 @@
     ``result = _mosek.cli_expopt.imize(cs, A, p_idxs, "gpkit_mosek")``
 
 """
-from __future__ import print_function
+from __future__ import unicode_literals, print_function
 
 import os
 import shutil

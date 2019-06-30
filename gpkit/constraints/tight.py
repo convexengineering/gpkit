@@ -1,4 +1,5 @@
 "Implements Tight"
+from __future__ import unicode_literals
 from .set import ConstraintSet
 from ..nomials import PosynomialInequality, SignomialInequality
 from ..small_scripts import mag
@@ -8,7 +9,7 @@ from .. import SignomialsEnabled
 
 class Tight(ConstraintSet):
     "ConstraintSet whose inequalities must result in an equality."
-    reltol = 1e-6
+    reltol = 1e-3
 
     def __init__(self, constraints, reltol=None, raiseerror=False, **kwargs):
         super(Tight, self).__init__(constraints)

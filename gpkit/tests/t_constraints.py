@@ -13,6 +13,9 @@ from gpkit.constraints.relax import ConstraintsRelaxed
 from gpkit.constraints.bounded import Bounded
 import gpkit
 
+if sys.version_info >= (3, 0):
+    unicode = str  # pylint:disable=redefined-builtin,invalid-name
+
 
 class TestConstraint(unittest.TestCase):
     """Tests for Constraint class"""
@@ -94,7 +97,7 @@ class TestConstraint(unittest.TestCase):
 
         def constr():
             """method that should raise a ValueError"""
-            return (1 >= 5*x + 1.1)
+            return 1 >= 5*x + 1.1
         self.assertRaises(ValueError, constr)
 
     def test_init(self):
@@ -111,7 +114,7 @@ class TestConstraint(unittest.TestCase):
         self.assertEqual(c.left, x)
         self.assertEqual(c.right, y**2)
         self.assertTrue("<=" in str(c))
-        self.assertEqual(type((1 >= x).latex()), str)
+        self.assertEqual(type((1 >= x).latex()), unicode)
 
     def test_oper_overload(self):
         """Test Constraint initialization by operator overloading"""
@@ -157,6 +160,12 @@ class TestMonomialEquality(unittest.TestCase):
             self.assertRaises(ValueError, MonomialEquality, x, y)
             self.assertRaises(ValueError, MonomialEquality, y, x)
 
+    def test_vector(self):
+        "Monomial Equalities with VectorVariables"
+        x = VectorVariable(3, "x")
+        self.assertFalse(x == 3)
+        self.assertTrue(x == x)
+
     def test_inheritance(self):
         """Make sure MonomialEquality inherits from the right things"""
         F = Variable('F')
@@ -180,7 +189,7 @@ class TestMonomialEquality(unittest.TestCase):
         x = Variable('x')
         y = Variable('y')
         mec = (x == y)
-        self.assertEqual(type(str(mec)), str)
+        self.assertEqual(type(mec.str_without()), unicode)
 
     def test_united_dimensionless(self):
         "Check dimensionless unit-ed variables work"

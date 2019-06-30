@@ -228,10 +228,10 @@ class Fuselage(Model):
     def setup(self):
         exec(parse_variables(Fuselage.__doc__))
 
-
 AC = Aircraft()
 MISSION = Mission(AC)
 M = Model(MISSION.takeoff_fuel, [MISSION, AC])
+print(M)
 sol = M.solve(verbosity=0)
 # save solution to some files
 sol.savemat()

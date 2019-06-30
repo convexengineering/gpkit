@@ -1,4 +1,5 @@
 "Implement CostedConstraintSet"
+from __future__ import unicode_literals
 import numpy as np
 from .set import ConstraintSet
 from ..small_scripts import maybe_flatten
@@ -47,13 +48,18 @@ class CostedConstraintSet(ConstraintSet):
         ConstraintSet.reset_varkeys(self)
         self.varkeys.update(self.cost.varkeys)
 
-    def rootconstr_str(self, excluded=None):
+    def rootconstr_str(self, excluded=()):
         "String showing cost, to be used when this is the top constraint"
-        return "\n".join(["  # minimize",
-                          "        %s" % self.cost.str_without(excluded),
-                          "  # subject to"])
+        description = ["", "Cost", "----",
+                       " %s" % self.cost.str_without(excluded),
+                       "", "Constraints", "-----------"]
+        if getattr(self, "lineage", None):
+            name, num = self.lineage[-1]
+            fullname = "%s" % (name if not num else name + str(num))
+            description = [fullname, "="*len(fullname)] + description
+        return description
 
-    def rootconstr_latex(self, excluded=None):
+    def rootconstr_latex(self, excluded=()):
         "Latex showing cost, to be used when this is the top constraint"
         return "\n".join(["\\text{minimize}",
                           "    & %s \\\\" % self.cost.latex(excluded),

@@ -1,11 +1,12 @@
 "Implements ConstraintSet"
-from collections import defaultdict
+from __future__ import unicode_literals
+from collections import defaultdict, OrderedDict
 import numpy as np
-
 from ..small_classes import Numbers
 from ..keydict import KeySet, KeyDict
 from ..small_scripts import try_str_without
 from ..repr_conventions import GPkitObject
+from .single_equation import SingleEquationConstraint
 
 
 def add_meq_bounds(bounded, meq_bounded):
@@ -30,6 +31,13 @@ def _sort_by_name_and_idx(var):
     return (var.key.str_without(["units", "idx"]), var.key.idx or ())
 
 
+def _sort_constrs(item):
+    "return tuple for Constraint sorting"
+    label, constraint = item
+    return (not isinstance(constraint, SingleEquationConstraint),
+            hasattr(constraint, "lineage") and bool(constraint.lineage), label)
+
+
 # pylint: disable=too-many-instance-attributes
 class ConstraintSet(list, GPkitObject):
     "Recursive container for ConstraintSets and Inequalities"
@@ -37,13 +45,18 @@ class ConstraintSet(list, GPkitObject):
     unique_varkeys = frozenset()
     # idxlookup holds the names of the top-level constraintsets
     idxlookup = None
+    _name_collision_varkeys = None
 
     def __init__(self, constraints, substitutions=None):  # pylint: disable=too-many-branches
-        if isinstance(constraints, dict):
-            self.idxlookup = {k: i for i, k in enumerate(constraints)}
-            constraints = constraints.values()
         if isinstance(constraints, ConstraintSet):
             constraints = [constraints]  # put it one level down
+        elif isinstance(constraints, dict):
+            if isinstance(constraints, OrderedDict):
+                items = constraints.items()
+            else:
+                items = sorted(list(constraints.items()), key=_sort_constrs)
+            self.idxlookup = {k: i for i, (k, _) in enumerate(items)}
+            constraints = list(zip(*items))[1]
         list.__init__(self, constraints)
 
         # initializations for attributes used elsewhere
@@ -170,6 +183,7 @@ class ConstraintSet(list, GPkitObject):
                 self.varkeys.update(constraint.varkeys)
         if hasattr(self.substitutions, "varkeys"):
             self.substitutions.varkeys = self.varkeys
+        self._name_collision_varkeys = None
 
     def as_posyslt1(self, substitutions=None):
         "Returns list of posynomials which must be kept <= 1"
@@ -246,44 +260,75 @@ class ConstraintSet(list, GPkitObject):
             val = v.evalfn(result["variables"])
             result["variables"][v] = result["freevariables"][v] = val
 
-    def str_without(self, excluded=None):
-        "String representation of a ConstraintSet."
-        excluded = excluded or ["units"]
-        lines = []
-        if "root" not in excluded:
-            excluded.append("root")
-            lines.append("")
+    def __repr__(self):
+        "Returns namespaced string."
+        return ("<gpkit.%s object containing %i top-level constraint(s)"
+                " and %i variable(s)>" % (self.__class__.__name__,
+                                          len(self), len(self.varkeys)))
+
+    def name_collision_varkeys(self):
+        "Returns the set of contained varkeys whose names are not unique"
+        if self._name_collision_varkeys is None:
+            self._name_collision_varkeys = set()
+            for key in self.varkeys:
+                if len(self.varkeys[key.str_without(["lineage"])]) > 1:
+                    self._name_collision_varkeys.add(key)
+        return self._name_collision_varkeys
+
+    def lines_without(self, excluded):
+        "Lines representation of a ConstraintSet."
+        root = "root" not in excluded
+        rootlines, lines = [], []
+        indent = " "*2 if (len(self) > 1
+                           or getattr(self, "lineage", None)) else ""
+        if root:
+            excluded += ("root",)
+            if "unnecessary lineage" in excluded:
+                for key in self.name_collision_varkeys():
+                    key.descr["necessarylineage"] = True
             if hasattr(self, "rootconstr_str"):
-                lines.append(self.rootconstr_str(excluded))  # pylint: disable=no-member
+                rootlines = self.rootconstr_str(excluded)  # pylint: disable=no-member
         if self.idxlookup:
             named_constraints = {v: k for k, v in self.idxlookup.items()}
         for i, constraint in enumerate(self):
-            if hasattr(constraint, "subconstr_str"):
-                cstr = constraint.subconstr_str(excluded)
-            else:
-                cstr = try_str_without(constraint, excluded)
-            if cstr[:4] != " "*4:  # require indentation
-                cstr = " "*8 + cstr
-            if self.idxlookup and i in named_constraints:
-                cstr = " "*4 + "\"%s\":\n" % named_constraints[i] + cstr
-            lines.append(cstr)
-        return "\n".join(lines)
+            clines = try_str_without(constraint, excluded).split("\n")
+            if (getattr(constraint, "lineage", None)
+                    and isinstance(constraint, ConstraintSet)):
+                name, num = constraint.lineage[-1]
+                if not any(clines):
+                    clines = [indent + "(no constraints)"]
+                if lines:
+                    lines.append("")
+                lines.append(name if not num else name + str(num))
+            elif ("constraint names" not in excluded
+                  and self.idxlookup and i in named_constraints):
+                lines.append("\"%s\":" % named_constraints[i])
+                for j, line in enumerate(clines):
+                    if clines[j][:len(indent)] != indent:
+                        clines[j] = indent + line  # must be indented
+            lines.extend(clines)
+        if root:
+            indent = " "
+            if "unnecessary lineage" in excluded:
+                for key in self.name_collision_varkeys():
+                    del key.descr["necessarylineage"]
+        return rootlines + [indent+line for line in lines]
 
-    def latex(self, excluded=None):
+    def str_without(self, excluded=("unnecessary lineage", "units")):
+        "String representation of a ConstraintSet."
+        return "\n".join(self.lines_without(excluded))
+
+    def latex(self, excluded=("units",)):
         "LaTeX representation of a ConstraintSet."
-        excluded = excluded or ["units"]
         lines = []
         root = "root" not in excluded
         if root:
-            excluded.append("root")
+            excluded += ("root",)
             lines.append("\\begin{array}{ll} \\text{}")
             if hasattr(self, "rootconstr_latex"):
                 lines.append(self.rootconstr_latex(excluded))  # pylint: disable=no-member
         for constraint in self:
-            if hasattr(constraint, "subconstr_latex"):
-                cstr = constraint.subconstr_latex(excluded)
-            else:
-                cstr = constraint.latex(excluded)
+            cstr = try_str_without(constraint, excluded, latex=True)
             if cstr[:6] != "    & ":  # require indentation
                 cstr = "    & " + cstr + " \\\\"
             lines.append(cstr)

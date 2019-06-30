@@ -11,7 +11,7 @@
         If the local MOSEK library could not be loaded
 
 """
-from __future__ import print_function
+from __future__ import unicode_literals, print_function
 
 from ctypes import pointer as ptr
 from ctypes import POINTER as ptr_factory

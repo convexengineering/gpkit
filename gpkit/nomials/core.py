@@ -1,4 +1,5 @@
 "The shared non-mathematical backbone of all Nomials"
+from __future__ import unicode_literals, print_function
 from .data import NomialData
 from ..small_classes import Numbers, FixedScalar
 from ..small_scripts import nomial_latex_helper
@@ -9,34 +10,35 @@ class Nomial(NomialData):
     __div__ = None
     sub = None
 
-    def str_without(self, excluded=None):
+    def str_without(self, excluded=()):
         "String representation, excluding fields ('units', varkey attributes)"
-        if excluded is None:
-            excluded = []
-        mstrs = []
-        for exp, c in self.hmap.items():
-            varstrs = []
-            for (var, x) in exp.items():
-                if x != 0:
-                    varstr = var.str_without(excluded)
-                    if x != 1:
-                        varstr += "**%.2g" % x
-                    varstrs.append(varstr)
-            varstrs.sort()
-            cstr = "%.3g" % c
-            if cstr == "-1" and varstrs:
-                mstrs.append("-" + "*".join(varstrs))
-            else:
-                cstr = [cstr] if (cstr != "1" or not varstrs) else []
-                mstrs.append("*".join(cstr + varstrs))
-        if "units" not in excluded:
-            units = self.unitstr(" [%s]")
+        units = "" if "units" in excluded else self.unitstr(" [%s]")
+        if hasattr(self, "key"):
+            return self.key.str_without(excluded) + units  # pylint: disable=no-member
+        elif self.ast:
+            return self.parse_ast(excluded) + units
         else:
-            units = ""
+            mstrs = []
+            for exp, c in self.hmap.items():
+                varstrs = []
+                for (var, x) in exp.items():
+                    if x != 0:
+                        varstr = var.str_without(excluded)
+                        if x != 1:
+                            varstr += "^%.2g" % x
+                        varstrs.append(varstr)
+                varstrs.sort()
+                cstr = "%.3g" % c
+                if cstr == "-1" and varstrs:
+                    mstrs.append("-" + "*".join(varstrs))
+                else:
+                    cstr = [cstr] if (cstr != "1" or not varstrs) else []
+                    mstrs.append("*".join(cstr + varstrs))
         return " + ".join(sorted(mstrs)) + units
 
     def latex(self, excluded=()):
         "Latex representation, parsing `excluded` just as .str_without does"
+        # TODO: add ast parsing here
         mstrs = []
         for exp, c in self.hmap.items():
             pos_vars, neg_vars = [], []
@@ -60,10 +62,6 @@ class Nomial(NomialData):
     def sum(self):
         "Return self for compatibility with NomialArray"
         return self
-
-    def to(self, units):
-        "Create new Signomial converted to new units"
-        return self.__class__(self.hmap.to(units))  # pylint: disable=no-member
 
     @property
     def value(self):
@@ -93,5 +91,5 @@ class Nomial(NomialData):
     def __truediv__(self, other): return self.__div__(other)   # pylint: disable=not-callable
 
     # for arithmetic consistency
-    def __radd__(self, other): return self + other
-    def __rmul__(self, other): return self * other
+    def __radd__(self, other): return self.__add__(other, rev=True)   # pylint: disable=no-member
+    def __rmul__(self, other): return self.__mul__(other, rev=True)   # pylint: disable=no-member

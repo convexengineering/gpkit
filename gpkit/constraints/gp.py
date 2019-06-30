@@ -1,5 +1,6 @@
 """Implement the GeometricProgram class"""
 from __future__ import print_function
+# unicode_literals here interfere with the boundschecking example
 import sys
 from time import time
 from collections import defaultdict
@@ -110,13 +111,16 @@ class GeometricProgram(CostedConstraintSet, NomialData):
             raise ValueError("Geometric Program is not fully bounded:\n"
                              + boundstrs)
 
+    varkeys = NomialData.varkeys
+
     def gen(self):
         "Generates nomial and solve data (A, p_idxs) from posynomials"
-        self._reset()  # method from NomialData
+        self._hashvalue = self._varlocs = self._varkeys = None
         self._exps, self._cs = [], []
         for hmap in self.hmaps:
             self._exps.extend(hmap.keys())
             self._cs.extend(hmap.values())
+        self.vks = self.varlocs
         self.A, self.missingbounds = genA(self.exps, self.varlocs,
                                           self.meq_idxs)
 
@@ -401,47 +405,66 @@ def genA(exps, varlocs, meq_idxs):  # pylint: disable=invalid-name
         missingbounds : dict
             Keys: variables that lack bounds. Values: which bounds are missed.
     """
-
-    meq_bounds = defaultdict(set)
-    for i in meq_idxs:
-        exp = exps[i]
-        for v1 in exp:
-            s_exp = np.sign(exp[v1])
-            ubs = frozenset((v2, "upper" if np.sign(e) != s_exp else "lower")
-                            for v2, e in exp.items() if v1 != v2)
-            lbs = frozenset((v2, "lower" if np.sign(e) != s_exp else "upper")
-                            for v2, e in exp.items() if v1 != v2)
-            meq_bounds[(v1, "upper")].add(ubs)
-            meq_bounds[(v1, "lower")].add(lbs)
-
     missingbounds = {}
-    A = CootMatrix([], [], [])
+    row, col, data = [], [], []
     for j, var in enumerate(varlocs):
-        varbounds = None
+        upperbound, lowerbound = False, False
+        row.extend(varlocs[var])
+        col.extend([j]*len(varlocs[var]))
+        data.extend(exps[i][var] for i in varlocs[var])
         for i in varlocs[var]:
-            exp = exps[i][var]
-            A.append(i, j, exp)
             if i not in meq_idxs:
-                if varbounds == "both":
-                    pass
-                elif varbounds is None:
-                    varbounds = np.sign(exp)
-                elif np.sign(exp) != varbounds:
-                    varbounds = "both"
-        if varbounds != "both":
-            if varbounds == 1 or varbounds is None:
-                missingbounds[(var, "lower")] = ""
-            if varbounds == -1 or varbounds is None:
-                missingbounds[(var, "upper")] = ""
+                if upperbound and lowerbound:
+                    break
+                elif exps[i][var] > 0:  # pylint:disable=simplifiable-if-statement
+                    upperbound = True
+                else:
+                    lowerbound = True
+        if not upperbound:
+            missingbounds[(var, "upper")] = ""
+        if not lowerbound:
+            missingbounds[(var, "lower")] = ""
 
-    check_mono_eq_bounds(missingbounds, meq_bounds)
+    check_mono_eq_bounds(missingbounds, gen_mono_eq_bounds(exps, meq_idxs))
 
     # space the matrix out for trailing constant terms
     for i, exp in enumerate(exps):
         if not exp:
-            A.append(i, 0, 0)
+            row.append(i)
+            col.append(0)
+            data.append(0)
+    A = CootMatrix(row, col, data)
 
     return A, missingbounds
+
+
+def gen_mono_eq_bounds(exps, meq_idxs):  # pylint: disable=too-many-locals
+    "Generate conditional monomial equality bounds"
+    meq_bounds = defaultdict(set)
+    for i in meq_idxs:
+        if i % 2:  # skip the second index of a meq
+            continue
+        p_upper, p_lower, n_upper, n_lower = set(), set(), set(), set()
+        for key, x in exps[i].items():
+            if x > 0:
+                p_upper.add((key, "upper"))
+                p_lower.add((key, "lower"))
+            else:
+                n_upper.add((key, "upper"))
+                n_lower.add((key, "lower"))
+        # (consider x*y/z == 1)
+        # for a var (e.g. x) to be upper bounded by this monomial equality,
+        #   - vars of the same sign/side (y) must be lower bounded
+        #   - AND vars of the opposite sign/side (z) must be upper bounded
+        p_ub = frozenset(n_upper).union(p_lower)
+        p_lb = frozenset(n_lower).union(p_upper)
+        n_ub = frozenset(p_upper).union(n_lower)
+        n_lb = frozenset(p_lower).union(n_upper)
+        for keys, ub, lb in ((p_upper, p_ub, p_lb), (n_upper, n_ub, n_lb)):
+            for key, _ in keys:
+                meq_bounds[(key, "upper")].add(ub.difference([(key, "lower")]))
+                meq_bounds[(key, "lower")].add(lb.difference([(key, "upper")]))
+    return meq_bounds
 
 
 def check_mono_eq_bounds(missingbounds, meq_bounds):

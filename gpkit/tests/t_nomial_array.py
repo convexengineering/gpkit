@@ -1,8 +1,12 @@
 """Tests for NomialArray class"""
 import unittest
+import sys
 import numpy as np
 from gpkit import Monomial, Posynomial, NomialArray, VectorVariable
 import gpkit
+
+if sys.version_info >= (3, 0):
+    unicode = str  # pylint:disable=redefined-builtin,invalid-name
 
 
 class TestNomialArray(unittest.TestCase):
@@ -13,8 +17,8 @@ class TestNomialArray(unittest.TestCase):
     def test_shape(self):
         x = VectorVariable((2, 3), 'x')
         self.assertEqual(x.shape, (2, 3))
-        self.assertIsInstance(str(x), str)
-        self.assertIsInstance(x.latex(), str)
+        self.assertIsInstance(x.str_without(), unicode)
+        self.assertIsInstance(x.latex(), unicode)
 
     def test_ndim(self):
         x = VectorVariable((3, 4), 'x')
@@ -54,9 +58,9 @@ class TestNomialArray(unittest.TestCase):
         # division with monomials
         p2 = NomialArray([x_0/m, x_1/m, x_2/m]).T
         self.assertEqual(x/m, p2)
-        self.assertIsInstance(str(v), str)
+        self.assertIsInstance(v.str_without(), unicode)
         self.assertIsInstance(v.latex(), str)
-        self.assertIsInstance(str(p), str)
+        self.assertIsInstance(p.str_without(), unicode)
         self.assertIsInstance(p.latex(), str)
 
     def test_constraint_gen(self):

@@ -1,6 +1,8 @@
 "Implements the NomialMap class"
+from __future__ import unicode_literals
 from collections import defaultdict
 import numpy as np
+from .. import units
 from ..exceptions import DimensionalityError
 from ..small_classes import HashVector, Strings, qty, EMPTY_HV
 from .substitution import parse_subs
@@ -31,14 +33,10 @@ class NomialMap(HashVector):
             self.units = None
         elif hasattr(thing, "units"):
             if hasattr(thing2, "units"):
-                self.units = qty((thing*thing2).units)
-                try:  # faster than "if self.units.dimensionless"
-                    conversion = float(self.units)
-                    self.units = None
+                self.units, dimless_convert = units.of_product(thing, thing2)
+                if dimless_convert:
                     for key in self:
-                        self[key] *= conversion
-                except DimensionalityError:
-                    pass
+                        self[key] *= dimless_convert
             else:
                 self.units = qty(thing.units)
         elif hasattr(thing2, "units"):
@@ -48,11 +46,11 @@ class NomialMap(HashVector):
         else:
             self.units = None
 
-    def to(self, units):
+    def to(self, to_units):
         "Returns a new NomialMap of the given units"
         sunits = self.units or DIMLESS_QUANTITY
-        nm = self * sunits.to(units).magnitude  # note that * creates a copy
-        nm.units_of_product(units)  # pylint: disable=no-member
+        nm = self * sunits.to(to_units).magnitude  # note that * creates a copy
+        nm.units_of_product(to_units)  # pylint: disable=no-member
         return nm
 
     def __add__(self, other):
@@ -69,11 +67,13 @@ class NomialMap(HashVector):
     def diff(self, varkey):
         "Differentiates a NomialMap with respect to a varkey"
         out = NomialMap()
+        out.units_of_product(self.units,
+                             1/varkey.units if varkey.units else None)
         for exp in self:
             if varkey in exp:
-                exp = exp.copy()
                 x = exp[varkey]
                 c = self[exp] * x
+                exp = exp.copy()
                 if x is 1:
                     exp.hashvalue ^= hash((varkey, 1))
                     del exp[varkey]
@@ -81,8 +81,6 @@ class NomialMap(HashVector):
                     exp.hashvalue ^= hash((varkey, x)) ^ hash((varkey, x-1))
                     exp[varkey] = x-1
                 out[exp] = c
-        out.units_of_product(self.units,
-                             1.0/varkey.units if varkey.units else None)
         return out
 
     def sub(self, substitutions, varkeys, parsedsubs=False):
@@ -131,7 +129,8 @@ class NomialMap(HashVector):
             exps, cval = varlocs[vk], fixed[vk]
             if hasattr(cval, "hmap"):
                 if any(cval.hmap.keys()):
-                    raise("Monomial substitutions are no longer supported.")
+                    raise ValueError("Monomial substitutions are not"
+                                     " supported.")
                 cval, = cval.hmap.to(vk.units or DIMLESS_QUANTITY).values()
             elif hasattr(cval, "to"):
                 cval = cval.to(vk.units or DIMLESS_QUANTITY).magnitude

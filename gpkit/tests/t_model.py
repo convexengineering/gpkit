@@ -12,6 +12,9 @@ from gpkit.constraints.relax import ConstraintsRelaxed
 from gpkit.constraints.relax import ConstraintsRelaxedEqually
 from gpkit.constraints.relax import ConstantsRelaxed
 
+if sys.version_info >= (3, 0):
+    unicode = str  # pylint:disable=redefined-builtin,invalid-name
+
 NDIGS = {"cvxopt": 4, "mosek": 5, "mosek_cli": 5}
 # name: decimal places of accuracy
 
@@ -41,9 +44,9 @@ class TestGP(unittest.TestCase):
         prob = Model(cost=(x + 2*y),
                      constraints=[x*y >= 1])
         sol = prob.solve(solver=self.solver, verbosity=0)
-        self.assertEqual(type(prob.latex()), str)
+        self.assertEqual(type(prob.latex()), unicode)
         # pylint: disable=protected-access
-        self.assertEqual(type(prob._repr_latex_()), str)
+        self.assertEqual(type(prob._repr_latex_()), unicode)
         self.assertAlmostEqual(sol("x"), np.sqrt(2.), self.ndig)
         self.assertAlmostEqual(sol("y"), 1/np.sqrt(2.), self.ndig)
         self.assertAlmostEqual(sol("x") + 2*sol("y"),
@@ -417,7 +420,7 @@ class TestSP(unittest.TestCase):
         self.assertEqual(stringout.getvalue(), (
             "Warning: SignomialConstraint x + y >= z became the tautological"
             " constraint 0 <= 1 + x after substitution.\n"
-            "Warning: SignomialConstraint 1 + x >= 0 became the tautological"
+            "Warning: SignomialConstraint x + 1 >= 0 became the tautological"
             " constraint 0 <= 1 + x after substitution.\n"))
 
     def test_impossible(self):
@@ -715,8 +718,8 @@ class TestModelNoSolve(unittest.TestCase):
     def test_modelcontainmentprinting(self):
         t = Thing2()
         self.assertEqual(t["c"].key.models, ("Thing2", "Thing"))
-        self.assertIsInstance(t.str_without(), str)
-        self.assertIsInstance(t.latex(), str)
+        self.assertIsInstance(t.str_without(), unicode)
+        self.assertIsInstance(t.latex(), unicode)
 
     def test_no_naming_on_var_access(self):
         # make sure that analysis models don't add their names to
@@ -738,7 +741,7 @@ MULTI_SOLVER_TESTS = [TestGP, TestSP]
 for testcase in MULTI_SOLVER_TESTS:
     for solver in settings["installed_solvers"]:
         if solver:
-            test = type(testcase.__name__+"_"+solver,
+            test = type(str(testcase.__name__+"_"+solver),
                         (testcase,), {})
             setattr(test, "solver", solver)
             setattr(test, "ndig", NDIGS[solver])

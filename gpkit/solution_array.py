@@ -1,12 +1,12 @@
 """Defines SolutionArray class"""
-from __future__ import print_function
+from __future__ import unicode_literals, print_function
 import re
 from collections import Iterable
 import pickle
 import numpy as np
 from .nomials import NomialArray
 from .small_classes import DictOfLists, Strings
-from .small_scripts import mag, isnan
+from .small_scripts import mag, isnan, try_str_without
 from .repr_conventions import unitstr, lineagestr
 
 
@@ -85,16 +85,15 @@ def tight_table(self, _, ntightconstrs=5, tight_senss=1e-2, **kwargs):
     return lines
 
 
-def loose_table(self, _, loose_senss=1e-5, **kwargs):
+def loose_table(self, _, min_senss=1e-5, **kwargs):
     "Return constraint tightness lines"
     if not self.model:
         return []
     title = "All Loose Constraints"
-    data = [(0, "", c)
-            for c in self.model.flat() if c.relax_sensitivity <= loose_senss]
+    data = [(0, "", c) for c in self.model.flat()
+            if c.relax_sensitivity <= min_senss]
     if not data:
-        lines = ["No constraints had a sensitivity below %+6.2g."
-                 % loose_senss]
+        lines = ["No constraints had a sensitivity below %+6.2g." % min_senss]
     else:
         lines = constraint_table(data, **kwargs)
     return [title] + ["-"*len(title)] + lines + [""]
@@ -103,42 +102,31 @@ def loose_table(self, _, loose_senss=1e-5, **kwargs):
 # pylint: disable=too-many-branches,too-many-locals,too-many-statements
 def constraint_table(data, sortbymodel=True, showmodels=True, **_):
     "Creates lines for tables where the right side is a constraint."
-    models = {}
-    decorated = []
-    for sortby, openingstr, constraint in data:
-        if sortbymodel and hasattr(constraint, "lineage"):
-            model = lineagestr(constraint.lineage)
-        else:
-            model = ""
+    excluded = ("units", "unnecessary lineage")
+    if not showmodels:
+        excluded = ("units", "lineage")  # hide all of it
+    models, decorated = {}, []
+    for sortby, openingstr, constraint in sorted(data):
+        model = lineagestr(constraint) if sortbymodel else ""
         if model not in models:
             models[model] = len(models)
-        if showmodels:
-            constrstr = str(constraint)
-            if " at 0x" in constrstr:  # don't print memory addresses
-                constrstr = constrstr[:constrstr.find(" at 0x")] + ">"
-        else:
-            try:
-                constrstr = constraint.str_without(["units", "lineage"])
-            except AttributeError:
-                constrstr = str(constraint)
+        constrstr = try_str_without(constraint, excluded)
+        if " at 0x" in constrstr:  # don't print memory addresses
+            constrstr = constrstr[:constrstr.find(" at 0x")] + ">"
         decorated.append((models[model], model, sortby, constrstr, openingstr))
     decorated.sort()
-    oldmodel = None
-    lines = []
+    previous_model, lines = None, []
     for varlist in decorated:
         _, model, _, constrstr, openingstr = varlist
-        if model != oldmodel and len(models) > 1:
-            if oldmodel is not None:
+        if model != previous_model and len(models) > 1:
+            if lines:
                 lines.append(["", ""])
             lines.append([("modelname",), model])
-            oldmodel = model
-        if model and len(models) == 1:  # fully remove
-            constrstr = constrstr.replace("_"+model, "")
-        else:  # partially remove
-            constrstr = constrstr.replace(model, "")
+            previous_model = model
+        constrstr = constrstr.replace(model, "")
         minlen, maxlen = 25, 80
         segments = [s for s in CONSTRSPLITPATTERN.split(constrstr) if s]
-        splitlines = []
+        constraintlines = []
         line = ""
         next_idx = 0
         while next_idx < len(segments):
@@ -148,22 +136,20 @@ def constraint_table(data, sortbymodel=True, showmodels=True, **_):
                 segments[next_idx] = segment[1:] + segments[next_idx]
                 segment = segment[0]
             elif len(line) + len(segment) > maxlen and len(line) > minlen:
-                splitlines.append(line)
-                line = "  "
+                constraintlines.append(line)
+                line = "  "  # start a new line
             line += segment
             while len(line) > maxlen:
-                splitlines.append(line[:maxlen])
+                constraintlines.append(line[:maxlen])
                 line = "  " + line[maxlen:]
-        splitlines.append(line)
-        lines += [(openingstr + " : ", splitlines[0])]
-        lines += [("", l) for l in splitlines[1:]]
-
+        constraintlines.append(line)
+        lines += [(openingstr + " : ", constraintlines[0])]
+        lines += [("", l) for l in constraintlines[1:]]
     maxlens = np.max([list(map(len, line)) for line in lines
                       if line[0] != ("modelname",)], axis=0)
-    dirs = ['>', '<']
-    # check lengths before using zip
+    dirs = [">", "<"]  # we'll check lengths before using zip
     assert len(list(dirs)) == len(list(maxlens))
-    fmts = [u'{0:%s%s}' % (direc, L) for direc, L in zip(dirs, maxlens)]
+    fmts = ["{0:%s%s}" % (direc, L) for direc, L in zip(dirs, maxlens)]
     for i, line in enumerate(lines):
         if line[0] == ("modelname",):
             line = [fmts[0].format(" | "), line[1]]
@@ -190,12 +176,10 @@ def warnings_table(self, _, **kwargs):
             if wtype == "Unexpectedly Tight Constraints" and data[0][1]:
                 data = [(-int(1e5*c.relax_sensitivity),
                          "%+6.2g" % c.relax_sensitivity, c) for _, c in data]
-                data = sorted(data)
                 lines += constraint_table(data, **kwargs)
             elif wtype == "Unexpectedly Loose Constraints" and data[0][1]:
                 data = [(-int(1e5*c.rel_diff),
                          "%.4g %s %.4g" % c.tightvalues, c) for _, c in data]
-                data = sorted(data)
                 lines += constraint_table(data, **kwargs)
             else:
                 for msg, _ in data:
@@ -262,10 +246,22 @@ class SolutionArray(DictOfLists):
     """
     program = None
     model = None
+    _name_collision_varkeys = None
     table_titles = {"sweepvariables": "Sweep Variables",
                     "freevariables": "Free Variables",
                     "constants": "Constants",
                     "variables": "Variables"}
+
+    def name_collision_varkeys(self):
+        "Returns the set of contained varkeys whose names are not unique"
+        if self._name_collision_varkeys is None:
+            self._name_collision_varkeys = set()
+            keymap = self["variables"].keymap
+            for key in list(keymap):
+                if hasattr(key, "key") and not (key.shape and not key.idx):
+                    if len(keymap[key.str_without(["lineage"])]) > 1:
+                        self._name_collision_varkeys.add(key)
+        return self._name_collision_varkeys
 
     def __len__(self):
         try:
@@ -489,8 +485,7 @@ class SolutionArray(DictOfLists):
                 row = [
                     key.name,
                     "" if idx is None else idx,
-                    value if idx is None else value[idx],
-                ]
+                    value if idx is None else value[idx]]
                 rows.append(row)
                 row.extend([
                     key.unitstr(),
@@ -500,14 +495,15 @@ class SolutionArray(DictOfLists):
                               if k not in ["name", "units", "unitrepr",
                                            "idx", "shape", "veckey",
                                            "value", "original_fn",
-                                           "lineage", "label"])
-                ])
+                                           "lineage", "label"])])
         return pd.DataFrame(rows, columns=cols)
 
-    def savetxt(self, filename="solution.txt", *args, **kwargs):
+    def savetxt(self, filename="solution.txt", printmodel=True, **kwargs):
         "Saves solution table as a text file"
         with open(filename, "w") as f:
-            f.write(self.table(*args, **kwargs).encode("utf-8"))
+            if printmodel and self.model:
+                f.write(str(self.model).encode("utf-8"))
+            f.write(self.table(**kwargs).encode("utf-8"))
 
     def savecsv(self, showvars=None, filename="solution.csv", valcols=5,
                 **kwargs):
@@ -519,10 +515,9 @@ class SolutionArray(DictOfLists):
         # if the columns don't capture any dimensions, skip them
         minspan, maxspan = None, 1
         for v in data.values():
-            if (getattr(v, "shape", None)
-                    and not all(di == 1 for di in v.shape)):
+            if getattr(v, "shape", None) and any(di != 1 for di in v.shape):
                 minspan_ = min((di for di in v.shape if di != 1))
-                maxspan_ = min((di for di in v.shape if di != 1))
+                maxspan_ = max((di for di in v.shape if di != 1))
                 if minspan is None or minspan_ < minspan:
                     minspan = minspan_
                 if maxspan is None or maxspan_ > maxspan:
@@ -531,8 +526,7 @@ class SolutionArray(DictOfLists):
             valcols = 1
         if maxspan < valcols:
             valcols = maxspan
-        lines = var_table(data, "", rawlines=True, maxcolumns=valcols,
-                          **kwargs)
+        lines = var_table(data, "", rawlines=True, maxcolumns=valcols, **kwargs)
         with open(filename, "w") as f:
             f.write("Model Name,Variable Name,Value(s)" + ","*valcols
                     + "Units,Description\n")
@@ -565,19 +559,17 @@ class SolutionArray(DictOfLists):
 
     def _parse_showvars(self, showvars):
         showvars_out = set()
-        if showvars:
-            for k in showvars:
-                k, _ = self["variables"].parse_and_index(k)
-                keys = self["variables"].keymap[k]
-                showvars_out.update(keys)
+        for k in showvars:
+            k, _ = self["variables"].parse_and_index(k)
+            keys = self["variables"].keymap[k]
+            showvars_out.update(keys)
         return showvars_out
 
     def summary(self, showvars=(), ntopsenss=5, **kwargs):
         "Print summary table, showing top sensitivities and no constants"
         showvars = self._parse_showvars(showvars)
-        out = self.table(showvars, ["cost", "warnings",
-                                    "sweepvariables", "freevariables"],
-                         **kwargs)
+        out = self.table(showvars, ["cost", "warnings", "sweepvariables",
+                                    "freevariables"], **kwargs)
         constants_in_showvars = showvars.intersection(self["constants"])
         senss_tables = []
         if len(self["constants"]) < ntopsenss+2 or constants_in_showvars:
@@ -614,12 +606,13 @@ class SolutionArray(DictOfLists):
         -------
         str
         """
+        for key in self.name_collision_varkeys():
+            key.descr["necessarylineage"] = True
         showvars = self._parse_showvars(showvars)
         strs = []
         for table in tables:
             if table == "cost":
-                cost = self["cost"]
-                # pylint: disable=unsubscriptable-object
+                cost = self["cost"]  # pylint: disable=unsubscriptable-object
                 if kwargs.get("latex", None):  # cost is not printed for latex
                     continue
                 strs += ["\n%s\n----" % "Cost"]
@@ -646,6 +639,8 @@ class SolutionArray(DictOfLists):
                                   "% \\usepackage{amsmath}",
                                   "% \\begin{document}\n"))
             strs = [preamble] + strs + ["% \\end{document}"]
+        for key in self.name_collision_varkeys():
+            del key.descr["necessarylineage"]
         return "\n".join(strs)
 
     def plot(self, posys=None, axes=None):
@@ -706,9 +701,7 @@ def var_table(data, title, printunits=True, latex=False, rawlines=False,
     """
     if not data:
         return []
-    lines = []
-    decorated = []
-    models = set()
+    decorated, models = [], set()
     for i, (k, v) in enumerate(data.items()):
         v_arr = np.array([v])
         notnan = ~isnan(v_arr)
@@ -716,16 +709,16 @@ def var_table(data, title, printunits=True, latex=False, rawlines=False,
             if minval and hidebelowminval and len(notnan.shape) > 1:
                 less_than_min = np.abs(v) <= minval
                 v[np.logical_and(~isnan(v), less_than_min)] = 0
-            b = isinstance(v, Iterable) and bool(v.shape)
             model = lineagestr(k.lineage) if sortbymodel else ""
             models.add(model)
-            s = k.str_without("lineage")
+            b = isinstance(v, Iterable) and bool(v.shape)
+            s = k.str_without(("lineage", "vec"))
             if not sortbyvals:
                 decorated.append((model, b, (varfmt % s), i, k, v))
             else:  # for consistent sorting, add small offset to negative vals
                 val = np.mean(np.abs(v)) - (1e-9 if np.mean(v) < 0 else 0)
-                val -= hash(k.name)*1e-30
-                decorated.append((model, -val, b, (varfmt % s), i, k, v))
+                sort = (float("%.4g" % -val), k.name)
+                decorated.append((model, sort, b, (varfmt % s), i, k, v))
     if included_models:
         included_models = set(included_models)
         included_models.add("")
@@ -733,7 +726,7 @@ def var_table(data, title, printunits=True, latex=False, rawlines=False,
     if excluded_models:
         models = models.difference(excluded_models)
     decorated.sort()
-    oldmodel = None
+    previous_model, lines = None, []
     for varlist in decorated:
         if not sortbyvals:
             model, isvector, varstr, _, var, val = varlist
@@ -741,19 +734,21 @@ def var_table(data, title, printunits=True, latex=False, rawlines=False,
             model, _, isvector, varstr, _, var, val = varlist
         if model not in models:
             continue
-        if model != oldmodel and len(models) > 1:
-            if oldmodel is not None:
+        if model != previous_model and len(models) > 1:
+            if lines:
                 lines.append(["", "", "", ""])
-            if model != "":
-                if latex:
+            if model:
+                if not latex:
+                    lines.append([("modelname",), model, "", ""])
+                else:
                     lines.append(
                         [r"\multicolumn{3}{l}{\textbf{" + model + r"}} \\"])
-                else:
-                    lines.append([("modelname",), model, "", ""])
-            oldmodel = model
+            previous_model = model
         label = var.descr.get('label', '')
         units = var.unitstr(" [%s] ") if printunits else ""
-        if isvector:
+        if not isvector:
+            valstr = valfmt % val
+        else:
             last_dim_index = len(val.shape)-1
             horiz_dim, ncols = last_dim_index, 1  # starting values
             for dim_idx, dim_size in enumerate(val.shape):
@@ -766,8 +761,6 @@ def var_table(data, title, printunits=True, latex=False, rawlines=False,
             vals = [vecfmt % v for v in flatval[:ncols]]
             bracket = " ] " if len(flatval) <= ncols else ""
             valstr = "[ %s%s" % ("  ".join(vals), bracket)
-        else:
-            valstr = valfmt % val
         for before, after in VALSTR_REPLACES:
             valstr = valstr.replace(before, after)
         if not latex:
@@ -806,10 +799,10 @@ def var_table(data, title, printunits=True, latex=False, rawlines=False,
         if lines:
             maxlens = np.max([list(map(len, line)) for line in lines
                               if line[0] != ("modelname",)], axis=0)
-            dirs = ['>', '<', '<', '<']
+            dirs = [">", "<", "<", "<"]
             # check lengths before using zip
             assert len(list(dirs)) == len(list(maxlens))
-            fmts = [u'{0:%s%s}' % (direc, L) for direc, L in zip(dirs, maxlens)]
+            fmts = ["{0:%s%s}" % (direc, L) for direc, L in zip(dirs, maxlens)]
         for i, line in enumerate(lines):
             if line[0] == ("modelname",):
                 line = [fmts[0].format(" | "), line[1]]
@@ -817,7 +810,7 @@ def var_table(data, title, printunits=True, latex=False, rawlines=False,
                 line = [fmt.format(s) for fmt, s in zip(fmts, line)]
             lines[i] = "".join(line).rstrip()
         lines = [title] + ["-"*len(title)] + lines + [""]
-    elif lines:
+    else:
         colfmt = {1: "llcl", 2: "lcl", 3: "llc"}
         lines = (["\n".join(["{\\footnotesize",
                              "\\begin{longtable}{%s}" % colfmt[latex],

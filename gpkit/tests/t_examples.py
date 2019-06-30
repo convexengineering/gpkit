@@ -1,8 +1,8 @@
 """Unit testing of tests in docs/source/examples"""
 import unittest
 import os
-import numpy as np
 import pickle
+import numpy as np
 
 from gpkit import settings
 from gpkit.tests.helpers import generate_example_tests

@@ -3,14 +3,15 @@ from __future__ import print_function, unicode_literals
 from collections import defaultdict
 import numpy as np
 from .core import Nomial
+from .array import NomialArray
+from .. import units
 from ..constraints import SingleEquationConstraint
 from ..globals import SignomialsEnabled
 from ..small_classes import Strings, Numbers
 from ..small_classes import HashVector, EMPTY_HV
 from ..varkey import VarKey
 from ..small_scripts import mag
-from ..exceptions import (InvalidGPConstraint, InvalidPosynomial,
-                          DimensionalityError)
+from ..exceptions import InvalidGPConstraint, InvalidPosynomial
 from .map import NomialMap
 from .substitution import parse_subs
 
@@ -61,21 +62,31 @@ class Signomial(Nomial):
             self.__class__ = Monomial
         else:
             self.__class__ = Posynomial
+        self.ast = ()
 
     def diff(self, var):
         """Derivative of this with respect to a Variable
 
         Arguments
         ---------
-        var (Variable):
-        Variable to take derivative with respect to
+        var : Variable key
+            Variable to take derivative with respect to
 
         Returns
         -------
         Signomial (or Posynomial or Monomial)
         """
-        # pylint: disable=unexpected-keyword-arg
-        return Signomial(Nomial.diff(self, var), require_positive=False)
+        varset = self.varkeys[var]
+        if len(varset) > 1:
+            raise ValueError("multiple variables %s found for key %s"
+                             % (list(varset), var))
+        elif not varset:
+            diff = NomialMap({EMPTY_HV: 0.0})
+            diff.units = None
+        else:
+            var, = varset
+            diff = self.hmap.diff(var)
+        return Signomial(diff, require_positive=False)
 
     def posy_negy(self):
         """Get the positive and negative parts, both as Posynomials
@@ -108,12 +119,11 @@ class Signomial(Nomial):
         """
         x0, _, _ = parse_subs(self.varkeys, x0)  # use only varkey keys
         psub = self.hmap.sub(x0, self.varkeys, parsedsubs=True)
-        if len(psub) > 1 or EMPTY_HV not in psub:
+        if EMPTY_HV not in psub or len(psub) > 1:
             raise ValueError("Variables %s remained after substituting x0=%s"
-                             " into %s" % (list(psub.vks), x0, self))
+                             " into %s" % (psub, x0, self))
         c0, = psub.values()
-        exp = HashVector()
-        c = c0
+        c, exp = c0, HashVector()
         for vk in self.vks:
             val = float(x0[vk])
             diff, = self.hmap.diff(vk).sub(x0, self.varkeys,
@@ -170,9 +180,7 @@ class Signomial(Nomial):
             return SignomialInequality(self, ">=", other)
         return NotImplemented
 
-    def __add__(self, other):
-        if isinstance(other, np.ndarray):
-            return np.array(self) + other
+    def __add__(self, other, rev=False):
         other_hmap = getattr(other, "hmap", None)
         if isinstance(other, Numbers):
             if not other:  # other is zero
@@ -181,18 +189,30 @@ class Signomial(Nomial):
                 other_hmap = NomialMap({EMPTY_HV: mag(other)})
                 other_hmap.units_of_product(other)
         if other_hmap:
-            return Signomial(self.hmap + other_hmap)
+            astorder = (self, other)
+            if rev:
+                astorder = tuple(reversed(astorder))
+            out = Signomial(self.hmap + other_hmap)
+            out.ast = ("add", astorder)
+            return out
         return NotImplemented
 
-    def __mul__(self, other):
+    def __mul__(self, other, rev=False):
+        astorder = (self, other)
+        if rev:
+            astorder = tuple(reversed(astorder))
         if isinstance(other, np.ndarray):
-            return np.array(self)*other
-        elif isinstance(other, Numbers):
+            s = NomialArray(self)
+            s.ast = self.ast
+            return s*other
+        if isinstance(other, Numbers):
             if not other:  # other is zero
                 return other
             hmap = mag(other)*self.hmap
             hmap.units_of_product(self.hmap.units, other)
-            return Signomial(hmap)
+            out = Signomial(hmap)
+            out.ast = ("mul", astorder)
+            return out
         elif isinstance(other, Signomial):
             hmap = NomialMap()
             for exp_s, c_s in self.hmap.items():
@@ -204,13 +224,17 @@ class Signomial(Nomial):
                     elif accumulated:
                         del hmap[exp]
             hmap.units_of_product(self.hmap.units, other.hmap.units)
-            return Signomial(hmap)
+            out = Signomial(hmap)
+            out.ast = ("mul", astorder)
+            return out
         return NotImplemented
 
     def __div__(self, other):
         "Support the / operator in Python 2.x"
         if isinstance(other, Numbers):
-            return self*other**-1
+            out = self*other**-1
+            out.ast = ("div", (self, other))
+            return out
         elif isinstance(other, Monomial):
             return other.__rdiv__(self)
         return NotImplemented
@@ -221,11 +245,16 @@ class Signomial(Nomial):
             while expo > 0:
                 p *= self
                 expo -= 1
+            p.ast = ("pow", (self, expo))
             return p
         return NotImplemented
 
     def __neg__(self):
-        return -1*self if SignomialsEnabled else NotImplemented  # pylint: disable=using-constant-test
+        if SignomialsEnabled:  # pylint: disable=using-constant-test
+            out = -1*self
+            out.ast = ("neg", self)
+            return out
+        return NotImplemented
 
     def __sub__(self, other):
         return self + -other if SignomialsEnabled else NotImplemented  # pylint: disable=using-constant-test
@@ -278,10 +307,12 @@ class Monomial(Posynomial):
     def __rdiv__(self, other):
         "Divide other by this Monomial"
         if isinstance(other, Numbers + (Signomial,)):
-            return other * self**-1
+            out = other * self**-1
+            out.ast = ("div", (other, self))
+            return out
         return NotImplemented
 
-    def __rtruediv__(self, other):
+    def __rtruediv__(self, other, rev=True):
         "__rdiv__ for python 3.x"
         return self.__rdiv__(other)
 
@@ -294,7 +325,9 @@ class Monomial(Posynomial):
                 hmap.units = self.hmap.units**expo
             else:
                 hmap.units = None
-            return Monomial(hmap)
+            out = Monomial(hmap)
+            out.ast = ("pow", (self, expo))
+            return out
         return NotImplemented
 
     def __eq__(self, other):
@@ -309,6 +342,8 @@ class Monomial(Posynomial):
     def __ge__(self, other):
         if isinstance(other, Numbers + (Posynomial,)):
             return PosynomialInequality(self, ">=", other)
+        # elif isinstance(other, np.ndarray):
+        #     return other.__le__(self, rev=True)
         return NotImplemented
 
     # Monomial.__le__ falls back on Posynomial.__le__
@@ -431,22 +466,12 @@ class PosynomialInequality(ScalarSingleEquationConstraint):
             m_c, = m_gt.hmap.values()
         except ValueError:
             raise TypeError("greater-than side '%s' is not monomial." % m_gt)
-        if m_gt.units != p_lt.units:
-            if m_gt.units and p_lt.units:
-                conversion = m_gt.units/p_lt.units
-            else:
-                conversion = m_gt.units or 1/p_lt.units
-            try:
-                m_c *= float(conversion)
-            except DimensionalityError:
-                raise DimensionalityError(p_lt, m_gt)
+        m_c *= units.of_division(m_gt, p_lt)
         hmap = p_lt.hmap.copy()
         for exp in list(hmap):
             hmap[exp-m_exp] = hmap.pop(exp)/m_c
         hmap = self._simplify_posy_ineq(hmap)
-        if hmap is None:
-            return []
-        return [Posynomial(hmap)]
+        return [Posynomial(hmap)] if hmap else []
 
     def as_posyslt1(self, substitutions=None):
         """Returns the posys <= 1 representation of this constraint.
@@ -607,8 +632,8 @@ class SignomialInequality(ScalarSingleEquationConstraint):
         siglt0 = siglt0.sub(substitutions, require_positive=False)
         posy, negy = siglt0.posy_negy()
         if posy is 0:
-            print ("Warning: SignomialConstraint %s became the tautological"
-                   " constraint 0 <= %s after substitution." % (self, negy))
+            print("Warning: SignomialConstraint %s became the tautological"
+                  " constraint 0 <= %s after substitution." % (self, negy))
             return []
         elif negy is 0:
             raise ValueError("SignomialConstraint %s became the infeasible"

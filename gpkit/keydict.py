@@ -79,6 +79,8 @@ class KeyDict(dict):
 
     def _copyonwrite(self, key):
         "Copys arrays before they are written to"
+        if not hasattr(self, "owned"):  # backwards pickle compatibility
+            self.owned = set()
         if key not in self.owned:
             dict.__setitem__(self, key, dict.__getitem__(self, key).copy())
             self.owned.add(key)
