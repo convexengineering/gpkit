@@ -498,10 +498,12 @@ class SolutionArray(DictOfLists):
                                            "lineage", "label"])])
         return pd.DataFrame(rows, columns=cols)
 
-    def savetxt(self, filename="solution.txt", *args, **kwargs):
+    def savetxt(self, filename="solution.txt", printmodel=True, **kwargs):
         "Saves solution table as a text file"
         with open(filename, "w") as f:
-            f.write(self.table(*args, **kwargs).encode("utf-8"))
+            if printmodel and self.model:
+                f.write(str(self.model).encode("utf-8"))
+            f.write(self.table(**kwargs).encode("utf-8"))
 
     def savecsv(self, showvars=None, filename="solution.csv", valcols=5,
                 **kwargs):
