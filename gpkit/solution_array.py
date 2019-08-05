@@ -460,21 +460,21 @@ class SolutionArray(DictOfLists):
         return names
 
     def savemat(self, filename="solution.mat", showvars=None,
-                exclude=("unnecessary lineage", "vec")):
+                excluded=("unnecessary lineage", "vec")):
         "Saves primal solution as matlab file"
         from scipy.io import savemat
         savemat(filename,
                 {name.replace(".", "_"): np.array(self["variables"][key], "f")
-                 for name, key in self.varnames(showvars, exclude).items()})
+                 for name, key in self.varnames(showvars, excluded).items()})
 
     def todataframe(self, showvars=None,
-                    exclude=("unnecessary lineage", "vec")):
+                    excluded=("unnecessary lineage", "vec")):
         "Returns primal solution as pandas dataframe"
         import pandas as pd  # pylint:disable=import-error
         rows = []
         cols = ["Name", "Index", "Value", "Units", "Label",
                 "Lineage", "Other"]
-        for _, key in sorted(self.varnames(showvars, exclude).items(),
+        for _, key in sorted(self.varnames(showvars, excluded).items(),
                              key=lambda k: k[0]):
             value = self["variables"][key]
             if key.shape:
