@@ -1,6 +1,5 @@
 "Docstring-parsing methods"
 import re
-import sys
 import numpy as np
 
 
@@ -59,8 +58,6 @@ def expected_unbounded(instance, doc):
 
 def parse_variables(string, errorcatch=True):
     "Parses a string to determine what variables to create from it"
-    if sys.version_info >= (3, 0):
-        raise FutureWarning("parse_variables is not yet supported in Python 3")
     out = "from gpkit import Variable, VectorVariable\n"
     out += check_and_parse_flag(string, "Constants\n", errorcatch,
                                 constant_declare)

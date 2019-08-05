@@ -17,6 +17,41 @@ from .constraints.set import ConstraintSet
 from .constraints.model import Model
 from .tools.docstring import parse_variables
 
+import inspect
+import ast
+
+
+class pv_decorater(object):
+
+    def __init__(self, string, globals):
+        self.string = string
+        self.globals = globals
+
+    def __call__(self, f):
+        string = self.string
+        orig_source = inspect.getsource(f)
+        # print("os\n", orig_source)
+        orig_lines = orig_source.split("\n")
+        indent_length = 0
+        while orig_lines[1][indent_length] in [" ", "\t"]:
+            indent_length += 1
+        first_indent_length = indent_length
+        while orig_lines[2][indent_length] in [" ", "\t"]:
+            indent_length += 1
+        second_indent = orig_lines[2][:indent_length]
+        parse_lines = [second_indent + line for line in parse_variables(string).split("\n")]
+        # make ast of these new lines, insert it into the original ast
+        new_lines = [orig_lines[1]] + parse_lines + orig_lines[2:]
+        new_src = "\n".join([line[first_indent_length:] for line in new_lines])
+        # print("ns\n%s" % new_src)
+        new_ast = ast.parse(new_src, "<parse_variables>")
+        ast.fix_missing_locations(new_ast)
+        code = compile(new_ast, "<parse_variables>", "exec", dont_inherit=True)
+        out = {}
+        exec(code, self.globals, out)
+        return out[f.__name__]
+
+
 GPBLU = "#59ade4"
 GPCOLORS = ["#59ade4", "#FA3333"]
 

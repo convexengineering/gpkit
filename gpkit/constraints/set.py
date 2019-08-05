@@ -262,6 +262,8 @@ class ConstraintSet(list, GPkitObject):
 
     def __repr__(self):
         "Returns namespaced string."
+        if not self:
+            return "<gpkit.%s object>" % self.__class__.__name__
         return ("<gpkit.%s object containing %i top-level constraint(s)"
                 " and %i variable(s)>" % (self.__class__.__name__,
                                           len(self), len(self.varkeys)))
