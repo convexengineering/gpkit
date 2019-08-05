@@ -445,36 +445,36 @@ class SolutionArray(DictOfLists):
         self["cost"], self["warnings"] = cost, warnings
         self.program, self.model = program, model
 
-    def varnames(self, vars, exclude):
+    def varnames(self, showvars, exclude):
         "Returns list of variables, optionally with minimal unique names"
-        if vars:
-            vars = self._parse_showvars(vars)
+        if showvars:
+            showvars = self._parse_showvars(showvars)
         for key in self.name_collision_varkeys():
             key.descr["necessarylineage"] = True
         names = {}
-        for key in (vars or self["variables"]):
+        for key in (showvars or self["variables"]):
             for k in self["variables"].keymap[key]:
                 names[k.str_without(exclude)] = k
         for key in self.name_collision_varkeys():
             del key.descr["necessarylineage"]
         return names
 
-    def savemat(self, filename="solution.mat", vars=None,
-                exclude={"unnecessary lineage", "vec"}):
+    def savemat(self, filename="solution.mat", showvars=None,
+                exclude=("unnecessary lineage", "vec")):
         "Saves primal solution as matlab file"
         from scipy.io import savemat
         savemat(filename,
-                {name.replace(".", "_"):  # matlab doesn't support '.' in names
-                 np.array(self["variables"][key], "f")
-                 for name, key in self.varnames(vars, exclude).items()})
+                {name.replace(".", "_"): np.array(self["variables"][key], "f")
+                 for name, key in self.varnames(showvars, exclude).items()})
 
-    def todataframe(self, vars=None, exclude={"unnecessary lineage", "vec"}):
+    def todataframe(self, showvars=None,
+                    exclude=("unnecessary lineage", "vec")):
         "Returns primal solution as pandas dataframe"
         import pandas as pd  # pylint:disable=import-error
         rows = []
         cols = ["Name", "Index", "Value", "Units", "Label",
                 "Lineage", "Other"]
-        for _, key in sorted(self.varnames(vars, exclude).items(),
+        for _, key in sorted(self.varnames(showvars, exclude).items(),
                              key=lambda k: k[0]):
             value = self["variables"][key]
             if key.shape:
