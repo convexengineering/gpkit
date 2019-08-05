@@ -144,7 +144,7 @@ class ConstantsRelaxed(ConstraintSet):
             var = Variable(**key.descr)
             self.origvars.append(var)
             unrelaxeddescr = descr.copy()
-            unrelaxeddescr["name"] += "_{prelax}"
+            unrelaxeddescr["lineage"] += (("OriginalValues", 0),)
             unrelaxed = Variable(**unrelaxeddescr)
             self._unrelaxmap[unrelaxed.key] = key
             substitutions[unrelaxed] = value
