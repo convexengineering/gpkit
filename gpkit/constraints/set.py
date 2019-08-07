@@ -271,7 +271,7 @@ class ConstraintSet(list, GPkitObject):
         if self._name_collision_varkeys is None:
             self._name_collision_varkeys = set()
             for key in self.varkeys:
-                if len(self.varkeys[key.str_without(["lineage"])]) > 1:
+                if len(self.varkeys[key.str_without(["lineage", "vec"])]) > 1:
                     self._name_collision_varkeys.add(key)
         return self._name_collision_varkeys
 

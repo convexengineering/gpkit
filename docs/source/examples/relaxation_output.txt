@@ -111,12 +111,12 @@ Constraints
    "relaxation constraints":
      "x_max":
        Relax2.x_max >= 1
-       x_max >= x_max_{prelax}/Relax2.x_max
-       x_max <= x_max_{prelax}*Relax2.x_max
+       x_max >= Relax2.OriginalValues.x_max/Relax2.x_max
+       x_max <= Relax2.OriginalValues.x_max*Relax2.x_max
      "x_min":
        Relax2.x_min >= 1
-       x_min >= x_min_{prelax}/Relax2.x_min
-       x_min <= x_min_{prelax}*Relax2.x_min
+       x_min >= Relax2.OriginalValues.x_min/Relax2.x_min
+       x_min <= Relax2.OriginalValues.x_min*Relax2.x_min
 
 Cost
 ----
@@ -134,8 +134,9 @@ x_min : 2
 
 Constants
 ---------
-x_max_{prelax} : 1
-x_min_{prelax} : 2
+      | Relax2.OriginalValues
+x_max : 1
+x_min : 2
 
 Sensitivities
 -------------
@@ -145,8 +146,8 @@ x_max : -0.99
 Tightest Constraints
 --------------------
     +1 : x >= x_min
-    +1 : x_min >= x_min_{prelax}/x_min
+    +1 : x_min >= Relax2.OriginalValues.x_min/Relax2.x_min
  +0.99 : x <= x_max
- +0.99 : x_max <= x_max_{prelax}*x_max
+ +0.99 : x_max <= Relax2.OriginalValues.x_max*Relax2.x_max
 
 

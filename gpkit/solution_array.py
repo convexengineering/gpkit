@@ -118,10 +118,11 @@ def constraint_table(data, sortbymodel=True, showmodels=True, **_):
     previous_model, lines = None, []
     for varlist in decorated:
         _, model, _, constrstr, openingstr = varlist
-        if model != previous_model and len(models) > 1:
+        if model != previous_model:
             if lines:
                 lines.append(["", ""])
-            lines.append([("modelname",), model])
+            if model or lines:
+                lines.append([("modelname",), model])
             previous_model = model
         constrstr = constrstr.replace(model, "")
         minlen, maxlen = 25, 80
@@ -255,11 +256,12 @@ class SolutionArray(DictOfLists):
     def name_collision_varkeys(self):
         "Returns the set of contained varkeys whose names are not unique"
         if self._name_collision_varkeys is None:
-            self._name_collision_varkeys = set()
+            self["variables"].update_keymap()
             keymap = self["variables"].keymap
+            self._name_collision_varkeys = set()
             for key in list(keymap):
-                if hasattr(key, "key") and not (key.shape and not key.idx):
-                    if len(keymap[key.str_without(["lineage"])]) > 1:
+                if hasattr(key, "key"):
+                    if len(keymap[key.str_without(["lineage", "vec"])]) > 1:
                         self._name_collision_varkeys.add(key)
         return self._name_collision_varkeys
 
@@ -443,33 +445,36 @@ class SolutionArray(DictOfLists):
         self["cost"], self["warnings"] = cost, warnings
         self.program, self.model = program, model
 
-    def varnames(self, include):
+    def varnames(self, showvars, exclude):
         "Returns list of variables, optionally with minimal unique names"
-        self["variables"].update_keymap()
-        keymap = self["variables"].keymap
+        if showvars:
+            showvars = self._parse_showvars(showvars)
+        for key in self.name_collision_varkeys():
+            key.descr["necessarylineage"] = True
         names = {}
-        for key in (include or self["variables"]):
-            if include:
-                key, _ = self["variables"].parse_and_index(key)
-            keys = keymap[key.name]
-            names.update((str(k), k) for k in keys)
+        for key in (showvars or self["variables"]):
+            for k in self["variables"].keymap[key]:
+                names[k.str_without(exclude)] = k
+        for key in self.name_collision_varkeys():
+            del key.descr["necessarylineage"]
         return names
 
-    def savemat(self, filename="solution.mat", include=None):
+    def savemat(self, filename="solution.mat", showvars=None,
+                excluded=("unnecessary lineage", "vec")):
         "Saves primal solution as matlab file"
         from scipy.io import savemat
         savemat(filename,
-                {name.replace("/", "_").replace(".", "__"):
-                 np.array(self["variables"][key], "f")
-                 for name, key in self.varnames(include).items()})
+                {name.replace(".", "_"): np.array(self["variables"][key], "f")
+                 for name, key in self.varnames(showvars, excluded).items()})
 
-    def todataframe(self, include=None):
+    def todataframe(self, showvars=None,
+                    excluded=("unnecessary lineage", "vec")):
         "Returns primal solution as pandas dataframe"
         import pandas as pd  # pylint:disable=import-error
         rows = []
         cols = ["Name", "Index", "Value", "Units", "Label",
                 "Lineage", "Other"]
-        for _, key in sorted(self.varnames(include).items(),
+        for _, key in sorted(self.varnames(showvars, excluded).items(),
                              key=lambda k: k[0]):
             value = self["variables"][key]
             if key.shape:
@@ -606,6 +611,14 @@ class SolutionArray(DictOfLists):
         -------
         str
         """
+        varlist = list(self["variables"])
+        has_only_one_model = True
+        for var in varlist[1:]:
+            if var.lineage != varlist[0].lineage:
+                has_only_one_model = False
+                break
+        if has_only_one_model:
+            kwargs["sortbymodel"] = False
         for key in self.name_collision_varkeys():
             key.descr["necessarylineage"] = True
         showvars = self._parse_showvars(showvars)
@@ -734,7 +747,7 @@ def var_table(data, title, printunits=True, latex=False, rawlines=False,
             model, _, isvector, varstr, _, var, val = varlist
         if model not in models:
             continue
-        if model != previous_model and len(models) > 1:
+        if model != previous_model:
             if lines:
                 lines.append(["", "", "", ""])
             if model:
