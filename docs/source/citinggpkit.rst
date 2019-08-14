@@ -8,5 +8,5 @@ If you use GPkit, please cite it with the following bibtex::
           title={GPkit software for geometric programming},
           howpublished={\url{https://github.com/convexengineering/gpkit}},
           year={2014},
-          note={Version 0.9.0}
+          note={Version 0.9.1}
          }
