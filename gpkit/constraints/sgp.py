@@ -107,7 +107,6 @@ class SequentialGeometricProgram(CostedConstraintSet):
         *args, **kwargs :
             Passed to solver function.
 
-
         Returns
         -------
         result : dict
@@ -136,10 +135,10 @@ class SequentialGeometricProgram(CostedConstraintSet):
                                       for i, constr in enumerate(signomials)]
             relaxed_obj = self.cost*np.prod(slack)**20.
             relaxed_model = SequentialGeometricProgram(relaxed_obj,
-                        [gp_constrs, relaxed_signomials], self.substitutions)
+                            [gp_constrs, relaxed_signomials], self.substitutions)
             self.result = relaxed_model.localsolve(solver, verbosity, x0,
-                    reltol, iteration_limit, mutategp, relax=False, **kwargs)
-            self.gps = self.relaxed_model.gps
+                          reltol, iteration_limit, mutategp, **kwargs)
+            self.gps = relaxed_model.gps
             return self.result
         # if there's external functions we can't mutate the GP
         mutategp = mutategp and not self.externalfns
