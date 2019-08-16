@@ -49,6 +49,7 @@ class SequentialGeometricProgram(CostedConstraintSet):
         self.gps = []
         self.solver_outs = []
         self._results = []
+        self.relax = False
         self.result = None
         self._spconstrs = []
         self._spvars = set()
@@ -77,7 +78,7 @@ class SequentialGeometricProgram(CostedConstraintSet):
 
     # pylint: disable=too-many-locals
     def localsolve(self, solver=None, verbosity=1, x0=None, reltol=1e-4,
-                   iteration_limit=50, mutategp=True, relax = False, **kwargs):
+                   iteration_limit=50, mutategp=True, relax=False, **kwargs):
         """Locally solves a SequentialGeometricProgram and returns the solution.
 
         Arguments
@@ -118,27 +119,26 @@ class SequentialGeometricProgram(CostedConstraintSet):
         self.gps = []  # NOTE: SIDE EFFECTS
         self.solver_outs = []
         self._results = []
-        self.relax = False
         if relax:
             self.relax = True
             print("Using penalty CCP...")
-            self.signomials = []
-            self.gp_constrs = []
+            signomials = []
+            gp_constrs = []
             for constr in self.flat(constraintsets=False):
-                if isinstance(constr, SingleSignomialEquality) or \
-                        isinstance(constr, SignomialInequality):
-                    self.signomials.append(constr)
+                if isinstance(constr, (SingleSignomialEquality, \
+                                       SignomialInequality)):
+                    signomials.append(constr)
                 else:
-                    self.gp_constrs.append(constr)
-            slack = VectorVariable(len(self.signomials))
+                    gp_constrs.append(constr)
+            slack = VectorVariable(len(signomials))
             with SignomialsEnabled():
-                self.relaxed_signomials = [constr.relaxed(slack[i])
-                                  for i,constr in enumerate(self.signomials)]
+                relaxed_signomials = [constr.relaxed(slack[i]) \
+                                      for i, constr in enumerate(signomials)]
             relaxed_obj = self.cost*np.prod(slack)**20.
-            self.relaxed_model = SequentialGeometricProgram(relaxed_obj,
-                        [self.gp_constrs, self.relaxed_signomials], self.substitutions)
-            self.result = self.relaxed_model.localsolve(solver, verbosity, x0, reltol,
-                   iteration_limit, mutategp, relax=False, **kwargs)
+            relaxed_model = SequentialGeometricProgram(relaxed_obj,
+                        [gp_constrs, relaxed_signomials], self.substitutions)
+            self.result = relaxed_model.localsolve(solver, verbosity, x0,
+                    reltol, iteration_limit, mutategp, relax=False, **kwargs)
             self.gps = self.relaxed_model.gps
             return self.result
         # if there's external functions we can't mutate the GP
