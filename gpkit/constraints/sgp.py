@@ -5,9 +5,11 @@ from collections import OrderedDict
 import numpy as np
 from ..exceptions import InvalidGPConstraint
 from ..keydict import KeyDict
-from ..nomials import Variable
+from ..nomials import Variable, VectorVariable
 from .gp import GeometricProgram
 from ..nomials import SignomialInequality, PosynomialInequality
+from ..nomials import SingleSignomialEquality
+from .. import SignomialsEnabled
 from .costed import CostedConstraintSet
 from ..small_scripts import mag
 
@@ -75,7 +77,7 @@ class SequentialGeometricProgram(CostedConstraintSet):
 
     # pylint: disable=too-many-locals
     def localsolve(self, solver=None, verbosity=1, x0=None, reltol=1e-4,
-                   iteration_limit=50, mutategp=True, **kwargs):
+                   iteration_limit=50, mutategp=True, relax = False, **kwargs):
         """Locally solves a SequentialGeometricProgram and returns the solution.
 
         Arguments
@@ -95,6 +97,12 @@ class SequentialGeometricProgram(CostedConstraintSet):
             consecutive solve's objective values.
         iteration_limit : int
             Maximum GP iterations allowed.
+        mutategp: boolean
+            Prescribes whether to mutate the previously generated GP
+            or to create a new GP with every solve.
+        relax: boolean
+            Implements the penalty convex-concave algorithm [Lipp,Boyd 2016]
+            instead of vanilla SP heuristic.
         *args, **kwargs :
             Passed to solver function.
 
@@ -110,6 +118,29 @@ class SequentialGeometricProgram(CostedConstraintSet):
         self.gps = []  # NOTE: SIDE EFFECTS
         self.solver_outs = []
         self._results = []
+        self.relax = False
+        if relax:
+            self.relax = True
+            print("Using penalty CCP...")
+            self.signomials = []
+            self.gp_constrs = []
+            for constr in self.flat(constraintsets=False):
+                if isinstance(constr, SingleSignomialEquality) or \
+                        isinstance(constr, SignomialInequality):
+                    self.signomials.append(constr)
+                else:
+                    self.gp_constrs.append(constr)
+            slack = VectorVariable(len(self.signomials))
+            with SignomialsEnabled():
+                self.relaxed_signomials = [constr.relaxed(slack[i])
+                                  for i,constr in enumerate(self.signomials)]
+            relaxed_obj = self.cost*np.prod(slack)**20.
+            self.relaxed_model = SequentialGeometricProgram(relaxed_obj,
+                        [self.gp_constrs, self.relaxed_signomials], self.substitutions)
+            self.result = self.relaxed_model.localsolve(solver, verbosity, x0, reltol,
+                   iteration_limit, mutategp, relax=False, **kwargs)
+            self.gps = self.relaxed_model.gps
+            return self.result
         # if there's external functions we can't mutate the GP
         mutategp = mutategp and not self.externalfns
         if x0 and not mutategp:
@@ -219,7 +250,7 @@ class SequentialGeometricProgram(CostedConstraintSet):
         self._numgpconstrs = len(gp.hmaps) - len(spapproxs)
         return gp
 
-    def gp(self, x0=None, mutategp=False):
+    def gp(self, x0=None, mutategp=False, **kwargs):
         "The GP approximation of this SP at x0."
         if mutategp:
             if not self.gps:
@@ -237,7 +268,7 @@ class SequentialGeometricProgram(CostedConstraintSet):
             gp.gen()
         else:
             x0 = self._fill_x0(x0)
-            gp_constrs = self.as_gpconstr(x0)
+            gp_constrs = self.as_gpconstr(x0, kwargs)
             if self.externalfn_vars:
                 for v in self.externalfn_vars:
                     posyconstr = v.key.externalfn(v, x0)
