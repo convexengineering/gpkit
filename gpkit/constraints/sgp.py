@@ -250,7 +250,7 @@ class SequentialGeometricProgram(CostedConstraintSet):
         self._numgpconstrs = len(gp.hmaps) - len(spapproxs)
         return gp
 
-    def gp(self, x0=None, mutategp=False, **kwargs):
+    def gp(self, x0=None, mutategp=False):
         "The GP approximation of this SP at x0."
         if mutategp:
             if not self.gps:
@@ -268,7 +268,7 @@ class SequentialGeometricProgram(CostedConstraintSet):
             gp.gen()
         else:
             x0 = self._fill_x0(x0)
-            gp_constrs = self.as_gpconstr(x0, kwargs)
+            gp_constrs = self.as_gpconstr(x0)
             if self.externalfn_vars:
                 for v in self.externalfn_vars:
                     posyconstr = v.key.externalfn(v, x0)
