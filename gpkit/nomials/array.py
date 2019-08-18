@@ -69,7 +69,6 @@ class NomialArray(GPkitObject, np.ndarray):
         out.ast = ("mul", astorder)
         return out
 
-
     def __div__(self, other, rev=False):
         astorder = (self, other)
         if rev:
@@ -78,11 +77,21 @@ class NomialArray(GPkitObject, np.ndarray):
         out.ast = ("div", astorder)
         return out
 
+    def __truediv__(self, other, rev=False):
+        astorder = (self, other)
+        if rev:
+            astorder = tuple(reversed(astorder))
+        out = NomialArray(np.ndarray.__truediv__(self, other))
+        out.ast = ("div", astorder)
+        return out
+
     def __rdiv__(self, other):
         astorder = (other, self)
         out = (np.ndarray.__mul__(self**-1, other))
         out.ast = ("div", astorder)
         return out
+
+    __rtruediv__ = __rdiv__
 
     def __add__(self, other, rev=False):
         astorder = (self, other)
