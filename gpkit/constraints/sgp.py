@@ -77,6 +77,8 @@ class SequentialGeometricProgram(CostedConstraintSet):
     solutions and can be solved with 'Model.solve()'.""")
 
     # pylint: disable=too-many-locals
+    # pylint: disable=too-many-arguments
+    # pylint: disable=too-many-statements
     def localsolve(self, solver=None, verbosity=1, x0=None, reltol=1e-4,
                    iteration_limit=50, mutategp=True, relax=False, **kwargs):
         """Locally solves a SequentialGeometricProgram and returns the solution.
@@ -119,25 +121,9 @@ class SequentialGeometricProgram(CostedConstraintSet):
         self.solver_outs = []
         self._results = []
         if relax:
-            self.relax = True
-            print("Using penalty CCP...")
-            signomials = []
-            gp_constrs = []
-            for constr in self.flat(constraintsets=False):
-                if isinstance(constr, (SingleSignomialEquality,
-                                       SignomialInequality)):
-                    signomials.append(constr)
-                else:
-                    gp_constrs.append(constr)
-            slack = VectorVariable(len(signomials))
-            with SignomialsEnabled():
-                relaxed_signomials = [constr.relaxed(slack[i])
-                                      for i, constr in enumerate(signomials)]
-            relaxed_obj = self.cost*np.prod(slack)**20.
-            relaxed_model = SequentialGeometricProgram(relaxed_obj,
-                                                       [gp_constrs,
-                                                        relaxed_signomials],
-                                                       self.substitutions)
+            if verbosity > 0:
+                print("Using penalty CCP...")
+            relaxed_model = self.penalty_ccp()
             self.result = relaxed_model.localsolve(solver, verbosity,
                                                    x0, reltol, iteration_limit,
                                                    mutategp, **kwargs)
@@ -279,3 +265,24 @@ class SequentialGeometricProgram(CostedConstraintSet):
             gp = GeometricProgram(self.cost, gp_constrs, self.substitutions)
             gp.x0 = x0  # NOTE: SIDE EFFECTS
         return gp
+
+    def penalty_ccp(self):
+        "Returns the penalty convex-concave form of this SP."
+        signomials = []
+        gp_constrs = []
+        for constr in self.flat(constraintsets=False):
+            if isinstance(constr, (SingleSignomialEquality,
+                                   SignomialInequality)):
+                signomials.append(constr)
+            else:
+                gp_constrs.append(constr)
+        slack = VectorVariable(len(signomials))
+        with SignomialsEnabled():
+            relaxed_signomials = [[constr.relaxed(slack[i]), slack[i] >= 1]
+                                  for i, constr in enumerate(signomials)]
+        relaxed_obj = self.cost*np.prod(slack)**10.
+        relaxed_model = SequentialGeometricProgram(relaxed_obj,
+                                                   [gp_constrs,
+                                                    relaxed_signomials],
+                                                   self.substitutions)
+        return relaxed_model
