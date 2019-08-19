@@ -124,20 +124,23 @@ class SequentialGeometricProgram(CostedConstraintSet):
             signomials = []
             gp_constrs = []
             for constr in self.flat(constraintsets=False):
-                if isinstance(constr, (SingleSignomialEquality, \
+                if isinstance(constr, (SingleSignomialEquality,
                                        SignomialInequality)):
                     signomials.append(constr)
                 else:
                     gp_constrs.append(constr)
             slack = VectorVariable(len(signomials))
             with SignomialsEnabled():
-                relaxed_signomials = [constr.relaxed(slack[i]) \
+                relaxed_signomials = [constr.relaxed(slack[i])
                                       for i, constr in enumerate(signomials)]
             relaxed_obj = self.cost*np.prod(slack)**20.
             relaxed_model = SequentialGeometricProgram(relaxed_obj,
-                            [gp_constrs, relaxed_signomials], self.substitutions)
-            self.result = relaxed_model.localsolve(solver, verbosity, x0,
-                          reltol, iteration_limit, mutategp, **kwargs)
+                                                       [gp_constrs,
+                                                        relaxed_signomials],
+                                                       self.substitutions)
+            self.result = relaxed_model.localsolve(solver, verbosity,
+                                                   x0, reltol, iteration_limit,
+                                                   mutategp, **kwargs)
             self.gps = relaxed_model.gps
             return self.result
         # if there's external functions we can't mutate the GP
