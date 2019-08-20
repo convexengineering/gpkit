@@ -266,7 +266,7 @@ class SequentialGeometricProgram(CostedConstraintSet):
             gp.x0 = x0  # NOTE: SIDE EFFECTS
         return gp
 
-    def penalty_ccp(self):
+    def penalty_ccp(self, exp=10.):
         "Returns the penalty convex-concave form of this SP."
         signomials = []
         gp_constrs = []
@@ -280,7 +280,7 @@ class SequentialGeometricProgram(CostedConstraintSet):
         with SignomialsEnabled():
             relaxed_signomials = [[constr.relaxed(slack[i]), slack[i] >= 1]
                                   for i, constr in enumerate(signomials)]
-        relaxed_obj = self.cost*np.prod(slack)**10.
+        relaxed_obj = self.cost*np.prod(slack)**exp
         relaxed_model = SequentialGeometricProgram(relaxed_obj,
                                                    [gp_constrs,
                                                     relaxed_signomials],
