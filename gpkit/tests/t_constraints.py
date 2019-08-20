@@ -369,8 +369,8 @@ class TestLocalsolve(unittest.TestCase):
             m = Model(1/z, [z <= x**2 + y, x*z == 2])
         sol = m.localsolve(verbosity=0)
         m.program.relax = True
-        sol_pccp = m.localsolve(verbosity=2, relax=True)
-        self.assertEqual(m.program.gps[-1].varkeys, 3)
+        sol_pccp = m.localsolve(verbosity=0, relax=True)
+        self.assertEqual(len(m.program.gps[-1].varkeys), 3)
         self.assertAlmostEqual(sol['cost'], sol_pccp['cost'])
 
 TESTS = [TestConstraint, TestMonomialEquality, TestSignomialInequality,
