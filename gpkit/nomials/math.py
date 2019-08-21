@@ -49,8 +49,15 @@ class Signomial(Nomial):
             elif isinstance(hmap, Strings):
                 hmap = VarKey(hmap, **descr).hmap
             elif isinstance(hmap, dict):
-                exp = HashVector({VarKey(k): v
-                                  for k, v in hmap.items() if v})
+                exp = HashVector()
+                for k, v in hmap.items():
+                    if isinstance(k, str):
+                        exp.update({VarKey(k): v})
+                    elif isinstance(k, VarKey):
+                        exp.update({k: v})
+                    else:
+                        raise ValueError("%s must be of type str or VarKey"
+                                         "in nomial __init__. " % k)
                 hmap = NomialMap({exp: mag(cs)})
                 hmap.units_of_product(cs)
         super(Signomial, self).__init__(hmap)
