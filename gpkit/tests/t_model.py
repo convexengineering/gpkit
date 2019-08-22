@@ -680,8 +680,9 @@ class SPThing(Model):
         y = Variable("y", 2.)
         z = Variable("z")
         with SignomialsEnabled():
-            m = Model(1/z, [z <= x**2 + y, x*z == 2])
-        return m
+            constraints = [z <= x**2 + y, x*z == 2]
+        self.cost = 1/z
+        return constraints
 
 class Box(Model):
     """simple box for model testing
