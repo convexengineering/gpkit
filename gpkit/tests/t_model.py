@@ -680,7 +680,7 @@ class SPThing(Model):
         y = Variable("y", 2.)
         z = Variable("z")
         with SignomialsEnabled():
-            m = Model(1/z, [z <= x**2 + y, x*z == 2])
+            m = Model(1/z, [z <= x**0.5 + y, x*z == 2])
         return m
 
 class Box(Model):
