@@ -358,22 +358,8 @@ class TestBounded(unittest.TestCase):
         sol = bm.solve(verbosity=0)
         self.assertAlmostEqual(sol["cost"], 1.0)
 
-class TestLocalsolve(unittest.TestCase):
-    """Test different SP solution methods"""
-
-    def test_penalty_ccp(self):
-        x = Variable("x")
-        y = Variable("y", 2.)
-        z = Variable("z")
-        with SignomialsEnabled():
-            m = Model(1/z, [z <= x**2 + y, x*z == 2])
-        sol = m.localsolve(verbosity=0)
-        sol_pccp = m.penalty_ccp_solve(verbosity=0)
-        self.assertEqual(len(m.program.gps[-1].varkeys), 3)
-        self.assertAlmostEqual(sol['cost'], sol_pccp['cost'])
-
 TESTS = [TestConstraint, TestMonomialEquality, TestSignomialInequality,
-         TestTight, TestLoose, TestBounded, TestLocalsolve]
+         TestTight, TestLoose, TestBounded]
 
 if __name__ == '__main__':
     run_tests(TESTS)
