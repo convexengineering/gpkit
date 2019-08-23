@@ -39,8 +39,8 @@ class TestGP(unittest.TestCase):
 
         The global optimum is (x, y) = (sqrt(2), 1/sqrt(2)).
         """
-        x = Monomial('x')
-        y = Monomial('y')
+        x = Variable('x')
+        y = Variable('y')
         prob = Model(cost=(x + 2*y),
                      constraints=[x*y >= 1])
         sol = prob.solve(solver=self.solver, verbosity=0)

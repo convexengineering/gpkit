@@ -44,15 +44,14 @@ class Signomial(Nomial):
                 hmap_ = NomialMap([(EMPTY_HV, mag(hmap))])
                 hmap_.units_of_product(hmap)
                 hmap = hmap_
-            elif hmap is None:
-                hmap = VarKey(**descr).hmap
-            elif isinstance(hmap, Strings):
-                hmap = VarKey(hmap, **descr).hmap
             elif isinstance(hmap, dict):
-                exp = HashVector({VarKey(k): v
-                                  for k, v in hmap.items() if v})
+                exp = HashVector({VarKey(k): v for k, v in hmap.items() if v})
                 hmap = NomialMap({exp: mag(cs)})
                 hmap.units_of_product(cs)
+            else:
+                raise ValueError("Nomial construction accepts only NomialMaps,"
+                                 " objects with an .hmap attribute, numbers,"
+                                 " or *(exp dict of strings, number).")
         super(Signomial, self).__init__(hmap)
         if self.any_nonpositive_cs:
             if require_positive and not SignomialsEnabled:

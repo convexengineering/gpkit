@@ -2,7 +2,7 @@
 import unittest
 import sys
 import numpy as np
-from gpkit import Monomial, Posynomial, NomialArray, VectorVariable
+from gpkit import Variable, Posynomial, NomialArray, VectorVariable, Monomial
 import gpkit
 
 if sys.version_info >= (3, 0):
@@ -26,9 +26,9 @@ class TestNomialArray(unittest.TestCase):
 
     def test_array_mult(self):
         x = VectorVariable(3, 'x', label='dummy variable')
-        x_0 = Monomial('x', idx=(0,), shape=(3,), label='dummy variable')
-        x_1 = Monomial('x', idx=(1,), shape=(3,), label='dummy variable')
-        x_2 = Monomial('x', idx=(2,), shape=(3,), label='dummy variable')
+        x_0 = Variable('x', idx=(0,), shape=(3,), label='dummy variable')
+        x_1 = Variable('x', idx=(1,), shape=(3,), label='dummy variable')
+        x_2 = Variable('x', idx=(2,), shape=(3,), label='dummy variable')
         p = x_0**2 + x_1**2 + x_2**2
         self.assertEqual(x.dot(x), p)
         m = NomialArray([[x_0**2, x_0*x_1, x_0*x_2],
@@ -37,11 +37,11 @@ class TestNomialArray(unittest.TestCase):
         self.assertEqual(x.outer(x), m)
 
     def test_elementwise_mult(self):
-        m = Monomial('m')
+        m = Variable('m')
         x = VectorVariable(3, 'x', label='dummy variable')
-        x_0 = Monomial('x', idx=(0,), shape=(3,), label='dummy variable')
-        x_1 = Monomial('x', idx=(1,), shape=(3,), label='dummy variable')
-        x_2 = Monomial('x', idx=(2,), shape=(3,), label='dummy variable')
+        x_0 = Variable('x', idx=(0,), shape=(3,), label='dummy variable')
+        x_1 = Variable('x', idx=(1,), shape=(3,), label='dummy variable')
+        x_2 = Variable('x', idx=(2,), shape=(3,), label='dummy variable')
         # multiplication with numbers
         v = NomialArray([2, 2, 3]).T
         p = NomialArray([2*x_0, 2*x_1, 3*x_2]).T
@@ -65,9 +65,9 @@ class TestNomialArray(unittest.TestCase):
 
     def test_constraint_gen(self):
         x = VectorVariable(3, 'x', label='dummy variable')
-        x_0 = Monomial('x', idx=(0,), shape=(3,), label='dummy variable')
-        x_1 = Monomial('x', idx=(1,), shape=(3,), label='dummy variable')
-        x_2 = Monomial('x', idx=(2,), shape=(3,), label='dummy variable')
+        x_0 = Variable('x', idx=(0,), shape=(3,), label='dummy variable')
+        x_1 = Variable('x', idx=(1,), shape=(3,), label='dummy variable')
+        x_2 = Variable('x', idx=(2,), shape=(3,), label='dummy variable')
         v = NomialArray([1, 2, 3]).T
         p = [x_0, x_1/2, x_2/3]
         self.assertEqual((x <= v).as_posyslt1(), p)
