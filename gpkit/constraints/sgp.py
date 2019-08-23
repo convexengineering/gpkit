@@ -49,7 +49,6 @@ class SequentialGeometricProgram(CostedConstraintSet):
         self.gps = []
         self.solver_outs = []
         self._results = []
-        self.solve_method = None
         self.result = None
         self._spconstrs = []
         self._spvars = set()
@@ -117,7 +116,6 @@ class SequentialGeometricProgram(CostedConstraintSet):
         self.gps = []  # NOTE: SIDE EFFECTS
         self.solver_outs = []
         self._results = []
-        self.solve_method = 'localsolve'
         # if there's external functions we can't mutate the GP
         mutategp = mutategp and not self.externalfns
         if x0 and not mutategp:
@@ -189,9 +187,8 @@ class SequentialGeometricProgram(CostedConstraintSet):
                 exp : float (optional)
             Sets penalty for violated signomial constraints
         """
-        self.solve_method = 'penalty_ccp_solve'
         if verbosity > 0:
-            print("Using penalty CCP...")
+            print("Applying penalty CCP transformation...")
         relaxed_model = self.penalty_ccp(exp=exp)
         self.result = relaxed_model.localsolve(solver, verbosity,
                                                x0, reltol, iteration_limit,
