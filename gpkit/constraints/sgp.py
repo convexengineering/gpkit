@@ -9,7 +9,7 @@ from ..nomials import Variable, VectorVariable
 from .gp import GeometricProgram
 from ..nomials import SignomialInequality, PosynomialInequality
 from ..nomials import SingleSignomialEquality
-from .. import SignomialsEnabled
+from .. import SignomialsEnabled, NamedVariables
 from .costed import CostedConstraintSet
 from ..small_scripts import mag
 
@@ -282,7 +282,8 @@ class SequentialGeometricProgram(CostedConstraintSet):
                 signomials.append(constr)
             else:
                 gp_constrs.append(constr)
-        slack = VectorVariable(len(signomials), 's')
+        with NamedVariables("PCCP"):
+            slack = VectorVariable(len(signomials), "s")
         with SignomialsEnabled():
             relaxed_signomials = [[constr.relaxed(slack[i]), slack[i] >= 1]
                                   for i, constr in enumerate(signomials)]
