@@ -358,7 +358,6 @@ class TestBounded(unittest.TestCase):
         sol = bm.solve(verbosity=0)
         self.assertAlmostEqual(sol["cost"], 1.0)
 
-
 TESTS = [TestConstraint, TestMonomialEquality, TestSignomialInequality,
          TestTight, TestLoose, TestBounded]
 
