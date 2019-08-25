@@ -234,6 +234,7 @@ class TestSignomial(unittest.TestCase):
         self.assertRaises(TypeError, lambda: x-y)
 
     def test_chop(self):
+        "Test Signomial deconstruction"
         x = Variable('x')
         y = Variable('y')
         with SignomialsEnabled():
