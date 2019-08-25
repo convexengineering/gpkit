@@ -7,7 +7,7 @@ from .array import NomialArray
 from .. import units
 from ..constraints import SingleEquationConstraint
 from ..globals import SignomialsEnabled
-from ..small_classes import Strings, Numbers
+from ..small_classes import Numbers
 from ..small_classes import HashVector, EMPTY_HV
 from ..varkey import VarKey
 from ..small_scripts import mag
@@ -36,7 +36,7 @@ class Signomial(Nomial):
     """
     _c = _exp = None  # pylint: disable=invalid-name
 
-    def __init__(self, hmap=None, cs=1, require_positive=True, **descr):  # pylint: disable=too-many-statements,too-many-branches
+    def __init__(self, hmap=None, cs=1, require_positive=True):  # pylint: disable=too-many-statements,too-many-branches
         if not isinstance(hmap, NomialMap):
             if hasattr(hmap, "hmap"):
                 hmap = hmap.hmap
