@@ -233,6 +233,17 @@ class TestSignomial(unittest.TestCase):
             self.assertEqual((1 - x/y**2).latex(), "-\\frac{x}{y^{2}} + 1")
         self.assertRaises(TypeError, lambda: x-y)
 
+    def test_chop(self):
+        x = Variable('x')
+        y = Variable('y')
+        with SignomialsEnabled():
+            c = x + 5.*y**2 - 0.2*x*y**0.78
+            monomials = c.chop()
+        with self.assertRaises(InvalidPosynomial):
+            c.chop()
+        with SignomialsEnabled():
+            self.assertIn(-0.2*x*y**0.78, monomials)
+
     def test_mult(self):
         "Test Signomial multiplication"
         x = Variable("x")
