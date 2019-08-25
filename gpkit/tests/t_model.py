@@ -2,7 +2,7 @@
 import unittest
 import sys
 import numpy as np
-from gpkit import (Model, Monomial, settings, VectorVariable, Variable,
+from gpkit import (Model, settings, VectorVariable, Variable,
                    SignomialsEnabled, ArrayVariable, SignomialEquality)
 from gpkit.constraints.bounded import Bounded
 from gpkit.small_classes import CootMatrix
