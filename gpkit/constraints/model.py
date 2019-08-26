@@ -82,6 +82,8 @@ class Model(CostedConstraintSet):
     solve = _solve_fctry(_progify_fctry(GeometricProgram, "solve"))
     localsolve = _solve_fctry(_progify_fctry(SequentialGeometricProgram,
                                              "localsolve"))
+    penalty_ccp_solve = _solve_fctry(_progify_fctry(SequentialGeometricProgram,
+                                                    "penalty_ccp_solve"))
 
     def verify_docstring(self):  # pylint:disable=too-many-locals,too-many-branches,too-many-statements
         "Verifies docstring bounds are sufficient but not excessive."
