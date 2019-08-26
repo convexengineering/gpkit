@@ -262,6 +262,12 @@ class Signomial(Nomial):
     def __rsub__(self, other):
         return other + -self if SignomialsEnabled else NotImplemented  # pylint: disable=using-constant-test
 
+    def chop(self):
+        "Returns a list of monomials in the signomial."
+        monmaps = [NomialMap({exp: c}) for exp, c in self.hmap.items()]
+        for monmap in monmaps:
+            monmap.units = self.hmap.units
+        return [Monomial(monmap) for monmap in monmaps]
 
 class Posynomial(Signomial):
     "A Signomial with strictly positive cs"
