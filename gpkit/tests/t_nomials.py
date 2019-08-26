@@ -28,7 +28,7 @@ class TestMonomial(unittest.TestCase):
         self.assertEqual(m, m2)
 
         # default c and a
-        m = Monomial('x')
+        m = Variable('x')
         x, = m.varkeys["x"]
         self.assertEqual(m.varlocs, {x: [0]})
         self.assertEqual(m.exp, {x: 1})
@@ -53,24 +53,26 @@ class TestMonomial(unittest.TestCase):
         self.assertRaises(InvalidPosynomial, Monomial, 0)
         self.assertRaises(InvalidPosynomial, Monomial, 0.0)
 
-        # can create nameless Monomials
-        x1 = Monomial()
-        x2 = Monomial()
-        V = Monomial('V')
-        vel = Monomial('V')
+        # can create nameless Variables
+        x1 = Variable()
+        x2 = Variable()
+        V = Variable('V')
+        vel = Variable('V')
         self.assertNotEqual(x1, x2)
         self.assertEqual(V, vel)
 
         # test label kwarg
-        x = Monomial('x', label='dummy variable')
+        x = Variable('x', label='dummy variable')
         self.assertEqual(list(x.exp)[0].descr['label'], 'dummy variable')
 
     def test_repr(self):
         "Simple tests for __repr__, which prints more than str"
-        m = Monomial({'x': 2, 'y': -1}, 5)
+        x = Variable("x")
+        y = Variable("y")
+        m = 5*x**2/y
         r = m.__repr__()
         self.assertEqual(type(r), unicode)
-        self.assertEqual(Monomial('x').__repr__(), 'gpkit.Monomial(x)')
+        self.assertEqual(repr(m), 'gpkit.Monomial(5*x^2/y)')
 
     def test_latex(self):
         "Test latex string creation"
@@ -89,8 +91,8 @@ class TestMonomial(unittest.TestCase):
         self.assertTrue('S' in xstr and 'rho' in xstr)
 
     def test_add(self):
-        x = Monomial("x")
-        y = Monomial("y", units="ft")
+        x = Variable("x")
+        y = Variable("y", units="ft")
         if gpkit.units:
             with self.assertRaises(gpkit.DimensionalityError):
                 _ = x + y
@@ -98,12 +100,12 @@ class TestMonomial(unittest.TestCase):
     def test_eq_ne(self):
         "Test equality and inequality comparators"
         # simple one
-        x = Monomial('x')
-        y = Monomial('y')
+        x = Variable('x')
+        y = Variable('y')
         self.assertNotEqual(x, y)
         self.assertFalse(x == y)
 
-        xx = Monomial('x')
+        xx = Variable('x')
         self.assertEqual(x, xx)
         self.assertFalse(x != xx)
 
@@ -127,15 +129,15 @@ class TestMonomial(unittest.TestCase):
         self.assertEqual(Monomial(3), 3)
         self.assertEqual(Monomial(3), Monomial(3))
         self.assertNotEqual(Monomial(3), 2)
-        self.assertNotEqual(Monomial('x'), 3)
-        self.assertNotEqual(Monomial(3), Monomial('x'))
+        self.assertNotEqual(Variable('x'), 3)
+        self.assertNotEqual(Monomial(3), Variable('x'))
 
     def test_div(self):
         "Test Monomial division"
-        x = Monomial('x')
-        y = Monomial('y')
-        z = Monomial('z')
-        t = Monomial('t')
+        x = Variable('x')
+        y = Variable('y')
+        z = Variable('z')
+        t = Variable('t')
         a = 36*x/y
         # sanity check
         self.assertEqual(a, Monomial({'x': 1, 'y': -1}, 36))
@@ -158,7 +160,7 @@ class TestMonomial(unittest.TestCase):
         # divide by scalar
         self.assertEqual(x*9, Monomial({'x': 1, 'y': -1}, 36))
         # divide by Monomial
-        y = x * Monomial('z')
+        y = x * Variable('z')
         self.assertEqual(y, Monomial({'x': 1, 'y': -1, 'z': 1}, 4))
         # make sure x unchanged
         self.assertEqual(x, Monomial({'x': 1, 'y': -1}, 4))
@@ -166,9 +168,9 @@ class TestMonomial(unittest.TestCase):
         z = x * Monomial({'x': -1, 't': 2}, .5)
         self.assertEqual(z, Monomial({'x': 0, 'y': -1, 't': 2}, 2))
 
-        x0 = Monomial('x0')
+        x0 = Variable('x0')
         self.assertEqual(0.0, 0.0*x0)
-        x1 = Monomial('x1')
+        x1 = Variable('x1')
         n_hat = [1, 0]
         p = n_hat[0]*x0 + n_hat[1]*x1
         self.assertEqual(p, x0)
@@ -226,8 +228,8 @@ class TestSignomial(unittest.TestCase):
 
     def test_init(self):
         "Test Signomial construction"
-        x = Monomial('x')
-        y = Monomial('y')
+        x = Variable('x')
+        y = Variable('y')
         with SignomialsEnabled():
             self.assertEqual(str(1 - x - y**2 - 1), "1 - x - y^2 - 1")
             self.assertEqual((1 - x/y**2).latex(), "-\\frac{x}{y^{2}} + 1")
@@ -273,10 +275,10 @@ class TestPosynomial(unittest.TestCase):
 
     def test_init(self):
         "Test Posynomial construction"
-        x = Monomial('x')
-        y = Monomial('y')
+        x = Variable('x')
+        y = Variable('y')
         ms = [Monomial({'x': 1, 'y': 2}, 3.14),
-              0.5*Monomial('y'),
+              0.5*Variable('y'),
               Monomial({'x': 3, 'y': 1}, 6),
               Monomial(2)]
         exps, cs = [], []
@@ -335,8 +337,8 @@ class TestPosynomial(unittest.TestCase):
 
     def test_simplification(self):
         "Make sure like monomial terms get automatically combined"
-        x = Monomial('x')
-        y = Monomial('y')
+        x = Variable('x')
+        y = Variable('y')
         p1 = x + y + y + (x+y) + (y+x**2) + 3*x
         p2 = 4*y + x**2 + 5*x
         # ps1 = [list(exp.keys())for exp in p1.exps]
@@ -346,8 +348,8 @@ class TestPosynomial(unittest.TestCase):
 
     def test_posyposy_mult(self):
         "Test multiplication of Posynomial with Posynomial"
-        x = Monomial('x')
-        y = Monomial('y')
+        x = Variable('x')
+        y = Variable('y')
         p1 = x**2 + 2*y*x + y**2
         p2 = (x+y)**2
         # ps1 = [list(exp.keys())for exp in p1.exps]
@@ -363,16 +365,16 @@ class TestPosynomial(unittest.TestCase):
 
     def test_constraint_gen(self):
         "Test creation of Constraints via operator overloading"
-        x = Monomial('x')
-        y = Monomial('y')
+        x = Variable('x')
+        y = Variable('y')
         p = x**2 + 2*y*x + y**2
         self.assertEqual((p <= 1).as_posyslt1(), [p])
         self.assertEqual((p <= x).as_posyslt1(), [p/x])
 
     def test_integer_division(self):
         "Make sure division by integer doesn't use Python integer division"
-        x = Monomial('x')
-        y = Monomial('y')
+        x = Variable('x')
+        y = Variable('y')
         p = 4*x + y
         self.assertEqual(p/3, p/3.)
         equiv1 = all((p/3).cs == [1./3., 4./3.])
