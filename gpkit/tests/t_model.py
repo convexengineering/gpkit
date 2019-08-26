@@ -2,7 +2,7 @@
 import unittest
 import sys
 import numpy as np
-from gpkit import (Model, Monomial, settings, VectorVariable, Variable,
+from gpkit import (Model, settings, VectorVariable, Variable,
                    SignomialsEnabled, ArrayVariable, SignomialEquality)
 from gpkit.constraints.bounded import Bounded
 from gpkit.small_classes import CootMatrix
@@ -39,8 +39,8 @@ class TestGP(unittest.TestCase):
 
         The global optimum is (x, y) = (sqrt(2), 1/sqrt(2)).
         """
-        x = Monomial('x')
-        y = Monomial('y')
+        x = Variable('x')
+        y = Variable('y')
         prob = Model(cost=(x + 2*y),
                      constraints=[x*y >= 1])
         sol = prob.solve(solver=self.solver, verbosity=0)

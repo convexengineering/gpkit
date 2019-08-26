@@ -7,7 +7,7 @@ from .array import NomialArray
 from .. import units
 from ..constraints import SingleEquationConstraint
 from ..globals import SignomialsEnabled
-from ..small_classes import Strings, Numbers
+from ..small_classes import Numbers
 from ..small_classes import HashVector, EMPTY_HV
 from ..varkey import VarKey
 from ..small_scripts import mag
@@ -36,7 +36,7 @@ class Signomial(Nomial):
     """
     _c = _exp = None  # pylint: disable=invalid-name
 
-    def __init__(self, hmap=None, cs=1, require_positive=True, **descr):  # pylint: disable=too-many-statements,too-many-branches
+    def __init__(self, hmap=None, cs=1, require_positive=True):  # pylint: disable=too-many-statements,too-many-branches
         if not isinstance(hmap, NomialMap):
             if hasattr(hmap, "hmap"):
                 hmap = hmap.hmap
@@ -44,15 +44,14 @@ class Signomial(Nomial):
                 hmap_ = NomialMap([(EMPTY_HV, mag(hmap))])
                 hmap_.units_of_product(hmap)
                 hmap = hmap_
-            elif hmap is None:
-                hmap = VarKey(**descr).hmap
-            elif isinstance(hmap, Strings):
-                hmap = VarKey(hmap, **descr).hmap
             elif isinstance(hmap, dict):
-                exp = HashVector({VarKey(k): v
-                                  for k, v in hmap.items() if v})
+                exp = HashVector({VarKey(k): v for k, v in hmap.items() if v})
                 hmap = NomialMap({exp: mag(cs)})
                 hmap.units_of_product(cs)
+            else:
+                raise ValueError("Nomial construction accepts only NomialMaps,"
+                                 " objects with an .hmap attribute, numbers,"
+                                 " or *(exp dict of strings, number).")
         super(Signomial, self).__init__(hmap)
         if self.any_nonpositive_cs:
             if require_positive and not SignomialsEnabled:
