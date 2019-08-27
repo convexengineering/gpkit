@@ -39,6 +39,10 @@ def unitstr(units, into="%s", options=UNIT_FORMATTING, dimless=""):
 def strify(val, excluded):
     "Turns a value into as pretty a string as possible."
     if isinstance(val, Numbers):
+        isqty = hasattr(val, "magnitude")
+        if isqty:
+            units = val
+            val = val.magnitude
         if (val > np.pi/12 and val < 100*np.pi       # within bounds?
                 and abs(12*val/np.pi % 1) <= 1e-2):  # nice multiple of PI?
             if val > 3.1:                            # product of PI
@@ -49,6 +53,8 @@ def strify(val, excluded):
                 val = "(%s/%.3g)" % (PI_STR, np.pi/val)
         else:
             val = "%.3g" % val
+        if isqty:
+            val += unitstr(units, " [%s]")
     else:
         val = try_str_without(val, excluded)
     return val
