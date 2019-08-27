@@ -12,7 +12,7 @@ import shutil
 import tempfile
 import errno
 import stat
-from subprocess import check_output
+from subprocess import check_output, CalledProcessError
 from .. import settings
 
 
@@ -84,9 +84,12 @@ def imize_fn(path=None, clearfiles=True):
 
         # run mskexpopt and print stdout
         solution_filename = filename + ".sol"
-        for logline in check_output(["mskexpopt", filename,
-                                     "-sol", solution_filename]).split(b"\n"):
-            print(logline)
+        try:
+            for logline in check_output(["mskexpopt", filename, "-sol",
+                                         solution_filename]).split(b"\n"):
+                print(logline)
+        except CalledProcessError as e:
+            raise RuntimeWarning(str(e))
         with open(solution_filename) as f:
             status = f.readline().split("PROBLEM STATUS      : ")
             if len(status) != 2:
