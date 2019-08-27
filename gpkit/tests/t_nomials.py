@@ -64,6 +64,9 @@ class TestMonomial(unittest.TestCase):
         # test label kwarg
         x = Variable('x', label='dummy variable')
         self.assertEqual(list(x.exp)[0].descr['label'], 'dummy variable')
+        _ = hash(m)
+        _ = hash(x)
+        _ = hash(Monomial(x))
 
     def test_repr(self):
         "Simple tests for __repr__, which prints more than str"
@@ -233,6 +236,7 @@ class TestSignomial(unittest.TestCase):
         with SignomialsEnabled():
             self.assertEqual(str(1 - x - y**2 - 1), "1 - x - y^2 - 1")
             self.assertEqual((1 - x/y**2).latex(), "-\\frac{x}{y^{2}} + 1")
+            _ = hash(1 - x/y**2)
         self.assertRaises(TypeError, lambda: x-y)
 
     def test_chop(self):
@@ -292,6 +296,7 @@ class TestPosynomial(unittest.TestCase):
         p2 = 3.14*x*y**2 + y/2 + x**3*6*y + 2
         self.assertEqual(p, p2)
         self.assertEqual(p, sum(ms))
+        _ = hash(p2)
 
         hmap = NomialMap({HashVector({'m': 1, 'v': 2}): 0.5,
                           HashVector({'m': 1, 'g': 1, 'h': 1}): 1})
