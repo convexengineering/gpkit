@@ -1,15 +1,19 @@
 """Test substitution capability across gpkit"""
 import unittest
+import sys
 import numpy as np
 import numpy.testing as npt
 from ad import adnumber, ADV
 import gpkit
-from gpkit import SignomialsEnabled, reset_modelnumbers
+from gpkit import SignomialsEnabled, NamedVariables
 from gpkit import Variable, VectorVariable, Model, Signomial
 from gpkit.small_scripts import mag
 from gpkit.tests.helpers import run_tests
 
 # pylint: disable=invalid-name,attribute-defined-outside-init,unused-variable
+
+if sys.version_info >= (3, 0):
+    unicode = str  # pylint:disable=redefined-builtin,invalid-name
 
 
 class TestNomialSubs(unittest.TestCase):
@@ -28,6 +32,7 @@ class TestNomialSubs(unittest.TestCase):
                     return c[y]+np.array([1, 2, 3])
                 self.x = x = VectorVariable(3, "x", vectorlink)
         m = VectorLinked()
+        self.assertEqual(m.substitutions[m.x[0].key](m.substitutions), 2)
         self.assertEqual(m.gp().substitutions[m.x[0].key], 2)
         self.assertEqual(m.gp().substitutions[m.x[1].key], 3)
         self.assertEqual(m.gp().substitutions[m.x[2].key], 4)
@@ -40,44 +45,12 @@ class TestNomialSubs(unittest.TestCase):
         self.assertEqual(p.sub({x.key: 3}), 9)
         self.assertEqual(p.sub({"x": 3}), 9)
 
-    def test_basic(self):
-        """Basic substitution, symbolic"""
-        x = Variable('x')
-        y = Variable('y')
-        p = 1 + x**2
-        q = p.sub({x: y**2})
-        self.assertEqual(q, 1 + y**4)
-        self.assertEqual(x.sub({x: y}), y)
-
-    def test_scalar_units(self):
-        x = Variable("x", "m")
-        xvk = x.key
-        y = Variable("y", "km")
-        yvk = y.key
-        units_exist = bool(x.units)
-        for x_ in ["x", xvk, x]:
-            for y_ in [yvk, y]:
-                if not isinstance(y_, str) and units_exist:
-                    expected = 1000.0
-                else:
-                    expected = 1.0
-                self.assertAlmostEqual(expected, mag(x.sub({x_: y_}).c))
-        if units_exist:
-            z = Variable("z", "s")
-            self.assertRaises(ValueError, y.sub, {y: z})
-
     def test_dimensionless_units(self):
         x = Variable('x', 3, 'ft')
         y = Variable('y', 1, 'm')
         if x.units is not None:
             # units are enabled
             self.assertAlmostEqual((x/y).value, 0.9144)
-
-    def test_unitless_monomial_sub(self):
-        "Tests that dimensionless and undimensioned subs can interact."
-        x = Variable("x", "-")
-        y = Variable("y")
-        self.assertEqual(x.sub({x: y}), y)
 
     def test_vector(self):
         x = Variable("x")
@@ -99,14 +72,11 @@ class TestNomialSubs(unittest.TestCase):
         y = Variable('y')
         m = x*y**2
         self.assertEqual(x.sub(3), 3)
-        self.assertEqual(x.sub(y), y)
-        self.assertEqual(x.sub(m), m)
         # make sure x was not mutated
         self.assertEqual(x, Variable('x'))
         self.assertNotEqual(x.sub(3), Variable('x'))
         # also make sure the old way works
         self.assertEqual(x.sub({x: 3}), 3)
-        self.assertEqual(x.sub({x: y}), y)
         # and for vectors
         xvec = VectorVariable(3, 'x')
         self.assertEqual(xvec[1].sub(3), 3)
@@ -125,23 +95,11 @@ class TestNomialSubs(unittest.TestCase):
             subbed = sc.sub({a: 2.0})
             self.assertTrue(isinstance(subbed, Signomial))
             self.assertEqual(subbed, 2*x - y - D)
+            _ = a.sub({a: -1}).value  # fix monomial assumptions
 
 
 class TestModelSubs(unittest.TestCase):
     """Test substitution for Model objects"""
-
-    def test_bad_subinplace(self):
-        x = Variable("x")
-        y = Variable("y")
-        z = Variable("z")
-        # good
-        m = Model(x*y, [x >= 1, y >= z], {z: 2})
-        m.subinplace({y: x})
-        self.assertAlmostEqual(m.solve(verbosity=0)["cost"], 4, 5)
-        # bad
-        m = Model(x, [y >= 1], {y: 2})
-        with self.assertRaises((KeyError, ValueError)):
-            m.subinplace({y: 3})
 
     def test_bad_gp_sub(self):
         x = Variable("x")
@@ -149,9 +107,6 @@ class TestModelSubs(unittest.TestCase):
         m = Model(x, [y >= 1], {y: x})
         with self.assertRaises(ValueError):
             m.solve()
-        m = Model(x, [y >= 1])
-        m.subinplace({y: x})
-        self.assertAlmostEqual(m.solve(verbosity=0)["cost"], 1)
 
     def test_quantity_sub(self):
         if gpkit.units:
@@ -178,8 +133,8 @@ class TestModelSubs(unittest.TestCase):
 
     def test_phantoms(self):
         x = Variable("x")
-        x_ = Variable("x", 1, models=["test"])
-        xv = VectorVariable(2, "x", [1, 1], models=["vec"])
+        x_ = Variable("x", 1, lineage=[("test", 0)])
+        xv = VectorVariable(2, "x", [1, 1], lineage=[("vec", 0)])
         m = Model(x, [x >= x_, x_ == xv.prod()])
         m.solve(verbosity=0)
         with self.assertRaises(ValueError):
@@ -228,25 +183,35 @@ class TestModelSubs(unittest.TestCase):
         sol.table()
         self.assertEqual(len(sol), 1)
 
-        m.substitutions[x_min][1][0] = 5
+        with self.assertRaises(RuntimeWarning):
+            sol = m.solve(verbosity=0, skipsweepfailures=False)
+
+        m.substitutions[x_min][1][0] = 5  # so no sweeps solve
         with self.assertRaises(RuntimeWarning):
             sol = m.solve(verbosity=0, skipsweepfailures=True)
 
     def test_vector_sweep(self):
         """Test sweep involving VectorVariables"""
         x = Variable("x")
+        x_min = Variable("x_min", 1)
         y = VectorVariable(2, "y")
         m = Model(x, [x >= y.prod()])
         m.substitutions.update({y: ('sweep', [[2, 3], [5, 7], [9, 11]])})
         a = m.solve(verbosity=0)["cost"]
         b = [6, 15, 27, 14, 35, 63, 22, 55, 99]
-        # below line fails with changing dictionary keys in py3
         self.assertTrue(all(abs(a-b)/(a+b) < 1e-7))
-        m = Model(x, [x >= y.prod()])
+        x_min = Variable("x_min", 1)  # constant to check array indexing
+        m = Model(x, [x >= y.prod(), x >= x_min])
         m.substitutions.update({y: ('sweep', [[2, 3], [5, 7, 11]])})
-        a = m.solve(verbosity=0)["cost"]
+        sol = m.solve(verbosity=0)
+        a = sol["cost"]
         b = [10, 15, 14, 21, 22, 33]
         self.assertTrue(all(abs(a-b)/(a+b) < 1e-7))
+        self.assertEqual(sol["constants"][x_min], 1)
+        for i, bi in enumerate(b):
+            self.assertEqual(sol.atindex(i)["constants"][x_min], 1)
+            ai = m.solution.atindex(i)["cost"]
+            self.assertTrue(abs(ai-bi)/(ai+bi) < 1e-7)
         m = Model(x, [x >= y.prod()])
         m.substitutions.update({y: ('sweep', [[2, 3, 9], [5, 7, 11]])})
         self.assertRaises(ValueError, m.solve, verbosity=0)
@@ -263,7 +228,8 @@ class TestModelSubs(unittest.TestCase):
         npt.assert_allclose(sol["sensitivities"]["constants"][t_day],
                             [-1./3, -0.5, -0.6, +1], 1e-5)
         self.assertEqual(len(sol["cost"]), 4)
-        npt.assert_allclose(sol(t_day) + sol(t_night), 24)
+        npt.assert_allclose([float(l) for l in
+                             (sol(t_day) + sol(t_night))/gpkit.ureg.hours], 24)
 
     def test_vector_init(self):
         N = 6
@@ -314,27 +280,23 @@ class TestModelSubs(unittest.TestCase):
         concat_cost = concatm.solve(verbosity=0)["cost"]
         almostequal = self.assertAlmostEqual
         yard, cm = gpkit.ureg("yard"), gpkit.ureg("cm")
-        if not isinstance(a["x"].key.units, str):
+        if not isinstance(a["x"].key.units, unicode):
             almostequal(1/yard/a.solve(verbosity=0)["cost"], 1, 5)
             almostequal(1*cm/b.solve(verbosity=0)["cost"], 1, 5)
             almostequal(1*cm/yard/concat_cost, 1, 5)
-        reset_modelnumbers()
+        NamedVariables.reset_modelnumbers()
         a1, b1 = Above(), Below()
-        self.assertEqual(a1["x"].key.modelnums, [0])
-        b1.subinplace({b1["x"]: a1["x"]})
-        m = Model(a1["x"], [a1, b1])
+        self.assertEqual(a1["x"].key.lineage, (("Above", 0),))
+        m = Model(a1["x"], [a1, b1, b1["x"] == a1["x"]])
         sol = m.solve(verbosity=0)
-        if not isinstance(m["x"].key.units, str):
+        if not isinstance(a1["x"].key.units, unicode):
             almostequal(1*cm/sol["cost"], 1, 5)
         a1, b1 = Above(), Below()
-        self.assertEqual(a1["x"].key.modelnums, [1])
-        a1.subinplace({a1["x"]: b1["x"]})
-        m = Model(b1["x"], [a1, b1])
-        m.cost = m["x"]
+        self.assertEqual(a1["x"].key.lineage, (("Above", 1),))
+        m = Model(b1["x"], [a1, b1, b1["x"] == a1["x"]])
         sol = m.solve(verbosity=0)
-        if not isinstance(m["x"].key.units, str):
+        if not isinstance(b1["x"].key.units, unicode):
             almostequal(1*gpkit.ureg.cm/sol["cost"], 1, 5)
-        self.assertIn(m["x"], sol["variables"])
         self.assertIn(a1["x"], sol["variables"])
         self.assertIn(b1["x"], sol["variables"])
         self.assertNotIn(a["x"], sol["variables"])

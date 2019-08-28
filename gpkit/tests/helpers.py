@@ -1,9 +1,13 @@
 """Convenience classes and functions for unit testing"""
+from __future__ import print_function
 import unittest
 import sys
+import codecs
 import os
 import importlib
-from ..repr_conventions import DEFAULT_UNIT_PRINTING
+
+if sys.version_info >= (3, 0):
+    reload = importlib.reload  # pylint: disable=redefined-builtin,invalid-name,no-member
 
 
 def generate_example_tests(path, testclasses, solvers=None, newtest_fn=None):
@@ -55,19 +59,22 @@ def new_test(name, solver, import_dict, path, testfn=None):
         # No docstring because it'd be uselessly the same for each example
 
         import gpkit
-        # clear MODELNUMS to ensure determinate script-like output!
-        for key in set(gpkit.MODELNUM_LOOKUP):
-            del gpkit.MODELNUM_LOOKUP[key]
-
         with NewDefaultSolver(solver):
-            testfn(name, import_dict, path)(self)
+            try:
+                testfn(name, import_dict, path)(self)
+            except FutureWarning as fw:
+                print(fw)
 
-        # check all other global state besides MODELNUM_LOOKUP
-        #   is falsy (which should mean blank)
-        for globname, global_thing in [("models", gpkit.MODELS),
-                                       ("modelnums", gpkit.MODELNUMS),
-                                       ("vectorization", gpkit.VECTORIZATION),
-                                       ("namedvars", gpkit.NAMEDVARS)]:
+        # clear modelnums to ensure deterministic script-like output!
+        gpkit.globals.NamedVariables.reset_modelnumbers()
+
+        # check all global state is falsy
+        for globname, global_thing in [
+                ("model numbers", gpkit.globals.NamedVariables.modelnums),
+                ("lineage", gpkit.NamedVariables.lineage),
+                ("signomials enabled", gpkit.SignomialsEnabled),
+                ("vectorization", gpkit.Vectorize.vectorization),
+                ("namedvars", gpkit.NamedVariables.namedvars)]:
             if global_thing:
                 raise ValueError("global attribute %s should have been"
                                  " falsy after the test, but was instead %s"
@@ -158,14 +165,14 @@ class StdoutCaptured(object):
     def __enter__(self):
         "Capture stdout"
         self.original_stdout = sys.stdout
-        self.original_unit_printing = DEFAULT_UNIT_PRINTING[0]
-        DEFAULT_UNIT_PRINTING[0] = ":~"
         logfile = (open(self.logfilepath, mode="w")
                    if self.logfilepath else NullFile())
-        sys.stdout = logfile
+        if sys.version_info >= (3, 0):
+            sys.stdout = logfile
+        else:
+            sys.stdout = codecs.getwriter("UTF-8")(logfile)
 
     def __exit__(self, *args):
         "Return stdout"
         sys.stdout.close()
-        DEFAULT_UNIT_PRINTING[0] = self.original_unit_printing
         sys.stdout = self.original_stdout

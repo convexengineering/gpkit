@@ -1,11 +1,12 @@
 "Implements ConstraintSet"
-from collections import defaultdict
+from __future__ import unicode_literals
+from collections import defaultdict, OrderedDict
 import numpy as np
-
-from ..small_classes import HashVector, Numbers
+from ..small_classes import Numbers
 from ..keydict import KeySet, KeyDict
 from ..small_scripts import try_str_without
-from ..repr_conventions import _str, _repr, _repr_latex_
+from ..repr_conventions import GPkitObject
+from .single_equation import SingleEquationConstraint
 
 
 def add_meq_bounds(bounded, meq_bounded):
@@ -13,13 +14,12 @@ def add_meq_bounds(bounded, meq_bounded):
     still_alive = True
     while still_alive:
         still_alive = False  # if no changes are made, the loop exits
-        for bound, conditions in meq_bounded.items():
-            if bound in bounded:
+        for bound, conditions in list(meq_bounded.items()):
+            if bound in bounded:  # bound exists in an inequality
                 del meq_bounded[bound]
                 continue
-            meq_bounded[bound] = set(conditions)
             for condition in conditions:
-                if condition.issubset(bounded):
+                if condition.issubset(bounded):  # bound's condition is met
                     del meq_bounded[bound]
                     bounded.add(bound)
                     still_alive = True
@@ -27,20 +27,36 @@ def add_meq_bounds(bounded, meq_bounded):
 
 
 def _sort_by_name_and_idx(var):
-    "return tuplef for Variable sorting"
-    return (var.key.str_without(["units", "idx"]), var.key.idx)
+    "return tuple for Variable sorting"
+    return (var.key.str_without(["units", "idx"]), var.key.idx or ())
+
+
+def _sort_constrs(item):
+    "return tuple for Constraint sorting"
+    label, constraint = item
+    return (not isinstance(constraint, SingleEquationConstraint),
+            hasattr(constraint, "lineage") and bool(constraint.lineage), label)
 
 
 # pylint: disable=too-many-instance-attributes
-class ConstraintSet(list):
+class ConstraintSet(list, GPkitObject):
     "Recursive container for ConstraintSets and Inequalities"
     varkeys = None
     unique_varkeys = frozenset()
+    # idxlookup holds the names of the top-level constraintsets
+    idxlookup = None
+    _name_collision_varkeys = None
 
     def __init__(self, constraints, substitutions=None):  # pylint: disable=too-many-branches
         if isinstance(constraints, ConstraintSet):
-            # stick it in a list to maintain hierarchy
-            constraints = [constraints]
+            constraints = [constraints]  # put it one level down
+        elif isinstance(constraints, dict):
+            if isinstance(constraints, OrderedDict):
+                items = constraints.items()
+            else:
+                items = sorted(list(constraints.items()), key=_sort_constrs)
+            self.idxlookup = {k: i for i, (k, _) in enumerate(items)}
+            constraints = list(zip(*items))[1]
         list.__init__(self, constraints)
 
         # initializations for attributes used elsewhere
@@ -67,7 +83,7 @@ class ConstraintSet(list):
                 raise ValueError("a ConstraintSet of type %s was included in"
                                  " another ConstraintSet before being"
                                  " initialized." % type(constraint))
-            elif constraint.numpy_bools:  # not initialized??
+            elif constraint.numpy_bools:
                 raise_elementhasnumpybools(constraint)
             for attr in ["substitutions", "bounded"]:
                 if hasattr(self[i], attr):
@@ -81,8 +97,14 @@ class ConstraintSet(list):
                                    if "value" in k.descr})
         if substitutions:
             self.substitutions.update(substitutions)
-        for key in self.varkeys:
-            if key in self.substitutions:
+        updated_veckeys = False  # vector subs need to find each indexed varkey
+        for subkey in self.substitutions:
+            if not updated_veckeys and subkey.shape and not subkey.idx:
+                for key in self.varkeys:
+                    if key.veckey:
+                        self.varkeys.keymap[key.veckey].add(key)
+                updated_veckeys = True
+            for key in self.varkeys[subkey]:
                 if key.value is not None and not key.constant:
                     del key.descr["value"]
                     if key.veckey and key.veckey.value is not None:
@@ -92,6 +114,8 @@ class ConstraintSet(list):
         add_meq_bounds(self.bounded, self.meq_bounded)
 
     def __getitem__(self, key):
+        if self.idxlookup and key in self.idxlookup:
+            key = self.idxlookup[key]
         if isinstance(key, int):
             return list.__getitem__(self, key)
         return self._choosevar(key, self.variables_byname(key))
@@ -99,8 +123,7 @@ class ConstraintSet(list):
     def _choosevar(self, key, variables):
         if not variables:
             raise KeyError(key)
-        if variables[0].key.veckey:
-            # maybe it's all one vector variable!
+        if variables[0].key.veckey:  # maybe it's all one vector variable?
             from ..nomials import NomialArray
             vk = variables[0].key.veckey
             arr = NomialArray(np.full(vk.shape, np.nan, dtype="object"))
@@ -129,86 +152,18 @@ class ConstraintSet(list):
     def constrained_varkeys(self):
         "Return all varkeys in non-ConstraintSet constraints"
         constrained_varkeys = set()
-        for constraint in self.flat(constraintsets=False):
+        for constraint in self.flat():
             constrained_varkeys.update(constraint.varkeys)
         return constrained_varkeys
 
     def __setitem__(self, key, value):
+        if self.idxlookup and key in self.idxlookup:
+            key = self.idxlookup[key]
         self.substitutions.update(value.substitutions)
         list.__setitem__(self, key, value)
         self.reset_varkeys()
 
-    def append(self, value):
-        if hasattr(value, "__iter__") and not isinstance(value, ConstraintSet):
-            value = ConstraintSet(value)
-        self.substitutions.update(value.substitutions)
-        list.append(self, value)
-        self.reset_varkeys()
-
-    __str__ = _str
-    __repr__ = _repr
-    _repr_latex_ = _repr_latex_
-
-    def str_without(self, excluded=None):
-        "String representation of a ConstraintSet."
-        if not excluded:
-            excluded = ["units"]
-        lines = []
-        if "root" not in excluded:
-            excluded.append("root")
-            lines.append("")
-            root_str = self.rootconstr_str(excluded)
-            if root_str:
-                lines.append(root_str)
-        for constraint in self:
-            cstr = constraint.subconstr_str(excluded)
-            if cstr is None:
-                cstr = try_str_without(constraint, excluded)
-            if cstr[:8] != "        ":  # require indentation
-                cstr = "        " + cstr
-            lines.append(cstr)
-        return "\n".join(lines)
-
-    def latex(self, excluded=None):
-        "LaTeX representation of a ConstraintSet."
-        if not excluded:
-            excluded = ["units"]
-        lines = []
-        root = "root" not in excluded
-        if root:
-            excluded.append("root")
-            lines.append("\\begin{array}{ll} \\text{}")
-            root_latex = self.rootconstr_latex(excluded)
-            if root_latex:
-                lines.append(root_latex)
-        for constraint in self:
-            cstr = constraint.subconstr_latex(excluded)
-            if cstr is None:
-                cstr = constraint.latex(excluded)
-            if cstr[:6] != "    & ":  # require indentation
-                cstr = "    & " + cstr + " \\\\"
-            lines.append(cstr)
-        if root:
-            lines.append("\\end{array}")
-        return "\n".join(lines)
-
-    def rootconstr_str(self, excluded=None):
-        "The appearance of a ConstraintSet in addition to its contents"
-        pass
-
-    def rootconstr_latex(self, excluded=None):
-        "The appearance of a ConstraintSet in addition to its contents"
-        pass
-
-    def subconstr_str(self, excluded=None):
-        "The collapsed appearance of a ConstraintSet"
-        pass
-
-    def subconstr_latex(self, excluded=None):
-        "The collapsed appearance of a ConstraintSet"
-        pass
-
-    def flat(self, constraintsets=True):
+    def flat(self, constraintsets=False):
         "Yields contained constraints, optionally including constraintsets."
         for constraint in self:
             if not isinstance(constraint, ConstraintSet):
@@ -220,43 +175,15 @@ class ConstraintSet(list):
                 for yielded_constraint in subgenerator:
                     yield yielded_constraint
 
-    def subinplace(self, subs):
-        """Substitutes in place, updating self.substitutions accordingly.
-
-        Keys substituted with `subinplace` are no longer present, so if such a
-        key is also in self.substitutions that substitution is now orphaned. If
-        `subs[key]` describes some key in the ConstraintSet (i.e. one key has
-        been substituted for another), then a substitution is added, mapping
-        the orphaned value to this new key; otherwise, an error is raised.
-        """
-        subs = {getattr(k, "key", k): getattr(v, "key", v)
-                for k, v in subs.items()}
-        subkeys = frozenset(subs)
-        for constraint in self:
-            if isinstance(constraint.varkeys, set):
-                constraint.varkeys = KeySet(constraint.varkeys)
-            csubs = {k: v for k, v in subs.items() if k in constraint.varkeys}
-            if csubs:
-                constraint.subinplace(csubs)
-        if subkeys.intersection(self.substitutions):
-            for key, value in subs.items():
-                if key in self.substitutions:
-                    valkey, _ = self.substitutions.parse_and_index(value)
-                    self.substitutions[valkey] = self.substitutions[key]
-                    del self.substitutions[key]
-        self.unique_varkeys = frozenset(subs[vk] if vk in subs else vk
-                                        for vk in self.unique_varkeys)
-        self.reset_varkeys()
-
     def reset_varkeys(self):
         "Goes through constraints and collects their varkeys."
-        varkeys = set(self.unique_varkeys)
+        self.varkeys = KeySet(self.unique_varkeys)
         for constraint in self:
             if hasattr(constraint, "varkeys"):
-                varkeys.update(constraint.varkeys)
-        self.varkeys = KeySet(varkeys)
+                self.varkeys.update(constraint.varkeys)
         if hasattr(self.substitutions, "varkeys"):
             self.substitutions.varkeys = self.varkeys
+        self._name_collision_varkeys = None
 
     def as_posyslt1(self, substitutions=None):
         "Returns list of posynomials which must be kept <= 1"
@@ -289,18 +216,16 @@ class ConstraintSet(list):
         var_senss : dict
             The variable sensitivities of this constraint
         """
-        var_senss = HashVector()
+        var_senss = {}
         offset = 0
         self.relax_sensitivity = 0
         for i, constr in enumerate(self):
             n_posys = self.posymap[i]
             la = las[offset:offset+n_posys]
             nu = nus[offset:offset+n_posys]
-            v_ss = constr.sens_from_dual(la, nu, result)
-            constr.v_ss = v_ss
+            constr.v_ss = constr.sens_from_dual(la, nu, result)
             self.relax_sensitivity += constr.relax_sensitivity
-            # not using HashVector addition because we want to preseve zeros
-            for key, value in v_ss.items():
+            for key, value in constr.v_ss.items():
                 var_senss[key] = value + var_senss.get(key, 0)
             offset += n_posys
         return var_senss
@@ -333,8 +258,129 @@ class ConstraintSet(list):
             if v.veckey:
                 v = v.veckey
             val = v.evalfn(result["variables"])
-            result["freevariables"][v] = val
-            result["variables"][v] = val
+            result["variables"][v] = result["freevariables"][v] = val
+
+    def __repr__(self):
+        "Returns namespaced string."
+        return ("<gpkit.%s object containing %i top-level constraint(s)"
+                " and %i variable(s)>" % (self.__class__.__name__,
+                                          len(self), len(self.varkeys)))
+
+    def name_collision_varkeys(self):
+        "Returns the set of contained varkeys whose names are not unique"
+        if self._name_collision_varkeys is None:
+            self._name_collision_varkeys = set()
+            for key in self.varkeys:
+                if len(self.varkeys[key.str_without(["lineage", "vec"])]) > 1:
+                    self._name_collision_varkeys.add(key)
+        return self._name_collision_varkeys
+
+    def lines_without(self, excluded):
+        "Lines representation of a ConstraintSet."
+        root = "root" not in excluded
+        rootlines, lines = [], []
+        indent = " "*2 if (len(self) > 1
+                           or getattr(self, "lineage", None)) else ""
+        if root:
+            excluded += ("root",)
+            if "unnecessary lineage" in excluded:
+                for key in self.name_collision_varkeys():
+                    key.descr["necessarylineage"] = True
+            if hasattr(self, "rootconstr_str"):
+                rootlines = self.rootconstr_str(excluded)  # pylint: disable=no-member
+        if self.idxlookup:
+            named_constraints = {v: k for k, v in self.idxlookup.items()}
+        for i, constraint in enumerate(self):
+            clines = try_str_without(constraint, excluded).split("\n")
+            if (getattr(constraint, "lineage", None)
+                    and isinstance(constraint, ConstraintSet)):
+                name, num = constraint.lineage[-1]
+                if not any(clines):
+                    clines = [indent + "(no constraints)"]
+                if lines:
+                    lines.append("")
+                lines.append(name if not num else name + str(num))
+            elif ("constraint names" not in excluded
+                  and self.idxlookup and i in named_constraints):
+                lines.append("\"%s\":" % named_constraints[i])
+                for j, line in enumerate(clines):
+                    if clines[j][:len(indent)] != indent:
+                        clines[j] = indent + line  # must be indented
+            lines.extend(clines)
+        if root:
+            indent = " "
+            if "unnecessary lineage" in excluded:
+                for key in self.name_collision_varkeys():
+                    del key.descr["necessarylineage"]
+        return rootlines + [indent+line for line in lines]
+
+    def str_without(self, excluded=("unnecessary lineage", "units")):
+        "String representation of a ConstraintSet."
+        return "\n".join(self.lines_without(excluded))
+
+    def latex(self, excluded=("units",)):
+        "LaTeX representation of a ConstraintSet."
+        lines = []
+        root = "root" not in excluded
+        if root:
+            excluded += ("root",)
+            lines.append("\\begin{array}{ll} \\text{}")
+            if hasattr(self, "rootconstr_latex"):
+                lines.append(self.rootconstr_latex(excluded))  # pylint: disable=no-member
+        for constraint in self:
+            cstr = try_str_without(constraint, excluded, latex=True)
+            if cstr[:6] != "    & ":  # require indentation
+                cstr = "    & " + cstr + " \\\\"
+            lines.append(cstr)
+        if root:
+            lines.append("\\end{array}")
+        return "\n".join(lines)
+
+    def as_view(self):
+        "Return a ConstraintSetView of this ConstraintSet."
+        return ConstraintSetView(self)
+
+
+class ConstraintSetView(object):
+    "Class to access particular views on a set's variables"
+
+    def __init__(self, constraintset, index=()):
+        self.constraintset = constraintset
+        try:
+            self.index = tuple(index)
+        except TypeError:  # probably not iterable
+            self.index = (index,)
+
+    def __getitem__(self, index):
+        "Appends the index to its own and returns a new view."
+        if not isinstance(index, tuple):
+            index = (index,)
+        # indexes are preprended to match Vectorize convention
+        return ConstraintSetView(self.constraintset, index + self.index)
+
+    def __getattr__(self, attr):
+        """Returns attribute from the base ConstraintSets
+
+        If it's a another ConstraintSet, return the matching View;
+        if it's an array, return it at the specified index;
+        otherwise, raise an error.
+        """
+        if hasattr(self.constraintset, attr):
+            value = getattr(self.constraintset, attr)
+            if isinstance(value, ConstraintSet):
+                return ConstraintSetView(value, self.index)
+            if not hasattr(value, "shape"):
+                raise ValueError("attribute %s with value %s did not have"
+                                 " a shape, so ConstraintSetView cannot"
+                                 " return an indexed view." % (attr, value))
+            index = self.index
+            newdims = len(value.shape) - len(self.index)
+            if newdims > 0:  # indexes are put last to match Vectorize
+                index = (slice(None),)*newdims + index
+            return value[index]
+        else:
+            raise AttributeError("the underlying ConstraintSet does not have"
+                                 "attribute %s." % attr)
 
 
 def raise_badelement(cns, i, constraint):

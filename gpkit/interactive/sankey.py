@@ -1,8 +1,10 @@
 "implements Sankey"
+from __future__ import unicode_literals, print_function
+import sys
 from collections import defaultdict
 import numpy as np
-from ipysankeywidget import SankeyWidget  # pylint: disable=import-error
 from ipywidgets import Layout
+from ipysankeywidget import SankeyWidget  # pylint: disable=import-error
 from .. import ConstraintSet, Model
 from .. import GeometricProgram, SequentialGeometricProgram
 from ..nomials.math import MonomialEquality
@@ -11,6 +13,9 @@ from .. import GPCOLORS
 
 
 INSENSITIVE = 1e-2
+
+if sys.version_info >= (3, 0):
+    unichr = chr  # pylint: disable=redefined-builtin,invalid-name
 
 
 def getcolor(value):
@@ -68,7 +73,7 @@ class Sankey(object):
             if getattr(constrset, "num", None):
                 target += ".%i" % constrset.num
             source = str(key)
-            shortname = (key.str_without(["models"])
+            shortname = (key.str_without(["lineage"])
                          + key.unitstr(into=" [%s]", dimless=" [-]"))
             self.nodes.append({"id": source, "title": shortname})
             self.links[target, source] += value
@@ -79,7 +84,7 @@ class Sankey(object):
                 if printing:
                     print ("(objective) adds %+.3g to the sensitivity"
                            " of %s" % (-value, key))
-                    print "(objective) is", self.gp.cost, "\n"
+                    print("(objective) is", self.gp.cost, "\n")
         for constr in constrset:
             if key not in constr.v_ss:
                 continue
@@ -102,7 +107,7 @@ class Sankey(object):
                 if printing:
                     print ("%s adds %+.3g to the overall sensitivity of %s"
                            % (source, value, key))
-                    print source, "is", constr.str_without("units"), "\n"
+                    print(source, "is", constr.str_without("units"), "\n")
                 if ((isinstance(constr, MonomialEquality)
                      or abs(value) >= INSENSITIVE)
                         and all(len(getattr(p, "hmap", [])) == 1

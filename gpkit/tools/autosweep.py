@@ -1,13 +1,14 @@
 "Tools for optimal fits to GP sweeps"
+from __future__ import print_function
 from time import time
 import numpy as np
 from ..small_classes import Count
 from ..small_scripts import mag
 from ..solution_array import SolutionArray
+from ..exceptions import InvalidGPConstraint
 
 
-# pylint: disable=too-many-instance-attributes
-class BinarySweepTree(object):
+class BinarySweepTree(object):  # pylint: disable=too-many-instance-attributes
     """Spans a line segment. May contain two subtrees that divide the segment.
 
     Attributes
@@ -83,7 +84,7 @@ class BinarySweepTree(object):
         bst = self.min_bst(value)
         lo, hi = bst.bounds
         loval, hival = [sol(posy) for sol in bst.sols]
-        lo, hi, loval, hival = np.log(map(mag, [lo, hi, loval, hival]))
+        lo, hi, loval, hival = np.log(list(map(mag, [lo, hi, loval, hival])))
         interp = (hi-np.log(value))/float(hi-lo)
         return np.exp(interp*loval + (1-interp)*hival)
 
@@ -109,7 +110,7 @@ class BinarySweepTree(object):
         else:
             lo, hi = bst.bounds
             loval, hival = [sol["cost"] for sol in bst.sols]
-        lo, hi, loval, hival = np.log(map(mag, [lo, hi, loval, hival]))
+        lo, hi, loval, hival = np.log(list(map(mag, [lo, hi, loval, hival])))
         interp = (hi-np.log(value))/float(hi-lo)
         return np.exp(interp*loval + (1-interp)*hival)
 
@@ -154,10 +155,10 @@ class BinarySweepTree(object):
             - each solution's 'program' attribute is removed
 
         Solution can then be loaded with e.g.:
-        >>> import cPickle as pickle
-        >>> pickle.load(open("autosweep.p"))
+            >>> import cPickle as pickle
+            >>> pickle.load(open("autosweep.p"))
         """
-        import cPickle as pickle
+        import pickle
         programs = []
         costs = []
         for sol in self.sollist:
@@ -165,7 +166,7 @@ class BinarySweepTree(object):
             sol.program = None
             costs.append(sol["cost"])
             sol["cost"] = mag(sol["cost"])
-        pickle.dump(self, open(filename, "w"))
+        pickle.dump(self, open(filename, "wb"))
         for i, sol in enumerate(self.sollist):
             sol["cost"] = costs[i]
             sol.program = programs[i]
@@ -185,7 +186,7 @@ class SolutionOracle(object):
 
     def _is_cost(self, key):
         if hasattr(key, "hmap") and key.hmap == self.bst.costposy.hmap:
-            key = "cost"
+            return True
         return key == "cost"
 
     def __getval(self, key):
@@ -235,11 +236,6 @@ class SolutionOracle(object):
             axes, = axes
         return plt.gcf(), axes
 
-    @property
-    def solarray(self):
-        "Returns a solution array of all the solutions in an autosweep"
-        return self.bst.solarray
-
 
 def autosweep_1d(model, logtol, sweepvar, bounds, **solvekwargs):
     "Autosweep a model over one sweepvar"
@@ -251,7 +247,10 @@ def autosweep_1d(model, logtol, sweepvar, bounds, **solvekwargs):
     firstsols = []
     for bound in bounds:
         model.substitutions.update({sweepvar: bound})
-        firstsols.append(model.solve(**solvekwargs))
+        try:
+            firstsols.append(model.solve(**solvekwargs))
+        except InvalidGPConstraint:
+            raise InvalidGPConstraint("only GPs can be autoswept.")
         sols()
     bst = BinarySweepTree(bounds, firstsols, sweepvar, model.cost)
     tol = recurse_splits(model, bst, sweepvar, logtol, solvekwargs, sols)
@@ -283,8 +282,7 @@ def recurse_splits(model, bst, variable, logtol, solvekwargs, sols):
     return tol
 
 
-# pylint: disable=too-many-locals
-def get_tol(costs, bounds, sols, variable):
+def get_tol(costs, bounds, sols, variable):  # pylint: disable=too-many-locals
     "Gets the intersection point and corresponding bounds from two solutions."
     y0, y1 = costs
     x0, x1 = np.log(bounds)
@@ -297,7 +295,7 @@ def get_tol(costs, bounds, sols, variable):
     if denom == 0:
         # mosek runs into this on perfect straight lines, num also equal to 0
         # mosek_cli also runs into this on near-straight lines, num ~= 0
-        interp = -1  # fflag interp as out-of bounds
+        interp = -1  # flag interp as out-of bounds
     else:
         x = num/denom
         lb = y0 + s0*(x-x0)

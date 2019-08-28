@@ -8,3 +8,8 @@ Free Variables
 x : 0.7854
 y : 0.7071
 
+Tightest Constraints
+--------------------
+    +1 : <external_constraint.ExternalConstraint object>
+    +1 : x >= 0.785
+

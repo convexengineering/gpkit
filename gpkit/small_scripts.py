@@ -1,6 +1,16 @@
 """Assorted helper methods"""
+from __future__ import print_function
 from collections import Iterable
 import numpy as np
+
+
+def appendsolwarning(msg, data, result, category="uncategorized"):
+    "Append a particular category of warnings to a solution."
+    if "warnings" not in result:
+        result["warnings"] = {}
+    if category not in result["warnings"]:
+        result["warnings"][category] = []
+    result["warnings"][category].append((msg, data))
 
 
 @np.vectorize
@@ -19,9 +29,11 @@ def maybe_flatten(value):
     return value
 
 
-def try_str_without(item, excluded):
+def try_str_without(item, excluded, latex=False):
     "Try to call item.str_without(excluded); fall back to str(item)"
-    if hasattr(item, "str_without"):
+    if latex and hasattr(item, "latex"):
+        return item.latex(excluded)
+    elif hasattr(item, "str_without"):
         return item.str_without(excluded)
     return str(item)
 
@@ -64,17 +76,35 @@ def nomial_latex_helper(c, pos_vars, neg_vars):
     return mstr
 
 
+class SweepValue(object):
+    "Object to represent a swept substitution."
+    def __init__(self, value):
+        self.value = value
+
+
 def is_sweepvar(sub):
     "Determines if a given substitution indicates a sweep."
+    return splitsweep(sub)[0]
+
+
+def get_sweepval(sub):
+    "Returns a given substitution's indicated sweep, or None."
+    return splitsweep(sub)[1]
+
+
+def splitsweep(sub):
+    "Splits a substitution into (is_sweepvar, sweepval)"
+    if isinstance(sub, SweepValue):
+        return True, sub.value
     try:
         sweep, value = sub
         # pylint:disable=literal-comparison
         if sweep is "sweep" and (isinstance(value, Iterable) or
                                  hasattr(value, "__call__")):
-            return True
+            return True, value
     except (TypeError, ValueError):
         pass
-    return False
+    return False, None
 
 
 def latex_num(c):

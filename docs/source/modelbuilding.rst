@@ -9,7 +9,7 @@ with ``sol1.almost_equal(sol2)`` and/or ``print sol1.diff(sol2)``, as shown belo
 
 .. code-block:: python
 
-    import cPickle as pickle
+    import pickle
     ...  # build the model
     sol = m.solve()
     # uncomment the line below to verify a new model
@@ -42,7 +42,6 @@ Accessing Variables in Models
 GPkit provides several ways to access a Variable in a ``Model`` (or ``ConstraintSet``):
 
 - using ``Model.variables_byname(key)``. This returns all Variables in the Model, as well as in any submodels, that match the key.
-- using ``Model.topvar(key)``. This returns the top-level Variable that matches the key. The Variable must appear at the top level, not in a submodel.
 - using ``Model.__getitem__``. ``Model[key]`` returns the only variable matching the key, even if the match occurs in a submodel. If multiple variables match the key, an error is raised.
 
 These methods are illustrated in the following example.

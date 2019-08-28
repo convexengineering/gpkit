@@ -1,12 +1,15 @@
 """Unit testing of tests in docs/source/examples"""
 import unittest
 import os
+import pickle
 import numpy as np
 
 from gpkit import settings
 from gpkit.tests.helpers import generate_example_tests
 from gpkit.small_scripts import mag
 from gpkit.small_classes import Quantity
+from gpkit.constraints.loose import Loose
+from gpkit import Model
 
 
 def assert_logtol(first, second, logtol=1e-6):
@@ -81,7 +84,21 @@ class TestExamples(unittest.TestCase):
             _ = model["m"]  # multiple variables called m
 
     def test_performance_modeling(self, example):
-        pass
+        m = Model(example.M.cost, Loose(example.M), example.M.substitutions)
+
+        sol = m.solve(verbosity=0)
+        sol.table()
+        sol.save("solution.pkl")
+        sol.table()
+        sol_loaded = pickle.load(open("solution.pkl"))
+        sol_loaded.table()
+
+        sweepsol = m.sweep({example.AC.fuse.W: (50, 100, 150)}, verbosity=0)
+        sweepsol.table()
+        sweepsol.save("sweepsolution.pkl")
+        sweepsol.table()
+        sol_loaded = pickle.load(open("sweepsolution.pkl"))
+        sol_loaded.table()
 
     def test_sp_to_gp_sweep(self, example):
         pass
@@ -95,11 +112,11 @@ class TestExamples(unittest.TestCase):
     def test_primal_infeasible_ex1(self, example):
         with self.assertRaises(RuntimeWarning) as cm:
             example.m.solve(verbosity=0)
-        err = cm.exception
-        if "mosek" in err.message:
-            self.assertIn("PRIM_INFEAS_CER", err.message)
-        elif "cvxopt" in err.message:
-            self.assertIn("unknown", err.message)
+        err = str(cm.exception)
+        if "mosek" in err:
+            self.assertIn("PRIM_INFEAS_CER", err)
+        elif "cvxopt" in err:
+            self.assertIn("unknown", err)
 
     def test_primal_infeasible_ex2(self, example):
         with self.assertRaises(RuntimeWarning):

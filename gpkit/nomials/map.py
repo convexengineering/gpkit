@@ -1,9 +1,10 @@
 "Implements the NomialMap class"
+from __future__ import unicode_literals
 from collections import defaultdict
 import numpy as np
+from .. import units
 from ..exceptions import DimensionalityError
-from ..small_classes import HashVector, Quantity, Strings, qty
-from ..small_scripts import mag
+from ..small_classes import HashVector, Strings, qty, EMPTY_HV
 from .substitution import parse_subs
 
 DIMLESS_QUANTITY = qty("dimensionless")
@@ -22,22 +23,20 @@ class NomialMap(HashVector):
     expmap = None  # used for monomial-mapping postsubstitution; see .mmap()
     csmap = None   # used for monomial-mapping postsubstitution; see .mmap()
 
+    def copy(self):
+        "Return a copy of this"
+        return self.__class__(self)
+
     def units_of_product(self, thing, thing2=None):
-        "Sets units to those of `thing*thing2`"
+        "Sets units to those of `thing*thing2`. Ugly optimized code."
         if thing is None and thing2 is None:
             self.units = None
         elif hasattr(thing, "units"):
             if hasattr(thing2, "units"):
-                self.units = qty((thing*thing2).units)
-                try:  # faster than "if self.units.dimensionless"
-                    conversion = float(self.units)
-                    self.units = None
+                self.units, dimless_convert = units.of_product(thing, thing2)
+                if dimless_convert:
                     for key in self:
-                        self[key] *= conversion
-                except DimensionalityError:
-                    pass
-            elif not isinstance(thing, Quantity):
-                self.units = thing.units
+                        self[key] *= dimless_convert
             else:
                 self.units = qty(thing.units)
         elif hasattr(thing2, "units"):
@@ -47,11 +46,11 @@ class NomialMap(HashVector):
         else:
             self.units = None
 
-    def to(self, units):
+    def to(self, to_units):
         "Returns a new NomialMap of the given units"
         sunits = self.units or DIMLESS_QUANTITY
-        nm = self * sunits.to(units).magnitude  # note that * creates a copy
-        nm.units_of_product(units)  # pylint: disable=no-member
+        nm = self * sunits.to(to_units).magnitude  # note that * creates a copy
+        nm.units_of_product(to_units)  # pylint: disable=no-member
         return nm
 
     def __add__(self, other):
@@ -59,43 +58,29 @@ class NomialMap(HashVector):
         if self.units != other.units:
             try:
                 other *= float(other.units/self.units)
-            except TypeError:  # if one of those units is None
+            except (TypeError, AttributeError):  # if one of those is None
                 raise DimensionalityError(self.units, other.units)
         hmap = HashVector.__add__(self, other)
         hmap.units = self.units
         return hmap
 
-    def remove_zeros(self):
-        """Removes zeroed exponents and monomials.
-
-        If `only_check_cs` is True, checks only whether any values are zero.
-        If False also checks whether any exponents in the keys are zero.
-        """
-        for key, value in self.items():
-            zeroes = set(vk for vk, exp in key.items() if exp == 0)
-            if zeroes:
-                # raise ValueError(self)
-                del self[key]
-                for vk in zeroes:
-                    key._hashvalue ^= hash((vk, key[vk]))
-                    del key[vk]
-                self[key] = value + self.get(key, 0)
-
     def diff(self, varkey):
         "Differentiates a NomialMap with respect to a varkey"
         out = NomialMap()
+        out.units_of_product(self.units,
+                             1/varkey.units if varkey.units else None)
         for exp in self:
             if varkey in exp:
-                exp = HashVector(exp)
                 x = exp[varkey]
                 c = self[exp] * x
-                if x is 1:  # speed optimization
+                exp = exp.copy()
+                if x is 1:
+                    exp.hashvalue ^= hash((varkey, 1))
                     del exp[varkey]
                 else:
+                    exp.hashvalue ^= hash((varkey, x)) ^ hash((varkey, x-1))
                     exp[varkey] = x-1
                 out[exp] = c
-        out.units_of_product(self.units,
-                             1.0/varkey.units if varkey.units else None)
         return out
 
     def sub(self, substitutions, varkeys, parsedsubs=False):
@@ -121,7 +106,7 @@ class NomialMap(HashVector):
         else:
             fixed, _, _ = parse_subs(varkeys, substitutions)
 
-        if not substitutions:
+        if not fixed:
             if not self.expmap:
                 self.expmap, self.csmap = {exp: exp for exp in self}, {}
             return self
@@ -136,24 +121,21 @@ class NomialMap(HashVector):
             cp.expmap[exp] = new_exp  # cp modifies exps, so it needs new ones
             cp[new_exp] = c
             for vk in new_exp:
-                varlocs[vk].add((exp, new_exp))
+                if vk in fixed:
+                    varlocs[vk].add((exp, new_exp))
 
+        squished = set()
         for vk in varlocs:
-            if vk in fixed:
-                expval = []
-                exps, cval = varlocs[vk], fixed[vk]
-                if hasattr(cval, "hmap"):
-                    expval, = cval.hmap.keys()  # TODO: catch "can't-sub-posys"
-                    cval = cval.hmap
-                if hasattr(cval, "to"):
-                    cval = mag(cval.to(vk.units or DIMLESS_QUANTITY))
-                    if isinstance(cval, NomialMap) and cval.keys() == [{}]:
-                        cval, = cval.values()
-                if expval:
-                    cval, = cval.values()
-                exps_covered = set()
-                for o_exp, exp in exps:
-                    subinplace(cp, exp, o_exp, vk, cval, expval, exps_covered)
+            exps, cval = varlocs[vk], fixed[vk]
+            if hasattr(cval, "hmap"):
+                if any(cval.hmap.keys()):
+                    raise ValueError("Monomial substitutions are not"
+                                     " supported.")
+                cval, = cval.hmap.to(vk.units or DIMLESS_QUANTITY).values()
+            elif hasattr(cval, "to"):
+                cval = cval.to(vk.units or DIMLESS_QUANTITY).magnitude
+            for o_exp, exp in exps:
+                subinplace(cp, exp, o_exp, vk, cval, squished)
         return cp
 
     def mmap(self, orig):
@@ -176,7 +158,7 @@ class NomialMap(HashVector):
         origexps = list(orig.keys())
         selfexps = list(self.keys())
         for orig_exp, self_exp in self.expmap.items():
-            total_c = self.get(self_exp, None)
+            total_c = self.get(self_exp, None)  # TODO: seems unnecessary?
             if total_c:
                 fraction = self.csmap.get(orig_exp, orig[orig_exp])/total_c
                 m_from_ms[self_exp][orig_exp] = fraction
@@ -186,32 +168,27 @@ class NomialMap(HashVector):
 
 
 # pylint: disable=invalid-name
-def subinplace(cp, exp, o_exp, vk, cval, expval, exps_covered):
+def subinplace(cp, exp, o_exp, vk, cval, squished):
     "Modifies cp by substituing cval/expval for vk in exp"
     x = exp[vk]
-    powval = float(cval)**x if cval != 0 or x >= 0 else np.inf
+    powval = float(cval)**x if cval != 0 or x >= 0 else np.sign(cval)*np.inf
     cp.csmap[o_exp] *= powval
-    if exp in cp and exp not in exps_covered:
+    if exp in cp:
         c = cp.pop(exp)
-        exp._hashvalue ^= hash((vk, x))  # remove (key, value) from _hashvalue
+        exp.hashvalue ^= hash((vk, x))  # remove (key, value) from hashvalue
         del exp[vk]
-        for key in expval:
-            if key in exp:
-                exp._hashvalue ^= hash((key, exp[key]))  # remove from hash
-                newval = expval[key]*x + exp[key]
-            else:
-                newval = expval[key]*x
-            exp._hashvalue ^= hash((key, newval))  # add to hash
-            exp[key] = newval
         value = powval * c
         if exp in cp:
+            squished.add(exp.copy())
             currentvalue = cp[exp]
             if value != -currentvalue:
-                cp[exp] = value + currentvalue
+                cp[exp] += value
             else:
                 del cp[exp]  # remove zeros created during substitution
         elif value:
             cp[exp] = value
         if not cp:  # make sure it's never an empty hmap
-            cp[HashVector()] = 0.0
-        exps_covered.add(exp)
+            cp[EMPTY_HV] = 0.0
+    elif exp in squished:
+        exp.hashvalue ^= hash((vk, x))  # remove (key, value) from hashvalue
+        del exp[vk]

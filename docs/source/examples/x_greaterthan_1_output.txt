@@ -1,2 +1,2 @@
 Optimal cost:  1
-Optimal x val: 1.0 dimensionless
+Optimal x val: 1

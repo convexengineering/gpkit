@@ -23,3 +23,8 @@ Sensitivities
 A_{wall} : -1.5  upper limit, wall area
    alpha : +0.5  lower limit, wall aspect ratio
 
+Tightest Constraints
+--------------------
+  +1.5 : A_{wall} >= 2*h*w + 2*h*d
+  +0.5 : alpha <= h/w
+

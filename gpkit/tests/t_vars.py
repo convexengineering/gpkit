@@ -1,10 +1,15 @@
 """Test VarKey, Variable, VectorVariable, and ArrayVariable classes"""
+from __future__ import print_function
 import unittest
+import sys
 import numpy as np
 from gpkit import (Monomial, NomialArray, Variable, VarKey,
                    VectorVariable, ArrayVariable)
 import gpkit
 from gpkit.nomials import Variable as PlainVariable
+
+if sys.version_info >= (3, 0):
+    unicode = str  # pylint:disable=redefined-builtin,invalid-name
 
 
 class TestVarKey(unittest.TestCase):
@@ -12,13 +17,18 @@ class TestVarKey(unittest.TestCase):
 
     def test_init(self):
         """Test VarKey initialization"""
+        # test no-name init
+        _ = ArrayVariable(1)
+        # test protected field
+        with self.assertRaises(ValueError):
+            _ = ArrayVariable(1, idx=5)
         # test type
         x = VarKey('x')
         self.assertEqual(type(x), VarKey)
         # test no args
         x = VarKey()
         self.assertEqual(type(x), VarKey)
-        y = VarKey(x)
+        y = VarKey(**x.descr)
         self.assertEqual(x, y)
         # test special 'name' keyword overwriting behavior
         x = VarKey('x', flavour='vanilla')
@@ -27,8 +37,62 @@ class TestVarKey(unittest.TestCase):
         self.assertEqual(x.name, 'x')
         # pylint: disable=redundant-keyword-arg
         self.assertRaises(TypeError, lambda: VarKey('x', name='y'))
-        # pylint: disable=redundant-keyword-arg
-        self.assertRaises(TypeError, lambda: VarKey(x, name='y'))
+        self.assertIsInstance(x.latex(), str)
+        self.assertIsInstance(x.latex_unitstr(), unicode)
+
+    def test_ast(self):
+        t = Variable("t")
+        u = Variable("u")
+        v = Variable("v")
+        w = Variable("w")
+        x = VectorVariable(3, "x")
+        y = VectorVariable(3, "y")
+        z = VectorVariable(3, "z")
+        a = VectorVariable((3, 2), "a")
+
+        print(w >= x)
+        self.assertEqual(str(3*(x + y)*z), "3*(x[:] + y[:])*z[:]")
+        nni = 3
+        ii = np.tile(np.arange(1., nni+1.), a.shape[1:]+(1,)).T
+        self.assertEqual(str(w*NomialArray(ii)/nni)[:4], "w*[[")
+        self.assertEqual(str(w*NomialArray(ii)/nni)[-4:], "]]/3")
+        self.assertEqual(str(NomialArray(ii)*w/nni)[:2], "[[")
+        self.assertEqual(str(NomialArray(ii)*w/nni)[-6:], "]]*w/3")
+        self.assertEqual(str(w*ii/nni)[:4], "w*[[")
+        self.assertEqual(str(w*ii/nni)[-4:], "]]/3")
+        self.assertEqual(str(w*(ii/nni))[:4], "w*[[")
+        self.assertEqual(str(w*(ii/nni))[-2:], "]]")
+        self.assertEqual(str(w >= (x[0]*t + x[1]*u)/v),
+                         "w >= (x[0]*t + x[1]*u)/v")
+        self.assertEqual(str(x), "x[:]")
+        self.assertEqual(str(x*2), "x[:]*2")
+        self.assertEqual(str(2*x), "2*x[:]")
+        self.assertEqual(str(x + 2), "x[:] + 2")
+        self.assertEqual(str(2 + x), "2 + x[:]")
+        self.assertEqual(str(x/2), "x[:]/2")
+        self.assertEqual(str(2/x), "2/x[:]")
+        self.assertEqual(str(x**3), "x[:]^3")
+        self.assertEqual(str(-x), "-x[:]")
+        self.assertEqual(str(x/y/z), "x[:]/y[:]/z[:]")
+        self.assertEqual(str(x/(y/z)), "x[:]/(y[:]/z[:])")
+        self.assertEqual(str(x >= y), "x[:] >= y[:]")
+        self.assertEqual(str(x >= y + z), "x[:] >= y[:] + z[:]")
+        self.assertEqual(str(x[:2]), "x[:2]")
+        self.assertEqual(str(x[:]), "x[:]")
+        self.assertEqual(str(x[1:]), "x[1:]")
+        self.assertEqual(str(y * [1, 2, 3]), "y[:]*[1, 2, 3]")
+        self.assertEqual(str(x[:2] == (y*[1, 2, 3])[:2]),
+                         "x[:2] = (y[:]*[1, 2, 3])[:2]")
+        self.assertEqual(str(y + [1, 2, 3]), "y[:] + [1, 2, 3]")
+        self.assertEqual(str(x == y + [1, 2, 3]), "x[:] = y[:] + [1, 2, 3]")
+        self.assertEqual(str(x >= y + [1, 2, 3]), "x[:] >= y[:] + [1, 2, 3]")
+        self.assertEqual(str(a[:, 0]), "a[:,0]")
+        self.assertEqual(str(a[2, :]), "a[2,:]")
+        g = 1 + 3*a[2, 0]**2
+        gstrbefore = str(g)
+        g.ast = None
+        gstrafter = str(g)
+        self.assertEqual(gstrbefore, gstrafter)
 
     def test_eq_neq(self):
         """Test boolean equality operators"""
@@ -57,10 +121,6 @@ class TestVarKey(unittest.TestCase):
         for k in ('x', '$x$', 'var_name', 'var name', r"\theta", r'$\pi_{10}$'):
             var = VarKey(k)
             self.assertEqual(repr(var), k)
-        # not sure what this means, but I want to know if it changes
-        for num in (2, 2.0):
-            v = VarKey(num)
-            self.assertEqual(v, VarKey(str(num)))
 
     def test_dict_key(self):
         """make sure variables are well-behaved dict keys"""
@@ -75,8 +135,8 @@ class TestVarKey(unittest.TestCase):
     def test_units_attr(self):
         """Make sure VarKey objects have a units attribute"""
         x = VarKey('x')
-        for vk in (VarKey(), x, VarKey(x), VarKey(units='m')):
-            self.assertTrue(hasattr(vk, 'units'))
+        for vk in (VarKey(), x, VarKey(**x.descr), VarKey(units='m')):
+            self.assertTrue("units" in vk.descr)
 
 class TestVariable(unittest.TestCase):
     """TestCase for the Variable class"""
@@ -154,9 +214,9 @@ class TestVectorVariable(unittest.TestCase):
 
         # test 2
         x = VectorVariable(3, 'x', label='dummy variable')
-        x_0 = Monomial('x', idx=(0,), shape=(3,), label='dummy variable')
-        x_1 = Monomial('x', idx=(1,), shape=(3,), label='dummy variable')
-        x_2 = Monomial('x', idx=(2,), shape=(3,), label='dummy variable')
+        x_0 = Variable('x', idx=(0,), shape=(3,), label='dummy variable')
+        x_1 = Variable('x', idx=(1,), shape=(3,), label='dummy variable')
+        x_2 = Variable('x', idx=(2,), shape=(3,), label='dummy variable')
         x2 = NomialArray([x_0, x_1, x_2])
         self.assertEqual(x, x2)
 
@@ -190,9 +250,7 @@ class TestArrayVariable(unittest.TestCase):
     def test_str(self):
         """Make sure string looks something like a numpy array"""
         x = ArrayVariable((2, 4), 'x')
-        strx = str(x)
-        self.assertEqual(strx.count("["), 3)
-        self.assertEqual(strx.count("]"), 3)
+        self.assertEqual(str(x), "x[:]")
 
 
 class TestVectorize(unittest.TestCase):

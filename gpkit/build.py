@@ -1,5 +1,5 @@
 "Finds solvers, sets gpkit settings, and builds gpkit"
-from __future__ import print_function
+from __future__ import unicode_literals, print_function
 
 import os
 import sys
@@ -154,18 +154,18 @@ class Mosek(SolverBackend):
 
     def look(self):  # pylint: disable=too-many-return-statements
         "Looks in default install locations for latest mosek version."
-        if sys.platform == "win32":
+        if sys.platform[:3] == "win":
             rootdir = "C:\\Program Files\\Mosek"
             mosek_platform = "win64x86"
             libpattern = "mosek64_?_?.dll"
             self.flags = "-Wl,--export-all-symbols,-R"
-        elif sys.platform == "darwin":
+        elif sys.platform[:6] == "darwin":
             rootdir = pathjoin(os.path.expanduser("~"), "mosek")
             mosek_platform = "osx64x86"
             libpattern = "libmosek64.?.?.dylib"
             self.flags = "-Wl,-rpath"
 
-        elif sys.platform == "linux2":
+        elif sys.platform[:5] == "linux":
             rootdir = pathjoin(os.path.expanduser("~"), "mosek")
             mosek_platform = "linux64x86"
             libpattern = "libmosek64.so"
@@ -275,6 +275,7 @@ class Mosek(SolverBackend):
             return False
 
         log("#\n#   Building Python bindings for expopt and Mosek...")
+        log("#   (if this fails on Windows, verify the mingw version)")
         built_expopt_h = call("python modified_ctypesgen.py -a" +
                               " -l " + pathjoin(solib_dir, "expopt.so").replace("\\", "/") +   # pylint: disable=line-too-long
                               ' -l "' + self.lib_path.replace("\\", "/") + '"' +

@@ -1,8 +1,12 @@
 """Tests for NomialArray class"""
 import unittest
+import sys
 import numpy as np
-from gpkit import Monomial, Posynomial, NomialArray, VectorVariable
+from gpkit import Variable, Posynomial, NomialArray, VectorVariable, Monomial
 import gpkit
+
+if sys.version_info >= (3, 0):
+    unicode = str  # pylint:disable=redefined-builtin,invalid-name
 
 
 class TestNomialArray(unittest.TestCase):
@@ -13,6 +17,8 @@ class TestNomialArray(unittest.TestCase):
     def test_shape(self):
         x = VectorVariable((2, 3), 'x')
         self.assertEqual(x.shape, (2, 3))
+        self.assertIsInstance(x.str_without(), unicode)
+        self.assertIsInstance(x.latex(), unicode)
 
     def test_ndim(self):
         x = VectorVariable((3, 4), 'x')
@@ -20,9 +26,9 @@ class TestNomialArray(unittest.TestCase):
 
     def test_array_mult(self):
         x = VectorVariable(3, 'x', label='dummy variable')
-        x_0 = Monomial('x', idx=(0,), shape=(3,), label='dummy variable')
-        x_1 = Monomial('x', idx=(1,), shape=(3,), label='dummy variable')
-        x_2 = Monomial('x', idx=(2,), shape=(3,), label='dummy variable')
+        x_0 = Variable('x', idx=(0,), shape=(3,), label='dummy variable')
+        x_1 = Variable('x', idx=(1,), shape=(3,), label='dummy variable')
+        x_2 = Variable('x', idx=(2,), shape=(3,), label='dummy variable')
         p = x_0**2 + x_1**2 + x_2**2
         self.assertEqual(x.dot(x), p)
         m = NomialArray([[x_0**2, x_0*x_1, x_0*x_2],
@@ -31,11 +37,11 @@ class TestNomialArray(unittest.TestCase):
         self.assertEqual(x.outer(x), m)
 
     def test_elementwise_mult(self):
-        m = Monomial('m')
+        m = Variable('m')
         x = VectorVariable(3, 'x', label='dummy variable')
-        x_0 = Monomial('x', idx=(0,), shape=(3,), label='dummy variable')
-        x_1 = Monomial('x', idx=(1,), shape=(3,), label='dummy variable')
-        x_2 = Monomial('x', idx=(2,), shape=(3,), label='dummy variable')
+        x_0 = Variable('x', idx=(0,), shape=(3,), label='dummy variable')
+        x_1 = Variable('x', idx=(1,), shape=(3,), label='dummy variable')
+        x_2 = Variable('x', idx=(2,), shape=(3,), label='dummy variable')
         # multiplication with numbers
         v = NomialArray([2, 2, 3]).T
         p = NomialArray([2*x_0, 2*x_1, 3*x_2]).T
@@ -52,12 +58,16 @@ class TestNomialArray(unittest.TestCase):
         # division with monomials
         p2 = NomialArray([x_0/m, x_1/m, x_2/m]).T
         self.assertEqual(x/m, p2)
+        self.assertIsInstance(v.str_without(), unicode)
+        self.assertIsInstance(v.latex(), str)
+        self.assertIsInstance(p.str_without(), unicode)
+        self.assertIsInstance(p.latex(), str)
 
     def test_constraint_gen(self):
         x = VectorVariable(3, 'x', label='dummy variable')
-        x_0 = Monomial('x', idx=(0,), shape=(3,), label='dummy variable')
-        x_1 = Monomial('x', idx=(1,), shape=(3,), label='dummy variable')
-        x_2 = Monomial('x', idx=(2,), shape=(3,), label='dummy variable')
+        x_0 = Variable('x', idx=(0,), shape=(3,), label='dummy variable')
+        x_1 = Variable('x', idx=(1,), shape=(3,), label='dummy variable')
+        x_2 = Variable('x', idx=(2,), shape=(3,), label='dummy variable')
         v = NomialArray([1, 2, 3]).T
         p = [x_0, x_1/2, x_2/3]
         self.assertEqual((x <= v).as_posyslt1(), p)
@@ -79,20 +89,6 @@ class TestNomialArray(unittest.TestCase):
         else:
             constraints = (c == 1)
         self.assertEqual(len(constraints), 5)
-
-    def test_left_right(self):
-        x = VectorVariable(10, 'x')
-        xL = x.left
-        xR = x.right
-        self.assertEqual(xL[0], 0)
-        self.assertEqual(xL[1], x[0])
-        self.assertEqual(xR[-1], 0)
-        self.assertEqual(xR[0], x[1])
-        self.assertEqual((xL + xR)[1:-1], x[2:] + x[:-2])
-
-        x = VectorVariable((2, 3), 'x')
-        self.assertRaises(NotImplementedError, lambda: x.left)
-        self.assertRaises(NotImplementedError, lambda: x.right)
 
     def test_sum(self):
         x = VectorVariable(5, 'x')

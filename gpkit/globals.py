@@ -1,6 +1,9 @@
 "global mutable variables"
+from __future__ import unicode_literals, print_function
 import os
+import sys
 from collections import defaultdict
+from six import with_metaclass
 from . import build
 
 
@@ -18,6 +21,9 @@ def load_settings(path=None, firstattempt=True):
                 # unless they're the solver list
                 if len(value) == 1 and name != "installed_solvers":
                     settings_[name] = value[0]
+                if sys.version_info >= (3, 0) and name == "installed_solvers":
+                    if "mosek" in value:
+                        value.remove("mosek")
     except IOError:
         settings_ = {"installed_solvers": [""]}
     if settings_["installed_solvers"] == [""]:
@@ -44,96 +50,86 @@ so we can prevent others from having to see this message.
         Thanks!  :)
 """)
     settings_["default_solver"] = settings_["installed_solvers"][0]
-    settings_["latex_modelname"] = True
     return settings_
 
 
 settings = load_settings()
 
 
-SIGNOMIALS_ENABLED = set()  # the current signomial permissions
+class SignomialsEnabledMeta(type):
+    "Metaclass to implement falsiness for SignomialsEnabled"
+
+    def __nonzero__(cls):
+        return 1 if cls._true else 0
+
+    def __bool__(cls):
+        return cls._true
 
 
-class SignomialsEnabled(object):
+class SignomialsEnabled(with_metaclass(SignomialsEnabledMeta)):  # pylint: disable=no-init
     """Class to put up and tear down signomial support in an instance of GPkit.
 
     Example
     -------
-    >>> import gpkit
-    >>> x = gpkit.Variable("x")
-    >>> y = gpkit.Variable("y", 0.1)
-    >>> with SignomialsEnabled():
-    >>>     constraints = [x >= 1-y]
-    >>> gpkit.Model(x, constraints).localsolve()
+        >>> import gpkit
+        >>> x = gpkit.Variable("x")
+        >>> y = gpkit.Variable("y", 0.1)
+        >>> with SignomialsEnabled():
+        >>>     constraints = [x >= 1-y]
+        >>> gpkit.Model(x, constraints).localsolve()
     """
-    # pylint: disable=global-statement
+    _true = False  # the current signomial permissions
+
     def __enter__(self):
-        SIGNOMIALS_ENABLED.add(True)
+        SignomialsEnabled._true = True
 
     def __exit__(self, type_, val, traceback):
-        SIGNOMIALS_ENABLED.remove(True)
-
-
-VECTORIZATION = []  # the current vectorization shape
+        SignomialsEnabled._true = False
 
 
 class Vectorize(object):
     """Creates an environment in which all variables are
        exended in an additional dimension.
     """
+    vectorization = ()  # the current vectorization shape
+
     def __init__(self, dimension_length):
         self.dimension_length = dimension_length
 
     def __enter__(self):
         "Enters a vectorized environment."
-        VECTORIZATION.insert(0, self.dimension_length)
+        Vectorize.vectorization = (self.dimension_length,) + self.vectorization
 
     def __exit__(self, type_, val, traceback):
         "Leaves a vectorized environment."
-        VECTORIZATION.pop(0)
-
-
-MODELS = []     # the current model hierarchy
-MODELNUMS = []  # modelnumbers corresponding to MODELS, above
-# lookup table for the number of models of each name that have been made
-MODELNUM_LOOKUP = defaultdict(int)
-# the list of variables named in the current MODELS/MODELNUM environment
-NAMEDVARS = defaultdict(list)
-
-
-def reset_modelnumbers():
-    "Zeroes all model number counters"
-    for key in MODELNUM_LOOKUP:
-        MODELNUM_LOOKUP[key] = 0
-
-
-def begin_variable_naming(model):
-    "Appends a model name and num to the environment."
-    MODELS.append(model)
-    num = MODELNUM_LOOKUP[model]
-    MODELNUMS.append(num)
-    MODELNUM_LOOKUP[model] += 1
-    return num, (tuple(MODELS), tuple(MODELNUMS))
-
-
-def end_variable_naming():
-    "Pops a model name and num from the environment."
-    NAMEDVARS.pop((tuple(MODELS), tuple(MODELNUMS)), None)
-    MODELS.pop()
-    MODELNUMS.pop()
+        Vectorize.vectorization = self.vectorization[1:]
 
 
 class NamedVariables(object):
     """Creates an environment in which all variables have
        a model name and num appended to their varkeys.
     """
-    def __init__(self, model):
-        self.model = model
+    lineage = ()  # the current model nesting
+    modelnums = defaultdict(int)  # the number of models of each lineage
+    namedvars = defaultdict(list)  # variables created in the current nesting
+
+    @classmethod
+    def reset_modelnumbers(cls):
+        "Clear all model number counters"
+        for key in list(cls.modelnums):
+            del cls.modelnums[key]
+
+    def __init__(self, name):
+        self.name = name
 
     def __enter__(self):
         "Enters a named environment."
-        begin_variable_naming(self.model)
+        num = self.modelnums[(self.lineage, self.name)]
+        self.modelnums[(self.lineage, self.name)] += 1
+        NamedVariables.lineage += ((self.name, num),)  # NOTE: Class reference
+        return self.lineage, self.namedvars[self.lineage]
 
     def __exit__(self, type_, val, traceback):
         "Leaves a named environment."
-        end_variable_naming()
+        del self.namedvars[self.lineage]
+        NamedVariables.lineage = self.lineage[:-1]   # NOTE: Class reference

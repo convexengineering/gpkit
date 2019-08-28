@@ -1,4 +1,5 @@
 "Implements Model"
+from __future__ import print_function
 import numpy as np
 from .costed import CostedConstraintSet
 from ..nomials import Monomial
@@ -31,22 +32,15 @@ class Model(CostedConstraintSet):
         This dictionary will be substituted into the problem before solving,
         and also allows the declaration of sweeps and linked sweeps.
 
-    name : str (optional)
-        Allows "naming" a model in a way similar to inherited instances,
-        and overrides the inherited name if there is one.
-
     Attributes with side effects
     ----------------------------
     `program` is set during a solve
     `solution` is set at the end of a solve
     """
 
-    # name and num identify a model uniquely
-    name = None
-    num = None
-    # naming holds the name and num evironment in which a model was created
-    # this includes its own name and num, and those of models containing it
-    naming = None
+    # lineage holds the (name, num) environment in which a model was created:
+    # this includes its own (name, num), and those of models above it
+    lineage = None
     program = None
     solution = None
 
@@ -55,20 +49,17 @@ class Model(CostedConstraintSet):
         substitutions = kwargs.pop("substitutions", None)  # reserved keyword
         if hasattr(self, "setup"):
             self.cost = None
-            with NamedVariables(self.__class__.__name__):
+            with NamedVariables(self.__class__.__name__) as (self.lineage,
+                                                             setup_vars):
                 start_args = [cost, constraints]
                 args = tuple(a for a in start_args if a is not None) + args
                 cs = self.setup(*args, **kwargs)  # pylint: disable=no-member
                 if (isinstance(cs, tuple) and len(cs) == 2
                         and isinstance(cs[1], dict)):
-                    constraints, substitutions = cs  # TODO: remove
+                    constraints, substitutions = cs
                 else:
                     constraints = cs
-                from .. import NAMEDVARS, MODELS, MODELNUMS
-                setup_vars = NAMEDVARS[tuple(MODELS), tuple(MODELNUMS)]
-                self.name, self.num = MODELS[-1], MODELNUMS[-1]
-                self.naming = (tuple(MODELS), tuple(MODELNUMS))
-            cost = self.cost  # TODO: remove
+            cost = self.cost
         elif args and not substitutions:
             # backwards compatibility: substitutions as third arg
             substitutions, = args
@@ -91,6 +82,8 @@ class Model(CostedConstraintSet):
     solve = _solve_fctry(_progify_fctry(GeometricProgram, "solve"))
     localsolve = _solve_fctry(_progify_fctry(SequentialGeometricProgram,
                                              "localsolve"))
+    penalty_ccp_solve = _solve_fctry(_progify_fctry(SequentialGeometricProgram,
+                                                    "penalty_ccp_solve"))
 
     def verify_docstring(self):  # pylint:disable=too-many-locals,too-many-branches,too-many-statements
         "Verifies docstring bounds are sufficient but not excessive."
@@ -149,16 +142,8 @@ class Model(CostedConstraintSet):
     def as_gpconstr(self, x0):
         "Returns approximating constraint, keeping name and num"
         cs = CostedConstraintSet.as_gpconstr(self, x0)
-        cs.name, cs.num = self.name, self.num
+        cs.lineage = self.lineage
         return cs
-
-    def subconstr_str(self, excluded=None):
-        "The collapsed appearance of a ConstraintBase"
-        return "%s_%s" % (self.name, self.num) if self.name else None
-
-    def subconstr_latex(self, excluded=None):
-        "The collapsed appearance of a ConstraintBase"
-        return "%s_{%s}" % (self.name, self.num) if self.name else None
 
     def sweep(self, sweeps, **solveargs):
         "Sweeps {var: values} pairs in sweeps. Returns swept solutions."
@@ -174,9 +159,7 @@ class Model(CostedConstraintSet):
                 self.substitutions[sweepvar] = original_val
             else:
                 del self.substitutions[sweepvar]
-        if len(sols) == 1:
-            return sols[0]
-        return sols
+        return sols if len(sols) > 1 else sols[0]
 
     def autosweep(self, sweeps, tol=0.01, samplepoints=100, **solveargs):
         """Autosweeps {var: (start, end)} pairs in sweeps to tol.
@@ -190,9 +173,7 @@ class Model(CostedConstraintSet):
             start, end = sweepvals
             bst = autosweep_1d(self, tol, sweepvar, [start, end], **solveargs)
             sols.append(bst.sample_at(np.linspace(start, end, samplepoints)))
-        if len(sols) == 1:
-            return sols[0]
-        return sols
+        return sols if len(sols) > 1 else sols[0]
 
     # pylint: disable=too-many-locals,too-many-branches,too-many-statements
     def debug(self, solver=None, verbosity=1, **solveargs):
@@ -210,8 +191,9 @@ class Model(CostedConstraintSet):
         solveargs["verbosity"] = verbosity - 1
         solveargs["process_result"] = False
 
-        print("< DEBUGGING >")
-        print("> Trying with bounded variables and relaxed constants:")
+        if verbosity:
+            print("< DEBUGGING >")
+            print("> Trying with bounded variables and relaxed constants:")
 
         bounded = Bounded(self)
         if self.substitutions:
@@ -233,7 +215,7 @@ class Model(CostedConstraintSet):
                 relaxed = get_relaxed([sol(r) for r in constsrelaxed.relaxvars],
                                       constsrelaxed.origvars,
                                       min_return=0 if sol["boundedness"] else 1)
-                if relaxed:
+                if verbosity and relaxed:
                     if sol["boundedness"]:
                         print("and these constants relaxed:")
                     else:
@@ -242,11 +224,13 @@ class Model(CostedConstraintSet):
                         print("  %s: relaxed from %-.4g to %-.4g"
                               % (orig, mag(constsrelaxed.constants[orig.key]),
                                  mag(sol(orig))))
-                    print
-            print(">> Success!")
+                    print("")
+            if verbosity:
+                print(">> Success!")
         except (ValueError, RuntimeWarning):
-            print(">> Failure.")
-            print("> Trying with relaxed constraints:")
+            if verbosity:
+                print(">> Failure.")
+                print("> Trying with relaxed constraints:")
 
             try:
                 constrsrelaxed = ConstraintsRelaxed(self)
@@ -256,21 +240,32 @@ class Model(CostedConstraintSet):
                     sol = feas.solve(**solveargs)
                 except InvalidGPConstraint:
                     sol = feas.localsolve(**solveargs)
+                relaxed_constraints = feas[0]["relaxed constraints"]
                 relaxed = get_relaxed(sol(constrsrelaxed.relaxvars),
-                                      range(len(feas[0][0])))
-                if relaxed:
+                                      range(len(relaxed_constraints)))
+                if verbosity and relaxed:
                     print("\nSolves with these constraints relaxed:")
                     for relaxval, i in relaxed:
-                        constraint = feas[0][0][i]
+                        constraint = relaxed_constraints[i][0]
+                        # substitutions of the final relax value
+                        conleft = constraint.left.sub(
+                            {constrsrelaxed.relaxvars[i]: relaxval})
+                        conright = constraint.right.sub(
+                            {constrsrelaxed.relaxvars[i]: relaxval})
+                        origconstraint = constrsrelaxed.origconstrs[i]
                         relax_percent = "%i%%" % (0.5+(relaxval-1)*100)
-                        print(" %3i: %5s relaxed, from %s <= 1\n"
-                              "                       to %s <= %.4g"
-                              % (i, relax_percent, constraint.right,
-                                 constraint.right, relaxval))
-                print("\n>> Success!")
+                        print(" %3i: %5s relaxed, from %s %s %s \n"
+                              "                     to %s %s %s "
+                              % (i, relax_percent, origconstraint.left,
+                                 origconstraint.oper, origconstraint.right,
+                                 conleft, constraint.oper, conright))
+                if verbosity:
+                    print("\n>> Success!")
             except (ValueError, RuntimeWarning):
-                print(">> Failure")
-        print
+                if verbosity:
+                    print(">> Failure")
+        if verbosity:
+            print("")
         return sol
 
 
@@ -278,7 +273,7 @@ def get_relaxed(relaxvals, mapped_list, min_return=1):
     "Determines which relaxvars are considered 'relaxed'"
     sortrelaxed = sorted(zip(relaxvals, mapped_list), key=lambda x: x[0],
                          reverse=True)
-    # arbitrarily 1.01 is the min that counts as "relaxed"
+    # arbitrarily, 1.01 is the point below which something is still "relaxed"
     mostrelaxed = max(sortrelaxed[0][0], 1.01)
     for i, (val, _) in enumerate(sortrelaxed):
         if i >= min_return and val <= 1.01 and (val-1) <= (mostrelaxed-1)/10:

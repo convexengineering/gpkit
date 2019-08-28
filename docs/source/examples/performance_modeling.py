@@ -1,5 +1,5 @@
 """Modular aircraft concept"""
-import cPickle as pickle
+import pickle
 import numpy as np
 from gpkit import Model, Vectorize, parse_variables
 
@@ -24,7 +24,7 @@ class AircraftP(Model):
     def setup(self, aircraft, state):
         self.aircraft = aircraft
         self.state = state
-        exec parse_variables(AircraftP.__doc__)
+        exec(parse_variables(AircraftP.__doc__))
 
         self.wing_aero = aircraft.wing.dynamic(aircraft.wing, state)
         self.perf_models = [self.wing_aero]
@@ -38,8 +38,13 @@ class AircraftP(Model):
         D = self.wing_aero.D
         CL = self.wing_aero.CL
 
-        return [W + Wfuel <= 0.5*rho*CL*S*V**2,
-                Wburn >= 0.1*D], self.perf_models
+        return {
+            "lift":
+                W + Wfuel <= 0.5*rho*CL*S*V**2,
+            "fuel burn rate":
+                Wburn >= 0.1*D,
+            "performance":
+                self.perf_models}
 
 
 class Aircraft(Model):
@@ -58,12 +63,16 @@ class Aircraft(Model):
     wing.c, wing.S
     """
     def setup(self):
-        exec parse_variables(Aircraft.__doc__)
+        exec(parse_variables(Aircraft.__doc__))
         self.fuse = Fuselage()
         self.wing = Wing()
         self.components = [self.fuse, self.wing]
 
-        return self.components, W >= sum(c.W for c in self.components)
+        return {
+            "definition of W":
+                W >= sum(c.W for c in self.components),
+            "components":
+                self.components}
 
     dynamic = AircraftP
 
@@ -79,7 +88,7 @@ class FlightState(Model):
 
     """
     def setup(self):
-        exec parse_variables(FlightState.__doc__)
+        exec(parse_variables(FlightState.__doc__))
 
 
 class FlightSegment(Model):
@@ -103,7 +112,8 @@ class FlightSegment(Model):
         self.Wburn = self.aircraftp.Wburn
         self.Wfuel = self.aircraftp.Wfuel
 
-        return self.flightstate, self.aircraftp
+        return {"flightstate": self.flightstate,
+                "aircraft performance": self.aircraftp}
 
 
 class Mission(Model):
@@ -127,8 +137,13 @@ class Mission(Model):
         Wfuel = self.fs.aircraftp.Wfuel
         self.takeoff_fuel = Wfuel[0]
 
-        return self.fs, [Wfuel[:-1] >= Wfuel[1:] + Wburn[:-1],
-                         Wfuel[-1] >= Wburn[-1]]
+        return {
+            "definition of Wburn":
+                Wfuel[:-1] >= Wfuel[1:] + Wburn[:-1],
+            "require fuel for the last leg":
+                Wfuel[-1] >= Wburn[-1],
+            "flight segment":
+                self.fs}
 
 
 class WingAero(Model):
@@ -153,7 +168,7 @@ class WingAero(Model):
     def setup(self, wing, state):
         self.wing = wing
         self.state = state
-        exec parse_variables(WingAero.__doc__)
+        exec(parse_variables(WingAero.__doc__))
 
         c = wing.c
         A = wing.A
@@ -162,10 +177,13 @@ class WingAero(Model):
         V = state.V
         mu = state.mu
 
-        return [
-            CD >= 0.074/Re**0.2 + CL**2/np.pi/A/e,
-            Re == rho*V*c/mu,
-            D >= 0.5*rho*V**2*CD*S]
+        return {
+            "drag model":
+                CD >= 0.074/Re**0.2 + CL**2/np.pi/A/e,
+            "definition of Re":
+                Re == rho*V*c/mu,
+            "definition of D":
+                D >= 0.5*rho*V**2*CD*S}
 
 
 class Wing(Model):
@@ -188,8 +206,11 @@ class Wing(Model):
     c, S
     """
     def setup(self):
-        exec parse_variables(Wing.__doc__)
-        return [W >= S*rho, c == (S/A)**0.5]
+        exec(parse_variables(Wing.__doc__))
+        return {"parametrization of wing weight":
+                    W >= S*rho,
+                "definition of mean chord":
+                    c == (S/A)**0.5}
 
     dynamic = WingAero
 
@@ -205,18 +226,31 @@ class Fuselage(Model):
 
     """
     def setup(self):
-        exec parse_variables(Fuselage.__doc__)
-
+        exec(parse_variables(Fuselage.__doc__))
 
 AC = Aircraft()
 MISSION = Mission(AC)
 M = Model(MISSION.takeoff_fuel, [MISSION, AC])
+print(M)
 sol = M.solve(verbosity=0)
-# save solution to a file and retrieve it
-sol.save("solution.p")
-sol_loaded = pickle.load(open("solution.p"))
+# save solution to some files
+sol.savemat()
+sol.savecsv()
+sol.savetxt()
+sol.save("solution.pkl")
+# retrieve solution from a file
+sol_loaded = pickle.load(open("solution.pkl"))
 
 vars_of_interest = set(AC.varkeys)
+# note that there's two ways to access submodels
+assert (MISSION["flight segment"]["aircraft performance"]
+        is MISSION.fs.aircraftp)
 vars_of_interest.update(MISSION.fs.aircraftp.unique_varkeys)
-vars_of_interest.add("D")
-print sol.summary(vars_of_interest)
+vars_of_interest.add(M["D"])
+print(sol.summary(vars_of_interest))
+print(sol.table(tables=["loose constraints"]))
+
+MISSION["flight segment"]["aircraft performance"]["fuel burn rate"] = (
+    MISSION.fs.aircraftp.Wburn >= 0.2*MISSION.fs.aircraftp.wing_aero.D)
+sol = M.solve(verbosity=0)
+print(sol.diff("solution.pkl", showvars=vars_of_interest, sortbymodel=False))

@@ -1,25 +1,27 @@
 "Implements Tight"
+from __future__ import unicode_literals
 from .set import ConstraintSet
 from ..nomials import PosynomialInequality, SignomialInequality
 from ..small_scripts import mag
+from ..small_scripts import appendsolwarning
 from .. import SignomialsEnabled
 
 
 class Tight(ConstraintSet):
     "ConstraintSet whose inequalities must result in an equality."
-    reltol = 1e-6
+    reltol = 1e-3
 
-    def __init__(self, constraints, reltol=None, raiseerror=False):
+    def __init__(self, constraints, reltol=None, raiseerror=False, **kwargs):
         super(Tight, self).__init__(constraints)
-        if reltol:
-            self.reltol = reltol
+        self.reltol = reltol or self.reltol
         self.raiseerror = raiseerror
+        self.__dict__.update(kwargs)  # NOTE: for Berk's use in labelling
 
     def process_result(self, result):
         "Checks that all constraints are satisfied with equality"
         super(Tight, self).process_result(result)
         variables = result["variables"]
-        for constraint in self.flat(constraintsets=False):
+        for constraint in self.flat():
             rel_diff = 0
             if isinstance(constraint, PosynomialInequality):
                 leftsubbed = constraint.left.sub(variables).value
@@ -37,14 +39,20 @@ class Tight(ConstraintSet):
                         leftsubbed = constraint.left.sub(variables).value
                         rightsubbed = constraint.right.sub(variables).value
             if rel_diff >= self.reltol:
-                msg = ("Constraint [%.100s... %s %.100s...] is not tight"
-                       " because the left hand side evaluated to %s but"
+                msg = ("Constraint [%.100s... %s %.100s...] is not tight:"
+                       " the left hand side evaluated to %s but"
                        " the right hand side evaluated to %s"
-                       " (Allowable error: %s%%, Actual error: %.2g%%)\n" %
+                       " (Allowable error: %s%%, Actual error: %.2g%%)" %
                        (constraint.left, constraint.oper, constraint.right,
                         leftsubbed, rightsubbed,
                         self.reltol*100, mag(rel_diff)*100))
                 if self.raiseerror:
                     raise ValueError(msg)
-                else:
-                    print "Warning: %s" % msg
+                if hasattr(leftsubbed, "magnitude"):
+                    rightsubbed = rightsubbed.to(leftsubbed.units).magnitude
+                    leftsubbed = leftsubbed.magnitude
+                constraint.tightvalues = (leftsubbed, constraint.oper,
+                                          rightsubbed)
+                constraint.rel_diff = rel_diff
+                appendsolwarning(msg, constraint,
+                                 result, "Unexpectedly Loose Constraints")

@@ -12,4 +12,8 @@ Free Variables
 --------------
 x : 1e+30
 
+Tightest Constraints
+--------------------
+    +1 : x <= 1e+30
+
 sol['boundedness'] is: {'value near upper bound': set([x]), 'sensitive to upper bound': set([x])}

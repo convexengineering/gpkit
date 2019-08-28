@@ -34,14 +34,14 @@ class Cube(Model):
     way that makes the most sense to someone else reading your model.
     """
     def setup(self):
-        exec parse_variables(Cube.__doc__)
+        exec(parse_variables(Cube.__doc__))
 
         return [A >= 2*(s[0]*s[1] + s[1]*s[2] + s[2]*s[0]),
                 s.prod() >= V,
                 s[2] >= h]
 
 
-print parse_variables(Cube.__doc__)
+print(parse_variables(Cube.__doc__))
 c = Cube()
 c.cost = c.A
-print c.solve(verbosity=0).table()
+print(c.solve(verbosity=0).table())

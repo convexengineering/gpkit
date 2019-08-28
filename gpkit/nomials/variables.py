@@ -4,6 +4,7 @@ import numpy as np
 from .data import NomialData
 from .array import NomialArray
 from .math import Monomial
+from ..globals import NamedVariables, Vectorize
 from ..varkey import VarKey
 from ..small_classes import Strings, Numbers
 from ..small_scripts import is_sweepvar
@@ -11,13 +12,10 @@ from ..small_scripts import is_sweepvar
 
 def addmodelstodescr(descr, addtonamedvars=None):
     "Add models to descr, optionally adding the second argument to NAMEDVARS"
-    from .. import MODELS, MODELNUMS, NAMEDVARS
-    if not MODELS or not MODELNUMS:
-        return
-    if addtonamedvars:
-        NAMEDVARS[tuple(MODELS), tuple(MODELNUMS)].append(addtonamedvars)
-    descr["models"] = descr.get("models", []) + MODELS
-    descr["modelnums"] = descr.get("modelnums", []) + MODELNUMS
+    if NamedVariables.lineage:
+        descr["lineage"] = NamedVariables.lineage
+        if addtonamedvars:
+            NamedVariables.namedvars[descr["lineage"]].append(addtonamedvars)
 
 
 class Variable(Monomial):
@@ -40,7 +38,7 @@ class Variable(Monomial):
     """
     def __init__(self, *args, **descr):
         if len(args) == 1 and isinstance(args[0], VarKey):
-            self.key = args[0]
+            self.key, = args
         else:
             for arg in args:
                 if isinstance(arg, Strings) and "name" not in descr:
@@ -68,11 +66,9 @@ class Variable(Monomial):
 
     def to(self, units):
         "Create new Signomial converted to new units"
-        # pylint: disable=no-member
-        return Monomial(self).to(units)
+        return Monomial(self).to(units)  # pylint: disable=no-member
 
-    def sub(self, *args, **kwargs):
-        # pylint: disable=arguments-differ
+    def sub(self, *args, **kwargs):  # pylint: disable=arguments-differ
         """Same as nomial substitution, but also allows single-argument calls
 
         Example
@@ -83,12 +79,11 @@ class Variable(Monomial):
         if len(args) == 1 and "val" not in kwargs:
             arg, = args
             if not isinstance(arg, dict):
-                args = ({self: arg},)
+                args = [{self: arg}]
         return Monomial.sub(self, *args, **kwargs)
 
 
-# pylint: disable=too-many-locals
-class ArrayVariable(NomialArray):
+class ArrayVariable(NomialArray):  # pylint: disable=too-many-locals
     """A described vector of singlet Monomials.
 
     Arguments
@@ -108,19 +103,15 @@ class ArrayVariable(NomialArray):
     NomialArray of Monomials, each containing a VarKey with name '$name_{i}',
     where $name is the vector's name and i is the VarKey's index.
     """
-
-    def __new__(cls, shape, *args, **descr):
-        # pylint: disable=too-many-branches, too-many-statements
-        # pylint: disable=arguments-differ
+    def __new__(cls, shape, *args, **descr):  # pylint: disable=too-many-branches, too-many-statements, arguments-differ
         cls = NomialArray
 
         if "idx" in descr:
-            raise KeyError("the description field 'idx' is reserved")
+            raise ValueError("the description field 'idx' is reserved")
 
         shape = (shape,) if isinstance(shape, Numbers) else tuple(shape)
-        from .. import VECTORIZATION
-        if VECTORIZATION:
-            shape = shape + tuple(VECTORIZATION)
+        if Vectorize.vectorization:
+            shape += Vectorize.vectorization
 
         descr["shape"] = shape
 
@@ -144,12 +135,10 @@ class ArrayVariable(NomialArray):
         value_option = None
         if "value" in descr:
             value_option = "value"
-        elif "sp_init" in descr:
-            value_option = "sp_init"
         if value_option:
             values = descr.pop(value_option)
         if value_option and not hasattr(values, "__call__"):
-            if VECTORIZATION:
+            if Vectorize.vectorization:
                 if not hasattr(values, "shape"):
                     values = np.full(shape, values, "f")
                 else:
@@ -160,13 +149,13 @@ class ArrayVariable(NomialArray):
                 raise ValueError("the value's shape %s is different than"
                                  " the vector's %s." % (values.shape, shape))
 
-        vdescr = descr.copy()
-        addmodelstodescr(vdescr)
+        veckeydescr = descr.copy()
+        addmodelstodescr(veckeydescr)
         if value_option:
             if hasattr(values, "__call__"):
-                vdescr["original_fn"] = values
-            vdescr[value_option] = values
-        veckey = VarKey(**vdescr)
+                veckeydescr["original_fn"] = values
+            veckeydescr[value_option] = values
+        veckey = VarKey(**veckeydescr)
 
         descr["veckey"] = veckey
         vl = np.empty(shape, dtype="object")
@@ -195,12 +184,10 @@ def veclinkedfn(linkedfn, i):
     return newlinkedfn
 
 
-# pylint: disable=too-many-ancestors
-class VectorizableVariable(Variable, ArrayVariable):
+class VectorizableVariable(Variable, ArrayVariable):  # pylint: disable=too-many-ancestors
     "A Variable outside a vectorized environment, an ArrayVariable within."
     def __new__(cls, *args, **descr):
-        from .. import VECTORIZATION
-        if VECTORIZATION:
+        if Vectorize.vectorization:
             shape = descr.pop("shape", ())
             return ArrayVariable.__new__(cls, shape, *args, **descr)
         return Variable(*args, **descr)

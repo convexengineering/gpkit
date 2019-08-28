@@ -1,5 +1,6 @@
 """Unit tests for Constraint, MonomialEquality and SignomialInequality"""
 import unittest
+import sys
 from gpkit import Variable, SignomialsEnabled, Posynomial, VectorVariable
 from gpkit.nomials import SignomialInequality, PosynomialInequality
 from gpkit.nomials import MonomialEquality
@@ -12,6 +13,9 @@ from gpkit.constraints.relax import ConstraintsRelaxed, \
                                     ConstraintsRelaxedEqually, ConstantsRelaxed
 from gpkit.constraints.bounded import Bounded
 import gpkit
+
+if sys.version_info >= (3, 0):
+    unicode = str  # pylint:disable=redefined-builtin,invalid-name
 
 
 class TestConstraint(unittest.TestCase):
@@ -40,9 +44,10 @@ class TestConstraint(unittest.TestCase):
         v = VectorVariable(2, "v")
         with self.assertRaises(ValueError):
             _ = Model(x, [v == "A"])
-        with self.assertRaises(ValueError):
+        err = TypeError if sys.version_info >= (3, 0) else ValueError
+        with self.assertRaises(err):
             _ = Model(x, [v <= ["A", "B"]])
-        with self.assertRaises(ValueError):
+        with self.assertRaises(err):
             _ = Model(x, [v >= ["A", "B"]])
 
     def test_evalfn(self):
@@ -75,9 +80,9 @@ class TestConstraint(unittest.TestCase):
 
     def test_constraintget(self):
         x = Variable("x")
-        x_ = Variable("x", models=["_"])
+        x_ = Variable("x", lineage=[("_", 0)])
         xv = VectorVariable(2, "x")
-        xv_ = VectorVariable(2, "x", models=["_"])
+        xv_ = VectorVariable(2, "x", lineage=[("_", 0)])
         self.assertEqual(Model(x, [x >= 1])["x"], x)
         with self.assertRaises(ValueError):
             _ = Model(x, [x >= 1, x_ >= 1])["x"]
@@ -106,7 +111,7 @@ class TestConstraint(unittest.TestCase):
 
         def constr():
             """method that should raise a ValueError"""
-            return (1 >= 5*x + 1.1)
+            return 1 >= 5*x + 1.1
         self.assertRaises(ValueError, constr)
 
     def test_init(self):
@@ -123,7 +128,7 @@ class TestConstraint(unittest.TestCase):
         self.assertEqual(c.left, x)
         self.assertEqual(c.right, y**2)
         self.assertTrue("<=" in str(c))
-        self.assertEqual(type((1 >= x).latex()), str)
+        self.assertEqual(type((1 >= x).latex()), unicode)
 
     def test_oper_overload(self):
         """Test Constraint initialization by operator overloading"""
@@ -138,6 +143,16 @@ class TestConstraint(unittest.TestCase):
         c2 = (1 + x**2 <= y)  # same as c
         self.assertEqual(c2.as_posyslt1(), c.as_posyslt1())
 
+    def test_sub_tol(self):
+        """ Test PosyIneq feasibility tolerance under substitutions"""
+        x = Variable('x')
+        y = Variable('y')
+        z = Variable('z')
+        PosynomialInequality.feastol = 1e-5
+        m = Model(z, [x == z, x >= y], {x: 1., y: 1.0001})
+        self.assertRaises(ValueError, m.solve, verbosity=0)
+        PosynomialInequality.feastol = 1e-3
+        self.assertEqual(m.substitutions('x'), m.solve(verbosity=0)('x'))
 
 class TestMonomialEquality(unittest.TestCase):
     """Test monomial equality constraint class"""
@@ -150,14 +165,20 @@ class TestMonomialEquality(unittest.TestCase):
         # operator overloading
         mec = (x == y**2)
         # __init__
-        mec2 = MonomialEquality(x, "=", y**2)
+        mec2 = MonomialEquality(x, y**2)
         self.assertTrue(mono in mec.as_posyslt1())
         self.assertTrue(mono in mec2.as_posyslt1())
         x = Variable("x", "ft")
         y = Variable("y")
         if gpkit.units:
-            self.assertRaises(ValueError, MonomialEquality, x, "=", y)
-            self.assertRaises(ValueError, MonomialEquality, y, "=", x)
+            self.assertRaises(ValueError, MonomialEquality, x, y)
+            self.assertRaises(ValueError, MonomialEquality, y, x)
+
+    def test_vector(self):
+        "Monomial Equalities with VectorVariables"
+        x = VectorVariable(3, "x")
+        self.assertFalse(x == 3)
+        self.assertTrue(x == x)
 
     def test_inheritance(self):
         """Make sure MonomialEquality inherits from the right things"""
@@ -174,7 +195,7 @@ class TestMonomialEquality(unittest.TestCase):
 
         def constr():
             """method that should raise a TypeError"""
-            MonomialEquality(x*y, "=", x+y)
+            MonomialEquality(x*y, x+y)
         self.assertRaises(TypeError, constr)
 
     def test_str(self):
@@ -182,30 +203,28 @@ class TestMonomialEquality(unittest.TestCase):
         x = Variable('x')
         y = Variable('y')
         mec = (x == y)
-        self.assertEqual(type(str(mec)), str)
+        self.assertEqual(type(mec.str_without()), unicode)
 
     def test_united_dimensionless(self):
         "Check dimensionless unit-ed variables work"
         x = Variable('x')
         y = Variable('y', 'hr/day')
-        c = MonomialEquality(x, "=", y)
+        c = MonomialEquality(x, y)
         self.assertTrue(isinstance(c, MonomialEquality))
 
 
 class TestSignomialInequality(unittest.TestCase):
     """Test Signomial constraints"""
+
     def test_becomes_posy_sensitivities(self):
         # pylint: disable=invalid-name
         # model from #1165
         ujet = Variable("ujet")
         PK = Variable("PK")
-
-        # Constants
         Dp = Variable("Dp", 0.662)
         fBLI = Variable("fBLI", 0.4)
         fsurf = Variable("fsurf", 0.836)
         mdot = Variable("mdot", 1/0.7376)
-
         with SignomialsEnabled():
             m = Model(PK, [mdot*ujet + fBLI*Dp >= 1,
                            PK >= 0.5*mdot*ujet*(2 + ujet) + fBLI*fsurf*Dp])
@@ -215,10 +234,40 @@ class TestSignomialInequality(unittest.TestCase):
         self.assertAlmostEqual(var_senss[fsurf], 0.19, 2)
         self.assertAlmostEqual(var_senss[mdot], -0.17, 2)
 
+        # Linked variable
+        Dp = Variable("Dp", 0.662)
+        mDp = Variable("-Dp", lambda c: -c[Dp])
+        fBLI = Variable("fBLI", 0.4)
+        fsurf = Variable("fsurf", 0.836)
+        mdot = Variable("mdot", 1/0.7376)
+        m = Model(PK, [mdot*ujet >= 1 + fBLI*mDp,
+                       PK >= 0.5*mdot*ujet*(2 + ujet) + fBLI*fsurf*Dp])
+        var_senss = m.solve(verbosity=0)["sensitivities"]["constants"]
+        self.assertAlmostEqual(var_senss[Dp], -0.16, 2)
+        self.assertAlmostEqual(var_senss[fBLI], -0.16, 2)
+        self.assertAlmostEqual(var_senss[fsurf], 0.19, 2)
+        self.assertAlmostEqual(var_senss[mdot], -0.17, 2)
+
+        # fixed negative variable
+        Dp = Variable("Dp", 0.662)
+        mDp = Variable("-Dp", -0.662)
+        fBLI = Variable("fBLI", 0.4)
+        fsurf = Variable("fsurf", 0.836)
+        mdot = Variable("mdot", 1/0.7376)
+        m = Model(PK, [mdot*ujet >= 1 + fBLI*mDp,
+                       PK >= 0.5*mdot*ujet*(2 + ujet) + fBLI*fsurf*Dp])
+        var_senss = m.solve(verbosity=0)["sensitivities"]["constants"]
+        self.assertAlmostEqual(var_senss[Dp] + var_senss[mDp], -0.16, 2)
+        self.assertAlmostEqual(var_senss[fBLI], -0.16, 2)
+        self.assertAlmostEqual(var_senss[fsurf], 0.19, 2)
+        self.assertAlmostEqual(var_senss[mdot], -0.17, 2)
+
     def test_init(self):
         "Test initialization and types"
         D = Variable('D', units="N")
         x1, x2, x3 = (Variable("x_%s" % i, units="N") for i in range(3))
+        with self.assertRaises(TypeError):
+            sc = (D >= x1 + x2 - x3)
         with SignomialsEnabled():
             sc = (D >= x1 + x2 - x3)
         self.assertTrue(isinstance(sc, SignomialInequality))
@@ -316,7 +365,12 @@ class TestBounded(unittest.TestCase):
         bm = Model(m.cost, Bounded(m))
         sol = bm.solve(verbosity=0)
         self.assertAlmostEqual(sol["cost"], 1.0)
-
+        bm = Model(m.cost, Bounded(m, lower=1e-10))
+        sol = bm.solve(verbosity=0)
+        self.assertAlmostEqual(sol["cost"], 1.0)
+        bm = Model(m.cost, Bounded(m, upper=1e10))
+        sol = bm.solve(verbosity=0)
+        self.assertAlmostEqual(sol["cost"], 1.0)
 
 TESTS = [TestConstraint, TestMonomialEquality, TestSignomialInequality,
          TestTight, TestLoose, TestBounded]

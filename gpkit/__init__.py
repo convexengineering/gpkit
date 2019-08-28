@@ -1,13 +1,10 @@
 "GP and SP modeling package"
-__version__ = "0.7.0"
+from __future__ import unicode_literals, print_function
+__version__ = "0.9.1"
 
 from .build import build
 from ._pint import units, ureg, DimensionalityError
-from .globals import settings
-from .globals import SignomialsEnabled, SIGNOMIALS_ENABLED
-from .globals import Vectorize, VECTORIZATION
-from .globals import (NamedVariables, MODELS, MODELNUMS, MODELNUM_LOOKUP,
-                      NAMEDVARS, reset_modelnumbers)
+from .globals import settings, SignomialsEnabled, Vectorize, NamedVariables
 from .varkey import VarKey
 from .nomials import Monomial, Posynomial, Signomial, NomialArray
 from .nomials import VectorizableVariable as Variable

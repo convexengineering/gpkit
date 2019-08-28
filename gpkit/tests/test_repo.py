@@ -1,4 +1,5 @@
 "Implements tests for all external repositories."
+from __future__ import print_function
 import os
 import sys
 import subprocess
@@ -15,10 +16,10 @@ def test_repo(repo=".", xmloutput=False):
     """
     os.chdir(repo)
     settings = get_settings()
-    print
-    print "SETTINGS"
-    print settings
-    print
+    print("")
+    print("SETTINGS")
+    print(settings)
+    print("")
 
     if repo == "." and not os.path.isdir("gpkitmodels"):
         git_clone("gplibrary")
@@ -61,7 +62,7 @@ def test_repos(repos=None, xmloutput=False, ingpkitmodels=False):
         repos_list_filename = "gplibrary"+os.sep+"EXTERNALTESTS"
         pip_install("gplibrary", local=True)
     else:
-        print "USING LOCAL DIRECTORY AS GPKITMODELS DIRECTORY"
+        print("USING LOCAL DIRECTORY AS GPKITMODELS DIRECTORY")
         repos_list_filename = "EXTERNALTESTS"
         pip_install(".", local=True)
     repos = [line.strip() for line in open(repos_list_filename, "r")]
@@ -107,10 +108,10 @@ def call_and_retry(cmd, max_iterations=5, delay=5):
     "Tries max_iterations times (waiting d each time) to run a command"
     iterations = 0
     return_code = None
-    print "calling", cmd
+    print("calling", cmd)
     while return_code != 0 and iterations < max_iterations:
         iterations += 1
-        print "  attempt", iterations
+        print("  attempt", iterations)
         return_code = subprocess.call(cmd)
         sleep(delay)
     return return_code

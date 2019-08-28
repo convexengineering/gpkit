@@ -1,5 +1,5 @@
 "Minimizes airplane drag for a simple drag and structure model."
-import cPickle as pickle
+import pickle
 import numpy as np
 from gpkit import Variable, Model
 pi = np.pi
@@ -60,8 +60,8 @@ m = Model(D, constraints)
 sol = m.solve(verbosity=0)
 print(sol.summary())
 # save solution to a file and retrieve it
-sol.save("solution.p")
-print(sol.diff("solution.p"))
+sol.save("solution.pkl")
+print(sol.diff("solution.pkl"))
 
 print("SWEEP\n=====")
 N = 2
@@ -70,5 +70,5 @@ sweeps = {V_min: ("sweep", np.linspace(20, 25, N)),
 m.substitutions.update(sweeps)
 sweepsol = m.solve(verbosity=0)
 print(sweepsol.summary())
-sol_loaded = pickle.load(open("solution.p"))
+sol_loaded = pickle.load(open("solution.pkl", "rb"))
 print(sweepsol.diff(sol_loaded))

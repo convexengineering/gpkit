@@ -5,13 +5,14 @@
     ``result = _mosek.cli_expopt.imize(cs, A, p_idxs, "gpkit_mosek")``
 
 """
+from __future__ import unicode_literals, print_function
 
 import os
 import shutil
 import tempfile
 import errno
 import stat
-from subprocess import check_output
+from subprocess import check_output, CalledProcessError
 from .. import settings
 
 
@@ -36,8 +37,9 @@ def imize_fn(path=None, clearfiles=True):
         path = tempfile.mkdtemp()
     filename = path + os.sep + "gpkit_mosek"
     if "mosek_bin_dir" in settings:
-        os.environ['PATH'] = ":".join([os.environ['PATH'],
-                                       settings["mosek_bin_dir"]])
+        if settings["mosek_bin_dir"] not in os.environ["PATH"]:
+            os.environ["PATH"] = (os.environ["PATH"]
+                                  + ":" + settings["mosek_bin_dir"])
 
     # pylint: disable=unused-argument
     def imize(c, A, p_idxs, *args, **kwargs):
@@ -45,7 +47,6 @@ def imize_fn(path=None, clearfiles=True):
 
         Definitions
         -----------
-        "[a,b] array of floats" indicates array-like data with shape [a,b]
         n is the number of monomials in the gp
         m is the number of variables in the gp
         p is the number of posynomials in the gp
@@ -79,13 +80,17 @@ def imize_fn(path=None, clearfiles=True):
             If the format of mskexpopt's output file is unexpected.
 
         """
-
         write_output_file(filename, c, A, p_idxs)
 
         # run mskexpopt and print stdout
-        for logline in check_output(["mskexpopt", filename]).split(b"\n"):
-            print(logline)
-        with open(filename+".sol") as f:
+        solution_filename = filename + ".sol"
+        try:
+            for logline in check_output(["mskexpopt", filename, "-sol",
+                                         solution_filename]).split(b"\n"):
+                print(logline)
+        except CalledProcessError as e:
+            raise RuntimeWarning(str(e))
+        with open(solution_filename) as f:
             status = f.readline().split("PROBLEM STATUS      : ")
             if len(status) != 2:
                 raise RuntimeWarning("could not read mskexpopt output status")
@@ -98,8 +103,8 @@ def imize_fn(path=None, clearfiles=True):
             assert_line(f, "\n")
             assert_line(f, "PRIMAL VARIABLES\n")
             assert_line(f, "INDEX   ACTIVITY\n")
-            primal_vals = list(read_vals(f))
-            # read_vals reads the next blank line
+            primal_vals = read_vals(f)
+            # read_vals reads the dividing blank line as well
             assert_line(f, "DUAL VARIABLES\n")
             assert_line(f, "INDEX   ACTIVITY\n")
             dual_vals = read_vals(f)

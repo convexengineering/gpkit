@@ -1,11 +1,16 @@
 """Tests for Monomial, Posynomial, and Signomial classes"""
 import math
+import sys
 import unittest
 from gpkit import Variable, Monomial, Posynomial, Signomial, SignomialsEnabled
 from gpkit import VectorVariable, NomialArray
 from gpkit.nomials import NomialMap
 from gpkit.small_classes import HashVector
+from gpkit.exceptions import InvalidPosynomial
 import gpkit
+
+if sys.version_info >= (3, 0):
+    unicode = str  # pylint:disable=redefined-builtin,invalid-name
 
 
 class TestMonomial(unittest.TestCase):
@@ -23,7 +28,7 @@ class TestMonomial(unittest.TestCase):
         self.assertEqual(m, m2)
 
         # default c and a
-        m = Monomial('x')
+        m = Variable('x')
         x, = m.varkeys["x"]
         self.assertEqual(m.varlocs, {x: [0]})
         self.assertEqual(m.exp, {x: 1})
@@ -43,35 +48,40 @@ class TestMonomial(unittest.TestCase):
         self.assertTrue(crazy_varkey in m.exp)
 
         # non-positive c raises
-        self.assertRaises(ValueError, Monomial, -2)
-        self.assertRaises(ValueError, Monomial, -1.)
-        self.assertRaises(ValueError, Monomial, 0)
-        self.assertRaises(ValueError, Monomial, 0.0)
+        self.assertRaises(InvalidPosynomial, Monomial, -2)
+        self.assertRaises(InvalidPosynomial, Monomial, -1.)
+        self.assertRaises(InvalidPosynomial, Monomial, 0)
+        self.assertRaises(InvalidPosynomial, Monomial, 0.0)
 
-        # can create nameless Monomials
-        x1 = Monomial()
-        x2 = Monomial()
-        V = Monomial('V')
-        vel = Monomial('V')
+        # can create nameless Variables
+        x1 = Variable()
+        x2 = Variable()
+        V = Variable('V')
+        vel = Variable('V')
         self.assertNotEqual(x1, x2)
         self.assertEqual(V, vel)
 
         # test label kwarg
-        x = Monomial('x', label='dummy variable')
+        x = Variable('x', label='dummy variable')
         self.assertEqual(list(x.exp)[0].descr['label'], 'dummy variable')
+        _ = hash(m)
+        _ = hash(x)
+        _ = hash(Monomial(x))
 
     def test_repr(self):
         "Simple tests for __repr__, which prints more than str"
-        m = Monomial({'x': 2, 'y': -1}, 5)
+        x = Variable("x")
+        y = Variable("y")
+        m = 5*x**2/y
         r = m.__repr__()
-        self.assertEqual(type(r), str)
-        self.assertEqual(Monomial('x').__repr__(), 'gpkit.Monomial(x)')
+        self.assertEqual(type(r), unicode)
+        self.assertEqual(repr(m), 'gpkit.Monomial(5*x^2/y)')
 
     def test_latex(self):
         "Test latex string creation"
         x = Variable("x")
         m = Monomial({'x': 2, 'y': -1}, 5).latex()
-        self.assertEqual(type(m), str)
+        self.assertEqual(type(m), unicode)
         self.assertEqual((5*x).latex(), '5x')
 
     def test_str_with_units(self):
@@ -79,19 +89,26 @@ class TestMonomial(unittest.TestCase):
         S = Variable('S', units='m^2')
         rho = Variable('rho', units='kg/m^3')
         x = rho*S
-        xstr = str(x)
-        self.assertEqual(type(xstr), str)
+        xstr = x.str_without()
+        self.assertEqual(type(xstr), unicode)
         self.assertTrue('S' in xstr and 'rho' in xstr)
+
+    def test_add(self):
+        x = Variable("x")
+        y = Variable("y", units="ft")
+        if gpkit.units:
+            with self.assertRaises(gpkit.DimensionalityError):
+                _ = x + y
 
     def test_eq_ne(self):
         "Test equality and inequality comparators"
         # simple one
-        x = Monomial('x')
-        y = Monomial('y')
+        x = Variable('x')
+        y = Variable('y')
         self.assertNotEqual(x, y)
         self.assertFalse(x == y)
 
-        xx = Monomial('x')
+        xx = Variable('x')
         self.assertEqual(x, xx)
         self.assertFalse(x != xx)
 
@@ -115,15 +132,15 @@ class TestMonomial(unittest.TestCase):
         self.assertEqual(Monomial(3), 3)
         self.assertEqual(Monomial(3), Monomial(3))
         self.assertNotEqual(Monomial(3), 2)
-        self.assertNotEqual(Monomial('x'), 3)
-        self.assertNotEqual(Monomial(3), Monomial('x'))
+        self.assertNotEqual(Variable('x'), 3)
+        self.assertNotEqual(Monomial(3), Variable('x'))
 
     def test_div(self):
         "Test Monomial division"
-        x = Monomial('x')
-        y = Monomial('y')
-        z = Monomial('z')
-        t = Monomial('t')
+        x = Variable('x')
+        y = Variable('y')
+        z = Variable('z')
+        t = Variable('t')
         a = 36*x/y
         # sanity check
         self.assertEqual(a, Monomial({'x': 1, 'y': -1}, 36))
@@ -146,7 +163,7 @@ class TestMonomial(unittest.TestCase):
         # divide by scalar
         self.assertEqual(x*9, Monomial({'x': 1, 'y': -1}, 36))
         # divide by Monomial
-        y = x * Monomial('z')
+        y = x * Variable('z')
         self.assertEqual(y, Monomial({'x': 1, 'y': -1, 'z': 1}, 4))
         # make sure x unchanged
         self.assertEqual(x, Monomial({'x': 1, 'y': -1}, 4))
@@ -154,12 +171,15 @@ class TestMonomial(unittest.TestCase):
         z = x * Monomial({'x': -1, 't': 2}, .5)
         self.assertEqual(z, Monomial({'x': 0, 'y': -1, 't': 2}, 2))
 
-        x0 = Monomial('x0')
+        x0 = Variable('x0')
         self.assertEqual(0.0, 0.0*x0)
-        x1 = Monomial('x1')
+        x1 = Variable('x1')
         n_hat = [1, 0]
         p = n_hat[0]*x0 + n_hat[1]*x1
         self.assertEqual(p, x0)
+
+        if gpkit.units:
+            self.assertNotEqual((x+1), (x+1)*gpkit.units("m"))
 
     def test_pow(self):
         "Test Monomial exponentiation"
@@ -211,12 +231,31 @@ class TestSignomial(unittest.TestCase):
 
     def test_init(self):
         "Test Signomial construction"
-        x = Monomial('x')
-        y = Monomial('y')
+        x = Variable('x')
+        y = Variable('y')
         with SignomialsEnabled():
-            self.assertEqual(str(1 - x - y**2 - 1), "-x + -y**2")
+            self.assertEqual(str(1 - x - y**2 - 1), "1 - x - y^2 - 1")
             self.assertEqual((1 - x/y**2).latex(), "-\\frac{x}{y^{2}} + 1")
+            _ = hash(1 - x/y**2)
         self.assertRaises(TypeError, lambda: x-y)
+
+    def test_chop(self):
+        "Test Signomial deconstruction"
+        x = Variable('x')
+        y = Variable('y')
+        with SignomialsEnabled():
+            c = x + 5.*y**2 - 0.2*x*y**0.78
+            monomials = c.chop()
+        with self.assertRaises(InvalidPosynomial):
+            c.chop()
+        with SignomialsEnabled():
+            self.assertIn(-0.2*x*y**0.78, monomials)
+
+    def test_mult(self):
+        "Test Signomial multiplication"
+        x = Variable("x")
+        with SignomialsEnabled():
+            self.assertEqual((x+1)*(x-1), x**2 - 1)
 
     def test_eq_ne(self):
         "Test Signomial equality and inequality operators"
@@ -240,10 +279,10 @@ class TestPosynomial(unittest.TestCase):
 
     def test_init(self):
         "Test Posynomial construction"
-        x = Monomial('x')
-        y = Monomial('y')
+        x = Variable('x')
+        y = Variable('y')
         ms = [Monomial({'x': 1, 'y': 2}, 3.14),
-              0.5*Monomial('y'),
+              0.5*Variable('y'),
               Monomial({'x': 3, 'y': 1}, 6),
               Monomial(2)]
         exps, cs = [], []
@@ -256,6 +295,8 @@ class TestPosynomial(unittest.TestCase):
         # check arithmetic
         p2 = 3.14*x*y**2 + y/2 + x**3*6*y + 2
         self.assertEqual(p, p2)
+        self.assertEqual(p, sum(ms))
+        _ = hash(p2)
 
         hmap = NomialMap({HashVector({'m': 1, 'v': 2}): 0.5,
                           HashVector({'m': 1, 'g': 1, 'h': 1}): 1})
@@ -301,8 +342,8 @@ class TestPosynomial(unittest.TestCase):
 
     def test_simplification(self):
         "Make sure like monomial terms get automatically combined"
-        x = Monomial('x')
-        y = Monomial('y')
+        x = Variable('x')
+        y = Variable('y')
         p1 = x + y + y + (x+y) + (y+x**2) + 3*x
         p2 = 4*y + x**2 + 5*x
         # ps1 = [list(exp.keys())for exp in p1.exps]
@@ -312,8 +353,8 @@ class TestPosynomial(unittest.TestCase):
 
     def test_posyposy_mult(self):
         "Test multiplication of Posynomial with Posynomial"
-        x = Monomial('x')
-        y = Monomial('y')
+        x = Variable('x')
+        y = Variable('y')
         p1 = x**2 + 2*y*x + y**2
         p2 = (x+y)**2
         # ps1 = [list(exp.keys())for exp in p1.exps]
@@ -329,16 +370,16 @@ class TestPosynomial(unittest.TestCase):
 
     def test_constraint_gen(self):
         "Test creation of Constraints via operator overloading"
-        x = Monomial('x')
-        y = Monomial('y')
+        x = Variable('x')
+        y = Variable('y')
         p = x**2 + 2*y*x + y**2
         self.assertEqual((p <= 1).as_posyslt1(), [p])
         self.assertEqual((p <= x).as_posyslt1(), [p/x])
 
     def test_integer_division(self):
         "Make sure division by integer doesn't use Python integer division"
-        x = Monomial('x')
-        y = Monomial('y')
+        x = Variable('x')
+        y = Variable('y')
         p = 4*x + y
         self.assertEqual(p/3, p/3.)
         equiv1 = all((p/3).cs == [1./3., 4./3.])
@@ -372,7 +413,6 @@ class TestPosynomial(unittest.TestCase):
         y = Variable('y')
         p = y**2 + 1
         self.assertEqual(y.mono_lower_bound({y: 1}), y)
-        # TODO: remove pylint warning below after Nomials refactor
         # pylint is confused because it thinks p is a Signomial
         # pylint: disable=no-member
         self.assertEqual(p.mono_lower_bound({y: 1}), 2*y)

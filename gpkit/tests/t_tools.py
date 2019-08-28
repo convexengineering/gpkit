@@ -1,11 +1,11 @@
 """Tests for tools module"""
 import unittest
+import sys
 import numpy as np
 from numpy import log
 from gpkit import Variable, VectorVariable, Model, NomialArray
 from gpkit.tools.autosweep import BinarySweepTree
 from gpkit.tools.tools import te_exp_minus1, te_secant, te_tangent
-from gpkit.tools.fmincon import generate_mfiles
 from gpkit.small_scripts import mag
 from gpkit import parse_variables
 
@@ -23,7 +23,7 @@ class OnlyVectorParse(Model):
     x    [-]    just another variable
     """
     def setup(self):
-        exec parse_variables(OnlyVectorParse.__doc__)  # pylint: disable=exec-used
+        exec(parse_variables(OnlyVectorParse.__doc__))  # pylint: disable=exec-used
 
 
 class Fuselage(Model):
@@ -52,7 +52,7 @@ class Fuselage(Model):
 
     # pylint: disable=undefined-variable, exec-used, invalid-name
     def setup(self, Wfueltot):
-        exec parse_variables(self.__doc__)
+        exec(parse_variables(self.__doc__))
         return [
             f == l/R/2,
             k >= 1 + 60/f**3 + f/400,
@@ -68,14 +68,21 @@ class TestTools(unittest.TestCase):
 
     def test_vector_only_parse(self):
         # pylint: disable=no-member
-        m = OnlyVectorParse()
-        self.assertTrue(hasattr(m, "x"))
-        self.assertIsInstance(m.x, NomialArray)
-        self.assertEqual(len(m.x), 3)
-
+        if sys.version_info >= (3, 0):
+            with self.assertRaises(FutureWarning):
+                m = OnlyVectorParse()
+        else:
+            m = OnlyVectorParse()
+            self.assertTrue(hasattr(m, "x"))
+            self.assertIsInstance(m.x, NomialArray)
+            self.assertEqual(len(m.x), 3)
 
     def test_parse_variables(self):
-        Fuselage(Variable("Wfueltot", 5, "lbf"))
+        if sys.version_info >= (3, 0):
+            with self.assertRaises(FutureWarning):
+                Fuselage(Variable("Wfueltot", 5, "lbf"))
+        else:
+            Fuselage(Variable("Wfueltot", 5, "lbf"))
 
     def test_binary_sweep_tree(self):
         bst0 = BinarySweepTree([1, 2], [{"cost": 1}, {"cost": 8}], None, None)
@@ -128,9 +135,9 @@ class TestTools(unittest.TestCase):
         self.assertEqual(x, Variable('x'))
         # try for VectorVariable too
         y = VectorVariable(3, 'y')
-        self.assertEqual(te_secant(y, 1), 1 + y**2/2.)
-        self.assertEqual(te_secant(y, 2), 1 + y**2/2. + 5*y**4/24.)
-        self.assertEqual(te_secant(y, 0), 1)
+        self.assertTrue(te_secant(y, 0) == 1)  # truthy bc monomial constraint
+        self.assertTrue(all(te_secant(y, 1) == 1 + y**2/2.))
+        self.assertTrue(all(te_secant(y, 2) == 1 + y**2/2. + 5*y**4/24.))
         # make sure y was not modified
         self.assertEqual(y, VectorVariable(3, 'y'))
 
@@ -149,36 +156,6 @@ class TestTools(unittest.TestCase):
         self.assertEqual(te_tangent(y, 0), 0)
         # make sure y was not modified
         self.assertEqual(y, VectorVariable(3, 'y'))
-
-    def test_fmincon_generator(self):
-        """Test fmincon comparison tool"""
-        x = Variable('x')
-        y = Variable('y')
-        m = Model(x, [x**3.2 >= 17*y + y**-0.2,
-                      x >= 2,
-                      y == 4])
-        obj, c, ceq, DC, DCeq = generate_mfiles(m, writefiles=False)
-        self.assertEqual(obj, 'x(1)')
-        self.assertEqual(c, ['-x(1)**3.2 + 17*x(2) + x(2)**-0.2', '-x(1) + 2'])
-        self.assertEqual(ceq, ['-x(2) + 4'])
-        self.assertEqual(DC, ['-3.2*x(1).^2.2,...\n          ' +
-                              '-0.2*x(2).^-1.2 + 17', '-1,...\n          0'])
-        self.assertEqual(DCeq, ['0,...\n            -1'])
-
-    def test_fmincon_generator_logspace(self):
-        "Test fmincon comparison tool (logspace)"
-        x = Variable('x')
-        y = Variable('y')
-        m = Model(x, [x**3.2 >= 17*y + y**-0.2,
-                      x >= 2,
-                      y == 4])
-        obj, c, ceq, _, _ = generate_mfiles(m, writefiles=False, logspace=True)
-        self.assertEqual(c, [
-            ('log( + 17.0*exp( +-3.2 * x(1) +1 * x(2) )'
-             ' + 1.0*exp( +-3.2 * x(1) +-0.2 * x(2) ) )'),
-            'log( + 2.0*exp( +-1 * x(1) ) )'])
-        self.assertEqual(obj, 'log( + 1.0*exp( +1 * x(1) ) )')
-        self.assertEqual(ceq, ['log( + 0.25*exp( +1 * x(2) ) )'])
 
 
 TESTS = [TestTools]

@@ -11,6 +11,7 @@
         If the local MOSEK library could not be loaded
 
 """
+from __future__ import unicode_literals, print_function
 
 from ctypes import pointer as ptr
 from ctypes import POINTER as ptr_factory
@@ -32,7 +33,7 @@ class ModuleShortener(object):
     Arguments
     ---------
     stub : str
-      String to append to all getattrs (the string "MSK_" above)
+      String to append to all getattrs (the string "MSK" above)
     module : str
       Module to be shortened (the first "MSK" object above)
     """
@@ -117,7 +118,7 @@ def printcb(void, msg):  # pylint: disable=unused-argument
     result : int
       0 indicates success
     """
-    print msg[:-1]
+    print(msg[:-1])
     return 0
 
 
@@ -245,6 +246,11 @@ def imize(c, A, p_idxs, *args, **kwargs):
     MSK._deleteenv(ptr(env))
 
     status = MSK._SOL_STA_LOOKUPTABLE[solsta.value]
+    # Allow mosek's NEAR_DUAL_FEAS solution status, because our check in gp.py
+    #   will catch solutions that don't actually meet our tolerance
+    # TODO: when we standardize solver status responses, revisit this.
+    if status == "NEAR_DUAL_FEAS":
+        status = "OPTIMAL"
     return dict(status=status,
                 objective=objval.value,
                 primal=list(xx),

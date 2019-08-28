@@ -1,4 +1,5 @@
 "Interactive GPkit widgets for iPython notebook"
+from __future__ import unicode_literals, print_function
 import ipywidgets as widgets
 from traitlets import link
 from ..small_scripts import is_sweepvar
@@ -32,7 +33,7 @@ def modelinteract(model, fns_of_sol, ranges=None, **solvekwargs):
         if not isinstance(ranges, dict):
             ranges = {k: None for k in ranges}
         slider_vars = set()
-        for k in ranges.keys():
+        for k in list(ranges):
             if k in model.substitutions:  # only if already a constant
                 for key in model.varkeys[k]:
                     slider_vars.add(key)
@@ -58,7 +59,7 @@ def modelinteract(model, fns_of_sol, ranges=None, **solvekwargs):
             if ranges and ranges[k]:
                 vmin, vmax = ranges[k]
             vstep = (vmax-vmin)/24.0
-            varkey_latex = "$"+k.latex(excluded=["models"])+"$"
+            varkey_latex = "$"+k.latex(excluded=["lineage"])+"$"
             floatslider = widgets.FloatSlider(min=vmin, max=vmax,
                                               step=vstep, value=v,
                                               description=varkey_latex)
@@ -85,9 +86,9 @@ def modelinteract(model, fns_of_sol, ranges=None, **solvekwargs):
                 sol = model.result
             for fn in fns_of_sol:
                 fn(sol)
-        except RuntimeWarning, e:
-            print "RuntimeWarning:", str(e).split("\n")[0]
-            print "\n> Running model.debug()"
+        except RuntimeWarning as e:
+            print("RuntimeWarning:", str(e).split("\n")[0])
+            print("\n> Running model.debug()")
             model.debug()
 
     resolve()
@@ -115,7 +116,7 @@ def modelcontrolpanel(model, showvars=(), fns_of_sol=None, **solvekwargs):
             "Display function to run when a slider is moved."
             # NOTE: if there are some freevariables in showvars, filter
             #       the table to show only those and the slider constants
-            print solution.summary(showvars if freev_in_showvars else ())
+            print(solution.summary(showvars if freev_in_showvars else ()))
 
         __defaultfntable = __defaultfn
 
@@ -154,7 +155,7 @@ def modelcontrolpanel(model, showvars=(), fns_of_sol=None, **solvekwargs):
 
     def append_plotfn():
         "Creates and adds plotfn to fn_of_sols"
-        from . import plot_1dsweepgrid
+        from .plot_sweep import plot_1dsweepgrid
         yvars = [model.cost]
         for varname in y_axes.value.split("  "):  # pylint: disable=no-member
             varname = varname.strip()

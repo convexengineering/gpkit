@@ -1,11 +1,16 @@
+BoundsChecking
+==============
 
-  # minimize
-        F
-  # subject to
-        F >= D + T
-        D = Ap*V**2*rf
-        Ap = nu
-        T = V*mf
-        mf >= mb + mi
-        mf = V*rf
-        Fs <= mi
+Cost
+----
+ F
+
+Constraints
+-----------
+ F >= D + T
+ D = rf*V^2*Ap
+ Ap = nu
+ T = mf*V
+ mf >= mi + mb
+ mf = rf*V
+ Fs <= mi

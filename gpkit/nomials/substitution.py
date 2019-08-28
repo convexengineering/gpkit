@@ -1,10 +1,10 @@
 "Scripts to parse and collate substitutions"
 import numpy as np
-from ..small_scripts import is_sweepvar
+from ..small_scripts import splitsweep
 
 
 def parse_subs(varkeys, substitutions, clean=False):
-    "Seperates subs into constants, sweeps linkedsweeps actually present."
+    "Seperates subs into the constants, sweeps, linkedsweeps actually present."
     constants, sweep, linkedsweep = {}, {}, {}
     if clean:
         for var in varkeys:
@@ -30,9 +30,9 @@ def parse_subs(varkeys, substitutions, clean=False):
 
 def append_sub(sub, keys, constants, sweep, linkedsweep):
     "Appends sub to constants, sweep, or linkedsweep."
-    sweepsub = is_sweepvar(sub)
-    if sweepsub:
-        _, sub = sub  # _ catches the "sweep" marker
+    sweepsub, sweepval = splitsweep(sub)
+    if sweepsub:  # if the whole key is swept
+        sub = sweepval
     for key in keys:
         if not key.shape or not getattr(sub, "shape", hasattr(sub, "__len__")):
             value = sub
@@ -40,8 +40,9 @@ def append_sub(sub, keys, constants, sweep, linkedsweep):
             sub = np.array(sub) if not hasattr(sub, "shape") else sub
             if key.shape == sub.shape:
                 value = sub[key.idx]
-                if is_sweepvar(value):
-                    _, value = value
+                sweepel, sweepval = splitsweep(value)
+                if sweepel:  # if only an element is swept
+                    value = sweepval
                     sweepsub = True
             elif sweepsub:
                 try:
@@ -60,7 +61,6 @@ def append_sub(sub, keys, constants, sweep, linkedsweep):
                                  " variable %s of shape %s." %
                                  (sub.shape, key.str_without("model"),
                                   key.shape))
-
         if hasattr(value, "__call__") and not hasattr(value, "key"):
             linkedsweep[key] = value
         elif sweepsub:

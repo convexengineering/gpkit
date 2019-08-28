@@ -1,6 +1,6 @@
 """Tests for small_classes.py and small_scripts.py"""
 import unittest
-from gpkit.small_classes import HashVector, CootMatrix
+from gpkit.small_classes import HashVector
 from gpkit.repr_conventions import unitstr
 import gpkit
 
@@ -28,6 +28,10 @@ class TestHashVector(unittest.TestCase):
         """Test exponentiation"""
         hv = HashVector(x=4, y=0, z=1)
         self.assertEqual(hv**0.5, {'x': 2, 'y': 0, 'z': 1})
+        with self.assertRaises(TypeError):
+            _ = hv**hv
+        with self.assertRaises(TypeError):
+            _ = hv**"a"
 
     def test_mul_add(self):
         """Test multiplication and addition"""
@@ -38,29 +42,18 @@ class TestHashVector(unittest.TestCase):
         r = a*0
         self.assertEqual(r, HashVector(x=0, y=0))
         self.assertTrue(isinstance(r, HashVector))
+        with self.assertRaises(TypeError):
+            _ = r*"a"
         r = a - 2
         self.assertEqual(r, HashVector(x=-1, y=5))
         self.assertTrue(isinstance(r, HashVector))
+        with self.assertRaises(TypeError):
+            _ = r + "a"
         # multiplication and addition by dicts
         self.assertEqual(a + b, a)
         self.assertEqual(a + b + c, HashVector(x=4, y=7, z=4))
         self.assertEqual(a * b * c, HashVector())
         self.assertEqual(a * {'x': 6, 'k': 4}, HashVector(x=6))
-
-
-class TestCootMatrix(unittest.TestCase):
-    """TestCase for the CootMatrix class"""
-    def test_shape(self):
-        A = CootMatrix([], [], [])
-        self.assertEqual(A.shape, [0, 0])
-        A.append(0, 0, 1)
-        self.assertEqual(A.shape, [1, 1])
-        A.append(1, 0, -0.5)
-        self.assertEqual(A.shape, [2, 1])
-        A.append(2, 0, -1)
-        self.assertEqual(A.shape, [3, 1])
-        A.append(3, 1, -1)
-        self.assertEqual(A.shape, [4, 2])
 
 
 class TestSmallScripts(unittest.TestCase):
@@ -84,7 +77,7 @@ class TestSmallScripts(unittest.TestCase):
             self.assertEqual(gpkit.units("nautical_mile"), gpkit.units("nmi"))
 
 
-TESTS = [TestHashVector, TestCootMatrix, TestSmallScripts]
+TESTS = [TestHashVector, TestSmallScripts]
 
 
 if __name__ == '__main__':

@@ -1,12 +1,19 @@
 """Tests for GP and SP classes"""
 import unittest
+import sys
 import numpy as np
-from gpkit import (Model, Monomial, settings, VectorVariable, Variable,
+from gpkit import (Model, settings, VectorVariable, Variable,
                    SignomialsEnabled, ArrayVariable, SignomialEquality)
 from gpkit.constraints.bounded import Bounded
 from gpkit.small_classes import CootMatrix
 from gpkit.exceptions import InvalidGPConstraint
 from gpkit import NamedVariables, units, parse_variables
+from gpkit.constraints.relax import ConstraintsRelaxed
+from gpkit.constraints.relax import ConstraintsRelaxedEqually
+from gpkit.constraints.relax import ConstantsRelaxed
+
+if sys.version_info >= (3, 0):
+    unicode = str  # pylint:disable=redefined-builtin,invalid-name
 
 NDIGS = {"cvxopt": 4, "mosek": 5, "mosek_cli": 5}
 # name: decimal places of accuracy
@@ -32,14 +39,14 @@ class TestGP(unittest.TestCase):
 
         The global optimum is (x, y) = (sqrt(2), 1/sqrt(2)).
         """
-        x = Monomial('x')
-        y = Monomial('y')
+        x = Variable('x')
+        y = Variable('y')
         prob = Model(cost=(x + 2*y),
                      constraints=[x*y >= 1])
         sol = prob.solve(solver=self.solver, verbosity=0)
-        self.assertEqual(type(prob.latex()), str)
+        self.assertEqual(type(prob.latex()), unicode)
         # pylint: disable=protected-access
-        self.assertEqual(type(prob._repr_latex_()), str)
+        self.assertEqual(type(prob._repr_latex_()), unicode)
         self.assertAlmostEqual(sol("x"), np.sqrt(2.), self.ndig)
         self.assertAlmostEqual(sol("y"), 1/np.sqrt(2.), self.ndig)
         self.assertAlmostEqual(sol("x") + 2*sol("y"),
@@ -49,8 +56,26 @@ class TestGP(unittest.TestCase):
 
     def test_sigeq(self):
         x = Variable("x")
-        y = VectorVariable(1, "y")  # test vector input to sigeq
+        y = VectorVariable(1, "y")
         c = Variable("c")
+        # test left vector input to sigeq
+        with SignomialsEnabled():
+            m = Model(c, [c >= (x + 0.25)**2 + (y - 0.5)**2,
+                          SignomialEquality(x**2 + x, y)])
+        sol = m.localsolve(solver=self.solver, verbosity=0, mutategp=False)
+        self.assertAlmostEqual(sol("x"), 0.1639472, self.ndig)
+        self.assertAlmostEqual(sol("y")[0], 0.1908254, self.ndig)
+        self.assertAlmostEqual(sol("c"), 0.2669448, self.ndig)
+        # test right vector input to sigeq
+        with SignomialsEnabled():
+            m = Model(c, [c >= (x + 0.25)**2 + (y - 0.5)**2,
+                          SignomialEquality(y, x**2 + x)])
+        sol = m.localsolve(solver=self.solver, verbosity=0)
+        self.assertAlmostEqual(sol("x"), 0.1639472, self.ndig)
+        self.assertAlmostEqual(sol("y")[0], 0.1908254, self.ndig)
+        self.assertAlmostEqual(sol("c"), 0.2669448, self.ndig)
+        # test scalar input to sigeq
+        y = Variable("y")
         with SignomialsEnabled():
             m = Model(c, [c >= (x + 0.25)**2 + (y - 0.5)**2,
                           SignomialEquality(x**2 + x, y)])
@@ -182,6 +207,7 @@ class TestGP(unittest.TestCase):
         sol = Model(1/L, constr).solve(self.solver, verbosity=0)
         self.assertAlmostEqual(sol(L), 10, self.ndig)
         self.assertAlmostEqual(sol["cost"], 0.1, self.ndig)
+        self.assertTrue(sol.almost_equal(sol))
 
     def test_singular(self):
         """
@@ -246,6 +272,40 @@ class TestSP(unittest.TestCase):
     name = "TestSP_"
     solver = None
     ndig = None
+
+    def test_sp_relaxation(self):
+        w = Variable('w')
+        x = Variable('x')
+        y = Variable('y')
+        z = Variable('z')
+        with SignomialsEnabled():
+            m = Model(x, [x+y >= w, x+y <= z/2, y <= x, y >= 1], {z: 3, w: 3})
+        r1 = ConstantsRelaxed(m)
+        self.assertEqual(len(r1.varkeys), 8)
+        with self.assertRaises(ValueError):
+            mr1 = Model(x*r1.relaxvars, r1)  # no 'prod'
+        mr1 = Model(x*r1.relaxvars.prod()**10, r1)
+        cost1 = mr1.localsolve(verbosity=0)["cost"]
+        self.assertAlmostEqual(cost1/1024, 1, self.ndig)
+        m.debug(verbosity=0)
+        with SignomialsEnabled():
+            m = Model(x, [x+y >= z, x+y <= z/2, y <= x, y >= 1], {z: 3})
+        if self.solver != "cvxopt":
+            m.debug(verbosity=0)
+        r2 = ConstraintsRelaxed(m)
+        self.assertEqual(len(r2.varkeys), 7)
+        mr2 = Model(x*r2.relaxvars.prod()**10, r2)
+        cost2 = mr2.localsolve(verbosity=0)["cost"]
+        self.assertAlmostEqual(cost2/1024, 1, self.ndig)
+        with SignomialsEnabled():
+            m = Model(x, [x+y >= z, x+y <= z/2, y <= x, y >= 1], {z: 3})
+        if self.solver != "cvxopt":
+            m.debug(verbosity=0)
+        r3 = ConstraintsRelaxedEqually(m)
+        self.assertEqual(len(r3.varkeys), 4)
+        mr3 = Model(x*r3.relaxvar**10, r3)
+        cost3 = mr3.localsolve(verbosity=0)["cost"]
+        self.assertAlmostEqual(cost3/(32*0.8786796585), 1, self.ndig)
 
     def test_sp_bounded(self):
         x = Variable("x")
@@ -316,16 +376,63 @@ class TestSP(unittest.TestCase):
         y = Variable('y', 1)
         z = Variable('z', 4)
 
-        with self.assertRaises(ValueError):
-            with SignomialsEnabled():
-                m = Model(x, [x + z >= y])
-                m.localsolve()
+        from io import StringIO
+        old_stdout = sys.stdout
+        sys.stdout = stringout = StringIO()
+
+        with SignomialsEnabled():
+            m = Model(x, [x + z >= y])
+            with self.assertRaises(ValueError):
+                m.localsolve(verbosity=0)
 
         with SignomialsEnabled():
             m = Model(x, [x + y >= z])
             m.substitutions[y] = 1
             m.substitutions[z] = 4
-        self.assertAlmostEqual(m.solve(self.solver, verbosity=0)["cost"], 3)
+        sol = m.solve(self.solver, verbosity=0)
+        self.assertAlmostEqual(sol["cost"], 3)
+
+        sys.stdout = old_stdout
+        self.assertEqual(stringout.getvalue(), (
+            "Warning: SignomialConstraint x + z >= y became the tautological"
+            " constraint 0 <= 3 + x after substitution.\n"
+            "Warning: SignomialConstraint x + z >= y became the tautological"
+            " constraint 0 <= 3 + x after substitution.\n"))
+
+    def test_tautological(self):
+        x = Variable('x')
+        y = Variable('y')
+        z = Variable('z')
+
+        from io import StringIO
+        old_stdout = sys.stdout
+        sys.stdout = stringout = StringIO()
+
+        with SignomialsEnabled():
+            m1 = Model(x, [x + y >= z, x >= y])
+            m2 = Model(x, [x + 1 >= 0, x >= y])
+        m1.substitutions.update({'z': 0, 'y': 1})
+        m2.substitutions.update({'y': 1})
+        self.assertAlmostEqual(m1.solve(self.solver, verbosity=0)["cost"],
+                               m2.solve(self.solver, verbosity=0)["cost"])
+
+        sys.stdout = old_stdout
+        self.assertEqual(stringout.getvalue(), (
+            "Warning: SignomialConstraint x + y >= z became the tautological"
+            " constraint 0 <= 1 + x after substitution.\n"
+            "Warning: SignomialConstraint x + 1 >= 0 became the tautological"
+            " constraint 0 <= 1 + x after substitution.\n"))
+
+    def test_impossible(self):
+        x = Variable('x')
+        y = Variable('y')
+        z = Variable('z')
+
+        with SignomialsEnabled():
+            m1 = Model(x, [x + y >= z, x >= y])
+        m1.substitutions.update({'x': 0, 'y': 0})
+        with self.assertRaises(ValueError):
+            _ = m1.localsolve()
 
     def test_trivial_sp(self):
         x = Variable('x')
@@ -460,7 +567,7 @@ class TestSP(unittest.TestCase):
         x = Variable('x')
         z = Variable('z')
         local_ndig = 4
-        nonzero_adder = 0.1  # TODO: support reaching zero, issue #348
+        nonzero_adder = 0.1
         with SignomialsEnabled():
             J = 0.01*(x - 1)**2 + nonzero_adder
             with NamedVariables("SmallSignomial"):
@@ -487,6 +594,18 @@ class TestSP(unittest.TestCase):
         gp = m.sp().gp(x0={x: 0.5})  # pylint: disable=no-member
         first_gp_constr_posy = gp[0][0].as_posyslt1()[0]
         self.assertEqual(first_gp_constr_posy.exp[x.key], -1./3)
+
+    def test_becomes_signomial(self):
+        "Test that a GP does not become an SP after substitutions"
+        x = Variable('x')
+        c = Variable('c')
+        y = Variable('y')
+        m = Model(x, [y >= 1 + c*x, y <= 0.5], {c: -1})
+        with self.assertRaises(RuntimeWarning):
+            with SignomialsEnabled():
+                _ = m.gp()
+        with self.assertRaises(RuntimeWarning):
+            _ = m.localsolve()
 
     def test_reassigned_constant_cost(self):
         # for issue 1131
@@ -521,6 +640,13 @@ class TestSP(unittest.TestCase):
         if "sensitive to lower bound" in bounds:
             self.assertIn(x.key, bounds["sensitive to lower bound"])
 
+    def test_penalty_ccp_solve(self):
+        "Test penalty convex-concave algorithm from [Lipp/Boyd 2016]."
+        m = SPThing()
+        sol = m.localsolve(verbosity=0)
+        sol_pccp = m.penalty_ccp_solve(verbosity=0)
+        self.assertEqual(len(m.program.gps[-1].varkeys), 3)
+        self.assertAlmostEqual(sol['cost'], sol_pccp['cost'])
 
 class TestModelSolverSpecific(unittest.TestCase):
     """test cases run only for specific solvers"""
@@ -535,17 +661,28 @@ class TestModelSolverSpecific(unittest.TestCase):
 
 
 class Thing(Model):
-    """a thing, for model testing
-
-    SKIP VERIFICATION
-
-    """
+    "a thing, for model testing"
     def setup(self, length):
         a = self.a = VectorVariable(length, "a", "g/m")
         b = self.b = VectorVariable(length, "b", "m")
         c = Variable("c", 17/4., "g")
         return [a >= c/b]
 
+class Thing2(Model):
+    "another thing for model testing"
+    def setup(self):
+        return [Thing(2), Model()]
+
+class SPThing(Model):
+    "a simple SP"
+    def setup(self):
+        x = Variable("x")
+        y = Variable("y", 2.)
+        z = Variable("z")
+        with SignomialsEnabled():
+            constraints = [z <= x**2 + y, x*z == 2]
+        self.cost = 1/z
+        return constraints
 
 class Box(Model):
     """simple box for model testing
@@ -566,8 +703,9 @@ class Box(Model):
     w, d, h
     """
     def setup(self):
-        exec parse_variables(Box.__doc__)
+        exec(parse_variables(Box.__doc__))
         return [V == h*w*d]
+
 
 class BoxAreaBounds(Model):
     """for testing functionality of separate analysis models
@@ -591,16 +729,26 @@ class TestModelNoSolve(unittest.TestCase):
     def test_modelname_added(self):
         t = Thing(2)
         for vk in t.varkeys:
-            self.assertEqual(vk.models, ["Thing"])
+            self.assertEqual(vk.lineage, (("Thing", 0),))
+
+    def test_modelcontainmentprinting(self):
+        t = Thing2()
+        self.assertEqual(t["c"].key.models, ("Thing2", "Thing"))
+        self.assertIsInstance(t.str_without(), unicode)
+        self.assertIsInstance(t.latex(), unicode)
 
     def test_no_naming_on_var_access(self):
         # make sure that analysis models don't add their names to
         # variables looked up from other models
-        box = Box()
-        area_bounds = BoxAreaBounds(box)
-        M = Model(box["V"], [box, area_bounds])
-        for var in ("h", "w", "d"):
-            self.assertEqual(len(M.variables_byname(var)), 1)
+        if sys.version_info >= (3, 0):
+            with self.assertRaises(FutureWarning):
+                box = Box()
+        else:
+            box = Box()
+            area_bounds = BoxAreaBounds(box)
+            M = Model(box["V"], [box, area_bounds])
+            for var in ("h", "w", "d"):
+                self.assertEqual(len(M.variables_byname(var)), 1)
 
 
 TESTS = [TestModelSolverSpecific, TestModelNoSolve]
@@ -609,7 +757,7 @@ MULTI_SOLVER_TESTS = [TestGP, TestSP]
 for testcase in MULTI_SOLVER_TESTS:
     for solver in settings["installed_solvers"]:
         if solver:
-            test = type(testcase.__name__+"_"+solver,
+            test = type(str(testcase.__name__+"_"+solver),
                         (testcase,), {})
             setattr(test, "solver", solver)
             setattr(test, "ndig", NDIGS[solver])

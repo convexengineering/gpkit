@@ -1,8 +1,8 @@
 "The shared non-mathematical backbone of all Nomials"
+from __future__ import unicode_literals, print_function
 from .data import NomialData
-from ..small_classes import Numbers
+from ..small_classes import Numbers, FixedScalar
 from ..small_scripts import nomial_latex_helper
-from ..repr_conventions import _str, _repr, _repr_latex_, unitstr
 
 
 class Nomial(NomialData):
@@ -10,41 +10,35 @@ class Nomial(NomialData):
     __div__ = None
     sub = None
 
-    __str__ = _str
-    __repr__ = _repr
-    _repr_latex_ = _repr_latex_
-    unitstr = unitstr
-
-    def str_without(self, excluded=None):
+    def str_without(self, excluded=()):
         "String representation, excluding fields ('units', varkey attributes)"
-        if excluded is None:
-            excluded = []
-        mstrs = []
-        for exp, c in self.hmap.items():
-            varstrs = []
-            for (var, x) in exp.items():
-                if x != 0:
-                    varstr = var.str_without(excluded)
-                    if x != 1:
-                        varstr += "**%.2g" % x
-                    varstrs.append(varstr)
-            varstrs.sort()
-            cstr = "%.3g" % c
-            if cstr == "-1" and varstrs:
-                mstrs.append("-" + "*".join(varstrs))
-            else:
-                cstr = [cstr] if (cstr != "1" or not varstrs) else []
-                mstrs.append("*".join(cstr + varstrs))
-        if "units" not in excluded:
-            units = self.unitstr(" [%s]")
+        units = "" if "units" in excluded else self.unitstr(" [%s]")
+        if hasattr(self, "key"):
+            return self.key.str_without(excluded) + units  # pylint: disable=no-member
+        elif self.ast:
+            return self.parse_ast(excluded) + units
         else:
-            units = ""
+            mstrs = []
+            for exp, c in self.hmap.items():
+                varstrs = []
+                for (var, x) in exp.items():
+                    if x != 0:
+                        varstr = var.str_without(excluded)
+                        if x != 1:
+                            varstr += "^%.2g" % x
+                        varstrs.append(varstr)
+                varstrs.sort()
+                cstr = "%.3g" % c
+                if cstr == "-1" and varstrs:
+                    mstrs.append("-" + "*".join(varstrs))
+                else:
+                    cstr = [cstr] if (cstr != "1" or not varstrs) else []
+                    mstrs.append("*".join(cstr + varstrs))
         return " + ".join(sorted(mstrs)) + units
 
-    def latex(self, excluded=None):
+    def latex(self, excluded=()):
         "Latex representation, parsing `excluded` just as .str_without does"
-        if excluded is None:
-            excluded = []
+        # TODO: add ast parsing here
         mstrs = []
         for exp, c in self.hmap.items():
             pos_vars, neg_vars = [], []
@@ -57,12 +51,17 @@ class Nomial(NomialData):
 
         if "units" in excluded:
             return " + ".join(sorted(mstrs))
-
         units = self.unitstr(r"\mathrm{~\left[ %s \right]}", ":L~")
         units_tf = units.replace("frac", "tfrac").replace(r"\cdot", r"\cdot ")
         return " + ".join(sorted(mstrs)) + units_tf
 
-    __hash__ = NomialData.__hash__  # required by Python 3
+    def prod(self):
+        "Return self for compatibility with NomialArray"
+        return self
+
+    def sum(self):
+        "Return self for compatibility with NomialArray"
+        return self
 
     @property
     def value(self):
@@ -73,41 +72,24 @@ class Nomial(NomialData):
         float, if no symbolic variables remain after substitution
         (Monomial, Posynomial, or Nomial), otherwise.
         """
-        p = self.sub(self.values)  # pylint: disable=not-callable
-        if len(p.hmap) == 1 and not p.vks:
-            return p.c
-        return p
-
-    def prod(self):
-        "Return self for compatibility with NomialArray"
-        return self
-
-    def sum(self):
-        "Return self for compatibility with NomialArray"
-        return self
-
-    def to(self, units):
-        "Create new Signomial converted to new units"
-         # pylint: disable=no-member
-        return self.__class__(self.hmap.to(units))
-
-    def __ne__(self, other):
-        return not self.__eq__(other)
+        if isinstance(self, FixedScalar):
+            return self.cs[0]
+        p = self.sub(self.varkeyvalues())  # pylint: disable=not-callable
+        return p.cs[0] if isinstance(p, FixedScalar) else p
 
     def __eq__(self, other):
-        "True if self and other are algbraically identical."
+        "True if self and other are algebraically identical."
         if isinstance(other, Numbers):
-            return (len(self.hmap) == 1 and  # single term
-                    not self.vks and         # constant
-                    self.cs[0] == other)     # the right constant
+            return isinstance(self, FixedScalar) and self.value == other
         return super(Nomial, self).__eq__(other)
 
-    def __radd__(self, other):
-        return self + other
+    # pylint: disable=multiple-statements
+    def __ne__(self, other): return not Nomial.__eq__(self, other)
 
-    def __rmul__(self, other):
-        return self * other
+    # required by Python 3
+    __hash__ = NomialData.__hash__
+    def __truediv__(self, other): return self.__div__(other)   # pylint: disable=not-callable
 
-    def __truediv__(self, other):
-        "For the / operator in Python 3.x"
-        return self.__div__(other)   # pylint: disable=not-callable
+    # for arithmetic consistency
+    def __radd__(self, other): return self.__add__(other, rev=True)   # pylint: disable=no-member
+    def __rmul__(self, other): return self.__mul__(other, rev=True)   # pylint: disable=no-member

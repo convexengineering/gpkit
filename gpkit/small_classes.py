@@ -1,8 +1,10 @@
 """Miscellaneous small classes"""
+from __future__ import unicode_literals
 from operator import xor
+from functools import reduce  # pylint: disable=redefined-builtin
+from six import with_metaclass
 import numpy as np
 from ._pint import Quantity, qty  # pylint: disable=unused-import
-from functools import reduce  # pylint: disable=redefined-builtin
 
 try:
     isinstance("", basestring)
@@ -11,6 +13,16 @@ except NameError:
     Strings = (str,)
 
 Numbers = (int, float, np.number, Quantity)
+
+
+class FixedScalarMeta(type):
+    "Metaclass to implement instance checking for fixed scalars"
+    def __instancecheck__(cls, obj):
+        return hasattr(obj, "hmap") and len(obj.hmap) == 1 and not obj.vks
+
+
+class FixedScalar(with_metaclass(FixedScalarMeta)):  # pylint: disable=no-init
+    "Instances of this class are scalar Nomials with no variables"
 
 
 class Count(object):
@@ -44,18 +56,6 @@ class CootMatrix(object):
     def __eq__(self, other):
         return (self.row == other.row and self.col == other.col
                 and self.data == other.data and self.shape == other.shape)
-
-    def append(self, row, col, data):
-        "Appends entry to matrix."
-        if row < 0 or col < 0:
-            raise ValueError("Only positive indices allowed")
-        if row >= self.shape[0]:
-            self.shape[0] = row + 1
-        if col >= self.shape[1]:
-            self.shape[1] = col + 1
-        self.row.append(row)
-        self.col.append(col)
-        self.data.append(data)
 
     tocoo = matrix_converter("coo")
     tocsc = matrix_converter("csc")
@@ -96,8 +96,7 @@ class DictOfLists(dict):
         "Appends a dict (of dicts) of lists to all held lists."
         if not hasattr(self, 'initialized'):
             _enlist_dict(sol, self)
-            # pylint: disable=attribute-defined-outside-init
-            self.initialized = True
+            self.initialized = True  # pylint: disable=attribute-defined-outside-init
         else:
             _append_dict(sol, self)
 
@@ -127,9 +126,7 @@ def _append_dict(d_in, d_out):
         if isinstance(v, dict):
             d_out[k] = _append_dict(v, d_out[k])
         else:
-            # consider appending nan / nanvector for new / missed keys
             d_out[k].append(v)
-    # assert set(i.keys()) == set(o.keys())  # keys change with swept varkeys
     return d_out
 
 
@@ -141,9 +138,8 @@ def _index_dict(idx, d_in, d_out):
         else:
             try:
                 d_out[k] = v[idx]
-            except IndexError:  # if not an array, return as is
+            except (IndexError, TypeError):  # if not an array, return as is
                 d_out[k] = v
-    # assert set(i.keys()) == set(o.keys())  # keys change with swept varkeys
     return d_out
 
 
@@ -158,7 +154,6 @@ def _enray(d_in, d_out):
             else:
                 v = np.array(v)
             d_out[k] = v
-    # assert set(i.keys()) == set(o.keys())  # keys change with swept varkeys
     return d_out
 
 
@@ -177,16 +172,19 @@ class HashVector(dict):
     >>> x = gpkit.nomials.Monomial('x')
     >>> exp = gpkit.small_classes.HashVector({x: 2})
     """
-    def copy(self):
-        "Return a copy of this"
-        return self.__class__(super(HashVector, self).copy())
+    hashvalue = None
 
     def __hash__(self):
         "Allows HashVectors to be used as dictionary keys."
-        # pylint:disable=access-member-before-definition, attribute-defined-outside-init
-        if not hasattr(self, "_hashvalue") or self._hashvalue is None:
-            self._hashvalue = reduce(xor, map(hash, self.items()), 0)
-        return self._hashvalue
+        if self.hashvalue is None:
+            self.hashvalue = reduce(xor, map(hash, self.items()), 0)
+        return self.hashvalue
+
+    def copy(self):
+        "Return a copy of this"
+        hv = self.__class__(self)
+        hv.hashvalue = self.hashvalue
+        return hv
 
     def __neg__(self):
         "Return Hashvector with each value negated."
@@ -231,6 +229,7 @@ class HashVector(dict):
                         sums[key] = value + svalue
                 else:
                     sums[key] = value
+            sums.hashvalue = None
             return sums
         return NotImplemented
 
@@ -239,5 +238,9 @@ class HashVector(dict):
     def __rsub__(self, other): return other + -self
     def __radd__(self, other): return self + other
     def __div__(self, other): return self * other**-1
+    def __truediv__(self, other): return self * other**-1
     def __rdiv__(self, other): return other * self**-1
     def __rmul__(self, other): return self * other
+
+
+EMPTY_HV = HashVector()
