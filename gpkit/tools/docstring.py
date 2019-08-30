@@ -1,6 +1,46 @@
 "Docstring-parsing methods"
 import re
+import inspect
+import ast
 import numpy as np
+
+
+class parse_variables(object):
+
+    def __init__(self, string, globals):
+        self.string = string
+        self.globals = globals
+
+    def __call__(self, f):
+        string = self.string
+        orig_lines, lineno = inspect.getsourcelines(f)
+        indent_length = 0
+        while orig_lines[1][indent_length] in [" ", "\t"]:
+            indent_length += 1
+        first_indent_length = indent_length
+        next_indented_idx = 2
+        # get the next indented line
+        while len(orig_lines[next_indented_idx]) <= indent_length + 1:
+            next_indented_idx += 1
+        while orig_lines[next_indented_idx][indent_length] in [" ", "\t"]:
+            indent_length += 1
+        second_indent = orig_lines[next_indented_idx][:indent_length]
+        parse_lines = [second_indent + line + "\n"
+                       for line in parse_varstring(string, errorcatch=False).split("\n")]
+        # make ast of these new lines, insert it into the original ast
+        new_lines = [orig_lines[1]] + parse_lines + orig_lines[2:]
+        # print(new_lines)
+        new_src = "\n".join([line[first_indent_length:-1] for line in new_lines])
+        # print("ns\n%s" % new_src)
+        # print(lineno, new_src)
+        new_ast = ast.parse(new_src, "<parse_variables>")
+        # ast.fix_missing_locations(new_ast)
+        # print(len(parse_lines), parse_lines)
+        ast.increment_lineno(new_ast, n=lineno-len(parse_lines))
+        code = compile(new_ast, inspect.getsourcefile(f), "exec", dont_inherit=True)
+        out = {}
+        exec(code, self.globals, out)
+        return out[f.__name__]
 
 
 def expected_unbounded(instance, doc):

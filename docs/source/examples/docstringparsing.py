@@ -1,5 +1,6 @@
 "Docstring parsing example"
-from gpkit import Model, parse_variables, parse_varstring
+from gpkit import Model, parse_variables
+from gpkit.tools.docstring import parse_varstring
 
 
 class Cube(Model):

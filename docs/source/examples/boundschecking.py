@@ -49,10 +49,12 @@ try:
 except ValueError:
     pass
 gp = m.gp(allow_missingbounds=True)
+print(gp.missingbounds)
 
-bplate = ", but would gain it from any of these sets of bounds: "
-assert {(m.D.key, 'lower'): bplate + "[(%s, 'lower')]" % m.Ap,
-        (m.Ap.key, 'lower'): bplate + ("[(%s, 'lower')]"
-                                       " or [(%s, 'lower')]" % (m.D, m.nu)),
-        (m.nu.key, 'lower'): bplate + "[(%s, 'lower')]" % m.Ap
-       } == gp.missingbounds
+str = ", but would gain it from any of these sets of bounds: "
+assert gp.missingbounds[(m.D.key, 'lower')] == str + "[(%s, 'lower')]" % m.Ap
+assert gp.missingbounds[(m.nu.key, 'lower')] == str + "[(%s, 'lower')]" % m.Ap
+# ordering is arbitrary:
+assert gp.missingbounds[(m.Ap.key, 'lower')] in (
+    str + ("[(%s, 'lower')] or [(%s, 'lower')]" % (m.D, m.nu)),
+    str + ("[(%s, 'lower')] or [(%s, 'lower')]" % (m.nu, m.D)))
