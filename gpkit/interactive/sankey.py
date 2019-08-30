@@ -1,5 +1,6 @@
 "implements Sankey"
 from __future__ import unicode_literals, print_function
+import sys
 from collections import defaultdict
 import numpy as np
 from ipywidgets import Layout
@@ -12,6 +13,9 @@ from .. import GPCOLORS
 
 
 INSENSITIVE = 1e-2
+
+if sys.version_info >= (3, 0):
+    unichr = chr  # pylint: disable=redefined-builtin,invalid-name
 
 
 def getcolor(value):

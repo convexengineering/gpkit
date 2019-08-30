@@ -2,7 +2,7 @@
 import unittest
 import sys
 import numpy as np
-from gpkit import (Model, Monomial, settings, VectorVariable, Variable,
+from gpkit import (Model, settings, VectorVariable, Variable,
                    SignomialsEnabled, ArrayVariable, SignomialEquality)
 from gpkit.constraints.bounded import Bounded
 from gpkit.small_classes import CootMatrix
@@ -39,8 +39,8 @@ class TestGP(unittest.TestCase):
 
         The global optimum is (x, y) = (sqrt(2), 1/sqrt(2)).
         """
-        x = Monomial('x')
-        y = Monomial('y')
+        x = Variable('x')
+        y = Variable('y')
         prob = Model(cost=(x + 2*y),
                      constraints=[x*y >= 1])
         sol = prob.solve(solver=self.solver, verbosity=0)
@@ -640,6 +640,13 @@ class TestSP(unittest.TestCase):
         if "sensitive to lower bound" in bounds:
             self.assertIn(x.key, bounds["sensitive to lower bound"])
 
+    def test_penalty_ccp_solve(self):
+        "Test penalty convex-concave algorithm from [Lipp/Boyd 2016]."
+        m = SPThing()
+        sol = m.localsolve(verbosity=0)
+        sol_pccp = m.penalty_ccp_solve(verbosity=0)
+        self.assertEqual(len(m.program.gps[-1].varkeys), 3)
+        self.assertAlmostEqual(sol['cost'], sol_pccp['cost'])
 
 class TestModelSolverSpecific(unittest.TestCase):
     """test cases run only for specific solvers"""
@@ -661,12 +668,21 @@ class Thing(Model):
         c = Variable("c", 17/4., "g")
         return [a >= c/b]
 
-
 class Thing2(Model):
     "another thing for model testing"
     def setup(self):
         return [Thing(2), Model()]
 
+class SPThing(Model):
+    "a simple SP"
+    def setup(self):
+        x = Variable("x")
+        y = Variable("y", 2.)
+        z = Variable("z")
+        with SignomialsEnabled():
+            constraints = [z <= x**2 + y, x*z == 2]
+        self.cost = 1/z
+        return constraints
 
 class Box(Model):
     """simple box for model testing

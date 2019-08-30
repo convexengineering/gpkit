@@ -7,7 +7,7 @@ from .array import NomialArray
 from .. import units
 from ..constraints import SingleEquationConstraint
 from ..globals import SignomialsEnabled
-from ..small_classes import Strings, Numbers
+from ..small_classes import Numbers
 from ..small_classes import HashVector, EMPTY_HV
 from ..varkey import VarKey
 from ..small_scripts import mag
@@ -36,7 +36,7 @@ class Signomial(Nomial):
     """
     _c = _exp = None  # pylint: disable=invalid-name
 
-    def __init__(self, hmap=None, cs=1, require_positive=True, **descr):  # pylint: disable=too-many-statements,too-many-branches
+    def __init__(self, hmap=None, cs=1, require_positive=True):  # pylint: disable=too-many-statements,too-many-branches
         if not isinstance(hmap, NomialMap):
             if hasattr(hmap, "hmap"):
                 hmap = hmap.hmap
@@ -44,15 +44,14 @@ class Signomial(Nomial):
                 hmap_ = NomialMap([(EMPTY_HV, mag(hmap))])
                 hmap_.units_of_product(hmap)
                 hmap = hmap_
-            elif hmap is None:
-                hmap = VarKey(**descr).hmap
-            elif isinstance(hmap, Strings):
-                hmap = VarKey(hmap, **descr).hmap
             elif isinstance(hmap, dict):
-                exp = HashVector({VarKey(k): v
-                                  for k, v in hmap.items() if v})
+                exp = HashVector({VarKey(k): v for k, v in hmap.items() if v})
                 hmap = NomialMap({exp: mag(cs)})
                 hmap.units_of_product(cs)
+            else:
+                raise ValueError("Nomial construction accepts only NomialMaps,"
+                                 " objects with an .hmap attribute, numbers,"
+                                 " or *(exp dict of strings, number).")
         super(Signomial, self).__init__(hmap)
         if self.any_nonpositive_cs:
             if require_positive and not SignomialsEnabled:
@@ -262,6 +261,12 @@ class Signomial(Nomial):
     def __rsub__(self, other):
         return other + -self if SignomialsEnabled else NotImplemented  # pylint: disable=using-constant-test
 
+    def chop(self):
+        "Returns a list of monomials in the signomial."
+        monmaps = [NomialMap({exp: c}) for exp, c in self.hmap.items()]
+        for monmap in monmaps:
+            monmap.units = self.hmap.units
+        return [Monomial(monmap) for monmap in monmaps]
 
 class Posynomial(Signomial):
     "A Signomial with strictly positive cs"
@@ -400,6 +405,8 @@ class PosynomialInequality(ScalarSingleEquationConstraint):
     """
 
     feastol = 1e-3
+    sgp_parent = None
+    relax_sensitivity = None
     # NOTE: follows .check_result's max default, but 1e-3 seems a bit lax...
 
     def __init__(self, left, oper, right):
@@ -427,8 +434,6 @@ class PosynomialInequality(ScalarSingleEquationConstraint):
         for key in self.substitutions:
             for bound in ("upper", "lower"):
                 self.bounded.add((key, bound))
-        self.relax_sensitivity = 0
-        self.sgp_parent = None
 
     def _simplify_posy_ineq(self, hmap, pmap=None):
         "Simplify a posy <= 1 by moving constants to the right side."
@@ -586,6 +591,8 @@ class MonomialEquality(PosynomialInequality):
         if not la or not nu:
             return {}  # as_posyslt1 created no inequalities
         self.relax_sensitivity = la[0] - la[1]
+        if self.sgp_parent:
+            self.sgp_parent.relax_sensitivity = self.relax_sensitivity
         var_senss = {}
         for var in self.varkeys:
             for i, m in enumerate(self.unsubbed):
@@ -721,7 +728,9 @@ class SignomialInequality(ScalarSingleEquationConstraint):
         posy, negy = siglt0.posy_negy()
         # default guess of 1.0 for unspecified negy variables
         x0.update({vk: 1.0 for vk in negy.vks if vk not in x0})
-        return PosynomialInequality(posy, "<=", negy.mono_lower_bound(x0))
+        pconstr = PosynomialInequality(posy, "<=", negy.mono_lower_bound(x0))
+        pconstr.sgp_parent = self
+        return pconstr
 
     def as_approxslt(self):
         "Returns posynomial-less-than sides of a signomial constraint"
@@ -757,6 +766,7 @@ class SingleSignomialEquality(SignomialInequality):
         # assume unspecified variables have a value of 1.0
         x0.update({vk: 1.0 for vk in siglt0.vks if vk not in x0})
         mec = (posy.mono_lower_bound(x0) == negy.mono_lower_bound(x0))
+        mec.sgp_parent = self
         return mec
 
     def as_approxslt(self):
