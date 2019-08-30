@@ -702,8 +702,8 @@ class Box(Model):
     ---------------
     w, d, h
     """
+    @parse_variables(__doc__, globals())
     def setup(self):
-        exec(parse_variables(Box.__doc__))
         return [V == h*w*d]
 
 
@@ -740,15 +740,11 @@ class TestModelNoSolve(unittest.TestCase):
     def test_no_naming_on_var_access(self):
         # make sure that analysis models don't add their names to
         # variables looked up from other models
-        if sys.version_info >= (3, 0):
-            with self.assertRaises(FutureWarning):
-                box = Box()
-        else:
-            box = Box()
-            area_bounds = BoxAreaBounds(box)
-            M = Model(box["V"], [box, area_bounds])
-            for var in ("h", "w", "d"):
-                self.assertEqual(len(M.variables_byname(var)), 1)
+        box = Box()
+        area_bounds = BoxAreaBounds(box)
+        M = Model(box["V"], [box, area_bounds])
+        for var in ("h", "w", "d"):
+            self.assertEqual(len(M.variables_byname(var)), 1)
 
 
 TESTS = [TestModelSolverSpecific, TestModelNoSolve]

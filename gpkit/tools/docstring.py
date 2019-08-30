@@ -56,7 +56,7 @@ def expected_unbounded(instance, doc):
     return exp_unbounded
 
 
-def parse_variables(string, errorcatch=True):
+def parse_varstring(string, errorcatch=True):
     "Parses a string to determine what variables to create from it"
     out = "from gpkit import Variable, VectorVariable\n"
     out += check_and_parse_flag(string, "Constants\n", errorcatch,

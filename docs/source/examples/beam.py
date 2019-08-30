@@ -39,8 +39,8 @@ class Beam(Model):
     w_tip
 
     """
+    @parse_variables(__doc__, globals())
     def setup(self, N=4):
-        exec(parse_variables(self.__doc__))
         # minimize tip displacement (the last w)
         self.cost = self.w_tip = w[-1]
         return {

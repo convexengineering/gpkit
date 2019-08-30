@@ -1,7 +1,7 @@
 """Modular aircraft concept"""
 import pickle
 import numpy as np
-from gpkit import Model, Vectorize, parse_variables, pv_decorater
+from gpkit import Model, Vectorize, parse_variables
 
 
 class AircraftP(Model):
@@ -21,7 +21,7 @@ class AircraftP(Model):
     Wfuel, aircraft.W, state.mu
 
     """
-    @pv_decorater(__doc__, globals())
+    @parse_variables(__doc__, globals())
     def setup(self, aircraft, state):
         self.aircraft = aircraft
         self.state = state
@@ -62,7 +62,7 @@ class Aircraft(Model):
     ---------------
     wing.c, wing.S
     """
-    @pv_decorater(__doc__, globals())
+    @parse_variables(__doc__, globals())
     def setup(self):
         self.fuse = Fuselage()
         self.wing = Wing()
@@ -87,7 +87,7 @@ class FlightState(Model):
     rho   0.74     [kg/m^3]   air density
 
     """
-    @pv_decorater(__doc__, globals())
+    @parse_variables(__doc__, globals())
     def setup(self):
         pass
 
@@ -104,7 +104,6 @@ class FlightSegment(Model):
     Wfuel, aircraft.W
 
     """
-    @pv_decorater(__doc__, globals())
     def setup(self, aircraft):
         self.aircraft = aircraft
 
@@ -167,11 +166,10 @@ class WingAero(Model):
     ---------------
     CL, wing.S, state.mu, state.rho, state.V
     """
-    @pv_decorater(__doc__, globals())
+    @parse_variables(__doc__, globals())
     def setup(self, wing, state):
         self.wing = wing
         self.state = state
-        assert False
 
         c = wing.c
         A = wing.A
@@ -208,7 +206,7 @@ class Wing(Model):
     ---------------
     c, S
     """
-    @pv_decorater(__doc__, globals())
+    @parse_variables(__doc__, globals())
     def setup(self):
         return {"parametrization of wing weight":
                     W >= S*rho,
@@ -228,7 +226,7 @@ class Fuselage(Model):
     W  100 [lbf]  weight
 
     """
-    @pv_decorater(__doc__, globals())
+    @parse_variables(__doc__, globals())
     def setup(self):
         pass
 
@@ -238,23 +236,23 @@ M = Model(MISSION.takeoff_fuel, [MISSION, AC])
 print(M)
 sol = M.solve(verbosity=0)
 # # save solution to some files
-# sol.savemat()
-# sol.savecsv()
-# sol.savetxt()
-# sol.save("solution.pkl")
-# # retrieve solution from a file
+sol.savemat()
+sol.savecsv()
+sol.savetxt()
+sol.save("solution.pkl")
+# retrieve solution from a file
 # sol_loaded = pickle.load(open("solution.pkl"))
-#
-# vars_of_interest = set(AC.varkeys)
-# # note that there's two ways to access submodels
-# assert (MISSION["flight segment"]["aircraft performance"]
-#         is MISSION.fs.aircraftp)
-# vars_of_interest.update(MISSION.fs.aircraftp.unique_varkeys)
-# vars_of_interest.add(M["D"])
-# print(sol.summary(vars_of_interest))
-# print(sol.table(tables=["loose constraints"]))
-#
-# MISSION["flight segment"]["aircraft performance"]["fuel burn rate"] = (
-#     MISSION.fs.aircraftp.Wburn >= 0.2*MISSION.fs.aircraftp.wing_aero.D)
-# sol = M.solve(verbosity=0)
+
+vars_of_interest = set(AC.varkeys)
+# note that there's two ways to access submodels
+assert (MISSION["flight segment"]["aircraft performance"]
+        is MISSION.fs.aircraftp)
+vars_of_interest.update(MISSION.fs.aircraftp.unique_varkeys)
+vars_of_interest.add(M["D"])
+print(sol.summary(vars_of_interest))
+print(sol.table(tables=["loose constraints"]))
+
+MISSION["flight segment"]["aircraft performance"]["fuel burn rate"] = (
+    MISSION.fs.aircraftp.Wburn >= 0.2*MISSION.fs.aircraftp.wing_aero.D)
+sol = M.solve(verbosity=0)
 # print(sol.diff("solution.pkl", showvars=vars_of_interest, sortbymodel=False))

@@ -28,8 +28,8 @@ class BoundsChecking(Model):
     D
 
     """
+    @parse_variables(__doc__, globals())
     def setup(self):
-        exec(parse_variables(BoundsChecking.__doc__))
         self.cost = F
         return [
             F >= D + T,
