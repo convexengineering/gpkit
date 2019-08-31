@@ -59,15 +59,23 @@ def expected_unbounded(instance, doc):
 
 
 class parse_variables(object):  # pylint:disable=invalid-name
-    """decorator for adding local Variables from a string
+    """decorator for adding local Variables from a string.
 
-    Generally called as `@parse_variables(__doc__, globals())`
+    Generally called as `@parse_variables(__doc__, globals())`.
     """
-    def __init__(self, string, scopevars):
+    def __init__(self, string, scopevars=None):
         self.string = string
         self.scopevars = scopevars
+        if scopevars is None:
+            raise DeprecationWarning("""
+parse_variables is no longer used directly with exec, but as a decorator:
 
-    def __call__(self, function):  # pylint:disable=too-many-locals,exec-used
+    @parse_variables(__doc__, globals())
+    def setup(...):
+
+""")
+
+    def __call__(self, function):  # pylint:disable=too-many-locals
         orig_lines, lineno = inspect.getsourcelines(function)
         indent_length = 0
         while orig_lines[1][indent_length] in [" ", "\t"]:
@@ -90,7 +98,7 @@ class parse_variables(object):  # pylint:disable=invalid-name
         code = compile(new_ast, inspect.getsourcefile(function), "exec",
                        dont_inherit=True)  # don't inherit __future__ from here
         out = {}
-        exec(code, self.scopevars, out)
+        exec(code, self.scopevars, out)  # pylint: disable=exec-used
         return out[function.__name__]
 
 

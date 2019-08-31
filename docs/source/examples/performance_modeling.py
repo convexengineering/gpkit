@@ -235,13 +235,13 @@ MISSION = Mission(AC)
 M = Model(MISSION.takeoff_fuel, [MISSION, AC])
 print(M)
 sol = M.solve(verbosity=0)
-# # save solution to some files
+# save solution to some files
 sol.savemat()
 sol.savecsv()
 sol.savetxt()
 sol.save("solution.pkl")
 # retrieve solution from a file
-# sol_loaded = pickle.load(open("solution.pkl"))
+sol_loaded = pickle.load(open("solution.pkl"))
 
 vars_of_interest = set(AC.varkeys)
 # note that there's two ways to access submodels
@@ -255,4 +255,4 @@ print(sol.table(tables=["loose constraints"]))
 MISSION["flight segment"]["aircraft performance"]["fuel burn rate"] = (
     MISSION.fs.aircraftp.Wburn >= 0.2*MISSION.fs.aircraftp.wing_aero.D)
 sol = M.solve(verbosity=0)
-# print(sol.diff("solution.pkl", showvars=vars_of_interest, sortbymodel=False))
+print(sol.diff("solution.pkl", showvars=vars_of_interest, sortbymodel=False))
