@@ -16,4 +16,4 @@ Tightest Constraints
 --------------------
     +1 : x <= 1e+30
 
-sol['boundedness'] is: {'value near upper bound': {x}, 'sensitive to upper bound': {x}}
+sol['boundedness'] is: {'value near upper bound': set([x]), 'sensitive to upper bound': set([x])}

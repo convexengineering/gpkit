@@ -1,29 +1,35 @@
-from gpkit import Variable, VectorVariable
-
-try:
-    A = self.A = Variable('A', 'm^2', 'surface area')
-except Exception as e:
-    raise ValueError("`"+e.__class__.__name__+": "+str(e)+"` was raised"
-                     " while executing the parsed line `A = self.A = Variable('A', 'm^2', 'surface area')`. Is this line following the format `Name (optional Value) [Units] (Optional Description)` without any whitespace in the Name or Value fields?")
-
-try:
-    V = self.V = Variable('V', 100, 'L', 'minimum volume')
-except Exception as e:
-    raise ValueError("`"+e.__class__.__name__+": "+str(e)+"` was raised"
-                     " while executing the parsed line `V = self.V = Variable('V', 100, 'L', 'minimum volume')`. Is this line following the format `Name (optional Value) [Units] (Optional Description)` without any whitespace in the Name or Value fields?")
-
-try:
-    h = self.h = Variable('h', 1, 'm', 'minimum height')
-except Exception as e:
-    raise ValueError("`"+e.__class__.__name__+": "+str(e)+"` was raised"
-                     " while executing the parsed line `h = self.h = Variable('h', 1, 'm', 'minimum height')`. Is this line following the format `Name (optional Value) [Units] (Optional Description)` without any whitespace in the Name or Value fields?")
-
-try:
-    s = self.s = VectorVariable(3, 's', 'm', 'side length')
-except Exception as e:
-    raise ValueError("`"+e.__class__.__name__+": "+str(e)+"` was raised"
-                     " while executing the parsed line `s = self.s = VectorVariable(3, 's', 'm', 'side length')`. Is this line following the format `Name (optional Value) [Units] (Optional Description)` without any whitespace in the Name or Value fields?")
-
+from gpkit import Variable, VectorVariable # Demonstration of nomenclature syntax
+# 
+#     Lines that end in "Variables" will be parsed as a scalar variable table
+#     until the next blank line.
+# 
+#     Variables
+#     ---------
+A = self.A = Variable("A", "m^2", "surface area")  # from 'A       [m^2]  surface area'
+V = self.V = Variable("V", 100, "L", "minimum volume")  # from 'V   100 [L]    minimum volume'
+# 
+#     Lines that end in "Variables of length $N" will be parsed as vector
+#     variables of length $N until the next blank line.
+# 
+#     Variables of length 3
+#     ---------------------
+s = self.s = VectorVariable(3, "s", "m", "side length")  # from 's       [m]    side length'
+# 
+#     Let's introduce more variables: (any line ending in "Variables" is parsed)
+# 
+#     Zoning Variables
+#     ----------------
+h = self.h = Variable("h", 1, "m", "minimum height")  # from 'h     1 [m]    minimum height'
+# 
+#     Upper Unbounded
+#     ---------------
+#     A
+# 
+#     The ordering of these blocks doesn't affect anything; order them in the
+#     way that makes the most sense to someone else reading your model.
+#     
+# ("@parse_variables" spacer line)
+# ("def setup" spacer line)
 
 Cost
 ----

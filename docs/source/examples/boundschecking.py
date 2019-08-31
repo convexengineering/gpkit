@@ -49,7 +49,6 @@ try:
 except ValueError:
     pass
 gp = m.gp(allow_missingbounds=True)
-print(gp.missingbounds)
 
 str = ", but would gain it from any of these sets of bounds: "
 assert gp.missingbounds[(m.D.key, 'lower')] == str + "[(%s, 'lower')]" % m.Ap

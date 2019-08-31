@@ -26,7 +26,7 @@ class parse_variables(object):
             indent_length += 1
         second_indent = orig_lines[next_indented_idx][:indent_length]
         parse_lines = [second_indent + line + "\n"
-                       for line in parse_varstring(string, errorcatch=False).split("\n")]
+                       for line in parse_varstring(string).split("\n")]
         # make ast of these new lines, insert it into the original ast
         new_lines = [orig_lines[1]] + parse_lines + orig_lines[2:]
         # print(new_lines)
@@ -96,15 +96,18 @@ def expected_unbounded(instance, doc):
     return exp_unbounded
 
 
-def parse_varstring(string, errorcatch=True):
+def parse_varstring(string):
     "Parses a string to determine what variables to create from it"
-    out = "from gpkit import Variable, VectorVariable\n"
-    out += check_and_parse_flag(string, "Constants\n", errorcatch,
-                                constant_declare)
-    out += check_and_parse_flag(string, "Variables\n", errorcatch)
-    out += check_and_parse_flag(string, "Variables of length", errorcatch,
-                                vv_declare)
-    return out
+    consts = check_and_parse_flag(string, "Constants\n", constant_declare)
+    vars = check_and_parse_flag(string, "Variables\n")
+    vecvars = check_and_parse_flag(string, "Variables of length", vv_declare)
+    out = ["# " + line for line in string.split("\n")]
+    out[0] = "from gpkit import Variable, VectorVariable" + " " + out[0]
+    for lines, indexs in (consts, vars, vecvars):
+        for line, index in zip(lines.split("\n"), indexs):
+            out[index] = line + "  # from '%s'" % out[index][1:].strip()
+    return "\n".join(out) + ('\n# ("@parse_variables" spacer line)'
+                             '\n# ("def setup" spacer line)')
 
 
 def vv_declare(string, flag, idx2, countstr):
@@ -119,9 +122,11 @@ def constant_declare(string, flag, idx2, countstr):
     return countstr.replace("')", "', constant=True)")
 
 
-def check_and_parse_flag(string, flag, errorcatch, declaration_func=None):
+def check_and_parse_flag(string, flag, declaration_func=None):
     "Checks for instances of flag in string and parses them."
     overallstr = ""
+    originalstr = string
+    lineidxs = []
     for _ in range(string.count(flag)):
         countstr = ""
         idx = string.index(flag)
@@ -149,14 +154,15 @@ def check_and_parse_flag(string, flag, errorcatch, declaration_func=None):
                 while line[labelstart] == " ":
                     labelstart += 1
                 label = line[labelstart:].replace("'", "\\'")
-            countstr += variable_declaration(nameval, units, label, line,
-                                             errorcatch)
+            countstr += variable_declaration(nameval, units, label, line)
+            # note that this is a 0-based line indexing
+            lineidxs.append(originalstr[:originalstr.index(line)].count("\n"))
         if declaration_func is None:
             overallstr += countstr
         else:
             overallstr += declaration_func(string, flag, idx2, countstr)
         string = string[idx2+len(flag):]
-    return overallstr
+    return overallstr, lineidxs
 
 
 PARSETIP = ("Is this line following the format `Name (optional Value) [Units]"
@@ -172,19 +178,9 @@ def variable_declaration(nameval, units, label, line, errorcatch=True):
                          " '%s' and the Units `%s`. %s"
                          % (line, nameval[1], units, PARSETIP))
     elif len(nameval) == 2:
-        out = ("{0} = self.{0} = Variable('{0}', {1}, '{2}', '{3}')")
+        out = ('{0} = self.{0} = Variable("{0}", {1}, "{2}", "{3}")')
         out = out.format(nameval[0], nameval[1], units, label)
     elif len(nameval) == 1:
-        out = ("{0} = self.{0} = Variable('{0}', '{1}', '{2}')")
+        out = ('{0} = self.{0} = Variable("{0}", "{1}", "{2}")')
         out = out.format(nameval[0], units, label)
-    if errorcatch:
-        out = """
-try:
-    {0}
-except Exception as e:
-    raise ValueError("`"+e.__class__.__name__+": "+str(e)+"` was raised"
-                     " while executing the parsed line `{0}`. {1}")
-""".format(out, PARSETIP)
-    else:
-        out = out + "\n"
-    return out
+    return out + "\n"

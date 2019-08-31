@@ -14,4 +14,3 @@ Constraints
  mf >= mi + mb
  mf = rf*V
  Fs <= mi
-{(BoundsChecking.Ap, 'lower'): ", but would gain it from any of these sets of bounds: [(BoundsChecking.nu, 'lower')] or [(BoundsChecking.D, 'lower')]", (BoundsChecking.D, 'lower'): ", but would gain it from any of these sets of bounds: [(BoundsChecking.Ap, 'lower')]", (BoundsChecking.nu, 'lower'): ", but would gain it from any of these sets of bounds: [(BoundsChecking.Ap, 'lower')]"}
