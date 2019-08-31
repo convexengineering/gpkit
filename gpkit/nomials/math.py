@@ -36,6 +36,8 @@ class Signomial(Nomial):
     """
     _c = _exp = None  # pylint: disable=invalid-name
 
+    __hash__ = Nomial.__hash__
+
     def __init__(self, hmap=None, cs=1, require_positive=True):  # pylint: disable=too-many-statements,too-many-branches
         if not isinstance(hmap, NomialMap):
             if hasattr(hmap, "hmap"):
@@ -270,6 +272,9 @@ class Signomial(Nomial):
 
 class Posynomial(Signomial):
     "A Signomial with strictly positive cs"
+
+    __hash__ = Signomial.__hash__
+
     def __le__(self, other):
         if isinstance(other, Numbers + (Monomial,)):
             return PosynomialInequality(self, "<=", other)
@@ -294,6 +299,8 @@ class Posynomial(Signomial):
 
 class Monomial(Posynomial):
     "A Posynomial with only one term"
+
+    __hash__ = Posynomial.__hash__
 
     @property
     def exp(self):
