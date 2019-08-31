@@ -1,4 +1,4 @@
-from gpkit import Variable, VectorVariable # Demonstration of nomenclature syntax
+from gpkit import Variable, VectorVariable  # Demonstration of nomenclature syntax
 # 
 #     Lines that end in "Variables" will be parsed as a scalar variable table
 #     until the next blank line.

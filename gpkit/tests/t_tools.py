@@ -1,6 +1,5 @@
 """Tests for tools module"""
 import unittest
-import sys
 import numpy as np
 from numpy import log
 from gpkit import Variable, VectorVariable, Model, NomialArray

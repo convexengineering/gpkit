@@ -5,44 +5,6 @@ import ast
 import numpy as np
 
 
-class parse_variables(object):
-
-    def __init__(self, string, globals):
-        self.string = string
-        self.globals = globals
-
-    def __call__(self, f):
-        string = self.string
-        orig_lines, lineno = inspect.getsourcelines(f)
-        indent_length = 0
-        while orig_lines[1][indent_length] in [" ", "\t"]:
-            indent_length += 1
-        first_indent_length = indent_length
-        next_indented_idx = 2
-        # get the next indented line
-        while len(orig_lines[next_indented_idx]) <= indent_length + 1:
-            next_indented_idx += 1
-        while orig_lines[next_indented_idx][indent_length] in [" ", "\t"]:
-            indent_length += 1
-        second_indent = orig_lines[next_indented_idx][:indent_length]
-        parse_lines = [second_indent + line + "\n"
-                       for line in parse_varstring(string).split("\n")]
-        # make ast of these new lines, insert it into the original ast
-        new_lines = [orig_lines[1]] + parse_lines + orig_lines[2:]
-        # print(new_lines)
-        new_src = "\n".join([line[first_indent_length:-1] for line in new_lines])
-        # print("ns\n%s" % new_src)
-        # print(lineno, new_src)
-        new_ast = ast.parse(new_src, "<parse_variables>")
-        # ast.fix_missing_locations(new_ast)
-        # print(len(parse_lines), parse_lines)
-        ast.increment_lineno(new_ast, n=lineno-len(parse_lines))
-        code = compile(new_ast, inspect.getsourcefile(f), "exec", dont_inherit=True)
-        out = {}
-        exec(code, self.globals, out)
-        return out[f.__name__]
-
-
 def expected_unbounded(instance, doc):
     "Gets expected-unbounded variables from a string"
     # pylint: disable=too-many-locals,too-many-nested-blocks
@@ -96,14 +58,50 @@ def expected_unbounded(instance, doc):
     return exp_unbounded
 
 
+class parse_variables(object):  # pylint:disable=invalid-name
+    """decorator for adding local Variables from a string
+
+    Generally called as `@parse_variables(__doc__, globals())`
+    """
+    def __init__(self, string, scopevars):
+        self.string = string
+        self.scopevars = scopevars
+
+    def __call__(self, function):  # pylint:disable=too-many-locals,exec-used
+        orig_lines, lineno = inspect.getsourcelines(function)
+        indent_length = 0
+        while orig_lines[1][indent_length] in [" ", "\t"]:
+            indent_length += 1
+        first_indent_length = indent_length
+        next_indented_idx = 2
+        # get the next indented line
+        while len(orig_lines[next_indented_idx]) <= indent_length + 1:
+            next_indented_idx += 1
+        while orig_lines[next_indented_idx][indent_length] in [" ", "\t"]:
+            indent_length += 1
+        second_indent = orig_lines[next_indented_idx][:indent_length]
+        parse_lines = [second_indent + line + "\n"
+                       for line in parse_varstring(self.string).split("\n")]
+        # make ast of these new lines, insert it into the original ast
+        new_lines = [orig_lines[1]] + parse_lines + orig_lines[2:]
+        new_src = "\n".join([l[first_indent_length:-1] for l in new_lines])
+        new_ast = ast.parse(new_src, "<parse_variables>")
+        ast.increment_lineno(new_ast, n=lineno-len(parse_lines))
+        code = compile(new_ast, inspect.getsourcefile(function), "exec",
+                       dont_inherit=True)  # don't inherit __future__ from here
+        out = {}
+        exec(code, self.scopevars, out)
+        return out[function.__name__]
+
+
 def parse_varstring(string):
     "Parses a string to determine what variables to create from it"
     consts = check_and_parse_flag(string, "Constants\n", constant_declare)
-    vars = check_and_parse_flag(string, "Variables\n")
+    variables = check_and_parse_flag(string, "Variables\n")
     vecvars = check_and_parse_flag(string, "Variables of length", vv_declare)
     out = ["# " + line for line in string.split("\n")]
-    out[0] = "from gpkit import Variable, VectorVariable" + " " + out[0]
-    for lines, indexs in (consts, vars, vecvars):
+    out[0] = "from gpkit import Variable, VectorVariable" + "  " + out[0]
+    for lines, indexs in (consts, variables, vecvars):
         for line, index in zip(lines.split("\n"), indexs):
             out[index] = line + "  # from '%s'" % out[index][1:].strip()
     return "\n".join(out) + ('\n# ("@parse_variables" spacer line)'
@@ -122,6 +120,7 @@ def constant_declare(string, flag, idx2, countstr):
     return countstr.replace("')", "', constant=True)")
 
 
+# pylint: disable=too-many-locals
 def check_and_parse_flag(string, flag, declaration_func=None):
     "Checks for instances of flag in string and parses them."
     overallstr = ""
