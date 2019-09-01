@@ -132,7 +132,7 @@ def vv_declare(string, flag, idx2, countstr):
 # pylint: disable=unused-argument
 def constant_declare(string, flag, idx2, countstr):
     "Turns Variable declarations into Constant ones"
-    return countstr.replace('")', '", constant=True)')
+    return countstr.replace("')", "', constant=True)")
 
 
 # pylint: disable=too-many-locals
