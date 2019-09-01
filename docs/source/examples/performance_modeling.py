@@ -21,10 +21,10 @@ class AircraftP(Model):
     Wfuel, aircraft.W, state.mu
 
     """
+    @parse_variables(__doc__, globals())
     def setup(self, aircraft, state):
         self.aircraft = aircraft
         self.state = state
-        exec(parse_variables(AircraftP.__doc__))
 
         self.wing_aero = aircraft.wing.dynamic(aircraft.wing, state)
         self.perf_models = [self.wing_aero]
@@ -62,8 +62,8 @@ class Aircraft(Model):
     ---------------
     wing.c, wing.S
     """
+    @parse_variables(__doc__, globals())
     def setup(self):
-        exec(parse_variables(Aircraft.__doc__))
         self.fuse = Fuselage()
         self.wing = Wing()
         self.components = [self.fuse, self.wing]
@@ -87,8 +87,9 @@ class FlightState(Model):
     rho   0.74     [kg/m^3]   air density
 
     """
+    @parse_variables(__doc__, globals())
     def setup(self):
-        exec(parse_variables(FlightState.__doc__))
+        pass
 
 
 class FlightSegment(Model):
@@ -165,10 +166,10 @@ class WingAero(Model):
     ---------------
     CL, wing.S, state.mu, state.rho, state.V
     """
+    @parse_variables(__doc__, globals())
     def setup(self, wing, state):
         self.wing = wing
         self.state = state
-        exec(parse_variables(WingAero.__doc__))
 
         c = wing.c
         A = wing.A
@@ -205,8 +206,8 @@ class Wing(Model):
     ---------------
     c, S
     """
+    @parse_variables(__doc__, globals())
     def setup(self):
-        exec(parse_variables(Wing.__doc__))
         return {"parametrization of wing weight":
                     W >= S*rho,
                 "definition of mean chord":
@@ -225,8 +226,9 @@ class Fuselage(Model):
     W  100 [lbf]  weight
 
     """
+    @parse_variables(__doc__, globals())
     def setup(self):
-        exec(parse_variables(Fuselage.__doc__))
+        pass
 
 AC = Aircraft()
 MISSION = Mission(AC)
@@ -239,7 +241,7 @@ sol.savecsv()
 sol.savetxt()
 sol.save("solution.pkl")
 # retrieve solution from a file
-sol_loaded = pickle.load(open("solution.pkl"))
+sol_loaded = pickle.load(open("solution.pkl", "rb"))
 
 vars_of_interest = set(AC.varkeys)
 # note that there's two ways to access submodels

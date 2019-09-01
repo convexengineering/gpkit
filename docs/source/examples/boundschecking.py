@@ -28,8 +28,8 @@ class BoundsChecking(Model):
     D
 
     """
+    @parse_variables(__doc__, globals())
     def setup(self):
-        exec(parse_variables(BoundsChecking.__doc__))
         self.cost = F
         return [
             F >= D + T,
@@ -50,9 +50,10 @@ except ValueError:
     pass
 gp = m.gp(allow_missingbounds=True)
 
-bplate = ", but would gain it from any of these sets of bounds: "
-assert {(m.D.key, 'lower'): bplate + "[(%s, 'lower')]" % m.Ap,
-        (m.Ap.key, 'lower'): bplate + ("[(%s, 'lower')]"
-                                       " or [(%s, 'lower')]" % (m.D, m.nu)),
-        (m.nu.key, 'lower'): bplate + "[(%s, 'lower')]" % m.Ap
-       } == gp.missingbounds
+bpl = ", but would gain it from any of these sets of bounds: "
+assert gp.missingbounds[(m.D.key, 'lower')] == bpl + "[(%s, 'lower')]" % m.Ap
+assert gp.missingbounds[(m.nu.key, 'lower')] == bpl + "[(%s, 'lower')]" % m.Ap
+# ordering is arbitrary:
+assert gp.missingbounds[(m.Ap.key, 'lower')] in (
+    bpl + ("[(%s, 'lower')] or [(%s, 'lower')]" % (m.D, m.nu)),
+    bpl + ("[(%s, 'lower')] or [(%s, 'lower')]" % (m.nu, m.D)))

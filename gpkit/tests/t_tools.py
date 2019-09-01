@@ -1,6 +1,5 @@
 """Tests for tools module"""
 import unittest
-import sys
 import numpy as np
 from numpy import log
 from gpkit import Variable, VectorVariable, Model, NomialArray
@@ -22,8 +21,9 @@ class OnlyVectorParse(Model):
     ---------------------
     x    [-]    just another variable
     """
+    @parse_variables(__doc__, globals())
     def setup(self):
-        exec(parse_variables(OnlyVectorParse.__doc__))  # pylint: disable=exec-used
+        pass
 
 
 class Fuselage(Model):
@@ -50,9 +50,9 @@ class Fuselage(Model):
 
     """
 
-    # pylint: disable=undefined-variable, exec-used, invalid-name
+    # pylint: disable=undefined-variable, invalid-name
+    @parse_variables(__doc__, globals())
     def setup(self, Wfueltot):
-        exec(parse_variables(self.__doc__))
         return [
             f == l/R/2,
             k >= 1 + 60/f**3 + f/400,
@@ -68,21 +68,13 @@ class TestTools(unittest.TestCase):
 
     def test_vector_only_parse(self):
         # pylint: disable=no-member
-        if sys.version_info >= (3, 0):
-            with self.assertRaises(FutureWarning):
-                m = OnlyVectorParse()
-        else:
-            m = OnlyVectorParse()
-            self.assertTrue(hasattr(m, "x"))
-            self.assertIsInstance(m.x, NomialArray)
-            self.assertEqual(len(m.x), 3)
+        m = OnlyVectorParse()
+        self.assertTrue(hasattr(m, "x"))
+        self.assertIsInstance(m.x, NomialArray)
+        self.assertEqual(len(m.x), 3)
 
     def test_parse_variables(self):
-        if sys.version_info >= (3, 0):
-            with self.assertRaises(FutureWarning):
-                Fuselage(Variable("Wfueltot", 5, "lbf"))
-        else:
-            Fuselage(Variable("Wfueltot", 5, "lbf"))
+        Fuselage(Variable("Wfueltot", 5, "lbf"))
 
     def test_binary_sweep_tree(self):
         bst0 = BinarySweepTree([1, 2], [{"cost": 1}, {"cost": 8}], None, None)

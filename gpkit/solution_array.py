@@ -71,7 +71,7 @@ def tight_table(self, _, ntightconstrs=5, tight_senss=1e-2, **kwargs):
         return []
     title = "Tightest Constraints"
     data = [((-float("%+6.2g" % c.relax_sensitivity), str(c)),
-             "%+6.2g" % c.relax_sensitivity, c)
+             "%+6.2g" % c.relax_sensitivity, id(c), c)
             for c in self.model.flat() if c.relax_sensitivity >= tight_senss]
     if not data:
         lines = ["No constraints had a sensitivity above %+5.1g."
@@ -106,7 +106,7 @@ def constraint_table(data, sortbymodel=True, showmodels=True, **_):
     if not showmodels:
         excluded = ("units", "lineage")  # hide all of it
     models, decorated = {}, []
-    for sortby, openingstr, constraint in sorted(data):
+    for sortby, openingstr, _, constraint in sorted(data):
         model = lineagestr(constraint) if sortbymodel else ""
         if model not in models:
             models[model] = len(models)
@@ -176,11 +176,13 @@ def warnings_table(self, _, **kwargs):
                 lines += ["| for sweep %i |" % i]
             if wtype == "Unexpectedly Tight Constraints" and data[0][1]:
                 data = [(-int(1e5*c.relax_sensitivity),
-                         "%+6.2g" % c.relax_sensitivity, c) for _, c in data]
+                         "%+6.2g" % c.relax_sensitivity, id(c), c)
+                        for _, c in data]
                 lines += constraint_table(data, **kwargs)
             elif wtype == "Unexpectedly Loose Constraints" and data[0][1]:
                 data = [(-int(1e5*c.rel_diff),
-                         "%.4g %s %.4g" % c.tightvalues, c) for _, c in data]
+                         "%.4g %s %.4g" % c.tightvalues, id(c), c)
+                        for _, c in data]
                 lines += constraint_table(data, **kwargs)
             else:
                 for msg, _ in data:
@@ -507,8 +509,8 @@ class SolutionArray(DictOfLists):
         "Saves solution table as a text file"
         with open(filename, "w") as f:
             if printmodel and self.model:
-                f.write(str(self.model).encode("utf-8"))
-            f.write(self.table(**kwargs).encode("utf-8"))
+                f.write(str(self.model))
+            f.write(self.table(**kwargs))
 
     def savecsv(self, showvars=None, filename="solution.csv", valcols=5,
                 **kwargs):
@@ -547,7 +549,7 @@ class SolutionArray(DictOfLists):
                         f.write(el + ",")
                     f.write(","*(valcols - len(vals.split())))
                     f.write((line[2].replace("[", "").replace("]", "").strip()
-                             + ",").encode("utf8"))
+                             + ","))
                     f.write(line[3].strip() + "\n")
 
     def subinto(self, posy):
@@ -789,7 +791,7 @@ def var_table(data, title, printunits=True, latex=False, rawlines=False,
                         valstr = valstr.replace(before, after)
                     if values_remaining <= 0:
                         spaces = (-values_remaining
-                                  * len(valstr)/(values_remaining + ncols))
+                                  * len(valstr)//(values_remaining + ncols))
                         valstr = valstr + "  ]" + " "*spaces
                     lines.append(["", valstr, "", ""])
         else:
