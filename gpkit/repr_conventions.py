@@ -10,11 +10,13 @@ from .small_scripts import try_str_without
 
 if sys.version_info >= (3, 0):
     unichr = chr  # pylint: disable=redefined-builtin,invalid-name
-
-
-PI_STR = "PI"  # fails on some external models if it's "π"
-UNICODE_EXPONENTS = False
-UNIT_FORMATTING = ":~"  # ":P~" for unicode exponents in units
+    PI_STR = "π"  # fails on some external models if it's "π"
+    UNICODE_EXPONENTS = True
+    UNIT_FORMATTING = ":P~"  # ":P~" for unicode exponents in units
+else:
+    PI_STR = "PI"  # fails on some external models if it's "π"
+    UNICODE_EXPONENTS = False
+    UNIT_FORMATTING = ":~"  # ":P~" for unicode exponents in units
 
 
 def lineagestr(lineage, modelnums=True):

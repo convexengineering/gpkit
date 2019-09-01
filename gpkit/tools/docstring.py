@@ -81,7 +81,10 @@ parse_variables is no longer used directly with exec, but as a decorator:
         while orig_lines[1][indent_length] in [" ", "\t"]:
             indent_length += 1
         first_indent_length = indent_length
-        next_indented_idx = 2
+        setup_lines = 1
+        while "):" not in orig_lines[setup_lines]:
+            setup_lines += 1
+        next_indented_idx = setup_lines + 1
         # get the next indented line
         while len(orig_lines[next_indented_idx]) <= indent_length + 1:
             next_indented_idx += 1
@@ -90,9 +93,13 @@ parse_variables is no longer used directly with exec, but as a decorator:
         second_indent = orig_lines[next_indented_idx][:indent_length]
         parse_lines = [second_indent + line + "\n"
                        for line in parse_varstring(self.string).split("\n")]
+        parse_lines += [second_indent + '# (@parse_variables spacer line)\n']
+        parse_lines += [second_indent + '# (setup spacer line)\n']*setup_lines
         # make ast of these new lines, insert it into the original ast
-        new_lines = [orig_lines[1]] + parse_lines + orig_lines[2:]
-        new_src = "\n".join([l[first_indent_length:-1] for l in new_lines])
+        new_lines = (orig_lines[1:setup_lines+1] + parse_lines
+                     + orig_lines[setup_lines+1:])
+        new_src = "\n".join([l[first_indent_length:-1] for l in new_lines
+                             if "#" not in l[:first_indent_length]])
         new_ast = ast.parse(new_src, "<parse_variables>")
         ast.increment_lineno(new_ast, n=lineno-len(parse_lines))
         code = compile(new_ast, inspect.getsourcefile(function), "exec",
@@ -113,8 +120,7 @@ def parse_varstring(string):
     for lines, indexs in (consts, variables, vecvars):
         for line, index in zip(lines.split("\n"), indexs):
             out[index] = line + "  # from '%s'" % out[index][1:].strip()
-    return "\n".join(out) + ('\n# ("@parse_variables" spacer line)'
-                             '\n# ("def setup" spacer line)')
+    return "\n".join(out)
 
 
 def vv_declare(string, flag, idx2, countstr):
@@ -186,9 +192,9 @@ def variable_declaration(nameval, units, label, line, errorcatch=True):
                          " '%s' and the Units `%s`. %s"
                          % (line, nameval[1], units, PARSETIP))
     elif len(nameval) == 2:
-        out = ('{0} = self.{0} = Variable("{0}", {1}, "{2}", "{3}")')
+        out = ("{0} = self.{0} = Variable('{0}', {1}, '{2}', '{3}')")
         out = out.format(nameval[0], nameval[1], units, label)
     elif len(nameval) == 1:
-        out = ('{0} = self.{0} = Variable("{0}", "{1}", "{2}")')
+        out = ("{0} = self.{0} = Variable('{0}', '{1}', '{2}')")
         out = out.format(nameval[0], units, label)
     return out + "\n"

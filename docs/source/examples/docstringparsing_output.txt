@@ -5,21 +5,21 @@ from gpkit import Variable, VectorVariable  # Demonstration of nomenclature synt
 # 
 #     Variables
 #     ---------
-A = self.A = Variable("A", "m^2", "surface area")  # from 'A       [m^2]  surface area'
-V = self.V = Variable("V", 100, "L", "minimum volume")  # from 'V   100 [L]    minimum volume'
+A = self.A = Variable('A', 'm^2', 'surface area')  # from 'A       [m^2]  surface area'
+V = self.V = Variable('V', 100, 'L', 'minimum volume')  # from 'V   100 [L]    minimum volume'
 # 
 #     Lines that end in "Variables of length $N" will be parsed as vector
 #     variables of length $N until the next blank line.
 # 
 #     Variables of length 3
 #     ---------------------
-s = self.s = VectorVariable(3, "s", "m", "side length")  # from 's       [m]    side length'
+s = self.s = VectorVariable(3, 's', 'm', 'side length')  # from 's       [m]    side length'
 # 
 #     Let's introduce more variables: (any line ending in "Variables" is parsed)
 # 
 #     Zoning Variables
 #     ----------------
-h = self.h = Variable("h", 1, "m", "minimum height")  # from 'h     1 [m]    minimum height'
+h = self.h = Variable('h', 1, 'm', 'minimum height')  # from 'h     1 [m]    minimum height'
 # 
 #     Upper Unbounded
 #     ---------------
@@ -28,8 +28,6 @@ h = self.h = Variable("h", 1, "m", "minimum height")  # from 'h     1 [m]    min
 #     The ordering of these blocks doesn't affect anything; order them in the
 #     way that makes the most sense to someone else reading your model.
 #     
-# ("@parse_variables" spacer line)
-# ("def setup" spacer line)
 
 Cost
 ----
