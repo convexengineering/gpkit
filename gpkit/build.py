@@ -260,6 +260,8 @@ class Mosek(SolverBackend):
                      + " @executable_path/libmosek64.8.1.dylib "
                      + pathjoin(self.bin_dir, "mskexpopt"))
 
+        settings["mosek_bin_path"] = pathjoin(solib_dir, "expopt.so")
+
         if built_expopt_lib != 0:
             return False
 
