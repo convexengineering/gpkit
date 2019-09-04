@@ -12,6 +12,7 @@
 
 """
 from __future__ import unicode_literals, print_function
+from os import path, sep
 from ctypes import pointer as ptr
 from ctypes import c_double, c_int, CFUNCTYPE
 from .baked_ctypesgen import load_library, String, c_void, POINTER, UNCHECKED
@@ -89,7 +90,8 @@ def c_array(py_array, c_type):
     return (c_type * len(pya))(*pya)
 
 
-MSK = ModuleShortener("MSK", load_library(settings["mosek_lib_path"]))
+LIB = path.abspath(__file__).replace("expopt.py", "build%sexpopt.so" % sep)
+MSK = ModuleShortener("MSK", load_library(LIB))
 
 MSK_RES_OK = 0
 MSK_IPAR_INTPNT_MAX_ITERATIONS = 19

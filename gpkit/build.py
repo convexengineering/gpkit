@@ -262,8 +262,6 @@ class Mosek(SolverBackend):
         if built_expopt_lib != 0:
             return False
 
-        settings["mosek_lib_path"] = pathjoin(solib_dir, "expopt.so")
-
         return True
 
 
