@@ -1,6 +1,7 @@
 gpkit/_mosek/__init__.py
 gpkit/_mosek/cli_expopt.py
 gpkit/_mosek/expopt.py
+gpkit/_mosek/baked_ctypesgen.py
 gpkit/_pint/__init__.py
 gpkit/_pint/usd_cpi.txt
 gpkit/constraints/__init__.py

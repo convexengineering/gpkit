@@ -18,8 +18,6 @@ GPkit interfaces with two off the shelf solvers: cvxopt, and MOSEK.
 Cvxopt is open source and installed by default; MOSEK requires a commercial licence or (free)
 academic license.
 
-Before any of the steps below, if you are using Python 2 run ``pip install ctypesgen``.
-
 Mac OS X
   - If ``which gcc`` does not return anything, install the `Apple Command Line Tools <https://developer.apple.com/downloads/index.action?=command%20line%20tools>`_.
   - Download `MOSEK 8 <https://www.mosek.com/downloads/>`_, then:

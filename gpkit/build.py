@@ -211,8 +211,6 @@ class Mosek(SolverBackend):
         for expopt_file in self.expopt_files:
             if not isfile(expopt_file):
                 return None
-        # pylint: disable=global-statement,global-variable-not-assigned
-        global settings
         settings["mosek_bin_dir"] = self.bin_dir
         os.environ['PATH'] = os.environ['PATH'] + os.pathsep + self.bin_dir
 
@@ -220,12 +218,6 @@ class Mosek(SolverBackend):
 
     def build(self):
         "Builds a dynamic library to GPKITBUILD or $HOME/.gpkit"
-        try:
-            # Testing the import, so the variable is intentionally not used
-            import ctypesgen  # pylint: disable=unused-variable
-        except ImportError:
-            log("## SKIPPING MOSEK INSTALL: CTYPESGENCORE WAS NOT FOUND")
-            return None
 
         lib_dir = replacedir(pathjoin("_mosek", "lib"))
         open(pathjoin(lib_dir, "__init__.py"), 'w').close()
@@ -273,17 +265,7 @@ class Mosek(SolverBackend):
         if built_expopt_lib != 0:
             return False
 
-        log("#\n#   Building Python bindings for expopt and Mosek...")
-        log("#   (if this fails on Windows, verify the mingw version)")
-        built_expopt_h = call("ctypesgen -a" +
-                              " -l " + pathjoin(solib_dir, "expopt.so").replace("\\", "/") +   # pylint: disable=line-too-long
-                              ' -l "' + self.lib_path.replace("\\", "/") + '"' +
-                              " -o "+pathjoin(lib_dir, "expopt_h.py") +
-                              "    "+pathjoin(build_dir, "expopt.h"))
-
-        if built_expopt_h != 0:
-            log("# FAILED TO BUILD EXPOPT_H")
-            return False
+        settings["mosek_lib_path"] = pathjoin(solib_dir, "expopt.so")
 
         return True
 
