@@ -56,7 +56,6 @@ gpkit/build.py
 gpkit/exceptions.py
 gpkit/globals.py
 gpkit/keydict.py
-gpkit/modified_ctypesgen.py
 gpkit/repr_conventions.py
 gpkit/small_classes.py
 gpkit/small_scripts.py
