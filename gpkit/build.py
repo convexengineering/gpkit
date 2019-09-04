@@ -222,7 +222,7 @@ class Mosek(SolverBackend):
         "Builds a dynamic library to GPKITBUILD or $HOME/.gpkit"
         try:
             # Testing the import, so the variable is intentionally not used
-            import ctypesgen  # pylint: disable=unused-variable
+            import ctypesgencore  # pylint: disable=unused-variable
         except ImportError:
             log("## SKIPPING MOSEK INSTALL: CTYPESGENCORE WAS NOT FOUND")
             return None
@@ -281,9 +281,9 @@ class Mosek(SolverBackend):
                               " -o "+pathjoin(lib_dir, "expopt_h.py") +
                               "    "+pathjoin(build_dir, "expopt.h"))
 
-        # if built_expopt_h != 0:
-        #     log("# FAILED TO BUILD EXPOPT_H")
-        #     return False
+        if built_expopt_h != 0:
+            log("# FAILED TO BUILD EXPOPT_H")
+            return False
 
         return True
 
