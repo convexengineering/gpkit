@@ -70,7 +70,7 @@ def option_callback_libdir(option, opt, value, parser):
     parser.values.compile_libdirs.append(value)
     parser.values.runtime_libdirs.append(value)
 
-import ctypesgencore
+import ctypesgen as ctypesgencore
 import ctypesgencore.messages as msgs
 
 if __name__=="__main__":
