@@ -90,12 +90,17 @@ def c_array(py_array, c_type):
     return (c_type * len(pya))(*pya)
 
 
-LIB = path.abspath(__file__).replace("expopt.py", "build%sexpopt.so" % sep)
+MOSEK_VERSION = settingss["mosek_version"]
+LIB = path.dirname(path.abspath(__file__)) + sep.join(["build, expopt.so"])
 MSK = ModuleShortener("MSK", load_library(LIB))
 
 MSK_RES_OK = 0
-MSK_IPAR_INTPNT_MAX_ITERATIONS = 19
-MSKuserhandle_t = POINTER(c_void)
+if MOSEK_VERSION == "7":
+    MSK_IPAR_INTPNT_MAX_ITERATIONS = 28
+    MSKuserhandle_t = POINTER(None)
+else:
+    MSK_IPAR_INTPNT_MAX_ITERATIONS = 19
+    MSKuserhandle_t = POINTER(c_void)
 MSKstreamfunc = CFUNCTYPE(UNCHECKED(None), MSKuserhandle_t, String)
 
 

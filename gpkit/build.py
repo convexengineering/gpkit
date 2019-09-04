@@ -262,6 +262,8 @@ class Mosek(SolverBackend):
         if built_expopt_lib != 0:
             return False
 
+        settings["mosek_version"] = self.version
+
         return True
 
 
