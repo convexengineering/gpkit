@@ -48,7 +48,7 @@ class ModuleShortener(object):
         -------
         attribute from self.module
         """
-        return getattr(self.module, self.stub + attribute)
+        return self.module[self.stub + attribute]
 
 
 # below is MSKsolsta_enum from mosek.h
