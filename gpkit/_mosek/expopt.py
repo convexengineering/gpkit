@@ -240,7 +240,7 @@ def imize(c, A, p_idxs, *args, **kwargs):
     MSK._deletetask(ptr(expopttask))
     MSK._deleteenv(ptr(env))
 
-    status = MSK_SOL_STA_LOOKUPTABLE[solsta.value]
+    status = MSK_SOL_STA_LOOKUPTABLE[solsta.value]  # pylint:disable=invalid-sequence-index
     # Allow mosek's NEAR_DUAL_FEAS solution status, because our check in gp.py
     #   will catch solutions that don't actually meet our tolerance
     # TODO: when we standardize solver status responses, revisit this.
