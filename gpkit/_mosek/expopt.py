@@ -12,10 +12,10 @@
 
 """
 from __future__ import unicode_literals, print_function
-
 from ctypes import pointer as ptr
-from ctypes import POINTER as ptr_factory
-from ctypes import c_double, c_int, c_void_p
+from ctypes import c_double, c_int, CFUNCTYPE
+from .baked_ctypesgen import load_library, String, c_void, POINTER, UNCHECKED
+from .. import settings
 
 
 class ModuleShortener(object):
@@ -50,10 +50,9 @@ class ModuleShortener(object):
         """
         return self.module[self.stub + attribute]
 
+
 # below is MSKsolsta_enum from mosek.h
 #   positions changed as noted because MOSEK solves the dual GP problem
-#   Pylint disabled because the _ naming comes from the C code
-# pylint: disable=invalid-name,attribute-defined-outside-init,protected-access
 MSK_SOL_STA_LOOKUPTABLE = ["UNKNOWN",
                            "OPTIMAL",
                            "DUAL_FEAS",  # originally position 3
@@ -90,19 +89,16 @@ def c_array(py_array, c_type):
     return (c_type * len(pya))(*pya)
 
 
-from .baked_ctypesgen import load_library, String, CFUNCTYPE, UNCHECKED
-
-from .. import settings
 MSK = ModuleShortener("MSK", load_library(settings["mosek_lib_path"]))
 
 MSK_RES_OK = 0
 MSK_IPAR_INTPNT_MAX_ITERATIONS = 19
-MSKuserhandle_t = c_void_p
-
+MSKuserhandle_t = POINTER(c_void)
 MSKstreamfunc = CFUNCTYPE(UNCHECKED(None), MSKuserhandle_t, String)
 
+
 @MSKstreamfunc
-def printcb(void, msg):  # pylint: disable=unused-argument
+def printcb(_, msg):
     """Function to handle MOSEK's internal logging
 
     To enable printing to the python console, add a line like
@@ -185,13 +181,13 @@ def imize(c, A, p_idxs, *args, **kwargs):
     numanz = c_int(len(A.data))
 
     objval = c_double()
-    env = c_void_p()
+    env = POINTER(c_void)()
     prosta = c_int()
     solsta = c_int()
-    expopttask = c_void_p()
-    expopthnd = c_void_p()
+    expopttask = POINTER(c_void)()
+    expopthnd = POINTER(c_void)()
     # a little extra work to declare a pointer for expopthnd...
-    ptr_expopthnd = ptr_factory(c_void_p)(expopthnd)
+    ptr_expopthnd = POINTER(POINTER(c_void))(expopthnd)
 
     if r == MSK_RES_OK:
         r = MSK._makeenv(ptr(env), None)
@@ -200,10 +196,7 @@ def imize(c, A, p_idxs, *args, **kwargs):
         r = MSK._makeemptytask(env, ptr(expopttask))
 
     if r == MSK_RES_OK:
-        r = MSK._linkfunctotaskstream(expopttask,
-                                 0,
-                                 None,
-                                 printcb)
+        r = MSK._linkfunctotaskstream(expopttask, 0, None, printcb)
 
     if r == MSK_RES_OK:
         # Initialize expopttask with problem data
@@ -220,7 +213,7 @@ def imize(c, A, p_idxs, *args, **kwargs):
                              numanz,
                              # Pointer to data structure holding nonlinear data
                              ptr_expopthnd
-                             )
+                            )
 
     # Any parameter can now be changed with standard mosek function calls
     if r == MSK_RES_OK:
@@ -230,7 +223,6 @@ def imize(c, A, p_idxs, *args, **kwargs):
 
     # Optimize,  xx holds the primal optimal solution,
     # yy holds solution to the dual problem
-
     if r == MSK_RES_OK:
         r = MSK._expoptimize(expopttask,
                              ptr(prosta),

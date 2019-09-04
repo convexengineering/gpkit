@@ -218,9 +218,6 @@ class Mosek(SolverBackend):
 
     def build(self):
         "Builds a dynamic library to GPKITBUILD or $HOME/.gpkit"
-
-        lib_dir = replacedir(pathjoin("_mosek", "lib"))
-        open(pathjoin(lib_dir, "__init__.py"), 'w').close()
         build_dir = replacedir(pathjoin("_mosek", "build"))
 
         if "GPKITBUILD" in os.environ:
