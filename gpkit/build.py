@@ -164,7 +164,6 @@ class Mosek(SolverBackend):
             mosek_platform = "osx64x86"
             libpattern = "libmosek64.?.?.dylib"
             self.flags = "-Wl,-rpath"
-
         elif sys.platform[:5] == "linux":
             rootdir = pathjoin(os.path.expanduser("~"), "mosek")
             mosek_platform = "linux64x86"
@@ -223,7 +222,7 @@ class Mosek(SolverBackend):
         "Builds a dynamic library to GPKITBUILD or $HOME/.gpkit"
         try:
             # Testing the import, so the variable is intentionally not used
-            import ctypesgencore  # pylint: disable=unused-variable
+            import ctypesgen  # pylint: disable=unused-variable
         except ImportError:
             log("## SKIPPING MOSEK INSTALL: CTYPESGENCORE WAS NOT FOUND")
             return None
