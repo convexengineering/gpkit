@@ -91,7 +91,7 @@ def c_array(py_array, c_type):
 
 
 MOSEK_VERSION = settings["mosek_version"]
-LIB = path.dirname(path.abspath(__file__)) + sep.join(["build, expopt.so"])
+LIB = path.dirname(path.abspath(__file__)) + sep.join(["build", "expopt.so"])
 MSK = ModuleShortener("MSK", load_library(LIB))
 
 MSK_RES_OK = 0

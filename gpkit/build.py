@@ -212,6 +212,7 @@ class Mosek(SolverBackend):
             if not isfile(expopt_file):
                 return None
         settings["mosek_bin_dir"] = self.bin_dir
+        settings["mosek_version"] = self.version
         os.environ['PATH'] = os.environ['PATH'] + os.pathsep + self.bin_dir
 
         return "version %s, installed to %s" % (self.version, rootdir)
@@ -261,8 +262,6 @@ class Mosek(SolverBackend):
 
         if built_expopt_lib != 0:
             return False
-
-        settings["mosek_version"] = self.version
 
         return True
 
