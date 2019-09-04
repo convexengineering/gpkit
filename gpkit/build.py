@@ -222,7 +222,7 @@ class Mosek(SolverBackend):
         "Builds a dynamic library to GPKITBUILD or $HOME/.gpkit"
         try:
             # Testing the import, so the variable is intentionally not used
-            import ctypesgen  # pylint: disable=unused-variable
+            import ctypesgencore  # pylint: disable=unused-variable
         except ImportError:
             log("## SKIPPING MOSEK INSTALL: CTYPESGENCORE WAS NOT FOUND")
             return None
