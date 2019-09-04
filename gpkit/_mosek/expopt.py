@@ -90,12 +90,9 @@ def c_array(py_array, c_type):
     return (c_type * len(pya))(*pya)
 
 
-MOSEK_VERSION = settings["mosek_version"]
-LIB = path.dirname(settings["mosek_bin_path"])
-MSK = ModuleShortener("MSK", load_library(LIB))
-
+MSK = ModuleShortener("MSK", load_library(settings["mosek_bin_path"]))
 MSK_RES_OK = 0
-if MOSEK_VERSION == "7":
+if settings["mosek_version"] == "7":
     MSK_IPAR_INTPNT_MAX_ITERATIONS = 28
     MSKuserhandle_t = POINTER(None)
 else:
