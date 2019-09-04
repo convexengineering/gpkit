@@ -12,7 +12,6 @@
 
 """
 from __future__ import unicode_literals, print_function
-from os import path, sep
 from ctypes import pointer as ptr
 from ctypes import c_double, c_int, CFUNCTYPE
 from .baked_ctypesgen import load_library, String, c_void, POINTER, UNCHECKED
