@@ -12,15 +12,10 @@
 
 """
 from __future__ import unicode_literals, print_function
-
 from ctypes import pointer as ptr
-from ctypes import POINTER as ptr_factory
-from ctypes import c_double, c_int, c_void_p
-
-try:
-    from .lib import expopt_h  # pylint: disable=import-error
-except Exception as e:
-    raise ImportError("Could not load MOSEK library: "+repr(e))
+from ctypes import c_double, c_int, CFUNCTYPE
+from .baked_ctypesgen import load_library, String, c_void, POINTER, UNCHECKED
+from .. import settings
 
 
 class ModuleShortener(object):
@@ -53,30 +48,26 @@ class ModuleShortener(object):
         -------
         attribute from self.module
         """
-        return getattr(self.module, self.stub+attribute)
+        return getattr(self.module, self.stub + attribute)
 
-
-MSK = ModuleShortener("MSK", expopt_h)
 
 # below is MSKsolsta_enum from mosek.h
 #   positions changed as noted because MOSEK solves the dual GP problem
-#   Pylint disabled because the _ naming comes from the C code
-# pylint: disable=invalid-name,attribute-defined-outside-init,protected-access
-MSK._SOL_STA_LOOKUPTABLE = ["UNKNOWN",
-                            "OPTIMAL",
-                            "DUAL_FEAS",  # originally position 3
-                            "PRIM_FEAS",  # originally position 2
-                            "PRIM_AND_DUAL_FEAS",
-                            "DUAL_INFEAS_CER",  # originally position 6
-                            "PRIM_INFEAS_CER",  # originally position 5
-                            "NEAR_OPTIMAL",
-                            "NEAR_DUAL_FEAS",  # originally position 9
-                            "NEAR_PRIM_FEAS",  # originally position 8
-                            "NEAR_PRIM_AND_DUAL_FEAS",
-                            "NEAR_DUAL_INFEAS_CER",  # originally position 12
-                            "NEAR_PRIM_INFEAS_CER",  # originally position 11
-                            "INTEGER_OPTIMAL",
-                            "NEAR_INTEGER_OPTIMAL"]
+MSK_SOL_STA_LOOKUPTABLE = ["UNKNOWN",
+                           "OPTIMAL",
+                           "DUAL_FEAS",  # originally position 3
+                           "PRIM_FEAS",  # originally position 2
+                           "PRIM_AND_DUAL_FEAS",
+                           "DUAL_INFEAS_CER",  # originally position 6
+                           "PRIM_INFEAS_CER",  # originally position 5
+                           "NEAR_OPTIMAL",
+                           "NEAR_DUAL_FEAS",  # originally position 9
+                           "NEAR_PRIM_FEAS",  # originally position 8
+                           "NEAR_PRIM_AND_DUAL_FEAS",
+                           "NEAR_DUAL_INFEAS_CER",  # originally position 12
+                           "NEAR_PRIM_INFEAS_CER",  # originally position 11
+                           "INTEGER_OPTIMAL",
+                           "NEAR_INTEGER_OPTIMAL"]
 
 
 def c_array(py_array, c_type):
@@ -98,8 +89,19 @@ def c_array(py_array, c_type):
     return (c_type * len(pya))(*pya)
 
 
-@MSK.streamfunc
-def printcb(void, msg):  # pylint: disable=unused-argument
+MSK = ModuleShortener("MSK", load_library(settings["mosek_bin_path"]))
+MSK_RES_OK = 0
+if settings["mosek_version"] == "7":
+    MSK_IPAR_INTPNT_MAX_ITERATIONS = 28
+    MSKuserhandle_t = POINTER(None)
+else:
+    MSK_IPAR_INTPNT_MAX_ITERATIONS = 19
+    MSKuserhandle_t = POINTER(c_void)
+MSKstreamfunc = CFUNCTYPE(UNCHECKED(None), MSKuserhandle_t, String)
+
+
+@MSKstreamfunc
+def printcb(_, msg):
     """Function to handle MOSEK's internal logging
 
     To enable printing to the python console, add a line like
@@ -163,7 +165,7 @@ def imize(c, A, p_idxs, *args, **kwargs):
 
     """
 
-    r = MSK._RES_OK
+    r = MSK_RES_OK
 
     numcon = 1+p_idxs[-1]
     numter, numvar = map(int, A.shape)
@@ -182,27 +184,24 @@ def imize(c, A, p_idxs, *args, **kwargs):
     numanz = c_int(len(A.data))
 
     objval = c_double()
-    env = MSK.env_t()
-    prosta = MSK.prostae()
-    solsta = MSK.solstae()
-    expopttask = MSK.task_t()
-    expopthnd = c_void_p()
+    env = POINTER(c_void)()
+    prosta = c_int()
+    solsta = c_int()
+    expopttask = POINTER(c_void)()
+    expopthnd = POINTER(c_void)()
     # a little extra work to declare a pointer for expopthnd...
-    ptr_expopthnd = ptr_factory(c_void_p)(expopthnd)
+    ptr_expopthnd = POINTER(POINTER(c_void))(expopthnd)
 
-    if r == MSK._RES_OK:
+    if r == MSK_RES_OK:
         r = MSK._makeenv(ptr(env), None)
 
-    if r == MSK._RES_OK:
+    if r == MSK_RES_OK:
         r = MSK._makeemptytask(env, ptr(expopttask))
 
-    if r == MSK._RES_OK:
-        r = MSK._linkfunctotaskstream(expopttask,
-                                      MSK._STREAM_LOG,
-                                      None,
-                                      printcb)
+    if r == MSK_RES_OK:
+        r = MSK._linkfunctotaskstream(expopttask, 0, None, printcb)
 
-    if r == MSK._RES_OK:
+    if r == MSK_RES_OK:
         # Initialize expopttask with problem data
         r = MSK._expoptsetup(expopttask,
                              c_int(1),  # Solve the dual formulation
@@ -220,15 +219,14 @@ def imize(c, A, p_idxs, *args, **kwargs):
                             )
 
     # Any parameter can now be changed with standard mosek function calls
-    if r == MSK._RES_OK:
+    if r == MSK_RES_OK:
         r = MSK._putintparam(expopttask,
-                             MSK._IPAR_INTPNT_MAX_ITERATIONS,
+                             MSK_IPAR_INTPNT_MAX_ITERATIONS,
                              c_int(200))
 
     # Optimize,  xx holds the primal optimal solution,
     # yy holds solution to the dual problem
-
-    if r == MSK._RES_OK:
+    if r == MSK_RES_OK:
         r = MSK._expoptimize(expopttask,
                              ptr(prosta),
                              ptr(solsta),
@@ -245,7 +243,7 @@ def imize(c, A, p_idxs, *args, **kwargs):
     MSK._deletetask(ptr(expopttask))
     MSK._deleteenv(ptr(env))
 
-    status = MSK._SOL_STA_LOOKUPTABLE[solsta.value]
+    status = MSK_SOL_STA_LOOKUPTABLE[solsta.value]  # pylint:disable=invalid-sequence-index
     # Allow mosek's NEAR_DUAL_FEAS solution status, because our check in gp.py
     #   will catch solutions that don't actually meet our tolerance
     # TODO: when we standardize solver status responses, revisit this.
