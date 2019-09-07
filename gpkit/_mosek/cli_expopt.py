@@ -24,7 +24,7 @@ def error_remove_read_only(func, path, exc):
         func(path)  # try again
 
 
-def imize_fn(path=None, clearfiles=True):
+def imize_fn(path=None):
     """Constructor for the MOSEK CLI solver function.
 
     Arguments
@@ -33,7 +33,8 @@ def imize_fn(path=None, clearfiles=True):
         The directory in which to put the MOSEK CLI input/output files.
         By default uses a system-appropriate temp directory.
     """
-    if not path:
+    clearfiles = path is None
+    if path is None:
         path = tempfile.mkdtemp()
     filename = path + os.sep + "gpkit_mosek"
     if "mosek_bin_dir" in settings:
