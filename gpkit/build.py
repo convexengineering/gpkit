@@ -164,7 +164,6 @@ class Mosek(SolverBackend):
             mosek_platform = "osx64x86"
             libpattern = "libmosek64.?.?.dylib"
             self.flags = "-Wl,-rpath"
-
         elif sys.platform[:5] == "linux":
             rootdir = pathjoin(os.path.expanduser("~"), "mosek")
             mosek_platform = "linux64x86"
@@ -212,24 +211,14 @@ class Mosek(SolverBackend):
         for expopt_file in self.expopt_files:
             if not isfile(expopt_file):
                 return None
-        # pylint: disable=global-statement,global-variable-not-assigned
-        global settings
         settings["mosek_bin_dir"] = self.bin_dir
+        settings["mosek_version"] = self.version
         os.environ['PATH'] = os.environ['PATH'] + os.pathsep + self.bin_dir
 
         return "version %s, installed to %s" % (self.version, rootdir)
 
     def build(self):
         "Builds a dynamic library to GPKITBUILD or $HOME/.gpkit"
-        try:
-            # Testing the import, so the variable is intentionally not used
-            import ctypesgencore  # pylint: disable=unused-variable
-        except ImportError:
-            log("## SKIPPING MOSEK INSTALL: CTYPESGENCORE WAS NOT FOUND")
-            return None
-
-        lib_dir = replacedir(pathjoin("_mosek", "lib"))
-        open(pathjoin(lib_dir, "__init__.py"), 'w').close()
         build_dir = replacedir(pathjoin("_mosek", "build"))
 
         if "GPKITBUILD" in os.environ:
@@ -271,18 +260,9 @@ class Mosek(SolverBackend):
                      + " @executable_path/libmosek64.8.1.dylib "
                      + pathjoin(self.bin_dir, "mskexpopt"))
 
+        settings["mosek_bin_path"] = pathjoin(solib_dir, "expopt.so")
+
         if built_expopt_lib != 0:
-            return False
-
-        log("#\n#   Building Python bindings for expopt and Mosek...")
-        log("#   (if this fails on Windows, verify the mingw version)")
-        built_expopt_h = call("python modified_ctypesgen.py -a" +
-                              " -l " + pathjoin(solib_dir, "expopt.so").replace("\\", "/") +   # pylint: disable=line-too-long
-                              ' -l "' + self.lib_path.replace("\\", "/") + '"' +
-                              " -o "+pathjoin(lib_dir, "expopt_h.py") +
-                              "    "+pathjoin(build_dir, "expopt.h"))
-
-        if built_expopt_h != 0:
             return False
 
         return True
