@@ -205,14 +205,17 @@ class SequentialGeometricProgram(CostedConstraintSet):
 
     def _fill_x0(self, x0):
         "Returns a copy of x0 with subsitutions added."
-        x0 = KeyDict(x0) if x0 else KeyDict()
+        x0kd = KeyDict()
+        x0kd.varkeys = self.varkeys
+        if x0:
+            x0kd.update(x0)
         for key in self.varkeys:
-            if key in x0:
+            if key in x0kd:
                 continue  # already specified by input dict
             elif key in self.substitutions:
-                x0[key] = self.substitutions[key]
+                x0kd[key] = self.substitutions[key]
             # undeclared variables are handled by individual constraints
-        return x0
+        return x0kd
 
     def init_gp(self, substitutions, x0=None):
         "Generates a simplified GP representation for later modification"

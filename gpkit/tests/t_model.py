@@ -533,17 +533,19 @@ class TestSP(unittest.TestCase):
     def test_sp_initial_guess_sub(self):
         x = Variable("x")
         y = Variable("y")
-        x0 = 2
+        x0 = 3
         y0 = 2
         with SignomialsEnabled():
             constraints = [y + x >= 4, y <= x]
         objective = x
         m = Model(objective, constraints)
         try:
-            sol = m.localsolve(x0={x: x0, y: y0}, verbosity=0,
-                               solver=self.solver)
+            sol = m.localsolve(x0={"x": x0, y: y0}, verbosity=0,
+                               mutategp=False, solver=self.solver)
         except TypeError:
             self.fail("Call to local solve with only variables failed")
+        self.assertEqual(m.program.gps[0].x0[x], 3)
+        self.assertEqual(m.program.gps[0].x0["y"], 2)
         self.assertAlmostEqual(sol(x), 2, self.ndig)
         self.assertAlmostEqual(sol["cost"], 2, self.ndig)
 
