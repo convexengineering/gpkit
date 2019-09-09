@@ -94,7 +94,7 @@ def c_array(py_array, c_type):
 
 
 MSK = ModuleShortener("MSK", load_library(settings["mosek_lib_path"]),
-                             load_library(settings["mosek_gpkitbin_path"]))
+                      load_library(settings["mosek_gpkitbin_path"]))
 MSK_RES_OK = 0
 if settings["mosek_version"] == "7":
     MSK_IPAR_INTPNT_MAX_ITERATIONS = 28
