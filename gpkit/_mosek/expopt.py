@@ -32,8 +32,8 @@ class ModuleShortener(object):
     module : str
       Module to be shortened (the first "MSK" object above)
     """
-    def __init__(self, stub, module):
-        self.module = module
+    def __init__(self, stub, *modules):
+        self.modules = modules
         self.stub = stub
 
     def __getattr__(self, attribute):
@@ -48,7 +48,11 @@ class ModuleShortener(object):
         -------
         attribute from self.module
         """
-        return getattr(self.module, self.stub + attribute)
+        for module in self.modules:
+            try:
+                return getattr(module, self.stub + attribute)
+            except AttributeError:
+                pass
 
 
 # below is MSKsolsta_enum from mosek.h
@@ -89,7 +93,8 @@ def c_array(py_array, c_type):
     return (c_type * len(pya))(*pya)
 
 
-MSK = ModuleShortener("MSK", load_library(settings["mosek_bin_path"]))
+MSK = ModuleShortener("MSK", load_library(settings["mosek_lib_path"]),
+                             load_library(settings["mosek_gpkitbin_path"]))
 MSK_RES_OK = 0
 if settings["mosek_version"] == "7":
     MSK_IPAR_INTPNT_MAX_ITERATIONS = 28

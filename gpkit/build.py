@@ -211,6 +211,7 @@ class Mosek(SolverBackend):
         for expopt_file in self.expopt_files:
             if not isfile(expopt_file):
                 return None
+        settings["mosek_lib_path"] = self.lib_path
         settings["mosek_bin_dir"] = self.bin_dir
         settings["mosek_version"] = self.version
         os.environ['PATH'] = os.environ['PATH'] + os.pathsep + self.bin_dir
@@ -260,7 +261,7 @@ class Mosek(SolverBackend):
                      + " @executable_path/libmosek64.8.1.dylib "
                      + pathjoin(self.bin_dir, "mskexpopt"))
 
-        settings["mosek_bin_path"] = pathjoin(solib_dir, "expopt.so")
+        settings["mosek_gpkitbin_path"] = pathjoin(solib_dir, "expopt.so")
 
         if built_expopt_lib != 0:
             return False
