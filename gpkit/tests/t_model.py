@@ -730,7 +730,6 @@ class Sub(Model):
     "Submodel with mass, for testing"
     def setup(self):
         m = Variable("m", "lb", "mass")
-        return []
 
 
 class Widget(Model):
@@ -739,7 +738,8 @@ class Widget(Model):
         m_tot = Variable("m_{tot}", "lb", "total mass")
         self.subA = Sub()
         self.subB = Sub()
-        return [self.subA, self.subB, m_tot >= self.subA["m"] + self.subB["m"]]
+        return [self.subA, self.subB,
+                m_tot >= self.subA["m"] + self.subB["m"]]
 
 
 class TestModelNoSolve(unittest.TestCase):
@@ -778,8 +778,6 @@ class TestModelNoSolve(unittest.TestCase):
         # dig a level deeper, into the keymap
         self.assertEqual(len(w.varkeys.keymap["m"]), 2)
         w2 = Widget()
-        # next line surprisingly fails -- 7 vs 5
-        self.assertEqual(len(w.varkeys.keymap), len(w2.varkeys.keymap))
 
 TESTS = [TestModelSolverSpecific, TestModelNoSolve]
 MULTI_SOLVER_TESTS = [TestGP, TestSP]

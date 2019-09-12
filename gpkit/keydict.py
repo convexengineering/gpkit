@@ -303,7 +303,8 @@ class KeySet(KeyDict):
             arg, = args
             if isinstance(arg, KeySet):  # assume unmapped
                 dict.update(self, arg)
-                self.keymap.update(arg.keymap)
+                for key, value in arg.keymap.items():
+                    self.keymap[key].update(value)
                 self._unmapped_keys.update(arg._unmapped_keys)  # pylint: disable=protected-access
             else:  # set-like interface
                 for item in arg:
