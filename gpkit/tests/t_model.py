@@ -726,6 +726,22 @@ class BoxAreaBounds(Model):
                 box.w*box.d <= A_floor]
 
 
+class Sub(Model):
+    "Submodel with mass, for testing"
+    def setup(self):
+        m = Variable("m", "lb", "mass")
+
+
+class Widget(Model):
+    "A model with two Sub models"
+    def setup(self):
+        m_tot = Variable("m_{tot}", "lb", "total mass")
+        self.subA = Sub()
+        self.subB = Sub()
+        return [self.subA, self.subB,
+                m_tot >= self.subA["m"] + self.subB["m"]]
+
+
 class TestModelNoSolve(unittest.TestCase):
     """model tests that don't require a solver"""
     def test_modelname_added(self):
@@ -748,6 +764,20 @@ class TestModelNoSolve(unittest.TestCase):
         for var in ("h", "w", "d"):
             self.assertEqual(len(M.variables_byname(var)), 1)
 
+    def test_duplicate_submodel_varnames(self):
+        w = Widget()
+        # w has two Sub models, both with their own variable m
+        self.assertEqual(len(w.variables_byname("m")), 2)
+        # keys for both submodel m's should be in the parent model varkeys
+        self.assertIn(w.subA["m"].key, w.varkeys)
+        self.assertIn(w.subB["m"].key, w.varkeys)
+        # keys of w.variables_byname("m") should match m.varkeys
+        m_vbn_keys = [v.key for v in w.variables_byname("m")]
+        self.assertIn(w.subA["m"].key, m_vbn_keys)
+        self.assertIn(w.subB["m"].key, m_vbn_keys)
+        # dig a level deeper, into the keymap
+        self.assertEqual(len(w.varkeys.keymap["m"]), 2)
+        w2 = Widget()
 
 TESTS = [TestModelSolverSpecific, TestModelNoSolve]
 MULTI_SOLVER_TESTS = [TestGP, TestSP]
