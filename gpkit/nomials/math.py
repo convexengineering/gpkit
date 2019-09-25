@@ -329,10 +329,14 @@ class Monomial(Posynomial):
         return self.__rdiv__(other)
 
     def __pow__(self, expo):
-        if isinstance(expo, Numbers):
+        if isinstance(expo, Numbers+(Signomial,)):
             (exp, c), = self.hmap.items()
             exp = exp*expo if expo else EMPTY_HV
-            hmap = NomialMap({exp: c**expo})
+            if c != 1:
+                newc = c**expo
+            else:
+                newc = c
+            hmap = NomialMap({exp: newc})
             if expo and self.hmap.units:
                 hmap.units = self.hmap.units**expo
             else:
