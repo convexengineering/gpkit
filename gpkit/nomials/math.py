@@ -63,7 +63,16 @@ class Signomial(Nomial):
             self.__class__ = Monomial
         else:
             self.__class__ = Posynomial
+        self.check_exps_units()
         self.ast = ()
+
+    def check_exps_units(self):
+        """Checking that units of signomial exponents are dimensionless."""
+        for exp in self.exps:
+            for k,v in exp.items():
+                if isinstance(v, Signomial) and v.units:
+                    raise ValueError("Exponent %s is united. Please normalize"
+                                     " or remove units." % v)
 
     def diff(self, var):
         """Derivative of this with respect to a Variable
