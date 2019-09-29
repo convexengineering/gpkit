@@ -3,7 +3,7 @@ import math
 import sys
 import unittest
 from gpkit import Variable, Monomial, Posynomial, Signomial, SignomialsEnabled
-from gpkit import VectorVariable, NomialArray
+from gpkit import VectorVariable, NomialArray, Model
 from gpkit.nomials import NomialMap
 from gpkit.small_classes import HashVector
 from gpkit.exceptions import InvalidPosynomial
@@ -273,6 +273,14 @@ class TestSignomial(unittest.TestCase):
             self.assertEqual(Signomial(-3), -3)
             self.assertNotEqual(Signomial(-3), 3)
 
+    def test_subbed_sig_exp(self):
+        x = Variable('x')
+        y = Variable('y', 1, 'm')
+        z = Variable('z', 2, 'm^2')
+        with SignomialsEnabled():
+            # self.assertRaises(ValueError, x**(y) >= 1)
+            constraints = [x**(y*z**(-0.5)) >= 1]
+            m = Model(x, constraints)
 
 class TestPosynomial(unittest.TestCase):
     """TestCase for the Posynomial class"""

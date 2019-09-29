@@ -24,7 +24,9 @@ class Nomial(NomialData):
                 for (var, x) in exp.items():
                     if x != 0:
                         varstr = var.str_without(excluded)
-                        if x != 1:
+                        if isinstance(x, Signomial):
+                            varstr += "^(%s)" % x.str_without(excluded) #TODO: fix this string...
+                        elif x != 1:
                             varstr += "^%.2g" % x
                         varstrs.append(varstr)
                 varstrs.sort()
