@@ -20,8 +20,9 @@ class NomialMap(HashVector):
     x and y are VarKey objects.
     """
     units = None
-    expmap = None  # used for monomial-mapping postsubstitution; see .mmap()
-    csmap = None   # used for monomial-mapping postsubstitution; see .mmap()
+    expmap = None   # used for monomial-mapping postsubstitution; see .mmap()
+    csmap = None    # used for monomial-mapping postsubstitution; see .mmap()
+    varexps = False # used for signomial exponent operations
 
     def copy(self):
         "Return a copy of this"

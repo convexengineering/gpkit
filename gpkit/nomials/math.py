@@ -63,16 +63,20 @@ class Signomial(Nomial):
             self.__class__ = Monomial
         else:
             self.__class__ = Posynomial
-        self.check_exps_units()
+        self.check_exps()
         self.ast = ()
 
-    def check_exps_units(self):
-        """Checking that units of signomial exponents are dimensionless."""
+    def check_exps(self):
+        """Checking units and adding varkeys of signomial exponents."""
         for exp in self.exps:
             for k,v in exp.items():
-                if isinstance(v, Signomial) and v.units:
-                    raise ValueError("Exponent %s is united. Please normalize"
-                                     " or remove units." % v)
+                if isinstance(v, Signomial):
+                    if v.units:
+                        raise ValueError("Exponent %s is united. Please "
+                                         "normalize or remove units." % v)
+                    else:
+                        self.hmap.varexps = True
+                        self.varkeys.update(v.varkeys)
 
     def diff(self, var):
         """Derivative of this with respect to a Variable
