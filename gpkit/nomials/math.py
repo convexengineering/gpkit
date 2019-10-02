@@ -344,8 +344,17 @@ class Monomial(Posynomial):
     def __pow__(self, expo):
         if isinstance(expo, Numbers+(Signomial,)):
             (exp, c), = self.hmap.items()
-            exp = exp*expo if expo else EMPTY_HV
-            if c != 1:
+            if isinstance(expo, Signomial):
+                exp = HashVector({key: expo.hmap*val for key, val in exp.items()})
+            else:
+                exp = exp*expo if expo else EMPTY_HV
+            if c != 1 and isinstance(expo, Signomial):
+                raise ValueError("Float %s raised to Signomial %s is "
+                                 "not currently supported. Please replace %s "
+                                 "with a substituted "
+                                 "Variable." % (str(c), expo.str_without(),
+                                                str(c)))
+            elif c != 1:
                 newc = c**expo
             else:
                 newc = c

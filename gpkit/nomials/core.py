@@ -1,9 +1,8 @@
 "The shared non-mathematical backbone of all Nomials"
 from __future__ import unicode_literals, print_function
 from .data import NomialData
-from ..small_classes import Numbers, FixedScalar
+from ..small_classes import Numbers, FixedScalar, HashVector
 from ..small_scripts import nomial_latex_helper
-
 
 class Nomial(NomialData):
     "Shared non-mathematical properties of all nomials"
@@ -24,8 +23,8 @@ class Nomial(NomialData):
                 for (var, x) in exp.items():
                     if x != 0:
                         varstr = var.str_without(excluded)
-                        if isinstance(x, Signomial):
-                            varstr += "^(%s)" % x.str_without(excluded) #TODO: fix this string...
+                        if isinstance(x, HashVector):
+                            varstr += "^(%s)" % str(x) #TODO: fix this string...
                         elif x != 1:
                             varstr += "^%.2g" % x
                         varstrs.append(varstr)
