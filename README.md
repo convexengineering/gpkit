@@ -9,8 +9,8 @@ Supported solvers are
 [mosek](http://mosek.com)
 and [cvxopt](http://cvxopt.org/).
 
-[![Build Status](https://acdl.mit.edu/csi/buildStatus/icon?job=gpkit_Push)](https://acdl.mit.edu/csi/job/gpkit_Push/) Unit tests
+[![Build Status](https://acdl.mit.edu/csi/buildStatus/icon?job=CE_gpkit_Push_unit_tests)](https://acdl.mit.edu/csi/view/convex%20engineering/job/CE_gpkit_Push_unit_tests/) Unit tests
 
-[![Build Status](https://acdl.mit.edu/csi/buildStatus/icon?job=gpkit_Install)](https://acdl.mit.edu/csi/job/gpkit_Install/) pip install
+[![Build Status](https://acdl.mit.edu/csi/buildStatus/icon?job=CE_gpkit_Install)](https://acdl.mit.edu/csi/view/convex%20engineering/job/CE_gpkit_Install/) pip install
 
-[![Build Status](https://acdl.mit.edu/csi/buildStatus/icon?job=gpkit_Push_Depends)](https://acdl.mit.edu/csi/job/gpkit_Push_Depends/) Dependencies
+[![Build Status](https://acdl.mit.edu/csi/buildStatus/icon?job=CE_gpkit_Push_dependency_tests)](https://acdl.mit.edu/csi/view/convex%20engineering/job/CE_gpkit_Push_dependency_tests/) Dependencies
