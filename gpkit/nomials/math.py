@@ -69,7 +69,7 @@ class Signomial(Nomial):
     def check_exps(self):
         """Checking units and adding varkeys of signomial exponents."""
         for exp in self.exps:
-            for k,v in exp.items():
+            for _, v in exp.items():
                 if isinstance(v, HashVector):
                     if v.units:
                         raise ValueError("Exponent %s is united. Please "
@@ -346,7 +346,8 @@ class Monomial(Posynomial):
         if isinstance(expo, Numbers+(Signomial,)):
             (exp, c), = self.hmap.items()
             if isinstance(expo, Signomial):
-                exp = HashVector({key: expo.hmap*val for key, val in exp.items()})
+                exp = HashVector({key: expo.hmap*val for key,
+                                                         val in exp.items()})
             else:
                 exp = exp*expo if expo else EMPTY_HV
             if c != 1 and isinstance(expo, Signomial):
