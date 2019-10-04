@@ -70,13 +70,14 @@ class Signomial(Nomial):
         """Checking units and adding varkeys of signomial exponents."""
         for exp in self.exps:
             for k,v in exp.items():
-                if isinstance(v, Signomial):
+                if isinstance(v, HashVector):
                     if v.units:
                         raise ValueError("Exponent %s is united. Please "
                                          "normalize or remove units." % v)
                     else:
                         self.hmap.varexps = True
-                        self.varkeys.update(v.varkeys)
+                        for key,value in v.items():
+                            self.varkeys.update([k for k in key.keys()])
 
     def diff(self, var):
         """Derivative of this with respect to a Variable
