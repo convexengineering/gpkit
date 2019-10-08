@@ -26,7 +26,9 @@ def load_settings(path=None, firstattempt=True):
                         value.remove("mosek")
     except IOError:
         settings_ = {"installed_solvers": [""]}
-    if settings_["installed_solvers"] == [""]:
+    if (settings_["installed_solvers"] == [""]
+        or ("mosek" in settings_["installed_solvers"]
+            and "mosek_version" not in settings_)):
         if firstattempt:
             print("Found no installed solvers, beginning a build.")
             build()
