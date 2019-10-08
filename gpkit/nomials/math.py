@@ -394,14 +394,18 @@ class ScalarSingleEquationConstraint(SingleEquationConstraint):
     def relaxed(self, relaxvar):
         "Returns the relaxation of the constraint in a list."
         if self.oper == ">=":
-            return [relaxvar*self.left >= self.right]
+            relaxed = [relaxvar*self.left >= self.right]
         elif self.oper == "<=":
-            return [self.left <= relaxvar*self.right]
+            relaxed = [self.left <= relaxvar*self.right]
         elif self.oper == "=":
-            return [self.left <= relaxvar*self.right,
-                    relaxvar*self.left >= self.right]
-        raise ValueError(
-            "Constraint %s had unknown operator %s." % self.oper, self)
+            relaxed = [self.left <= relaxvar*self.right,
+                       relaxvar*self.left >= self.right]
+        else:
+            raise ValueError(
+                "Constraint %s had unknown operator %s." % self.oper, self)
+        for constr in relaxed:
+            constr.sgp_parent = self
+        return relaxed
 
 
 # pylint: disable=too-many-instance-attributes, invalid-unary-operand-type
@@ -519,6 +523,8 @@ class PosynomialInequality(ScalarSingleEquationConstraint):
         self.relax_sensitivity = la
         if self.sgp_parent:
             self.sgp_parent.relax_sensitivity = la
+            if getattr(self.sgp_parent, "sgp_parent", None):
+                self.sgp_parent.sgp_parent.relax_sensitivity = la
         nu, = nu
         presub, = self.unsubbed
         if hasattr(self, "pmap"):
@@ -600,6 +606,8 @@ class MonomialEquality(PosynomialInequality):
         self.relax_sensitivity = la[0] - la[1]
         if self.sgp_parent:
             self.sgp_parent.relax_sensitivity = self.relax_sensitivity
+            if getattr(self.sgp_parent, "sgp_parent", None):
+                self.sgp_parent.sgp_parent.relax_sensitivity = self.relax_sensitivity
         var_senss = {}
         for var in self.varkeys:
             for i, m in enumerate(self.unsubbed):
