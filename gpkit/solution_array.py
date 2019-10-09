@@ -70,9 +70,14 @@ def tight_table(self, _, ntightconstrs=5, tight_senss=1e-2, **kwargs):
     if not self.model:
         return []
     title = "Tightest Constraints"
-    data = [((-float("%+6.2g" % c.relax_sensitivity), str(c)),
-             "%+6.2g" % c.relax_sensitivity, id(c), c)
-            for c in self.model.flat() if c.relax_sensitivity >= tight_senss]
+    try:
+        data = [((-float("%+6.2g" % c.relax_sensitivity), str(c)),
+                 "%+6.2g" % c.relax_sensitivity, id(c), c)
+                for c in self.model.flat()
+                if c.relax_sensitivity >= tight_senss]
+    except AttributeError:
+        print("Constraint %s had no `relax_sensitivity` attribute." % c)
+        return []
     if not data:
         lines = ["No constraints had a sensitivity above %+5.1g."
                  % tight_senss]
