@@ -375,6 +375,7 @@ MONS = Numbers + (Monomial,)
 class ScalarSingleEquationConstraint(SingleEquationConstraint):
     "A SingleEquationConstraint with scalar left and right sides."
     nomials = []
+    sgp_parent = None
 
     def __init__(self, left, oper, right):
         lr = [left, right]
@@ -416,7 +417,6 @@ class PosynomialInequality(ScalarSingleEquationConstraint):
     """
 
     feastol = 1e-3
-    sgp_parent = None
     relax_sensitivity = None
     # NOTE: follows .check_result's max default, but 1e-3 seems a bit lax...
 
@@ -607,7 +607,8 @@ class MonomialEquality(PosynomialInequality):
         if self.sgp_parent:
             self.sgp_parent.relax_sensitivity = self.relax_sensitivity
             if getattr(self.sgp_parent, "sgp_parent", None):
-                self.sgp_parent.sgp_parent.relax_sensitivity = self.relax_sensitivity
+                self.sgp_parent.sgp_parent.relax_sensitivity = \
+                    self.relax_sensitivity
         var_senss = {}
         for var in self.varkeys:
             for i, m in enumerate(self.unsubbed):
