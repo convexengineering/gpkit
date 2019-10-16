@@ -274,11 +274,17 @@ class TestSignomial(unittest.TestCase):
             self.assertNotEqual(Signomial(-3), 3)
 
     def test_subbed_sig_exp(self):
+        a = Variable('a')
+        b = Variable('b')
+        c = Variable('c')
         x = Variable('x')
         y = Variable('y', 1, 'm')
         z = Variable('z', 2, 'm^2')
         with SignomialsEnabled():
             # self.assertRaises(ValueError, x**(y) >= 1)
+            self.assertRaises(ValueError, (2*a)**c) # float**signomial check
+            self.assertRaises(ValueError, a**y) # united signomial check
+            self.assertRaises(ValueError, a**(2*b + z*y)) # dimension check
             constraints = [x**(y*z**(-0.5)) >= 1]
             m = Model(x, constraints)
 

@@ -346,6 +346,10 @@ class Monomial(Posynomial):
         if isinstance(expo, Numbers+(Signomial,)):
             (exp, c), = self.hmap.items()
             if isinstance(expo, Signomial):
+                if expo.units:
+                    raise ValueError("Exponents cannot be united. Please "
+                                     "remove units from Signomial %s." %
+                                     expo.str_without())
                 exp = HashVector({key: expo.hmap*val for key,
                                                          val in exp.items()})
             else:
