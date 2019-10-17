@@ -16,14 +16,6 @@ from subprocess import check_output, CalledProcessError
 from .. import settings
 
 
-def error_remove_read_only(func, path, exc):
-    "If we can't remove a file/directory, change permissions and try again."
-    if func in (os.rmdir, os.remove) and exc[1].errno == errno.EACCES:
-        # change the file to be readable,writable,executable: 0777
-        os.chmod(path, stat.S_IRWXU | stat.S_IRWXG | stat.S_IRWXO)
-        func(path)  # try again
-
-
 def imize_fn(path=None):
     """Constructor for the MOSEK CLI solver function.
 
@@ -111,7 +103,7 @@ def imize_fn(path=None):
             dual_vals = read_vals(f)
 
         if clearfiles:
-            while os.path.isfile(filename):
+            while os.path.isdir(path):
                 try:
                     shutil.rmtree(path)
                 except OSError as e:
