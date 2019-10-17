@@ -113,8 +113,7 @@ def imize_fn(path=None):
         if clearfiles:
             while os.path.isfile(filename):
                 try:
-                    shutil.rmtree(path, ignore_errors=False,
-                                  onerror=error_remove_read_only)
+                    shutil.rmtree(path)
                 except OSError as e:
                     # Reraise unless ENOENT: No such file or directory
                     # (ok if directory has already been deleted)
