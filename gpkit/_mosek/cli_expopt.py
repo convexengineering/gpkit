@@ -111,7 +111,7 @@ def imize_fn(path=None):
             dual_vals = read_vals(f)
 
         if clearfiles:
-            while os.isfile(filename):
+            while os.path.isfile(filename):
                 shutil.rmtree(path, ignore_errors=False,
                               onerror=error_remove_read_only)
 
