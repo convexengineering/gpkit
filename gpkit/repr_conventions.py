@@ -120,7 +120,7 @@ class GPkitObject(object):
             aststr = "-%s" % parenthesize(strify(values, excluded), mult=False)
         elif oper == "pow":
             left = parenthesize(strify(values[0], excluded))
-            x = values[1]
+            x = parenthesize(strify(values[1], excluded))
             if left == "1":
                 aststr = "1"
             elif isinstance(x, Numbers) and UNICODE_EXPONENTS and \
