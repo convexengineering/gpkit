@@ -76,8 +76,8 @@ class Signomial(Nomial):
                                          "normalize or remove units." % v)
                     else:
                         self.hmap.varexps = True
-                        for key,value in v.items():
-                            self.varkeys.update([k for k in key.keys()])
+                        for key, _ in v.items():
+                            self.vks.update([k for k in key.keys()])
 
     def diff(self, var):
         """Derivative of this with respect to a Variable
@@ -350,8 +350,7 @@ class Monomial(Posynomial):
                     raise ValueError("Exponents cannot be united. Please "
                                      "remove units from Signomial %s." %
                                      expo.str_without())
-                exp = HashVector({key: expo.hmap*val for key,
-                                                         val in exp.items()})
+                exp = HashVector({k: expo.hmap*v for k, v in exp.items()})
             else:
                 exp = exp*expo if expo else EMPTY_HV
             if c != 1 and isinstance(expo, Signomial):
