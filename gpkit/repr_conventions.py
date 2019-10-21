@@ -33,7 +33,10 @@ def unitstr(units, into="%s", options=UNIT_FORMATTING, dimless=""):
         units = units.units
     if not isinstance(units, Quantity):
         return dimless
-    rawstr = ("{%s}" % options).format(units.units)
+    if options == ":~" and "ohm" in str(units.units):
+        rawstr = str(units.units)  # otherwise it'll be a capital Omega
+    else:
+        rawstr = ("{%s}" % options).format(units.units)
     units = rawstr.replace(" ", "").replace("dimensionless", dimless)
     return into % units or dimless
 
