@@ -5,7 +5,7 @@ import sys
 from time import time
 from collections import defaultdict
 import numpy as np
-from ..nomials import NomialData
+from ..nomials import NomialData, NomialMap
 from ..small_classes import CootMatrix, SolverLog, Numbers, FixedScalar
 from ..keydict import KeyDict
 from ..small_scripts import mag
@@ -122,7 +122,7 @@ class GeometricProgram(CostedConstraintSet, NomialData):
             self._cs.extend(hmap.values())
         self.vks = self.varlocs
         self.A, self.missingbounds = genA(self.exps, self.varlocs,
-                                          self.meq_idxs)
+                                          self.meq_idxs, self.substitutions)
 
     # pylint: disable=too-many-statements, too-many-locals
     def solve(self, solver=None, verbosity=1, warn_on_check=False,
@@ -394,7 +394,7 @@ class GeometricProgram(CostedConstraintSet, NomialData):
                                  " cost %s" % (np.exp(dual_cost), cost))
 
 
-def genA(exps, varlocs, meq_idxs):  # pylint: disable=invalid-name
+def genA(exps, varlocs, meq_idxs, substitutions=None):  # pylint: disable=invalid-name
     """Generates A matrix
 
     Returns
@@ -407,13 +407,34 @@ def genA(exps, varlocs, meq_idxs):  # pylint: disable=invalid-name
     """
     missingbounds = {}
     row, col, data = [], [], []
+    bte = set(meq_idxs) # variables bounded through equalities or sig exp substitutions
     for j, var in enumerate(varlocs):
         upperbound, lowerbound = False, False
         row.extend(varlocs[var])
         col.extend([j]*len(varlocs[var]))
-        data.extend(exps[i][var] for i in varlocs[var])
         for i in varlocs[var]:
-            if i not in meq_idxs:
+            if isinstance(exps[i][var], NomialMap):
+                varkeyDict = KeyDict({key:key for item in exps[i][var].keys() \
+                                      for key in item.keys()})
+                subbed_exp = exps[i][var].sub(substitutions, varkeyDict)
+                if subbed_exp.keys()[0]:
+                    raise ValueError("Signomial exponent %s has variables that " 
+                                     "have not been fully substituted. Complete "
+                                     "substitutions and try again." % \
+                                     (exps[i])) #TODO: improve error.
+                data.extend([subbed_exp.values()[0]])
+                # Add substituted variables in signomial exponent to bte
+                # to make them bounded.
+                bte = bte.union(varkeyDict.keys())
+                # Checking boundedness of base variable
+                if subbed_exp.values()[0] > 0 and \
+                        not(upperbound and lowerbound):
+                    upperbound = True
+                else:
+                    lowerbound = True
+            else:
+                data.extend([exps[i][var]])
+            if i not in bte:
                 if upperbound and lowerbound:
                     break
                 elif exps[i][var] > 0:  # pylint:disable=simplifiable-if-statement

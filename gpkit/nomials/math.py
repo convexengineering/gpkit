@@ -133,7 +133,11 @@ class Signomial(Nomial):
         Monomial (unless self(x0) < 0, in which case a Signomial is returned)
         """
         x0, _, _ = parse_subs(self.varkeys, x0)  # use only varkey keys
-        psub = self.hmap.sub(x0, self.varkeys, parsedsubs=True)
+        if self.hmap.varexps:
+            raise ValueError("Varexps only works for GPs for now... "
+                             "stick to GPs!")
+        else:
+            psub = self.hmap.sub(x0, self.varkeys, parsedsubs=True)
         if EMPTY_HV not in psub or len(psub) > 1:
             raise ValueError("Variables %s remained after substituting x0=%s"
                              " into %s" % (psub, x0, self))

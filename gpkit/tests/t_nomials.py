@@ -3,7 +3,7 @@ import math
 import sys
 import unittest
 from gpkit import Variable, Monomial, Posynomial, Signomial, SignomialsEnabled
-from gpkit import VectorVariable, NomialArray, Model
+from gpkit import VectorVariable, NomialArray, Model, units
 from gpkit.nomials import NomialMap
 from gpkit.small_classes import HashVector
 from gpkit.exceptions import InvalidPosynomial
@@ -273,20 +273,24 @@ class TestSignomial(unittest.TestCase):
             self.assertEqual(Signomial(-3), -3)
             self.assertNotEqual(Signomial(-3), 3)
 
-    def test_subbed_sig_exp(self):
-        a = Variable('a')
-        b = Variable('b')
-        c = Variable('c')
-        x = Variable('x')
-        y = Variable('y', 1, 'm')
-        z = Variable('z', 2, 'm^2')
-        with SignomialsEnabled():
-            # self.assertRaises(ValueError, x**(y) >= 1)
-            self.assertRaises(ValueError, (2*a)**c) # float**signomial check
-            self.assertRaises(ValueError, a**y) # united signomial check
-            self.assertRaises(ValueError, a**(2*b + z*y)) # dimension check
-            constraints = [x**(y*z**(-0.5)) >= 1]
-            m = Model(x, constraints)
+    # def test_subbed_sig_exp(self):
+    #     a = Variable('a')
+    #     b = Variable('b')
+    #     c = Variable('c')
+    #     x = Variable('x')
+    #     y = Variable('y', 'm')
+    #     z = Variable('z', 'm^2')
+    #     with SignomialsEnabled():
+            # self.assertRaises(ValueError, (2*a)**c) # float**signomial check
+            # self.assertRaises(ValueError, a**y) # united signomial check
+            # self.assertRaises(ValueError, a**(2*b + z*y)) # dimension check
+            # mony = a**(2*b + z/y**2)
+            # constraints = [x**(y*z**(-0.5)) >= 1]
+            # m = Model(x, constraints)
+            # m.substitutions.update({y: 1*units('m')})
+            # self.assertRaises(ValueError, m.solve()) # substitutions check
+            # m.substitutions.update({z: 2*units('m^2')})
+
 
 class TestPosynomial(unittest.TestCase):
     """TestCase for the Posynomial class"""

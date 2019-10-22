@@ -194,6 +194,7 @@ class SequentialGeometricProgram(CostedConstraintSet):
                                                x0, reltol, iteration_limit,
                                                mutategp, **kwargs)
         self.gps = relaxed_model.gps
+        self.solver_outs = relaxed_model.solver_outs
         return self.result
 
     @property
