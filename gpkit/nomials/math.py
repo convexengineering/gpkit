@@ -5,6 +5,7 @@ import numpy as np
 from .core import Nomial
 from .array import NomialArray
 from .. import units
+from ..keydict import KeyDict
 from ..constraints import SingleEquationConstraint
 from ..globals import SignomialsEnabled
 from ..small_classes import Numbers
@@ -572,10 +573,19 @@ class PosynomialInequality(ScalarSingleEquationConstraint):
                 for idx, percentage in self.const_mmap.items():
                     nu_[idx] += percentage * la*scale
             nu = nu_
-        return {var: sum([presub.exps[i][var]*nu[i]
-                          for i in presub.varlocs[var]])
-                for var in self.varkeys}  # Constant sensitivities
-
+        sens_dict = KeyDict({v: 0*v.units for v in self.varkeys if v.units})
+        sens_dict.update({v: 0 for v in self.varkeys if not v.units})
+        for var in self.varkeys:
+            for i in presub.varlocs[var]:
+                if not isinstance(presub.exps[i][var], HashVector):
+                    sens_dict[var] += presub.exps[i][var]*nu[i]
+                else:
+                    exps = presub.exps[i][var]
+                    varkeyDict = KeyDict({key:key for item in exps.keys() \
+                                      for key in item.keys()})
+                    subbed_exp = exps.sub(result, varkeyDict).values()[0]
+                    sens_dict[var] += subbed_exp*nu[i]
+        return sens_dict
     def as_gpconstr(self, x0):  # pylint: disable=unused-argument
         "The GP version of a Posynomial constraint is itself"
         return self

@@ -2,6 +2,7 @@
 import math
 import sys
 import unittest
+import numpy as np
 from gpkit import Variable, Monomial, Posynomial, Signomial, SignomialsEnabled
 from gpkit import VectorVariable, NomialArray, Model, units
 from gpkit.nomials import NomialMap
@@ -273,24 +274,33 @@ class TestSignomial(unittest.TestCase):
             self.assertEqual(Signomial(-3), -3)
             self.assertNotEqual(Signomial(-3), 3)
 
-    # def test_subbed_sig_exp(self):
-    #     a = Variable('a')
-    #     b = Variable('b')
-    #     c = Variable('c')
-    #     x = Variable('x')
-    #     y = Variable('y', 'm')
-    #     z = Variable('z', 'm^2')
-    #     with SignomialsEnabled():
-            # self.assertRaises(ValueError, (2*a)**c) # float**signomial check
-            # self.assertRaises(ValueError, a**y) # united signomial check
-            # self.assertRaises(ValueError, a**(2*b + z*y)) # dimension check
+    def test_subbed_sig_exp(self):
+        a = Variable('a')
+        b = Variable('b')
+        c = Variable('c')
+        x = Variable('x')
+        y = Variable('y', 'm')
+        z = Variable('z', 'm^2')
+        with SignomialsEnabled():
+            with self.assertRaises(ValueError):
+                mony = (2*a)**c # float**signomial check
+                mony = a**y # united signomial check
+                mony = a**(2*b + z*y) # dimension check
             # mony = a**(2*b + z/y**2)
-            # constraints = [x**(y*z**(-0.5)) >= 1]
-            # m = Model(x, constraints)
-            # m.substitutions.update({y: 1*units('m')})
-            # self.assertRaises(ValueError, m.solve()) # substitutions check
-            # m.substitutions.update({z: 2*units('m^2')})
-
+            # subs = {a: 3, b: 2, z: 4, y: 0.3}
+            # self.assertEqual()
+            constraints = [b*x**(y*z**(-0.5)) >= 1]
+            constraints_subbed = [3*x**(1*2**(-0.5)) >= 1]
+            m = Model(x, constraints)
+            m_subbed = Model(x, constraints_subbed)
+            m.substitutions.update({y: 1*units('m')})
+            self.assertRaises(ValueError, m.solve, verbosity=0) # substitutions check
+            m.substitutions.update({b:3, z: 2*units('m^2')})
+            sol = m.solve(verbosity=0)
+            self.assertEqual(sol(x),
+                             m_subbed.solve(verbosity=0)(x))
+            self.assertAlmostEqual(sol['sensitivities']['constants'][b],
+                                   -np.sqrt(2), places=5)
 
 class TestPosynomial(unittest.TestCase):
     """TestCase for the Posynomial class"""

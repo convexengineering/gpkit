@@ -430,17 +430,18 @@ def genA(exps, varlocs, meq_idxs, substitutions=None):  # pylint: disable=invali
                 if subbed_exp.values()[0] > 0 and \
                         not(upperbound and lowerbound):
                     upperbound = True
-                else:
+                elif subbed_exp.values()[0] <= 0:
                     lowerbound = True
             else:
                 data.extend([exps[i][var]])
-            if i not in bte:
-                if upperbound and lowerbound:
-                    break
-                elif exps[i][var] > 0:  # pylint:disable=simplifiable-if-statement
-                    upperbound = True
+                if i not in bte:
+                    if exps[i][var] > 0 and not (upperbound and lowerbound):
+                        upperbound = True
+                    elif exps[i][var] <= 0:
+                        lowerbound = True
                 else:
                     lowerbound = True
+                    upperbound = True
         if not upperbound:
             missingbounds[(var, "upper")] = ""
         if not lowerbound:
@@ -454,6 +455,9 @@ def genA(exps, varlocs, meq_idxs, substitutions=None):  # pylint: disable=invali
             row.append(i)
             col.append(0)
             data.append(0)
+    if len(row) != len(col) != len(data):
+        raise ValueError("The A matrix generated does not have the right "
+                         "dimensions.")
     A = CootMatrix(row, col, data)
 
     return A, missingbounds
