@@ -474,9 +474,9 @@ class PosynomialInequality(ScalarSingleEquationConstraint):
         if self.unsubbed:
             for exp in self.unsubbed[0].hmap:
                 for key, e in exp.items():
-                    if e > 0:
+                    if isinstance(e, Numbers) and e > 0:
                         self.bounded.add((key, "upper"))
-                    if e < 0:
+                    if isinstance(e, Numbers) and e < 0:
                         self.bounded.add((key, "lower"))
         for key in self.substitutions:
             for bound in ("upper", "lower"):
@@ -686,9 +686,9 @@ class SignomialInequality(ScalarSingleEquationConstraint):
         if self.unsubbed:
             for exp, c in self.unsubbed[0].hmap.items():
                 for key, e in exp.items():
-                    if e*c > 0:
+                    if isinstance(e, Numbers) and e*c > 0:
                         self.bounded.add((key, "upper"))
-                    if e*c < 0:
+                    if isinstance(e, Numbers) and e*c < 0:
                         self.bounded.add((key, "lower"))
         for key in self.substitutions:
             for bound in ("upper", "lower"):
