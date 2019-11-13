@@ -417,12 +417,12 @@ def genA(exps, varlocs, meq_idxs, substitutions=None):  # pylint: disable=invali
                 varkeyDict = KeyDict({key:key for item in exps[i][var].keys() \
                                       for key in item.keys()})
                 subbed_exp = exps[i][var].sub(substitutions, varkeyDict)
-                if subbed_exp.keys()[0]:
+                if list(subbed_exp.keys())[0]:
                     raise ValueError("Signomial exponent %s has variables that " 
                                      "have not been fully substituted. Complete "
                                      "substitutions and try again." % \
                                      (exps[i])) #TODO: improve error.
-                data.extend([subbed_exp.values()[0]])
+                data.extend([list(subbed_exp.values())[0]])
                 # Add substituted variables in signomial exponent to bte
                 # to make them bounded.
                 bte = bte.union(varkeyDict.keys())
