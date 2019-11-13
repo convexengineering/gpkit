@@ -427,10 +427,10 @@ def genA(exps, varlocs, meq_idxs, substitutions=None):  # pylint: disable=invali
                 # to make them bounded.
                 bte = bte.union(varkeyDict.keys())
                 # Checking boundedness of base variable
-                if subbed_exp.values()[0] > 0 and \
+                if list(subbed_exp.values())[0] > 0 and \
                         not(upperbound and lowerbound):
                     upperbound = True
-                elif subbed_exp.values()[0] <= 0:
+                elif list(subbed_exp.values())[0] <= 0:
                     lowerbound = True
             else:
                 data.extend([exps[i][var]])
