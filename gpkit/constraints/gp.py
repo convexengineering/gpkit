@@ -407,11 +407,13 @@ def genA(exps, varlocs, meq_idxs, substitutions=None):  # pylint: disable=invali
     """
     missingbounds = {}
     row, col, data = [], [], []
-    bte = set(meq_idxs) # variables bounded through equalities or sig exp substitutions
+    bte = set() # variables bounded through equalities or sig exp substitutions
     for j, var in enumerate(varlocs):
+        # print(var)
         upperbound, lowerbound = False, False
         row.extend(varlocs[var])
         col.extend([j]*len(varlocs[var]))
+        exp_arr = []
         for i in varlocs[var]:
             if isinstance(exps[i][var], NomialMap):
                 varkeyDict = KeyDict({key:key for item in exps[i][var].keys() \
@@ -422,32 +424,36 @@ def genA(exps, varlocs, meq_idxs, substitutions=None):  # pylint: disable=invali
                                      "have not been fully substituted. Complete "
                                      "substitutions and try again." % \
                                      (exps[i])) #TODO: improve error.
-                data.extend([list(subbed_exp.values())[0]])
+                exp_arr.extend([list(subbed_exp.values())[0]])
                 # Add substituted variables in signomial exponent to bte
                 # to make them bounded.
                 bte = bte.union(varkeyDict.keys())
-                # Checking boundedness of base variable
-                if list(subbed_exp.values())[0] > 0 and \
-                        not(upperbound and lowerbound):
-                    upperbound = True
-                elif list(subbed_exp.values())[0] <= 0:
-                    lowerbound = True
             else:
-                data.extend([exps[i][var]])
-                if i not in bte:
-                    if exps[i][var] > 0 and not (upperbound and lowerbound):
-                        upperbound = True
-                    elif exps[i][var] <= 0:
-                        lowerbound = True
-                else:
-                    lowerbound = True
+                exp_arr.extend([exps[i][var]])
+        # print(exp_arr)
+        data.extend(exp_arr)
+        for k, i in enumerate(varlocs[var]):
+            # Checking boundedness of base variable
+            if i in meq_idxs or var in bte:
+                # print('meq_idxs')
+                lowerbound = True
+                upperbound = True
+                break
+            else:
+                if upperbound and lowerbound:
+                    break
+                elif exp_arr[k] > 0:
+                    # print('upper')
                     upperbound = True
+                else:
+                    # print('lower')
+                    lowerbound = True
+
         if not upperbound:
             missingbounds[(var, "upper")] = ""
         if not lowerbound:
             missingbounds[(var, "lower")] = ""
-
-    check_mono_eq_bounds(missingbounds, gen_mono_eq_bounds(exps, meq_idxs))
+    check_mono_eq_bounds(missingbounds, gen_mono_eq_bounds(exps, meq_idxs)) #TODO: or bte?
 
     # space the matrix out for trailing constant terms
     for i, exp in enumerate(exps):
