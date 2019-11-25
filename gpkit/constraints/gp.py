@@ -120,6 +120,11 @@ class GeometricProgram(CostedConstraintSet, NomialData):
         for hmap in self.hmaps:
             self._exps.extend(hmap.keys())
             self._cs.extend(hmap.values())
+        from collections import OrderedDict
+        sorted_varlocs = OrderedDict()
+        for key in sorted(self.varlocs, key=lambda k: str(k)):
+            sorted_varlocs[key] = self.varlocs[key]
+        self._varlocs = sorted_varlocs
         self.vks = self.varlocs
         self.A, self.missingbounds = genA(self.exps, self.varlocs,
                                           self.meq_idxs)
