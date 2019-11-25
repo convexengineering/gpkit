@@ -122,7 +122,7 @@ class GeometricProgram(CostedConstraintSet, NomialData):
             self._cs.extend(hmap.values())
         from collections import OrderedDict
         sorted_varlocs = OrderedDict()
-        for key in sorted(self.varlocs, key=lambda k: str(k)):
+        for key in sorted(self.varlocs, key=str):
             sorted_varlocs[key] = self.varlocs[key]
         self._varlocs = sorted_varlocs
         self.vks = self.varlocs
