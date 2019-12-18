@@ -448,7 +448,7 @@ class SolutionArray(DictOfLists):
         >>> pickle.load(open("solution.pkl"))
         """
         program, model, cost, warnings = self.pickle_prep()
-        pickle.dump(self, open(filename, "wb"))
+        pickle.dump(self, open(filename, "wb"), protocol=1)
         self["cost"], self["warnings"] = cost, warnings
         self.program, self.model = program, model
 
