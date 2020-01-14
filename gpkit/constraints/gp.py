@@ -414,7 +414,8 @@ def genA(exps, varlocs, meq_idxs, substitutions=None):  # pylint: disable=invali
         row.extend(varlocs[var])
         col.extend([j]*len(varlocs[var]))
         exp_arr = []
-        for i in varlocs[var]:
+        # Adding data to A matrix
+        for k, i in enumerate(varlocs[var]):
             if isinstance(exps[i][var], NomialMap):
                 varkeyDict = KeyDict({key:key for item in exps[i][var].keys() \
                                       for key in item.keys()})
@@ -432,28 +433,25 @@ def genA(exps, varlocs, meq_idxs, substitutions=None):  # pylint: disable=invali
                 exp_arr.extend([exps[i][var]])
         # print(exp_arr)
         data.extend(exp_arr)
+        # Checking boundedness
         for k, i in enumerate(varlocs[var]):
-            # Checking boundedness of base variable
-            if i in meq_idxs or var in bte:
-                # print('meq_idxs')
+            # Checking variables subbed in exponent
+            if var in bte:
                 lowerbound = True
                 upperbound = True
                 break
-            else:
+            elif i not in meq_idxs:
                 if upperbound and lowerbound:
                     break
                 elif exp_arr[k] > 0:
-                    # print('upper')
                     upperbound = True
                 else:
-                    # print('lower')
                     lowerbound = True
-
         if not upperbound:
             missingbounds[(var, "upper")] = ""
         if not lowerbound:
             missingbounds[(var, "lower")] = ""
-    check_mono_eq_bounds(missingbounds, gen_mono_eq_bounds(exps, meq_idxs)) #TODO: or bte?
+    check_mono_eq_bounds(missingbounds, gen_mono_eq_bounds(exps, meq_idxs))
 
     # space the matrix out for trailing constant terms
     for i, exp in enumerate(exps):
