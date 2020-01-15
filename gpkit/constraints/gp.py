@@ -417,9 +417,9 @@ def genA(exps, varlocs, meq_idxs, substitutions=None):  # pylint: disable=invali
         # Adding data to A matrix
         for k, i in enumerate(varlocs[var]):
             if isinstance(exps[i][var], NomialMap):
-                varkeyDict = KeyDict({key:key for item in exps[i][var].keys() \
+                varkeydict = KeyDict({key:key for item in exps[i][var].keys() \
                                       for key in item.keys()})
-                subbed_exp = exps[i][var].sub(substitutions, varkeyDict)
+                subbed_exp = exps[i][var].sub(substitutions, varkeydict)
                 if list(subbed_exp.keys())[0]:
                     raise ValueError("Signomial exponent %s has variables that " 
                                      "have not been fully substituted. Complete "
@@ -428,7 +428,7 @@ def genA(exps, varlocs, meq_idxs, substitutions=None):  # pylint: disable=invali
                 exp_arr.extend([list(subbed_exp.values())[0]])
                 # Add substituted variables in signomial exponent to bte
                 # to make them bounded.
-                bte = bte.union(varkeyDict.keys())
+                bte = bte.union(varkeydict.keys())
             else:
                 exp_arr.extend([exps[i][var]])
         # print(exp_arr)

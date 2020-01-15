@@ -581,9 +581,9 @@ class PosynomialInequality(ScalarSingleEquationConstraint):
                     sens_dict[var] += presub.exps[i][var]*nu[i]
                 else:
                     exps = presub.exps[i][var]
-                    varkeyDict = KeyDict({key:key for item in exps.keys() \
+                    varkeydict = KeyDict({key:key for item in exps.keys() \
                                       for key in item.keys()})
-                    subbed_exp = exps.sub(result, varkeyDict).values()[0]
+                    subbed_exp = exps.sub(result, varkeydict).values()[0]
                     sens_dict[var] += subbed_exp*nu[i]
         return sens_dict
     def as_gpconstr(self, x0):  # pylint: disable=unused-argument

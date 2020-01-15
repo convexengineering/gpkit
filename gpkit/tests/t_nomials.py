@@ -283,6 +283,7 @@ class TestSignomial(unittest.TestCase):
         z = Variable('z', 'm^2')
         with SignomialsEnabled():
             with self.assertRaises(ValueError):
+                #pylint: disable=unused-variable
                 mony = (2*a)**c # float**signomial check
                 mony = a**y # united signomial check
                 mony = a**(2*b + z*y) # dimension check
