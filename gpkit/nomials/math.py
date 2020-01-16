@@ -133,7 +133,7 @@ class Signomial(Nomial):
         -------
         Monomial (unless self(x0) < 0, in which case a Signomial is returned)
         """
-        x0, _, _ = parse_subs(self.varkeys, x0)  # use only varkey keys
+        x0, _, _, _ = parse_subs(self.varkeys, x0)  # use only varkey keys
         if self.hmap.varexps:
             raise ValueError("Varexps only works for GPs for now... "
                              "stick to GPs!")
@@ -535,7 +535,7 @@ class PosynomialInequality(ScalarSingleEquationConstraint):
         out = []
         self._last_used_substitutions = {}
         for posy in posys:
-            fixed, _, _ = parse_subs(posy.varkeys, substitutions, clean=True)
+            fixed, _, _, _ = parse_subs(posy.varkeys, substitutions, clean=True)
             self._last_used_substitutions.update(fixed)
             hmap = posy.hmap.sub(fixed, posy.varkeys, parsedsubs=True)
             self.pmap, self.mfm = hmap.mmap(posy.hmap)  # pylint: disable=attribute-defined-outside-init

@@ -111,7 +111,7 @@ def _solve_fctry(genfunction):
          ValueError if the program is invalid.
          RuntimeWarning if an error occurs in solving or parsing the solution.
          """
-        constants, sweep, linked = parse_subs(self.varkeys, self.substitutions)
+        constants, integers, sweep, linked = parse_subs(self.varkeys, self.substitutions)
         solution = SolutionArray()
 
         # NOTE SIDE EFFECTS: self.program is set below

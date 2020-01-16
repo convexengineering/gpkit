@@ -375,6 +375,13 @@ class TestModelSubs(unittest.TestCase):
         m.substitutions["ymax"] = [0.3, 0.5, 0.8]
         m.localsolve(verbosity=0)
 
+    def test_int_sub(self):
+        x = Variable("x")
+        y = Variable("y")
+        m = Model(x, [x >= y])
+        m.substitutions.update({x: ("int", [1.,2.,3.]),
+                                y: ("sweep"), [0.9, 2.1, 10]})
+
     def test_spsubs(self):
         x = Variable("x", 5)
         y = Variable("y", lambda c: 2*c[x])

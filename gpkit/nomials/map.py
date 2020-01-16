@@ -105,7 +105,7 @@ class NomialMap(HashVector):
         if parsedsubs or not substitutions:
             fixed = substitutions
         else:
-            fixed, _, _ = parse_subs(varkeys, substitutions)
+            fixed, _, _, _ = parse_subs(varkeys, substitutions)
 
         if not fixed:
             if not self.expmap:

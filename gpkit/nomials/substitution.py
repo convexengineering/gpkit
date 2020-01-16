@@ -4,13 +4,14 @@ from ..small_scripts import splitsweep
 
 
 def parse_subs(varkeys, substitutions, clean=False):
-    "Seperates subs into the constants, sweeps, linkedsweeps actually present."
-    constants, sweep, linkedsweep = {}, {}, {}
+    """Seperates subs into the constants, sweeps, linkedsweeps,
+    and integer variables actually present."""
+    constants, integers, sweep, linkedsweep = {}, {}, {}, {}
     if clean:
         for var in varkeys:
             if dict.__contains__(substitutions, var):
                 sub = dict.__getitem__(substitutions, var)
-                append_sub(sub, [var], constants, sweep, linkedsweep)
+                append_sub(sub, [var], constants, integers, sweep, linkedsweep)
     else:
         varkeys.update_keymap()
         if hasattr(substitutions, "keymap"):
@@ -18,18 +19,18 @@ def parse_subs(varkeys, substitutions, clean=False):
                 if dict.__contains__(substitutions, var):
                     sub = dict.__getitem__(substitutions, var)
                     keys = varkeys.keymap[var]
-                    append_sub(sub, keys, constants, sweep, linkedsweep)
+                append_sub(sub, [var], constants, integers, sweep, linkedsweep)
         else:
             for var in substitutions:
                 key = getattr(var, "key", var)
                 if key in varkeys.keymap:
                     sub, keys = substitutions[var], varkeys.keymap[key]
-                    append_sub(sub, keys, constants, sweep, linkedsweep)
+                append_sub(sub, [var], constants, integers, sweep, linkedsweep)
     return constants, sweep, linkedsweep
 
 
-def append_sub(sub, keys, constants, sweep, linkedsweep):
-    "Appends sub to constants, sweep, or linkedsweep."
+def append_sub(sub, keys, constants, integers, sweep, linkedsweep):
+    """Appends sub to constants, integers, sweep, or linkesweep."""
     sweepsub, sweepval = splitsweep(sub)
     if sweepsub:  # if the whole key is swept
         sub = sweepval
