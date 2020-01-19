@@ -18,9 +18,9 @@ def cvxoptimize(c, A, k, *args, **kwargs):
         ---------
         c : floats array of shape n
             Coefficients of each monomial
-        A : floats array of shape (m,n)
+        A : floats array of shape (n, m)
             Exponents of the various free variables for each monomial.
-        k : ints array of shape n
+        k : ints array of shape p+1
             number of monomials (columns of F) present in each constraint
 
         Returns
