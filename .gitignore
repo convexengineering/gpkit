@@ -18,6 +18,7 @@ __pycache__/
 .Python
 env/
 bin/
+gpkit/env/*
 build/
 develop-eggs/
 dist/
@@ -30,6 +31,7 @@ var/
 *.egg-info/
 .installed.cfg
 *.egg
+gpkit/_mosek/build/*
 
 # Installer logs
 pip-log.txt
@@ -42,6 +44,7 @@ htmlcov/
 .cache
 nosetests.xml
 coverage.xml
+gplibrary/*
 
 # Translations
 *.mo
@@ -76,3 +79,6 @@ test_reports_nounits/
 
 # OSX
 .DS_Store
+
+# Development environment
+.idea/
