@@ -12,7 +12,7 @@ def cvxoptimize(c, A, k, *args, **kwargs):
         "[a,b] array of floats" indicates array-like data with shape [a,b]
         n is the number of monomials in the gp
         m is the number of variables in the gp
-        p is the number of posynomials in the gp
+        p is the number of posynomial constraints in the gp
 
         Arguments
         ---------
@@ -21,7 +21,8 @@ def cvxoptimize(c, A, k, *args, **kwargs):
         A : floats array of shape (n, m)
             Exponents of the various free variables for each monomial.
         k : ints array of shape p+1
-            number of monomials (columns of F) present in each constraint
+            k[0] is the number of monomials (rows of A) present in the objective
+            k[1:] is number of monomials (rows of A) present in each constraint
 
         Returns
         -------
