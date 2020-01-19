@@ -93,7 +93,7 @@ class GeometricProgram(CostedConstraintSet, NomialData):
         self.posynomials.extend(self.as_posyslt1(self.substitutions))
         self.hmaps = [p.hmap for p in self.posynomials]
         ## Generate various maps into the posy- and monomials
-        # k [j]: number of monomials (columns of F) present in each constraint
+        # k [j]: number of monomials (rows of A) present in each constraint
         self.k = [len(hm) for hm in self.hmaps]
         p_idxs = []  # p_idxs [i]: posynomial index of each monomial
         self.m_idxs = []  # m_idxs [i]: monomial indices of each posynomial
