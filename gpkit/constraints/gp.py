@@ -15,7 +15,7 @@ from ..exceptions import InvalidPosynomial
 
 
 DEFAULT_SOLVER_KWARGS = {"cvxopt": {"kktsolver": "ldl"}}
-SOLUTION_TOL = {"cvxopt": 1e-3, "mosek_cli": 1e-4, "mosek": 1e-5, 'mosek_conif': 1e-5}
+SOLUTION_TOL = {"cvxopt": 1e-3, "mosek_cli": 1e-4, "mosek": 1e-5, 'mosek_conif': 1e-3}
 
 
 def _get_solver(solver, kwargs):
@@ -38,7 +38,7 @@ def _get_solver(solver, kwargs):
     elif solver == "mosek":
         from .._mosek import expopt
         solverfn = expopt.imize
-    elif solver =='mosek_conif':
+    elif solver == 'mosek_conif':
         from .._mosek import mosek_conif
         solverfn = mosek_conif.mskoptimize
     elif hasattr(solver, "__call__"):
