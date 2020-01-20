@@ -122,6 +122,21 @@ class CVXopt(SolverBackend):
             pass
 
 
+class MosekConif(SolverBackend):
+
+    name = 'mosek_conif'
+
+    def look(self):
+        "Attempts to import mosek."
+        try:
+            log("#   Trying to import mosek...")
+            # Testing the import, so the variable is intentionally not used
+            import mosek  # pylint: disable=unused-variable
+            return "in Python path"
+        except ImportError:
+            pass
+
+
 class Mosek(SolverBackend):
     "MOSEK finder and builder."
     name = "mosek"
@@ -279,7 +294,7 @@ def build():
     log("Started building gpkit...\n")
 
     log("Attempting to find and build solvers:\n")
-    solvers = [Mosek(), MosekCLI(), CVXopt()]
+    solvers = [MosekConif(), Mosek(), MosekCLI(), CVXopt()]
     installed_solvers = [solver.name
                          for solver in solvers
                          if solver.installed]
