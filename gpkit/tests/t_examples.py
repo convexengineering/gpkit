@@ -113,7 +113,7 @@ class TestExamples(unittest.TestCase):
         with self.assertRaises(RuntimeWarning) as cm:
             example.m.solve(verbosity=0)
         err = str(cm.exception)
-        if "mosek" in err:
+        if "mosek" in err and 'mosek_conif' not in err:
             self.assertIn("PRIM_INFEAS_CER", err)
         elif "cvxopt" in err:
             self.assertIn("unknown", err)

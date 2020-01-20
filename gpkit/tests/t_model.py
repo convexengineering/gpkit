@@ -626,7 +626,7 @@ class TestSP(unittest.TestCase):
         x = Variable("x")
         y = Variable("y")
         m = Model(x*y, [x*y**1.01 >= 100])
-        with self.assertRaises((RuntimeWarning, InvalidPosynomial)):
+        with self.assertRaises((RuntimeWarning, ValueError, InvalidPosynomial)):
             m.solve(self.solver, verbosity=0)
         # test one-sided bound
         m = Model(x*y, Bounded(m, verbosity=0, lower=0.001))
