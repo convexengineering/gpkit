@@ -51,7 +51,7 @@ def mskoptimize(c, A, k, p_idxs, *args, **kwargs):
     #
     c = np.array(c)
     n, m = A.shape
-    p = len(p_idxs) - 1
+    p = len(k) - 1
     n_msk = m + 3*n
     #
     #   Create MOSEK task. add variables and conic constraints.
@@ -75,36 +75,36 @@ def mskoptimize(c, A, k, p_idxs, *args, **kwargs):
     cols = (m + 3*np.arange(n) + 1).tolist()
     vals = [1.0] * n
     task.putaijlist(rows, cols, vals)
-    # Linear equations: A[ell,:] @ x - t[3*ell + 2] == 0
+    # Linear equations: A[ell,:] @ x  - t[3*ell + 2] == -np.log(c[ell])
     cur_con_idx = n
-    rows = [cur_con_idx + r for r in A.rows]
-    task.putaijlist(rows, A.cols, A.vals)
+    rows = [cur_con_idx + r for r in A.row]
+    task.putaijlist(rows, A.col, A.data)
     rows = [cur_con_idx + i for i in range(n)]
     cols = (m + 3*np.arange(n) + 2).tolist()
     vals = [-1.0] * n
     task.putaijlist(rows, cols, vals)
-    # Linear inequalities: c[sels] @ t[3 * sels] <= 1, for sels = np.nonzero(p_idxs[i])
+    # Linear inequalities: 1 @ t[3 * sels] <= 1, for sels = np.nonzero(p_idxs[i])
     cur_con_idx = 2*n
     rows, cols, vals = [], [], []
     for i in range(p):
-        sels = np.nonzero(p_idxs[i + 1])[0]
+        sels = np.nonzero(p_idxs == (i + 1))[0]
         rows.extend([cur_con_idx] * sels.size)
         cols.extend(m + 3 * sels)
-        vals.extend(c[sels])
+        vals.extend([1] * sels.size)
         cur_con_idx += 1
     task.putaijlist(rows, cols, vals)
     #
     #   Build the right-hand-sides of the [in]equality constraints
     #
     type_constraint = [mosek.boundkey.fx] * (2*n) + [mosek.boundkey.up] * p
-    h = np.concatenate([np.ones(n), np.zeros(n), np.ones(p)])
+    h = np.concatenate([np.ones(n), -np.log(c), np.ones(p)])
     task.putconboundlist(np.arange(h.size, dtype=int), type_constraint, h, h)
     #
     #   Set the objective function
     #
-    sels = np.nonzero(p_idxs[0])[0]
+    sels = np.nonzero(p_idxs == 0)[0]
     cols = (m + 3 * sels).tolist()
-    task.putclist(cols, c[sels].tolist())
+    task.putclist(cols, [1] * sels.size)
     task.putobjsense(mosek.objsense.minimize)
     #
     #   Set solver parameters, and call .solve().
@@ -117,16 +117,21 @@ def mskoptimize(c, A, k, p_idxs, *args, **kwargs):
     if msk_solsta == mosek.solsta.optimal:
         str_status = 'optimal'
         x = [0.] * m
-        task.getxxslice(mosek.soltype.itr, 0, len(x), x)
-        solution = {'status': str_status, 'primal': np.array(x)}
-        return solution
+        task.getxxslice(mosek.soltype.itr, 0, m, x)
+        z = [0.] * p
+        task.getsucslice(mosek.soltype.itr, 2*n, 2*n + p, z)
+        z = np.array(z)
+        z[z < 0] = 0
+        x = np.array(x)
+        solution = {'status': str_status, 'primal': x, 'la': z}
     elif msk_solsta == mosek.solsta.prim_infeas_cer:
         str_status = 'infeasible'
         solution = {'status': str_status, 'primal': None}
-        return solution
     elif msk_solsta == mosek.solsta.dual_infeas_cer:
         str_status = 'unbounded'
         solution = {'status': str_status, 'primal': None}
-        return solution
     else:
         raise RuntimeError('Unexpected solver status.')
+    task.__exit__(None, None, None)
+    env.__exit__(None, None, None)
+    return solution
