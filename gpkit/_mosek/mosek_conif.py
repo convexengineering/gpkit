@@ -125,7 +125,6 @@ def mskoptimize(c, A, k, p_idxs, *args, **kwargs):
     #
     msk_solsta = task.getsolsta(mosek.soltype.itr)
     if msk_solsta == mosek.solsta.optimal:
-        str_status = 'optimal'
         # recover primal variables
         x = [0.] * m
         task.getxxslice(mosek.soltype.itr, 0, m, x)
@@ -137,15 +136,13 @@ def mskoptimize(c, A, k, p_idxs, *args, **kwargs):
         z_duals = np.array(z_duals)
         z_duals[z_duals < 0] = 0
         # wrap things up in a dictionary
-        solution = {'status': str_status, 'primal': x, 'la': z_duals}
+        solution = {'status': 'optimal', 'primal': x, 'la': z_duals}
     elif msk_solsta == mosek.solsta.prim_infeas_cer:
-        str_status = 'infeasible'
-        solution = {'status': str_status, 'primal': None}
+        solution = {'status': 'infeasible', 'primal': None}
     elif msk_solsta == mosek.solsta.dual_infeas_cer:
-        str_status = 'unbounded'
-        solution = {'status': str_status, 'primal': None}
+        solution = {'status': 'unbounded', 'primal': None}
     else:
-        raise RuntimeError('Unexpected solver status.')
+        solution = {'status': 'unknown', 'primal': None}
     task.__exit__(None, None, None)
     env.__exit__(None, None, None)
     return solution
