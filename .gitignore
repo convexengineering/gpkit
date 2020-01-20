@@ -45,6 +45,10 @@ htmlcov/
 nosetests.xml
 coverage.xml
 gplibrary/*
+gpkit/tests/*.csv
+gpkit/tests/*.txt
+gpkit/tests/*.mat
+gpkit/tests/*.pkl
 
 # Translations
 *.mo
