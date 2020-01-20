@@ -6,7 +6,7 @@ from gpkit import (Model, settings, VectorVariable, Variable,
                    SignomialsEnabled, ArrayVariable, SignomialEquality)
 from gpkit.constraints.bounded import Bounded
 from gpkit.small_classes import CootMatrix
-from gpkit.exceptions import InvalidGPConstraint
+from gpkit.exceptions import InvalidGPConstraint, InvalidPosynomial
 from gpkit import NamedVariables, units, parse_variables
 from gpkit.constraints.relax import ConstraintsRelaxed
 from gpkit.constraints.relax import ConstraintsRelaxedEqually
@@ -15,7 +15,7 @@ from gpkit.constraints.relax import ConstantsRelaxed
 if sys.version_info >= (3, 0):
     unicode = str  # pylint:disable=redefined-builtin,invalid-name
 
-NDIGS = {"cvxopt": 4, "mosek": 5, "mosek_cli": 5}
+NDIGS = {"cvxopt": 4, "mosek": 5, "mosek_cli": 5, 'mosek_conif': 4}
 # name: decimal places of accuracy
 
 # pylint: disable=invalid-name,attribute-defined-outside-init,unused-variable,undefined-variable,exec-used
@@ -285,26 +285,26 @@ class TestSP(unittest.TestCase):
         with self.assertRaises(ValueError):
             mr1 = Model(x*r1.relaxvars, r1)  # no 'prod'
         mr1 = Model(x*r1.relaxvars.prod()**10, r1)
-        cost1 = mr1.localsolve(verbosity=0)["cost"]
+        cost1 = mr1.localsolve(verbosity=0, solver=self.solver)["cost"]
         self.assertAlmostEqual(cost1/1024, 1, self.ndig)
-        m.debug(verbosity=0)
+        m.debug(verbosity=0, solver=self.solver)
         with SignomialsEnabled():
             m = Model(x, [x+y >= z, x+y <= z/2, y <= x, y >= 1], {z: 3})
         if self.solver != "cvxopt":
-            m.debug(verbosity=0)
+            m.debug(verbosity=0, solver=self.solver)
         r2 = ConstraintsRelaxed(m)
         self.assertEqual(len(r2.varkeys), 7)
         mr2 = Model(x*r2.relaxvars.prod()**10, r2)
-        cost2 = mr2.localsolve(verbosity=0)["cost"]
+        cost2 = mr2.localsolve(verbosity=0, solver=self.solver)["cost"]
         self.assertAlmostEqual(cost2/1024, 1, self.ndig)
         with SignomialsEnabled():
             m = Model(x, [x+y >= z, x+y <= z/2, y <= x, y >= 1], {z: 3})
         if self.solver != "cvxopt":
-            m.debug(verbosity=0)
+            m.debug(verbosity=0, solver=self.solver)
         r3 = ConstraintsRelaxedEqually(m)
         self.assertEqual(len(r3.varkeys), 4)
         mr3 = Model(x*r3.relaxvar**10, r3)
-        cost3 = mr3.localsolve(verbosity=0)["cost"]
+        cost3 = mr3.localsolve(verbosity=0, solver=self.solver)["cost"]
         self.assertAlmostEqual(cost3/(32*0.8786796585), 1, self.ndig)
 
     def test_sp_bounded(self):
@@ -313,17 +313,17 @@ class TestSP(unittest.TestCase):
 
         with SignomialsEnabled():
             m = Model(x, [x + y >= 1, y <= 0.1])  # solves
-        cost = m.localsolve(verbosity=0)["cost"]
+        cost = m.localsolve(verbosity=0, solver=self.solver)["cost"]
         self.assertAlmostEqual(cost, 0.9, self.ndig)
 
         with SignomialsEnabled():
             m = Model(x, [x + y >= 1])  # dual infeasible
         with self.assertRaises((RuntimeWarning, ValueError)):
-            m.localsolve(verbosity=0)
+            m.localsolve(verbosity=0, solver=self.solver),
 
         with SignomialsEnabled():
             m = Model(x, Bounded([x + y >= 1], verbosity=0))
-        sol = m.localsolve(verbosity=0)
+        sol = m.localsolve(verbosity=0, solver=self.solver)
         boundedness = sol["boundedness"]
         if "value near lower bound" in boundedness:
             self.assertIn(x.key, boundedness["value near lower bound"])
@@ -341,7 +341,7 @@ class TestSP(unittest.TestCase):
                            y >= x - 1]
         m = Model(x + y*z, constraints)
         m.substitutions.update({"z": 5})
-        sol = m.localsolve(verbosity=0)
+        sol = m.localsolve(verbosity=0, solver=self.solver)
         self.assertAlmostEqual(sol["cost"], 13, self.ndig)
 
         # Constant variable declaration method
@@ -350,7 +350,7 @@ class TestSP(unittest.TestCase):
             constraints = [x + y >= z,
                            y >= x - 1]
         m = Model(x + y*z, constraints)
-        sol = m.localsolve(verbosity=0)
+        sol = m.localsolve(verbosity=0, solver=self.solver)
         self.assertAlmostEqual(sol["cost"], 13, self.ndig)
 
     def test_initially_infeasible(self):
@@ -363,7 +363,7 @@ class TestSP(unittest.TestCase):
 
         m = Model(1/x, [sigc, sigc2, y <= 0.5])
 
-        sol = m.localsolve(verbosity=0)
+        sol = m.localsolve(verbosity=0, solver=self.solver)
         self.assertAlmostEqual(sol["cost"], 2**0.5, self.ndig)
         self.assertAlmostEqual(sol(y), 0.5, self.ndig)
         second_solve_key_names = [key.name[:5]
@@ -383,14 +383,14 @@ class TestSP(unittest.TestCase):
         with SignomialsEnabled():
             m = Model(x, [x + z >= y])
             with self.assertRaises(ValueError):
-                m.localsolve(verbosity=0)
+                m.localsolve(verbosity=0, solver=self.solver)
 
         with SignomialsEnabled():
             m = Model(x, [x + y >= z])
             m.substitutions[y] = 1
             m.substitutions[z] = 4
         sol = m.solve(self.solver, verbosity=0)
-        self.assertAlmostEqual(sol["cost"], 3)
+        self.assertAlmostEqual(sol["cost"], 3, self.ndig)
 
         sys.stdout = old_stdout
         self.assertEqual(stringout.getvalue(), (
@@ -432,7 +432,7 @@ class TestSP(unittest.TestCase):
             m1 = Model(x, [x + y >= z, x >= y])
         m1.substitutions.update({'x': 0, 'y': 0})
         with self.assertRaises(ValueError):
-            _ = m1.localsolve()
+            _ = m1.localsolve(solver=self.solver)
 
     def test_trivial_sp(self):
         x = Variable('x')
@@ -440,7 +440,7 @@ class TestSP(unittest.TestCase):
         with SignomialsEnabled():
             m = Model(x, [x >= 1-y, y <= 0.1])
         with self.assertRaises(InvalidGPConstraint):
-            m.solve(verbosity=0)
+            m.solve(verbosity=0, solver=self.solver)
         sol = m.localsolve(self.solver, verbosity=0)
         self.assertAlmostEqual(sol["variables"]["x"], 0.9, self.ndig)
         with SignomialsEnabled():
@@ -455,7 +455,7 @@ class TestSP(unittest.TestCase):
         with SignomialsEnabled():
             m = Model(x, [x >= 1-y, y <= 0.1, y >= z])
         with self.assertRaises(InvalidGPConstraint):
-            m.solve(verbosity=0)
+            m.solve(verbosity=0, solver=self.solver)
         sol = m.localsolve(self.solver, verbosity=0)
         self.assertAlmostEqual(sol["variables"]["x"], 0.9, self.ndig)
 
@@ -466,7 +466,7 @@ class TestSP(unittest.TestCase):
             constraints = [y + x >= 2, y <= x]
         objective = x
         m = Model(objective, constraints)
-        m.localsolve(verbosity=0)
+        m.localsolve(verbosity=0, solver=self.solver)
 
         # issue #257
 
@@ -479,7 +479,7 @@ class TestSP(unittest.TestCase):
                            C <= 1]
         obj = 1/A[0] + 1/A[1]
         m = Model(obj, constraints)
-        m.localsolve(verbosity=0)
+        m.localsolve(verbosity=0, solver=self.solver)
 
     def test_issue180(self):
         L = Variable("L")
@@ -574,7 +574,7 @@ class TestSP(unittest.TestCase):
             J = 0.01*(x - 1)**2 + nonzero_adder
             with NamedVariables("SmallSignomial"):
                 m = Model(z, [z >= J])
-        sol = m.localsolve(verbosity=0)
+        sol = m.localsolve(verbosity=0, solver=self.solver)
         self.assertAlmostEqual(sol['cost'], nonzero_adder, local_ndig)
         self.assertAlmostEqual(sol('x'), 0.98725425, self.ndig)
 
@@ -585,7 +585,7 @@ class TestSP(unittest.TestCase):
             J = 0.01*((x - 1)**2 + (y - 1)**2) + (x*y - 1)**2
             m = Model(J)
             with self.assertRaises(TypeError):
-                m.localsolve(verbosity=0)
+                m.localsolve(verbosity=0, solver=self.solver)
 
     def test_partial_sub_signomial(self):
         "Test SP partial x0 initialization"
@@ -607,7 +607,7 @@ class TestSP(unittest.TestCase):
             with SignomialsEnabled():
                 _ = m.gp()
         with self.assertRaises(RuntimeWarning):
-            _ = m.localsolve()
+            _ = m.localsolve(solver=self.solver)
 
     def test_reassigned_constant_cost(self):
         # for issue 1131
@@ -626,7 +626,7 @@ class TestSP(unittest.TestCase):
         x = Variable("x")
         y = Variable("y")
         m = Model(x*y, [x*y**1.01 >= 100])
-        with self.assertRaises((RuntimeWarning, ValueError)):
+        with self.assertRaises(InvalidPosynomial):
             m.solve(self.solver, verbosity=0)
         # test one-sided bound
         m = Model(x*y, Bounded(m, verbosity=0, lower=0.001))
@@ -645,7 +645,7 @@ class TestSP(unittest.TestCase):
     def test_penalty_ccp_solve(self):
         "Test penalty convex-concave algorithm from [Lipp/Boyd 2016]."
         m = SPThing()
-        sol = m.localsolve(verbosity=0)
+        sol = m.localsolve(verbosity=0, solver=self.solver)
         sol_pccp = m.penalty_ccp_solve(verbosity=0)
         self.assertEqual(len(m.program.gps[-1].varkeys), 3)
         self.assertAlmostEqual(sol['cost'], sol_pccp['cost'])
