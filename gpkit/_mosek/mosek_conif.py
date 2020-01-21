@@ -39,6 +39,12 @@ def mskoptimize(c, A, k, p_idxs, *args, **kwargs):
                 those constraints are represented in log-sum-exp ("LSE") form.
     """
     import mosek
+    if not hasattr(mosek.conetype, 'pexp'):
+        msg = """
+        mosek_conif requires MOSEK version >= 9. The imported version of MOSEK does
+        not have attribute ``mosek.conetype.pexp``, which was introduced in MOSEK 9. 
+        """
+        raise RuntimeError(msg)
     #
     #   Initial transformations of problem data.
     #

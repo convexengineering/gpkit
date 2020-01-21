@@ -127,12 +127,15 @@ class MosekConif(SolverBackend):
     name = 'mosek_conif'
 
     def look(self):
-        "Attempts to import mosek."
+        "Attempts to import mosek, version >= 9."
         try:
             log("#   Trying to import mosek...")
             # Testing the import, so the variable is intentionally not used
             import mosek  # pylint: disable=unused-variable
-            return "in Python path"
+            if hasattr(mosek.conetype, 'pexp'):
+                return "in Python path"
+            else:
+                pass
         except ImportError:
             pass
 
