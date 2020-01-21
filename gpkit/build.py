@@ -123,6 +123,7 @@ class CVXopt(SolverBackend):
 
 
 class MosekConif(SolverBackend):
+    "Find MOSEK version >= 9."
 
     name = 'mosek_conif'
 

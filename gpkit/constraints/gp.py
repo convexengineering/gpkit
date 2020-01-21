@@ -15,7 +15,8 @@ from ..exceptions import InvalidPosynomial
 
 
 DEFAULT_SOLVER_KWARGS = {"cvxopt": {"kktsolver": "ldl"}}
-SOLUTION_TOL = {"cvxopt": 1e-3, "mosek_cli": 1e-4, "mosek": 1e-5, 'mosek_conif': 1e-3}
+SOLUTION_TOL = {"cvxopt": 1e-3, "mosek_cli": 1e-4, "mosek": 1e-5,
+                'mosek_conif': 1e-3}
 
 
 def _get_solver(solver, kwargs):

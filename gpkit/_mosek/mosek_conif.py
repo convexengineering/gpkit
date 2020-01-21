@@ -1,5 +1,6 @@
-"Implements the GPkit interface to MOSEK (version >= 9) python-based Optimizer API"
-
+"Implements the GPkit interface to MOSEK (v >= 9) python-based Optimizer API"
+from __future__ import print_function
+import sys
 import numpy as np
 
 
@@ -22,9 +23,10 @@ def mskoptimize(c, A, k, p_idxs, *args, **kwargs):
         k[0] is the number of monomials (rows of A) present in the objective
         k[1:] is the number of monomials (rows of A) present in each constraint
     p_idxs : ints array of shape n.
-        sel = p_idxs == i selects rows of A and entries of c of the i-th posynomial
-        fi(x) = c[sel] @ exp(A[sel,:] @ x). The 0-th posynomial gives the objective
-        function, and the remaining posynomials should be constrained to be <= 1.
+        sel = p_idxs == i selects rows of A and entries of c of the i-th
+        posynomial fi(x) = c[sel] @ exp(A[sel,:] @ x). The 0-th posynomial gives
+        the objective function, and the remaining posynomials should be
+        constrained to be <= 1.
 
     Returns
     -------
@@ -41,15 +43,16 @@ def mskoptimize(c, A, k, p_idxs, *args, **kwargs):
     import mosek
     if not hasattr(mosek.conetype, 'pexp'):
         msg = """
-        mosek_conif requires MOSEK version >= 9. The imported version of MOSEK does
-        not have attribute ``mosek.conetype.pexp``, which was introduced in MOSEK 9. 
+        mosek_conif requires MOSEK version >= 9. The imported version of MOSEK
+        does not have attribute ``mosek.conetype.pexp``, which was introduced
+        in MOSEK 9. 
         """
         raise RuntimeError(msg)
     #
     #   Initial transformations of problem data.
     #
-    #       separate monomial constraints (call them "lin"), from those which require
-    #       an LSE representation (call those "lse").
+    #       separate monomial constraints (call them "lin"), from those which
+    #       require an LSE representation (call those "lse").
     #
     #       NOTE: the epigraph of the objective function always gets an "lse"
     #       representation, even if the objective is a monomial.
@@ -57,9 +60,10 @@ def mskoptimize(c, A, k, p_idxs, *args, **kwargs):
     log_c = np.log(np.array(c))
     lse_posys = [0] + [i+1 for i, val in enumerate(k[1:]) if val > 1]
     lin_posys = [i for i in range(len(k)) if i not in lse_posys]
-    if len(lin_posys) > 0:
+    if lin_posys:
         A = A.tocsr()
-        lin_idxs = np.concatenate([np.nonzero(p_idxs == i)[0] for i in lin_posys])
+        lin_idxs = np.concatenate(
+            [np.nonzero(p_idxs == i)[0] for i in lin_posys])
         lse_idxs = np.ones(A.shape[0], dtype=bool)
         lse_idxs[lin_idxs] = False
         A_lse = A[lse_idxs, :].tocoo()
@@ -67,7 +71,8 @@ def mskoptimize(c, A, k, p_idxs, *args, **kwargs):
         A_lin = A[lin_idxs, :].tocoo()
         log_c_lin = log_c[lin_idxs]
     else:
-        log_c_lin = np.array([])  # A_lin won't be referenced later, so no need to define it.
+        log_c_lin = np.array([])
+        # A_lin won't be referenced later, so no need to define it.
         A_lse = A
         log_c_lse = log_c
     k_lse = [k[i] for i in lse_posys]
@@ -80,25 +85,31 @@ def mskoptimize(c, A, k, p_idxs, *args, **kwargs):
     #
     #   Create MOSEK task. Add variables, and conic constraints.
     #
-    #       Say that MOSEK's optimization variable is a block vector, [x;t;z], where ...
+    #       Say that MOSEK's optimization variable is a block vector, [x;t;z],
+    #       where ...
     #           x is the user-defined primal variable (length m),
-    #           t is an auxiliary variable for exponential cones (length 3 * n_lse), and
+    #           t is an auxiliary variable for exponential cones (length
+    #           3 * n_lse), and
     #           z is an epigraph variable for LSE terms (length p_lse).
     #
-    #       The variable z[0] is special, because it's the epigraph of the objective function
-    #       in LSE form. The sign of this variable is not constrained.
+    #       The variable z[0] is special, because it's the epigraph of the
+    #       objective function in LSE form. The sign of this variable is
+    #       not constrained.
     #
-    #       The variables z[1:] are epigraph terms for "log", in constraints that naturally
-    #       write as LSE(Ai @ x + log_ci) <= 0. These variables need to be <= 0.
+    #       The variables z[1:] are epigraph terms for "log", in constraints
+    #       that naturally write as LSE(Ai @ x + log_ci) <= 0. These variables
+    #       need to be <= 0.
     #
-    #       The main constraints on (x, t, z) are described in next comment block.
+    #       The main constraints on (x, t, z) are described in next
+    #       comment block.
     #
     env = mosek.Env()
     task = env.Task(0, 0)
     m = A.shape[1]
     msk_nvars = m + 3 * n_lse + p_lse
     task.appendvars(msk_nvars)
-    bound_types = [mosek.boundkey.fr] * (m + 3*n_lse + 1) + [mosek.boundkey.up] * (p_lse - 1)
+    bound_types = [mosek.boundkey.fr] * (m + 3*n_lse + 1)
+    bound_types.extend([mosek.boundkey.up] * (p_lse - 1))
     task.putvarboundlist(np.arange(msk_nvars, dtype=int),
                          bound_types, np.zeros(msk_nvars), np.zeros(msk_nvars))
     for i in range(n_lse):
@@ -116,16 +127,17 @@ def mskoptimize(c, A, k, p_idxs, *args, **kwargs):
     #           sum(t[3*i] for i where i == lse_p_idx[j]) <= 1.
     #       This contributes another p_lse constraints.
     #
-    #       The above constraints imply that for ``sel = lse_p_idx == i``, we have
+    #       The above constraints imply that for ``sel = lse_p_idx == i``,
+    #       we have
     #           LSE(A_lse[sel, :] @ x + log_c_lse[sel]) <= z[i].
     #
-    #       We specify the necessary constraints to MOSEK in three phases. Over the
-    #       course of these three phases, we make a total of five calls to "putaijlist"
-    #       and a single call to "putconboundlist".
+    #       We specify the necessary constraints to MOSEK in three phases.
+    #       Over the course of these three phases, we make a total of five
+    #       calls to "putaijlist" and a single call to "putconboundlist".
     #
     task.appendcons(2*n_lse + p_lse)
     # 1st n_lse: Linear equations: t[3*i + 1] == 1
-    rows = [i for i in range(n_lse)]
+    rows = list(range(n_lse))
     cols = (m + 3*np.arange(n_lse) + 1).tolist()
     vals = [1.0] * n_lse
     task.putaijlist(rows, cols, vals)
@@ -153,7 +165,8 @@ def mskoptimize(c, A, k, p_idxs, *args, **kwargs):
     task.putaijlist(rows, cols, vals)
     cur_con_idx = 2 * n_lse + p_lse
     # Build the right-hand-sides of the [in]equality constraints
-    type_constraint = [mosek.boundkey.fx] * (2*n_lse) + [mosek.boundkey.up] * p_lse
+    type_constraint = [mosek.boundkey.fx] * (2*n_lse)
+    type_constraint.extend([mosek.boundkey.up] * p_lse)
     h = np.concatenate([np.ones(n_lse), -log_c_lse, np.ones(p_lse)])
     task.putconboundlist(np.arange(h.size, dtype=int), type_constraint, h, h)
     #
@@ -166,7 +179,8 @@ def mskoptimize(c, A, k, p_idxs, *args, **kwargs):
         rows = [cur_con_idx + r for r in A_lin.row]
         task.putaijlist(rows, A_lin.col, A_lin.data)
         type_constraint = [mosek.boundkey.up] * log_c_lin.size
-        con_indices = np.arange(cur_con_idx, cur_con_idx + log_c_lin.size, dtype=int)
+        con_indices = np.arange(cur_con_idx, cur_con_idx + log_c_lin.size,
+                                dtype=int)
         h = -log_c_lin
         task.putconboundlist(con_indices, type_constraint, h, h)
         cur_con_idx += log_c_lin.size
@@ -182,9 +196,9 @@ def mskoptimize(c, A, k, p_idxs, *args, **kwargs):
     if 'verbose' in kwargs:
         verbose = kwargs['verbose']
     if verbose:
-        import sys
 
         def streamprinter(text):
+            """A helper, for logging MOSEK output to sys.stdout."""
             sys.stdout.write(text)
             sys.stdout.flush()
 
@@ -216,7 +230,8 @@ def mskoptimize(c, A, k, p_idxs, *args, **kwargs):
         # recover dual variables for the remaining user-provided constraints
         if log_c_lin.size > 0:
             aff_duals = [0.] * log_c_lin.size
-            task.getsucslice(mosek.soltype.itr, 2*n_lse + p_lse, cur_con_idx, aff_duals)
+            task.getsucslice(mosek.soltype.itr, 2*n_lse + p_lse, cur_con_idx,
+                             aff_duals)
             aff_duals = np.array(aff_duals)
             aff_duals[aff_duals < 0] = 0
             # merge z_duals with aff_duals

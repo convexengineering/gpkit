@@ -319,7 +319,7 @@ class TestSP(unittest.TestCase):
         with SignomialsEnabled():
             m = Model(x, [x + y >= 1])  # dual infeasible
         with self.assertRaises((RuntimeWarning, ValueError)):
-            m.localsolve(verbosity=0, solver=self.solver),
+            m.localsolve(verbosity=0, solver=self.solver)
 
         with SignomialsEnabled():
             m = Model(x, Bounded([x + y >= 1], verbosity=0))
