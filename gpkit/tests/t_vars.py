@@ -1,5 +1,5 @@
 """Test VarKey, Variable, VectorVariable, and ArrayVariable classes"""
-from __future__ import print_function
+
 import unittest
 import sys
 import numpy as np
@@ -7,10 +7,6 @@ from gpkit import (Monomial, NomialArray, Variable, VarKey,
                    VectorVariable, ArrayVariable)
 import gpkit
 from gpkit.nomials import Variable as PlainVariable
-
-if sys.version_info >= (3, 0):
-    unicode = str  # pylint:disable=redefined-builtin,invalid-name
-
 
 class TestVarKey(unittest.TestCase):
     """TestCase for the VarKey class"""
@@ -38,7 +34,7 @@ class TestVarKey(unittest.TestCase):
         # pylint: disable=redundant-keyword-arg
         self.assertRaises(TypeError, lambda: VarKey('x', name='y'))
         self.assertIsInstance(x.latex(), str)
-        self.assertIsInstance(x.latex_unitstr(), unicode)
+        self.assertIsInstance(x.latex_unitstr(), str)
 
     def test_ast(self):
         t = Variable("t")

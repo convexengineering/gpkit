@@ -1,5 +1,5 @@
 """Machinery for exps, cs, varlocs data -- common to nomials and programs"""
-from __future__ import unicode_literals
+
 from collections import defaultdict
 import numpy as np
 from ..keydict import KeySet
@@ -24,7 +24,7 @@ class NomialData(GPkitObject):
         for exp in self.hmap:
             self.vks.update(exp)
         self.units = self.hmap.units
-        self.any_nonpositive_cs = any(c <= 0 for c in self.hmap.values())
+        self.any_nonpositive_cs = any(c <= 0 for c in list(self.hmap.values()))
 
     def to(self, units):
         "Create new Signomial converted to new units"

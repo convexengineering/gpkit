@@ -1,5 +1,5 @@
 "The shared non-mathematical backbone of all Nomials"
-from __future__ import unicode_literals, print_function
+
 from .data import NomialData
 from ..small_classes import Numbers, FixedScalar
 from ..small_scripts import nomial_latex_helper
@@ -19,9 +19,9 @@ class Nomial(NomialData):
             return self.parse_ast(excluded) + units
         else:
             mstrs = []
-            for exp, c in self.hmap.items():
+            for exp, c in list(self.hmap.items()):
                 varstrs = []
-                for (var, x) in exp.items():
+                for (var, x) in list(exp.items()):
                     if x != 0:
                         varstr = var.str_without(excluded)
                         if x != 1:
@@ -40,9 +40,9 @@ class Nomial(NomialData):
         "Latex representation, parsing `excluded` just as .str_without does"
         # TODO: add ast parsing here
         mstrs = []
-        for exp, c in self.hmap.items():
+        for exp, c in list(self.hmap.items()):
             pos_vars, neg_vars = [], []
-            for var, x in exp.items():
+            for var, x in list(exp.items()):
                 if x > 0:
                     pos_vars.append((var.latex(excluded), x))
                 elif x < 0:

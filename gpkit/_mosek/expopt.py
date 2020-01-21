@@ -11,7 +11,7 @@
         If the local MOSEK library could not be loaded
 
 """
-from __future__ import unicode_literals, print_function
+
 from ctypes import pointer as ptr
 from ctypes import c_double, c_int, CFUNCTYPE
 from .baked_ctypesgen import load_library, String, c_void, POINTER, UNCHECKED
@@ -173,12 +173,12 @@ def imize(c, A, p_idxs, *args, **kwargs):
     r = MSK_RES_OK
 
     numcon = 1+p_idxs[-1]
-    numter, numvar = map(int, A.shape)
+    numter, numvar = list(map(int, A.shape))
 
     xx = c_array([0]*numvar, c_double)
     yy = c_array([0]*numter, c_double)
 
-    numcon, numvar, numter = map(c_int, [numcon, numvar, numter])
+    numcon, numvar, numter = list(map(c_int, [numcon, numvar, numter]))
 
     c = c_array(c, c_double)
     subi = c_array(p_idxs, c_int)

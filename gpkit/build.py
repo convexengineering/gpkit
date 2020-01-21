@@ -1,5 +1,5 @@
 "Finds solvers, sets gpkit settings, and builds gpkit"
-from __future__ import unicode_literals, print_function
+
 
 import os
 import sys
@@ -237,7 +237,7 @@ class Mosek(SolverBackend):
                 expopt_build_files.append(new_location)
 
         log("#\n#   Applying expopt patches...")
-        for filename, patch in self.patches.items():
+        for filename, patch in list(self.patches.items()):
             diff(pathjoin(build_dir, filename), patch)
 
         log("#\n#   Building expopt library...")
@@ -303,7 +303,7 @@ def build():
     replacedir(envpath)
     settingspath = pathjoin(envpath, "settings")
     with open(settingspath, "w") as f:
-        for setting, value in settings.items():
+        for setting, value in list(settings.items()):
             f.write("%s : %s\n" % (setting, value))
         f.write("\n")
 

@@ -1,5 +1,5 @@
 "Runs each file listed in pwd/TESTS as a test"
-from __future__ import print_function
+
 
 import unittest
 import os

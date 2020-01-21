@@ -1,5 +1,5 @@
 "global mutable variables"
-from __future__ import unicode_literals, print_function
+
 import os
 import sys
 from collections import defaultdict
@@ -16,7 +16,7 @@ def load_settings(path=None, firstattempt=True):
             lines = [line[:-1].split(" : ") for line in settingsfile
                      if len(line.split(" : ")) == 2]
             settings_ = {name: value.split(", ") for name, value in lines}
-            for name, value in settings_.items():
+            for name, value in list(settings_.items()):
                 # hack to flatten 1-element lists,
                 # unless they're the solver list
                 if len(value) == 1 and name != "installed_solvers":
@@ -61,7 +61,7 @@ settings = load_settings()
 class SignomialsEnabledMeta(type):
     "Metaclass to implement falsiness for SignomialsEnabled"
 
-    def __nonzero__(cls):
+    def __bool__(cls):
         return 1 if cls._true else 0
 
     def __bool__(cls):

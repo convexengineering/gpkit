@@ -1,5 +1,5 @@
 "Implement CostedConstraintSet"
-from __future__ import unicode_literals
+
 import numpy as np
 from .set import ConstraintSet
 from ..small_scripts import maybe_flatten
@@ -27,7 +27,7 @@ class CostedConstraintSet(ConstraintSet):
         self.cost = cost
         if isinstance(constraints, dict):
             self.idxlookup = {k: i for i, k in enumerate(constraints)}
-            constraints = constraints.values()
+            constraints = list(constraints.values())
         if not isinstance(constraints, ConstraintSet):
             constraints = ConstraintSet(constraints)
         else:

@@ -5,7 +5,7 @@
     ``result = _mosek.cli_expopt.imize(cs, A, p_idxs, "gpkit_mosek")``
 
 """
-from __future__ import unicode_literals, print_function
+
 
 import os
 import shutil
@@ -126,7 +126,7 @@ def write_output_file(filename, c, A, p_idxs):
     "Writes a mosekexpopt compatible GP description to `filename`."
     with open(filename, "w") as f:
         numcon = p_idxs[-1]
-        numter, numvar = map(int, A.shape)
+        numter, numvar = list(map(int, A.shape))
         for n in [numcon, numvar, numter]:
             f.write("%d\n" % n)
 

@@ -1,5 +1,5 @@
 """Models for assessing primal feasibility"""
-from __future__ import unicode_literals
+
 from .set import ConstraintSet
 from ..nomials import Variable, VectorVariable, parse_subs, NomialArray
 from ..keydict import KeyDict
@@ -118,14 +118,14 @@ class ConstantsRelaxed(ConstraintSet):
         constrained_varkeys = constraints.constrained_varkeys()
         if linked:
             kdc = KeyDict(constants)
-            constants.update({k: f(kdc) for k, f in linked.items()
+            constants.update({k: f(kdc) for k, f in list(linked.items())
                               if k in constrained_varkeys})
         self.constants = constants
         relaxvars, self.origvars, relaxation_constraints = [], [], {}
         with NamedVariables("Relax") as (self.lineage, _):
             pass
         self._unrelaxmap = {}
-        for key, value in constants.items():
+        for key, value in list(constants.items()):
             if value == 0:
                 continue
             elif include_only and key.name not in include_only:
@@ -160,6 +160,6 @@ class ConstantsRelaxed(ConstraintSet):
     def process_result(self, result):
         ConstraintSet.process_result(self, result)
         csenss = result["sensitivities"]["constants"]
-        for const, origvar in self._unrelaxmap.items():
+        for const, origvar in list(self._unrelaxmap.items()):
             csenss[origvar] = csenss[const]
             del csenss[const]

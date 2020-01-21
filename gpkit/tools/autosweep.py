@@ -1,5 +1,5 @@
 "Tools for optimal fits to GP sweeps"
-from __future__ import print_function
+
 from time import time
 import numpy as np
 from ..small_classes import Count
@@ -243,7 +243,7 @@ def autosweep_1d(model, logtol, sweepvar, bounds, **solvekwargs):
     start_time = time()
     solvekwargs.setdefault("verbosity", 1)
     solvekwargs["verbosity"] -= 1
-    sols = Count().next
+    sols = Count().__next__
     firstsols = []
     for bound in bounds:
         model.substitutions.update({sweepvar: bound})

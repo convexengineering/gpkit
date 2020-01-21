@@ -92,7 +92,7 @@ class KeyDict(dict):
             self.keymap.update(args[0].keymap)
             self._unmapped_keys.update(args[0]._unmapped_keys)  # pylint:disable=protected-access
         else:
-            for k, v in dict(*args, **kwargs).items():
+            for k, v in list(dict(*args, **kwargs).items()):
                 self[k] = v
 
     def parse_and_index(self, key):
@@ -160,7 +160,7 @@ class KeyDict(dict):
         got = self[key]
         # if uniting ever becomes a speed hit, cache the results
         if isinstance(got, dict):
-            for k, v in got.items():
+            for k, v in list(got.items()):
                 got[k] = v*(k.units or DIMLESS_QUANTITY)
         else:
             if not hasattr(key, "units"):
@@ -189,7 +189,7 @@ class KeyDict(dict):
                 self.logged_gets.add(k)
         if len(values) == 1:
             return values[0]
-        return dict(zip(keys, values))
+        return dict(list(zip(keys, values)))
 
     def __setitem__(self, key, value):
         "Overloads __setitem__ and []= to work with all keys"
@@ -303,7 +303,7 @@ class KeySet(KeyDict):
             arg, = args
             if isinstance(arg, KeySet):  # assume unmapped
                 dict.update(self, arg)
-                for key, value in arg.keymap.items():
+                for key, value in list(arg.keymap.items()):
                     self.keymap[key].update(value)
                 self._unmapped_keys.update(arg._unmapped_keys)  # pylint: disable=protected-access
             else:  # set-like interface

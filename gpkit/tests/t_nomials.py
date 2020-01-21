@@ -9,10 +9,6 @@ from gpkit.small_classes import HashVector
 from gpkit.exceptions import InvalidPosynomial
 import gpkit
 
-if sys.version_info >= (3, 0):
-    unicode = str  # pylint:disable=redefined-builtin,invalid-name
-
-
 class TestMonomial(unittest.TestCase):
     """TestCase for the Monomial class"""
 
@@ -74,14 +70,14 @@ class TestMonomial(unittest.TestCase):
         y = Variable("y")
         m = 5*x**2/y
         r = m.__repr__()
-        self.assertEqual(type(r), unicode)
+        self.assertEqual(type(r), str)
         self.assertEqual(repr(m), 'gpkit.Monomial(5*x^2/y)')
 
     def test_latex(self):
         "Test latex string creation"
         x = Variable("x")
         m = Monomial({'x': 2, 'y': -1}, 5).latex()
-        self.assertEqual(type(m), unicode)
+        self.assertEqual(type(m), str)
         self.assertEqual((5*x).latex(), '5x')
 
     def test_str_with_units(self):
@@ -90,7 +86,7 @@ class TestMonomial(unittest.TestCase):
         rho = Variable('rho', units='kg/m^3')
         x = rho*S
         xstr = x.str_without()
-        self.assertEqual(type(xstr), unicode)
+        self.assertEqual(type(xstr), str)
         self.assertTrue('S' in xstr and 'rho' in xstr)
 
     def test_add(self):
@@ -289,7 +285,7 @@ class TestPosynomial(unittest.TestCase):
         for m in ms:
             cs += m.cs.tolist()
             exps += m.exps
-        hmap = NomialMap(zip(exps, cs))
+        hmap = NomialMap(list(zip(exps, cs)))
         hmap.units_of_product(None)
         p = Posynomial(hmap)
         # check arithmetic

@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 "Repository for representation standards"
-from __future__ import unicode_literals, print_function
+
 import sys
 import re
 import numpy as np
@@ -9,7 +9,7 @@ from .small_scripts import try_str_without
 
 
 if sys.version_info >= (3, 0):
-    unichr = chr  # pylint: disable=redefined-builtin,invalid-name
+    chr = chr  # pylint: disable=redefined-builtin,invalid-name
     PI_STR = "π"  # fails on some external models if it's "π"
     UNICODE_EXPONENTS = True
     UNIT_FORMATTING = ":P~"  # ":P~" for unicode exponents in units
@@ -128,9 +128,9 @@ class GPkitObject(object):
                 aststr = "1"
             elif UNICODE_EXPONENTS and int(x) == x and x >= 2 and x <= 9:
                 if int(x) in (2, 3):
-                    aststr = "%s%s" % (left, unichr(176+x))
+                    aststr = "%s%s" % (left, chr(176+x))
                 elif int(x) in (4, 5, 6, 7, 8, 9):
-                    aststr = "%s%s" % (left, unichr(8304+x))
+                    aststr = "%s%s" % (left, chr(8304+x))
             else:
                 aststr = "%s^%s" % (left, x)
         elif oper == "prod":  # TODO: only do if it makes a shorter string
@@ -147,7 +147,7 @@ class GPkitObject(object):
                 for el in idx:
                     if isinstance(el, slice):
                         start = el.start or ""
-                        stop = (el.stop if el.stop and el.stop != sys.maxint
+                        stop = (el.stop if el.stop and el.stop != sys.maxsize
                                 else "")
                         step = ":%s" % el.step if el.step is not None else ""
                         elstrs.append("%s:%s%s" % (start, stop, step))

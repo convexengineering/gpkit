@@ -1,5 +1,5 @@
 "implements Sankey"
-from __future__ import unicode_literals, print_function
+
 import sys
 from collections import defaultdict
 import numpy as np
@@ -13,10 +13,6 @@ from .. import GPCOLORS
 
 
 INSENSITIVE = 1e-2
-
-if sys.version_info >= (3, 0):
-    unichr = chr  # pylint: disable=redefined-builtin,invalid-name
-
 
 def getcolor(value):
     "color scheme for sensitivities"
@@ -100,7 +96,7 @@ class Sankey(object):
             else:
                 if constr not in self.constr_name:
                     # use unicode's circled letters for constraint labels
-                    source = unichr(self.counter.next()+9398)
+                    source = chr(next(self.counter)+9398)
                     self.constr_name[constr] = source
                 else:
                     source = self.constr_name[constr]
@@ -111,13 +107,13 @@ class Sankey(object):
                 if ((isinstance(constr, MonomialEquality)
                      or abs(value) >= INSENSITIVE)
                         and all(len(getattr(p, "hmap", [])) == 1
-                                and p.hmap.keys()[0].values() == [1]
+                                and list(p.hmap.keys())[0].values() == [1]
                                 for p in [constr.left, constr.right])):
-                    leftkey = constr.left.hmap.keys()[0].keys()[0]
+                    leftkey = list(constr.left.hmap.keys())[0].keys()[0]
                     if key != leftkey:
                         key2 = leftkey
                     else:
-                        key2 = constr.right.hmap.keys()[0].keys()[0]
+                        key2 = list(constr.right.hmap.keys())[0].keys()[0]
                     if key2 not in self.var_eqs:  # not already been added
                         self.var_eqs.update([key2, key])
                         self.varlinks(self.gp[0], key2, printing=printing)
@@ -144,21 +140,21 @@ class Sankey(object):
             for node in self.nodes:
                 if node["id"] in lookup:
                     # use inverted circled numbers to id the variables...
-                    node["title"] += " " + unichr(0x2776+lookup[node["id"]])
+                    node["title"] += " " + chr(0x2776+lookup[node["id"]])
                 elif "passthrough" in node:
                     cn = node.pop("passthrough")
-                    l_idx = lookup[str(cn.left.hmap.keys()[0].keys()[0])]
-                    r_idx = lookup[str(cn.right.hmap.keys()[0].keys()[0])]
-                    op = {"=": "=", ">=": u"\u2265", "<=": u"\u2264"}[cn.oper]
+                    l_idx = lookup[str(list(cn.left.hmap.keys())[0].keys()[0])]
+                    r_idx = lookup[str(list(cn.right.hmap.keys())[0].keys()[0])]
+                    op = {"=": "=", ">=": "\u2265", "<=": "\u2264"}[cn.oper]
                     # ...so that e.g. (1) >= (2) can label the constraints
-                    node["title"] = (node["id"]+u"\u2009"+unichr(l_idx+0x2776)
-                                     + op + unichr(r_idx+0x2776))
+                    node["title"] = (node["id"]+"\u2009"+chr(l_idx+0x2776)
+                                     + op + chr(r_idx+0x2776))
         if flowright:
             r, l = margins["right"], margins["left"]
             margins["left"], margins["right"] = r, l
         links = []
-        maxflow = np.abs(self.links.values()).max()
-        for (source, target), value in self.links.items():
+        maxflow = np.abs(list(self.links.values())).max()
+        for (source, target), value in list(self.links.items()):
             if not flowright:
                 source, target = target, source
             links.append({"source": source, "target": target,
@@ -182,7 +178,7 @@ class Sankey(object):
                 self.varlinks(self.gp, key, printing=False)
                 maxflow = max(self.links.values())
                 if maxflow > 0.01:  # TODO: arbitrary threshold
-                    varprops[key] = {"constraints": self.counter.next(),
+                    varprops[key] = {"constraints": next(self.counter),
                                      "maxflow": maxflow}
                 var_eqs.update(self.var_eqs)
             self.__init__(self.gp)
@@ -191,6 +187,6 @@ class Sankey(object):
 
     def sorted_by(self, prop, idx, **kwargs):
         "chooses a variable by its rank in # of constraints or maximum flow"
-        key = sorted(self.variable_properties.items(),
+        key = sorted(list(self.variable_properties.items()),
                      key=lambda i: (-i[1][prop], str(i[0])))[idx][0]
         return self.diagram(key, **kwargs)

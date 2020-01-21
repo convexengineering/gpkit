@@ -1,5 +1,5 @@
 """Implement the SequentialGeometricProgram class"""
-from __future__ import unicode_literals, print_function
+
 from time import time
 from collections import OrderedDict
 import numpy as np
@@ -136,7 +136,7 @@ class SequentialGeometricProgram(CostedConstraintSet):
                                       warn_on_check=True,
                                       gen_result=False, **kwargs)
                 self.solver_outs.append(solver_out)
-                x0 = dict(zip(gp.varlocs, np.exp(solver_out["primal"])))
+                x0 = dict(list(zip(gp.varlocs, np.exp(solver_out["primal"]))))
                 if "objective" in solver_out:
                     cost = float(solver_out["objective"])
                 else:
@@ -150,8 +150,8 @@ class SequentialGeometricProgram(CostedConstraintSet):
                 self.gps.append(primal_feas)
                 solver_out = primal_feas.solve(solver, verbosity-1,
                                                gen_result=False, **kwargs)
-                x0 = dict(zip(primal_feas.varlocs,
-                              np.exp(solver_out["primal"])))
+                x0 = dict(list(zip(primal_feas.varlocs,
+                              np.exp(solver_out["primal"]))))
                 cost = None  # reset the cost-counting
             if prevcost is None or cost is None:
                 rel_improvement = None
@@ -253,7 +253,7 @@ class SequentialGeometricProgram(CostedConstraintSet):
             if not self.gps:
                 return self._gp  # we've already generated the first gp
             gp = self._gp        # otherwise, update it with a new x0
-            gp.x0.update({k: v for (k, v) in x0.items() if k in self._spvars})
+            gp.x0.update({k: v for (k, v) in list(x0.items()) if k in self._spvars})
             mono_gts = []
             for spc in self._spconstrs:
                 mono_gts.extend(spc.as_approxsgt(gp.x0))

@@ -1,14 +1,15 @@
 """Miscellaneous small classes"""
-from __future__ import unicode_literals
+
 from operator import xor
 from functools import reduce  # pylint: disable=redefined-builtin
 from six import with_metaclass
 import numpy as np
 from ._pint import Quantity, qty  # pylint: disable=unused-import
 
+#TODO: PY3
 try:
-    isinstance("", basestring)
-    Strings = (str, unicode)
+    isinstance("", str)
+    Strings = (str, str)
 except NameError:
     Strings = (str,)
 
@@ -31,7 +32,7 @@ class Count(object):
     def __init__(self):
         self.count = -1
 
-    def next(self):
+    def __next__(self):
         "Increment self.count and return it"
         self.count += 1
         return self.count
@@ -111,7 +112,7 @@ class DictOfLists(dict):
 
 def _enlist_dict(d_in, d_out):
     "Recursively copies d_in into d_out, placing non-dict items into lists."
-    for k, v in d_in.items():
+    for k, v in list(d_in.items()):
         if isinstance(v, dict):
             d_out[k] = _enlist_dict(v, v.__class__())
         else:
@@ -122,7 +123,7 @@ def _enlist_dict(d_in, d_out):
 
 def _append_dict(d_in, d_out):
     "Recursively travels dict d_out and appends items found in d_in."
-    for k, v in d_in.items():
+    for k, v in list(d_in.items()):
         if isinstance(v, dict):
             d_out[k] = _append_dict(v, d_out[k])
         else:
@@ -132,7 +133,7 @@ def _append_dict(d_in, d_out):
 
 def _index_dict(idx, d_in, d_out):
     "Recursively travels dict d_in, placing items at idx into dict d_out."
-    for k, v in d_in.items():
+    for k, v in list(d_in.items()):
         if isinstance(v, dict):
             d_out[k] = _index_dict(idx, v, v.__class__())
         else:
@@ -145,7 +146,7 @@ def _index_dict(idx, d_in, d_out):
 
 def _enray(d_in, d_out):
     "Recursively turns lists into numpy arrays."
-    for k, v in d_in.items():
+    for k, v in list(d_in.items()):
         if isinstance(v, dict):
             d_out[k] = _enray(v, v.__class__())
         else:
@@ -177,7 +178,7 @@ class HashVector(dict):
     def __hash__(self):
         "Allows HashVectors to be used as dictionary keys."
         if self.hashvalue is None:
-            self.hashvalue = reduce(xor, map(hash, self.items()), 0)
+            self.hashvalue = reduce(xor, list(map(hash, list(self.items()))), 0)
         return self.hashvalue
 
     def copy(self):
@@ -188,13 +189,13 @@ class HashVector(dict):
 
     def __neg__(self):
         "Return Hashvector with each value negated."
-        return self.__class__({key: -val for (key, val) in self.items()})
+        return self.__class__({key: -val for (key, val) in list(self.items())})
 
     def __pow__(self, other):
         "Accepts scalars. Return Hashvector with each value put to a power."
         if isinstance(other, Numbers):
             return self.__class__({key: val**other
-                                   for (key, val) in self.items()})
+                                   for (key, val) in list(self.items())})
         return NotImplemented
 
     def __mul__(self, other):
@@ -204,7 +205,7 @@ class HashVector(dict):
         and their key's intersection will form the new keys."""
         if isinstance(other, Numbers):
             return self.__class__({key: val*other
-                                   for (key, val) in self.items()})
+                                   for (key, val) in list(self.items())})
         elif isinstance(other, dict):
             keys = set(self).intersection(other)
             return self.__class__({key: self[key] * other[key] for key in keys})
@@ -217,10 +218,10 @@ class HashVector(dict):
         and their key's union will form the new keys."""
         if isinstance(other, Numbers):
             return self.__class__({key: val+other
-                                   for (key, val) in self.items()})
+                                   for (key, val) in list(self.items())})
         elif isinstance(other, dict):
             sums = self.copy()
-            for key, value in other.items():
+            for key, value in list(other.items()):
                 if key in sums:
                     svalue = sums[key]
                     if value == -svalue:

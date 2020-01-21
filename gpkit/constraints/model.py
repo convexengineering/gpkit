@@ -1,5 +1,5 @@
 "Implements Model"
-from __future__ import print_function
+
 import numpy as np
 from .costed import CostedConstraintSet
 from ..nomials import Monomial
@@ -125,7 +125,7 @@ class Model(CostedConstraintSet):
         if self.missingbounds:  # anything unbounded? err!
             boundstrs = "\n".join("  %s has no %s bound%s" % (v, b, x)
                                   for (v, b), x
-                                  in self.missingbounds.items())
+                                  in list(self.missingbounds.items()))
             docstring = ("To fix this add the following to %s's"
                          " docstring (you may not need it all):"
                          " \n" % self.__class__.__name__)
@@ -148,7 +148,7 @@ class Model(CostedConstraintSet):
     def sweep(self, sweeps, **solveargs):
         "Sweeps {var: values} pairs in sweeps. Returns swept solutions."
         sols = []
-        for sweepvar, sweepvals in sweeps.items():
+        for sweepvar, sweepvals in list(sweeps.items()):
             original_val = self.substitutions.get(sweepvar, None)
             self.substitutions.update({sweepvar: ('sweep', sweepvals)})
             try:
@@ -168,7 +168,7 @@ class Model(CostedConstraintSet):
         The original simplex tree can be accessed at sol.bst
         """
         sols = []
-        for sweepvar, sweepvals in sweeps.items():
+        for sweepvar, sweepvals in list(sweeps.items()):
             sweepvar = self[sweepvar].key
             start, end = sweepvals
             bst = autosweep_1d(self, tol, sweepvar, [start, end], **solveargs)
@@ -242,7 +242,7 @@ class Model(CostedConstraintSet):
                     sol = feas.localsolve(**solveargs)
                 relaxed_constraints = feas[0]["relaxed constraints"]
                 relaxed = get_relaxed(sol(constrsrelaxed.relaxvars),
-                                      range(len(relaxed_constraints)))
+                                      list(range(len(relaxed_constraints))))
                 if verbosity and relaxed:
                     print("\nSolves with these constraints relaxed:")
                     for relaxval, i in relaxed:

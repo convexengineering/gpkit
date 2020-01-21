@@ -1,5 +1,5 @@
 """Defines the VarKey class"""
-from __future__ import unicode_literals
+
 from .small_classes import HashVector, Count, qty
 from .repr_conventions import GPkitObject
 
@@ -19,7 +19,7 @@ class VarKey(GPkitObject):  # pylint:disable=too-many-instance-attributes
     -------
     VarKey with the given name and descr.
     """
-    unique_id = Count().next
+    unique_id = Count().__next__
     vars_of_a_name = {}
     subscripts = ("lineage", "idx")
 
@@ -60,7 +60,7 @@ class VarKey(GPkitObject):  # pylint:disable=too-many-instance-attributes
         "Stores varkey as its metadata dictionary, removing functions"
         state = self.descr.copy()
         state.pop("units", None)  # not necessary, but saves space
-        for key, value in state.items():
+        for key, value in list(state.items()):
             if getattr(value, "__call__", None):
                 state[key] = str(value)
         return state

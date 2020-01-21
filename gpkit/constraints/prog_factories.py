@@ -1,5 +1,5 @@
 "Scripts for generating, solving and sweeping programs"
-from __future__ import unicode_literals, print_function
+
 from time import time
 import numpy as np
 from ..nomials import parse_subs
@@ -19,11 +19,11 @@ def evaluate_linked(constants, linked):
     "Evaluates the values and gradients of linked variables."
     if adnumber:
         kdc = KeyDict({k: adnumber(maybe_flatten(v))
-                       for k, v in constants.items()})
+                       for k, v in list(constants.items())})
         kdc.log_gets = True
     kdc_plain = None
     array_calulated, logged_array_gets = {}, {}
-    for v, f in linked.items():
+    for v, f in list(linked.items()):
         try:
             assert adnumber  # trigger exit if ad not found
             if v.veckey and v.veckey.original_fn:
@@ -139,8 +139,8 @@ def run_sweep(genfunction, self, solution, skipsweepfailures,
               solver, verbosity, **kwargs):
     "Runs through a sweep."
     # sort sweeps by the eqstr of their varkey
-    sweepvars, sweepvals = zip(*sorted(list(sweep.items()),
-                                       key=lambda vkval: vkval[0].eqstr))
+    sweepvars, sweepvals = list(zip(*sorted(list(sweep.items()),
+                                       key=lambda vkval: vkval[0].eqstr)))
     if len(sweep) == 1:
         sweep_grids = np.array(list(sweepvals))
     else:
@@ -157,10 +157,10 @@ def run_sweep(genfunction, self, solution, skipsweepfailures,
     self.program = []
     for i in range(N_passes):
         constants.update({var: sweep_vect[i]
-                          for (var, sweep_vect) in sweep_vects.items()})
+                          for (var, sweep_vect) in list(sweep_vects.items())})
         if linked:
             kdc = KeyDict(constants)
-            constants.update({v: f(kdc) for v, f in linked.items()})
+            constants.update({v: f(kdc) for v, f in list(linked.items())})
         program, solvefn = genfunction(self, constants)
         self.program.append(program)  # NOTE: SIDE EFFECTS
         try:

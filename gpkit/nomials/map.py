@@ -1,5 +1,5 @@
 "Implements the NomialMap class"
-from __future__ import unicode_literals
+
 from collections import defaultdict
 import numpy as np
 from .. import units
@@ -116,7 +116,7 @@ class NomialMap(HashVector):
         # csmap is modified during substitution, but keeps the same exps
         cp.expmap, cp.csmap = {}, self.copy()
         varlocs = defaultdict(set)
-        for exp, c in self.items():
+        for exp, c in list(self.items()):
             new_exp = exp.copy()
             cp.expmap[exp] = new_exp  # cp modifies exps, so it needs new ones
             cp[new_exp] = c
@@ -131,7 +131,7 @@ class NomialMap(HashVector):
                 if any(cval.hmap.keys()):
                     raise ValueError("Monomial substitutions are not"
                                      " supported.")
-                cval, = cval.hmap.to(vk.units or DIMLESS_QUANTITY).values()
+                cval, = list(cval.hmap.to(vk.units or DIMLESS_QUANTITY).values())
             elif hasattr(cval, "to"):
                 cval = cval.to(vk.units or DIMLESS_QUANTITY).magnitude
             for o_exp, exp in exps:
@@ -157,7 +157,7 @@ class NomialMap(HashVector):
         pmap = [{} for _ in self]
         origexps = list(orig.keys())
         selfexps = list(self.keys())
-        for orig_exp, self_exp in self.expmap.items():
+        for orig_exp, self_exp in list(self.expmap.items()):
             total_c = self.get(self_exp, None)  # TODO: seems unnecessary?
             if total_c:
                 fraction = self.csmap.get(orig_exp, orig[orig_exp])/total_c

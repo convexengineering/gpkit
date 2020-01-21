@@ -121,7 +121,7 @@ class TestTools(unittest.TestCase):
         a = te_secant(x, 2)
         b = 1 + x**2/2. + 5*x**4/24.
         self.assertTrue(all([abs(val) <= 1e-10
-                             for val in (a.hmap - b.hmap).values()]))  # pylint:disable=no-member
+                             for val in list((a.hmap - b.hmap).values())]))  # pylint:disable=no-member
         self.assertEqual(te_secant(x, 0), 1)
         # make sure x was not modified
         self.assertEqual(x, Variable('x'))

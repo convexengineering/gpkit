@@ -1,5 +1,5 @@
 "Implements ConstraintSet"
-from __future__ import unicode_literals
+
 from collections import defaultdict, OrderedDict
 import numpy as np
 from ..small_classes import Numbers
@@ -52,7 +52,7 @@ class ConstraintSet(list, GPkitObject):
             constraints = [constraints]  # put it one level down
         elif isinstance(constraints, dict):
             if isinstance(constraints, OrderedDict):
-                items = constraints.items()
+                items = list(constraints.items())
             else:
                 items = sorted(list(constraints.items()), key=_sort_constrs)
             self.idxlookup = {k: i for i, (k, _) in enumerate(items)}
@@ -89,7 +89,7 @@ class ConstraintSet(list, GPkitObject):
                 if hasattr(self[i], attr):
                     getattr(self, attr).update(getattr(self[i], attr))
             if hasattr(self[i], "meq_bounded"):
-                for bound, solutionset in self[i].meq_bounded.items():
+                for bound, solutionset in list(self[i].meq_bounded.items()):
                     self.meq_bounded[bound].update(solutionset)
         self.reset_varkeys()
         self.substitutions.update({k: k.descr["value"]
@@ -225,7 +225,7 @@ class ConstraintSet(list, GPkitObject):
             nu = nus[offset:offset+n_posys]
             constr.v_ss = constr.sens_from_dual(la, nu, result)
             self.relax_sensitivity += constr.relax_sensitivity
-            for key, value in constr.v_ss.items():
+            for key, value in list(constr.v_ss.items()):
                 var_senss[key] = value + var_senss.get(key, 0)
             offset += n_posys
         return var_senss
@@ -291,7 +291,7 @@ class ConstraintSet(list, GPkitObject):
             if hasattr(self, "rootconstr_str"):
                 rootlines = self.rootconstr_str(excluded)  # pylint: disable=no-member
         if self.idxlookup:
-            named_constraints = {v: k for k, v in self.idxlookup.items()}
+            named_constraints = {v: k for k, v in list(self.idxlookup.items())}
         for i, constraint in enumerate(self):
             clines = try_str_without(constraint, excluded).split("\n")
             if (getattr(constraint, "lineage", None)

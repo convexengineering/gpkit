@@ -1,5 +1,5 @@
 """Defines SolutionArray class"""
-from __future__ import unicode_literals, print_function
+
 import re
 from collections import Iterable
 import pickle
@@ -46,9 +46,9 @@ def topsenss_filter(data, showvars, nvars=5):
     "Filters sensitivities down to top N vars"
     if "constants" in data.get("sensitivities", {}):
         data = data["sensitivities"]["constants"]
-    mean_abs_senss = {k: np.abs(s).mean() for k, s in data.items()
+    mean_abs_senss = {k: np.abs(s).mean() for k, s in list(data.items())
                       if not isnan(s).any()}
-    topk = [k for k, _ in sorted(mean_abs_senss.items(), key=lambda l: l[1])]
+    topk = [k for k, _ in sorted(list(mean_abs_senss.items()), key=lambda l: l[1])]
     filter_already_shown = showvars.intersection(topk)
     for k in filter_already_shown:
         topk.remove(k)
@@ -61,7 +61,7 @@ def insenss_table(data, _, maxval=0.1, **kwargs):
     "Returns insensitivity table lines"
     if "constants" in data.get("sensitivities", {}):
         data = data["sensitivities"]["constants"]
-    data = {k: s for k, s in data.items() if np.mean(np.abs(s)) < maxval}
+    data = {k: s for k, s in list(data.items()) if np.mean(np.abs(s)) < maxval}
     return senss_table(data, title="Insensitive Fixed Variables", **kwargs)
 
 
@@ -343,7 +343,7 @@ class SolutionArray(DictOfLists):
             lines.insert(1, "(positive means the argument is bigger)")
         elif sol_diff:
             values = []
-            for v in sol_diff.values():
+            for v in list(sol_diff.values()):
                 if hasattr(v, "shape"):
                     values.extend(v.flatten().tolist())
                 else:
@@ -386,7 +386,7 @@ class SolutionArray(DictOfLists):
                     "(positive means the argument has a higher sensitivity)")
             elif senss_delta:
                 absmaxvalue, maxvalue = 0, 0
-                for valarray in senss_delta.values():
+                for valarray in list(senss_delta.values()):
                     if not getattr(valarray, "shape", None):
                         value = valarray
                     else:
@@ -472,7 +472,7 @@ class SolutionArray(DictOfLists):
         from scipy.io import savemat
         savemat(filename,
                 {name.replace(".", "_"): np.array(self["variables"][key], "f")
-                 for name, key in self.varnames(showvars, excluded).items()})
+                 for name, key in list(self.varnames(showvars, excluded).items())})
 
     def todataframe(self, showvars=None,
                     excluded=("unnecessary lineage", "vec")):
@@ -481,7 +481,7 @@ class SolutionArray(DictOfLists):
         rows = []
         cols = ["Name", "Index", "Value", "Units", "Label",
                 "Lineage", "Other"]
-        for _, key in sorted(self.varnames(showvars, excluded).items(),
+        for _, key in sorted(list(self.varnames(showvars, excluded).items()),
                              key=lambda k: k[0]):
             value = self["variables"][key]
             if key.shape:
@@ -503,7 +503,7 @@ class SolutionArray(DictOfLists):
                     key.unitstr(),
                     key.label or "",
                     key.lineage or "",
-                    ", ".join("%s=%s" % (k, v) for (k, v) in key.descr.items()
+                    ", ".join("%s=%s" % (k, v) for (k, v) in list(key.descr.items())
                               if k not in ["name", "units", "unitrepr",
                                            "idx", "shape", "veckey",
                                            "value", "original_fn",
@@ -526,7 +526,7 @@ class SolutionArray(DictOfLists):
             data = {k: data[k] for k in showvars if k in data}
         # if the columns don't capture any dimensions, skip them
         minspan, maxspan = None, 1
-        for v in data.values():
+        for v in list(data.values()):
             if getattr(v, "shape", None) and any(di != 1 for di in v.shape):
                 minspan_ = min((di for di in v.shape if di != 1))
                 maxspan_ = max((di for di in v.shape if di != 1))
@@ -675,7 +675,7 @@ class SolutionArray(DictOfLists):
         import matplotlib.pyplot as plt
         from .interactive.plot_sweep import assign_axes
         from . import GPBLU
-        (swept, x), = self["sweepvariables"].items()
+        (swept, x), = list(self["sweepvariables"].items())
         posys, axes = assign_axes(swept, posys, axes)
         for posy, ax in zip(posys, axes):
             y = self(posy) if posy not in [None, "cost"] else self["cost"]

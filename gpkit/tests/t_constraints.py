@@ -13,10 +13,6 @@ from gpkit.constraints.relax import ConstraintsRelaxed
 from gpkit.constraints.bounded import Bounded
 import gpkit
 
-if sys.version_info >= (3, 0):
-    unicode = str  # pylint:disable=redefined-builtin,invalid-name
-
-
 class TestConstraint(unittest.TestCase):
     """Tests for Constraint class"""
 
@@ -114,7 +110,7 @@ class TestConstraint(unittest.TestCase):
         self.assertEqual(c.left, x)
         self.assertEqual(c.right, y**2)
         self.assertTrue("<=" in str(c))
-        self.assertEqual(type((1 >= x).latex()), unicode)
+        self.assertEqual(type((1 >= x).latex()), str)
 
     def test_oper_overload(self):
         """Test Constraint initialization by operator overloading"""
@@ -189,7 +185,7 @@ class TestMonomialEquality(unittest.TestCase):
         x = Variable('x')
         y = Variable('y')
         mec = (x == y)
-        self.assertEqual(type(mec.str_without()), unicode)
+        self.assertEqual(type(mec.str_without()), str)
 
     def test_united_dimensionless(self):
         "Check dimensionless unit-ed variables work"

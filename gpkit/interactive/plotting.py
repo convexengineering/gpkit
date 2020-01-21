@@ -1,5 +1,5 @@
 """Plotting methods"""
-from __future__ import unicode_literals
+
 import matplotlib.pyplot as plt
 import numpy as np
 from .plot_sweep import assign_axes
@@ -62,5 +62,5 @@ def plot_convergence(model):
     ax.plot(it, cost, '-o')
     ax.set_xlabel('Iteration')
     ax.set_ylabel('Cost')
-    ax.set_xticks(range(1, len(model.program.gps)+1))
+    ax.set_xticks(list(range(1, len(model.program.gps)+1)))
     return fig, ax

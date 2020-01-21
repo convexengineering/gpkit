@@ -1,5 +1,5 @@
 "Implements Loose"
-from __future__ import unicode_literals, print_function
+
 from .set import ConstraintSet
 from ..small_scripts import appendsolwarning
 

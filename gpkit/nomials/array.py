@@ -7,7 +7,7 @@
     >>> px = gpkit.NomialArray([1, x, x**2])
 
 """
-from __future__ import unicode_literals
+
 from operator import eq, le, ge, xor
 from functools import reduce  # pylint: disable=redefined-builtin
 import numpy as np
@@ -145,7 +145,7 @@ class NomialArray(GPkitObject, np.ndarray):
         return np.ndarray.__str__(self)
 
     def __hash__(self):
-        return reduce(xor, map(hash, self.flat), 0)
+        return reduce(xor, list(map(hash, self.flat)), 0)
 
     def __new__(cls, input_array):
         "Constructor. Required for objects inheriting from np.ndarray."

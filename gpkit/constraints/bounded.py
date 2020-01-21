@@ -1,5 +1,5 @@
 "Implements Bounded"
-from __future__ import print_function
+
 from collections import defaultdict, OrderedDict
 import numpy as np
 from .. import Variable
@@ -124,7 +124,7 @@ class Bounded(ConstraintSet):
         if self.verbosity > 0 and out:
             print("")
             print("Solves with these variables bounded:")
-            for key, value in out.items():
+            for key, value in list(out.items()):
                 print("% 25s: %s" % (key, ", ".join(map(str, value))))
             print("")
         return out

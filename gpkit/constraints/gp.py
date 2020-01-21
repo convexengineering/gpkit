@@ -1,5 +1,5 @@
 """Implement the GeometricProgram class"""
-from __future__ import print_function
+
 # unicode_literals here interfere with the boundschecking example
 import sys
 from time import time
@@ -75,7 +75,7 @@ class GeometricProgram(CostedConstraintSet, NomialData):
         self.solver_log = None
         self.solver_out = None
         self.__bare_init__(cost, constraints, substitutions, varkeys=False)
-        for key, sub in self.substitutions.items():
+        for key, sub in list(self.substitutions.items()):
             if isinstance(sub, FixedScalar):
                 sub = sub.value
                 if hasattr(sub, "units"):
@@ -107,7 +107,7 @@ class GeometricProgram(CostedConstraintSet, NomialData):
         self.gen()  # A [i, v]: sparse matrix of powers in each monomial
         if self.missingbounds and not allow_missingbounds:
             boundstrs = "\n".join("  %s has no %s bound%s" % (v, b, x)
-                                  for (v, b), x in self.missingbounds.items())
+                                  for (v, b), x in list(self.missingbounds.items()))
             raise ValueError("Geometric Program is not fully bounded:\n"
                              + boundstrs)
 
@@ -118,8 +118,8 @@ class GeometricProgram(CostedConstraintSet, NomialData):
         self._hashvalue = self._varlocs = self._varkeys = None
         self._exps, self._cs = [], []
         for hmap in self.hmaps:
-            self._exps.extend(hmap.keys())
-            self._cs.extend(hmap.values())
+            self._exps.extend(list(hmap.keys()))
+            self._cs.extend(list(hmap.values()))
         self.vks = self.varlocs
         self.A, self.missingbounds = genA(self.exps, self.varlocs,
                                           self.meq_idxs)
@@ -281,7 +281,7 @@ class GeometricProgram(CostedConstraintSet, NomialData):
         if not self.varlocs and len(primal) == 1 and primal[0] == 0:
             primal = []  # an empty result, as returned by MOSEK
         assert len(self.varlocs) == len(primal)
-        result = {"freevariables": KeyDict(zip(self.varlocs, np.exp(primal)))}
+        result = {"freevariables": KeyDict(list(zip(self.varlocs, np.exp(primal))))}
         # get cost #
         if "objective" in solver_out:
             result["cost"] = float(solver_out["objective"])
@@ -291,7 +291,7 @@ class GeometricProgram(CostedConstraintSet, NomialData):
             cost = self.posynomials[0].sub(freev)
             if cost.varkeys:
                 raise ValueError("cost contains unsolved variables %s"
-                                 % cost.varkeys.keys())
+                                 % list(cost.varkeys.keys()))
             result["cost"] = mag(cost.c)
         # get variables #
         result["constants"] = KeyDict(self.substitutions)
@@ -303,15 +303,15 @@ class GeometricProgram(CostedConstraintSet, NomialData):
                                         result)
         # add cost's sensitivity in (nu could be self.nu_by_posy[0])
         cost_senss = {var: sum([self.cost.exps[i][var]*nu[i] for i in locs])
-                      for (var, locs) in self.cost.varlocs.items()}
+                      for (var, locs) in list(self.cost.varlocs.items())}
         var_senss = self.v_ss.copy()
-        for key, value in cost_senss.items():
+        for key, value in list(cost_senss.items()):
             var_senss[key] = value + var_senss.get(key, 0)
         # carry linked sensitivities over to their constants
         for v in list(v for v in var_senss if v.gradients):
             dlogcost_dlogv = var_senss.pop(v)
             val = result["constants"][v]
-            for c, dv_dc in v.gradients.items():
+            for c, dv_dc in list(v.gradients.items()):
                 if val != 0:
                     dlogv_dlogc = dv_dc * result["constants"][c]/val
                 # make nans / infs explicitly to avoid warnings
@@ -330,7 +330,7 @@ class GeometricProgram(CostedConstraintSet, NomialData):
         result["sensitivities"]["cost"] = cost_senss
         result["sensitivities"]["variables"] = KeyDict(var_senss)
         result["sensitivities"]["constants"] = KeyDict(
-            {k: v for k, v in var_senss.items() if k in result["constants"]})
+            {k: v for k, v in list(var_senss.items()) if k in result["constants"]})
         result["soltime"] = solver_out["soltime"]
         return SolutionArray(result)
 
@@ -445,7 +445,7 @@ def gen_mono_eq_bounds(exps, meq_idxs):  # pylint: disable=too-many-locals
         if i % 2:  # skip the second index of a meq
             continue
         p_upper, p_lower, n_upper, n_lower = set(), set(), set(), set()
-        for key, x in exps[i].items():
+        for key, x in list(exps[i].items()):
             if x > 0:
                 p_upper.add((key, "upper"))
                 p_lower.add((key, "lower"))

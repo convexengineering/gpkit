@@ -1,5 +1,5 @@
 """Signomial, Posynomial, Monomial, Constraint, & MonoEQCOnstraint classes"""
-from __future__ import print_function, unicode_literals
+
 from collections import defaultdict
 import numpy as np
 from .core import Nomial
@@ -47,7 +47,7 @@ class Signomial(Nomial):
                 hmap_.units_of_product(hmap)
                 hmap = hmap_
             elif isinstance(hmap, dict):
-                exp = HashVector({VarKey(k): v for k, v in hmap.items() if v})
+                exp = HashVector({VarKey(k): v for k, v in list(hmap.items()) if v})
                 hmap = NomialMap({exp: mag(cs)})
                 hmap.units_of_product(cs)
             else:
@@ -99,7 +99,7 @@ class Signomial(Nomial):
         """
         py, ny = NomialMap(), NomialMap()
         py.units, ny.units = self.units, self.units
-        for exp, c in self.hmap.items():
+        for exp, c in list(self.hmap.items()):
             if c > 0:
                 py[exp] = c
             elif c < 0:
@@ -123,12 +123,12 @@ class Signomial(Nomial):
         if EMPTY_HV not in psub or len(psub) > 1:
             raise ValueError("Variables %s remained after substituting x0=%s"
                              " into %s" % (psub, x0, self))
-        c0, = psub.values()
+        c0, = list(psub.values())
         c, exp = c0, HashVector()
         for vk in self.vks:
             val = float(x0[vk])
-            diff, = self.hmap.diff(vk).sub(x0, self.varkeys,
-                                           parsedsubs=True).values()
+            diff, = list(self.hmap.diff(vk).sub(x0, self.varkeys,
+                                           parsedsubs=True).values())
             e = val*diff/c0
             if e:
                 exp[vk] = e
@@ -216,8 +216,8 @@ class Signomial(Nomial):
             return out
         elif isinstance(other, Signomial):
             hmap = NomialMap()
-            for exp_s, c_s in self.hmap.items():
-                for exp_o, c_o in other.hmap.items():
+            for exp_s, c_s in list(self.hmap.items()):
+                for exp_o, c_o in list(other.hmap.items()):
                     exp = exp_s + exp_o
                     new, accumulated = c_s*c_o, hmap.get(exp, 0)
                     if new != -accumulated:
@@ -265,7 +265,7 @@ class Signomial(Nomial):
 
     def chop(self):
         "Returns a list of monomials in the signomial."
-        monmaps = [NomialMap({exp: c}) for exp, c in self.hmap.items()]
+        monmaps = [NomialMap({exp: c}) for exp, c in list(self.hmap.items())]
         for monmap in monmaps:
             monmap.units = self.hmap.units
         return [Monomial(monmap) for monmap in monmaps]
@@ -306,7 +306,7 @@ class Monomial(Posynomial):
     def exp(self):
         "Creates exp or returns a cached exp"
         if not self._exp:
-            self._exp, = self.hmap.keys()  # pylint: disable=attribute-defined-outside-init
+            self._exp, = list(self.hmap.keys())  # pylint: disable=attribute-defined-outside-init
         return self._exp
 
     @property
@@ -330,7 +330,7 @@ class Monomial(Posynomial):
 
     def __pow__(self, expo):
         if isinstance(expo, Numbers):
-            (exp, c), = self.hmap.items()
+            (exp, c), = list(self.hmap.items())
             exp = exp*expo if expo else EMPTY_HV
             hmap = NomialMap({exp: c**expo})
             if expo and self.hmap.units:
@@ -437,7 +437,7 @@ class PosynomialInequality(ScalarSingleEquationConstraint):
         self.bounded = set()
         if self.unsubbed:
             for exp in self.unsubbed[0].hmap:
-                for key, e in exp.items():
+                for key, e in list(exp.items()):
                     if e > 0:
                         self.bounded.add((key, "upper"))
                     if e < 0:
@@ -478,8 +478,8 @@ class PosynomialInequality(ScalarSingleEquationConstraint):
 
         """
         try:
-            m_exp, = m_gt.hmap.keys()
-            m_c, = m_gt.hmap.values()
+            m_exp, = list(m_gt.hmap.keys())
+            m_c, = list(m_gt.hmap.values())
         except ValueError:
             raise TypeError("greater-than side '%s' is not monomial." % m_gt)
         m_c *= units.of_division(m_gt, p_lt)
@@ -530,11 +530,11 @@ class PosynomialInequality(ScalarSingleEquationConstraint):
         if hasattr(self, "pmap"):
             nu_ = np.zeros(len(presub.hmap))
             for i, mmap in enumerate(self.pmap):
-                for idx, percentage in mmap.items():
+                for idx, percentage in list(mmap.items()):
                     nu_[idx] += percentage*nu[i]
             if hasattr(self, "const_mmap"):
                 scale = (1-self.const_coeff)/self.const_coeff
-                for idx, percentage in self.const_mmap.items():
+                for idx, percentage in list(self.const_mmap.items()):
                     nu_[idx] += percentage * la*scale
             nu = nu_
         return {var: sum([presub.exps[i][var]*nu[i]
@@ -562,16 +562,16 @@ class MonomialEquality(PosynomialInequality):
         self.relax_sensitivity = 0  # don't count equality sensitivities
         if self.unsubbed and len(self.varkeys) > 1:
             exp, = list(self.unsubbed[0].hmap.keys())
-            for key, e in exp.items():
+            for key, e in list(exp.items()):
                 if key in self.substitutions:
                     for bound in ("upper", "lower"):
                         self.bounded.add((key, bound))
                     continue
                 s_e = np.sign(e)
                 ubs = frozenset((k, "upper" if np.sign(e) != s_e else "lower")
-                                for k, e in exp.items() if k != key)
+                                for k, e in list(exp.items()) if k != key)
                 lbs = frozenset((k, "lower" if np.sign(e) != s_e else "upper")
-                                for k, e in exp.items() if k != key)
+                                for k, e in list(exp.items()) if k != key)
                 self.meq_bounded[(key, "upper")] = frozenset([ubs])
                 self.meq_bounded[(key, "lower")] = frozenset([lbs])
 
@@ -589,7 +589,7 @@ class MonomialEquality(PosynomialInequality):
             p.from_meq = True  # pylint: disable=attribute-defined-outside-init
         return out
 
-    def __nonzero__(self):
+    def __bool__(self):
         'A constraint not guaranteed to be satisfied evaluates as "False".'
         return bool(self.left.c == self.right.c
                     and self.left.exp == self.right.exp)
@@ -639,8 +639,8 @@ class SignomialInequality(ScalarSingleEquationConstraint):
         self.nomials.extend(self.unsubbed)
         self.bounded = set()
         if self.unsubbed:
-            for exp, c in self.unsubbed[0].hmap.items():
-                for key, e in exp.items():
+            for exp, c in list(self.unsubbed[0].hmap.items()):
+                for key, e in list(exp.items()):
                     if e*c > 0:
                         self.bounded.add((key, "upper"))
                     if e*c < 0:
@@ -669,20 +669,20 @@ class SignomialInequality(ScalarSingleEquationConstraint):
             siglt0_hmap = siglt0_us.hmap.sub(substitutions, siglt0_us.varkeys)
             negy_hmap = NomialMap()
             posy_hmaps = defaultdict(NomialMap)
-            for o_exp, exp in siglt0_hmap.expmap.items():
+            for o_exp, exp in list(siglt0_hmap.expmap.items()):
                 if exp == negy.exp:
                     negy_hmap[o_exp] = -siglt0_us.hmap[o_exp]
                 else:
                     posy_hmaps[exp-negy.exp][o_exp] = siglt0_us.hmap[o_exp]
             # pylint: disable=attribute-defined-outside-init
             self._mons = [Monomial(NomialMap({k: v}))
-                          for k, v in (posy/negy).hmap.items()]
+                          for k, v in list((posy/negy).hmap.items())]
             self._negysig = Signomial(negy_hmap, require_positive=False)
             self._coeffsigs = {exp: Signomial(hmap, require_positive=False)
-                               for exp, hmap in posy_hmaps.items()}
+                               for exp, hmap in list(posy_hmaps.items())}
             self._sigvars = {exp: (list(self._negysig.varkeys.keys())
                                    + list(sig.varkeys.keys()))
-                             for exp, sig in self._coeffsigs.items()}
+                             for exp, sig in list(self._coeffsigs.items())}
             return p_ineq.as_posyslt1(substitutions)
 
         else:
@@ -718,7 +718,7 @@ class SignomialInequality(ScalarSingleEquationConstraint):
             "Substitute solution into a posynomial and return the result"
             hmap = posy.sub(result["variables"],
                             require_positive=False).hmap
-            (key, value), = hmap.items()
+            (key, value), = list(hmap.items())
             assert not key  # constant
             return value
 
