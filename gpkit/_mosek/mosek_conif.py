@@ -59,67 +59,128 @@ def mskoptimize(c, A, k, p_idxs, *args, **kwargs):
     #
     #
     c = np.array(c)
-    n, m = A.shape
-    p = len(k) - 1
-    n_msk = m + 3*n + p + 1
+    # separate exponential from linear constraints.
+    # the objective is always kept in exponential form.
+    exp_posys = [0] + [i+1 for i, val in enumerate(k[1:]) if val > 1]
+    lin_posys = [i for i in range(len(k)) if i not in exp_posys]
+    if len(lin_posys) > 0:
+        A = A.tocsr()
+        lin_idxs = []
+        for i in lin_posys:
+            temp = np.nonzero(p_idxs == i)
+            temp = temp[0]
+            lin_idxs.append(temp)
+        lin_idxs = np.concatenate(lin_idxs)
+        nonlin_idxs = np.ones(A.shape[0], dtype=bool)
+        nonlin_idxs[lin_idxs] = False
+        A_exp = A[nonlin_idxs, :].tocoo()
+        c_exp = c[nonlin_idxs]
+        A_lin = A[lin_idxs, :].tocoo()
+        c_lin = c[lin_idxs]
+    else:
+        c_lin = np.array([])
+        A_exp = A
+        c_exp = c
+
+    m = A.shape[1]
+    k_exp = [k[i] for i in exp_posys]
+    n_exp = sum(k_exp)
+    p_exp = len(k_exp)
+    n_msk = m + 3*n_exp + p_exp
+    exp_p_idx = []
+    for i, ki in enumerate(k_exp):
+        exp_p_idx.extend([i] * ki)
+    exp_p_idx = np.array(exp_p_idx)
     #
     #   Create MOSEK task. add variables and conic constraints.
     #
     env = mosek.Env()
     task = env.Task(0, 0)
     task.appendvars(n_msk)
-    bound_types = [mosek.boundkey.fr] * (m + 3*n + 1) + [mosek.boundkey.up] * p
+    bound_types = [mosek.boundkey.fr] * (m + 3*n_exp + 1) + [mosek.boundkey.up] * (p_exp - 1)
     task.putvarboundlist(np.arange(n_msk, dtype=int),
                          bound_types, np.zeros(n_msk), np.zeros(n_msk))
-    for i in range(n):
+    for i in range(n_exp):
         idx = m + 3*i
         task.appendcone(mosek.conetype.pexp, 0.0, np.arange(idx, idx + 3))
     #
-    #   Calls to MOSEK's "putaijlist"
+    #   Affine constraints related to the exponential cone
     #
-    task.appendcons(2*n + p + 1)
-    # Linear equations: t[3*ell + 1] == 1.
-    rows = [i for i in range(n)]
-    cols = (m + 3*np.arange(n) + 1).tolist()
-    vals = [1.0] * n
+    task.appendcons(2*n_exp + p_exp)
+    # 1st n_exp: Linear equations: t[3*ell + 1] == 1
+    rows = [i for i in range(n_exp)]
+    cols = (m + 3*np.arange(n_exp) + 1).tolist()
+    vals = [1.0] * n_exp
     task.putaijlist(rows, cols, vals)
-    # Linear equations: A[ell,:] @ x  - t[3*ell + 2] - z[posynom idx corresponding to ell] == -np.log(c[ell])
-    cur_con_idx = n
-    rows = [cur_con_idx + r for r in A.row]
-    task.putaijlist(rows, A.col, A.data)
-    rows = [cur_con_idx + i for i in range(n)]
-    cols = (m + 3*np.arange(n) + 2).tolist()
-    vals = [-1.0] * n
+    # 2nd n_exp: Linear equations:
+    #       A[ell,:] @ x  - t[3*ell + 2] - z[posynom idx corresponding to ell] == -np.log(c[ell])
+    cur_con_idx = n_exp
+    rows = [cur_con_idx + r for r in A_exp.row]
+    task.putaijlist(rows, A_exp.col, A_exp.data)
+    rows = [cur_con_idx + i for i in range(n_exp)]
+    cols = (m + 3*np.arange(n_exp) + 2).tolist()
+    vals = [-1.0] * n_exp
     task.putaijlist(rows, cols, vals)
-    rows = [cur_con_idx + i for i in range(n)]
-    cols = [m + 3*n + p_idxs[i] for i in range(n)]
-    vals = [-1.0] * n
+    rows = [cur_con_idx + i for i in range(n_exp)]
+    cols = [m + 3*n_exp + exp_p_idx[i] for i in range(n_exp)]
+    vals = [-1.0] * n_exp
     task.putaijlist(rows, cols, vals)
-    # Linear inequalities: 1 @ t[3 * sels] <= 1, for sels = np.nonzero(p_idxs[i] == i)
-    cur_con_idx = 2*n
+    # last p_exp: Linear inequalities:
+    #       1 @ t[3 * sels] <= 1, for sels = np.nonzero(exp_p_idxs[i] == i)
+    cur_con_idx = 2*n_exp
     rows, cols, vals = [], [], []
-    for i in range(p+1):
-        sels = np.nonzero(p_idxs == i)[0]
+    for i in range(p_exp):
+        sels = np.nonzero(exp_p_idx == i)[0]
         rows.extend([cur_con_idx] * sels.size)
         cols.extend(m + 3 * sels)
         vals.extend([1] * sels.size)
         cur_con_idx += 1
     task.putaijlist(rows, cols, vals)
-    #
-    #   Build the right-hand-sides of the [in]equality constraints
-    #
-    type_constraint = [mosek.boundkey.fx] * (2*n) + [mosek.boundkey.up] * (p + 1)
-    h = np.concatenate([np.ones(n), -np.log(c), np.ones(p + 1)])
+    # Build the right-hand-sides of the [in]equality constraints
+    type_constraint = [mosek.boundkey.fx] * (2*n_exp) + [mosek.boundkey.up] * p_exp
+    h = np.concatenate([np.ones(n_exp), -np.log(c_exp), np.ones(p_exp)])
     task.putconboundlist(np.arange(h.size, dtype=int), type_constraint, h, h)
+    #
+    #   Affine constraints, not needing the exponential cone
+    #
+    cur_con_idx = 2*n_exp + p_exp
+    if c_lin.size > 0:
+        task.appendcons(c_lin.size)
+        rows = [cur_con_idx + r for r in A_lin.row]
+        task.putaijlist(rows, A_lin.col, A_lin.data)
+        type_constraint = [mosek.boundkey.up] * c_lin.size
+        con_indices = np.arange(cur_con_idx, cur_con_idx + c_lin.size, dtype=int)
+        h = -np.log(c_lin)
+        task.putconboundlist(con_indices, type_constraint, h, h)
+        cur_con_idx += c_lin.size
     #
     #   Set the objective function
     #
-    task.putclist([int(m + 3*n)], [1])
+    task.putclist([int(m + 3*n_exp)], [1])
     task.putobjsense(mosek.objsense.minimize)
     #
     #   Set solver parameters, and call .solve().
     #
+    verbose = False
+    if 'verbose' in kwargs:
+        verbose = kwargs['verbose']
+    if verbose:
+        import sys
+
+        def streamprinter(text):
+            sys.stdout.write(text)
+            sys.stdout.flush()
+
+        print('\n')
+        env.set_Stream(mosek.streamtype.log, streamprinter)
+        task.set_Stream(mosek.streamtype.log, streamprinter)
+        task.putintparam(mosek.iparam.infeas_report_auto, mosek.onoffkey.on)
+        task.putintparam(mosek.iparam.log_presolve, 0)
+
     task.optimize()
+
+    if verbose:
+        task.solutionsummary(mosek.streamtype.msg)
     #
     #   Recover the solution
     #
@@ -131,12 +192,25 @@ def mskoptimize(c, A, k, p_idxs, *args, **kwargs):
         x = np.array(x)
         # recover dual variables for log-sum-exp epigraph constraints
         # (skip epigraph of the objective function).
-        z_duals = [0.] * p
-        task.getsuxslice(mosek.soltype.itr, m + 3*n + 1, n_msk, z_duals)
+        z_duals = [0.] * (p_exp - 1)
+        task.getsuxslice(mosek.soltype.itr, m + 3*n_exp + 1, n_msk, z_duals)
         z_duals = np.array(z_duals)
         z_duals[z_duals < 0] = 0
+        # recover dual variables for the remaining user-provided constraints
+        if c_lin.size > 0:
+            aff_duals = [0.] * c_lin.size
+            task.getsucslice(mosek.soltype.itr, 2*n_exp + p_exp, cur_con_idx, aff_duals)
+            aff_duals = np.array(aff_duals)
+            aff_duals[aff_duals < 0] = 0
+            # merge z_duals with aff_duals
+            merged_duals = np.zeros(len(k))
+            merged_duals[exp_posys[1:]] = z_duals
+            merged_duals[lin_posys] = aff_duals
+            merged_duals = merged_duals[1:]
+        else:
+            merged_duals = z_duals
         # wrap things up in a dictionary
-        solution = {'status': 'optimal', 'primal': x, 'la': z_duals}
+        solution = {'status': 'optimal', 'primal': x, 'la': merged_duals}
     elif msk_solsta == mosek.solsta.prim_infeas_cer:
         solution = {'status': 'infeasible', 'primal': None}
     elif msk_solsta == mosek.solsta.dual_infeas_cer:
