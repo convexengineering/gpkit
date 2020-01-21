@@ -64,7 +64,7 @@ class TestGP(unittest.TestCase):
                           SignomialEquality(x**2 + x, y)])
         sol = m.localsolve(solver=self.solver, verbosity=0, mutategp=False)
         self.assertAlmostEqual(sol("x"), 0.1639472, self.ndig)
-        self.assertAlmostEqual(sol("y")[0], 0.1908254, 3)
+        self.assertAlmostEqual(sol("y")[0], 0.1908254, self.ndig)
         self.assertAlmostEqual(sol("c"), 0.2669448, self.ndig)
         # test right vector input to sigeq
         with SignomialsEnabled():
@@ -80,9 +80,9 @@ class TestGP(unittest.TestCase):
             m = Model(c, [c >= (x + 0.25)**2 + (y - 0.5)**2,
                           SignomialEquality(x**2 + x, y)])
         sol = m.localsolve(solver=self.solver, verbosity=0)
-        self.assertAlmostEqual(sol("x"), 0.1639472, 3)
-        self.assertAlmostEqual(sol("y"), 0.1908254, 3)
-        self.assertAlmostEqual(sol("c"), 0.2669448, 3)
+        self.assertAlmostEqual(sol("x"), 0.1639472, self.ndig)
+        self.assertAlmostEqual(sol("y"), 0.1908254, self.ndig)
+        self.assertAlmostEqual(sol("c"), 0.2669448, self.ndig)
 
     def test_601(self):
         # tautological monomials should solve but not pass to the solver
