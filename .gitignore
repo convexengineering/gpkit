@@ -42,9 +42,9 @@ htmlcov/
 .cache
 nosetests.xml
 coverage.xml
-gpkit/tests/*.csv
-gpkit/tests/*.mat
-gpkit/tests/*.pkl
+gpkit/docs/source/examples/*.csv
+docs/source/examples/*.mat
+docs/source/examples/*.pkl
 
 # Translations
 *.mo

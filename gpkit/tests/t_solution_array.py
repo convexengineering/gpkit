@@ -73,7 +73,7 @@ class TestSolutionArray(unittest.TestCase):
         tminsub = 1000 * gpkit.ureg.lbf
         m.substitutions.update({Tmin: tminsub})
         sol = m.solve(verbosity=0)
-        self.assertEqual(sol(Tmin) - tminsub, 0)
+        self.assertEqual(sol(Tmin), tminsub)
         self.assertFalse(
             "1000N" in
             sol.table().replace(" ", "").replace("[", "").replace("]", ""))
