@@ -322,9 +322,8 @@ def build():
     replacedir(envpath)
     settingspath = pathjoin(envpath, "settings")
     with open(settingspath, "w") as f:
-        for setting, value in settings.items():
+        for setting, value in sorted(settings.items()):
             f.write("%s : %s\n" % (setting, value))
-        f.write("\n")
 
     with open(pathjoin(envpath, "build.log"), "w") as f:
         f.write(LOGSTR)

@@ -29,7 +29,7 @@ class TestGP(unittest.TestCase):
     name = "TestGP_"
     # solver and ndig get set in loop at bottom this file, a bit hacky
     solver = None
-    ndig = 4
+    ndig = None
 
     def test_trivial_gp(self):
         """
@@ -271,7 +271,7 @@ class TestSP(unittest.TestCase):
     """test case for SP class -- gets run for each installed solver"""
     name = "TestSP_"
     solver = None
-    ndig = 4
+    ndig = None
 
     def test_sp_relaxation(self):
         w = Variable('w')
@@ -626,7 +626,7 @@ class TestSP(unittest.TestCase):
         x = Variable("x")
         y = Variable("y")
         m = Model(x*y, [x*y**1.01 >= 100])
-        with self.assertRaises((RuntimeWarning, ValueError, InvalidPosynomial)):
+        with self.assertRaises((RuntimeWarning, ValueError)):
             m.solve(self.solver, verbosity=0)
         # test one-sided bound
         m = Model(x*y, Bounded(m, verbosity=0, lower=0.001))
