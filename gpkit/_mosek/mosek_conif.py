@@ -79,7 +79,8 @@ def mskoptimize(c, A, k, p_idxs, *args, **kwargs):
         lse_p_idx.extend([i] * ki)
     lse_p_idx = np.array(lse_p_idx)
     #
-    #   Create MOSEK task. Add variables, and conic constraints.
+    #   Create MOSEK task. Add variables, bound constraints, and conic
+    #   constraints.
     #
     #       Say that MOSEK's optimization variable is a block vector,
     #       [x;t;z], where ...
@@ -103,53 +104,51 @@ def mskoptimize(c, A, k, p_idxs, *args, **kwargs):
     m = A.shape[1]
     msk_nvars = m + 3 * n_lse + p_lse
     task.appendvars(msk_nvars)
-    bound_types = [mosek.boundkey.fr] * (m + 3*n_lse + 1) + \
-                  [mosek.boundkey.up] * (p_lse - 1)
-    task.putvarboundlist(np.arange(msk_nvars, dtype=int),
-                         bound_types, np.zeros(msk_nvars), np.zeros(msk_nvars))
-    for i in range(n_lse):
-        idx = m + 3*i
-        task.appendcone(mosek.conetype.pexp, 0.0, np.arange(idx, idx + 3))
+    # "x" is free
+    task.putvarboundlist(np.arange(m), [mosek.boundkey.fr] * m,
+                         np.zeros(m), np.zeros(m))
+    # t[3 * i + i] == 1, other components are free.
+    bound_types = [mosek.boundkey.fr, mosek.boundkey.fx, mosek.boundkey.fr]
+    task.putvarboundlist(np.arange(m, m + 3*n_lse), bound_types * n_lse,
+                         np.ones(3*n_lse), np.ones(3*n_lse))
+    # z[0] is free; z[1:] <= 0.
+    bound_types = [mosek.boundkey.fr] + [mosek.boundkey.up] * (p_lse - 1)
+    task.putvarboundlist(np.arange(m + 3*n_lse, msk_nvars), bound_types,
+                         np.zeros(p_lse), np.zeros(p_lse))
+    # t[3*i], t[3*i + 1], t[3*i + 2] belongs to the exponential cone
+    task.appendconesseq([mosek.conetype.pexp] * n_lse, [0.0] * n_lse,
+                        [3] * n_lse, m)
     #
-    #   Affine constraints related to the exponential cone
+    #   Exponential cone affine constraints (other than t[3*i + 1] == 1).
     #
     #       For each i in {0, ..., n_lse - 1}, we need
-    #           t[3*i + 1] == 1, and
     #           t[3*i + 2] == A_lse[i, :] @ x + log_c_lse[i] - z[lse_p_idx[i]].
-    #       This contributes 2 * n_lse constraints.
     #
     #       For each j from {0, ..., p_lse - 1}, the "t" should also satisfy
     #           sum(t[3*i] for i where i == lse_p_idx[j]) <= 1.
-    #       This contributes another p_lse constraints.
     #
-    #       The above constraints imply that for ``sel = lse_p_idx == i``,
-    #       we have LSE(A_lse[sel, :] @ x + log_c_lse[sel]) <= z[i].
+    #       When combined with bound constraints ``t[3*i + 1] == 1``, the
+    #       above constraints imply
+    #           LSE(A_lse[sel, :] @ x + log_c_lse[sel]) <= z[i]
+    #       for ``sel = lse_p_idx == i``.
     #
-    #       We specify the necessary constraints to MOSEK in three phases.
-    #       Over the course of these three phases,
-    #       we make a total of five calls to "putaijlist"
-    #       and a single call to "putconboundlist".
-    #
-    task.appendcons(2*n_lse + p_lse)
-    # 1st n_lse: Linear equations: t[3*i + 1] == 1
-    rows = list(range(n_lse))
-    cols = (m + 3*np.arange(n_lse) + 1).tolist()
-    vals = [1.0] * n_lse
+    task.appendcons(n_lse + p_lse)
+    # Linear equations between (x,t,z).
+    #   start with coefficients on "x"
+    rows = [r for r in A_lse.row]
+    cols = [c for c in A_lse.col]
+    vals = [v for v in A_lse.data]
+    #   add coefficients on "t"
+    rows += list(range(n_lse))
+    cols += (m + 3*np.arange(n_lse) + 2).tolist()
+    vals += [-1.0] * n_lse
+    #   add coefficients on "z"
+    rows += list(range(n_lse))
+    cols += [m + 3*n_lse + lse_p_idx[i] for i in range(n_lse)]
+    vals += [-1.0] * n_lse
     task.putaijlist(rows, cols, vals)
     cur_con_idx = n_lse
-    # 2nd n_lse: Linear equations between (x,t,z).
-    rows = [cur_con_idx + r for r in A_lse.row]
-    task.putaijlist(rows, A_lse.col, A_lse.data)  # coefficients on "x"
-    rows = [cur_con_idx + i for i in range(n_lse)]
-    cols = (m + 3*np.arange(n_lse) + 2).tolist()
-    vals = [-1.0] * n_lse
-    task.putaijlist(rows, cols, vals)  # coefficients on "t"
-    rows = [cur_con_idx + i for i in range(n_lse)]
-    cols = [m + 3*n_lse + lse_p_idx[i] for i in range(n_lse)]
-    vals = [-1.0] * n_lse
-    task.putaijlist(rows, cols, vals)  # coefficients on "z".
-    cur_con_idx = 2 * n_lse
-    # last p_lse: Linear inequalities on certain sums of "t".
+    # Linear inequalities on certain sums of "t".
     rows, cols, vals = [], [], []
     for i in range(p_lse):
         sels = np.nonzero(lse_p_idx == i)[0]
@@ -158,11 +157,9 @@ def mskoptimize(c, A, k, p_idxs, *args, **kwargs):
         vals.extend([1] * sels.size)
         cur_con_idx += 1
     task.putaijlist(rows, cols, vals)
-    cur_con_idx = 2 * n_lse + p_lse
     # Build the right-hand-sides of the [in]equality constraints
-    type_constraint = [mosek.boundkey.fx] * (2*n_lse) + \
-                      [mosek.boundkey.up] * p_lse
-    h = np.concatenate([np.ones(n_lse), -log_c_lse, np.ones(p_lse)])
+    type_constraint = [mosek.boundkey.fx] * n_lse + [mosek.boundkey.up] * p_lse
+    h = np.concatenate([-log_c_lse, np.ones(p_lse)])
     task.putconboundlist(np.arange(h.size, dtype=int), type_constraint, h, h)
     #
     #   Affine constraints, not needing the exponential cone
@@ -174,8 +171,7 @@ def mskoptimize(c, A, k, p_idxs, *args, **kwargs):
         rows = [cur_con_idx + r for r in A_lin.row]
         task.putaijlist(rows, A_lin.col, A_lin.data)
         type_constraint = [mosek.boundkey.up] * log_c_lin.size
-        con_indices = np.arange(cur_con_idx, cur_con_idx + log_c_lin.size,
-                                dtype=int)
+        con_indices = np.arange(cur_con_idx, cur_con_idx + log_c_lin.size)
         h = -log_c_lin
         task.putconboundlist(con_indices, type_constraint, h, h)
         cur_con_idx += log_c_lin.size
@@ -227,7 +223,7 @@ def mskoptimize(c, A, k, p_idxs, *args, **kwargs):
         # recover dual variables for the remaining user-provided constraints
         if log_c_lin.size > 0:
             aff_duals = [0.] * log_c_lin.size
-            task.getsucslice(mosek.soltype.itr, 2*n_lse + p_lse, cur_con_idx,
+            task.getsucslice(mosek.soltype.itr, n_lse + p_lse, cur_con_idx,
                              aff_duals)
             aff_duals = np.array(aff_duals)
             aff_duals[aff_duals < 0] = 0
