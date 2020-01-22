@@ -123,20 +123,17 @@ class CVXopt(SolverBackend):
 
 
 class MosekConif(SolverBackend):
-    "Find MOSEK version >= 9."
-
+    "MOSEK exponential cone solver finder."
     name = 'mosek_conif'
 
     def look(self):
         "Attempts to import mosek, version >= 9."
         try:
             log("#   Trying to import mosek...")
-            # Testing the import, so the variable is intentionally not used
-            import mosek  # pylint: disable=unused-variable
+            import mosek
             if hasattr(mosek.conetype, 'pexp'):
                 return "in Python path"
-            else:
-                pass
+            return None
         except ImportError:
             pass
 

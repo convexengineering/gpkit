@@ -6,7 +6,7 @@ from gpkit import (Model, settings, VectorVariable, Variable,
                    SignomialsEnabled, ArrayVariable, SignomialEquality)
 from gpkit.constraints.bounded import Bounded
 from gpkit.small_classes import CootMatrix
-from gpkit.exceptions import InvalidGPConstraint, InvalidPosynomial
+from gpkit.exceptions import InvalidGPConstraint
 from gpkit import NamedVariables, units, parse_variables
 from gpkit.constraints.relax import ConstraintsRelaxed
 from gpkit.constraints.relax import ConstraintsRelaxedEqually

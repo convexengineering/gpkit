@@ -22,7 +22,7 @@ def cvxoptimize(c, A, k, *args, **kwargs):
             Exponents of the various free variables for each monomial.
         k : ints array of shape p+1
             k[0] is the number of monomials (rows of A) present in the objective
-            k[1:] is the number of monomials (rows of A) present in each constraint
+            k[1:] is the number of monomials present in each constraint
 
         Returns
         -------

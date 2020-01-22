@@ -57,7 +57,7 @@ def mskoptimize(c, A, k, p_idxs, *args, **kwargs):
     log_c = np.log(np.array(c))
     lse_posys = [0] + [i+1 for i, val in enumerate(k[1:]) if val > 1]
     lin_posys = [i for i in range(len(k)) if i not in lse_posys]
-    if len(lin_posys) > 0:
+    if lin_posys:
         A = A.tocsr()
         lin_idxs = np.concatenate([np.nonzero(p_idxs == i)[0]
                                    for i in lin_posys])
@@ -188,19 +188,17 @@ def mskoptimize(c, A, k, p_idxs, *args, **kwargs):
     #   Set solver parameters, and call .solve().
     #
     verbose = False
-    if kwargs.get('verbose'):
+    if kwargs.get("verbose"):
         verbose = kwargs['verbose']
     if verbose:
-        # pylint: disable=import-outside-toplevel
         import sys
-        # pylint: enable=import-outside-toplevel
 
         def streamprinter(text):
             """ Stream printer for output from mosek. """
             sys.stdout.write(text)
             sys.stdout.flush()
 
-        print('\n')
+        print()
         env.set_Stream(mosek.streamtype.log, streamprinter)
         task.set_Stream(mosek.streamtype.log, streamprinter)
         task.putintparam(mosek.iparam.infeas_report_auto, mosek.onoffkey.on)
