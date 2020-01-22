@@ -55,12 +55,17 @@ def mskoptimize(c, A, k, p_idxs, *args, **kwargs):
     #       representation, even if the objective is a monomial.
     #
     log_c = np.log(np.array(c))
-    lse_posys = [0] + [i+1 for i, val in enumerate(k[1:]) if val > 1]
-    lin_posys = [i for i in range(len(k)) if i not in lse_posys]
+    lse_posys = [0]
+    lin_posys = []
+    for i, val in enumerate(k[1:]):
+        if val > 1:
+            lse_posys.append(i+1)
+        else:
+            lin_posys.append(i+1)
     if lin_posys:
         A = A.tocsr()
-        lin_idxs = np.concatenate([np.nonzero(p_idxs == i)[0]
-                                   for i in lin_posys])
+        lin_posys_set = frozenset(lin_posys)
+        lin_idxs = [i for i, p in enumerate(p_idxs) if p in lin_posys_set]
         lse_idxs = np.ones(A.shape[0], dtype=bool)
         lse_idxs[lin_idxs] = False
         A_lse = A[lse_idxs, :].tocoo()
@@ -135,9 +140,9 @@ def mskoptimize(c, A, k, p_idxs, *args, **kwargs):
     task.appendcons(n_lse + p_lse)
     # Linear equations between (x,t,z).
     #   start with coefficients on "x"
-    rows = [r for r in A_lse.row]
-    cols = [c for c in A_lse.col]
-    vals = [v for v in A_lse.data]
+    rows = list(A_lse.row)
+    cols = list(A_lse.col)
+    vals = list(A_lse.data)
     #   add coefficients on "t"
     rows += list(range(n_lse))
     cols += (m + 3*np.arange(n_lse) + 2).tolist()
@@ -168,7 +173,7 @@ def mskoptimize(c, A, k, p_idxs, *args, **kwargs):
     #
     if log_c_lin.size > 0:
         task.appendcons(log_c_lin.size)
-        rows = [cur_con_idx + r for r in A_lin.row]
+        rows = cur_con_idx + np.array(A_lin.row)
         task.putaijlist(rows, A_lin.col, A_lin.data)
         type_constraint = [mosek.boundkey.up] * log_c_lin.size
         con_indices = np.arange(cur_con_idx, cur_con_idx + log_c_lin.size)
@@ -185,12 +190,9 @@ def mskoptimize(c, A, k, p_idxs, *args, **kwargs):
     #
     verbose = kwargs.get("verbose", True)
     if verbose:
-        import sys
-
         def streamprinter(text):
             """ Stream printer for output from mosek. """
-            sys.stdout.write(text)
-            sys.stdout.flush()
+            print(text)
 
         env.set_Stream(mosek.streamtype.log, streamprinter)
         task.set_Stream(mosek.streamtype.log, streamprinter)
