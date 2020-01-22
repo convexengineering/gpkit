@@ -183,9 +183,7 @@ def mskoptimize(c, A, k, p_idxs, *args, **kwargs):
     #
     #   Set solver parameters, and call .solve().
     #
-    verbose = False
-    if kwargs.get("verbose"):
-        verbose = kwargs['verbose']
+    verbose = kwargs.get("verbose", True)
     if verbose:
         import sys
 
@@ -194,7 +192,6 @@ def mskoptimize(c, A, k, p_idxs, *args, **kwargs):
             sys.stdout.write(text)
             sys.stdout.flush()
 
-        print()
         env.set_Stream(mosek.streamtype.log, streamprinter)
         task.set_Stream(mosek.streamtype.log, streamprinter)
         task.putintparam(mosek.iparam.infeas_report_auto, mosek.onoffkey.on)
