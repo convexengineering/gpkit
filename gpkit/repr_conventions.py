@@ -128,9 +128,9 @@ class GPkitObject(object):
                 aststr = "1"
             elif UNICODE_EXPONENTS and int(x) == x and x >= 2 and x <= 9:
                 if int(x) in (2, 3):
-                    aststr = "%s%s" % (left, unichr(176+x))
+                    aststr = "%s%s" % (left, unichr(176+int(x)))
                 elif int(x) in (4, 5, 6, 7, 8, 9):
-                    aststr = "%s%s" % (left, unichr(8304+x))
+                    aststr = "%s%s" % (left, unichr(8304+int(x)))
             else:
                 aststr = "%s^%s" % (left, x)
         elif oper == "prod":  # TODO: only do if it makes a shorter string
