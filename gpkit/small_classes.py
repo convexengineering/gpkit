@@ -192,9 +192,8 @@ class HashVector(dict):
 
     def __pow__(self, other):
         "Accepts scalars. Return Hashvector with each value put to a power."
-        if isinstance(other, Numbers):
-            return self.__class__({key: val**other
-                                   for (key, val) in self.items()})
+        return self.__class__({key: val**other
+                               for (key, val) in self.items()})
         return NotImplemented
 
     def __mul__(self, other):
@@ -202,7 +201,8 @@ class HashVector(dict):
 
         If the other object inherits from dict, multiplication is element-wise
         and their key's intersection will form the new keys."""
-        if isinstance(other, Numbers):
+        from gpkit.nomials.math import Signomial
+        if isinstance(other, Numbers + (Signomial,)):
             return self.__class__({key: val*other
                                    for (key, val) in self.items()})
         elif isinstance(other, dict):

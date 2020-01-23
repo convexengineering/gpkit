@@ -123,10 +123,11 @@ class GPkitObject(object):
             aststr = "-%s" % parenthesize(strify(values, excluded), mult=False)
         elif oper == "pow":
             left = parenthesize(strify(values[0], excluded))
-            x = values[1]
+            x = parenthesize(strify(values[1], excluded))
             if left == "1":
                 aststr = "1"
-            elif UNICODE_EXPONENTS and int(x) == x and x >= 2 and x <= 9:
+            elif isinstance(x, Numbers) and UNICODE_EXPONENTS and \
+                int(x) == x and x >= 2 and x <= 9:
                 if int(x) in (2, 3):
                     aststr = "%s%s" % (left, unichr(176+int(x)))
                 elif int(x) in (4, 5, 6, 7, 8, 9):

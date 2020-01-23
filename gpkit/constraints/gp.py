@@ -5,7 +5,7 @@ import sys
 from time import time
 from collections import defaultdict
 import numpy as np
-from ..nomials import NomialData
+from ..nomials import NomialData, NomialMap
 from ..small_classes import CootMatrix, SolverLog, Numbers, FixedScalar
 from ..keydict import KeyDict
 from ..small_scripts import mag
@@ -122,7 +122,7 @@ class GeometricProgram(CostedConstraintSet, NomialData):
             self._cs.extend(hmap.values())
         self.vks = self.varlocs
         self.A, self.missingbounds = genA(self.exps, self.varlocs,
-                                          self.meq_idxs)
+                                          self.meq_idxs, self.substitutions)
 
     # pylint: disable=too-many-statements, too-many-locals
     def solve(self, solver=None, verbosity=1, warn_on_check=False,
@@ -394,7 +394,7 @@ class GeometricProgram(CostedConstraintSet, NomialData):
                                  " cost %s" % (np.exp(dual_cost), cost))
 
 
-def genA(exps, varlocs, meq_idxs):  # pylint: disable=invalid-name
+def genA(exps, varlocs, meq_idxs, substitutions=None):  # pylint: disable=invalid-name
     """Generates A matrix
 
     Returns
@@ -407,16 +407,43 @@ def genA(exps, varlocs, meq_idxs):  # pylint: disable=invalid-name
     """
     missingbounds = {}
     row, col, data = [], [], []
+    bte = set() # variables bounded through equalities or sig exp substitutions
     for j, var in enumerate(varlocs):
+        # print(var)
         upperbound, lowerbound = False, False
         row.extend(varlocs[var])
         col.extend([j]*len(varlocs[var]))
-        data.extend(exps[i][var] for i in varlocs[var])
-        for i in varlocs[var]:
-            if i not in meq_idxs:
+        exp_arr = []
+        # Adding data to A matrix
+        for k, i in enumerate(varlocs[var]):
+            if isinstance(exps[i][var], NomialMap):
+                varkeydict = KeyDict({key:key for item in exps[i][var].keys() \
+                                      for key in item.keys()})
+                subbed_exp = exps[i][var].sub(substitutions, varkeydict)
+                if list(subbed_exp.keys())[0]:
+                    raise ValueError("Signomial exponent %s has variables that " 
+                                     "have not been fully substituted. Complete "
+                                     "substitutions and try again." % \
+                                     (exps[i])) #TODO: improve error.
+                exp_arr.extend([list(subbed_exp.values())[0]])
+                # Add substituted variables in signomial exponent to bte
+                # to make them bounded.
+                bte = bte.union(varkeydict.keys())
+            else:
+                exp_arr.extend([exps[i][var]])
+        # print(exp_arr)
+        data.extend(exp_arr)
+        # Checking boundedness
+        for k, i in enumerate(varlocs[var]):
+            # Checking variables subbed in exponent
+            if var in bte:
+                lowerbound = True
+                upperbound = True
+                break
+            elif i not in meq_idxs:
                 if upperbound and lowerbound:
                     break
-                elif exps[i][var] > 0:  # pylint:disable=simplifiable-if-statement
+                elif exp_arr[k] > 0:
                     upperbound = True
                 else:
                     lowerbound = True
@@ -424,7 +451,6 @@ def genA(exps, varlocs, meq_idxs):  # pylint: disable=invalid-name
             missingbounds[(var, "upper")] = ""
         if not lowerbound:
             missingbounds[(var, "lower")] = ""
-
     check_mono_eq_bounds(missingbounds, gen_mono_eq_bounds(exps, meq_idxs))
 
     # space the matrix out for trailing constant terms
@@ -433,6 +459,9 @@ def genA(exps, varlocs, meq_idxs):  # pylint: disable=invalid-name
             row.append(i)
             col.append(0)
             data.append(0)
+    if len(row) != len(col) != len(data):
+        raise ValueError("The A matrix generated does not have the right "
+                         "dimensions.")
     A = CootMatrix(row, col, data)
 
     return A, missingbounds

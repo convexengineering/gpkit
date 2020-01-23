@@ -5,6 +5,7 @@ import numpy as np
 from .core import Nomial
 from .array import NomialArray
 from .. import units
+from ..keydict import KeyDict
 from ..constraints import SingleEquationConstraint
 from ..globals import SignomialsEnabled
 from ..small_classes import Numbers
@@ -63,7 +64,21 @@ class Signomial(Nomial):
             self.__class__ = Monomial
         else:
             self.__class__ = Posynomial
+        self.check_exps()
         self.ast = ()
+
+    def check_exps(self):
+        """Checking units and adding varkeys of signomial exponents."""
+        for exp in self.exps:
+            for _, v in exp.items():
+                if isinstance(v, HashVector):
+                    if v.units:
+                        raise ValueError("Exponent %s is united. Please "
+                                         "normalize or remove units." % v)
+                    else:
+                        self.hmap.varexps = True
+                        for key, _ in v.items():
+                            self.vks.update([k for k in key.keys()])
 
     def diff(self, var):
         """Derivative of this with respect to a Variable
@@ -119,7 +134,11 @@ class Signomial(Nomial):
         Monomial (unless self(x0) < 0, in which case a Signomial is returned)
         """
         x0, _, _ = parse_subs(self.varkeys, x0)  # use only varkey keys
-        psub = self.hmap.sub(x0, self.varkeys, parsedsubs=True)
+        if self.hmap.varexps:
+            raise ValueError("Varexps only works for GPs for now... "
+                             "stick to GPs!")
+        else:
+            psub = self.hmap.sub(x0, self.varkeys, parsedsubs=True)
         if EMPTY_HV not in psub or len(psub) > 1:
             raise ValueError("Variables %s remained after substituting x0=%s"
                              " into %s" % (psub, x0, self))
@@ -329,10 +348,27 @@ class Monomial(Posynomial):
         return self.__rdiv__(other)
 
     def __pow__(self, expo):
-        if isinstance(expo, Numbers):
+        if isinstance(expo, Numbers+(Signomial,)):
             (exp, c), = self.hmap.items()
-            exp = exp*expo if expo else EMPTY_HV
-            hmap = NomialMap({exp: c**expo})
+            if isinstance(expo, Signomial):
+                if expo.units:
+                    raise ValueError("Exponents cannot be united. Please "
+                                     "remove units from Signomial %s." %
+                                     expo.str_without())
+                exp = HashVector({k: expo.hmap*v for k, v in exp.items()})
+            else:
+                exp = exp*expo if expo else EMPTY_HV
+            if c != 1 and isinstance(expo, Signomial):
+                raise ValueError("Float %s raised to Signomial %s is "
+                                 "not currently supported. Please replace %s "
+                                 "with a substituted "
+                                 "Variable." % (str(c), expo.str_without(),
+                                                str(c)))
+            elif c != 1:
+                newc = c**expo
+            else:
+                newc = c
+            hmap = NomialMap({exp: newc})
             if expo and self.hmap.units:
                 hmap.units = self.hmap.units**expo
             else:
@@ -438,9 +474,9 @@ class PosynomialInequality(ScalarSingleEquationConstraint):
         if self.unsubbed:
             for exp in self.unsubbed[0].hmap:
                 for key, e in exp.items():
-                    if e > 0:
+                    if isinstance(e, Numbers) and e > 0:
                         self.bounded.add((key, "upper"))
-                    if e < 0:
+                    if isinstance(e, Numbers) and e < 0:
                         self.bounded.add((key, "lower"))
         for key in self.substitutions:
             for bound in ("upper", "lower"):
@@ -537,10 +573,19 @@ class PosynomialInequality(ScalarSingleEquationConstraint):
                 for idx, percentage in self.const_mmap.items():
                     nu_[idx] += percentage * la*scale
             nu = nu_
-        return {var: sum([presub.exps[i][var]*nu[i]
-                          for i in presub.varlocs[var]])
-                for var in self.varkeys}  # Constant sensitivities
-
+        sens_dict = KeyDict({v: 0*v.units for v in self.varkeys if v.units})
+        sens_dict.update({v: 0 for v in self.varkeys if not v.units})
+        for var in self.varkeys:
+            for i in presub.varlocs[var]:
+                if not isinstance(presub.exps[i][var], HashVector):
+                    sens_dict[var] += presub.exps[i][var]*nu[i]
+                else:
+                    exps = presub.exps[i][var]
+                    varkeydict = KeyDict({key:key for item in exps.keys() \
+                                      for key in item.keys()})
+                    subbed_exp = exps.sub(result, varkeydict).values()[0]
+                    sens_dict[var] += subbed_exp*nu[i]
+        return sens_dict
     def as_gpconstr(self, x0):  # pylint: disable=unused-argument
         "The GP version of a Posynomial constraint is itself"
         return self
@@ -641,9 +686,9 @@ class SignomialInequality(ScalarSingleEquationConstraint):
         if self.unsubbed:
             for exp, c in self.unsubbed[0].hmap.items():
                 for key, e in exp.items():
-                    if e*c > 0:
+                    if isinstance(e, Numbers) and e*c > 0:
                         self.bounded.add((key, "upper"))
-                    if e*c < 0:
+                    if isinstance(e, Numbers) and e*c < 0:
                         self.bounded.add((key, "lower"))
         for key in self.substitutions:
             for bound in ("upper", "lower"):
