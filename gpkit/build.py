@@ -295,7 +295,7 @@ def build():
     log("Started building gpkit...\n")
 
     log("Attempting to find and build solvers:\n")
-    solvers = [MosekConif(), Mosek(), MosekCLI(), CVXopt()]
+    solvers = [Mosek(), MosekCLI(), MosekConif(), CVXopt()]
     installed_solvers = [solver.name
                          for solver in solvers
                          if solver.installed]

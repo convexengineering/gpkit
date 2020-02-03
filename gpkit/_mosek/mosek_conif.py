@@ -74,8 +74,8 @@ def mskoptimize(c, A, k, p_idxs, *args, **kwargs):
         A_lin = A[lin_idxs, :].tocoo()
         log_c_lin = log_c[lin_idxs]
     else:
-        log_c_lin = np.array([])  # A_lin won't be referenced later,
-        A_lse = A                 # so no need to define it.
+        log_c_lin = None  # A_lin won't be referenced later,
+        A_lse = A         # so no need to define it.
         log_c_lse = log_c
     k_lse = [k[i] for i in lse_posys]
     n_lse = sum(k_lse)
@@ -172,13 +172,13 @@ def mskoptimize(c, A, k, p_idxs, *args, **kwargs):
     #
     #       Require A_lin @ x <= -log_c_lin.
     #
-    if log_c_lin.size > 0:
+    if log_c_lin is not None:
         task.appendcons(log_c_lin.size)
         rows = cur_con_idx + np.array(A_lin.row)
         task.putaijlist(rows, A_lin.col, A_lin.data)
         type_constraint = [mosek.boundkey.up] * log_c_lin.size
         con_indices = np.arange(cur_con_idx, cur_con_idx + log_c_lin.size)
-        h = -log_c_lin
+        h = -log_c_lin  #pylint: disable=invalid-unary-operand-type
         task.putconboundlist(con_indices, type_constraint, h, h)
         cur_con_idx += log_c_lin.size
     #
@@ -192,7 +192,7 @@ def mskoptimize(c, A, k, p_idxs, *args, **kwargs):
     verbose = kwargs.get("verbose", True)
     if verbose:
         def streamprinter(text):
-            """ Stream printer for output from mosek. """
+            "Stream printer for output from mosek."
             print(text)
 
         env.set_Stream(mosek.streamtype.log, streamprinter)
@@ -221,7 +221,7 @@ def mskoptimize(c, A, k, p_idxs, *args, **kwargs):
         z_duals = np.array(z_duals)
         z_duals[z_duals < 0] = 0
         # recover dual variables for the remaining user-provided constraints
-        if log_c_lin.size > 0:
+        if log_c_lin is not None:
             aff_duals = [0.] * log_c_lin.size
             task.getsucslice(mosek.soltype.itr, n_lse + p_lse, cur_con_idx,
                              aff_duals)
