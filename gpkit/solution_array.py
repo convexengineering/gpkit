@@ -486,7 +486,7 @@ class SolutionArray(DictOfLists):
             value = self["variables"][key]
             if key.shape:
                 idxs = []
-                it = np.nditer(np.empty(key.shape), flags=['multi_index'])
+                it = np.nditer(np.empty(value.shape), flags=['multi_index'])
                 while not it.finished:
                     idx = it.multi_index
                     idxs.append(idx[0] if len(idx) == 1 else idx)
