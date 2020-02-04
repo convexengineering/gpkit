@@ -15,7 +15,8 @@ from ..exceptions import InvalidPosynomial
 
 
 DEFAULT_SOLVER_KWARGS = {"cvxopt": {"kktsolver": "ldl"}}
-SOLUTION_TOL = {"cvxopt": 1e-3, "mosek_cli": 1e-4, "mosek": 1e-5}
+SOLUTION_TOL = {"cvxopt": 1e-3, "mosek_cli": 1e-4, "mosek": 1e-5,
+                'mosek_conif': 1e-3}
 
 
 def _get_solver(solver, kwargs):
@@ -38,6 +39,9 @@ def _get_solver(solver, kwargs):
     elif solver == "mosek":
         from .._mosek import expopt
         solverfn = expopt.imize
+    elif solver == 'mosek_conif':
+        from .._mosek import mosek_conif
+        solverfn = mosek_conif.mskoptimize
     elif hasattr(solver, "__call__"):
         solverfn = solver
         solver = solver.__name__
@@ -93,7 +97,7 @@ class GeometricProgram(CostedConstraintSet, NomialData):
         self.posynomials.extend(self.as_posyslt1(self.substitutions))
         self.hmaps = [p.hmap for p in self.posynomials]
         ## Generate various maps into the posy- and monomials
-        # k [j]: number of monomials (columns of F) present in each constraint
+        # k [j]: number of monomials (rows of A) present in each constraint
         self.k = [len(hm) for hm in self.hmaps]
         p_idxs = []  # p_idxs [i]: posynomial index of each monomial
         self.m_idxs = []  # m_idxs [i]: monomial indices of each posynomial
@@ -385,10 +389,10 @@ class GeometricProgram(CostedConstraintSet, NomialData):
         if any(np.abs(ATnu) > tol):
             raise RuntimeWarning("sum of nu^T * A did not vanish")
         b = np.log(self.cs)
-        dual_cost = sum(self.nu_by_posy[i].dot(b[mi] -
-                                               np.log(self.nu_by_posy[i]/la[i])
-                                               if la[i] else 0)
-                        for i, mi in enumerate(self.m_idxs))
+        dual_cost = sum(
+            self.nu_by_posy[i].dot(
+                b[mi] - np.log(self.nu_by_posy[i]/la[i]))
+            for i, mi in enumerate(self.m_idxs) if la[i])
         if not _almost_equal(np.exp(dual_cost), cost):
             raise RuntimeWarning("Dual cost %s does not match primal"
                                  " cost %s" % (np.exp(dual_cost), cost))

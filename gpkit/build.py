@@ -122,6 +122,22 @@ class CVXopt(SolverBackend):
             pass
 
 
+class MosekConif(SolverBackend):
+    "MOSEK exponential cone solver finder."
+    name = 'mosek_conif'
+
+    def look(self):
+        "Attempts to import mosek, version >= 9."
+        try:
+            log("#   Trying to import mosek...")
+            import mosek
+            if hasattr(mosek.conetype, 'pexp'):
+                return "in Python path"
+            return None
+        except ImportError:
+            pass
+
+
 class Mosek(SolverBackend):
     "MOSEK finder and builder."
     name = "mosek"
@@ -279,7 +295,7 @@ def build():
     log("Started building gpkit...\n")
 
     log("Attempting to find and build solvers:\n")
-    solvers = [Mosek(), MosekCLI(), CVXopt()]
+    solvers = [Mosek(), MosekCLI(), MosekConif(), CVXopt()]
     installed_solvers = [solver.name
                          for solver in solvers
                          if solver.installed]
@@ -303,9 +319,8 @@ def build():
     replacedir(envpath)
     settingspath = pathjoin(envpath, "settings")
     with open(settingspath, "w") as f:
-        for setting, value in settings.items():
+        for setting, value in sorted(settings.items()):
             f.write("%s : %s\n" % (setting, value))
-        f.write("\n")
 
     with open(pathjoin(envpath, "build.log"), "w") as f:
         f.write(LOGSTR)
