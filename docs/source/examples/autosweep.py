@@ -36,7 +36,8 @@ bst1_loaded = pickle.load(open("autosweep.pkl", "rb"))
 # this problem is two intersecting lines in logspace
 m2 = Model(A**2, [A >= (l/3)**2, A >= (l/3)**0.5 * units.m**1.5])
 tol2 = {"mosek": 1e-12, "cvxopt": 1e-7,
-        "mosek_cli": 1e-6}[gpkit.settings["default_solver"]]
+        "mosek_cli": 1e-6,
+        'mosek_conif': 1e-6}[gpkit.settings["default_solver"]]
 # test Model method
 sol2 = m2.autosweep({l: [1, 10]}, tol2, verbosity=0)
 bst2 = sol2.bst

@@ -42,6 +42,9 @@ htmlcov/
 .cache
 nosetests.xml
 coverage.xml
+gpkit/docs/source/examples/*.csv
+docs/source/examples/*.mat
+docs/source/examples/*.pkl
 
 # Translations
 *.mo
@@ -76,3 +79,6 @@ test_reports_nounits/
 
 # OSX
 .DS_Store
+
+# Development environment
+.idea/
