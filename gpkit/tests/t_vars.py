@@ -40,7 +40,7 @@ class TestVarKey(unittest.TestCase):
         self.assertIsInstance(x.latex(), str)
         self.assertIsInstance(x.latex_unitstr(), unicode)
 
-    def test_ast(self):
+    def test_ast(self): # pylint: disable=too-many-statements
         t = Variable("t")
         u = Variable("u")
         v = Variable("v")
