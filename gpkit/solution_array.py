@@ -412,8 +412,6 @@ class SolutionArray(DictOfLists):
             lines.append("")
 
         out = "\n".join(lines)
-        out = out.replace("+0.", " +.")
-        out = out.replace("-0.", " -.")
         return out
 
     def pickle_prep(self):
