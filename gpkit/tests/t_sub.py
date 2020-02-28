@@ -8,6 +8,7 @@ from gpkit import SignomialsEnabled, NamedVariables
 from gpkit import Variable, VectorVariable, Model, Signomial
 from gpkit.small_scripts import mag
 from gpkit.tests.helpers import run_tests
+from gpkit.exceptions import UnboundedGP, UnknownInfeasible
 
 # pylint: disable=invalid-name,attribute-defined-outside-init,unused-variable
 
@@ -152,7 +153,7 @@ class TestModelSubs(unittest.TestCase):
             m.substitutions[ymax] = 0.2
             self.assertAlmostEqual(m.localsolve(verbosity=0)["cost"], 0.8, 3)
             m = gpkit.Model(x, [x >= 1-y, y <= ymax])
-            with self.assertRaises(ValueError):  # from unbounded ymax
+            with self.assertRaises(UnboundedGP):  # from unbounded ymax
                 m.localsolve(verbosity=0)
             m = gpkit.Model(x, [x >= 1-y, y <= ymax])
             m.substitutions[ymax] = 0.1

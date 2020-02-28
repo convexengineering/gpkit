@@ -11,5 +11,5 @@ m = Model(x*y, [
     x*y <= 1.5
 ])
 
-# m.solve()  # raises uknown on cvxopt
-             # and PRIM_INFEAS_CER on mosek
+# raises UnknownInfeasible on cvxopt, PrimalInfeasible on mosek
+# m.solve()

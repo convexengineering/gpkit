@@ -2,7 +2,8 @@
 from time import time
 from collections import OrderedDict
 import numpy as np
-from ..exceptions import InvalidGPConstraint
+from ..exceptions import (InvalidGPConstraint,
+                          PrimalInfeasible, UnknownInfeasible)
 from ..keydict import KeyDict
 from ..nomials import Variable, VectorVariable
 from .gp import GeometricProgram
@@ -43,7 +44,7 @@ class SequentialGeometricProgram(CostedConstraintSet):
                         ])
     >>> gp.solve()
     """
-    def __init__(self, cost, constraints, substitutions):
+    def __init__(self, cost, constraints, substitutions, **gpinitargs):
         # pylint:disable=super-init-not-called
         self.gps = []
         self.solver_outs = []
@@ -66,7 +67,7 @@ class SequentialGeometricProgram(CostedConstraintSet):
                                          if v.externalfn)
         self.externalfns = bool(self.externalfn_vars)
         if not self.externalfns:
-            self._gp = self.init_gp(self.substitutions)
+            self._gp = self.init_gp(self.substitutions, **gpinitargs)
             if self._gp and not self._gp["SP approximations"]:
                 raise ValueError("""Model valid as a Geometric Program.
 
@@ -123,7 +124,7 @@ class SequentialGeometricProgram(CostedConstraintSet):
         prevcost, cost, rel_improvement = None, None, None
         while rel_improvement is None or rel_improvement > reltol:
             if len(self.gps) > iteration_limit:
-                raise RuntimeWarning("""problem unsolved after %s iterations.
+                raise UnknownInfeasible("""problem unsolved after %s iterations.
 
     The last result is available in Model.program.gps[-1].result. If the gps
     appear to be converging, you may wish to increase the iteration limit by
@@ -140,7 +141,7 @@ class SequentialGeometricProgram(CostedConstraintSet):
                     cost = float(solver_out["objective"])
                 else:
                     cost = mag(gp.posynomials[0].sub(x0).c)
-            except (RuntimeWarning, ValueError):
+            except (PrimalInfeasible, UnknownInfeasible):
                 feas_constrs = ([slackvar >= 1] +
                                 [posy <= slackvar
                                  for posy in gp.posynomials[1:]])
@@ -216,7 +217,7 @@ class SequentialGeometricProgram(CostedConstraintSet):
             # undeclared variables are handled by individual constraints
         return x0kd
 
-    def init_gp(self, substitutions, x0=None):
+    def init_gp(self, substitutions, x0=None, **gpinitargs):
         "Generates a simplified GP representation for later modification"
         gpconstrs, self._spconstrs, self._approx_lt, approx_gt = [], [], [], []
         x0 = self._fill_x0(x0)
@@ -241,12 +242,12 @@ class SequentialGeometricProgram(CostedConstraintSet):
             pconstr.sgp_parent = spconstr
         gp = GeometricProgram(self.cost, OrderedDict((
             ("GP constraints", gpconstrs),
-            ("SP approximations", spapproxs))), substitutions)
+            ("SP approximations", spapproxs))), substitutions, **gpinitargs)
         gp.x0 = x0
         self._numgpconstrs = len(gp.hmaps) - len(spapproxs)
         return gp
 
-    def gp(self, x0=None, mutategp=False):
+    def gp(self, x0=None, mutategp=False, **gpinitargs):
         "The GP approximation of this SP at x0."
         if mutategp:
             if not self.gps:
@@ -270,7 +271,8 @@ class SequentialGeometricProgram(CostedConstraintSet):
                     posyconstr = v.key.externalfn(v, x0)
                     posyconstr.sgp_parent = v.key.externalfn
                     gp_constrs.append(posyconstr)
-            gp = GeometricProgram(self.cost, gp_constrs, self.substitutions)
+            gp = GeometricProgram(self.cost, gp_constrs, self.substitutions,
+                                  **gpinitargs)
             gp.x0 = x0  # NOTE: SIDE EFFECTS
         return gp
 

@@ -2,6 +2,8 @@
 import numpy as np
 from cvxopt import spmatrix, matrix, log
 from cvxopt.solvers import gp
+from gpkit.exceptions import (Infeasible, UnknownInfeasible,
+                              PrimalInfeasible, DualInfeasible)
 
 
 def cvxoptimize(c, A, k, *args, **kwargs):
@@ -38,7 +40,17 @@ def cvxoptimize(c, A, k, *args, **kwargs):
     """
     g = log(matrix(c))
     F = spmatrix(A.data, A.row, A.col, tc='d')
-    solution = gp(k, F, g, *args, **kwargs)
+    try:
+        solution = gp(k, F, g, *args, **kwargs)
+    except ValueError as e:
+        print(repr(ValueError))
+        raise DualInfeasible("Model has a feasible zero-cost point.")
+
+    if solution["status"] == "unknown":
+        raise UnknownInfeasible("Model cannot solve with this solver.")
+    if solution["status"] != "optimal":
+        raise Infeasible("Unknown solver status: " + statusval[:-1])
+
     return dict(status=solution['status'],
                 primal=np.ravel(solution['x']),
                 la=solution['znl'])

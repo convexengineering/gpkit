@@ -52,7 +52,7 @@ class CostedConstraintSet(ConstraintSet):
                        " %s" % self.cost.str_without(excluded),
                        "", "Constraints", "-----------"]
         if self.lineage:
-            name, num = self.lineage[-1]
+            name, num = self.lineage[-1]  # pylint: disable=unsubscriptable-object
             fullname = "%s" % (name if not num else name + str(num))
             description = [fullname, "="*len(fullname)] + description
         return description

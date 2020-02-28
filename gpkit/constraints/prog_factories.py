@@ -5,6 +5,7 @@ from ..nomials import parse_subs
 from ..solution_array import SolutionArray
 from ..keydict import KeyDict
 from ..small_scripts import maybe_flatten
+from ..exceptions import UnboundedGP, Infeasible
 
 try:
     from ad import adnumber
@@ -154,6 +155,7 @@ def run_sweep(genfunction, self, solution, skipsweepfailures,
         tic = time()
 
     self.program = []
+    last_error = None
     for i in range(N_passes):
         constants.update({var: sweep_vect[i]
                           for (var, sweep_vect) in sweep_vects.items()})
@@ -164,14 +166,14 @@ def run_sweep(genfunction, self, solution, skipsweepfailures,
         self.program.append(program)  # NOTE: SIDE EFFECTS
         try:
             solution.append(solvefn(solver, verbosity-1, **kwargs))
-        except (RuntimeWarning, ValueError):
+        except Infeasible as e:
+            last_error = e
             if not skipsweepfailures:
-                raise RuntimeWarning("solve failed during sweep; program"
-                                     " has been saved to m.program[-1]."
-                                     " To ignore such failures, solve with"
-                                     " skipsweepfailures=True.")
+                raise RuntimeWarning(
+                    "Sweep halted! Progress saved to m.program. To skip over"
+                    " such failures, solve with skipsweepfailures=True.") from e
     if not solution:
-        raise RuntimeWarning("no sweeps solved successfully.")
+        raise RuntimeWarning("No sweeps solved successfully.") from last_error
 
     solution["sweepvariables"] = KeyDict()
     ksweep = KeyDict(sweep)

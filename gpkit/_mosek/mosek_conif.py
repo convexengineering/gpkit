@@ -2,6 +2,8 @@
    through python-based Optimizer API"""
 import mosek
 import numpy as np
+from ..exceptions import (Infeasible, UnknownInfeasible,
+                          PrimalInfeasible, DualInfeasible)
 
 def mskoptimize(c, A, k, p_idxs, **kwargs):
     # pylint: disable=too-many-locals,too-many-statements,too-many-branches
@@ -233,11 +235,11 @@ def mskoptimize(c, A, k, p_idxs, **kwargs):
         # wrap things up in a dictionary
         solution = {'status': 'optimal', 'primal': x, 'la': merged_duals}
     elif msk_solsta == mosek.solsta.prim_infeas_cer:
-        solution = {'status': 'infeasible', 'primal': None, 'la': None}
+        raise PrimalInfeasible("Model has no feasible points.")
     elif msk_solsta == mosek.solsta.dual_infeas_cer:
-        solution = {'status': 'unbounded', 'primal': None, 'la': None}
+        raise DualInfeasible("Model has a feasible zero-cost point.")
     else:
-        solution = {'status': 'unknown', 'primal': None, 'la': None}
+        raise UnknownInfeasible("Model cannot solve with this solver.")
     task.__exit__(None, None, None)
     env.__exit__(None, None, None)
     return solution

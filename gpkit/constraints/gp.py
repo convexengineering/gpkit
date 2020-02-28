@@ -9,7 +9,8 @@ from ..keydict import KeyDict
 from ..small_scripts import mag
 from ..solution_array import SolutionArray
 from .costed import CostedConstraintSet
-from ..exceptions import InvalidPosynomial
+from ..exceptions import (InvalidPosynomial, Infeasible, UnknownInfeasible,
+                          PrimalInfeasible, DualInfeasible, UnboundedGP)
 
 
 DEFAULT_SOLVER_KWARGS = {"cvxopt": {"kktsolver": "ldl"}}
@@ -65,7 +66,7 @@ class GeometricProgram(CostedConstraintSet, NomialData):
     >>> gp.solve()
     """
     def __init__(self, cost, constraints, substitutions,
-                 allow_missingbounds=False):
+                 *, allow_missingbounds=False):
         # pylint:disable=super-init-not-called
         # initialize attributes modified by internal methods
         self._result = None
@@ -105,10 +106,10 @@ class GeometricProgram(CostedConstraintSet, NomialData):
                          if getattr(p, "from_meq", False)}
         self.gen()  # A [i, v]: sparse matrix of powers in each monomial
         if self.missingbounds and not allow_missingbounds:
-            boundstrs = "\n".join("  %s has no %s bound%s" % (v, b, x)
-                                  for (v, b), x in self.missingbounds.items())
-            raise ValueError("Geometric Program is not fully bounded:\n"
-                             + boundstrs)
+            boundstrs = "    \n".join(
+                "%s has no %s bound%s" % (v, b, x)
+                for (v, b), x in self.missingbounds.items())
+            raise UnboundedGP(boundstrs)
 
     varkeys = NomialData.varkeys
 

@@ -11,6 +11,8 @@ from gpkit import NamedVariables, units, parse_variables
 from gpkit.constraints.relax import ConstraintsRelaxed
 from gpkit.constraints.relax import ConstraintsRelaxedEqually
 from gpkit.constraints.relax import ConstantsRelaxed
+from gpkit.exceptions import (Infeasible, UnknownInfeasible,
+                              PrimalInfeasible, DualInfeasible, UnboundedGP)
 
 
 NDIGS = {"cvxopt": 4, "mosek": 5, "mosek_cli": 5, 'mosek_conif': 4}
@@ -97,14 +99,23 @@ class TestGP(unittest.TestCase):
         "Test freeing a variable that's in the cost."
         x = Variable("x", 1)
         x_min = Variable("x_{min}", 2)
+        intermediary = Variable("intermediary")
+        m = Model(x, [x >= intermediary, intermediary >= x_min])
+        self.assertRaises((PrimalInfeasible, UnknownInfeasible), m.solve,
+                          solver=self.solver, verbosity=0)
+        x = Variable("x", 1)
+        x_min = Variable("x_{min}", 2)
         m = Model(x, [x >= x_min])
-        self.assertRaises((RuntimeWarning, ValueError), m.solve,
+        self.assertRaises(ValueError, m.solve,
                           solver=self.solver, verbosity=0)
         del m.substitutions["x"]
         self.assertAlmostEqual(m.solve(solver=self.solver,
                                        verbosity=0)["cost"], 2)
         del m.substitutions["x_{min}"]
-        self.assertRaises((RuntimeWarning, ValueError), m.solve,
+        self.assertRaises(UnboundedGP, m.solve,
+                          solver=self.solver, verbosity=0)
+        gp = m.gp(allow_missingbounds=True)
+        self.assertRaises(DualInfeasible, gp.solve,
                           solver=self.solver, verbosity=0)
 
     def test_simple_united_gp(self):
@@ -316,8 +327,11 @@ class TestSP(unittest.TestCase):
 
         with SignomialsEnabled():
             m = Model(x, [x + y >= 1])  # dual infeasible
-        with self.assertRaises((RuntimeWarning, ValueError)):
+        with self.assertRaises(UnboundedGP):
             m.localsolve(verbosity=0, solver=self.solver)
+        gp = m.sp(allow_missingbounds=True).gp(allow_missingbounds=True)
+        self.assertRaises(DualInfeasible, gp.solve,
+                          solver=self.solver, verbosity=0)
 
         with SignomialsEnabled():
             m = Model(x, Bounded([x + y >= 1], verbosity=0))
@@ -380,7 +394,7 @@ class TestSP(unittest.TestCase):
 
         with SignomialsEnabled():
             m = Model(x, [x + z >= y])
-            with self.assertRaises(ValueError):
+            with self.assertRaises(UnboundedGP):
                 m.localsolve(verbosity=0, solver=self.solver)
 
         with SignomialsEnabled():
@@ -624,7 +638,7 @@ class TestSP(unittest.TestCase):
         x = Variable("x")
         y = Variable("y")
         m = Model(x*y, [x*y**1.01 >= 100])
-        with self.assertRaises((RuntimeWarning, ValueError)):
+        with self.assertRaises(DualInfeasible):
             m.solve(self.solver, verbosity=0)
         # test one-sided bound
         m = Model(x*y, Bounded(m, verbosity=0, lower=0.001))

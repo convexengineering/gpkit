@@ -11,6 +11,7 @@ from ..exceptions import InvalidGPConstraint
 from .. import NamedVariables
 from ..tools.docstring import expected_unbounded
 from .set import add_meq_bounds
+from gpkit.exceptions import Infeasible
 
 
 class Model(CostedConstraintSet):
@@ -226,7 +227,7 @@ class Model(CostedConstraintSet):
                     print("")
             if verbosity:
                 print(">> Success!")
-        except (ValueError, RuntimeWarning):
+        except Infeasible:
             if verbosity:
                 print(">> Failure.")
                 print("> Trying with relaxed constraints:")
