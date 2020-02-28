@@ -79,7 +79,7 @@ assert max(abs(w_gp - w_exact)) <= 1.1*ureg.cm
 
 PLOT = False
 if PLOT:
-    import matplotlib.pyplot as plt
+    import matplotlib.pyplot as plt  # pylint: disable=wrong-import-order
     x_exact = np.linspace(0, L, 1000)
     w_exact = q/(24.*EI) * x_exact**2 * (x_exact**2 - 4*L*x_exact + 6*L**2)
     plt.plot(x, w_gp, color='red', linestyle='solid', marker='^',
