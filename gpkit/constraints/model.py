@@ -70,7 +70,7 @@ class Model(CostedConstraintSet):
             self.unique_varkeys = frozenset(v.key for v in setup_vars)
         CostedConstraintSet.__init__(self, cost, constraints, substitutions)
         docstr = self.__class__.__doc__
-        if hasattr(self, "setup") and "SKIP VERIFICATION" not in docstr:
+        if self.lineage and docstr and "SKIP VERIFICATION" not in docstr:
             if "Unbounded" in docstr or "Bounded by" in docstr:
                 self.verify_docstring()
 
