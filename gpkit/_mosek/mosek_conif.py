@@ -237,7 +237,8 @@ def mskoptimize(c, A, k, p_idxs, **kwargs):
     else:
         merged_duals = z_duals
     # wrap things up in a dictionary
-    solution = {"status": "optimal", "primal": np.array(x), "la": merged_duals}
+    solution = {"status": "optimal", "primal": np.array(x), "la": merged_duals,
+                "objective": np.exp(task.getprimalobj(mosek.soltype.itr))}
     task.__exit__(None, None, None)
     env.__exit__(None, None, None)
     return solution
