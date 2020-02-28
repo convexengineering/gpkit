@@ -53,6 +53,9 @@ def run(filename="TESTS", xmloutput=False, skipsolvers=None):
     with open(filename, "r") as f:
         for path in f:
             add_filetest(TestFiles, path)
+    if skipsolvers == "look around":
+        from .test_repo import get_settings
+        skipsolvers = get_settings()["skipsolvers"]
     solvers = [s for s in settings["installed_solvers"]
                if not skipsolvers or s not in skipsolvers]
     tests = generate_example_tests("", [TestFiles], solvers,

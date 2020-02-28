@@ -149,7 +149,7 @@ def _enray(d_in, d_out):
             d_out[k] = _enray(v, v.__class__())
         else:
             if len(v) == 1:
-                v = v[0]
+                v, = v
             else:
                 v = np.array(v)
             d_out[k] = v
