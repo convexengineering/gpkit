@@ -46,7 +46,7 @@ class GeometricProgram(CostedConstraintSet, NomialData):
 
     Attributes with side effects
     ----------------------------
-    `solver_out` and `solver_log` are set during a solve
+    `solver_out` and `solve_log` are set during a solve
     `result` is set at the end of a solve if solution status is optimal
 
     Examples
@@ -66,7 +66,7 @@ class GeometricProgram(CostedConstraintSet, NomialData):
         self._result = None
         self.v_ss = None
         self.nu_by_posy = None
-        self.solver_log = None
+        self.solve_log = None
         self.solver_out = None
         self.__bare_init__(cost, constraints, substitutions)
         for key, sub in self.substitutions.items():
@@ -113,7 +113,8 @@ class GeometricProgram(CostedConstraintSet, NomialData):
             self._exps.extend(hmap.keys())
             self._cs.extend(hmap.values())
         self.vks = self.varlocs
-        self.A, self.missingbounds = genA(self.exps, self.varlocs, self.meq_idxs)
+        self.A, self.missingbounds = genA(self.exps,
+                                          self.varlocs, self.meq_idxs)
 
     # pylint: disable=too-many-statements, too-many-locals
     def solve(self, solver=None, *, verbosity=1,
@@ -137,36 +138,31 @@ class GeometricProgram(CostedConstraintSet, NomialData):
         result : SolutionArray
         """
         solvername, solverfn = _get_solver(solver, kwargs)
+        solver_kwargs = DEFAULT_SOLVER_KWARGS.get(solvername, {})
+        solver_kwargs.update(kwargs)
+        solver_out = {}
 
-        starttime = time()
         if verbosity > 0:
             print("Using solver '%s'" % solvername)
             print("Solving for %i variables." % len(self.varlocs))
-
-        solver_kwargs = DEFAULT_SOLVER_KWARGS.get(solvername, {})
-        solver_kwargs.update(kwargs)
-
-        infeasibility, solver_out = None, {}
-        original_stdout = sys.stdout
         try:
-            # NOTE: SIDE EFFECTS AS WE LOG SOLVER'S STDOUT AND OUTPUT
-            sys.stdout = SolverLog(verbosity-1, original_stdout)
+            starttime = time()
+            infeasibility, original_stdout = None, sys.stdout
+            sys.stdout = SolverLog(original_stdout, verbosity=verbosity-1)
             solver_out = solverfn(c=self.cs, A=self.A, p_idxs=self.p_idxs,
                                   k=self.k, **solver_kwargs)
-            self.solver_out = solver_out
         except Infeasible as e:
             infeasibility = e
         except Exception as e:
             raise UnknownInfeasible("Something unexpected went wrong.") from e
         finally:
-            self.solver_log = "\n".join(sys.stdout)
+            self.solve_log = "\n".join(sys.stdout)
             sys.stdout = original_stdout
-            # STDOUT HAS BEEN RETURNED. ENDING SIDE EFFECTS
-
-        solver_out["solver"] = solvername
-        solver_out["soltime"] = time() - starttime
-        if verbosity > 0:
-            print("Solving took %.3g seconds." % (solver_out["soltime"],))
+            self.solver_out = solver_out
+            solver_out["solver"] = solvername
+            solver_out["soltime"] = time() - starttime
+            if verbosity > 0:
+                print("Solving took %.3g seconds." % solver_out["soltime"])
 
         if infeasibility:
             if isinstance(infeasibility, PrimalInfeasible):
@@ -183,10 +179,11 @@ class GeometricProgram(CostedConstraintSet, NomialData):
 
         if gen_result:  # NOTE: SIDE EFFECTS
             self._result = self.generate_result(solver_out,
-                                                verbosity, process_result)
+                                                verbosity=verbosity-1,
+                                                process_result=process_result)
             return self.result
 
-        solver_out["gen_result"] = \
+        solver_out["generate_result"] = \
             lambda: self.generate_result(solver_out, dual_check=False)
 
         return solver_out
@@ -198,39 +195,41 @@ class GeometricProgram(CostedConstraintSet, NomialData):
             self._result = self.generate_result(self.solver_out)
         return self._result
 
-    def generate_result(self, solver_out, warn_on_check=True, verbosity=0,
+    def generate_result(self, solver_out, *, verbosity=0,
                         process_result=True, dual_check=True):
         "Generates a full SolutionArray and checks it."
-        if verbosity > 1:
+        if verbosity > 0:
+            soltime = solver_out["soltime"]
             tic = time()
-        soltime = solver_out["soltime"]
+
+        # result packing #
         result = self._compile_result(solver_out)  # NOTE: SIDE EFFECTS
-        if verbosity > 1:
+        if verbosity > 0:
             print("Result packing took %.2g%% of solve time." %
                   ((time() - tic) / soltime * 100))
             tic = time()
 
+        # solution checking #
         try:
             tol = SOLUTION_TOL.get(solver_out["solver"], 1e-5)
             self.check_solution(result["cost"], solver_out['primal'],
                                 solver_out["nu"], solver_out["la"], tol)
-        except Infeasible as e:
-            if warn_on_check:
-                e = str(e)
-                if dual_check or ("Dual" not in e and "nu" not in e):
-                    print("Solution check warning: %s" % e)
-            else:
-                raise e
-        if verbosity > 1:
+        except Infeasible as chkerror:
+            chkwarn = str(chkerror)
+            if dual_check or ("Dual" not in chkwarn and "nu" not in chkwarn):
+                print("Solution check warning: %s" % chkwarn)
+        if verbosity > 0:
             print("Solution checking took %.2g%% of solve time." %
                   ((time() - tic) / soltime * 100))
             tic = time()
 
+        # result processing #
         if process_result:
             self.process_result(result)
-        if verbosity > 1:
+        if verbosity > 0:
             print("Processing results took %.2g%% of solve time." %
                   ((time() - tic) / soltime * 100))
+
         return result
 
     def _generate_nula(self, solver_out):
@@ -357,7 +356,8 @@ class GeometricProgram(CostedConstraintSet, NomialData):
             return (num1 == num2 or abs((num1 - num2) / (num1 + num2)) < tol
                     or abs(num1 - num2) < abstol)
         A = self.A.tocsr()
-        # check primal sol
+
+        # check primal sol #
         primal_exp_vals = self.cs * np.exp(A.dot(primal))   # c*e^Ax
         if not _almost_equal(primal_exp_vals[self.m_idxs[0]].sum(), cost):
             raise Infeasible("Primal solution computed cost did not match"
@@ -367,20 +367,21 @@ class GeometricProgram(CostedConstraintSet, NomialData):
             if primal_exp_vals[mi].sum() > 1 + tol:
                 raise Infeasible("Primal solution violates constraint: %s is "
                                  "greater than 1." % primal_exp_vals[mi].sum())
-        # check dual sol
+
+        # check dual sol #
         # note: follows dual formulation in section 3.1 of
         # http://web.mit.edu/~whoburg/www/papers/hoburg_phd_thesis.pdf
         if not _almost_equal(self.nu_by_posy[0].sum(), 1.):
             raise Infeasible("Dual variables associated with objective sum"
                              " to %s, not 1." % self.nu_by_posy[0].sum())
         if any(nu < 0):
-            if all(nu > -tol/1000.):  # HACK, see issue 528
-                print("Allowing negative dual variables up to %s." % min(nu))
+            minnu = min(nu)
+            if minnu > -tol/1000.:  # HACK, see issue 528
+                print("Allowing negative dual variables up to %s." % minnu)
             else:
                 raise Infeasible("Dual solution has negative entries as"
-                                 " large as %s." % min(nu))
-        ATnu = A.T.dot(nu)
-        if any(np.abs(ATnu) > tol):
+                                 " large as %s." % minnu)
+        if any(np.abs(A.T.dot(nu)) > tol):
             raise Infeasible("Sum of nu^T * A did not vanish.")
         b = np.log(self.cs)
         dual_cost = sum(
@@ -482,8 +483,7 @@ def check_mono_eq_bounds(missingbounds, meq_bounds):
                     still_alive = True
                     break
     for (var, bound) in meq_bounds:
-        boundstr = (", but would gain it from any of these"
-                    " sets of bounds: ")
+        boundstr = (", but would gain it from any of these sets of bounds: ")
         for condition in list(meq_bounds[(var, bound)]):
             meq_bounds[(var, bound)].remove(condition)
             newcond = condition.intersection(missingbounds)

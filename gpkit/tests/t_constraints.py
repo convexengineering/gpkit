@@ -1,4 +1,4 @@
-"""Unit tests for Constraint, MonomialEquality and SignomialInequality"""
+"Unit tests for Constraint, MonomialEquality and SignomialInequality"
 import unittest
 from gpkit import Variable, SignomialsEnabled, Posynomial, VectorVariable
 from gpkit.nomials import SignomialInequality, PosynomialInequality
@@ -14,7 +14,7 @@ import gpkit
 
 
 class TestConstraint(unittest.TestCase):
-    """Tests for Constraint class"""
+    "Tests for Constraint class"
 
     def test_uninited_element(self):
         x = Variable("x")
@@ -76,7 +76,7 @@ class TestConstraint(unittest.TestCase):
             _ = Model(xv.prod(), [xv >= 1, x_ >= 1])["x"]
 
     def test_additive_scalar(self):
-        """Make sure additive scalars simplify properly"""
+        "Make sure additive scalars simplify properly"
         x = Variable('x')
         c1 = 1 >= 10*x
         c2 = 1 >= 5*x + 0.5
@@ -87,16 +87,16 @@ class TestConstraint(unittest.TestCase):
         self.assertEqual(c1posy.hmap, c2posy.hmap)
 
     def test_additive_scalar_gt1(self):
-        """1 can't be greater than (1 + something positive)"""
+        "1 can't be greater than (1 + something positive)"
         x = Variable('x')
 
         def constr():
-            """method that should raise a ValueError"""
+            "method that should raise a ValueError"
             return 1 >= 5*x + 1.1
         self.assertRaises(ValueError, constr)
 
     def test_init(self):
-        """Test Constraint __init__"""
+        "Test Constraint __init__"
         x = Variable('x')
         y = Variable('y')
         c = PosynomialInequality(x, ">=", y**2)
@@ -112,7 +112,7 @@ class TestConstraint(unittest.TestCase):
         self.assertEqual(type((1 >= x).latex()), str)
 
     def test_oper_overload(self):
-        """Test Constraint initialization by operator overloading"""
+        "Test Constraint initialization by operator overloading"
         x = Variable('x')
         y = Variable('y')
         c = (y >= 1 + x**2)
@@ -125,7 +125,7 @@ class TestConstraint(unittest.TestCase):
         self.assertEqual(c2.as_posyslt1(), c.as_posyslt1())
 
     def test_sub_tol(self):
-        """ Test PosyIneq feasibility tolerance under substitutions"""
+        " Test PosyIneq feasibility tolerance under substitutions"
         x = Variable('x')
         y = Variable('y')
         z = Variable('z')
@@ -136,10 +136,10 @@ class TestConstraint(unittest.TestCase):
         self.assertEqual(m.substitutions('x'), m.solve(verbosity=0)('x'))
 
 class TestMonomialEquality(unittest.TestCase):
-    """Test monomial equality constraint class"""
+    "Test monomial equality constraint class"
 
     def test_init(self):
-        """Test initialization via both operator overloading and __init__"""
+        "Test initialization via both operator overloading and __init__"
         x = Variable('x')
         y = Variable('y')
         mono = y**2/x
@@ -162,7 +162,7 @@ class TestMonomialEquality(unittest.TestCase):
         self.assertTrue(x == x)  # pylint: disable=comparison-with-itself
 
     def test_inheritance(self):
-        """Make sure MonomialEquality inherits from the right things"""
+        "Make sure MonomialEquality inherits from the right things"
         F = Variable('F')
         m = Variable('m')
         a = Variable('a')
@@ -170,12 +170,12 @@ class TestMonomialEquality(unittest.TestCase):
         self.assertTrue(isinstance(mec, MonomialEquality))
 
     def test_non_monomial(self):
-        """Try to initialize a MonomialEquality with non-monomial args"""
+        "Try to initialize a MonomialEquality with non-monomial args"
         x = Variable('x')
         y = Variable('y')
 
         def constr():
-            """method that should raise a TypeError"""
+            "method that should raise a TypeError"
             MonomialEquality(x*y, x+y)
         self.assertRaises(TypeError, constr)
 
@@ -195,7 +195,7 @@ class TestMonomialEquality(unittest.TestCase):
 
 
 class TestSignomialInequality(unittest.TestCase):
-    """Test Signomial constraints"""
+    "Test Signomial constraints"
 
     def test_becomes_posy_sensitivities(self):
         # pylint: disable=invalid-name
@@ -265,16 +265,18 @@ class TestSignomialInequality(unittest.TestCase):
 
 
 class TestLoose(unittest.TestCase):
-    """Test loose constraint set"""
+    "Test loose constraint set"
 
     def test_posyconstr_in_gp(self):
-        """Tests loose constraint set with solve()"""
+        "Tests loose constraint set with solve()"
         x = Variable('x')
         x_min = Variable('x_{min}', 2)
-        m = Model(x, [Loose([x >= x_min], raiseerror=True),
+        m = Model(x, [Loose([x >= x_min]),
                       x >= 1])
-        with self.assertRaises(ValueError):
-            m.solve(verbosity=0)
+        sol = m.solve(verbosity=0)
+        self.assertIs(
+            sol["warnings"]["Unexpectedly Tight Constraints"][0][1], m[0][0])
+        self.assertAlmostEqual(m[0][0].relax_sensitivity, +1)
         m.substitutions[x_min] = 0.5
         self.assertAlmostEqual(m.solve(verbosity=0)["cost"], 1)
 
@@ -285,26 +287,30 @@ class TestLoose(unittest.TestCase):
         y_min = Variable('y_min', 2)
         with SignomialsEnabled():
             sig_constraint = (x + y >= 3.5)
-        m = Model(x*y, [Loose([x >= y], raiseerror=True),
+        m = Model(x*y, [Loose([x >= y]),
                         x >= x_min, y >= y_min, sig_constraint])
-        with self.assertRaises(ValueError):
-            m.localsolve(verbosity=0)
+        sol = m.localsolve(verbosity=0)
+        self.assertIs(
+            sol["warnings"]["Unexpectedly Tight Constraints"][0][1], m[0][0])
+        self.assertAlmostEqual(m[0][0].relax_sensitivity, +1)
         m.substitutions[x_min] = 2
         m.substitutions[y_min] = 1
         self.assertAlmostEqual(m.localsolve(verbosity=0)["cost"], 2.5, 5)
 
 
 class TestTight(unittest.TestCase):
-    """Test tight constraint set"""
+    "Test tight constraint set"
 
     def test_posyconstr_in_gp(self):
-        """Tests tight constraint set with solve()"""
+        "Tests tight constraint set with solve()"
         x = Variable('x')
         x_min = Variable('x_{min}', 2)
-        m = Model(x, [Tight([x >= 1], raiseerror=True),
+        m = Model(x, [Tight([x >= 1]),
                       x >= x_min])
-        with self.assertRaises(ValueError):
-            m.solve(verbosity=0)
+        sol = m.solve(verbosity=0)
+        self.assertIs(
+            sol["warnings"]["Unexpectedly Loose Constraints"][0][1], m[0][0])
+        self.assertAlmostEqual(m[0][0].rel_diff, 1)
         m.substitutions[x_min] = 0.5
         self.assertAlmostEqual(m.solve(verbosity=0)["cost"], 1)
 
@@ -313,31 +319,35 @@ class TestTight(unittest.TestCase):
         y = Variable('y')
         with SignomialsEnabled():
             sig_constraint = (x + y >= 0.1)
-        m = Model(x*y, [Tight([x >= y], raiseerror=True),
+        m = Model(x*y, [Tight([x >= y]),
                         x >= 2, y >= 1, sig_constraint])
-        with self.assertRaises(ValueError):
-            m.localsolve(verbosity=0)
+        sol = m.localsolve(verbosity=0)
+        self.assertIs(
+            sol["warnings"]["Unexpectedly Loose Constraints"][0][1], m[0][0])
+        self.assertAlmostEqual(m[0][0].rel_diff, 1)
         m.pop(1)
         self.assertAlmostEqual(m.localsolve(verbosity=0)["cost"], 1, 5)
 
     def test_sigconstr_in_sp(self):
-        """Tests tight constraint set with localsolve()"""
+        "Tests tight constraint set with localsolve()"
         x = Variable('x')
         y = Variable('y')
         x_min = Variable('x_{min}', 2)
         y_max = Variable('y_{max}', 0.5)
         with SignomialsEnabled():
-            m = Model(x, [Tight([x + y >= 1], raiseerror=True),
+            m = Model(x, [Tight([x + y >= 1]),
                           x >= x_min,
                           y <= y_max])
-        with self.assertRaises(ValueError):
-            m.localsolve(verbosity=0)
+        sol = m.localsolve(verbosity=0)
+        self.assertIs(
+            sol["warnings"]["Unexpectedly Loose Constraints"][0][1], m[0][0])
+        self.assertAlmostEqual(m[0][0].rel_diff, 0.6)
         m.substitutions[x_min] = 0.5
         self.assertAlmostEqual(m.localsolve(verbosity=0)["cost"], 0.5)
 
 
 class TestBounded(unittest.TestCase):
-    """Test bounded constraint set"""
+    "Test bounded constraint set"
 
     def test_substitution_issue905(self):
         x = Variable("x")

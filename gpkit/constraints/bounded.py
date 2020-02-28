@@ -1,5 +1,5 @@
 "Implements Bounded"
-from collections import defaultdict, OrderedDict
+from collections import defaultdict
 import numpy as np
 from .. import Variable
 from .set import ConstraintSet
@@ -86,13 +86,12 @@ class Bounded(ConstraintSet):
     def check_boundaries(self, result, *, verbosity=0):
         "Creates (and potentially prints) a dictionary of unbounded variables."
         out = defaultdict(set)
-        verbosity = self.verbosity if verbosity is None else verbosity
         for i, varkey in enumerate(self.bound_varkeys):
             value = mag(result["variables"][varkey])
             constraints = self["variable bounds"][i]
             if self.lowerbound:
                 if constraints[0].relax_sensitivity >= self.sens_threshold:
-                        out["sensitive to lower bound"].add(varkey)
+                    out["sensitive to lower bound"].add(varkey)
                 if np.log(value/self.lowerbound) <= self.logtol_threshold:
                     out["value near lower bound"].add(varkey)
             if self.upperbound:

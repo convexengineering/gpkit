@@ -10,10 +10,9 @@ class Tight(ConstraintSet):
     "ConstraintSet whose inequalities must result in an equality."
     reltol = 1e-3
 
-    def __init__(self, constraints, reltol=None, raiseerror=False, **kwargs):
+    def __init__(self, constraints, *, reltol=None, **kwargs):
         super().__init__(constraints)
         self.reltol = reltol or self.reltol
-        self.raiseerror = raiseerror
         self.__dict__.update(kwargs)  # NOTE: for Berk's use in labelling
 
     def process_result(self, result):
@@ -45,13 +44,11 @@ class Tight(ConstraintSet):
                        (constraint.left, constraint.oper, constraint.right,
                         leftsubbed, rightsubbed,
                         self.reltol*100, mag(rel_diff)*100))
-                if self.raiseerror:
-                    raise ValueError(msg)
                 if hasattr(leftsubbed, "magnitude"):
                     rightsubbed = rightsubbed.to(leftsubbed.units).magnitude
                     leftsubbed = leftsubbed.magnitude
                 constraint.tightvalues = (leftsubbed, constraint.oper,
                                           rightsubbed)
                 constraint.rel_diff = rel_diff
-                appendsolwarning(msg, constraint,
-                                 result, "Unexpectedly Loose Constraints")
+                appendsolwarning(msg, constraint, result,
+                                 "Unexpectedly Loose Constraints")

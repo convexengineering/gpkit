@@ -166,7 +166,7 @@ class SequentialGeometricProgram(CostedConstraintSet):
             rel_improvement = abs(prevcost - cost)/(prevcost + cost)
             prevcost = cost
         # solved successfully!
-        self.result = gp.generate_result(solver_out, verbosity)
+        self.result = gp.generate_result(solver_out, verbosity=verbosity-1)
         self.result["soltime"] = time() - starttime
         if verbosity > 0:
             print("Solving took %i GP solves" % len(self.gps)
@@ -200,7 +200,7 @@ class SequentialGeometricProgram(CostedConstraintSet):
     def results(self):
         "Creates and caches results from the raw solver_outs"
         if not self._results:
-            self._results = [so["gen_result"]() for so in self.solver_outs]
+            self._results = [o["generate_result"]() for o in self.solver_outs]
         return self._results
 
     def _fill_x0(self, x0):

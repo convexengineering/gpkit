@@ -13,6 +13,8 @@ class CostedConstraintSet(ConstraintSet):
     constraints : Iterable
     substitutions : dict (None)
     """
+    lineage = None
+
     def __init__(self, cost, constraints, substitutions=None):
         self.cost = maybe_flatten(cost)
         if isinstance(self.cost, np.ndarray):  # if it's still a vector
