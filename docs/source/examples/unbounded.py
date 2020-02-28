@@ -11,4 +11,6 @@ m = Model(1/x, Bounded(constraints))
 # by default, prints bounds warning during solve
 sol = m.solve(verbosity=0)
 print(sol.summary())
-print("sol['boundedness'] is: %s" % sol["boundedness"])
+# but they can also be accessed from the solution:
+assert (sol["boundedness"]["value near upper bound"]
+        == sol["boundedness"]["sensitive to upper bound"])

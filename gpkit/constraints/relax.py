@@ -124,7 +124,7 @@ class ConstantsRelaxed(ConstraintSet):
         with NamedVariables("Relax") as (self.lineage, _):
             pass
         self._unrelaxmap = {}
-        for key, value in constants.items():
+        for key, value in sorted(constants.items(), key=lambda i: i[0].eqstr):
             if value == 0:
                 continue
             if include_only and key.name not in include_only:
