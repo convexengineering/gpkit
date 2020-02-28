@@ -617,7 +617,7 @@ class TestSP(unittest.TestCase):
         m.localsolve(verbosity=0, solver=self.solver)
         del m.substitutions[x_min]
         m.cost = 1/x_min
-        self.assertNotIn(x_min, m.sp().substitutions)
+        self.assertNotIn(x_min, m.sp().substitutions)  # pylint: disable=no-member
 
     def test_unbounded_debugging(self):
         "Test nearly-dual-feasible problems"

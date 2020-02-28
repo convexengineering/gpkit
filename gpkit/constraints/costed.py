@@ -28,10 +28,9 @@ class CostedConstraintSet(ConstraintSet):
             self.idxlookup = {k: i for i, k in enumerate(constraints)}
             constraints = constraints.values()
         if not isinstance(constraints, ConstraintSet):
-            constraints = ConstraintSet(constraints)
+            list.__init__(self, ConstraintSet(constraints))
         else:
-            constraints = [constraints]
-        list.__init__(self, constraints)
+            list.__init__(self, [constraints])
         self.substitutions = substitutions or {}
         if varkeys:
             self.reset_varkeys()

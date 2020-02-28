@@ -100,7 +100,7 @@ With constants relaxed individually
 
 Cost
 ----
- [Relax2.x_max, Relax2.x_min].prod()·x^0.01
+ [Relax2.x_min, Relax2.x_max].prod()·x^0.01
 
 Constraints
 -----------

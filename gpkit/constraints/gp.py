@@ -156,16 +156,16 @@ class GeometricProgram(CostedConstraintSet, NomialData):
 
         # NOTE: SIDE EFFECTS AS WE LOG SOLVER'S STDOUT AND OUTPUT
         original_stdout = sys.stdout
-        self.solver_log = SolverLog(verbosity-1, original_stdout)
+        log = SolverLog(verbosity-1, original_stdout)
         try:
-            sys.stdout = self.solver_log   # CAPTURED
+            sys.stdout = log   # CAPTURED
             solver_out = solverfn(c=self.cs, A=self.A, p_idxs=self.p_idxs,
                                   k=self.k, **solver_kwargs)
             self.solver_out = solver_out
         finally:
             sys.stdout = original_stdout
         # STDOUT HAS BEEN RETURNED. ENDING SIDE EFFECTS.
-        self.solver_log = "\n".join(self.solver_log)
+        self.solver_log = "\n".join(log)
 
         solver_out["solver"] = solvername
         solver_out["soltime"] = time() - starttime

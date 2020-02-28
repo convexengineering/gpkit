@@ -77,8 +77,8 @@ class Sankey:
                 value = -cost_senss[key]  # sensitivites flow _from_ cost
                 self.links[source, "(objective)"] += value
                 if printing:
-                    print ("(objective) adds %+.3g to the sensitivity"
-                           " of %s" % (-value, key))
+                    print("(objective) adds %+.3g to the sensitivity"
+                          " of %s" % (-value, key))
                     print("(objective) is", self.gp.cost, "\n")
         for constr in constrset:
             if key not in constr.v_ss:
@@ -100,8 +100,8 @@ class Sankey:
                 else:
                     source = self.constr_name[constr]
                 if printing:
-                    print ("%s adds %+.3g to the overall sensitivity of %s"
-                           % (source, value, key))
+                    print("%s adds %+.3g to the overall sensitivity of %s"
+                          % (source, value, key))
                     print(source, "is", constr.str_without("units"), "\n")
                 if ((isinstance(constr, MonomialEquality)
                      or abs(value) >= INSENSITIVE)

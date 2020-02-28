@@ -1,6 +1,6 @@
 "Implements SignomialEquality"
 from .set import ConstraintSet
-from ..nomials import SingleSignomialEquality
+from ..nomials import SingleSignomialEquality as SSE
 from ..nomials.array import array_constraint
 
 
@@ -9,7 +9,7 @@ class SignomialEquality(ConstraintSet):
 
     def __init__(self, left, right):
         if hasattr(left, "shape") or hasattr(right, "shape"):
-            cns = array_constraint("=", SingleSignomialEquality)(left, right)
+            ConstraintSet.__init__(self,
+                                   array_constraint("=", SSE)(left, right))
         else:
-            cns = [SingleSignomialEquality(left, right)]
-        ConstraintSet.__init__(self, cns)
+            ConstraintSet.__init__(self, [SSE(left, right)])

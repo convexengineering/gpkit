@@ -45,7 +45,7 @@ class TestVarKey(unittest.TestCase):
         z = VectorVariable(3, "z")
         a = VectorVariable((3, 2), "a")
 
-        print(w >= x)
+        # print(w >= x)  # TODO: this always prints the vector on the left
         self.assertEqual(str(3*(x + y)*z), "3·(x[:] + y[:])·z[:]")
         nni = 3
         ii = np.tile(np.arange(1., nni+1.), a.shape[1:]+(1,)).T
