@@ -108,7 +108,7 @@ class KeyDict(dict):
             if not self.varkeys:
                 self.update_keymap()
             elif key in self.varkeys:  # pylint:disable=unsupported-membership-test
-                keys = self.varkeys[key]  # pylint:disable=unsubscriptable-module
+                keys = self.varkeys[key]  # pylint:disable=unsubscriptable-object
                 origkey, key = key, next(iter(keys))
                 if len(keys) > 1:
                     if (key.veckey
