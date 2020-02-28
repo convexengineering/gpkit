@@ -12,8 +12,6 @@ from gpkit.constraints.relax import ConstraintsRelaxed
 from gpkit.constraints.relax import ConstraintsRelaxedEqually
 from gpkit.constraints.relax import ConstantsRelaxed
 
-if sys.version_info >= (3, 0):
-    unicode = str  # pylint:disable=redefined-builtin,invalid-name
 
 NDIGS = {"cvxopt": 4, "mosek": 5, "mosek_cli": 5, 'mosek_conif': 4}
 # name: decimal places of accuracy
@@ -44,9 +42,9 @@ class TestGP(unittest.TestCase):
         prob = Model(cost=(x + 2*y),
                      constraints=[x*y >= 1])
         sol = prob.solve(solver=self.solver, verbosity=0)
-        self.assertEqual(type(prob.latex()), unicode)
+        self.assertEqual(type(prob.latex()), str)
         # pylint: disable=protected-access
-        self.assertEqual(type(prob._repr_latex_()), unicode)
+        self.assertEqual(type(prob._repr_latex_()), str)
         self.assertAlmostEqual(sol("x"), np.sqrt(2.), self.ndig)
         self.assertAlmostEqual(sol("y"), 1/np.sqrt(2.), self.ndig)
         self.assertAlmostEqual(sol("x") + 2*sol("y"),
@@ -756,8 +754,8 @@ class TestModelNoSolve(unittest.TestCase):
     def test_modelcontainmentprinting(self):
         t = Thing2()
         self.assertEqual(t["c"].key.models, ("Thing2", "Thing"))
-        self.assertIsInstance(t.str_without(), unicode)
-        self.assertIsInstance(t.latex(), unicode)
+        self.assertIsInstance(t.str_without(), str)
+        self.assertIsInstance(t.latex(), str)
 
     def test_no_naming_on_var_access(self):
         # make sure that analysis models don't add their names to

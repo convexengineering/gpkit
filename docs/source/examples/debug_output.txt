@@ -19,7 +19,7 @@ and these constants relaxed:
 
 Solves with these constraints relaxed:
    1: 3500% relaxed, from x [ft] >= 1 [yd] 
-                     to 36*x [ft] >= 1 [yd] 
+                     to 36·x [ft] >= 1 [yd] 
 
 >> Success!
 

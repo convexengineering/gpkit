@@ -12,9 +12,6 @@ from gpkit.tests.helpers import run_tests
 
 # pylint: disable=invalid-name,attribute-defined-outside-init,unused-variable
 
-if sys.version_info >= (3, 0):
-    unicode = str  # pylint:disable=redefined-builtin,invalid-name
-
 
 class TestNomialSubs(unittest.TestCase):
     """Test substitution for nomial-family objects"""
@@ -280,7 +277,7 @@ class TestModelSubs(unittest.TestCase):
         concat_cost = concatm.solve(verbosity=0)["cost"]
         almostequal = self.assertAlmostEqual
         yard, cm = gpkit.ureg("yard"), gpkit.ureg("cm")
-        if not isinstance(a["x"].key.units, unicode):
+        if not isinstance(a["x"].key.units, str):
             almostequal(1/yard/a.solve(verbosity=0)["cost"], 1, 5)
             almostequal(1*cm/b.solve(verbosity=0)["cost"], 1, 5)
             almostequal(1*cm/yard/concat_cost, 1, 5)
@@ -289,13 +286,13 @@ class TestModelSubs(unittest.TestCase):
         self.assertEqual(a1["x"].key.lineage, (("Above", 0),))
         m = Model(a1["x"], [a1, b1, b1["x"] == a1["x"]])
         sol = m.solve(verbosity=0)
-        if not isinstance(a1["x"].key.units, unicode):
+        if not isinstance(a1["x"].key.units, str):
             almostequal(1*cm/sol["cost"], 1, 5)
         a1, b1 = Above(), Below()
         self.assertEqual(a1["x"].key.lineage, (("Above", 1),))
         m = Model(b1["x"], [a1, b1, b1["x"] == a1["x"]])
         sol = m.solve(verbosity=0)
-        if not isinstance(b1["x"].key.units, unicode):
+        if not isinstance(b1["x"].key.units, str):
             almostequal(1*gpkit.ureg.cm/sol["cost"], 1, 5)
         self.assertIn(a1["x"], sol["variables"])
         self.assertIn(b1["x"], sol["variables"])

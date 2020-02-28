@@ -21,9 +21,6 @@ def load_settings(path=None, firstattempt=True):
                 # unless they're the solver list
                 if len(value) == 1 and name != "installed_solvers":
                     settings_[name] = value[0]
-                if sys.version_info >= (3, 0) and name == "installed_solvers":
-                    if "mosek" in value:
-                        value.remove("mosek")
     except IOError:
         settings_ = {"installed_solvers": [""]}
     if (settings_["installed_solvers"] == [""]

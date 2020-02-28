@@ -1,6 +1,5 @@
 # -*- coding: utf-8 -*-
 "Repository for representation standards"
-from __future__ import unicode_literals, print_function
 import sys
 import re
 import numpy as np
@@ -8,15 +7,9 @@ from .small_classes import Quantity, Numbers
 from .small_scripts import try_str_without
 
 
-if sys.version_info >= (3, 0):
-    unichr = chr  # pylint: disable=redefined-builtin,invalid-name
-    PI_STR = "π"  # fails on some external models if it's "π"
-    UNICODE_EXPONENTS = True
-    UNIT_FORMATTING = ":P~"  # ":P~" for unicode exponents in units
-else:
-    PI_STR = "PI"  # fails on some external models if it's "π"
-    UNICODE_EXPONENTS = False
-    UNIT_FORMATTING = ":~"  # ":P~" for unicode exponents in units
+PI_STR = "π"  # fails on some external models if it's "π"
+UNICODE_EXPONENTS = True
+UNIT_FORMATTING = ":P~"  # ":P~" for unicode exponents in units
 
 
 def lineagestr(lineage, modelnums=True):
@@ -72,7 +65,7 @@ def parenthesize(string, addi=True, mult=True):
     "Parenthesizes a string if it needs it and isn't already."
     parensless = string if "(" not in string else INSIDE_PARENS.sub("", string)
     bare_addi = (" + " in parensless or " - " in parensless)
-    bare_mult = ("*" in parensless or "/" in parensless)
+    bare_mult = ("·" in parensless or "/" in parensless)
     if parensless and (addi and bare_addi) or (mult and bare_mult):
         return "(%s)" % string
     return string
@@ -111,7 +104,7 @@ class GPkitObject(object):
             elif right == "1":
                 aststr = left
             else:
-                aststr = "%s*%s" % (left, right)
+                aststr = "%s·%s" % (left, right)
         elif oper == "div":
             left = parenthesize(strify(values[0], excluded), mult=False)
             right = parenthesize(strify(values[1], excluded))
@@ -127,10 +120,11 @@ class GPkitObject(object):
             if left == "1":
                 aststr = "1"
             elif UNICODE_EXPONENTS and int(x) == x and x >= 2 and x <= 9:
-                if int(x) in (2, 3):
-                    aststr = "%s%s" % (left, unichr(176+int(x)))
-                elif int(x) in (4, 5, 6, 7, 8, 9):
-                    aststr = "%s%s" % (left, unichr(8304+int(x)))
+                x = int(x)
+                if x in (2, 3):
+                    aststr = "%s%s" % (left, chr(176+x))
+                elif x in (4, 5, 6, 7, 8, 9):
+                    aststr = "%s%s" % (left, chr(8304+x))
             else:
                 aststr = "%s^%s" % (left, x)
         elif oper == "prod":  # TODO: only do if it makes a shorter string

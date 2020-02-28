@@ -22,8 +22,8 @@ Constraints
    "minimum relaxation":
      C >= 1
    "relaxed constraints":
-     x <= C*x_max
-     x_min <= C*x
+     x <= C·x_max
+     x_min <= C·x
 
 Cost
 ----
@@ -48,8 +48,8 @@ x_min : +0.5
 
 Tightest Constraints
 --------------------
-  +0.5 : x <= C*x_max
-  +0.5 : x_min <= C*x
+  +0.5 : x <= C·x_max
+  +0.5 : x_min <= C·x
 
 
 With constraints relaxed individually
@@ -57,15 +57,15 @@ With constraints relaxed individually
 
 Cost
 ----
- C[:].prod()*x^0.01
+ C[:].prod()·x^0.01
 
 Constraints
 -----------
    "minimum relaxation":
      C[:] >= 1
    "relaxed constraints":
-     x <= C[0]*x_max
-     x_min <= C[1]*x
+     x <= C[0]·x_max
+     x_min <= C[1]·x
 
 Cost
 ----
@@ -90,8 +90,8 @@ x_max : -0.99
 
 Tightest Constraints
 --------------------
-    +1 : x_min <= C[1]*x
- +0.99 : x <= C[0]*x_max
+    +1 : x_min <= C[1]·x
+ +0.99 : x <= C[0]·x_max
  +0.01 : C[0] >= 1
 
 
@@ -100,7 +100,7 @@ With constants relaxed individually
 
 Cost
 ----
- [Relax2.x_max, Relax2.x_min].prod()*x^0.01
+ [Relax2.x_max, Relax2.x_min].prod()·x^0.01
 
 Constraints
 -----------
@@ -112,11 +112,11 @@ Constraints
      "x_max":
        Relax2.x_max >= 1
        x_max >= Relax2.OriginalValues.x_max/Relax2.x_max
-       x_max <= Relax2.OriginalValues.x_max*Relax2.x_max
+       x_max <= Relax2.OriginalValues.x_max·Relax2.x_max
      "x_min":
        Relax2.x_min >= 1
        x_min >= Relax2.OriginalValues.x_min/Relax2.x_min
-       x_min <= Relax2.OriginalValues.x_min*Relax2.x_min
+       x_min <= Relax2.OriginalValues.x_min·Relax2.x_min
 
 Cost
 ----
@@ -148,6 +148,6 @@ Tightest Constraints
     +1 : x >= x_min
     +1 : x_min >= Relax2.OriginalValues.x_min/Relax2.x_min
  +0.99 : x <= x_max
- +0.99 : x_max <= Relax2.OriginalValues.x_max*Relax2.x_max
+ +0.99 : x_max <= Relax2.OriginalValues.x_max·Relax2.x_max
 
 

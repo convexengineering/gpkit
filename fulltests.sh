@@ -1,3 +1,3 @@
-python -c "from gpkit.tests import run; run()" 
+python3 -c "from gpkit.tests import run; run()" 
 rm *.pkl
 rm solution.*

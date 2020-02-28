@@ -9,9 +9,6 @@ from gpkit.small_classes import HashVector
 from gpkit.exceptions import InvalidPosynomial
 import gpkit
 
-if sys.version_info >= (3, 0):
-    unicode = str  # pylint:disable=redefined-builtin,invalid-name
-
 
 class TestMonomial(unittest.TestCase):
     """TestCase for the Monomial class"""
@@ -74,15 +71,14 @@ class TestMonomial(unittest.TestCase):
         y = Variable("y")
         m = 5*x**2/y
         r = m.__repr__()
-        self.assertEqual(type(r), unicode)
-        if sys.version_info <= (3, 0):
-            self.assertEqual(repr(m), 'gpkit.Monomial(5*x^2/y)')
+        self.assertEqual(type(r), str)
+        self.assertEqual(repr(m), 'gpkit.Monomial(5·x²/y)')
 
     def test_latex(self):
         "Test latex string creation"
         x = Variable("x")
         m = Monomial({'x': 2, 'y': -1}, 5).latex()
-        self.assertEqual(type(m), unicode)
+        self.assertEqual(type(m), str)
         self.assertEqual((5*x).latex(), '5x')
 
     def test_str_with_units(self):
@@ -91,7 +87,7 @@ class TestMonomial(unittest.TestCase):
         rho = Variable('rho', units='kg/m^3')
         x = rho*S
         xstr = x.str_without()
-        self.assertEqual(type(xstr), unicode)
+        self.assertEqual(type(xstr), str)
         self.assertTrue('S' in xstr and 'rho' in xstr)
 
     def test_add(self):
@@ -235,8 +231,7 @@ class TestSignomial(unittest.TestCase):
         x = Variable('x')
         y = Variable('y')
         with SignomialsEnabled():
-            if sys.version_info <= (3, 0):
-                self.assertEqual(str(1 - x - y**2 - 1), "1 - x - y^2 - 1")
+            self.assertEqual(str(1 - x - y**2 - 1), "1 - x - y² - 1")
             self.assertEqual((1 - x/y**2).latex(), "-\\frac{x}{y^{2}} + 1")
             _ = hash(1 - x/y**2)
         self.assertRaises(TypeError, lambda: x-y)

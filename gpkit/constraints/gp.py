@@ -36,9 +36,6 @@ def _get_solver(solver, kwargs):
     elif solver == "mosek_cli":
         from .._mosek import cli_expopt
         solverfn = cli_expopt.imize_fn(**kwargs)
-    elif solver == "mosek":
-        from .._mosek import expopt
-        solverfn = expopt.imize
     elif solver == 'mosek_conif':
         from .._mosek import mosek_conif
         solverfn = mosek_conif.mskoptimize

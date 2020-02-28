@@ -3,6 +3,7 @@ from __future__ import unicode_literals, print_function
 from .data import NomialData
 from ..small_classes import Numbers, FixedScalar
 from ..small_scripts import nomial_latex_helper
+from ..repr_conventions import UNICODE_EXPONENTS
 
 
 class Nomial(NomialData):
@@ -25,15 +26,23 @@ class Nomial(NomialData):
                     if x != 0:
                         varstr = var.str_without(excluded)
                         if x != 1:
-                            varstr += "^%.2g" % x
+                            if (UNICODE_EXPONENTS and int(x) == x
+                                and x >= 2 and x <= 9):
+                                    x = int(x)
+                                    if x in (2, 3):
+                                        varstr += chr(176+x)
+                                    elif x in (4, 5, 6, 7, 8, 9):
+                                        varstr += chr(8304+x)
+                            else:
+                                varstr += "^%.2g" % x
                         varstrs.append(varstr)
                 varstrs.sort()
                 cstr = "%.3g" % c
                 if cstr == "-1" and varstrs:
-                    mstrs.append("-" + "*".join(varstrs))
+                    mstrs.append("-" + "·".join(varstrs))
                 else:
                     cstr = [cstr] if (cstr != "1" or not varstrs) else []
-                    mstrs.append("*".join(cstr + varstrs))
+                    mstrs.append("·".join(cstr + varstrs))
         return " + ".join(sorted(mstrs)) + units
 
     def latex(self, excluded=()):

@@ -6,9 +6,6 @@ import codecs
 import os
 import importlib
 
-if sys.version_info >= (3, 0):
-    reload = importlib.reload  # pylint: disable=redefined-builtin,invalid-name,no-member
-
 
 def generate_example_tests(path, testclasses, solvers=None, newtest_fn=None):
     """
@@ -98,7 +95,7 @@ def logged_example_testcase(name, imported, path):
             if name not in imported:
                 imported[name] = importlib.import_module(name)
             else:
-                reload(imported[name])
+                importlib.reload(imported[name])
         getattr(self, name)(imported[name])
     return test
 
@@ -165,12 +162,8 @@ class StdoutCaptured(object):
     def __enter__(self):
         "Capture stdout"
         self.original_stdout = sys.stdout
-        logfile = (open(self.logfilepath, mode="w")
-                   if self.logfilepath else NullFile())
-        if sys.version_info >= (3, 0):
-            sys.stdout = logfile
-        else:
-            sys.stdout = codecs.getwriter("UTF-8")(logfile)
+        sys.stdout = (open(self.logfilepath, mode="w")
+                      if self.logfilepath else NullFile())
 
     def __exit__(self, *args):
         "Return stdout"
