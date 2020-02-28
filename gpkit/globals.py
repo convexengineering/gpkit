@@ -57,9 +57,6 @@ settings = load_settings()
 class SignomialsEnabledMeta(type):
     "Metaclass to implement falsiness for SignomialsEnabled"
 
-    def __nonzero__(cls):
-        return 1 if cls._true else 0
-
     def __bool__(cls):
         return cls._true
 

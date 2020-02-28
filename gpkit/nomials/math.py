@@ -588,14 +588,10 @@ class MonomialEquality(PosynomialInequality):
             p.from_meq = True  # pylint: disable=attribute-defined-outside-init
         return out
 
-    def __nonzero__(self):
+    def __bool__(self):
         'A constraint not guaranteed to be satisfied evaluates as "False".'
         return bool(self.left.c == self.right.c
                     and self.left.exp == self.right.exp)
-
-    def __bool__(self):
-        'A constraint not guaranteed to be satisfied  evaluates as "False".'
-        return self.__nonzero__()
 
     def sens_from_dual(self, la, nu, result):
         "Returns the variable/constraint sensitivities from lambda/nu"
