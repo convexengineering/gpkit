@@ -51,7 +51,7 @@ class CostedConstraintSet(ConstraintSet):
         description = ["", "Cost", "----",
                        " %s" % self.cost.str_without(excluded),
                        "", "Constraints", "-----------"]
-        if getattr(self, "lineage", None):
+        if self.lineage:
             name, num = self.lineage[-1]
             fullname = "%s" % (name if not num else name + str(num))
             description = [fullname, "="*len(fullname)] + description

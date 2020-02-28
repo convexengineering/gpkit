@@ -1,5 +1,5 @@
 "Implement Variable and ArrayVariable classes"
-from collections import Iterable
+from collections.abc import Iterable
 import numpy as np
 from .data import NomialData
 from .array import NomialArray

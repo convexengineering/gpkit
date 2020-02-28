@@ -1,6 +1,6 @@
 """Defines SolutionArray class"""
 import re
-from collections import Iterable
+from collections.abc import Iterable
 import pickle
 import numpy as np
 from .nomials import NomialArray

@@ -40,6 +40,7 @@ def _sort_constrs(item):
 # pylint: disable=too-many-instance-attributes
 class ConstraintSet(list, GPkitObject):
     "Recursive container for ConstraintSets and Inequalities"
+    lineage = None
     varkeys = None
     unique_varkeys = frozenset()
     # idxlookup holds the names of the top-level constraintsets

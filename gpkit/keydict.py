@@ -1,5 +1,6 @@
 "Implements KeyDict and KeySet classes"
-from collections import defaultdict, Hashable
+from collections import defaultdict
+from collections.abc import Hashable
 import numpy as np
 from .small_classes import Numbers, Quantity, FixedScalar
 from .small_scripts import is_sweepvar, isnan, SweepValue
@@ -106,8 +107,8 @@ class KeyDict(dict):
             idx = None
             if not self.varkeys:
                 self.update_keymap()
-            elif key in self.varkeys:
-                keys = self.varkeys[key]
+            elif key in self.varkeys:  # pylint:disable=unsupported-membership-test
+                keys = self.varkeys[key]  # pylint:disable=unsubscriptable-module
                 origkey, key = key, next(iter(keys))
                 if len(keys) > 1:
                     if (key.veckey
