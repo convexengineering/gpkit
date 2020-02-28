@@ -15,35 +15,34 @@ class Nomial(NomialData):
         units = "" if "units" in excluded else self.unitstr(" [%s]")
         if hasattr(self, "key"):
             return self.key.str_without(excluded) + units  # pylint: disable=no-member
-        elif self.ast:
+        if self.ast:
             return self.parse_ast(excluded) + units
-        else:
-            mstrs = []
-            for exp, c in self.hmap.items():
-                varstrs = []
-                for (var, x) in exp.items():
-                    if not x:
-                        continue
-                    varstr = var.str_without(excluded)
-                    if x == 1:
-                        pass
-                    elif (UNICODE_EXPONENTS and int(x) == x
-                          and 2 <= x and x <= 9):
-                        x = int(x)
-                        if x in (2, 3):
-                            varstr += chr(176+x)
-                        elif x in (4, 5, 6, 7, 8, 9):
-                            varstr += chr(8304+x)
-                    else:
-                        varstr += "^%.2g" % x
-                    varstrs.append(varstr)
-                varstrs.sort()
-                cstr = "%.3g" % c
-                if cstr == "-1" and varstrs:
-                    mstrs.append("-" + "·".join(varstrs))
+        mstrs = []
+        for exp, c in self.hmap.items():
+            varstrs = []
+            for (var, x) in exp.items():
+                if not x:
+                    continue
+                varstr = var.str_without(excluded)
+                if x == 1:
+                    pass
+                elif (UNICODE_EXPONENTS and int(x) == x
+                      and 2 <= x and x <= 9):
+                    x = int(x)
+                    if x in (2, 3):
+                        varstr += chr(176+x)
+                    elif x in (4, 5, 6, 7, 8, 9):
+                        varstr += chr(8304+x)
                 else:
-                    cstr = [cstr] if (cstr != "1" or not varstrs) else []
-                    mstrs.append("·".join(cstr + varstrs))
+                    varstr += "^%.2g" % x
+                varstrs.append(varstr)
+            varstrs.sort()
+            cstr = "%.3g" % c
+            if cstr == "-1" and varstrs:
+                mstrs.append("-" + "·".join(varstrs))
+            else:
+                cstr = [cstr] if (cstr != "1" or not varstrs) else []
+                mstrs.append("·".join(cstr + varstrs))
         return " + ".join(sorted(mstrs)) + units
 
     def latex(self, excluded=()):

@@ -5,12 +5,8 @@ WORKSPACE=$(git rev-parse --show-toplevel)
 
 # Calling pylint directly will not work correcly in a virtualenv if pylint is not installed in the venv
 # Using python with the pylint script will always work properly in a virtualenv
-if [[ `which pylint3` ]]; then
-  PYLINT=`which pylint3`
-else
-  PYLINT=`which pylint`
-fi
-which $PYLINT
+PYLINT=`which pylint`
+echo $PYLINT
 $PYLINT --version
 
 # Add gpkit to the python path so that pylint can import gpkit when analyzing the examples directory

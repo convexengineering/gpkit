@@ -366,22 +366,23 @@ class ConstraintSetView:
         if it's an array, return it at the specified index;
         otherwise, raise an error.
         """
-        if hasattr(self.constraintset, attr):
-            value = getattr(self.constraintset, attr)
-            if isinstance(value, ConstraintSet):
-                return ConstraintSetView(value, self.index)
-            if not hasattr(value, "shape"):
-                raise ValueError("attribute %s with value %s did not have"
-                                 " a shape, so ConstraintSetView cannot"
-                                 " return an indexed view." % (attr, value))
-            index = self.index
-            newdims = len(value.shape) - len(self.index)
-            if newdims > 0:  # indexes are put last to match Vectorize
-                index = (slice(None),)*newdims + index
-            return value[index]
-        else:
+        if not hasattr(self.constraintset, attr):
             raise AttributeError("the underlying ConstraintSet does not have"
                                  "attribute %s." % attr)
+
+        value = getattr(self.constraintset, attr)
+        if isinstance(value, ConstraintSet):
+            return ConstraintSetView(value, self.index)
+        if not hasattr(value, "shape"):
+            raise ValueError("attribute %s with value %s did not have"
+                             " a shape, so ConstraintSetView cannot"
+                             " return an indexed view." % (attr, value))
+        index = self.index
+        newdims = len(value.shape) - len(self.index)
+        if newdims > 0:  # indexes are put last to match Vectorize
+            index = (slice(None),)*newdims + index
+        return value[index]
+
 
 
 def raise_badelement(cns, i, constraint):

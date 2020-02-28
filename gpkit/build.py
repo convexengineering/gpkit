@@ -147,7 +147,7 @@ class CVXopt(SolverBackend):
         try:
             log("#   Trying to import cvxopt...")
             # Testing the import, so the variable is intentionally not used
-            import cvxopt  # pylint: disable=unused-variable
+            import cvxopt  # pylint: disable=unused-import
             return "in Python path"
         except ImportError:
             pass

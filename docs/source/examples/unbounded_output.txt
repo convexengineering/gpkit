@@ -1,7 +1,7 @@
 
 Solves with these variables bounded:
-   value near upper bound: x
  sensitive to upper bound: x
+   value near upper bound: x
 
 
 Cost

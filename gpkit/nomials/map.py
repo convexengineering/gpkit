@@ -73,7 +73,7 @@ class NomialMap(HashVector):
                 x = exp[varkey]
                 c = self[exp] * x
                 exp = exp.copy()
-                if x is 1:
+                if x == 1:
                     exp.hashvalue ^= hash((varkey, 1))
                     del exp[varkey]
                 else:

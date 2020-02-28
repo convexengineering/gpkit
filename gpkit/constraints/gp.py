@@ -415,7 +415,7 @@ def genA(exps, varlocs, meq_idxs):  # pylint: disable=invalid-name
             if i not in meq_idxs:
                 if upperbound and lowerbound:
                     break
-                elif exps[i][var] > 0:  # pylint:disable=simplifiable-if-statement
+                if exps[i][var] > 0:  # pylint:disable=simplifiable-if-statement
                     upperbound = True
                 else:
                     lowerbound = True

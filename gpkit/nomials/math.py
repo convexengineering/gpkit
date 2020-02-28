@@ -80,7 +80,7 @@ class Signomial(Nomial):
         if len(varset) > 1:
             raise ValueError("multiple variables %s found for key %s"
                              % (list(varset), var))
-        elif not varset:
+        if not varset:
             diff = NomialMap({EMPTY_HV: 0.0})
             diff.units = None
         else:
@@ -185,9 +185,8 @@ class Signomial(Nomial):
         if isinstance(other, Numbers):
             if not other:  # other is zero
                 return Signomial(self.hmap)
-            else:
-                other_hmap = NomialMap({EMPTY_HV: mag(other)})
-                other_hmap.units_of_product(other)
+            other_hmap = NomialMap({EMPTY_HV: mag(other)})
+            other_hmap.units_of_product(other)
         if other_hmap:
             astorder = (self, other)
             if rev:
@@ -213,7 +212,7 @@ class Signomial(Nomial):
             out = Signomial(hmap)
             out.ast = ("mul", astorder)
             return out
-        elif isinstance(other, Signomial):
+        if isinstance(other, Signomial):
             hmap = NomialMap()
             for exp_s, c_s in self.hmap.items():
                 for exp_o, c_o in other.hmap.items():
@@ -235,7 +234,7 @@ class Signomial(Nomial):
             out = self*other**-1
             out.ast = ("div", (self, other))
             return out
-        elif isinstance(other, Monomial):
+        if isinstance(other, Monomial):
             return other.__rdiv__(self)
         return NotImplemented
 
@@ -456,7 +455,7 @@ class PosynomialInequality(ScalarSingleEquationConstraint):
             self.const_coeff = coeff  # pylint: disable=attribute-defined-outside-init
         if coeff >= -self.feastol and len(hmap) == 1:
             return None   # a tautological monomial!
-        elif coeff < -self.feastol:
+        if coeff < -self.feastol:
             raise ValueError("The constraint %s is infeasible by"
                              " %f%%" % (self, -coeff*100))
         scaled = hmap/coeff
@@ -653,7 +652,7 @@ class SignomialInequality(ScalarSingleEquationConstraint):
             print("Warning: SignomialConstraint %s became the tautological"
                   " constraint 0 <= %s after substitution." % (self, negy))
             return []
-        elif negy is 0:
+        if negy is 0:
             raise ValueError("SignomialConstraint %s became the infeasible"
                              " constraint %s <= 0 after substitution." %
                              (self, posy))

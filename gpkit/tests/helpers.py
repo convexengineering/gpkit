@@ -125,11 +125,9 @@ class NullFile:
     "A fake file interface that does nothing"
     def write(self, string):
         "Do not write, do not pass go."
-        pass
 
     def close(self):
         "Having not written, cease."
-        pass
 
 
 class NewDefaultSolver:

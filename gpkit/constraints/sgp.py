@@ -211,7 +211,7 @@ class SequentialGeometricProgram(CostedConstraintSet):
         for key in self.varkeys:
             if key in x0kd:
                 continue  # already specified by input dict
-            elif key in self.substitutions:
+            if key in self.substitutions:
                 x0kd[key] = self.substitutions[key]
             # undeclared variables are handled by individual constraints
         return x0kd

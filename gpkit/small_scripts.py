@@ -32,7 +32,7 @@ def try_str_without(item, excluded, latex=False):
     "Try to call item.str_without(excluded); fall back to str(item)"
     if latex and hasattr(item, "latex"):
         return item.latex(excluded)
-    elif hasattr(item, "str_without"):
+    if hasattr(item, "str_without"):
         return item.str_without(excluded)
     return str(item)
 
@@ -58,7 +58,7 @@ def nomial_latex_helper(c, pos_vars, neg_vars):
     nvarstr = ' '.join(nvarstrs)
     c = mag(c)
     cstr = "%.2g" % c
-    if pos_vars and (cstr == "1" or cstr == "-1"):
+    if pos_vars and cstr in ["1", "-1"]:
         cstr = cstr[:-1]
     else:
         cstr = latex_num(c)

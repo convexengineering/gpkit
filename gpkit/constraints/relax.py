@@ -127,9 +127,9 @@ class ConstantsRelaxed(ConstraintSet):
         for key, value in constants.items():
             if value == 0:
                 continue
-            elif include_only and key.name not in include_only:
+            if include_only and key.name not in include_only:
                 continue
-            elif key.name in exclude:
+            if key.name in exclude:
                 continue
             key.descr.pop("gradients", None)
             descr = key.descr.copy()

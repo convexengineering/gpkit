@@ -151,10 +151,9 @@ class KeyDict(dict):
                                      (key, idx,
                                       dict.__getitem__(self, key)))
             return True
-        elif key in self.keymap:
+        if key in self.keymap:
             return True
-        else:
-            return False
+        return False
 
     def __call__(self, key):
         got = self[key]

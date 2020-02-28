@@ -204,9 +204,11 @@ class HashVector(dict):
         if isinstance(other, Numbers):
             return self.__class__({key: val*other
                                    for (key, val) in self.items()})
-        elif isinstance(other, dict):
+
+        if isinstance(other, dict):
             keys = set(self).intersection(other)
             return self.__class__({key: self[key] * other[key] for key in keys})
+
         return NotImplemented
 
     def __add__(self, other):
@@ -217,7 +219,8 @@ class HashVector(dict):
         if isinstance(other, Numbers):
             return self.__class__({key: val+other
                                    for (key, val) in self.items()})
-        elif isinstance(other, dict):
+
+        if isinstance(other, dict):
             sums = self.copy()
             for key, value in other.items():
                 if key in sums:
@@ -230,6 +233,7 @@ class HashVector(dict):
                     sums[key] = value
             sums.hashvalue = None
             return sums
+
         return NotImplemented
 
     # pylint: disable=multiple-statements

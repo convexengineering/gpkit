@@ -8,7 +8,6 @@ from gpkit.tests.helpers import generate_example_tests, new_test
 
 class TestFiles(unittest.TestCase):
     "Stub to be filled with files in $pwd/TESTS"
-    pass
 
 
 def clean(string):

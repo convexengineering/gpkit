@@ -216,8 +216,10 @@ def reldiff(val1, val2):
                 val1 = val1_ * val1.units
         # numpy division will warn but return infs
         return (val2/val1 - 1).to("dimensionless").magnitude
-    elif val2.magnitude == 0:  # both are scalar zeroes
+
+    if val2.magnitude == 0:  # both are scalar zeroes
         return 0
+
     return np.inf  # just val1 is a scalar zero
 
 
@@ -325,10 +327,8 @@ class SolutionArray(DictOfLists):
         solvars = set(sol["variables"])
         if showvars:
             showvars = self._parse_showvars(showvars)
-            selfvars = set([k for k in showvars
-                            if k in self["variables"]])
-            solvars = set([k for k in showvars
-                           if k in sol["variables"]])
+            selfvars = {k for k in showvars if k in self["variables"]}
+            solvars = {k for k in showvars if k in sol["variables"]}
         sol_diff = {}
         for key in selfvars.intersection(solvars):
             sol_diff[key] = 100*reldiff(self(key), sol(key))
