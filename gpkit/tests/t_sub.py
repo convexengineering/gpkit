@@ -1,6 +1,5 @@
 """Test substitution capability across gpkit"""
 import unittest
-import sys
 import numpy as np
 import numpy.testing as npt
 from ad import adnumber, ADV

@@ -7,7 +7,7 @@ from ..solution_array import SolutionArray
 from ..exceptions import InvalidGPConstraint
 
 
-class BinarySweepTree(object):  # pylint: disable=too-many-instance-attributes
+class BinarySweepTree:  # pylint: disable=too-many-instance-attributes
     """Spans a line segment. May contain two subtrees that divide the segment.
 
     Attributes
@@ -171,7 +171,7 @@ class BinarySweepTree(object):  # pylint: disable=too-many-instance-attributes
             sol.program = programs[i]
 
 
-class SolutionOracle(object):
+class SolutionOracle:
     "Acts like a SolutionArray for autosweeps"
     def __init__(self, bst, sampled_at):
         self.sampled_at = sampled_at

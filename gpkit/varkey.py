@@ -113,6 +113,6 @@ class VarKey(GPkitObject):  # pylint:disable=too-many-instance-attributes
         return self.eqstr == other.eqstr
 
     def __ne__(self, other):
-        return not self == other
+        return not self == other  # pylint: disable=unneeded-not
 
 from .nomials import NomialMap  # pylint: disable=wrong-import-position

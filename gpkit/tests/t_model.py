@@ -73,13 +73,13 @@ class TestGP(unittest.TestCase):
         self.assertAlmostEqual(sol("y")[0], 0.1908254, self.ndig)
         self.assertAlmostEqual(sol("c"), 0.2669448, self.ndig)
         # test scalar input to sigeq
-        y = Variable("y")
+        z = Variable("z")
         with SignomialsEnabled():
-            m = Model(c, [c >= (x + 0.25)**2 + (y - 0.5)**2,
-                          SignomialEquality(x**2 + x, y)])
+            m = Model(c, [c >= (x + 0.25)**2 + (z - 0.5)**2,
+                          SignomialEquality(x**2 + x, z)])
         sol = m.localsolve(solver=self.solver, verbosity=0)
         self.assertAlmostEqual(sol("x"), 0.1639472, self.ndig)
-        self.assertAlmostEqual(sol("y"), 0.1908254, self.ndig)
+        self.assertAlmostEqual(sol("z"), 0.1908254, self.ndig)
         self.assertAlmostEqual(sol("c"), 0.2669448, self.ndig)
 
     def test_601(self):
@@ -603,9 +603,9 @@ class TestSP(unittest.TestCase):
         m = Model(x, [y >= 1 + c*x, y <= 0.5], {c: -1})
         with self.assertRaises(RuntimeWarning):
             with SignomialsEnabled():
-                _ = m.gp()
+                m.gp()
         with self.assertRaises(RuntimeWarning):
-            _ = m.localsolve(solver=self.solver)
+            m.localsolve(solver=self.solver)
 
     def test_reassigned_constant_cost(self):
         # for issue 1131

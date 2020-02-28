@@ -8,8 +8,12 @@ try:
     Quantity = ureg.Quantity
 except ImportError:  # pint is not installed; provide dummy imports
     ureg = None  # pylint: disable=invalid-name
-    Quantity = lambda a, b: None
     DimensionalityError = None
+
+    class Quantity:
+        "Dummy class for if pint is not installed"
+        def __init__(self, _):
+            pass
 
 QTY_CACHE = {}
 
@@ -21,7 +25,7 @@ def qty(unit):
     return QTY_CACHE[unit]
 
 
-class GPkitUnits(object):
+class GPkitUnits:
     "Return Monomials instead of Quantitites"
     division_cache = {}
     multiplication_cache = {}

@@ -69,14 +69,15 @@ def tight_table(self, _, ntightconstrs=5, tight_senss=1e-2, **kwargs):
     if not self.model:
         return []
     title = "Tightest Constraints"
-    try:
-        data = [((-float("%+6.2g" % c.relax_sensitivity), str(c)),
-                 "%+6.2g" % c.relax_sensitivity, id(c), c)
-                for c in self.model.flat()
-                if c.relax_sensitivity >= tight_senss]
-    except AttributeError:
-        print("Constraint %s had no `relax_sensitivity` attribute." % c)
-        return []
+    data = []
+    for c in self.model.flat():
+        try:
+            if c.relax_sensitivity >= tight_senss:
+                data.append(((-float("%+6.2g" % c.relax_sensitivity), str(c)),
+                             "%+6.2g" % c.relax_sensitivity, id(c), c))
+        except AttributeError:
+            print("Constraint %s had no `relax_sensitivity` attribute." % c)
+            return []
     if not data:
         lines = ["No constraints had a sensitivity above %+5.1g."
                  % tight_senss]
@@ -157,10 +158,10 @@ def constraint_table(data, sortbymodel=True, showmodels=True, **_):
     fmts = ["{0:%s%s}" % (direc, L) for direc, L in zip(dirs, maxlens)]
     for i, line in enumerate(lines):
         if line[0] == ("modelname",):
-            line = [fmts[0].format(" | "), line[1]]
+            linelist = [fmts[0].format(" | "), line[1]]
         else:
-            line = [fmt.format(s) for fmt, s in zip(fmts, line)]
-        lines[i] = "".join(line).rstrip()
+            linelist = [fmt.format(s) for fmt, s in zip(fmts, line)]
+        lines[i] = "".join(linelist).rstrip()
     return lines
 
 
@@ -456,7 +457,7 @@ class SolutionArray(DictOfLists):
         for key in self.name_collision_varkeys():
             key.descr["necessarylineage"] = True
         names = {}
-        for key in (showvars or self["variables"]):
+        for key in showvars or self["variables"]:
             for k in self["variables"].keymap[key]:
                 names[k.str_without(exclude)] = k
         for key in self.name_collision_varkeys():

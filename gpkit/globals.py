@@ -1,8 +1,6 @@
 "global mutable variables"
 import os
-import sys
 from collections import defaultdict
-from six import with_metaclass
 from . import build
 
 
@@ -61,7 +59,7 @@ class SignomialsEnabledMeta(type):
         return cls._true
 
 
-class SignomialsEnabled(with_metaclass(SignomialsEnabledMeta)):  # pylint: disable=no-init
+class SignomialsEnabled(metaclass=SignomialsEnabledMeta):  # pylint: disable=no-init
     """Class to put up and tear down signomial support in an instance of GPkit.
 
     Example
@@ -82,7 +80,7 @@ class SignomialsEnabled(with_metaclass(SignomialsEnabledMeta)):  # pylint: disab
         SignomialsEnabled._true = False
 
 
-class Vectorize(object):
+class Vectorize:
     """Creates an environment in which all variables are
        exended in an additional dimension.
     """
@@ -100,7 +98,7 @@ class Vectorize(object):
         Vectorize.vectorization = self.vectorization[1:]
 
 
-class NamedVariables(object):
+class NamedVariables:
     """Creates an environment in which all variables have
        a model name and num appended to their varkeys.
     """

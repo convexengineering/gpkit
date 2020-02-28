@@ -18,7 +18,7 @@ def isnan(element):
     try:
         return np.isnan(element)
     except TypeError:
-        return False
+        return np.array([])
 
 
 def maybe_flatten(value):
@@ -75,7 +75,7 @@ def nomial_latex_helper(c, pos_vars, neg_vars):
     return mstr
 
 
-class SweepValue(object):
+class SweepValue:
     "Object to represent a swept substitution."
     def __init__(self, value):
         self.value = value
@@ -97,7 +97,6 @@ def splitsweep(sub):
         return True, sub.value
     try:
         sweep, value = sub
-        # pylint:disable=literal-comparison
         if sweep is "sweep" and (isinstance(value, Iterable) or
                                  hasattr(value, "__call__")):
             return True, value

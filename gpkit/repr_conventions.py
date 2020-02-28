@@ -71,7 +71,7 @@ def parenthesize(string, addi=True, mult=True):
     return string
 
 
-class GPkitObject(object):
+class GPkitObject:
     "This class combines various printing methods for easier adoption."
     lineagestr = lineagestr
     unitstr = unitstr
@@ -141,7 +141,7 @@ class GPkitObject(object):
                 for el in idx:
                     if isinstance(el, slice):
                         start = el.start or ""
-                        stop = (el.stop if el.stop and el.stop != sys.maxint
+                        stop = (el.stop if el.stop and el.stop < sys.maxsize
                                 else "")
                         step = ":%s" % el.step if el.step is not None else ""
                         elstrs.append("%s:%s%s" % (start, stop, step))

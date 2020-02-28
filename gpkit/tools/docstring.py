@@ -58,7 +58,7 @@ def expected_unbounded(instance, doc):
     return exp_unbounded
 
 
-class parse_variables(object):  # pylint:disable=invalid-name
+class parse_variables:  # pylint:disable=invalid-name
     """decorator for adding local Variables from a string.
 
     Generally called as `@parse_variables(__doc__, globals())`.

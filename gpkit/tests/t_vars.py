@@ -1,6 +1,5 @@
 """Test VarKey, Variable, VectorVariable, and ArrayVariable classes"""
 import unittest
-import sys
 import numpy as np
 from gpkit import (Monomial, NomialArray, Variable, VarKey,
                    VectorVariable, ArrayVariable)

@@ -1,5 +1,4 @@
 "implements Sankey"
-import sys
 from collections import defaultdict
 import numpy as np
 from ipywidgets import Layout
@@ -21,7 +20,7 @@ def getcolor(value):
     return GPCOLORS[0 if value < 0 else 1]
 
 
-class Sankey(object):
+class Sankey:
     "diagrams of sensitivity flow"
     def __init__(self, model):
         self.links = defaultdict(float)

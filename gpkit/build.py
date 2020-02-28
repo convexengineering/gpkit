@@ -3,7 +3,6 @@ import os
 import sys
 import shutil
 import subprocess
-import glob
 
 LOGSTR = ""
 settings = {}
@@ -67,8 +66,10 @@ def diff(filename, diff_dict):
     shutil.move(filename+".new", filename)
 
 
-class SolverBackend(object):
+class SolverBackend:
     "Inheritable class for finding solvers. Logs."
+    name = None
+    look = None
 
     def __init__(self):
         log("#\n# Looking for", self.name)
@@ -117,14 +118,14 @@ class MosekCLI(SolverBackend):
         if not possible_versions:
             return log("# no version folders (e.g. '7', '8') found"
                        " in mosek directory \"%s\"" % rootdir)
-        self.version = sorted(possible_versions)[-1]
-        tools_dir = pathjoin(rootdir, self.version, "tools")
+        version = sorted(possible_versions)[-1]
+        tools_dir = pathjoin(rootdir, version, "tools")
         lib_dir = pathjoin(tools_dir, "platform", mosek_platform)
-        self.bin_dir = pathjoin(lib_dir, "bin")
-        settings["mosek_bin_dir"] = self.bin_dir
-        os.environ['PATH'] = os.environ['PATH'] + os.pathsep + self.bin_dir
+        bin_dir = pathjoin(lib_dir, "bin")
+        settings["mosek_bin_dir"] = bin_dir
+        os.environ['PATH'] = os.environ['PATH'] + os.pathsep + bin_dir
 
-        return self.run("in " + self.bin_dir)
+        return self.run("in " + bin_dir)
 
     def run(self, where="in system path"):
         "Attempts to run mskexpopt."
@@ -206,3 +207,6 @@ def build():
         f.write(LOGSTR)
 
     os.chdir(start_dir)
+
+if __name__ == "__main__":
+    build()

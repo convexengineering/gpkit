@@ -1,13 +1,10 @@
 """Implements the GPkit interface to MOSEK (version >= 9)
    through python-based Optimizer API"""
-import numpy as np
 import mosek
+import numpy as np
 
-def mskoptimize(c, A, k, p_idxs, *args, **kwargs):
-    # pylint: disable=unused-argument
-    # pylint: disable-msg=too-many-locals
-    # pylint: disable-msg=too-many-statements
-    # pylint: disable-msg=too-many-branches
+def mskoptimize(c, A, k, p_idxs, **kwargs):
+    # pylint: disable=too-many-locals,too-many-statements,too-many-branches
     """
     Definitions
     -----------

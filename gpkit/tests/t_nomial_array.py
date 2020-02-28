@@ -1,6 +1,5 @@
 """Tests for NomialArray class"""
 import unittest
-import sys
 import numpy as np
 from gpkit import Variable, Posynomial, NomialArray, VectorVariable, Monomial
 import gpkit

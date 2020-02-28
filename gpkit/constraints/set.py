@@ -144,7 +144,7 @@ class ConstraintSet(list, GPkitObject):
     def variables_byname(self, key):
         "Get all variables with a given name"
         from ..nomials import Variable
-        variables = [Variable(key) for key in self.varkeys[key]]
+        variables = [Variable(k) for k in self.varkeys[key]]
         variables.sort(key=_sort_by_name_and_idx)
         return variables
 
@@ -342,7 +342,7 @@ class ConstraintSet(list, GPkitObject):
         return ConstraintSetView(self)
 
 
-class ConstraintSetView(object):
+class ConstraintSetView:
     "Class to access particular views on a set's variables"
 
     def __init__(self, constraintset, index=()):

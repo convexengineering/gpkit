@@ -3,7 +3,7 @@ from gpkit.exceptions import InvalidGPConstraint
 from external_function import external_code
 
 
-class ExternalConstraint(object):
+class ExternalConstraint:
     "Class for external calling"
     varkeys = {}
 

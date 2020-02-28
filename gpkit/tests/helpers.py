@@ -1,7 +1,6 @@
 """Convenience classes and functions for unit testing"""
 import unittest
 import sys
-import codecs
 import os
 import importlib
 
@@ -122,7 +121,7 @@ def run_tests(tests, xmloutput=None, verbosity=2):
         unittest.TextTestRunner(verbosity=verbosity).run(suite)
 
 
-class NullFile(object):
+class NullFile:
     "A fake file interface that does nothing"
     def write(self, string):
         "Do not write, do not pass go."
@@ -133,7 +132,7 @@ class NullFile(object):
         pass
 
 
-class NewDefaultSolver(object):
+class NewDefaultSolver:
     "Creates an environment with a different default solver"
     def __init__(self, solver):
         self.solver = solver
@@ -151,7 +150,7 @@ class NewDefaultSolver(object):
         gpkit.settings["default_solver"] = self.prev_default_solver
 
 
-class StdoutCaptured(object):
+class StdoutCaptured:
     "Puts everything that would have printed to stdout in a log file instead"
     def __init__(self, logfilepath=None):
         self.logfilepath = logfilepath

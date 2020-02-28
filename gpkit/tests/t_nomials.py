@@ -1,6 +1,5 @@
 """Tests for Monomial, Posynomial, and Signomial classes"""
 import math
-import sys
 import unittest
 from gpkit import Variable, Monomial, Posynomial, Signomial, SignomialsEnabled
 from gpkit import VectorVariable, NomialArray
@@ -25,18 +24,18 @@ class TestMonomial(unittest.TestCase):
         self.assertEqual(m, m2)
 
         # default c and a
-        m = Variable('x')
-        x, = m.varkeys["x"]
-        self.assertEqual(m.varlocs, {x: [0]})
-        self.assertEqual(m.exp, {x: 1})
-        self.assertEqual(m.c, 1)
+        v = Variable('x')
+        x, = v.varkeys["x"]
+        self.assertEqual(v.varlocs, {x: [0]})
+        self.assertEqual(v.exp, {x: 1})
+        self.assertEqual(v.c, 1)
 
         # single (string) var with non-default c
-        m = 0.1*Variable('tau')
-        tau, = m.varkeys["tau"]
-        self.assertEqual(m.varlocs, {tau: [0]})
-        self.assertEqual(m.exp, {tau: 1})  # pylint: disable=no-member
-        self.assertEqual(m.c, .1)  # pylint: disable=no-member
+        v = 0.1*Variable('tau')
+        tau, = v.varkeys["tau"]
+        self.assertEqual(v.varlocs, {tau: [0]})
+        self.assertEqual(v.exp, {tau: 1})  # pylint: disable=no-member
+        self.assertEqual(v.c, .1)  # pylint: disable=no-member
 
         # variable names not compatible with python namespaces
         crazy_varstr = 'what the !!!/$**?'
@@ -112,9 +111,9 @@ class TestMonomial(unittest.TestCase):
         self.assertEqual(x, x)
         self.assertFalse(x != x)
 
-        x = Monomial({}, 1)
-        self.assertEqual(x, 1)
-        self.assertEqual(x, Monomial({}))
+        m = Monomial({}, 1)
+        self.assertEqual(m, 1)
+        self.assertEqual(m, Monomial({}))
 
         # several vars
         m1 = Monomial({'a': 3, 'b': 2, 'c': 1}, 5)

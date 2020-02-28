@@ -24,7 +24,7 @@ class FixedScalar(with_metaclass(FixedScalarMeta)):  # pylint: disable=no-init
     "Instances of this class are scalar Nomials with no variables"
 
 
-class Count(object):
+class Count:
     "Like python 2's itertools.count, for Python 3 compatibility."
 
     def __init__(self):
@@ -45,7 +45,7 @@ def matrix_converter(name):
     return to_
 
 
-class CootMatrix(object):
+class CootMatrix:
     "A very simple sparse matrix representation."
     def __init__(self, row, col, data):
         self.row, self.col, self.data = row, col, data

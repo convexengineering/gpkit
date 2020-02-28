@@ -37,7 +37,7 @@ def format_and_label_axes(var, posys, axes, ylabel=True):
         ax.tick_params(length=0)
         ax.spines['left'].set_visible(False)
         ax.spines['top'].set_visible(False)
-        for i in ax.spines.itervalues():
+        for i in ax.spines.values():
             i.set_linewidth(0.6)
             i.set_color("0.6")
             i.set_linestyle("dotted")

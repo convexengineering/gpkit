@@ -17,10 +17,10 @@ class Loose(ConstraintSet):
         super(Loose, self).process_result(result)
         for constraint in self.flat():
             if not hasattr(constraint, "relax_sensitivity"):
-                print ("Constraint [%.100s... %s %.100s...] does not have a"
-                       " `relax_sensitivity` parameter and can't be checked"
-                       " for looseness."
-                       % (constraint.left, constraint.oper, constraint.right))
+                print("Constraint [%.100s... %s %.100s...] does not have a"
+                      " `relax_sensitivity` parameter and can't be checked"
+                      " for looseness."
+                      % (constraint.left, constraint.oper, constraint.right))
                 continue
             if constraint.relax_sensitivity >= self.senstol:
                 msg = ("Constraint [%.100s... %s %.100s...] is not loose:"

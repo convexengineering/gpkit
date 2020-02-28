@@ -1,6 +1,5 @@
 """Unit tests for Constraint, MonomialEquality and SignomialInequality"""
 import unittest
-import sys
 from gpkit import Variable, SignomialsEnabled, Posynomial, VectorVariable
 from gpkit.nomials import SignomialInequality, PosynomialInequality
 from gpkit.nomials import MonomialEquality
