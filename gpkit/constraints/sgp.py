@@ -81,7 +81,7 @@ class SequentialGeometricProgram(CostedConstraintSet):
     # pylint: disable=too-many-locals
     # pylint: disable=too-many-arguments
     # pylint: disable=too-many-statements
-    def localsolve(self, solver=None, verbosity=1, x0=None, reltol=1e-4,
+    def localsolve(self, solver=None, *, verbosity=1, x0=None, reltol=1e-4,
                    iteration_limit=50, mutategp=True, **kwargs):
         """Locally solves a SequentialGeometricProgram and returns the solution.
 
@@ -132,7 +132,7 @@ class SequentialGeometricProgram(CostedConstraintSet):
                     "Unsolved after %s iterations. Check `m.program.results`;"
                     " if they're converging, try `.localsolve(...,"
                     " iteration_limit=NEWLIMIT)`." % len(self.gps))
-            gp = self.gp(x0, mutategp)
+            gp = self.gp(x0, mutategp=mutategp)
             self.gps.append(gp)  # NOTE: SIDE EFFECTS
             try:
                 solver_out = gp.solve(solver, verbosity=verbosity-1,
@@ -177,23 +177,28 @@ class SequentialGeometricProgram(CostedConstraintSet):
                 self[0].insert(0, v.key.externalfn)  # for constraint senss
         return self.result
 
-    def penalty_ccp_solve(self, solver=None, verbosity=1, x0=None, reltol=1e-4,
-                          iteration_limit=50, mutategp=True, exp=10.,
-                          **kwargs):
+    def pccpsolve(self, solver=None, *, verbosity=1, relaxation_penalty=10.,
+                  **kwargs):
         """ Implements the penalty convex-concave algorithm [Lipp,Boyd 2016]
             instead of vanilla SP heuristic.
 
-            Same arguments as localsolve, but also
+            Same keyword arguments as localsolve, but also
                 exp : float (optional)
             Sets penalty for violated signomial constraints
         """
+        tick = time()
+        self.sp  = sp = self.penalty_ccp_formulation(relaxation_penalty)
+        self.slack = sp.slack
         if verbosity > 0:
-            print("Applying penalty CCP transformation...")
-        relaxed_model = self.penalty_ccp(exp=exp)
-        self.result = relaxed_model.localsolve(solver, verbosity,
-                                               x0, reltol, iteration_limit,
-                                               mutategp, **kwargs)
-        self.gps = relaxed_model.gps
+            print("Penalty CCP formulation took %.3g seconds" % (time() - tick))
+            tick = time()
+        self.result = sp.localsolve(solver, verbosity=verbosity-1, **kwargs)
+        self.gps = sp.gps
+        self.solver_outs = sp.solver_outs
+        self.result["soltime"] = time() - tick
+        if verbosity > 0:
+            print("Solving took %i GP solves" % len(self.gps)
+                  + " and %.3g seconds." % self.result["soltime"])
         return self.result
 
     @property
@@ -247,7 +252,7 @@ class SequentialGeometricProgram(CostedConstraintSet):
         self._numgpconstrs = len(gp.hmaps) - len(spapproxs)
         return gp
 
-    def gp(self, x0=None, mutategp=False, **gpinitargs):
+    def gp(self, x0=None, *, mutategp=False, **gpinitargs):
         "The GP approximation of this SP at x0."
         if mutategp:
             if not self.gps:
@@ -276,24 +281,23 @@ class SequentialGeometricProgram(CostedConstraintSet):
             gp.x0 = x0  # NOTE: SIDE EFFECTS
         return gp
 
-    def penalty_ccp(self, exp=10.):
+    def penalty_ccp_formulation(self, relaxation_penalty=10.):
         "Returns the penalty convex-concave form of this SP."
-        signomials = []
-        gp_constrs = []
-        for constr in self.flat(constraintsets=False):
-            if isinstance(constr, (SingleSignomialEquality,
-                                   SignomialInequality)):
-                signomials.append(constr)
+        gp_compatible_constraints, signomials = [], []
+        for c in self.flat():
+            if isinstance(c, (SingleSignomialEquality, SignomialInequality)):
+                signomials.append(c)
             else:
-                gp_constrs.append(constr)
+                gp_compatible_constraints.append(c)
         with NamedVariables("PCCP"):
             slack = VectorVariable(len(signomials), "s")
         with SignomialsEnabled():
             relaxed_signomials = [[constr.relaxed(slack[i]), slack[i] >= 1]
                                   for i, constr in enumerate(signomials)]
-        relaxed_obj = self.cost*np.prod(slack)**exp
-        relaxed_model = SequentialGeometricProgram(relaxed_obj,
-                                                   [gp_constrs,
-                                                    relaxed_signomials],
-                                                   self.substitutions)
-        return relaxed_model
+        sgp = SequentialGeometricProgram(
+            self.cost * slack.prod()**relaxation_penalty,
+            {"GP constraints": gp_compatible_constraints,
+             "Relaxed SP constraints": relaxed_signomials},
+            self.substitutions)
+        sgp.slack = slack
+        return sgp

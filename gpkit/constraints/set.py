@@ -367,8 +367,7 @@ class ConstraintSetView:
         otherwise, raise an error.
         """
         if not hasattr(self.constraintset, attr):
-            raise AttributeError("the underlying ConstraintSet does not have"
-                                 "attribute %s." % attr)
+            raise AttributeError("the underlying object lacks `.%s`." % attr)
 
         value = getattr(self.constraintset, attr)
         if isinstance(value, ConstraintSet):
@@ -388,8 +387,7 @@ class ConstraintSetView:
 def raise_badelement(cns, i, constraint):
     "Identify the bad element and raise a ValueError"
     cause = "" if not isinstance(constraint, bool) else (
-        " Did the constraint list contain"
-        " an accidental equality?")
+        " Did the constraint list contain an accidental equality?")
     if len(cns) == 1:
         loc = "as the only constraint"
     elif i == 0:
@@ -404,14 +402,12 @@ def raise_badelement(cns, i, constraint):
 
 def raise_elementhasnumpybools(constraint):
     "Identify the bad subconstraint array and raise a ValueError"
-    cause = ("An ArrayConstraint was created with elements of"
-             " numpy.bool_")
+    cause = ("An constraint was created containing numpy.bools.")
     for side in [constraint.left, constraint.right]:
         if not (isinstance(side, Numbers)
                 or hasattr(side, "hmap")
                 or hasattr(side, "__iter__")):
-            cause += (", because "
-                      "NomialArray comparison with %.10s %s"
+            cause += (" NomialArray comparison with %.10s %s"
                       " does not return a valid constraint."
                       % (repr(side), type(side)))
     raise ValueError("%s\nFull constraint: %s"

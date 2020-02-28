@@ -331,7 +331,7 @@ class SolutionArray(DictOfLists):
             solvars = {k for k in showvars if k in sol["variables"]}
         sol_diff = {}
         for key in selfvars.intersection(solvars):
-            sol_diff[key] = 100*reldiff(self(key), sol(key))
+            sol_diff[key] = 100*reldiff(sol(key), self(key))
         lines = var_table(sol_diff, "Solution difference", sortbyvals=True,
                           valfmt="%+6.1f%%  ", vecfmt="%+6.1f%% ",
                           printunits=False, minval=min_percent,
@@ -340,7 +340,7 @@ class SolutionArray(DictOfLists):
             lines[0] += " for variables given in `showvars`"
             lines[1] += "----------------------------------"
         if len(lines) > 3:
-            lines.insert(1, "(positive means the argument is bigger)")
+            lines.insert(1, "(positive means the argument is smaller)")
         elif sol_diff:
             values = []
             for v in sol_diff.values():
@@ -364,7 +364,7 @@ class SolutionArray(DictOfLists):
                                 and val2.shape[:val1_dims] == val1.shape):
                             val1 = np.tile(val1,
                                            val2.shape[val1_dims:]+(1,)).T
-                    senss_delta[key] = val2 - val1
+                    senss_delta[key] = val1 - val2
                 elif key in sol["sensitivities"]["variables"]:
                     print("Key %s is not in this solution's sensitivities"
                           " but is in those of the argument.")

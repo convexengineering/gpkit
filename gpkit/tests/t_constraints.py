@@ -276,7 +276,7 @@ class TestLoose(unittest.TestCase):
         sol = m.solve(verbosity=0)
         self.assertIs(
             sol["warnings"]["Unexpectedly Tight Constraints"][0][1], m[0][0])
-        self.assertAlmostEqual(m[0][0].relax_sensitivity, +1)
+        self.assertAlmostEqual(m[0][0].relax_sensitivity, +1, 3)
         m.substitutions[x_min] = 0.5
         self.assertAlmostEqual(m.solve(verbosity=0)["cost"], 1)
 
@@ -292,7 +292,7 @@ class TestLoose(unittest.TestCase):
         sol = m.localsolve(verbosity=0)
         self.assertIs(
             sol["warnings"]["Unexpectedly Tight Constraints"][0][1], m[0][0])
-        self.assertAlmostEqual(m[0][0].relax_sensitivity, +1)
+        self.assertAlmostEqual(m[0][0].relax_sensitivity, +1, 3)
         m.substitutions[x_min] = 2
         m.substitutions[y_min] = 1
         self.assertAlmostEqual(m.localsolve(verbosity=0)["cost"], 2.5, 5)
@@ -310,7 +310,7 @@ class TestTight(unittest.TestCase):
         sol = m.solve(verbosity=0)
         self.assertIs(
             sol["warnings"]["Unexpectedly Loose Constraints"][0][1], m[0][0])
-        self.assertAlmostEqual(m[0][0].rel_diff, 1)
+        self.assertAlmostEqual(m[0][0].rel_diff, 1, 3)
         m.substitutions[x_min] = 0.5
         self.assertAlmostEqual(m.solve(verbosity=0)["cost"], 1)
 
@@ -324,7 +324,7 @@ class TestTight(unittest.TestCase):
         sol = m.localsolve(verbosity=0)
         self.assertIs(
             sol["warnings"]["Unexpectedly Loose Constraints"][0][1], m[0][0])
-        self.assertAlmostEqual(m[0][0].rel_diff, 1)
+        self.assertAlmostEqual(m[0][0].rel_diff, 1, 3)
         m.pop(1)
         self.assertAlmostEqual(m.localsolve(verbosity=0)["cost"], 1, 5)
 
@@ -341,7 +341,7 @@ class TestTight(unittest.TestCase):
         sol = m.localsolve(verbosity=0)
         self.assertIs(
             sol["warnings"]["Unexpectedly Loose Constraints"][0][1], m[0][0])
-        self.assertAlmostEqual(m[0][0].rel_diff, 0.6)
+        self.assertGreater(m[0][0].rel_diff, 0.5)
         m.substitutions[x_min] = 0.5
         self.assertAlmostEqual(m.localsolve(verbosity=0)["cost"], 0.5)
 

@@ -61,7 +61,7 @@ def evaluate_linked(constants, linked):
                 kdc.logged_gets = set()
 
 
-def _progify_fctry(program, return_attr=None):
+def progify(program, return_attr=None):
     """Generates function that returns a program() and optionally an attribute.
 
     Arguments
@@ -71,7 +71,7 @@ def _progify_fctry(program, return_attr=None):
     return_attr: string
         attribute to return in addition to the program
     """
-    def programify(self, constants=None, **kwargs):
+    def programfn(self, constants=None, **kwargs):
         "Return program version of self"
         if not constants:
             constants, _, linked = parse_subs(self.varkeys, self.substitutions)
@@ -81,12 +81,12 @@ def _progify_fctry(program, return_attr=None):
         if return_attr:
             return prog, getattr(prog, return_attr)
         return prog
-    return programify
+    return programfn
 
 
-def _solve_fctry(genfunction):
+def solvify(genfunction):
     "Returns function for making/solving/sweeping a program."
-    def solvefn(self, solver=None, verbosity=1, skipsweepfailures=False,
+    def solvefn(self, solver=None, *, verbosity=1, skipsweepfailures=False,
                 **kwargs):
         """Forms a mathematical program and attempts to solve it.
 
@@ -113,19 +113,18 @@ def _solve_fctry(genfunction):
          """
         constants, sweep, linked = parse_subs(self.varkeys, self.substitutions)
         solution = SolutionArray()
+        solution.model = self
 
         # NOTE SIDE EFFECTS: self.program is set below
         if sweep:
             run_sweep(genfunction, self, solution, skipsweepfailures,
-                      constants, sweep, linked,
-                      solver, verbosity, **kwargs)
+                      constants, sweep, linked, solver, verbosity, **kwargs)
         else:
             self.program, progsolve = genfunction(self)
             result = progsolve(solver, verbosity=verbosity, **kwargs)
             solution.append(result)
-        solution.program = self.program
-        solution.model = self
         solution.to_arrays()
+        solution.program = self.program
         if self.cost.units:
             solution["cost"] = solution["cost"] * self.cost.units
         self.solution = solution  # NOTE: SIDE EFFECTS
@@ -151,7 +150,7 @@ def run_sweep(genfunction, self, solution, skipsweepfailures,
                    for (var, grid) in zip(sweepvars, sweep_grids)}
 
     if verbosity > 0:
-        print("Solving over %i passes." % N_passes)
+        print("Sweeping over %i solves." % N_passes)
         tic = time()
 
     self.program = []

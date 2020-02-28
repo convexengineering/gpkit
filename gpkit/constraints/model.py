@@ -2,9 +2,9 @@
 import numpy as np
 from .costed import CostedConstraintSet
 from ..nomials import Monomial
-from .prog_factories import _progify_fctry, _solve_fctry
-from .gp import GeometricProgram as GP
-from .sgp import SequentialGeometricProgram as SGP
+from .prog_factories import progify, solvify
+from .gp import GeometricProgram
+from .sgp import SequentialGeometricProgram
 from ..small_scripts import mag
 from ..tools.autosweep import autosweep_1d
 from ..exceptions import InvalidGPConstraint
@@ -74,12 +74,12 @@ class Model(CostedConstraintSet):
             if "Unbounded" in docstr or "Bounded by" in docstr:
                 self.verify_docstring()
 
-    gp = _progify_fctry(GP)
-    solve = _solve_fctry(_progify_fctry(GP, "solve"))
+    gp = progify(GeometricProgram)
+    solve = solvify(progify(GeometricProgram, "solve"))
 
-    sp = _progify_fctry(SGP)
-    localsolve = _solve_fctry(_progify_fctry(SGP, "localsolve"))
-    penalty_ccp_solve = _solve_fctry(_progify_fctry(SGP, "penalty_ccp_solve"))
+    sp = progify(SequentialGeometricProgram)
+    localsolve = solvify(progify(SequentialGeometricProgram, "localsolve"))
+    pccpsolve = solvify(progify(SequentialGeometricProgram, "pccpsolve"))
 
     def verify_docstring(self):  # pylint:disable=too-many-locals,too-many-branches,too-many-statements
         "Verifies docstring bounds are sufficient but not excessive."
@@ -206,17 +206,17 @@ class Model(CostedConstraintSet):
                                                           verbosity=verbosity)
             if self.substitutions:
                 relaxed = get_relaxed([sol(r) for r in tants.relaxvars],
-                                      tants.origvars,
+                                      tants.freedvars,
                                       min_return=0 if sol["boundedness"] else 1)
                 if verbosity and relaxed:
                     if sol["boundedness"]:
                         print("and these constants relaxed:")
                     else:
                         print("\nSolves with these constants relaxed:")
-                    for (_, orig) in relaxed:
+                    for (_, freed) in relaxed:
                         print("  %s: relaxed from %-.4g to %-.4g"
-                              % (orig, mag(tants.constants[orig.key]),
-                                 mag(sol(orig))))
+                              % (freed, mag(tants.constants[freed.key]),
+                                 mag(sol(freed))))
                     print("")
             if verbosity > 0:
                 print(">> Success!")
@@ -239,7 +239,7 @@ class Model(CostedConstraintSet):
                     print("\nSolves with these constraints relaxed:")
                     for relaxval, i in relaxed:
                         relax_percent = "%i%%" % (0.5+(relaxval-1)*100)
-                        oldconstraint = traints.origconstrs[i]
+                        oldconstraint = traints.original_constraints[i]
                         newconstraint = relaxed_constraints[i][0]
                         subs = {traints.relaxvars[i]: relaxval}
                         relaxdleft = newconstraint.left.sub(subs)
