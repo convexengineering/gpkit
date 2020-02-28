@@ -1,5 +1,4 @@
 "Implements Model"
-from __future__ import print_function
 import numpy as np
 from .costed import CostedConstraintSet
 from ..nomials import Monomial

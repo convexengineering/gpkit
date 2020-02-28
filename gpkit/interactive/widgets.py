@@ -1,5 +1,4 @@
 "Interactive GPkit widgets for iPython notebook"
-from __future__ import unicode_literals, print_function
 import ipywidgets as widgets
 from traitlets import link
 from ..small_scripts import is_sweepvar

@@ -1,5 +1,4 @@
 """Assorted helper methods"""
-from __future__ import print_function
 from collections import Iterable
 import numpy as np
 

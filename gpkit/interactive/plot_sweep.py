@@ -1,5 +1,4 @@
 "Implements plot_sweep1d function"
-from __future__ import unicode_literals
 import matplotlib.pyplot as plt
 from ..exceptions import InvalidGPConstraint
 

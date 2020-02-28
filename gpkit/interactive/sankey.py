@@ -1,5 +1,4 @@
 "implements Sankey"
-from __future__ import unicode_literals, print_function
 import sys
 from collections import defaultdict
 import numpy as np

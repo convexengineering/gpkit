@@ -1,5 +1,4 @@
 "Implements Tight"
-from __future__ import unicode_literals
 from .set import ConstraintSet
 from ..nomials import PosynomialInequality, SignomialInequality
 from ..small_scripts import mag

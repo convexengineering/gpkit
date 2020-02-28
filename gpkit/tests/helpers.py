@@ -1,5 +1,4 @@
 """Convenience classes and functions for unit testing"""
-from __future__ import print_function
 import unittest
 import sys
 import codecs

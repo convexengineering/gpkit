@@ -1,5 +1,4 @@
 """Implement the SequentialGeometricProgram class"""
-from __future__ import unicode_literals, print_function
 from time import time
 from collections import OrderedDict
 import numpy as np

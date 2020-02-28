@@ -1,5 +1,4 @@
 """Miscellaneous small classes"""
-from __future__ import unicode_literals
 from operator import xor
 from functools import reduce  # pylint: disable=redefined-builtin
 from six import with_metaclass

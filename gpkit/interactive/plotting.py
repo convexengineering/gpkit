@@ -1,5 +1,4 @@
 """Plotting methods"""
-from __future__ import unicode_literals
 import matplotlib.pyplot as plt
 import numpy as np
 from .plot_sweep import assign_axes

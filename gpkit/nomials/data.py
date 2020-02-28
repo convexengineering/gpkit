@@ -1,5 +1,4 @@
 """Machinery for exps, cs, varlocs data -- common to nomials and programs"""
-from __future__ import unicode_literals
 from collections import defaultdict
 import numpy as np
 from ..keydict import KeySet

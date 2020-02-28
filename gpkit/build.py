@@ -1,6 +1,4 @@
 "Finds solvers, sets gpkit settings, and builds gpkit"
-from __future__ import unicode_literals, print_function
-
 import os
 import sys
 import shutil

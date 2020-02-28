@@ -1,6 +1,4 @@
 "GPkit-specific Exception classes"
-from __future__ import unicode_literals
-
 from . import DimensionalityError  # pylint: disable=unused-import
 
 

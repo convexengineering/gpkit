@@ -1,5 +1,4 @@
 "GP and SP modeling package"
-from __future__ import unicode_literals, print_function
 __version__ = "0.9.1"
 
 from .build import build

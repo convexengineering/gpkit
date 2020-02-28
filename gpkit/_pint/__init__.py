@@ -1,5 +1,4 @@
 "wraps pint in gpkit monomials"
-from __future__ import unicode_literals
 import os
 try:
     from pint import UnitRegistry, DimensionalityError

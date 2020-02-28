@@ -1,7 +1,7 @@
 
 Solves with these variables bounded:
-   value near upper bound: x
  sensitive to upper bound: x
+   value near upper bound: x
 
 
 Cost
@@ -16,4 +16,4 @@ Tightest Constraints
 --------------------
     +1 : x <= 1e+30
 
-sol['boundedness'] is: {'value near upper bound': {x}, 'sensitive to upper bound': {x}}
+sol['boundedness'] is: {'sensitive to upper bound': {x}, 'value near upper bound': {x}}

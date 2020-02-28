@@ -1,5 +1,4 @@
 "Implements SignomialEquality"
-from __future__ import unicode_literals
 from .set import ConstraintSet
 from ..nomials import SingleSignomialEquality
 from ..nomials.array import array_constraint
