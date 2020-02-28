@@ -91,9 +91,10 @@ class Bounded(ConstraintSet):
             result["boundedness"] = {}
         result["boundedness"].update(self.check_boundaries(result))
 
-    def check_boundaries(self, result):
+    def check_boundaries(self, result, verbosity=None):
         "Creates (and potentially prints) a dictionary of unbounded variables."
         out = defaultdict(set)
+        verbosity = self.verbosity if verbosity is None else verbosity
         for i, varkey in enumerate(self.bound_varkeys):
             value = mag(result["variables"][varkey])
             if self.bound_las:
@@ -120,7 +121,7 @@ class Bounded(ConstraintSet):
                 distance_above = np.log(self.upperbound/value)
                 if distance_above <= self.logtol_threshold:
                     out["value near upper bound"].add(varkey)
-        if self.verbosity > 0 and out:
+        if verbosity > 0 and out:
             print("")
             print("Solves with these variables bounded:")
             for key, value in sorted(out.items()):

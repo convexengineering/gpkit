@@ -195,7 +195,7 @@ class Model(CostedConstraintSet):
             print("< DEBUGGING >")
             print("> Trying with bounded variables and relaxed constants:")
 
-        bounded = Bounded(self)
+        bounded = Bounded(self, verbosity=0)
         if self.substitutions:
             constsrelaxed = ConstantsRelaxed(bounded)
             feas = Model(constsrelaxed.relaxvars.prod()**30 * self.cost,
@@ -210,7 +210,7 @@ class Model(CostedConstraintSet):
                 sol = feas.solve(**solveargs)
             except InvalidGPConstraint:
                 sol = feas.localsolve(**solveargs)
-            sol["boundedness"] = bounded.check_boundaries(sol)
+            sol["boundedness"] = bounded.check_boundaries(sol, verbosity=1)
             if self.substitutions:
                 relaxed = get_relaxed([sol(r) for r in constsrelaxed.relaxvars],
                                       constsrelaxed.origvars,
@@ -271,8 +271,7 @@ class Model(CostedConstraintSet):
 
 def get_relaxed(relaxvals, mapped_list, min_return=1):
     "Determines which relaxvars are considered 'relaxed'"
-    sortrelaxed = sorted(zip(relaxvals, mapped_list), key=lambda x: x[0],
-                         reverse=True)
+    sortrelaxed = sorted(zip(relaxvals, mapped_list), key=lambda x: -x[0])
     # arbitrarily, 1.01 is the point below which something is still "relaxed"
     mostrelaxed = max(sortrelaxed[0][0], 1.01)
     for i, (val, _) in enumerate(sortrelaxed):
