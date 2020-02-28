@@ -95,7 +95,7 @@ def modelinteract(model, fns_of_sol, ranges=None, **solvekwargs):
     return widgets.interactive(resolve, **ranges_out)
 
 
-# pylint: disable=too-many-locals
+# pylint: disable=too-many-locals, too-many-statements
 def modelcontrolpanel(model, showvars=(), fns_of_sol=None, **solvekwargs):
     """Easy model control in IPython / Jupyter
 

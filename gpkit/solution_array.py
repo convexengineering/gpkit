@@ -772,7 +772,7 @@ def var_table(data, title, printunits=True, latex=False, rawlines=False,
             last_dim_index = len(val.shape)-1
             horiz_dim, ncols = last_dim_index, 1  # starting values
             for dim_idx, dim_size in enumerate(val.shape):
-                if dim_size >= ncols and dim_size <= maxcolumns:
+                if ncols <= dim_size <= maxcolumns:
                     horiz_dim, ncols = dim_idx, dim_size
             # align the array with horiz_dim by making it the last one
             dim_order = list(range(last_dim_index))

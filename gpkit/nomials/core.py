@@ -25,8 +25,7 @@ class Nomial(NomialData):
                 varstr = var.str_without(excluded)
                 if x == 1:
                     pass
-                elif (UNICODE_EXPONENTS and int(x) == x
-                      and 2 <= x and x <= 9):
+                elif UNICODE_EXPONENTS and int(x) == x and 2 <= x <= 9:
                     x = int(x)
                     if x in (2, 3):
                         varstr += chr(176+x)

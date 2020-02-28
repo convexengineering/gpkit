@@ -41,8 +41,8 @@ def strify(val, excluded):
         if isqty:
             units = val
             val = val.magnitude
-        if (val > np.pi/12 and val < 100*np.pi       # within bounds?
-                and abs(12*val/np.pi % 1) <= 1e-2):  # nice multiple of PI?
+        if np.pi/12 < val < 100*np.pi and abs(12*val/np.pi % 1) <= 1e-2:
+            # val is in bounds and a clean multiple of PI!
             if val > 3.1:                            # product of PI
                 val = "%.3g%s" % (val/np.pi, PI_STR)
                 if val == "1%s" % PI_STR:
@@ -119,7 +119,7 @@ class GPkitObject:
             x = values[1]
             if left == "1":
                 aststr = "1"
-            elif UNICODE_EXPONENTS and int(x) == x and x >= 2 and x <= 9:
+            elif UNICODE_EXPONENTS and int(x) == x and 2 <= x <= 9:
                 x = int(x)
                 if x in (2, 3):
                     aststr = "%s%s" % (left, chr(176+x))
