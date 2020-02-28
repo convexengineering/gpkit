@@ -91,7 +91,7 @@ def plot_1dsweepgrid(model, sweeps, posys, origsol=None, tol=0.01, **solveargs):
         if origsubs:
             for posy, ax in zip(posys, subaxes):
                 ax.plot(origsubs[swept], origsol(posy), "ko", markersize=4)
-        format_and_label_axes(swept, posys, subaxes, ylabel=(i is 0))
+        format_and_label_axes(swept, posys, subaxes, ylabel=(i == 0))
         model.substitutions.update(origsubs)
 
     return f, axes

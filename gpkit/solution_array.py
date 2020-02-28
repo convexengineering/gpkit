@@ -425,7 +425,7 @@ class SolutionArray(DictOfLists):
             for wtype in self["warnings"]:
                 warnings[wtype] = self["warnings"][wtype]
                 warnarray = np.array(self["warnings"][wtype])
-                warnarray.T[1] = None  # remove pointer to exact constraint
+                warnarray.T[1] = None  # remove pointer to exact constraint  # pylint: disable=unsupported-assignment-operation
                 if len(warnarray.shape) == 2:
                     warnarray = warnarray.tolist()
                 self["warnings"][wtype] = warnarray
@@ -559,13 +559,15 @@ class SolutionArray(DictOfLists):
         "Returns NomialArray of each solution substituted into posy."
         if posy in self["variables"]:
             return self["variables"](posy)
-        elif not hasattr(posy, "sub"):
+
+        if not hasattr(posy, "sub"):
             raise ValueError("no variable '%s' found in the solution" % posy)
-        elif len(self) > 1:
+
+        if len(self) > 1:
             return NomialArray([self.atindex(i).subinto(posy)
                                 for i in range(len(self))])
-        else:
-            return posy.sub(self["variables"])
+
+        return posy.sub(self["variables"])
 
     def _parse_showvars(self, showvars):
         showvars_out = set()

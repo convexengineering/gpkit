@@ -155,7 +155,7 @@ class SequentialGeometricProgram(CostedConstraintSet):
             if prevcost is None or cost is None:
                 rel_improvement = None
             elif prevcost < (1-reltol)*cost and verbosity > 0:
-                print("SP is not converging! Last GP iteration had a higher"
+                print("SP is not converging! Last GP iteration had a higher"  # pylint: disable=bad-string-format-type
                       " cost (%.2g) than the previous one (%.2g). Results for"
                       " each iteration are in (Model).program.results. If your"
                       " model contains SignomialEqualities, note that"

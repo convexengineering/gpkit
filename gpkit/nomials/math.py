@@ -228,14 +228,14 @@ class Signomial(Nomial):
             return out
         return NotImplemented
 
-    def __div__(self, other):
+    def __truediv__(self, other):
         "Support the / operator in Python 2.x"
         if isinstance(other, Numbers):
             out = self*other**-1
             out.ast = ("div", (self, other))
             return out
         if isinstance(other, Monomial):
-            return other.__rdiv__(self)
+            return other.__rtruediv__(self)
         return NotImplemented
 
     def __pow__(self, expo):
@@ -314,17 +314,13 @@ class Monomial(Posynomial):
             self._c, = self.cs  # pylint: disable=attribute-defined-outside-init, invalid-name
         return self._c
 
-    def __rdiv__(self, other):
+    def __rtruediv__(self, other):
         "Divide other by this Monomial"
         if isinstance(other, Numbers + (Signomial,)):
             out = other * self**-1
             out.ast = ("div", (other, self))
             return out
         return NotImplemented
-
-    def __rtruediv__(self, other, rev=True):
-        "__rdiv__ for python 3.x"
-        return self.__rdiv__(other)
 
     def __pow__(self, expo):
         if isinstance(expo, Numbers):
@@ -648,15 +644,15 @@ class SignomialInequality(ScalarSingleEquationConstraint):
         siglt0, = self.unsubbed
         siglt0 = siglt0.sub(substitutions, require_positive=False)
         posy, negy = siglt0.posy_negy()
-        if posy is 0:
+        if posy is 0:  # pylint: disable=literal-comparison
             print("Warning: SignomialConstraint %s became the tautological"
                   " constraint 0 <= %s after substitution." % (self, negy))
             return []
-        if negy is 0:
+        if negy is 0:  # pylint: disable=literal-comparison
             raise ValueError("SignomialConstraint %s became the infeasible"
                              " constraint %s <= 0 after substitution." %
                              (self, posy))
-        elif not hasattr(negy, "cs") or len(negy.cs) == 1:
+        if not hasattr(negy, "cs") or len(negy.cs) == 1:
             # all but one of the negy terms becomes compatible with the posy
             p_ineq = PosynomialInequality(posy, "<=", negy)
             siglt0_us, = self.unsubbed
@@ -679,12 +675,10 @@ class SignomialInequality(ScalarSingleEquationConstraint):
                              for exp, sig in self._coeffsigs.items()}
             return p_ineq.as_posyslt1(substitutions)
 
-        else:
-            raise InvalidGPConstraint("SignomialInequality could not simplify"
-                                      " to a PosynomialInequality; try calling"
-                                      " `.localsolve` instead of `.solve` to"
-                                      " form your Model as a"
-                                      " SequentialGeometricProgram")
+        raise InvalidGPConstraint("SignomialInequality could not simplify to a"
+                                  " PosynomialInequality; try calling"
+                                  " `.localsolve` instead of `.solve` to form"
+                                  " your Model as a SequentialGeometricProgram")
 
     def sens_from_dual(self, la, nu, result):
         """ We want to do the following chain:

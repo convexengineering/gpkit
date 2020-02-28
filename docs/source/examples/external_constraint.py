@@ -20,24 +20,13 @@ class ExternalConstraint:
 
     def as_gpconstr(self, x0):
         "Returns locally-approximating GP constraint"
-
-        # Unpacking the GPkit variables
-        x = self.x
-        y = self.y
-
         # Creating a default constraint for the first solve
         if not x0:
-            return (y >= x)
-
-        # Returns constraint updated with new call to the external code
-        else:
-            # Unpack Design Variables at the current point
-            x_star = x0["x"]
-
-            # Call external code
-            res = external_code(x_star)
-
-        # Return linearized constraint
-        posynomial_constraint = (y >= res*x/x_star)
+            return (self.y >= self.x)
+        # Otherwise calls external code at the current position...
+        x_star = x0[self.x]
+        res = external_code(x_star)
+        # ...and returns a linearized constraint
+        posynomial_constraint = (self.y >= res*self.x/x_star)
         posynomial_constraint.sgp_parent = self
         return posynomial_constraint

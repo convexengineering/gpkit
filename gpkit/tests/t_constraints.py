@@ -159,7 +159,7 @@ class TestMonomialEquality(unittest.TestCase):
         "Monomial Equalities with VectorVariables"
         x = VectorVariable(3, "x")
         self.assertFalse(x == 3)
-        self.assertTrue(x == x)
+        self.assertTrue(x == x)  # pylint: disable=comparison-with-itself
 
     def test_inheritance(self):
         """Make sure MonomialEquality inherits from the right things"""

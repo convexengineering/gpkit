@@ -240,9 +240,8 @@ class HashVector(dict):
     def __sub__(self, other): return self + -other
     def __rsub__(self, other): return other + -self
     def __radd__(self, other): return self + other
-    def __div__(self, other): return self * other**-1
     def __truediv__(self, other): return self * other**-1
-    def __rdiv__(self, other): return other * self**-1
+    def __rtruediv__(self, other): return other * self**-1
     def __rmul__(self, other): return self * other
 
 

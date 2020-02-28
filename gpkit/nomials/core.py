@@ -7,7 +7,6 @@ from ..repr_conventions import UNICODE_EXPONENTS
 
 class Nomial(NomialData):
     "Shared non-mathematical properties of all nomials"
-    __div__ = None
     sub = None
 
     def str_without(self, excluded=()):
@@ -97,7 +96,6 @@ class Nomial(NomialData):
 
     # required by Python 3
     __hash__ = NomialData.__hash__
-    def __truediv__(self, other): return self.__div__(other)   # pylint: disable=not-callable
 
     # for arithmetic consistency
     def __radd__(self, other): return self.__add__(other, rev=True)   # pylint: disable=no-member

@@ -97,7 +97,7 @@ def splitsweep(sub):
         return True, sub.value
     try:
         sweep, value = sub
-        if sweep is "sweep" and (isinstance(value, Iterable) or
+        if sweep is "sweep" and (isinstance(value, Iterable) or  # pylint: disable=literal-comparison
                                  hasattr(value, "__call__")):
             return True, value
     except (TypeError, ValueError):

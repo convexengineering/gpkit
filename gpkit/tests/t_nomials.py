@@ -32,8 +32,8 @@ class TestMonomial(unittest.TestCase):
 
         # single (string) var with non-default c
         v = 0.1*Variable('tau')
-        tau, = v.varkeys["tau"]
-        self.assertEqual(v.varlocs, {tau: [0]})
+        tau, = v.varkeys["tau"]  # pylint: disable=no-member
+        self.assertEqual(v.varlocs, {tau: [0]})  # pylint: disable=no-member
         self.assertEqual(v.exp, {tau: 1})  # pylint: disable=no-member
         self.assertEqual(v.c, .1)  # pylint: disable=no-member
 
@@ -109,7 +109,7 @@ class TestMonomial(unittest.TestCase):
         self.assertFalse(x != xx)
 
         self.assertEqual(x, x)
-        self.assertFalse(x != x)
+        self.assertFalse(x != x)  # pylint: disable=comparison-with-itself
 
         m = Monomial({}, 1)
         self.assertEqual(m, 1)
@@ -391,8 +391,8 @@ class TestPosynomial(unittest.TestCase):
         self.assertEqual((y**2).diff(y), 2*y)
         self.assertEqual((x + y**2).diff(y), 2*y)
         self.assertEqual((x + y**2).diff('x'), 1)
-        self.assertEqual((x + x*y**2).diff(y), 2*x*y)
-        self.assertEqual((2*y).diff(y), 2)
+        self.assertEqual((x + x*y**2).diff(y), 2*x*y)  # pylint: disable=no-member
+        self.assertEqual((2*y).diff(y), 2)  # pylint: disable=no-member
         # test with units
         x = Variable('x', units='ft')
         d = (3*x**2).diff(x)

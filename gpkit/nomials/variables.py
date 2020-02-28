@@ -104,8 +104,6 @@ class ArrayVariable(NomialArray):  # pylint: disable=too-many-locals
     where $name is the vector's name and i is the VarKey's index.
     """
     def __new__(cls, shape, *args, **descr):  # pylint: disable=too-many-branches, too-many-statements, arguments-differ
-        cls = NomialArray
-
         if "idx" in descr:
             raise ValueError("the description field 'idx' is reserved")
 
@@ -171,7 +169,7 @@ class ArrayVariable(NomialArray):  # pylint: disable=too-many-locals
                     descr[value_option] = values[i]
             vl[i] = Variable(**descr)
 
-        obj = np.asarray(vl).view(cls)
+        obj = np.asarray(vl).view(NomialArray)
         obj.key = veckey
         return obj
 

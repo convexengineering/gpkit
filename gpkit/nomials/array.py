@@ -68,14 +68,6 @@ class NomialArray(GPkitObject, np.ndarray):
         out.ast = ("mul", astorder)
         return out
 
-    def __div__(self, other, rev=False):
-        astorder = (self, other)
-        if rev:
-            astorder = tuple(reversed(astorder))
-        out = NomialArray(np.ndarray.__div__(self, other))
-        out.ast = ("div", astorder)
-        return out
-
     def __truediv__(self, other, rev=False):
         astorder = (self, other)
         if rev:
@@ -84,13 +76,11 @@ class NomialArray(GPkitObject, np.ndarray):
         out.ast = ("div", astorder)
         return out
 
-    def __rdiv__(self, other):
+    def __rtruediv__(self, other):
         astorder = (other, self)
         out = (np.ndarray.__mul__(self**-1, other))
         out.ast = ("div", astorder)
         return out
-
-    __rtruediv__ = __rdiv__
 
     def __add__(self, other, rev=False):
         astorder = (self, other)
@@ -104,9 +94,9 @@ class NomialArray(GPkitObject, np.ndarray):
     def __rmul__(self, other): return self.__mul__(other, rev=True)
     def __radd__(self, other): return self.__add__(other, rev=True)
 
-    def __pow__(self, expo):
+    def __pow__(self, expo):  # pylint: disable=arguments-differ
         astorder = (self, expo)
-        out = (np.ndarray.__pow__(self, expo))
+        out = (np.ndarray.__pow__(self, expo))  # pylint: disable=too-many-function-args
         out.ast = ("pow", astorder)
         return out
 
@@ -130,11 +120,12 @@ class NomialArray(GPkitObject, np.ndarray):
             return self.parse_ast(excluded)
         if hasattr(self, "key"):
             return self.key.str_without(excluded)
-        elif not self.shape:
+        if not self.shape:
             return try_str_without(self.flatten()[0], excluded)
+
         return "[%s]" % ", ".join(
             [try_str_without(np.ndarray.__getitem__(self, i), excluded)
-             for i in range(self.shape[0])])
+             for i in range(self.shape[0])])  # pylint: disable=unsubscriptable-object
 
     def latex(self, excluded=()):
         "Returns latex representation without certain fields."
@@ -153,14 +144,13 @@ class NomialArray(GPkitObject, np.ndarray):
 
     def __array_finalize__(self, obj):
         "Finalizer. Required for objects inheriting from np.ndarray."
-        pass
 
-    def __array_wrap__(self, out_arr, context=None):
+    def __array_wrap__(self, out_arr, context=None):  # pylint: disable=arguments-differ
         """Called by numpy ufuncs.
         Special case to avoid creation of 0-dimensional arrays
         See http://docs.scipy.org/doc/numpy/user/basics.subclassing.html"""
         if out_arr.ndim:
-            return np.ndarray.__array_wrap__(self, out_arr, context)
+            return np.ndarray.__array_wrap__(self, out_arr, context)  # pylint: disable=too-many-function-args
         val = out_arr.item()
         return np.float(val) if isinstance(val, np.generic) else val
 
@@ -184,7 +174,7 @@ class NomialArray(GPkitObject, np.ndarray):
     def units(self):
         """units must have same dimensions across the entire nomial array"""
         units = None
-        for el in self.flat:
+        for el in self.flat:  # pylint: disable=not-an-iterable
             el_units = getattr(el, "units", None)
             if units is None:
                 units = el_units
@@ -193,9 +183,9 @@ class NomialArray(GPkitObject, np.ndarray):
                 raise DimensionalityError(el_units, units)
         return units
 
-    def sum(self, *args, **kwargs):
+    def sum(self, *args, **kwargs):  # pylint: disable=arguments-differ
         "Returns a sum. O(N) if no arguments are given."
-        if args or kwargs or all(l == 0 for l in self.shape):
+        if args or kwargs or not self.shape:
             return np.ndarray.sum(self, *args, **kwargs)
         hmap = NomialMap()
         hmap.units = self.units
@@ -212,9 +202,9 @@ class NomialArray(GPkitObject, np.ndarray):
         out.ast = ("sum", (self, None))
         return out
 
-    def prod(self, *args, **kwargs):
+    def prod(self, *args, **kwargs):  # pylint: disable=arguments-differ
         "Returns a product. O(N) if no arguments and only contains monomials."
-        if args or kwargs or all(dim_len == 0 for dim_len in self.shape):
+        if args or kwargs:
             return np.ndarray.prod(self, *args, **kwargs)
         c, unitpower = 1.0, 0
         exp = HashVector()
