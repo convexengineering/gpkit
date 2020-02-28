@@ -288,8 +288,8 @@ class ConstraintSet(list, GPkitObject):
             if "unnecessary lineage" in excluded:
                 for key in self.name_collision_varkeys():
                     key.descr["necessarylineage"] = True
-            if hasattr(self, "rootconstr_str"):
-                rootlines = self.rootconstr_str(excluded)  # pylint: disable=no-member
+            if hasattr(self, "_rootlines"):
+                rootlines = self._rootlines(excluded)  # pylint: disable=no-member
         if self.idxlookup:
             named_constraints = {v: k for k, v in self.idxlookup.items()}
         for i, constraint in enumerate(self):
@@ -327,8 +327,8 @@ class ConstraintSet(list, GPkitObject):
         if root:
             excluded += ("root",)
             lines.append("\\begin{array}{ll} \\text{}")
-            if hasattr(self, "rootconstr_latex"):
-                lines.append(self.rootconstr_latex(excluded))  # pylint: disable=no-member
+            if hasattr(self, "_rootlatex"):
+                lines.append(self._rootlatex(excluded))  # pylint: disable=no-member
         for constraint in self:
             cstr = try_str_without(constraint, excluded, latex=True)
             if cstr[:6] != "    & ":  # require indentation

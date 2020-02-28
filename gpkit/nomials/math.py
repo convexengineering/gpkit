@@ -53,7 +53,7 @@ class Signomial(Nomial):
                 raise ValueError("Nomial construction accepts only NomialMaps,"
                                  " objects with an .hmap attribute, numbers,"
                                  " or *(exp dict of strings, number).")
-        super(Signomial, self).__init__(hmap)
+        super().__init__(hmap)
         if self.any_nonpositive_cs:
             if require_positive and not SignomialsEnabled:
                 raise InvalidPosynomial("each c must be positive.")
@@ -343,7 +343,7 @@ class Monomial(Posynomial):
             except ValueError as e:  # units mismatch or infeasible constraint
                 print("Infeasible monomial equality: %s" % e)
                 return False
-        return super(Monomial, self).__eq__(other)
+        return super().__eq__(other)
 
     def __ge__(self, other):
         if isinstance(other, Numbers + (Posynomial,)):
@@ -383,8 +383,7 @@ class ScalarSingleEquationConstraint(SingleEquationConstraint):
                 lr[i] = Signomial(sig)
         from .. import NamedVariables
         self.lineage = tuple(NamedVariables.lineage)
-        super(ScalarSingleEquationConstraint,
-              self).__init__(lr[0], oper, lr[1])
+        super().__init__(lr[0], oper, lr[1])
 
     def relaxed(self, relaxvar):
         "Returns the relaxation of the constraint in a list."

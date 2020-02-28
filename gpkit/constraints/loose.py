@@ -8,13 +8,13 @@ class Loose(ConstraintSet):
     senstol = 1e-5
 
     def __init__(self, constraints, senstol=None, raiseerror=False):
-        super(Loose, self).__init__(constraints)
+        super().__init__(constraints)
         self.senstol = senstol or self.senstol
         self.raiseerror = raiseerror
 
     def process_result(self, result):
         "Checks that all constraints are satisfied with equality"
-        super(Loose, self).process_result(result)
+        super().process_result(result)
         for constraint in self.flat():
             if not hasattr(constraint, "relax_sensitivity"):
                 print("Constraint [%.100s... %s %.100s...] does not have a"

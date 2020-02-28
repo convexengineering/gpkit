@@ -16,24 +16,22 @@ class CostedConstraintSet(ConstraintSet):
     def __init__(self, cost, constraints, substitutions=None):
         self.cost = maybe_flatten(cost)
         if isinstance(self.cost, np.ndarray):  # if it's still a vector
-            raise ValueError("cost must be scalar, not the vector %s" % cost)
+            raise ValueError("Cost must be scalar, not the vector %s." % cost)
         subs = dict(self.cost.varkeyvalues())
         if substitutions:
             subs.update(substitutions)
         ConstraintSet.__init__(self, constraints, subs)
 
-    def __bare_init__(self, cost, constraints, substitutions, varkeys=False):
+    def __bare_init__(self, cost, constraints, substitutions):
         self.cost = cost
-        if isinstance(constraints, dict):
-            self.idxlookup = {k: i for i, k in enumerate(constraints)}
-            constraints = constraints.values()
+        self.substitutions = substitutions or {}
         if not isinstance(constraints, ConstraintSet):
+            if isinstance(constraints, dict):
+                self.idxlookup = {k: i for i, k in enumerate(constraints)}
+                constraints = constraints.values()
             list.__init__(self, ConstraintSet(constraints))
         else:
             list.__init__(self, [constraints])
-        self.substitutions = substitutions or {}
-        if varkeys:
-            self.reset_varkeys()
 
     def constrained_varkeys(self):
         "Return all varkeys in the cost and non-ConstraintSet constraints"
@@ -46,7 +44,7 @@ class CostedConstraintSet(ConstraintSet):
         ConstraintSet.reset_varkeys(self)
         self.varkeys.update(self.cost.varkeys)
 
-    def rootconstr_str(self, excluded=()):
+    def _rootlines(self, excluded=()):
         "String showing cost, to be used when this is the top constraint"
         description = ["", "Cost", "----",
                        " %s" % self.cost.str_without(excluded),
@@ -57,7 +55,7 @@ class CostedConstraintSet(ConstraintSet):
             description = [fullname, "="*len(fullname)] + description
         return description
 
-    def rootconstr_latex(self, excluded=()):
+    def _rootlatex(self, excluded=()):
         "Latex showing cost, to be used when this is the top constraint"
         return "\n".join(["\\text{minimize}",
                           "    & %s \\\\" % self.cost.latex(excluded),

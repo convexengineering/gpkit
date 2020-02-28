@@ -14,36 +14,30 @@ from ..exceptions import (InvalidPosynomial, Infeasible, UnknownInfeasible,
 
 
 DEFAULT_SOLVER_KWARGS = {"cvxopt": {"kktsolver": "ldl"}}
-SOLUTION_TOL = {"cvxopt": 1e-3, "mosek_cli": 1e-4, "mosek": 1e-5,
-                'mosek_conif': 1e-3}
+SOLUTION_TOL = {"cvxopt": 1e-3, "mosek_cli": 1e-4, "mosek_conif": 1e-3}
 
 
 def _get_solver(solver, kwargs):
     """Get the solverfn and solvername associated with solver"""
     if solver is None:
         from .. import settings
-        solver = settings.get("default_solver", None)
-        if not solver:
-            raise ValueError(
-                "No solver was given; perhaps gpkit was not properly"
-                " installed, or found no solvers during the"
-                " installation process.")
-
+        try:
+            solver = settings["default_solver"]
+        except KeyError:
+            raise ValueError("No default solver was set during build, so"
+                             " solvers must be manually specified.")
     if solver == "cvxopt":
-        from .._cvxopt import cvxoptimize
-        solverfn = cvxoptimize
+        from ..solvers.cvxopt import optimize
     elif solver == "mosek_cli":
-        from .._mosek import cli_expopt
-        solverfn = cli_expopt.imize_fn(**kwargs)
-    elif solver == 'mosek_conif':
-        from .._mosek import mosek_conif
-        solverfn = mosek_conif.mskoptimize
+        from ..solvers.mosek_cli import optimize_generator
+        optimize = optimize_generator(**kwargs)
+    elif solver == "mosek_conif":
+        from ..solvers.mosek_conif import optimize
     elif hasattr(solver, "__call__"):
-        solverfn = solver
-        solver = solver.__name__
+        solver, optimize = solver.__name__, solver
     else:
         raise ValueError("Unknown solver '%s'." % solver)
-    return solverfn, solver
+    return solver, optimize
 
 
 class GeometricProgram(CostedConstraintSet, NomialData):
@@ -74,18 +68,16 @@ class GeometricProgram(CostedConstraintSet, NomialData):
         self.nu_by_posy = None
         self.solver_log = None
         self.solver_out = None
-        self.__bare_init__(cost, constraints, substitutions, varkeys=False)
+        self.__bare_init__(cost, constraints, substitutions)
         for key, sub in self.substitutions.items():
             if isinstance(sub, FixedScalar):
                 sub = sub.value
                 if hasattr(sub, "units"):
                     sub = sub.to(key.units or "dimensionless").magnitude
                 self.substitutions[key] = sub
-            # only allow Numbers and ndarrays
             if not isinstance(sub, (Numbers, np.ndarray)):
-                raise ValueError("substitution {%s: %s} with value type %s is"
-                                 " not allowed in .substitutions."
-                                 % (key, sub, type(sub)))
+                raise ValueError("substitution {%s: %s} has invalid value type"
+                                 " %s." % (key, sub, type(sub)))
         try:
             self.posynomials = [cost.sub(self.substitutions)]
         except InvalidPosynomial:
@@ -111,7 +103,7 @@ class GeometricProgram(CostedConstraintSet, NomialData):
                 for (v, b), x in self.missingbounds.items())
             raise UnboundedGP(boundstrs)
 
-    varkeys = NomialData.varkeys
+    varkeys = NomialData.varkeys  # as opposed to ConstraintSet's
 
     def gen(self):
         "Generates nomial and solve data (A, p_idxs) from posynomials"
@@ -121,20 +113,19 @@ class GeometricProgram(CostedConstraintSet, NomialData):
             self._exps.extend(hmap.keys())
             self._cs.extend(hmap.values())
         self.vks = self.varlocs
-        self.A, self.missingbounds = genA(self.exps, self.varlocs,
-                                          self.meq_idxs)
+        self.A, self.missingbounds = genA(self.exps, self.varlocs, self.meq_idxs)
 
     # pylint: disable=too-many-statements, too-many-locals
-    def solve(self, solver=None, *, verbosity=1, process_result=True,
-              gen_result=True, **kwargs):
+    def solve(self, solver=None, *, verbosity=1,
+              process_result=True, gen_result=True, **kwargs):
         """Solves a GeometricProgram and returns the solution.
 
         Arguments
         ---------
         solver : str or function (optional)
-            By default uses one of the solvers found during installation.
-            If set to "mosek", "mosek_cli", or "cvxopt", uses that solver.
-            If set to a function, passes that function cs, A, p_idxs, and k.
+            By default uses a solver found during installation.
+            If "mosek_conif", "mosek_cli", or "cvxopt", uses that solver.
+            If a function, passes that function cs, A, p_idxs, and k.
         verbosity : int (default 1)
             If greater than 0, prints solver name and solve time.
         **kwargs :
@@ -145,7 +136,7 @@ class GeometricProgram(CostedConstraintSet, NomialData):
         -------
         result : SolutionArray
         """
-        solverfn, solvername = _get_solver(solver, kwargs)
+        solvername, solverfn = _get_solver(solver, kwargs)
 
         starttime = time()
         if verbosity > 0:
@@ -157,10 +148,9 @@ class GeometricProgram(CostedConstraintSet, NomialData):
 
         infeasibility, solver_out = None, {}
         original_stdout = sys.stdout
-        log = SolverLog(verbosity-1, original_stdout)
         try:
             # NOTE: SIDE EFFECTS AS WE LOG SOLVER'S STDOUT AND OUTPUT
-            sys.stdout = log
+            sys.stdout = SolverLog(verbosity-1, original_stdout)
             solver_out = solverfn(c=self.cs, A=self.A, p_idxs=self.p_idxs,
                                   k=self.k, **solver_kwargs)
             self.solver_out = solver_out
@@ -169,8 +159,8 @@ class GeometricProgram(CostedConstraintSet, NomialData):
         except Exception as e:
             raise UnknownInfeasible("Something unexpected went wrong.") from e
         finally:
+            self.solver_log = "\n".join(sys.stdout)
             sys.stdout = original_stdout
-            self.solver_log = "\n".join(log)
             # STDOUT HAS BEEN RETURNED. ENDING SIDE EFFECTS
 
         solver_out["solver"] = solvername

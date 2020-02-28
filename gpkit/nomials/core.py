@@ -88,7 +88,7 @@ class Nomial(NomialData):
         "True if self and other are algebraically identical."
         if isinstance(other, Numbers):
             return isinstance(self, FixedScalar) and self.value == other
-        return super(Nomial, self).__eq__(other)
+        return super().__eq__(other)
 
     # pylint: disable=multiple-statements
     def __ne__(self, other): return not Nomial.__eq__(self, other)

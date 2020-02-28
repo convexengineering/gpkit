@@ -64,7 +64,8 @@ class SequentialGeometricProgram(CostedConstraintSet):
     The equivalent of a Signomial objective can be constructed by constraining
     a dummy variable `z` to be greater than the desired Signomial objective `s`
     (z >= s) and then minimizing that dummy variable.""")
-        self.__bare_init__(cost, constraints, substitutions, varkeys=True)
+        self.__bare_init__(cost, constraints, substitutions)
+        self.reset_varkeys()
         self.externalfn_vars = frozenset(Variable(v) for v in self.varkeys
                                          if v.externalfn)
         self.externalfns = bool(self.externalfn_vars)

@@ -11,14 +11,14 @@ class Tight(ConstraintSet):
     reltol = 1e-3
 
     def __init__(self, constraints, reltol=None, raiseerror=False, **kwargs):
-        super(Tight, self).__init__(constraints)
+        super().__init__(constraints)
         self.reltol = reltol or self.reltol
         self.raiseerror = raiseerror
         self.__dict__.update(kwargs)  # NOTE: for Berk's use in labelling
 
     def process_result(self, result):
         "Checks that all constraints are satisfied with equality"
-        super(Tight, self).process_result(result)
+        super().process_result(result)
         variables = result["variables"]
         for constraint in self.flat():
             rel_diff = 0

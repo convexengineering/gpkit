@@ -3,7 +3,7 @@ from operator import xor
 from functools import reduce  # pylint: disable=redefined-builtin
 from six import with_metaclass
 import numpy as np
-from ._pint import Quantity, qty  # pylint: disable=unused-import
+from .units import Quantity, qty  # pylint: disable=unused-import
 
 try:
     isinstance("", basestring)

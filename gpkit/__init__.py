@@ -1,6 +1,6 @@
 "GP and SP modeling package"
 from .build import build
-from ._pint import units, ureg, DimensionalityError
+from .units import units, ureg, DimensionalityError
 from .globals import settings, SignomialsEnabled, Vectorize, NamedVariables
 from .varkey import VarKey
 from .nomials import Monomial, Posynomial, Signomial, NomialArray
