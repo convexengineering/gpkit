@@ -2,7 +2,7 @@
    through python-based Optimizer API"""
 import mosek
 import numpy as np
-from ..exceptions import (Infeasible, UnknownInfeasible,
+from ..exceptions import (UnknownInfeasible,
                           PrimalInfeasible, DualInfeasible)
 
 def mskoptimize(c, A, k, p_idxs, **kwargs):

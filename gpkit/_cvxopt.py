@@ -2,8 +2,7 @@
 import numpy as np
 from cvxopt import spmatrix, matrix, log
 from cvxopt.solvers import gp
-from gpkit.exceptions import (Infeasible, UnknownInfeasible,
-                              PrimalInfeasible, DualInfeasible)
+from gpkit.exceptions import UnknownInfeasible, DualInfeasible
 
 
 def cvxoptimize(c, A, k, *args, **kwargs):

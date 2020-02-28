@@ -5,7 +5,7 @@ from ..nomials import parse_subs
 from ..solution_array import SolutionArray
 from ..keydict import KeyDict
 from ..small_scripts import maybe_flatten
-from ..exceptions import UnboundedGP, Infeasible
+from ..exceptions import Infeasible
 
 try:
     from ad import adnumber

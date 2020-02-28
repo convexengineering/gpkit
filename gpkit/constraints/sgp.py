@@ -144,7 +144,7 @@ class SequentialGeometricProgram(CostedConstraintSet):
                     cost = mag(gp.posynomials[0].sub(x0).c)
             except (PrimalInfeasible, UnknownInfeasible):
                 primal_feas = GeometricProgram(
-                    slackvar**100 * gp.cost,
+                    gp.cost * slackvar**100,
                     [slackvar >= 1] +
                     [posy <= slackvar for posy in gp.posynomials[1:]], None)
                 self.gps.append(primal_feas)
@@ -156,11 +156,12 @@ class SequentialGeometricProgram(CostedConstraintSet):
                 prevcost = cost
                 continue
             if cost*(1 - EPS) > prevcost + EPS and verbosity >= 0:
-                print("SP is not converging! Last GP iteration had a higher"  # pylint: disable=bad-string-format-type
-                " cost (%.2e) than the previous one (%+.2e). Check"
-                " `m.program.results`. If your model has SignomialEqualities,"
-                " convergence is not guaranteed: try replacing any"
-                " SigEqs you can and solving again." % (cost, cost - prevcost))
+                print(
+                    "SP is not converging! Last GP iteration had a higher cost"
+                    " (%.2e) than the previous one (%+.2e). Check `m.program"
+                    ".results`. If your model has SignomialEqualities,"
+                    " convergence is not guaranteed: try replacing any SigEqs"
+                    " you can and solving again." % (cost, cost - prevcost))
             rel_improvement = abs(prevcost - cost)/(prevcost + cost)
             prevcost = cost
         # solved successfully!

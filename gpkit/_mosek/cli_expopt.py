@@ -12,7 +12,7 @@ import errno
 import stat
 from subprocess import check_output, CalledProcessError
 from .. import settings
-from ..exceptions import (Infeasible, UnknownInfeasible,
+from ..exceptions import (UnknownInfeasible,
                           PrimalInfeasible, DualInfeasible)
 
 def remove_read_only(func, path, exc):

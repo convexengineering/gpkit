@@ -181,7 +181,7 @@ class GeometricProgram(CostedConstraintSet, NomialData):
         if infeasibility:
             if isinstance(infeasibility, PrimalInfeasible):
                 msg = ("The model had no feasible points; "
-                         "you may wish to relax some constraints or constants.")
+                       "you may wish to relax some constraints or constants.")
             elif isinstance(infeasibility, DualInfeasible):
                 msg = ("The model ran to an infinitely low cost;"
                        " bounding the right variables would prevent this.")

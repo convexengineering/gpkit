@@ -10,7 +10,7 @@ from gpkit.small_scripts import mag
 from gpkit.small_classes import Quantity
 from gpkit.constraints.loose import Loose
 from gpkit import Model
-from gpkit.exceptions import (Infeasible, UnknownInfeasible,
+from gpkit.exceptions import (UnknownInfeasible,
                               PrimalInfeasible, DualInfeasible, UnboundedGP)
 
 
@@ -109,7 +109,7 @@ class TestExamples(unittest.TestCase):
         if "mosek_conif" == settings["default_solver"]:
             example.gp.solve(verbosity=0)  # mosek_conif can solve it!
         else:
-            with self.assertRaises(UnknownInfeasible) as cm:
+            with self.assertRaises(UnknownInfeasible):
                 example.gp.solve(verbosity=0)
 
     def test_vectorize(self, example):
@@ -119,14 +119,14 @@ class TestExamples(unittest.TestCase):
         primal_or_unknown = PrimalInfeasible
         if "cvxopt" in settings["default_solver"]:
             primal_or_unknown = UnknownInfeasible
-        with self.assertRaises(primal_or_unknown) as cm:
+        with self.assertRaises(primal_or_unknown):
             example.m.solve(verbosity=0)
 
     def test_primal_infeasible_ex2(self, example):
         primal_or_unknown = PrimalInfeasible
         if "cvxopt" in settings["default_solver"]:
             primal_or_unknown = UnknownInfeasible
-        with self.assertRaises(primal_or_unknown) as cm:
+        with self.assertRaises(primal_or_unknown):
             example.m.solve(verbosity=0)
 
     def test_docstringparsing(self, example):
@@ -136,21 +136,21 @@ class TestExamples(unittest.TestCase):
         dual_or_primal = DualInfeasible
         if "mosek_conif" == settings["default_solver"]:
             dual_or_primal = PrimalInfeasible
-        with self.assertRaises(UnboundedGP) as cm:
+        with self.assertRaises(UnboundedGP):
             example.m.gp()
-        with self.assertRaises(dual_or_primal) as cm:
+        with self.assertRaises(dual_or_primal):
             gp = example.m.gp(allow_missingbounds=True)
             gp.solve(verbosity=0)
 
         primal_or_unknown = PrimalInfeasible
         if "cvxopt" == settings["default_solver"]:
             primal_or_unknown = UnknownInfeasible
-        with self.assertRaises(primal_or_unknown) as cm:
+        with self.assertRaises(primal_or_unknown):
             example.m2.solve(verbosity=0)
 
-        with self.assertRaises(UnboundedGP) as cm:
+        with self.assertRaises(UnboundedGP):
             example.m3.gp()
-        with self.assertRaises(DualInfeasible) as cm:
+        with self.assertRaises(DualInfeasible):
             gp3 = example.m3.gp(allow_missingbounds=True)
             gp3.solve(verbosity=0)
 

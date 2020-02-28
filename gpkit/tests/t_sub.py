@@ -8,7 +8,7 @@ from gpkit import SignomialsEnabled, NamedVariables
 from gpkit import Variable, VectorVariable, Model, Signomial
 from gpkit.small_scripts import mag
 from gpkit.tests.helpers import run_tests
-from gpkit.exceptions import UnboundedGP, UnknownInfeasible
+from gpkit.exceptions import UnboundedGP
 
 # pylint: disable=invalid-name,attribute-defined-outside-init,unused-variable
 

@@ -11,7 +11,7 @@ from gpkit import NamedVariables, units, parse_variables
 from gpkit.constraints.relax import ConstraintsRelaxed
 from gpkit.constraints.relax import ConstraintsRelaxedEqually
 from gpkit.constraints.relax import ConstantsRelaxed
-from gpkit.exceptions import (Infeasible, UnknownInfeasible,
+from gpkit.exceptions import (UnknownInfeasible,
                               PrimalInfeasible, DualInfeasible, UnboundedGP)
 
 

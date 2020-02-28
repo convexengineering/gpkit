@@ -11,7 +11,7 @@ from ..exceptions import InvalidGPConstraint
 from .. import NamedVariables
 from ..tools.docstring import expected_unbounded
 from .set import add_meq_bounds
-from gpkit.exceptions import Infeasible
+from ..exceptions import Infeasible
 
 
 class Model(CostedConstraintSet):
