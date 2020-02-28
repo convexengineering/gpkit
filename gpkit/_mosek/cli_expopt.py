@@ -87,19 +87,17 @@ def imize_fn(path=None):
                                          solution_filename]).split(b"\n"):
                 print(logline)
         except CalledProcessError as e:
-            raise UnknownInfeasible(str(e))
+            raise UnknownInfeasible() from e
         with open(solution_filename) as f:
-            _, statusval = f.readline().split("PROBLEM STATUS      : ")
-            if statusval == "PRIMAL_INFEASIBLE\n":
-                raise PrimalInfeasible("Model has no feasible points.")
-            if statusval == "DUAL_INFEASIBLE\n":
-                raise DualInfeasible("Model has a feasible zero-cost point.")
-            if statusval == "PRIMAL_AND_DUAL_FEASIBLE\n":
-                status = "optimal"
-            else:
-                raise UnknownInfeasible("solver status: " + statusval[:-1])
+            _, probsta = f.readline().split("PROBLEM STATUS      : ")
+            if probsta == "PRIMAL_INFEASIBLE\n":
+                raise PrimalInfeasible()
+            if probsta == "DUAL_INFEASIBLE\n":
+                raise DualInfeasible()
+            if probsta != "PRIMAL_AND_DUAL_FEASIBLE\n":
+                raise UnknownInfeasible("solver status: " + probsta[:-1])
 
-            assert_equal(f.readline(), "SOLUTION STATUS     : OPTIMAL\n")
+            _, solsta = f.readline().split("SOLUTION STATUS     : ")
             # line looks like "OBJECTIVE           : 2.763550e+002"
             objective_val = float(f.readline().split()[2])
             assert_equal(f.readline(), "\n")
@@ -114,7 +112,7 @@ def imize_fn(path=None):
         if tmpdir:
             shutil.rmtree(path, ignore_errors=False, onerror=remove_read_only)
 
-        return dict(status=status,
+        return dict(status=solsta[:-1],
                     objective=objective_val,
                     primal=primal_vals,
                     nu=dual_vals)

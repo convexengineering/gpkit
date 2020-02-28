@@ -155,32 +155,41 @@ class GeometricProgram(CostedConstraintSet, NomialData):
         solver_kwargs = DEFAULT_SOLVER_KWARGS.get(solvername, {})
         solver_kwargs.update(kwargs)
 
-        # NOTE: SIDE EFFECTS AS WE LOG SOLVER'S STDOUT AND OUTPUT
+        infeasibility, solver_out = None, {}
         original_stdout = sys.stdout
         log = SolverLog(verbosity-1, original_stdout)
         try:
-            sys.stdout = log   # CAPTURED
+            # NOTE: SIDE EFFECTS AS WE LOG SOLVER'S STDOUT AND OUTPUT
+            sys.stdout = log
             solver_out = solverfn(c=self.cs, A=self.A, p_idxs=self.p_idxs,
                                   k=self.k, **solver_kwargs)
             self.solver_out = solver_out
+        except Infeasible as e:
+            infeasibility = e
+        except Exception as e:
+            raise UnknownInfeasible("Something unexpected went wrong.") from e
         finally:
             sys.stdout = original_stdout
-        # STDOUT HAS BEEN RETURNED. ENDING SIDE EFFECTS.
-        self.solver_log = "\n".join(log)
+            self.solver_log = "\n".join(log)
+            # STDOUT HAS BEEN RETURNED. ENDING SIDE EFFECTS
 
         solver_out["solver"] = solvername
         solver_out["soltime"] = time() - starttime
         if verbosity > 0:
             print("Solving took %.3g seconds." % (solver_out["soltime"],))
 
-        solver_status = str(solver_out.get("status", None))
-        if solver_status.lower() != "optimal":
-            raise RuntimeWarning(
-                "final status of solver '%s' was '%s', not 'optimal'.\n\n"
-                "The solver's result is stored in model.program.solver_out. "
-                "A result dict can be generated via "
-                "program._compile_result(program.solver_out)." %
-                (solvername, solver_status))
+        if infeasibility:
+            if isinstance(infeasibility, PrimalInfeasible):
+                msg = ("The model had no feasible points; "
+                         "you may wish to relax some constraints or constants.")
+            elif isinstance(infeasibility, DualInfeasible):
+                msg = ("The model ran to an infinitely low cost;"
+                       " bounding the right variables would prevent this.")
+            elif isinstance(infeasibility, UnknownInfeasible):
+                msg = "The solver failed for an unknown reason."
+            msg += (" Running `.debug()` may pinpoint the trouble. You can"
+                    " also try another solver, or increase the verbosity.")
+            raise infeasibility.__class__(msg) from infeasibility
 
         if gen_result:  # NOTE: SIDE EFFECTS
             self._result = self.generate_result(solver_out, warn_on_check,
@@ -214,7 +223,7 @@ class GeometricProgram(CostedConstraintSet, NomialData):
             tol = SOLUTION_TOL.get(solver_out["solver"], 1e-5)
             self.check_solution(result["cost"], solver_out['primal'],
                                 solver_out["nu"], solver_out["la"], tol)
-        except RuntimeWarning as e:
+        except Infeasible as e:
             if warn_on_check:
                 e = str(e)
                 if dual_check or ("Dual" not in e and "nu" not in e):
@@ -360,38 +369,36 @@ class GeometricProgram(CostedConstraintSet, NomialData):
         # check primal sol
         primal_exp_vals = self.cs * np.exp(A.dot(primal))   # c*e^Ax
         if not _almost_equal(primal_exp_vals[self.m_idxs[0]].sum(), cost):
-            raise RuntimeWarning("Primal solution computed cost did not match"
-                                 " solver-returned cost: %s vs %s" %
-                                 (primal_exp_vals[self.m_idxs[0]].sum(), cost))
+            raise Infeasible("Primal solution computed cost did not match"
+                             " solver-returned cost: %s vs %s." %
+                             (primal_exp_vals[self.m_idxs[0]].sum(), cost))
         for mi in self.m_idxs[1:]:
             if primal_exp_vals[mi].sum() > 1 + tol:
-                raise RuntimeWarning("Primal solution violates constraint:"
-                                     " %s is greater than 1." %
-                                     primal_exp_vals[mi].sum())
+                raise Infeasible("Primal solution violates constraint: %s is "
+                                 "greater than 1." % primal_exp_vals[mi].sum())
         # check dual sol
         # note: follows dual formulation in section 3.1 of
         # http://web.mit.edu/~whoburg/www/papers/hoburg_phd_thesis.pdf
         if not _almost_equal(self.nu_by_posy[0].sum(), 1.):
-            raise RuntimeWarning("Dual variables associated with objective sum"
-                                 " to %s, not 1" % self.nu_by_posy[0].sum())
+            raise Infeasible("Dual variables associated with objective sum"
+                             " to %s, not 1." % self.nu_by_posy[0].sum())
         if any(nu < 0):
             if all(nu > -tol/1000.):  # HACK, see issue 528
-                print("Allowing negative dual variable(s) as small as"
-                      " %s." % min(nu))
+                print("Allowing negative dual variables up to %s." % min(nu))
             else:
-                raise RuntimeWarning("Dual solution has negative entries as"
-                                     " small as %s." % min(nu))
+                raise Infeasible("Dual solution has negative entries as"
+                                 " large as %s." % min(nu))
         ATnu = A.T.dot(nu)
         if any(np.abs(ATnu) > tol):
-            raise RuntimeWarning("sum of nu^T * A did not vanish")
+            raise Infeasible("Sum of nu^T * A did not vanish.")
         b = np.log(self.cs)
         dual_cost = sum(
             self.nu_by_posy[i].dot(
                 b[mi] - np.log(self.nu_by_posy[i]/la[i]))
             for i, mi in enumerate(self.m_idxs) if la[i])
         if not _almost_equal(np.exp(dual_cost), cost):
-            raise RuntimeWarning("Dual cost %s does not match primal"
-                                 " cost %s" % (np.exp(dual_cost), cost))
+            raise Infeasible("Dual cost %s does not match primal cost %s"
+                             % (np.exp(dual_cost), cost))
 
 
 def genA(exps, varlocs, meq_idxs):  # pylint: disable=invalid-name

@@ -14,5 +14,3 @@ Constraints
  mf >= mi + mb
  mf = rf·V
  Fs <= mi
-Using solver 'cvxopt'
-Solving for 7 variables.

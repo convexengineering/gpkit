@@ -235,11 +235,11 @@ def mskoptimize(c, A, k, p_idxs, **kwargs):
         # wrap things up in a dictionary
         solution = {'status': 'optimal', 'primal': x, 'la': merged_duals}
     elif msk_solsta == mosek.solsta.prim_infeas_cer:
-        raise PrimalInfeasible("Model has no feasible points.")
+        raise PrimalInfeasible()
     elif msk_solsta == mosek.solsta.dual_infeas_cer:
-        raise DualInfeasible("Model has a feasible zero-cost point.")
+        raise DualInfeasible()
     else:
-        raise UnknownInfeasible("Model cannot solve with this solver.")
+        raise UnknownInfeasible("solution status: ", msk_solsta)
     task.__exit__(None, None, None)
     env.__exit__(None, None, None)
     return solution

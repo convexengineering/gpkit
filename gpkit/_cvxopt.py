@@ -43,13 +43,11 @@ def cvxoptimize(c, A, k, *args, **kwargs):
     try:
         solution = gp(k, F, g, *args, **kwargs)
     except ValueError as e:
-        print(repr(ValueError))
-        raise DualInfeasible("Model has a feasible zero-cost point.")
-
+        raise DualInfeasible() from e
     if solution["status"] == "unknown":
-        raise UnknownInfeasible("Model cannot solve with this solver.")
+        raise UnknownInfeasible()
     if solution["status"] != "optimal":
-        raise Infeasible("Unknown solver status: " + statusval[:-1])
+        raise UnknownInfeasible("solution status: " + solution["status"])
 
     return dict(status=solution['status'],
                 primal=np.ravel(solution['x']),
