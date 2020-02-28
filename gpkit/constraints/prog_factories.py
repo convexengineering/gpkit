@@ -121,7 +121,7 @@ def _solve_fctry(genfunction):
                       solver, verbosity, **kwargs)
         else:
             self.program, progsolve = genfunction(self)
-            result = progsolve(solver, verbosity, **kwargs)
+            result = progsolve(solver, verbosity=verbosity, **kwargs)
             solution.append(result)
         solution.program = self.program
         solution.model = self
@@ -165,7 +165,7 @@ def run_sweep(genfunction, self, solution, skipsweepfailures,
         program, solvefn = genfunction(self, constants)
         self.program.append(program)  # NOTE: SIDE EFFECTS
         try:
-            solution.append(solvefn(solver, verbosity-1, **kwargs))
+            solution.append(solvefn(solver, verbosity=verbosity-1, **kwargs))
         except Infeasible as e:
             last_error = e
             if not skipsweepfailures:

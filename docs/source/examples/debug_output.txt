@@ -5,6 +5,11 @@ Solves with these variables bounded:
  sensitive to upper bound: y
    value near upper bound: y
 
+
+Solves with these variables bounded:
+ sensitive to upper bound: y
+   value near upper bound: y
+
 and these constants relaxed:
   x_min [ft]: relaxed from 2 to 1
 
@@ -27,6 +32,11 @@ Solves with these constraints relaxed:
 
 < DEBUGGING >
 > Trying with bounded variables and relaxed constants:
+
+Solves with these variables bounded:
+ sensitive to upper bound: y
+   value near upper bound: y
+
 
 Solves with these variables bounded:
  sensitive to upper bound: y

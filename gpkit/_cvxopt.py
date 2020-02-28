@@ -39,7 +39,7 @@ def cvxoptimize(c, A, k, *args, **kwargs):
                     Optimal value of the dual variables, in logspace.
     """
     g = log(matrix(c))
-    F = spmatrix(A.data, A.row, A.col, tc='d')
+    F = spmatrix(A.data, A.row, A.col, tc="d")
     try:
         solution = gp(k, F, g, *args, **kwargs)
     except ValueError as e:
@@ -49,6 +49,7 @@ def cvxoptimize(c, A, k, *args, **kwargs):
     if solution["status"] != "optimal":
         raise UnknownInfeasible("solution status: " + solution["status"])
 
-    return dict(status=solution['status'],
-                primal=np.ravel(solution['x']),
-                la=solution['znl'])
+    return dict(status=solution["status"],
+                objective=np.exp(solution["primal objective"]),
+                primal=np.ravel(solution["x"]),
+                la=solution["znl"])

@@ -95,7 +95,7 @@ def imize_fn(path=None):
             if probsta == "DUAL_INFEASIBLE\n":
                 raise DualInfeasible()
             if probsta != "PRIMAL_AND_DUAL_FEASIBLE\n":
-                raise UnknownInfeasible("solver status: " + probsta[:-1])
+                raise UnknownInfeasible("PROBLEM STATUS: " + probsta[:-1])
 
             _, solsta = f.readline().split("SOLUTION STATUS     : ")
             # line looks like "OBJECTIVE           : 2.763550e+002"

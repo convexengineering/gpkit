@@ -14,6 +14,8 @@ from .costed import CostedConstraintSet
 from ..small_scripts import mag
 
 
+EPS = 1e-6  # determines what counts as "convergence"
+
 # pylint: disable=too-many-instance-attributes
 class SequentialGeometricProgram(CostedConstraintSet):
     """Prepares a collection of signomials for a SP solve.
@@ -123,17 +125,16 @@ class SequentialGeometricProgram(CostedConstraintSet):
         slackvar = Variable()
         prevcost, cost, rel_improvement = None, None, None
         while rel_improvement is None or rel_improvement > reltol:
+            prevcost = cost
             if len(self.gps) > iteration_limit:
-                raise UnknownInfeasible("""problem unsolved after %s iterations.
-
-    The last result is available in Model.program.gps[-1].result. If the gps
-    appear to be converging, you may wish to increase the iteration limit by
-    calling .localsolve(..., iteration_limit=NEWLIMIT).""" % len(self.gps))
+                raise UnknownInfeasible(
+                    "Unsolved after %s iterations. Check `m.program.results`;"
+                    " if they're converging, try `.localsolve(...,"
+                    " iteration_limit=NEWLIMIT)`." % len(self.gps))
             gp = self.gp(x0, mutategp)
             self.gps.append(gp)  # NOTE: SIDE EFFECTS
             try:
-                solver_out = gp.solve(solver, verbosity-1,
-                                      warn_on_check=True,
+                solver_out = gp.solve(solver, verbosity=verbosity-1,
                                       gen_result=False, **kwargs)
                 self.solver_outs.append(solver_out)
                 x0 = dict(zip(gp.varlocs, np.exp(solver_out["primal"])))
@@ -142,28 +143,25 @@ class SequentialGeometricProgram(CostedConstraintSet):
                 else:
                     cost = mag(gp.posynomials[0].sub(x0).c)
             except (PrimalInfeasible, UnknownInfeasible):
-                feas_constrs = ([slackvar >= 1] +
-                                [posy <= slackvar
-                                 for posy in gp.posynomials[1:]])
-                primal_feas = GeometricProgram(slackvar**100 * gp.cost,
-                                               feas_constrs, None)
+                primal_feas = GeometricProgram(
+                    slackvar**100 * gp.cost,
+                    [slackvar >= 1] +
+                    [posy <= slackvar for posy in gp.posynomials[1:]], None)
                 self.gps.append(primal_feas)
-                solver_out = primal_feas.solve(solver, verbosity-1,
-                                               gen_result=False, **kwargs)
-                x0 = dict(zip(primal_feas.varlocs,
-                              np.exp(solver_out["primal"])))
+                closest = primal_feas.solve(solver, verbosity=verbosity-1,
+                                            gen_result=False, **kwargs)
+                x0 = dict(zip(primal_feas.varlocs, np.exp(closest["primal"])))
                 cost = None  # reset the cost-counting
             if prevcost is None or cost is None:
-                rel_improvement = None
-            elif prevcost < (1-reltol)*cost and verbosity > 0:
+                prevcost = cost
+                continue
+            if cost*(1 - EPS) > prevcost + EPS and verbosity >= 0:
                 print("SP is not converging! Last GP iteration had a higher"  # pylint: disable=bad-string-format-type
-                      " cost (%.2g) than the previous one (%.2g). Results for"
-                      " each iteration are in (Model).program.results. If your"
-                      " model contains SignomialEqualities, note that"
-                      " convergence is not guaranteed: try replacing any"
-                      " SigEqs you can and solving again." % (cost, prevcost))
-            else:
-                rel_improvement = abs(prevcost-cost)/(prevcost + cost)
+                " cost (%.2e) than the previous one (%+.2e). Check"
+                " `m.program.results`. If your model has SignomialEqualities,"
+                " convergence is not guaranteed: try replacing any"
+                " SigEqs you can and solving again." % (cost, cost - prevcost))
+            rel_improvement = abs(prevcost - cost)/(prevcost + cost)
             prevcost = cost
         # solved successfully!
         self.result = gp.generate_result(solver_out, verbosity)

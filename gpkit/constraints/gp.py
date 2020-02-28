@@ -125,8 +125,8 @@ class GeometricProgram(CostedConstraintSet, NomialData):
                                           self.meq_idxs)
 
     # pylint: disable=too-many-statements, too-many-locals
-    def solve(self, solver=None, verbosity=1, warn_on_check=False,
-              process_result=True, gen_result=True, **kwargs):
+    def solve(self, solver=None, *, verbosity=1, process_result=True,
+              gen_result=True, **kwargs):
         """Solves a GeometricProgram and returns the solution.
 
         Arguments
@@ -192,12 +192,13 @@ class GeometricProgram(CostedConstraintSet, NomialData):
             raise infeasibility.__class__(msg) from infeasibility
 
         if gen_result:  # NOTE: SIDE EFFECTS
-            self._result = self.generate_result(solver_out, warn_on_check,
+            self._result = self.generate_result(solver_out,
                                                 verbosity, process_result)
             return self.result
 
         solver_out["gen_result"] = \
             lambda: self.generate_result(solver_out, dual_check=False)
+
         return solver_out
 
     @property
@@ -215,7 +216,7 @@ class GeometricProgram(CostedConstraintSet, NomialData):
         soltime = solver_out["soltime"]
         result = self._compile_result(solver_out)  # NOTE: SIDE EFFECTS
         if verbosity > 1:
-            print("result packing took %.2g%% of solve time" %
+            print("Result packing took %.2g%% of solve time." %
                   ((time() - tic) / soltime * 100))
             tic = time()
 
@@ -231,14 +232,14 @@ class GeometricProgram(CostedConstraintSet, NomialData):
             else:
                 raise e
         if verbosity > 1:
-            print("solution checking took %.2g%% of solve time" %
+            print("Solution checking took %.2g%% of solve time." %
                   ((time() - tic) / soltime * 100))
             tic = time()
 
         if process_result:
             self.process_result(result)
         if verbosity > 1:
-            print("processing results took %.2g%% of solve time" %
+            print("Processing results took %.2g%% of solve time." %
                   ((time() - tic) / soltime * 100))
         return result
 
@@ -344,7 +345,7 @@ class GeometricProgram(CostedConstraintSet, NomialData):
         return SolutionArray(result)
 
     def check_solution(self, cost, primal, nu, la, tol, abstol=1e-20):
-        """Run a series of checks to mathematically confirm sol solves this GP
+        """Run checks to mathematically confirm solution solves this GP
 
         Arguments
         ---------
@@ -359,7 +360,7 @@ class GeometricProgram(CostedConstraintSet, NomialData):
 
         Raises
         ------
-        RuntimeWarning, if any problems are found
+        Infeasible if any problems are found
         """
         def _almost_equal(num1, num2):
             "local almost equal test"
