@@ -57,7 +57,7 @@ setup(
                       "cvxopt >= 1.1.8"],
     version="0.9.1.0",
     packages=["gpkit", "gpkit.tools", "gpkit.interactive", "gpkit.constraints",
-              "gpkit.nomials", "gpkit.tests", "gpkit._mosek", "gpkit._pint"],
+              "gpkit.nomials", "gpkit.tests", "gpkit.solvers"],
     package_data={"gpkit": ["env/settings"]},
     license=LICENSE,
     long_description=LONG_DESCRIPTION,
