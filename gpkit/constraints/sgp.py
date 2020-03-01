@@ -140,11 +140,8 @@ class SequentialGeometricProgram(CostedConstraintSet):
             solver_out = gp.solve(solver, verbosity=verbosity-1,
                                   gen_result=False, **solveargs)
             self.solver_outs.append(solver_out)
+            cost = float(solver_out["objective"])
             x0 = dict(zip(gp.varlocs, np.exp(solver_out["primal"])))
-            if "objective" in solver_out:
-                cost = float(solver_out["objective"])
-            else:
-                cost = mag(gp.posynomials[0].sub(x0).c)
             if prevcost is None or cost is None:
                 continue
             if cost*(1 - EPS) > prevcost + EPS and verbosity >= 0:
@@ -205,7 +202,7 @@ class SequentialGeometricProgram(CostedConstraintSet):
         for cs in self.flat():
             try:
                 if not isinstance(cs, PosynomialInequality):
-                    cs.as_posyslt1(substitutions)  # is it gp-compatible?
+                    cs.as_hmapslt1(substitutions)  # is it gp-compatible?
                 constraints["GP constraints"].append(cs)
             except InvalidGPConstraint:
                 self._spvars.update(cs.varkeys)

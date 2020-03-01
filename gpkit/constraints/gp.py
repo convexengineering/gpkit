@@ -59,15 +59,13 @@ class GeometricProgram(CostedConstraintSet, NomialData):
                         ], {})
     >>> gp.solve()
     """
+    _result, solve_log, solver_out = None, None, None
+    v_ss, nu_by_posy = None, None
+
     def __init__(self, cost, constraints, substitutions,
                  *, allow_missingbounds=False):
         # pylint:disable=super-init-not-called
         # initialize attributes modified by internal methods
-        self._result = None
-        self.v_ss = None
-        self.nu_by_posy = None
-        self.solve_log = None
-        self.solver_out = None
         self.__bare_init__(cost, constraints, substitutions)
         for key, sub in self.substitutions.items():
             if isinstance(sub, FixedScalar):
@@ -78,24 +76,24 @@ class GeometricProgram(CostedConstraintSet, NomialData):
             if not isinstance(sub, (Numbers, np.ndarray)):
                 raise ValueError("substitution {%s: %s} has invalid value type"
                                  " %s." % (key, sub, type(sub)))
-        try:
-            self.posynomials = [cost.sub(self.substitutions)]
-        except InvalidPosynomial:
+        cost_hmap = cost.hmap.sub(self.substitutions, cost.varkeys)
+        if any(c <= 0 for c in cost_hmap.values()):
             raise InvalidPosynomial("cost must be a Posynomial")
-        self.posynomials.extend(self.as_posyslt1(self.substitutions))
-        self.hmaps = [p.hmap for p in self.posynomials]
+        self.hmaps = [cost_hmap] + self.as_hmapslt1(self.substitutions)
         ## Generate various maps into the posy- and monomials
         # k [j]: number of monomials (rows of A) present in each constraint
         self.k = [len(hm) for hm in self.hmaps]
         p_idxs = []  # p_idxs [i]: posynomial index of each monomial
         self.m_idxs = []  # m_idxs [i]: monomial indices of each posynomial
+        self.meq_idxs = [] # meq_idxs: first mon-index of each mon equality
+        m_idx_start = 0
         for i, p_len in enumerate(self.k):
-            self.m_idxs.append(list(range(len(p_idxs), len(p_idxs) + p_len)))
+            if getattr(self.hmaps[i], "from_meq", False):
+                self.meq_idxs.append(m_idx_start)
+            self.m_idxs.append(list(range(m_idx_start, m_idx_start + p_len)))
             p_idxs += [i]*p_len
+            m_idx_start += p_len
         self.p_idxs = np.array(p_idxs)
-        # m_idxs: first exp-index of each monomial equality
-        self.meq_idxs = {sum(self.k[:i]) for i, p in enumerate(self.posynomials)
-                         if getattr(p, "from_meq", False)}
         self.gen()  # A [i, v]: sparse matrix of powers in each monomial
         self.missingbounds = self.check_bounds(allow_missingbounds)
 
@@ -116,16 +114,14 @@ class GeometricProgram(CostedConstraintSet, NomialData):
                 missingbounds[(var, "upper")] = ""
             if not lowerbound:
                 missingbounds[(var, "lower")] = ""
-
-        conditional_missingbounds = gen_mono_eq_bounds(self.exps, self.meq_idxs)
-        check_conditional_bounds(missingbounds, conditional_missingbounds)
         if not missingbounds:
             return {}
-        if allow_missingbounds:
+        meq_bounds = gen_meq_bounds(missingbounds, self.exps, self.meq_idxs)
+        fulfill_meq_bounds(missingbounds, meq_bounds)
+        if allow_missingbounds or not missingbounds:
             return missingbounds
-
-        raise UnboundedGP("    \n".join("%s has no %s bound%s" % (v, b, x)
-                                        for (v, b), x in missingbounds.items()))
+        raise UnboundedGP("\n\n".join("%s has no %s bound%s" % (v, b, x)
+                                      for (v, b), x in missingbounds.items()))
 
     def gen(self):
         "Generates nomial and solve data (A, p_idxs) from posynomials"
@@ -313,18 +309,8 @@ class GeometricProgram(CostedConstraintSet, NomialData):
             primal = []  # an empty result, as returned by MOSEK
         assert len(self.varlocs) == len(primal)
         result = {"freevariables": KeyDict(zip(self.varlocs, np.exp(primal)))}
-        # get cost #
-        if "objective" in solver_out:
-            result["cost"] = float(solver_out["objective"])
-        else:
-            # use self.posynomials[0] because the cost may have had constants
-            freev = result["freevariables"]
-            cost = self.posynomials[0].sub(freev)
-            if cost.varkeys:
-                raise ValueError("cost contains unsolved variables %s"
-                                 % cost.varkeys.keys())
-            result["cost"] = mag(cost.c)
-        # get variables #
+        # get cost & variables #
+        result["cost"] = float(solver_out["objective"])
         result["constants"] = KeyDict(self.substitutions)
         result["variables"] = KeyDict(result["freevariables"])
         result["variables"].update(result["constants"])
@@ -425,53 +411,62 @@ class GeometricProgram(CostedConstraintSet, NomialData):
                              % (np.exp(dual_cost), cost))
 
 
-def gen_mono_eq_bounds(exps, meq_idxs):  # pylint: disable=too-many-locals
+def gen_meq_bounds(missingbounds, exps, meq_idxs):  # pylint: disable=too-many-locals
     "Generate conditional monomial equality bounds"
     meq_bounds = defaultdict(set)
     for i in meq_idxs:
-        if i % 2:  # skip the second index of a meq
-            continue
         p_upper, p_lower, n_upper, n_lower = set(), set(), set(), set()
         for key, x in exps[i].items():
-            if x > 0:
-                p_upper.add((key, "upper"))
-                p_lower.add((key, "lower"))
-            else:
-                n_upper.add((key, "upper"))
-                n_lower.add((key, "lower"))
+            if (key, "upper") in missingbounds:
+                if x > 0:
+                    p_upper.add((key, "upper"))
+                else:
+                    n_upper.add((key, "upper"))
+            if (key, "lower") in missingbounds:
+                if x > 0:
+                    p_lower.add((key, "lower"))
+                else:
+                    n_lower.add((key, "lower"))
         # (consider x*y/z == 1)
         # for a var (e.g. x) to be upper bounded by this monomial equality,
         #   - vars of the same sign/side (y) must be lower bounded
         #   - AND vars of the opposite sign/side (z) must be upper bounded
-        p_ub = frozenset(n_upper).union(p_lower)
-        p_lb = frozenset(n_lower).union(p_upper)
-        n_ub = frozenset(p_upper).union(n_lower)
-        n_lb = frozenset(p_lower).union(n_upper)
-        for keys, ub, lb in ((p_upper, p_ub, p_lb), (n_upper, n_ub, n_lb)):
+        p_ub = n_lb = frozenset(n_upper).union(p_lower)
+        n_ub = p_lb = frozenset(p_upper).union(n_lower)
+        for keys, ub in ((p_upper, p_ub), (n_upper, n_ub)):
             for key, _ in keys:
-                meq_bounds[(key, "upper")].add(ub.difference([(key, "lower")]))
-                meq_bounds[(key, "lower")].add(lb.difference([(key, "upper")]))
+                needed = ub.difference([(key, "lower")])
+                if needed:
+                    meq_bounds[(key, "upper")].add(needed)
+                else:
+                    del missingbounds[(key, "upper")]
+        for keys, lb in ((p_lower, p_lb), (n_lower, n_lb)):
+            for key, _ in keys:
+                needed = lb.difference([(key, "upper")])
+                if needed:
+                    meq_bounds[(key, "lower")].add(needed)
+                else:
+                    del missingbounds[(key, "lower")]
     return meq_bounds
 
 
-def check_conditional_bounds(missingbounds, meq_bounds):
+def fulfill_meq_bounds(missingbounds, meq_bounds):
     "Bounds variables with monomial equalities"
     still_alive = True
     while still_alive:
         still_alive = False  # if no changes are made, the loop exits
-        for bound in list(meq_bounds):
+        for bound in set(meq_bounds):
             if bound not in missingbounds:
                 del meq_bounds[bound]
                 continue
-            conditions = meq_bounds[bound]
-            for condition in conditions:
+            for condition in meq_bounds[bound]:
                 if not any(bound in missingbounds for bound in condition):
                     del meq_bounds[bound]
                     del missingbounds[bound]
                     still_alive = True
                     break
     for (var, bound) in meq_bounds:
-        boundstr = (", but would gain it from any of these sets of bounds: ")
+        boundstr = (", but would gain it from any of these sets: ")
         for condition in list(meq_bounds[(var, bound)]):
             meq_bounds[(var, bound)].remove(condition)
             newcond = condition.intersection(missingbounds)

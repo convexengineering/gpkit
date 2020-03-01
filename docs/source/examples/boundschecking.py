@@ -47,7 +47,8 @@ m = BoundsChecking()
 print(m.str_without(["lineage"]))
 try:
     m.solve()
-except UnboundedGP:
+except UnboundedGP as unbounded_error:
+    print("\n", unbounded_error)
     gp = m.gp(allow_missingbounds=True)
 
 try:
@@ -55,7 +56,7 @@ try:
 except UnknownInfeasible:
     pass
 
-bpl = ", but would gain it from any of these sets of bounds: "
+bpl = ", but would gain it from any of these sets: "
 assert gp.missingbounds[(m.D.key, 'lower')] == bpl + "[(%s, 'lower')]" % m.Ap
 assert gp.missingbounds[(m.nu.key, 'lower')] == bpl + "[(%s, 'lower')]" % m.Ap
 # ordering is arbitrary:

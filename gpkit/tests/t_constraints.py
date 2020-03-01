@@ -7,7 +7,7 @@ from gpkit import Model, ConstraintSet
 from gpkit.constraints.tight import Tight
 from gpkit.constraints.loose import Loose
 from gpkit.tests.helpers import run_tests
-from gpkit.exceptions import InvalidGPConstraint
+from gpkit.exceptions import InvalidGPConstraint, PrimalInfeasible
 from gpkit.constraints.relax import ConstraintsRelaxed
 from gpkit.constraints.bounded import Bounded
 import gpkit
@@ -82,9 +82,9 @@ class TestConstraint(unittest.TestCase):
         c2 = 1 >= 5*x + 0.5
         self.assertEqual(type(c1), PosynomialInequality)
         self.assertEqual(type(c2), PosynomialInequality)
-        c1posy, = c1.as_posyslt1()
-        c2posy, = c2.as_posyslt1()
-        self.assertEqual(c1posy.hmap, c2posy.hmap)
+        c1hmap, = c1.as_hmapslt1({})
+        c2hmap, = c2.as_hmapslt1({})
+        self.assertEqual(c1hmap, c2hmap)
 
     def test_additive_scalar_gt1(self):
         "1 can't be greater than (1 + something positive)"
@@ -93,19 +93,19 @@ class TestConstraint(unittest.TestCase):
         def constr():
             "method that should raise a ValueError"
             return 1 >= 5*x + 1.1
-        self.assertRaises(ValueError, constr)
+        self.assertRaises(PrimalInfeasible, constr)
 
     def test_init(self):
         "Test Constraint __init__"
         x = Variable('x')
         y = Variable('y')
         c = PosynomialInequality(x, ">=", y**2)
-        self.assertEqual(c.as_posyslt1(), [y**2/x])
+        self.assertEqual(c.as_hmapslt1({}), [(y**2/x).hmap])
         self.assertEqual(c.left, x)
         self.assertEqual(c.right, y**2)
         self.assertTrue(">=" in str(c))
         c = PosynomialInequality(x, "<=", y**2)
-        self.assertEqual(c.as_posyslt1(), [x/y**2])
+        self.assertEqual(c.as_hmapslt1({}), [(x/y**2).hmap])
         self.assertEqual(c.left, x)
         self.assertEqual(c.right, y**2)
         self.assertTrue("<=" in str(c))
@@ -116,13 +116,13 @@ class TestConstraint(unittest.TestCase):
         x = Variable('x')
         y = Variable('y')
         c = (y >= 1 + x**2)
-        self.assertEqual(c.as_posyslt1(), [1/y + x**2/y])
+        self.assertEqual(c.as_hmapslt1({}), [(1/y + x**2/y).hmap])
         self.assertEqual(c.left, y)
         self.assertEqual(c.right, 1 + x**2)
         self.assertTrue(">=" in str(c))
         # same constraint, switched operator direction
         c2 = (1 + x**2 <= y)  # same as c
-        self.assertEqual(c2.as_posyslt1(), c.as_posyslt1())
+        self.assertEqual(c2.as_hmapslt1({}), c.as_hmapslt1({}))
 
     def test_sub_tol(self):
         " Test PosyIneq feasibility tolerance under substitutions"
@@ -131,7 +131,7 @@ class TestConstraint(unittest.TestCase):
         z = Variable('z')
         PosynomialInequality.feastol = 1e-5
         m = Model(z, [x == z, x >= y], {x: 1., y: 1.0001})
-        self.assertRaises(ValueError, m.solve, verbosity=0)
+        self.assertRaises(PrimalInfeasible, m.solve, verbosity=0)
         PosynomialInequality.feastol = 1e-3
         self.assertEqual(m.substitutions('x'), m.solve(verbosity=0)('x'))
 
@@ -147,8 +147,8 @@ class TestMonomialEquality(unittest.TestCase):
         mec = (x == y**2)
         # __init__
         mec2 = MonomialEquality(x, y**2)
-        self.assertTrue(mono in mec.as_posyslt1())
-        self.assertTrue(mono in mec2.as_posyslt1())
+        self.assertTrue(mono.hmap in mec.as_hmapslt1({}))
+        self.assertTrue(mono.hmap in mec2.as_hmapslt1({}))
         x = Variable("x", "ft")
         y = Variable("y")
         if gpkit.units:
@@ -261,7 +261,7 @@ class TestSignomialInequality(unittest.TestCase):
             sc = (x + y >= x*y)
         # make sure that the error type doesn't change on our users
         with self.assertRaises(InvalidGPConstraint):
-            _ = sc.as_posyslt1()
+            _ = sc.as_hmapslt1({})
 
 
 class TestLoose(unittest.TestCase):

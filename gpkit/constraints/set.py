@@ -59,7 +59,7 @@ class ConstraintSet(list, GPkitObject):
         list.__init__(self, constraints)
 
         # initializations for attributes used elsewhere
-        self.posymap = []
+        self.hmaplengths = []
         self.relax_sensitivity = 0
         self.numpy_bools = False
 
@@ -184,16 +184,16 @@ class ConstraintSet(list, GPkitObject):
             self.substitutions.varkeys = self.varkeys
         self._name_collision_varkeys = None
 
-    def as_posyslt1(self, substitutions=None):
-        "Returns list of posynomials which must be kept <= 1"
-        posylist, self.posymap = [], []
+    def as_hmapslt1(self, substitutions):
+        "Returns list of hmaps which must be kept <= 1"
+        hmaplist, self.hmaplengths = [], []
         for i, constraint in enumerate(self):
-            if not hasattr(constraint, "as_posyslt1"):
+            if not hasattr(constraint, "as_hmapslt1"):
                 raise_badelement(self, i, constraint)
-            posys = constraint.as_posyslt1(substitutions)
-            self.posymap.append(len(posys))
-            posylist.extend(posys)
-        return posylist
+            hmaps = constraint.as_hmapslt1(substitutions)
+            self.hmaplengths.append(len(hmaps))
+            hmaplist.extend(hmaps)
+        return hmaplist
 
     def sens_from_dual(self, las, nus, result):
         """Computes constraint and variable sensitivities from dual solution
@@ -219,7 +219,7 @@ class ConstraintSet(list, GPkitObject):
         offset = 0
         self.relax_sensitivity = 0
         for i, constr in enumerate(self):
-            n_posys = self.posymap[i]
+            n_posys = self.hmaplengths[i]
             la = las[offset:offset+n_posys]
             nu = nus[offset:offset+n_posys]
             constr.v_ss = constr.sens_from_dual(la, nu, result)

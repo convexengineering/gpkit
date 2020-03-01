@@ -14,7 +14,7 @@ class ExternalConstraint:
         self.x = x
         self.y = y
 
-    def as_posyslt1(self, _):
+    def as_hmapslt1(self, _):
         "Ensures this is treated as an SGP constraint"
         raise InvalidGPConstraint("ExternalConstraint cannot solve as a GP.")
 

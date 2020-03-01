@@ -14,3 +14,9 @@ Constraints
  mf >= mi + mb
  mf = rf·V
  Fs <= mi
+
+ BoundsChecking.D has no lower bound, but would gain it from any of these sets: [(BoundsChecking.Ap, 'lower')]
+
+BoundsChecking.nu has no lower bound, but would gain it from any of these sets: [(BoundsChecking.Ap, 'lower')]
+
+BoundsChecking.Ap has no lower bound, but would gain it from any of these sets: [(BoundsChecking.D, 'lower')] or [(BoundsChecking.nu, 'lower')]

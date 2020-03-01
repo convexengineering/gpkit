@@ -77,7 +77,7 @@ def modelinteract(model, fns_of_sol, ranges=None, **solvekwargs):
             try:
                 model.solve(**solvekwargs)
             except InvalidGPConstraint:
-                # TypeError raised by as_posyslt1 in non-GP-compatible models
+                # TypeError raised by as_hmapslt1 in non-GP-compatible models
                 model.localsolve(**solvekwargs)
             if hasattr(model, "solution"):
                 sol = model.solution

@@ -1,6 +1,6 @@
 "Implement CostedConstraintSet"
 import numpy as np
-from .set import ConstraintSet
+from .set import ConstraintSet, add_meq_bounds
 from ..small_scripts import maybe_flatten
 
 
@@ -31,11 +31,18 @@ class CostedConstraintSet(ConstraintSet):
             if isinstance(constraints, dict):
                 self.idxlookup = {k: i for i, k in enumerate(constraints)}
                 constraints = constraints.values()
-            list.__init__(self, ConstraintSet(constraints))
+            constraints = ConstraintSet(constraints)
+            list.__init__(self, constraints)
         else:
             list.__init__(self, [constraints])
-        self.varkeys = self[0].varkeys
-        self.varkeys.update(self.cost.varkeys)
+        self.varkeys = constraints.varkeys
+        self.varkeys.update(cost.varkeys)
+        self.bounded = constraints.bounded
+        for exp in cost.hmap:
+            for vk, x in exp.items():
+                self.bounded.add((vk, "upper" if x > 0 else "lower"))
+        self.meq_bounded = constraints.meq_bounded
+        add_meq_bounds(self.bounded, self.meq_bounded)
 
     def constrained_varkeys(self):
         "Return all varkeys in the cost and non-ConstraintSet constraints"

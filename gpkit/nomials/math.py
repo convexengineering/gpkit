@@ -10,7 +10,8 @@ from ..small_classes import Numbers
 from ..small_classes import HashVector, EMPTY_HV
 from ..varkey import VarKey
 from ..small_scripts import mag
-from ..exceptions import InvalidGPConstraint, InvalidPosynomial
+from ..exceptions import (InvalidGPConstraint, InvalidPosynomial,
+                          PrimalInfeasible)
 from .map import NomialMap
 from .substitution import parse_subs
 
@@ -416,30 +417,22 @@ class PosynomialInequality(ScalarSingleEquationConstraint):
     def __init__(self, left, oper, right):
         ScalarSingleEquationConstraint.__init__(self, left, oper, right)
         if self.oper == "<=":
-            p_lt, m_gt = self.left, self.right
+            self.p_lt, self.m_gt = self.left, self.right
         elif self.oper == ">=":
-            m_gt, p_lt = self.left, self.right
+            self.m_gt, self.p_lt = self.left, self.right
         else:
             raise ValueError("operator %s is not supported." % self.oper)
 
-        self.p_lt, self.m_gt = p_lt, m_gt
-        self.unsubbed = self._gen_unsubbed(p_lt, m_gt)
+        self.unsubbed = self._gen_unsubbed(self.p_lt, self.m_gt)
         self.nomials = [self.left, self.right, self.p_lt, self.m_gt]
         self.nomials.extend(self.unsubbed)
-        self._last_used_substitutions = {}
         self.bounded = set()
-        if self.unsubbed:
-            for exp in self.unsubbed[0].hmap:
-                for key, e in exp.items():
-                    if e > 0:
-                        self.bounded.add((key, "upper"))
-                    if e < 0:
-                        self.bounded.add((key, "lower"))
-        for key in self.substitutions:
-            for bound in ("upper", "lower"):
-                self.bounded.add((key, bound))
+        for p in self.unsubbed:
+            for exp in p.hmap:
+                for vk, x in exp.items():
+                    self.bounded.add((vk, "upper" if x > 0 else "lower"))
 
-    def _simplify_posy_ineq(self, hmap, pmap=None):
+    def _simplify_posy_ineq(self, hmap, pmap=None, fixed=None):
         "Simplify a posy <= 1 by moving constants to the right side."
         if EMPTY_HV not in hmap:
             return hmap
@@ -451,8 +444,10 @@ class PosynomialInequality(ScalarSingleEquationConstraint):
         if coeff >= -self.feastol and len(hmap) == 1:
             return None   # a tautological monomial!
         if coeff < -self.feastol:
-            raise ValueError("The constraint %s is infeasible by"
-                             " %f%%" % (self, -coeff*100))
+            msg = "'%s' is infeasible by %.2g%%" % (self, -coeff*100)
+            if fixed:
+                msg += " after substituting %s." % fixed
+            raise PrimalInfeasible(msg)
         scaled = hmap/coeff
         scaled.units = hmap.units
         del scaled[EMPTY_HV]
@@ -482,36 +477,26 @@ class PosynomialInequality(ScalarSingleEquationConstraint):
         hmap = self._simplify_posy_ineq(hmap)
         return [Posynomial(hmap)] if hmap else []
 
-    def as_posyslt1(self, substitutions=None):
-        """Returns the posys <= 1 representation of this constraint.
-        """
-        posys = self.unsubbed
-        if not substitutions:
-            return posys
-
+    def as_hmapslt1(self, substitutions):
+        "Returns the posys <= 1 representation of this constraint."
         out = []
-        self._last_used_substitutions = {}
-        for posy in posys:
+        for posy in self.unsubbed:
             fixed, _, _ = parse_subs(posy.varkeys, substitutions, clean=True)
-            self._last_used_substitutions.update(fixed)
             hmap = posy.hmap.sub(fixed, posy.varkeys, parsedsubs=True)
             self.pmap, self.mfm = hmap.mmap(posy.hmap)  # pylint: disable=attribute-defined-outside-init
-            hmap = self._simplify_posy_ineq(hmap, self.pmap)
-            if hmap is None:
-                continue
-            p = Posynomial(hmap, require_positive=False)
-            out.append(p)
-            if p.any_nonpositive_cs:  # the positivity check skipped above
-                raise RuntimeWarning("PosynomialInequality %s became Signomial"
-                                     " after substitution %s"
-                                     % (self, fixed))
+            hmap = self._simplify_posy_ineq(hmap, self.pmap, fixed)
+            if hmap is not None:
+                if any(c <= 0 for c in hmap.values()):
+                    raise RuntimeWarning("'%s' became Signomial after"
+                                         " substituting %s" % (self, fixed))
+                out.append(hmap)
         return out
 
     def sens_from_dual(self, la, nu, result):  # pylint: disable=unused-argument
         "Returns the variable/constraint sensitivities from lambda/nu"
         self.relax_sensitivity = 0
         if not la or not nu:
-            return {}  # as_posyslt1 created no inequalities
+            return {}  # as_hmapslt1 created no inequalities
         la, = la
         self.relax_sensitivity = la
         if self.sgp_parent:
@@ -534,7 +519,7 @@ class PosynomialInequality(ScalarSingleEquationConstraint):
                           for i in presub.varlocs[var]])
                 for var in self.varkeys}  # Constant sensitivities
 
-    def as_gpconstr(self, x0):  # pylint: disable=unused-argument
+    def as_gpconstr(self, _):
         "The GP version of a Posynomial constraint is itself"
         return self
 
@@ -549,7 +534,6 @@ class MonomialEquality(PosynomialInequality):
         self.unsubbed = self._gen_unsubbed(self.left, self.right)
         self.nomials = [self.left, self.right]
         self.nomials.extend(self.unsubbed)
-        self._last_used_substitutions = {}
         self.bounded = set()
         self.meq_bounded = {}
         self.relax_sensitivity = 0  # don't count equality sensitivities
@@ -575,11 +559,11 @@ class MonomialEquality(PosynomialInequality):
         r_over_l = unsubbed(self, right, left)
         return l_over_r + r_over_l
 
-    def as_posyslt1(self, substitutions=None):
+    def as_hmapslt1(self, substitutions):
         "Tags posynomials for dual feasibility checking"
-        out = PosynomialInequality.as_posyslt1(self, substitutions)
-        for p in out:
-            p.from_meq = True  # pylint: disable=attribute-defined-outside-init
+        out = PosynomialInequality.as_hmapslt1(self, substitutions)
+        for h in out:
+            h.from_meq = True  # pylint: disable=attribute-defined-outside-init
         return out
 
     def __bool__(self):
@@ -591,7 +575,7 @@ class MonomialEquality(PosynomialInequality):
         "Returns the variable/constraint sensitivities from lambda/nu"
         self.relax_sensitivity = 0
         if not la or not nu:
-            return {}  # as_posyslt1 created no inequalities
+            return {}  # as_hmapslt1 created no inequalities
         self.relax_sensitivity = la[0] - la[1]
         if self.sgp_parent:
             self.sgp_parent.relax_sensitivity = self.relax_sensitivity
@@ -626,19 +610,9 @@ class SignomialInequality(ScalarSingleEquationConstraint):
         self.nomials = [self.left, self.right]
         self.unsubbed = [plt - pgt]
         self.nomials.extend(self.unsubbed)
-        self.bounded = set()
-        if self.unsubbed:
-            for exp, c in self.unsubbed[0].hmap.items():
-                for key, e in exp.items():
-                    if e*c > 0:
-                        self.bounded.add((key, "upper"))
-                    if e*c < 0:
-                        self.bounded.add((key, "lower"))
-        for key in self.substitutions:
-            for bound in ("upper", "lower"):
-                self.bounded.add((key, bound))
+        self.bounded = self.as_gpconstr({}).bounded
 
-    def as_posyslt1(self, substitutions=None):
+    def as_hmapslt1(self, substitutions=None):
         "Returns the posys <= 1 representation of this constraint."
         siglt0, = self.unsubbed
         siglt0 = siglt0.sub(substitutions, require_positive=False)
@@ -672,7 +646,7 @@ class SignomialInequality(ScalarSingleEquationConstraint):
             self._sigvars = {exp: (list(self._negysig.varkeys.keys())
                                    + list(sig.varkeys.keys()))
                              for exp, sig in self._coeffsigs.items()}
-            return p_ineq.as_posyslt1(substitutions)
+            return p_ineq.as_hmapslt1(substitutions)
 
         raise InvalidGPConstraint("SignomialInequality could not simplify to a"
                                   " PosynomialInequality; try calling"
@@ -695,7 +669,7 @@ class SignomialInequality(ScalarSingleEquationConstraint):
         # pylint: disable=too-many-locals, attribute-defined-outside-init
         self.relax_sensitivity = 0
         if not la or not nu:
-            return {}  # as_posyslt1 created no inequalities
+            return {}  # as_hmapslt1 created no inequalities
         la, = la
         self.relax_sensitivity = la
         nu, = nu
@@ -755,7 +729,7 @@ class SingleSignomialEquality(SignomialInequality):
         SignomialInequality.__init__(self, left, "<=", right)
         self.oper = "="
 
-    def as_posyslt1(self, substitutions=None):
+    def as_hmapslt1(self, substitutions=None):
         "Returns the posys <= 1 representation of this constraint."
         # TODO: check if it would be a monomial equality after substitutions
         raise InvalidGPConstraint("SignomialEquality could not simplify"
