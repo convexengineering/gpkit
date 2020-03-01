@@ -62,7 +62,7 @@ class TestGP(unittest.TestCase):
         with SignomialsEnabled():
             m = Model(c, [c >= (x + 0.25)**2 + (y - 0.5)**2,
                           SignomialEquality(x**2 + x, y)])
-        sol = m.localsolve(solver=self.solver, verbosity=0, mutategp=False)
+        sol = m.localsolve(solver=self.solver, verbosity=0)
         self.assertAlmostEqual(sol("x"), 0.1639472, self.ndig)
         self.assertAlmostEqual(sol("y")[0], 0.1908254, self.ndig)
         self.assertAlmostEqual(sol("c"), 0.2669448, self.ndig)
@@ -292,10 +292,10 @@ class TestSP(unittest.TestCase):
         r1 = ConstantsRelaxed(m)
         self.assertEqual(len(r1.varkeys), 8)
         with self.assertRaises(ValueError):
-            mr1 = Model(x*r1.relaxvars, r1)  # no 'prod'
-        mr1 = Model(x*r1.relaxvars.prod()**10, r1)
-        cost1 = mr1.localsolve(verbosity=0, solver=self.solver)["cost"]
-        self.assertAlmostEqual(cost1/1024, 1, self.ndig)
+            _ = Model(x*r1.relaxvars, r1)  # no 'prod'
+        sp = Model(x*r1.relaxvars.prod()**10, r1).sp(use_pccp=False)
+        cost = sp.localsolve(verbosity=0, solver=self.solver)["cost"]
+        self.assertAlmostEqual(cost/1024, 1, self.ndig)
         m.debug(verbosity=0, solver=self.solver)
         with SignomialsEnabled():
             m = Model(x, [x+y >= z, x+y <= z/2, y <= x, y >= 1], {z: 3})
@@ -303,18 +303,18 @@ class TestSP(unittest.TestCase):
             m.debug(verbosity=0, solver=self.solver)
         r2 = ConstraintsRelaxed(m)
         self.assertEqual(len(r2.varkeys), 7)
-        mr2 = Model(x*r2.relaxvars.prod()**10, r2)
-        cost2 = mr2.localsolve(verbosity=0, solver=self.solver)["cost"]
-        self.assertAlmostEqual(cost2/1024, 1, self.ndig)
+        sp = Model(x*r2.relaxvars.prod()**10, r2).sp(use_pccp=False)
+        cost = sp.localsolve(verbosity=0, solver=self.solver)["cost"]
+        self.assertAlmostEqual(cost/1024, 1, self.ndig)
         with SignomialsEnabled():
             m = Model(x, [x+y >= z, x+y <= z/2, y <= x, y >= 1], {z: 3})
         if self.solver != "cvxopt":
             m.debug(verbosity=0, solver=self.solver)
         r3 = ConstraintsRelaxedEqually(m)
         self.assertEqual(len(r3.varkeys), 4)
-        mr3 = Model(x*r3.relaxvar**10, r3)
-        cost3 = mr3.localsolve(verbosity=0, solver=self.solver)["cost"]
-        self.assertAlmostEqual(cost3/(32*0.8786796585), 1, self.ndig)
+        sp = Model(x*r3.relaxvar**10, r3).sp(use_pccp=False)
+        cost = sp.localsolve(verbosity=0, solver=self.solver)["cost"]
+        self.assertAlmostEqual(cost/(32*0.8786796585), 1, self.ndig)
 
     def test_sp_bounded(self):
         x = Variable("x")
@@ -378,10 +378,6 @@ class TestSP(unittest.TestCase):
         sol = m.localsolve(verbosity=0, solver=self.solver)
         self.assertAlmostEqual(sol["cost"], 2**0.5, self.ndig)
         self.assertAlmostEqual(sol(y), 0.5, self.ndig)
-        second_solve_key_names = [key.name[:5]
-                                  for key in m.program.gps[1].cost.exp.keys()
-                                  if key.name[:5] == "\\fbox"]
-        self.assertIn("\\fbox", second_solve_key_names)
 
     def test_sp_substitutions(self):
         x = Variable('x')
@@ -606,7 +602,7 @@ class TestSP(unittest.TestCase):
         with SignomialsEnabled():
             m = Model(x, [x + y >= 1, y <= 0.5])
         gp = m.sp().gp(x0={x: 0.5})  # pylint: disable=no-member
-        first_gp_constr_posy = gp[0][0].as_posyslt1()[0]
+        first_gp_constr_posy = gp[0].as_posyslt1()[0]
         self.assertEqual(first_gp_constr_posy.exp[x.key], -1./3)
 
     def test_becomes_signomial(self):
@@ -653,14 +649,6 @@ class TestSP(unittest.TestCase):
             self.assertIn(y.key, bounds["sensitive to upper bound"])
         if "sensitive to lower bound" in bounds:
             self.assertIn(x.key, bounds["sensitive to lower bound"])
-
-    def test_pccpsolve(self):
-        "Test penalty convex-concave algorithm from [Lipp/Boyd 2016]."
-        m = SPThing()
-        sol = m.localsolve(verbosity=0, solver=self.solver)
-        sol_pccp = m.pccpsolve(verbosity=0)
-        self.assertEqual(len(m.program.gps[-1].varkeys), 3)
-        self.assertAlmostEqual(sol['cost'], sol_pccp['cost'])
 
 
 class TestModelSolverSpecific(unittest.TestCase):

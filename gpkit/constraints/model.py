@@ -79,7 +79,6 @@ class Model(CostedConstraintSet):
 
     sp = progify(SequentialGeometricProgram)
     localsolve = solvify(progify(SequentialGeometricProgram, "localsolve"))
-    pccpsolve = solvify(progify(SequentialGeometricProgram, "pccpsolve"))
 
     def verify_docstring(self):  # pylint:disable=too-many-locals,too-many-branches,too-many-statements
         "Verifies docstring bounds are sufficient but not excessive."
@@ -201,7 +200,7 @@ class Model(CostedConstraintSet):
             try:
                 sol = feas.solve(**solveargs)
             except InvalidGPConstraint:
-                sol = feas.localsolve(**solveargs)
+                sol = feas.sp(use_pccp=False).localsolve(**solveargs)
             sol["boundedness"] = bounded.check_boundaries(sol,
                                                           verbosity=verbosity)
             if self.substitutions:
@@ -231,7 +230,7 @@ class Model(CostedConstraintSet):
                 try:
                     sol = feas.solve(**solveargs)
                 except InvalidGPConstraint:
-                    sol = feas.localsolve(**solveargs)
+                    sol = feas.sp(use_pccp=False).localsolve(**solveargs)
                 relaxed_constraints = feas[0]["relaxed constraints"]
                 relaxed = get_relaxed(sol(traints.relaxvars),
                                       range(len(relaxed_constraints)))

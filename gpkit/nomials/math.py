@@ -735,14 +735,16 @@ class SignomialInequality(ScalarSingleEquationConstraint):
         pconstr.sgp_parent = self
         return pconstr
 
-    def as_approxslt(self):
+    def as_approxlts(self):
         "Returns posynomial-less-than sides of a signomial constraint"
         siglt0, = self.unsubbed
         posy, self._negy = siglt0.posy_negy()  # pylint: disable=attribute-defined-outside-init
         return [posy]
 
-    def as_approxsgt(self, x0):
+    def as_approxgts(self, x0):
         "Returns monomial-greater-than sides, to be called after as_approxlt1"
+        # default guess of 1.0 for unspecified negy variables
+        x0.update({vk: 1.0 for vk in self._negy.varkeys if vk not in x0})
         return [self._negy.mono_lower_bound(x0)]
 
 
@@ -772,14 +774,17 @@ class SingleSignomialEquality(SignomialInequality):
         mec.sgp_parent = self
         return mec
 
-    def as_approxslt(self):
+    def as_approxlts(self):
         "Returns posynomial-less-than sides of a signomial constraint"
         siglt0, = self.unsubbed
         self._posy, self._negy = siglt0.posy_negy()  # pylint: disable=attribute-defined-outside-init
         return Monomial(1), Monomial(1)  # no 'fixed' posy_lt for a SigEq
 
-    def as_approxsgt(self, x0):
+    def as_approxgts(self, x0):
         "Returns monomial-greater-than sides, to be called after as_approxlt1"
+        # default guess of 1.0 for unspecified variables
+        siglt0, = self.unsubbed
+        x0.update({vk: 1.0 for vk in siglt0.varkeys if vk not in x0})
         lhs = self._posy.mono_lower_bound(x0)
         rhs = self._negy.mono_lower_bound(x0)
         return lhs/rhs, rhs/lhs

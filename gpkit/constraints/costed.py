@@ -34,6 +34,8 @@ class CostedConstraintSet(ConstraintSet):
             list.__init__(self, ConstraintSet(constraints))
         else:
             list.__init__(self, [constraints])
+        self.varkeys = self[0].varkeys
+        self.varkeys.update(self.cost.varkeys)
 
     def constrained_varkeys(self):
         "Return all varkeys in the cost and non-ConstraintSet constraints"

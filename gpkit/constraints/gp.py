@@ -100,17 +100,18 @@ class GeometricProgram(CostedConstraintSet, NomialData):
         self.missingbounds = self.check_bounds(allow_missingbounds)
 
     def check_bounds(self, allow_missingbounds=True):
+        "Checks if any variables are unbounded, through equality constraints."
         missingbounds = {}
         for var, locs in self.varlocs.items():
             upperbound, lowerbound = False, False
             for i in locs:
                 if i not in self.meq_idxs:
-                    if upperbound and lowerbound:
-                        break
                     if self.exps[i][var] > 0:  # pylint:disable=simplifiable-if-statement
                         upperbound = True
                     else:
                         lowerbound = True
+                if upperbound and lowerbound:
+                    break
             if not upperbound:
                 missingbounds[(var, "upper")] = ""
             if not lowerbound:
@@ -125,8 +126,6 @@ class GeometricProgram(CostedConstraintSet, NomialData):
 
         raise UnboundedGP("    \n".join("%s has no %s bound%s" % (v, b, x)
                                         for (v, b), x in missingbounds.items()))
-
-    varkeys = NomialData.varkeys  # as opposed to ConstraintSet's
 
     def gen(self):
         "Generates nomial and solve data (A, p_idxs) from posynomials"

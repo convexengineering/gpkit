@@ -14,4 +14,4 @@ def y_ext(self, x0):
 y = Variable("y", externalfn=y_ext)
 
 m = Model(y, [np.pi/4 <= x, x <= np.pi/2])
-print(m.localsolve(verbosity=0).summary())
+print(m.localsolve(verbosity=0, x0={x: np.pi/4}).summary())

@@ -14,4 +14,4 @@ constraints = [ExternalConstraint(x, y),
               ]
 
 m = Model(objective, constraints)
-print(m.localsolve(verbosity=0).summary())
+print(m.localsolve(verbosity=0, x0={x: np.pi/4}).summary())
