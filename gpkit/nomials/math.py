@@ -369,7 +369,7 @@ MONS = Numbers + (Monomial,)
 class ScalarSingleEquationConstraint(SingleEquationConstraint):
     "A SingleEquationConstraint with scalar left and right sides."
     nomials = []
-    generated_by = None
+    generated_by = v_ss = parent = None
     bounded = meq_bounded = {}
 
     def __init__(self, left, oper, right):
@@ -409,7 +409,6 @@ class PosynomialInequality(ScalarSingleEquationConstraint):
     Stored in the posylt1_rep attribute as a single Posynomial (self <= 1)
     Usually initialized via operator overloading, e.g. cc = (y**2 >= 1 + x)
     """
-
     feastol = 1e-3
     relax_sensitivity = None
     # NOTE: follows .check_result's max default, but 1e-3 seems a bit lax...
@@ -489,21 +488,17 @@ class PosynomialInequality(ScalarSingleEquationConstraint):
                 if any(c <= 0 for c in hmap.values()):
                     raise RuntimeWarning("'%s' became Signomial after"
                                          " substituting %s" % (self, fixed))
+                hmap.parent = self
                 out.append(hmap)
         return out
 
     def sens_from_dual(self, la, nu, result):  # pylint: disable=unused-argument
         "Returns the variable/constraint sensitivities from lambda/nu"
-        self.relax_sensitivity = 0
-        if not la or not nu:
-            return {}  # as_hmapslt1 created no inequalities
-        la, = la
         self.relax_sensitivity = la
         if self.generated_by:
             self.generated_by.relax_sensitivity = la
             if getattr(self.generated_by, "generated_by", None):
                 self.generated_by.generated_by.relax_sensitivity = la
-        nu, = nu
         presub, = self.unsubbed
         if hasattr(self, "pmap"):
             nu_ = np.zeros(len(presub.hmap))
@@ -515,7 +510,8 @@ class PosynomialInequality(ScalarSingleEquationConstraint):
                 for idx, percentage in self.const_mmap.items():
                     nu_[idx] += percentage * la*scale
             nu = nu_
-        return sum(nu_i*exp for (nu_i, exp) in zip(nu, presub.hmap.keys()))
+        self.v_ss = sum(nu_i*exp for (nu_i, exp) in zip(nu, presub.hmap.keys()))
+        return self.v_ss
 
     def as_gpconstr(self, _):
         "The GP version of a Posynomial constraint is itself"
@@ -535,6 +531,7 @@ class MonomialEquality(PosynomialInequality):
         self.bounded = set()
         self.meq_bounded = {}
         self.relax_sensitivity = 0  # don't count equality sensitivities
+        self._las = []
         if self.unsubbed and len(self.varkeys) > 1:
             exp, = list(self.unsubbed[0].hmap.keys())
             for key, e in exp.items():
@@ -571,9 +568,11 @@ class MonomialEquality(PosynomialInequality):
 
     def sens_from_dual(self, la, nu, result):
         "Returns the variable/constraint sensitivities from lambda/nu"
-        self.relax_sensitivity = 0
-        if not la or not nu:
-            return {}  # as_hmapslt1 created no inequalities
+        self._las.append(la)
+        if len(self._las) < 2:
+            return {}
+        la = self._las
+        self._las = []
         self.relax_sensitivity = la[0] - la[1]
         if self.generated_by:
             self.generated_by.relax_sensitivity = self.relax_sensitivity
@@ -621,6 +620,7 @@ class SignomialInequality(ScalarSingleEquationConstraint):
         if not hasattr(negy, "cs") or len(negy.cs) == 1:
             # all but one of the negy terms becomes compatible with the posy
             p_ineq = PosynomialInequality(posy, "<=", negy)
+            p_ineq.parent = self
             siglt0_us, = self.unsubbed
             siglt0_hmap = siglt0_us.hmap.sub(substitutions, siglt0_us.varkeys)
             negy_hmap = NomialMap()
@@ -660,12 +660,7 @@ class SignomialInequality(ScalarSingleEquationConstraint):
                = d(coeff)/d(var)*1/negy - d(negy)/d(var)*coeff*1/negy**2
         """
         # pylint: disable=too-many-locals, attribute-defined-outside-init
-        self.relax_sensitivity = 0
-        if not la or not nu:
-            return {}  # as_hmapslt1 created no inequalities
-        la, = la
         self.relax_sensitivity = la
-        nu, = nu
 
         # pylint: disable=no-member
         def subval(posy):

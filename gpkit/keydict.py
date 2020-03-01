@@ -171,7 +171,7 @@ class KeyDict(KeyMap, dict):
         key, idx = self.parse_and_index(key)
         keys = self.keymap[key]
         if not keys:
-            del self.keymap[key]  # remove blank entry added due to defaultdict
+            del self.keymap[key]  # remove blank entry added by defaultdict
             raise KeyError(key)
         got = {}
         for k in keys:

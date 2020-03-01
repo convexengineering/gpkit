@@ -1,5 +1,6 @@
 "Implements ConstraintSet"
 from collections import defaultdict, OrderedDict
+from itertools import chain
 import numpy as np
 from ..small_classes import Numbers
 from ..keydict import KeySet, KeyDict
@@ -8,7 +9,7 @@ from ..repr_conventions import GPkitObject
 from .single_equation import SingleEquationConstraint
 
 
-def add_meq_bounds(bounded, meq_bounded):
+def add_meq_bounds(bounded, meq_bounded):  #TODO: collapse with GP version?
     "Iterates through meq_bounds until convergence"
     still_alive = True
     while still_alive:
@@ -24,11 +25,9 @@ def add_meq_bounds(bounded, meq_bounded):
                     still_alive = True
                     break
 
-
 def _sort_by_name_and_idx(var):
     "return tuple for Variable sorting"
     return (var.key.str_without(["units", "idx"]), var.key.idx or ())
-
 
 def _sort_constrs(item):
     "return tuple for Constraint sorting"
@@ -37,14 +36,12 @@ def _sort_constrs(item):
             hasattr(constraint, "lineage") and bool(constraint.lineage), label)
 
 
-# pylint: disable=too-many-instance-attributes
 class ConstraintSet(list, GPkitObject):
     "Recursive container for ConstraintSets and Inequalities"
-    unique_varkeys = frozenset()
+    unique_varkeys, idxlookup = frozenset(), {}
     varkeys = _name_collision_varkeys = None
-    idxlookup = []  # holds the names of the top-level constraintsets
 
-    def __init__(self, constraints, substitutions=None):  # pylint: disable=too-many-branches
+    def __init__(self, constraints, substitutions=None):  # pylint: disable=too-many-branches,too-many-statements
         if isinstance(constraints, ConstraintSet):
             constraints = [constraints]  # put it one level down
         elif isinstance(constraints, dict):
@@ -55,20 +52,14 @@ class ConstraintSet(list, GPkitObject):
             self.idxlookup = {k: i for i, (k, _) in enumerate(items)}
             constraints = list(zip(*items))[1]
         list.__init__(self, constraints)
-
         # initializations for attributes used elsewhere
-        self.hmaplengths = []
-        self.relax_sensitivity = 0
         self.numpy_bools = False
-
         # get substitutions and convert all members to ConstraintSets
         self.varkeys = KeySet(self.unique_varkeys)
         self.substitutions = KeyDict({k: k.value
                                       for k in self.unique_varkeys if k.value})
         self.substitutions.varkeys = self.varkeys
-        self.bounded = set()
-        self.meq_bounded = defaultdict(set)
-        isconstraint = False
+        self.bounded, self.meq_bounded = set(), defaultdict(set)
         for i, constraint in enumerate(self):
             if not isinstance(constraint, ConstraintSet):
                 if hasattr(constraint, "__iter__"):
@@ -76,11 +67,9 @@ class ConstraintSet(list, GPkitObject):
                 elif not hasattr(constraint, "as_hmapslt1"):
                     if not isinstance(constraint, np.bool_):
                         raise_badelement(self, i, constraint)
-                    else:
-                        # allow NomialArray equalities (arr == "a", etc.)
-                        self.numpy_bools = True  # but mark them
-                        # so we can catch them later (next line)
-            elif not hasattr(constraint, "numpy_bools"):
+                    else:  # allow NomialArray equalities (arr == "a", etc.)
+                        self.numpy_bools = True  # but mark them so
+            elif not hasattr(constraint, "numpy_bools"):  # we can catch them!
                 raise ValueError("a ConstraintSet of type %s was included in"
                                  " another ConstraintSet before being"
                                  " initialized." % type(constraint))
@@ -92,6 +81,11 @@ class ConstraintSet(list, GPkitObject):
                 self.bounded.update(self[i].bounded)
                 for bound, solutionset in self[i].meq_bounded.items():
                     self.meq_bounded[bound].update(solutionset)
+                if type(self[i]) is ConstraintSet:  # pylint: disable=unidiomatic-typecheck
+                    del self[i].varkeys
+                    del self[i].substitutions
+                    del self[i].bounded
+                    del self[i].meq_bounded
         if substitutions:
             self.substitutions.update(substitutions)
         updated_veckeys = False  # vector subs need to find each indexed varkey
@@ -102,12 +96,12 @@ class ConstraintSet(list, GPkitObject):
                         self.varkeys.keymap[key.veckey].add(key)
                 updated_veckeys = True
             for key in self.varkeys[subkey]:
+                self.bounded.add((key, "upper"))
+                self.bounded.add((key, "lower"))
                 if key.value is not None and not key.constant:
                     del key.descr["value"]
                     if key.veckey and key.veckey.value is not None:
                         del key.veckey.descr["value"]
-                for direction in ("upper", "lower"):
-                    self.bounded.add((key, direction))
         add_meq_bounds(self.bounded, self.meq_bounded)
 
     def __getitem__(self, key):
@@ -120,24 +114,20 @@ class ConstraintSet(list, GPkitObject):
     def _choosevar(self, key, variables):
         if not variables:
             raise KeyError(key)
-        if variables[0].key.veckey:  # maybe it's all one vector variable?
-            from ..nomials import NomialArray
-            vk = variables[0].key.veckey
-            arr = NomialArray(np.full(vk.shape, np.nan, dtype="object"))
-            arr.key = vk
-            for variable in variables:
-                if variable.key.veckey == vk:
-                    arr[variable.key.idx] = variable
-                else:
-                    arr = None
-                    break
-            if arr is not None:
-                return arr
-        elif len(variables) == 1:
-            return variables[0]
-        raise ValueError("multiple variables are called '%s'; use"
-                         " variables_byname('%s') to see all of them"
-                         % (key, key))
+        firstvar, *othervars = variables
+        if not othervars:
+            return firstvar
+        veckey = firstvar.key.veckey
+        if veckey is None or any(v.key.veckey != veckey for v in othervars):
+            raise ValueError("multiple variables are called '%s'; use"
+                             " variables_byname('%s') to see all of them"
+                             % (key, key))
+        from ..nomials import NomialArray  # all one vector!
+        arr = NomialArray(np.full(veckey.shape, np.nan, dtype="object"))
+        for v in variables:
+            arr[v.key.idx] = v
+        arr.key = veckey
+        return arr
 
     def variables_byname(self, key):
         "Get all variables with a given name"
@@ -157,58 +147,14 @@ class ConstraintSet(list, GPkitObject):
         for constraint in self:
             if isinstance(constraint, ConstraintSet):
                 yield from constraint.flat()
+            elif hasattr(constraint, "__iter__"):
+                yield from constraint
             else:
                 yield constraint
 
-    def as_hmapslt1(self, substitutions):
-        "Returns list of hmaps which must be kept <= 1"
-        hmaplist, self.hmaplengths = [], []
-        for i, constraint in enumerate(self):
-            if not hasattr(constraint, "as_hmapslt1"):
-                raise_badelement(self, i, constraint)
-            hmaps = constraint.as_hmapslt1(substitutions)
-            self.hmaplengths.append(len(hmaps))
-            hmaplist.extend(hmaps)
-        return hmaplist
-
-    def sens_from_dual(self, las, nus, result):
-        """Computes constraint and variable sensitivities from dual solution
-
-        Arguments
-        ---------
-        las : list
-            Sensitivity of each posynomial returned by `self.as_posyslt1`
-
-        nus: list of lists
-             Each posynomial's monomial sensitivities
-
-
-        Returns
-        -------
-        constraint_sens : dict
-            The interesting and computable sensitivities of this constraint
-
-        var_senss : dict
-            The variable sensitivities of this constraint
-        """
-        var_senss = {}
-        start = self.relax_sensitivity = 0
-        for n_posys, constr in zip(self.hmaplengths, self):
-            end = start + n_posys
-            la = las[start:end]
-            nu = nus[start:end]
-            start = end
-            constr.v_ss = constr.sens_from_dual(la, nu, result)
-            self.relax_sensitivity += constr.relax_sensitivity
-            for key, value in constr.v_ss.items():
-                var_senss[key] = value + var_senss.get(key, 0)
-        return var_senss
-
-    def as_gpconstr(self, x0):
-        """Returns GPConstraint approximating this constraint at x0
-
-        When x0 is none, may return a default guess."""
-        return ConstraintSet([constr.as_gpconstr(x0) for constr in self])
+    def flathmaps(self, subs):
+        "Yields hmaps<=1 from self.flat()"
+        yield from chain(*(l.as_hmapslt1(subs) for l in self.flat()))
 
     def process_result(self, result):
         """Does arbitrary computation / manipulation of a program's result

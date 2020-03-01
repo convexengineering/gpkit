@@ -3,10 +3,10 @@ import sys
 from time import time
 from collections import defaultdict
 import numpy as np
-from ..nomials import NomialData
 from ..small_classes import CootMatrix, SolverLog, Numbers, FixedScalar
 from ..keydict import KeyDict
 from ..solution_array import SolutionArray
+from .set import ConstraintSet
 from .costed import CostedConstraintSet
 from ..exceptions import (InvalidPosynomial, Infeasible, UnknownInfeasible,
                           PrimalInfeasible, DualInfeasible, UnboundedGP)
@@ -47,7 +47,7 @@ def _get_solver(solver, kwargs):
     return solver, optimize
 
 
-class GeometricProgram(CostedConstraintSet, NomialData):
+class GeometricProgram(CostedConstraintSet):
     # pylint: disable=too-many-instance-attributes
     """Standard mathematical representation of a GP.
 
@@ -70,9 +70,14 @@ class GeometricProgram(CostedConstraintSet, NomialData):
 
     def __init__(self, cost, constraints, substitutions,
                  *, allow_missingbounds=False):
-        # pylint:disable=super-init-not-called
-        # initialize attributes modified by internal methods
-        self.__bare_init__(cost, constraints, substitutions)
+        # pylint:disable=super-init-not-called,non-parent-init-called
+        self.cost, self.substitutions = cost, substitutions
+        if isinstance(constraints, dict):
+            self.idxlookup = {k: i for i, k in enumerate(constraints)}
+            constraints = list(constraints.values())
+        elif isinstance(constraints, ConstraintSet):
+            constraints = [constraints]
+        list.__init__(self, constraints)
         for key, sub in self.substitutions.items():
             if isinstance(sub, FixedScalar):
                 sub = sub.value
@@ -85,7 +90,7 @@ class GeometricProgram(CostedConstraintSet, NomialData):
         cost_hmap = cost.hmap.sub(self.substitutions, cost.varkeys)
         if any(c <= 0 for c in cost_hmap.values()):
             raise InvalidPosynomial("cost must be a Posynomial")
-        self.hmaps = [cost_hmap] + self.as_hmapslt1(self.substitutions)
+        self.hmaps = [cost_hmap] + list(self.flathmaps(self.substitutions))
         ## Generate various maps into the posy- and monomials
         # k [j]: number of monomials (rows of A) present in each constraint
         self.k = [len(hm) for hm in self.hmaps]
@@ -133,12 +138,9 @@ class GeometricProgram(CostedConstraintSet, NomialData):
 
     def gen(self):
         "Generates nomial and solve data (A, p_idxs) from posynomials"
-        self._hashvalue = self._varlocs = self._varkeys = None
-        self._exps, self._cs = [], []
-        for hmap in self.hmaps:
-            self._exps.extend(hmap.keys())
-            self._cs.extend(hmap.values())
-        self.vks = self.varlocs = defaultdict(list)
+        self.exps = sum((list(hmap.keys()) for hmap in self.hmaps), [])
+        self.cs = sum((list(hmap.values()) for hmap in self.hmaps), [])
+        self.varkeys = self.varlocs = defaultdict(list)
         for i, exp in enumerate(self.exps):
             for var in exp:
                 self.varlocs[var].append(i)
@@ -332,17 +334,17 @@ class GeometricProgram(CostedConstraintSet, NomialData):
         result["variables"].update(result["constants"])
         # get sensitivities #
         result["sensitivities"] = {"nu": nu, "la": la}
-        self.v_ss = self.sens_from_dual(la[1:].tolist(), self.nu_by_posy[1:],
-                                        result)
         # add cost's sensitivity in (nu could be self.nu_by_posy[0])
         cost_senss = sum(nu_i*exp
                          for (nu_i, exp) in zip(nu, self.cost.hmap.keys()))
-        var_senss = self.v_ss.copy()
-        for key, value in cost_senss.items():
-            var_senss[key] = value + var_senss.get(key, 0)
+        self.v_ss = cost_senss.copy()
+        for las, nus, leaf in zip(la[1:], self.nu_by_posy[1:], self.hmaps[1:]):
+            while hasattr(leaf, "parent") and leaf.parent is not None:
+                leaf = leaf.parent
+            self.v_ss += leaf.sens_from_dual(las, nus, result)
         # carry linked sensitivities over to their constants
-        for v in list(v for v in var_senss if v.gradients):
-            dlogcost_dlogv = var_senss.pop(v)
+        for v in list(v for v in self.v_ss if v.gradients):
+            dlogcost_dlogv = self.v_ss.pop(v)
             val = result["constants"][v]
             for c, dv_dc in v.gradients.items():
                 if val != 0:
@@ -352,18 +354,19 @@ class GeometricProgram(CostedConstraintSet, NomialData):
                     dlogv_dlogc = np.nan
                 else:
                     dlogv_dlogc = np.inf * dv_dc*result["constants"][c]
-                accum = var_senss.get(c, 0)
-                var_senss[c] = dlogcost_dlogv*dlogv_dlogc + accum
+                accum = self.v_ss.get(c, 0)
+                self.v_ss[c] = dlogcost_dlogv*dlogv_dlogc + accum
                 if v in cost_senss:
                     if c in self.cost.varkeys:
                         dlogcost_dlogv = cost_senss.pop(v)
                         accum = cost_senss.get(c, 0)
                         cost_senss[c] = dlogcost_dlogv*dlogv_dlogc + accum
-
+        self.v_ss.update({vk: 0 for vk in self.model.varkeys
+                          if not vk in self.v_ss})
         result["sensitivities"]["cost"] = cost_senss
-        result["sensitivities"]["variables"] = KeyDict(var_senss)
+        result["sensitivities"]["variables"] = KeyDict(self.v_ss)
         result["sensitivities"]["constants"] = KeyDict(
-            {k: v for k, v in var_senss.items() if k in result["constants"]})
+            {k: v for k, v in self.v_ss.items() if k in result["constants"]})
         result["soltime"] = solver_out["soltime"]
         return SolutionArray(result)
 

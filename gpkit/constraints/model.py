@@ -134,12 +134,6 @@ class Model(CostedConstraintSet):
 """ % (direction.title(), ", ".join(set(k.name for k in mb)))
             raise ValueError(err + boundstrs + "\n\n" + docstring)
 
-    def as_gpconstr(self, x0):
-        "Returns approximating constraint, keeping name and num"
-        cs = CostedConstraintSet.as_gpconstr(self, x0)
-        cs.lineage = self.lineage
-        return cs
-
     def sweep(self, sweeps, **solveargs):
         "Sweeps {var: values} pairs in sweeps. Returns swept solutions."
         sols = []
