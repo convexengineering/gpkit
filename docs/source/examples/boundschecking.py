@@ -51,7 +51,7 @@ except UnboundedGP:
     gp = m.gp(allow_missingbounds=True)
 
 try:
-    sol = gp.solve(verbosity=0)  # Errors on cvxopt and mosek_cli
+    sol = gp.solve(verbosity=0)  # Errors on mosek_cli
 except UnknownInfeasible:
     pass
 

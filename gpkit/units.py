@@ -5,7 +5,7 @@ try:
     ureg.define("USD = [money] = $")
     Quantity = ureg.Quantity
 except ImportError:  # pint is not installed; provide dummy imports
-    ureg, DimensionalityError = None, None  # pylint: disable=invalid-name
+    ureg = DimensionalityError = None  # pylint: disable=invalid-name
 
     class Quantity:
         "Dummy class for if pint is not installed"

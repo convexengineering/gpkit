@@ -78,6 +78,7 @@ def progify(program, return_attr=None):
             if linked:
                 evaluate_linked(constants, linked)
         prog = program(self.cost, self, constants, **initargs)
+        prog.model = self
         if return_attr:
             return prog, getattr(prog, return_attr)
         return prog

@@ -66,8 +66,7 @@ class GeometricProgram(CostedConstraintSet, NomialData):
                         ], {})
     >>> gp.solve()
     """
-    _result, solve_log, solver_out = None, None, None
-    v_ss, nu_by_posy = None, None
+    _result = solve_log = solver_out = model = v_ss = nu_by_posy = None
 
     def __init__(self, cost, constraints, substitutions,
                  *, allow_missingbounds=False):
@@ -211,6 +210,10 @@ class GeometricProgram(CostedConstraintSet, NomialData):
                        " bounding the right variables would prevent this.")
             elif isinstance(infeasibility, UnknownInfeasible):
                 msg = "The solver failed for an unknown reason."
+            if verbosity > 0 and solver_out["soltime"] < 1:
+                print(msg + "\nSince this model solved in less than a second,"
+                      " let's run `.debug()` automatically to check.\n`")
+                return self.model.debug(solver=solver)
             msg += (" Running `.debug()` may pinpoint the trouble. You can"
                     " also try another solver, or increase the verbosity.")
             raise infeasibility.__class__(msg) from infeasibility

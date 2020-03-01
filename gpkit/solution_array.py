@@ -417,7 +417,7 @@ class SolutionArray(DictOfLists):
     def pickle_prep(self):
         "After calling this, the SolutionArray is ready to pickle"
         program, model = self.program, self.model
-        self.program, self.model = None, None
+        self.program = self.model = None
         cost = self["cost"]
         self["cost"] = mag(cost)
         warnings = {}
