@@ -63,7 +63,6 @@ class Signomial(Nomial):
             self.__class__ = Monomial
         else:
             self.__class__ = Posynomial
-        self.ast = ()
 
     def diff(self, var):
         """Derivative of this with respect to a Variable
@@ -516,8 +515,7 @@ class PosynomialInequality(ScalarSingleEquationConstraint):
                 for idx, percentage in self.const_mmap.items():
                     nu_[idx] += percentage * la*scale
             nu = nu_
-        return {var: sum([presub.exps[i][var]*nu[i]
-                          for i in presub.varlocs[var]])
+        return {var: sum(presub.exps[i][var]*nu[i] for i in presub.varlocs[var])
                 for var in self.varkeys}  # Constant sensitivities
 
     def as_gpconstr(self, _):

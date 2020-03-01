@@ -68,8 +68,7 @@ def diff(filename, diff_dict):
 
 class SolverBackend:
     "Inheritable class for finding solvers. Logs."
-    name = None
-    look = None
+    name = look = None
 
     def __init__(self):
         log("#\n# Looking for", self.name)
@@ -146,7 +145,6 @@ class CVXopt(SolverBackend):
         "Attempts to import cvxopt."
         try:
             log("#   Trying to import cvxopt...")
-            # Testing the import, so the variable is intentionally not used
             import cvxopt  # pylint: disable=unused-import
             return "in Python path"
         except ImportError:
@@ -155,14 +153,14 @@ class CVXopt(SolverBackend):
 
 class MosekConif(SolverBackend):
     "MOSEK exponential cone solver finder."
-    name = 'mosek_conif'
+    name = "mosek_conif"
 
     def look(self):
         "Attempts to import mosek, version >= 9."
         try:
             log("#   Trying to import mosek...")
             import mosek
-            if hasattr(mosek.conetype, 'pexp'):
+            if hasattr(mosek.conetype, "pexp"):
                 return "in Python path"
             return None
         except ImportError:
@@ -176,33 +174,26 @@ def build():
     os.chdir(gpkit.__path__[0])
 
     log("Started building gpkit...\n")
-
     log("Attempting to find and build solvers:\n")
     solvers = [MosekCLI(), MosekConif(), CVXopt()]
     installed_solvers = [solver.name for solver in solvers if solver.installed]
     if not installed_solvers:
         log("Can't find any solvers!\n")
-
     log("...finished building gpkit.")
-
     if "GPKITSOLVERS" in os.environ:
         log("Replaced found solvers (%s) with environment var GPKITSOLVERS"
             " (%s)" % (installed_solvers, os.environ["GPKITSOLVERS"]))
         settings["installed_solvers"] = os.environ["GPKITSOLVERS"]
     else:
         settings["installed_solvers"] = ", ".join(installed_solvers)
-
-    # Choose default solver
     log("\nFound the following solvers: " + settings["installed_solvers"])
 
     # Write settings
     envpath = "env"
     replacedir(envpath)
-    settingspath = pathjoin(envpath, "settings")
-    with open(settingspath, "w") as f:
+    with open(pathjoin(envpath, "settings"), "w") as f:
         for setting, value in sorted(settings.items()):
             f.write("%s : %s\n" % (setting, value))
-
     with open(pathjoin(envpath, "build.log"), "w") as f:
         f.write(LOGSTR)
 

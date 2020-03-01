@@ -28,7 +28,7 @@ def maybe_flatten(value):
     return value
 
 
-def try_str_without(item, excluded, latex=False):
+def try_str_without(item, excluded, *, latex=False):
     "Try to call item.str_without(excluded); fall back to str(item)"
     if latex and hasattr(item, "latex"):
         return item.latex(excluded)
@@ -40,39 +40,6 @@ def try_str_without(item, excluded, latex=False):
 def mag(c):
     "Return magnitude of a Number or Quantity"
     return getattr(c, "magnitude", c)
-
-
-def nomial_latex_helper(c, pos_vars, neg_vars):
-    """Combines (varlatex, exponent) tuples,
-    separated by positive vs negative exponent,
-    into a single latex string"""
-    # TODO this is awkward due to sensitivity_map, which needs a refactor
-    pvarstrs = ['%s^{%.2g}' % (varl, x) if "%.2g" % x != "1" else varl
-                for (varl, x) in pos_vars]
-    nvarstrs = ['%s^{%.2g}' % (varl, -x)
-                if "%.2g" % -x != "1" else varl
-                for (varl, x) in neg_vars]
-    pvarstrs.sort()
-    nvarstrs.sort()
-    pvarstr = ' '.join(pvarstrs)
-    nvarstr = ' '.join(nvarstrs)
-    c = mag(c)
-    cstr = "%.2g" % c
-    if pos_vars and cstr in ["1", "-1"]:
-        cstr = cstr[:-1]
-    else:
-        cstr = latex_num(c)
-
-    if not pos_vars and not neg_vars:
-        mstr = "%s" % cstr
-    elif pos_vars and not neg_vars:
-        mstr = "%s%s" % (cstr, pvarstr)
-    elif neg_vars and not pos_vars:
-        mstr = "\\frac{%s}{%s}" % (cstr, nvarstr)
-    elif pos_vars and neg_vars:
-        mstr = "%s\\frac{%s}{%s}" % (cstr, pvarstr, nvarstr)
-
-    return mstr
 
 
 class SweepValue:
@@ -103,12 +70,3 @@ def splitsweep(sub):
     except (TypeError, ValueError):
         pass
     return False, None
-
-
-def latex_num(c):
-    "Returns latex string of numbers, potentially using exponential notation."
-    cstr = "%.4g" % c
-    if 'e' in cstr:
-        idx = cstr.index('e')
-        cstr = "%s \\times 10^{%i}" % (cstr[:idx], int(cstr[idx+1:]))
-    return cstr

@@ -7,9 +7,9 @@ from .small_classes import Quantity, Numbers
 from .small_scripts import try_str_without
 
 
-PI_STR = "π"  # fails on some external models if it's "π"
-UNICODE_EXPONENTS = True
-UNIT_FORMATTING = ":P~"  # ":P~" for unicode exponents in units
+PI_STR = "π"
+UNIT_FORMATTING = ":P~"
+INSIDE_PARENS = re.compile(r"\(.*\)")
 
 
 def lineagestr(lineage, modelnums=True):
@@ -32,6 +32,12 @@ def unitstr(units, into="%s", options=UNIT_FORMATTING, dimless=""):
         rawstr = ("{%s}" % options).format(units.units)
     units = rawstr.replace(" ", "").replace("dimensionless", dimless)
     return into % units or dimless
+
+def latex_unitstr(units):
+    "Returns latex unitstr"
+    us = unitstr(units, r"~\mathrm{%s}", ":L~")
+    utf = us.replace("frac", "tfrac").replace(r"\cdot", r"\cdot ")
+    return utf if utf != r"~\mathrm{-}" else ""
 
 
 def strify(val, excluded):
@@ -58,9 +64,6 @@ def strify(val, excluded):
     return val
 
 
-INSIDE_PARENS = re.compile(r"\(.*\)")
-
-
 def parenthesize(string, addi=True, mult=True):
     "Parenthesizes a string if it needs it and isn't already."
     parensless = string if "(" not in string else INSIDE_PARENS.sub("", string)
@@ -75,9 +78,10 @@ class GPkitObject:
     "This class combines various printing methods for easier adoption."
     lineagestr = lineagestr
     unitstr = unitstr
+    latex_unitstr = latex_unitstr
+
     cached_strs = None
     ast = None
-
     # pylint: disable=too-many-branches, too-many-statements
     def parse_ast(self, excluded=("units")):
         "Turns the AST of this object's construction into a faithful string"
@@ -119,7 +123,7 @@ class GPkitObject:
             x = values[1]
             if left == "1":
                 aststr = "1"
-            elif UNICODE_EXPONENTS and int(x) == x and 2 <= x <= 9:
+            elif int(x) == x and 2 <= x <= 9:
                 x = int(x)
                 if x in (2, 3):
                     aststr = "%s%s" % (left, chr(176+x))
@@ -174,9 +178,3 @@ class GPkitObject:
     def _repr_latex_(self):
         "Returns default latex for automatic iPython Notebook rendering."
         return "$$"+self.latex()+"$$"  # pylint: disable=no-member
-
-    def latex_unitstr(self):
-        "Returns latex unitstr"
-        us = self.unitstr(r"~\mathrm{%s}", ":L~")
-        utf = us.replace("frac", "tfrac").replace(r"\cdot", r"\cdot ")
-        return utf if utf != r"~\mathrm{-}" else ""

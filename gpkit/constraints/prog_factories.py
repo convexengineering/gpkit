@@ -71,13 +71,13 @@ def progify(program, return_attr=None):
     return_attr: string
         attribute to return in addition to the program
     """
-    def programfn(self, constants=None, **kwargs):
+    def programfn(self, constants=None, **initargs):
         "Return program version of self"
         if not constants:
             constants, _, linked = parse_subs(self.varkeys, self.substitutions)
             if linked:
                 evaluate_linked(constants, linked)
-        prog = program(self.cost, self, constants, **kwargs)
+        prog = program(self.cost, self, constants, **initargs)
         if return_attr:
             return prog, getattr(prog, return_attr)
         return prog
@@ -87,7 +87,7 @@ def progify(program, return_attr=None):
 def solvify(genfunction):
     "Returns function for making/solving/sweeping a program."
     def solvefn(self, solver=None, *, verbosity=1, skipsweepfailures=False,
-                **kwargs):
+                **solveargs):
         """Forms a mathematical program and attempts to solve it.
 
          Arguments
@@ -99,7 +99,7 @@ def solvify(genfunction):
              Is decremented by one and then passed to programs.
          skipsweepfailures : bool (default False)
              If True, when a solve errors during a sweep, skip it.
-         **kwargs : Passed to solver
+         **solveargs : Passed to solver
 
          Returns
          -------
@@ -118,10 +118,10 @@ def solvify(genfunction):
         # NOTE SIDE EFFECTS: self.program is set below
         if sweep:
             run_sweep(genfunction, self, solution, skipsweepfailures,
-                      constants, sweep, linked, solver, verbosity, **kwargs)
+                      constants, sweep, linked, solver, verbosity, **solveargs)
         else:
             self.program, progsolve = genfunction(self)
-            result = progsolve(solver, verbosity=verbosity, **kwargs)
+            result = progsolve(solver, verbosity=verbosity, **solveargs)
             solution.append(result)
         solution.to_arrays()
         solution.program = self.program

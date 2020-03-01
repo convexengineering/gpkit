@@ -49,7 +49,6 @@ class KeyMap:
 
     def __init__(self, *args, **kwargs):
         "Passes through to super().__init__ via the `update()` method"
-        # pylint: disable=super-init-not-called
         self.keymap = defaultdict(set)
         self._unmapped_keys = set()
         self.owned = set()

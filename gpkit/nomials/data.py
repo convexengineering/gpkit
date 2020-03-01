@@ -27,7 +27,7 @@ class NomialData(GPkitObject):
 
     def to(self, units):
         "Create new Signomial converted to new units"
-        return self.__class__(self.hmap.to(units))  # pylint: disable=no-member
+        return self.__class__(self.hmap.to(units))
 
     @property
     def varlocs(self):

@@ -259,7 +259,7 @@ class Model(CostedConstraintSet):
 def get_relaxed(relaxvals, mapped_list, min_return=1):
     "Determines which relaxvars are considered 'relaxed'"
     sortrelaxed = sorted(zip(relaxvals, mapped_list), key=lambda x: -x[0])
-    # arbitrarily, 1.01 is the point below which something is unrelaxed
+    # arbitrarily, 1.01 is the threshold below which we don't show slack
     mostrelaxed = max(sortrelaxed[0][0], 1.01)
     for i, (val, _) in enumerate(sortrelaxed):
         if i >= min_return and val <= 1.01 and (val-1) <= (mostrelaxed-1)/10:

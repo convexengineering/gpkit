@@ -20,9 +20,7 @@ def load_settings(path=None, firstattempt=True):
                     settings_[name] = value[0]
     except IOError:
         settings_ = {"installed_solvers": [""]}
-    if (settings_["installed_solvers"] == [""]
-            or ("mosek" in settings_["installed_solvers"]
-                and "mosek_version" not in settings_)):
+    if settings_["installed_solvers"] == [""]:
         if firstattempt:
             print("Found no installed solvers, beginning a build.")
             build()
@@ -54,10 +52,7 @@ settings = load_settings()
 
 class SignomialsEnabledMeta(type):
     "Metaclass to implement falsiness for SignomialsEnabled"
-
-    def __bool__(cls):
-        return cls._true
-
+    def __bool__(cls): return cls._true  # pylint: disable=multiple-statements
 
 class SignomialsEnabled(metaclass=SignomialsEnabledMeta):  # pylint: disable=no-init
     """Class to put up and tear down signomial support in an instance of GPkit.
@@ -71,13 +66,10 @@ class SignomialsEnabled(metaclass=SignomialsEnabledMeta):  # pylint: disable=no-
         >>>     constraints = [x >= 1-y]
         >>> gpkit.Model(x, constraints).localsolve()
     """
-    _true = False  # the current signomial permissions
-
-    def __enter__(self):
-        SignomialsEnabled._true = True
-
-    def __exit__(self, type_, val, traceback):
-        SignomialsEnabled._true = False
+    _true = False  # default signomial permissions
+    # pylint: disable=multiple-statements
+    def __enter__(self): SignomialsEnabled._true = True
+    def __exit__(self, type_, val, traceback): SignomialsEnabled._true = False
 
 
 class Vectorize:
@@ -119,10 +111,10 @@ class NamedVariables:
         "Enters a named environment."
         num = self.modelnums[(self.lineage, self.name)]
         self.modelnums[(self.lineage, self.name)] += 1
-        NamedVariables.lineage += ((self.name, num),)  # NOTE: Class reference
+        NamedVariables.lineage += ((self.name, num),)  # NOTE: Side effects
         return self.lineage, self.namedvars[self.lineage]
 
     def __exit__(self, type_, val, traceback):
         "Leaves a named environment."
         del self.namedvars[self.lineage]
-        NamedVariables.lineage = self.lineage[:-1]   # NOTE: Class reference
+        NamedVariables.lineage = self.lineage[:-1]   # NOTE: Side effects

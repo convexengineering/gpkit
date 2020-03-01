@@ -1,16 +1,10 @@
 """Miscellaneous small classes"""
 from operator import xor
-from functools import reduce  # pylint: disable=redefined-builtin
-from six import with_metaclass
+from functools import reduce
 import numpy as np
 from .units import Quantity, qty  # pylint: disable=unused-import
 
-try:
-    isinstance("", basestring)
-    Strings = (str, unicode)
-except NameError:
-    Strings = (str,)
-
+Strings = (str,)
 Numbers = (int, float, np.number, Quantity)
 
 
@@ -20,13 +14,12 @@ class FixedScalarMeta(type):
         return hasattr(obj, "hmap") and len(obj.hmap) == 1 and not obj.vks
 
 
-class FixedScalar(with_metaclass(FixedScalarMeta)):  # pylint: disable=no-init
+class FixedScalar(metaclass=FixedScalarMeta):  # pylint: disable=no-init
     "Instances of this class are scalar Nomials with no variables"
 
 
 class Count:
     "Like python 2's itertools.count, for Python 3 compatibility."
-
     def __init__(self):
         self.count = -1
 
@@ -83,7 +76,7 @@ class SolverLog(list):
         "Append and potentially write the new line."
         if writ != "\n":
             writ = writ.rstrip("\n")
-            self.append(writ)
+            self.append(str(writ))
         if self.verbosity > 0:
             self.output.write(writ)
 
@@ -93,7 +86,7 @@ class DictOfLists(dict):
 
     def append(self, sol):
         "Appends a dict (of dicts) of lists to all held lists."
-        if not hasattr(self, 'initialized'):
+        if not hasattr(self, "initialized"):
             _enlist_dict(sol, self)
             self.initialized = True  # pylint: disable=attribute-defined-outside-init
         else:
@@ -168,7 +161,7 @@ class HashVector(dict):
 
     Example
     -------
-    >>> x = gpkit.nomials.Monomial('x')
+    >>> x = gpkit.nomials.Monomial("'"x"'")
     >>> exp = gpkit.small_classes.HashVector({x: 2})
     """
     hashvalue = None
@@ -185,15 +178,10 @@ class HashVector(dict):
         hv.hashvalue = self.hashvalue
         return hv
 
-    def __neg__(self):
-        "Return Hashvector with each value negated."
-        return self.__class__({key: -val for (key, val) in self.items()})
-
     def __pow__(self, other):
         "Accepts scalars. Return Hashvector with each value put to a power."
         if isinstance(other, Numbers):
-            return self.__class__({key: val**other
-                                   for (key, val) in self.items()})
+            return self.__class__({k: v**other for (k, v) in self.items()})
         return NotImplemented
 
     def __mul__(self, other):
@@ -202,13 +190,10 @@ class HashVector(dict):
         If the other object inherits from dict, multiplication is element-wise
         and their key's intersection will form the new keys."""
         if isinstance(other, Numbers):
-            return self.__class__({key: val*other
-                                   for (key, val) in self.items()})
-
+            return self.__class__({k: v*other for (k, v) in self.items()})
         if isinstance(other, dict):
             keys = set(self).intersection(other)
-            return self.__class__({key: self[key] * other[key] for key in keys})
-
+            return self.__class__({k: self[k]*other[k] for k in keys})
         return NotImplemented
 
     def __add__(self, other):
@@ -217,9 +202,7 @@ class HashVector(dict):
         If the other object inherits from dict, addition is element-wise
         and their key's union will form the new keys."""
         if isinstance(other, Numbers):
-            return self.__class__({key: val+other
-                                   for (key, val) in self.items()})
-
+            return self.__class__({k: v + other for (k, v) in self.items()})
         if isinstance(other, dict):
             sums = self.copy()
             for key, value in other.items():
@@ -233,10 +216,10 @@ class HashVector(dict):
                     sums[key] = value
             sums.hashvalue = None
             return sums
-
         return NotImplemented
 
     # pylint: disable=multiple-statements
+    def __neg__(self): return -1*self
     def __sub__(self, other): return self + -other
     def __rsub__(self, other): return other + -self
     def __radd__(self, other): return self + other

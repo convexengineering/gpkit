@@ -26,25 +26,14 @@ def vec_recurse(element, function, *args, **kwargs):
 def array_constraint(symbol, func):
     "Return function which creates constraints of the given operator."
     vecfunc = np.vectorize(func)
-    orig_symbol = symbol
 
-    def wrapped_func(self, other, rev=False):
+    def wrapped_func(self, other):
         "Creates array constraint from vectorized operator."
         if not isinstance(other, NomialArray):
             other = NomialArray(other)
-        if rev:
-            left, right = other, self
-            if orig_symbol == ">=":
-                symbol = "<="
-            elif orig_symbol == "<=":
-                symbol = ">="
-        else:
-            left, right = self, other
-            symbol = orig_symbol
-        result = vecfunc(left, right)
-        left = left.key if hasattr(left, "key") else left
-        right = right.key if hasattr(right, "key") else right
-        return ArrayConstraint(result, left, symbol, right)
+        result = vecfunc(self, other)
+        return ArrayConstraint(result, getattr(self, "key", self),
+                               symbol, getattr(other, "key", other))
     return wrapped_func
 
 
@@ -60,44 +49,35 @@ class NomialArray(GPkitObject, np.ndarray):
     >>> px = gpkit.NomialArray([1, x, x**2])
     """
 
-    def __mul__(self, other, rev=False):
-        astorder = (self, other)
-        if rev:
-            astorder = tuple(reversed(astorder))
+    def __mul__(self, other, *, reverse_order=False):
+        astorder = (self, other) if not reverse_order else (other, self)
         out = NomialArray(np.ndarray.__mul__(self, other))
         out.ast = ("mul", astorder)
         return out
 
-    def __truediv__(self, other, rev=False):
-        astorder = (self, other)
-        if rev:
-            astorder = tuple(reversed(astorder))
+    def __truediv__(self, other):
         out = NomialArray(np.ndarray.__truediv__(self, other))
-        out.ast = ("div", astorder)
+        out.ast = ("div", (self, other))
         return out
 
     def __rtruediv__(self, other):
-        astorder = (other, self)
         out = (np.ndarray.__mul__(self**-1, other))
-        out.ast = ("div", astorder)
+        out.ast = ("div", (other, self))
         return out
 
-    def __add__(self, other, rev=False):
-        astorder = (self, other)
-        if rev:
-            astorder = tuple(reversed(astorder))
+    def __add__(self, other, *, reverse_order=False):
+        astorder = (self, other) if not reverse_order else (other, self)
         out = (np.ndarray.__add__(self, other))
         out.ast = ("add", astorder)
         return out
 
     # pylint: disable=multiple-statements
-    def __rmul__(self, other): return self.__mul__(other, rev=True)
-    def __radd__(self, other): return self.__add__(other, rev=True)
+    def __rmul__(self, other): return self.__mul__(other, reverse_order=True)
+    def __radd__(self, other): return self.__add__(other, reverse_order=True)
 
     def __pow__(self, expo):  # pylint: disable=arguments-differ
-        astorder = (self, expo)
         out = (np.ndarray.__pow__(self, expo))  # pylint: disable=too-many-function-args
-        out.ast = ("pow", astorder)
+        out.ast = ("pow", (self, expo))
         return out
 
     def __neg__(self):
@@ -109,8 +89,6 @@ class NomialArray(GPkitObject, np.ndarray):
         out = np.ndarray.__getitem__(self, idxs)
         if not getattr(out, "shape", None):
             return out
-        out = (out)
-        # print(repr(idxs))
         out.ast = ("index", (self, idxs))
         return out
 

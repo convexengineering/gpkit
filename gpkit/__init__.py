@@ -16,8 +16,8 @@ from .tools.docstring import parse_variables
 from .tests.run_tests import run as run_unit_tests
 
 __version__ = "0.9.1"
-GPBLU = "#59ade4"
 GPCOLORS = ["#59ade4", "#FA3333"]
+GPBLU, GPRED = GPCOLORS
 
 if "just built!" in settings:
     run_unit_tests(verbosity=1)

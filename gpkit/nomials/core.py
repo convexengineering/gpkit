@@ -1,8 +1,34 @@
 "The shared non-mathematical backbone of all Nomials"
 from .data import NomialData
 from ..small_classes import Numbers, FixedScalar
-from ..small_scripts import nomial_latex_helper
-from ..repr_conventions import UNICODE_EXPONENTS
+
+
+def nomial_latex_helper(c, pos_vars, neg_vars):
+    """Combines (varlatex, exponent) tuples,
+    separated by positive vs negative exponent, into a single latex string."""
+    # TODO this is awkward due to sensitivity_map, which needs a refactor
+    pvarstrs = ['%s^{%.2g}' % (varl, x) if "%.2g" % x != "1" else varl
+                for (varl, x) in pos_vars]
+    nvarstrs = ['%s^{%.2g}' % (varl, -x) if "%.2g" % -x != "1" else varl
+                for (varl, x) in neg_vars]
+    pvarstr = " ".join(sorted(pvarstrs))
+    nvarstr = " ".join(sorted(nvarstrs))
+    cstr = "%.2g" % c
+    if pos_vars and cstr in ["1", "-1"]:
+        cstr = cstr[:-1]
+    else:
+        cstr = "%.4g" % c
+        if "e" in cstr:  # use exponential notation
+            idx = cstr.index("e")
+            cstr = "%s \\times 10^{%i}" % (cstr[:idx], int(cstr[idx+1:]))
+
+    if pos_vars and neg_vars:
+        return "%s\\frac{%s}{%s}" % (cstr, pvarstr, nvarstr)
+    if neg_vars and not pos_vars:
+        return "\\frac{%s}{%s}" % (cstr, nvarstr)
+    if pos_vars:
+        return "%s%s" % (cstr, pvarstr)
+    return "%s" % cstr
 
 
 class Nomial(NomialData):
@@ -25,7 +51,7 @@ class Nomial(NomialData):
                 varstr = var.str_without(excluded)
                 if x == 1:
                     pass
-                elif UNICODE_EXPONENTS and int(x) == x and 2 <= x <= 9:
+                elif int(x) == x and 2 <= x <= 9:
                     x = int(x)
                     if x in (2, 3):
                         varstr += chr(176+x)
@@ -62,14 +88,6 @@ class Nomial(NomialData):
         units_tf = units.replace("frac", "tfrac").replace(r"\cdot", r"\cdot ")
         return " + ".join(sorted(mstrs)) + units_tf
 
-    def prod(self):
-        "Return self for compatibility with NomialArray"
-        return self
-
-    def sum(self):
-        "Return self for compatibility with NomialArray"
-        return self
-
     @property
     def value(self):
         """Self, with values substituted for variables that have values
@@ -90,12 +108,14 @@ class Nomial(NomialData):
             return isinstance(self, FixedScalar) and self.value == other
         return super().__eq__(other)
 
+    __hash__ = NomialData.__hash__
     # pylint: disable=multiple-statements
     def __ne__(self, other): return not Nomial.__eq__(self, other)
-
-    # required by Python 3
-    __hash__ = NomialData.__hash__
-
-    # for arithmetic consistency
     def __radd__(self, other): return self.__add__(other, rev=True)   # pylint: disable=no-member
     def __rmul__(self, other): return self.__mul__(other, rev=True)   # pylint: disable=no-member
+
+    def prod(self):
+        "Return self for compatibility with NomialArray"
+        return self
+
+    sum = prod
