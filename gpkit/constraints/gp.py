@@ -16,6 +16,14 @@ DEFAULT_SOLVER_KWARGS = {"cvxopt": {"kktsolver": "ldl"}}
 SOLUTION_TOL = {"cvxopt": 1e-3, "mosek_cli": 1e-4, "mosek_conif": 1e-3}
 
 
+class MonoEqualityIndexes:
+    "Class to hold MonoEqualityIndexes"
+
+    def __init__(self):
+        self.all = set()
+        self.first_half = set()
+
+
 def _get_solver(solver, kwargs):
     """Get the solverfn and solvername associated with solver"""
     if solver is None:
@@ -84,11 +92,13 @@ class GeometricProgram(CostedConstraintSet, NomialData):
         self.k = [len(hm) for hm in self.hmaps]
         p_idxs = []  # p_idxs [i]: posynomial index of each monomial
         self.m_idxs = []  # m_idxs [i]: monomial indices of each posynomial
-        self.meq_idxs = set() # meq_idxs: first mon-index of each mon equality
+        self.meq_idxs = MonoEqualityIndexes()
         m_idx_start = 0
         for i, p_len in enumerate(self.k):
             if getattr(self.hmaps[i], "from_meq", False):
-                self.meq_idxs.add(m_idx_start)
+                self.meq_idxs.all.add(m_idx_start)
+                if len(self.meq_idxs.all) > 2*len(self.meq_idxs.first_half):
+                    self.meq_idxs.first_half.add(m_idx_start)
             self.m_idxs.append(list(range(m_idx_start, m_idx_start + p_len)))
             p_idxs += [i]*p_len
             m_idx_start += p_len
@@ -102,7 +112,7 @@ class GeometricProgram(CostedConstraintSet, NomialData):
         for var, locs in self.varlocs.items():
             upperbound, lowerbound = False, False
             for i in locs:
-                if i not in self.meq_idxs:
+                if i not in self.meq_idxs.all:
                     if self.exps[i][var] > 0:  # pylint:disable=simplifiable-if-statement
                         upperbound = True
                     else:
@@ -177,7 +187,8 @@ class GeometricProgram(CostedConstraintSet, NomialData):
             infeasibility, original_stdout = None, sys.stdout
             sys.stdout = SolverLog(original_stdout, verbosity=verbosity-1)
             solver_out = solverfn(c=self.cs, A=self.A, p_idxs=self.p_idxs,
-                                  k=self.k, **solver_kwargs)
+                                  k=self.k, meq_idxs=self.meq_idxs,
+                                  **solver_kwargs)
         except Infeasible as e:
             infeasibility = e
         except Exception as e:
@@ -413,7 +424,7 @@ class GeometricProgram(CostedConstraintSet, NomialData):
 def gen_meq_bounds(missingbounds, exps, meq_idxs):  # pylint: disable=too-many-locals,too-many-branches
     "Generate conditional monomial equality bounds"
     meq_bounds = defaultdict(set)
-    for i in meq_idxs:
+    for i in meq_idxs.first_half:
         p_upper, p_lower, n_upper, n_lower = set(), set(), set(), set()
         for key, x in exps[i].items():
             if (key, "upper") in missingbounds:

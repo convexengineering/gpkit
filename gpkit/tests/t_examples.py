@@ -106,7 +106,7 @@ class TestExamples(unittest.TestCase):
         pass
 
     def test_boundschecking(self, example):
-        if "mosek_conif" == settings["default_solver"]:
+        if "mosek_cli" != settings["default_solver"]:
             example.gp.solve(verbosity=0)  # mosek_conif can solve it!
         else:
             with self.assertRaises(UnknownInfeasible):
