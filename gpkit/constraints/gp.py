@@ -97,11 +97,34 @@ class GeometricProgram(CostedConstraintSet, NomialData):
         self.meq_idxs = {sum(self.k[:i]) for i, p in enumerate(self.posynomials)
                          if getattr(p, "from_meq", False)}
         self.gen()  # A [i, v]: sparse matrix of powers in each monomial
-        if self.missingbounds and not allow_missingbounds:
-            boundstrs = "    \n".join(
-                "%s has no %s bound%s" % (v, b, x)
-                for (v, b), x in self.missingbounds.items())
-            raise UnboundedGP(boundstrs)
+        self.missingbounds = self.check_bounds(allow_missingbounds)
+
+    def check_bounds(self, allow_missingbounds=True):
+        missingbounds = {}
+        for var, locs in self.varlocs.items():
+            upperbound, lowerbound = False, False
+            for i in locs:
+                if i not in self.meq_idxs:
+                    if upperbound and lowerbound:
+                        break
+                    if self.exps[i][var] > 0:  # pylint:disable=simplifiable-if-statement
+                        upperbound = True
+                    else:
+                        lowerbound = True
+            if not upperbound:
+                missingbounds[(var, "upper")] = ""
+            if not lowerbound:
+                missingbounds[(var, "lower")] = ""
+
+        conditional_missingbounds = gen_mono_eq_bounds(self.exps, self.meq_idxs)
+        check_conditional_bounds(missingbounds, conditional_missingbounds)
+        if not missingbounds:
+            return {}
+        if allow_missingbounds:
+            return missingbounds
+
+        raise UnboundedGP("    \n".join("%s has no %s bound%s" % (v, b, x)
+                                        for (v, b), x in missingbounds.items()))
 
     varkeys = NomialData.varkeys  # as opposed to ConstraintSet's
 
@@ -113,8 +136,18 @@ class GeometricProgram(CostedConstraintSet, NomialData):
             self._exps.extend(hmap.keys())
             self._cs.extend(hmap.values())
         self.vks = self.varlocs
-        self.A, self.missingbounds = genA(self.exps,
-                                          self.varlocs, self.meq_idxs)
+
+        row, col, data = [], [], []
+        for j, var in enumerate(self.varlocs):
+            row.extend(self.varlocs[var])
+            col.extend([j]*len(self.varlocs[var]))
+            data.extend(self.exps[i][var] for i in self.varlocs[var])
+        for i, exp in enumerate(self.exps):
+            if not exp:  # space the matrix out for trailing constant terms
+                row.append(i)
+                col.append(0)
+                data.append(0)
+        self.A = CootMatrix(row, col, data)
 
     # pylint: disable=too-many-statements, too-many-locals
     def solve(self, solver=None, *, verbosity=1,
@@ -393,50 +426,6 @@ class GeometricProgram(CostedConstraintSet, NomialData):
                              % (np.exp(dual_cost), cost))
 
 
-def genA(exps, varlocs, meq_idxs):  # pylint: disable=invalid-name
-    """Generates A matrix
-
-    Returns
-    -------
-        A : sparse Cootmatrix
-            Exponents of the various free variables for each monomial: rows
-            of A are monomials, columns of A are variables.
-        missingbounds : dict
-            Keys: variables that lack bounds. Values: which bounds are missed.
-    """
-    missingbounds = {}
-    row, col, data = [], [], []
-    for j, var in enumerate(varlocs):
-        upperbound, lowerbound = False, False
-        row.extend(varlocs[var])
-        col.extend([j]*len(varlocs[var]))
-        data.extend(exps[i][var] for i in varlocs[var])
-        for i in varlocs[var]:
-            if i not in meq_idxs:
-                if upperbound and lowerbound:
-                    break
-                if exps[i][var] > 0:  # pylint:disable=simplifiable-if-statement
-                    upperbound = True
-                else:
-                    lowerbound = True
-        if not upperbound:
-            missingbounds[(var, "upper")] = ""
-        if not lowerbound:
-            missingbounds[(var, "lower")] = ""
-
-    check_mono_eq_bounds(missingbounds, gen_mono_eq_bounds(exps, meq_idxs))
-
-    # space the matrix out for trailing constant terms
-    for i, exp in enumerate(exps):
-        if not exp:
-            row.append(i)
-            col.append(0)
-            data.append(0)
-    A = CootMatrix(row, col, data)
-
-    return A, missingbounds
-
-
 def gen_mono_eq_bounds(exps, meq_idxs):  # pylint: disable=too-many-locals
     "Generate conditional monomial equality bounds"
     meq_bounds = defaultdict(set)
@@ -466,7 +455,7 @@ def gen_mono_eq_bounds(exps, meq_idxs):  # pylint: disable=too-many-locals
     return meq_bounds
 
 
-def check_mono_eq_bounds(missingbounds, meq_bounds):
+def check_conditional_bounds(missingbounds, meq_bounds):
     "Bounds variables with monomial equalities"
     still_alive = True
     while still_alive:
