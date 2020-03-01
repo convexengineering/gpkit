@@ -40,12 +40,11 @@ def _sort_constrs(item):
 # pylint: disable=too-many-instance-attributes
 class ConstraintSet(list, GPkitObject):
     "Recursive container for ConstraintSets and Inequalities"
-    varkeys = None
     unique_varkeys = frozenset()
-    # idxlookup holds the names of the top-level constraintsets
-    idxlookup = None
-    _name_collision_varkeys = None
+    varkeys = _name_collision_varkeys = None
+    idxlookup = None  # holds the names of the top-level constraintsets
 
+    # @profile
     def __init__(self, constraints, substitutions=None):  # pylint: disable=too-many-branches
         if isinstance(constraints, ConstraintSet):
             constraints = [constraints]  # put it one level down
@@ -174,6 +173,7 @@ class ConstraintSet(list, GPkitObject):
                 for yielded_constraint in subgenerator:
                     yield yielded_constraint
 
+    # @profile
     def reset_varkeys(self):
         "Goes through constraints and collects their varkeys."
         self.varkeys = KeySet(self.unique_varkeys)

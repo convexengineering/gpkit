@@ -24,15 +24,12 @@ def clean_value(key, value):
         value = value.to(key.units or "dimensionless").magnitude
     return value
 
-
-class KeyDict(dict):
-    """KeyDicts do two things over a dict: map keys and collapse arrays.
-
-    >>>> kd = gpkit.keydict.KeyDict()
+class KeyMap:
+    """Helper class to provide KeyMapping to interfaces.
 
     Mapping keys
     ------------
-    If ``.keymapping`` is True, a KeyDict keeps an internal list of VarKeys as
+    A KeyMap keeps an internal list of VarKeys as
     canonical keys, and their values can be accessed with any object whose
     `key` attribute matches one of those VarKeys, or with strings matching
     any of the multiple possible string interpretations of each key:
@@ -46,55 +43,20 @@ class KeyDict(dict):
 
     Note that if a item is set using a key that does not have a `.key`
     attribute, that key can be set and accessed normally.
-
-    Collapsing arrays
-    -----------------
-    If ``.collapse_arrays`` is True then VarKeys which have a `shape`
-    parameter (indicating they are part of an array) are stored as numpy
-    arrays, and automatically de-indexed when a matching VarKey with a
-    particular `idx` parameter is used as a key.
-
-    See also: gpkit/tests/t_keydict.py.
     """
-    collapse_arrays = True
-    keymapping = True
+    collapse_arrays = False
     keymap = []
+    log_gets = False
+    varkeys = None
 
     def __init__(self, *args, **kwargs):
         "Passes through to dict.__init__ via the `update()` method"
         # pylint: disable=super-init-not-called
-        self.varkeys = None
         self.keymap = defaultdict(set)
         self._unmapped_keys = set()
-        self.log_gets = False
-        self.logged_gets = set()
         self.owned = set()
-        self.update(*args, **kwargs)
-
-    def get(self, key, alternative=KeyError):
-        if key not in self:
-            if alternative is KeyError:
-                raise alternative(key)
-            return alternative
-        return self[key]
-
-    def _copyonwrite(self, key):
-        "Copys arrays before they are written to"
-        if not hasattr(self, "owned"):  # backwards pickle compatibility
-            self.owned = set()
-        if key not in self.owned:
-            dict.__setitem__(self, key, dict.__getitem__(self, key).copy())
-            self.owned.add(key)
-
-    def update(self, *args, **kwargs):
-        "Iterates through the dictionary created by args and kwargs"
-        if not self and len(args) == 1 and isinstance(args[0], KeyDict):
-            dict.update(self, args[0])
-            self.keymap.update(args[0].keymap)
-            self._unmapped_keys.update(args[0]._unmapped_keys)  # pylint:disable=protected-access
-        else:
-            for k, v in dict(*args, **kwargs).items():
-                self[k] = v
+        self.logged_gets = set()
+        self.update(*args, **kwargs)  # pylint: disable=no-member
 
     def parse_and_index(self, key):
         "Returns key if key had one, and veckey/idx for indexed veckeys."
@@ -137,24 +99,79 @@ class KeyDict(dict):
             return True
         if not isinstance(key, Hashable):
             return False
-        if dict.__contains__(self, key):
+        if super().__contains__(key):  # pylint: disable=no-member
             if idx:
                 try:
-                    value = dict.__getitem__(self, key)[idx]
+                    value = super().__getitem__(key)[idx]  # pylint: disable=no-member
                     return True if is_sweepvar(value) else not isnan(value)
                 except TypeError:
                     raise TypeError("%s has an idx, but its value in this"
                                     " KeyDict is the scalar %s."
-                                    % (key, dict.__getitem__(self, key)))
+                                    % (key, super().__getitem__(key)))  # pylint: disable=no-member
                 except IndexError:
                     raise IndexError("key %s with idx %s is out of bounds"
                                      " for value %s" %
-                                     (key, idx,
-                                      dict.__getitem__(self, key)))
+                                     (key, idx, super().__getitem__(key)))  # pylint: disable=no-member
             return True
         if key in self.keymap:
             return True
         return False
+
+    def update_keymap(self):
+        "Updates the keymap with the keys in _unmapped_keys"
+        copied = set()  # have to copy bc update leaves duplicate sets
+        while self._unmapped_keys:
+            key = self._unmapped_keys.pop()
+            if hasattr(key, "keys"):
+                for mapkey in key.keys:
+                    if mapkey not in copied and mapkey in self.keymap:
+                        self.keymap[mapkey] = set(self.keymap[mapkey])
+                        copied.add(mapkey)
+                    self.keymap[mapkey].add(key)
+
+
+class KeyDict(KeyMap, dict):
+    """KeyDicts do two things over a dict: map keys and collapse arrays.
+
+    >>>> kd = gpkit.keydict.KeyDict()
+
+    For mapping keys, see KeyMapper.__doc__
+
+    Collapsing arrays
+    -----------------
+    If ``.collapse_arrays`` is True then VarKeys which have a `shape`
+    parameter (indicating they are part of an array) are stored as numpy
+    arrays, and automatically de-indexed when a matching VarKey with a
+    particular `idx` parameter is used as a key.
+
+    See also: gpkit/tests/t_keydict.py.
+    """
+    collapse_arrays = True
+
+    def get(self, key, alternative=KeyError):
+        if key not in self:
+            if alternative is KeyError:
+                raise alternative(key)
+            return alternative
+        return self[key]
+
+    def _copyonwrite(self, key):
+        "Copys arrays before they are written to"
+        if not hasattr(self, "owned"):  # backwards pickle compatibility
+            self.owned = set()
+        if key not in self.owned:
+            super().__setitem__(key, super().__getitem__(key).copy())
+            self.owned.add(key)
+
+    def update(self, *args, **kwargs):
+        "Iterates through the dictionary created by args and kwargs"
+        if not self and len(args) == 1 and isinstance(args[0], KeyDict):
+            super().update(args[0])
+            self.keymap.update(args[0].keymap)
+            self._unmapped_keys.update(args[0]._unmapped_keys)  # pylint:disable=protected-access
+        else:
+            for k, v in dict(*args, **kwargs).items():
+                self[k] = v
 
     def __call__(self, key):
         got = self[key]
@@ -244,18 +261,6 @@ class KeyDict(dict):
                 dict.__setitem__(self, key, value)
                 self.owned.add(key)
 
-    def update_keymap(self):
-        "Updates the keymap with the keys in _unmapped_keys"
-        copied = set()  # have to copy bc update leaves duplicate sets
-        while self.keymapping and self._unmapped_keys:
-            key = self._unmapped_keys.pop()
-            if hasattr(key, "keys"):
-                for mapkey in key.keys:
-                    if mapkey not in copied and mapkey in self.keymap:
-                        self.keymap[mapkey] = set(self.keymap[mapkey])
-                        copied.add(mapkey)
-                    self.keymap[mapkey].add(key)
-
     def __delitem__(self, key):
         "Overloads del [] to work with all keys"
         key, idx = self.parse_and_index(key)
@@ -266,13 +271,13 @@ class KeyDict(dict):
         for k in list(keys):
             delete = True
             if idx:
-                dict.__getitem__(self, k)[idx] = np.nan
-                if not isnan(dict.__getitem__(self, k)).all():
+                super().__getitem__(k)[idx] = np.nan
+                if not isnan(super().__getitem__(k)).all():
                     delete = False
             if delete:
-                dict.__delitem__(self, k)
+                super().__delitem__(k)
                 mapkeys = set([k])
-                if self.keymapping and hasattr(k, "keys"):
+                if hasattr(k, "keys"):
                     mapkeys.update(k.keys)
                 for mapkey in mapkeys:
                     if mapkey in self.keymap:
@@ -285,33 +290,27 @@ class KeyDict(dict):
                         self.keymap[mapkey].remove(k)
 
 
-class KeySet(KeyDict):
-    "KeyDicts that don't collapse arrays or store values."
+class KeySet(KeyMap, set):
+    "KeyMaps that don't collapse arrays or store values."
     collapse_arrays = False
-
-    def add(self, item):
-        "Adds an item to the keyset"
-        key, _ = self.parse_and_index(item)
-        if key not in self.keymap:
-            self.keymap[key].add(key)
-            self._unmapped_keys.add(key)
-            dict.__setitem__(self, key, None)
 
     def update(self, *args, **kwargs):
         "Iterates through the dictionary created by args and kwargs"
         if len(args) == 1:
             arg, = args
-            if isinstance(arg, KeySet):  # assume unmapped
-                dict.update(self, arg)
+            if isinstance(arg, KeySet):
+                set.update(self, arg)
                 for key, value in arg.keymap.items():
                     self.keymap[key].update(value)
                 self._unmapped_keys.update(arg._unmapped_keys)  # pylint: disable=protected-access
             else:  # set-like interface
-                for item in arg:
-                    self.add(item)
-        else:  # dict-like interface
-            for k in dict(*args, **kwargs):
-                self.add(k)
+                keys = {item.key for item in arg}
+                for key in keys:
+                    self.keymap[key].add(key)
+                self._unmapped_keys.update(keys)
+                super().update(keys)
+        else:  # set-like interface
+            super().update(set(*args, **kwargs))
 
     def __getitem__(self, key):
         "Gets the keys corresponding to a particular key."

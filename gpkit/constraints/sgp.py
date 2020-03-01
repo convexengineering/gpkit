@@ -9,7 +9,6 @@ from .gp import GeometricProgram
 from ..nomials import PosynomialInequality
 from .. import NamedVariables
 from .costed import CostedConstraintSet
-from ..small_scripts import mag
 
 
 EPS = 1e-6  # determines what counts as "convergence"

@@ -4,7 +4,6 @@ import unittest
 from gpkit import Variable, Monomial, Posynomial, Signomial, SignomialsEnabled
 from gpkit import VectorVariable, NomialArray
 from gpkit.nomials import NomialMap
-from gpkit.small_classes import HashVector
 from gpkit.exceptions import InvalidPosynomial
 import gpkit
 
@@ -294,8 +293,8 @@ class TestPosynomial(unittest.TestCase):
         self.assertEqual(p, sum(ms))
         _ = hash(p2)
 
-        hmap = NomialMap({HashVector({'m': 1, 'v': 2}): 0.5,
-                          HashVector({'m': 1, 'g': 1, 'h': 1}): 1})
+        hmap = NomialMap({Monomial({'m': 1, 'v': 2}).exp : 0.5,
+                          Monomial({'m': 1, 'g': 1, 'h': 1}).exp: 1})
         hmap.units_of_product(None)
         p = Posynomial(hmap)
         m, = p.varkeys["m"]

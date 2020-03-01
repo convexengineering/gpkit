@@ -643,8 +643,8 @@ class SignomialInequality(ScalarSingleEquationConstraint):
             self._negysig = Signomial(negy_hmap, require_positive=False)
             self._coeffsigs = {exp: Signomial(hmap, require_positive=False)
                                for exp, hmap in posy_hmaps.items()}
-            self._sigvars = {exp: (list(self._negysig.varkeys.keys())
-                                   + list(sig.varkeys.keys()))
+            self._sigvars = {exp: (list(self._negysig.varkeys)
+                                   + list(sig.varkeys))
                              for exp, sig in self._coeffsigs.items()}
             return p_ineq.as_hmapslt1(substitutions)
 

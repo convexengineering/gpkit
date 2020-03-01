@@ -6,7 +6,6 @@ import numpy as np
 from ..nomials import NomialData
 from ..small_classes import CootMatrix, SolverLog, Numbers, FixedScalar
 from ..keydict import KeyDict
-from ..small_scripts import mag
 from ..solution_array import SolutionArray
 from .costed import CostedConstraintSet
 from ..exceptions import (InvalidPosynomial, Infeasible, UnknownInfeasible,
@@ -85,11 +84,11 @@ class GeometricProgram(CostedConstraintSet, NomialData):
         self.k = [len(hm) for hm in self.hmaps]
         p_idxs = []  # p_idxs [i]: posynomial index of each monomial
         self.m_idxs = []  # m_idxs [i]: monomial indices of each posynomial
-        self.meq_idxs = [] # meq_idxs: first mon-index of each mon equality
+        self.meq_idxs = set() # meq_idxs: first mon-index of each mon equality
         m_idx_start = 0
         for i, p_len in enumerate(self.k):
             if getattr(self.hmaps[i], "from_meq", False):
-                self.meq_idxs.append(m_idx_start)
+                self.meq_idxs.add(m_idx_start)
             self.m_idxs.append(list(range(m_idx_start, m_idx_start + p_len)))
             p_idxs += [i]*p_len
             m_idx_start += p_len
@@ -111,9 +110,9 @@ class GeometricProgram(CostedConstraintSet, NomialData):
                 if upperbound and lowerbound:
                     break
             if not upperbound:
-                missingbounds[(var, "upper")] = ""
+                missingbounds[(var, "upper")] = "."
             if not lowerbound:
-                missingbounds[(var, "lower")] = ""
+                missingbounds[(var, "lower")] = "."
         if not missingbounds:
             return {}
         meq_bounds = gen_meq_bounds(missingbounds, self.exps, self.meq_idxs)
@@ -411,7 +410,7 @@ class GeometricProgram(CostedConstraintSet, NomialData):
                              % (np.exp(dual_cost), cost))
 
 
-def gen_meq_bounds(missingbounds, exps, meq_idxs):  # pylint: disable=too-many-locals
+def gen_meq_bounds(missingbounds, exps, meq_idxs):  # pylint: disable=too-many-locals,too-many-branches
     "Generate conditional monomial equality bounds"
     meq_bounds = defaultdict(set)
     for i in meq_idxs:
