@@ -192,17 +192,16 @@ class ConstraintSet(list, GPkitObject):
             The variable sensitivities of this constraint
         """
         var_senss = {}
-        offset = 0
-        self.relax_sensitivity = 0
-        for i, constr in enumerate(self):
-            n_posys = self.hmaplengths[i]
-            la = las[offset:offset+n_posys]
-            nu = nus[offset:offset+n_posys]
+        start = self.relax_sensitivity = 0
+        for n_posys, constr in zip(self.hmaplengths, self):
+            end = start + n_posys
+            la = las[start:end]
+            nu = nus[start:end]
+            start = end
             constr.v_ss = constr.sens_from_dual(la, nu, result)
             self.relax_sensitivity += constr.relax_sensitivity
             for key, value in constr.v_ss.items():
                 var_senss[key] = value + var_senss.get(key, 0)
-            offset += n_posys
         return var_senss
 
     def as_gpconstr(self, x0):

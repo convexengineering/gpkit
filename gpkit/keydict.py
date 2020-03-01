@@ -8,7 +8,6 @@ from .small_scripts import is_sweepvar, isnan, SweepValue
 DIMLESS_QUANTITY = Quantity(1, "dimensionless")
 INT_DTYPE = np.dtype(int)
 
-
 def clean_value(key, value):
     """Gets the value of variable-less monomials, so that
     `x.sub({x: gpkit.units.m})` and `x.sub({x: gpkit.ureg.m})` are equivalent.
@@ -18,9 +17,10 @@ def clean_value(key, value):
     """
     if isinstance(value, FixedScalar):
         value = value.value
-    if hasattr(value, "units") and not hasattr(value, "hmap"):
+    if isinstance(value, Quantity):
         value = value.to(key.units or "dimensionless").magnitude
     return value
+
 
 class KeyMap:
     """Helper class to provide KeyMapping to interfaces.

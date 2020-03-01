@@ -515,8 +515,7 @@ class PosynomialInequality(ScalarSingleEquationConstraint):
                 for idx, percentage in self.const_mmap.items():
                     nu_[idx] += percentage * la*scale
             nu = nu_
-        return {var: sum(presub.exps[i][var]*nu[i] for i in presub.varlocs[var])
-                for var in self.varkeys}  # Constant sensitivities
+        return sum(nu_i*exp for (nu_i, exp) in zip(nu, presub.hmap.keys()))
 
     def as_gpconstr(self, _):
         "The GP version of a Posynomial constraint is itself"
@@ -581,13 +580,8 @@ class MonomialEquality(PosynomialInequality):
             if getattr(self.generated_by, "generated_by", None):
                 self.generated_by.generated_by.relax_sensitivity = \
                     self.relax_sensitivity
-        var_senss = {}
-        for var in self.varkeys:
-            for i, m in enumerate(self.unsubbed):
-                if var in m.varlocs:
-                    nu_, = nu[i]
-                    var_senss[var] = m.exp[var]*nu_ + var_senss.get(var, 0)
-        return var_senss
+        exp, = self.unsubbed[0].hmap
+        return (la[0]-la[1])*exp
 
 
 class SignomialInequality(ScalarSingleEquationConstraint):

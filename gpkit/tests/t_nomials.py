@@ -17,7 +17,6 @@ class TestMonomial(unittest.TestCase):
         m2 = Monomial({'x': 2, 'y': -1}, 5)
         x, = m.varkeys["x"]
         y, = m.varkeys["y"]
-        self.assertEqual(m.varlocs, {x: [0], y: [0]})
         self.assertEqual(m.exp, {x: 2, y: -1})
         self.assertEqual(m.c, 5)
         self.assertEqual(m, m2)
@@ -25,14 +24,12 @@ class TestMonomial(unittest.TestCase):
         # default c and a
         v = Variable('x')
         x, = v.varkeys["x"]
-        self.assertEqual(v.varlocs, {x: [0]})
         self.assertEqual(v.exp, {x: 1})
         self.assertEqual(v.c, 1)
 
         # single (string) var with non-default c
         v = 0.1*Variable('tau')
         tau, = v.varkeys["tau"]  # pylint: disable=no-member
-        self.assertEqual(v.varlocs, {tau: [0]})  # pylint: disable=no-member
         self.assertEqual(v.exp, {tau: 1})  # pylint: disable=no-member
         self.assertEqual(v.c, .1)  # pylint: disable=no-member
 
@@ -272,7 +269,7 @@ class TestSignomial(unittest.TestCase):
 class TestPosynomial(unittest.TestCase):
     """TestCase for the Posynomial class"""
 
-    def test_init(self):
+    def test_init(self):  # pylint:disable=too-many-locals
         "Test Posynomial construction"
         x = Variable('x')
         y = Variable('y')
@@ -293,8 +290,9 @@ class TestPosynomial(unittest.TestCase):
         self.assertEqual(p, sum(ms))
         _ = hash(p2)
 
-        hmap = NomialMap({Monomial({'m': 1, 'v': 2}).exp : 0.5,
-                          Monomial({'m': 1, 'g': 1, 'h': 1}).exp: 1})
+        exp1 = Monomial({'m': 1, 'v': 2}).exp
+        exp2 = Monomial({'m': 1, 'g': 1, 'h': 1}).exp
+        hmap = NomialMap({exp1 : 0.5, exp2: 1})
         hmap.units_of_product(None)
         p = Posynomial(hmap)
         m, = p.varkeys["m"]
@@ -303,11 +301,7 @@ class TestPosynomial(unittest.TestCase):
         v, = p.varkeys["v"]
         self.assertTrue(all(isinstance(x, float) for x in p.cs))
         self.assertEqual(len(p.exps), 2)
-        self.assertEqual(set(p.varlocs), set([m, g, h, v]))
-        self.assertEqual(p.varlocs[g], p.varlocs[h])
-        self.assertNotEqual(p.varlocs[g], p.varlocs[v])
-        self.assertEqual(len(p.varlocs[m]), 2)
-        self.assertTrue(all(len(p.varlocs[key]) == 1 for key in [g, h, v]))
+        self.assertEqual(set(p.vks), set([m, g, h, v]))
 
     def test_eq(self):
         """Test Posynomial __eq__"""

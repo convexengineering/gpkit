@@ -1,5 +1,4 @@
 """Machinery for exps, cs, varlocs data -- common to nomials and programs"""
-from collections import defaultdict
 import numpy as np
 from ..keydict import KeySet
 from ..repr_conventions import GPkitObject
@@ -28,16 +27,6 @@ class NomialData(GPkitObject):
     def to(self, units):
         "Create new Signomial converted to new units"
         return self.__class__(self.hmap.to(units))
-
-    @property
-    def varlocs(self):
-        "Create varlocs or return cached varlocs"
-        if self._varlocs is None:
-            self._varlocs = defaultdict(list)
-            for i, exp in enumerate(self.exps):
-                for var in exp:
-                    self._varlocs[var].append(i)
-        return self._varlocs
 
     @property
     def exps(self):

@@ -138,7 +138,10 @@ class GeometricProgram(CostedConstraintSet, NomialData):
         for hmap in self.hmaps:
             self._exps.extend(hmap.keys())
             self._cs.extend(hmap.values())
-        self.vks = self.varlocs
+        self.vks = self.varlocs = defaultdict(list)
+        for i, exp in enumerate(self.exps):
+            for var in exp:
+                self.varlocs[var].append(i)
 
         row, col, data = [], [], []
         for j, var in enumerate(self.varlocs):
@@ -332,8 +335,8 @@ class GeometricProgram(CostedConstraintSet, NomialData):
         self.v_ss = self.sens_from_dual(la[1:].tolist(), self.nu_by_posy[1:],
                                         result)
         # add cost's sensitivity in (nu could be self.nu_by_posy[0])
-        cost_senss = {var: sum([self.cost.exps[i][var]*nu[i] for i in locs])
-                      for (var, locs) in self.cost.varlocs.items()}
+        cost_senss = sum(nu_i*exp
+                         for (nu_i, exp) in zip(nu, self.cost.hmap.keys()))
         var_senss = self.v_ss.copy()
         for key, value in cost_senss.items():
             var_senss[key] = value + var_senss.get(key, 0)
