@@ -42,9 +42,8 @@ class ConstraintSet(list, GPkitObject):
     "Recursive container for ConstraintSets and Inequalities"
     unique_varkeys = frozenset()
     varkeys = _name_collision_varkeys = None
-    idxlookup = None  # holds the names of the top-level constraintsets
+    idxlookup = []  # holds the names of the top-level constraintsets
 
-    # @profile
     def __init__(self, constraints, substitutions=None):  # pylint: disable=too-many-branches
         if isinstance(constraints, ConstraintSet):
             constraints = [constraints]  # put it one level down
@@ -63,14 +62,18 @@ class ConstraintSet(list, GPkitObject):
         self.numpy_bools = False
 
         # get substitutions and convert all members to ConstraintSets
-        self.substitutions = KeyDict()
+        self.varkeys = KeySet(self.unique_varkeys)
+        self.substitutions = KeyDict({k: k.value
+                                      for k in self.unique_varkeys if k.value})
+        self.substitutions.varkeys = self.varkeys
         self.bounded = set()
         self.meq_bounded = defaultdict(set)
+        isconstraint = False
         for i, constraint in enumerate(self):
             if not isinstance(constraint, ConstraintSet):
                 if hasattr(constraint, "__iter__"):
                     list.__setitem__(self, i, ConstraintSet(constraint))
-                elif not hasattr(constraint, "varkeys"):
+                elif not hasattr(constraint, "as_hmapslt1"):
                     if not isinstance(constraint, np.bool_):
                         raise_badelement(self, i, constraint)
                     else:
@@ -83,16 +86,12 @@ class ConstraintSet(list, GPkitObject):
                                  " initialized." % type(constraint))
             elif constraint.numpy_bools:
                 raise_elementhasnumpybools(constraint)
-            for attr in ["substitutions", "bounded"]:
-                if hasattr(self[i], attr):
-                    getattr(self, attr).update(getattr(self[i], attr))
-            if hasattr(self[i], "meq_bounded"):
+            if hasattr(self[i], "varkeys"):
+                self.varkeys.update(self[i].varkeys)
+                self.substitutions.update(self[i].substitutions)
+                self.bounded.update(self[i].bounded)
                 for bound, solutionset in self[i].meq_bounded.items():
                     self.meq_bounded[bound].update(solutionset)
-        self.reset_varkeys()
-        self.substitutions.update({k: k.descr["value"]
-                                   for k in self.unique_varkeys
-                                   if "value" in k.descr})
         if substitutions:
             self.substitutions.update(substitutions)
         updated_veckeys = False  # vector subs need to find each indexed varkey
@@ -112,7 +111,7 @@ class ConstraintSet(list, GPkitObject):
         add_meq_bounds(self.bounded, self.meq_bounded)
 
     def __getitem__(self, key):
-        if self.idxlookup and key in self.idxlookup:
+        if key in self.idxlookup:
             key = self.idxlookup[key]
         if isinstance(key, int):
             return list.__getitem__(self, key)
@@ -143,9 +142,8 @@ class ConstraintSet(list, GPkitObject):
     def variables_byname(self, key):
         "Get all variables with a given name"
         from ..nomials import Variable
-        variables = [Variable(k) for k in self.varkeys[key]]
-        variables.sort(key=_sort_by_name_and_idx)
-        return variables
+        return sorted([Variable(k) for k in self.varkeys[key]],
+                      key=_sort_by_name_and_idx)
 
     def constrained_varkeys(self):
         "Return all varkeys in non-ConstraintSet constraints"
@@ -154,35 +152,13 @@ class ConstraintSet(list, GPkitObject):
             constrained_varkeys.update(constraint.varkeys)
         return constrained_varkeys
 
-    def __setitem__(self, key, value):
-        if self.idxlookup and key in self.idxlookup:
-            key = self.idxlookup[key]
-        self.substitutions.update(value.substitutions)
-        list.__setitem__(self, key, value)
-        self.reset_varkeys()
-
-    def flat(self, constraintsets=False):
+    def flat(self):
         "Yields contained constraints, optionally including constraintsets."
         for constraint in self:
-            if not isinstance(constraint, ConstraintSet):
-                yield constraint
+            if isinstance(constraint, ConstraintSet):
+                yield from constraint.flat()
             else:
-                if constraintsets:
-                    yield constraint
-                subgenerator = constraint.flat(constraintsets)
-                for yielded_constraint in subgenerator:
-                    yield yielded_constraint
-
-    # @profile
-    def reset_varkeys(self):
-        "Goes through constraints and collects their varkeys."
-        self.varkeys = KeySet(self.unique_varkeys)
-        for constraint in self:
-            if hasattr(constraint, "varkeys"):
-                self.varkeys.update(constraint.varkeys)
-        if hasattr(self.substitutions, "varkeys"):
-            self.substitutions.varkeys = self.varkeys
-        self._name_collision_varkeys = None
+                yield constraint
 
     def as_hmapslt1(self, substitutions):
         "Returns list of hmaps which must be kept <= 1"

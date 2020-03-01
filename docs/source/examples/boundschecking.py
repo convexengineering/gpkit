@@ -47,8 +47,7 @@ m = BoundsChecking()
 print(m.str_without(["lineage"]))
 try:
     m.solve()
-except UnboundedGP as unbounded_error:
-    print("\n", unbounded_error)
+except UnboundedGP:
     gp = m.gp(allow_missingbounds=True)
 
 try:

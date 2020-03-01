@@ -23,6 +23,7 @@ class CostedConstraintSet(ConstraintSet):
         if substitutions:
             subs.update(substitutions)
         ConstraintSet.__init__(self, constraints, subs)
+        self.varkeys.update(self.cost.varkeys)
 
     def __bare_init__(self, cost, constraints, substitutions):
         self.cost = cost
@@ -49,11 +50,6 @@ class CostedConstraintSet(ConstraintSet):
         constrained_varkeys = ConstraintSet.constrained_varkeys(self)
         constrained_varkeys.update(self.cost.varkeys)
         return constrained_varkeys
-
-    def reset_varkeys(self):
-        "Resets varkeys to what is in the cost and constraints"
-        ConstraintSet.reset_varkeys(self)
-        self.varkeys.update(self.cost.varkeys)
 
     def _rootlines(self, excluded=()):
         "String showing cost, to be used when this is the top constraint"

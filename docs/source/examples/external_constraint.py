@@ -5,7 +5,6 @@ from external_function import external_code
 
 class ExternalConstraint:
     "Class for external calling"
-    varkeys = {}
 
     def __init__(self, x, y):
         # We need a GPkit variable defined to return in our constraint.  The
@@ -28,5 +27,5 @@ class ExternalConstraint:
         res = external_code(x_star)
         # ...and returns a linearized constraint
         posynomial_constraint = (self.y >= res*self.x/x_star)
-        posynomial_constraint.sgp_parent = self
+        posynomial_constraint.generated_by = self
         return posynomial_constraint

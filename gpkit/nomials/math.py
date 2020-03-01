@@ -370,7 +370,8 @@ MONS = Numbers + (Monomial,)
 class ScalarSingleEquationConstraint(SingleEquationConstraint):
     "A SingleEquationConstraint with scalar left and right sides."
     nomials = []
-    sgp_parent = None
+    generated_by = None
+    bounded = meq_bounded = {}
 
     def __init__(self, left, oper, right):
         lr = [left, right]
@@ -399,7 +400,7 @@ class ScalarSingleEquationConstraint(SingleEquationConstraint):
             raise ValueError(
                 "Constraint %s had unknown operator %s." % self.oper, self)
         for constr in relaxed:
-            constr.sgp_parent = self
+            constr.generated_by = self
         return relaxed
 
 
@@ -499,10 +500,10 @@ class PosynomialInequality(ScalarSingleEquationConstraint):
             return {}  # as_hmapslt1 created no inequalities
         la, = la
         self.relax_sensitivity = la
-        if self.sgp_parent:
-            self.sgp_parent.relax_sensitivity = la
-            if getattr(self.sgp_parent, "sgp_parent", None):
-                self.sgp_parent.sgp_parent.relax_sensitivity = la
+        if self.generated_by:
+            self.generated_by.relax_sensitivity = la
+            if getattr(self.generated_by, "generated_by", None):
+                self.generated_by.generated_by.relax_sensitivity = la
         nu, = nu
         presub, = self.unsubbed
         if hasattr(self, "pmap"):
@@ -577,10 +578,10 @@ class MonomialEquality(PosynomialInequality):
         if not la or not nu:
             return {}  # as_hmapslt1 created no inequalities
         self.relax_sensitivity = la[0] - la[1]
-        if self.sgp_parent:
-            self.sgp_parent.relax_sensitivity = self.relax_sensitivity
-            if getattr(self.sgp_parent, "sgp_parent", None):
-                self.sgp_parent.sgp_parent.relax_sensitivity = \
+        if self.generated_by:
+            self.generated_by.relax_sensitivity = self.relax_sensitivity
+            if getattr(self.generated_by, "generated_by", None):
+                self.generated_by.generated_by.relax_sensitivity = \
                     self.relax_sensitivity
         var_senss = {}
         for var in self.varkeys:
@@ -706,7 +707,7 @@ class SignomialInequality(ScalarSingleEquationConstraint):
         # default guess of 1.0 for unspecified negy variables
         x0.update({vk: 1.0 for vk in negy.vks if vk not in x0})
         pconstr = PosynomialInequality(posy, "<=", negy.mono_lower_bound(x0))
-        pconstr.sgp_parent = self
+        pconstr.generated_by = self
         return pconstr
 
     def as_approxlts(self):
@@ -745,7 +746,7 @@ class SingleSignomialEquality(SignomialInequality):
         # assume unspecified variables have a value of 1.0
         x0.update({vk: 1.0 for vk in siglt0.vks if vk not in x0})
         mec = (posy.mono_lower_bound(x0) == negy.mono_lower_bound(x0))
-        mec.sgp_parent = self
+        mec.generated_by = self
         return mec
 
     def as_approxlts(self):

@@ -16,8 +16,6 @@ def clean_value(key, value):
     Also converts any quantities to the key's units, because quantities
     can't/shouldn't be stored as elements of numpy arrays.
     """
-    if hasattr(value, "__len__"):
-        return [clean_value(key, v) for v in value]
     if isinstance(value, FixedScalar):
         value = value.value
     if hasattr(value, "units") and not hasattr(value, "hmap"):
@@ -50,7 +48,7 @@ class KeyMap:
     varkeys = None
 
     def __init__(self, *args, **kwargs):
-        "Passes through to dict.__init__ via the `update()` method"
+        "Passes through to super().__init__ via the `update()` method"
         # pylint: disable=super-init-not-called
         self.keymap = defaultdict(set)
         self._unmapped_keys = set()
@@ -66,28 +64,21 @@ class KeyMap:
                 return key.veckey, key.idx
             return key, None
         except AttributeError:
-            idx = None
             if not self.varkeys:
-                self.update_keymap()
-            elif key in self.varkeys:  # pylint:disable=unsupported-membership-test
-                keys = self.varkeys[key]  # pylint:disable=unsubscriptable-object
-                origkey, key = key, next(iter(keys))
-                if len(keys) > 1:
-                    if (key.veckey
-                            and all(k.veckey == key.veckey for k in keys)):
-                        key = key.veckey
-                    else:
-                        raise ValueError("%s could refer to multiple keys in"
-                                         " this substitutions KeyDict. Use"
-                                         " `.variables_byname(%s)` to see all"
-                                         " of them." % (origkey, origkey))
-            else:
-                raise KeyError(key)
-            if self.collapse_arrays:
-                idx = getattr(key, "idx", None)
-                if idx:
-                    key = key.veckey
-            return key, idx
+                return key, self.update_keymap()
+        # looks like we're in a substitutions dictionary
+        if key not in self.varkeys:  # pylint:disable=unsupported-membership-test
+            raise KeyError(key)
+        newkey, *otherkeys = self.varkeys[key]  # pylint:disable=unsubscriptable-object
+        if otherkeys:
+            if all(k.veckey == newkey.veckey for k in otherkeys):
+                return newkey.veckey, None
+            raise ValueError("%s refers to multiple keys in this substitutions"
+                             " KeyDict. Use `.variables_byname(%s)` to see all"
+                             " of them." % (key, key))
+        if self.collapse_arrays and newkey.idx:
+            return newkey.veckey, newkey.idx
+        return newkey, None
 
     def __contains__(self, key):  # pylint:disable=too-many-return-statements
         "In a winding way, figures out if a key is in the KeyDict"
@@ -113,21 +104,18 @@ class KeyMap:
                                      " for value %s" %
                                      (key, idx, super().__getitem__(key)))  # pylint: disable=no-member
             return True
-        if key in self.keymap:
-            return True
-        return False
+        return key in self.keymap
 
     def update_keymap(self):
         "Updates the keymap with the keys in _unmapped_keys"
         copied = set()  # have to copy bc update leaves duplicate sets
-        while self._unmapped_keys:
-            key = self._unmapped_keys.pop()
-            if hasattr(key, "keys"):
-                for mapkey in key.keys:
-                    if mapkey not in copied and mapkey in self.keymap:
-                        self.keymap[mapkey] = set(self.keymap[mapkey])
-                        copied.add(mapkey)
-                    self.keymap[mapkey].add(key)
+        for key in self._unmapped_keys:
+            for mapkey in key.keys:
+                if mapkey not in copied and mapkey in self.keymap:
+                    self.keymap[mapkey] = set(self.keymap[mapkey])
+                    copied.add(mapkey)
+                self.keymap[mapkey].add(key)
+        self._unmapped_keys = set()
 
 
 class KeyDict(KeyMap, dict):
@@ -148,12 +136,8 @@ class KeyDict(KeyMap, dict):
     """
     collapse_arrays = True
 
-    def get(self, key, alternative=KeyError):
-        if key not in self:
-            if alternative is KeyError:
-                raise alternative(key)
-            return alternative
-        return self[key]
+    def get(self, key, *alternative):
+        return alternative[0] if alternative and key not in self else self[key]
 
     def _copyonwrite(self, key):
         "Copys arrays before they are written to"
@@ -173,19 +157,15 @@ class KeyDict(KeyMap, dict):
             for k, v in dict(*args, **kwargs).items():
                 self[k] = v
 
-    def __call__(self, key):
+    def __call__(self, key):  # if uniting is ever a speed hit, cache it
         got = self[key]
-        # if uniting ever becomes a speed hit, cache the results
         if isinstance(got, dict):
             for k, v in got.items():
                 got[k] = v*(k.units or DIMLESS_QUANTITY)
-        else:
-            if not hasattr(key, "units"):
-                parsedkey, _ = self.parse_and_index(key)
-                keys = self.keymap[parsedkey]
-                key, = keys
-            got = Quantity(got, key.units or DIMLESS_QUANTITY)
-        return got
+            return got
+        if not hasattr(key, "units"):
+            key, = self.keymap[self.parse_and_index(key)[0]]
+        return Quantity(got, key.units or "dimensionless")
 
     def __getitem__(self, key):
         "Overloads __getitem__ and [] access to work with all keys"
@@ -194,72 +174,64 @@ class KeyDict(KeyMap, dict):
         if not keys:
             del self.keymap[key]  # remove blank entry added due to defaultdict
             raise KeyError(key)
-        values = []
+        got = {}
         for k in keys:
-            if not idx and k.shape:
-                self._copyonwrite(k)
-            got = dict.__getitem__(self, k)
-            if idx:
-                got = got[idx]
-            values.append(got)
             if self.log_gets:
                 self.logged_gets.add(k)
-        if len(values) == 1:
-            return values[0]
-        return dict(zip(keys, values))
+            if not idx and k.shape:
+                self._copyonwrite(k)
+            val = dict.__getitem__(self, k)
+            if idx:
+                val = val[idx]
+            if len(keys) == 1:
+                return val
+            got[key] = val
+        return got
 
     def __setitem__(self, key, value):
         "Overloads __setitem__ and []= to work with all keys"
         # pylint: disable=too-many-boolean-expressions
         key, idx = self.parse_and_index(key)
+        value = clean_value(key, value)
         if key not in self.keymap:
             if not hasattr(self, "_unmapped_keys"):
                 self.__init__()  # py3's pickle sets items before init... :(
             self.keymap[key].add(key)
             self._unmapped_keys.add(key)
             if idx:
-                number_array = isinstance(value, Numbers)
-                kwargs = {} if number_array else {"dtype": "object"}
-                emptyvec = np.full(key.shape, np.nan, **kwargs)
-                dict.__setitem__(self, key, emptyvec)
+                dty = {} if isinstance(value, Numbers) else {"dtype": "object"}
+                dict.__setitem__(self, key, np.full(key.shape, np.nan, **dty))
                 self.owned.add(key)
-        if isinstance(value, FixedScalar):
-            value = value.value  # substitute constant monomials
-        if isinstance(value, Quantity):
-            value = value.to(key.units or "dimensionless").magnitude
         if idx:
             if is_sweepvar(value):
-                dict.__setitem__(self, key,
-                                 np.array(dict.__getitem__(self, key), object))
-                self.owned.add(key)
                 value = SweepValue(value[1])
-            self._copyonwrite(key)
-            dict.__getitem__(self, key)[idx] = value
-        else:
-            if (self.collapse_arrays and hasattr(key, "descr")
-                    and "shape" in key.descr  # if veckey, and
-                    and not isinstance(value, np.ndarray)  # not an array, and
-                    and not is_sweepvar(value)):  # not a sweep, then
-                if not hasattr(value, "__len__"):  # fill an array with it, or
-                    value = np.full(key.shape, value, "f")
-                # if it's not a list of arrays (as in a sol), clean it up!
-                elif not isinstance(value[0], np.ndarray):
-                    value = np.array([clean_value(key, v) for v in value])
-            if getattr(value, "shape", False) and dict.__contains__(self, key):
-                goodvals = ~isnan(value)
-                present_value = dict.__getitem__(self, key)
-                if present_value.dtype != value.dtype:
-                    # e.g., we're replacing a number with a linked function
-                    dict.__setitem__(self, key, np.array(present_value,
-                                                         dtype=value.dtype))
-                    self.owned.add(key)
-                self._copyonwrite(key)
-                self[key][goodvals] = value[goodvals]
-            else:
-                if hasattr(value, "dtype") and value.dtype == INT_DTYPE:
-                    value = np.array(value, "f")
-                dict.__setitem__(self, key, value)
+                old = super().__getitem__(key)
+                super().__setitem__(key, np.array(old, "object"))
                 self.owned.add(key)
+            self._copyonwrite(key)
+            super().__getitem__(key)[idx] = value
+            return  # succefully set a single index!
+        # now if we're not just setting a single index...
+        if getattr(value, "shape", None):   # maybe it's an array?
+            if value.dtype == INT_DTYPE:
+                value = np.array(value, "f")  # convert to float
+            if dict.__contains__(self, key):
+                old = super().__getitem__(key)
+                if old.dtype != value.dtype:
+                    # e.g. replacing a number with a linked function
+                    self.owned.add(key)
+                    super().__setitem__(key, np.array(old, dtype=value.dtype))
+                self._copyonwrite(key)
+                goodvals = ~isnan(value)
+                super().__getitem__(key)[goodvals] = value[goodvals]
+        # or maybe it just needs to be shaped into one
+        elif not is_sweepvar(value) and key.shape:  # not a sweep, and a veckey
+            if not hasattr(value, "__len__"):
+                value = np.full(key.shape, value, "f")
+            elif not isinstance(value[0], np.ndarray):
+                value = np.array([clean_value(key, v) for v in value])
+        super().__setitem__(key, value)
+        self.owned.add(key)
 
     def __delitem__(self, key):
         "Overloads del [] to work with all keys"
@@ -276,41 +248,36 @@ class KeyDict(KeyMap, dict):
                     delete = False
             if delete:
                 super().__delitem__(k)
-                mapkeys = set([k])
-                if hasattr(k, "keys"):
-                    mapkeys.update(k.keys)
-                for mapkey in mapkeys:
-                    if mapkey in self.keymap:
-                        if len(self.keymap[mapkey]) == 1:
-                            del self.keymap[mapkey]
-                            continue
-                        if mapkey not in copied:
-                            self.keymap[mapkey] = set(self.keymap[mapkey])
-                            copied.add(mapkey)
-                        self.keymap[mapkey].remove(k)
+            mapkeys = set([k])
+            if k.keys:
+                mapkeys.update(k.keys)
+            for mapkey in mapkeys:
+                if mapkey in self.keymap:
+                    if len(self.keymap[mapkey]) == 1:
+                        del self.keymap[mapkey]
+                        continue
+                    if mapkey not in copied:
+                        self.keymap[mapkey] = set(self.keymap[mapkey])
+                        copied.add(mapkey)
+                    self.keymap[mapkey].remove(k)
 
 
 class KeySet(KeyMap, set):
     "KeyMaps that don't collapse arrays or store values."
     collapse_arrays = False
 
-    def update(self, *args, **kwargs):
+    def update(self, keys):
         "Iterates through the dictionary created by args and kwargs"
-        if len(args) == 1:
-            arg, = args
-            if isinstance(arg, KeySet):
-                set.update(self, arg)
-                for key, value in arg.keymap.items():
-                    self.keymap[key].update(value)
-                self._unmapped_keys.update(arg._unmapped_keys)  # pylint: disable=protected-access
-            else:  # set-like interface
-                keys = {item.key for item in arg}
-                for key in keys:
-                    self.keymap[key].add(key)
-                self._unmapped_keys.update(keys)
-                super().update(keys)
+        if isinstance(keys, KeySet):
+            set.update(self, keys)
+            for key, value in keys.keymap.items():
+                self.keymap[key].update(value)
+            self._unmapped_keys.update(keys._unmapped_keys)  # pylint: disable=protected-access
         else:  # set-like interface
-            super().update(set(*args, **kwargs))
+            for key in keys:
+                self.keymap[key].add(key)
+            self._unmapped_keys.update(keys)
+            super().update(keys)
 
     def __getitem__(self, key):
         "Gets the keys corresponding to a particular key."
