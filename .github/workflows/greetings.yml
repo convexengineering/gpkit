@@ -8,5 +8,5 @@ jobs:
     steps:
     - uses: actions/first-interaction@v1
       with:
-        repo-token: ${{ secrets.GITHUB_TOKEN }}
+        repo-token: ${{ secrets.AUTOMATION_TOKEN }}
         issue-message: 'Welcome to GPkit! Thank you for bringing this to our attention.'
