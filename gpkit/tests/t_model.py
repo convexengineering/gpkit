@@ -15,8 +15,8 @@ from gpkit.exceptions import (UnknownInfeasible,
                               PrimalInfeasible, DualInfeasible, UnboundedGP)
 
 
-NDIGS = {"cvxopt": 4, "mosek": 5, "mosek_cli": 5, "mosek_conif": 4}
-# name: decimal places of accuracy
+NDIGS = {"cvxopt": 5, "mosek_cli": 5, "mosek_conif": 3}
+# name: decimal places of accuracy achieved in these tests
 
 # pylint: disable=invalid-name,attribute-defined-outside-init,unused-variable,undefined-variable,exec-used
 
@@ -795,4 +795,4 @@ for testcase in MULTI_SOLVER_TESTS:
 if __name__ == "__main__":
     # pylint: disable=wrong-import-position
     from gpkit.tests.helpers import run_tests
-    run_tests(TESTS)
+    run_tests(TESTS, verbosity=0)
