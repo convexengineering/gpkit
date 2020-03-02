@@ -69,7 +69,7 @@ class GeometricProgram(CostedConstraintSet):
     _result = solve_log = solver_out = model = v_ss = nu_by_posy = None
 
     def __init__(self, cost, constraints, substitutions,
-                 *, allow_missingbounds=False):
+                 *, allow_missingbounds=False, **_):
         # pylint:disable=super-init-not-called,non-parent-init-called
         self.cost, self.substitutions = cost, substitutions
         if isinstance(constraints, dict):
@@ -185,11 +185,11 @@ class GeometricProgram(CostedConstraintSet):
 
         if verbosity > 0:
             print("Using solver '%s'" % solvername)
-            print("Solving for %i variables." % len(self.varlocs))
+            print("Solving for %i variables" % len(self.varlocs))
         try:
             starttime = time()
             infeasibility, original_stdout = None, sys.stdout
-            sys.stdout = SolverLog(original_stdout, verbosity=verbosity-1)
+            sys.stdout = SolverLog(original_stdout, verbosity=verbosity-2)
             solver_out = solverfn(c=self.cs, A=self.A, p_idxs=self.p_idxs,
                                   k=self.k, meq_idxs=self.meq_idxs,
                                   **solver_kwargs)
@@ -225,7 +225,7 @@ class GeometricProgram(CostedConstraintSet):
 
         if gen_result:  # NOTE: SIDE EFFECTS
             self._result = self.generate_result(solver_out,
-                                                verbosity=verbosity-1,
+                                                verbosity=verbosity-2,
                                                 process_result=process_result)
             return self.result
 

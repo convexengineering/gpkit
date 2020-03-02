@@ -44,14 +44,15 @@ def evaluate_linked(constants, linked):
                     v.gradients[key] = np.array(grad)
                 else:
                     v.gradients[key] = out.d(kdc[key])
-        except Exception:  # pylint: disable=broad-except
+        except Exception as exception:  # pylint: disable=broad-except
             from .. import settings
             if settings.get("ad_errors_raise", None):
                 raise
             if adnumber:
-                print("Couldn't auto-differentiate linked variable %s\n  "
-                      "(to raise the error directly for debugging purposes,"
-                      " set gpkit.settings[\"ad_errors_raise\"] to True)" % v)
+                print("Warning: skipped auto-differentiation of linked variable"
+                      " %s because %s was raised. Set `gpkit.settings"
+                      "[\"ad_errors_raise\"] = True` to raise such Exceptions"
+                      " directly.\n" % (v, repr(exception)))
             if kdc_plain is None:
                 kdc_plain = KeyDict(constants)
             constants[v] = f(kdc_plain)
@@ -88,7 +89,7 @@ def progify(program, return_attr=None):
 def solvify(genfunction):
     "Returns function for making/solving/sweeping a program."
     def solvefn(self, solver=None, *, verbosity=1, skipsweepfailures=False,
-                **solveargs):
+                **kwargs):
         """Forms a mathematical program and attempts to solve it.
 
          Arguments
@@ -100,7 +101,7 @@ def solvify(genfunction):
              Is decremented by one and then passed to programs.
          skipsweepfailures : bool (default False)
              If True, when a solve errors during a sweep, skip it.
-         **solveargs : Passed to solver
+         **kwargs : Passed to solver and program.__init__
 
          Returns
          -------
@@ -119,10 +120,10 @@ def solvify(genfunction):
         # NOTE SIDE EFFECTS: self.program is set below
         if sweep:
             run_sweep(genfunction, self, solution, skipsweepfailures,
-                      constants, sweep, linked, solver, verbosity, **solveargs)
+                      constants, sweep, linked, solver, verbosity, **kwargs)
         else:
-            self.program, progsolve = genfunction(self)
-            result = progsolve(solver, verbosity=verbosity, **solveargs)
+            self.program, progsolve = genfunction(self, **kwargs)
+            result = progsolve(solver, verbosity=verbosity, **kwargs)
             solution.append(result)
         solution.to_arrays()
         solution.program = self.program

@@ -24,10 +24,6 @@ class CostedConstraintSet(ConstraintSet):
             subs.update(substitutions)
         ConstraintSet.__init__(self, constraints, subs)
         self.varkeys.update(self.cost.varkeys)
-        for exp in cost.hmap:
-            for vk, x in exp.items():
-                self.bounded.add((vk, "upper" if x > 0 else "lower"))
-        add_meq_bounds(self.bounded, self.meq_bounded)
 
     def __bare_init__(self, cost, constraints, substitutions):
         self.cost = cost
@@ -42,12 +38,6 @@ class CostedConstraintSet(ConstraintSet):
             list.__init__(self, [constraints])
         self.varkeys = constraints.varkeys
         self.varkeys.update(cost.varkeys)
-        # self.bounded = constraints.bounded
-        # for exp in cost.hmap:
-        #     for vk, x in exp.items():
-        #         self.bounded.add((vk, "upper" if x > 0 else "lower"))
-        # self.meq_bounded = constraints.meq_bounded
-        # add_meq_bounds(self.bounded, self.meq_bounded)
 
     def constrained_varkeys(self):
         "Return all varkeys in the cost and non-ConstraintSet constraints"

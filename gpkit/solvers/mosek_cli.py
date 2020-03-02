@@ -23,7 +23,7 @@ def remove_read_only(func, path, exc):
         func(path)  # try again
 
 
-def optimize_generator(path=None):
+def optimize_generator(path=None, **_):
     """Constructor for the MOSEK CLI solver function.
 
     Arguments

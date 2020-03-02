@@ -6,7 +6,7 @@ from gpkit.exceptions import UnknownInfeasible, DualInfeasible
 
 
 # pylint: disable=too-many-locals
-def optimize(*, c, A, k, meq_idxs, **kwargs):
+def optimize(*, c, A, k, meq_idxs, use_leqs=True, **kwargs):
     """Interface to the CVXOPT solver
 
         Definitions
@@ -40,22 +40,20 @@ def optimize(*, c, A, k, meq_idxs, **kwargs):
     """
     log_c = np.log(np.array(c))
     lse_mons, lin_mons, leq_mons = [], [], []
-    lse_posys, lin_posys, leq_posys, leq_posys2 = [], [], [], []
+    lse_posys, lin_posys, leq_posys = [], [], []
     for i, n_monomials in enumerate(k):
         start = sum(k[:i])
         mons = range(start, start+k[i])
-        if i == 0 or n_monomials > 1:
-            lse_mons.extend(mons)
-            lse_posys.append(i)
-        elif start in meq_idxs.first_half:
-            leq_posys.append(i)
-            leq_mons.extend(mons)
-        elif start in meq_idxs.all:
-            leq_posys2.append(i)
-        else:
+        if use_leqs and start in meq_idxs.all:
+            if start in meq_idxs.first_half:
+                leq_posys.append(i)
+                leq_mons.extend(mons)
+        elif i != 0 and n_monomials == 1:
             lin_mons.extend(mons)
             lin_posys.append(i)
-    # if leq_mons:
+        else:
+            lse_mons.extend(mons)
+            lse_posys.append(i)
     A = A.tocsr()
     maxcol = A.shape[1]-1
     if leq_mons:
@@ -83,10 +81,8 @@ def optimize(*, c, A, k, meq_idxs, **kwargs):
         solution = gp(k_lse, F, g, **kwargs)
     except ValueError as e:
         raise DualInfeasible() from e
-    if solution["status"] == "unknown":
-        raise UnknownInfeasible()
     if solution["status"] != "optimal":
-        raise UnknownInfeasible("solution status: " + solution["status"])
+        raise UnknownInfeasible("solution status " + repr(solution["status"]))
     la = np.zeros(len(k))
     la[lin_posys] = list(solution["zl"])
     la[lse_posys] = [1.] + list(solution["znl"])

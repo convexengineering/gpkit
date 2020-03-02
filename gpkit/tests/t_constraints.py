@@ -343,7 +343,7 @@ class TestTight(unittest.TestCase):
             sol["warnings"]["Unexpectedly Loose Constraints"][0][1], m[0][0])
         self.assertGreater(m[0][0].rel_diff, 0.5)
         m.substitutions[x_min] = 0.5
-        self.assertAlmostEqual(m.localsolve(verbosity=0)["cost"], 0.5)
+        self.assertAlmostEqual(m.localsolve(verbosity=0)["cost"], 0.5, 5)
 
 
 class TestBounded(unittest.TestCase):

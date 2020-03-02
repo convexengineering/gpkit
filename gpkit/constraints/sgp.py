@@ -48,7 +48,7 @@ class SequentialGeometricProgram(CostedConstraintSet):
     with NamedVariables("PCCP"):
         slack = Variable("slack")
 
-    def __init__(self, cost, constraints, substitutions, **initgpargs):
+    def __init__(self, cost, constraints, substitutions, **kwargs):
         # pylint: disable=super-init-not-called
         self.__bare_init__(cost, constraints, substitutions)
         if cost.any_nonpositive_cs:
@@ -63,7 +63,7 @@ class SequentialGeometricProgram(CostedConstraintSet):
             self.blackboxconstraints = True
         else:
             try:
-                self._gp = self.init_gp(self.substitutions, **initgpargs)
+                self._gp = self.init_gp(self.substitutions, **kwargs)
                 self.blackboxconstraints = False
             except AttributeError:
                 self.blackboxconstraints = True
@@ -112,7 +112,13 @@ class SequentialGeometricProgram(CostedConstraintSet):
         """
         starttime = time()
         if verbosity > 0:
-            print("Beginning signomial solve.")
+            print("Using a sequence of GP solves")
+            if self._spvars:
+                print("Solving for %i variables in %i signomial constraints"
+                       % (len(self._spvars), len(self._sp_constraints)))
+            if self.externalfn_vars:
+                print("Solving for %i variables defined by externalfns"
+                      % len(self.externalfn_vars))
         self.gps, self.solver_outs = [], []  # NOTE: SIDE EFFECTS
         # if there's external functions we can't mutate the GP
         mutategp = mutategp and not self.blackboxconstraints
@@ -137,27 +143,37 @@ class SequentialGeometricProgram(CostedConstraintSet):
                 gp = self.gp(x0)
             gp.model = self.model
             self.gps.append(gp)  # NOTE: SIDE EFFECTS
+            if verbosity > 1:
+                print("\nGP Iteration %i" % len(self.gps))
+            if verbosity > 2:
+                print("===============")
             solver_out = gp.solve(solver, verbosity=verbosity-1,
                                   gen_result=False, **solveargs)
             self.solver_outs.append(solver_out)
             cost = float(solver_out["objective"])
             x0 = dict(zip(gp.varlocs, np.exp(solver_out["primal"])))
-            if prevcost is None or cost is None:
+            if verbosity > 2:
+                print(gp.generate_result(solver_out, verbosity=verbosity-3).table(self._spvars))
+            elif verbosity > 1:
+                print("Solved cost was %.4g" % cost)
+            if prevcost is None:
                 continue
+            rel_improvement = (prevcost - cost)/(prevcost + cost)
             if cost*(1 - EPS) > prevcost + EPS and verbosity >= 0:
-                print(
-                    "SP is not converging! Last GP iteration had a higher cost"
-                    " (%.2e) than the previous one (%+.2e). Check `m.program"
-                    ".results`. If your model has SignomialEqualities,"
-                    " convergence is not guaranteed: try replacing any SigEqs"
-                    " you can and solving again." % (cost, cost - prevcost))
-            rel_improvement = abs(prevcost - cost)/(prevcost + cost)
+                print("SGP not convergent: Cost rose by %.2g%% on iteration %i."
+                      " Details can be found in `m.program.results` or by"
+                      " solving at a higher verbosity. Note that convergence"
+                      " is not guaranteed for models with SignomialEqualities."
+                      % (100*(cost - prevcost)/prevcost, len(self.gps)))
+                cost = None
         # solved successfully!
-        self.result = gp.generate_result(solver_out, verbosity=verbosity-1)
+        self.result = gp.generate_result(solver_out, verbosity=verbosity-3)
         self.result["soltime"] = time() - starttime
+        if verbosity > 1:
+            print()
         if verbosity > 0:
-            print("Solving took %i GP solves" % len(self.gps)
-                  + " and %.3g seconds." % self.result["soltime"])
+            print("Solving took %.3g seconds and %i GP solves."
+                  % (self.result["soltime"], len(self.gps)))
         self.process_result(self.result)
         if self.externalfn_vars:
             for v in self.externalfn_vars:
@@ -165,9 +181,13 @@ class SequentialGeometricProgram(CostedConstraintSet):
         try:  # check that there's not too much slack
             excess_slack = self.result["variables"][self.slack.key] - 1
             if excess_slack >= EPS:
-                raise Infeasible(
-                    "final slack on SP constraints was 1%+.2e. Result(s)"
-                    " stored in `m.program.result(s)`." % excess_slack)
+                print ("Final solution let non-GP compatible constraints"
+                       " slacken by %.2g%%." % (100*excess_slack))
+                print("Calling .localsolve with a higher `pccp_penalty` (%.3g"
+                      " for this solve) may reduce final slack, but the model"
+                      " may not be solvable with less. To check if it is,"
+                      " call .localsolve with `use_pccp=False, x0=(this"
+                      " model's final solution)`." % gp.pccp_penalty)
             del self.result["variables"][self.slack.key]
             del self.result["freevariables"][self.slack.key]
         except KeyError:
@@ -190,15 +210,14 @@ class SequentialGeometricProgram(CostedConstraintSet):
         x0kd.update(self.substitutions)
         return x0kd
 
-    def init_gp(self, substitutions, x0=None, **initgpargs):
+    def init_gp(self, substitutions, x0=None, use_pccp=True, pccp_penalty=2e2,
+                **initgpargs):
         "Generates a simplified GP representation for later modification"
         x0 = self._fill_x0(x0)
-        use_pccp = initgpargs.pop("use_pccp", True)
-        pccp_penalty = initgpargs.pop("pccp_penalty", 10)
         constraints = OrderedDict((("SP approximations", []),
                                    ("GP constraints", [])))
         self._sp_constraints, self._lt_approxs = [], []
-        self._spvars = set()
+        self._spvars = set([self.slack])
         for cs in self.flat():
             try:
                 if not isinstance(cs, PosynomialInequality):
@@ -222,7 +241,7 @@ class SequentialGeometricProgram(CostedConstraintSet):
         else:
             cost = self.cost
         gp = GeometricProgram(cost, constraints, substitutions, **initgpargs)
-        gp.x0 = x0
+        gp.x0, gp.pccp_penalty = x0, pccp_penalty
         return gp
 
     def update_gp(self, x0):

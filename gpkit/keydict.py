@@ -221,11 +221,9 @@ class KeyDict(KeyMap, dict):
                     self.owned.add(key)
                     super().__setitem__(key, np.array(old, dtype=value.dtype))
                 self._copyonwrite(key)
-                try:
-                    goodvals = ~isnan(value)
-                except:
-                    raise ValueError(key, value)
+                goodvals = ~isnan(value)
                 super().__getitem__(key)[goodvals] = value[goodvals]
+                return  # successfully set only some indexes!
         # or maybe it just needs to be shaped into one
         elif not is_sweepvar(value) and key.shape:  # not a sweep, and a veckey
             if not hasattr(value, "__len__"):

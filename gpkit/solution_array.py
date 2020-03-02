@@ -72,7 +72,7 @@ def tight_table(self, _, ntightconstrs=5, tight_senss=1e-2, **kwargs):
     data = []
     for c in self.model.flat():
         try:
-            if c.relax_sensitivity >= tight_senss:
+            if c.relax_sensitivity and c.relax_sensitivity >= tight_senss:
                 data.append(((-float("%+6.2g" % c.relax_sensitivity), str(c)),
                              "%+6.2g" % c.relax_sensitivity, id(c), c))
         except AttributeError:

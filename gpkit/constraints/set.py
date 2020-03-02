@@ -56,8 +56,8 @@ class ConstraintSet(list, GPkitObject):
         self.numpy_bools = False
         # get substitutions and convert all members to ConstraintSets
         self.varkeys = KeySet(self.unique_varkeys)
-        self.substitutions = KeyDict({k: k.value
-                                      for k in self.unique_varkeys if k.value})
+        self.substitutions = KeyDict({k: k.value for k in self.unique_varkeys
+                                      if "value" in k.descr})
         self.substitutions.varkeys = self.varkeys
         self.bounded, self.meq_bounded = set(), defaultdict(set)
         for i, constraint in enumerate(self):
