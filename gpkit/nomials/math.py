@@ -716,6 +716,7 @@ class SingleSignomialEquality(SignomialInequality):
     def __init__(self, left, right):
         SignomialInequality.__init__(self, left, "<=", right)
         self.oper = "="
+        self.meq_bounded = self.as_gpconstr({}).meq_bounded
 
     def as_hmapslt1(self, substitutions=None):
         "Returns the posys <= 1 representation of this constraint."
