@@ -383,7 +383,7 @@ class SolutionArray(DictOfLists):
             if len(lines) > primal_lines + 3:
                 lines.insert(
                     primal_lines + 1,
-                    "(positive means the argument has a higher sensitivity)")
+                    "(positive means the argument has a lower sensitivity)")
             elif senss_delta:
                 absmaxvalue, maxvalue = 0, 0
                 for valarray in senss_delta.values():
