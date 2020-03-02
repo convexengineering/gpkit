@@ -115,7 +115,7 @@ class SequentialGeometricProgram(CostedConstraintSet):
             print("Using a sequence of GP solves")
             if self._spvars:
                 print("Solving for %i variables in %i signomial constraints"
-                       % (len(self._spvars), len(self._sp_constraints)))
+                      % (len(self._spvars), len(self._sp_constraints)))
             if self.externalfn_vars:
                 print("Solving for %i variables defined by externalfns"
                       % len(self.externalfn_vars))
@@ -152,8 +152,9 @@ class SequentialGeometricProgram(CostedConstraintSet):
             self.solver_outs.append(solver_out)
             cost = float(solver_out["objective"])
             x0 = dict(zip(gp.varlocs, np.exp(solver_out["primal"])))
-            if verbosity > 2:
-                print(gp.generate_result(solver_out, verbosity=verbosity-3).table(self._spvars))
+            if verbosity > 2 and self._spvars:
+                result = gp.generate_result(solver_out, verbosity=verbosity-3)
+                print(result.table(self._spvars))
             elif verbosity > 1:
                 print("Solved cost was %.4g" % cost)
             if prevcost is None:
@@ -181,13 +182,13 @@ class SequentialGeometricProgram(CostedConstraintSet):
         try:  # check that there's not too much slack
             excess_slack = self.result["variables"][self.slack.key] - 1
             if excess_slack >= EPS:
-                print ("Final solution let signomial constraints slacken by"
-                       " %.2g%%. Calling .localsolve with a higher"
-                       " `pccp_penalty` (it was %.3g this time) will reduce"
-                       " final slack if the model is solvable with less. If"
-                       " you think it might not be, check by solving with "
-                       "`use_pccp=False, x0=(this model's final solution)`.\n"
-                       % (100*excess_slack, gp.pccp_penalty))
+                print("Final solution let signomial constraints slacken by"
+                      " %.2g%%. Calling .localsolve with a higher"
+                      " `pccp_penalty` (it was %.3g this time) will reduce"
+                      " final slack if the model is solvable with less. If"
+                      " you think it might not be, check by solving with "
+                      "`use_pccp=False, x0=(this model's final solution)`.\n"
+                      % (100*excess_slack, gp.pccp_penalty))
             del self.result["variables"][self.slack.key]
             del self.result["freevariables"][self.slack.key]
         except KeyError:

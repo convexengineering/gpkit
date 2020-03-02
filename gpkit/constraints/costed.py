@@ -1,6 +1,6 @@
 "Implement CostedConstraintSet"
 import numpy as np
-from .set import ConstraintSet, add_meq_bounds
+from .set import ConstraintSet
 from ..small_scripts import maybe_flatten
 
 
