@@ -162,8 +162,8 @@ class SequentialGeometricProgram(CostedConstraintSet):
             if cost*(1 - EPS) > prevcost + EPS and verbosity >= 0:
                 print("SGP not convergent: Cost rose by %.2g%% on iteration %i."
                       " Details can be found in `m.program.results` or by"
-                      " solving at a higher verbosity. Note that convergence"
-                      " is not guaranteed for models with SignomialEqualities."
+                      " solving at a higher verbosity. Note that convergence is"
+                      " not guaranteed for models with SignomialEqualities.\n"
                       % (100*(cost - prevcost)/prevcost, len(self.gps)))
                 cost = None
         # solved successfully!
@@ -181,13 +181,13 @@ class SequentialGeometricProgram(CostedConstraintSet):
         try:  # check that there's not too much slack
             excess_slack = self.result["variables"][self.slack.key] - 1
             if excess_slack >= EPS:
-                print ("Final solution let non-GP compatible constraints"
-                       " slacken by %.2g%%." % (100*excess_slack))
-                print("Calling .localsolve with a higher `pccp_penalty` (%.3g"
-                      " for this solve) may reduce final slack, but the model"
-                      " may not be solvable with less. To check if it is,"
-                      " call .localsolve with `use_pccp=False, x0=(this"
-                      " model's final solution)`." % gp.pccp_penalty)
+                print ("Final solution let signomial constraints slacken by"
+                       " %.2g%%. Calling .localsolve with a higher"
+                       " `pccp_penalty` (it was %.3g this time) will reduce"
+                       " final slack if the model is solvable with less. If"
+                       " you think it might not be, check by solving with "
+                       "`use_pccp=False, x0=(this model's final solution)`.\n"
+                       % (100*excess_slack, gp.pccp_penalty))
             del self.result["variables"][self.slack.key]
             del self.result["freevariables"][self.slack.key]
         except KeyError:
