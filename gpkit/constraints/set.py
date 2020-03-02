@@ -115,13 +115,12 @@ class ConstraintSet(list, GPkitObject):
         if not variables:
             raise KeyError(key)
         firstvar, *othervars = variables
-        if not othervars:
-            return firstvar
         veckey = firstvar.key.veckey
         if veckey is None or any(v.key.veckey != veckey for v in othervars):
-            raise ValueError("multiple variables are called '%s'; use"
-                             " variables_byname('%s') to see all of them"
-                             % (key, key))
+            if not othervars:
+                return firstvar
+            raise ValueError("multiple variables are called '%s'; show them"
+                             " with `.variables_byname('%s')`" % (key, key))
         from ..nomials import NomialArray  # all one vector!
         arr = NomialArray(np.full(veckey.shape, np.nan, dtype="object"))
         for v in variables:
