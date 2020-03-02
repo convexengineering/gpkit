@@ -218,6 +218,12 @@ class HashVector(dict):
             return sums
         return NotImplemented
 
+    def __iadd__(self, other):
+        for key, value in other.items():
+            self[key] = value + self.get(key, 0)
+        self.hashvalue = None
+        return self
+
     # pylint: disable=multiple-statements
     def __neg__(self): return -1*self
     def __sub__(self, other): return self + -other

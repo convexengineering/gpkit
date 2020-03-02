@@ -361,8 +361,6 @@ class GeometricProgram(CostedConstraintSet):
                         dlogcost_dlogv = cost_senss.pop(v)
                         accum = cost_senss.get(c, 0)
                         cost_senss[c] = dlogcost_dlogv*dlogv_dlogc + accum
-        self.v_ss.update({vk: 0 for vk in self.model.varkeys
-                          if not vk in self.v_ss})
         result["sensitivities"]["cost"] = cost_senss
         result["sensitivities"]["variables"] = KeyDict(self.v_ss)
         result["sensitivities"]["constants"] = KeyDict(
