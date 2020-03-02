@@ -18,7 +18,7 @@ def isnan(element):
     try:
         return np.isnan(element)
     except TypeError:
-        return np.array([])
+        return False
 
 
 def maybe_flatten(value):

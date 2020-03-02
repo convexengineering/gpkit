@@ -161,7 +161,7 @@ class HashVector(dict):
 
     Example
     -------
-    >>> x = gpkit.nomials.Monomial("'"x"'")
+    >>> x = gpkit.nomials.Monomial("x")
     >>> exp = gpkit.small_classes.HashVector({x: 2})
     """
     hashvalue = None

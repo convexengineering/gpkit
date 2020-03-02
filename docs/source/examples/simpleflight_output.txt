@@ -99,7 +99,7 @@ V_{min} : [   -9.1%     -9.1%    +13.6%    +13.6%  ] takeoff speed
     C_f : [   -7.3%    -12.7%     +0.2%     -5.0%  ] skin friction coefficient
 
 Solution sensitivity delta
-(positive means the argument has a higher sensitivity)
+(positive means the argument has a lower sensitivity)
 --------------------------
                   V : [ +0.59   +0.97   +0.25   +0.75  ] cruising speed
             V_{min} : [ -0.45   -0.67   -0.05   -0.34  ] takeoff speed

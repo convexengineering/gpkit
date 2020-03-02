@@ -1,6 +1,6 @@
 "Implement CostedConstraintSet"
 import numpy as np
-from .set import ConstraintSet
+from .set import ConstraintSet, add_meq_bounds
 from ..small_scripts import maybe_flatten
 
 
@@ -24,6 +24,10 @@ class CostedConstraintSet(ConstraintSet):
             subs.update(substitutions)
         ConstraintSet.__init__(self, constraints, subs)
         self.varkeys.update(self.cost.varkeys)
+        for exp in cost.hmap:
+            for vk, x in exp.items():
+                self.bounded.add((vk, "upper" if x > 0 else "lower"))
+        add_meq_bounds(self.bounded, self.meq_bounded)
 
     def __bare_init__(self, cost, constraints, substitutions):
         self.cost = cost

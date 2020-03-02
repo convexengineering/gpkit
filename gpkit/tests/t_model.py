@@ -756,7 +756,7 @@ class TestModelNoSolve(unittest.TestCase):
         self.assertIsInstance(t.latex(), str)
 
     def test_no_naming_on_var_access(self):
-        # make sure that analysis models don"t add their names to
+        # make sure that analysis models don't add their names to
         # variables looked up from other models
         box = Box()
         area_bounds = BoxAreaBounds(box)
@@ -768,7 +768,7 @@ class TestModelNoSolve(unittest.TestCase):
         w = Widget()
         # w has two Sub models, both with their own variable m
         self.assertEqual(len(w.variables_byname("m")), 2)
-        # keys for both submodel m"s should be in the parent model varkeys
+        # keys for both submodel m's should be in the parent model varkeys
         self.assertIn(w.subA["m"].key, w.varkeys)
         self.assertIn(w.subB["m"].key, w.varkeys)
         # keys of w.variables_byname("m") should match m.varkeys
