@@ -110,7 +110,7 @@ class SequentialGeometricProgram(CostedConstraintSet):
         result : dict
             A dictionary containing the translated solver result.
         """
-        self.gps, self.solver_outs = [], []  # NOTE: SIDE EFFECTS
+        self.gps, self.solver_outs, self._results = [], [], []
         # if there's external functions we can't mutate the GP
         mutategp = mutategp and not self.blackboxconstraints
         if not mutategp and not x0:
@@ -157,6 +157,7 @@ class SequentialGeometricProgram(CostedConstraintSet):
             x0 = dict(zip(gp.varlocs, np.exp(solver_out["primal"])))
             if verbosity > 2 and self._spvars:
                 result = gp.generate_result(solver_out, verbosity=verbosity-3)
+                self._results.append(result)
                 print(result.table(self._spvars))
             elif verbosity > 1:
                 print("Solved cost was %.4g." % cost)
@@ -169,7 +170,7 @@ class SequentialGeometricProgram(CostedConstraintSet):
                       " solving at a higher verbosity. Note that convergence is"
                       " not guaranteed for models with SignomialEqualities.\n"
                       % (100*(cost - prevcost)/prevcost, len(self.gps)))
-                cost = None
+                rel_improvement = cost = None
         # solved successfully!
         self.result = gp.generate_result(solver_out, verbosity=verbosity-3)
         self.result["soltime"] = time() - starttime

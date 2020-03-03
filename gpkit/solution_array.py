@@ -13,12 +13,10 @@ from .repr_conventions import unitstr, lineagestr
 CONSTRSPLITPATTERN = re.compile(r"([^*]\*[^*])|( \+ )|( >= )|( <= )|( = )")
 
 VALSTR_REPLACES = [
-    (" nan ", "  -  "),
-    (" +nan ", "   -  "),
-    (" nan% ", "  -   "),
-    (" -nan ", "   -  "),
-    (" +nan% ", "   -   "),
-    (" -nan% ", "   -   "),
+    ("+nan", " nan"),
+    ("-nan", " nan"),
+    ("nan%", "nan "),
+    ("nan", " - "),
 ]
 
 
@@ -210,6 +208,8 @@ def unrolled_absmax(values):
         absmaxval = np.abs(val).max()
         if absmaxval >= absmaxest:
             absmaxest, finalval = absmaxval, val
+    if getattr(finalval, "shape", None):
+        return finalval[np.argmax(np.abs(finalval))]
     return finalval
 
 
@@ -308,24 +308,26 @@ class SolutionArray(DictOfLists):
         return True
 
     # pylint: disable=too-many-locals, too-many-branches, too-many-statements
-    def diff(self, other, *, showvars=None, senssdiff=True, absdiff=False,
-             reltol=1.0, sensstol=0.1, abstol=0, **tableargs):
+    def diff(self, other, showvars=None, *, senssdiff=True, sensstol=0.1,
+             absdiff=False, abstol=0, reldiff=True, reltol=1.0, **tableargs):
         """Outputs differences between this solution and another
 
         Arguments
         ---------
         other : solution or string
-            Strings are treated as paths to valid pickled solutions
-        reltol : float
-            The smallest percentage difference in the result worth showing
+            strings will be treated as paths to pickled solutions
         senssdiff : boolean
-            if True, also computer sensitivity deltas
+            if True, show sensitivity differences
         sensstol : float
-            The smallest absolute difference in sensitivities worth showing
+            the smallest sensitivity difference worth showing
         abssdiff : boolean
-            if True, also computer absolute deltas
+            if True, show absolute differences
         absstol : float
-            The smallest absolute difference in the result worth showing
+            the smallest absolute difference worth showing
+        reldiff : boolean
+            if True, show relative differences
+        reltol : float
+            the smallest relative difference worth showing
 
         Returns
         -------
@@ -340,8 +342,8 @@ class SolutionArray(DictOfLists):
                  "(positive means the argument is smaller)", ""]
         svks, ovks = set(svars), set(ovars)
         if showvars:
-            lines[0] += " for variables in `showvars`"
-            lines[1] += "============================"
+            lines[0] += " for selected variables"
+            lines[1] += "======================="
             showvars = self._parse_showvars(showvars)
             svks = {k for k in showvars if k in svars}
             ovks = {k for k in showvars if k in ovars}
@@ -355,29 +357,32 @@ class SolutionArray(DictOfLists):
                          " which are not in this solution:")
             lines.append("\n".join("  %s" % key for key in ovks - svks))
             lines.append("")
+        sharedvks = svks.intersection(ovks)
         # relative difference #
-        rel_diff = {vk: 100*(cast(np.divide, svars[vk], ovars[vk]) - 1)
-                    for vk in svks.intersection(ovks)}
-        lines += var_table(rel_diff, "Relative difference",
-                           valfmt="%+6.1f%%  ", vecfmt="%+6.1f%% ",
-                           minval=reltol, printunits=False, **tableargs)
-        if lines[-2][:10] == "-"*10:  # nothing larger than sensstol
-            lines.insert(-1, ("The largest is %g%%"
-                              % unrolled_absmax(rel_diff.values())))
+        if reldiff:
+            rel_diff = {vk: 100*(cast(np.divide, svars[vk], ovars[vk]) - 1)
+                        for vk in sharedvks}
+            lines += var_table(rel_diff, "Relative differences >%g%%" % reltol,
+                               valfmt="%+.1f%%  ", vecfmt="%+6.1f%% ",
+                               minval=reltol, printunits=False, **tableargs)
+            if lines[-2][:10] == "-"*10:  # nothing larger than sensstol
+                lines.insert(-1, ("The largest is %g%%"
+                                  % unrolled_absmax(rel_diff.values())))
         # absolute difference #
         if absdiff:
-            abs_diff = {vk: cast(sub, svars[vk], ovars[vk]) for vk in rel_diff}
-            lines += var_table(abs_diff, "Absolute difference",
-                               vecfmt="% +8.2g", minval=abstol, **tableargs)
+            abs_diff = {vk: cast(sub, svars[vk], ovars[vk]) for vk in sharedvks}
+            lines += var_table(abs_diff, "Absolute differences >%g" % abstol,
+                               valfmt="%+.2g", vecfmt="%+8.2g",
+                               minval=abstol, **tableargs)
         # sensitivity difference #
         if senssdiff:
             ssenss = self["sensitivities"]["variables"]
             osenss = other["sensitivities"]["variables"]
             senss_delta = {vk: cast(sub, ssenss.get(vk, 0), osenss.get(vk, 0))
                            for vk in svks.intersection(ovks)}
-            primal_lines = len(lines)
-            lines += var_table(senss_delta, "Sensitivity difference",
-                               valfmt="%+-6.2f  ", vecfmt="%+-6.2f",
+            title = "Sensitivity differences >%g" % sensstol
+            lines += var_table(senss_delta, title,
+                               valfmt="%+-.2f  ", vecfmt="%+-6.2f",
                                minval=sensstol, printunits=False, **tableargs)
             if lines[-2][:10] == "-"*10:  # nothing larger than sensstol
                 lines.insert(-1, ("The largest is %+g"
@@ -692,10 +697,8 @@ def var_table(data, title, printunits=True, latex=False, rawlines=False,
         return []
     decorated, models = [], set()
     for i, (k, v) in enumerate(data.items()):
-        v_arr = np.array([v])
-        notnan = ~isnan(v_arr)
-        if notnan.any() and np.sum(np.abs(v_arr[notnan])) > minval:
-            if minval and hidebelowminval and len(notnan.shape) > 1:
+        if np.nanmax(np.abs(v)) > minval:
+            if minval and hidebelowminval and getattr(v, "shape", None):
                 less_than_min = np.abs(v) <= minval
                 v[np.logical_and(~isnan(v), less_than_min)] = np.nan
             model = lineagestr(k.lineage) if sortbymodel else ""
@@ -705,7 +708,7 @@ def var_table(data, title, printunits=True, latex=False, rawlines=False,
             if not sortbyvals:
                 decorated.append((model, b, (varfmt % s), i, k, v))
             else:  # for consistent sorting, add small offset to negative vals
-                val = np.mean(np.abs(v)) - (1e-9 if np.mean(v) < 0 else 0)
+                val = np.nanmean(np.abs(v)) - (1e-9 if np.nanmean(v) < 0 else 0)
                 sort = (float("%.4g" % -val), k.name)
                 decorated.append((model, sort, b, (varfmt % s), i, k, v))
     if included_models:
