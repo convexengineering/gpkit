@@ -8,7 +8,7 @@ from .small_scripts import try_str_without
 
 INSIDE_PARENS = re.compile(r"\(.*\)")
 
-if "win" in sys.platform:
+if sys.platform[:3] == "win":
     MUL = "*"
     PI_STR = "PI"
     UNICODE_EXPONENTS = False

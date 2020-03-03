@@ -37,7 +37,7 @@ class TestVarKey(unittest.TestCase):
         self.assertIsInstance(x.latex_unitstr(), str)
 
     def test_ast(self): # pylint: disable=too-many-statements
-        if "win" in sys.platform:
+        if sys.platform[:3] == "win":
             return
 
         t = Variable("t")

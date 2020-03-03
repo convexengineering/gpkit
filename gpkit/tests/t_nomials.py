@@ -68,7 +68,7 @@ class TestMonomial(unittest.TestCase):
         m = 5*x**2/y
         r = m.__repr__()
         self.assertEqual(type(r), str)
-        if "win" not in sys.platform:
+        if sys.platform[:3] != "win":
             self.assertEqual(repr(m), "gpkit.Monomial(5·x²/y)")
 
     def test_latex(self):
@@ -228,7 +228,7 @@ class TestSignomial(unittest.TestCase):
         x = Variable("x")
         y = Variable("y")
         with SignomialsEnabled():
-            if "win" not in sys.platform:
+            if sys.platform[:3] != "win":
                 self.assertEqual(str(1 - x - y**2 - 1), "1 - x - y² - 1")
             self.assertEqual((1 - x/y**2).latex(), "-\\frac{x}{y^{2}} + 1")
             _ = hash(1 - x/y**2)
