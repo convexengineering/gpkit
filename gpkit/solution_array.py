@@ -211,7 +211,7 @@ def cast(function, val1, val2):
     with pywarnings.catch_warnings():  # skip those pesky divide-by-zeros
         pywarnings.simplefilter("ignore")
         if hasattr(val1, "shape") and hasattr(val2, "shape"):
-            if val1.shape == val2.shape:
+            if val1.ndim == val2.ndim:
                 return function(val1, val2)
             lessdim, dimmest = sorted([val1, val2], key=lambda v: v.ndim)
             dimdelta = dimmest.ndim - lessdim.ndim
