@@ -99,13 +99,16 @@ All Loose Constraints
 No constraints had a sensitivity below +1e-05.
 
 Solution difference for variables in `showvars`
+===============================================
 (positive means the argument is smaller)
------------------------------------------------
+
+Relative difference
+-------------------
 Wburn : [ +102.1%   +101.6%   +101.1%   +100.5%  ] segment fuel burn
 Wfuel : [ +101.3%   +101.1%   +100.8%   +100.5%  ] fuel weight
-    D : [   +1.1%     +0.8%     +0.5%     +0.3%  ] drag force
+    D : [   +1.1%       -         -         -    ] drag force
 
-Solution sensitivity delta for variables given in `showvars`
-------------------------------------------------------------
-The largest sensitivity delta is -0.00451643
+Sensitivity difference
+----------------------
+The largest is -0.00451643
 

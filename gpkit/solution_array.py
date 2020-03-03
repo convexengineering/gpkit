@@ -13,14 +13,12 @@ from .repr_conventions import unitstr, lineagestr
 CONSTRSPLITPATTERN = re.compile(r"([^*]\*[^*])|( \+ )|( >= )|( <= )|( = )")
 
 VALSTR_REPLACES = [
-    ("+nan", " - "),
-    ("nan", " - "),
-    ("-nan", " - "),
-    ("+0 ", " 0 "),
-    ("+0.00 ", " 0.00 "),
-    ("-0.00 ", " 0.00 "),
-    ("+0.0% ", " 0.0  "),
-    ("-0.0% ", " 0.0  ")
+    (" nan ", "  -  "),
+    (" +nan ", "   -  "),
+    (" nan% ", "  -   "),
+    (" -nan ", "   -  "),
+    (" +nan% ", "   -   "),
+    (" -nan% ", "   -   "),
 ]
 
 
@@ -205,6 +203,15 @@ TABLEFNS = {"sensitivities": senss_table,
             "warnings": warnings_table,
            }
 
+def unrolled_absmax(values):
+    "From an iterable of numbers and arrays, returns the largest magnitude"
+    finalval, absmaxest = None, 0
+    for val in values:
+        absmaxval = np.abs(val).max()
+        if absmaxval >= absmaxest:
+            absmaxest, finalval = absmaxval, val
+    return finalval
+
 
 def cast(function, val1, val2):
     "Relative difference between val1 and val2 (positive if val2 is larger)"
@@ -301,109 +308,81 @@ class SolutionArray(DictOfLists):
         return True
 
     # pylint: disable=too-many-locals, too-many-branches, too-many-statements
-    def diff(self, other, *, showvars=None, sortbymodel=True,
-             show_sensitivities=True, absdiff=False,
-             min_percent=1.0, min_senss_delta=0.1):
+    def diff(self, other, *, showvars=None, senssdiff=True, absdiff=False,
+             reltol=1.0, sensstol=0.1, abstol=0, **tableargs):
         """Outputs differences between this solution and another
 
         Arguments
         ---------
         other : solution or string
             Strings are treated as paths to valid pickled solutions
-        min_percent : float
-            The smallest percentage difference in the result to consider
-        show_sensitivities : boolean
+        reltol : float
+            The smallest percentage difference in the result worth showing
+        senssdiff : boolean
             if True, also computer sensitivity deltas
-        min_senss_delta : float
-            The smallest absolute difference in sensitivities to consider
+        sensstol : float
+            The smallest absolute difference in sensitivities worth showing
+        abssdiff : boolean
+            if True, also computer absolute deltas
+        absstol : float
+            The smallest absolute difference in the result worth showing
 
         Returns
         -------
         str
         """
+        tableargs.update({"hidebelowminval": True, "sortbyvals": True})
         if isinstance(other, Strings):
             other = pickle.load(open(other, "rb"))
         svars, ovars = self["variables"], other["variables"]
+        lines = ["Solution difference",
+                 "===================",
+                 "(positive means the argument is smaller)", ""]
+        svks, ovks = set(svars), set(ovars)
         if showvars:
+            lines[0] += " for variables in `showvars`"
+            lines[1] += "============================"
             showvars = self._parse_showvars(showvars)
             svks = {k for k in showvars if k in svars}
             ovks = {k for k in showvars if k in ovars}
-        else:
-            svks, ovks = set(svars), set(ovars)
-        rel_diff = {vk: 100*(cast(np.divide, svars[vk], ovars[vk]) - 1)
-                    for vk in svks.intersection(ovks)}
-        lines = var_table(rel_diff, "Solution difference",
-                          sortbyvals=True, minval=min_percent,
-                          valfmt="%+6.1f%%  ", vecfmt="%+6.1f%% ",
-                          printunits=False, sortbymodel=sortbymodel)
-        if absdiff:
-            abs_diff = {vk: cast(sub, svars[vk], ovars[vk]) for vk in rel_diff}
-            lines += var_table(abs_diff, "Absolute solution difference",
-                               sortbymodel=sortbymodel, hidebelowminval=True,
-                               sortbyvals=True, vecfmt="% -8.2g")
-        if showvars:
-            lines[0] += " for variables in `showvars`"
-            lines[1] += "----------------------------"
-        if len(lines) > 3:
-            lines.insert(1, "(positive means the argument is smaller)")
-        elif rel_diff:
-            values = []
-            for v in rel_diff.values():
-                if hasattr(v, "shape"):
-                    values.extend(v.flatten().tolist())
-                else:
-                    values.append(v)
-            values = np.array(values)
-            i = np.unravel_index(np.argmax(np.abs(values)), values.shape)
-            lines.insert(2, "The largest difference is %g%%" % values[i])
-
-        if show_sensitivities:
-            ssenss = self["sensitivities"]["variables"]
-            osenss = other["sensitivities"]["variables"]
-            senss_delta = {vk: cast(sub, ssenss.get(vk, 0), osenss.get(vk, 0))
-                           for vk in svks.intersection(ovks)}
-            primal_lines = len(lines)
-            lines += var_table(senss_delta, "Solution sensitivity delta",
-                               sortbyvals=True,
-                               valfmt="%+-6.2f  ", vecfmt="%+-6.2f",
-                               printunits=False, minval=min_senss_delta,
-                               sortbymodel=sortbymodel)
-            if showvars:
-                lines[primal_lines] += " for variables given in `showvars`"
-                lines[primal_lines + 1] += "----------------------------------"
-            if len(lines) > primal_lines + 3:
-                lines.insert(
-                    primal_lines + 1,
-                    "(positive means the argument has a lower sensitivity)")
-            elif senss_delta:
-                absmaxvalue, maxvalue = 0, 0
-                for valarray in senss_delta.values():
-                    if not getattr(valarray, "shape", None):
-                        value = valarray
-                    else:
-                        flatvalarray = valarray.flatten()
-                        value = flatvalarray[np.argmax(np.abs(valarray))]
-                    absvalue = abs(value)
-                    if absvalue > absmaxvalue:
-                        maxvalue = value
-                        absmaxvalue = absvalue
-                lines.insert(
-                    primal_lines + 2,
-                    "The largest sensitivity delta is %+g" % maxvalue)
-
         if svks - ovks:
             lines.append("Variable(s) of this solution"
                          " which are not in the argument:")
             lines.append("\n".join("  %s" % key for key in svks - ovks))
             lines.append("")
-        if ovks-svks:
+        if ovks - svks:
             lines.append("Variable(s) of the argument"
                          " which are not in this solution:")
             lines.append("\n".join("  %s" % key for key in ovks - svks))
             lines.append("")
-
-        out = "\n".join(lines)
-        return out
+        # relative difference #
+        rel_diff = {vk: 100*(cast(np.divide, svars[vk], ovars[vk]) - 1)
+                    for vk in svks.intersection(ovks)}
+        lines += var_table(rel_diff, "Relative difference",
+                           valfmt="%+6.1f%%  ", vecfmt="%+6.1f%% ",
+                           minval=reltol, printunits=False, **tableargs)
+        if lines[-2][:10] == "-"*10:  # nothing larger than sensstol
+            lines.insert(-1, ("The largest is %g%%"
+                              % unrolled_absmax(rel_diff.values())))
+        # absolute difference #
+        if absdiff:
+            abs_diff = {vk: cast(sub, svars[vk], ovars[vk]) for vk in rel_diff}
+            lines += var_table(abs_diff, "Absolute difference",
+                               vecfmt="% +8.2g", minval=abstol, **tableargs)
+        # sensitivity difference #
+        if senssdiff:
+            ssenss = self["sensitivities"]["variables"]
+            osenss = other["sensitivities"]["variables"]
+            senss_delta = {vk: cast(sub, ssenss.get(vk, 0), osenss.get(vk, 0))
+                           for vk in svks.intersection(ovks)}
+            primal_lines = len(lines)
+            lines += var_table(senss_delta, "Sensitivity difference",
+                               valfmt="%+-6.2f  ", vecfmt="%+-6.2f",
+                               minval=sensstol, printunits=False, **tableargs)
+            if lines[-2][:10] == "-"*10:  # nothing larger than sensstol
+                lines.insert(-1, ("The largest is %+g"
+                                  % unrolled_absmax(senss_delta.values())))
+        return "\n".join(lines)
 
     def pickle_prep(self):
         "After calling this, the SolutionArray is ready to pickle"
@@ -718,7 +697,7 @@ def var_table(data, title, printunits=True, latex=False, rawlines=False,
         if notnan.any() and np.sum(np.abs(v_arr[notnan])) > minval:
             if minval and hidebelowminval and len(notnan.shape) > 1:
                 less_than_min = np.abs(v) <= minval
-                v[np.logical_and(~isnan(v), less_than_min)] = 0
+                v[np.logical_and(~isnan(v), less_than_min)] = np.nan
             model = lineagestr(k.lineage) if sortbymodel else ""
             models.add(model)
             b = bool(getattr(v, "shape", None))
