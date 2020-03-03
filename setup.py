@@ -17,7 +17,7 @@ and `CVXopt <http://cvxopt.org/>`_.
 
 LICENSE = """The MIT License (MIT)
 
-Copyright (c) 2019 Edward Burnell
+Copyright (c) 2020 Edward Burnell
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
@@ -55,7 +55,7 @@ setup(
     python_requires=">=3.5.2",
     install_requires=["numpy >= 1.16.4", "pint >= 0.8.1,<0.10",
                       "scipy", "ad", "cvxopt >= 1.1.8"],
-    version="0.9.1.0",
+    version="1.0.0",
     packages=["gpkit", "gpkit.tools", "gpkit.interactive", "gpkit.constraints",
               "gpkit.nomials", "gpkit.tests", "gpkit.solvers"],
     package_data={"gpkit": ["env/settings"]},

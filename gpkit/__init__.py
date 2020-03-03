@@ -15,7 +15,7 @@ from .constraints.model import Model
 from .tools.docstring import parse_variables
 from .tests.run_tests import run as run_unit_tests
 
-__version__ = "0.9.1"
+__version__ = "1.0.0pre"
 GPCOLORS = ["#59ade4", "#FA3333"]
 GPBLU, GPRED = GPCOLORS
 
