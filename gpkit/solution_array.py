@@ -6,7 +6,7 @@ import pickle
 import numpy as np
 from .nomials import NomialArray
 from .small_classes import DictOfLists, Strings
-from .small_scripts import mag, isnan, try_str_without
+from .small_scripts import mag, try_str_without
 from .repr_conventions import unitstr, lineagestr
 
 
@@ -43,7 +43,7 @@ def topsenss_filter(data, showvars, nvars=5):
     if "constants" in data.get("sensitivities", {}):
         data = data["sensitivities"]["constants"]
     mean_abs_senss = {k: np.abs(s).mean() for k, s in data.items()
-                      if not isnan(s).any()}
+                      if not np.isnan(s).any()}
     topk = [k for k, _ in sorted(mean_abs_senss.items(), key=lambda l: l[1])]
     filter_already_shown = showvars.intersection(topk)
     for k in filter_already_shown:
@@ -699,8 +699,7 @@ def var_table(data, title, printunits=True, latex=False, rawlines=False,
     for i, (k, v) in enumerate(data.items()):
         if np.nanmax(np.abs(v)) > minval:
             if minval and hidebelowminval and getattr(v, "shape", None):
-                less_than_min = np.abs(v) <= minval
-                v[np.logical_and(~isnan(v), less_than_min)] = np.nan
+                v[np.abs(v) <= minval] = np.nan
             model = lineagestr(k.lineage) if sortbymodel else ""
             models.add(model)
             b = bool(getattr(v, "shape", None))
