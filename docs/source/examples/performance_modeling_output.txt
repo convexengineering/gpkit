@@ -98,9 +98,9 @@ All Loose Constraints
 ---------------------
 No constraints had a sensitivity below +1e-05.
 
-Solution difference for variables given in `showvars`
+Solution difference for variables in `showvars`
 (positive means the argument is smaller)
------------------------------------------------------
+-----------------------------------------------
 Wburn : [ +102.1%   +101.6%   +101.1%   +100.5%  ] segment fuel burn
 Wfuel : [ +101.3%   +101.1%   +100.8%   +100.5%  ] fuel weight
     D : [   +1.1%     +0.8%     +0.5%     +0.3%  ] drag force

@@ -98,6 +98,20 @@ V_{min} : [   -9.1%     -9.1%    +13.6%    +13.6%  ] takeoff speed
       W : [   -6.8%    -12.8%     -5.1%    -12.2%  ] total aircraft weight
     C_f : [   -7.3%    -12.7%     +0.2%     -5.0%  ] skin friction coefficient
 
+Absolute solution difference
+----------------------------
+     Re : [  1.7e+06   3.6e+06  -4.1e+04   1.1e+06 ]        Reynold's number
+      W : [ -5e+02    -9.4e+02  -3.8e+02  -9e+02   ]  [N]   total aircraft weight
+    W_w : [ -5e+02    -9.4e+02  -3.8e+02  -9e+02   ]  [N]   wing weight
+      D : [  35        93       -8.8       23      ]  [N]   total drag force
+      V : [  6.8       17        6.8       17      ]  [m/s] cruising speed
+      S : [  2.1       0.9      -4.4      -5.3     ]  [m²]  total wing area
+V_{min} : [ -2        -2         3         3       ]  [m/s] takeoff speed
+      A : [ -2.3      -3.7       0.38     -1.3     ]        aspect ratio
+    C_L : [ -0.2      -0.3      -0.036    -0.19    ]        Lift coefficent of wing
+    C_D : [ -0.006    -0.0083   -0.001    -0.0049  ]        Drag coefficient of wing
+    C_f : [ -0.00026  -0.00046   8e-06    -0.00018 ]        skin friction coefficient
+
 Solution sensitivity delta
 (positive means the argument has a lower sensitivity)
 --------------------------
