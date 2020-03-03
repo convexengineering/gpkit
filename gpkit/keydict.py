@@ -184,7 +184,7 @@ class KeyDict(KeyMap, dict):
                 val = val[idx]
             if len(keys) == 1:
                 return val
-            got[key] = val
+            got[k] = val
         return got
 
     def __setitem__(self, key, value):

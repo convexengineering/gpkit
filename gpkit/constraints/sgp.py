@@ -110,16 +110,6 @@ class SequentialGeometricProgram(CostedConstraintSet):
         result : dict
             A dictionary containing the translated solver result.
         """
-        starttime = time()
-        if verbosity > 0:
-            print("Starting a sequence of GP solves")
-            if self.externalfn_vars:
-                print("Solving for %i variables defined by externalfns"
-                      % len(self.externalfn_vars))
-            if self._spvars:
-                print(" for %i free variables" % len(self._spvars))
-                print("  in %i signomial constraints."
-                      % len(self._sp_constraints))
         self.gps, self.solver_outs = [], []  # NOTE: SIDE EFFECTS
         # if there's external functions we can't mutate the GP
         mutategp = mutategp and not self.blackboxconstraints
@@ -130,6 +120,18 @@ class SequentialGeometricProgram(CostedConstraintSet):
             if x0:
                 self._gp = self.init_gp(self.substitutions, x0)
             gp = self._gp
+        starttime = time()
+        if verbosity > 0:
+            print("Starting a sequence of GP solves")
+            if self.externalfn_vars:
+                print(" for %i variables defined by externalfns"
+                      % len(self.externalfn_vars))
+            elif mutategp:
+                print(" for %i free variables" % len(self._spvars))
+                print("  in %i signomial constraints"
+                      % len(self._sp_constraints))
+            print("  and for %i free variables" % len(gp.varlocs))
+            print("       in %i posynomial inequalities." % len(gp.k))
         prevcost, cost, rel_improvement = None, None, None
         while rel_improvement is None or rel_improvement > reltol:
             prevcost = cost
@@ -145,7 +147,7 @@ class SequentialGeometricProgram(CostedConstraintSet):
             gp.model = self.model
             self.gps.append(gp)  # NOTE: SIDE EFFECTS
             if verbosity > 1:
-                print("\nGP Iteration %i" % len(self.gps))
+                print("\nGP Solve %i" % len(self.gps))
             if verbosity > 2:
                 print("===============")
             solver_out = gp.solve(solver, verbosity=verbosity-1,
@@ -157,12 +159,12 @@ class SequentialGeometricProgram(CostedConstraintSet):
                 result = gp.generate_result(solver_out, verbosity=verbosity-3)
                 print(result.table(self._spvars))
             elif verbosity > 1:
-                print("Solved cost was %.4g" % cost)
+                print("Solved cost was %.4g." % cost)
             if prevcost is None:
                 continue
             rel_improvement = (prevcost - cost)/(prevcost + cost)
             if cost*(1 - EPS) > prevcost + EPS and verbosity > -1:
-                print("SGP not convergent: Cost rose by %.2g%% on iteration %i."
+                print("SGP not convergent: Cost rose by %.2g%% on GP solve %i."
                       " Details can be found in `m.program.results` or by"
                       " solving at a higher verbosity. Note that convergence is"
                       " not guaranteed for models with SignomialEqualities.\n"
