@@ -1,6 +1,7 @@
 "The shared non-mathematical backbone of all Nomials"
 from .data import NomialData
 from ..small_classes import Numbers, FixedScalar
+from ..repr_conventions import MUL, UNICODE_EXPONENTS
 
 
 def nomial_latex_helper(c, pos_vars, neg_vars):
@@ -49,15 +50,13 @@ class Nomial(NomialData):
                 if not x:
                     continue
                 varstr = var.str_without(excluded)
-                if x == 1:
-                    pass
-                elif int(x) == x and 2 <= x <= 9:
+                if UNICODE_EXPONENTS and int(x) == x and 2 <= x <= 9:
                     x = int(x)
                     if x in (2, 3):
                         varstr += chr(176+x)
                     elif x in (4, 5, 6, 7, 8, 9):
                         varstr += chr(8304+x)
-                else:
+                elif x != 1:
                     varstr += "^%.2g" % x
                 varstrs.append(varstr)
             varstrs.sort()
@@ -66,7 +65,7 @@ class Nomial(NomialData):
                 mstrs.append("-" + "·".join(varstrs))
             else:
                 cstr = [cstr] if (cstr != "1" or not varstrs) else []
-                mstrs.append("·".join(cstr + varstrs))
+                mstrs.append(MUL.join(cstr + varstrs))
         return " + ".join(sorted(mstrs)) + units
 
     def latex(self, excluded=()):

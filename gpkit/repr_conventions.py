@@ -6,11 +6,18 @@ import numpy as np
 from .small_classes import Quantity, Numbers
 from .small_scripts import try_str_without
 
-
-PI_STR = "π"
-UNIT_FORMATTING = ":P~"
 INSIDE_PARENS = re.compile(r"\(.*\)")
 
+if "win" in sys.platform:
+    MUL = "*"
+    PI_STR = "PI"
+    UNICODE_EXPONENTS = False
+    UNIT_FORMATTING = ":~"
+else:
+    MUL = "·"
+    PI_STR = "π"
+    UNICODE_EXPONENTS = True
+    UNIT_FORMATTING = ":P~"
 
 def lineagestr(lineage, modelnums=True):
     "Returns properly formatted lineage string"
@@ -108,7 +115,7 @@ class GPkitObject:
             elif right == "1":
                 aststr = left
             else:
-                aststr = "%s·%s" % (left, right)
+                aststr = "%s%s%s" % (left, MUL, right)
         elif oper == "div":
             left = parenthesize(strify(values[0], excluded), mult=False)
             right = parenthesize(strify(values[1], excluded))
@@ -123,7 +130,7 @@ class GPkitObject:
             x = values[1]
             if left == "1":
                 aststr = "1"
-            elif int(x) == x and 2 <= x <= 9:
+            elif UNICODE_EXPONENTS and int(x) == x and 2 <= x <= 9:
                 x = int(x)
                 if x in (2, 3):
                     aststr = "%s%s" % (left, chr(176+x))
