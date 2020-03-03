@@ -42,7 +42,7 @@ class TestMonomial(unittest.TestCase):
 
         # non-positive c raises
         self.assertRaises(InvalidPosynomial, Monomial, -2)
-        self.assertRaises(InvalidPosynomial, Monomial, -1.)
+        self.assertRaises(InvalidPosynomial, Monomial, -1)
         self.assertRaises(InvalidPosynomial, Monomial, 0)
         self.assertRaises(InvalidPosynomial, Monomial, 0.0)
 
@@ -191,9 +191,9 @@ class TestMonomial(unittest.TestCase):
 
     def test_numerical_precision(self):
         "not sure what to test here, placeholder for now"
-        c1, c2 = 1/700., 123e8
+        c1, c2 = 1/700, 123e8
         m1 = Monomial({"x": 2, "y": 1}, c1)
-        m2 = Monomial({"y": -1, "z": 3/2.}, c2)
+        m2 = Monomial({"y": -1, "z": 3/2}, c2)
         self.assertEqual(math.log((m1**4 * m2**3).c),  # pylint: disable=no-member
                          4*math.log(c1) + 3*math.log(c2))
 
@@ -239,7 +239,7 @@ class TestSignomial(unittest.TestCase):
         x = Variable("x")
         y = Variable("y")
         with SignomialsEnabled():
-            c = x + 5.*y**2 - 0.2*x*y**0.78
+            c = x + 5*y**2 - 0.2*x*y**0.78
             monomials = c.chop()
         with self.assertRaises(InvalidPosynomial):
             c.chop()
@@ -373,9 +373,9 @@ class TestPosynomial(unittest.TestCase):
         x = Variable("x")
         y = Variable("y")
         p = 4*x + y
-        self.assertEqual(p/3, p/3.)
-        equiv1 = all((p/3).cs == [1./3., 4./3.])
-        equiv2 = all((p/3).cs == [4./3., 1./3.])
+        self.assertEqual(p/3, p/3)
+        equiv1 = all((p/3).cs == [1/3, 4/3])
+        equiv2 = all((p/3).cs == [4/3, 1/3])
         self.assertTrue(equiv1 or equiv2)
 
     def test_diff(self):

@@ -100,7 +100,7 @@ class TestResultsTable(unittest.TestCase):
     def test_nan_printing(self):
         """Test that solution prints when it contains nans"""
         x = VarKey(name='x')
-        data = {x: np.array([np.nan, 1., 1., 1., 1.])}
+        data = {x: np.array([np.nan, 1, 1, 1, 1])}
         title = "Free variables"
         printstr = "\n".join(var_table(data, title))
         self.assertTrue(" - " in printstr)  # nan is printed as " - "

@@ -22,7 +22,7 @@ def SimPleAC():
     tau = Variable("\\tau", 0.12, "-", "airfoil thickness to chord ratio")
     W_W_coeff1 = Variable("W_{W_{coeff1}}", 2e-5, "1/m",
                           "wing weight coefficent 1")  # 12e-5 originally
-    W_W_coeff2 = Variable("W_{W_{coeff2}}", 60., "Pa",
+    W_W_coeff2 = Variable("W_{W_{coeff2}}", 60, "Pa",
                           "wing weight coefficent 2")
 
     # Dimensional constants
@@ -91,7 +91,7 @@ def SimPleAC():
     # Wing weight model
     constraints += [
         W_w_surf >= W_W_coeff2 * S,
-        W_w_strc**2. >= W_W_coeff1**2/tau**2 * N_ult**2*A**3*(V_f_fuse*g*rho_f
+        W_w_strc**2 >= W_W_coeff1**2/tau**2 * N_ult**2*A**3*(V_f_fuse*g*rho_f
                                                               + W_0)*W*S,
         W_w >= W_w_surf + W_w_strc]
 

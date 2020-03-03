@@ -401,19 +401,17 @@ class GeometricProgram(CostedConstraintSet):
         for mi in self.m_idxs[1:]:
             if primal_exp_vals[mi].sum() > 1 + tol:
                 raise Infeasible("Primal solution violates constraint: %s is "
-                                 "greater than 1." % primal_exp_vals[mi].sum())
+                                 "greater than 1" % primal_exp_vals[mi].sum())
 
         # check dual sol #
         # note: follows dual formulation in section 3.1 of
         # http://web.mit.edu/~whoburg/www/papers/hoburg_phd_thesis.pdf
-        if not _almost_equal(self.nu_by_posy[0].sum(), 1.):
+        if not _almost_equal(self.nu_by_posy[0].sum(), 1):
             raise Infeasible("Dual variables associated with objective sum"
-                             " to %s, not 1." % self.nu_by_posy[0].sum())
+                             " to %s, not 1" % self.nu_by_posy[0].sum())
         if any(nu < 0):
             minnu = min(nu)
-            if minnu > -tol/1000.:  # HACK, see issue 528
-                print("Allowing negative dual variables up to %s." % minnu)
-            else:
+            if minnu < -tol/1000:
                 raise Infeasible("Dual solution has negative entries as"
                                  " large as %s." % minnu)
         if any(np.abs(A.T.dot(nu)) > tol):

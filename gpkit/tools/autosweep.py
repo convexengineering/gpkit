@@ -37,7 +37,7 @@ class BinarySweepTree:  # pylint: disable=too-many-instance-attributes
 
     def __init__(self, bounds, sols, sweptvar, costposy):
         if len(bounds) != 2:
-            raise ValueError("bounds must be of length 2.")
+            raise ValueError("bounds must be of length 2")
         if bounds[1] <= bounds[0]:
             raise ValueError("bounds[0] must be smaller than bounds[1].")
         self.bounds = bounds

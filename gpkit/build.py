@@ -86,7 +86,7 @@ class MosekCLI(SolverBackend):
     name = "mosek_cli"
 
     def look(self):  # pylint: disable=too-many-return-statements
-        "Looks in default install locations for a mosek before 9."
+        "Looks in default install locations for a mosek before version 9."
         already_in_path = self.run()
         if already_in_path:
             return already_in_path
@@ -156,7 +156,7 @@ class MosekConif(SolverBackend):
     name = "mosek_conif"
 
     def look(self):
-        "Attempts to import mosek, version >= 9."
+        "Attempts to import a mosek supporting exponential cones."
         try:
             log("#   Trying to import mosek...")
             import mosek

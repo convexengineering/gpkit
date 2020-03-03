@@ -9,8 +9,8 @@ y = Variable("y")
 objective = y
 
 constraints = [ExternalConstraint(x, y),
-               x <= np.pi/2.,
-               x >= np.pi/4.,
+               x <= np.pi/2,
+               x >= np.pi/4,
               ]
 
 m = Model(objective, constraints)

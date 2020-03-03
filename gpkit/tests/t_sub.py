@@ -223,7 +223,7 @@ class TestModelSubs(unittest.TestCase):
         m.substitutions.update({t_day: ("sweep", [6, 8, 9, 13])})
         sol = m.solve(verbosity=0)
         npt.assert_allclose(sol["sensitivities"]["constants"][t_day],
-                            [-1./3, -0.5, -0.6, +1], 1e-5)
+                            [-1/3, -0.5, -0.6, +1], 1e-5)
         self.assertEqual(len(sol["cost"]), 4)
         npt.assert_allclose([float(l) for l in
                              (sol(t_day) + sol(t_night))/gpkit.ureg.hours], 24)

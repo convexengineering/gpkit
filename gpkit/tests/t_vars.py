@@ -52,7 +52,7 @@ class TestVarKey(unittest.TestCase):
         # print(w >= x)  # TODO: this always prints the vector on the left
         self.assertEqual(str(3*(x + y)*z), "3·(x[:] + y[:])·z[:]")
         nni = 3
-        ii = np.tile(np.arange(1., nni+1.), a.shape[1:]+(1,)).T
+        ii = np.tile(np.arange(1, nni+1), a.shape[1:]+(1,)).T
         self.assertEqual(str(w*NomialArray(ii)/nni)[:4], "w·[[")
         self.assertEqual(str(w*NomialArray(ii)/nni)[-4:], "]]/3")
         self.assertEqual(str(NomialArray(ii)*w/nni)[:2], "[[")
@@ -221,7 +221,7 @@ class TestVectorVariable(unittest.TestCase):
 
         # test inspired by issue 137
         N = 20
-        x_arr = np.arange(0, 5., 5./N) + 1e-6
+        x_arr = np.arange(0, 5, 5/N) + 1e-6
         x = VectorVariable(N, 'x', x_arr, 'm', "Beam Location")
 
     def test_constraint_creation_units(self):
