@@ -1,6 +1,6 @@
 "GP and SP modeling package"
 from __future__ import unicode_literals, print_function
-__version__ = "0.9.1"
+__version__ = "0.9.9"
 
 from .build import build
 from ._pint import units, ureg, DimensionalityError
