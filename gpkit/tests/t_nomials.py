@@ -1,4 +1,5 @@
 """Tests for Monomial, Posynomial, and Signomial classes"""
+import sys
 import math
 import unittest
 from gpkit import Variable, Monomial, Posynomial, Signomial, SignomialsEnabled
@@ -67,7 +68,8 @@ class TestMonomial(unittest.TestCase):
         m = 5*x**2/y
         r = m.__repr__()
         self.assertEqual(type(r), str)
-        self.assertEqual(repr(m), "gpkit.Monomial(5·x²/y)")
+        if "win" not in sys.platform:
+            self.assertEqual(repr(m), "gpkit.Monomial(5·x²/y)")
 
     def test_latex(self):
         "Test latex string creation"
@@ -226,7 +228,8 @@ class TestSignomial(unittest.TestCase):
         x = Variable("x")
         y = Variable("y")
         with SignomialsEnabled():
-            self.assertEqual(str(1 - x - y**2 - 1), "1 - x - y² - 1")
+            if "win" not in sys.platform:
+                self.assertEqual(str(1 - x - y**2 - 1), "1 - x - y² - 1")
             self.assertEqual((1 - x/y**2).latex(), "-\\frac{x}{y^{2}} + 1")
             _ = hash(1 - x/y**2)
         self.assertRaises(TypeError, lambda: x-y)

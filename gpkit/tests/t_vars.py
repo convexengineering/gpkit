@@ -1,4 +1,5 @@
 """Test VarKey, Variable, VectorVariable, and ArrayVariable classes"""
+import sys
 import unittest
 import numpy as np
 from gpkit import (Monomial, NomialArray, Variable, VarKey,
@@ -36,6 +37,9 @@ class TestVarKey(unittest.TestCase):
         self.assertIsInstance(x.latex_unitstr(), str)
 
     def test_ast(self): # pylint: disable=too-many-statements
+        if "win" in sys.platform:
+            return
+
         t = Variable("t")
         u = Variable("u")
         v = Variable("v")
