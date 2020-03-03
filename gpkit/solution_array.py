@@ -214,10 +214,10 @@ def cast(function, val1, val2):
             lessdim, dimmest = sorted([val1, val2], key=lambda v: v.ndim)
             dimdelta = dimmest.ndim - lessdim.ndim
             add_axes = (slice(None),)*lessdim.ndim + (np.newaxis,)*dimdelta
+            if dimmest is val1:
+                return function(dimmest, lessdim[add_axes])
             if dimmest is val2:
                 return function(lessdim[add_axes], dimmest)
-                if dimmest is val1:
-                    return function(dimmest, lessdim[add_axes])
         return function(val1, val2)
 
 
