@@ -7,7 +7,6 @@
     >>> px = gpkit.NomialArray([1, x, x**2])
 
 """
-from __future__ import unicode_literals
 from operator import eq, le, ge, xor
 from functools import reduce  # pylint: disable=redefined-builtin
 import numpy as np
@@ -27,25 +26,14 @@ def vec_recurse(element, function, *args, **kwargs):
 def array_constraint(symbol, func):
     "Return function which creates constraints of the given operator."
     vecfunc = np.vectorize(func)
-    orig_symbol = symbol
 
-    def wrapped_func(self, other, rev=False):
+    def wrapped_func(self, other):
         "Creates array constraint from vectorized operator."
         if not isinstance(other, NomialArray):
             other = NomialArray(other)
-        if rev:
-            left, right = other, self
-            if orig_symbol == ">=":
-                symbol = "<="
-            elif orig_symbol == "<=":
-                symbol = ">="
-        else:
-            left, right = self, other
-            symbol = orig_symbol
-        result = vecfunc(left, right)
-        left = left.key if hasattr(left, "key") else left
-        right = right.key if hasattr(right, "key") else right
-        return ArrayConstraint(result, left, symbol, right)
+        result = vecfunc(self, other)
+        return ArrayConstraint(result, getattr(self, "key", self),
+                               symbol, getattr(other, "key", other))
     return wrapped_func
 
 
@@ -61,54 +49,35 @@ class NomialArray(GPkitObject, np.ndarray):
     >>> px = gpkit.NomialArray([1, x, x**2])
     """
 
-    def __mul__(self, other, rev=False):
-        astorder = (self, other)
-        if rev:
-            astorder = tuple(reversed(astorder))
+    def __mul__(self, other, *, reverse_order=False):
+        astorder = (self, other) if not reverse_order else (other, self)
         out = NomialArray(np.ndarray.__mul__(self, other))
         out.ast = ("mul", astorder)
         return out
 
-    def __div__(self, other, rev=False):
-        astorder = (self, other)
-        if rev:
-            astorder = tuple(reversed(astorder))
-        out = NomialArray(np.ndarray.__div__(self, other))
-        out.ast = ("div", astorder)
-        return out
-
-    def __truediv__(self, other, rev=False):
-        astorder = (self, other)
-        if rev:
-            astorder = tuple(reversed(astorder))
+    def __truediv__(self, other):
         out = NomialArray(np.ndarray.__truediv__(self, other))
-        out.ast = ("div", astorder)
+        out.ast = ("div", (self, other))
         return out
 
-    def __rdiv__(self, other):
-        astorder = (other, self)
+    def __rtruediv__(self, other):
         out = (np.ndarray.__mul__(self**-1, other))
-        out.ast = ("div", astorder)
+        out.ast = ("div", (other, self))
         return out
 
-    __rtruediv__ = __rdiv__
-
-    def __add__(self, other, rev=False):
-        astorder = (self, other)
-        if rev:
-            astorder = tuple(reversed(astorder))
+    def __add__(self, other, *, reverse_order=False):
+        astorder = (self, other) if not reverse_order else (other, self)
         out = (np.ndarray.__add__(self, other))
         out.ast = ("add", astorder)
         return out
 
     # pylint: disable=multiple-statements
-    def __rmul__(self, other): return self.__mul__(other, rev=True)
-    def __radd__(self, other): return self.__add__(other, rev=True)
+    def __rmul__(self, other): return self.__mul__(other, reverse_order=True)
+    def __radd__(self, other): return self.__add__(other, reverse_order=True)
 
-    def __pow__(self, expo):
-        astorder = (self, expo)
-        out = (np.ndarray.__pow__(self, expo))
-        out.ast = ("pow", astorder)
+    def __pow__(self, expo):  # pylint: disable=arguments-differ
+        out = (np.ndarray.__pow__(self, expo))  # pylint: disable=too-many-function-args
+        out.ast = ("pow", (self, expo))
         return out
 
     def __neg__(self):
@@ -120,8 +89,6 @@ class NomialArray(GPkitObject, np.ndarray):
         out = np.ndarray.__getitem__(self, idxs)
         if not getattr(out, "shape", None):
             return out
-        out = (out)
-        # print(repr(idxs))
         out.ast = ("index", (self, idxs))
         return out
 
@@ -131,11 +98,12 @@ class NomialArray(GPkitObject, np.ndarray):
             return self.parse_ast(excluded)
         if hasattr(self, "key"):
             return self.key.str_without(excluded)
-        elif not self.shape:
+        if not self.shape:
             return try_str_without(self.flatten()[0], excluded)
+
         return "[%s]" % ", ".join(
             [try_str_without(np.ndarray.__getitem__(self, i), excluded)
-             for i in range(self.shape[0])])
+             for i in range(self.shape[0])])  # pylint: disable=unsubscriptable-object
 
     def latex(self, excluded=()):
         "Returns latex representation without certain fields."
@@ -154,14 +122,13 @@ class NomialArray(GPkitObject, np.ndarray):
 
     def __array_finalize__(self, obj):
         "Finalizer. Required for objects inheriting from np.ndarray."
-        pass
 
-    def __array_wrap__(self, out_arr, context=None):
+    def __array_wrap__(self, out_arr, context=None):  # pylint: disable=arguments-differ
         """Called by numpy ufuncs.
         Special case to avoid creation of 0-dimensional arrays
         See http://docs.scipy.org/doc/numpy/user/basics.subclassing.html"""
         if out_arr.ndim:
-            return np.ndarray.__array_wrap__(self, out_arr, context)
+            return np.ndarray.__array_wrap__(self, out_arr, context)  # pylint: disable=too-many-function-args
         val = out_arr.item()
         return np.float(val) if isinstance(val, np.generic) else val
 
@@ -185,7 +152,7 @@ class NomialArray(GPkitObject, np.ndarray):
     def units(self):
         """units must have same dimensions across the entire nomial array"""
         units = None
-        for el in self.flat:
+        for el in self.flat:  # pylint: disable=not-an-iterable
             el_units = getattr(el, "units", None)
             if units is None:
                 units = el_units
@@ -194,9 +161,9 @@ class NomialArray(GPkitObject, np.ndarray):
                 raise DimensionalityError(el_units, units)
         return units
 
-    def sum(self, *args, **kwargs):
+    def sum(self, *args, **kwargs):  # pylint: disable=arguments-differ
         "Returns a sum. O(N) if no arguments are given."
-        if args or kwargs or all(l == 0 for l in self.shape):
+        if args or kwargs or not self.shape:
             return np.ndarray.sum(self, *args, **kwargs)
         hmap = NomialMap()
         hmap.units = self.units
@@ -213,9 +180,9 @@ class NomialArray(GPkitObject, np.ndarray):
         out.ast = ("sum", (self, None))
         return out
 
-    def prod(self, *args, **kwargs):
+    def prod(self, *args, **kwargs):  # pylint: disable=arguments-differ
         "Returns a product. O(N) if no arguments and only contains monomials."
-        if args or kwargs or all(dim_len == 0 for dim_len in self.shape):
+        if args or kwargs:
             return np.ndarray.prod(self, *args, **kwargs)
         c, unitpower = 1.0, 0
         exp = HashVector()

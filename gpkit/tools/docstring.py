@@ -14,8 +14,9 @@ def expected_unbounded(instance, doc):
         count = doc.count(flag)
         if count == 0:
             continue
-        elif count > 1:
+        if count > 1:
             raise ValueError("multiple instances of %s" % flag)
+
         idx = doc.index(flag) + len(flag)
         idx2 = doc[idx:].index("\n")
         try:
@@ -58,7 +59,7 @@ def expected_unbounded(instance, doc):
     return exp_unbounded
 
 
-class parse_variables(object):  # pylint:disable=invalid-name
+class parse_variables:  # pylint:disable=invalid-name
     """decorator for adding local Variables from a string.
 
     Generally called as `@parse_variables(__doc__, globals())`.
@@ -191,7 +192,7 @@ def variable_declaration(nameval, units, label, line, errorcatch=True):
                          " (separated by whitespace) were found between Value"
                          " '%s' and the Units `%s`. %s"
                          % (line, nameval[1], units, PARSETIP))
-    elif len(nameval) == 2:
+    if len(nameval) == 2:
         out = ("{0} = self.{0} = Variable('{0}', {1}, '{2}', '{3}')")
         out = out.format(nameval[0], nameval[1], units, label)
     elif len(nameval) == 1:

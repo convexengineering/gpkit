@@ -1,7 +1,6 @@
 """Defines SolutionArray class"""
-from __future__ import unicode_literals, print_function
 import re
-from collections import Iterable
+from collections.abc import Iterable
 import pickle
 import numpy as np
 from .nomials import NomialArray
@@ -70,14 +69,15 @@ def tight_table(self, _, ntightconstrs=5, tight_senss=1e-2, **kwargs):
     if not self.model:
         return []
     title = "Tightest Constraints"
-    try:
-        data = [((-float("%+6.2g" % c.relax_sensitivity), str(c)),
-                 "%+6.2g" % c.relax_sensitivity, id(c), c)
-                for c in self.model.flat()
-                if c.relax_sensitivity >= tight_senss]
-    except AttributeError:
-        print("Constraint %s had no `relax_sensitivity` attribute." % c)
-        return []
+    data = []
+    for c in self.model.flat():
+        try:
+            if c.relax_sensitivity and c.relax_sensitivity >= tight_senss:
+                data.append(((-float("%+6.2g" % c.relax_sensitivity), str(c)),
+                             "%+6.2g" % c.relax_sensitivity, id(c), c))
+        except AttributeError:
+            print("Constraint %s had no `relax_sensitivity` attribute." % c)
+            return []
     if not data:
         lines = ["No constraints had a sensitivity above %+5.1g."
                  % tight_senss]
@@ -158,10 +158,10 @@ def constraint_table(data, sortbymodel=True, showmodels=True, **_):
     fmts = ["{0:%s%s}" % (direc, L) for direc, L in zip(dirs, maxlens)]
     for i, line in enumerate(lines):
         if line[0] == ("modelname",):
-            line = [fmts[0].format(" | "), line[1]]
+            linelist = [fmts[0].format(" | "), line[1]]
         else:
-            line = [fmt.format(s) for fmt, s in zip(fmts, line)]
-        lines[i] = "".join(line).rstrip()
+            linelist = [fmt.format(s) for fmt, s in zip(fmts, line)]
+        lines[i] = "".join(linelist).rstrip()
     return lines
 
 
@@ -216,8 +216,10 @@ def reldiff(val1, val2):
                 val1 = val1_ * val1.units
         # numpy division will warn but return infs
         return (val2/val1 - 1).to("dimensionless").magnitude
-    elif val2.magnitude == 0:  # both are scalar zeroes
+
+    if val2.magnitude == 0:  # both are scalar zeroes
         return 0
+
     return np.inf  # just val1 is a scalar zero
 
 
@@ -325,13 +327,11 @@ class SolutionArray(DictOfLists):
         solvars = set(sol["variables"])
         if showvars:
             showvars = self._parse_showvars(showvars)
-            selfvars = set([k for k in showvars
-                            if k in self["variables"]])
-            solvars = set([k for k in showvars
-                           if k in sol["variables"]])
+            selfvars = {k for k in showvars if k in self["variables"]}
+            solvars = {k for k in showvars if k in sol["variables"]}
         sol_diff = {}
         for key in selfvars.intersection(solvars):
-            sol_diff[key] = 100*reldiff(self(key), sol(key))
+            sol_diff[key] = 100*reldiff(sol(key), self(key))
         lines = var_table(sol_diff, "Solution difference", sortbyvals=True,
                           valfmt="%+6.1f%%  ", vecfmt="%+6.1f%% ",
                           printunits=False, minval=min_percent,
@@ -340,7 +340,7 @@ class SolutionArray(DictOfLists):
             lines[0] += " for variables given in `showvars`"
             lines[1] += "----------------------------------"
         if len(lines) > 3:
-            lines.insert(1, "(positive means the argument is bigger)")
+            lines.insert(1, "(positive means the argument is smaller)")
         elif sol_diff:
             values = []
             for v in sol_diff.values():
@@ -364,7 +364,7 @@ class SolutionArray(DictOfLists):
                                 and val2.shape[:val1_dims] == val1.shape):
                             val1 = np.tile(val1,
                                            val2.shape[val1_dims:]+(1,)).T
-                    senss_delta[key] = val2 - val1
+                    senss_delta[key] = val1 - val2
                 elif key in sol["sensitivities"]["variables"]:
                     print("Key %s is not in this solution's sensitivities"
                           " but is in those of the argument.")
@@ -383,7 +383,7 @@ class SolutionArray(DictOfLists):
             if len(lines) > primal_lines + 3:
                 lines.insert(
                     primal_lines + 1,
-                    "(positive means the argument has a higher sensitivity)")
+                    "(positive means the argument has a lower sensitivity)")
             elif senss_delta:
                 absmaxvalue, maxvalue = 0, 0
                 for valarray in senss_delta.values():
@@ -417,7 +417,7 @@ class SolutionArray(DictOfLists):
     def pickle_prep(self):
         "After calling this, the SolutionArray is ready to pickle"
         program, model = self.program, self.model
-        self.program, self.model = None, None
+        self.program = self.model = None
         cost = self["cost"]
         self["cost"] = mag(cost)
         warnings = {}
@@ -425,7 +425,7 @@ class SolutionArray(DictOfLists):
             for wtype in self["warnings"]:
                 warnings[wtype] = self["warnings"][wtype]
                 warnarray = np.array(self["warnings"][wtype])
-                warnarray.T[1] = None  # remove pointer to exact constraint
+                warnarray.T[1] = None  # remove pointer to exact constraint  # pylint: disable=unsupported-assignment-operation
                 if len(warnarray.shape) == 2:
                     warnarray = warnarray.tolist()
                 self["warnings"][wtype] = warnarray
@@ -457,7 +457,7 @@ class SolutionArray(DictOfLists):
         for key in self.name_collision_varkeys():
             key.descr["necessarylineage"] = True
         names = {}
-        for key in (showvars or self["variables"]):
+        for key in showvars or self["variables"]:
             for k in self["variables"].keymap[key]:
                 names[k.str_without(exclude)] = k
         for key in self.name_collision_varkeys():
@@ -559,13 +559,15 @@ class SolutionArray(DictOfLists):
         "Returns NomialArray of each solution substituted into posy."
         if posy in self["variables"]:
             return self["variables"](posy)
-        elif not hasattr(posy, "sub"):
+
+        if not hasattr(posy, "sub"):
             raise ValueError("no variable '%s' found in the solution" % posy)
-        elif len(self) > 1:
+
+        if len(self) > 1:
             return NomialArray([self.atindex(i).subinto(posy)
                                 for i in range(len(self))])
-        else:
-            return posy.sub(self["variables"])
+
+        return posy.sub(self["variables"])
 
     def _parse_showvars(self, showvars):
         showvars_out = set()
@@ -770,7 +772,7 @@ def var_table(data, title, printunits=True, latex=False, rawlines=False,
             last_dim_index = len(val.shape)-1
             horiz_dim, ncols = last_dim_index, 1  # starting values
             for dim_idx, dim_size in enumerate(val.shape):
-                if dim_size >= ncols and dim_size <= maxcolumns:
+                if ncols <= dim_size <= maxcolumns:
                     horiz_dim, ncols = dim_idx, dim_size
             # align the array with horiz_dim by making it the last one
             dim_order = list(range(last_dim_index))

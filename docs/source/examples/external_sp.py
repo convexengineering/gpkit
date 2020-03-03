@@ -9,9 +9,9 @@ y = Variable("y")
 objective = y
 
 constraints = [ExternalConstraint(x, y),
-               x <= np.pi/2.,
-               x >= np.pi/4.,
+               x <= np.pi/2,
+               x >= np.pi/4,
               ]
 
 m = Model(objective, constraints)
-print(m.localsolve(verbosity=0).summary())
+print(m.localsolve(verbosity=0, x0={x: np.pi/4}).summary())

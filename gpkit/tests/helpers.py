@@ -1,13 +1,8 @@
 """Convenience classes and functions for unit testing"""
-from __future__ import print_function
 import unittest
 import sys
-import codecs
 import os
 import importlib
-
-if sys.version_info >= (3, 0):
-    reload = importlib.reload  # pylint: disable=redefined-builtin,invalid-name,no-member
 
 
 def generate_example_tests(path, testclasses, solvers=None, newtest_fn=None):
@@ -98,7 +93,7 @@ def logged_example_testcase(name, imported, path):
             if name not in imported:
                 imported[name] = importlib.import_module(name)
             else:
-                reload(imported[name])
+                importlib.reload(imported[name])
         getattr(self, name)(imported[name])
     return test
 
@@ -126,18 +121,16 @@ def run_tests(tests, xmloutput=None, verbosity=2):
         unittest.TextTestRunner(verbosity=verbosity).run(suite)
 
 
-class NullFile(object):
+class NullFile:
     "A fake file interface that does nothing"
     def write(self, string):
         "Do not write, do not pass go."
-        pass
 
     def close(self):
         "Having not written, cease."
-        pass
 
 
-class NewDefaultSolver(object):
+class NewDefaultSolver:
     "Creates an environment with a different default solver"
     def __init__(self, solver):
         self.solver = solver
@@ -155,7 +148,7 @@ class NewDefaultSolver(object):
         gpkit.settings["default_solver"] = self.prev_default_solver
 
 
-class StdoutCaptured(object):
+class StdoutCaptured:
     "Puts everything that would have printed to stdout in a log file instead"
     def __init__(self, logfilepath=None):
         self.logfilepath = logfilepath
@@ -165,12 +158,8 @@ class StdoutCaptured(object):
     def __enter__(self):
         "Capture stdout"
         self.original_stdout = sys.stdout
-        logfile = (open(self.logfilepath, mode="w")
-                   if self.logfilepath else NullFile())
-        if sys.version_info >= (3, 0):
-            sys.stdout = logfile
-        else:
-            sys.stdout = codecs.getwriter("UTF-8")(logfile)
+        sys.stdout = (open(self.logfilepath, mode="w")
+                      if self.logfilepath else NullFile())
 
     def __exit__(self, *args):
         "Return stdout"

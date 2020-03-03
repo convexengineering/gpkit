@@ -1,15 +1,11 @@
 """Test VarKey, Variable, VectorVariable, and ArrayVariable classes"""
-from __future__ import print_function
-import unittest
 import sys
+import unittest
 import numpy as np
 from gpkit import (Monomial, NomialArray, Variable, VarKey,
                    VectorVariable, ArrayVariable)
 import gpkit
 from gpkit.nomials import Variable as PlainVariable
-
-if sys.version_info >= (3, 0):
-    unicode = str  # pylint:disable=redefined-builtin,invalid-name
 
 
 class TestVarKey(unittest.TestCase):
@@ -38,9 +34,12 @@ class TestVarKey(unittest.TestCase):
         # pylint: disable=redundant-keyword-arg
         self.assertRaises(TypeError, lambda: VarKey('x', name='y'))
         self.assertIsInstance(x.latex(), str)
-        self.assertIsInstance(x.latex_unitstr(), unicode)
+        self.assertIsInstance(x.latex_unitstr(), str)
 
     def test_ast(self): # pylint: disable=too-many-statements
+        if sys.platform[:3] == "win":
+            return
+
         t = Variable("t")
         u = Variable("u")
         v = Variable("v")
@@ -50,29 +49,28 @@ class TestVarKey(unittest.TestCase):
         z = VectorVariable(3, "z")
         a = VectorVariable((3, 2), "a")
 
-        print(w >= x)
-        self.assertEqual(str(3*(x + y)*z), "3*(x[:] + y[:])*z[:]")
+        # print(w >= x)  # TODO: this always prints the vector on the left
+        self.assertEqual(str(3*(x + y)*z), "3·(x[:] + y[:])·z[:]")
         nni = 3
-        ii = np.tile(np.arange(1., nni+1.), a.shape[1:]+(1,)).T
-        self.assertEqual(str(w*NomialArray(ii)/nni)[:4], "w*[[")
+        ii = np.tile(np.arange(1, nni+1), a.shape[1:]+(1,)).T
+        self.assertEqual(str(w*NomialArray(ii)/nni)[:4], "w·[[")
         self.assertEqual(str(w*NomialArray(ii)/nni)[-4:], "]]/3")
         self.assertEqual(str(NomialArray(ii)*w/nni)[:2], "[[")
-        self.assertEqual(str(NomialArray(ii)*w/nni)[-6:], "]]*w/3")
-        self.assertEqual(str(w*ii/nni)[:4], "w*[[")
+        self.assertEqual(str(NomialArray(ii)*w/nni)[-6:], "]]·w/3")
+        self.assertEqual(str(w*ii/nni)[:4], "w·[[")
         self.assertEqual(str(w*ii/nni)[-4:], "]]/3")
-        self.assertEqual(str(w*(ii/nni))[:4], "w*[[")
+        self.assertEqual(str(w*(ii/nni))[:4], "w·[[")
         self.assertEqual(str(w*(ii/nni))[-2:], "]]")
         self.assertEqual(str(w >= (x[0]*t + x[1]*u)/v),
-                         "w >= (x[0]*t + x[1]*u)/v")
+                         "w >= (x[0]·t + x[1]·u)/v")
         self.assertEqual(str(x), "x[:]")
-        self.assertEqual(str(x*2), "x[:]*2")
-        self.assertEqual(str(2*x), "2*x[:]")
+        self.assertEqual(str(x*2), "x[:]·2")
+        self.assertEqual(str(2*x), "2·x[:]")
         self.assertEqual(str(x + 2), "x[:] + 2")
         self.assertEqual(str(2 + x), "2 + x[:]")
         self.assertEqual(str(x/2), "x[:]/2")
         self.assertEqual(str(2/x), "2/x[:]")
-        if sys.version_info <= (3, 0):
-            self.assertEqual(str(x**3), "x[:]^3")
+        self.assertEqual(str(x**3), "x[:]³")
         self.assertEqual(str(-x), "-x[:]")
         self.assertEqual(str(x/y/z), "x[:]/y[:]/z[:]")
         self.assertEqual(str(x/(y/z)), "x[:]/(y[:]/z[:])")
@@ -81,9 +79,9 @@ class TestVarKey(unittest.TestCase):
         self.assertEqual(str(x[:2]), "x[:2]")
         self.assertEqual(str(x[:]), "x[:]")
         self.assertEqual(str(x[1:]), "x[1:]")
-        self.assertEqual(str(y * [1, 2, 3]), "y[:]*[1, 2, 3]")
+        self.assertEqual(str(y * [1, 2, 3]), "y[:]·[1, 2, 3]")
         self.assertEqual(str(x[:2] == (y*[1, 2, 3])[:2]),
-                         "x[:2] = (y[:]*[1, 2, 3])[:2]")
+                         "x[:2] = (y[:]·[1, 2, 3])[:2]")
         self.assertEqual(str(y + [1, 2, 3]), "y[:] + [1, 2, 3]")
         self.assertEqual(str(x == y + [1, 2, 3]), "x[:] = y[:] + [1, 2, 3]")
         self.assertEqual(str(x >= y + [1, 2, 3]), "x[:] >= y[:] + [1, 2, 3]")
@@ -93,8 +91,7 @@ class TestVarKey(unittest.TestCase):
         gstrbefore = str(g)
         g.ast = None
         gstrafter = str(g)
-        if sys.version_info <= (3, 0):
-            self.assertEqual(gstrbefore, gstrafter)
+        self.assertEqual(gstrbefore, gstrafter)
 
     def test_eq_neq(self):
         """Test boolean equality operators"""
@@ -224,7 +221,7 @@ class TestVectorVariable(unittest.TestCase):
 
         # test inspired by issue 137
         N = 20
-        x_arr = np.arange(0, 5., 5./N) + 1e-6
+        x_arr = np.arange(0, 5, 5/N) + 1e-6
         x = VectorVariable(N, 'x', x_arr, 'm', "Beam Location")
 
     def test_constraint_creation_units(self):

@@ -1,5 +1,6 @@
 "verifies that bounds are caught through monomials"
 from gpkit import Model, parse_variables
+from gpkit.exceptions import UnboundedGP, UnknownInfeasible
 
 
 class BoundsChecking(Model):
@@ -46,11 +47,15 @@ m = BoundsChecking()
 print(m.str_without(["lineage"]))
 try:
     m.solve()
-except ValueError:
-    pass
-gp = m.gp(allow_missingbounds=True)
+except UnboundedGP:
+    gp = m.gp(allow_missingbounds=True)
 
-bpl = ", but would gain it from any of these sets of bounds: "
+try:
+    sol = gp.solve(verbosity=0)  # Errors on mosek_cli
+except UnknownInfeasible:
+    pass
+
+bpl = ", but would gain it from any of these sets: "
 assert gp.missingbounds[(m.D.key, 'lower')] == bpl + "[(%s, 'lower')]" % m.Ap
 assert gp.missingbounds[(m.nu.key, 'lower')] == bpl + "[(%s, 'lower')]" % m.Ap
 # ordering is arbitrary:

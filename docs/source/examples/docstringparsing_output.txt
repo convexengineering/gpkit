@@ -31,12 +31,12 @@ h = self.h = Variable('h', 1, 'm', 'minimum height')  # from 'h     1 [m]    min
 
 Cost
 ----
- 1.465 [m**2]
+ 1.465 [m²]
 
 Free Variables
 --------------
-A : 1.465                             [m**2] surface area
-s : [ 0.316     0.316     1        ]  [m]    side length
+A : 1.465                             [m²] surface area
+s : [ 0.316     0.316     1        ]  [m]  side length
 
 Constants
 ---------
@@ -50,7 +50,7 @@ h : +0.3   minimum height
 
 Tightest Constraints
 --------------------
-    +1 : A >= 2*(s[0]*s[1] + s[1]*s[2] + s[2]*s[0])
+    +1 : A >= 2·(s[0]·s[1] + s[1]·s[2] + s[2]·s[0])
  +0.57 : V <= s[:].prod()
   +0.3 : s[2] >= h
 

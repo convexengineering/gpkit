@@ -252,7 +252,6 @@ vars_of_interest.add(M["D"])
 print(sol.summary(vars_of_interest))
 print(sol.table(tables=["loose constraints"]))
 
-MISSION["flight segment"]["aircraft performance"]["fuel burn rate"] = (
-    MISSION.fs.aircraftp.Wburn >= 0.2*MISSION.fs.aircraftp.wing_aero.D)
+M.append(MISSION.fs.aircraftp.Wburn >= 0.2*MISSION.fs.aircraftp.wing_aero.D)
 sol = M.solve(verbosity=0)
 print(sol.diff("solution.pkl", showvars=vars_of_interest, sortbymodel=False))

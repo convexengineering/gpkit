@@ -1,14 +1,12 @@
 """Implements the GPkit interface to MOSEK (version >= 9)
    through python-based Optimizer API"""
-from __future__ import print_function
-import numpy as np
 import mosek
+import numpy as np
+from ..exceptions import (UnknownInfeasible,
+                          PrimalInfeasible, DualInfeasible)
 
-def mskoptimize(c, A, k, p_idxs, *args, **kwargs):
-    # pylint: disable=unused-argument
-    # pylint: disable-msg=too-many-locals
-    # pylint: disable-msg=too-many-statements
-    # pylint: disable-msg=too-many-branches
+def optimize(*, c, A, k, p_idxs, **kwargs):
+    # pylint: disable=too-many-locals,too-many-statements,too-many-branches
     """
     Definitions
     -----------
@@ -208,40 +206,39 @@ def mskoptimize(c, A, k, p_idxs, *args, **kwargs):
     #   Recover the solution
     #
     msk_solsta = task.getsolsta(mosek.soltype.itr)
-    if msk_solsta == mosek.solsta.optimal:
-        # recover primal variables
-        x = [0.] * m
-        task.getxxslice(mosek.soltype.itr, 0, m, x)
-        x = np.array(x)
-        # recover dual variables for log-sum-exp epigraph constraints
-        # (skip epigraph of the objective function).
-        z_duals = [0.] * (p_lse - 1)
-        task.getsuxslice(mosek.soltype.itr, m + 3*n_lse + 1,
-                         msk_nvars, z_duals)
-        z_duals = np.array(z_duals)
-        z_duals[z_duals < 0] = 0
-        # recover dual variables for the remaining user-provided constraints
-        if log_c_lin is not None:
-            aff_duals = [0.] * log_c_lin.size
-            task.getsucslice(mosek.soltype.itr, n_lse + p_lse, cur_con_idx,
-                             aff_duals)
-            aff_duals = np.array(aff_duals)
-            aff_duals[aff_duals < 0] = 0
-            # merge z_duals with aff_duals
-            merged_duals = np.zeros(len(k))
-            merged_duals[lse_posys[1:]] = z_duals
-            merged_duals[lin_posys] = aff_duals
-            merged_duals = merged_duals[1:]
-        else:
-            merged_duals = z_duals
-        # wrap things up in a dictionary
-        solution = {'status': 'optimal', 'primal': x, 'la': merged_duals}
-    elif msk_solsta == mosek.solsta.prim_infeas_cer:
-        solution = {'status': 'infeasible', 'primal': None, 'la': None}
-    elif msk_solsta == mosek.solsta.dual_infeas_cer:
-        solution = {'status': 'unbounded', 'primal': None, 'la': None}
+    if msk_solsta == mosek.solsta.prim_infeas_cer:
+        raise PrimalInfeasible()
+    if msk_solsta == mosek.solsta.dual_infeas_cer:
+        raise DualInfeasible()
+    if msk_solsta != mosek.solsta.optimal:
+        raise UnknownInfeasible("solution status: ", msk_solsta)
+
+    # recover primal variables
+    x = [0.] * m
+    task.getxxslice(mosek.soltype.itr, 0, m, x)
+    # recover dual variables for log-sum-exp epigraph constraints
+    # (skip epigraph of the objective function).
+    z_duals = [0.] * (p_lse - 1)
+    task.getsuxslice(mosek.soltype.itr, m + 3*n_lse + 1, msk_nvars, z_duals)
+    z_duals = np.array(z_duals)
+    z_duals[z_duals < 0] = 0
+    # recover dual variables for the remaining user-provided constraints
+    if log_c_lin is not None:
+        aff_duals = [0.] * log_c_lin.size
+        task.getsucslice(mosek.soltype.itr, n_lse + p_lse, cur_con_idx,
+                         aff_duals)
+        aff_duals = np.array(aff_duals)
+        aff_duals[aff_duals < 0] = 0
+        # merge z_duals with aff_duals
+        merged_duals = np.zeros(len(k))
+        merged_duals[lse_posys[1:]] = z_duals  # skipping the cost
+        merged_duals[lin_posys] = aff_duals
+        merged_duals = merged_duals[1:]
     else:
-        solution = {'status': 'unknown', 'primal': None, 'la': None}
+        merged_duals = z_duals
+    # wrap things up in a dictionary
+    solution = {"status": "optimal", "primal": np.array(x), "la": merged_duals,
+                "objective": np.exp(task.getprimalobj(mosek.soltype.itr))}
     task.__exit__(None, None, None)
     env.__exit__(None, None, None)
     return solution

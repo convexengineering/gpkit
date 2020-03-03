@@ -1,5 +1,4 @@
 "Tools for optimal fits to GP sweeps"
-from __future__ import print_function
 from time import time
 import numpy as np
 from ..small_classes import Count
@@ -8,7 +7,7 @@ from ..solution_array import SolutionArray
 from ..exceptions import InvalidGPConstraint
 
 
-class BinarySweepTree(object):  # pylint: disable=too-many-instance-attributes
+class BinarySweepTree:  # pylint: disable=too-many-instance-attributes
     """Spans a line segment. May contain two subtrees that divide the segment.
 
     Attributes
@@ -38,7 +37,7 @@ class BinarySweepTree(object):  # pylint: disable=too-many-instance-attributes
 
     def __init__(self, bounds, sols, sweptvar, costposy):
         if len(bounds) != 2:
-            raise ValueError("bounds must be of length 2.")
+            raise ValueError("bounds must be of length 2")
         if bounds[1] <= bounds[0]:
             raise ValueError("bounds[0] must be smaller than bounds[1].")
         self.bounds = bounds
@@ -172,7 +171,7 @@ class BinarySweepTree(object):  # pylint: disable=too-many-instance-attributes
             sol.program = programs[i]
 
 
-class SolutionOracle(object):
+class SolutionOracle:
     "Acts like a SolutionArray for autosweeps"
     def __init__(self, bst, sampled_at):
         self.sampled_at = sampled_at

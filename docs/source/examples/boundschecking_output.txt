@@ -8,9 +8,9 @@ Cost
 Constraints
 -----------
  F >= D + T
- D = rf*V^2*Ap
+ D = rf·V²·Ap
  Ap = nu
- T = mf*V
+ T = mf·V
  mf >= mi + mb
- mf = rf*V
+ mf = rf·V
  Fs <= mi

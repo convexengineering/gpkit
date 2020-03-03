@@ -60,7 +60,7 @@ def te_secant(var, nterm):
         E2n = np.append(E2n, E2n_add)
 
     res = 1
-    factorial_denom = 1.
+    factorial_denom = 1
     for i in range(1, nterm + 1):
         factorial_denom *= ((2*i)*(2*i-1))
         res = res + var**(2*i) * E2n[i-1] / factorial_denom
@@ -87,21 +87,21 @@ def te_tangent(var, nterm):
                                   " 15 terms")
 
     # The first 15 Bernoulli Numbers
-    B2n = np.asarray([1/6.,
-                      -1/30.,
-                      1/42.,
-                      -1/30.,
-                      5/66.,
-                      -691/2730.,
-                      7/6.,
-                      -3617/510.,
-                      43867/798.,
-                      -174611/330.,
-                      854513/138.,
-                      -236364091/2730.,
-                      8553103/6.,
-                      -23749461029/870.,
-                      8615841276005/14322.])
+    B2n = np.asarray([1/6,
+                      -1/30,
+                      1/42,
+                      -1/30,
+                      5/66,
+                      -691/2730,
+                      7/6,
+                      -3617/510,
+                      43867/798,
+                      -174611/330,
+                      854513/138,
+                      -236364091/2730,
+                      8553103/6,
+                      -23749461029/870,
+                      8615841276005/14322])
 
     res = 0
     factorial_denom = 1

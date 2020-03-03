@@ -1,9 +1,6 @@
 "global mutable variables"
-from __future__ import unicode_literals, print_function
 import os
-import sys
 from collections import defaultdict
-from six import with_metaclass
 from . import build
 
 
@@ -21,14 +18,9 @@ def load_settings(path=None, firstattempt=True):
                 # unless they're the solver list
                 if len(value) == 1 and name != "installed_solvers":
                     settings_[name] = value[0]
-                if sys.version_info >= (3, 0) and name == "installed_solvers":
-                    if "mosek" in value:
-                        value.remove("mosek")
     except IOError:
         settings_ = {"installed_solvers": [""]}
-    if (settings_["installed_solvers"] == [""]
-            or ("mosek" in settings_["installed_solvers"]
-                and "mosek_version" not in settings_)):
+    if settings_["installed_solvers"] == [""]:
         if firstattempt:
             print("Found no installed solvers, beginning a build.")
             build()
@@ -60,15 +52,9 @@ settings = load_settings()
 
 class SignomialsEnabledMeta(type):
     "Metaclass to implement falsiness for SignomialsEnabled"
+    def __bool__(cls): return cls._true  # pylint: disable=multiple-statements
 
-    def __nonzero__(cls):
-        return 1 if cls._true else 0
-
-    def __bool__(cls):
-        return cls._true
-
-
-class SignomialsEnabled(with_metaclass(SignomialsEnabledMeta)):  # pylint: disable=no-init
+class SignomialsEnabled(metaclass=SignomialsEnabledMeta):  # pylint: disable=no-init
     """Class to put up and tear down signomial support in an instance of GPkit.
 
     Example
@@ -80,16 +66,13 @@ class SignomialsEnabled(with_metaclass(SignomialsEnabledMeta)):  # pylint: disab
         >>>     constraints = [x >= 1-y]
         >>> gpkit.Model(x, constraints).localsolve()
     """
-    _true = False  # the current signomial permissions
-
-    def __enter__(self):
-        SignomialsEnabled._true = True
-
-    def __exit__(self, type_, val, traceback):
-        SignomialsEnabled._true = False
+    _true = False  # default signomial permissions
+    # pylint: disable=multiple-statements
+    def __enter__(self): SignomialsEnabled._true = True
+    def __exit__(self, type_, val, traceback): SignomialsEnabled._true = False
 
 
-class Vectorize(object):
+class Vectorize:
     """Creates an environment in which all variables are
        exended in an additional dimension.
     """
@@ -107,7 +90,7 @@ class Vectorize(object):
         Vectorize.vectorization = self.vectorization[1:]
 
 
-class NamedVariables(object):
+class NamedVariables:
     """Creates an environment in which all variables have
        a model name and num appended to their varkeys.
     """
@@ -128,10 +111,10 @@ class NamedVariables(object):
         "Enters a named environment."
         num = self.modelnums[(self.lineage, self.name)]
         self.modelnums[(self.lineage, self.name)] += 1
-        NamedVariables.lineage += ((self.name, num),)  # NOTE: Class reference
+        NamedVariables.lineage += ((self.name, num),)  # NOTE: Side effects
         return self.lineage, self.namedvars[self.lineage]
 
     def __exit__(self, type_, val, traceback):
         "Leaves a named environment."
         del self.namedvars[self.lineage]
-        NamedVariables.lineage = self.lineage[:-1]   # NOTE: Class reference
+        NamedVariables.lineage = self.lineage[:-1]   # NOTE: Side effects

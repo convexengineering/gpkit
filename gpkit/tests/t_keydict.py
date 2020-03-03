@@ -39,12 +39,6 @@ class TestKeyDict(unittest.TestCase):
         self.assertEqual(res, 5)
         self.assertIn("waldo", kd)
 
-    def test_dictlike(self):
-        kd = KeyDict()
-        kd["a string key"] = "a string value"
-        self.assertTrue(isinstance(kd, dict))
-        self.assertEqual(list(kd.keys()), ["a string key"])
-
     def test_vector(self):
         v = VectorVariable(3, "v")
         kd = KeyDict()

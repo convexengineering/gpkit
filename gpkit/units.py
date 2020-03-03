@@ -1,16 +1,16 @@
 "wraps pint in gpkit monomials"
-from __future__ import unicode_literals
-import os
 try:
     from pint import UnitRegistry, DimensionalityError
     ureg = UnitRegistry()  # pylint: disable=invalid-name
-    ureg.load_definitions(os.sep.join([os.path.dirname(__file__),
-                                       "usd_cpi.txt"]))
+    ureg.define("USD = [money] = $")
     Quantity = ureg.Quantity
 except ImportError:  # pint is not installed; provide dummy imports
-    ureg = None  # pylint: disable=invalid-name
-    Quantity = lambda a, b: None
-    DimensionalityError = None
+    ureg = DimensionalityError = None  # pylint: disable=invalid-name
+
+    class Quantity:
+        "Dummy class for if pint is not installed"
+        def __init__(self, *_):
+            pass
 
 QTY_CACHE = {}
 
@@ -22,29 +22,29 @@ def qty(unit):
     return QTY_CACHE[unit]
 
 
-class GPkitUnits(object):
+class GPkitUnits:
     "Return Monomials instead of Quantitites"
     division_cache = {}
     multiplication_cache = {}
     monomial_cache = {}
 
-    def __call__(self, arg):
+    def __call__(self, unity):
         "Returns a unit Monomial, caching the result for future retrievals"
-        from .. import Monomial
-        if arg not in self.monomial_cache:
-            self.monomial_cache[arg] = Monomial(qty(arg))
-        return self.monomial_cache[arg]
+        from . import Monomial
+        if unity not in self.monomial_cache:
+            self.monomial_cache[unity] = Monomial(qty(unity))
+        return self.monomial_cache[unity]
 
-    def __getattr__(self, attr):
-        "Turns an attribute get into a function call"
-        return self(attr)
+    __getattr__ = __call__
 
     def of_division(self, numerator, denominator):
         "Cached unit division. Requires Quantity inputs."
         if numerator.units is denominator.units:
             return 1
         key = (id(numerator.units), id(denominator.units))
-        if key not in self.division_cache:
+        try:
+            return self.division_cache[key]
+        except KeyError:
             if numerator.units and denominator.units:
                 conversion = numerator.units/denominator.units
             else:
@@ -60,7 +60,9 @@ class GPkitUnits(object):
         # TODO: qty shouldn't be necessary below
         mul_units = qty((thing1*thing2).units)
         key = id(mul_units)
-        if key not in self.multiplication_cache:
+        try:
+            return self.multiplication_cache[key]
+        except KeyError:
             try:
                 self.multiplication_cache[key] = (None, float(mul_units))
             except DimensionalityError:

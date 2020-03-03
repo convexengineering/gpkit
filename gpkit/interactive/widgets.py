@@ -1,5 +1,4 @@
 "Interactive GPkit widgets for iPython notebook"
-from __future__ import unicode_literals, print_function
 import ipywidgets as widgets
 from traitlets import link
 from ..small_scripts import is_sweepvar
@@ -78,7 +77,7 @@ def modelinteract(model, fns_of_sol, ranges=None, **solvekwargs):
             try:
                 model.solve(**solvekwargs)
             except InvalidGPConstraint:
-                # TypeError raised by as_posyslt1 in non-GP-compatible models
+                # TypeError raised by as_hmapslt1 in non-GP-compatible models
                 model.localsolve(**solvekwargs)
             if hasattr(model, "solution"):
                 sol = model.solution
@@ -96,7 +95,7 @@ def modelinteract(model, fns_of_sol, ranges=None, **solvekwargs):
     return widgets.interactive(resolve, **ranges_out)
 
 
-# pylint: disable=too-many-locals
+# pylint: disable=too-many-locals, too-many-statements
 def modelcontrolpanel(model, showvars=(), fns_of_sol=None, **solvekwargs):
     """Easy model control in IPython / Jupyter
 

@@ -1,5 +1,4 @@
 "Implements plot_sweep1d function"
-from __future__ import unicode_literals
 import matplotlib.pyplot as plt
 from ..exceptions import InvalidGPConstraint
 
@@ -38,7 +37,7 @@ def format_and_label_axes(var, posys, axes, ylabel=True):
         ax.tick_params(length=0)
         ax.spines['left'].set_visible(False)
         ax.spines['top'].set_visible(False)
-        for i in ax.spines.itervalues():
+        for i in ax.spines.values():
             i.set_linewidth(0.6)
             i.set_color("0.6")
             i.set_linestyle("dotted")
@@ -92,7 +91,7 @@ def plot_1dsweepgrid(model, sweeps, posys, origsol=None, tol=0.01, **solveargs):
         if origsubs:
             for posy, ax in zip(posys, subaxes):
                 ax.plot(origsubs[swept], origsol(posy), "ko", markersize=4)
-        format_and_label_axes(swept, posys, subaxes, ylabel=(i is 0))
+        format_and_label_axes(swept, posys, subaxes, ylabel=(i == 0))
         model.substitutions.update(origsubs)
 
     return f, axes

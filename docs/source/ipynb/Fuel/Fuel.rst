@@ -161,7 +161,7 @@ return and sprint flights.
                              p >= 1.9,
                              tau <= 0.15,
                              M_rbar >= W_tw*A*p/(24*gpkit.units.N),
-                             .92**2/2.*w*tau**2*t_cap >= I_cap * gpkit.units.m**-4 + .92*w*tau*t_cap**2,
+                             .92**2/2*w*tau**2*t_cap >= I_cap * gpkit.units.m**-4 + .92*w*tau*t_cap**2,
                              8 >= N_lift*M_rbar*A*q**2*tau/S/I_cap/sigma_max * gpkit.units.parse_expression('Pa*m**6'),
                              12 >= A*W_tw*N_lift*q**2/tau/S/t_web/sigma_maxshear,
                              nu**3.94 >= .86*p**-2.38 + .14*p**0.56,

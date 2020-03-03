@@ -1,5 +1,4 @@
 "Implements SingleEquationConstraint"
-from __future__ import unicode_literals
 from operator import le, ge, eq
 from ..small_scripts import try_str_without
 from ..repr_conventions import GPkitObject

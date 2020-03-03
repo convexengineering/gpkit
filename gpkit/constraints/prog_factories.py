@@ -1,11 +1,11 @@
 "Scripts for generating, solving and sweeping programs"
-from __future__ import unicode_literals, print_function
 from time import time
 import numpy as np
 from ..nomials import parse_subs
 from ..solution_array import SolutionArray
 from ..keydict import KeyDict
 from ..small_scripts import maybe_flatten
+from ..exceptions import Infeasible
 
 try:
     from ad import adnumber
@@ -44,14 +44,15 @@ def evaluate_linked(constants, linked):
                     v.gradients[key] = np.array(grad)
                 else:
                     v.gradients[key] = out.d(kdc[key])
-        except Exception:  # pylint: disable=broad-except
+        except Exception as exception:  # pylint: disable=broad-except
             from .. import settings
             if settings.get("ad_errors_raise", None):
                 raise
             if adnumber:
-                print("Couldn't auto-differentiate linked variable %s\n  "
-                      "(to raise the error directly for debugging purposes,"
-                      " set gpkit.settings[\"ad_errors_raise\"] to True)" % v)
+                print("Warning: skipped auto-differentiation of linked variable"
+                      " %s because %s was raised. Set `gpkit.settings"
+                      "[\"ad_errors_raise\"] = True` to raise such Exceptions"
+                      " directly.\n" % (v, repr(exception)))
             if kdc_plain is None:
                 kdc_plain = KeyDict(constants)
             constants[v] = f(kdc_plain)
@@ -61,7 +62,7 @@ def evaluate_linked(constants, linked):
                 kdc.logged_gets = set()
 
 
-def _progify_fctry(program, return_attr=None):
+def progify(program, return_attr=None):
     """Generates function that returns a program() and optionally an attribute.
 
     Arguments
@@ -71,22 +72,23 @@ def _progify_fctry(program, return_attr=None):
     return_attr: string
         attribute to return in addition to the program
     """
-    def programify(self, constants=None, **kwargs):
+    def programfn(self, constants=None, **initargs):
         "Return program version of self"
         if not constants:
             constants, _, linked = parse_subs(self.varkeys, self.substitutions)
             if linked:
                 evaluate_linked(constants, linked)
-        prog = program(self.cost, self, constants, **kwargs)
+        prog = program(self.cost, self, constants, **initargs)
+        prog.model = self
         if return_attr:
             return prog, getattr(prog, return_attr)
         return prog
-    return programify
+    return programfn
 
 
-def _solve_fctry(genfunction):
+def solvify(genfunction):
     "Returns function for making/solving/sweeping a program."
-    def solvefn(self, solver=None, verbosity=1, skipsweepfailures=False,
+    def solvefn(self, solver=None, *, verbosity=1, skipsweepfailures=False,
                 **kwargs):
         """Forms a mathematical program and attempts to solve it.
 
@@ -99,7 +101,7 @@ def _solve_fctry(genfunction):
              Is decremented by one and then passed to programs.
          skipsweepfailures : bool (default False)
              If True, when a solve errors during a sweep, skip it.
-         **kwargs : Passed to solver
+         **kwargs : Passed to solver and program.__init__
 
          Returns
          -------
@@ -113,19 +115,18 @@ def _solve_fctry(genfunction):
          """
         constants, sweep, linked = parse_subs(self.varkeys, self.substitutions)
         solution = SolutionArray()
+        solution.model = self
 
         # NOTE SIDE EFFECTS: self.program is set below
         if sweep:
             run_sweep(genfunction, self, solution, skipsweepfailures,
-                      constants, sweep, linked,
-                      solver, verbosity, **kwargs)
+                      constants, sweep, linked, solver, verbosity, **kwargs)
         else:
-            self.program, progsolve = genfunction(self)
-            result = progsolve(solver, verbosity, **kwargs)
+            self.program, progsolve = genfunction(self, **kwargs)
+            result = progsolve(solver, verbosity=verbosity, **kwargs)
             solution.append(result)
-        solution.program = self.program
-        solution.model = self
         solution.to_arrays()
+        solution.program = self.program
         if self.cost.units:
             solution["cost"] = solution["cost"] * self.cost.units
         self.solution = solution  # NOTE: SIDE EFFECTS
@@ -151,10 +152,11 @@ def run_sweep(genfunction, self, solution, skipsweepfailures,
                    for (var, grid) in zip(sweepvars, sweep_grids)}
 
     if verbosity > 0:
-        print("Solving over %i passes." % N_passes)
+        print("Sweeping over %i solves." % N_passes)
         tic = time()
 
     self.program = []
+    last_error = None
     for i in range(N_passes):
         constants.update({var: sweep_vect[i]
                           for (var, sweep_vect) in sweep_vects.items()})
@@ -164,15 +166,15 @@ def run_sweep(genfunction, self, solution, skipsweepfailures,
         program, solvefn = genfunction(self, constants)
         self.program.append(program)  # NOTE: SIDE EFFECTS
         try:
-            solution.append(solvefn(solver, verbosity-1, **kwargs))
-        except (RuntimeWarning, ValueError):
+            solution.append(solvefn(solver, verbosity=verbosity-1, **kwargs))
+        except Infeasible as e:
+            last_error = e
             if not skipsweepfailures:
-                raise RuntimeWarning("solve failed during sweep; program"
-                                     " has been saved to m.program[-1]."
-                                     " To ignore such failures, solve with"
-                                     " skipsweepfailures=True.")
+                raise RuntimeWarning(
+                    "Sweep halted! Progress saved to m.program. To skip over"
+                    " such failures, solve with skipsweepfailures=True.") from e
     if not solution:
-        raise RuntimeWarning("no sweeps solved successfully.")
+        raise RuntimeWarning("No sweeps solved successfully.") from last_error
 
     solution["sweepvariables"] = KeyDict()
     ksweep = KeyDict(sweep)

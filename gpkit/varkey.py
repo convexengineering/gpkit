@@ -1,5 +1,4 @@
 """Defines the VarKey class"""
-from __future__ import unicode_literals
 from .small_classes import HashVector, Count, qty
 from .repr_conventions import GPkitObject
 
@@ -12,7 +11,7 @@ class VarKey(GPkitObject):  # pylint:disable=too-many-instance-attributes
     name : str, VarKey, or Monomial
         Name of this Variable, or object to derive this Variable from.
 
-    **kwargs :
+    **descr :
         Any additional attributes, which become the descr attribute (a dict).
 
     Returns
@@ -23,9 +22,9 @@ class VarKey(GPkitObject):  # pylint:disable=too-many-instance-attributes
     vars_of_a_name = {}
     subscripts = ("lineage", "idx")
 
-    def __init__(self, name=None, **kwargs):
-        # NOTE: Python arg handling guarantees 'name' won't appear in kwargs
-        self.descr = kwargs
+    def __init__(self, name=None, **descr):
+        # NOTE: Python arg handling guarantees 'name' won't appear in descr
+        self.descr = descr
         self.descr["name"] = name or "\\fbox{%s}" % VarKey.unique_id()
         unitrepr = self.unitrepr or self.units
         if unitrepr in ["", "-", None]:  # dimensionless
@@ -38,8 +37,10 @@ class VarKey(GPkitObject):  # pylint:disable=too-many-instance-attributes
         self.key = self
         fullstr = self.str_without(["modelnums", "vec"])
         self.eqstr = fullstr + str(self.lineage) + self.unitrepr
-        self._hashvalue = hash(self.eqstr)
+        self.hashvalue = hash(self.eqstr)
         self.keys = set((self.name, fullstr))
+        self.hmap = NomialMap({HashVector({self: 1}): 1.0})
+        self.hmap.units = self.units
 
         if "idx" in self.descr:
             if "veckey" not in self.descr:
@@ -50,19 +51,14 @@ class VarKey(GPkitObject):  # pylint:disable=too-many-instance-attributes
                 self.keys.add(self.veckey)
                 self.keys.add(self.str_without(["idx", "modelnums"]))
 
-        self.hmap = NomialMap({HashVector({self: 1}): 1.0})
-        self.hmap.units = self.units
-
-    def __repr__(self):
-        return self.str_without()
-
     def __getstate__(self):
         "Stores varkey as its metadata dictionary, removing functions"
         state = self.descr.copy()
         state.pop("units", None)  # not necessary, but saves space
         for key, value in state.items():
             if getattr(value, "__call__", None):
-                state[key] = str(value)
+                print("`%s.%s` (function %s) will not be pickled."
+                      % (self, key, value))
         return state
 
     def __setstate__(self, state):
@@ -83,8 +79,11 @@ class VarKey(GPkitObject):  # pylint:disable=too-many-instance-attributes
                 name += "[:]"
         return name
 
-    def __getattr__(self, attr):
-        return self.descr.get(attr, None)
+    __repr__ = str_without
+
+    # pylint: disable=multiple-statements
+    def __hash__(self): return self.hashvalue
+    def __getattr__(self, attr): return self.descr.get(attr, None)
 
     @property
     def models(self):
@@ -105,15 +104,12 @@ class VarKey(GPkitObject):  # pylint:disable=too-many-instance-attributes
                                   self.lineagestr("modelnums" not in excluded))
         return name
 
-    def __hash__(self):
-        return self._hashvalue
-
     def __eq__(self, other):
         if not hasattr(other, "descr"):
             return False
         return self.eqstr == other.eqstr
 
-    def __ne__(self, other):
-        return not self == other
+    # pylint: disable=unneeded-not
+    def __ne__(self, other): return not self == other
 
 from .nomials import NomialMap  # pylint: disable=wrong-import-position
