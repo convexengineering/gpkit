@@ -92,7 +92,7 @@ def SimPleAC():
     constraints += [
         W_w_surf >= W_W_coeff2 * S,
         W_w_strc**2 >= W_W_coeff1**2/tau**2 * N_ult**2*A**3*(V_f_fuse*g*rho_f
-                                                              + W_0)*W*S,
+                                                             + W_0)*W*S,
         W_w >= W_w_surf + W_w_strc]
 
     m = Model(objective, constraints)

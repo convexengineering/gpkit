@@ -112,13 +112,14 @@ class SequentialGeometricProgram(CostedConstraintSet):
         """
         starttime = time()
         if verbosity > 0:
-            print("Using a sequence of GP solves")
-            if self._spvars:
-                print("Solving for %i variables in %i signomial constraints"
-                      % (len(self._spvars), len(self._sp_constraints)))
+            print("Starting a sequence of GP solves")
             if self.externalfn_vars:
                 print("Solving for %i variables defined by externalfns"
                       % len(self.externalfn_vars))
+            if self._spvars:
+                print(" for %i free variables" % len(self._spvars))
+                print("  in %i signomial constraints."
+                      % len(self._sp_constraints))
         self.gps, self.solver_outs = [], []  # NOTE: SIDE EFFECTS
         # if there's external functions we can't mutate the GP
         mutategp = mutategp and not self.blackboxconstraints
@@ -160,7 +161,7 @@ class SequentialGeometricProgram(CostedConstraintSet):
             if prevcost is None:
                 continue
             rel_improvement = (prevcost - cost)/(prevcost + cost)
-            if cost*(1 - EPS) > prevcost + EPS and verbosity >= 0:
+            if cost*(1 - EPS) > prevcost + EPS and verbosity > -1:
                 print("SGP not convergent: Cost rose by %.2g%% on iteration %i."
                       " Details can be found in `m.program.results` or by"
                       " solving at a higher verbosity. Note that convergence is"
@@ -181,7 +182,7 @@ class SequentialGeometricProgram(CostedConstraintSet):
                 self[0].insert(0, v.key.externalfn)  # for constraint senss
         try:  # check that there's not too much slack
             excess_slack = self.result["variables"][self.slack.key] - 1
-            if excess_slack >= EPS:
+            if excess_slack >= EPS and verbosity > -1:
                 print("Final solution let signomial constraints slacken by"
                       " %.2g%%. Calling .localsolve with a higher"
                       " `pccp_penalty` (it was %.3g this time) will reduce"
@@ -225,7 +226,6 @@ class SequentialGeometricProgram(CostedConstraintSet):
                     cs.as_hmapslt1(substitutions)  # is it gp-compatible?
                 constraints["GP constraints"].append(cs)
             except InvalidGPConstraint:
-                self._spvars.update(cs.varkeys)
                 self._sp_constraints.append(cs)
                 if use_pccp:
                     lts = [lt/self.slack for lt in cs.as_approxlts()]
@@ -236,6 +236,8 @@ class SequentialGeometricProgram(CostedConstraintSet):
                     constraint = (lt <= gt)
                     constraint.generated_by = cs
                     constraints["SP approximations"].append(constraint)
+                    self._spvars.update({vk for vk in gt.varkeys
+                                         if vk not in self.substitutions})
         if use_pccp:
             cost = self.cost * self.slack**pccp_penalty
             constraints["Slack restriction"] = (self.slack >= 1)

@@ -185,7 +185,8 @@ class GeometricProgram(CostedConstraintSet):
 
         if verbosity > 0:
             print("Using solver '%s'" % solvername)
-            print("Solving for %i variables" % len(self.varlocs))
+            print(" for %i free variables" % len(self.varlocs))
+            print("  in %i posynomial inequalities." % len(self.k))
         try:
             starttime = time()
             infeasibility, original_stdout = None, sys.stdout
