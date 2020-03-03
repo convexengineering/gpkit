@@ -51,16 +51,14 @@ def append_sub(sub, keys, constants, sweep, linkedsweep):
                     raise ValueError("cannot sweep variable %s of shape %s"
                                      " with array of shape %s; array shape"
                                      " must either be %s or %s" %
-                                     (key.str_without("model"), key.shape,
-                                      sub.shape,
+                                     (key.veckey, key.shape, sub.shape,
                                       key.shape, ("N",)+key.shape))
                 idx = (slice(None),)+key.descr["idx"]
                 value = sub[idx]
             else:
                 raise ValueError("cannot substitute array of shape %s for"
                                  " variable %s of shape %s." %
-                                 (sub.shape, key.str_without("model"),
-                                  key.shape))
+                                 (sub.shape, key.veckey, key.shape))
         if hasattr(value, "__call__") and not hasattr(value, "key"):
             linkedsweep[key] = value
         elif sweepsub:
