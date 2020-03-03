@@ -43,11 +43,11 @@ V_{f_{avail}} : [ 0.589     0.788     0.958    ]  [m³]  fuel volume available
 
 Most Sensitive
 --------------
+            V_{min} : [ -1.4        -         -      ] takeoff speed
               Range : [ +1.4      +1.1      +1.2     ] aircraft range
                TSFC : [ +1.4      +1.1      +1.2     ] thrust specific fuel consumption
 (\frac{S}{S_{wet}}) : [ +0.85     +0.71     +0.74    ] wetted area ratio
                   k : [ +0.85     +0.71     +0.74    ] form factor
-            V_{min} : [ -1.4       0         0       ] takeoff speed
 
 Tightest Constraints
 (for the last sweep only)

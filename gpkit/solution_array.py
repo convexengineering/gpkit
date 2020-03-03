@@ -1,25 +1,22 @@
 """Defines SolutionArray class"""
 import re
-from collections.abc import Iterable
+from operator import sub
+import warnings as pywarnings
 import pickle
 import numpy as np
 from .nomials import NomialArray
 from .small_classes import DictOfLists, Strings
-from .small_scripts import mag, isnan, try_str_without
+from .small_scripts import mag, try_str_without
 from .repr_conventions import unitstr, lineagestr
 
 
 CONSTRSPLITPATTERN = re.compile(r"([^*]\*[^*])|( \+ )|( >= )|( <= )|( = )")
 
 VALSTR_REPLACES = [
-    ("+nan", " - "),
+    ("+nan", " nan"),
+    ("-nan", " nan"),
+    ("nan%", "nan "),
     ("nan", " - "),
-    ("-nan", " - "),
-    ("+0 ", " 0 "),
-    ("+0.00 ", " 0.00 "),
-    ("-0.00 ", " 0.00 "),
-    ("+0.0% ", " 0.0  "),
-    ("-0.0% ", " 0.0  ")
 ]
 
 
@@ -46,7 +43,7 @@ def topsenss_filter(data, showvars, nvars=5):
     if "constants" in data.get("sensitivities", {}):
         data = data["sensitivities"]["constants"]
     mean_abs_senss = {k: np.abs(s).mean() for k, s in data.items()
-                      if not isnan(s).any()}
+                      if not np.isnan(s).any()}
     topk = [k for k, _ in sorted(mean_abs_senss.items(), key=lambda l: l[1])]
     filter_already_shown = showvars.intersection(topk)
     for k in filter_already_shown:
@@ -204,23 +201,33 @@ TABLEFNS = {"sensitivities": senss_table,
             "warnings": warnings_table,
            }
 
+def unrolled_absmax(values):
+    "From an iterable of numbers and arrays, returns the largest magnitude"
+    finalval, absmaxest = None, 0
+    for val in values:
+        absmaxval = np.abs(val).max()
+        if absmaxval >= absmaxest:
+            absmaxest, finalval = absmaxval, val
+    if getattr(finalval, "shape", None):
+        return finalval[np.argmax(np.abs(finalval))]
+    return finalval
 
-def reldiff(val1, val2):
+
+def cast(function, val1, val2):
     "Relative difference between val1 and val2 (positive if val2 is larger)"
-    if hasattr(val1, "shape") or hasattr(val2, "shape") or val1.magnitude != 0:
-        if hasattr(val1, "shape") and val1.shape:
-            val1_dims = len(val1.shape)
-            if (hasattr(val2, "shape") and val1.shape != val2.shape
-                    and val2.shape[:val1_dims] == val1.shape):
-                val1_ = np.tile(val1.magnitude, val2.shape[val1_dims:]+(1,)).T
-                val1 = val1_ * val1.units
-        # numpy division will warn but return infs
-        return (val2/val1 - 1).to("dimensionless").magnitude
-
-    if val2.magnitude == 0:  # both are scalar zeroes
-        return 0
-
-    return np.inf  # just val1 is a scalar zero
+    with pywarnings.catch_warnings():  # skip those pesky divide-by-zeros
+        pywarnings.simplefilter("ignore")
+        if hasattr(val1, "shape") and hasattr(val2, "shape"):
+            if val1.ndim == val2.ndim:
+                return function(val1, val2)
+            lessdim, dimmest = sorted([val1, val2], key=lambda v: v.ndim)
+            dimdelta = dimmest.ndim - lessdim.ndim
+            add_axes = (slice(None),)*lessdim.ndim + (np.newaxis,)*dimdelta
+            if dimmest is val1:
+                return function(dimmest, lessdim[add_axes])
+            if dimmest is val2:
+                return function(lessdim[add_axes], dimmest)
+        return function(val1, val2)
 
 
 class SolutionArray(DictOfLists):
@@ -286,133 +293,101 @@ class SolutionArray(DictOfLists):
         posy_subbed = self.subinto(posy)
         return getattr(posy_subbed, "c", posy_subbed)
 
-    def almost_equal(self, sol, reltol=1e-3, sens_abstol=0.01):
+    def almost_equal(self, other, reltol=1e-3, sens_abstol=0.01):
         "Checks for almost-equality between two solutions"
-        selfvars = set(self["variables"])
-        solvars = set(sol["variables"])
-        if selfvars != solvars:
+        svars, ovars = self["variables"], other["variables"]
+        svks, ovks = set(svars), set(ovars)
+        if svks != ovks:
             return False
-        for key in selfvars:
-            if abs(reldiff(self(key), sol(key))) >= reltol:
+        for key in svks:
+            if abs(cast(np.divide, svars[key], ovars[key]) - 1) >= reltol:
                 return False
-            if abs(sol["sensitivities"]["variables"][key]
-                   - self["sensitivities"]["variables"][key]) >= sens_abstol:
+            if abs(self["sensitivities"]["variables"][key]
+                   - other["sensitivities"]["variables"][key]) >= sens_abstol:
                 return False
         return True
 
     # pylint: disable=too-many-locals, too-many-branches, too-many-statements
-    def diff(self, sol, showvars=None, min_percent=1.0,
-             show_sensitivities=True, min_senss_delta=0.1,
-             sortbymodel=True):
+    def diff(self, other, showvars=None, *, senssdiff=True, sensstol=0.1,
+             absdiff=False, abstol=0, reldiff=True, reltol=1.0, **tableargs):
         """Outputs differences between this solution and another
 
         Arguments
         ---------
-        sol : solution or string
-            Strings are treated as paths to valid pickled solutions
-        min_percent : float
-            The smallest percentage difference in the result to consider
-        show_sensitivities : boolean
-            if True, also computer sensitivity deltas
-        min_senss_delta : float
-            The smallest absolute difference in sensitivities to consider
+        other : solution or string
+            strings will be treated as paths to pickled solutions
+        senssdiff : boolean
+            if True, show sensitivity differences
+        sensstol : float
+            the smallest sensitivity difference worth showing
+        abssdiff : boolean
+            if True, show absolute differences
+        absstol : float
+            the smallest absolute difference worth showing
+        reldiff : boolean
+            if True, show relative differences
+        reltol : float
+            the smallest relative difference worth showing
 
         Returns
         -------
         str
         """
-        if isinstance(sol, Strings):
-            sol = pickle.load(open(sol, "rb"))
-        selfvars = set(self["variables"])
-        solvars = set(sol["variables"])
+        tableargs.update({"hidebelowminval": True, "sortbyvals": True})
+        if isinstance(other, Strings):
+            other = pickle.load(open(other, "rb"))
+        svars, ovars = self["variables"], other["variables"]
+        lines = ["Solution difference",
+                 "===================",
+                 "(positive means the argument is smaller)", ""]
+        svks, ovks = set(svars), set(ovars)
         if showvars:
+            lines[0] += " for selected variables"
+            lines[1] += "======================="
             showvars = self._parse_showvars(showvars)
-            selfvars = {k for k in showvars if k in self["variables"]}
-            solvars = {k for k in showvars if k in sol["variables"]}
-        sol_diff = {}
-        for key in selfvars.intersection(solvars):
-            sol_diff[key] = 100*reldiff(sol(key), self(key))
-        lines = var_table(sol_diff, "Solution difference", sortbyvals=True,
-                          valfmt="%+6.1f%%  ", vecfmt="%+6.1f%% ",
-                          printunits=False, minval=min_percent,
-                          sortbymodel=sortbymodel)
-        if showvars:
-            lines[0] += " for variables given in `showvars`"
-            lines[1] += "----------------------------------"
-        if len(lines) > 3:
-            lines.insert(1, "(positive means the argument is smaller)")
-        elif sol_diff:
-            values = []
-            for v in sol_diff.values():
-                if hasattr(v, "shape"):
-                    values.extend(v.flatten().tolist())
-                else:
-                    values.append(v)
-            values = np.array(values)
-            i = np.unravel_index(np.argmax(np.abs(values)), values.shape)
-            lines.insert(2, "The largest difference is %g%%" % values[i])
-
-        if show_sensitivities:
-            senss_delta = {}
-            for key in selfvars.intersection(solvars):
-                if key in sol["sensitivities"]["variables"]:
-                    val1 = self["sensitivities"]["variables"][key]
-                    val2 = sol["sensitivities"]["variables"][key]
-                    if hasattr(val1, "shape") and val1.shape:
-                        val1_dims = len(val1.shape)
-                        if (hasattr(val2, "shape") and val1.shape != val2.shape
-                                and val2.shape[:val1_dims] == val1.shape):
-                            val1 = np.tile(val1,
-                                           val2.shape[val1_dims:]+(1,)).T
-                    senss_delta[key] = val1 - val2
-                elif key in sol["sensitivities"]["variables"]:
-                    print("Key %s is not in this solution's sensitivities"
-                          " but is in those of the argument.")
-                else:  # for variables that just aren't in any constraints
-                    senss_delta[key] = 0
-
-            primal_lines = len(lines)
-            lines += var_table(senss_delta, "Solution sensitivity delta",
-                               sortbyvals=True,
-                               valfmt="%+-6.2f  ", vecfmt="%+-6.2f",
-                               printunits=False, minval=min_senss_delta,
-                               sortbymodel=sortbymodel)
-            if showvars:
-                lines[primal_lines] += " for variables given in `showvars`"
-                lines[primal_lines + 1] += "----------------------------------"
-            if len(lines) > primal_lines + 3:
-                lines.insert(
-                    primal_lines + 1,
-                    "(positive means the argument has a lower sensitivity)")
-            elif senss_delta:
-                absmaxvalue, maxvalue = 0, 0
-                for valarray in senss_delta.values():
-                    if not getattr(valarray, "shape", None):
-                        value = valarray
-                    else:
-                        flatvalarray = valarray.flatten()
-                        value = flatvalarray[np.argmax(np.abs(valarray))]
-                    absvalue = abs(value)
-                    if absvalue > absmaxvalue:
-                        maxvalue = value
-                        absmaxvalue = absvalue
-                lines.insert(
-                    primal_lines + 2,
-                    "The largest sensitivity delta is %+g" % maxvalue)
-
-        if selfvars-solvars:
+            svks = {k for k in showvars if k in svars}
+            ovks = {k for k in showvars if k in ovars}
+        if svks - ovks:
             lines.append("Variable(s) of this solution"
                          " which are not in the argument:")
-            lines.append("\n".join("  %s" % key for key in selfvars-solvars))
+            lines.append("\n".join("  %s" % key for key in svks - ovks))
             lines.append("")
-        if solvars-selfvars:
+        if ovks - svks:
             lines.append("Variable(s) of the argument"
                          " which are not in this solution:")
-            lines.append("\n".join("  %s" % key for key in solvars-selfvars))
+            lines.append("\n".join("  %s" % key for key in ovks - svks))
             lines.append("")
-
-        out = "\n".join(lines)
-        return out
+        sharedvks = svks.intersection(ovks)
+        # relative difference #
+        if reldiff:
+            rel_diff = {vk: 100*(cast(np.divide, svars[vk], ovars[vk]) - 1)
+                        for vk in sharedvks}
+            lines += var_table(rel_diff, "Relative differences >%g%%" % reltol,
+                               valfmt="%+.1f%%  ", vecfmt="%+6.1f%% ",
+                               minval=reltol, printunits=False, **tableargs)
+            if lines[-2][:10] == "-"*10:  # nothing larger than sensstol
+                lines.insert(-1, ("The largest is %g%%"
+                                  % unrolled_absmax(rel_diff.values())))
+        # absolute difference #
+        if absdiff:
+            abs_diff = {vk: cast(sub, svars[vk], ovars[vk]) for vk in sharedvks}
+            lines += var_table(abs_diff, "Absolute differences >%g" % abstol,
+                               valfmt="%+.2g", vecfmt="%+8.2g",
+                               minval=abstol, **tableargs)
+        # sensitivity difference #
+        if senssdiff:
+            ssenss = self["sensitivities"]["variables"]
+            osenss = other["sensitivities"]["variables"]
+            senss_delta = {vk: cast(sub, ssenss.get(vk, 0), osenss.get(vk, 0))
+                           for vk in svks.intersection(ovks)}
+            title = "Sensitivity differences >%g" % sensstol
+            lines += var_table(senss_delta, title,
+                               valfmt="%+-.2f  ", vecfmt="%+-6.2f",
+                               minval=sensstol, printunits=False, **tableargs)
+            if lines[-2][:10] == "-"*10:  # nothing larger than sensstol
+                lines.insert(-1, ("The largest is %+g"
+                                  % unrolled_absmax(senss_delta.values())))
+        return "\n".join(lines)
 
     def pickle_prep(self):
         "After calling this, the SolutionArray is ready to pickle"
@@ -515,8 +490,7 @@ class SolutionArray(DictOfLists):
                 f.write(str(self.model))
             f.write(self.table(**kwargs))
 
-    def savecsv(self, showvars=None, filename="solution.csv", valcols=5,
-                **kwargs):
+    def savecsv(self, showvars=None, filename="solution.csv", valcols=5):
         "Saves primal solution as a CSV sorted by modelname, like the tables."
         data = self["variables"]
         if showvars:
@@ -536,7 +510,7 @@ class SolutionArray(DictOfLists):
             valcols = 1
         if maxspan < valcols:
             valcols = maxspan
-        lines = var_table(data, "", rawlines=True, maxcolumns=valcols, **kwargs)
+        lines = var_table(data, "", rawlines=True, maxcolumns=valcols)
         with open(filename, "w") as f:
             f.write("Model Name,Variable Name,Value(s)" + ","*valcols
                     + "Units,Description\n")
@@ -723,20 +697,17 @@ def var_table(data, title, printunits=True, latex=False, rawlines=False,
         return []
     decorated, models = [], set()
     for i, (k, v) in enumerate(data.items()):
-        v_arr = np.array([v])
-        notnan = ~isnan(v_arr)
-        if notnan.any() and np.sum(np.abs(v_arr[notnan])) >= minval:
-            if minval and hidebelowminval and len(notnan.shape) > 1:
-                less_than_min = np.abs(v) <= minval
-                v[np.logical_and(~isnan(v), less_than_min)] = 0
+        if np.nanmax(np.abs(v)) > minval:
+            if minval and hidebelowminval and getattr(v, "shape", None):
+                v[np.abs(v) <= minval] = np.nan
             model = lineagestr(k.lineage) if sortbymodel else ""
             models.add(model)
-            b = isinstance(v, Iterable) and bool(v.shape)
+            b = bool(getattr(v, "shape", None))
             s = k.str_without(("lineage", "vec"))
             if not sortbyvals:
                 decorated.append((model, b, (varfmt % s), i, k, v))
             else:  # for consistent sorting, add small offset to negative vals
-                val = np.mean(np.abs(v)) - (1e-9 if np.mean(v) < 0 else 0)
+                val = np.nanmean(np.abs(v)) - (1e-9 if np.nanmean(v) < 0 else 0)
                 sort = (float("%.4g" % -val), k.name)
                 decorated.append((model, sort, b, (varfmt % s), i, k, v))
     if included_models:
