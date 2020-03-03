@@ -1,7 +1,7 @@
 """Defines SolutionArray class"""
 import re
 from operator import sub
-import warnings
+import warnings as pywarnings
 import pickle
 import numpy as np
 from .nomials import NomialArray
@@ -208,9 +208,11 @@ TABLEFNS = {"sensitivities": senss_table,
 
 def cast(function, val1, val2):
     "Relative difference between val1 and val2 (positive if val2 is larger)"
-    with warnings.catch_warnings():  # skip those pesky divide-by-zeros
-        warnings.simplefilter("ignore")
-        if getattr(val1, "shape", None) != getattr(val2, "shape", None):
+    with pywarnings.catch_warnings():  # skip those pesky divide-by-zeros
+        pywarnings.simplefilter("ignore")
+        if hasattr(val1, "shape") and hasattr(val2, "shape"):
+            if val1.shape == val2.shape:
+                return function(val1, val2)
             lessdim, dimmest = sorted([val1, val2], key=lambda v: v.ndim)
             dimdelta = dimmest.ndim - lessdim.ndim
             add_axes = (slice(None),)*lessdim.ndim + (np.newaxis,)*dimdelta
@@ -409,10 +411,10 @@ class SolutionArray(DictOfLists):
         self.program = self.model = None
         cost = self["cost"]
         self["cost"] = mag(cost)
-        solwarnings = {}
+        warnings = {}
         if "warnings" in self:
             for wtype in self["warnings"]:
-                solwarnings[wtype] = self["warnings"][wtype]
+                warnings[wtype] = self["warnings"][wtype]
                 warnarray = np.array(self["warnings"][wtype])
                 warnarray.T[1] = None  # remove pointer to exact constraint  # pylint: disable=unsupported-assignment-operation
                 if len(warnarray.shape) == 2:
@@ -434,9 +436,9 @@ class SolutionArray(DictOfLists):
         >>> import pickle
         >>> pickle.load(open("solution.pkl"))
         """
-        program, model, cost, solwarnings = self.pickle_prep()
+        program, model, cost, warnings = self.pickle_prep()
         pickle.dump(self, open(filename, "wb"), protocol=1)
-        self["cost"], self["warnings"] = cost, solwarnings
+        self["cost"], self["warnings"] = cost, warnings
         self.program, self.model = program, model
 
     def varnames(self, showvars, exclude):
