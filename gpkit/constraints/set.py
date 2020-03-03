@@ -86,6 +86,10 @@ class ConstraintSet(list, GPkitObject):
                     del self[i].substitutions
                     del self[i].bounded
                     del self[i].meq_bounded
+                    # TODO, speedup: make constraintset more and more a list;
+                    #   don't turn every sub-element into its own dang set.
+                    #   keep a flattened list of those with hmapslt1,
+                    #   process_result, and Thats It.
         if substitutions:
             self.substitutions.update(substitutions)
         updated_veckeys = False  # vector subs need to find each indexed varkey

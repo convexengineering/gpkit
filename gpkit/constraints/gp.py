@@ -138,6 +138,7 @@ class GeometricProgram(CostedConstraintSet):
 
     def gen(self):
         "Generates nomial and solve data (A, p_idxs) from posynomials"
+        # TODO, speedup: make these lazy lists and get rid of varlocs
         self.exps = sum((list(hmap.keys()) for hmap in self.hmaps), [])
         self.cs = sum((list(hmap.values()) for hmap in self.hmaps), [])
         self.varkeys = self.varlocs = defaultdict(list)
