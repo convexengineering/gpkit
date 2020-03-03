@@ -1,6 +1,5 @@
 """Defines SolutionArray class"""
 import re
-from collections.abc import Iterable
 from operator import sub
 import warnings
 import pickle
@@ -207,21 +206,19 @@ TABLEFNS = {"sensitivities": senss_table,
            }
 
 
-def cast(fn, val1, val2):
+def cast(function, val1, val2):
     "Relative difference between val1 and val2 (positive if val2 is larger)"
     with warnings.catch_warnings():  # skip those pesky divide-by-zeros
         warnings.simplefilter("ignore")
-        if not hasattr(val1, "shape") or not hasattr(val2, "shape"):
-            return fn(val1, val2)
-        if val1.shape == val2.shape:
-            return fn(val1, val2)
-        lessdim, dimmest  = sorted([val1, val2], key=lambda v: v.ndim)
-        dimdelta = dimmest.ndim - lessdim.ndim
-        add_axes = (slice(None),)*lessdim.ndim + (np.newaxis,)*dimdelta
-        if dimmest is val2:
-            return fn(lessdim[add_axes], dimmest)
-        elif dimmest is val1:
-            return fn(dimmest, lessdim[add_axes])
+        if getattr(val1, "shape", None) != getattr(val2, "shape", None):
+            lessdim, dimmest = sorted([val1, val2], key=lambda v: v.ndim)
+            dimdelta = dimmest.ndim - lessdim.ndim
+            add_axes = (slice(None),)*lessdim.ndim + (np.newaxis,)*dimdelta
+            if dimmest is val2:
+                return function(lessdim[add_axes], dimmest)
+                if dimmest is val1:
+                    return function(dimmest, lessdim[add_axes])
+        return function(val1, val2)
 
 
 class SolutionArray(DictOfLists):
@@ -412,10 +409,10 @@ class SolutionArray(DictOfLists):
         self.program = self.model = None
         cost = self["cost"]
         self["cost"] = mag(cost)
-        warnings = {}
+        solwarnings = {}
         if "warnings" in self:
             for wtype in self["warnings"]:
-                warnings[wtype] = self["warnings"][wtype]
+                solwarnings[wtype] = self["warnings"][wtype]
                 warnarray = np.array(self["warnings"][wtype])
                 warnarray.T[1] = None  # remove pointer to exact constraint  # pylint: disable=unsupported-assignment-operation
                 if len(warnarray.shape) == 2:
@@ -437,9 +434,9 @@ class SolutionArray(DictOfLists):
         >>> import pickle
         >>> pickle.load(open("solution.pkl"))
         """
-        program, model, cost, warnings = self.pickle_prep()
+        program, model, cost, solwarnings = self.pickle_prep()
         pickle.dump(self, open(filename, "wb"), protocol=1)
-        self["cost"], self["warnings"] = cost, warnings
+        self["cost"], self["warnings"] = cost, solwarnings
         self.program, self.model = program, model
 
     def varnames(self, showvars, exclude):
