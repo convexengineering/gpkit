@@ -5,15 +5,16 @@ Cost
 
 Warnings
 ========
-Unexpectedly Loose Constraints
-------------------------------
-| for sweep 0 |
+Unexpectedly Loose Constraints in sweep 0
+-----------------------------------------
 0.9585 >= 0.9187 : V_{f_{avail}} >= V_f
 
-| for sweep 1 |
+Unexpectedly Loose Constraints in sweep 1
+-----------------------------------------
 0.9585 >= 0.9187 : V_{f_{avail}} >= V_f
 
-| for sweep 2 |
+Unexpectedly Loose Constraints in sweep 2
+-----------------------------------------
 0.9585 >= 0.9187 : V_{f_{avail}} >= V_f
 
 Sweep Variables
@@ -49,9 +50,8 @@ Most Sensitive
 (\frac{S}{S_{wet}}) : [ +0.85     +0.71     +0.74    ] wetted area ratio
                   k : [ +0.85     +0.71     +0.74    ] form factor
 
-Tightest Constraints
-(for the last sweep only)
---------------------
+Tightest Constraints in last sweep
+----------------------------------
   +1.2 : C_D >= (CDA0)/S + k·C_f·(\frac{S}{S_{wet}}) + C_L²/(π·A·e)
   +1.2 : D >= 0.5·\rho·S·C_D·V²
   +1.2 : T_{flight} >= Range/V

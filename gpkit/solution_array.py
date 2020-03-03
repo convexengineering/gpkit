@@ -63,11 +63,15 @@ def insenss_table(data, _, maxval=0.1, **kwargs):
 
 def tight_table(self, _, ntightconstrs=5, tight_senss=1e-2, **kwargs):
     "Return constraint tightness lines"
-    if not self.model:
+    if self.program is None:
         return []
+    program = self.program
     title = "Tightest Constraints"
+    if "sweepvariables" in self:
+        program = program[-1]
+        title += " in last sweep"
     data = []
-    for c in self.model.flat():
+    for c in program.flat():
         try:
             if c.relax_sensitivity and c.relax_sensitivity >= tight_senss:
                 data.append(((-float("%+6.2g" % c.relax_sensitivity), str(c)),
@@ -75,34 +79,25 @@ def tight_table(self, _, ntightconstrs=5, tight_senss=1e-2, **kwargs):
         except AttributeError:
             print("Constraint %s had no `relax_sensitivity` attribute." % c)
             return []
-    if not data:
-        lines = ["No constraints had a sensitivity above %+5.1g."
-                 % tight_senss]
-    else:
-        data = sorted(data)[:ntightconstrs]
-        lines = constraint_table(data, **kwargs)
-    lines = [title] + ["-"*len(title)] + lines + [""]
-    if "sweepvariables" in self:
-        lines.insert(1, "(for the last sweep only)")
-    return lines
-
+    data = sorted(data)[:ntightconstrs]
+    return constraint_table(data, title, **kwargs)
 
 def loose_table(self, _, min_senss=1e-5, **kwargs):
     "Return constraint tightness lines"
-    if not self.model:
+    if self.program is None:
         return []
-    title = "All Loose Constraints"
-    data = [(0, "", c) for c in self.model.flat()
+    program = self.program
+    title = "Constraints with sensitivity below %+g" % min_senss
+    if "sweepvariables" in self:
+        program = program[-1]
+        title += " in last sweep"
+    data = [(0, "", c) for c in program.flat()
             if c.relax_sensitivity <= min_senss]
-    if not data:
-        lines = ["No constraints had a sensitivity below %+6.2g." % min_senss]
-    else:
-        lines = constraint_table(data, **kwargs)
-    return [title] + ["-"*len(title)] + lines + [""]
+    return constraint_table(data, title, **kwargs)
 
 
 # pylint: disable=too-many-branches,too-many-locals,too-many-statements
-def constraint_table(data, sortbymodel=True, showmodels=True, **_):
+def constraint_table(data, title, sortbymodel=True, showmodels=True, **_):
     "Creates lines for tables where the right side is a constraint."
     excluded = ("units", "unnecessary lineage")
     if not showmodels:
@@ -148,6 +143,8 @@ def constraint_table(data, sortbymodel=True, showmodels=True, **_):
         constraintlines.append(line)
         lines += [(openingstr + " : ", constraintlines[0])]
         lines += [("", l) for l in constraintlines[1:]]
+    if not lines:
+        lines = [("", "(none)")]
     maxlens = np.max([list(map(len, line)) for line in lines
                       if line[0] != ("modelname",)], axis=0)
     dirs = [">", "<"]  # we'll check lengths before using zip
@@ -159,7 +156,7 @@ def constraint_table(data, sortbymodel=True, showmodels=True, **_):
         else:
             linelist = [fmt.format(s) for fmt, s in zip(fmts, line)]
         lines[i] = "".join(linelist).rstrip()
-    return lines
+    return [title] + ["-"*len(title)] + lines + [""]
 
 
 def warnings_table(self, _, **kwargs):
@@ -169,27 +166,28 @@ def warnings_table(self, _, **kwargs):
     if "warnings" not in self or not self["warnings"]:
         return []
     for wtype in self["warnings"]:
-        lines += [wtype] + ["-"*len(wtype)]
         data_vec = self["warnings"][wtype]
         if not hasattr(data_vec, "shape"):
             data_vec = [data_vec]
         for i, data in enumerate(data_vec):
+            title = wtype
             if len(data_vec) > 1:
-                lines += ["| for sweep %i |" % i]
+                title += " in sweep %i" % i
             if wtype == "Unexpectedly Tight Constraints" and data[0][1]:
                 data = [(-int(1e5*c.relax_sensitivity),
                          "%+6.2g" % c.relax_sensitivity, id(c), c)
                         for _, c in data]
-                lines += constraint_table(data, **kwargs)
+                lines += constraint_table(data, title, **kwargs)
             elif wtype == "Unexpectedly Loose Constraints" and data[0][1]:
                 data = [(-int(1e5*c.rel_diff),
                          "%.4g %s %.4g" % c.tightvalues, id(c), c)
                         for _, c in data]
-                lines += constraint_table(data, **kwargs)
+                lines += constraint_table(data, title, **kwargs)
             else:
+                lines += [title] + ["-"*len(wtype)]
                 for msg, _ in data:
                     lines += [msg, ""]
-            lines += [""]
+                lines += [""]
     return lines
 
 
@@ -261,8 +259,7 @@ class SolutionArray(DictOfLists):
     >>> senss.append(sol["sensitivities"]["variables"]["x_{min}"])
     >>> assert all(np.array(senss) == 1)
     """
-    program = None
-    model = None
+    program = model = None
     _name_collision_varkeys = None
     table_titles = {"sweepvariables": "Sweep Variables",
                     "freevariables": "Free Variables",
@@ -374,6 +371,9 @@ class SolutionArray(DictOfLists):
             lines += var_table(abs_diff, "Absolute differences >%g" % abstol,
                                valfmt="%+.2g", vecfmt="%+8.2g",
                                minval=abstol, **tableargs)
+            if lines[-2][:10] == "-"*10:  # nothing larger than sensstol
+                lines.insert(-1, ("The largest is %+g"
+                                  % unrolled_absmax(abs_diff.values())))
         # sensitivity difference #
         if senssdiff:
             ssenss = self["sensitivities"]["variables"]
@@ -389,24 +389,7 @@ class SolutionArray(DictOfLists):
                                   % unrolled_absmax(senss_delta.values())))
         return "\n".join(lines)
 
-    def pickle_prep(self):
-        "After calling this, the SolutionArray is ready to pickle"
-        program, model = self.program, self.model
-        self.program = self.model = None
-        cost = self["cost"]
-        self["cost"] = mag(cost)
-        warnings = {}
-        if "warnings" in self:
-            for wtype in self["warnings"]:
-                warnings[wtype] = self["warnings"][wtype]
-                warnarray = np.array(self["warnings"][wtype])
-                warnarray.T[1] = None  # remove pointer to exact constraint  # pylint: disable=unsupported-assignment-operation
-                if len(warnarray.shape) == 2:
-                    warnarray = warnarray.tolist()
-                self["warnings"][wtype] = warnarray
-        return program, model, cost, warnings
-
-    def save(self, filename="solution.pkl"):
+    def save(self, filename="solution.pkl", **pickleargs):
         """Pickles the solution and saves it to a file.
 
         The saved solution is identical except for two things:
@@ -420,10 +403,11 @@ class SolutionArray(DictOfLists):
         >>> import pickle
         >>> pickle.load(open("solution.pkl"))
         """
-        program, model, cost, warnings = self.pickle_prep()
-        pickle.dump(self, open(filename, "wb"), protocol=1)
-        self["cost"], self["warnings"] = cost, warnings
-        self.program, self.model = program, model
+        pickle.dump(self, open(filename, "wb"), **pickleargs)
+
+    def __getstate__(self):
+        "Pickle prep; returns None so other __getstates__ are called"
+        self.model = str(self.model)
 
     def varnames(self, showvars, exclude):
         "Returns list of variables, optionally with minimal unique names"
@@ -486,7 +470,7 @@ class SolutionArray(DictOfLists):
     def savetxt(self, filename="solution.txt", printmodel=True, **kwargs):
         "Saves solution table as a text file"
         with open(filename, "w") as f:
-            if printmodel and self.model:
+            if printmodel:
                 f.write(str(self.model))
             f.write(self.table(**kwargs))
 

@@ -158,17 +158,7 @@ class BinarySweepTree:  # pylint: disable=too-many-instance-attributes
             >>> pickle.load(open("autosweep.p"))
         """
         import pickle
-        programs = []
-        costs = []
-        for sol in self.sollist:
-            programs.append(sol.program)
-            sol.program = None
-            costs.append(sol["cost"])
-            sol["cost"] = mag(sol["cost"])
         pickle.dump(self, open(filename, "wb"))
-        for i, sol in enumerate(self.sollist):
-            sol["cost"] = costs[i]
-            sol.program = programs[i]
 
 
 class SolutionOracle:

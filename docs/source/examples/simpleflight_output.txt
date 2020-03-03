@@ -78,9 +78,8 @@ Most Sensitive
 (\frac{S}{S_{wet}}) : [ +0.56     +0.63     +0.45     +0.54    ] wetted area ratio
                   k : [ +0.56     +0.63     +0.45     +0.54    ] form factor
 
-Tightest Constraints
-(for the last sweep only)
---------------------
+Tightest Constraints in last sweep
+----------------------------------
     +1 : C_D >= (CDA0)/S + k·C_f·(\frac{S}{S_{wet}}) + C_L²/(π·A·e)
     +1 : D >= 0.5·\rho·S·C_D·V²
     +1 : W >= W_0 + W_w

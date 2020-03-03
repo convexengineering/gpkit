@@ -115,7 +115,6 @@ def solvify(genfunction):
          """
         constants, sweep, linked = parse_subs(self.varkeys, self.substitutions)
         solution = SolutionArray()
-        solution.model = self
 
         # NOTE SIDE EFFECTS: self.program is set below
         if sweep:

@@ -94,9 +94,9 @@ Tightest Constraints
        | Aircraft.Wing
  +0.43 : .W >= S·.rho
 
-All Loose Constraints
----------------------
-No constraints had a sensitivity below +1e-05.
+Constraints with sensitivity below +1e-05
+-----------------------------------------
+(none)
 
 Solution difference for selected variables
 ==========================================

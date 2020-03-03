@@ -6,12 +6,12 @@ from gpkit import (Model, settings, VectorVariable, Variable,
                    SignomialsEnabled, ArrayVariable, SignomialEquality)
 from gpkit.constraints.bounded import Bounded
 from gpkit.small_classes import CootMatrix
-from gpkit.exceptions import InvalidGPConstraint
 from gpkit import NamedVariables, units, parse_variables
 from gpkit.constraints.relax import ConstraintsRelaxed
 from gpkit.constraints.relax import ConstraintsRelaxedEqually
 from gpkit.constraints.relax import ConstantsRelaxed
 from gpkit.exceptions import (UnknownInfeasible,
+                              InvalidGPConstraint, InvalidSGP,
                               PrimalInfeasible, DualInfeasible, UnboundedGP)
 
 
@@ -386,8 +386,10 @@ class TestSP(unittest.TestCase):
 
         with SignomialsEnabled():
             m = Model(x, [x + z >= y])
-        with self.assertRaises(UnboundedGP):
+        with self.assertRaises(InvalidSGP):
             m.localsolve(verbosity=0, solver=self.solver)
+        with self.assertRaises(UnboundedGP):
+            m.solve(verbosity=0, solver=self.solver)
 
         with SignomialsEnabled():
             m = Model(x, [x + y >= z])
@@ -588,7 +590,7 @@ class TestSP(unittest.TestCase):
             y = Variable("y")
             J = 0.01*((x - 1)**2 + (y - 1)**2) + (x*y - 1)**2
             m = Model(J)
-            with self.assertRaises(TypeError):
+            with self.assertRaises(InvalidSGP):
                 m.localsolve(verbosity=0, solver=self.solver)
 
     def test_partial_sub_signomial(self):
@@ -607,10 +609,10 @@ class TestSP(unittest.TestCase):
         c = Variable("c")
         y = Variable("y")
         m = Model(x, [y >= 1 + c*x, y <= 0.5], {c: -1})
-        with self.assertRaises(RuntimeWarning):
+        with self.assertRaises(InvalidGPConstraint):
             with SignomialsEnabled():
                 m.gp()
-        with self.assertRaises(RuntimeWarning):
+        with self.assertRaises(InvalidSGP):
             m.localsolve(solver=self.solver)
 
     def test_reassigned_constant_cost(self):

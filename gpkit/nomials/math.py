@@ -486,8 +486,8 @@ class PosynomialInequality(ScalarSingleEquationConstraint):
             hmap = self._simplify_posy_ineq(hmap, self.pmap, fixed)
             if hmap is not None:
                 if any(c <= 0 for c in hmap.values()):
-                    raise RuntimeWarning("'%s' became Signomial after"
-                                         " substituting %s" % (self, fixed))
+                    raise InvalidGPConstraint("'%s' became Signomial after sub"
+                                              "stituting %s" % (self, fixed))
                 hmap.parent = self
                 out.append(hmap)
         return out
