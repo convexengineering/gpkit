@@ -210,7 +210,7 @@ class TestExamples(unittest.TestCase):
                 sol_rat = mag(sol["variables"][key])/freevarcheck[key]
                 self.assertTrue(abs(1-sol_rat) < 1e-2)
             for key in senscheck:
-                sol_rat = sol["sensitivities"]["constants"][key]/senscheck[key]
+                sol_rat = sol["sensitivities"]["variables"][key]/senscheck[key]
                 self.assertTrue(abs(1-sol_rat) < 1e-2)
 
     def test_relaxation(self, example):

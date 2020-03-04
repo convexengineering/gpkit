@@ -139,11 +139,8 @@ class BinarySweepTree:  # pylint: disable=too-many-instance-attributes
         "Returns a solution array of all the solutions in an autosweep"
         solution = SolutionArray()
         for sol in self.sollist:
-            solution.append(sol.program.result)
+            solution.append(sol)
         solution.to_arrays()
-        units = getattr(self.sols[0]["cost"], "units", None)
-        if units:
-            solution["cost"] = solution["cost"] * units
         return solution
 
     def save(self, filename="autosweep.p"):
@@ -158,17 +155,7 @@ class BinarySweepTree:  # pylint: disable=too-many-instance-attributes
             >>> pickle.load(open("autosweep.p"))
         """
         import pickle
-        programs = []
-        costs = []
-        for sol in self.sollist:
-            programs.append(sol.program)
-            sol.program = None
-            costs.append(sol["cost"])
-            sol["cost"] = mag(sol["cost"])
         pickle.dump(self, open(filename, "wb"))
-        for i, sol in enumerate(self.sollist):
-            sol["cost"] = costs[i]
-            sol.program = programs[i]
 
 
 class SolutionOracle:
@@ -247,7 +234,8 @@ def autosweep_1d(model, logtol, sweepvar, bounds, **solvekwargs):
     for bound in bounds:
         model.substitutions.update({sweepvar: bound})
         try:
-            firstsols.append(model.solve(**solvekwargs))
+            model.solve(**solvekwargs)
+            firstsols.append(model.program.result)
         except InvalidGPConstraint:
             raise InvalidGPConstraint("only GPs can be autoswept.")
         sols()
@@ -270,7 +258,8 @@ def recurse_splits(model, bst, variable, logtol, solvekwargs, sols):
     tol = (ub-lb)/2.0
     if tol >= logtol:
         model.substitutions.update({variable: x})
-        bst.add_split(x, model.solve(**solvekwargs))
+        model.solve(**solvekwargs)
+        bst.add_split(x, model.program.result)
         sols()
         tols = [recurse_splits(model, split, variable, logtol, solvekwargs,
                                sols)
@@ -285,7 +274,7 @@ def get_tol(costs, bounds, sols, variable):  # pylint: disable=too-many-locals
     "Gets the intersection point and corresponding bounds from two solutions."
     y0, y1 = costs
     x0, x1 = np.log(bounds)
-    s0, s1 = [sol["sensitivities"]["constants"][variable] for sol in sols]
+    s0, s1 = [sol["sensitivities"]["variables"][variable] for sol in sols]
     # y0 + s0*(x - x0) == y1 + s1*(x - x1)
     num = y1-y0 + x0*s0-x1*s1
     denom = s0-s1

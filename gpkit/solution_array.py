@@ -1,5 +1,6 @@
 """Defines SolutionArray class"""
 import re
+import difflib
 from operator import sub
 import warnings as pywarnings
 import pickle
@@ -20,13 +21,13 @@ VALSTR_REPLACES = [
 ]
 
 
-def senss_table(data, showvars=(), title="Sensitivities", **kwargs):
+def senss_table(data, showvars=(), title="Variable Sensitivities", **kwargs):
     "Returns sensitivity table lines"
-    if "constants" in data.get("sensitivities", {}):
-        data = data["sensitivities"]["constants"]
+    if "variables" in data.get("sensitivities", {}):
+        data = data["sensitivities"]["variables"]
     if showvars:
         data = {k: data[k] for k in showvars if k in data}
-    return var_table(data, title, sortbyvals=True,
+    return var_table(data, title, sortbyvals=True, skipifempty=True,
                      valfmt="%+-.2g  ", vecfmt="%+-8.2g",
                      printunits=False, minval=1e-3, **kwargs)
 
@@ -34,14 +35,16 @@ def senss_table(data, showvars=(), title="Sensitivities", **kwargs):
 def topsenss_table(data, showvars, nvars=5, **kwargs):
     "Returns top sensitivity table lines"
     data, filtered = topsenss_filter(data, showvars, nvars)
-    title = "Most Sensitive" if not filtered else "Next Largest Sensitivities"
+    title = "Most Sensitive Variables"
+    if filtered:
+        title = "Next Most Sensitive Variables"
     return senss_table(data, title=title, hidebelowminval=True, **kwargs)
 
 
 def topsenss_filter(data, showvars, nvars=5):
     "Filters sensitivities down to top N vars"
-    if "constants" in data.get("sensitivities", {}):
-        data = data["sensitivities"]["constants"]
+    if "variables" in data.get("sensitivities", {}):
+        data = data["sensitivities"]["variables"]
     mean_abs_senss = {k: np.abs(s).mean() for k, s in data.items()
                       if not np.isnan(s).any()}
     topk = [k for k, _ in sorted(mean_abs_senss.items(), key=lambda l: l[1])]
@@ -56,54 +59,45 @@ def topsenss_filter(data, showvars, nvars=5):
 def insenss_table(data, _, maxval=0.1, **kwargs):
     "Returns insensitivity table lines"
     if "constants" in data.get("sensitivities", {}):
-        data = data["sensitivities"]["constants"]
+        data = data["sensitivities"]["variables"]
     data = {k: s for k, s in data.items() if np.mean(np.abs(s)) < maxval}
     return senss_table(data, title="Insensitive Fixed Variables", **kwargs)
 
 
 def tight_table(self, _, ntightconstrs=5, tight_senss=1e-2, **kwargs):
     "Return constraint tightness lines"
-    if not self.model:
-        return []
-    title = "Tightest Constraints"
-    data = []
-    for c in self.model.flat():
-        try:
-            if c.relax_sensitivity and c.relax_sensitivity >= tight_senss:
-                data.append(((-float("%+6.2g" % c.relax_sensitivity), str(c)),
-                             "%+6.2g" % c.relax_sensitivity, id(c), c))
-        except AttributeError:
-            print("Constraint %s had no `relax_sensitivity` attribute." % c)
-            return []
-    if not data:
-        lines = ["No constraints had a sensitivity above %+5.1g."
-                 % tight_senss]
+    title = "Most Sensitive Constraints"
+    if len(self) > 1:
+        title += " (in last sweep)"
+        data = sorted(((-float("%+6.2g" % s[-1]), str(c)),
+                       "%+6.2g" % s[-1], id(c), c)
+                      for c, s in self["sensitivities"]["constraints"].items()
+                      if s[-1] >= tight_senss)[:ntightconstrs]
     else:
-        data = sorted(data)[:ntightconstrs]
-        lines = constraint_table(data, **kwargs)
-    lines = [title] + ["-"*len(title)] + lines + [""]
-    if "sweepvariables" in self:
-        lines.insert(1, "(for the last sweep only)")
-    return lines
-
+        data = sorted(((-float("%+6.2g" % s), str(c)), "%+6.2g" % s, id(c), c)
+                      for c, s in self["sensitivities"]["constraints"].items()
+                      if s >= tight_senss)[:ntightconstrs]
+    return constraint_table(data, title, **kwargs)
 
 def loose_table(self, _, min_senss=1e-5, **kwargs):
     "Return constraint tightness lines"
-    if not self.model:
-        return []
-    title = "All Loose Constraints"
-    data = [(0, "", c) for c in self.model.flat()
-            if c.relax_sensitivity <= min_senss]
-    if not data:
-        lines = ["No constraints had a sensitivity below %+6.2g." % min_senss]
+    title = "Insensitive Constraints |below %+g|" % min_senss
+    if len(self) > 1:
+        title += " (in last sweep)"
+        data = [(0, "", id(c), c)
+                for c, s in self["sensitivities"]["constraints"].items()
+                if s[-1] <= min_senss]
     else:
-        lines = constraint_table(data, **kwargs)
-    return [title] + ["-"*len(title)] + lines + [""]
+        data = [(0, "", id(c), c)
+                for c, s in self["sensitivities"]["constraints"].items()
+                if s <= min_senss]
+    return constraint_table(data, title, **kwargs)
 
 
 # pylint: disable=too-many-branches,too-many-locals,too-many-statements
-def constraint_table(data, sortbymodel=True, showmodels=True, **_):
+def constraint_table(data, title, sortbymodel=True, showmodels=True, **_):
     "Creates lines for tables where the right side is a constraint."
+    # TODO: this should support 1D array inputs from sweeps
     excluded = ("units", "unnecessary lineage")
     if not showmodels:
         excluded = ("units", "lineage")  # hide all of it
@@ -148,6 +142,8 @@ def constraint_table(data, sortbymodel=True, showmodels=True, **_):
         constraintlines.append(line)
         lines += [(openingstr + " : ", constraintlines[0])]
         lines += [("", l) for l in constraintlines[1:]]
+    if not lines:
+        lines = [("", "(none)")]
     maxlens = np.max([list(map(len, line)) for line in lines
                       if line[0] != ("modelname",)], axis=0)
     dirs = [">", "<"]  # we'll check lengths before using zip
@@ -159,7 +155,7 @@ def constraint_table(data, sortbymodel=True, showmodels=True, **_):
         else:
             linelist = [fmt.format(s) for fmt, s in zip(fmts, line)]
         lines[i] = "".join(linelist).rstrip()
-    return lines
+    return [title] + ["-"*len(title)] + lines + [""]
 
 
 def warnings_table(self, _, **kwargs):
@@ -169,27 +165,28 @@ def warnings_table(self, _, **kwargs):
     if "warnings" not in self or not self["warnings"]:
         return []
     for wtype in self["warnings"]:
-        lines += [wtype] + ["-"*len(wtype)]
         data_vec = self["warnings"][wtype]
         if not hasattr(data_vec, "shape"):
             data_vec = [data_vec]
         for i, data in enumerate(data_vec):
+            title = wtype
             if len(data_vec) > 1:
-                lines += ["| for sweep %i |" % i]
+                title += " in sweep %i" % i
             if wtype == "Unexpectedly Tight Constraints" and data[0][1]:
                 data = [(-int(1e5*c.relax_sensitivity),
                          "%+6.2g" % c.relax_sensitivity, id(c), c)
                         for _, c in data]
-                lines += constraint_table(data, **kwargs)
+                lines += constraint_table(data, title, **kwargs)
             elif wtype == "Unexpectedly Loose Constraints" and data[0][1]:
                 data = [(-int(1e5*c.rel_diff),
                          "%.4g %s %.4g" % c.tightvalues, id(c), c)
                         for _, c in data]
-                lines += constraint_table(data, **kwargs)
+                lines += constraint_table(data, title, **kwargs)
             else:
+                lines += [title] + ["-"*len(wtype)]
                 for msg, _ in data:
                     lines += [msg, ""]
-            lines += [""]
+                lines += [""]
     return lines
 
 
@@ -209,7 +206,8 @@ def unrolled_absmax(values):
         if absmaxval >= absmaxest:
             absmaxest, finalval = absmaxval, val
     if getattr(finalval, "shape", None):
-        return finalval[np.argmax(np.abs(finalval))]
+        return finalval[np.unravel_index(np.argmax(np.abs(finalval)),
+                                         finalval.shape)]
     return finalval
 
 
@@ -261,12 +259,11 @@ class SolutionArray(DictOfLists):
     >>> senss.append(sol["sensitivities"]["variables"]["x_{min}"])
     >>> assert all(np.array(senss) == 1)
     """
-    program = None
-    model = None
+    modelstr = ""
     _name_collision_varkeys = None
-    table_titles = {"sweepvariables": "Sweep Variables",
+    table_titles = {"sweepvariables": "Swept Variables",
                     "freevariables": "Free Variables",
-                    "constants": "Constants",
+                    "constants": "Fixed Variables",  # TODO: change everywhere
                     "variables": "Variables"}
 
     def name_collision_varkeys(self):
@@ -308,7 +305,8 @@ class SolutionArray(DictOfLists):
         return True
 
     # pylint: disable=too-many-locals, too-many-branches, too-many-statements
-    def diff(self, other, showvars=None, *, senssdiff=True, sensstol=0.1,
+    def diff(self, other, showvars=None, *,
+             constraintsdiff=True, senssdiff=True, sensstol=0.1,
              absdiff=False, abstol=0, reldiff=True, reltol=1.0, **tableargs):
         """Outputs differences between this solution and another
 
@@ -333,20 +331,34 @@ class SolutionArray(DictOfLists):
         -------
         str
         """
-        tableargs.update({"hidebelowminval": True, "sortbyvals": True})
+        tableargs.update({"hidebelowminval": True, "sortbyvals": True,
+                          "skipifempty": False})
         if isinstance(other, Strings):
             other = pickle.load(open(other, "rb"))
         svars, ovars = self["variables"], other["variables"]
-        lines = ["Solution difference",
-                 "===================",
+        lines = ["Solution Diff",
+                 "=============",
                  "(positive means the argument is smaller)", ""]
         svks, ovks = set(svars), set(ovars)
         if showvars:
-            lines[0] += " for selected variables"
-            lines[1] += "======================="
+            lines[0] += " (for selected variables)"
+            lines[1] += "========================="
             showvars = self._parse_showvars(showvars)
             svks = {k for k in showvars if k in svars}
             ovks = {k for k in showvars if k in ovars}
+        if constraintsdiff and other.modelstr and self.modelstr:
+            if self.modelstr == other.modelstr:
+                lines += ["** no constraint differences **", ""]
+            else:
+                cdiff = ["Constraint Differences",
+                         "**********************"]
+                cdiff.extend(difflib.unified_diff(
+                    self.modelstr.split("\n"), other.modelstr.split("\n"),
+                    fromfile="removed in argument", tofile="added in argument",
+                    lineterm="", n=3))
+                cdiff.insert(4, "")
+                cdiff += ["", "**********************", ""]
+                lines += cdiff
         if svks - ovks:
             lines.append("Variable(s) of this solution"
                          " which are not in the argument:")
@@ -358,55 +370,40 @@ class SolutionArray(DictOfLists):
             lines.append("\n".join("  %s" % key for key in ovks - svks))
             lines.append("")
         sharedvks = svks.intersection(ovks)
-        # relative difference #
         if reldiff:
             rel_diff = {vk: 100*(cast(np.divide, svars[vk], ovars[vk]) - 1)
                         for vk in sharedvks}
-            lines += var_table(rel_diff, "Relative differences >%g%%" % reltol,
+            lines += var_table(rel_diff,
+                               "Relative Differences |above %g%%|" % reltol,
                                valfmt="%+.1f%%  ", vecfmt="%+6.1f%% ",
                                minval=reltol, printunits=False, **tableargs)
             if lines[-2][:10] == "-"*10:  # nothing larger than sensstol
-                lines.insert(-1, ("The largest is %g%%"
+                lines.insert(-1, ("The largest is %+g%%."
                                   % unrolled_absmax(rel_diff.values())))
-        # absolute difference #
         if absdiff:
             abs_diff = {vk: cast(sub, svars[vk], ovars[vk]) for vk in sharedvks}
-            lines += var_table(abs_diff, "Absolute differences >%g" % abstol,
+            lines += var_table(abs_diff,
+                               "Absolute Differences |above %g|" % abstol,
                                valfmt="%+.2g", vecfmt="%+8.2g",
                                minval=abstol, **tableargs)
-        # sensitivity difference #
+            if lines[-2][:10] == "-"*10:  # nothing larger than sensstol
+                lines.insert(-1, ("The largest is %+g."
+                                  % unrolled_absmax(abs_diff.values())))
         if senssdiff:
             ssenss = self["sensitivities"]["variables"]
             osenss = other["sensitivities"]["variables"]
-            senss_delta = {vk: cast(sub, ssenss.get(vk, 0), osenss.get(vk, 0))
+            senss_delta = {vk: cast(sub, ssenss[vk], osenss[vk])
                            for vk in svks.intersection(ovks)}
-            title = "Sensitivity differences >%g" % sensstol
-            lines += var_table(senss_delta, title,
+            lines += var_table(senss_delta,
+                               "Sensitivity Differences |above %g|" % sensstol,
                                valfmt="%+-.2f  ", vecfmt="%+-6.2f",
                                minval=sensstol, printunits=False, **tableargs)
             if lines[-2][:10] == "-"*10:  # nothing larger than sensstol
-                lines.insert(-1, ("The largest is %+g"
+                lines.insert(-1, ("The largest is %+g."
                                   % unrolled_absmax(senss_delta.values())))
         return "\n".join(lines)
 
-    def pickle_prep(self):
-        "After calling this, the SolutionArray is ready to pickle"
-        program, model = self.program, self.model
-        self.program = self.model = None
-        cost = self["cost"]
-        self["cost"] = mag(cost)
-        warnings = {}
-        if "warnings" in self:
-            for wtype in self["warnings"]:
-                warnings[wtype] = self["warnings"][wtype]
-                warnarray = np.array(self["warnings"][wtype])
-                warnarray.T[1] = None  # remove pointer to exact constraint  # pylint: disable=unsupported-assignment-operation
-                if len(warnarray.shape) == 2:
-                    warnarray = warnarray.tolist()
-                self["warnings"][wtype] = warnarray
-        return program, model, cost, warnings
-
-    def save(self, filename="solution.pkl"):
+    def save(self, filename="solution.pkl", **pickleargs):
         """Pickles the solution and saves it to a file.
 
         The saved solution is identical except for two things:
@@ -420,10 +417,7 @@ class SolutionArray(DictOfLists):
         >>> import pickle
         >>> pickle.load(open("solution.pkl"))
         """
-        program, model, cost, warnings = self.pickle_prep()
-        pickle.dump(self, open(filename, "wb"), protocol=1)
-        self["cost"], self["warnings"] = cost, warnings
-        self.program, self.model = program, model
+        pickle.dump(self, open(filename, "wb"), **pickleargs)
 
     def varnames(self, showvars, exclude):
         "Returns list of variables, optionally with minimal unique names"
@@ -486,8 +480,8 @@ class SolutionArray(DictOfLists):
     def savetxt(self, filename="solution.txt", printmodel=True, **kwargs):
         "Saves solution table as a text file"
         with open(filename, "w") as f:
-            if printmodel and self.model:
-                f.write(str(self.model))
+            if printmodel:
+                f.write(self.modelstr)
             f.write(self.table(**kwargs))
 
     def savecsv(self, showvars=None, filename="solution.csv", valcols=5):
@@ -609,7 +603,7 @@ class SolutionArray(DictOfLists):
                 cost = self["cost"]  # pylint: disable=unsubscriptable-object
                 if kwargs.get("latex", None):  # cost is not printed for latex
                     continue
-                strs += ["\n%s\n----" % "Cost"]
+                strs += ["\n%s\n------------" % "Optimal Cost"]
                 if len(self) > 1:
                     costs = ["%-8.3g" % c for c in mag(cost[:4])]
                     strs += [" [ %s %s ]" % ("  ".join(costs),
@@ -643,9 +637,6 @@ class SolutionArray(DictOfLists):
             print("SolutionArray.plot only supports 1-dimensional sweeps")
         if not hasattr(posys, "__len__"):
             posys = [posys]
-        for i, posy in enumerate(posys):
-            if posy in [None, "cost"]:
-                posys[i] = self.program[0].cost   # pylint: disable=unsubscriptable-object
         import matplotlib.pyplot as plt
         from .interactive.plot_sweep import assign_axes
         from . import GPBLU
@@ -665,7 +656,7 @@ def var_table(data, title, printunits=True, latex=False, rawlines=False,
               varfmt="%s : ", valfmt="%-.4g ", vecfmt="%-8.3g",
               minval=0, sortbyvals=False, hidebelowminval=False,
               included_models=None, excluded_models=None, sortbymodel=True,
-              maxcolumns=5, **_):
+              maxcolumns=5, skipifempty=True, **_):
     """
     Pretty string representation of a dict of VarKeys
     Iterable values are handled specially (partial printing)
@@ -710,6 +701,8 @@ def var_table(data, title, printunits=True, latex=False, rawlines=False,
                 val = np.nanmean(np.abs(v)) - (1e-9 if np.nanmean(v) < 0 else 0)
                 sort = (float("%.4g" % -val), k.name)
                 decorated.append((model, sort, b, (varfmt % s), i, k, v))
+    if not decorated and skipifempty:
+        return []
     if included_models:
         included_models = set(included_models)
         included_models.add("")
@@ -735,7 +728,7 @@ def var_table(data, title, printunits=True, latex=False, rawlines=False,
                     lines.append(
                         [r"\multicolumn{3}{l}{\textbf{" + model + r"}} \\"])
             previous_model = model
-        label = var.descr.get('label', '')
+        label = var.descr.get("label", "")
         units = var.unitstr(" [%s] ") if printunits else ""
         if not isvector:
             valstr = valfmt % val

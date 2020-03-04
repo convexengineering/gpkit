@@ -193,7 +193,7 @@ Hmm, why didn't :math:`A_{floor}` show up in the sensitivities list?
 
 .. code:: python
 
-    sol["sensitivities"]["constants"][A_floor]
+    sol["sensitivities"]["variables"][A_floor]
 
 
 

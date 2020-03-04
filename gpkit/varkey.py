@@ -54,11 +54,9 @@ class VarKey(GPkitObject):  # pylint:disable=too-many-instance-attributes
     def __getstate__(self):
         "Stores varkey as its metadata dictionary, removing functions"
         state = self.descr.copy()
-        state.pop("units", None)  # not necessary, but saves space
         for key, value in state.items():
             if getattr(value, "__call__", None):
-                print("`%s.%s` (function %s) will not be pickled."
-                      % (self, key, value))
+                state[key] = "unpickleable function %s" % value
         return state
 
     def __setstate__(self, state):

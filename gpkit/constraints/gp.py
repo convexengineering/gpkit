@@ -325,25 +325,27 @@ class GeometricProgram(CostedConstraintSet):
         primal = solver_out["primal"]
         nu, la = solver_out["nu"], solver_out["la"]
         # confirm lengths before calling zip
-        if not self.varlocs and len(primal) == 1 and primal[0] == 0:
-            primal = []  # an empty result, as returned by MOSEK
         assert len(self.varlocs) == len(primal)
-        result = {"freevariables": KeyDict(zip(self.varlocs, np.exp(primal)))}
         # get cost & variables #
-        result["cost"] = float(solver_out["objective"])
+        result = {"cost": float(solver_out["objective"])}
         result["constants"] = KeyDict(self.substitutions)
+        result["freevariables"] = KeyDict(zip(self.varlocs, np.exp(primal)))
         result["variables"] = KeyDict(result["freevariables"])
         result["variables"].update(result["constants"])
         # get sensitivities #
-        result["sensitivities"] = {"nu": nu, "la": la}
+        result["sensitivities"] = {"constraints": {}}
         # add cost's sensitivity in (nu could be self.nu_by_posy[0])
         cost_senss = sum(nu_i*exp
                          for (nu_i, exp) in zip(nu, self.cost.hmap.keys()))
         self.v_ss = cost_senss.copy()
-        for las, nus, leaf in zip(la[1:], self.nu_by_posy[1:], self.hmaps[1:]):
-            while hasattr(leaf, "parent") and leaf.parent is not None:
-                leaf = leaf.parent
-            self.v_ss += leaf.sens_from_dual(las, nus, result)
+        for las, nus, c in zip(la[1:], self.nu_by_posy[1:], self.hmaps[1:]):
+            while hasattr(c, "parent") and c.parent is not None:
+                c = c.parent
+            v_ss, c_senss = c.sens_from_dual(las, nus, result)
+            self.v_ss += v_ss
+            while hasattr(c, "generated_by") and c.generated_by is not None:
+                c = c.generated_by
+            result["sensitivities"]["constraints"][c] = c_senss
         # carry linked sensitivities over to their constants
         for v in list(v for v in self.v_ss if v.gradients):
             dlogcost_dlogv = self.v_ss.pop(v)
@@ -365,8 +367,8 @@ class GeometricProgram(CostedConstraintSet):
                         cost_senss[c] = dlogcost_dlogv*dlogv_dlogc + accum
         result["sensitivities"]["cost"] = cost_senss
         result["sensitivities"]["variables"] = KeyDict(self.v_ss)
-        result["sensitivities"]["constants"] = KeyDict(
-            {k: v for k, v in self.v_ss.items() if k in result["constants"]})
+        result["sensitivities"]["constants"] = \
+            result["sensitivities"]["variables"]  # NOTE: backwards compat.
         result["soltime"] = solver_out["soltime"]
         return SolutionArray(result)
 

@@ -1,22 +1,23 @@
 
-Cost
-----
- [ 4.63e+03  6.23e+03  7.36e+03  ] [N]
+Optimal Cost
+------------
+ [ 4.63e+03  6.23e+03  7.36e+03  ]
 
 Warnings
 ========
-Unexpectedly Loose Constraints
-------------------------------
-| for sweep 0 |
+Unexpectedly Loose Constraints in sweep 0
+-----------------------------------------
 0.9585 >= 0.9187 : V_{f_{avail}} >= V_f
 
-| for sweep 1 |
+Unexpectedly Loose Constraints in sweep 1
+-----------------------------------------
 0.9585 >= 0.9187 : V_{f_{avail}} >= V_f
 
-| for sweep 2 |
+Unexpectedly Loose Constraints in sweep 2
+-----------------------------------------
 0.9585 >= 0.9187 : V_{f_{avail}} >= V_f
 
-Sweep Variables
+Swept Variables
 ---------------
 V_f_wing : [ 0.1       0.3       0.5      ]  [m³] fuel volume in the wing
 
@@ -41,17 +42,16 @@ V_{f_{avail}} : [ 0.589     0.788     0.958    ]  [m³]  fuel volume available
      W_w_strc : [ 1.33e+03  269       151      ]  [N]   wing structural weight
      W_w_surf : [ 1.32e+03  1.78e+03  2.14e+03 ]  [N]   wing skin weight
 
-Most Sensitive
---------------
+Most Sensitive Variables
+------------------------
             V_{min} : [ -1.4        -         -      ] takeoff speed
               Range : [ +1.4      +1.1      +1.2     ] aircraft range
                TSFC : [ +1.4      +1.1      +1.2     ] thrust specific fuel consumption
 (\frac{S}{S_{wet}}) : [ +0.85     +0.71     +0.74    ] wetted area ratio
                   k : [ +0.85     +0.71     +0.74    ] form factor
 
-Tightest Constraints
-(for the last sweep only)
---------------------
+Most Sensitive Constraints (in last sweep)
+------------------------------------------
   +1.2 : C_D >= (CDA0)/S + k·C_f·(\frac{S}{S_{wet}}) + C_L²/(π·A·e)
   +1.2 : D >= 0.5·\rho·S·C_D·V²
   +1.2 : T_{flight} >= Range/V

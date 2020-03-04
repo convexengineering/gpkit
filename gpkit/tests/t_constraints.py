@@ -209,7 +209,7 @@ class TestSignomialInequality(unittest.TestCase):
         with SignomialsEnabled():
             m = Model(PK, [mdot*ujet + fBLI*Dp >= 1,
                            PK >= 0.5*mdot*ujet*(2 + ujet) + fBLI*fsurf*Dp])
-        var_senss = m.solve(verbosity=0)["sensitivities"]["constants"]
+        var_senss = m.solve(verbosity=0)["sensitivities"]["variables"]
         self.assertAlmostEqual(var_senss[Dp], -0.16, 2)
         self.assertAlmostEqual(var_senss[fBLI], -0.16, 2)
         self.assertAlmostEqual(var_senss[fsurf], 0.19, 2)
@@ -223,7 +223,7 @@ class TestSignomialInequality(unittest.TestCase):
         mdot = Variable("mdot", 1/0.7376)
         m = Model(PK, [mdot*ujet >= 1 + fBLI*mDp,
                        PK >= 0.5*mdot*ujet*(2 + ujet) + fBLI*fsurf*Dp])
-        var_senss = m.solve(verbosity=0)["sensitivities"]["constants"]
+        var_senss = m.solve(verbosity=0)["sensitivities"]["variables"]
         self.assertAlmostEqual(var_senss[Dp], -0.16, 2)
         self.assertAlmostEqual(var_senss[fBLI], -0.16, 2)
         self.assertAlmostEqual(var_senss[fsurf], 0.19, 2)
@@ -237,7 +237,7 @@ class TestSignomialInequality(unittest.TestCase):
         mdot = Variable("mdot", 1/0.7376)
         m = Model(PK, [mdot*ujet >= 1 + fBLI*mDp,
                        PK >= 0.5*mdot*ujet*(2 + ujet) + fBLI*fsurf*Dp])
-        var_senss = m.solve(verbosity=0)["sensitivities"]["constants"]
+        var_senss = m.solve(verbosity=0)["sensitivities"]["variables"]
         self.assertAlmostEqual(var_senss[Dp] + var_senss[mDp], -0.16, 2)
         self.assertAlmostEqual(var_senss[fBLI], -0.16, 2)
         self.assertAlmostEqual(var_senss[fsurf], 0.19, 2)

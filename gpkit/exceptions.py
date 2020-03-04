@@ -1,13 +1,24 @@
 "GPkit-specific Exception classes"
 from . import DimensionalityError  # pylint: disable=unused-import
 
-class InvalidGPConstraint(Exception):
-    "Raised when a non-GP-compatible constraint is used in a GP"
+class MathematicallyInvalid(TypeError):
+    "Raised whenever something violates a mathematical definition."
 
-class InvalidPosynomial(Exception):
+class InvalidPosynomial(MathematicallyInvalid):
     "Raised when a Posynomial would be created with a negative coefficient"
 
-class Infeasible(Exception):
+class InvalidGPConstraint(MathematicallyInvalid):
+    "Raised when a non-GP-compatible constraint is used in a GP"
+
+class UnnecessarySGP(MathematicallyInvalid):
+    "Raised when an SGP is fully GP-compatible"
+
+
+class UnboundedGP(ValueError):
+    "Raise when a GP is not fully bounded"
+
+
+class Infeasible(RuntimeWarning):
     "Raised when a model does not solve"
 
 class UnknownInfeasible(Infeasible):
@@ -18,6 +29,3 @@ class PrimalInfeasible(Infeasible):
 
 class DualInfeasible(Infeasible):
     "Raised when a model returns a certificate of dual infeasibility"
-
-class UnboundedGP(Exception):
-    "Raise when a GP is not fully bounded"

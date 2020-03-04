@@ -122,11 +122,11 @@ class TestModelSubs(unittest.TestCase):
             m = Model(v.prod(), [v >= v_min],
                       {v_min: [2*gpkit.units("nmi")]})
             cost = m.solve(verbosity=0)["cost"]
-            self.assertAlmostEqual(cost/(3.704*gpkit.ureg("km")), 1.0)
+            self.assertAlmostEqual(cost/3.704, 1.0)
             m = Model(v.prod(), [v >= v_min],
                       {v_min: np.array([2])*gpkit.units("nmi")})
             cost = m.solve(verbosity=0)["cost"]
-            self.assertAlmostEqual(cost/(3.704*gpkit.ureg("km")), 1.0)
+            self.assertAlmostEqual(cost/3.704, 1.0)
 
     def test_phantoms(self):
         x = Variable("x")
@@ -169,7 +169,7 @@ class TestModelSubs(unittest.TestCase):
                                 h: 35*gpkit.units("USD"),
                                 Q: ("sweep", [50, 100, 500])})
         firstcost = m.solve(verbosity=0)["cost"][0]
-        self.assertAlmostEqual(1760*gpkit.ureg("USD")/firstcost, 1, 5)
+        self.assertAlmostEqual(1760/firstcost, 1, 5)
 
     def test_skipfailures(self):
         x = Variable("x")
@@ -222,7 +222,7 @@ class TestModelSubs(unittest.TestCase):
         self.assertAlmostEqual(sol(t_night)/gpkit.ureg.hours, 12)
         m.substitutions.update({t_day: ("sweep", [6, 8, 9, 13])})
         sol = m.solve(verbosity=0)
-        npt.assert_allclose(sol["sensitivities"]["constants"][t_day],
+        npt.assert_allclose(sol["sensitivities"]["variables"][t_day],
                             [-1/3, -0.5, -0.6, +1], 1e-5)
         self.assertEqual(len(sol["cost"]), 4)
         npt.assert_allclose([float(l) for l in
@@ -245,6 +245,7 @@ class TestModelSubs(unittest.TestCase):
         a, b = sol("xi"), xi_dist*gpkit.ureg.N
         self.assertTrue(all(abs(a-b)/(a+b) < 1e-7))
 
+    # pylint: disable=too-many-locals
     def test_model_composition_units(self):
         class Above(Model):
             """A simple upper bound on x
@@ -277,23 +278,24 @@ class TestModelSubs(unittest.TestCase):
         concat_cost = concatm.solve(verbosity=0)["cost"]
         almostequal = self.assertAlmostEqual
         yard, cm = gpkit.ureg("yard"), gpkit.ureg("cm")
+        ft, meter = gpkit.ureg("ft"), gpkit.ureg("m")
         if not isinstance(a["x"].key.units, str):
-            almostequal(1/yard/a.solve(verbosity=0)["cost"], 1, 5)
-            almostequal(1*cm/b.solve(verbosity=0)["cost"], 1, 5)
-            almostequal(1*cm/yard/concat_cost, 1, 5)
+            almostequal(a.solve(verbosity=0)["cost"], ft/yard, 5)
+            almostequal(b.solve(verbosity=0)["cost"], cm/meter, 5)
+            almostequal(cm/yard, concat_cost, 5)
         NamedVariables.reset_modelnumbers()
         a1, b1 = Above(), Below()
         self.assertEqual(a1["x"].key.lineage, (("Above", 0),))
         m = Model(a1["x"], [a1, b1, b1["x"] == a1["x"]])
         sol = m.solve(verbosity=0)
         if not isinstance(a1["x"].key.units, str):
-            almostequal(1*cm/sol["cost"], 1, 5)
+            almostequal(sol["cost"], cm/ft, 5)
         a1, b1 = Above(), Below()
         self.assertEqual(a1["x"].key.lineage, (("Above", 1),))
         m = Model(b1["x"], [a1, b1, b1["x"] == a1["x"]])
         sol = m.solve(verbosity=0)
         if not isinstance(b1["x"].key.units, str):
-            almostequal(1*gpkit.ureg.cm/sol["cost"], 1, 5)
+            almostequal(sol["cost"], cm/meter, 5)
         self.assertIn(a1["x"], sol["variables"])
         self.assertIn(b1["x"], sol["variables"])
         self.assertNotIn(a["x"], sol["variables"])

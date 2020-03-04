@@ -1,31 +1,31 @@
 SCALAR
 
-Cost
-----
+Optimal Cost
+------------
  1
 
 Free Variables
 --------------
 x : 1
 
-Tightest Constraints
---------------------
+Most Sensitive Constraints
+--------------------------
     +1 : x >= 1
 
 __________
 
 VECTORIZED
 
-Cost
-----
+Optimal Cost
+------------
  2
 
 Free Variables
 --------------
 x : [ 1         2         1        ]
 
-Tightest Constraints
---------------------
+Most Sensitive Constraints
+--------------------------
     +1 : x[0] >= 1
     +1 : x[1] >= 2
     +1 : x[2] >= 1

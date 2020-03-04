@@ -6,12 +6,12 @@ from gpkit import (Model, settings, VectorVariable, Variable,
                    SignomialsEnabled, ArrayVariable, SignomialEquality)
 from gpkit.constraints.bounded import Bounded
 from gpkit.small_classes import CootMatrix
-from gpkit.exceptions import InvalidGPConstraint
 from gpkit import NamedVariables, units, parse_variables
 from gpkit.constraints.relax import ConstraintsRelaxed
 from gpkit.constraints.relax import ConstraintsRelaxedEqually
 from gpkit.constraints.relax import ConstantsRelaxed
 from gpkit.exceptions import (UnknownInfeasible,
+                              InvalidGPConstraint, UnnecessarySGP,
                               PrimalInfeasible, DualInfeasible, UnboundedGP)
 
 
@@ -134,7 +134,7 @@ class TestGP(unittest.TestCase):
                       M <= 0.76])
         sol = prob.solve(solver=self.solver, verbosity=0)
         almostequal = self.assertAlmostEqual
-        almostequal(0.000553226/R.units/sol["cost"], 1, self.ndig)
+        almostequal(0.000553226/sol["cost"], 1, self.ndig)
         almostequal(340.29/sol["constants"]["a0"], 1, self.ndig)
         almostequal(340.29/sol["variables"]["a0"], 1, self.ndig)
         almostequal(340.29*a0.units/sol("a0"), 1, self.ndig)
@@ -167,7 +167,7 @@ class TestGP(unittest.TestCase):
         m = Model(61.3e6*units.USD*(mtow/(1e5*units.lbf))**0.807,
                   [mtow >= W_payload + f_oew*mtow + fuel_per_nm*R])
         sol = m.solve(solver=self.solver, verbosity=0)
-        senss = sol["sensitivities"]["constants"]
+        senss = sol["sensitivities"]["variables"]
         self.assertAlmostEqual(senss[f_oew], 0.91, 2)
         self.assertAlmostEqual(senss[R], 0.41, 2)
         self.assertAlmostEqual(senss[fuel_per_nm], 0.41, 2)
@@ -386,8 +386,10 @@ class TestSP(unittest.TestCase):
 
         with SignomialsEnabled():
             m = Model(x, [x + z >= y])
-        with self.assertRaises(UnboundedGP):
+        with self.assertRaises(UnnecessarySGP):
             m.localsolve(verbosity=0, solver=self.solver)
+        with self.assertRaises(UnboundedGP):
+            m.solve(verbosity=0, solver=self.solver)
 
         with SignomialsEnabled():
             m = Model(x, [x + y >= z])
@@ -502,8 +504,8 @@ class TestSP(unittest.TestCase):
         m = Model(Obj, eqns)
         spsol = m.solve(self.solver, verbosity=0)
         # now solve as GP
-        eqns[-1] = (Obj >= a_val*(2*L + 2*W) + (1-a_val)*(12 * W**-1 * L**-3))
-        m = Model(Obj, eqns)
+        m[-1] = (Obj >= a_val*(2*L + 2*W) + (1-a_val)*(12 * W**-1 * L**-3))
+        del m.substitutions["a"]
         gpsol = m.solve(self.solver, verbosity=0)
         self.assertAlmostEqual(spsol["cost"], gpsol["cost"])
 
@@ -588,7 +590,7 @@ class TestSP(unittest.TestCase):
             y = Variable("y")
             J = 0.01*((x - 1)**2 + (y - 1)**2) + (x*y - 1)**2
             m = Model(J)
-            with self.assertRaises(TypeError):
+            with self.assertRaises(UnnecessarySGP):
                 m.localsolve(verbosity=0, solver=self.solver)
 
     def test_partial_sub_signomial(self):
@@ -607,10 +609,10 @@ class TestSP(unittest.TestCase):
         c = Variable("c")
         y = Variable("y")
         m = Model(x, [y >= 1 + c*x, y <= 0.5], {c: -1})
-        with self.assertRaises(RuntimeWarning):
+        with self.assertRaises(InvalidGPConstraint):
             with SignomialsEnabled():
                 m.gp()
-        with self.assertRaises(RuntimeWarning):
+        with self.assertRaises(UnnecessarySGP):
             m.localsolve(solver=self.solver)
 
     def test_reassigned_constant_cost(self):

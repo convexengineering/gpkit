@@ -3,7 +3,6 @@ from collections import defaultdict
 import numpy as np
 from .. import Variable
 from .set import ConstraintSet
-from ..small_scripts import mag
 
 
 def varkey_bounds(varkeys, lower, upper):
@@ -87,15 +86,16 @@ class Bounded(ConstraintSet):
         "Creates (and potentially prints) a dictionary of unbounded variables."
         out = defaultdict(set)
         for i, varkey in enumerate(self.bound_varkeys):
-            value = mag(result["variables"][varkey])
-            constraints = self["variable bounds"][i]
+            value = result["variables"][varkey]
+            c_senss = [result["sensitivities"]["constraints"].get(c, 0)
+                       for c in self["variable bounds"][i]]
             if self.lowerbound:
-                if constraints[0].relax_sensitivity >= self.sens_threshold:
+                if c_senss[0] >= self.sens_threshold:
                     out["sensitive to lower bound"].add(varkey)
                 if np.log(value/self.lowerbound) <= self.logtol_threshold:
                     out["value near lower bound"].add(varkey)
             if self.upperbound:
-                if constraints[-1].relax_sensitivity >= self.sens_threshold:
+                if c_senss[-1] >= self.sens_threshold:
                     out["sensitive to upper bound"].add(varkey)
                 if np.log(self.upperbound/value) <= self.logtol_threshold:
                     out["value near upper bound"].add(varkey)
