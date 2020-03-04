@@ -130,7 +130,7 @@ class GPkitObject:
             if left == "1":
                 aststr = "1"
             elif (UNICODE_EXPONENTS and not getattr(x, "shape", None)
-                    and int(x) == x and 2 <= x <= 9):
+                  and int(x) == x and 2 <= x <= 9):
                 x = int(x)
                 if x in (2, 3):
                     aststr = "%s%s" % (left, chr(176+x))

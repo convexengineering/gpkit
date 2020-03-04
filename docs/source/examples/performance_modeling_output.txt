@@ -104,14 +104,15 @@ Solution difference for selected variables
 
 Constraint differences
 **********************
-
 --- removed in argument
 +++ added in argument
+
 @@ -41,4 +41,3 @@
           c = (S/A)^0.5
         "parametrization of wing weight":
           Aircraft.Wing.W >= S·Aircraft.Wing.rho
 - Wburn[:] >= 0.2·D[:]
+
 **********************
 
 Relative differences >1%

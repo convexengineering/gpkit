@@ -303,7 +303,8 @@ class SolutionArray(DictOfLists):
         return True
 
     # pylint: disable=too-many-locals, too-many-branches, too-many-statements
-    def diff(self, other, showvars=None, *, senssdiff=True, sensstol=0.1,
+    def diff(self, other, showvars=None, *,
+             constraintsdiff=True, senssdiff=True, sensstol=0.1,
              absdiff=False, abstol=0, reldiff=True, reltol=1.0, **tableargs):
         """Outputs differences between this solution and another
 
@@ -343,14 +344,17 @@ class SolutionArray(DictOfLists):
             showvars = self._parse_showvars(showvars)
             svks = {k for k in showvars if k in svars}
             ovks = {k for k in showvars if k in ovars}
-        if self.modelstr != other.modelstr:
-            lines += ["Constraint differences",
-                      "**********************", ""]
-            lines.extend(difflib.unified_diff(
-                self.modelstr.split("\n"), other.modelstr.split("\n"),
-                fromfile="removed in argument", tofile="added in argument",
-                lineterm="", n=3))
-            lines += ["**********************", ""]
+        if constraintsdiff:
+            if self.modelstr != other.modelstr:
+                cdiff = ["Constraint differences",
+                         "**********************"]
+                cdiff.extend(difflib.unified_diff(
+                    self.modelstr.split("\n"), other.modelstr.split("\n"),
+                    fromfile="removed in argument", tofile="added in argument",
+                    lineterm="", n=3))
+                cdiff.insert(4, "")
+                cdiff += ["", "**********************", ""]
+                lines += cdiff
         if svks - ovks:
             lines.append("Variable(s) of this solution"
                          " which are not in the argument:")
