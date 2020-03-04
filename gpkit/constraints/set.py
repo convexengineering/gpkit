@@ -214,10 +214,11 @@ class ConstraintSet(list, ReprMixin):
             if hasattr(self, "_rootlines"):
                 rootlines = self._rootlines(excluded)  # pylint: disable=no-member
         lines = recursively_line(self, excluded)
+        indent = " " if getattr(self, "lineage", None) else ""
         if root and "unnecessary lineage" in excluded:
+            indent += " "
             for key in self.name_collision_varkeys():
                 del key.descr["necessarylineage"]
-        indent = " " if getattr(self, "lineage", None) else ""
         return rootlines + [(indent+line).rstrip() for line in lines]
 
     def str_without(self, excluded=("unnecessary lineage", "units")):

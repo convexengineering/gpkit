@@ -5,42 +5,42 @@ Cost
 
 Constraints
 -----------
-Mission
- "definition of Wburn":
-   Wfuel[:-1] >= Wfuel[1:] + Wburn[:-1]
- "require fuel for the last leg":
-   Wfuel[3] >= Wburn[3]
+ Mission
+  "definition of Wburn":
+    Wfuel[:-1] >= Wfuel[1:] + Wburn[:-1]
+  "require fuel for the last leg":
+    Wfuel[3] >= Wburn[3]
 
- FlightSegment
-  AircraftP
-   "fuel burn rate":
-     Wburn[:] >= 0.1·D[:]
-   "lift":
-     Aircraft.W + Wfuel[:] <= 0.5·rho[:]·CL[:]·S·V[:]²
-   "performance":
-     WingAero
-      "definition of D":
-        D[:] >= 0.5·rho[:]·V[:]²·CD[:]·S
-      "definition of Re":
-        Re[:] = rho[:]·V[:]·c/mu[:]
-      "drag model":
-        CD[:] >= 0.074/Re[:]^0.2 + CL[:]²/π/A/e[:]
+  FlightSegment
+   AircraftP
+    "fuel burn rate":
+      Wburn[:] >= 0.1·D[:]
+    "lift":
+      Aircraft.W + Wfuel[:] <= 0.5·rho[:]·CL[:]·S·V[:]²
+    "performance":
+      WingAero
+       "definition of D":
+         D[:] >= 0.5·rho[:]·V[:]²·CD[:]·S
+       "definition of Re":
+         Re[:] = rho[:]·V[:]·c/mu[:]
+       "drag model":
+         CD[:] >= 0.074/Re[:]^0.2 + CL[:]²/π/A/e[:]
 
-  FlightState
-   (no constraints)
-
-Aircraft
- "definition of W":
-   Aircraft.W >= Aircraft.Fuselage.W + Aircraft.Wing.W
- "components":
-   Fuselage
+   FlightState
     (no constraints)
 
-   Wing
-    "definition of mean chord":
-      c = (S/A)^0.5
-    "parametrization of wing weight":
-      Aircraft.Wing.W >= S·Aircraft.Wing.rho
+ Aircraft
+  "definition of W":
+    Aircraft.W >= Aircraft.Fuselage.W + Aircraft.Wing.W
+  "components":
+    Fuselage
+     (no constraints)
+
+    Wing
+     "definition of mean chord":
+       c = (S/A)^0.5
+     "parametrization of wing weight":
+       Aircraft.Wing.W >= S·Aircraft.Wing.rho
 
 Optimal Cost
 ------------
@@ -108,10 +108,10 @@ Constraint Differences
 +++ added in argument
 
 @@ -41,4 +41,3 @@
-       c = (S/A)^0.5
-     "parametrization of wing weight":
-       Aircraft.Wing.W >= S·Aircraft.Wing.rho
--Wburn[:] >= 0.2·D[:]
+        c = (S/A)^0.5
+      "parametrization of wing weight":
+        Aircraft.Wing.W >= S·Aircraft.Wing.rho
+- Wburn[:] >= 0.2·D[:]
 
 **********************
 
