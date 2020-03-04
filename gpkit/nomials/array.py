@@ -95,7 +95,7 @@ class NomialArray(ReprMixin, np.ndarray):
         "Returns string without certain fields (such as 'lineage')."
         if self.ast:
             return self.parse_ast(excluded)
-        if hasattr(self, "key"):
+        if hasattr(self, "key"):  # pylint: disable=no-member
             return self.key.str_without(excluded)
         if not self.shape:
             return try_str_without(self.flatten()[0], excluded)
@@ -107,7 +107,7 @@ class NomialArray(ReprMixin, np.ndarray):
     def latex(self, excluded=()):
         "Returns latex representation without certain fields."
         units = self.latex_unitstr() if "units" not in excluded else ""
-        if hasattr(self, "key"):
+        if hasattr(self, "key"):  # pylint: disable=no-member
             return self.key.latex(excluded) + units
         return np.ndarray.__str__(self)
 
