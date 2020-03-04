@@ -102,6 +102,18 @@ Solution difference for selected variables
 ==========================================
 (positive means the argument is smaller)
 
+Constraint differences
+**********************
+
+--- removed in argument
++++ added in argument
+@@ -41,4 +41,3 @@
+          c = (S/A)^0.5
+        "parametrization of wing weight":
+          Aircraft.Wing.W >= S·Aircraft.Wing.rho
+- Wburn[:] >= 0.2·D[:]
+**********************
+
 Relative differences >1%
 ------------------------
 Wburn : [ +102.1%   +101.6%   +101.1%   +100.5%  ] segment fuel burn
@@ -110,5 +122,5 @@ Wfuel : [ +101.3%   +101.1%   +100.8%   +100.5%  ] fuel weight
 
 Sensitivity differences >0.1
 ----------------------------
-The largest is -0.00451643
+The largest is -0.00451643.
 

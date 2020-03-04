@@ -1,5 +1,6 @@
 """Defines SolutionArray class"""
 import re
+import difflib
 from operator import sub
 import warnings as pywarnings
 import pickle
@@ -342,6 +343,14 @@ class SolutionArray(DictOfLists):
             showvars = self._parse_showvars(showvars)
             svks = {k for k in showvars if k in svars}
             ovks = {k for k in showvars if k in ovars}
+        if self.modelstr != other.modelstr:
+            lines += ["Constraint differences",
+                      "**********************", ""]
+            lines.extend(difflib.unified_diff(
+                self.modelstr.split("\n"), other.modelstr.split("\n"),
+                fromfile="removed in argument", tofile="added in argument",
+                lineterm="", n=3))
+            lines += ["**********************", ""]
         if svks - ovks:
             lines.append("Variable(s) of this solution"
                          " which are not in the argument:")
@@ -361,7 +370,7 @@ class SolutionArray(DictOfLists):
                                valfmt="%+.1f%%  ", vecfmt="%+6.1f%% ",
                                minval=reltol, printunits=False, **tableargs)
             if lines[-2][:10] == "-"*10:  # nothing larger than sensstol
-                lines.insert(-1, ("The largest is %g%%"
+                lines.insert(-1, ("The largest is %+g%%."
                                   % unrolled_absmax(rel_diff.values())))
         # absolute difference #
         if absdiff:
@@ -370,7 +379,7 @@ class SolutionArray(DictOfLists):
                                valfmt="%+.2g", vecfmt="%+8.2g",
                                minval=abstol, **tableargs)
             if lines[-2][:10] == "-"*10:  # nothing larger than sensstol
-                lines.insert(-1, ("The largest is %+g"
+                lines.insert(-1, ("The largest is %+g."
                                   % unrolled_absmax(abs_diff.values())))
         # sensitivity difference #
         if senssdiff:
@@ -383,7 +392,7 @@ class SolutionArray(DictOfLists):
                                valfmt="%+-.2f  ", vecfmt="%+-6.2f",
                                minval=sensstol, printunits=False, **tableargs)
             if lines[-2][:10] == "-"*10:  # nothing larger than sensstol
-                lines.insert(-1, ("The largest is %+g"
+                lines.insert(-1, ("The largest is %+g."
                                   % unrolled_absmax(senss_delta.values())))
         return "\n".join(lines)
 

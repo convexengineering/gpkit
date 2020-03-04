@@ -40,11 +40,11 @@ Solution difference
 
 Relative differences >1%
 ------------------------
-The largest is 0%
+The largest is +0%.
 
 Sensitivity differences >0.1
 ----------------------------
-The largest is +0
+The largest is +0.
 
 SWEEP
 =====
