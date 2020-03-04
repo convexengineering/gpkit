@@ -11,7 +11,7 @@ from gpkit.constraints.relax import ConstraintsRelaxed
 from gpkit.constraints.relax import ConstraintsRelaxedEqually
 from gpkit.constraints.relax import ConstantsRelaxed
 from gpkit.exceptions import (UnknownInfeasible,
-                              InvalidGPConstraint, InvalidSGP,
+                              InvalidGPConstraint, UnnecessarySGP,
                               PrimalInfeasible, DualInfeasible, UnboundedGP)
 
 
@@ -386,7 +386,7 @@ class TestSP(unittest.TestCase):
 
         with SignomialsEnabled():
             m = Model(x, [x + z >= y])
-        with self.assertRaises(InvalidSGP):
+        with self.assertRaises(UnnecessarySGP):
             m.localsolve(verbosity=0, solver=self.solver)
         with self.assertRaises(UnboundedGP):
             m.solve(verbosity=0, solver=self.solver)
@@ -590,7 +590,7 @@ class TestSP(unittest.TestCase):
             y = Variable("y")
             J = 0.01*((x - 1)**2 + (y - 1)**2) + (x*y - 1)**2
             m = Model(J)
-            with self.assertRaises(InvalidSGP):
+            with self.assertRaises(UnnecessarySGP):
                 m.localsolve(verbosity=0, solver=self.solver)
 
     def test_partial_sub_signomial(self):
@@ -612,7 +612,7 @@ class TestSP(unittest.TestCase):
         with self.assertRaises(InvalidGPConstraint):
             with SignomialsEnabled():
                 m.gp()
-        with self.assertRaises(InvalidSGP):
+        with self.assertRaises(UnnecessarySGP):
             m.localsolve(solver=self.solver)
 
     def test_reassigned_constant_cost(self):

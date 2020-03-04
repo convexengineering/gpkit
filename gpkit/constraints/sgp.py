@@ -2,7 +2,7 @@
 from time import time
 from collections import OrderedDict
 import numpy as np
-from ..exceptions import InvalidGPConstraint, Infeasible, InvalidSGP
+from ..exceptions import InvalidGPConstraint, Infeasible, UnnecessarySGP
 from ..keydict import KeyDict
 from ..nomials import Variable
 from .gp import GeometricProgram
@@ -52,7 +52,7 @@ class SequentialGeometricProgram(CostedConstraintSet):
                  use_pccp=True, pccp_penalty=2e2, **initgpargs):
         # pylint: disable=super-init-not-called,non-parent-init-called
         if cost.any_nonpositive_cs:
-            raise InvalidSGP("""Sequential GPs need Posynomial objectives.
+            raise UnnecessarySGP("""Sequential GPs need Posynomial objectives.
 
     The equivalent of a Signomial objective can be constructed by constraining
     a dummy variable `z` to be greater than the desired Signomial objective `s`
@@ -78,7 +78,7 @@ class SequentialGeometricProgram(CostedConstraintSet):
                             lts = cs.as_approxlts()
                         self._lt_approxs.append(lts)
                 if not sgpconstraints["SP constraints"]:
-                    raise InvalidSGP("""Model valid as a Geometric Program.
+                    raise UnnecessarySGP("""Model valid as a Geometric Program.
 
     SequentialGeometricPrograms should only be created with Models containing
     Signomial Constraints, since Models without Signomials have global
