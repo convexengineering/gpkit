@@ -167,7 +167,7 @@ class TestGP(unittest.TestCase):
         m = Model(61.3e6*units.USD*(mtow/(1e5*units.lbf))**0.807,
                   [mtow >= W_payload + f_oew*mtow + fuel_per_nm*R])
         sol = m.solve(solver=self.solver, verbosity=0)
-        senss = sol["sensitivities"]["constants"]
+        senss = sol["sensitivities"]["variables"]
         self.assertAlmostEqual(senss[f_oew], 0.91, 2)
         self.assertAlmostEqual(senss[R], 0.41, 2)
         self.assertAlmostEqual(senss[fuel_per_nm], 0.41, 2)

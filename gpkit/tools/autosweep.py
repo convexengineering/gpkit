@@ -139,11 +139,8 @@ class BinarySweepTree:  # pylint: disable=too-many-instance-attributes
         "Returns a solution array of all the solutions in an autosweep"
         solution = SolutionArray()
         for sol in self.sollist:
-            solution.append(sol.program.result)
+            solution.append(sol["gp"].result)
         solution.to_arrays()
-        units = getattr(self.sols[0]["cost"], "units", None)
-        if units:
-            solution["cost"] = solution["cost"] * units
         return solution
 
     def save(self, filename="autosweep.p"):
@@ -275,7 +272,7 @@ def get_tol(costs, bounds, sols, variable):  # pylint: disable=too-many-locals
     "Gets the intersection point and corresponding bounds from two solutions."
     y0, y1 = costs
     x0, x1 = np.log(bounds)
-    s0, s1 = [sol["sensitivities"]["constants"][variable] for sol in sols]
+    s0, s1 = [sol["sensitivities"]["variables"][variable] for sol in sols]
     # y0 + s0*(x - x0) == y1 + s1*(x - x1)
     num = y1-y0 + x0*s0-x1*s1
     denom = s0-s1

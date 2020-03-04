@@ -9,7 +9,7 @@ Table of solutions used in the autosweep:
 
 Cost
 ----
- [ 0.333     1         123       ] [m⁴]
+ [ 0.333     1         123       ]
 
 Free Variables
 --------------
@@ -22,4 +22,8 @@ l : [ 1         3         10       ]  [m]
 Sensitivities
 -------------
 l : [ +1        +2.5      +4       ]
+
+Tightest Constraints in last sweep
+----------------------------------
+    +2 : A >= (l/3)²
 

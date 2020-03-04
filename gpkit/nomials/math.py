@@ -398,8 +398,6 @@ class ScalarSingleEquationConstraint(SingleEquationConstraint):
         else:
             raise ValueError(
                 "Constraint %s had unknown operator %s." % self.oper, self)
-        for constr in relaxed:
-            constr.generated_by = self
         return relaxed
 
 
@@ -410,7 +408,6 @@ class PosynomialInequality(ScalarSingleEquationConstraint):
     Usually initialized via operator overloading, e.g. cc = (y**2 >= 1 + x)
     """
     feastol = 1e-3
-    relax_sensitivity = None
     # NOTE: follows .check_result's max default, but 1e-3 seems a bit lax...
 
     def __init__(self, left, oper, right):
@@ -494,11 +491,6 @@ class PosynomialInequality(ScalarSingleEquationConstraint):
 
     def sens_from_dual(self, la, nu, result):  # pylint: disable=unused-argument
         "Returns the variable/constraint sensitivities from lambda/nu"
-        self.relax_sensitivity = la
-        if self.generated_by:
-            self.generated_by.relax_sensitivity = la
-            if getattr(self.generated_by, "generated_by", None):
-                self.generated_by.generated_by.relax_sensitivity = la
         presub, = self.unsubbed
         if hasattr(self, "pmap"):
             nu_ = np.zeros(len(presub.hmap))
@@ -511,7 +503,7 @@ class PosynomialInequality(ScalarSingleEquationConstraint):
                     nu_[idx] += percentage * la*scale
             nu = nu_
         self.v_ss = sum(nu_i*exp for (nu_i, exp) in zip(nu, presub.hmap.keys()))
-        return self.v_ss
+        return self.v_ss, la
 
     def as_gpconstr(self, _):
         "The GP version of a Posynomial constraint is itself"
@@ -530,7 +522,6 @@ class MonomialEquality(PosynomialInequality):
         self.nomials.extend(self.unsubbed)
         self.bounded = set()
         self.meq_bounded = {}
-        self.relax_sensitivity = 0  # don't count equality sensitivities
         self._las = []
         if self.unsubbed and len(self.varkeys) > 1:
             exp, = list(self.unsubbed[0].hmap.keys())
@@ -570,17 +561,11 @@ class MonomialEquality(PosynomialInequality):
         "Returns the variable/constraint sensitivities from lambda/nu"
         self._las.append(la)
         if len(self._las) < 2:
-            return {}
-        la = self._las
+            return {}, 0
+        la = self._las[0] - self._las[1]
         self._las = []
-        self.relax_sensitivity = la[0] - la[1]
-        if self.generated_by:
-            self.generated_by.relax_sensitivity = self.relax_sensitivity
-            if getattr(self.generated_by, "generated_by", None):
-                self.generated_by.generated_by.relax_sensitivity = \
-                    self.relax_sensitivity
         exp, = self.unsubbed[0].hmap
-        return (la[0]-la[1])*exp
+        return la*exp, la
 
 
 class SignomialInequality(ScalarSingleEquationConstraint):
@@ -660,7 +645,6 @@ class SignomialInequality(ScalarSingleEquationConstraint):
                = d(coeff)/d(var)*1/negy - d(negy)/d(var)*coeff*1/negy**2
         """
         # pylint: disable=too-many-locals, attribute-defined-outside-init
-        self.relax_sensitivity = la
 
         # pylint: disable=no-member
         def subval(posy):
@@ -685,7 +669,7 @@ class SignomialInequality(ScalarSingleEquationConstraint):
                 sens = (nu_i*inv_mon_val*d_mon_d_var*var_val)
                 assert isinstance(sens, float)
                 var_senss[var] = sens + var_senss.get(var, 0)
-        return var_senss
+        return var_senss, la
 
     def as_gpconstr(self, x0):
         "Returns GP approximation of an SP constraint at x0"

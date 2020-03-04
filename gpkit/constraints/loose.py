@@ -16,16 +16,14 @@ class Loose(ConstraintSet):
         "Checks that all constraints are satisfied with equality"
         super().process_result(result)
         for constraint in self.flat():
-            cstr = ("Constraint [ %.100s... %s %.100s... )"
-                    % (constraint.left, constraint.oper, constraint.right))
-            if not hasattr(constraint, "relax_sensitivity"):
-                print("%s lacks a `relax_sensitivity` parameter and"
-                      " so can't be checked for looseness." % cstr)
-                continue
-            if constraint.relax_sensitivity >= self.senstol:
+            c_senss = result["sensitivities"]["constraints"][constraint]
+            if c_senss >= self.senstol:
+                cstr = ("Constraint [ %.100s... %s %.100s... )"
+                        % (constraint.left, constraint.oper, constraint.right))
                 msg = ("%s is not loose: it has a sensitivity of %+.4g."
                        " (Allowable sensitivity: %.4g)" %
-                       (cstr, constraint.relax_sensitivity, self.senstol))
+                       (cstr, c_senss, self.senstol))
+                constraint.relax_sensitivity = c_senss
                 appendsolwarning(msg, constraint, result,
                                  "Unexpectedly Tight Constraints")
                 if self.raiseerror:

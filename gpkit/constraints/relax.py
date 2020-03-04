@@ -169,7 +169,7 @@ class ConstantsRelaxed(ConstraintSet):
     def process_result(self, result):
         "Transfers the constant sensitivities back to the original constants"
         ConstraintSet.process_result(self, result)
-        constant_senss = result["sensitivities"]["constants"]
+        constant_senss = result["sensitivities"]["variables"]
         for new_constant, former_constant in self._derelax_map.items():
             constant_senss[former_constant] = constant_senss[new_constant]
             del constant_senss[new_constant]

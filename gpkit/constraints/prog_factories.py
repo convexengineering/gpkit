@@ -115,6 +115,7 @@ def solvify(genfunction):
          """
         constants, sweep, linked = parse_subs(self.varkeys, self.substitutions)
         solution = SolutionArray()
+        solution.modelstr = str(self)
 
         # NOTE SIDE EFFECTS: self.program is set below
         if sweep:
@@ -125,7 +126,6 @@ def solvify(genfunction):
             result = progsolve(solver, verbosity=verbosity, **kwargs)
             solution.append(result)
         solution.to_arrays()
-        solution.program = self.program
         if self.cost.units:
             solution["cost"] = solution["cost"] * self.cost.units
         self.solution = solution  # NOTE: SIDE EFFECTS

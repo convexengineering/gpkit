@@ -22,11 +22,11 @@ VALSTR_REPLACES = [
 
 def senss_table(data, showvars=(), title="Sensitivities", **kwargs):
     "Returns sensitivity table lines"
-    if "constants" in data.get("sensitivities", {}):
-        data = data["sensitivities"]["constants"]
+    if "variables" in data.get("sensitivities", {}):
+        data = data["sensitivities"]["variables"]
     if showvars:
         data = {k: data[k] for k in showvars if k in data}
-    return var_table(data, title, sortbyvals=True,
+    return var_table(data, title, sortbyvals=True, skipifempty=True,
                      valfmt="%+-.2g  ", vecfmt="%+-8.2g",
                      printunits=False, minval=1e-3, **kwargs)
 
@@ -40,8 +40,8 @@ def topsenss_table(data, showvars, nvars=5, **kwargs):
 
 def topsenss_filter(data, showvars, nvars=5):
     "Filters sensitivities down to top N vars"
-    if "constants" in data.get("sensitivities", {}):
-        data = data["sensitivities"]["constants"]
+    if "variables" in data.get("sensitivities", {}):
+        data = data["sensitivities"]["variables"]
     mean_abs_senss = {k: np.abs(s).mean() for k, s in data.items()
                       if not np.isnan(s).any()}
     topk = [k for k, _ in sorted(mean_abs_senss.items(), key=lambda l: l[1])]
@@ -56,49 +56,45 @@ def topsenss_filter(data, showvars, nvars=5):
 def insenss_table(data, _, maxval=0.1, **kwargs):
     "Returns insensitivity table lines"
     if "constants" in data.get("sensitivities", {}):
-        data = data["sensitivities"]["constants"]
+        data = data["sensitivities"]["variables"]
     data = {k: s for k, s in data.items() if np.mean(np.abs(s)) < maxval}
     return senss_table(data, title="Insensitive Fixed Variables", **kwargs)
 
 
 def tight_table(self, _, ntightconstrs=5, tight_senss=1e-2, **kwargs):
     "Return constraint tightness lines"
-    if self.program is None:
-        return []
-    program = self.program
     title = "Tightest Constraints"
-    if "sweepvariables" in self:
-        program = program[-1]
+    if len(self) > 1:
         title += " in last sweep"
-    data = []
-    for c in program.flat():
-        try:
-            if c.relax_sensitivity and c.relax_sensitivity >= tight_senss:
-                data.append(((-float("%+6.2g" % c.relax_sensitivity), str(c)),
-                             "%+6.2g" % c.relax_sensitivity, id(c), c))
-        except AttributeError:
-            print("Constraint %s had no `relax_sensitivity` attribute." % c)
-            return []
-    data = sorted(data)[:ntightconstrs]
+        data = sorted(((-float("%+6.2g" % s[-1]), str(c)),
+                       "%+6.2g" % s[-1], id(c), c)
+                      for c, s in self["sensitivities"]["constraints"].items()
+                      if s[-1] >= tight_senss)[:ntightconstrs]
+    else:
+        data = sorted(((-float("%+6.2g" % s), str(c)), "%+6.2g" % s, id(c), c)
+                      for c, s in self["sensitivities"]["constraints"].items()
+                      if s >= tight_senss)[:ntightconstrs]
     return constraint_table(data, title, **kwargs)
 
 def loose_table(self, _, min_senss=1e-5, **kwargs):
     "Return constraint tightness lines"
-    if self.program is None:
-        return []
-    program = self.program
     title = "Constraints with sensitivity below %+g" % min_senss
-    if "sweepvariables" in self:
-        program = program[-1]
+    if len(self) > 1:
         title += " in last sweep"
-    data = [(0, "", c) for c in program.flat()
-            if c.relax_sensitivity <= min_senss]
+        data = [(0, "", id(c), c)
+                for c, s in self["sensitivities"]["constraints"].items()
+                if s[-1] <= min_senss]
+    else:
+        data = [(0, "", id(c), c)
+                for c, s in self["sensitivities"]["constraints"].items()
+                if s <= min_senss]
     return constraint_table(data, title, **kwargs)
 
 
 # pylint: disable=too-many-branches,too-many-locals,too-many-statements
 def constraint_table(data, title, sortbymodel=True, showmodels=True, **_):
     "Creates lines for tables where the right side is a constraint."
+    # TODO: this should support 1D array inputs from sweeps
     excluded = ("units", "unnecessary lineage")
     if not showmodels:
         excluded = ("units", "lineage")  # hide all of it
@@ -259,7 +255,7 @@ class SolutionArray(DictOfLists):
     >>> senss.append(sol["sensitivities"]["variables"]["x_{min}"])
     >>> assert all(np.array(senss) == 1)
     """
-    program = model = None
+    modelstr = ""
     _name_collision_varkeys = None
     table_titles = {"sweepvariables": "Sweep Variables",
                     "freevariables": "Free Variables",
@@ -330,7 +326,8 @@ class SolutionArray(DictOfLists):
         -------
         str
         """
-        tableargs.update({"hidebelowminval": True, "sortbyvals": True})
+        tableargs.update({"hidebelowminval": True, "sortbyvals": True,
+                          "skipifempty": False})
         if isinstance(other, Strings):
             other = pickle.load(open(other, "rb"))
         svars, ovars = self["variables"], other["variables"]
@@ -405,10 +402,6 @@ class SolutionArray(DictOfLists):
         """
         pickle.dump(self, open(filename, "wb"), **pickleargs)
 
-    def __getstate__(self):
-        "Pickle prep; returns None so other __getstates__ are called"
-        self.model = str(self.model)
-
     def varnames(self, showvars, exclude):
         "Returns list of variables, optionally with minimal unique names"
         if showvars:
@@ -471,7 +464,7 @@ class SolutionArray(DictOfLists):
         "Saves solution table as a text file"
         with open(filename, "w") as f:
             if printmodel:
-                f.write(str(self.model))
+                f.write(self.modelstr)
             f.write(self.table(**kwargs))
 
     def savecsv(self, showvars=None, filename="solution.csv", valcols=5):
@@ -627,9 +620,6 @@ class SolutionArray(DictOfLists):
             print("SolutionArray.plot only supports 1-dimensional sweeps")
         if not hasattr(posys, "__len__"):
             posys = [posys]
-        for i, posy in enumerate(posys):
-            if posy in [None, "cost"]:
-                posys[i] = self.program[0].cost   # pylint: disable=unsubscriptable-object
         import matplotlib.pyplot as plt
         from .interactive.plot_sweep import assign_axes
         from . import GPBLU
@@ -649,7 +639,7 @@ def var_table(data, title, printunits=True, latex=False, rawlines=False,
               varfmt="%s : ", valfmt="%-.4g ", vecfmt="%-8.3g",
               minval=0, sortbyvals=False, hidebelowminval=False,
               included_models=None, excluded_models=None, sortbymodel=True,
-              maxcolumns=5, **_):
+              maxcolumns=5, skipifempty=True, **_):
     """
     Pretty string representation of a dict of VarKeys
     Iterable values are handled specially (partial printing)
@@ -694,6 +684,8 @@ def var_table(data, title, printunits=True, latex=False, rawlines=False,
                 val = np.nanmean(np.abs(v)) - (1e-9 if np.nanmean(v) < 0 else 0)
                 sort = (float("%.4g" % -val), k.name)
                 decorated.append((model, sort, b, (varfmt % s), i, k, v))
+    if not decorated and skipifempty:
+        return []
     if included_models:
         included_models = set(included_models)
         included_models.add("")
