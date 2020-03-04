@@ -1,4 +1,3 @@
-# -*coding: utf-8 -*-
 """Module for creating NomialArray instances.
 
     Example
@@ -14,7 +13,7 @@ from .map import NomialMap
 from ..small_classes import Numbers, HashVector, EMPTY_HV
 from ..small_scripts import try_str_without, mag
 from ..constraints import ArrayConstraint
-from ..repr_conventions import GPkitObject
+from ..repr_conventions import ReprMixin
 from ..exceptions import DimensionalityError
 
 @np.vectorize
@@ -37,7 +36,7 @@ def array_constraint(symbol, func):
     return wrapped_func
 
 
-class NomialArray(GPkitObject, np.ndarray):
+class NomialArray(ReprMixin, np.ndarray):
     """A Numpy array with elementwise inequalities and substitutions.
 
     Arguments
@@ -97,7 +96,7 @@ class NomialArray(GPkitObject, np.ndarray):
         if self.ast:
             return self.parse_ast(excluded)
         if hasattr(self, "key"):
-            return self.key.str_without(excluded)
+            return self.key.str_without(excluded)  # pylint: disable=no-member
         if not self.shape:
             return try_str_without(self.flatten()[0], excluded)
 
@@ -109,7 +108,7 @@ class NomialArray(GPkitObject, np.ndarray):
         "Returns latex representation without certain fields."
         units = self.latex_unitstr() if "units" not in excluded else ""
         if hasattr(self, "key"):
-            return self.key.latex(excluded) + units
+            return self.key.latex(excluded) + units  # pylint: disable=no-member
         return np.ndarray.__str__(self)
 
     def __hash__(self):

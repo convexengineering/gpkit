@@ -19,11 +19,11 @@ Cost
 
 Constraints
 -----------
-   "minimum relaxation":
-     C >= 1
-   "relaxed constraints":
-     x <= C·x_max
-     x_min <= C·x
+ "minimum relaxation":
+   C >= 1
+ "relaxed constraints":
+   x <= C·x_max
+   x_min <= C·x
 
 Optimal Cost
 ------------
@@ -61,11 +61,11 @@ Cost
 
 Constraints
 -----------
-   "minimum relaxation":
-     C[:] >= 1
-   "relaxed constraints":
-     x <= C[0]·x_max
-     x_min <= C[1]·x
+ "minimum relaxation":
+   C[:] >= 1
+ "relaxed constraints":
+   x <= C[0]·x_max
+   x_min <= C[1]·x
 
 Optimal Cost
 ------------
@@ -105,18 +105,18 @@ Cost
 Constraints
 -----------
  Relax2
-   "original constraints":
-     x <= x_max
-     x >= x_min
-   "relaxation constraints":
-     "x_max":
-       Relax2.x_max >= 1
-       x_max >= Relax2.OriginalValues.x_max/Relax2.x_max
-       x_max <= Relax2.OriginalValues.x_max·Relax2.x_max
-     "x_min":
-       Relax2.x_min >= 1
-       x_min >= Relax2.OriginalValues.x_min/Relax2.x_min
-       x_min <= Relax2.OriginalValues.x_min·Relax2.x_min
+  "original constraints":
+    x <= x_max
+    x >= x_min
+  "relaxation constraints":
+    "x_max":
+      Relax2.x_max >= 1
+      x_max >= Relax2.OriginalValues.x_max/Relax2.x_max
+      x_max <= Relax2.OriginalValues.x_max·Relax2.x_max
+    "x_min":
+      Relax2.x_min >= 1
+      x_min >= Relax2.OriginalValues.x_min/Relax2.x_min
+      x_min <= Relax2.OriginalValues.x_min·Relax2.x_min
 
 Optimal Cost
 ------------

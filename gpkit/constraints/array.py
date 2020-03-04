@@ -1,9 +1,8 @@
 "Implements ArrayConstraint"
-from .set import ConstraintSet
 from .single_equation import SingleEquationConstraint
 
 
-class ArrayConstraint(SingleEquationConstraint, ConstraintSet):
+class ArrayConstraint(SingleEquationConstraint, list):
     """A ConstraintSet for prettier array-constraint printing.
 
     ArrayConstraint gets its `sub` method from ConstrainSet,
@@ -14,10 +13,16 @@ class ArrayConstraint(SingleEquationConstraint, ConstraintSet):
     """
     def __init__(self, constraints, left, oper, right):
         SingleEquationConstraint.__init__(self, left, oper, right)
-        ConstraintSet.__init__(self, constraints)
+        list.__init__(self, constraints)
+        self.constraints = constraints
+
+    def __iter__(self):
+        yield from self.constraints.flat
+
+    def lines_without(self, excluded):
+        "Returns lines for indentation in hierarchical printing."
+        return self.str_without(excluded).split("\n")
 
     def __bool__(self):
         "Allows the use of '=' NomialArrays as truth elements."
-        if self.oper != "=":
-            return NotImplemented
-        return all(bool(p) for p in self.flat())
+        return False if self.oper != "=" else bool(self.constraints.all())

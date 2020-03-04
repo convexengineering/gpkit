@@ -2,6 +2,7 @@
 import unittest
 import numpy as np
 from gpkit import Variable, Posynomial, NomialArray, VectorVariable, Monomial
+from gpkit.constraints.set import ConstraintSet
 import gpkit
 
 
@@ -66,7 +67,8 @@ class TestNomialArray(unittest.TestCase):
         x_2 = Variable('x', idx=(2,), shape=(3,), label='dummy variable')
         v = NomialArray([1, 2, 3]).T
         p = [x_0, x_1/2, x_2/3]
-        self.assertEqual(list((x <= v).flathmaps({})), [e.hmap for e in p])
+        constraint = ConstraintSet([x <= v])
+        self.assertEqual(list(constraint.as_hmapslt1({})), [e.hmap for e in p])
 
     def test_substition(self):  # pylint: disable=no-member
         x = VectorVariable(3, 'x', label='dummy variable')
