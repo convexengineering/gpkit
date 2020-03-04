@@ -19,23 +19,23 @@ cost upper bound:
 Solved after  3 passes, cost logtol +/-0
 Table of solutions used in the autosweep:
 
-Cost
-----
+Optimal Cost
+------------
  [ 0.333     1         123       ]
 
 Free Variables
 --------------
 A : [ 0.577     1         11.1     ]  [m²]
 
-Constants
----------
+Fixed Variables
+---------------
 l : [ 1         3         10       ]  [m]
 
-Sensitivities
--------------
+Variable Sensitivities
+----------------------
 l : [ +1        +2.5      +4       ]
 
-Tightest Constraints in last sweep
-----------------------------------
+Most Sensitive Constraints (in last sweep)
+------------------------------------------
     +2 : A >= (l/3)²
 

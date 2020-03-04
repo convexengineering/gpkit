@@ -4,15 +4,15 @@ Solves with these variables bounded:
    value near upper bound: x
 
 
-Cost
-----
+Optimal Cost
+------------
  1e-30
 
 Free Variables
 --------------
 x : 1e+30
 
-Tightest Constraints
---------------------
+Most Sensitive Constraints
+--------------------------
     +1 : x <= 1e+30
 

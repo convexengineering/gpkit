@@ -21,7 +21,7 @@ VALSTR_REPLACES = [
 ]
 
 
-def senss_table(data, showvars=(), title="Sensitivities", **kwargs):
+def senss_table(data, showvars=(), title="Variable Sensitivities", **kwargs):
     "Returns sensitivity table lines"
     if "variables" in data.get("sensitivities", {}):
         data = data["sensitivities"]["variables"]
@@ -35,7 +35,9 @@ def senss_table(data, showvars=(), title="Sensitivities", **kwargs):
 def topsenss_table(data, showvars, nvars=5, **kwargs):
     "Returns top sensitivity table lines"
     data, filtered = topsenss_filter(data, showvars, nvars)
-    title = "Most Sensitive" if not filtered else "Next Largest Sensitivities"
+    title = "Most Sensitive Variables"
+    if filtered:
+        title = "Next Most Sensitive Variables"
     return senss_table(data, title=title, hidebelowminval=True, **kwargs)
 
 
@@ -64,9 +66,9 @@ def insenss_table(data, _, maxval=0.1, **kwargs):
 
 def tight_table(self, _, ntightconstrs=5, tight_senss=1e-2, **kwargs):
     "Return constraint tightness lines"
-    title = "Tightest Constraints"
+    title = "Most Sensitive Constraints"
     if len(self) > 1:
-        title += " in last sweep"
+        title += " (in last sweep)"
         data = sorted(((-float("%+6.2g" % s[-1]), str(c)),
                        "%+6.2g" % s[-1], id(c), c)
                       for c, s in self["sensitivities"]["constraints"].items()
@@ -79,9 +81,9 @@ def tight_table(self, _, ntightconstrs=5, tight_senss=1e-2, **kwargs):
 
 def loose_table(self, _, min_senss=1e-5, **kwargs):
     "Return constraint tightness lines"
-    title = "Constraints with sensitivity below %+g" % min_senss
+    title = "Insensitive Constraints |below %+g|" % min_senss
     if len(self) > 1:
-        title += " in last sweep"
+        title += " (in last sweep)"
         data = [(0, "", id(c), c)
                 for c, s in self["sensitivities"]["constraints"].items()
                 if s[-1] <= min_senss]
@@ -259,9 +261,9 @@ class SolutionArray(DictOfLists):
     """
     modelstr = ""
     _name_collision_varkeys = None
-    table_titles = {"sweepvariables": "Sweep Variables",
+    table_titles = {"sweepvariables": "Swept Variables",
                     "freevariables": "Free Variables",
-                    "constants": "Constants",
+                    "constants": "Fixed Variables",  # TODO: change everywhere
                     "variables": "Variables"}
 
     def name_collision_varkeys(self):
@@ -334,19 +336,21 @@ class SolutionArray(DictOfLists):
         if isinstance(other, Strings):
             other = pickle.load(open(other, "rb"))
         svars, ovars = self["variables"], other["variables"]
-        lines = ["Solution difference",
-                 "===================",
+        lines = ["Solution Diff",
+                 "=============",
                  "(positive means the argument is smaller)", ""]
         svks, ovks = set(svars), set(ovars)
         if showvars:
-            lines[0] += " for selected variables"
-            lines[1] += "======================="
+            lines[0] += " (for selected variables)"
+            lines[1] += "========================="
             showvars = self._parse_showvars(showvars)
             svks = {k for k in showvars if k in svars}
             ovks = {k for k in showvars if k in ovars}
-        if constraintsdiff:
-            if self.modelstr != other.modelstr:
-                cdiff = ["Constraint differences",
+        if constraintsdiff and other.modelstr and self.modelstr:
+            if self.modelstr == other.modelstr:
+                lines += ["** no constraint differences **", ""]
+            else:
+                cdiff = ["Constraint Differences",
                          "**********************"]
                 cdiff.extend(difflib.unified_diff(
                     self.modelstr.split("\n"), other.modelstr.split("\n"),
@@ -366,33 +370,32 @@ class SolutionArray(DictOfLists):
             lines.append("\n".join("  %s" % key for key in ovks - svks))
             lines.append("")
         sharedvks = svks.intersection(ovks)
-        # relative difference #
         if reldiff:
             rel_diff = {vk: 100*(cast(np.divide, svars[vk], ovars[vk]) - 1)
                         for vk in sharedvks}
-            lines += var_table(rel_diff, "Relative differences >%g%%" % reltol,
+            lines += var_table(rel_diff,
+                               "Relative Differences |above %g%%|" % reltol,
                                valfmt="%+.1f%%  ", vecfmt="%+6.1f%% ",
                                minval=reltol, printunits=False, **tableargs)
             if lines[-2][:10] == "-"*10:  # nothing larger than sensstol
                 lines.insert(-1, ("The largest is %+g%%."
                                   % unrolled_absmax(rel_diff.values())))
-        # absolute difference #
         if absdiff:
             abs_diff = {vk: cast(sub, svars[vk], ovars[vk]) for vk in sharedvks}
-            lines += var_table(abs_diff, "Absolute differences >%g" % abstol,
+            lines += var_table(abs_diff,
+                               "Absolute Differences |above %g|" % abstol,
                                valfmt="%+.2g", vecfmt="%+8.2g",
                                minval=abstol, **tableargs)
             if lines[-2][:10] == "-"*10:  # nothing larger than sensstol
                 lines.insert(-1, ("The largest is %+g."
                                   % unrolled_absmax(abs_diff.values())))
-        # sensitivity difference #
         if senssdiff:
             ssenss = self["sensitivities"]["variables"]
             osenss = other["sensitivities"]["variables"]
-            senss_delta = {vk: cast(sub, ssenss.get(vk, 0), osenss.get(vk, 0))
+            senss_delta = {vk: cast(sub, ssenss[vk], osenss[vk])
                            for vk in svks.intersection(ovks)}
-            title = "Sensitivity differences >%g" % sensstol
-            lines += var_table(senss_delta, title,
+            lines += var_table(senss_delta,
+                               "Sensitivity Differences |above %g|" % sensstol,
                                valfmt="%+-.2f  ", vecfmt="%+-6.2f",
                                minval=sensstol, printunits=False, **tableargs)
             if lines[-2][:10] == "-"*10:  # nothing larger than sensstol
@@ -600,7 +603,7 @@ class SolutionArray(DictOfLists):
                 cost = self["cost"]  # pylint: disable=unsubscriptable-object
                 if kwargs.get("latex", None):  # cost is not printed for latex
                     continue
-                strs += ["\n%s\n----" % "Cost"]
+                strs += ["\n%s\n------------" % "Optimal Cost"]
                 if len(self) > 1:
                     costs = ["%-8.3g" % c for c in mag(cost[:4])]
                     strs += [" [ %s %s ]" % ("  ".join(costs),
@@ -725,7 +728,7 @@ def var_table(data, title, printunits=True, latex=False, rawlines=False,
                     lines.append(
                         [r"\multicolumn{3}{l}{\textbf{" + model + r"}} \\"])
             previous_model = model
-        label = var.descr.get('label', '')
+        label = var.descr.get("label", "")
         units = var.unitstr(" [%s] ") if printunits else ""
         if not isvector:
             valstr = valfmt % val

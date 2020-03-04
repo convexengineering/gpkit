@@ -29,8 +29,8 @@ h = self.h = Variable('h', 1, 'm', 'minimum height')  # from 'h     1 [m]    min
 #     way that makes the most sense to someone else reading your model.
 #     
 
-Cost
-----
+Optimal Cost
+------------
  1.465
 
 Free Variables
@@ -38,18 +38,18 @@ Free Variables
 A : 1.465                             [m²] surface area
 s : [ 0.316     0.316     1        ]  [m]  side length
 
-Constants
----------
+Fixed Variables
+---------------
 V : 100  [l] minimum volume
 h : 1    [m] minimum height
 
-Sensitivities
--------------
+Variable Sensitivities
+----------------------
 V : +0.57  minimum volume
 h : +0.3   minimum height
 
-Tightest Constraints
---------------------
+Most Sensitive Constraints
+--------------------------
     +1 : A >= 2·(s[0]·s[1] + s[1]·s[2] + s[2]·s[0])
  +0.57 : V <= s[:].prod()
   +0.3 : s[2] >= h

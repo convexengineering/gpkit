@@ -25,8 +25,8 @@ Constraints
      x <= C·x_max
      x_min <= C·x
 
-Cost
-----
+Optimal Cost
+------------
  1.414
 
 Free Variables
@@ -36,18 +36,18 @@ x : 1.414
   | Relax
 C : 1.414
 
-Constants
----------
+Fixed Variables
+---------------
 x_max : 1
 x_min : 2
 
-Sensitivities
--------------
+Variable Sensitivities
+----------------------
 x_max : -0.5
 x_min : +0.5
 
-Tightest Constraints
---------------------
+Most Sensitive Constraints
+--------------------------
   +0.5 : x <= C·x_max
   +0.5 : x_min <= C·x
 
@@ -67,8 +67,8 @@ Constraints
      x <= C[0]·x_max
      x_min <= C[1]·x
 
-Cost
-----
+Optimal Cost
+------------
  2
 
 Free Variables
@@ -78,18 +78,18 @@ x : 1
   | Relax1
 C : [ 1         2        ]
 
-Constants
----------
+Fixed Variables
+---------------
 x_max : 1
 x_min : 2
 
-Sensitivities
--------------
+Variable Sensitivities
+----------------------
 x_min : +1
 x_max : -0.99
 
-Tightest Constraints
---------------------
+Most Sensitive Constraints
+--------------------------
     +1 : x_min <= C[1]·x
  +0.99 : x <= C[0]·x_max
  +0.01 : C[0] >= 1
@@ -118,8 +118,8 @@ Constraints
        x_min >= Relax2.OriginalValues.x_min/Relax2.x_min
        x_min <= Relax2.OriginalValues.x_min·Relax2.x_min
 
-Cost
-----
+Optimal Cost
+------------
  2
 
 Free Variables
@@ -132,19 +132,19 @@ x_min : 1
 x_max : 1
 x_min : 2
 
-Constants
----------
+Fixed Variables
+---------------
       | Relax2.OriginalValues
 x_max : 1
 x_min : 2
 
-Sensitivities
--------------
+Variable Sensitivities
+----------------------
 x_min : +1
 x_max : -0.99
 
-Tightest Constraints
---------------------
+Most Sensitive Constraints
+--------------------------
     +1 : x >= x_min
     +1 : x_min >= Relax2.OriginalValues.x_min/Relax2.x_min
  +0.99 : x <= x_max

@@ -214,6 +214,8 @@ class SequentialGeometricProgram(CostedConstraintSet):
                 del self.result["freevariables"][self.slack.key]
                 del self.result["variables"][self.slack.key]
                 del self.result["sensitivities"]["variables"][self.slack.key]
+                slackconstraint = self["GP constraints"][-1]
+                del self.result["sensitivities"]["constraints"][slackconstraint]
             elif verbosity > -1:
                 print("Final solution let signomial constraints slacken by"
                       " %.2g%%. Calling .localsolve with a higher"

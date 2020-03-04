@@ -42,8 +42,8 @@ Constraints
        "parametrization of wing weight":
          Aircraft.Wing.W >= S·Aircraft.Wing.rho
 
-Cost
-----
+Optimal Cost
+------------
  1.091
 
 Free Variables
@@ -63,8 +63,8 @@ Wfuel : [ 1.09      0.817     0.544     0.272    ]  [lbf] fuel weight
       | Mission.FlightSegment.AircraftP.WingAero
     D : [ 2.74      2.73      2.72      2.72     ]  [lbf] drag force
 
-Sensitivities
--------------
+Variable Sensitivities
+----------------------
     | Aircraft.Fuselage
   W : +0.97  weight
 
@@ -72,8 +72,8 @@ Sensitivities
   A : -0.67  aspect ratio
 rho : +0.43  areal density
 
-Next Largest Sensitivities
---------------------------
+Next Most Sensitive Variables
+-----------------------------
     | Mission.FlightSegment.AircraftP.WingAero
   e : [ -0.18     -0.18     -0.18     -0.18    ] Oswald efficiency
 
@@ -81,8 +81,8 @@ Next Largest Sensitivities
   V : [ -0.22     -0.21     -0.21     -0.21    ] true airspeed
 rho : [ -0.12     -0.11     -0.11     -0.11    ] air density
 
-Tightest Constraints
---------------------
+Most Sensitive Constraints
+--------------------------
        | Aircraft
   +1.4 : .W >= .Fuselage.W + .Wing.W
 
@@ -94,15 +94,15 @@ Tightest Constraints
        | Aircraft.Wing
  +0.43 : .W >= S·.rho
 
-Constraints with sensitivity below +1e-05
------------------------------------------
+Insensitive Constraints |below +1e-05|
+--------------------------------------
 (none)
 
-Solution difference for selected variables
-==========================================
+Solution Diff (for selected variables)
+======================================
 (positive means the argument is smaller)
 
-Constraint differences
+Constraint Differences
 **********************
 --- removed in argument
 +++ added in argument
@@ -115,13 +115,13 @@ Constraint differences
 
 **********************
 
-Relative differences >1%
-------------------------
+Relative Differences |above 1%|
+-------------------------------
 Wburn : [ +102.1%   +101.6%   +101.1%   +100.5%  ] segment fuel burn
 Wfuel : [ +101.3%   +101.1%   +100.8%   +100.5%  ] fuel weight
     D : [   +1.1%       -         -         -    ] drag force
 
-Sensitivity differences >0.1
-----------------------------
+Sensitivity Differences |above 0.1|
+-----------------------------------
 The largest is -0.00451643.
 
