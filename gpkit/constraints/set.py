@@ -1,11 +1,11 @@
 "Implements ConstraintSet"
+from warnings import warn
 from collections import defaultdict, OrderedDict
 from itertools import chain
 import numpy as np
-from ..small_classes import Numbers
 from ..keydict import KeySet, KeyDict
 from ..small_scripts import try_str_without
-from ..repr_conventions import GPkitObject
+from ..repr_conventions import ReprMixin
 from .single_equation import SingleEquationConstraint
 
 
@@ -35,25 +35,42 @@ def _sort_constrs(item):
     return (not isinstance(constraint, SingleEquationConstraint),
             hasattr(constraint, "lineage") and bool(constraint.lineage), label)
 
+def flatiter(iterable, yield_if_hasattr=None):
+    "Yields contained constraints, optionally including constraintsets."
+    if isinstance(iterable, dict):
+        iterable = iterable.values()
+    for constraint in iterable:
+        if yield_if_hasattr and hasattr(constraint, yield_if_hasattr):
+            yield constraint
+        elif hasattr(constraint, "flat"):
+            if hasattr(constraint.flat, "__call__"):
+                yield from constraint.flat(yield_if_hasattr)
+            else:
+                yield from constraint.flat
+        elif hasattr(constraint, "__iter__"):
+            yield from flatiter(constraint, yield_if_hasattr)
+        else:
+            yield constraint
 
-class ConstraintSet(list, GPkitObject):
+
+class ConstraintSet(list, ReprMixin):
     "Recursive container for ConstraintSets and Inequalities"
     unique_varkeys, idxlookup = frozenset(), {}
-    varkeys = _name_collision_varkeys = None
+    _name_collision_varkeys = None
 
     def __init__(self, constraints, substitutions=None):  # pylint: disable=too-many-branches,too-many-statements
-        if isinstance(constraints, ConstraintSet):
-            constraints = [constraints]  # put it one level down
-        elif isinstance(constraints, dict):
+        if isinstance(constraints, dict):
             if isinstance(constraints, OrderedDict):
                 items = constraints.items()
             else:
                 items = sorted(list(constraints.items()), key=_sort_constrs)
             self.idxlookup = {k: i for i, (k, _) in enumerate(items)}
-            constraints = list(zip(*items))[1]
+            constraints = (item[1] for item in items)  # just the values
+        elif isinstance(constraints, ConstraintSet):
+            constraints = [constraints]  # put it one level down
+        else:
+            warn("please label your constraints!", PendingDeprecationWarning)
         list.__init__(self, constraints)
-        # initializations for attributes used elsewhere
-        self.numpy_bools = False
         # get substitutions and convert all members to ConstraintSets
         self.varkeys = KeySet(self.unique_varkeys)
         self.substitutions = KeyDict({k: k.value for k in self.unique_varkeys
@@ -61,39 +78,20 @@ class ConstraintSet(list, GPkitObject):
         self.substitutions.varkeys = self.varkeys
         self.bounded, self.meq_bounded = set(), defaultdict(set)
         for i, constraint in enumerate(self):
-            if not isinstance(constraint, ConstraintSet):
-                if hasattr(constraint, "__iter__"):
-                    list.__setitem__(self, i, ConstraintSet(constraint))
-                elif not hasattr(constraint, "as_hmapslt1"):
-                    if not isinstance(constraint, np.bool_):
+            if hasattr(constraint, "varkeys"):
+                self._update(constraint)
+            elif not hasattr(constraint, "as_hmapslt1"):
+                if not hasattr(constraint, "__iter__"):
+                    raise_badelement(self, i, constraint)
+                elif isinstance(constraint, ConstraintSet):
+                    raise ValueError("found ConstraintSet of type %s in"
+                                     " another ConstraintSet before it had"
+                                     " been initialized." % type(constraint))
+                for subconstraint in flatiter(constraint,
+                                              yield_if_hasattr="varkeys"):
+                    if isinstance(subconstraint, np.bool_):
                         raise_badelement(self, i, constraint)
-                    else:  # allow NomialArray equalities (arr == "a", etc.)
-                        self.numpy_bools = True  # but mark them so
-            elif not hasattr(constraint, "numpy_bools"):  # we can catch them!
-                raise ValueError("a ConstraintSet of type %s was included in"
-                                 " another ConstraintSet before being"
-                                 " initialized." % type(constraint))
-            elif constraint.numpy_bools:
-                raise_elementhasnumpybools(constraint)
-            if hasattr(self[i], "varkeys"):
-                self.varkeys.update(self[i].varkeys)
-                if hasattr(self[i], "substitutions"):
-                    self.substitutions.update(self[i].substitutions)
-                else:
-                    self.substitutions.update({k: k.value \
-                        for k in self[i].varkeys if "value" in k.descr})
-                self.bounded.update(self[i].bounded)
-                for bound, solutionset in self[i].meq_bounded.items():
-                    self.meq_bounded[bound].update(solutionset)
-                if type(self[i]) is ConstraintSet:  # pylint: disable=unidiomatic-typecheck
-                    del self[i].varkeys
-                    del self[i].substitutions
-                    del self[i].bounded
-                    del self[i].meq_bounded
-                    # TODO, speedup: make constraintset more and more a list;
-                    #   don't turn every sub-element into its own dang set.
-                    #   keep a flattened list of those with hmapslt1,
-                    #   process_result, and Thats It.
+                    self._update(subconstraint)
         if substitutions:
             self.substitutions.update(substitutions)
         updated_veckeys = False  # vector subs need to find each indexed varkey
@@ -111,6 +109,18 @@ class ConstraintSet(list, GPkitObject):
                     if key.veckey and key.veckey.value is not None:
                         del key.veckey.descr["value"]
         add_meq_bounds(self.bounded, self.meq_bounded)
+
+    def _update(self, constraint):
+        "Update parameters with a given constraint"
+        self.varkeys.update(constraint.varkeys)
+        if hasattr(constraint, "substitutions"):
+            self.substitutions.update(constraint.substitutions)
+        else:
+            self.substitutions.update({k: k.value \
+                for k in constraint.varkeys if "value" in k.descr})
+        self.bounded.update(constraint.bounded)
+        for bound, solutionset in constraint.meq_bounded.items():
+            self.meq_bounded[bound].update(solutionset)
 
     def __getitem__(self, key):
         if key in self.idxlookup:
@@ -149,15 +159,7 @@ class ConstraintSet(list, GPkitObject):
             constrained_varkeys.update(constraint.varkeys)
         return constrained_varkeys
 
-    def flat(self):
-        "Yields contained constraints, optionally including constraintsets."
-        for constraint in self:
-            if isinstance(constraint, ConstraintSet):
-                yield from constraint.flat()
-            elif hasattr(constraint, "__iter__"):
-                yield from constraint
-            else:
-                yield constraint
+    flat = flatiter
 
     def flathmaps(self, subs):
         "Yields hmaps<=1 from self.flat()"
@@ -176,7 +178,7 @@ class ConstraintSet(list, GPkitObject):
           - add values computed from solved variables
 
         """
-        for constraint in self:
+        for constraint in self.flat(yield_if_hasattr="process_result"):
             if hasattr(constraint, "process_result"):
                 constraint.process_result(result)
         for v in self.unique_varkeys:
@@ -208,8 +210,7 @@ class ConstraintSet(list, GPkitObject):
         "Lines representation of a ConstraintSet."
         root = "root" not in excluded
         rootlines, lines = [], []
-        indent = " "*2 if (len(self) > 1
-                           or getattr(self, "lineage", None)) else ""
+        indent = " " if getattr(self, "lineage", None) else ""
         if root:
             excluded += ("root",)
             if "unnecessary lineage" in excluded:
@@ -217,31 +218,12 @@ class ConstraintSet(list, GPkitObject):
                     key.descr["necessarylineage"] = True
             if hasattr(self, "_rootlines"):
                 rootlines = self._rootlines(excluded)  # pylint: disable=no-member
-        if self.idxlookup:
-            named_constraints = {v: k for k, v in self.idxlookup.items()}
-        for i, constraint in enumerate(self):
-            clines = try_str_without(constraint, excluded).split("\n")
-            if (getattr(constraint, "lineage", None)
-                    and isinstance(constraint, ConstraintSet)):
-                name, num = constraint.lineage[-1]
-                if not any(clines):
-                    clines = [indent + "(no constraints)"]
-                if lines:
-                    lines.append("")
-                lines.append(name if not num else name + str(num))
-            elif ("constraint names" not in excluded
-                  and self.idxlookup and i in named_constraints):
-                lines.append("\"%s\":" % named_constraints[i])
-                for j, line in enumerate(clines):
-                    if clines[j][:len(indent)] != indent:
-                        clines[j] = indent + line  # must be indented
-            lines.extend(clines)
+        lines = recursively_line(self, excluded)
         if root:
-            indent = " "
             if "unnecessary lineage" in excluded:
                 for key in self.name_collision_varkeys():
                     del key.descr["necessarylineage"]
-        return rootlines + [indent+line for line in lines]
+        return rootlines + [(indent+line).rstrip() for line in lines]
 
     def str_without(self, excluded=("unnecessary lineage", "units")):
         "String representation of a ConstraintSet."
@@ -268,6 +250,39 @@ class ConstraintSet(list, GPkitObject):
     def as_view(self):
         "Return a ConstraintSetView of this ConstraintSet."
         return ConstraintSetView(self)
+
+def recursively_line(iterable, excluded):
+    "Generates lines in a recursive tree-like fashion, the better to indent."
+    named_constraints = {}
+    if isinstance(iterable, dict):
+        items = sorted(list(iterable.items()), key=_sort_constrs)
+        named_constraints = {i: k for i, (k, _) in enumerate(items)}
+        iterable = (item[1] for item in items)  # just the values
+    elif hasattr(iterable, "idxlookup"):
+        named_constraints = {i: k for k, i in iterable.idxlookup.items()}
+    lines = []
+    for i, constraint in enumerate(iterable):
+        if hasattr(constraint, "lines_without"):
+            clines = constraint.lines_without(excluded)
+        elif not hasattr(constraint, "__iter__"):
+            clines = try_str_without(constraint, excluded).split("\n")
+        elif iterable is constraint:
+            clines = ["(constraint contained itself)"]
+        else:
+            clines = recursively_line(constraint, excluded)
+        if (getattr(constraint, "lineage", None)
+                and isinstance(constraint, ConstraintSet)):
+            name, num = constraint.lineage[-1]
+            if not any(clines):
+                clines = [" " + "(no constraints)"]  # named model indent
+            if lines:
+                lines.append("")
+            lines.append(name if not num else name + str(num))
+        elif "constraint names" not in excluded and i in named_constraints:
+            lines.append("\"%s\":" % named_constraints[i])
+            clines = ["  " + line for line in clines]  # named constraint indent
+        lines.extend(clines)
+    return lines
 
 
 class ConstraintSetView:
@@ -326,17 +341,3 @@ def raise_badelement(cns, i, constraint):
         loc = "between %s and %s" % (cns[i-1], cns[i+1])
     raise ValueError("%s was found %s.%s"
                      % (type(constraint), loc, cause))
-
-
-def raise_elementhasnumpybools(constraint):
-    "Identify the bad subconstraint array and raise a ValueError"
-    cause = ("An constraint was created containing numpy.bools.")
-    for side in [constraint.left, constraint.right]:
-        if not (isinstance(side, Numbers)
-                or hasattr(side, "hmap")
-                or hasattr(side, "__iter__")):
-            cause += (" NomialArray comparison with %.10s %s"
-                      " does not return a valid constraint."
-                      % (repr(side), type(side)))
-    raise ValueError("%s\nFull constraint: %s"
-                     % (cause, constraint))

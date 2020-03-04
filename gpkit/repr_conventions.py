@@ -80,7 +80,7 @@ def parenthesize(string, addi=True, mult=True):
     return string
 
 
-class GPkitObject:
+class ReprMixin:
     "This class combines various printing methods for easier adoption."
     lineagestr = lineagestr
     unitstr = unitstr

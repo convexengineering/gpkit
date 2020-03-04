@@ -1,9 +1,9 @@
 """Defines the VarKey class"""
 from .small_classes import HashVector, Count, qty
-from .repr_conventions import GPkitObject
+from .repr_conventions import ReprMixin
 
 
-class VarKey(GPkitObject):  # pylint:disable=too-many-instance-attributes
+class VarKey(ReprMixin):  # pylint:disable=too-many-instance-attributes
     """An object to correspond to each 'variable name'.
 
     Arguments

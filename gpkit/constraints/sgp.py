@@ -95,7 +95,7 @@ class SequentialGeometricProgram(CostedConstraintSet):
                 self._gp = self.init_gp(**initgpargs)
                 self.blackboxconstraints = False
                 return
-            except AttributeError:
+            except AttributeError:  # TODO: this is too broad of a catch
                 pass  # some constraint lacked
         self.blackboxconstraints = True
         self.__bare_init__(cost, model, substitutions)
@@ -236,7 +236,7 @@ class SequentialGeometricProgram(CostedConstraintSet):
     def _fill_x0(self, x0):
         "Returns a copy of x0 with subsitutions added."
         x0kd = KeyDict()
-        x0kd.varkeys = self.varkeys
+        x0kd.varkeys = self.model.varkeys
         if x0:
             x0kd.update(x0)  # has to occur after the setting of varkeys
         x0kd.update(self.substitutions)

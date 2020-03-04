@@ -1,11 +1,11 @@
 """Machinery for exps, cs, varlocs data -- common to nomials and programs"""
 import numpy as np
 from ..keydict import KeySet
-from ..repr_conventions import GPkitObject
+from ..repr_conventions import ReprMixin
 from ..varkey import VarKey
 
 
-class NomialData(GPkitObject):
+class NomialData(ReprMixin):
     """Object for holding cs, exps, and other basic 'nomial' properties.
 
     cs: array (coefficient of each monomial term)

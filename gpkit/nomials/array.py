@@ -1,4 +1,3 @@
-# -*coding: utf-8 -*-
 """Module for creating NomialArray instances.
 
     Example
@@ -14,7 +13,7 @@ from .map import NomialMap
 from ..small_classes import Numbers, HashVector, EMPTY_HV
 from ..small_scripts import try_str_without, mag
 from ..constraints import ArrayConstraint
-from ..repr_conventions import GPkitObject
+from ..repr_conventions import ReprMixin
 from ..exceptions import DimensionalityError
 
 @np.vectorize
@@ -37,7 +36,7 @@ def array_constraint(symbol, func):
     return wrapped_func
 
 
-class NomialArray(GPkitObject, np.ndarray):
+class NomialArray(ReprMixin, np.ndarray):
     """A Numpy array with elementwise inequalities and substitutions.
 
     Arguments
