@@ -134,7 +134,7 @@ class TestGP(unittest.TestCase):
                       M <= 0.76])
         sol = prob.solve(solver=self.solver, verbosity=0)
         almostequal = self.assertAlmostEqual
-        almostequal(0.000553226/R.units/sol["cost"], 1, self.ndig)
+        almostequal(0.000553226/sol["cost"], 1, self.ndig)
         almostequal(340.29/sol["constants"]["a0"], 1, self.ndig)
         almostequal(340.29/sol["variables"]["a0"], 1, self.ndig)
         almostequal(340.29*a0.units/sol("a0"), 1, self.ndig)

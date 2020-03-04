@@ -2,7 +2,7 @@ Infeasible monomial equality: Cannot convert from 'V [m³]' to 'M [kg]'
 
 Cost
 ----
- 1.293 [m²]
+ 1.293
 
 Free Variables
 --------------

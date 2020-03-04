@@ -44,7 +44,7 @@ Constraints
 
 Cost
 ----
- 1.091 [lbf]
+ 1.091
 
 Free Variables
 --------------

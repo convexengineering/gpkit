@@ -31,7 +31,7 @@ h = self.h = Variable('h', 1, 'm', 'minimum height')  # from 'h     1 [m]    min
 
 Cost
 ----
- 1.465 [m²]
+ 1.465
 
 Free Variables
 --------------

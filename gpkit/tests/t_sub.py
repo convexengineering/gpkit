@@ -122,11 +122,11 @@ class TestModelSubs(unittest.TestCase):
             m = Model(v.prod(), [v >= v_min],
                       {v_min: [2*gpkit.units("nmi")]})
             cost = m.solve(verbosity=0)["cost"]
-            self.assertAlmostEqual(cost/(3.704*gpkit.ureg("km")), 1.0)
+            self.assertAlmostEqual(cost/3.704, 1.0)
             m = Model(v.prod(), [v >= v_min],
                       {v_min: np.array([2])*gpkit.units("nmi")})
             cost = m.solve(verbosity=0)["cost"]
-            self.assertAlmostEqual(cost/(3.704*gpkit.ureg("km")), 1.0)
+            self.assertAlmostEqual(cost/3.704, 1.0)
 
     def test_phantoms(self):
         x = Variable("x")
@@ -169,7 +169,7 @@ class TestModelSubs(unittest.TestCase):
                                 h: 35*gpkit.units("USD"),
                                 Q: ("sweep", [50, 100, 500])})
         firstcost = m.solve(verbosity=0)["cost"][0]
-        self.assertAlmostEqual(1760*gpkit.ureg("USD")/firstcost, 1, 5)
+        self.assertAlmostEqual(1760/firstcost, 1, 5)
 
     def test_skipfailures(self):
         x = Variable("x")
@@ -277,23 +277,24 @@ class TestModelSubs(unittest.TestCase):
         concat_cost = concatm.solve(verbosity=0)["cost"]
         almostequal = self.assertAlmostEqual
         yard, cm = gpkit.ureg("yard"), gpkit.ureg("cm")
+        ft, meter = gpkit.ureg("ft"), gpkit.ureg("m")
         if not isinstance(a["x"].key.units, str):
-            almostequal(1/yard/a.solve(verbosity=0)["cost"], 1, 5)
-            almostequal(1*cm/b.solve(verbosity=0)["cost"], 1, 5)
-            almostequal(1*cm/yard/concat_cost, 1, 5)
+            almostequal(a.solve(verbosity=0)["cost"], ft/yard, 5)
+            almostequal(b.solve(verbosity=0)["cost"], cm/meter, 5)
+            almostequal(cm/yard, concat_cost, 5)
         NamedVariables.reset_modelnumbers()
         a1, b1 = Above(), Below()
         self.assertEqual(a1["x"].key.lineage, (("Above", 0),))
         m = Model(a1["x"], [a1, b1, b1["x"] == a1["x"]])
         sol = m.solve(verbosity=0)
         if not isinstance(a1["x"].key.units, str):
-            almostequal(1*cm/sol["cost"], 1, 5)
+            almostequal(sol["cost"], cm/ft, 5)
         a1, b1 = Above(), Below()
         self.assertEqual(a1["x"].key.lineage, (("Above", 1),))
         m = Model(b1["x"], [a1, b1, b1["x"] == a1["x"]])
         sol = m.solve(verbosity=0)
         if not isinstance(b1["x"].key.units, str):
-            almostequal(1*gpkit.ureg.cm/sol["cost"], 1, 5)
+            almostequal(sol["cost"], cm/meter, 5)
         self.assertIn(a1["x"], sol["variables"])
         self.assertIn(b1["x"], sol["variables"])
         self.assertNotIn(a["x"], sol["variables"])

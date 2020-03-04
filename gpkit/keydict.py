@@ -210,26 +210,26 @@ class KeyDict(KeyMap, dict):
             self._copyonwrite(key)
             super().__getitem__(key)[idx] = value
             return  # succefully set a single index!
-        # now if we're not just setting a single index...
-        if getattr(value, "shape", None):   # maybe it's an array?
-            if value.dtype == INT_DTYPE:
-                value = np.array(value, "f")  # convert to float
-            if dict.__contains__(self, key):
-                old = super().__getitem__(key)
-                if old.dtype != value.dtype:
-                    # e.g. replacing a number with a linked function
-                    self.owned.add(key)
-                    super().__setitem__(key, np.array(old, dtype=value.dtype))
-                self._copyonwrite(key)
-                goodvals = ~isnan(value)
-                super().__getitem__(key)[goodvals] = value[goodvals]
-                return  # successfully set only some indexes!
-        # or maybe it just needs to be shaped into one
-        elif not is_sweepvar(value) and key.shape:  # not a sweep, and a veckey
-            if not hasattr(value, "__len__"):
-                value = np.full(key.shape, value, "f")
-            elif not isinstance(value[0], np.ndarray):
-                value = np.array([clean_value(key, v) for v in value])
+        if key.shape: # now if we're setting an array...
+            if getattr(value, "shape", None):   # is the value an array?
+                if value.dtype == INT_DTYPE:
+                    value = np.array(value, "f")  # convert to float
+                if dict.__contains__(self, key):
+                    old = super().__getitem__(key)
+                    if old.dtype != value.dtype:
+                        # e.g. replacing a number with a linked function
+                        newly_typed_array = np.array(old, dtype=value.dtype)
+                        super().__setitem__(key, newly_typed_array)
+                        self.owned.add(key)
+                    self._copyonwrite(key)
+                    goodvals = ~isnan(value)
+                    super().__getitem__(key)[goodvals] = value[goodvals]
+                    return  # successfully set only some indexes!
+            elif not is_sweepvar(value): # or needs to be made one?
+                if not hasattr(value, "__len__"):
+                    value = np.full(key.shape, value, "f")
+                elif not isinstance(value[0], np.ndarray):
+                    value = np.array([clean_value(key, v) for v in value])
         super().__setitem__(key, value)
         self.owned.add(key)
 

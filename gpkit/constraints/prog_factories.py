@@ -126,8 +126,6 @@ def solvify(genfunction):
             result = progsolve(solver, verbosity=verbosity, **kwargs)
             solution.append(result)
         solution.to_arrays()
-        if self.cost.units:
-            solution["cost"] = solution["cost"] * self.cost.units
         self.solution = solution  # NOTE: SIDE EFFECTS
         return solution
     return solvefn
