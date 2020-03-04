@@ -245,6 +245,7 @@ class TestModelSubs(unittest.TestCase):
         a, b = sol("xi"), xi_dist*gpkit.ureg.N
         self.assertTrue(all(abs(a-b)/(a+b) < 1e-7))
 
+    # pylint: disable=too-many-locals
     def test_model_composition_units(self):
         class Above(Model):
             """A simple upper bound on x
