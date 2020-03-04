@@ -20,7 +20,7 @@ class ArrayConstraint(SingleEquationConstraint, list):
 
     def lines_without(self, excluded):
         "Returns lines for indentation in hierarchical printing."
-        return [self.str_without(excluded)]#.split("\n")
+        return self.str_without(excluded).split("\n")
 
     def __bool__(self):
         "Allows the use of '=' NomialArrays as truth elements."
