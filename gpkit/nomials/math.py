@@ -375,11 +375,9 @@ class ScalarSingleEquationConstraint(SingleEquationConstraint):
     def __init__(self, left, oper, right):
         lr = [left, right]
         self.varkeys = set()
-        self.substitutions = {}
         for i, sig in enumerate(lr):
             if isinstance(sig, Signomial):
                 self.varkeys.update(sig.vks)
-                self.substitutions.update(sig.varkeyvalues())
             else:
                 lr[i] = Signomial(sig)
         from .. import NamedVariables
@@ -526,10 +524,6 @@ class MonomialEquality(PosynomialInequality):
         if self.unsubbed and len(self.varkeys) > 1:
             exp, = list(self.unsubbed[0].hmap.keys())
             for key, e in exp.items():
-                if key in self.substitutions:
-                    for bound in ("upper", "lower"):
-                        self.bounded.add((key, bound))
-                    continue
                 s_e = np.sign(e)
                 ubs = frozenset((k, "upper" if np.sign(e) != s_e else "lower")
                                 for k, e in exp.items() if k != key)

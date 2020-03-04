@@ -139,7 +139,7 @@ class BinarySweepTree:  # pylint: disable=too-many-instance-attributes
         "Returns a solution array of all the solutions in an autosweep"
         solution = SolutionArray()
         for sol in self.sollist:
-            solution.append(sol["gp"].result)
+            solution.append(sol)
         solution.to_arrays()
         return solution
 
@@ -234,7 +234,8 @@ def autosweep_1d(model, logtol, sweepvar, bounds, **solvekwargs):
     for bound in bounds:
         model.substitutions.update({sweepvar: bound})
         try:
-            firstsols.append(model.solve(**solvekwargs))
+            model.solve(**solvekwargs)
+            firstsols.append(model.program.result)
         except InvalidGPConstraint:
             raise InvalidGPConstraint("only GPs can be autoswept.")
         sols()
@@ -257,7 +258,8 @@ def recurse_splits(model, bst, variable, logtol, solvekwargs, sols):
     tol = (ub-lb)/2.0
     if tol >= logtol:
         model.substitutions.update({variable: x})
-        bst.add_split(x, model.solve(**solvekwargs))
+        model.solve(**solvekwargs)
+        bst.add_split(x, model.program.result)
         sols()
         tols = [recurse_splits(model, split, variable, logtol, solvekwargs,
                                sols)

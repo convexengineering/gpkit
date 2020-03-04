@@ -203,7 +203,8 @@ def unrolled_absmax(values):
         if absmaxval >= absmaxest:
             absmaxest, finalval = absmaxval, val
     if getattr(finalval, "shape", None):
-        return finalval[np.argmax(np.abs(finalval))]
+        return finalval[np.unravel_index(np.argmax(np.abs(finalval)),
+                                         finalval.shape)]
     return finalval
 
 

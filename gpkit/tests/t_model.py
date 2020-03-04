@@ -504,8 +504,8 @@ class TestSP(unittest.TestCase):
         m = Model(Obj, eqns)
         spsol = m.solve(self.solver, verbosity=0)
         # now solve as GP
-        eqns[-1] = (Obj >= a_val*(2*L + 2*W) + (1-a_val)*(12 * W**-1 * L**-3))
-        m = Model(Obj, eqns)
+        m[-1] = (Obj >= a_val*(2*L + 2*W) + (1-a_val)*(12 * W**-1 * L**-3))
+        del m.substitutions["a"]
         gpsol = m.solve(self.solver, verbosity=0)
         self.assertAlmostEqual(spsol["cost"], gpsol["cost"])
 

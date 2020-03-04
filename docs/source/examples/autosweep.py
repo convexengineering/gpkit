@@ -20,9 +20,9 @@ print("values of l: %s" % l_vals)
 print("values of A: %s" % sol1("A"))
 cost_estimate = sol1["cost"]
 cost_lb, cost_ub = sol1.cost_lb(), sol1.cost_ub()
-print("cost lower bound: %s" % cost_lb)
-print("cost estimate:    %s" % cost_estimate)
-print("cost upper bound: %s" % cost_ub)
+print("cost lower bound:\n%s\n" % cost_lb)
+print("cost estimate:\n%s\n" % cost_estimate)
+print("cost upper bound:\n%s\n" % cost_ub)
 # you can evaluate arbitrary posynomials
 np.testing.assert_allclose(mag(2*sol1(A)), mag(sol1(2*A)))
 assert (sol1["cost"] == sol1(A**2)).all()

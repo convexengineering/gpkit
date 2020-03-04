@@ -87,8 +87,7 @@ class Bounded(ConstraintSet):
         out = defaultdict(set)
         for i, varkey in enumerate(self.bound_varkeys):
             value = result["variables"][varkey]
-            # import pdb; pdb.set_trace()
-            c_senss = [result["sensitivities"]["constraints"][c]
+            c_senss = [result["sensitivities"]["constraints"].get(c, 0)
                        for c in self["variable bounds"][i]]
             if self.lowerbound:
                 if c_senss[0] >= self.sens_threshold:

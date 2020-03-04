@@ -211,8 +211,9 @@ class SequentialGeometricProgram(CostedConstraintSet):
         if self.slack.key in self.result["variables"]:
             excess_slack = self.result["variables"][self.slack.key] - 1
             if excess_slack <= EPS:
-                del self.result["variables"][self.slack.key]
                 del self.result["freevariables"][self.slack.key]
+                del self.result["variables"][self.slack.key]
+                del self.result["sensitivities"]["variables"][self.slack.key]
             elif verbosity > -1:
                 print("Final solution let signomial constraints slacken by"
                       " %.2g%%. Calling .localsolve with a higher"

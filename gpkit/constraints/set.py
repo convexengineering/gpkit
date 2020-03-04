@@ -77,7 +77,11 @@ class ConstraintSet(list, GPkitObject):
                 raise_elementhasnumpybools(constraint)
             if hasattr(self[i], "varkeys"):
                 self.varkeys.update(self[i].varkeys)
-                self.substitutions.update(self[i].substitutions)
+                if hasattr(self[i], "substitutions"):
+                    self.substitutions.update(self[i].substitutions)
+                else:
+                    self.substitutions.update({k: k.value for k in self[i].varkeys
+                                               if "value" in k.descr})
                 self.bounded.update(self[i].bounded)
                 for bound, solutionset in self[i].meq_bounded.items():
                     self.meq_bounded[bound].update(solutionset)
