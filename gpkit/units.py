@@ -59,12 +59,11 @@ class GPkitUnits:
 
     def of_product(self, thing1, thing2):
         "Cached unit division. Requires united inputs."
-        # TODO: qty shouldn't be necessary below
-        mul_units = qty((thing1*thing2).units)
-        key = id(mul_units)
+        key = (thing1.units, thing2.units)
         try:
             return self.multiplication_cache[key]
         except KeyError:
+            mul_units = qty((thing1*thing2).units)
             try:
                 self.multiplication_cache[key] = (None, float(mul_units))
             except DimensionalityError:

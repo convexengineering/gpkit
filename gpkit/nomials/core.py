@@ -7,7 +7,6 @@ from ..repr_conventions import MUL, UNICODE_EXPONENTS
 def nomial_latex_helper(c, pos_vars, neg_vars):
     """Combines (varlatex, exponent) tuples,
     separated by positive vs negative exponent, into a single latex string."""
-    # TODO this is awkward due to sensitivity_map, which needs a refactor
     pvarstrs = ['%s^{%.2g}' % (varl, x) if "%.2g" % x != "1" else varl
                 for (varl, x) in pos_vars]
     nvarstrs = ['%s^{%.2g}' % (varl, -x) if "%.2g" % -x != "1" else varl
@@ -68,9 +67,8 @@ class Nomial(NomialData):
                 mstrs.append(MUL.join(cstr + varstrs))
         return " + ".join(sorted(mstrs)) + units
 
-    def latex(self, excluded=()):
+    def latex(self, excluded=()):  # TODO: add ast parsing here
         "Latex representation, parsing `excluded` just as .str_without does"
-        # TODO: add ast parsing here
         mstrs = []
         for exp, c in self.hmap.items():
             pos_vars, neg_vars = [], []
