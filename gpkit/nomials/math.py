@@ -696,12 +696,7 @@ class SingleSignomialEquality(SignomialInequality):
 
     def as_hmapslt1(self, substitutions=None):
         "Returns the posys <= 1 representation of this constraint."
-        # TODO: check if it would be a monomial equality after substitutions
-        raise InvalidGPConstraint("SignomialEquality could not simplify"
-                                  " to a PosynomialInequality; try calling"
-                                  "`.localsolve` instead of `.solve` to"
-                                  " form your Model as a"
-                                  " SequentialGeometricProgram")
+        raise InvalidGPConstraint("SignomialEquality is not GP compatible.")
 
     def as_gpconstr(self, x0):
         "Returns GP approximation of an SP constraint at x0"
