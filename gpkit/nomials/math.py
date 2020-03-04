@@ -387,16 +387,14 @@ class ScalarSingleEquationConstraint(SingleEquationConstraint):
     def relaxed(self, relaxvar):
         "Returns the relaxation of the constraint in a list."
         if self.oper == ">=":
-            relaxed = [relaxvar*self.left >= self.right]
-        elif self.oper == "<=":
-            relaxed = [self.left <= relaxvar*self.right]
-        elif self.oper == "=":
-            relaxed = [self.left <= relaxvar*self.right,
-                       relaxvar*self.left >= self.right]
-        else:
-            raise ValueError(
-                "Constraint %s had unknown operator %s." % self.oper, self)
-        return relaxed
+            return [relaxvar*self.left >= self.right]
+        if self.oper == "<=":
+            return [self.left <= relaxvar*self.right]
+        if self.oper == "=":
+            return [self.left <= relaxvar*self.right,
+                    relaxvar*self.left >= self.right]
+        raise ValueError(
+            "Constraint %s had unknown operator %s." % self.oper, self)
 
 
 # pylint: disable=too-many-instance-attributes, invalid-unary-operand-type

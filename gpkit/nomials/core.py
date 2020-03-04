@@ -98,7 +98,7 @@ class Nomial(NomialData):
         """
         if isinstance(self, FixedScalar):
             return self.cs[0]
-        p = self.sub(self.varkeyvalues())  # pylint: disable=not-callable
+        p = self.sub({k: k.value for k in self.vks if "value" in k.descr})  # pylint: disable=not-callable
         return p.cs[0] if isinstance(p, FixedScalar) else p
 
     def __eq__(self, other):

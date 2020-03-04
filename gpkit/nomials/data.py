@@ -54,10 +54,6 @@ class NomialData(GPkitObject):
             self._varkeys = KeySet(self.vks)
         return self._varkeys
 
-    def varkeyvalues(self):
-        "Returns the NomialData's keys' values"
-        return {k: k.descr["value"] for k in self.vks if "value" in k.descr}
-
     def __eq__(self, other):
         "Equality test"
         if not hasattr(other, "hmap"):
