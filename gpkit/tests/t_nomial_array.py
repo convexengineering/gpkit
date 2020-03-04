@@ -68,7 +68,7 @@ class TestNomialArray(unittest.TestCase):
         v = NomialArray([1, 2, 3]).T
         p = [x_0, x_1/2, x_2/3]
         constraint = ConstraintSet([x <= v])
-        self.assertEqual(list(constraint.flathmaps({})), [e.hmap for e in p])
+        self.assertEqual(list(constraint.as_hmapslt1({})), [e.hmap for e in p])
 
     def test_substition(self):  # pylint: disable=no-member
         x = VectorVariable(3, 'x', label='dummy variable')

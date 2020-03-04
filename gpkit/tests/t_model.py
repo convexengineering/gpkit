@@ -600,7 +600,7 @@ class TestSP(unittest.TestCase):
         with SignomialsEnabled():
             m = Model(x, [x + y >= 1, y <= 0.5])
         gp = m.sp().gp(x0={x: 0.5})  # pylint: disable=no-member
-        first_gp_constr_posy_exp, = list(gp.flathmaps({}))[0]
+        first_gp_constr_posy_exp, = list(gp.as_hmapslt1({}))[0]
         self.assertEqual(first_gp_constr_posy_exp[x.key], -1./3)
 
     def test_becomes_signomial(self):

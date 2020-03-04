@@ -688,19 +688,20 @@ def var_table(data, title, printunits=True, latex=False, rawlines=False,
         return []
     decorated, models = [], set()
     for i, (k, v) in enumerate(data.items()):
-        if np.nanmax(np.abs(v)) > minval:
-            if minval and hidebelowminval and getattr(v, "shape", None):
-                v[np.abs(v) <= minval] = np.nan
-            model = lineagestr(k.lineage) if sortbymodel else ""
-            models.add(model)
-            b = bool(getattr(v, "shape", None))
-            s = k.str_without(("lineage", "vec"))
-            if not sortbyvals:
-                decorated.append((model, b, (varfmt % s), i, k, v))
-            else:  # for consistent sorting, add small offset to negative vals
-                val = np.nanmean(np.abs(v)) - (1e-9 if np.nanmean(v) < 0 else 0)
-                sort = (float("%.4g" % -val), k.name)
-                decorated.append((model, sort, b, (varfmt % s), i, k, v))
+        if np.isnan(v).all() or np.nanmax(np.abs(v)) <= minval:
+            continue  # no values below minval
+        if minval and hidebelowminval and getattr(v, "shape", None):
+            v[np.abs(v) <= minval] = np.nan
+        model = lineagestr(k.lineage) if sortbymodel else ""
+        models.add(model)
+        b = bool(getattr(v, "shape", None))
+        s = k.str_without(("lineage", "vec"))
+        if not sortbyvals:
+            decorated.append((model, b, (varfmt % s), i, k, v))
+        else:  # for consistent sorting, add small offset to negative vals
+            val = np.nanmean(np.abs(v)) - (1e-9 if np.nanmean(v) < 0 else 0)
+            sort = (float("%.4g" % -val), k.name)
+            decorated.append((model, sort, b, (varfmt % s), i, k, v))
     if not decorated and skipifempty:
         return []
     if included_models:

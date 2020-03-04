@@ -90,7 +90,7 @@ class GeometricProgram(CostedConstraintSet):
         cost_hmap = cost.hmap.sub(self.substitutions, cost.varkeys)
         if any(c <= 0 for c in cost_hmap.values()):
             raise InvalidPosynomial("cost must be a Posynomial")
-        self.hmaps = [cost_hmap] + list(self.flathmaps(self.substitutions))
+        self.hmaps = [cost_hmap] + list(self.as_hmapslt1(self.substitutions))
         ## Generate various maps into the posy- and monomials
         # k [j]: number of monomials (rows of A) present in each constraint
         self.k = [len(hm) for hm in self.hmaps]
