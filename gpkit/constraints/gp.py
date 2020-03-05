@@ -145,14 +145,18 @@ class GeometricProgram(CostedConstraintSet):
         varexponents = defaultdict(list)
         self.exps = []
         self.cs = np.zeros(len(self.p_idxs))
+        row, col, data = [], [], []
         for m_idxs, hmap in zip(self.m_idxs, self.hmaps):
             self.exps.extend(hmap.keys())
             for i, (exp, c) in zip(m_idxs, hmap.items()):
                 self.cs[i] = c
+                if not exp: # space the matrix out for trailing constant terms
+                    row.append(i)
+                    col.append(0)
+                    data.append(0)
                 for var, x in exp.items():
                     self.varlocs[var].append(i)
                     varexponents[var].append(x)
-        row, col, data = [], [], []
         for j, var in enumerate(self.varlocs):
             row.extend(self.varlocs[var])
             col.extend([j]*len(self.varlocs[var]))
