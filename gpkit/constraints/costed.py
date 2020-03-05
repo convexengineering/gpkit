@@ -25,20 +25,6 @@ class CostedConstraintSet(ConstraintSet):
         ConstraintSet.__init__(self, constraints, subs)
         self.varkeys.update(self.cost.varkeys)
 
-    def __bare_init__(self, cost, constraints, substitutions):
-        self.cost = cost
-        self.substitutions = substitutions or {}
-        if not isinstance(constraints, ConstraintSet):
-            if isinstance(constraints, dict):
-                self.idxlookup = {k: i for i, k in enumerate(constraints)}
-                constraints = constraints.values()
-            constraints = ConstraintSet(constraints)
-            list.__init__(self, constraints)
-        else:
-            list.__init__(self, [constraints])
-        self.varkeys = constraints.varkeys
-        self.varkeys.update(cost.varkeys)
-
     def constrained_varkeys(self):
         "Return all varkeys in the cost and non-ConstraintSet constraints"
         constrained_varkeys = ConstraintSet.constrained_varkeys(self)

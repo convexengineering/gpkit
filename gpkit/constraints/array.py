@@ -12,9 +12,9 @@ class ArrayConstraint(SingleEquationConstraint, list):
     be either NomialArrays or Varkeys of VectorVariables.
     """
     def __init__(self, constraints, left, oper, right):
-        SingleEquationConstraint.__init__(self, left, oper, right)
-        list.__init__(self, constraints)
         self.constraints = constraints
+        list.__init__(self, constraints)
+        SingleEquationConstraint.__init__(self, left, oper, right)
 
     def __iter__(self):
         yield from self.constraints.flat

@@ -178,11 +178,9 @@ class ConstraintSet(list, ReprMixin):
         for constraint in self.flat(yield_if_hasattr="process_result"):
             if hasattr(constraint, "process_result"):
                 constraint.process_result(result)
-        for v in self.unique_varkeys:
-            if not v.evalfn or v in result["variables"]:
-                continue
-            if v.veckey:
-                v = v.veckey
+        evalfn_vars = {v.veckey or v for v in self.unique_varkeys
+                       if v.evalfn and v not in result["variables"]}
+        for v in evalfn_vars:
             val = v.evalfn(result["variables"])
             result["variables"][v] = result["freevariables"][v] = val
 

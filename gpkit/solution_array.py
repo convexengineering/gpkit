@@ -650,9 +650,8 @@ class SolutionArray(DictOfLists):
         return plt.gcf(), axes
 
 
-# pylint: disable=too-many-statements,too-many-arguments
-# pylint: disable=too-many-branches,too-many-locals
-def var_table(data, title, printunits=True, latex=False, rawlines=False,
+# pylint: disable=too-many-branches,too-many-locals,too-many-statements
+def var_table(data, title, *, printunits=True, latex=False, rawlines=False,
               varfmt="%s : ", valfmt="%-.4g ", vecfmt="%-8.3g",
               minval=0, sortbyvals=False, hidebelowminval=False,
               included_models=None, excluded_models=None, sortbymodel=True,

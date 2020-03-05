@@ -120,8 +120,7 @@ class Sankey:
                                            "passthrough": constr})
                 self.links[source, target] += value
 
-    # pylint: disable=too-many-arguments
-    def diagram(self, variables=None, flowright=False, width=900, height=400,
+    def diagram(self, variables=None, *, flowright=False, width=900, height=400,
                 top=0, bottom=0, left=120, right=55, printing=True):
         "creates links and an ipython widget to show them"
         margins = dict(top=top, bottom=bottom, left=left, right=right)
