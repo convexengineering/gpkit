@@ -523,7 +523,7 @@ class MonomialEquality(PosynomialInequality):
         self.meq_bounded = {}
         self._las = []
         if self.unsubbed and len(self.varkeys) > 1:
-            exp, = list(self.unsubbed[0].hmap)
+            exp, = self.unsubbed[0].hmap
             for key, e in exp.items():
                 s_e = np.sign(e)
                 ubs = frozenset((k, "upper" if np.sign(e) != s_e else "lower")

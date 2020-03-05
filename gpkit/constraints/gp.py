@@ -290,8 +290,12 @@ class GeometricProgram(CostedConstraintSet):
             nu_by_posy = [nu[mi] for mi in self.m_idxs]
             solver_out["la"] = la = np.array([sum(nup) for nup in nu_by_posy])
         elif "la" in solver_out:
+            la = np.ravel(solver_out["la"])
+            if len(la) == len(self.hmaps) - 1:
+                # assume solver dropped the cost's sensitivity (always 1.0)
+                la = np.hstack(([1.0], la))
             # solver gave us posynomial sensitivities, generate monomial ones
-            solver_out["la"] = la = np.ravel(solver_out["la"])
+            solver_out["la"] = la
             z = np.log(self.cs) + self.A.dot(solver_out["primal"])
             m_iss = [self.p_idxs == i for i in range(len(la))]
             nu_by_posy = [la[p_i]*np.exp(z[m_is])/sum(np.exp(z[m_is]))
