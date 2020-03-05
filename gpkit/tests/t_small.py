@@ -42,8 +42,6 @@ class TestHashVector(unittest.TestCase):
         r = a*0
         self.assertEqual(r, HashVector(x=0, y=0))
         self.assertTrue(isinstance(r, HashVector))
-        with self.assertRaises(TypeError):
-            _ = r*"a"
         r = a - 2
         self.assertEqual(r, HashVector(x=-1, y=5))
         self.assertTrue(isinstance(r, HashVector))
@@ -52,8 +50,6 @@ class TestHashVector(unittest.TestCase):
         # multiplication and addition by dicts
         self.assertEqual(a + b, a)
         self.assertEqual(a + b + c, HashVector(x=4, y=7, z=4))
-        self.assertEqual(a * b * c, HashVector())
-        self.assertEqual(a * {'x': 6, 'k': 4}, HashVector(x=6))
 
 
 class TestSmallScripts(unittest.TestCase):
