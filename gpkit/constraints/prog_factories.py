@@ -133,8 +133,7 @@ def solvify(genfunction):
 
 # pylint: disable=too-many-locals,too-many-arguments
 def run_sweep(genfunction, self, solution, skipsweepfailures,
-              constants, sweep, linked,
-              solver, verbosity, **kwargs):
+              constants, sweep, linked, solver, verbosity, **kwargs):
     "Runs through a sweep."
     # sort sweeps by the eqstr of their varkey
     sweepvars, sweepvals = zip(*sorted(list(sweep.items()),

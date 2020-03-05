@@ -6,6 +6,7 @@ from ..exceptions import InvalidGPConstraint, Infeasible, UnnecessarySGP
 from ..keydict import KeyDict
 from ..nomials import Variable
 from .gp import GeometricProgram
+from .set import sort_constraints_dict
 from ..nomials import PosynomialInequality
 from .. import NamedVariables
 from .costed import CostedConstraintSet
@@ -50,59 +51,63 @@ class SequentialGeometricProgram(CostedConstraintSet):
 
     def __init__(self, cost, model, substitutions, *,
                  use_pccp=True, pccp_penalty=2e2, **initgpargs):
-        # pylint: disable=super-init-not-called,non-parent-init-called
         if cost.any_nonpositive_cs:
             raise UnnecessarySGP("""Sequential GPs need Posynomial objectives.
 
     The equivalent of a Signomial objective can be constructed by constraining
     a dummy variable `z` to be greater than the desired Signomial objective `s`
     (z >= s) and then minimizing that dummy variable.""")
-        self.model = model
         self._original_cost = cost
+        self.model = model
+        self.substitutions = substitutions
         self.externalfn_vars = \
             frozenset(Variable(v) for v in self.model.varkeys if v.externalfn)
-        if not self.externalfn_vars:
+        if self.externalfn_vars:  # a non-SP-constraint generating variable
+            self.blackboxconstraints = True
+            super().__init__(cost, model, substitutions)
+            return
+
+        self._lt_approxs = []
+        sgpconstraints = {"SP constraints": [], "GP constraints": []}
+        for cs in model.flat():
             try:
-                sgpconstraints = {"SP constraints": [], "GP constraints": []}
-                self._lt_approxs = []
-                for cs in model.flat():
-                    try:
-                        if not isinstance(cs, PosynomialInequality):
-                            cs.as_hmapslt1(substitutions)  # gp-compatible?
-                        sgpconstraints["GP constraints"].append(cs)
-                    except InvalidGPConstraint:
-                        sgpconstraints["SP constraints"].append(cs)
-                        if use_pccp:
-                            lts = [lt/self.slack for lt in cs.as_approxlts()]
-                        else:
-                            lts = cs.as_approxlts()
-                        self._lt_approxs.append(lts)
-                if not sgpconstraints["SP constraints"]:
-                    raise UnnecessarySGP("""Model valid as a Geometric Program.
+                if not isinstance(cs, PosynomialInequality):
+                    cs.as_hmapslt1(substitutions)  # gp-compatible?
+                sgpconstraints["GP constraints"].append(cs)
+            except InvalidGPConstraint:
+                sgpconstraints["SP constraints"].append(cs)
+                try:
+                    if use_pccp:
+                        lts = [lt/self.slack for lt in cs.as_approxlts()]
+                    else:
+                        lts = cs.as_approxlts()
+                    self._lt_approxs.append(lts)
+                except AttributeError:  # some custom non-SP constraint
+                    self.blackboxconstraints = True
+                    super().__init__(cost, model, substitutions)
+                    return
+        # all constraints seem SP-compatible
+        self.blackboxconstraints = False
+        if not sgpconstraints["SP constraints"]:
+            raise UnnecessarySGP("""Model valid as a Geometric Program.
 
-    SequentialGeometricPrograms should only be created with Models containing
-    Signomial Constraints, since Models without Signomials have global
-    solutions and can be solved with 'Model.solve()'.""")
-                if use_pccp:
-                    self.pccp_penalty = pccp_penalty
-                    self.cost = cost * self.slack**pccp_penalty
-                    sgpconstraints["GP constraints"].append(self.slack >= 1)
-                else:
-                    self.cost = cost
-                self.idxlookup = {k: i for i, k in enumerate(sgpconstraints)}
-                list.__init__(self, sgpconstraints.values())
-                self.substitutions = substitutions
-                self._gp = self.init_gp(**initgpargs)
-                self.blackboxconstraints = False
-                return
-            except AttributeError:  # TODO: this is too broad of a catch
-                pass  # some constraint lacked
-        self.blackboxconstraints = True
-        self.__bare_init__(cost, model, substitutions)
+SequentialGeometricPrograms should only be created with Models containing
+Signomial Constraints, since Models without Signomials have global
+solutions and can be solved with 'Model.solve()'.""")
 
-    # pylint: disable=too-many-locals,too-many-branches
-    # pylint: disable=too-many-arguments
-    # pylint: disable=too-many-statements
+        if not use_pccp:
+            self.cost = cost
+        else:
+            self.pccp_penalty = pccp_penalty
+            self.cost = cost * self.slack**pccp_penalty
+            sgpconstraints["GP constraints"].append(self.slack >= 1)
+
+        keys, sgpconstraints = sort_constraints_dict(sgpconstraints)
+        self.idxlookup = {k: i for i, k in enumerate(keys)}
+        list.__init__(self, sgpconstraints)  # pylint: disable=non-parent-init-called
+        self._gp = self.init_gp(**initgpargs)
+
+    # pylint: disable=too-many-locals,too-many-branches,too-many-statements
     def localsolve(self, solver=None, *, verbosity=1, x0=None, reltol=1e-4,
                    iteration_limit=50, mutategp=True, **solveargs):
         """Locally solves a SequentialGeometricProgram and returns the solution.

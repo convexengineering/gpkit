@@ -103,6 +103,6 @@ class Bounded(ConstraintSet):
             print("")
             print("Solves with these variables bounded:")
             for key, value in sorted(out.items()):
-                print("% 25s: %s" % (key, ", ".join(map(str, value))))
+                print("% 25s: %s" % (key, ", ".join([str(v) for v in value])))
             print("")
         return out

@@ -94,8 +94,10 @@ class GeometricProgram(CostedConstraintSet):
         ## Generate various maps into the posy- and monomials
         # k [j]: number of monomials (rows of A) present in each constraint
         self.k = [len(hm) for hm in self.hmaps]
-        p_idxs = []  # p_idxs [i]: posynomial index of each monomial
-        self.m_idxs = []  # m_idxs [i]: monomial indices of each posynomial
+        # m_idxs [i]: monomial indices of each posynomial
+        self.m_idxs = []
+        # p_idxs [i]: posynomial index of each monomial
+        self.p_idxs = np.zeros(sum(self.k), "int")
         self.meq_idxs = MonoEqualityIndexes()
         m_idx_start = 0
         for i, p_len in enumerate(self.k):
@@ -103,10 +105,10 @@ class GeometricProgram(CostedConstraintSet):
                 self.meq_idxs.all.add(m_idx_start)
                 if len(self.meq_idxs.all) > 2*len(self.meq_idxs.first_half):
                     self.meq_idxs.first_half.add(m_idx_start)
-            self.m_idxs.append(list(range(m_idx_start, m_idx_start + p_len)))
-            p_idxs += [i]*p_len
+            m_idx = range(m_idx_start, m_idx_start+p_len)
+            self.m_idxs.append(m_idx)
+            self.p_idxs[m_idx] = i
             m_idx_start += p_len
-        self.p_idxs = np.array(p_idxs)
         self.gen()  # A [i, v]: sparse matrix of powers in each monomial
         self.missingbounds = self.check_bounds(allow_missingbounds)
 
@@ -139,23 +141,29 @@ class GeometricProgram(CostedConstraintSet):
     def gen(self):
         "Generates nomial and solve data (A, p_idxs) from posynomials"
         # TODO, speedup: make these lazy lists and get rid of varlocs
-        self.exps = sum((list(hmap.keys()) for hmap in self.hmaps), [])
-        self.cs = sum((list(hmap.values()) for hmap in self.hmaps), [])
         self.varkeys = self.varlocs = defaultdict(list)
-        for i, exp in enumerate(self.exps):
-            for var in exp:
-                self.varlocs[var].append(i)
-
+        varexponents = defaultdict(list)
+        self.cs = np.zeros(len(self.p_idxs))
+        self.exps = []
+        sparerows = []
+        for m_idxs, hmap in zip(self.m_idxs, self.hmaps):
+            self.exps.extend(hmap.keys())
+            for i, (exp, c) in zip(m_idxs, hmap.items()):
+                self.cs[i] = c
+                if not exp:
+                    sparerows.append(i)
+                for var, x in exp.items():
+                    self.varlocs[var].append(i)
+                    varexponents[var].append(x)
         row, col, data = [], [], []
         for j, var in enumerate(self.varlocs):
             row.extend(self.varlocs[var])
             col.extend([j]*len(self.varlocs[var]))
-            data.extend(self.exps[i][var] for i in self.varlocs[var])
-        for i, exp in enumerate(self.exps):
-            if not exp:  # space the matrix out for trailing constant terms
-                row.append(i)
-                col.append(0)
-                data.append(0)
+            data.extend(varexponents[var])
+        for i in sparerows: # space the matrix out for trailing constant terms
+            row.append(i)
+            col.append(0)
+            data.append(0)
         self.A = CootMatrix(row, col, data)
 
     # pylint: disable=too-many-statements, too-many-locals
