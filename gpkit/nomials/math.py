@@ -485,7 +485,7 @@ class PosynomialInequality(ScalarSingleEquationConstraint):
                 out.append(hmap)
         return out
 
-    def sens_from_dual(self, la, nu, result):  # pylint: disable=unused-argument
+    def sens_from_dual(self, la, nu, _):
         "Returns the variable/constraint sensitivities from lambda/nu"
         presub, = self.unsubbed
         if hasattr(self, "pmap"):
@@ -498,7 +498,10 @@ class PosynomialInequality(ScalarSingleEquationConstraint):
                 for idx, percentage in self.const_mmap.items():
                     nu_[idx] += percentage * la*scale
             nu = nu_
-        self.v_ss = sum(nu_i*exp for (nu_i, exp) in zip(nu, presub.hmap.keys()))
+        self.v_ss = HashVector()
+        for nu_i, exp in zip(nu, presub.hmap):
+            for vk, x in exp.items():
+                self.v_ss[vk] = nu_i*x + self.v_ss.get(vk, 0)
         return self.v_ss, la
 
     def as_gpconstr(self, _):
@@ -520,7 +523,7 @@ class MonomialEquality(PosynomialInequality):
         self.meq_bounded = {}
         self._las = []
         if self.unsubbed and len(self.varkeys) > 1:
-            exp, = list(self.unsubbed[0].hmap.keys())
+            exp, = list(self.unsubbed[0].hmap)
             for key, e in exp.items():
                 s_e = np.sign(e)
                 ubs = frozenset((k, "upper" if np.sign(e) != s_e else "lower")
@@ -549,7 +552,7 @@ class MonomialEquality(PosynomialInequality):
         return bool(self.left.c == self.right.c
                     and self.left.exp == self.right.exp)
 
-    def sens_from_dual(self, la, nu, result):
+    def sens_from_dual(self, la, nu, _):
         "Returns the variable/constraint sensitivities from lambda/nu"
         self._las.append(la)
         if len(self._las) < 2:
@@ -557,7 +560,8 @@ class MonomialEquality(PosynomialInequality):
         la = self._las[0] - self._las[1]
         self._las = []
         exp, = self.unsubbed[0].hmap
-        return la*exp, la
+        self.v_ss = exp*la
+        return self.v_ss, la
 
 
 class SignomialInequality(ScalarSingleEquationConstraint):
