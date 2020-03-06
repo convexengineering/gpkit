@@ -7,15 +7,15 @@ Warnings
 ========
 Unexpectedly Loose Constraints in sweep 0
 -----------------------------------------
-0.9585 >= 0.9187 : V_{f_{avail}} >= V_f
+1 >= 0.9187 : V_{f_{avail}} >= V_f
 
 Unexpectedly Loose Constraints in sweep 1
 -----------------------------------------
-0.9585 >= 0.9187 : V_{f_{avail}} >= V_f
+1 >= 0.9187 : V_{f_{avail}} >= V_f
 
 Unexpectedly Loose Constraints in sweep 2
 -----------------------------------------
-0.9585 >= 0.9187 : V_{f_{avail}} >= V_f
+1 >= 0.9187 : V_{f_{avail}} >= V_f
 
 Swept Variables
 ---------------
@@ -35,7 +35,7 @@ Free Variables
    T_{flight} : [ 16.6      13.4      12.3     ]  [hr]  flight time
             V : [ 50.3      62.1      67.9     ]  [m/s] cruising speed
           V_f : [ 0.577     0.777     0.919    ]  [m³]  fuel volume
-V_{f_{avail}} : [ 0.589     0.788     0.958    ]  [m³]  fuel volume available
+V_{f_{avail}} : [ 0.6       0.8       1        ]  [m³]  fuel volume available
             W : [ 1.35e+04  1.45e+04  1.59e+04 ]  [N]   total aircraft weight
           W_f : [ 4.63e+03  6.23e+03  7.36e+03 ]  [N]   fuel weight
           W_w : [ 2.65e+03  2.05e+03  2.29e+03 ]  [N]   wing weight

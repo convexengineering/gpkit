@@ -149,5 +149,6 @@ Most Sensitive Constraints
     +1 : x_min >= Relax2.OriginalValues.x_min/Relax2.x_min
  +0.99 : x <= x_max
  +0.99 : x_max <= Relax2.OriginalValues.x_max·Relax2.x_max
+ +0.01 : Relax2.x_max >= 1
 
 

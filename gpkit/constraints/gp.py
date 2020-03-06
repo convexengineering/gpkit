@@ -123,11 +123,6 @@ class GeometricProgram(CostedConstraintSet):
 
     def gen(self):
         "Generates nomial and solve data (A, p_idxs) from posynomials"
-        row, col, data = [], [], []
-        if not all(self.hmaps[0]):  # space out constants in cost for mosek
-            row.append(len(self.hmaps[0])-1)
-            col.append(0)
-            data.append(0)
         # k [posys]: number of monomials (rows of A) present in each constraint
         self.k = [len(hmap) for hmap in self.hmaps]
         # m_idxs [mons]: monomial indices of each posynomial
@@ -141,6 +136,7 @@ class GeometricProgram(CostedConstraintSet):
         # meq_idxs: {all indices of equality mons} and {just the first halves}
         self.meq_idxs = MonoEqualityIndexes()
         m_idx = 0
+        row, col, data = [], [], []
         for p_idx, (N_mons, hmap) in enumerate(zip(self.k, self.hmaps)):
             self.p_idxs.extend([p_idx]*N_mons)
             self.m_idxs.append(slice(m_idx, m_idx+N_mons))
@@ -151,6 +147,10 @@ class GeometricProgram(CostedConstraintSet):
             self.exps.extend(hmap)
             self.cs.extend(hmap.values())
             for exp in hmap:
+                if not exp:  # space out A matrix with constants for mosek
+                    row.append(m_idx)
+                    col.append(0)
+                    data.append(0)
                 for var in exp:
                     self.varlocs[var].append(m_idx)
                 m_idx += 1
