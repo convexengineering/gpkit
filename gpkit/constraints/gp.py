@@ -91,26 +91,42 @@ class GeometricProgram(CostedConstraintSet):
         cost_hmap = cost.hmap.sub(self.substitutions, cost.varkeys)
         if any(c <= 0 for c in cost_hmap.values()):
             raise InvalidPosynomial("cost must be a Posynomial")
-        self.hmaps = [cost_hmap] + list(self.as_hmapslt1(self.substitutions))
         ## Generate various maps into the posy- and monomials
-        # k [j]: number of monomials (rows of A) present in each constraint
-        self.k = [len(hm) for hm in self.hmaps]
-        # m_idxs [i]: monomial indices of each posynomial
+        self._row, self._col, self._data = [], [], []
+        if not all(cost_hmap):  # space out constants in cost for mosek
+            self._row.append(len(cost_hmap)-1)
+            self._col.append(0)
+            self._data.append(0)
+        self.hmaps = [cost_hmap] + list(self.as_hmapslt1(self.substitutions))
+        # k [posys]: number of monomials (rows of A) present in each constraint
+        self.k = [len(hmap) for hmap in self.hmaps]
+        # m_idxs [mons]: monomial indices of each posynomial
         self.m_idxs = []
-        # p_idxs [i]: posynomial index of each monomial
-        self.p_idxs = np.zeros(sum(self.k), "int")
+        # p_idxs [mons]: posynomial index of each monomial
+        self.p_idxs = []
+        # cs, exps [mons]: coefficient and exponents of each monomial
+        self.cs, self.exps = [], []
+        # varlocs: {vk: monomial indices of each variables' location}
+        self.varkeys = self.varlocs = defaultdict(list)
+        # meq_idxs: {all indices of equality mons} and {just the first halves}
         self.meq_idxs = MonoEqualityIndexes()
-        m_idx_start = 0
-        for i, p_len in enumerate(self.k):
-            if getattr(self.hmaps[i], "from_meq", False):
-                self.meq_idxs.all.add(m_idx_start)
+        m_idx = 0
+        for p_idx, (N_mons, hmap) in enumerate(zip(self.k, self.hmaps)):
+            self.p_idxs.extend([p_idx]*N_mons)
+            self.m_idxs.append(slice(m_idx, m_idx+N_mons))
+            if getattr(self.hmaps[p_idx], "from_meq", False):
+                self.meq_idxs.all.add(m_idx)
                 if len(self.meq_idxs.all) > 2*len(self.meq_idxs.first_half):
-                    self.meq_idxs.first_half.add(m_idx_start)
-            m_idx = list(range(m_idx_start, m_idx_start+p_len))
-            self.m_idxs.append(m_idx)
-            self.p_idxs[m_idx] = i
-            m_idx_start += p_len
-        self.gen()  # A [i, v]: sparse matrix of powers in each monomial
+                    self.meq_idxs.first_half.add(m_idx)
+            self.exps.extend(hmap)
+            self.cs.extend(hmap.values())
+            for exp in hmap:
+                for var in exp:
+                    self.varlocs[var].append(m_idx)
+                m_idx += 1
+        self.p_idxs = np.array(self.p_idxs, "int32")  # for later use as array
+        # A [mons, vks]: sparse array of each monomials' variables' exponents
+        self.gen(alreadyexps=True)
         self.missingbounds = self.check_bounds(allow_missingbounds)
 
     def check_bounds(self, allow_missingbounds=True):
@@ -139,28 +155,18 @@ class GeometricProgram(CostedConstraintSet):
         raise UnboundedGP("\n\n".join("%s has no %s bound%s" % (v, b, x)
                                       for (v, b), x in missingbounds.items()))
 
-    def gen(self):
+    def gen(self, alreadyexps=False):
         "Generates nomial and solve data (A, p_idxs) from posynomials"
-        self.varkeys = self.varlocs = defaultdict(list)
-        varexponents = defaultdict(list)
-        self.exps = []
-        self.cs = np.zeros(len(self.p_idxs))
-        row, col, data = [], [], []
-        for m_idxs, hmap in zip(self.m_idxs, self.hmaps):
-            self.exps.extend(hmap.keys())
-            for i, (exp, c) in zip(m_idxs, hmap.items()):
-                self.cs[i] = c
-                if not exp: # space the matrix out for trailing constant terms
-                    row.append(i)
-                    col.append(0)
-                    data.append(0)
-                for var, x in exp.items():
-                    self.varlocs[var].append(i)
-                    varexponents[var].append(x)
-        for j, var in enumerate(self.varlocs):
-            row.extend(self.varlocs[var])
-            col.extend([j]*len(self.varlocs[var]))
-            data.extend(varexponents[var])
+        row, col, data = list(self._row), list(self._col), list(self._data)
+        if not alreadyexps:
+            self.cs, self.exps = [], []
+            for hmap in self.hmaps:
+                self.exps.extend(hmap.keys())
+                self.cs.extend(hmap.values())
+        for j, (var, locs) in enumerate(self.varlocs.items()):
+            row.extend(locs)
+            col.extend([j]*len(locs))
+            data.extend(self.exps[i][var] for i in locs)
         self.A = CootMatrix(row, col, data)
 
     # pylint: disable=too-many-statements, too-many-locals
