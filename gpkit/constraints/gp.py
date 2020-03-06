@@ -155,9 +155,8 @@ class GeometricProgram(CostedConstraintSet):
                     self.varlocs[var].append(m_idx)
                 m_idx += 1
         self.p_idxs = np.array(self.p_idxs, "int32")  # for later use as array
-        self.varidxs = {}
+        self.varidxs = {vk: i for i, vk in enumerate(self.varlocs)}
         for j, (var, locs) in enumerate(self.varlocs.items()):
-            self.varidxs[var] = j
             row.extend(locs)
             col.extend([j]*len(locs))
             data.extend(self.exps[i][var] for i in locs)
