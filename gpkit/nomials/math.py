@@ -677,17 +677,12 @@ class SignomialInequality(ScalarSingleEquationConstraint):
         pconstr.generated_by = self
         return pconstr
 
-    def as_approxlts(self):
-        "Returns posynomial-less-than sides of a signomial constraint"
+    def approx_as_posyslt1(self, x0):
         siglt0, = self.unsubbed
-        posy, self._negy = siglt0.posy_negy()  # pylint: disable=attribute-defined-outside-init
-        return [posy]
-
-    def as_approxgts(self, x0):
-        "Returns monomial-greater-than sides, to be called after as_approxlt1"
+        posy, negy = siglt0.posy_negy()
         # default guess of 1.0 for unspecified negy variables
-        x0.update({vk: 1.0 for vk in self._negy.varkeys if vk not in x0})
-        return [self._negy.mono_lower_bound(x0)]
+        x0.update({vk: 1.0 for vk in negy.vks if vk not in x0})
+        return [posy/negy.mono_lower_bound(x0)]
 
 
 class SingleSignomialEquality(SignomialInequality):
@@ -712,17 +707,10 @@ class SingleSignomialEquality(SignomialInequality):
         mec.generated_by = self
         return mec
 
-    def as_approxlts(self):
-        "Returns posynomial-less-than sides of a signomial constraint"
+    def approx_as_posyslt1(self, x0):
         siglt0, = self.unsubbed
-        self._posy, self._negy = siglt0.posy_negy()  # pylint: disable=attribute-defined-outside-init
-        return Monomial(1), Monomial(1)  # no 'fixed' posy_lt for a SigEq
-
-    def as_approxgts(self, x0):
-        "Returns monomial-greater-than sides, to be called after as_approxlt1"
-        # default guess of 1.0 for unspecified variables
-        siglt0, = self.unsubbed
-        x0.update({vk: 1.0 for vk in siglt0.varkeys if vk not in x0})
-        lhs = self._posy.mono_lower_bound(x0)
-        rhs = self._negy.mono_lower_bound(x0)
-        return lhs/rhs, rhs/lhs
+        posy, negy = siglt0.posy_negy()
+        # assume unspecified variables have a value of 1.0
+        x0.update({vk: 1.0 for vk in siglt0.vks if vk not in x0})
+        plb, nlb = posy.mono_lower_bound(x0), negy.mono_lower_bound(x0)
+        return [plb/nlb, nlb/plb]
