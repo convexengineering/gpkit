@@ -325,7 +325,7 @@ class TestSP(unittest.TestCase):
             m = Model(x, [x + y >= 1])  # dual infeasible
         with self.assertRaises(UnboundedGP):
             m.localsolve(verbosity=0, solver=self.solver)
-        gp = m.sp(allow_missingbounds=True).gp(allow_missingbounds=True)
+        gp = m.sp(allow_missingbounds=True).gp()
         self.assertRaises(DualInfeasible, gp.solve,
                           solver=self.solver, verbosity=0)
 
@@ -547,11 +547,9 @@ class TestSP(unittest.TestCase):
         m = Model(objective, constraints)
         try:
             sol = m.localsolve(x0={"x": x0, y: y0}, verbosity=0,
-                               mutategp=False, solver=self.solver)
+                               solver=self.solver)
         except TypeError:
             self.fail("Call to local solve with only variables failed")
-        self.assertEqual(m.program.gps[0].x0[x], 3)
-        self.assertEqual(m.program.gps[0].x0["y"], 2)
         self.assertAlmostEqual(sol(x), 2, self.ndig)
         self.assertAlmostEqual(sol["cost"], 2, self.ndig)
 

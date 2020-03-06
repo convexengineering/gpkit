@@ -95,7 +95,7 @@ solutions and can be solved with 'Model.solve()'.""")
 
     # pylint: disable=too-many-locals,too-many-branches,too-many-statements
     def localsolve(self, solver=None, *, verbosity=1, x0=None, reltol=1e-4,
-                   iteration_limit=50, mutategp=True, **solveargs):
+                   iteration_limit=50, **solveargs):
         """Locally solves a SequentialGeometricProgram and returns the solution.
 
         Arguments
@@ -127,22 +127,14 @@ solutions and can be solved with 'Model.solve()'.""")
             A dictionary containing the translated solver result.
         """
         self.gps, self.solver_outs, self._results = [], [], []
-        if not mutategp and not x0:
-            raise ValueError("Solves with arbitrary constraint generators"
-                             " must specify an initial starting point x0.")
-        if mutategp:
-            if x0:
-                self._gp = self.init_gp(x0)
-            gp = self._gp
         starttime = time()
         if verbosity > 0:
             print("Starting a sequence of GP solves")
-            if mutategp:
-                print(" for %i free variables" % len(self._spvars))
-                print("  in %i signomial constraints"
-                      % len(self["SP constraints"]))
-            print("  and for %i free variables" % len(gp.varlocs))
-            print("       in %i posynomial inequalities." % len(gp.k))
+            print(" for %i free variables" % len(self._spvars))
+            print("  in %i signomial constraints"
+                  % len(self["SP constraints"]))
+            print("  and for %i free variables" % len(self._gp.varlocs))
+            print("       in %i posynomial inequalities." % len(self._gp.k))
         prevcost, cost, rel_improvement = None, None, None
         while rel_improvement is None or rel_improvement > reltol:
             prevcost = cost
@@ -151,10 +143,7 @@ solutions and can be solved with 'Model.solve()'.""")
                     "Unsolved after %s iterations. Check `m.program.results`;"
                     " if they're converging, try `.localsolve(...,"
                     " iteration_limit=NEWLIMIT)`." % len(self.gps))
-            if mutategp:
-                self.update_gp(x0)
-            else:
-                gp = self.gp(x0)
+            gp = self.gp(x0, cleanx0=True)
             gp.model = self.model
             self.gps.append(gp)  # NOTE: SIDE EFFECTS
             if verbosity > 1:
@@ -216,29 +205,21 @@ solutions and can be solved with 'Model.solve()'.""")
             self._results = [o["generate_result"]() for o in self.solver_outs]
         return self._results
 
-    def _fill_x0(self, x0):
-        "Returns a copy of x0 with subsitutions added."
-        x0kd = KeyDict()
-        x0kd.varkeys = self.model.varkeys
-        if x0:
-            x0kd.update(x0)  # has to occur after the setting of varkeys
-        x0kd.update(self.substitutions)
-        return x0kd
-
-    def init_gp(self, x0=None, **initgpargs):
+    def init_gp(self, **initgpargs):
         "Generates a simplified GP representation for later modification"
-        x0 = self._fill_x0(x0)
+        x0 = KeyDict()
+        x0.varkeys = self.model.varkeys
+        x0.update(self.substitutions)
         # OrderedDict so that SP constraints are at the first indices
         constraints = OrderedDict({"SP approximations": []})
         constraints["GP constraints"] = self["GP constraints"]
-        self._spvars = set([self.slack])
+        self._spvars = set()
         for cs in self["SP constraints"]:
             for posylt1 in cs.approx_as_posyslt1(x0):
                 constraint = (posylt1 <= self.slack)
                 constraint.generated_by = cs
                 constraints["SP approximations"].append(constraint)
-                self._spvars.update({vk for vk in posylt1.varkeys
-                                     if vk not in self.substitutions})
+                self._spvars.update(posylt1.varkeys)
         gp = GeometricProgram(self.cost, constraints, self.substitutions,
                               **initgpargs)
         gp.x0 = x0
@@ -249,13 +230,15 @@ solutions and can be solved with 'Model.solve()'.""")
                 self.a_idxs[gp.p_idxs[m_idx]].append(row_idx)
         return gp
 
-    def update_gp(self, x0):
-        "Update self._gp for x0."
-        if not self.gps:
-            return  # we've already generated the first gp
+    def gp(self, x0={}, *, cleanx0=False):
+        "Update self._gp for x0 and return it."
+        if not x0:
+            return self._gp  # return last generated
+        if not cleanx0:
+            x0 = KeyDict(x0)
         gp = self._gp
-        gp.x0.update({k: v for (k, v) in x0.items() if k in self._spvars})
-        p_idx = 0  # TODO: use .as_gpconstr in the below (it's fast enough)
+        gp.x0.update({vk: x0[vk] for vk in self._spvars if vk in x0})
+        p_idx = 0
         for sp_constraint in self["SP constraints"]:
             for posylt1 in sp_constraint.approx_as_posyslt1(gp.x0):
                 approx_constraint = gp["SP approximations"][p_idx]
@@ -273,13 +256,4 @@ solutions and can be solved with 'Model.solve()'.""")
                         gp.A.row[row_idx] = m_idx + i
                         gp.A.col[row_idx] = gp.varidxs[var]
                         gp.A.data[row_idx] = x
-
-    def gp(self, x0=None, **gpinitargs):
-        "The GP approximation of this SP at x0."
-        x0 = self._fill_x0(x0)
-        constraints = OrderedDict(
-            {"SP constraints": [c.as_gpconstr(x0) for c in self.model.flat()]})
-        gp = GeometricProgram(self._original_cost,
-                              constraints, self.substitutions, **gpinitargs)
-        gp.x0 = x0
         return gp
