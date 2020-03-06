@@ -277,7 +277,7 @@ solutions and can be solved with 'Model.solve()'.""")
             return  # we've already generated the first gp
         gp = self._gp
         gp.x0.update({k: v for (k, v) in x0.items() if k in self._spvars})
-        p_idx = 0
+        p_idx = 0  # TODO: use .as_gpconstr in the below (it's fast enough)
         for sp_constraint, lts in zip(self["SP constraints"], self._lt_approxs):
             for lt, gt in zip(lts, sp_constraint.as_approxgts(gp.x0)):
                 approx_constraint = gp["SP approximations"][p_idx]
