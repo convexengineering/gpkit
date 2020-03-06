@@ -269,7 +269,7 @@ class TestGP(unittest.TestCase):
         gp2 = m2.gp()
         # pylint: disable=no-member
         self.assertEqual(gp1.A, gp2.A)
-        self.assertTrue(all(gp1.cs == gp2.cs))
+        self.assertTrue(gp1.cs == gp2.cs)
 
 
 class TestSP(unittest.TestCase):

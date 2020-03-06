@@ -1,6 +1,6 @@
 """Implement the SequentialGeometricProgram class"""
 from time import time
-from collections import OrderedDict
+from collections import OrderedDict, defaultdict
 import numpy as np
 from ..exceptions import InvalidGPConstraint, Infeasible, UnnecessarySGP
 from ..keydict import KeyDict
@@ -250,6 +250,7 @@ solutions and can be solved with 'Model.solve()'.""")
     def init_gp(self, x0=None, **initgpargs):
         "Generates a simplified GP representation for later modification"
         x0 = self._fill_x0(x0)
+        # OrderedDict so that SP constraints are at the first indices
         constraints = OrderedDict({"SP approximations": []})
         constraints["GP constraints"] = self["GP constraints"]
         self._spvars = set([self.slack])
@@ -263,6 +264,11 @@ solutions and can be solved with 'Model.solve()'.""")
         gp = GeometricProgram(self.cost, constraints, self.substitutions,
                               **initgpargs)
         gp.x0 = x0
+        self.a_idxs = defaultdict(list)
+        cost_mons, sp_mons = gp.k[0], sum(gp.k[:1+len(self["SP constraints"])])
+        for row_idx, m_idx in enumerate(gp.A.row):
+            if cost_mons <= m_idx <= sp_mons:
+                self.a_idxs[gp.p_idxs[m_idx]].append(row_idx)
         return gp
 
     def update_gp(self, x0):
@@ -271,16 +277,24 @@ solutions and can be solved with 'Model.solve()'.""")
             return  # we've already generated the first gp
         gp = self._gp
         gp.x0.update({k: v for (k, v) in x0.items() if k in self._spvars})
-        hmap_idx = 0
+        p_idx = 0
         for sp_constraint, lts in zip(self["SP constraints"], self._lt_approxs):
             for lt, gt in zip(lts, sp_constraint.as_approxgts(gp.x0)):
-                unsubbed = lt/gt
-                gp["SP approximations"][hmap_idx].unsubbed = [unsubbed]
-                hmap = unsubbed.hmap.sub(self.substitutions, unsubbed.varkeys)
-                hmap.parent = gp["SP approximations"][hmap_idx]
-                hmap_idx += 1  # here because gp.hmaps[0] is the cost hmap
-                gp.hmaps[hmap_idx] = hmap
-        gp.gen()
+                approx_constraint = gp["SP approximations"][p_idx]
+                approx_constraint.unsubbed = [lt/gt]
+                p_idx += 1  # p_idx=0 is the cost; sp constraints are after it
+                hmap, = approx_constraint.as_hmapslt1(self.substitutions)
+                gp.hmaps[p_idx] = hmap
+                m_idx = gp.m_idxs[p_idx].start
+                a_idxs = list(self.a_idxs[p_idx])  # A's entries we can modify
+                for i, (exp, c) in enumerate(hmap.items()):
+                    gp.exps[m_idx + i] = exp
+                    gp.cs[m_idx + i] = c
+                    for var, x in exp.items():
+                        row_idx = a_idxs.pop()  # modify a particular A entry
+                        gp.A.row[row_idx] = m_idx + i
+                        gp.A.col[row_idx] = gp.varidxs[var]
+                        gp.A.data[row_idx] = x
 
     def gp(self, x0=None, **gpinitargs):
         "The GP approximation of this SP at x0."

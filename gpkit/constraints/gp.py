@@ -91,42 +91,8 @@ class GeometricProgram(CostedConstraintSet):
         cost_hmap = cost.hmap.sub(self.substitutions, cost.varkeys)
         if any(c <= 0 for c in cost_hmap.values()):
             raise InvalidPosynomial("cost must be a Posynomial")
-        ## Generate various maps into the posy- and monomials
-        self._row, self._col, self._data = [], [], []
-        if not all(cost_hmap):  # space out constants in cost for mosek
-            self._row.append(len(cost_hmap)-1)
-            self._col.append(0)
-            self._data.append(0)
         self.hmaps = [cost_hmap] + list(self.as_hmapslt1(self.substitutions))
-        # k [posys]: number of monomials (rows of A) present in each constraint
-        self.k = [len(hmap) for hmap in self.hmaps]
-        # m_idxs [mons]: monomial indices of each posynomial
-        self.m_idxs = []
-        # p_idxs [mons]: posynomial index of each monomial
-        self.p_idxs = []
-        # cs, exps [mons]: coefficient and exponents of each monomial
-        self.cs, self.exps = [], []
-        # varlocs: {vk: monomial indices of each variables' location}
-        self.varkeys = self.varlocs = defaultdict(list)
-        # meq_idxs: {all indices of equality mons} and {just the first halves}
-        self.meq_idxs = MonoEqualityIndexes()
-        m_idx = 0
-        for p_idx, (N_mons, hmap) in enumerate(zip(self.k, self.hmaps)):
-            self.p_idxs.extend([p_idx]*N_mons)
-            self.m_idxs.append(slice(m_idx, m_idx+N_mons))
-            if getattr(self.hmaps[p_idx], "from_meq", False):
-                self.meq_idxs.all.add(m_idx)
-                if len(self.meq_idxs.all) > 2*len(self.meq_idxs.first_half):
-                    self.meq_idxs.first_half.add(m_idx)
-            self.exps.extend(hmap)
-            self.cs.extend(hmap.values())
-            for exp in hmap:
-                for var in exp:
-                    self.varlocs[var].append(m_idx)
-                m_idx += 1
-        self.p_idxs = np.array(self.p_idxs, "int32")  # for later use as array
-        # A [mons, vks]: sparse array of each monomials' variables' exponents
-        self.gen(alreadyexps=True)
+        self.gen()  # Generate various maps into the posy- and monomials
         self.missingbounds = self.check_bounds(allow_missingbounds)
 
     def check_bounds(self, allow_missingbounds=True):
@@ -155,18 +121,47 @@ class GeometricProgram(CostedConstraintSet):
         raise UnboundedGP("\n\n".join("%s has no %s bound%s" % (v, b, x)
                                       for (v, b), x in missingbounds.items()))
 
-    def gen(self, alreadyexps=False):
+    def gen(self):
         "Generates nomial and solve data (A, p_idxs) from posynomials"
-        row, col, data = list(self._row), list(self._col), list(self._data)
-        if not alreadyexps:
-            self.cs, self.exps = [], []
-            for hmap in self.hmaps:
-                self.exps.extend(hmap.keys())
-                self.cs.extend(hmap.values())
+        row, col, data = [], [], []
+        if not all(self.hmaps[0]):  # space out constants in cost for mosek
+            row.append(len(self.hmaps[0])-1)
+            col.append(0)
+            data.append(0)
+        # k [posys]: number of monomials (rows of A) present in each constraint
+        self.k = [len(hmap) for hmap in self.hmaps]
+        # m_idxs [mons]: monomial indices of each posynomial
+        self.m_idxs = []
+        # p_idxs [mons]: posynomial index of each monomial
+        self.p_idxs = []
+        # cs, exps [mons]: coefficient and exponents of each monomial
+        self.cs, self.exps = [], []
+        # varlocs: {vk: monomial indices of each variables' location}
+        self.varkeys = self.varlocs = defaultdict(list)
+        # meq_idxs: {all indices of equality mons} and {just the first halves}
+        self.meq_idxs = MonoEqualityIndexes()
+        m_idx = 0
+        for p_idx, (N_mons, hmap) in enumerate(zip(self.k, self.hmaps)):
+            self.p_idxs.extend([p_idx]*N_mons)
+            self.m_idxs.append(slice(m_idx, m_idx+N_mons))
+            if getattr(self.hmaps[p_idx], "from_meq", False):
+                self.meq_idxs.all.add(m_idx)
+                if len(self.meq_idxs.all) > 2*len(self.meq_idxs.first_half):
+                    self.meq_idxs.first_half.add(m_idx)
+            self.exps.extend(hmap)
+            self.cs.extend(hmap.values())
+            for exp in hmap:
+                for var in exp:
+                    self.varlocs[var].append(m_idx)
+                m_idx += 1
+        self.p_idxs = np.array(self.p_idxs, "int32")  # for later use as array
+        self.varidxs = {}
         for j, (var, locs) in enumerate(self.varlocs.items()):
+            self.varidxs[var] = j
             row.extend(locs)
             col.extend([j]*len(locs))
             data.extend(self.exps[i][var] for i in locs)
+        # A [mons, vks]: sparse array of each monomials' variables' exponents
         self.A = CootMatrix(row, col, data)
 
     # pylint: disable=too-many-statements, too-many-locals
