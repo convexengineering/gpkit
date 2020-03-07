@@ -504,10 +504,6 @@ class PosynomialInequality(ScalarSingleEquationConstraint):
                 self.v_ss[vk] = nu_i*x + self.v_ss.get(vk, 0)
         return self.v_ss, la
 
-    def as_gpconstr(self, _):
-        "The GP version of a Posynomial constraint is itself"
-        return self
-
 
 class MonomialEquality(PosynomialInequality):
     "A Constraint of the form Monomial == Monomial."
@@ -542,7 +538,7 @@ class MonomialEquality(PosynomialInequality):
 
     def as_hmapslt1(self, substitutions):
         "Tags posynomials for dual feasibility checking"
-        out = PosynomialInequality.as_hmapslt1(self, substitutions)
+        out = super().as_hmapslt1(substitutions)
         for h in out:
             h.from_meq = True  # pylint: disable=attribute-defined-outside-init
         return out
@@ -567,7 +563,7 @@ class MonomialEquality(PosynomialInequality):
 class SignomialInequality(ScalarSingleEquationConstraint):
     """A constraint of the general form posynomial >= posynomial
 
-    Stored internally (exps, cs) as a single Signomial (0 >= self)"""
+    Stored at .unsubbed[0] as a single Signomial (0 >= self)"""
 
     def __init__(self, left, oper, right):
         ScalarSingleEquationConstraint.__init__(self, left, oper, right)
@@ -585,7 +581,7 @@ class SignomialInequality(ScalarSingleEquationConstraint):
         self.nomials.extend(self.unsubbed)
         self.bounded = self.as_gpconstr({}).bounded
 
-    def as_hmapslt1(self, substitutions=None):
+    def as_hmapslt1(self, substitutions):
         "Returns the posys <= 1 representation of this constraint."
         siglt0, = self.unsubbed
         siglt0 = siglt0.sub(substitutions, require_positive=False)
@@ -666,7 +662,7 @@ class SignomialInequality(ScalarSingleEquationConstraint):
         return var_senss, la
 
     def as_gpconstr(self, x0):
-        "Returns GP approximation of an SP constraint at x0"
+        "Returns GP-compatible approximation at x0"
         siglt0, = self.unsubbed
         posy, negy = siglt0.posy_negy()
         # default guess of 1.0 for unspecified negy variables
@@ -684,12 +680,12 @@ class SingleSignomialEquality(SignomialInequality):
         self.oper = "="
         self.meq_bounded = self.as_gpconstr({}).meq_bounded
 
-    def as_hmapslt1(self, substitutions=None):
-        "Returns the posys <= 1 representation of this constraint."
+    def as_hmapslt1(self, substitutions):
+        "SignomialEquality is never considered GP-compatible"
         raise InvalidGPConstraint(self)
 
     def as_gpconstr(self, x0):
-        "Returns GP approximation of an SP constraint at x0"
+        "Returns GP-compatible approximation at x0"
         siglt0, = self.unsubbed
         posy, negy = siglt0.posy_negy()
         # default guess of 1.0 for unspecified negy variables

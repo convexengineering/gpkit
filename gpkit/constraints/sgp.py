@@ -49,7 +49,6 @@ class SequentialGeometricProgram:
 
     def __init__(self, cost, model, substitutions, *,
                  use_pccp=True, pccp_penalty=2e2, checkbounds=True):
-        self.substitutions = substitutions
         self.pccp_penalty = pccp_penalty
         if cost.any_nonpositive_cs:
             raise InvalidPosynomial("""an SGP's cost must be Posynomial
@@ -65,8 +64,12 @@ class SequentialGeometricProgram:
         cost *= self.slack**pccp_penalty
         self.approxconstraints = []
         self.sgpvks = set()
+        x0 = KeyDict(substitutions)
+        x0.varkeys = model.varkeys  # for string access and so forth
         for cs in model.flat():
             try:
+                if not hasattr(cs, "as_hmapslt1"):
+                    raise InvalidGPConstraint(cs)
                 if not isinstance(cs, PosynomialInequality):
                     cs.as_hmapslt1(substitutions)  # gp-compatible?
                 self.gpconstraints.append(cs)
@@ -74,7 +77,7 @@ class SequentialGeometricProgram:
                 if not hasattr(cs, "as_gpconstr"):
                     raise InvalidSGPConstraint(cs)
                 self.sgpconstraints.append(cs)
-                for hmaplt1 in cs.as_gpconstr({}).as_hmapslt1({}):
+                for hmaplt1 in cs.as_gpconstr(x0).as_hmapslt1({}):
                     constraint = (Posynomial(hmaplt1) <= self.slack)
                     constraint.generated_by = cs
                     self.approxconstraints.append(constraint)
@@ -88,8 +91,7 @@ solutions and can be solved with 'Model.solve()'.""")
         self._gp = GeometricProgram(
             cost, self.approxconstraints + self.gpconstraints,
             substitutions, checkbounds=checkbounds)
-        self._gp.x0 = KeyDict()
-        self._gp.x0.varkeys = model.varkeys  # for string access, etc.
+        self._gp.x0 = x0
         self.a_idxs = defaultdict(list)
         cost_mons = self._gp.k[0]
         sp_mons = sum(self._gp.k[:1+len(self.approxconstraints)])
@@ -182,11 +184,11 @@ solutions and can be solved with 'Model.solve()'.""")
             print("Solving took %.3g seconds and %i GP solves."
                   % (self.result["soltime"], len(self.gps)))
         if hasattr(self.slack, "key"):
-            excess_slack = self.result["variables"][self.slack.key] - 1
+            excess_slack = self.result["variables"][self.slack.key] - 1  # pylint: disable=no-member
             if excess_slack <= EPS:
-                del self.result["freevariables"][self.slack.key]
-                del self.result["variables"][self.slack.key]
-                del self.result["sensitivities"]["variables"][self.slack.key]
+                del self.result["freevariables"][self.slack.key]  # pylint: disable=no-member
+                del self.result["variables"][self.slack.key]  # pylint: disable=no-member
+                del self.result["sensitivities"]["variables"][self.slack.key]  # pylint: disable=no-member
                 slackconstraint = self.gpconstraints[0]
                 del self.result["sensitivities"]["constraints"][slackconstraint]
             elif verbosity > -1:
@@ -214,12 +216,12 @@ solutions and can be solved with 'Model.solve()'.""")
             x0 = KeyDict(x0)
         self._gp.x0.update({vk: x0[vk] for vk in self.sgpvks if vk in x0})
         p_idx = 0
-        for sp_constraint in self.sgpconstraints:
-            for hmaplt1 in sp_constraint.as_gpconstr(self._gp.x0).as_hmapslt1({}):
-                approx_constraint = self.approxconstraints[p_idx]
-                approx_constraint.unsubbed = [Posynomial(hmaplt1)/self.slack]
+        for sgpc in self.sgpconstraints:
+            for hmaplt1 in sgpc.as_gpconstr(self._gp.x0).as_hmapslt1({}):
+                approxc = self.approxconstraints[p_idx]
+                approxc.unsubbed = [Posynomial(hmaplt1)/self.slack]
                 p_idx += 1  # p_idx=0 is the cost; sp constraints are after it
-                hmap, = approx_constraint.as_hmapslt1(self.substitutions)
+                hmap, = approxc.as_hmapslt1(self._gp.substitutions)
                 self._gp.hmaps[p_idx] = hmap
                 m_idx = self._gp.m_idxs[p_idx].start
                 a_idxs = list(self.a_idxs[p_idx])  # A's entries we can modify

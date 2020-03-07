@@ -1,5 +1,4 @@
 "Can be found in gpkit/docs/source/examples/external_constraint.py"
-from gpkit.exceptions import InvalidGPConstraint
 from external_function import external_code
 
 
@@ -12,10 +11,6 @@ class ExternalConstraint:
         # the initiation of the class and store them here.
         self.x = x
         self.y = y
-
-    def as_hmapslt1(self, _):
-        "Ensures this is treated as an SGP constraint"
-        raise InvalidGPConstraint("ExternalConstraint cannot solve as a GP.")
 
     def as_gpconstr(self, x0):
         "Returns locally-approximating GP constraint"

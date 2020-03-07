@@ -79,7 +79,8 @@ class ConstraintSet(list, ReprMixin):
         for i, constraint in enumerate(self):
             if hasattr(constraint, "varkeys"):
                 self._update(constraint)
-            elif not hasattr(constraint, "as_hmapslt1"):
+            elif not (hasattr(constraint, "as_hmapslt1")
+                      or hasattr(constraint, "as_gpconstr")):
                 try:
                     for subconstraint in flatiter(constraint, "varkeys"):
                         self._update(subconstraint)
