@@ -166,11 +166,7 @@ class Model(CostedConstraintSet):
 
     # pylint: disable=too-many-locals,too-many-branches,too-many-statements
     def debug(self, solver=None, verbosity=1, **solveargs):
-        """Attempts to diagnose infeasible models.
-
-        If a model debugs but errors in a process_result call, debug again
-        with `process_results=False`
-        """
+        "Attempts to diagnose infeasible models."
         from .relax import ConstantsRelaxed, ConstraintsRelaxed
         from .bounded import Bounded
 

@@ -49,7 +49,7 @@ try:
     m.solve()
 except UnboundedGP:
     gp = m.gp(checkbounds=False)
-    missingbounds = gp.check_bounds(err_on_missing_bounds=False)
+    missingbounds = gp.check_bounds()
 
 try:
     sol = gp.solve(verbosity=0)  # Errors on mosek_cli

@@ -17,13 +17,13 @@ class ExternalConstraint:
         "Ensures this is treated as an SGP constraint"
         raise InvalidGPConstraint("ExternalConstraint cannot solve as a GP.")
 
-    def approx_as_posyslt1(self, x0):
+    def as_gpconstr(self, x0):
         "Returns locally-approximating GP constraint"
         # Creating a default constraint for the first solve
         if self.x not in x0:
-            return [self.x/self.y]
+            return (self.y >= self.x)
         # Otherwise calls external code at the current position...
         x_star = x0[self.x]
         res = external_code(x_star)
         # ...and returns a linearized posy <= 1
-        return [res*self.x/x_star/self.y]
+        return (self.y >= res * self.x/x_star)

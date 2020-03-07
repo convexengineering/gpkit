@@ -159,8 +159,9 @@ class ConstraintSet(list, ReprMixin):
 
     def as_hmapslt1(self, subs):
         "Yields hmaps<=1 from self.flat()"
-        yield from chain(*(l.as_hmapslt1(subs)
-                           for l in self.flat(yield_if_hasattr="as_hmapslt1")))
+        yield from chain(*(c.as_hmapslt1(subs)
+                           for c in flatiter(self,
+                                             yield_if_hasattr="as_hmapslt1")))
 
     def process_result(self, result):
         """Does arbitrary computation / manipulation of a program's result

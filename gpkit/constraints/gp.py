@@ -8,7 +8,6 @@ from ..small_classes import CootMatrix, SolverLog, Numbers, FixedScalar
 from ..keydict import KeyDict
 from ..solution_array import SolutionArray
 from .set import ConstraintSet
-from .costed import CostedConstraintSet
 from ..exceptions import (InvalidPosynomial, Infeasible, UnknownInfeasible,
                           PrimalInfeasible, DualInfeasible, UnboundedGP)
 
@@ -48,7 +47,7 @@ def _get_solver(solver, kwargs):
     return solver, optimize
 
 
-class GeometricProgram(CostedConstraintSet):
+class GeometricProgram:
     # pylint: disable=too-many-instance-attributes
     """Standard mathematical representation of a GP.
 
@@ -69,16 +68,8 @@ class GeometricProgram(CostedConstraintSet):
     """
     _result = solve_log = solver_out = model = v_ss = nu_by_posy = None
 
-    def __init__(self, cost, constraints, substitutions,
-                 *, checkbounds=True):
-        # pylint:disable=super-init-not-called,non-parent-init-called
+    def __init__(self, cost, constraints, substitutions, *, checkbounds=True):
         self.cost, self.substitutions = cost, substitutions
-        if isinstance(constraints, dict):
-            self.idxlookup = {k: i for i, k in enumerate(constraints)}
-            constraints = list(constraints.values())
-        elif isinstance(constraints, ConstraintSet):
-            constraints = [constraints]
-        list.__init__(self, constraints)
         for key, sub in self.substitutions.items():
             if isinstance(sub, FixedScalar):
                 sub = sub.value
@@ -90,8 +81,9 @@ class GeometricProgram(CostedConstraintSet):
                                  " %s." % (key, sub, type(sub)))
         cost_hmap = cost.hmap.sub(self.substitutions, cost.varkeys)
         if any(c <= 0 for c in cost_hmap.values()):
-            raise InvalidPosynomial("cost must be a Posynomial")
-        self.hmaps = [cost_hmap] + list(self.as_hmapslt1(self.substitutions))
+            raise InvalidPosynomial("a GP's cost must be Posynomial")
+        hmapgen = ConstraintSet.as_hmapslt1(constraints, self.substitutions)
+        self.hmaps = [cost_hmap] + list(hmapgen)
         self.gen()  # Generate various maps into the posy- and monomials
         if checkbounds:
             self.check_bounds(err_on_missing_bounds=True)
@@ -166,8 +158,7 @@ class GeometricProgram(CostedConstraintSet):
         self.A = CootMatrix(row, col, data)
 
     # pylint: disable=too-many-statements, too-many-locals
-    def solve(self, solver=None, *, verbosity=1,
-              process_result=True, gen_result=True, **kwargs):
+    def solve(self, solver=None, *, verbosity=1, gen_result=True, **kwargs):
         """Solves a GeometricProgram and returns the solution.
 
         Arguments
@@ -233,10 +224,9 @@ class GeometricProgram(CostedConstraintSet):
 
         if gen_result:  # NOTE: SIDE EFFECTS
             self._result = self.generate_result(solver_out,
-                                                verbosity=verbosity-2,
-                                                process_result=process_result)
+                                                verbosity=verbosity-2)
             return self.result
-
+        # TODO: remove this "generate_result" closure
         solver_out["generate_result"] = \
             lambda: self.generate_result(solver_out, dual_check=False)
 
@@ -249,20 +239,17 @@ class GeometricProgram(CostedConstraintSet):
             self._result = self.generate_result(self.solver_out)
         return self._result
 
-    def generate_result(self, solver_out, *, verbosity=0,
-                        process_result=True, dual_check=True):
+    def generate_result(self, solver_out, *, verbosity=0, dual_check=True):
         "Generates a full SolutionArray and checks it."
         if verbosity > 0:
             soltime = solver_out["soltime"]
             tic = time()
-
         # result packing #
         result = self._compile_result(solver_out)  # NOTE: SIDE EFFECTS
         if verbosity > 0:
             print("Result packing took %.2g%% of solve time." %
                   ((time() - tic) / soltime * 100))
             tic = time()
-
         # solution checking #
         try:
             tol = SOLUTION_TOL.get(solver_out["solver"], 1e-5)
@@ -276,13 +263,6 @@ class GeometricProgram(CostedConstraintSet):
             print("Solution checking took %.2g%% of solve time." %
                   ((time() - tic) / soltime * 100))
             tic = time()
-
-        # result processing #
-        if process_result:
-            self.process_result(result)
-        if verbosity > 0:
-            print("Processing results took %.2g%% of solve time." %
-                  ((time() - tic) / soltime * 100))
         return result
 
     def _generate_nula(self, solver_out):

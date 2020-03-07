@@ -124,6 +124,8 @@ def solvify(genfunction):
         else:
             self.program, progsolve = genfunction(self)
             result = progsolve(solver, verbosity=verbosity, **solveargs)
+            if solveargs.get("process_result", True):
+                self.process_result(result)
             solution.append(result)
         solution.to_arrays()
         self.solution = solution
@@ -162,7 +164,10 @@ def run_sweep(genfunction, self, solution, skipsweepfailures,
         program, solvefn = genfunction(self, constants)
         self.program.append(program)  # NOTE: SIDE EFFECTS
         try:
-            solution.append(solvefn(solver, verbosity=verbosity-1, **solveargs))
+            result = solvefn(solver, verbosity=verbosity-1, **solveargs)
+            if solveargs.get("process_result", True):
+                self.process_result(result)
+            solution.append(result)
         except Infeasible as e:
             last_error = e
             if not skipsweepfailures:
