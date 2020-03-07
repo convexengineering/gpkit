@@ -229,8 +229,18 @@ solutions and can be solved with 'Model.solve()'.""")
                     self._gp.exps[m_idx + i] = exp
                     self._gp.cs[m_idx + i] = c
                     for var, x in exp.items():
-                        row_idx = a_idxs.pop()  # modify a particular A entry
-                        self._gp.A.row[row_idx] = m_idx + i
-                        self._gp.A.col[row_idx] = self._gp.varidxs[var]
-                        self._gp.A.data[row_idx] = x
+                        try:  # modify a particular A entry
+                            row_idx = a_idxs.pop()
+                            self._gp.A.row[row_idx] = m_idx + i
+                            self._gp.A.col[row_idx] = self._gp.varidxs[var]
+                            self._gp.A.data[row_idx] = x
+                        except IndexError:  # numbers of exps increased
+                            self.a_idxs[p_idx].append(len(self._gp.A.row))
+                            self._gp.A.row.append(m_idx + i)
+                            self._gp.A.col.append(self._gp.varidxs[var])
+                            self._gp.A.data.append(x)
+                for row_idx in a_idxs:  # number of exps decreased
+                    self._gp.A.row[row_idx] = 0  # zero out this entry
+                    self._gp.A.col[row_idx] = 0
+                    self._gp.A.data[row_idx] = 0
         return self._gp
