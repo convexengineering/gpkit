@@ -8,7 +8,6 @@ from ..small_classes import CootMatrix, SolverLog, Numbers, FixedScalar
 from ..keydict import KeyDict
 from ..solution_array import SolutionArray
 from .set import ConstraintSet
-from .costed import CostedConstraintSet
 from ..exceptions import (InvalidPosynomial, Infeasible, UnknownInfeasible,
                           PrimalInfeasible, DualInfeasible, UnboundedGP)
 
@@ -48,7 +47,7 @@ def _get_solver(solver, kwargs):
     return solver, optimize
 
 
-class GeometricProgram(CostedConstraintSet):
+class GeometricProgram:
     # pylint: disable=too-many-instance-attributes
     """Standard mathematical representation of a GP.
 
@@ -69,16 +68,8 @@ class GeometricProgram(CostedConstraintSet):
     """
     _result = solve_log = solver_out = model = v_ss = nu_by_posy = None
 
-    def __init__(self, cost, constraints, substitutions,
-                 *, allow_missingbounds=False, **_):
-        # pylint:disable=super-init-not-called,non-parent-init-called
+    def __init__(self, cost, constraints, substitutions, *, checkbounds=True):
         self.cost, self.substitutions = cost, substitutions
-        if isinstance(constraints, dict):
-            self.idxlookup = {k: i for i, k in enumerate(constraints)}
-            constraints = list(constraints.values())
-        elif isinstance(constraints, ConstraintSet):
-            constraints = [constraints]
-        list.__init__(self, constraints)
         for key, sub in self.substitutions.items():
             if isinstance(sub, FixedScalar):
                 sub = sub.value
@@ -90,30 +81,14 @@ class GeometricProgram(CostedConstraintSet):
                                  " %s." % (key, sub, type(sub)))
         cost_hmap = cost.hmap.sub(self.substitutions, cost.varkeys)
         if any(c <= 0 for c in cost_hmap.values()):
-            raise InvalidPosynomial("cost must be a Posynomial")
-        self.hmaps = [cost_hmap] + list(self.as_hmapslt1(self.substitutions))
-        ## Generate various maps into the posy- and monomials
-        # k [j]: number of monomials (rows of A) present in each constraint
-        self.k = [len(hm) for hm in self.hmaps]
-        # m_idxs [i]: monomial indices of each posynomial
-        self.m_idxs = []
-        # p_idxs [i]: posynomial index of each monomial
-        self.p_idxs = np.zeros(sum(self.k), "int")
-        self.meq_idxs = MonoEqualityIndexes()
-        m_idx_start = 0
-        for i, p_len in enumerate(self.k):
-            if getattr(self.hmaps[i], "from_meq", False):
-                self.meq_idxs.all.add(m_idx_start)
-                if len(self.meq_idxs.all) > 2*len(self.meq_idxs.first_half):
-                    self.meq_idxs.first_half.add(m_idx_start)
-            m_idx = list(range(m_idx_start, m_idx_start+p_len))
-            self.m_idxs.append(m_idx)
-            self.p_idxs[m_idx] = i
-            m_idx_start += p_len
-        self.gen()  # A [i, v]: sparse matrix of powers in each monomial
-        self.missingbounds = self.check_bounds(allow_missingbounds)
+            raise InvalidPosynomial("a GP's cost must be Posynomial")
+        hmapgen = ConstraintSet.as_hmapslt1(constraints, self.substitutions)
+        self.hmaps = [cost_hmap] + list(hmapgen)
+        self.gen()  # Generate various maps into the posy- and monomials
+        if checkbounds:
+            self.check_bounds(err_on_missing_bounds=True)
 
-    def check_bounds(self, allow_missingbounds=True):
+    def check_bounds(self, *, err_on_missing_bounds=False):
         "Checks if any variables are unbounded, through equality constraints."
         missingbounds = {}
         for var, locs in self.varlocs.items():
@@ -131,41 +106,59 @@ class GeometricProgram(CostedConstraintSet):
             if not lowerbound:
                 missingbounds[(var, "lower")] = "."
         if not missingbounds:
-            return {}
+            return {}  # all bounds found in inequalities
         meq_bounds = gen_meq_bounds(missingbounds, self.exps, self.meq_idxs)
         fulfill_meq_bounds(missingbounds, meq_bounds)
-        if allow_missingbounds or not missingbounds:
-            return missingbounds
-        raise UnboundedGP("\n\n".join("%s has no %s bound%s" % (v, b, x)
-                                      for (v, b), x in missingbounds.items()))
+        if missingbounds and err_on_missing_bounds:
+            raise UnboundedGP(
+                "\n\n".join("%s has no %s bound%s" % (v, b, x)
+                            for (v, b), x in missingbounds.items()))
+        return missingbounds
 
     def gen(self):
         "Generates nomial and solve data (A, p_idxs) from posynomials"
+        # k [posys]: number of monomials (rows of A) present in each constraint
+        self.k = [len(hmap) for hmap in self.hmaps]
+        # m_idxs [mons]: monomial indices of each posynomial
+        self.m_idxs = []
+        # p_idxs [mons]: posynomial index of each monomial
+        self.p_idxs = []
+        # cs, exps [mons]: coefficient and exponents of each monomial
+        self.cs, self.exps = [], []
+        # varlocs: {vk: monomial indices of each variables' location}
         self.varkeys = self.varlocs = defaultdict(list)
-        varexponents = defaultdict(list)
-        self.exps = []
-        self.cs = np.zeros(len(self.p_idxs))
+        # meq_idxs: {all indices of equality mons} and {just the first halves}
+        self.meq_idxs = MonoEqualityIndexes()
+        m_idx = 0
         row, col, data = [], [], []
-        for m_idxs, hmap in zip(self.m_idxs, self.hmaps):
-            self.exps.extend(hmap.keys())
-            for i, (exp, c) in zip(m_idxs, hmap.items()):
-                self.cs[i] = c
-                if not exp: # space the matrix out for trailing constant terms
-                    row.append(i)
+        for p_idx, (N_mons, hmap) in enumerate(zip(self.k, self.hmaps)):
+            self.p_idxs.extend([p_idx]*N_mons)
+            self.m_idxs.append(slice(m_idx, m_idx+N_mons))
+            if getattr(self.hmaps[p_idx], "from_meq", False):
+                self.meq_idxs.all.add(m_idx)
+                if len(self.meq_idxs.all) > 2*len(self.meq_idxs.first_half):
+                    self.meq_idxs.first_half.add(m_idx)
+            self.exps.extend(hmap)
+            self.cs.extend(hmap.values())
+            for exp in hmap:
+                if not exp:  # space out A matrix with constants for mosek
+                    row.append(m_idx)
                     col.append(0)
                     data.append(0)
-                for var, x in exp.items():
-                    self.varlocs[var].append(i)
-                    varexponents[var].append(x)
-        for j, var in enumerate(self.varlocs):
-            row.extend(self.varlocs[var])
-            col.extend([j]*len(self.varlocs[var]))
-            data.extend(varexponents[var])
+                for var in exp:
+                    self.varlocs[var].append(m_idx)
+                m_idx += 1
+        self.p_idxs = np.array(self.p_idxs, "int32")  # for later use as array
+        self.varidxs = {vk: i for i, vk in enumerate(self.varlocs)}
+        for j, (var, locs) in enumerate(self.varlocs.items()):
+            row.extend(locs)
+            col.extend([j]*len(locs))
+            data.extend(self.exps[i][var] for i in locs)
+        # A [mons, vks]: sparse array of each monomials' variables' exponents
         self.A = CootMatrix(row, col, data)
 
     # pylint: disable=too-many-statements, too-many-locals
-    def solve(self, solver=None, *, verbosity=1,
-              process_result=True, gen_result=True, **kwargs):
+    def solve(self, solver=None, *, verbosity=1, gen_result=True, **kwargs):
         """Solves a GeometricProgram and returns the solution.
 
         Arguments
@@ -231,10 +224,9 @@ class GeometricProgram(CostedConstraintSet):
 
         if gen_result:  # NOTE: SIDE EFFECTS
             self._result = self.generate_result(solver_out,
-                                                verbosity=verbosity-2,
-                                                process_result=process_result)
+                                                verbosity=verbosity-2)
             return self.result
-
+        # TODO: remove this "generate_result" closure
         solver_out["generate_result"] = \
             lambda: self.generate_result(solver_out, dual_check=False)
 
@@ -247,20 +239,17 @@ class GeometricProgram(CostedConstraintSet):
             self._result = self.generate_result(self.solver_out)
         return self._result
 
-    def generate_result(self, solver_out, *, verbosity=0,
-                        process_result=True, dual_check=True):
+    def generate_result(self, solver_out, *, verbosity=0, dual_check=True):
         "Generates a full SolutionArray and checks it."
         if verbosity > 0:
             soltime = solver_out["soltime"]
             tic = time()
-
         # result packing #
         result = self._compile_result(solver_out)  # NOTE: SIDE EFFECTS
         if verbosity > 0:
             print("Result packing took %.2g%% of solve time." %
                   ((time() - tic) / soltime * 100))
             tic = time()
-
         # solution checking #
         try:
             tol = SOLUTION_TOL.get(solver_out["solver"], 1e-5)
@@ -274,13 +263,6 @@ class GeometricProgram(CostedConstraintSet):
             print("Solution checking took %.2g%% of solve time." %
                   ((time() - tic) / soltime * 100))
             tic = time()
-
-        # result processing #
-        if process_result:
-            self.process_result(result)
-        if verbosity > 0:
-            print("Processing results took %.2g%% of solve time." %
-                  ((time() - tic) / soltime * 100))
         return result
 
     def _generate_nula(self, solver_out):

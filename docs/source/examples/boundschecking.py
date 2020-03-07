@@ -48,7 +48,8 @@ print(m.str_without(["lineage"]))
 try:
     m.solve()
 except UnboundedGP:
-    gp = m.gp(allow_missingbounds=True)
+    gp = m.gp(checkbounds=False)
+    missingbounds = gp.check_bounds()
 
 try:
     sol = gp.solve(verbosity=0)  # Errors on mosek_cli
@@ -56,9 +57,9 @@ except UnknownInfeasible:
     pass
 
 bpl = ", but would gain it from any of these sets: "
-assert gp.missingbounds[(m.D.key, 'lower')] == bpl + "[(%s, 'lower')]" % m.Ap
-assert gp.missingbounds[(m.nu.key, 'lower')] == bpl + "[(%s, 'lower')]" % m.Ap
+assert missingbounds[(m.D.key, 'lower')] == bpl + "[(%s, 'lower')]" % m.Ap
+assert missingbounds[(m.nu.key, 'lower')] == bpl + "[(%s, 'lower')]" % m.Ap
 # ordering is arbitrary:
-assert gp.missingbounds[(m.Ap.key, 'lower')] in (
+assert missingbounds[(m.Ap.key, 'lower')] in (
     bpl + ("[(%s, 'lower')] or [(%s, 'lower')]" % (m.D, m.nu)),
     bpl + ("[(%s, 'lower')] or [(%s, 'lower')]" % (m.nu, m.D)))

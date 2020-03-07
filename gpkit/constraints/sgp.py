@@ -1,21 +1,20 @@
 """Implement the SequentialGeometricProgram class"""
 from time import time
-from collections import OrderedDict
+from collections import defaultdict
 import numpy as np
-from ..exceptions import InvalidGPConstraint, Infeasible, UnnecessarySGP
+from ..exceptions import (InvalidGPConstraint, Infeasible, UnnecessarySGP,
+                          InvalidPosynomial, InvalidSGPConstraint)
 from ..keydict import KeyDict
 from ..nomials import Variable
 from .gp import GeometricProgram
-from .set import sort_constraints_dict
-from ..nomials import PosynomialInequality
+from ..nomials import PosynomialInequality, Posynomial
 from .. import NamedVariables
-from .costed import CostedConstraintSet
 
 
 EPS = 1e-6  # 1 +/- this is used in a few relative differences
 
 # pylint: disable=too-many-instance-attributes
-class SequentialGeometricProgram(CostedConstraintSet):
+class SequentialGeometricProgram:
     """Prepares a collection of signomials for a SP solve.
 
     Arguments
@@ -45,71 +44,64 @@ class SequentialGeometricProgram(CostedConstraintSet):
     >>> gp.solve()
     """
     gps = solver_outs = _results = result = model = None
-    _gp = _spvars = _lt_approxs = pccp_penalty = None
     with NamedVariables("SGP"):
         slack = Variable("PCCPslack")
 
     def __init__(self, cost, model, substitutions, *,
-                 use_pccp=True, pccp_penalty=2e2, **initgpargs):
+                 use_pccp=True, pccp_penalty=2e2, checkbounds=True):
+        self.pccp_penalty = pccp_penalty
         if cost.any_nonpositive_cs:
-            raise UnnecessarySGP("""Sequential GPs need Posynomial objectives.
+            raise InvalidPosynomial("""an SGP's cost must be Posynomial
 
     The equivalent of a Signomial objective can be constructed by constraining
     a dummy variable `z` to be greater than the desired Signomial objective `s`
     (z >= s) and then minimizing that dummy variable.""")
-        self._original_cost = cost
-        self.model = model
-        self.substitutions = substitutions
-        self.externalfn_vars = \
-            frozenset(Variable(v) for v in self.model.varkeys if v.externalfn)
-        if self.externalfn_vars:  # a non-SP-constraint generating variable
-            self.blackboxconstraints = True
-            super().__init__(cost, model, substitutions)
-            return
-
-        self._lt_approxs = []
-        sgpconstraints = {"SP constraints": [], "GP constraints": []}
+        self.gpconstraints, self.sgpconstraints = [], []
+        if not use_pccp:
+            self.slack = 1
+        else:
+            self.gpconstraints.append(self.slack >= 1)
+        cost *= self.slack**pccp_penalty
+        self.approxconstraints = []
+        self.sgpvks = set()
+        x0 = KeyDict(substitutions)
+        x0.varkeys = model.varkeys  # for string access and so forth
         for cs in model.flat():
             try:
+                if not hasattr(cs, "as_hmapslt1"):
+                    raise InvalidGPConstraint(cs)
                 if not isinstance(cs, PosynomialInequality):
                     cs.as_hmapslt1(substitutions)  # gp-compatible?
-                sgpconstraints["GP constraints"].append(cs)
+                self.gpconstraints.append(cs)
             except InvalidGPConstraint:
-                sgpconstraints["SP constraints"].append(cs)
-                try:
-                    if use_pccp:
-                        lts = [lt/self.slack for lt in cs.as_approxlts()]
-                    else:
-                        lts = cs.as_approxlts()
-                    self._lt_approxs.append(lts)
-                except AttributeError:  # some custom non-SP constraint
-                    self.blackboxconstraints = True
-                    super().__init__(cost, model, substitutions)
-                    return
-        # all constraints seem SP-compatible
-        self.blackboxconstraints = False
-        if not sgpconstraints["SP constraints"]:
+                if not hasattr(cs, "as_gpconstr"):
+                    raise InvalidSGPConstraint(cs)
+                self.sgpconstraints.append(cs)
+                for hmaplt1 in cs.as_gpconstr(x0).as_hmapslt1({}):
+                    constraint = (Posynomial(hmaplt1) <= self.slack)
+                    constraint.generated_by = cs
+                    self.approxconstraints.append(constraint)
+                    self.sgpvks.update(constraint.varkeys)
+        if not self.sgpconstraints:
             raise UnnecessarySGP("""Model valid as a Geometric Program.
 
 SequentialGeometricPrograms should only be created with Models containing
 Signomial Constraints, since Models without Signomials have global
 solutions and can be solved with 'Model.solve()'.""")
-
-        if not use_pccp:
-            self.cost = cost
-        else:
-            self.pccp_penalty = pccp_penalty
-            self.cost = cost * self.slack**pccp_penalty
-            sgpconstraints["GP constraints"].append(self.slack >= 1)
-
-        keys, sgpconstraints = sort_constraints_dict(sgpconstraints)
-        self.idxlookup = {k: i for i, k in enumerate(keys)}
-        list.__init__(self, sgpconstraints)  # pylint: disable=non-parent-init-called
-        self._gp = self.init_gp(**initgpargs)
+        self._gp = GeometricProgram(
+            cost, self.approxconstraints + self.gpconstraints,
+            substitutions, checkbounds=checkbounds)
+        self._gp.x0 = x0
+        self.a_idxs = defaultdict(list)
+        cost_mons = self._gp.k[0]
+        sp_mons = sum(self._gp.k[:1+len(self.approxconstraints)])
+        for row_idx, m_idx in enumerate(self._gp.A.row):
+            if cost_mons <= m_idx <= sp_mons:
+                self.a_idxs[self._gp.p_idxs[m_idx]].append(row_idx)
 
     # pylint: disable=too-many-locals,too-many-branches,too-many-statements
     def localsolve(self, solver=None, *, verbosity=1, x0=None, reltol=1e-4,
-                   iteration_limit=50, mutategp=True, **solveargs):
+                   iteration_limit=50, **solveargs):
         """Locally solves a SequentialGeometricProgram and returns the solution.
 
         Arguments
@@ -141,27 +133,13 @@ solutions and can be solved with 'Model.solve()'.""")
             A dictionary containing the translated solver result.
         """
         self.gps, self.solver_outs, self._results = [], [], []
-        # if there's external functions we can't mutate the GP
-        mutategp = mutategp and not self.blackboxconstraints
-        if not mutategp and not x0:
-            raise ValueError("Solves with arbitrary constraint generators"
-                             " must specify an initial starting point x0.")
-        if mutategp:
-            if x0:
-                self._gp = self.init_gp(x0)
-            gp = self._gp
         starttime = time()
         if verbosity > 0:
             print("Starting a sequence of GP solves")
-            if self.externalfn_vars:
-                print(" for %i variables defined by externalfns"
-                      % len(self.externalfn_vars))
-            elif mutategp:
-                print(" for %i free variables" % len(self._spvars))
-                print("  in %i signomial constraints"
-                      % len(self["SP constraints"]))
-            print("  and for %i free variables" % len(gp.varlocs))
-            print("       in %i posynomial inequalities." % len(gp.k))
+            print(" for %i free variables" % len(self.sgpvks))
+            print("  in %i locally-GP constraints" % len(self.sgpconstraints))
+            print("  and for %i free variables" % len(self._gp.varlocs))
+            print("       in %i posynomial inequalities." % len(self._gp.k))
         prevcost, cost, rel_improvement = None, None, None
         while rel_improvement is None or rel_improvement > reltol:
             prevcost = cost
@@ -170,11 +148,7 @@ solutions and can be solved with 'Model.solve()'.""")
                     "Unsolved after %s iterations. Check `m.program.results`;"
                     " if they're converging, try `.localsolve(...,"
                     " iteration_limit=NEWLIMIT)`." % len(self.gps))
-            if mutategp:
-                self.update_gp(x0)
-            else:
-                gp = self.gp(x0)
-            gp.model = self.model
+            gp = self.gp(x0, cleanx0=True)
             self.gps.append(gp)  # NOTE: SIDE EFFECTS
             if verbosity > 1:
                 print("\nGP Solve %i" % len(self.gps))
@@ -185,10 +159,10 @@ solutions and can be solved with 'Model.solve()'.""")
             self.solver_outs.append(solver_out)
             cost = float(solver_out["objective"])
             x0 = dict(zip(gp.varlocs, np.exp(solver_out["primal"])))
-            if verbosity > 2 and self._spvars:
+            if verbosity > 2:
                 result = gp.generate_result(solver_out, verbosity=verbosity-3)
                 self._results.append(result)
-                print(result.table(self._spvars))
+                print(result.table(self.sgpvks))
             elif verbosity > 1:
                 print("Solved cost was %.4g." % cost)
             if prevcost is None:
@@ -209,17 +183,13 @@ solutions and can be solved with 'Model.solve()'.""")
         if verbosity > 0:
             print("Solving took %.3g seconds and %i GP solves."
                   % (self.result["soltime"], len(self.gps)))
-        self.model.process_result(self.result)
-        if self.externalfn_vars:
-            for v in self.externalfn_vars:
-                self[0].insert(0, v.key.externalfn)  # for constraint senss
-        if self.slack.key in self.result["variables"]:
-            excess_slack = self.result["variables"][self.slack.key] - 1
+        if hasattr(self.slack, "key"):
+            excess_slack = self.result["variables"][self.slack.key] - 1  # pylint: disable=no-member
             if excess_slack <= EPS:
-                del self.result["freevariables"][self.slack.key]
-                del self.result["variables"][self.slack.key]
-                del self.result["sensitivities"]["variables"][self.slack.key]
-                slackconstraint = self["GP constraints"][-1]
+                del self.result["freevariables"][self.slack.key]  # pylint: disable=no-member
+                del self.result["variables"][self.slack.key]  # pylint: disable=no-member
+                del self.result["sensitivities"]["variables"][self.slack.key]  # pylint: disable=no-member
+                slackconstraint = self.gpconstraints[0]
                 del self.result["sensitivities"]["constraints"][slackconstraint]
             elif verbosity > -1:
                 print("Final solution let signomial constraints slacken by"
@@ -238,62 +208,29 @@ solutions and can be solved with 'Model.solve()'.""")
             self._results = [o["generate_result"]() for o in self.solver_outs]
         return self._results
 
-    def _fill_x0(self, x0):
-        "Returns a copy of x0 with subsitutions added."
-        x0kd = KeyDict()
-        x0kd.varkeys = self.model.varkeys
-        if x0:
-            x0kd.update(x0)  # has to occur after the setting of varkeys
-        x0kd.update(self.substitutions)
-        return x0kd
-
-    def init_gp(self, x0=None, **initgpargs):
-        "Generates a simplified GP representation for later modification"
-        x0 = self._fill_x0(x0)
-        constraints = OrderedDict({"SP approximations": []})
-        constraints["GP constraints"] = self["GP constraints"]
-        self._spvars = set([self.slack])
-        for cs, lts in zip(self["SP constraints"], self._lt_approxs):
-            for lt, gt in zip(lts, cs.as_approxgts(x0)):
-                constraint = (lt <= gt)
-                constraint.generated_by = cs
-                constraints["SP approximations"].append(constraint)
-                self._spvars.update({vk for vk in gt.varkeys
-                                     if vk not in self.substitutions})
-        gp = GeometricProgram(self.cost, constraints, self.substitutions,
-                              **initgpargs)
-        gp.x0 = x0
-        return gp
-
-    def update_gp(self, x0):
-        "Update self._gp for x0."
-        if not self.gps:
-            return  # we've already generated the first gp
-        gp = self._gp
-        gp.x0.update({k: v for (k, v) in x0.items() if k in self._spvars})
-        hmap_idx = 0
-        for sp_constraint, lts in zip(self["SP constraints"], self._lt_approxs):
-            for lt, gt in zip(lts, sp_constraint.as_approxgts(gp.x0)):
-                unsubbed = lt/gt
-                gp["SP approximations"][hmap_idx].unsubbed = [unsubbed]
-                hmap = unsubbed.hmap.sub(self.substitutions, unsubbed.varkeys)
-                hmap.parent = gp["SP approximations"][hmap_idx]
-                hmap_idx += 1  # here because gp.hmaps[0] is the cost hmap
-                gp.hmaps[hmap_idx] = hmap
-        gp.gen()
-
-    def gp(self, x0=None, **gpinitargs):
-        "The GP approximation of this SP at x0."
-        x0 = self._fill_x0(x0)
-        constraints = OrderedDict(
-            {"SP constraints": [c.as_gpconstr(x0) for c in self.model.flat()]})
-        if self.externalfn_vars:
-            constraints["Generated by externalfns"] = []
-            for v in self.externalfn_vars:
-                constraint = v.key.externalfn(v, x0)
-                constraint.generated_by = v.key.externalfn
-                constraints["Generated by externalfns"].append(constraint)
-        gp = GeometricProgram(self._original_cost,
-                              constraints, self.substitutions, **gpinitargs)
-        gp.x0 = x0
-        return gp
+    def gp(self, x0=None, *, cleanx0=False):
+        "Update self._gp for x0 and return it."
+        if not x0:
+            return self._gp  # return last generated
+        if not cleanx0:
+            x0 = KeyDict(x0)
+        self._gp.x0.update({vk: x0[vk] for vk in self.sgpvks if vk in x0})
+        p_idx = 0
+        for sgpc in self.sgpconstraints:
+            for hmaplt1 in sgpc.as_gpconstr(self._gp.x0).as_hmapslt1({}):
+                approxc = self.approxconstraints[p_idx]
+                approxc.unsubbed = [Posynomial(hmaplt1)/self.slack]
+                p_idx += 1  # p_idx=0 is the cost; sp constraints are after it
+                hmap, = approxc.as_hmapslt1(self._gp.substitutions)
+                self._gp.hmaps[p_idx] = hmap
+                m_idx = self._gp.m_idxs[p_idx].start
+                a_idxs = list(self.a_idxs[p_idx])  # A's entries we can modify
+                for i, (exp, c) in enumerate(hmap.items()):
+                    self._gp.exps[m_idx + i] = exp
+                    self._gp.cs[m_idx + i] = c
+                    for var, x in exp.items():
+                        row_idx = a_idxs.pop()  # modify a particular A entry
+                        self._gp.A.row[row_idx] = m_idx + i
+                        self._gp.A.col[row_idx] = self._gp.varidxs[var]
+                        self._gp.A.data[row_idx] = x
+        return self._gp

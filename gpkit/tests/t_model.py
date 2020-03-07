@@ -10,7 +10,7 @@ from gpkit import NamedVariables, units, parse_variables
 from gpkit.constraints.relax import ConstraintsRelaxed
 from gpkit.constraints.relax import ConstraintsRelaxedEqually
 from gpkit.constraints.relax import ConstantsRelaxed
-from gpkit.exceptions import (UnknownInfeasible,
+from gpkit.exceptions import (UnknownInfeasible, InvalidPosynomial,
                               InvalidGPConstraint, UnnecessarySGP,
                               PrimalInfeasible, DualInfeasible, UnboundedGP)
 
@@ -92,7 +92,7 @@ class TestGP(unittest.TestCase):
                   [x >= 1,
                    y == 2])
         m.solve(solver=self.solver, verbosity=0)
-        self.assertEqual(len(m.program[0]), 2)  # pylint:disable=unsubscriptable-object
+        self.assertEqual(len(list(m.as_hmapslt1({}))), 3)
         self.assertEqual(len(m.program.hmaps), 2)
 
     def test_cost_freeing(self):
@@ -114,7 +114,7 @@ class TestGP(unittest.TestCase):
         del m.substitutions["x_{min}"]
         self.assertRaises(UnboundedGP, m.solve,
                           solver=self.solver, verbosity=0)
-        gp = m.gp(allow_missingbounds=True)
+        gp = m.gp(checkbounds=False)
         self.assertRaises(DualInfeasible, gp.solve,
                           solver=self.solver, verbosity=0)
 
@@ -269,7 +269,7 @@ class TestGP(unittest.TestCase):
         gp2 = m2.gp()
         # pylint: disable=no-member
         self.assertEqual(gp1.A, gp2.A)
-        self.assertTrue(all(gp1.cs == gp2.cs))
+        self.assertTrue(gp1.cs == gp2.cs)
 
 
 class TestSP(unittest.TestCase):
@@ -325,7 +325,7 @@ class TestSP(unittest.TestCase):
             m = Model(x, [x + y >= 1])  # dual infeasible
         with self.assertRaises(UnboundedGP):
             m.localsolve(verbosity=0, solver=self.solver)
-        gp = m.sp(allow_missingbounds=True).gp(allow_missingbounds=True)
+        gp = m.sp(checkbounds=False).gp()
         self.assertRaises(DualInfeasible, gp.solve,
                           solver=self.solver, verbosity=0)
 
@@ -547,11 +547,9 @@ class TestSP(unittest.TestCase):
         m = Model(objective, constraints)
         try:
             sol = m.localsolve(x0={"x": x0, y: y0}, verbosity=0,
-                               mutategp=False, solver=self.solver)
+                               solver=self.solver)
         except TypeError:
             self.fail("Call to local solve with only variables failed")
-        self.assertEqual(m.program.gps[0].x0[x], 3)
-        self.assertEqual(m.program.gps[0].x0["y"], 2)
         self.assertAlmostEqual(sol(x), 2, self.ndig)
         self.assertAlmostEqual(sol["cost"], 2, self.ndig)
 
@@ -590,7 +588,7 @@ class TestSP(unittest.TestCase):
             y = Variable("y")
             J = 0.01*((x - 1)**2 + (y - 1)**2) + (x*y - 1)**2
             m = Model(J)
-            with self.assertRaises(UnnecessarySGP):
+            with self.assertRaises(InvalidPosynomial):
                 m.localsolve(verbosity=0, solver=self.solver)
 
     def test_partial_sub_signomial(self):
@@ -600,7 +598,7 @@ class TestSP(unittest.TestCase):
         with SignomialsEnabled():
             m = Model(x, [x + y >= 1, y <= 0.5])
         gp = m.sp().gp(x0={x: 0.5})  # pylint: disable=no-member
-        first_gp_constr_posy_exp, = list(gp.as_hmapslt1({}))[0]
+        first_gp_constr_posy_exp, = gp.hmaps[1]  # first after cost
         self.assertEqual(first_gp_constr_posy_exp[x.key], -1./3)
 
     def test_becomes_signomial(self):
@@ -625,7 +623,7 @@ class TestSP(unittest.TestCase):
         m.localsolve(verbosity=0, solver=self.solver)
         del m.substitutions[x_min]
         m.cost = 1/x_min
-        self.assertNotIn(x_min, m.sp().substitutions)  # pylint: disable=no-member
+        self.assertNotIn(x_min, m.sp().gp().substitutions)  # pylint: disable=no-member
 
     def test_unbounded_debugging(self):
         "Test nearly-dual-feasible problems"

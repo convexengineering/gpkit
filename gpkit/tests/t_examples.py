@@ -139,7 +139,7 @@ class TestExamples(unittest.TestCase):
         with self.assertRaises(UnboundedGP):
             example.m.gp()
         with self.assertRaises(dual_or_primal):
-            gp = example.m.gp(allow_missingbounds=True)
+            gp = example.m.gp(checkbounds=False)
             gp.solve(verbosity=0)
 
         primal_or_unknown = PrimalInfeasible
@@ -151,7 +151,7 @@ class TestExamples(unittest.TestCase):
         with self.assertRaises(UnboundedGP):
             example.m3.gp()
         with self.assertRaises(DualInfeasible):
-            gp3 = example.m3.gp(allow_missingbounds=True)
+            gp3 = example.m3.gp(checkbounds=False)
             gp3.solve(verbosity=0)
 
     def test_simple_sp(self, example):
@@ -173,9 +173,6 @@ class TestExamples(unittest.TestCase):
         pass
 
     def test_external_sp(self, example):
-        pass
-
-    def test_external_sp2(self, example):
         pass
 
     def test_simpleflight(self, example):

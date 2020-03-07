@@ -504,10 +504,6 @@ class PosynomialInequality(ScalarSingleEquationConstraint):
                 self.v_ss[vk] = nu_i*x + self.v_ss.get(vk, 0)
         return self.v_ss, la
 
-    def as_gpconstr(self, _):
-        "The GP version of a Posynomial constraint is itself"
-        return self
-
 
 class MonomialEquality(PosynomialInequality):
     "A Constraint of the form Monomial == Monomial."
@@ -542,7 +538,7 @@ class MonomialEquality(PosynomialInequality):
 
     def as_hmapslt1(self, substitutions):
         "Tags posynomials for dual feasibility checking"
-        out = PosynomialInequality.as_hmapslt1(self, substitutions)
+        out = super().as_hmapslt1(substitutions)
         for h in out:
             h.from_meq = True  # pylint: disable=attribute-defined-outside-init
         return out
@@ -567,7 +563,7 @@ class MonomialEquality(PosynomialInequality):
 class SignomialInequality(ScalarSingleEquationConstraint):
     """A constraint of the general form posynomial >= posynomial
 
-    Stored internally (exps, cs) as a single Signomial (0 >= self)"""
+    Stored at .unsubbed[0] as a single Signomial (0 >= self)"""
 
     def __init__(self, left, oper, right):
         ScalarSingleEquationConstraint.__init__(self, left, oper, right)
@@ -585,7 +581,7 @@ class SignomialInequality(ScalarSingleEquationConstraint):
         self.nomials.extend(self.unsubbed)
         self.bounded = self.as_gpconstr({}).bounded
 
-    def as_hmapslt1(self, substitutions=None):
+    def as_hmapslt1(self, substitutions):
         "Returns the posys <= 1 representation of this constraint."
         siglt0, = self.unsubbed
         siglt0 = siglt0.sub(substitutions, require_positive=False)
@@ -595,37 +591,35 @@ class SignomialInequality(ScalarSingleEquationConstraint):
                   " constraint 0 <= %s after substitution." % (self, negy))
             return []
         if negy is 0:  # pylint: disable=literal-comparison
-            raise ValueError("SignomialConstraint %s became the infeasible"
-                             " constraint %s <= 0 after substitution." %
-                             (self, posy))
-        if not hasattr(negy, "cs") or len(negy.cs) == 1:
-            # all but one of the negy terms becomes compatible with the posy
-            p_ineq = PosynomialInequality(posy, "<=", negy)
-            p_ineq.parent = self
-            siglt0_us, = self.unsubbed
-            siglt0_hmap = siglt0_us.hmap.sub(substitutions, siglt0_us.varkeys)
-            negy_hmap = NomialMap()
-            posy_hmaps = defaultdict(NomialMap)
-            for o_exp, exp in siglt0_hmap.expmap.items():
-                if exp == negy.exp:
-                    negy_hmap[o_exp] = -siglt0_us.hmap[o_exp]
-                else:
-                    posy_hmaps[exp-negy.exp][o_exp] = siglt0_us.hmap[o_exp]
-            # pylint: disable=attribute-defined-outside-init
-            self._mons = [Monomial(NomialMap({k: v}))
-                          for k, v in (posy/negy).hmap.items()]
-            self._negysig = Signomial(negy_hmap, require_positive=False)
-            self._coeffsigs = {exp: Signomial(hmap, require_positive=False)
-                               for exp, hmap in posy_hmaps.items()}
-            self._sigvars = {exp: (list(self._negysig.varkeys)
-                                   + list(sig.varkeys))
-                             for exp, sig in self._coeffsigs.items()}
-            return p_ineq.as_hmapslt1(substitutions)
-
-        raise InvalidGPConstraint("SignomialInequality could not simplify to a"
-                                  " PosynomialInequality; try calling"
-                                  " `.localsolve` instead of `.solve` to form"
-                                  " your Model as a SequentialGeometricProgram")
+            raise ValueError("%s became the infeasible constraint %s <= 0"
+                             " after substitution." % (self, posy))
+        if hasattr(negy, "cs") and len(negy.cs) > 1:
+            raise InvalidGPConstraint(
+                "%s did not simplify to a PosynomialInequality; try calling"
+                " `.localsolve` instead of `.solve` to form your Model as a"
+                " SequentialGeometricProgram." % self)
+        # all but one of the negy terms becomes compatible with the posy
+        p_ineq = PosynomialInequality(posy, "<=", negy)
+        p_ineq.parent = self
+        siglt0_us, = self.unsubbed
+        siglt0_hmap = siglt0_us.hmap.sub(substitutions, siglt0_us.varkeys)
+        negy_hmap = NomialMap()
+        posy_hmaps = defaultdict(NomialMap)
+        for o_exp, exp in siglt0_hmap.expmap.items():
+            if exp == negy.exp:
+                negy_hmap[o_exp] = -siglt0_us.hmap[o_exp]
+            else:
+                posy_hmaps[exp-negy.exp][o_exp] = siglt0_us.hmap[o_exp]
+        # pylint: disable=attribute-defined-outside-init
+        self._mons = [Monomial(NomialMap({k: v}))
+                      for k, v in (posy/negy).hmap.items()]
+        self._negysig = Signomial(negy_hmap, require_positive=False)
+        self._coeffsigs = {exp: Signomial(hmap, require_positive=False)
+                           for exp, hmap in posy_hmaps.items()}
+        self._sigvars = {exp: (list(self._negysig.varkeys)
+                               + list(sig.varkeys))
+                         for exp, sig in self._coeffsigs.items()}
+        return p_ineq.as_hmapslt1(substitutions)
 
     def sens_from_dual(self, la, nu, result):
         """ We want to do the following chain:
@@ -668,26 +662,14 @@ class SignomialInequality(ScalarSingleEquationConstraint):
         return var_senss, la
 
     def as_gpconstr(self, x0):
-        "Returns GP approximation of an SP constraint at x0"
+        "Returns GP-compatible approximation at x0"
         siglt0, = self.unsubbed
         posy, negy = siglt0.posy_negy()
         # default guess of 1.0 for unspecified negy variables
-        x0.update({vk: 1.0 for vk in negy.vks if vk not in x0})
+        x0 = {vk: x0.get(vk, 1) for vk in negy.vks}
         pconstr = PosynomialInequality(posy, "<=", negy.mono_lower_bound(x0))
         pconstr.generated_by = self
         return pconstr
-
-    def as_approxlts(self):
-        "Returns posynomial-less-than sides of a signomial constraint"
-        siglt0, = self.unsubbed
-        posy, self._negy = siglt0.posy_negy()  # pylint: disable=attribute-defined-outside-init
-        return [posy]
-
-    def as_approxgts(self, x0):
-        "Returns monomial-greater-than sides, to be called after as_approxlt1"
-        # default guess of 1.0 for unspecified negy variables
-        x0.update({vk: 1.0 for vk in self._negy.varkeys if vk not in x0})
-        return [self._negy.mono_lower_bound(x0)]
 
 
 class SingleSignomialEquality(SignomialInequality):
@@ -698,31 +680,16 @@ class SingleSignomialEquality(SignomialInequality):
         self.oper = "="
         self.meq_bounded = self.as_gpconstr({}).meq_bounded
 
-    def as_hmapslt1(self, substitutions=None):
-        "Returns the posys <= 1 representation of this constraint."
-        raise InvalidGPConstraint("SignomialEquality is not GP compatible.")
+    def as_hmapslt1(self, substitutions):
+        "SignomialEquality is never considered GP-compatible"
+        raise InvalidGPConstraint(self)
 
     def as_gpconstr(self, x0):
-        "Returns GP approximation of an SP constraint at x0"
+        "Returns GP-compatible approximation at x0"
         siglt0, = self.unsubbed
         posy, negy = siglt0.posy_negy()
-        # assume unspecified variables have a value of 1.0
-        x0.update({vk: 1.0 for vk in siglt0.vks if vk not in x0})
+        # default guess of 1.0 for unspecified negy variables
+        x0 = {vk: x0.get(vk, 1) for vk in siglt0.vks}
         mec = (posy.mono_lower_bound(x0) == negy.mono_lower_bound(x0))
         mec.generated_by = self
         return mec
-
-    def as_approxlts(self):
-        "Returns posynomial-less-than sides of a signomial constraint"
-        siglt0, = self.unsubbed
-        self._posy, self._negy = siglt0.posy_negy()  # pylint: disable=attribute-defined-outside-init
-        return Monomial(1), Monomial(1)  # no 'fixed' posy_lt for a SigEq
-
-    def as_approxgts(self, x0):
-        "Returns monomial-greater-than sides, to be called after as_approxlt1"
-        # default guess of 1.0 for unspecified variables
-        siglt0, = self.unsubbed
-        x0.update({vk: 1.0 for vk in siglt0.varkeys if vk not in x0})
-        lhs = self._posy.mono_lower_bound(x0)
-        rhs = self._negy.mono_lower_bound(x0)
-        return lhs/rhs, rhs/lhs

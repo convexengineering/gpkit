@@ -79,7 +79,8 @@ class ConstraintSet(list, ReprMixin):
         for i, constraint in enumerate(self):
             if hasattr(constraint, "varkeys"):
                 self._update(constraint)
-            elif not hasattr(constraint, "as_hmapslt1"):
+            elif not (hasattr(constraint, "as_hmapslt1")
+                      or hasattr(constraint, "as_gpconstr")):
                 try:
                     for subconstraint in flatiter(constraint, "varkeys"):
                         self._update(subconstraint)
@@ -159,8 +160,9 @@ class ConstraintSet(list, ReprMixin):
 
     def as_hmapslt1(self, subs):
         "Yields hmaps<=1 from self.flat()"
-        yield from chain(*(l.as_hmapslt1(subs)
-                           for l in self.flat(yield_if_hasattr="as_hmapslt1")))
+        yield from chain(*(c.as_hmapslt1(subs)
+                           for c in flatiter(self,
+                                             yield_if_hasattr="as_hmapslt1")))
 
     def process_result(self, result):
         """Does arbitrary computation / manipulation of a program's result

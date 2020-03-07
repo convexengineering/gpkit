@@ -51,7 +51,7 @@ Note that this variable should not be used in constructing your model!
     self.assertAlmostEqual(sol(x2), sol(x)**2)
 
 
-For evaluated variables that can be used during a solution, see ``externalfn`` under :ref:`sgp`.
+For evaluated variables that can be used during a solution, see :ref:`sgp`.
 
 
 .. _Sweeps:
