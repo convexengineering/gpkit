@@ -11,7 +11,7 @@ from gpkit.constraints.relax import ConstraintsRelaxed
 from gpkit.constraints.relax import ConstraintsRelaxedEqually
 from gpkit.constraints.relax import ConstantsRelaxed
 from gpkit.exceptions import (UnknownInfeasible,
-                              InvalidGPConstraint, UnnecessarySGP,
+                              InvalidGPConstraint, UnnecessarySGP, InvalidSGP,
                               PrimalInfeasible, DualInfeasible, UnboundedGP)
 
 
@@ -114,7 +114,7 @@ class TestGP(unittest.TestCase):
         del m.substitutions["x_{min}"]
         self.assertRaises(UnboundedGP, m.solve,
                           solver=self.solver, verbosity=0)
-        gp = m.gp(allow_missingbounds=True)
+        gp = m.gp(checkbounds=False)
         self.assertRaises(DualInfeasible, gp.solve,
                           solver=self.solver, verbosity=0)
 
@@ -325,7 +325,7 @@ class TestSP(unittest.TestCase):
             m = Model(x, [x + y >= 1])  # dual infeasible
         with self.assertRaises(UnboundedGP):
             m.localsolve(verbosity=0, solver=self.solver)
-        gp = m.sp(allow_missingbounds=True).gp()
+        gp = m.sp(checkbounds=False).gp()
         self.assertRaises(DualInfeasible, gp.solve,
                           solver=self.solver, verbosity=0)
 
@@ -588,7 +588,7 @@ class TestSP(unittest.TestCase):
             y = Variable("y")
             J = 0.01*((x - 1)**2 + (y - 1)**2) + (x*y - 1)**2
             m = Model(J)
-            with self.assertRaises(UnnecessarySGP):
+            with self.assertRaises(InvalidSGP):
                 m.localsolve(verbosity=0, solver=self.solver)
 
     def test_partial_sub_signomial(self):

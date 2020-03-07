@@ -10,9 +10,12 @@ class InvalidPosynomial(MathematicallyInvalid):
 class InvalidGPConstraint(MathematicallyInvalid):
     "Raised when a non-GP-compatible constraint is used in a GP"
 
-class UnnecessarySGP(MathematicallyInvalid):
-    "Raised when an SGP is fully GP-compatible"
+class InvalidSGP(MathematicallyInvalid):
+    "Raised when a non-GP-compatible constraint is used in a GP"
 
+
+class UnnecessarySGP(ValueError):
+    "Raised when an SGP is fully GP-compatible"
 
 class UnboundedGP(ValueError):
     "Raise when a GP is not fully bounded"

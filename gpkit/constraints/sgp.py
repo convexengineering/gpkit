@@ -2,7 +2,8 @@
 from time import time
 from collections import OrderedDict, defaultdict
 import numpy as np
-from ..exceptions import InvalidGPConstraint, Infeasible, UnnecessarySGP
+from ..exceptions import (InvalidGPConstraint, Infeasible, UnnecessarySGP,
+                          InvalidSGP)
 from ..keydict import KeyDict
 from ..nomials import Variable
 from .gp import GeometricProgram
@@ -50,9 +51,9 @@ class SequentialGeometricProgram(CostedConstraintSet):
         slack = Variable("PCCPslack")
 
     def __init__(self, cost, model, substitutions, *,
-                 use_pccp=True, pccp_penalty=2e2, **initgpargs):
+                 use_pccp=True, pccp_penalty=2e2, checkbounds=True):
         if cost.any_nonpositive_cs:
-            raise UnnecessarySGP("""Sequential GPs need Posynomial objectives.
+            raise InvalidSGP("""Sequential GPs need Posynomial objectives.
 
     The equivalent of a Signomial objective can be constructed by constraining
     a dummy variable `z` to be greater than the desired Signomial objective `s`
@@ -91,7 +92,7 @@ solutions and can be solved with 'Model.solve()'.""")
         keys, sgpconstraints = sort_constraints_dict(sgpconstraints)
         self.idxlookup = {k: i for i, k in enumerate(keys)}
         list.__init__(self, sgpconstraints)  # pylint: disable=non-parent-init-called
-        self._gp = self.init_gp(**initgpargs)
+        self._gp = self.init_gp(checkbounds=checkbounds)
 
     # pylint: disable=too-many-locals,too-many-branches,too-many-statements
     def localsolve(self, solver=None, *, verbosity=1, x0=None, reltol=1e-4,
@@ -155,7 +156,7 @@ solutions and can be solved with 'Model.solve()'.""")
             self.solver_outs.append(solver_out)
             cost = float(solver_out["objective"])
             x0 = dict(zip(gp.varlocs, np.exp(solver_out["primal"])))
-            if verbosity > 2 and self._spvars:
+            if verbosity > 2:
                 result = gp.generate_result(solver_out, verbosity=verbosity-3)
                 self._results.append(result)
                 print(result.table(self._spvars))
@@ -205,7 +206,7 @@ solutions and can be solved with 'Model.solve()'.""")
             self._results = [o["generate_result"]() for o in self.solver_outs]
         return self._results
 
-    def init_gp(self, **initgpargs):
+    def init_gp(self, checkbounds=True):
         "Generates a simplified GP representation for later modification"
         x0 = KeyDict()
         x0.varkeys = self.model.varkeys
@@ -221,7 +222,7 @@ solutions and can be solved with 'Model.solve()'.""")
                 constraints["SP approximations"].append(constraint)
                 self._spvars.update(posylt1.varkeys)
         gp = GeometricProgram(self.cost, constraints, self.substitutions,
-                              **initgpargs)
+                              checkbounds=checkbounds)
         gp.x0 = x0
         self.a_idxs = defaultdict(list)
         cost_mons, sp_mons = gp.k[0], sum(gp.k[:1+len(self["SP constraints"])])

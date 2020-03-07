@@ -70,7 +70,7 @@ class GeometricProgram(CostedConstraintSet):
     _result = solve_log = solver_out = model = v_ss = nu_by_posy = None
 
     def __init__(self, cost, constraints, substitutions,
-                 *, allow_missingbounds=False, **_):
+                 *, checkbounds=True):
         # pylint:disable=super-init-not-called,non-parent-init-called
         self.cost, self.substitutions = cost, substitutions
         if isinstance(constraints, dict):
@@ -93,9 +93,10 @@ class GeometricProgram(CostedConstraintSet):
             raise InvalidPosynomial("cost must be a Posynomial")
         self.hmaps = [cost_hmap] + list(self.as_hmapslt1(self.substitutions))
         self.gen()  # Generate various maps into the posy- and monomials
-        self.missingbounds = self.check_bounds(allow_missingbounds)
+        if checkbounds:
+            self.check_bounds(err_on_missing_bounds=True)
 
-    def check_bounds(self, allow_missingbounds=True):
+    def check_bounds(self, *, err_on_missing_bounds=False):
         "Checks if any variables are unbounded, through equality constraints."
         missingbounds = {}
         for var, locs in self.varlocs.items():
@@ -113,13 +114,14 @@ class GeometricProgram(CostedConstraintSet):
             if not lowerbound:
                 missingbounds[(var, "lower")] = "."
         if not missingbounds:
-            return {}
+            return {}  # all bounds found in inequalities
         meq_bounds = gen_meq_bounds(missingbounds, self.exps, self.meq_idxs)
         fulfill_meq_bounds(missingbounds, meq_bounds)
-        if allow_missingbounds or not missingbounds:
-            return missingbounds
-        raise UnboundedGP("\n\n".join("%s has no %s bound%s" % (v, b, x)
-                                      for (v, b), x in missingbounds.items()))
+        if missingbounds and err_on_missing_bounds:
+            raise UnboundedGP(
+                "\n\n".join("%s has no %s bound%s" % (v, b, x)
+                            for (v, b), x in missingbounds.items()))
+        return missingbounds
 
     def gen(self):
         "Generates nomial and solve data (A, p_idxs) from posynomials"

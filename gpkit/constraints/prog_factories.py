@@ -89,7 +89,7 @@ def progify(program, return_attr=None):
 def solvify(genfunction):
     "Returns function for making/solving/sweeping a program."
     def solvefn(self, solver=None, *, verbosity=1, skipsweepfailures=False,
-                **kwargs):
+                **solveargs):
         """Forms a mathematical program and attempts to solve it.
 
          Arguments
@@ -101,7 +101,7 @@ def solvify(genfunction):
              Is decremented by one and then passed to programs.
          skipsweepfailures : bool (default False)
              If True, when a solve errors during a sweep, skip it.
-         **kwargs : Passed to solver and program.__init__
+         **solveargs : Passed to solve() call
 
          Returns
          -------
@@ -117,23 +117,23 @@ def solvify(genfunction):
         solution = SolutionArray()
         solution.modelstr = str(self)
 
-        # NOTE SIDE EFFECTS: self.program is set below
+        # NOTE SIDE EFFECTS: self.program and self.solution set below
         if sweep:
             run_sweep(genfunction, self, solution, skipsweepfailures,
-                      constants, sweep, linked, solver, verbosity, **kwargs)
+                      constants, sweep, linked, solver, verbosity, **solveargs)
         else:
-            self.program, progsolve = genfunction(self, **kwargs)
-            result = progsolve(solver, verbosity=verbosity, **kwargs)
+            self.program, progsolve = genfunction(self)
+            result = progsolve(solver, verbosity=verbosity, **solveargs)
             solution.append(result)
         solution.to_arrays()
-        self.solution = solution  # NOTE: SIDE EFFECTS
+        self.solution = solution
         return solution
     return solvefn
 
 
 # pylint: disable=too-many-locals,too-many-arguments
 def run_sweep(genfunction, self, solution, skipsweepfailures,
-              constants, sweep, linked, solver, verbosity, **kwargs):
+              constants, sweep, linked, solver, verbosity, **solveargs):
     "Runs through a sweep."
     # sort sweeps by the eqstr of their varkey
     sweepvars, sweepvals = zip(*sorted(list(sweep.items()),
@@ -162,7 +162,7 @@ def run_sweep(genfunction, self, solution, skipsweepfailures,
         program, solvefn = genfunction(self, constants)
         self.program.append(program)  # NOTE: SIDE EFFECTS
         try:
-            solution.append(solvefn(solver, verbosity=verbosity-1, **kwargs))
+            solution.append(solvefn(solver, verbosity=verbosity-1, **solveargs))
         except Infeasible as e:
             last_error = e
             if not skipsweepfailures:
