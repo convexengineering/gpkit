@@ -116,8 +116,8 @@ class ConstantsRelaxed(ConstraintSet):
 
         if not isinstance(constraints, ConstraintSet):
             constraints = ConstraintSet(constraints)
-        substitutions = KeyDict(constraints.substitutions)
-        constants, _, linked = parse_subs(constraints.varkeys, substitutions)
+        old_substitutions = KeyDict(constraints.substitutions)
+        constants, _, linked = parse_subs(constraints.varkeys, old_substitutions)
         if linked:
             kdc = KeyDict(constants)
             constrained_varkeys = constraints.constrained_varkeys()
@@ -126,6 +126,7 @@ class ConstantsRelaxed(ConstraintSet):
 
         self._derelax_map = {}
         relaxvars, self.freedvars, relaxation_constraints = [], [], {}
+        new_substitutions = {}
         for const, val in sorted(constants.items(), key=lambda i: i[0].eqstr):
             if val == 0:
                 continue
@@ -146,13 +147,12 @@ class ConstantsRelaxed(ConstraintSet):
             relaxvar = Variable(**relaxedd)
             relaxvars.append(relaxvar)
             # the newly freed const can acquire a new value
-            del substitutions[const]
             freed = Variable(**const.descr)
             self.freedvars.append(freed)
-            # becuase the make the newconst will take its old value
+            # because the make the newconst will take its old value
             newconstd["lineage"] += (("OriginalValues", 0),)
             newconst = Variable(**newconstd)
-            substitutions[newconst] = val
+            new_substitutions[newconst] = val
             self._derelax_map[newconst.key] = const
             # add constraints so the newly freed's wiggle room
             # is proportional to the value relaxvar, and it can't antirelax
@@ -163,7 +163,7 @@ class ConstantsRelaxed(ConstraintSet):
             "original constraints": constraints,
             "relaxation constraints": relaxation_constraints})
         self.relaxvars = NomialArray(relaxvars)  # so they can be .prod()'d
-        self.substitutions = substitutions
+        self.substitutions = new_substitutions
         self.constants = constants
 
     def process_result(self, result):
