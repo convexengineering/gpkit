@@ -1,6 +1,6 @@
 """Standard Python setup script for gpkit"""
 import os
-from distutils.core import setup
+from setuptools import setup
 
 LONG_DESCRIPTION = """
 GPkit is a Python package for defining and manipulating
