@@ -2,7 +2,7 @@
    through python-based Optimizer API"""
 import mosek
 import numpy as np
-from ..exceptions import (UnknownInfeasible,
+from ..exceptions import (UnknownInfeasible, InvalidLicense,
                           PrimalInfeasible, DualInfeasible)
 
 def optimize(*, c, A, k, p_idxs, **kwargs):
@@ -198,7 +198,12 @@ def optimize(*, c, A, k, p_idxs, **kwargs):
         task.putintparam(mosek.iparam.infeas_report_auto, mosek.onoffkey.on)
         task.putintparam(mosek.iparam.log_presolve, 0)
 
-    task.optimize()
+    try:
+        task.optimize()
+    except mosek.Error as e:
+        if e.errno == mosek.rescode.err_missing_license_file:
+            raise InvalidLicense() from e
+        raise e
 
     if verbose:
         task.solutionsummary(mosek.streamtype.msg)

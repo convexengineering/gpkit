@@ -21,6 +21,10 @@ class UnboundedGP(ValueError):
     "Raise if a GP is not fully bounded"
 
 
+class InvalidLicense(RuntimeWarning):
+    "Raised if a solver's license is missing, invalid, or expired."
+
+
 class Infeasible(RuntimeWarning):
     "Raised if a model does not solve"
 

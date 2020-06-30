@@ -9,7 +9,8 @@ from ..keydict import KeyDict
 from ..solution_array import SolutionArray
 from .set import ConstraintSet
 from ..exceptions import (InvalidPosynomial, Infeasible, UnknownInfeasible,
-                          PrimalInfeasible, DualInfeasible, UnboundedGP)
+                          PrimalInfeasible, DualInfeasible, UnboundedGP,
+                          InvalidLicense)
 
 
 DEFAULT_SOLVER_KWARGS = {"cvxopt": {"kktsolver": "ldl"}}
@@ -195,6 +196,9 @@ class GeometricProgram:
         except Infeasible as e:
             infeasibility = e
         except Exception as e:
+            if isinstance(e, InvalidLicense):
+                raise InvalidLicense("license for solver \"%s\" is invalid."
+                                     % solvername)
             raise UnknownInfeasible("Something unexpected went wrong.") from e
         finally:
             self.solve_log = "\n".join(sys.stdout)
