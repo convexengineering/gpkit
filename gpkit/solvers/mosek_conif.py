@@ -201,7 +201,9 @@ def optimize(*, c, A, k, p_idxs, **kwargs):
     try:
         task.optimize()
     except mosek.Error as e:
-        if e.errno == mosek.rescode.err_missing_license_file:
+        if e.errno in [mosek.rescode.err_missing_license_file,
+                       mosek.rescode.err_license_version,
+                       mosek.rescode.err_license_expired]:
             raise InvalidLicense() from e
         raise e
 

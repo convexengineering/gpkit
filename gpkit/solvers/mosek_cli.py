@@ -87,7 +87,10 @@ def optimize_generator(path=None, **_):
                                          solution_filename]).split(b"\n"):
                 print(logline)
         except CalledProcessError as e:
-            if e.returncode in [240]:
+            # invalid license return codes:
+            #   expired: 233 (linux)
+            #   missing: 240 (linux)
+            if e.returncode in [233, 240]:
                 raise InvalidLicense() from e
             raise UnknownInfeasible() from e
         with open(solution_filename) as f:
