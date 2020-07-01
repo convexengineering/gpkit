@@ -235,31 +235,30 @@ class KeyDict(KeyMap, dict):
 
     def __delitem__(self, key):
         "Overloads del [] to work with all keys"
-        key, idx = self.parse_and_index(key)
-        keys = self.keymap[key]
-        if not keys:
-            raise KeyError(key)
-        copied = set()  # have to copy bc update leaves duplicate sets
-        for k in list(keys):
-            delete = True
-            if idx:
-                super().__getitem__(k)[idx] = np.nan
-                if not isnan(super().__getitem__(k)).all():
-                    delete = False
-            if delete:
-                super().__delitem__(k)
-            mapkeys = set([k])
-            if k.keys:
-                mapkeys.update(k.keys)
-            for mapkey in mapkeys:
-                if mapkey in self.keymap:
-                    if len(self.keymap[mapkey]) == 1:
-                        del self.keymap[mapkey]
-                        continue
-                    if mapkey not in copied:
-                        self.keymap[mapkey] = set(self.keymap[mapkey])
-                        copied.add(mapkey)
-                    self.keymap[mapkey].remove(k)
+        key = getattr(key, "key", None)
+        if not key:
+            raise ValueError("KeyDict.__delitem__() requires a keyed object"
+                             " such as a gpkit.Variable instance.")
+        veckey, idx = self.parse_and_index(key)
+        if idx is None:
+            super().__delitem__(key)
+        else:
+            super().__getitem__(veckey)[idx] = np.nan
+            if isnan(super().__getitem__(veckey)).all():
+                super().__delitem__(veckey)
+        copiedonwrite = set()  # to save time, .update() does not copy
+        mapkeys = set([key])
+        if key.keys:
+            mapkeys.update(key.keys)
+        for mapkey in mapkeys:
+            if mapkey in self.keymap:
+                if len(self.keymap[mapkey]) == 1:
+                    del self.keymap[mapkey]
+                    continue
+                if mapkey not in copiedonwrite:
+                    self.keymap[mapkey] = set(self.keymap[mapkey])
+                    copiedonwrite.add(mapkey)
+                self.keymap[mapkey].remove(key)
 
 
 class KeySet(KeyMap, set):

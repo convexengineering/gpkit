@@ -128,6 +128,7 @@ class ConstantsRelaxed(ConstraintSet):
         relaxvars, self.freedvars, relaxation_constraints = [], [], {}
         for const, val in sorted(constants.items(), key=lambda i: i[0].eqstr):
             if val == 0:
+                substitutions[const] = 0
                 continue
             if include_only and const.name not in include_only:
                 continue

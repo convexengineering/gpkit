@@ -108,10 +108,10 @@ class TestGP(unittest.TestCase):
         m = Model(x, [x >= x_min])
         self.assertRaises(PrimalInfeasible, m.solve,
                           solver=self.solver, verbosity=0)
-        del m.substitutions["x"]
+        del m.substitutions[m["x"]]
         self.assertAlmostEqual(m.solve(solver=self.solver,
                                        verbosity=0)["cost"], 2)
-        del m.substitutions["x_{min}"]
+        del m.substitutions[m["x_{min}"]]
         self.assertRaises(UnboundedGP, m.solve,
                           solver=self.solver, verbosity=0)
         gp = m.gp(checkbounds=False)
@@ -505,7 +505,7 @@ class TestSP(unittest.TestCase):
         spsol = m.solve(self.solver, verbosity=0)
         # now solve as GP
         m[-1] = (Obj >= a_val*(2*L + 2*W) + (1-a_val)*(12 * W**-1 * L**-3))
-        del m.substitutions["a"]
+        del m.substitutions[m["a"]]
         gpsol = m.solve(self.solver, verbosity=0)
         self.assertAlmostEqual(spsol["cost"], gpsol["cost"])
 
