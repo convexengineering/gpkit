@@ -12,7 +12,7 @@ import errno
 import stat
 from subprocess import check_output, CalledProcessError
 from .. import settings
-from ..exceptions import (UnknownInfeasible,
+from ..exceptions import (UnknownInfeasible, InvalidLicense,
                           PrimalInfeasible, DualInfeasible)
 
 def remove_read_only(func, path, exc):
@@ -87,6 +87,11 @@ def optimize_generator(path=None, **_):
                                          solution_filename]).split(b"\n"):
                 print(logline)
         except CalledProcessError as e:
+            # invalid license return codes:
+            #   expired: 233 (linux)
+            #   missing: 240 (linux)
+            if e.returncode in [233, 240]:
+                raise InvalidLicense() from e
             raise UnknownInfeasible() from e
         with open(solution_filename) as f:
             _, probsta = f.readline().split("PROBLEM STATUS      : ")
