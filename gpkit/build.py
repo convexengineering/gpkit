@@ -71,10 +71,10 @@ class SolverBackend:
     name = look = None
 
     def __init__(self):
-        log("#\n# Looking for", self.name)
+        log("\n# Looking for `%s`" % self.name)
         found_in = self.look()  # pylint: disable=not-callable
         if found_in:
-            log("# Found %s %s\n#" % (self.name, found_in))
+            log("\nFound %s %s" % (self.name, found_in))
             self.installed = True
         else:
             log("# Did not find\n#", self.name)
@@ -87,11 +87,14 @@ class MosekCLI(SolverBackend):
 
     def look(self):  # pylint: disable=too-many-return-statements
         "Looks in default install locations for a mosek before version 9."
+        log("#   (A \"success\" is if mskexpopt complains that")
+        log("#    we haven't specified a file for it to open.)")
         already_in_path = self.run()
         if already_in_path:
             return already_in_path
 
-        log("# `mskexpopt` is not in system path, let's try adding it.")
+        log("# Looks like `mskexpopt` was not found in the default PATH,")
+        log("#  so let's try locating that binary ourselves.")
 
         if sys.platform[:3] == "win":
             rootdir = "C:\\Program Files\\Mosek"
@@ -123,13 +126,13 @@ class MosekCLI(SolverBackend):
         bin_dir = pathjoin(lib_dir, "bin")
         settings["mosek_bin_dir"] = bin_dir
         os.environ['PATH'] = os.environ['PATH'] + os.pathsep + bin_dir
+        log("#   Adding %s to the PATH" % bin_dir)
 
         return self.run("in " + bin_dir)
 
-    def run(self, where="in system path"):
+    def run(self, where="in the default PATH"):
         "Attempts to run mskexpopt."
         try:
-            log("#   Trying to run mskexpopt...")
             if call("mskexpopt") in (1052, 28):  # 28 for MacOSX
                 return where
         except:   # pylint: disable=bare-except
@@ -146,7 +149,7 @@ class CVXopt(SolverBackend):
         try:
             log("#   Trying to import cvxopt...")
             import cvxopt  # pylint: disable=unused-import
-            return "in Python path"
+            return "in the default PYTHONPATH"
         except ImportError:
             pass
 
@@ -161,7 +164,7 @@ class MosekConif(SolverBackend):
             log("#   Trying to import mosek...")
             import mosek
             if hasattr(mosek.conetype, "pexp"):
-                return "in Python path"
+                return "in the default PYTHONPATH"
             return None
         except ImportError:
             pass
@@ -173,13 +176,11 @@ def build():
     start_dir = os.getcwd()
     os.chdir(gpkit.__path__[0])
 
-    log("Started building gpkit...\n")
-    log("Attempting to find and build solvers:\n")
+    log("\nAttempting to find and build solvers:")
     solvers = [MosekCLI(), MosekConif(), CVXopt()]
     installed_solvers = [solver.name for solver in solvers if solver.installed]
     if not installed_solvers:
         log("Can't find any solvers!\n")
-    log("...finished building gpkit.")
     if "GPKITSOLVERS" in os.environ:
         log("Replaced found solvers (%s) with environment var GPKITSOLVERS"
             " (%s)" % (installed_solvers, os.environ["GPKITSOLVERS"]))
