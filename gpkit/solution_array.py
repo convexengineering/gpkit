@@ -4,6 +4,8 @@ import difflib
 from operator import sub
 import warnings as pywarnings
 import pickle
+import bz2
+import _pickle as cPickle
 import numpy as np
 from .nomials import NomialArray
 from .small_classes import DictOfLists, Strings
@@ -418,6 +420,16 @@ class SolutionArray(DictOfLists):
         >>> pickle.load(open("solution.pkl"))
         """
         pickle.dump(self, open(filename, "wb"), **pickleargs)
+
+    def save_compressed(self, title="solution", **cpickleargs):
+        "Pickle a file and then compress it into a file with extension."
+        with bz2.BZ2File(title + ".pbz2", "w") as f:
+            cPickle.dump(self, f, **cpickleargs)
+
+    @staticmethod
+    def decompress_file(file):
+        "Load any compressed pickle file"
+        return cPickle.load(bz2.BZ2File(file, "rb"))
 
     def varnames(self, showvars, exclude):
         "Returns list of variables, optionally with minimal unique names"

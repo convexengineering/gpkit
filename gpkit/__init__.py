@@ -12,6 +12,7 @@ from .constraints.sgp import SequentialGeometricProgram
 from .constraints.sigeq import SignomialEquality
 from .constraints.set import ConstraintSet
 from .constraints.model import Model
+from .solution_array import SolutionArray
 from .tools.docstring import parse_variables
 from .tests.run_tests import run as run_unit_tests
 
