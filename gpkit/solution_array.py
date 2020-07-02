@@ -5,8 +5,8 @@ from operator import sub
 import warnings as pywarnings
 import pickle
 import bz2
-import _pickle as cPickle
 import numpy as np
+import _pickle as cPickle
 from .nomials import NomialArray
 from .small_classes import DictOfLists, Strings
 from .small_scripts import mag, try_str_without
