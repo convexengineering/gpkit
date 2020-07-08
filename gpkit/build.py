@@ -172,6 +172,7 @@ class MosekConif(SolverBackend):
 def build():
     "Builds GPkit"
     import gpkit
+    log("# Building GPkit version %s" % gpkit.__version__)
     log("# Moving to the directory from which GPkit was imported.")
     start_dir = os.getcwd()
     os.chdir(gpkit.__path__[0])
