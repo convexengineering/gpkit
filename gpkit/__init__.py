@@ -1,4 +1,9 @@
 "GP and SP modeling package"
+#pylint:disable=wrong-import-position
+__version__ = "1.0.0pre"
+GPCOLORS = ["#59ade4", "#FA3333"]
+GPBLU, GPRED = GPCOLORS
+
 from .build import build
 from .units import units, ureg, DimensionalityError
 from .globals import settings, SignomialsEnabled, Vectorize, NamedVariables
@@ -15,10 +20,6 @@ from .constraints.model import Model
 from .solution_array import SolutionArray
 from .tools.docstring import parse_variables
 from .tests.run_tests import run as run_unit_tests
-
-__version__ = "1.0.0pre"
-GPCOLORS = ["#59ade4", "#FA3333"]
-GPBLU, GPRED = GPCOLORS
 
 if "just built!" in settings:
     run_unit_tests(verbosity=1)
