@@ -41,9 +41,13 @@ class GPkitUnits:
 
     def of_division(self, numerator, denominator):
         "Cached unit division. Requires Quantity inputs."
+        if numerator.units is denominator.units:
+            return 1
+        if numerator.units and denominator.units:
+            conversion = numerator.units/denominator.units
+        else:
+            conversion = numerator.units or 1/denominator.units
         return float(conversion)
-        # if numerator.units is denominator.units:
-        #     return 1
         # key = (id(numerator.units), id(denominator.units))
         # try:
         #     return self.division_cache[key]
