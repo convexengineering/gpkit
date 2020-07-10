@@ -41,21 +41,22 @@ class GPkitUnits:
 
     def of_division(self, numerator, denominator):
         "Cached unit division. Requires Quantity inputs."
-        if numerator.units is denominator.units:
-            return 1
-        key = (id(numerator.units), id(denominator.units))
-        try:
-            return self.division_cache[key]
-        except KeyError:
-            if numerator.units and denominator.units:
-                conversion = numerator.units/denominator.units
-            else:
-                conversion = numerator.units or 1/denominator.units
-            try:
-                self.division_cache[key] = float(conversion)
-            except:
-                raise DimensionalityError(numerator, denominator)
-        return self.division_cache[key]
+        return float(conversion)
+        # if numerator.units is denominator.units:
+        #     return 1
+        # key = (id(numerator.units), id(denominator.units))
+        # try:
+        #     return self.division_cache[key]
+        # except KeyError:
+        #     if numerator.units and denominator.units:
+        #         conversion = numerator.units/denominator.units
+        #     else:
+        #         conversion = numerator.units or 1/denominator.units
+        #     try:
+        #         self.division_cache[key] = float(conversion)
+        #     except DimensionalityError:
+        #         raise DimensionalityError(numerator, denominator)
+        # return self.division_cache[key]
 
     def of_product(self, thing1, thing2):
         "Cached unit division. Requires united inputs."
@@ -66,7 +67,7 @@ class GPkitUnits:
             mul_units = qty((thing1*thing2).units)
             try:
                 self.multiplication_cache[key] = (None, float(mul_units))
-            except:
+            except DimensionalityError:
                 self.multiplication_cache[key] = (mul_units, None)
         return self.multiplication_cache[key]
 
