@@ -53,7 +53,7 @@ class GPkitUnits:
                 conversion = numerator.units or 1/denominator.units
             try:
                 self.division_cache[key] = float(conversion)
-            except DimensionalityError:
+            except:
                 raise DimensionalityError(numerator, denominator)
         return self.division_cache[key]
 
@@ -66,7 +66,7 @@ class GPkitUnits:
             mul_units = qty((thing1*thing2).units)
             try:
                 self.multiplication_cache[key] = (None, float(mul_units))
-            except DimensionalityError:
+            except:
                 self.multiplication_cache[key] = (mul_units, None)
         return self.multiplication_cache[key]
 

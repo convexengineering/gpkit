@@ -6,7 +6,6 @@ import warnings as pywarnings
 import pickle
 import gzip
 import pickletools
-import _pickle as cPickle
 import numpy as np
 from .nomials import NomialArray
 from .small_classes import DictOfLists, Strings
@@ -425,14 +424,14 @@ class SolutionArray(DictOfLists):
     def save_compressed(self, title="solution", **cpickleargs):
         "Pickle a file and then compress it into a file with extension."
         with gzip.open(title + ".pgz", "wb") as f:
-            pickled = cPickle.dumps(self, **cpickleargs)
+            pickled = pickle.dumps(self, **cpickleargs)
             f.write(pickletools.optimize(pickled))
 
     @staticmethod
     def decompress_file(file):
         "Load any compressed pickle file"
         with gzip.open(file, "rb") as f:
-            return cPickle.Unpickler(f).load()
+            return pickle.Unpickler(f).load()
 
     def varnames(self, showvars, exclude):
         "Returns list of variables, optionally with minimal unique names"
