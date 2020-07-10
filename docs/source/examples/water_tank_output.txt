@@ -1,4 +1,4 @@
-Infeasible monomial equality: Cannot convert from 'meter ** 3 / kilogram' to 'dimensionless'
+Infeasible monomial equality: Cannot convert from 'V [m³]' to 'M [kg]'
 
 Optimal Cost
 ------------

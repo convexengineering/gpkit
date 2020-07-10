@@ -1,4 +1,5 @@
 "Scripts to parse and collate substitutions"
+import warnings as pywarnings
 import numpy as np
 from ..small_scripts import splitsweep
 
@@ -37,7 +38,12 @@ def append_sub(sub, keys, constants, sweep, linkedsweep):
         if not key.shape or not getattr(sub, "shape", hasattr(sub, "__len__")):
             value = sub
         else:
-            sub = np.array(sub) if not hasattr(sub, "shape") else sub
+            with pywarnings.catch_warnings():
+                pywarnings.filterwarnings("error")
+                try:
+                    sub = np.array(sub) if not hasattr(sub, "shape") else sub
+                except Warning:  # ragged nested sequences, eg [[2]], [3, 4]]
+                    sub = np.array(sub, dtype=object)
             if key.shape == sub.shape:
                 value = sub[key.idx]
                 sweepel, sweepval = splitsweep(value)

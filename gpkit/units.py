@@ -5,7 +5,7 @@ try:
     ureg.define("USD = [money] = $")
     pint.set_application_registry(ureg)
     Quantity = ureg.Quantity
-    DimensionalityError = pint.errors.DimensionalityError
+    DimensionalityError = pint.DimensionalityError
 except ImportError:  # pint is not installed; provide dummy imports
     ureg = DimensionalityError = None  # pylint: disable=invalid-name
 
@@ -43,24 +43,19 @@ class GPkitUnits:
         "Cached unit division. Requires Quantity inputs."
         if numerator.units is denominator.units:
             return 1
-        if numerator.units and denominator.units:
-            conversion = numerator.units/denominator.units
-        else:
-            conversion = numerator.units or 1/denominator.units
-        return float(conversion)
-        # key = (id(numerator.units), id(denominator.units))
-        # try:
-        #     return self.division_cache[key]
-        # except KeyError:
-        #     if numerator.units and denominator.units:
-        #         conversion = numerator.units/denominator.units
-        #     else:
-        #         conversion = numerator.units or 1/denominator.units
-        #     try:
-        #         self.division_cache[key] = float(conversion)
-        #     except DimensionalityError:
-        #         raise DimensionalityError(numerator, denominator)
-        # return self.division_cache[key]
+        key = (id(numerator.units), id(denominator.units))
+        try:
+            return self.division_cache[key]
+        except KeyError:
+            if numerator.units and denominator.units:
+                conversion = numerator.units/denominator.units
+            else:
+                conversion = numerator.units or 1/denominator.units
+            try:
+                self.division_cache[key] = float(conversion)
+            except DimensionalityError:
+                raise DimensionalityError(numerator, denominator)
+        return self.division_cache[key]
 
     def of_product(self, thing1, thing2):
         "Cached unit division. Requires united inputs."

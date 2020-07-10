@@ -11,7 +11,7 @@ from ..small_classes import HashVector, EMPTY_HV
 from ..varkey import VarKey
 from ..small_scripts import mag
 from ..exceptions import (InvalidGPConstraint, InvalidPosynomial,
-                          PrimalInfeasible)
+                          PrimalInfeasible, DimensionalityError)
 from .map import NomialMap
 from .substitution import parse_subs
 
@@ -340,7 +340,7 @@ class Monomial(Posynomial):
         if isinstance(other, MONS):
             try:  # if both are monomials, return a constraint
                 return MonomialEquality(self, other)
-            except ValueError as e:  # units mismatch or infeasible constraint
+            except (DimensionalityError, ValueError) as e:
                 print("Infeasible monomial equality: %s" % e)
                 return False
         return super().__eq__(other)
