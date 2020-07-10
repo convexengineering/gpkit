@@ -5,7 +5,7 @@ try:
     ureg.define("USD = [money] = $")
     pint.set_application_registry(ureg)
     Quantity = ureg.Quantity
-    DimensionalityError = pint.DimensionalityError
+    DimensionalityError = pint.errors.DimensionalityError
 except ImportError:  # pint is not installed; provide dummy imports
     ureg = DimensionalityError = None  # pylint: disable=invalid-name
 
