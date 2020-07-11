@@ -8,7 +8,7 @@ from gpkit import SignomialsEnabled, NamedVariables
 from gpkit import Variable, VectorVariable, Model, Signomial
 from gpkit.small_scripts import mag
 from gpkit.tests.helpers import run_tests
-from gpkit.exceptions import UnboundedGP
+from gpkit.exceptions import UnboundedGP, DimensionalityError
 
 # pylint: disable=invalid-name,attribute-defined-outside-init,unused-variable
 
@@ -112,8 +112,8 @@ class TestModelSubs(unittest.TestCase):
             self.assertEqual(x.sub({x: 1*gpkit.units.m}).c.magnitude, 100)
             # NOTE: uncomment the below if requiring Quantity substitutions
             # self.assertRaises(ValueError, x.sub, x, 1)
-            self.assertRaises(ValueError, x.sub, {x: 1*gpkit.ureg.N})
-            self.assertRaises(ValueError, y.sub, {y: 1*gpkit.ureg.N})
+            self.assertRaises(DimensionalityError, x.sub, {x: 1*gpkit.ureg.N})
+            self.assertRaises(DimensionalityError, y.sub, {y: 1*gpkit.ureg.N})
             v = gpkit.VectorVariable(3, "v", "cm")
             subbed = v.sub({v: [1, 2, 3]*gpkit.ureg.m})
             self.assertEqual([z.c.magnitude for z in subbed], [100, 200, 300])

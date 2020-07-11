@@ -7,7 +7,8 @@ from gpkit import Model, ConstraintSet
 from gpkit.constraints.tight import Tight
 from gpkit.constraints.loose import Loose
 from gpkit.tests.helpers import run_tests
-from gpkit.exceptions import InvalidGPConstraint, PrimalInfeasible
+from gpkit.exceptions import (InvalidGPConstraint, PrimalInfeasible,
+                              DimensionalityError)
 from gpkit.constraints.relax import ConstraintsRelaxed
 from gpkit.constraints.bounded import Bounded
 import gpkit
@@ -152,8 +153,8 @@ class TestMonomialEquality(unittest.TestCase):
         x = Variable("x", "ft")
         y = Variable("y")
         if gpkit.units:
-            self.assertRaises(ValueError, MonomialEquality, x, y)
-            self.assertRaises(ValueError, MonomialEquality, y, x)
+            self.assertRaises(DimensionalityError, MonomialEquality, x, y)
+            self.assertRaises(DimensionalityError, MonomialEquality, y, x)
 
     def test_vector(self):
         "Monomial Equalities with VectorVariables"
