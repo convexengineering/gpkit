@@ -239,7 +239,6 @@ class KeyDict(KeyMap, dict):
             self.update_keymap()
             keys = self.keymap[key]
             if not keys:
-                import pdb; pdb.set_trace()
                 raise KeyError(key)
             for k in keys:
                 del self[k]
