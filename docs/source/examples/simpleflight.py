@@ -1,7 +1,7 @@
 "Minimizes airplane drag for a simple drag and structure model."
 import pickle
 import numpy as np
-from gpkit import Variable, Model
+from gpkit import Variable, Model, SolutionArray
 pi = np.pi
 
 
@@ -61,6 +61,7 @@ sol = m.solve(verbosity=0)
 print(sol.summary())
 # save solution to a file and retrieve it
 sol.save("solution.pkl")
+sol.save_compressed("solution.pgz")
 print(sol.diff("solution.pkl"))
 
 print("SWEEP\n=====")
@@ -71,4 +72,5 @@ m.substitutions.update(sweeps)
 sweepsol = m.solve(verbosity=0)
 print(sweepsol.summary())
 sol_loaded = pickle.load(open("solution.pkl", "rb"))
+assert sol_loaded.almost_equal(SolutionArray.decompress_file("solution.pgz"))
 print(sweepsol.diff(sol_loaded, absdiff=True))

@@ -4,6 +4,8 @@ import difflib
 from operator import sub
 import warnings as pywarnings
 import pickle
+import gzip
+import pickletools
 import numpy as np
 from .nomials import NomialArray
 from .small_classes import DictOfLists, Strings
@@ -334,7 +336,10 @@ class SolutionArray(DictOfLists):
         tableargs.update({"hidebelowminval": True, "sortbyvals": True,
                           "skipifempty": False})
         if isinstance(other, Strings):
-            other = pickle.load(open(other, "rb"))
+            if other[-4:] == ".pgz":
+                other = SolutionArray.decompress_file(other)
+            else:
+                other = pickle.load(open(other, "rb"))
         svars, ovars = self["variables"], other["variables"]
         lines = ["Solution Diff",
                  "=============",
@@ -418,6 +423,18 @@ class SolutionArray(DictOfLists):
         >>> pickle.load(open("solution.pkl"))
         """
         pickle.dump(self, open(filename, "wb"), **pickleargs)
+
+    def save_compressed(self, filename="solution.pgz", **cpickleargs):
+        "Pickle a file and then compress it into a file with extension."
+        with gzip.open(filename, "wb") as f:
+            pickled = pickle.dumps(self, **cpickleargs)
+            f.write(pickletools.optimize(pickled))
+
+    @staticmethod
+    def decompress_file(file):
+        "Load any compressed pickle file"
+        with gzip.open(file, "rb") as f:
+            return pickle.Unpickler(f).load()
 
     def varnames(self, showvars, exclude):
         "Returns list of variables, optionally with minimal unique names"
