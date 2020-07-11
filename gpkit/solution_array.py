@@ -336,7 +336,10 @@ class SolutionArray(DictOfLists):
         tableargs.update({"hidebelowminval": True, "sortbyvals": True,
                           "skipifempty": False})
         if isinstance(other, Strings):
-            other = pickle.load(open(other, "rb"))
+            if other[-4:] == ".pgz":
+                other = SolutionArray.decompress_file(other)
+            else:
+                other = pickle.load(open(other, "rb"))
         svars, ovars = self["variables"], other["variables"]
         lines = ["Solution Diff",
                  "=============",
@@ -421,9 +424,9 @@ class SolutionArray(DictOfLists):
         """
         pickle.dump(self, open(filename, "wb"), **pickleargs)
 
-    def save_compressed(self, title="solution", **cpickleargs):
+    def save_compressed(self, filename="solution.pgz", **cpickleargs):
         "Pickle a file and then compress it into a file with extension."
-        with gzip.open(title + ".pgz", "wb") as f:
+        with gzip.open(filename, "wb") as f:
             pickled = pickle.dumps(self, **cpickleargs)
             f.write(pickletools.optimize(pickled))
 
