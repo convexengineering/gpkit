@@ -48,7 +48,7 @@ def newtest_fn(name, solver, import_dict, path):
                             lambda self: getattr(self, name)()))  # pylint:disable=undefined-variable
 
 
-def run(filename="TESTS", xmloutput=False, skipsolvers=None):
+def run(filename="TESTS", xmloutput=False, skipsolvers="look around"):
     "Parse and run paths from a given file for each solver"
     with open(filename, "r") as f:
         for path in f:

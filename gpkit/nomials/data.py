@@ -65,6 +65,3 @@ class NomialData(ReprMixin):
         if self.units != other.units:
             return False
         return True
-
-    def __ne__(self, other):
-        return not self == other  # pylint: disable=unneeded-not

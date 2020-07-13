@@ -107,7 +107,4 @@ class VarKey(ReprMixin):  # pylint:disable=too-many-instance-attributes
             return False
         return self.eqstr == other.eqstr
 
-    # pylint: disable=unneeded-not
-    def __ne__(self, other): return not self == other
-
 from .nomials import NomialMap  # pylint: disable=wrong-import-position
