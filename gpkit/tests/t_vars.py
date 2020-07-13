@@ -3,7 +3,7 @@ import sys
 import unittest
 import numpy as np
 from gpkit import (Monomial, NomialArray, Variable, VarKey,
-                   VectorVariable, ArrayVariable)
+                   VectorVariable, ArrayVariable, Vectorize)
 import gpkit
 from gpkit.nomials import Variable as PlainVariable
 
@@ -223,6 +223,18 @@ class TestVectorVariable(unittest.TestCase):
         N = 20
         x_arr = np.arange(0, 5, 5/N) + 1e-6
         x = VectorVariable(N, 'x', x_arr, 'm', "Beam Location")
+
+        with self.assertRaises(ValueError):
+            _ = VectorVariable(2, "x", [1, 2, 3])
+
+        with Vectorize(2):
+            x = VectorVariable(3, "x", np.array([13, 15, 17]))
+            self.assertEqual(x[0, 0].value, 13)
+            self.assertEqual(x[1, 0].value, 15)
+            self.assertEqual(x[2, 0].value, 17)
+            self.assertEqual(x[0, 0].value, x[0, 1].value)
+            self.assertEqual(x[1, 0].value, x[1, 1].value)
+            self.assertEqual(x[2, 0].value, x[2, 1].value)
 
     def test_constraint_creation_units(self):
         v = VectorVariable(2, "v", "m/s")

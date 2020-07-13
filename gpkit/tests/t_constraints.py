@@ -144,7 +144,7 @@ class TestCostedConstraint(unittest.TestCase):
     def test_vector_cost(self):
         x = VectorVariable(2, "x")
         self.assertRaises(ValueError, CostedConstraintSet, x, [])
-        cc = CostedConstraintSet(np.array(x[0]), [])
+        _ = CostedConstraintSet(np.array(x[0]), [])
 
 class TestMonomialEquality(unittest.TestCase):
     "Test monomial equality constraint class"

@@ -387,8 +387,24 @@ class TestModelSubs(unittest.TestCase):
         m.localsolve(verbosity=0)
         self.assertTrue(m.substitutions["y"], "__call__")
 
+class TestNomialMapSubs(unittest.TestCase):
+    "Tests substitutions of nomialmaps"
+    def test_monomial_sub(self):
+        z = Variable("z")
+        w = Variable("w")
 
-TESTS = [TestNomialSubs, TestModelSubs]
+        with self.assertRaises(ValueError):
+            z.hmap.sub({z.key: w.key}, varkeys=z.varkeys)
+
+    def test_subinplace_zero(self):
+        z = Variable("z")
+        w = Variable("w")
+
+        p = 2*w + z*w + 2
+
+        self.assertEqual(p.sub({z: -2}), 2)
+
+TESTS = [TestNomialSubs, TestModelSubs, TestNomialMapSubs]
 
 if __name__ == '__main__':
     run_tests(TESTS)
