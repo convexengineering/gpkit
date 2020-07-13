@@ -1,9 +1,11 @@
 "Unit tests for Constraint, MonomialEquality and SignomialInequality"
 import unittest
+import numpy as np
 from gpkit import Variable, SignomialsEnabled, Posynomial, VectorVariable
 from gpkit.nomials import SignomialInequality, PosynomialInequality
 from gpkit.nomials import MonomialEquality
 from gpkit import Model, ConstraintSet
+from gpkit.constraints.costed import CostedConstraintSet
 from gpkit.constraints.tight import Tight
 from gpkit.constraints.loose import Loose
 from gpkit.tests.helpers import run_tests
@@ -135,6 +137,14 @@ class TestConstraint(unittest.TestCase):
         self.assertRaises(PrimalInfeasible, m.solve, verbosity=0)
         PosynomialInequality.feastol = 1e-3
         self.assertEqual(m.substitutions('x'), m.solve(verbosity=0)('x'))
+
+class TestCostedConstraint(unittest.TestCase):
+    "Tests for Costed Constraint class"
+
+    def test_vector_cost(self):
+        x = VectorVariable(2, "x")
+        self.assertRaises(ValueError, CostedConstraintSet, x, [])
+        cc = CostedConstraintSet(np.array(x[0]), [])
 
 class TestMonomialEquality(unittest.TestCase):
     "Test monomial equality constraint class"
@@ -268,6 +278,15 @@ class TestSignomialInequality(unittest.TestCase):
 class TestLoose(unittest.TestCase):
     "Test loose constraint set"
 
+    def test_raiseerror(self):
+        x = Variable('x')
+        x_min = Variable('x_{min}', 2)
+        m = Model(x, [Loose([x >= x_min]),
+                      x >= 1])
+        Loose.raiseerror = True
+        self.assertRaises(RuntimeWarning, m.solve, verbosity=0)
+        Loose.raiseerror = False
+
     def test_posyconstr_in_gp(self):
         "Tests loose constraint set with solve()"
         x = Variable('x')
@@ -365,7 +384,7 @@ class TestBounded(unittest.TestCase):
         self.assertAlmostEqual(sol["cost"], 1.0)
 
 TESTS = [TestConstraint, TestMonomialEquality, TestSignomialInequality,
-         TestTight, TestLoose, TestBounded]
+         TestTight, TestLoose, TestBounded, TestCostedConstraint]
 
 if __name__ == '__main__':
     run_tests(TESTS)
