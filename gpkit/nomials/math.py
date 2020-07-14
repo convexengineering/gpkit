@@ -368,7 +368,6 @@ MONS = Numbers + (Monomial,)
 
 class ScalarSingleEquationConstraint(SingleEquationConstraint):
     "A SingleEquationConstraint with scalar left and right sides."
-    nomials = []
     generated_by = v_ss = parent = None
     bounded = meq_bounded = {}
 
@@ -409,15 +408,13 @@ class PosynomialInequality(ScalarSingleEquationConstraint):
     def __init__(self, left, oper, right):
         ScalarSingleEquationConstraint.__init__(self, left, oper, right)
         if self.oper == "<=":
-            self.p_lt, self.m_gt = self.left, self.right
+            p_lt, m_gt = self.left, self.right
         elif self.oper == ">=":
-            self.m_gt, self.p_lt = self.left, self.right
+            m_gt, p_lt = self.left, self.right
         else:
             raise ValueError("operator %s is not supported." % self.oper)
 
-        self.unsubbed = self._gen_unsubbed(self.p_lt, self.m_gt)
-        self.nomials = [self.left, self.right, self.p_lt, self.m_gt]
-        self.nomials.extend(self.unsubbed)
+        self.unsubbed = self._gen_unsubbed(p_lt, m_gt)
         self.bounded = set()
         for p in self.unsubbed:
             for exp in p.hmap:
@@ -513,8 +510,6 @@ class MonomialEquality(PosynomialInequality):
         # pylint: disable=super-init-not-called,non-parent-init-called
         ScalarSingleEquationConstraint.__init__(self, left, self.oper, right)
         self.unsubbed = self._gen_unsubbed(self.left, self.right)
-        self.nomials = [self.left, self.right]
-        self.nomials.extend(self.unsubbed)
         self.bounded = set()
         self.meq_bounded = {}
         self._las = []
@@ -576,9 +571,7 @@ class SignomialInequality(ScalarSingleEquationConstraint):
             pgt, plt = self.left, self.right
         else:
             raise ValueError("operator %s is not supported." % self.oper)
-        self.nomials = [self.left, self.right]
         self.unsubbed = [plt - pgt]
-        self.nomials.extend(self.unsubbed)
         self.bounded = self.as_gpconstr({}).bounded
 
     def as_hmapslt1(self, substitutions):
