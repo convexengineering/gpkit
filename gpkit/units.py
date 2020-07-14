@@ -1,19 +1,10 @@
 "wraps pint in gpkit monomials"
-try:
-    import pint
-    ureg = pint.UnitRegistry()  # pylint: disable=invalid-name
-    ureg.define("USD = [money] = $")
-    pint.set_application_registry(ureg)
-    Quantity = ureg.Quantity
-    DimensionalityError = pint.DimensionalityError
-except ImportError:  # pint is not installed; provide dummy imports
-    ureg = DimensionalityError = None  # pylint: disable=invalid-name
-
-    class Quantity:
-        "Dummy class for if pint is not installed"
-        def __init__(self, *_):
-            pass
-
+import pint
+ureg = pint.UnitRegistry()  # pylint: disable=invalid-name
+ureg.define("USD = [money] = $")
+pint.set_application_registry(ureg)
+Quantity = ureg.Quantity
+DimensionalityError = pint.DimensionalityError
 QTY_CACHE = {}
 
 
