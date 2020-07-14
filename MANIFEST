@@ -1,9 +1,3 @@
-gpkit/_mosek/__init__.py
-gpkit/_mosek/cli_expopt.py
-gpkit/_mosek/expopt.py
-gpkit/_mosek/baked_ctypesgen.py
-gpkit/_pint/__init__.py
-gpkit/_pint/usd_cpi.txt
 gpkit/constraints/__init__.py
 gpkit/constraints/array.py
 gpkit/constraints/bounded.py
@@ -31,6 +25,10 @@ gpkit/nomials/math.py
 gpkit/nomials/map.py
 gpkit/nomials/substitution.py
 gpkit/nomials/variables.py
+gpkit/solvers/__init__.py
+gpkit/solvers/mosek_cli.py
+gpkit/solvers/cvxopt.py
+gpkit/solvers/mosek_conif.py
 gpkit/tests/__init__.py
 gpkit/tests/from_paths.py
 gpkit/tests/helpers.py
@@ -51,6 +49,7 @@ gpkit/tools/__init__.py
 gpkit/tools/autosweep.py
 gpkit/tools/docstring.py
 gpkit/tools/tools.py
+gpkit/units.py
 gpkit/__init__.py
 gpkit/_cvxopt.py
 gpkit/build.py
