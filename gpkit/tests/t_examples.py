@@ -225,7 +225,7 @@ if os.path.isdir(EXAMPLE_DIR):
 else:
     TESTS = []
 
-if __name__ == "__main__":
+if __name__ == "__main__":  # pragma: no cover
     # pylint:disable=wrong-import-position
     from gpkit.tests.helpers import run_tests
     run_tests(TESTS)

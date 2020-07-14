@@ -792,7 +792,7 @@ for testcase in MULTI_SOLVER_TESTS:
             setattr(test, "ndig", NDIGS[solver])
             TESTS.append(test)
 
-if __name__ == "__main__":
+if __name__ == "__main__":  # pragma: no cover
     # pylint: disable=wrong-import-position
     from gpkit.tests.helpers import run_tests
     run_tests(TESTS, verbosity=0)

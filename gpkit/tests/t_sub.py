@@ -406,5 +406,5 @@ class TestNomialMapSubs(unittest.TestCase):
 
 TESTS = [TestNomialSubs, TestModelSubs, TestNomialMapSubs]
 
-if __name__ == '__main__':
+if __name__ == "__main__":  # pragma: no cover
     run_tests(TESTS)
