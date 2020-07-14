@@ -16,7 +16,6 @@ Subpackages
    gpkit.interactive
    gpkit.nomials
    gpkit.solvers
-   gpkit.tests
    gpkit.tools
 
 Submodules
