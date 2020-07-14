@@ -23,6 +23,32 @@ VALSTR_REPLACES = [
 ]
 
 
+class SolSavingEnvironment:
+    """Temporarily removes construction/solve attributes from constraints.
+
+    This approximately halves the size of the pickled solution.
+    """
+
+    def __init__(self, solarray):
+        self.solarray = solarray
+        self.attrstore = {}
+
+    def __enter__(self):
+        for constraint_attr in ["mfm", "pmap", "bounded", "meq_bounded",
+                                "v_ss", "unsubbed", "varkeys"]:
+            store = {}
+            for constraint in self.solarray["sensitivities"]["constraints"]:
+                if getattr(constraint, constraint_attr, None):
+                    store[constraint] = getattr(constraint, constraint_attr)
+                    delattr(constraint, constraint_attr)
+            self.attrstore[constraint_attr] = store
+
+    def __exit__(self, type_, val, traceback):
+        for constraint_attr, store in self.attrstore.items():
+            for constraint, value in store.items():
+                setattr(constraint, constraint_attr, value)
+
+
 def senss_table(data, showvars=(), title="Variable Sensitivities", **kwargs):
     "Returns sensitivity table lines"
     if "variables" in data.get("sensitivities", {}):
@@ -411,28 +437,23 @@ class SolutionArray(DictOfLists):
     def save(self, filename="solution.pkl", **pickleargs):
         """Pickles the solution and saves it to a file.
 
-        The saved solution is identical except for two things:
-            - the cost is made unitless
-            - the solution's 'program' attribute is removed
-            - the solution's 'model' attribute is removed
-            - the data field is removed from the solution's warnings
-                (the "message" field is preserved)
-
         Solution can then be loaded with e.g.:
         >>> import pickle
         >>> pickle.load(open("solution.pkl"))
         """
-        pickle.dump(self, open(filename, "wb"), **pickleargs)
+        with SolSavingEnvironment(self):
+            pickle.dump(self, open(filename, "wb"), **pickleargs)
 
     def save_compressed(self, filename="solution.pgz", **cpickleargs):
         "Pickle a file and then compress it into a file with extension."
         with gzip.open(filename, "wb") as f:
-            pickled = pickle.dumps(self, **cpickleargs)
+            with SolSavingEnvironment(self):
+                pickled = pickle.dumps(self, **cpickleargs)
             f.write(pickletools.optimize(pickled))
 
     @staticmethod
     def decompress_file(file):
-        "Load any compressed pickle file"
+        "Load a gzip-compressed pickle file"
         with gzip.open(file, "rb") as f:
             return pickle.Unpickler(f).load()
 
