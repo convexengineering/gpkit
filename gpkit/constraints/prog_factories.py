@@ -1,18 +1,12 @@
 "Scripts for generating, solving and sweeping programs"
 from time import time
 import numpy as np
+from ad import adnumber
 from ..nomials import parse_subs
 from ..solution_array import SolutionArray
 from ..keydict import KeyDict
 from ..small_scripts import maybe_flatten
 from ..exceptions import Infeasible
-
-try:
-    from ad import adnumber
-except ImportError:
-    adnumber = None
-    print("Couldn't import ad; automatic differentiation of linked variables"
-          " is disabled.")
 
 
 def evaluate_linked(constants, linked):
