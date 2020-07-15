@@ -177,9 +177,10 @@ class NomialArray(ReprMixin, np.ndarray):
         c, exp = 1.0, HashVector()
         hmap = NomialMap()
         for m in self.flat:  # pylint:disable=not-an-iterable
-            if not hasattr(m, "hmap") and len(m.hmap) == 1:
+            try:
+                (mexp, mc), = m.hmap.items()
+            except (AttributeError, ValueError):
                 return np.ndarray.prod(self, *args, **kwargs)
-            (mexp, mc), = m.hmap.items()
             c *= mc
             exp += mexp
             if m.units:

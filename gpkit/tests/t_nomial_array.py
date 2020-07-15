@@ -1,8 +1,10 @@
 """Tests for NomialArray class"""
 import unittest
+import warnings as pywarnings
 import numpy as np
 from gpkit import Variable, Posynomial, NomialArray, VectorVariable, Monomial
 from gpkit.constraints.set import ConstraintSet
+from gpkit.exceptions import DimensionalityError
 import gpkit
 
 
@@ -85,8 +87,11 @@ class TestNomialArray(unittest.TestCase):
         constraints = (c == 1*gpkit.units.m)
         self.assertEqual(len(constraints), 5)
         # test an array with inconsistent units
-        mismatch = NomialArray([1*gpkit.units.m, 1*gpkit.units.ft])
-        self.assertEqual(mismatch.sum().c, 1.3048*gpkit.ureg.m)  # pylint:disable=no-member
+        with pywarnings.catch_warnings():  # skip the UnitStrippedWarning
+            pywarnings.simplefilter("ignore")
+            mismatch = NomialArray([1*gpkit.units.m, 1*gpkit.ureg.ft, 1.0])
+        self.assertRaises(DimensionalityError, mismatch.sum)
+        self.assertEqual(mismatch[:2].sum().c, 1.3048*gpkit.ureg.m)  # pylint:disable=no-member
         self.assertEqual(mismatch.prod().c, 1*gpkit.ureg.m*gpkit.ureg.ft)  # pylint:disable=no-member
 
     def test_sum(self):

@@ -189,6 +189,7 @@ class TestGP(unittest.TestCase):
         self.assertEqual(gp3.A, CootMatrix(row=[0, 1, 2],
                                            col=[0, 0, 0],
                                            data=[-1, 1, -1]))
+        self.assertTrue((gp3.A.todense() == np.matrix([-1, 1, -1]).T).all())
         self.assertAlmostEqual(sol1(Mdd), sol2(Mdd))
         self.assertAlmostEqual(sol1(Mdd), sol3(Mdd))
         self.assertAlmostEqual(sol2(Mdd), sol3(Mdd))

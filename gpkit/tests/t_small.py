@@ -38,6 +38,9 @@ class TestHashVector(unittest.TestCase):
         a = HashVector(x=1, y=7)
         b = HashVector()
         c = HashVector(x=3, z=4)
+        # nonsense multiplication
+        with self.assertRaises(TypeError):
+            _ = a * set()
         # multiplication and addition by scalars
         r = a*0
         self.assertEqual(r, HashVector(x=0, y=0))
