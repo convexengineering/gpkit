@@ -82,10 +82,7 @@ class TestNomialArray(unittest.TestCase):
     def test_units(self):
         # inspired by gpkit issue #106
         c = VectorVariable(5, "c", "m", "Local Chord")
-        if gpkit.units:
-            constraints = (c == 1*gpkit.units.m)
-        else:
-            constraints = (c == 1)
+        constraints = (c == 1*gpkit.units.m)
         self.assertEqual(len(constraints), 5)
 
     def test_sum(self):

@@ -120,8 +120,6 @@ class TestGP(unittest.TestCase):
 
     def test_simple_united_gp(self):
         R = Variable("R", "nautical_miles")
-        if not R.units:
-            return
         a0 = Variable("a0", 340.29, "m/s")
         theta = Variable("\\theta", 0.7598)
         t = Variable("t", 10, "hr")
@@ -157,8 +155,6 @@ class TestGP(unittest.TestCase):
 
     def test_sensitivities(self):
         W_payload = Variable("W_{payload}", 175*(195 + 30), "lbf")
-        if not W_payload.units:
-            return
         f_oew = Variable("f_{oew}", 0.53, "-", "OEW/MTOW")
         fuel_per_nm = Variable("\\theta_{fuel}", 13.75, "lbf/nautical_mile")
         R = Variable("R", 3000, "nautical_miles", "range")
@@ -218,7 +214,7 @@ class TestGP(unittest.TestCase):
 
     def test_singular(self):
         "Create and solve GP with a singular A matrix"
-        if self.solver == "cvxopt":
+        if self.solver == "cvxopt":  # pragma: no cover
             # cvxopt can"t solve this problem
             # (see https://github.com/cvxopt/cvxopt/issues/36)
             return
@@ -295,8 +291,7 @@ class TestSP(unittest.TestCase):
         m.debug(verbosity=0, solver=self.solver)
         with SignomialsEnabled():
             m = Model(x, [x+y >= z, x+y <= z/2, y <= x, y >= 1], {z: 3})
-        if self.solver != "cvxopt":
-            m.debug(verbosity=0, solver=self.solver)
+        m.debug(verbosity=0, solver=self.solver)
         r2 = ConstraintsRelaxed(m)
         self.assertEqual(len(r2.varkeys), 7)
         sp = Model(x*r2.relaxvars.prod()**10, r2).sp(use_pccp=False)
@@ -304,8 +299,7 @@ class TestSP(unittest.TestCase):
         self.assertAlmostEqual(cost/1024, 1, self.ndig)
         with SignomialsEnabled():
             m = Model(x, [x+y >= z, x+y <= z/2, y <= x, y >= 1], {z: 3})
-        if self.solver != "cvxopt":
-            m.debug(verbosity=0, solver=self.solver)
+        m.debug(verbosity=0, solver=self.solver)
         r3 = ConstraintsRelaxedEqually(m)
         self.assertEqual(len(r3.varkeys), 4)
         sp = Model(x*r3.relaxvar**10, r3).sp(use_pccp=False)
@@ -545,28 +539,21 @@ class TestSP(unittest.TestCase):
             constraints = [y + x >= 4, y <= x]
         objective = x
         m = Model(objective, constraints)
-        try:
-            sol = m.localsolve(x0={"x": x0, y: y0}, verbosity=0,
-                               solver=self.solver)
-        except TypeError:
-            self.fail("Call to local solve with only variables failed")
+        # Call to local solve with only variables
+        sol = m.localsolve(x0={"x": x0, y: y0}, verbosity=0,
+                           solver=self.solver)
         self.assertAlmostEqual(sol(x), 2, self.ndig)
         self.assertAlmostEqual(sol["cost"], 2, self.ndig)
 
-        try:
-            sol = m.localsolve(x0={"x": x0, "y": y0}, verbosity=0,
-                               solver=self.solver)
-        except TypeError:
-            self.fail("Call to local solve with only variable strings failed")
+        # Call to local solve with only variable strings
+        sol = m.localsolve(x0={"x": x0, "y": y0}, verbosity=0,
+                           solver=self.solver)
         self.assertAlmostEqual(sol("x"), 2, self.ndig)
         self.assertAlmostEqual(sol["cost"], 2, self.ndig)
 
-        try:
-            sol = m.localsolve(x0={"x": x0, y: y0}, verbosity=0,
-                               solver=self.solver)
-        except TypeError:
-            self.fail("Call to local solve with a mix of variable strings "
-                      "and variables failed")
+        # Call to local solve with a mix of variable strings and variables
+        sol = m.localsolve(x0={"x": x0, y: y0}, verbosity=0,
+                           solver=self.solver)
         self.assertAlmostEqual(sol["cost"], 2, self.ndig)
 
     def test_small_named_signomial(self):
@@ -650,7 +637,7 @@ class TestSP(unittest.TestCase):
 class TestModelSolverSpecific(unittest.TestCase):
     "test cases run only for specific solvers"
     def test_cvxopt_kwargs(self):
-        if "cvxopt" not in settings["installed_solvers"]:
+        if "cvxopt" not in settings["installed_solvers"]:  # pragma: no cover
             return
         x = Variable("x")
         m = Model(x, [x >= 12])
@@ -672,18 +659,6 @@ class Thing2(Model):
     "another thing for model testing"
     def setup(self):
         return [Thing(2), Model()]
-
-
-class SPThing(Model):
-    "a simple SP"
-    def setup(self):
-        x = Variable("x")
-        y = Variable("y", 2.)
-        z = Variable("z")
-        with SignomialsEnabled():
-            constraints = [z <= x**2 + y, x*z == 2]
-        self.cost = 1/z
-        return constraints
 
 
 class Box(Model):

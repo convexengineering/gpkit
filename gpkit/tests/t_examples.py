@@ -60,9 +60,6 @@ class TestExamples(unittest.TestCase):
             assert_logtol(sol1("l"), l_)
             assert_logtol(sol1("A"), l_**2 + 1, tol1)
             assert_logtol(sol1["cost"], (l_**2 + 1)**2, tol1)
-            if hasattr(sol1["cost"], "units"):  # loaded costs are unitless
-                self.assertEqual(Quantity(1.0, sol1["cost"].units),
-                                 Quantity(1.0, ureg.m)**4)
             self.assertEqual(Quantity(1.0, sol1("A").units),
                              Quantity(1.0, ureg.m)**2)
 
@@ -117,14 +114,14 @@ class TestExamples(unittest.TestCase):
 
     def test_primal_infeasible_ex1(self, example):
         primal_or_unknown = PrimalInfeasible
-        if "cvxopt" in settings["default_solver"]:
+        if "cvxopt" in settings["default_solver"]:  # pragma: no cover
             primal_or_unknown = UnknownInfeasible
         with self.assertRaises(primal_or_unknown):
             example.m.solve(verbosity=0)
 
     def test_primal_infeasible_ex2(self, example):
         primal_or_unknown = PrimalInfeasible
-        if "cvxopt" in settings["default_solver"]:
+        if "cvxopt" in settings["default_solver"]:  # pragma: no cover
             primal_or_unknown = UnknownInfeasible
         with self.assertRaises(primal_or_unknown):
             example.m.solve(verbosity=0)
@@ -134,7 +131,7 @@ class TestExamples(unittest.TestCase):
 
     def test_debug(self, example):
         dual_or_primal = DualInfeasible
-        if "mosek_conif" == settings["default_solver"]:
+        if "mosek_conif" == settings["default_solver"]:  # pragma: no cover
             dual_or_primal = PrimalInfeasible
         with self.assertRaises(UnboundedGP):
             example.m.gp()
@@ -143,7 +140,7 @@ class TestExamples(unittest.TestCase):
             gp.solve(verbosity=0)
 
         primal_or_unknown = PrimalInfeasible
-        if "cvxopt" == settings["default_solver"]:
+        if "cvxopt" == settings["default_solver"]:  # pragma: no cover
             primal_or_unknown = UnknownInfeasible
         with self.assertRaises(primal_or_unknown):
             example.m2.solve(verbosity=0)

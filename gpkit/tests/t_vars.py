@@ -37,8 +37,8 @@ class TestVarKey(unittest.TestCase):
         self.assertIsInstance(x.latex_unitstr(), str)
 
     def test_ast(self): # pylint: disable=too-many-statements
-        if sys.platform[:3] == "win":
-            return
+        # if sys.platform[:3] == "win":
+        #     return
 
         t = Variable("t")
         u = Variable("u")
@@ -109,10 +109,7 @@ class TestVarKey(unittest.TestCase):
         x1 = Variable("x", 3, "m")
         x2 = Variable("x", 2, "ft")
         x3 = Variable("x", 2, "m")
-        if gpkit.units:
-            self.assertNotEqual(x2.key, x3.key)
-        else:  # units don't distinguish variables when they're disabled
-            self.assertEqual(x2.key, x3.key)
+        self.assertNotEqual(x2.key, x3.key)
         self.assertEqual(x1.key, x3.key)
 
     def test_repr(self):
@@ -169,10 +166,7 @@ class TestVariable(unittest.TestCase):
         p2 = Variable("p", "psi", "second pressure")
         self.assertEqual(hash(p1), hash(p2))
         xu = Variable("x", "m", "x with units")
-        if gpkit.units:
-            self.assertNotEqual(hash(x1), hash(xu))
-        else:  # units don't distinguish variables when they're disabled
-            self.assertEqual(hash(x1), hash(xu))
+        self.assertNotEqual(hash(x1), hash(xu))
 
     def test_unit_parsing(self):
         x = Variable("x", "s^0.5/m^0.5")
@@ -180,9 +174,8 @@ class TestVariable(unittest.TestCase):
         self.assertEqual(x.units, y.units)
 
     def test_to(self):
-        if gpkit.units:
-            x = Variable("x", "ft")
-            self.assertEqual(x.to("inch").c.magnitude, 12)
+        x = Variable("x", "ft")
+        self.assertEqual(x.to("inch").c.magnitude, 12)
 
     def test_eq_ne(self):
         # test for #1138
@@ -240,12 +233,8 @@ class TestVectorVariable(unittest.TestCase):
         v = VectorVariable(2, "v", "m/s")
         c = (v >= 40*gpkit.units("ft/s"))
         c2 = (v >= np.array([20, 30])*gpkit.units("ft/s"))
-        if gpkit.units:
-            self.assertTrue(c.right.units)
-            self.assertTrue(NomialArray(c2.right).units)
-        else:
-            self.assertEqual(type(c.right), int)
-            self.assertEqual(type(c2.right), np.ndarray)
+        self.assertTrue(c.right.units)
+        self.assertTrue(NomialArray(c2.right).units)
 
 
 class TestArrayVariable(unittest.TestCase):
