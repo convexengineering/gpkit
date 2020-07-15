@@ -31,6 +31,11 @@ class TestGP(unittest.TestCase):
     solver = None
     ndig = None
 
+    def test_no_monomial_constraints(self):
+        x = Variable("x")
+        sol = Model(x, [x + 1/x <= 3]).solve(solver=self.solver, verbosity=0)
+        self.assertAlmostEqual(sol["cost"], 0.381966, self.ndig)
+
     def test_trivial_gp(self):
         """
         Create and solve a trivial GP:
@@ -639,8 +644,8 @@ class TestSP(unittest.TestCase):
 
 class TestModelSolverSpecific(unittest.TestCase):
     "test cases run only for specific solvers"
-    def test_cvxopt_kwargs(self):
-        if "cvxopt" not in settings["installed_solvers"]:  # pragma: no cover
+    def test_cvxopt_kwargs(self):  # pragma: no cover
+        if "cvxopt" not in settings["installed_solvers"]:
             return
         x = Variable("x")
         m = Model(x, [x >= 12])
