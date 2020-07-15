@@ -218,6 +218,11 @@ class TestModelSubs(unittest.TestCase):
         a = m.solve(verbosity=0)["cost"]
         b = [6, 10]
         self.assertTrue(all(abs(a-b)/(a+b) < 1e-7))
+        # create a numpy float array, then insert a sweep element
+        m.substitutions.update({y: [2, 3]})
+        m.substitutions.update({y[1]: ("sweep", [3, 5])})
+        a = m.solve(verbosity=0)["cost"]
+        self.assertTrue(all(abs(a-b)/(a+b) < 1e-7))
 
     def test_calcconst(self):
         x = Variable("x", "hours")

@@ -213,9 +213,9 @@ class TestGP(unittest.TestCase):
         self.assertAlmostEqual(sol["cost"], 0.1, self.ndig)
         self.assertTrue(sol.almost_equal(sol))
 
-    def test_singular(self):
+    def test_singular(self):  # pragma: no cover
         "Create and solve GP with a singular A matrix"
-        if self.solver == "cvxopt":  # pragma: no cover
+        if self.solver == "cvxopt":
             # cvxopt can"t solve this problem
             # (see https://github.com/cvxopt/cvxopt/issues/36)
             return
@@ -328,9 +328,10 @@ class TestSP(unittest.TestCase):
             m = Model(x, Bounded([x + y >= 1], verbosity=0))
         sol = m.localsolve(verbosity=0, solver=self.solver)
         boundedness = sol["boundedness"]
-        if "value near lower bound" in boundedness:
+        # depends on solver, platform, whims of the numerical deities
+        if "value near lower bound" in boundedness:  # pragma: no cover
             self.assertIn(x.key, boundedness["value near lower bound"])
-        if "value near upper bound" in boundedness:
+        else:  # pragma: no cover
             self.assertIn(y.key, boundedness["value near upper bound"])
 
     def test_values_vs_subs(self):
@@ -629,9 +630,10 @@ class TestSP(unittest.TestCase):
         m = Model(x*y, Bounded(m, verbosity=0))
         sol = m.solve(self.solver, verbosity=0)
         bounds = sol["boundedness"]
-        if "sensitive to upper bound" in bounds:
+        # depends on solver, platform, whims of the numerical deities
+        if "sensitive to upper bound" in bounds:  # pragma: no cover
             self.assertIn(y.key, bounds["sensitive to upper bound"])
-        if "sensitive to lower bound" in bounds:
+        else:  # pragma: no cover
             self.assertIn(x.key, bounds["sensitive to lower bound"])
 
 

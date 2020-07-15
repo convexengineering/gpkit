@@ -202,6 +202,10 @@ class KeyDict(KeyMap, dict):
                 dict.__setitem__(self, key, np.full(key.shape, np.nan, **dty))
                 self.owned.add(key)
         if idx:
+            if is_sweepvar(value):
+                old = super().__getitem__(key)
+                super().__setitem__(key, np.array(old, "object"))
+                self.owned.add(key)
             self._copyonwrite(key)
             super().__getitem__(key)[idx] = value
             return  # succefully set a single index!
