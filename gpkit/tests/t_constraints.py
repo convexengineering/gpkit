@@ -11,10 +11,8 @@ from gpkit.constraints.loose import Loose
 from gpkit.tests.helpers import run_tests
 from gpkit.exceptions import (InvalidGPConstraint, PrimalInfeasible,
                               DimensionalityError)
-from gpkit.constraints.relax import (ConstraintsRelaxed, ConstantsRelaxed,
-                                     ConstraintsRelaxedEqually)
+from gpkit.constraints.relax import ConstraintsRelaxed
 from gpkit.constraints.bounded import Bounded
-from gpkit.globals import NamedVariables
 import gpkit
 
 
@@ -56,28 +54,6 @@ class TestConstraint(unittest.TestCase):
         m.unique_varkeys = set([x2.key])
         sol = m.solve(verbosity=0)
         self.assertAlmostEqual(sol(x2), sol(x)**2)
-
-    def test_relax_list(self):
-        x = Variable("x")
-        x_max = Variable("x_max", 1)
-        x_min = Variable("x_min", 2)
-        constraints = [x_min <= x, x <= x_max]
-        ConstraintsRelaxed(constraints)
-        ConstantsRelaxed(constraints)
-        ConstraintsRelaxedEqually(constraints)
-
-    def test_relax_linked(self):
-        x = Variable("x")
-        x_max = Variable("x_max", 1)
-        x_min = Variable("x_min", lambda c: 2*c[x_max])
-        zero = Variable("zero", lambda c: 0*c[x_max])
-        constraints = ConstraintSet([x_min + zero <= x, x + zero <= x_max])
-        _ = ConstantsRelaxed(constraints)
-        NamedVariables.reset_modelnumbers()
-        include_min = ConstantsRelaxed(constraints, include_only=["x_min"])
-        NamedVariables.reset_modelnumbers()
-        exclude_max = ConstantsRelaxed(constraints, exclude=["x_max"])
-        self.assertEqual(str(include_min), str(exclude_max))
 
     def test_equality_relaxation(self):
         x = Variable("x")
@@ -410,5 +386,5 @@ class TestBounded(unittest.TestCase):
 TESTS = [TestConstraint, TestMonomialEquality, TestSignomialInequality,
          TestTight, TestLoose, TestBounded, TestCostedConstraint]
 
-if __name__ == "__main__":  # pragma: no cover
+if __name__ == '__main__':
     run_tests(TESTS)

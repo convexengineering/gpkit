@@ -21,7 +21,7 @@ from .solution_array import SolutionArray
 from .tools.docstring import parse_variables
 from .tests.run_tests import run as run_unit_tests
 
-if "just built!" in settings:  # pragma: no cover
+if "just built!" in settings:
     run_unit_tests(verbosity=1)
     print("""
 GPkit is now installed with solver(s) %s

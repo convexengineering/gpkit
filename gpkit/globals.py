@@ -4,29 +4,31 @@ from collections import defaultdict
 from . import build
 
 
-def load_settings(path=None, trybuild=True):
+def load_settings(path=None, firstattempt=True):
     "Load the settings file at SETTINGS_PATH; return settings dict"
     if path is None:
         path = os.sep.join([os.path.dirname(__file__), "env", "settings"])
-    try:  # if the settings file already exists, read it
+    try:
         with open(path) as settingsfile:
             lines = [line[:-1].split(" : ") for line in settingsfile
                      if len(line.split(" : ")) == 2]
             settings_ = {name: value.split(", ") for name, value in lines}
             for name, value in settings_.items():
-                # flatten 1-element lists unless they're the solver list
+                # hack to flatten 1-element lists,
+                # unless they're the solver list
                 if len(value) == 1 and name != "installed_solvers":
-                    settings_[name], = value
-    except IOError:  # pragma: no cover
+                    settings_[name] = value[0]
+    except IOError:
         settings_ = {"installed_solvers": [""]}
-    if settings_["installed_solvers"] == [""] and trybuild:  # pragma: no cover
-        print("Found no installed solvers, beginning a build.")
-        build()
-        settings_ = load_settings(path, trybuild=False)
-        if settings_["installed_solvers"] != [""]:
-            settings_["just built!"] = True
-        else:
-            print("""
+    if settings_["installed_solvers"] == [""]:
+        if firstattempt:
+            print("Found no installed solvers, beginning a build.")
+            build()
+            settings_ = load_settings(path, firstattempt=False)
+            if settings_["installed_solvers"] != [""]:
+                settings_["just built!"] = True
+            else:
+                print("""
 =============
 Build failed!  :(
 =============

@@ -90,8 +90,9 @@ class TestMonomial(unittest.TestCase):
     def test_add(self):
         x = Variable("x")
         y = Variable("y", units="ft")
-        with self.assertRaises(gpkit.DimensionalityError):
-            _ = x + y
+        if gpkit.units:
+            with self.assertRaises(gpkit.DimensionalityError):
+                _ = x + y
 
     def test_eq_ne(self):
         "Test equality and inequality comparators"
@@ -171,7 +172,8 @@ class TestMonomial(unittest.TestCase):
         p = n_hat[0]*x0 + n_hat[1]*x1
         self.assertEqual(p, x0)
 
-        self.assertNotEqual((x+1), (x+1)*gpkit.units("m"))
+        if gpkit.units:
+            self.assertNotEqual((x+1), (x+1)*gpkit.units("m"))
 
     def test_pow(self):
         "Test Monomial exponentiation"
@@ -210,10 +212,12 @@ class TestMonomial(unittest.TestCase):
         # and with vectors...
         v = 0.5 * VectorVariable(3, "x", "m")**2 * gpkit.units.kg
         self.assertTrue(isinstance(v, NomialArray))
-        self.assertEqual(v[0].units, 1*gpkit.ureg.kg*gpkit.ureg.m**2)
+        if v.units:
+            self.assertEqual(v.units, 1*gpkit.ureg.kg*gpkit.ureg.m**2)
         v = 0.5 * gpkit.units.kg * VectorVariable(3, "x", "m")**2
         self.assertTrue(isinstance(v, NomialArray))
-        self.assertEqual(v[0].units, 1*gpkit.ureg.kg*gpkit.ureg.m**2)
+        if v.units:
+            self.assertEqual(v.units, 1*gpkit.ureg.kg*gpkit.ureg.m**2)
 
 
 class TestSignomial(unittest.TestCase):
@@ -254,7 +258,10 @@ class TestSignomial(unittest.TestCase):
         xu = Variable("x", units="ft")
         with SignomialsEnabled():
             self.assertEqual(x - x**2, -x**2 + x)
-            self.assertNotEqual(-x, -xu)
+            if gpkit.units:
+                self.assertNotEqual(-x, -xu)
+            else:  # units don"t create inequality if they"re disabled
+                self.assertEqual(-x, -xu)
             # numeric
             self.assertEqual(Signomial(0), 0)
             self.assertNotEqual(Signomial(0), 1)
@@ -318,8 +325,12 @@ class TestPosynomial(unittest.TestCase):
         p2u = Variable("x", units="m") + Variable("y", units="m")
         self.assertEqual(p1, p2)
         self.assertEqual(p1u, p2u)
-        self.assertFalse(p1 == p1u)
-        self.assertNotEqual(p1, p1u)
+        if gpkit.units:
+            self.assertFalse(p1 == p1u)
+            self.assertNotEqual(p1, p1u)
+        else:  # units don"t distinguish variables when they"re disabled
+            self.assertTrue(p1 == p1u)
+            self.assertEqual(p1, p1u)
 
     def test_simplification(self):
         "Make sure like monomial terms get automatically combined"
@@ -411,7 +422,7 @@ class TestPosynomial(unittest.TestCase):
 
 TESTS = [TestPosynomial, TestMonomial, TestSignomial]
 
-if __name__ == "__main__":  # pragma: no cover
+if __name__ == "__main__":
     # pylint: disable=wrong-import-position
     from gpkit.tests.helpers import run_tests
     run_tests(TESTS)

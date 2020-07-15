@@ -23,6 +23,9 @@ def generate_example_tests(path, testclasses, solvers=None, newtest_fn=None):
     import_dict = {}
     if newtest_fn is None:
         newtest_fn = new_test
+    if solvers is None:
+        import gpkit
+        solvers = [gpkit.settings["default_solver"]]
     tests = []
     for testclass in testclasses:
         if os.path.isdir(path):
@@ -52,7 +55,10 @@ def new_test(name, solver, import_dict, path, testfn=None):
 
         import gpkit
         with NewDefaultSolver(solver):
-            testfn(name, import_dict, path)(self)
+            try:
+                testfn(name, import_dict, path)(self)
+            except FutureWarning as fw:
+                print(fw)
 
         # clear modelnums to ensure deterministic script-like output!
         gpkit.globals.NamedVariables.reset_modelnumbers()
@@ -64,7 +70,7 @@ def new_test(name, solver, import_dict, path, testfn=None):
                 ("signomials enabled", gpkit.SignomialsEnabled),
                 ("vectorization", gpkit.Vectorize.vectorization),
                 ("namedvars", gpkit.NamedVariables.namedvars)]:
-            if global_thing:  # pragma: no cover
+            if global_thing:
                 raise ValueError("global attribute %s should have been"
                                  " falsy after the test, but was instead %s"
                                  % (globname, global_thing))
@@ -84,7 +90,10 @@ def logged_example_testcase(name, imported, path):
         filepath = ("".join([path, os.sep, "%s_output.txt" % name])
                     if name not in imported else None)
         with StdoutCaptured(logfilepath=filepath):
-            imported[name] = importlib.import_module(name)
+            if name not in imported:
+                imported[name] = importlib.import_module(name)
+            else:
+                importlib.reload(imported[name])
         getattr(self, name)(imported[name])
     return test
 
@@ -108,7 +117,7 @@ def run_tests(tests, xmloutput=None, verbosity=2):
     if xmloutput:
         import xmlrunner  # pylint: disable=import-error
         xmlrunner.XMLTestRunner(output=xmloutput).run(suite)
-    else:  # pragma: no cover
+    else:
         unittest.TextTestRunner(verbosity=verbosity).run(suite)
 
 

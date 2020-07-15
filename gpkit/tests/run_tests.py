@@ -54,8 +54,8 @@ def run(xmloutput=False, tests=None, verbosity=1):
         tests = import_tests()
     if xmloutput:
         run_tests(tests, xmloutput='test_reports')
-    else:  # pragma: no cover
+    else:
         run_tests(tests, verbosity=verbosity)
 
-if __name__ == "__main__":  # pragma: no cover
+if __name__ == '__main__':
     run()

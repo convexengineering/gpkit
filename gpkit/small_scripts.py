@@ -42,13 +42,26 @@ def mag(c):
     return getattr(c, "magnitude", c)
 
 
+class SweepValue:
+    "Object to represent a swept substitution."
+    def __init__(self, value):
+        self.value = value
+
+
 def is_sweepvar(sub):
     "Determines if a given substitution indicates a sweep."
     return splitsweep(sub)[0]
 
 
+def get_sweepval(sub):
+    "Returns a given substitution's indicated sweep, or None."
+    return splitsweep(sub)[1]
+
+
 def splitsweep(sub):
     "Splits a substitution into (is_sweepvar, sweepval)"
+    if isinstance(sub, SweepValue):
+        return True, sub.value
     try:
         sweep, value = sub
         if sweep is "sweep" and (isinstance(value, Iterable) or  # pylint: disable=literal-comparison

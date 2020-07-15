@@ -7,12 +7,12 @@ from .small_scripts import try_str_without
 
 INSIDE_PARENS = re.compile(r"\(.*\)")
 
-if sys.platform[:3] == "win":  # pragma: no cover
+if sys.platform[:3] == "win":
     MUL = "*"
     PI_STR = "PI"
     UNICODE_EXPONENTS = False
     UNIT_FORMATTING = ":~"
-else:  # pragma: no cover
+else:
     MUL = "·"
     PI_STR = "π"
     UNICODE_EXPONENTS = True
@@ -32,7 +32,7 @@ def unitstr(units, into="%s", options=UNIT_FORMATTING, dimless=""):
         units = units.units
     if not isinstance(units, Quantity):
         return dimless
-    if options == ":~" and "ohm" in str(units.units):  # pragma: no cover
+    if options == ":~" and "ohm" in str(units.units):
         rawstr = str(units.units)  # otherwise it'll be a capital Omega
     else:
         rawstr = ("{%s}" % options).format(units.units)

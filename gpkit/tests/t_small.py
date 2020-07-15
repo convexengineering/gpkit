@@ -38,9 +38,6 @@ class TestHashVector(unittest.TestCase):
         a = HashVector(x=1, y=7)
         b = HashVector()
         c = HashVector(x=3, z=4)
-        # nonsense multiplication
-        with self.assertRaises(TypeError):
-            _ = a * set()
         # multiplication and addition by scalars
         r = a*0
         self.assertEqual(r, HashVector(x=0, y=0))
@@ -79,7 +76,7 @@ class TestSmallScripts(unittest.TestCase):
 TESTS = [TestHashVector, TestSmallScripts]
 
 
-if __name__ == "__main__":  # pragma: no cover
+if __name__ == '__main__':
     # pylint: disable=wrong-import-position
     from gpkit.tests.helpers import run_tests
     run_tests(TESTS)

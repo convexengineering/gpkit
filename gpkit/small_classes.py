@@ -77,7 +77,7 @@ class SolverLog(list):
         if writ != "\n":
             writ = writ.rstrip("\n")
             self.append(str(writ))
-        if self.verbosity > 0:  # pragma: no cover
+        if self.verbosity > 0:
             self.output.write(writ)
 
 
