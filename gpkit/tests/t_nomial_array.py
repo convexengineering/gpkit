@@ -70,9 +70,9 @@ class TestNomialArray(unittest.TestCase):
         constraint = ConstraintSet([x <= v])
         self.assertEqual(list(constraint.as_hmapslt1({})), [e.hmap for e in p])
 
-    def test_multiline_rightside_constraint_printing(self):
-        x = VectorVariable((3,3), "x")
-        cstr = str(2*x >= x + np.ones((3,3))/2)
+    def test_multiline_printing(self):
+        x = VectorVariable((3, 3), "x")
+        cstr = str(2*x >= x + np.ones((3, 3))/2)
         self.assertEqual(cstr, """2·x[:] >= x[:] + [[0.5 0.5 0.5]
            [0.5 0.5 0.5]
            [0.5 0.5 0.5]]""")

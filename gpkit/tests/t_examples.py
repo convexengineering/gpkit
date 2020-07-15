@@ -102,12 +102,12 @@ class TestExamples(unittest.TestCase):
     def test_sp_to_gp_sweep(self, example):
         pass
 
-    def test_boundschecking(self, example):
-        if "mosek_cli" != settings["default_solver"]:
-            example.gp.solve(verbosity=0)  # mosek_conif can solve it!
-        else:
+    def test_boundschecking(self, example):  # pragma: no cover
+        if "mosek_cli" in settings["default_solver"]:
             with self.assertRaises(UnknownInfeasible):
                 example.gp.solve(verbosity=0)
+        else:
+            example.gp.solve(verbosity=0)  # mosek_conif and cvxopt solve it
 
     def test_vectorize(self, example):
         pass
@@ -219,7 +219,7 @@ EXAMPLE_DIR = os.path.abspath(FILE_DIR + '../../../docs/source/examples')
 SOLVERS = settings["installed_solvers"]
 if os.path.isdir(EXAMPLE_DIR):
     TESTS = generate_example_tests(EXAMPLE_DIR, [TestExamples], SOLVERS)
-else:
+else:  # pragma: no cover
     TESTS = []
 
 if __name__ == "__main__":  # pragma: no cover
