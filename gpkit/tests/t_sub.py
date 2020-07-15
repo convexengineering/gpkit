@@ -1,4 +1,5 @@
 """Test substitution capability across gpkit"""
+import pickle
 import unittest
 import numpy as np
 import numpy.testing as npt
@@ -217,6 +218,7 @@ class TestModelSubs(unittest.TestCase):
         x = Variable("x", "hours")
         t_day = Variable("t_{day}", 12, "hours")
         t_night = Variable("t_{night}", lambda c: 24 - c[t_day], "hours")
+        _ = pickle.dumps(t_night)
         m = Model(x, [x >= t_day, x >= t_night])
         sol = m.solve(verbosity=0)
         self.assertAlmostEqual(sol(t_night)/gpkit.ureg.hours, 12)

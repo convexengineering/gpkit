@@ -51,9 +51,13 @@ class VarKey(ReprMixin):  # pylint:disable=too-many-instance-attributes
                 self.keys.add(self.veckey)
                 self.keys.add(self.str_without(["idx", "modelnums"]))
 
-    def __getstate__(self):  # TODO: remove with varkey impostering
+    def __getstate__(self):
         "Stores varkey as its metadata dictionary, removing functions"
-        return self.descr
+        state = self.descr.copy()
+        for key, value in state.items():
+            if getattr(value, "__call__", None):
+                state[key] = "unpickleable function %s" % value
+        return state
 
     def __setstate__(self, state):
         "Restores varkey from its metadata dictionary"
