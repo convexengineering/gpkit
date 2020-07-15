@@ -219,6 +219,7 @@ class TestModelSubs(unittest.TestCase):
         t_night = Variable("t_{night}", lambda c: 24 - c[t_day], "hours")
         m = Model(x, [x >= t_day, x >= t_night])
         sol = m.solve(verbosity=0)
+        sol.save()
         self.assertAlmostEqual(sol(t_night)/gpkit.ureg.hours, 12)
         m.substitutions.update({t_day: ("sweep", [6, 8, 9, 13])})
         sol = m.solve(verbosity=0)

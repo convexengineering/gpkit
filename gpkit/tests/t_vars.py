@@ -35,6 +35,9 @@ class TestVarKey(unittest.TestCase):
         self.assertRaises(TypeError, lambda: VarKey('x', name='y'))
         self.assertIsInstance(x.latex(), str)
         self.assertIsInstance(x.latex_unitstr(), str)
+        # test index latex printing
+        y = VectorVariable(2, "y")
+        self.assertEqual(y[0].key.latex(), "{\\vec{y}}_{0}")
 
     def test_ast(self): # pylint: disable=too-many-statements
         if sys.platform[:3] == "win":  # pragma: no cover
