@@ -3,7 +3,7 @@ from collections import defaultdict
 from collections.abc import Hashable
 import numpy as np
 from .small_classes import Numbers, Quantity, FixedScalar
-from .small_scripts import is_sweepvar
+from .small_scripts import is_sweepvar, isnan
 
 DIMLESS_QUANTITY = Quantity(1, "dimensionless")
 INT_DTYPE = np.dtype(int)
@@ -93,7 +93,7 @@ class KeyMap:
             if idx:
                 try:
                     value = super().__getitem__(key)[idx]  # pylint: disable=no-member
-                    return True if is_sweepvar(value) else not np.isnan(value)
+                    return True if is_sweepvar(value) else not isnan(value)
                 except TypeError:
                     raise TypeError("%s has an idx, but its value in this"
                                     " KeyDict is the scalar %s."
@@ -221,7 +221,7 @@ class KeyDict(KeyMap, dict):
                         super().__setitem__(key, newly_typed_array)
                         self.owned.add(key)
                     self._copyonwrite(key)
-                    goodvals = ~np.isnan(value)
+                    goodvals = ~isnan(value)
                     super().__getitem__(key)[goodvals] = value[goodvals]
                     return  # successfully set only some indexes!
             elif not is_sweepvar(value): # or needs to be made one?
@@ -248,7 +248,7 @@ class KeyDict(KeyMap, dict):
                 super().__delitem__(key)
             else:
                 super().__getitem__(veckey)[idx] = np.nan
-                if np.isnan(super().__getitem__(veckey)).all():
+                if isnan(super().__getitem__(veckey)).all():
                     super().__delitem__(veckey)
             copiedonwrite = set()  # to save time, .update() does not copy
             mapkeys = set([key])

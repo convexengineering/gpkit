@@ -1,5 +1,6 @@
 """Assorted helper methods"""
 from collections.abc import Iterable
+import numpy as np
 
 
 def appendsolwarning(msg, data, result, category="uncategorized"):
@@ -9,6 +10,15 @@ def appendsolwarning(msg, data, result, category="uncategorized"):
     if category not in result["warnings"]:
         result["warnings"][category] = []
     result["warnings"][category].append((msg, data))
+
+
+@np.vectorize
+def isnan(element):
+    "Determine if something of arbitrary type is a numpy nan."
+    try:
+        return np.isnan(element)
+    except TypeError:
+        return False
 
 
 def maybe_flatten(value):
