@@ -3,7 +3,7 @@ from collections import defaultdict
 from collections.abc import Hashable
 import numpy as np
 from .small_classes import Numbers, Quantity, FixedScalar
-from .small_scripts import is_sweepvar, isnan, SweepValue
+from .small_scripts import is_sweepvar
 
 DIMLESS_QUANTITY = Quantity(1, "dimensionless")
 INT_DTYPE = np.dtype(int)
@@ -93,7 +93,7 @@ class KeyMap:
             if idx:
                 try:
                     value = super().__getitem__(key)[idx]  # pylint: disable=no-member
-                    return True if is_sweepvar(value) else not isnan(value)
+                    return True if is_sweepvar(value) else not np.isnan(value)
                 except TypeError:
                     raise TypeError("%s has an idx, but its value in this"
                                     " KeyDict is the scalar %s."
@@ -202,11 +202,6 @@ class KeyDict(KeyMap, dict):
                 dict.__setitem__(self, key, np.full(key.shape, np.nan, **dty))
                 self.owned.add(key)
         if idx:
-            if is_sweepvar(value):
-                value = SweepValue(value[1])
-                old = super().__getitem__(key)
-                super().__setitem__(key, np.array(old, "object"))
-                self.owned.add(key)
             self._copyonwrite(key)
             super().__getitem__(key)[idx] = value
             return  # succefully set a single index!
@@ -222,7 +217,7 @@ class KeyDict(KeyMap, dict):
                         super().__setitem__(key, newly_typed_array)
                         self.owned.add(key)
                     self._copyonwrite(key)
-                    goodvals = ~isnan(value)
+                    goodvals = ~np.isnan(value)
                     super().__getitem__(key)[goodvals] = value[goodvals]
                     return  # successfully set only some indexes!
             elif not is_sweepvar(value): # or needs to be made one?
@@ -249,7 +244,7 @@ class KeyDict(KeyMap, dict):
                 super().__delitem__(key)
             else:
                 super().__getitem__(veckey)[idx] = np.nan
-                if isnan(super().__getitem__(veckey)).all():
+                if np.isnan(super().__getitem__(veckey)).all():
                     super().__delitem__(veckey)
             copiedonwrite = set()  # to save time, .update() does not copy
             mapkeys = set([key])

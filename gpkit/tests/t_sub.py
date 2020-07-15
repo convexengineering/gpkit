@@ -58,6 +58,7 @@ class TestNomialSubs(unittest.TestCase):
         self.assertTrue(all(p.sub({x: 1, "y": 2}) == 2*z))
         self.assertTrue(all(p.sub({x: 1, y: 2, "z": [1, 2]}) ==
                             z.sub({z: [2, 4]})))
+        self.assertRaises(ValueError, z.sub, {z: [1, 2, 3]})
 
         xvec = VectorVariable(3, "x", "m")
         xs = xvec[:2].sum()
@@ -213,6 +214,10 @@ class TestModelSubs(unittest.TestCase):
         m = Model(x, [x >= y.prod()])
         m.substitutions.update({y: ('sweep', [[2, 3, 9], [5, 7, 11]])})
         self.assertRaises(ValueError, m.solve, verbosity=0)
+        m.substitutions.update({y: [2, ("sweep", [3, 5])]})
+        a = m.solve(verbosity=0)["cost"]
+        b = [6, 10]
+        self.assertTrue(all(abs(a-b)/(a+b) < 1e-7))
 
     def test_calcconst(self):
         x = Variable("x", "hours")
