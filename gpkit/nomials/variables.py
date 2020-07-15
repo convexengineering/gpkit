@@ -171,6 +171,7 @@ class ArrayVariable(NomialArray):  # pylint: disable=too-many-locals
 
         obj = np.asarray(vl).view(NomialArray)
         obj.key = veckey
+        obj.units = obj.key.units
         return obj
 
 

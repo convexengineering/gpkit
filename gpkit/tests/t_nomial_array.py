@@ -70,13 +70,6 @@ class TestNomialArray(unittest.TestCase):
         constraint = ConstraintSet([x <= v])
         self.assertEqual(list(constraint.as_hmapslt1({})), [e.hmap for e in p])
 
-    def test_multiline_printing(self):
-        x = VectorVariable((3, 3), "x")
-        cstr = str(2*x >= x + np.ones((3, 3))/2)
-        self.assertEqual(cstr, """2·x[:] >= x[:] + [[0.5 0.5 0.5]
-           [0.5 0.5 0.5]
-           [0.5 0.5 0.5]]""")
-
     def test_substition(self):  # pylint: disable=no-member
         x = VectorVariable(3, 'x', label='dummy variable')
         c = {x: [1, 2, 3]}
@@ -91,6 +84,10 @@ class TestNomialArray(unittest.TestCase):
         c = VectorVariable(5, "c", "m", "Local Chord")
         constraints = (c == 1*gpkit.units.m)
         self.assertEqual(len(constraints), 5)
+        # test an array with inconsistent units
+        mismatch = NomialArray([1*gpkit.units.m, 1*gpkit.units.ft])
+        self.assertEqual(mismatch.sum().c, 1.3048*gpkit.ureg.m)  # pylint:disable=no-member
+        self.assertEqual(mismatch.prod().c, 1*gpkit.ureg.m*gpkit.ureg.ft)  # pylint:disable=no-member
 
     def test_sum(self):
         x = VectorVariable(5, 'x')
@@ -119,6 +116,8 @@ class TestNomialArray(unittest.TestCase):
         self.assertTrue(isinstance(m, Monomial))
         self.assertEqual(m, x[0]*x[1]*x[2])
         self.assertEqual(m, np.prod(x))
+        pows = NomialArray([x[0], x[0]**2, x[0]**3])
+        self.assertEqual(pows.prod(), x[0]**6)
 
     def test_outer(self):
         x = VectorVariable(3, 'x')

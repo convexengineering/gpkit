@@ -8,7 +8,7 @@ def load_settings(path=None, trybuild=True):
     "Load the settings file at SETTINGS_PATH; return settings dict"
     if path is None:
         path = os.sep.join([os.path.dirname(__file__), "env", "settings"])
-    try:
+    try:  # if the settings file already exists, read it
         with open(path) as settingsfile:
             lines = [line[:-1].split(" : ") for line in settingsfile
                      if len(line.split(" : ")) == 2]
@@ -17,7 +17,7 @@ def load_settings(path=None, trybuild=True):
                 # flatten 1-element lists unless they're the solver list
                 if len(value) == 1 and name != "installed_solvers":
                     settings_[name], = value
-    except IOError:  # settings file doesn't exist yet
+    except IOError:  # pragma: no cover
         settings_ = {"installed_solvers": [""]}
     if settings_["installed_solvers"] == [""] and trybuild:  # pragma: no cover
         print("Found no installed solvers, beginning a build.")

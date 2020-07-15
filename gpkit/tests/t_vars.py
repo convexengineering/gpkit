@@ -96,6 +96,11 @@ class TestVarKey(unittest.TestCase):
         gstrafter = str(g)
         self.assertEqual(gstrbefore, gstrafter)
 
+        cstr = str(2*a >= a + np.ones((3, 2))/2)
+        self.assertEqual(cstr, """2·a[:] >= a[:] + [[0.5 0.5]
+           [0.5 0.5]
+           [0.5 0.5]]""")
+
     def test_eq_neq(self):
         """Test boolean equality operators"""
         # no args
@@ -231,13 +236,6 @@ class TestVectorVariable(unittest.TestCase):
             self.assertEqual(x[0, 0].value, x[0, 1].value)
             self.assertEqual(x[1, 0].value, x[1, 1].value)
             self.assertEqual(x[2, 0].value, x[2, 1].value)
-
-    def test_constraint_creation_units(self):
-        v = VectorVariable(2, "v", "m/s")
-        c = (v >= 40*gpkit.units("ft/s"))
-        c2 = (v >= np.array([20, 30])*gpkit.units("ft/s"))
-        self.assertTrue(c.right.units)
-        self.assertTrue(NomialArray(c2.right).units)
 
 
 class TestArrayVariable(unittest.TestCase):

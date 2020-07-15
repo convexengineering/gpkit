@@ -210,12 +210,10 @@ class TestMonomial(unittest.TestCase):
         # and with vectors...
         v = 0.5 * VectorVariable(3, "x", "m")**2 * gpkit.units.kg
         self.assertTrue(isinstance(v, NomialArray))
-        if v.units:
-            self.assertEqual(v.units, 1*gpkit.ureg.kg*gpkit.ureg.m**2)
+        self.assertEqual(v[0].units, 1*gpkit.ureg.kg*gpkit.ureg.m**2)
         v = 0.5 * gpkit.units.kg * VectorVariable(3, "x", "m")**2
         self.assertTrue(isinstance(v, NomialArray))
-        if v.units:
-            self.assertEqual(v.units, 1*gpkit.ureg.kg*gpkit.ureg.m**2)
+        self.assertEqual(v[0].units, 1*gpkit.ureg.kg*gpkit.ureg.m**2)
 
 
 class TestSignomial(unittest.TestCase):
