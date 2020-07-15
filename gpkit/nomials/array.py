@@ -10,11 +10,10 @@ from operator import eq, le, ge, xor
 from functools import reduce  # pylint: disable=redefined-builtin
 import numpy as np
 from .map import NomialMap
-from ..small_classes import Numbers, HashVector, EMPTY_HV
-from ..small_scripts import try_str_without, mag
+from ..small_classes import HashVector, EMPTY_HV
+from ..small_scripts import try_str_without
 from ..constraints import ArrayConstraint
 from ..repr_conventions import ReprMixin
-from ..exceptions import DimensionalityError
 
 @np.vectorize
 def vec_recurse(element, function, *args, **kwargs):
@@ -147,56 +146,46 @@ class NomialArray(ReprMixin, np.ndarray):
         "Substitutes into the array"
         return self.vectorize(lambda nom: nom.sub(subs, require_positive))
 
-    @property
-    def units(self):
-        """units must have same dimensions across the entire nomial array"""
-        units = None
-        for el in self.flat:  # pylint: disable=not-an-iterable
-            el_units = getattr(el, "units", None)
-            if units is None:
-                units = el_units
-            elif ((el_units and units != el_units) or
-                  (isinstance(el, Numbers) and not (el == 0 or np.isnan(el)))):
-                raise DimensionalityError(el_units, units)
-        return units
-
     def sum(self, *args, **kwargs):  # pylint: disable=arguments-differ
         "Returns a sum. O(N) if no arguments are given."
+        if not self.size:
+            raise ValueError("cannot sum NomialArray of size 0")
         if args or kwargs or not self.shape:
             return np.ndarray.sum(self, *args, **kwargs)
         hmap = NomialMap()
-        hmap.units = self.units
-        it = np.nditer(self, flags=["multi_index", "refs_ok"])
-        while not it.finished:
-            m = self[it.multi_index]
-            it.iternext()
-            if isinstance(mag(m), Numbers):
-                if mag(m):
-                    hmap[EMPTY_HV] = mag(m) + hmap.get(EMPTY_HV, 0)
+        for p in self.flat:  # pylint:disable=not-an-iterable
+            if not hmap and hasattr(p, "units"):
+                hmap.units = p.units
+            if hasattr(p, "hmap"):
+                hmap += p.hmap
             else:
-                hmap += m.hmap
+                if hasattr(p, "units"):
+                    p = p.to(hmap.units).magnitude
+                elif hmap.units and p and not np.isnan(p):
+                    p /= float(hmap.units)
+                hmap[EMPTY_HV] = p + hmap.get(EMPTY_HV, 0)
         out = Signomial(hmap)
         out.ast = ("sum", (self, None))
         return out
 
     def prod(self, *args, **kwargs):  # pylint: disable=arguments-differ
         "Returns a product. O(N) if no arguments and only contains monomials."
+        if not self.size:
+            raise ValueError("cannot prod NomialArray of size 0")
         if args or kwargs:
             return np.ndarray.prod(self, *args, **kwargs)
-        c, unitpower = 1.0, 0
-        exp = HashVector()
-        it = np.nditer(self, flags=["multi_index", "refs_ok"])
-        while not it.finished:
-            m = self[it.multi_index]
-            it.iternext()
-            if not hasattr(m, "hmap") and len(m.hmap) == 1:
+        c, exp = 1.0, HashVector()
+        hmap = NomialMap()
+        for m in self.flat:  # pylint:disable=not-an-iterable
+            try:
+                (mexp, mc), = m.hmap.items()
+            except (AttributeError, ValueError):
                 return np.ndarray.prod(self, *args, **kwargs)
-            c *= mag(m.c)
-            unitpower += 1
-            exp += m.exp
-        hmap = NomialMap({exp: c})
-        units = self.units
-        hmap.units = units**unitpower if units else None
+            c *= mc
+            exp += mexp
+            if m.units:
+                hmap.units = (hmap.units or 1) * m.units
+        hmap[exp] = c
         out = Signomial(hmap)
         out.ast = ("prod", (self, None))
         return out

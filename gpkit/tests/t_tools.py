@@ -132,6 +132,7 @@ class TestTools(unittest.TestCase):
         self.assertTrue(all(te_secant(y, 2) == 1 + y**2/2 + 5*y**4/24))
         # make sure y was not modified
         self.assertEqual(y, VectorVariable(3, 'y'))
+        _ = te_secant(x, 13)  # to trigger the extension
 
     def test_te_tangent(self):
         "Test Taylor expansion of tangent(var)"
@@ -148,12 +149,14 @@ class TestTools(unittest.TestCase):
         self.assertEqual(te_tangent(y, 0), 0)
         # make sure y was not modified
         self.assertEqual(y, VectorVariable(3, 'y'))
+        with self.assertRaises(NotImplementedError):
+            _ = te_tangent(x, 16)
 
 
 TESTS = [TestTools]
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":  # pragma: no cover
     # pylint: disable=wrong-import-position
     from gpkit.tests.helpers import run_tests
     run_tests(TESTS)

@@ -31,6 +31,11 @@ class TestGP(unittest.TestCase):
     solver = None
     ndig = None
 
+    def test_no_monomial_constraints(self):
+        x = Variable("x")
+        sol = Model(x, [x + 1/x <= 3]).solve(solver=self.solver, verbosity=0)
+        self.assertAlmostEqual(sol["cost"], 0.381966, self.ndig)
+
     def test_trivial_gp(self):
         """
         Create and solve a trivial GP:
@@ -120,8 +125,6 @@ class TestGP(unittest.TestCase):
 
     def test_simple_united_gp(self):
         R = Variable("R", "nautical_miles")
-        if not R.units:
-            return
         a0 = Variable("a0", 340.29, "m/s")
         theta = Variable("\\theta", 0.7598)
         t = Variable("t", 10, "hr")
@@ -157,8 +160,6 @@ class TestGP(unittest.TestCase):
 
     def test_sensitivities(self):
         W_payload = Variable("W_{payload}", 175*(195 + 30), "lbf")
-        if not W_payload.units:
-            return
         f_oew = Variable("f_{oew}", 0.53, "-", "OEW/MTOW")
         fuel_per_nm = Variable("\\theta_{fuel}", 13.75, "lbf/nautical_mile")
         R = Variable("R", 3000, "nautical_miles", "range")
@@ -193,6 +194,7 @@ class TestGP(unittest.TestCase):
         self.assertEqual(gp3.A, CootMatrix(row=[0, 1, 2],
                                            col=[0, 0, 0],
                                            data=[-1, 1, -1]))
+        self.assertTrue((gp3.A.todense() == np.matrix([-1, 1, -1]).T).all())
         self.assertAlmostEqual(sol1(Mdd), sol2(Mdd))
         self.assertAlmostEqual(sol1(Mdd), sol3(Mdd))
         self.assertAlmostEqual(sol2(Mdd), sol3(Mdd))
@@ -216,7 +218,7 @@ class TestGP(unittest.TestCase):
         self.assertAlmostEqual(sol["cost"], 0.1, self.ndig)
         self.assertTrue(sol.almost_equal(sol))
 
-    def test_singular(self):
+    def test_singular(self):  # pragma: no cover
         "Create and solve GP with a singular A matrix"
         if self.solver == "cvxopt":
             # cvxopt can"t solve this problem
@@ -295,8 +297,7 @@ class TestSP(unittest.TestCase):
         m.debug(verbosity=0, solver=self.solver)
         with SignomialsEnabled():
             m = Model(x, [x+y >= z, x+y <= z/2, y <= x, y >= 1], {z: 3})
-        if self.solver != "cvxopt":
-            m.debug(verbosity=0, solver=self.solver)
+        m.debug(verbosity=0, solver=self.solver)
         r2 = ConstraintsRelaxed(m)
         self.assertEqual(len(r2.varkeys), 7)
         sp = Model(x*r2.relaxvars.prod()**10, r2).sp(use_pccp=False)
@@ -304,8 +305,7 @@ class TestSP(unittest.TestCase):
         self.assertAlmostEqual(cost/1024, 1, self.ndig)
         with SignomialsEnabled():
             m = Model(x, [x+y >= z, x+y <= z/2, y <= x, y >= 1], {z: 3})
-        if self.solver != "cvxopt":
-            m.debug(verbosity=0, solver=self.solver)
+        m.debug(verbosity=0, solver=self.solver)
         r3 = ConstraintsRelaxedEqually(m)
         self.assertEqual(len(r3.varkeys), 4)
         sp = Model(x*r3.relaxvar**10, r3).sp(use_pccp=False)
@@ -333,9 +333,10 @@ class TestSP(unittest.TestCase):
             m = Model(x, Bounded([x + y >= 1], verbosity=0))
         sol = m.localsolve(verbosity=0, solver=self.solver)
         boundedness = sol["boundedness"]
-        if "value near lower bound" in boundedness:
+        # depends on solver, platform, whims of the numerical deities
+        if "value near lower bound" in boundedness:  # pragma: no cover
             self.assertIn(x.key, boundedness["value near lower bound"])
-        if "value near upper bound" in boundedness:
+        else:  # pragma: no cover
             self.assertIn(y.key, boundedness["value near upper bound"])
 
     def test_values_vs_subs(self):
@@ -545,28 +546,21 @@ class TestSP(unittest.TestCase):
             constraints = [y + x >= 4, y <= x]
         objective = x
         m = Model(objective, constraints)
-        try:
-            sol = m.localsolve(x0={"x": x0, y: y0}, verbosity=0,
-                               solver=self.solver)
-        except TypeError:
-            self.fail("Call to local solve with only variables failed")
+        # Call to local solve with only variables
+        sol = m.localsolve(x0={"x": x0, y: y0}, verbosity=0,
+                           solver=self.solver)
         self.assertAlmostEqual(sol(x), 2, self.ndig)
         self.assertAlmostEqual(sol["cost"], 2, self.ndig)
 
-        try:
-            sol = m.localsolve(x0={"x": x0, "y": y0}, verbosity=0,
-                               solver=self.solver)
-        except TypeError:
-            self.fail("Call to local solve with only variable strings failed")
+        # Call to local solve with only variable strings
+        sol = m.localsolve(x0={"x": x0, "y": y0}, verbosity=0,
+                           solver=self.solver)
         self.assertAlmostEqual(sol("x"), 2, self.ndig)
         self.assertAlmostEqual(sol["cost"], 2, self.ndig)
 
-        try:
-            sol = m.localsolve(x0={"x": x0, y: y0}, verbosity=0,
-                               solver=self.solver)
-        except TypeError:
-            self.fail("Call to local solve with a mix of variable strings "
-                      "and variables failed")
+        # Call to local solve with a mix of variable strings and variables
+        sol = m.localsolve(x0={"x": x0, y: y0}, verbosity=0,
+                           solver=self.solver)
         self.assertAlmostEqual(sol["cost"], 2, self.ndig)
 
     def test_small_named_signomial(self):
@@ -641,15 +635,16 @@ class TestSP(unittest.TestCase):
         m = Model(x*y, Bounded(m, verbosity=0))
         sol = m.solve(self.solver, verbosity=0)
         bounds = sol["boundedness"]
-        if "sensitive to upper bound" in bounds:
+        # depends on solver, platform, whims of the numerical deities
+        if "sensitive to upper bound" in bounds:  # pragma: no cover
             self.assertIn(y.key, bounds["sensitive to upper bound"])
-        if "sensitive to lower bound" in bounds:
+        else:  # pragma: no cover
             self.assertIn(x.key, bounds["sensitive to lower bound"])
 
 
 class TestModelSolverSpecific(unittest.TestCase):
     "test cases run only for specific solvers"
-    def test_cvxopt_kwargs(self):
+    def test_cvxopt_kwargs(self):  # pragma: no cover
         if "cvxopt" not in settings["installed_solvers"]:
             return
         x = Variable("x")
@@ -672,18 +667,6 @@ class Thing2(Model):
     "another thing for model testing"
     def setup(self):
         return [Thing(2), Model()]
-
-
-class SPThing(Model):
-    "a simple SP"
-    def setup(self):
-        x = Variable("x")
-        y = Variable("y", 2.)
-        z = Variable("z")
-        with SignomialsEnabled():
-            constraints = [z <= x**2 + y, x*z == 2]
-        self.cost = 1/z
-        return constraints
 
 
 class Box(Model):
@@ -792,7 +775,7 @@ for testcase in MULTI_SOLVER_TESTS:
             setattr(test, "ndig", NDIGS[solver])
             TESTS.append(test)
 
-if __name__ == "__main__":
+if __name__ == "__main__":  # pragma: no cover
     # pylint: disable=wrong-import-position
     from gpkit.tests.helpers import run_tests
     run_tests(TESTS, verbosity=0)

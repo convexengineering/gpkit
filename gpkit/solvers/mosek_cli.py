@@ -15,7 +15,7 @@ from .. import settings
 from ..exceptions import (UnknownInfeasible, InvalidLicense,
                           PrimalInfeasible, DualInfeasible)
 
-def remove_read_only(func, path, exc):
+def remove_read_only(func, path, exc):  # pragma: no cover
     "If we can't remove a file/directory, change permissions and try again."
     if func in (os.rmdir, os.remove) and exc[1].errno == errno.EACCES:
         # change the file to be readable,writable,executable: 0777
@@ -90,28 +90,28 @@ def optimize_generator(path=None, **_):
             # invalid license return codes:
             #   expired: 233 (linux)
             #   missing: 240 (linux)
-            if e.returncode in [233, 240]:
+            if e.returncode in [233, 240]:  # pragma: no cover
                 raise InvalidLicense() from e
             raise UnknownInfeasible() from e
         with open(solution_filename) as f:
-            _, probsta = f.readline().split("PROBLEM STATUS      : ")
-            if probsta == "PRIMAL_INFEASIBLE\n":
+            _, probsta = f.readline()[:-1].split("PROBLEM STATUS      : ")
+            if probsta == "PRIMAL_INFEASIBLE":
                 raise PrimalInfeasible()
-            if probsta == "DUAL_INFEASIBLE\n":
+            if probsta == "DUAL_INFEASIBLE":
                 raise DualInfeasible()
-            if probsta != "PRIMAL_AND_DUAL_FEASIBLE\n":
-                raise UnknownInfeasible("PROBLEM STATUS: " + probsta[:-1])
+            if probsta != "PRIMAL_AND_DUAL_FEASIBLE":
+                raise UnknownInfeasible("PROBLEM STATUS: " + probsta)
 
             _, solsta = f.readline().split("SOLUTION STATUS     : ")
             # line looks like "OBJECTIVE           : 2.763550e+002"
             objective_val = float(f.readline().split()[2])
-            assert_equal(f.readline(), "\n")
-            assert_equal(f.readline(), "PRIMAL VARIABLES\n")
-            assert_equal(f.readline(), "INDEX   ACTIVITY\n")
+            assert_equal(f.readline(), "")
+            assert_equal(f.readline(), "PRIMAL VARIABLES")
+            assert_equal(f.readline(), "INDEX   ACTIVITY")
             primal_vals = read_vals(f)
             # read_vals reads the dividing blank line as well
-            assert_equal(f.readline(), "DUAL VARIABLES\n")
-            assert_equal(f.readline(), "INDEX   ACTIVITY\n")
+            assert_equal(f.readline(), "DUAL VARIABLES")
+            assert_equal(f.readline(), "INDEX   ACTIVITY")
             dual_vals = read_vals(f)
 
         if tmpdir:
@@ -146,7 +146,7 @@ def write_output_file(filename, c, A, p_idxs):
 
 def assert_equal(received, expected):
     "Asserts that a file's next line is as expected."
-    if tuple(expected[:-1].split()) != tuple(received[:-1].split()):
+    if expected.rstrip() != received.rstrip():  # pragma: no cover
         errstr = repr(expected)+" is not the same as "+repr(received)
         raise RuntimeWarning("could not read mskexpopt output file: "+errstr)
 

@@ -200,7 +200,7 @@ def optimize(*, c, A, k, p_idxs, **kwargs):
 
     try:
         task.optimize()
-    except mosek.Error as e:
+    except mosek.Error as e:  # pragma: no cover
         if e.errno in [mosek.rescode.err_missing_license_file,
                        mosek.rescode.err_license_version,
                        mosek.rescode.err_license_expired]:
@@ -217,7 +217,7 @@ def optimize(*, c, A, k, p_idxs, **kwargs):
         raise PrimalInfeasible()
     if msk_solsta == mosek.solsta.dual_infeas_cer:
         raise DualInfeasible()
-    if msk_solsta != mosek.solsta.optimal:
+    if msk_solsta != mosek.solsta.optimal:  # pragma: no cover
         raise UnknownInfeasible("solution status: ", msk_solsta)
 
     # recover primal variables

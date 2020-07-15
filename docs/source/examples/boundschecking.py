@@ -53,7 +53,7 @@ except UnboundedGP:
 
 try:
     sol = gp.solve(verbosity=0)  # Errors on mosek_cli
-except UnknownInfeasible:
+except UnknownInfeasible:  # pragma: no cover
     pass
 
 bpl = ", but would gain it from any of these sets: "

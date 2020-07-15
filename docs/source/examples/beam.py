@@ -78,7 +78,7 @@ w_exact = q/(24*EI) * x**2 * (x**2 - 4*L*x + 6*L**2)  # analytic soln
 assert max(abs(w_gp - w_exact)) <= 1.1*ureg.cm
 
 PLOT = False
-if PLOT:
+if PLOT:  # pragma: no cover
     import matplotlib.pyplot as plt
     x_exact = np.linspace(0, L, 1000)
     w_exact = q/(24*EI) * x_exact**2 * (x_exact**2 - 4*L*x_exact + 6*L**2)

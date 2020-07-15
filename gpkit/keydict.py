@@ -3,7 +3,7 @@ from collections import defaultdict
 from collections.abc import Hashable
 import numpy as np
 from .small_classes import Numbers, Quantity, FixedScalar
-from .small_scripts import is_sweepvar, isnan, SweepValue
+from .small_scripts import is_sweepvar, isnan
 
 DIMLESS_QUANTITY = Quantity(1, "dimensionless")
 INT_DTYPE = np.dtype(int)
@@ -203,7 +203,6 @@ class KeyDict(KeyMap, dict):
                 self.owned.add(key)
         if idx:
             if is_sweepvar(value):
-                value = SweepValue(value[1])
                 old = super().__getitem__(key)
                 super().__setitem__(key, np.array(old, "object"))
                 self.owned.add(key)

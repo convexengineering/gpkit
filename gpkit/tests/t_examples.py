@@ -60,9 +60,6 @@ class TestExamples(unittest.TestCase):
             assert_logtol(sol1("l"), l_)
             assert_logtol(sol1("A"), l_**2 + 1, tol1)
             assert_logtol(sol1["cost"], (l_**2 + 1)**2, tol1)
-            if hasattr(sol1["cost"], "units"):  # loaded costs are unitless
-                self.assertEqual(Quantity(1.0, sol1["cost"].units),
-                                 Quantity(1.0, ureg.m)**4)
             self.assertEqual(Quantity(1.0, sol1("A").units),
                              Quantity(1.0, ureg.m)**2)
 
@@ -105,26 +102,26 @@ class TestExamples(unittest.TestCase):
     def test_sp_to_gp_sweep(self, example):
         pass
 
-    def test_boundschecking(self, example):
-        if "mosek_cli" != settings["default_solver"]:
-            example.gp.solve(verbosity=0)  # mosek_conif can solve it!
-        else:
+    def test_boundschecking(self, example):  # pragma: no cover
+        if "mosek_cli" in settings["default_solver"]:
             with self.assertRaises(UnknownInfeasible):
                 example.gp.solve(verbosity=0)
+        else:
+            example.gp.solve(verbosity=0)  # mosek_conif and cvxopt solve it
 
     def test_vectorize(self, example):
         pass
 
     def test_primal_infeasible_ex1(self, example):
         primal_or_unknown = PrimalInfeasible
-        if "cvxopt" in settings["default_solver"]:
+        if "cvxopt" in settings["default_solver"]:  # pragma: no cover
             primal_or_unknown = UnknownInfeasible
         with self.assertRaises(primal_or_unknown):
             example.m.solve(verbosity=0)
 
     def test_primal_infeasible_ex2(self, example):
         primal_or_unknown = PrimalInfeasible
-        if "cvxopt" in settings["default_solver"]:
+        if "cvxopt" in settings["default_solver"]:  # pragma: no cover
             primal_or_unknown = UnknownInfeasible
         with self.assertRaises(primal_or_unknown):
             example.m.solve(verbosity=0)
@@ -134,7 +131,7 @@ class TestExamples(unittest.TestCase):
 
     def test_debug(self, example):
         dual_or_primal = DualInfeasible
-        if "mosek_conif" == settings["default_solver"]:
+        if "mosek_conif" == settings["default_solver"]:  # pragma: no cover
             dual_or_primal = PrimalInfeasible
         with self.assertRaises(UnboundedGP):
             example.m.gp()
@@ -143,7 +140,7 @@ class TestExamples(unittest.TestCase):
             gp.solve(verbosity=0)
 
         primal_or_unknown = PrimalInfeasible
-        if "cvxopt" == settings["default_solver"]:
+        if "cvxopt" == settings["default_solver"]:  # pragma: no cover
             primal_or_unknown = UnknownInfeasible
         with self.assertRaises(primal_or_unknown):
             example.m2.solve(verbosity=0)
@@ -222,10 +219,10 @@ EXAMPLE_DIR = os.path.abspath(FILE_DIR + '../../../docs/source/examples')
 SOLVERS = settings["installed_solvers"]
 if os.path.isdir(EXAMPLE_DIR):
     TESTS = generate_example_tests(EXAMPLE_DIR, [TestExamples], SOLVERS)
-else:
+else:  # pragma: no cover
     TESTS = []
 
-if __name__ == "__main__":
+if __name__ == "__main__":  # pragma: no cover
     # pylint:disable=wrong-import-position
     from gpkit.tests.helpers import run_tests
     run_tests(TESTS)

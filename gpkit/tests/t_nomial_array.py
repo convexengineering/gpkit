@@ -1,8 +1,10 @@
 """Tests for NomialArray class"""
 import unittest
+import warnings as pywarnings
 import numpy as np
 from gpkit import Variable, Posynomial, NomialArray, VectorVariable, Monomial
 from gpkit.constraints.set import ConstraintSet
+from gpkit.exceptions import DimensionalityError
 import gpkit
 
 
@@ -82,11 +84,15 @@ class TestNomialArray(unittest.TestCase):
     def test_units(self):
         # inspired by gpkit issue #106
         c = VectorVariable(5, "c", "m", "Local Chord")
-        if gpkit.units:
-            constraints = (c == 1*gpkit.units.m)
-        else:
-            constraints = (c == 1)
+        constraints = (c == 1*gpkit.units.m)
         self.assertEqual(len(constraints), 5)
+        # test an array with inconsistent units
+        with pywarnings.catch_warnings():  # skip the UnitStrippedWarning
+            pywarnings.simplefilter("ignore")
+            mismatch = NomialArray([1*gpkit.units.m, 1*gpkit.ureg.ft, 1.0])
+        self.assertRaises(DimensionalityError, mismatch.sum)
+        self.assertEqual(mismatch[:2].sum().c, 1.3048*gpkit.ureg.m)  # pylint:disable=no-member
+        self.assertEqual(mismatch.prod().c, 1*gpkit.ureg.m*gpkit.ureg.ft)  # pylint:disable=no-member
 
     def test_sum(self):
         x = VectorVariable(5, 'x')
@@ -115,6 +121,8 @@ class TestNomialArray(unittest.TestCase):
         self.assertTrue(isinstance(m, Monomial))
         self.assertEqual(m, x[0]*x[1]*x[2])
         self.assertEqual(m, np.prod(x))
+        pows = NomialArray([x[0], x[0]**2, x[0]**3])
+        self.assertEqual(pows.prod(), x[0]**6)
 
     def test_outer(self):
         x = VectorVariable(3, 'x')
@@ -135,7 +143,7 @@ class TestNomialArray(unittest.TestCase):
 
 TESTS = [TestNomialArray]
 
-if __name__ == '__main__':
+if __name__ == "__main__":  # pragma: no cover
     # pylint: disable=wrong-import-position
     from gpkit.tests.helpers import run_tests
     run_tests(TESTS)

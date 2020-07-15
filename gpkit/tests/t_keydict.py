@@ -10,6 +10,15 @@ from gpkit.tests.helpers import run_tests
 class TestKeyDict(unittest.TestCase):
     """TestCase for the KeyDict class"""
 
+    def test_nonnumeric(self):
+        x = VectorVariable(2, "x")
+        kd = KeyDict()
+        kd[x[1]] = "2"
+        self.assertTrue(np.isnan(kd[x[0]]))
+        self.assertEqual(kd[x[1]], "2")
+        self.assertNotIn(x[0], kd)
+        self.assertIn(x[1], kd)
+
     def test_setattr(self):
         kd = KeyDict()
         x = Variable("x", lineage=(("test", 0),))
@@ -61,5 +70,5 @@ class TestKeyDict(unittest.TestCase):
 TESTS = [TestKeyDict]
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":  # pragma: no cover
     run_tests(TESTS)

@@ -1,31 +1,23 @@
 "Scripts for generating, solving and sweeping programs"
 from time import time
 import numpy as np
+from ad import adnumber
 from ..nomials import parse_subs
 from ..solution_array import SolutionArray
 from ..keydict import KeyDict
 from ..small_scripts import maybe_flatten
 from ..exceptions import Infeasible
 
-try:
-    from ad import adnumber
-except ImportError:
-    adnumber = None
-    print("Couldn't import ad; automatic differentiation of linked variables"
-          " is disabled.")
-
 
 def evaluate_linked(constants, linked):
     "Evaluates the values and gradients of linked variables."
-    if adnumber:
-        kdc = KeyDict({k: adnumber(maybe_flatten(v))
-                       for k, v in constants.items()})
-        kdc.log_gets = True
+    kdc = KeyDict({k: adnumber(maybe_flatten(v))
+                   for k, v in constants.items()})
+    kdc.log_gets = True
     kdc_plain = None
     array_calulated, logged_array_gets = {}, {}
     for v, f in linked.items():
         try:
-            assert adnumber  # trigger exit if ad not found
             if v.veckey and v.veckey.original_fn:
                 if v.veckey not in array_calulated:
                     ofn = v.veckey.original_fn
@@ -48,18 +40,16 @@ def evaluate_linked(constants, linked):
             from .. import settings
             if settings.get("ad_errors_raise", None):
                 raise
-            if adnumber:
-                print("Warning: skipped auto-differentiation of linked variable"
-                      " %s because %s was raised. Set `gpkit.settings"
-                      "[\"ad_errors_raise\"] = True` to raise such Exceptions"
-                      " directly.\n" % (v, repr(exception)))
+            print("Warning: skipped auto-differentiation of linked variable"
+                  " %s because %s was raised. Set `gpkit.settings"
+                  "[\"ad_errors_raise\"] = True` to raise such Exceptions"
+                  " directly.\n" % (v, repr(exception)))
             if kdc_plain is None:
                 kdc_plain = KeyDict(constants)
             constants[v] = f(kdc_plain)
             v.descr.pop("gradients", None)
         finally:
-            if adnumber:
-                kdc.logged_gets = set()
+            kdc.logged_gets = set()
 
 
 def progify(program, return_attr=None):
