@@ -1,4 +1,5 @@
 """Implement the SequentialGeometricProgram class"""
+import warnings as pywarnings
 from time import time
 from collections import defaultdict
 import numpy as np
@@ -169,10 +170,11 @@ solutions and can be solved with 'Model.solve()'.""")
                 continue
             rel_improvement = (prevcost - cost)/(prevcost + cost)
             if cost*(1 - EPS) > prevcost + EPS and verbosity > -1:
-                print("SGP not convergent: Cost rose by %.2g%% on GP solve %i."
+                pywarnings.warn("SGP not convergent:"
+                      " Cost rose by %.2g%% on GP solve %i."
                       " Details can be found in `m.program.results` or by"
-                      " solving at a higher verbosity. Note that convergence is"
-                      " not guaranteed for models with SignomialEqualities.\n"
+                      " solving at a higher verbosity. Note that convergence"
+                      " is not guaranteed for models with SignomialEqualities."
                       % (100*(cost - prevcost)/prevcost, len(self.gps)))
                 rel_improvement = cost = None
         # solved successfully!
