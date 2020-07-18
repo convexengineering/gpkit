@@ -170,12 +170,12 @@ solutions and can be solved with 'Model.solve()'.""")
                 continue
             rel_improvement = (prevcost - cost)/(prevcost + cost)
             if cost*(1 - EPS) > prevcost + EPS and verbosity > -1:
-                pywarnings.warn("SGP not convergent:"
-                      " Cost rose by %.2g%% on GP solve %i."
-                      " Details can be found in `m.program.results` or by"
-                      " solving at a higher verbosity. Note that convergence"
-                      " is not guaranteed for models with SignomialEqualities."
-                      % (100*(cost - prevcost)/prevcost, len(self.gps)))
+                pywarnings.warn(
+                    "SGP not convergent: Cost rose by %.2g%% on GP solve %i."
+                    " Details can be found in `m.program.results` or by"
+                    " solving at a higher verbosity. Note that convergence"
+                    " is not guaranteed for models with SignomialEqualities."
+                    % (100*(cost - prevcost)/prevcost, len(self.gps)))
                 rel_improvement = cost = None
         # solved successfully!
         self.result = gp.generate_result(solver_out, verbosity=verbosity-3)
@@ -194,13 +194,14 @@ solutions and can be solved with 'Model.solve()'.""")
                 slackconstraint = self.gpconstraints[0]
                 del self.result["sensitivities"]["constraints"][slackconstraint]
             elif verbosity > -1:
-                print("Final solution let signomial constraints slacken by"
-                      " %.2g%%. Calling .localsolve with a higher"
-                      " `pccp_penalty` (it was %.3g this time) will reduce"
-                      " final slack if the model is solvable with less. If"
-                      " you think it might not be, check by solving with "
-                      "`use_pccp=False, x0=(this model's final solution)`.\n"
-                      % (100*excess_slack, self.pccp_penalty))
+                pywarnings.warn(
+                    "Final solution let signomial constraints slacken by"
+                    " %.2g%%. Calling .localsolve with a higher"
+                    " `pccp_penalty` (it was %.3g this time) will reduce"
+                    " final slack if the model is solvable with less. If"
+                    " you think it might not be, check by solving with "
+                    "`use_pccp=False, x0=(this model's final solution)`.\n"
+                    % (100*excess_slack, self.pccp_penalty))
         return self.result
 
     @property
