@@ -6,7 +6,7 @@ Sankey Diagrams
 
 Requirements
 ------------
--  jupyter notebook
+-  Jupyter Notebook
 -  `ipysankeywidget <https://github.com/ricklupton/ipysankeywidget>`__
 
 Example
