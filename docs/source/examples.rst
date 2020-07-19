@@ -34,7 +34,7 @@ Say we had a fixed mass of water we wanted to contain within a tank, but also wa
 
 .. literalinclude:: examples/water_tank.py
 
-The output is
+The output is:
 
 .. literalinclude:: examples/water_tank_output.txt
 
@@ -44,7 +44,7 @@ This example comes from Section 3 of `Geometric Programming for Aircraft Design 
 
 .. literalinclude:: examples/simpleflight.py
 
-The output is
+The output is:
 
 .. literalinclude:: examples/simpleflight_output.txt
 
@@ -54,7 +54,7 @@ In this example we consider a beam subjected to a uniformly distributed transver
 
 .. literalinclude:: examples/beam.py
 
-The output is
+The output is:
 
 .. literalinclude:: examples/beam_output.txt
 
