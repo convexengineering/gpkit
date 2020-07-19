@@ -5,7 +5,7 @@ Checking for result changes
 ===========================
 Tracking the effects of changes to complex models can get out of hand;
 we recommend saving solutions with ``sol.save()``, then checking that new solutions are almost equivalent
-with ``sol1.almost_equal(sol2)`` and/or ``print sol1.diff(sol2)``, as shown below.
+with ``sol1.almost_equal(sol2)`` and/or ``print(sol1.diff(sol2))``, as shown below.
 
 .. literalinclude:: examples/checking_result_changes.py
 
