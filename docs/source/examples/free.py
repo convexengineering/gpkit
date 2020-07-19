@@ -1,0 +1,1 @@
+Sankey(M).diagram(M.aircraft.b)
