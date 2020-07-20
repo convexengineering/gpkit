@@ -1,3 +1,0 @@
-The optimal value is 15.5884619886.
-The x dimension is 0.5774 meter.
-The y dimension is 0.2887 meter.

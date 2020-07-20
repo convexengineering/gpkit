@@ -14,12 +14,30 @@ Example
 
 Code in this section uses the `CE solar model <https://github.com/convexengineering/solar/tree/gpkitdocs>`__
 
-.. literalinclude:: examples/example.py
+.. code:: python
+
+    from solar import *
+    Vehicle = Aircraft(Npod=1, sp = False)
+    M = Mission(Vehicle, latitude=[20])
+    M.cost = M[M.aircraft.Wtotal]
+    sol = M.solve()
+
+    from gpkit.interactive.sankey import Sankey
+    Sankey(M).diagram(M.aircraft.Wtotal)
 
 .. figure:: figures/sankey/solar_wtotal.svg
     :width: 700 px
 
-.. literalinclude:: examples/example_output.txt
+::
+
+    (objective) adds +1 to the sensitivity of Wtotal_Aircraft
+    (objective) is Wtotal_Aircraft [lbf] 
+
+    Ⓐ adds +0.0075 to the overall sensitivity of Wtotal_Aircraft
+    Ⓐ is Wtotal_Aircraft <= 0.5*CL_Mission/Climb/AircraftDrag/WingAero_(0,)*S_Aircraft/Wing/Planform.2*V_Mission/Climb_(0, 0)**2*rho_Mission/Climb_(0, 0) 
+
+    Ⓑ adds +0.0117 to the overall sensitivity of Wtotal_Aircraft
+    Ⓑ is Wtotal_Aircraft <= 0.5*CL_Mission/Climb/AircraftDrag/WingAero_(1,)*S_Aircraft/Wing/Planform.2*V_Mission/Climb_(0, 1)**2*rho_Mission/Climb_(0, 1) 
 
 
 Explanation
@@ -56,7 +74,9 @@ shows how the various pressures on that variable in all its constraints
 cancel each other out; this can get quite complex, as in this diagram of the
 pressures on wingspan:
 
-.. literalinclude:: examples/free.py
+.. code:: python
+
+    Sankey(M).diagram(M.aircraft.b)
 
 .. figure:: figures/sankey/solar_b.svg
     :width: 700 px
@@ -67,7 +87,9 @@ Fixed
 Fixed variables can have a nonzero overall sensitivity. Sankey diagrams
 can how that sensitivity comes together:
 
-.. literalinclude:: examples/fixed.py
+.. code:: python
+    
+    Sankey(M).diagram(M['vgust']) 
 
 .. figure:: figures/sankey/solar_vgust.svg
     :width: 700 px
@@ -82,7 +104,9 @@ if the constraint is sensitive), they are found and plotted
 at the same time, and all shown on the left. The constraints responsible
 for this are shown next to their labels.
 
-.. literalinclude:: examples/equivalent_variables.py
+.. code-block:: python
+
+    Sankey(M).sorted_by('constraints', 11)
 
 .. figure:: figures/sankey/solar_tmin.svg
     :width: 700 px
@@ -97,7 +121,8 @@ additive, these sensitivities are too: a model's sensitivity is equal to
 the sum of its constraints' sensitivities. Gray lines in this diagram
 indicate models without any tight constraints.
 
-.. literalinclude:: examples/models.py
+.. code:: python
+    Sankey(M).diagram(left=60, right=90, width=1050)
 
 .. figure:: figures/sankey/solar.svg
     :width: 700 px

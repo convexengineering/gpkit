@@ -5,7 +5,9 @@ GPkit is a Python package, so we assume basic familiarity with Python: if you're
 
 Otherwise, :ref:`install GPkit <installation>` and import away:
 
-.. literalinclude:: examples/getting_started.py
+.. code:: python
+
+    from gpkit import Variable, VectorVariable, Model
 
 Declaring Variables
 ===================
@@ -70,23 +72,47 @@ Solving the Model
 
 When solving the model you can change the level of information that gets printed to the screen with the ``verbosity`` setting. A verbosity of 1 (the default) prints warnings and timing; a verbosity of 2 prints solver output, and a verbosity of 0 prints nothing.
 
-.. literalinclude:: examples/solving_the_model.py
+.. code:: python
+    sol = m.solve(verbosity=0)
 
 Printing Results
 ================
 
 The solution object can represent itself as a table:
 
-.. literalinclude:: examples/printing_results_1.py
+.. code:: python
+    print(sol.table())
 
-.. literalinclude:: examples/printing_results_output_1.txt
+::
 
+    Cost
+    ----
+    15.59 [1/m**3]
+
+    Free Variables
+    --------------
+    x : 0.5774  [m]
+    y : 0.2887  [m]
+    z : 0.3849  [m]
+
+    Constants
+    ---------
+    S : 1  [m**2]
+
+    Sensitivities
+    -------------
+    S : -1.5
 
 We can also print the optimal value and solved variables individually.
 
-.. literalinclude:: examples/printing_results_2.py
+.. code:: python
+    print ("The optimal value is %s." % sol["cost"])
 
-.. literalinclude:: examples/printing_results_output_2.txt
+::
+
+    The optimal value is 15.5884619886.
+    The x dimension is 0.5774 meter.
+    The y dimension is 0.2887 meter.
 
 .. refactor this section; explain what can be done with a SolutionArray
 .. e.g. table(), __call__, ["variables"], etc.

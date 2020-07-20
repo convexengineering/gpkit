@@ -1,1 +1,0 @@
-Sankey(M).diagram(M['vgust'])

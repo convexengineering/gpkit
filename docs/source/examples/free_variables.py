@@ -1,3 +1,5 @@
+from gpkit import Variable
+
 # Declare a variable, x
 x = Variable("x")
 

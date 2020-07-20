@@ -1,1 +1,0 @@
-Sankey(M).sorted_by('constraints', 11)
