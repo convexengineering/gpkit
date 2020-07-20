@@ -1,5 +1,19 @@
 import pickle
-...  # build the model
+from gpkit import Model, Variable
+
+# build model (dummy)
+# decision variable
+x = Variable("x")
+y = Variable("y")
+
+# objective and constraints
+objective = 0.23 + x/y # minimize x and y
+constraints = [x + y <= 5, x >= 1, y >= 2]
+
+# create model
+m = Model(objective, constraints)
+
+# solve the model
 sol = m.solve()
 # uncomment the line below to verify a new model
 # sol.save("last_verified.sol")
