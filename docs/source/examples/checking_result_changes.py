@@ -15,13 +15,15 @@ m = Model(objective, constraints)
 
 # solve the model
 sol = m.solve()
+
+# save the current state of the model
+sol.save("last_verified.sol")
+
 # uncomment the line below to verify a new model
-# sol.save("last_verified.sol")
-last_verified_sol = pickle.load(open("last_verified.sol"))
 last_verified_sol = pickle.load(open("last_verified.sol", mode="rb"))
 if not sol.almost_equal(last_verified_sol, reltol=1e-3):
     print(last_verified_sol.diff(sol))
 
 # Note you can replace the last three lines above with
-print(sol.diff("last_verified.sol"))
+# print(sol.diff("last_verified.sol"))
 # if you don't mind doing the diff in that direction.
