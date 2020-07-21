@@ -1,3 +1,4 @@
+"Example VectorVariable declaration"
 from gpkit import VectorVariable
 # Declare a 3-element vector variable "x" with units of "m"
 x = VectorVariable(3, "x", "m", "Cube corner coordinates")

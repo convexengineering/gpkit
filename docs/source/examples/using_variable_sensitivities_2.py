@@ -1,3 +1,4 @@
+"Example variable sensitivity usage"
 import gpkit
 x = gpkit.Variable("x")
 x_squared_min = gpkit.Variable("x^2_{min}", 2)

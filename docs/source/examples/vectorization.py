@@ -1,5 +1,5 @@
+"Example Vectorize usage, from gpkit/tests/t_vars.py"
 import gpkit
-"from gpkit/tests/t_vars.py"
 
 def test_shapes():
     with gpkit.Vectorize(3):

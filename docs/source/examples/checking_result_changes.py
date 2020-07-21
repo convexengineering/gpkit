@@ -1,3 +1,4 @@
+"Example code for solution saving and differencing."
 import pickle
 from gpkit import Model, Variable
 

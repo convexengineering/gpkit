@@ -1,4 +1,6 @@
+"Example PosynomialInequality creation"
 from gpkit import Variable
+from gpkit.nomials import PosynomialInequality
 
 # consider a block with dimensions x, y, z less than 1
 # constrain surface area less than 1.0 m^2
@@ -7,4 +9,4 @@ y = Variable("y", "m")
 z = Variable("z", "m")
 S = Variable("S", 1.0, "m^2")
 c = (2*x*y + 2*x*z + 2*y*z <= S)
-print(type(c))  # gpkit.nomials.PosynomialInequality
+assert isinstance(c, PosynomialInequality)

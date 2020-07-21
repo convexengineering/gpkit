@@ -1,3 +1,4 @@
+"Example variable declaration"
 from gpkit import Variable
 
 # Declare a variable, x
