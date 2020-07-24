@@ -129,10 +129,10 @@ Using Variable Sensitivities
 
 Fixed variable sensitivities can be accessed from a SolutionArray’s ``["sensitivities"]["variables"]`` dict, as in this example:
 
-.. literalinclude:: examples/using_variable_sensitivities_1.py
+.. literalinclude:: examples/using_var_sens_1.py
 
 These sensitivities are actually log derivatives (:math:`\frac{d \mathrm{log}(y)}{d \mathrm{log}(x)}`); whereas a regular derivative is a tangent line, these are tangent monomials, so the ``1`` above indicates that ``x_min`` has a linear relation with the objective. This is confirmed by a further example:
 
-.. literalinclude:: examples/using_variable_sensitivities_2.py
+.. literalinclude:: examples/using_var_sens_2.py
 
 .. add a plot of a monomial approximation vs a tangent approximation

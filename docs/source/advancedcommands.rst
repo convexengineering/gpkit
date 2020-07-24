@@ -100,7 +100,7 @@ Here the variable ``x`` is being replaced with ``3`` in three ways: first by sub
 Substituting multiple values
 ----------------------------
 
-.. literalinclude:: examples/substituting_multiple_values.py
+.. literalinclude:: examples/sub_multi_values.py
 
 To substitute in multiple variables, pass them in as a dictionary where the keys are what will be replaced and values are what it will be replaced with. Note that you can also substitute for VectorVariables by their name or by their NomialArray.
 

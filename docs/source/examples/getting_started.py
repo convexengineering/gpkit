@@ -1,1 +1,0 @@
-from gpkit import Variable, VectorVariable, Model
