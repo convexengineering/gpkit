@@ -11,31 +11,22 @@ from ..exceptions import Infeasible
 
 def evaluate_linked(constants, linked):
     "Evaluates the values and gradients of linked variables."
-    kdc = KeyDict({k: adnumber(maybe_flatten(v))
+    kdc = KeyDict({k: adnumber(maybe_flatten(v), k)
                    for k, v in constants.items()})
-    kdc.log_gets = True
     kdc_plain = None
-    array_calulated, logged_array_gets = {}, {}
+    array_calulated = {}
     for v, f in linked.items():
         try:
             if v.veckey and v.veckey.original_fn:
                 if v.veckey not in array_calulated:
                     ofn = v.veckey.original_fn
                     array_calulated[v.veckey] = np.array(ofn(kdc))
-                    logged_array_gets[v.veckey] = kdc.logged_gets
-                logged_gets = logged_array_gets[v.veckey]
                 out = array_calulated[v.veckey][v.idx]
             else:
-                logged_gets = kdc.logged_gets
                 out = f(kdc)
             constants[v] = out.x
-            v.descr["gradients"] = {}
-            for key in logged_gets:
-                if key.shape:
-                    grad = out.gradient(kdc[key])
-                    v.gradients[key] = np.array(grad)
-                else:
-                    v.gradients[key] = out.d(kdc[key])
+            v.descr["gradients"] = {adn.tag: grad
+                                    for adn, grad in out.d().items()}
         except Exception as exception:  # pylint: disable=broad-except
             from .. import settings
             if settings.get("ad_errors_raise", None):
@@ -48,8 +39,6 @@ def evaluate_linked(constants, linked):
                 kdc_plain = KeyDict(constants)
             constants[v] = f(kdc_plain)
             v.descr.pop("gradients", None)
-        finally:
-            kdc.logged_gets = set()
 
 
 def progify(program, return_attr=None):
@@ -149,8 +138,7 @@ def run_sweep(genfunction, self, solution, skipsweepfailures,
         constants.update({var: sweep_vect[i]
                           for (var, sweep_vect) in sweep_vects.items()})
         if linked:
-            kdc = KeyDict(constants)
-            constants.update({v: f(kdc) for v, f in linked.items()})
+            evaluate_linked(constants, linked)
         program, solvefn = genfunction(self, constants)
         self.program.append(program)  # NOTE: SIDE EFFECTS
         try:
@@ -173,7 +161,7 @@ def run_sweep(genfunction, self, solution, skipsweepfailures,
         if var in ksweep:
             solution["sweepvariables"][var] = val
             del solution["constants"][var]
-        elif var not in linked:
+        elif (val[0] == val[1:]).all():
             solution["constants"][var] = [val[0]]
 
     if verbosity > 0:
