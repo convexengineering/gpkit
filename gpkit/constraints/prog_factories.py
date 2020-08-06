@@ -161,7 +161,14 @@ def run_sweep(genfunction, self, solution, skipsweepfailures,
         if var in ksweep:
             solution["sweepvariables"][var] = val
             del solution["constants"][var]
-        elif (val[0] == val[1:]).all():
+        elif linked:  # if any variables are linked, we check all of them
+            if hasattr(val[0], "shape"):
+                differences = ((l != val[0]).any() for l in val[1:])
+            else:
+                differences = (l != val[0] for l in val[1:])
+            if not any(differences):
+                solution["constants"][var] = [val[0]]
+        else:
             solution["constants"][var] = [val[0]]
 
     if verbosity > 0:
