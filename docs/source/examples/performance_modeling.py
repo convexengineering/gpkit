@@ -255,3 +255,9 @@ print(sol.table(tables=["loose constraints"]))
 M.append(MISSION.fs.aircraftp.Wburn >= 0.2*MISSION.fs.aircraftp.wing_aero.D)
 sol = M.solve(verbosity=0)
 print(sol.diff("solution.pkl", showvars=vars_of_interest, sortbymodel=False))
+
+# this will only make an image when run in jupyter notebook
+from gpkit.interactive.sankey import Sankey
+sankey = Sankey(sol, M).diagram(left=40, width=950, right=150)
+sankey.auto_save_svg("performance_modeling.svg")
+sankey

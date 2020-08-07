@@ -1,4 +1,5 @@
 "Implements ConstraintSet"
+import sys
 from collections import defaultdict, OrderedDict
 from itertools import chain
 import numpy as np
@@ -36,7 +37,7 @@ def _sort_constraints(item):
 
 def sort_constraints_dict(iterable):
     "Sort a dictionary of {k: constraint} and return its keys and values"
-    if isinstance(iterable, OrderedDict):
+    if sys.version_info >= (3, 7) or isinstance(iterable, OrderedDict):
         return iterable.keys(), iterable.values()
     items = sorted(list(iterable.items()), key=_sort_constraints)
     return (item[0] for item in items), (item[1] for item in items)

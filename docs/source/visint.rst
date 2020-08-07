@@ -1,8 +1,9 @@
 Visualization and Interaction
 *****************************
 
-Sankey Diagrams
-===============
+.. _sankey:
+Sensitivity Diagrams
+====================
 
 Requirements
 ------------
@@ -31,13 +32,13 @@ Code in this section uses the `CE solar model <https://github.com/convexengineer
 ::
 
     (objective) adds +1 to the sensitivity of Wtotal_Aircraft
-    (objective) is Wtotal_Aircraft [lbf] 
+    (objective) is Wtotal_Aircraft [lbf]
 
     Ⓐ adds +0.0075 to the overall sensitivity of Wtotal_Aircraft
-    Ⓐ is Wtotal_Aircraft <= 0.5*CL_Mission/Climb/AircraftDrag/WingAero_(0,)*S_Aircraft/Wing/Planform.2*V_Mission/Climb_(0, 0)**2*rho_Mission/Climb_(0, 0) 
+    Ⓐ is Wtotal_Aircraft <= 0.5*CL_Mission/Climb/AircraftDrag/WingAero_(0,)*S_Aircraft/Wing/Planform.2*V_Mission/Climb_(0, 0)**2*rho_Mission/Climb_(0, 0)
 
     Ⓑ adds +0.0117 to the overall sensitivity of Wtotal_Aircraft
-    Ⓑ is Wtotal_Aircraft <= 0.5*CL_Mission/Climb/AircraftDrag/WingAero_(1,)*S_Aircraft/Wing/Planform.2*V_Mission/Climb_(0, 1)**2*rho_Mission/Climb_(0, 1) 
+    Ⓑ is Wtotal_Aircraft <= 0.5*CL_Mission/Climb/AircraftDrag/WingAero_(1,)*S_Aircraft/Wing/Planform.2*V_Mission/Climb_(0, 1)**2*rho_Mission/Climb_(0, 1)
 
 
 Explanation
@@ -92,23 +93,6 @@ can how that sensitivity comes together:
 Sankey(M).diagram(M['vgust'])
 
 .. figure:: figures/sankey/solar_vgust.svg
-    :width: 700 px
-
-
-Equivalent Variables
-^^^^^^^^^^^^^^^^^^^^
-
-If any variables are equal to the diagram's variable (modulo some
-constant factor; e.g. ``2*x == y`` counts for this, as does ``2*x <= y``
-if the constraint is sensitive), they are found and plotted
-at the same time, and all shown on the left. The constraints responsible
-for this are shown next to their labels.
-
-.. code:: python
-
-    Sankey(M).sorted_by('constraints', 11)
-
-.. figure:: figures/sankey/solar_tmin.svg
     :width: 700 px
 
 
