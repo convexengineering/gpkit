@@ -63,7 +63,7 @@ class Sankey:
         elif isinstance(constrset, Iterable):
             for i, constr in enumerate(constrset):
                 total_sens += self.constrlinks(constr, target, i, depth)
-        else:
+        elif constrset in self.csenss:
             total_sens = -abs(self.csenss[constrset])
         if switchedtarget:
             self.links[target, switchedtarget] += total_sens
@@ -127,12 +127,13 @@ class Sankey:
             self.links[self.leftlabel, str(variable)] = \
                 self.varlinks(self.cset, self.leftlabel, variable.key)
         links = []
+        maxflow = np.abs(list(self.links.values())).max()
         for (source, target), value in self.links.items():
             if not flowright:  # reverse by default, sigh
                 source, target = target, source
             links.append({"source": source, "target": target,
-                          "value": abs(value), "title": "%+.2g" % value,
-                          "color": getcolor(value)})
+                          "value": max(abs(value), maxflow/1e5),
+                          "title": "%+.2g" % value, "color": getcolor(value)})
         out = SankeyWidget(nodes=self.nodes, links=links,
                            layout=Layout(width=str(width),
                                          height=str(height)),
