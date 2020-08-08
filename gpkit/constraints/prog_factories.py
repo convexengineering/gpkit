@@ -26,7 +26,8 @@ def evaluate_linked(constants, linked):
                 out = f(kdc)
             constants[v] = out.x
             v.descr["gradients"] = {adn.tag: grad
-                                    for adn, grad in out.d().items()}
+                                    for adn, grad in out.d().items()
+                                    if adn.tag}  # else it's user-created
         except Exception as exception:  # pylint: disable=broad-except
             from .. import settings
             if settings.get("ad_errors_raise", None):
@@ -112,7 +113,7 @@ def solvify(genfunction):
     return solvefn
 
 
-# pylint: disable=too-many-locals,too-many-arguments
+# pylint: disable=too-many-locals,too-many-arguments,too-many-branches
 def run_sweep(genfunction, self, solution, skipsweepfailures,
               constants, sweep, linked, solver, verbosity, **solveargs):
     "Runs through a sweep."
