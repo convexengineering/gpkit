@@ -1,4 +1,4 @@
-"verifies that bounds are caught through monomials"
+"Verifies that bounds are caught through monomials"
 from gpkit import Model, parse_variables
 from gpkit.exceptions import UnboundedGP, UnknownInfeasible
 
