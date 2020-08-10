@@ -1,7 +1,7 @@
 """Implements the GPkit interface to MOSEK (version >= 9)
    through python-based Optimizer API"""
-import mosek
 import numpy as np
+import mosek
 from ..exceptions import (UnknownInfeasible, InvalidLicense,
                           PrimalInfeasible, DualInfeasible)
 

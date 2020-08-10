@@ -50,7 +50,7 @@ For some applications, it is useful to call external codes which may not be GP c
                       & \frac{\pi}{4} \leq x \leq \frac{\pi}{2}
                       \end{array}
 
-This problem is not GP compatible due to the sin(x) constraint.  One approach might be to take the first term of the Taylor expansion of sin(x) and attempt to solve:
+This problem is not GP compatible due to the :math:`sin(x)` constraint.  One approach might be to take the first term of the Taylor expansion of :math:`sin(x)` and attempt to solve:
 
 .. literalinclude:: examples/sin_approx_example.py
 

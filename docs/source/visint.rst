@@ -6,7 +6,7 @@ Sankey Diagrams
 
 Requirements
 ------------
--  jupyter notebook
+-  Jupyter Notebook
 -  `ipysankeywidget <https://github.com/ricklupton/ipysankeywidget>`__
 
 Example
@@ -88,8 +88,8 @@ Fixed variables can have a nonzero overall sensitivity. Sankey diagrams
 can how that sensitivity comes together:
 
 .. code:: python
-
-Sankey(M).diagram(M['vgust'])
+    
+    Sankey(M).diagram(M['vgust']) 
 
 .. figure:: figures/sankey/solar_vgust.svg
     :width: 700 px
@@ -104,7 +104,7 @@ if the constraint is sensitive), they are found and plotted
 at the same time, and all shown on the left. The constraints responsible
 for this are shown next to their labels.
 
-.. code:: python
+.. code-block:: python
 
     Sankey(M).sorted_by('constraints', 11)
 
@@ -122,7 +122,6 @@ the sum of its constraints' sensitivities. Gray lines in this diagram
 indicate models without any tight constraints.
 
 .. code:: python
-
     Sankey(M).diagram(left=60, right=90, width=1050)
 
 .. figure:: figures/sankey/solar.svg

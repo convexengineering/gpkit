@@ -22,3 +22,4 @@ class ExternalConstraint:
         res = external_code(x_star)
         # ...and returns a linearized posy <= 1
         return (self.y >= res * self.x/x_star)
+        
