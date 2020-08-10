@@ -17,7 +17,8 @@ print("Solved after %2i passes, cost logtol +/-%.3g" % (bst1.nsols, bst1.tol))
 l_vals = np.linspace(1, 10, 10)
 sol1 = bst1.sample_at(l_vals)
 print("values of l: %s" % l_vals)
-print("values of A: %s" % sol1("A"))
+print("values of A: [%s] %s" %
+      (" ".join("% .1f" % n for n in sol1("A").magnitude), sol1("A").units))
 cost_estimate = sol1["cost"]
 cost_lb, cost_ub = sol1.cost_lb(), sol1.cost_ub()
 print("cost lower bound:\n%s\n" % cost_lb)

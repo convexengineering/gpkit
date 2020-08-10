@@ -113,8 +113,8 @@ class FlightSegment(Model):
         self.Wburn = self.aircraftp.Wburn
         self.Wfuel = self.aircraftp.Wfuel
 
-        return {"flightstate": self.flightstate,
-                "aircraft performance": self.aircraftp}
+        return {"aircraft performance": self.aircraftp,
+                "flightstate": self.flightstate}
 
 
 class Mission(Model):
@@ -179,12 +179,12 @@ class WingAero(Model):
         mu = state.mu
 
         return {
-            "drag model":
-                CD >= 0.074/Re**0.2 + CL**2/np.pi/A/e,
+            "definition of D":
+                D >= 0.5*rho*V**2*CD*S,
             "definition of Re":
                 Re == rho*V*c/mu,
-            "definition of D":
-                D >= 0.5*rho*V**2*CD*S}
+            "drag model":
+                CD >= 0.074/Re**0.2 + CL**2/np.pi/A/e}
 
 
 class Wing(Model):
@@ -208,10 +208,10 @@ class Wing(Model):
     """
     @parse_variables(__doc__, globals())
     def setup(self):
-        return {"parametrization of wing weight":
-                    W >= S*rho,
-                "definition of mean chord":
-                    c == (S/A)**0.5}
+        return {"definition of mean chord":
+                    c == (S/A)**0.5,
+                "parametrization of wing weight":
+                    W >= S*rho}
 
     dynamic = WingAero
 

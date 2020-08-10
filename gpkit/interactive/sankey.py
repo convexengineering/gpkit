@@ -1,5 +1,6 @@
 "implements Sankey"
-from collections import defaultdict, Iterable
+from collections import defaultdict
+from collections.abc import Iterable
 import numpy as np
 from ipywidgets import Layout
 from ipysankeywidget import SankeyWidget  # pylint: disable=import-error

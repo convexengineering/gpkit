@@ -39,8 +39,8 @@ class ConstraintsRelaxedEqually(ConstraintSet):
                                    for c in original_constraints.flat()]
 
         ConstraintSet.__init__(self, {
-            "relaxed constraints": relaxed_constraints,
-            "minimum relaxation": self.relaxvar >= 1}, original_substitutions)
+            "minimum relaxation": self.relaxvar >= 1,
+            "relaxed constraints": relaxed_constraints}, original_substitutions)
 
 
 class ConstraintsRelaxed(ConstraintSet):
@@ -78,8 +78,8 @@ class ConstraintsRelaxed(ConstraintSet):
                 for i, c in enumerate(original_constraints.flat())]
 
         ConstraintSet.__init__(self, {
-            "relaxed constraints": relaxed_constraints,
-            "minimum relaxation": self.relaxvars >= 1}, original_substitutions)
+            "minimum relaxation": self.relaxvars >= 1,
+            "relaxed constraints": relaxed_constraints}, original_substitutions)
 
 
 class ConstantsRelaxed(ConstraintSet):
