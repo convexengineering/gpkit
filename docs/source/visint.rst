@@ -117,8 +117,9 @@ Models
 When created without a variable, the diagram shows the sensitivity of
 every named model to becoming locally easier. Because derivatives are
 additive, these sensitivities are too: a model's sensitivity is equal to
-the sum of its constraints' sensitivities. Gray lines in this diagram
-indicate models without any tight constraints.
+the sum of its constraints' sensitivities and the magnitude of its
+fixed-variable sensitivities. Gray lines in this diagram indicate models
+without any tight constraints or sensitive fixed variables.
 
 .. code:: python
 

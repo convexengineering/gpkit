@@ -32,6 +32,7 @@ class Sankey:
 
     def __init__(self, solution, constraintset, leftlabel=None):
         self.csenss = solution["sensitivities"]["constraints"]
+        self.vsenss = solution["sensitivities"]["variables"]
         self.cset = constraintset
         if leftlabel is None:
             leftlabel = lineagestr(self.cset) or self.cset.__class__.__name__
@@ -56,6 +57,9 @@ class Sankey:
             switchedtarget = target
             target = self.add_node(target, cset.lineage[-1][0], "namedmodel")
             depth += 1
+            if not var:
+                for vk in cset.unique_varkeys:
+                    total_sens += -abs(self.vsenss.get(vk, 0))
         elif depth == 0:
             depth += 1  # to make top-level named models look right
         elif isinstance(cset, ArrayConstraint) and cset.constraints.size > 1:
@@ -132,7 +136,7 @@ class Sankey:
                          lambda s, t, v: "subarray" not in self.nodes[s])
         self.filterlinks("all constraints",
                          lambda s, t, v: "constraint" not in self.nodes[s],
-                         forced=constraints)
+                         forced=not constraints)
         self.filterlinks("constraint labels",
                          lambda s, t, v: "constraintlabel" not in self.nodes[s])
 
