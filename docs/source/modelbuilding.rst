@@ -5,22 +5,9 @@ Checking for result changes
 ===========================
 Tracking the effects of changes to complex models can get out of hand;
 we recommend saving solutions with ``sol.save()``, then checking that new solutions are almost equivalent
-with ``sol1.almost_equal(sol2)`` and/or ``print sol1.diff(sol2)``, as shown below.
+with ``sol1.almost_equal(sol2)`` and/or ``print(sol1.diff(sol2))``, as shown below.
 
-.. code-block:: python
-
-    import pickle
-    ...  # build the model
-    sol = m.solve()
-    # uncomment the line below to verify a new model
-    # sol.save("last_verified.sol")
-    last_verified_sol = pickle.load(open("last_verified.sol"))
-    if not sol.almost_equal(last_verified_sol, reltol=1e-3):
-        print last_verified_sol.diff(sol)
-
-    # Note you can replace the last three lines above with
-    print sol.diff("last_verified.sol")
-    # if you don't mind doing the diff in that direction.
+.. literalinclude:: examples/checking_result_changes.py
 
 You can also check differences between swept solutions, or between
 a point solution and a sweep.
@@ -55,21 +42,7 @@ Vectorization
 
 ``gpkit.Vectorize`` creates an environment in which Variables are created with an additional dimension:
 
-.. code-block:: python
-
-    "from gpkit/tests/t_vars.py"
-
-    def test_shapes(self):
-        with gpkit.Vectorize(3):
-            with gpkit.Vectorize(5):
-                y = gpkit.Variable("y")
-                x = gpkit.VectorVariable(2, "x")
-            z = gpkit.VectorVariable(7, "z")
-
-        self.assertEqual(y.shape, (5, 3))
-        self.assertEqual(x.shape, (2, 5, 3))
-        self.assertEqual(z.shape, (7, 3))
-
+.. literalinclude:: examples/vectorization.py
 
 This allows models written with scalar constraints to be created with vector constraints:
 

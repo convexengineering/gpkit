@@ -1,6 +1,7 @@
 "Relaxation examples"
 
 from gpkit import Variable, Model
+
 x = Variable("x")
 x_min = Variable("x_min", 2)
 x_max = Variable("x_max", 1)
@@ -13,7 +14,9 @@ print("")
 
 print("With constraints relaxed equally")
 print("================================")
+
 from gpkit.constraints.relax import ConstraintsRelaxedEqually
+
 allrelaxed = ConstraintsRelaxedEqually(m)
 mr1 = Model(allrelaxed.relaxvar, allrelaxed)
 print(mr1)
@@ -22,7 +25,9 @@ print("")
 
 print("With constraints relaxed individually")
 print("=====================================")
+
 from gpkit.constraints.relax import ConstraintsRelaxed
+
 constraintsrelaxed = ConstraintsRelaxed(m)
 mr2 = Model(constraintsrelaxed.relaxvars.prod() * m.cost**0.01,
             # add a bit of the original cost in
@@ -33,7 +38,9 @@ print("")
 
 print("With constants relaxed individually")
 print("===================================")
+
 from gpkit.constraints.relax import ConstantsRelaxed
+
 constantsrelaxed = ConstantsRelaxed(m)
 mr3 = Model(constantsrelaxed.relaxvars.prod() * m.cost**0.01,
             # add a bit of the original cost in
