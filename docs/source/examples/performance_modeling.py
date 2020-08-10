@@ -39,10 +39,10 @@ class AircraftP(Model):
         CL = self.wing_aero.CL
 
         return {
-            "lift":
-                W + Wfuel <= 0.5*rho*CL*S*V**2,
             "fuel burn rate":
                 Wburn >= 0.1*D,
+            "lift":
+                W + Wfuel <= 0.5*rho*CL*S*V**2,
             "performance":
                 self.perf_models}
 

@@ -13,10 +13,10 @@ Constraints
 
   FlightSegment
    AircraftP
-    "lift":
-      Aircraft.W + Wfuel[:] <= 0.5·rho[:]·CL[:]·S·V[:]²
     "fuel burn rate":
       Wburn[:] >= 0.1·D[:]
+    "lift":
+      Aircraft.W + Wfuel[:] <= 0.5·rho[:]·CL[:]·S·V[:]²
     "performance":
       WingAero
        "definition of D":
