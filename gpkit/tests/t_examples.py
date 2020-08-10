@@ -9,7 +9,6 @@ from gpkit.tests.helpers import generate_example_tests
 from gpkit.small_scripts import mag
 from gpkit.small_classes import Quantity
 from gpkit.constraints.loose import Loose
-from gpkit.nomials import Monomial, Posynomial, PosynomialInequality
 from gpkit.exceptions import (UnknownInfeasible,
                               PrimalInfeasible, DualInfeasible, UnboundedGP)
 
@@ -80,18 +79,6 @@ class TestExamples(unittest.TestCase):
         sol = example.sol
         self.assertAlmostEqual(sol["cost"], 0.48, 2)
 
-    def test_creating_monomials(self, example):
-        monomial = example.m
-        self.assertIsInstance(monomial, Monomial)
-
-    def test_creating_posynomials(self, example):
-        posynomial = example.p
-        self.assertIsInstance(posynomial, Posynomial)
-
-    def test_declaring_constraints(self, example):
-        c = example.c
-        self.assertIsInstance(c, PosynomialInequality)
-
     def test_evaluated_fixed_variables(self, example):
         sol = example.sol
         t_night = example.t_night
@@ -114,29 +101,6 @@ class TestExamples(unittest.TestCase):
         sol = m.localsolve(verbosity=0)
         self.assertAlmostEqual(sol["cost"], 0.707, places=3)
 
-    def test_fixed_variables_1(self, example):
-        rho = example.rho
-        self.assertAlmostEqual(rho.value.magnitude, 1.225, places=3)
-
-    def test_fixed_variables_2(self, example):
-        pi = example.pi
-        self.assertAlmostEqual(pi.value, 3.14, places=2)
-
-    def test_formulating_a_model(self, example):
-        m = example.m
-        sol = m.solve(verbosity=0)
-        self.assertAlmostEqual(sol["cost"], 0.0055, places=4)
-
-    def test_free_variables(self, example):
-        z = example.z
-        z_descr = z.key.descr
-        self.assertEqual(z_descr["name"], "z")
-        self.assertEqual(z_descr["unitrepr"], "m")
-        self.assertEqual(
-            z_descr["label"],
-            "A variable called z with units of meters"
-        )
-
     def test_freeing_fixed_variables(self, example):
         x = example.x
         y = Variable("y", 3)
@@ -149,6 +113,10 @@ class TestExamples(unittest.TestCase):
         sol = m.solve(verbosity=0)
         self.assertTrue(abs(sol["cost"] - 2) <= 1e-4)
         self.assertTrue(y in sol["freevariables"])
+
+    def test_gettingstarted(self, example):
+        pass
+
 
     def test_loose_constraintsets(self, example):
         m = example.m
@@ -176,26 +144,6 @@ class TestExamples(unittest.TestCase):
         m = example.m
         sol = m.solve(verbosity=0)
         self.assertAlmostEqual(sol["cost"], 2, places=2)
-
-    def test_using_var_sens_1(self, example):
-        sol = example.sol
-        x_min = example.x_min
-        sens_x_min = sol["sensitivities"]["variables"][x_min]
-        self.assertAlmostEqual(sol["cost"], 2, places=2)
-        self.assertAlmostEqual(sens_x_min, 1.00, places=2)
-
-    def test_using_var_sens_2(self, example):
-        sol = example.sol
-        x_squared_min = example.x_squared_min
-        sens_x_min = sol["sensitivities"]["variables"][x_squared_min]
-        self.assertAlmostEqual(sol["cost"], 1.414, places=3)
-        self.assertAlmostEqual(sens_x_min, 0.50, places=2)
-
-    def test_vector_variables(self, example):
-        x = example.x
-        x_min = example.x_min
-        self.assertEqual(x.shape, (3,))
-        self.assertEqual(x_min.shape, (3,))
 
     def test_vectorization(self, example):
         x = example.x
