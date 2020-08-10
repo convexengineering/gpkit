@@ -36,17 +36,13 @@ Most Sensitive Constraints
 
 Solution Diff
 =============
-(positive means the argument is smaller)
+(argument is the baseline solution)
 
 ** no constraint differences **
 
 Relative Differences |above 1%|
 -------------------------------
 The largest is +0%.
-
-Sensitivity Differences |above 0.1|
------------------------------------
-The largest is +0.
 
 SWEEP
 =====
@@ -90,7 +86,7 @@ Most Sensitive Constraints (in last sweep)
 
 Solution Diff
 =============
-(positive means the argument is smaller)
+(argument is the baseline solution)
 
 ** no constraint differences **
 

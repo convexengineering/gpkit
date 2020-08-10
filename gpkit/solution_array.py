@@ -334,7 +334,7 @@ class SolutionArray(DictOfLists):
 
     # pylint: disable=too-many-locals, too-many-branches, too-many-statements
     def diff(self, other, showvars=None, *,
-             constraintsdiff=True, senssdiff=True, sensstol=0.1,
+             constraintsdiff=True, senssdiff=False, sensstol=0.1,
              absdiff=False, abstol=0, reldiff=True, reltol=1.0, **tableargs):
         """Outputs differences between this solution and another
 
@@ -369,7 +369,7 @@ class SolutionArray(DictOfLists):
         svars, ovars = self["variables"], other["variables"]
         lines = ["Solution Diff",
                  "=============",
-                 "(positive means the argument is smaller)", ""]
+                 "(argument is the baseline solution)", ""]
         svks, ovks = set(svars), set(ovars)
         if showvars:
             lines[0] += " (for selected variables)"
@@ -383,11 +383,9 @@ class SolutionArray(DictOfLists):
             else:
                 cdiff = ["Constraint Differences",
                          "**********************"]
-                cdiff.extend(difflib.unified_diff(
+                cdiff.extend(list(difflib.unified_diff(
                     other.modelstr.split("\n"), self.modelstr.split("\n"),
-                    fromfile="only in argument", tofile="not in argument",
-                    lineterm="", n=3))
-                cdiff.insert(4, "")
+                    lineterm="", n=3))[2:])
                 cdiff += ["", "**********************", ""]
                 lines += cdiff
         if svks - ovks:
