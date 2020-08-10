@@ -1,6 +1,24 @@
 Visualization and Interaction
 *****************************
 
+Plotting a 1D Sweep
+==================
+
+Methods exist to facilitate creating, solving, and plotting the results of a single-variable sweep (see :ref:`Sweeps` for details). Example usage is as follows:
+
+.. literalinclude:: examples/plot_sweep1d.py
+
+Which results in:
+
+.. figure:: examples/plot_sweep1d.png
+    :align: center
+
+.. figure:: examples/plot_autosweep1d.png
+    :align: center
+
+
+
+
 .. _sankey:
 Sensitivity Diagrams
 ====================
@@ -17,28 +35,16 @@ Code in this section uses the `CE solar model <https://github.com/convexengineer
 
 .. code:: python
 
-    from solar import *
-    Vehicle = Aircraft(Npod=1, sp = False)
+    from solar.solar import *
+    Vehicle = Aircraft(Npod=3, sp=True)
     M = Mission(Vehicle, latitude=[20])
     M.cost = M[M.aircraft.Wtotal]
-    sol = M.solve()
+    sol = M.localsolve("mosek_cli")
 
     from gpkit.interactive.sankey import Sankey
-    Sankey(M).diagram(M.aircraft.Wtotal)
+    Sankey(sol, M, "SolarMission").diagram(M.aircraft.Wtotal, left=210, right=130)
 
-.. figure:: figures/sankey/solar_wtotal.svg
-    :width: 700 px
-
-::
-
-    (objective) adds +1 to the sensitivity of Wtotal_Aircraft
-    (objective) is Wtotal_Aircraft [lbf]
-
-    Ⓐ adds +0.0075 to the overall sensitivity of Wtotal_Aircraft
-    Ⓐ is Wtotal_Aircraft <= 0.5*CL_Mission/Climb/AircraftDrag/WingAero_(0,)*S_Aircraft/Wing/Planform.2*V_Mission/Climb_(0, 0)**2*rho_Mission/Climb_(0, 0)
-
-    Ⓑ adds +0.0117 to the overall sensitivity of Wtotal_Aircraft
-    Ⓑ is Wtotal_Aircraft <= 0.5*CL_Mission/Climb/AircraftDrag/WingAero_(1,)*S_Aircraft/Wing/Planform.2*V_Mission/Climb_(0, 1)**2*rho_Mission/Climb_(0, 1)
+.. figure:: figures/solar/SolarMission_Wtotal.png
 
 
 Explanation
@@ -53,7 +59,7 @@ is, the objective of the overall model would improve if that variable's
 value were increased *in that constraint alone*. Red indicates a
 positive sensitivity: the objective and the the constraint 'want' that
 variable's value decreased. Gray flows indicate a sensitivity whose
-absolute value is below ``1e-7``, i.e. a constraint that is inactive for
+absolute value is below ``1e-2``, i.e. a constraint that is inactive for
 that variable. Where equal red and blue flows meet, they cancel each
 other out to gray.
 
@@ -77,10 +83,9 @@ pressures on wingspan:
 
 .. code:: python
 
-    Sankey(M).diagram(M.aircraft.b)
+    Sankey(sol, M, "SolarMission").diagram(M.aircraft.b, right=180)
 
-.. figure:: figures/sankey/solar_b.svg
-    :width: 700 px
+.. figure:: figures/solar/SolarMission_b.png
 
 Fixed
 ^^^^^
@@ -90,10 +95,20 @@ can how that sensitivity comes together:
 
 .. code:: python
 
-Sankey(M).diagram(M['vgust'])
+    Sankey(sol, M, "SolarMission").diagram(M.variables_byname("tmin")[0], right=160, left=10)
 
-.. figure:: figures/sankey/solar_vgust.svg
-    :width: 700 px
+.. figure:: figures/solar/SolarMission_tmin.png
+
+
+Note that the only difference between free and fixed variabels from this perspective
+is their final sensitivity; for example ``Nprop``, the number of propellers on the
+plane, has almost zero sensitivity, much like the wingspan ``b``, above.
+
+.. code:: python
+
+    Sankey(sol, M, "SolarMission").diagram(M.variables_byname("tmin")[0], right=160, left=10)
+
+.. figure:: figures/solar/SolarMission_Nprop.png
 
 
 Models
@@ -107,10 +122,9 @@ indicate models without any tight constraints.
 
 .. code:: python
 
-    Sankey(M).diagram(left=60, right=90, width=1050)
+    Sankey(sol, M, "SolarMission").diagram(height=600)
 
-.. figure:: figures/sankey/solar.svg
-    :width: 700 px
+.. figure:: figures/solar/SolarMission.png
 
 
 Syntax
@@ -127,30 +141,6 @@ Syntax
 +-------------------------------+-------------------------------------------------------------------------------+
 | ``s.diagram(width=...)``      | Sets width in pixels. Same for height.                                        |
 +-------------------------------+-------------------------------------------------------------------------------+
-| ``s.diagram(left=...)``       | Sets top margin in pixels. Same for right, top. bottom.                       |
-|                               | Use if the left-hand text is being cut off.                                   |
+| ``s.diagram(left=...)``       | Sets left (top, right, bottom) margin in pixels.                              |
+|                               | Use if text is being cut off.                                                 |
 +-------------------------------+-------------------------------------------------------------------------------+
-| ``s.diagram(flowright=True)`` | Shows the variable / top constraint on the right instead of the left.         |
-+-------------------------------+-------------------------------------------------------------------------------+
-| ``s.sorted_by("maxflow", 0)`` | Creates diagram of the variable with the largest single constraint            |
-|                               | sensitivity. (change the ``0`` index to go down the list)                     |
-+-------------------------------+-------------------------------------------------------------------------------+
-| ``s.sorted_by("constraints",  | Creates diagram of the variable that's in the most constraints.               |
-| 0)``                          | (change the ``0`` index to go down the list)                                  |
-+-------------------------------+-------------------------------------------------------------------------------+
-
-
-Plotting a 1D Sweep
-==================
-
-Methods exist to facilitate creating, solving, and plotting the results of a single-variable sweep (see :ref:`Sweeps` for details). Example usage is as follows:
-
-.. literalinclude:: examples/plot_sweep1d.py
-
-Which results in:
-
-.. figure:: examples/plot_sweep1d.png
-    :align: center
-
-.. figure:: examples/plot_autosweep1d.png
-    :align: center

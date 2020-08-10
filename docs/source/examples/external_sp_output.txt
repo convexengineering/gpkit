@@ -11,5 +11,5 @@ y : 0.7071
 Most Sensitive Constraints
 --------------------------
     +1 : <external_constraint.ExternalConstraint object>
-    +1 : x >= 0.785
+    +1 : x ≥ 0.785
 

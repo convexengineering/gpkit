@@ -130,12 +130,10 @@ class TestConstraint(unittest.TestCase):
         self.assertEqual(c.as_hmapslt1({}), [(y**2/x).hmap])
         self.assertEqual(c.left, x)
         self.assertEqual(c.right, y**2)
-        self.assertTrue(">=" in str(c))
         c = PosynomialInequality(x, "<=", y**2)
         self.assertEqual(c.as_hmapslt1({}), [(x/y**2).hmap])
         self.assertEqual(c.left, x)
         self.assertEqual(c.right, y**2)
-        self.assertTrue("<=" in str(c))
         self.assertEqual(type((1 >= x).latex()), str)
 
     def test_oper_overload(self):
@@ -146,7 +144,6 @@ class TestConstraint(unittest.TestCase):
         self.assertEqual(c.as_hmapslt1({}), [(1/y + x**2/y).hmap])
         self.assertEqual(c.left, y)
         self.assertEqual(c.right, 1 + x**2)
-        self.assertTrue(">=" in str(c))
         # same constraint, switched operator direction
         c2 = (1 + x**2 <= y)  # same as c
         self.assertEqual(c2.as_hmapslt1({}), c.as_hmapslt1({}))

@@ -7,15 +7,15 @@ Warnings
 ========
 Unexpectedly Loose Constraints in sweep 0
 -----------------------------------------
-0.9585 >= 0.9187 : V_{f_{avail}} >= V_f
+0.9585 >= 0.9187 : V_{f_{avail}} ≥ V_f
 
 Unexpectedly Loose Constraints in sweep 1
 -----------------------------------------
-0.9585 >= 0.9187 : V_{f_{avail}} >= V_f
+0.9585 >= 0.9187 : V_{f_{avail}} ≥ V_f
 
 Unexpectedly Loose Constraints in sweep 2
 -----------------------------------------
-0.9585 >= 0.9187 : V_{f_{avail}} >= V_f
+0.9585 >= 0.9187 : V_{f_{avail}} ≥ V_f
 
 Swept Variables
 ---------------
@@ -52,9 +52,9 @@ Most Sensitive Variables
 
 Most Sensitive Constraints (in last sweep)
 ------------------------------------------
-  +1.2 : C_D >= (CDA0)/S + k·C_f·(\frac{S}{S_{wet}}) + C_L²/(π·A·e)
-  +1.2 : D >= 0.5·\rho·S·C_D·V²
-  +1.2 : T_{flight} >= Range/V
-  +1.2 : W_f >= TSFC·T_{flight}·D
- +0.74 : C_f >= 0.074/Re^0.2
+  +1.2 : C_D ≥ (CDA0)/S + k·C_f·(\frac{S}{S_{wet}}) + C_L²/(π·A·e)
+  +1.2 : D ≥ 0.5·\rho·S·C_D·V²
+  +1.2 : T_{flight} ≥ Range/V
+  +1.2 : W_f ≥ TSFC·T_{flight}·D
+ +0.74 : C_f ≥ 0.074/Re^0.2
 

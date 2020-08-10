@@ -7,10 +7,10 @@ Cost
 
 Constraints
 -----------
- F >= D + T
+ F ≥ D + T
  D = rf·V²·Ap
  Ap = nu
  T = mf·V
- mf >= mi + mb
+ mf ≥ mi + mb
  mf = rf·V
- Fs <= mi
+ Fs ≤ mi

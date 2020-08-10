@@ -65,7 +65,7 @@ class TestVarKey(unittest.TestCase):
         self.assertEqual(str(w*(ii/nni))[:4], "w·[[")
         self.assertEqual(str(w*(ii/nni))[-2:], "]]")
         self.assertEqual(str(w >= (x[0]*t + x[1]*u)/v),
-                         "w >= (x[0]·t + x[1]·u)/v")
+                         "w ≥ (x[0]·t + x[1]·u)/v")
         self.assertEqual(str(x), "x[:]")
         self.assertEqual(str(x*2), "x[:]·2")
         self.assertEqual(str(2*x), "2·x[:]")
@@ -77,8 +77,8 @@ class TestVarKey(unittest.TestCase):
         self.assertEqual(str(-x), "-x[:]")
         self.assertEqual(str(x/y/z), "x[:]/y[:]/z[:]")
         self.assertEqual(str(x/(y/z)), "x[:]/(y[:]/z[:])")
-        self.assertEqual(str(x >= y), "x[:] >= y[:]")
-        self.assertEqual(str(x >= y + z), "x[:] >= y[:] + z[:]")
+        self.assertEqual(str(x <= y), "x[:] ≤ y[:]")
+        self.assertEqual(str(x >= y + z), "x[:] ≥ y[:] + z[:]")
         self.assertEqual(str(x[:2]), "x[:2]")
         self.assertEqual(str(x[:]), "x[:]")
         self.assertEqual(str(x[1:]), "x[1:]")
@@ -87,7 +87,7 @@ class TestVarKey(unittest.TestCase):
                          "x[:2] = (y[:]·[1, 2, 3])[:2]")
         self.assertEqual(str(y + [1, 2, 3]), "y[:] + [1, 2, 3]")
         self.assertEqual(str(x == y + [1, 2, 3]), "x[:] = y[:] + [1, 2, 3]")
-        self.assertEqual(str(x >= y + [1, 2, 3]), "x[:] >= y[:] + [1, 2, 3]")
+        self.assertEqual(str(x >= y + [1, 2, 3]), "x[:] ≥ y[:] + [1, 2, 3]")
         self.assertEqual(str(a[:, 0]), "a[:,0]")
         self.assertEqual(str(a[2, :]), "a[2,:]")
         g = 1 + 3*a[2, 0]**2
@@ -97,7 +97,7 @@ class TestVarKey(unittest.TestCase):
         self.assertEqual(gstrbefore, gstrafter)
 
         cstr = str(2*a >= a + np.ones((3, 2))/2)
-        self.assertEqual(cstr, """2·a[:] >= a[:] + [[0.5 0.5]
+        self.assertEqual(cstr, """2·a[:] ≥ a[:] + [[0.5 0.5]
            [0.5 0.5]
            [0.5 0.5]]""")
 

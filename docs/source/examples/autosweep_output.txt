@@ -37,5 +37,5 @@ l : [ +1        +2.5      +4       ]
 
 Most Sensitive Constraints (in last sweep)
 ------------------------------------------
-    +2 : A >= (l/3)²
+    +2 : A ≥ (l/3)²
 

@@ -7,31 +7,31 @@ Constraints
 -----------
  Mission
   "definition of Wburn":
-    Wfuel[:-1] >= Wfuel[1:] + Wburn[:-1]
+    Wfuel[:-1] ≥ Wfuel[1:] + Wburn[:-1]
   "require fuel for the last leg":
-    Wfuel[3] >= Wburn[3]
+    Wfuel[3] ≥ Wburn[3]
 
   FlightSegment
    AircraftP
     "fuel burn rate":
-      Wburn[:] >= 0.1·D[:]
+      Wburn[:] ≥ 0.1·D[:]
     "lift":
-      Aircraft.W + Wfuel[:] <= 0.5·rho[:]·CL[:]·S·V[:]²
+      Aircraft.W + Wfuel[:] ≤ 0.5·rho[:]·CL[:]·S·V[:]²
     "performance":
       WingAero
        "definition of D":
-         D[:] >= 0.5·rho[:]·V[:]²·CD[:]·S
+         D[:] ≥ 0.5·rho[:]·V[:]²·CD[:]·S
        "definition of Re":
          Re[:] = rho[:]·V[:]·c/mu[:]
        "drag model":
-         CD[:] >= 0.074/Re[:]^0.2 + CL[:]²/π/A/e[:]
+         CD[:] ≥ 0.074/Re[:]^0.2 + CL[:]²/π/A/e[:]
 
    FlightState
     (no constraints)
 
  Aircraft
   "definition of W":
-    Aircraft.W >= Aircraft.Fuselage.W + Aircraft.Wing.W
+    Aircraft.W ≥ Aircraft.Fuselage.W + Aircraft.Wing.W
   "components":
     Fuselage
      (no constraints)
@@ -40,7 +40,7 @@ Constraints
      "definition of mean chord":
        c = (S/A)^0.5
      "parametrization of wing weight":
-       Aircraft.Wing.W >= S·Aircraft.Wing.rho
+       Aircraft.Wing.W ≥ S·Aircraft.Wing.rho
 
 Optimal Cost
 ------------
@@ -84,15 +84,15 @@ rho : [ -0.12     -0.11     -0.11     -0.11    ] air density
 Most Sensitive Constraints
 --------------------------
        | Aircraft
-  +1.4 : .W >= .Fuselage.W + .Wing.W
+  +1.4 : .W ≥ .Fuselage.W + .Wing.W
 
        | Mission
-    +1 : Wfuel[0] >= Wfuel[1] + Wburn[0]
- +0.75 : Wfuel[1] >= Wfuel[2] + Wburn[1]
-  +0.5 : Wfuel[2] >= Wfuel[3] + Wburn[2]
+    +1 : Wfuel[0] ≥ Wfuel[1] + Wburn[0]
+ +0.75 : Wfuel[1] ≥ Wfuel[2] + Wburn[1]
+  +0.5 : Wfuel[2] ≥ Wfuel[3] + Wburn[2]
 
        | Aircraft.Wing
- +0.43 : .W >= S·.rho
+ +0.43 : .W ≥ S·.rho
 
 Insensitive Constraints |below +1e-05|
 --------------------------------------
@@ -110,8 +110,8 @@ Constraint Differences
 @@ -41,3 +41,4 @@
         c = (S/A)^0.5
       "parametrization of wing weight":
-        Aircraft.Wing.W >= S·Aircraft.Wing.rho
-+ Wburn[:] >= 0.2·D[:]
+        Aircraft.Wing.W ≥ S·Aircraft.Wing.rho
++ Wburn[:] ≥ 0.2·D[:]
 
 **********************
 
@@ -125,3 +125,4 @@ Sensitivity Differences |above 0.1|
 -----------------------------------
 The largest is -0.00451643.
 
+Links exceed link limit (56 > 50); skipping constraints inside arrays.

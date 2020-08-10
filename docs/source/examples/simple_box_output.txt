@@ -25,6 +25,6 @@ A_{wall} : -1.5  upper limit, wall area
 
 Most Sensitive Constraints
 --------------------------
-  +1.5 : A_{wall} >= 2·h·w + 2·h·d
-  +0.5 : alpha <= h/w
+  +1.5 : A_{wall} ≥ 2·h·w + 2·h·d
+  +0.5 : alpha ≤ h/w
 
