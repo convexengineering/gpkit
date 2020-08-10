@@ -11,7 +11,8 @@ INSENSITIVE = 1e-2
 
 def isnamedmodel(constraint):
     "Checks if a constraint is a named model"
-    return isinstance(constraint, Model) and type(constraint) is not Model
+    return (isinstance(constraint, Model)
+            and constraint.__class__.__name__ != "Model")
 
 def getcolor(value):
     "color scheme for sensitivities"
@@ -34,9 +35,10 @@ class Sankey:
         self.links = defaultdict(float)
         self.nodes = []
 
-    def constrlinks(self, constrset, target, i=0, depth=0, named=False):
+    # pylint: disable=too-many-branches
+    def link(self, constrset, target, var=None, i=0, depth=0, named=False):
         "adds links of a given constraint set to self.links"
-        total_sens = 0
+        total_sens = None
         switchedtarget = False
         if not named and isnamedmodel(constrset) and 0 < depth <= self.maxdepth:
             switchedtarget = target
@@ -50,66 +52,36 @@ class Sankey:
             constrset = {k: constrset[i]
                          for k, i in constrset.idxlookup.items()}
         if isinstance(constrset, dict):
-            for i, (label, constr) in enumerate(constrset.items()):
+            for i, (label, c) in enumerate(constrset.items()):  # pylint: disable=redefined-argument-from-local
                 if depth > self.maxdepth or not self.constraintlabels:
-                    subtotal_sens = self.constrlinks(constr, target, i, depth)
+                    subtotal_sens = self.link(c, target, var, i, depth)
                 else:
                     source = "%s.%03i.%s" % (target, i, label)
                     self.nodes.append({"id": source, "title": label})
-                    subtotal_sens = self.constrlinks(constr, source, i, depth+1,
-                                                     named=isnamedmodel(constr))
-                    self.links[source, target] += subtotal_sens
-                total_sens += subtotal_sens
+                    subtotal_sens = self.link(c, source, var, i, depth+1,
+                                              named=isnamedmodel(c))
+                    if subtotal_sens is not None:
+                        self.links[source, target] += subtotal_sens
+                if subtotal_sens is not None:
+                    if total_sens is None:
+                        total_sens = 0
+                    total_sens += subtotal_sens
         elif isinstance(constrset, Iterable):
-            for i, constr in enumerate(constrset):
-                total_sens += self.constrlinks(constr, target, i, depth)
-        elif constrset in self.csenss:
+            for i, c in enumerate(constrset):  # pylint: disable=redefined-argument-from-local
+                subtotal_sens = self.link(c, target, var, i, depth)
+                if subtotal_sens is not None:
+                    if total_sens is None:
+                        total_sens = 0
+                    total_sens += subtotal_sens
+        elif var is None and constrset in self.csenss:
             total_sens = -abs(self.csenss[constrset])
-        if switchedtarget:
+        elif var is not None and var.key in constrset.v_ss:
+            total_sens = constrset.v_ss[var.key]
+        if switchedtarget and total_sens is not None:
             self.links[target, switchedtarget] += total_sens
         return total_sens
 
-    def varlinks(self, constrset, target, key, i=0, depth=1):
-        "adds links of a given constraint set to self.links"
-        total_sens = None
-        switchedtarget = False
-        if (isinstance(constrset, Model) and type(constrset) is not Model
-                and depth <= self.maxdepth):
-            switchedtarget = target
-            name, _ = constrset.lineage[-1]
-            target = "%s.%03i.%s" % (switchedtarget, i, name)
-            self.nodes.append({"id": target, "title": name})
-            depth += 1
-        if getattr(constrset, "idxlookup", None):
-            constrset = {k: constrset[i]
-                         for k, i in constrset.idxlookup.items()}
-        if isinstance(constrset, dict):
-            for i, (label, constr) in enumerate(constrset.items()):
-                if depth <= self.maxdepth:
-                    source = "%s.%03i.%s" % (target, i, label)
-                    self.nodes.append({"id": source, "title": label})
-                    subtotal_sens = self.varlinks(constr, source, key, i, depth+1)
-                    if subtotal_sens is not None:
-                        self.links[source, target] += subtotal_sens
-                else:
-                    subtotal_sens = self.varlinks(constr, target, key, i, depth)
-                if subtotal_sens is not None:
-                    if total_sens is None:
-                        total_sens = 0
-                    total_sens += subtotal_sens
-        elif isinstance(constrset, Iterable):
-            for i, constr in enumerate(constrset):
-                subtotal_sens = self.varlinks(constr, target, key, i, depth)
-                if subtotal_sens is not None:
-                    if total_sens is None:
-                        total_sens = 0
-                    total_sens += subtotal_sens
-        elif key in constrset.v_ss:
-            total_sens = constrset.v_ss[key]
-        if switchedtarget and total_sens is not None:
-                self.links[target, switchedtarget] += total_sens
-        return total_sens
-
+    # pylint: disable=too-many-locals
     def diagram(self, variable=None, *, flowright=False, width=900, height=400,
                 top=0, bottom=0, left=120, right=55, maxdepth=None,
                 constraintlabels=None):
@@ -121,13 +93,13 @@ class Sankey:
             self.maxdepth = maxdepth  # NOTE: side effects
         if constraintlabels is not None:
             self.constraintlabels = constraintlabels  # NOTE: side effects
-        if variable is None:
-            self.constrlinks(self.cset, self.leftlabel)
-        else:
-            self.links[self.leftlabel, str(variable)] = \
-                self.varlinks(self.cset, self.leftlabel, variable.key)
-        links = []
+
+        total_sens = self.link(self.cset, self.leftlabel, variable)
+        if variable is not None:
+            self.links[self.leftlabel, str(variable)] = total_sens
+
         maxflow = np.abs(list(self.links.values())).max()
+        links = []
         for (source, target), value in self.links.items():
             if not flowright:  # reverse by default, sigh
                 source, target = target, source

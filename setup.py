@@ -2,18 +2,6 @@
 import os
 from distutils.core import setup
 
-LONG_DESCRIPTION = """
-GPkit is a Python package for defining and manipulating
-geometric programming models,
-abstracting away the backend solver.
-Supported solvers are
-`MOSEK <http://mosek.com>`_
-and `CVXopt <http://cvxopt.org/>`_.
-
-`Documentation <http://gpkit.rtfd.org/>`_
-
-`Citing GPkit <http://gpkit.rtfd.org/en/latest/citinggpkit.html>`_
-"""
 
 LICENSE = """The MIT License (MIT)
 
@@ -38,12 +26,17 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE."""
 
 # create blank settings file to replace anything cached
-settings = os.sep.join([os.path.dirname(__file__), "gpkit", "env", "settings"])
+THIS_DIR = os.path.dirname(__file__)
 try:
-    with open(settings, "w") as f:
+    with open(os.sep.join([THIS_DIR, "gpkit", "env", "settings"]), "w") as f:
         f.write("installed_solvers :  ")
 except IOError:
     pass
+
+# read the README file
+with open(os.path.join(THIS_DIR, "README.md"), encoding="utf-8") as f:
+    LONG_DESCRIPTION = f.read()
+
 
 setup(
     name="gpkit",
@@ -61,4 +54,5 @@ setup(
     package_data={"gpkit": ["env/settings"]},
     license=LICENSE,
     long_description=LONG_DESCRIPTION,
+    long_description_content_type="text/markdown",
 )

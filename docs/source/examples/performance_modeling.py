@@ -258,6 +258,7 @@ print(sol.diff("solution.pkl", showvars=vars_of_interest, sortbymodel=False))
 
 # this will only make an image when run in jupyter notebook
 from gpkit.interactive.sankey import Sankey
+variablesankey = Sankey(sol, M).diagram(AC.wing.A)
 sankey = Sankey(sol, M).diagram(left=40, width=950, right=150)
 sankey.auto_save_svg("performance_modeling.svg")
-sankey
+sankey  # pylint: disable=pointless-statement
