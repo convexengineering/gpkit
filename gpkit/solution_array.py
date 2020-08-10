@@ -384,8 +384,8 @@ class SolutionArray(DictOfLists):
                 cdiff = ["Constraint Differences",
                          "**********************"]
                 cdiff.extend(difflib.unified_diff(
-                    self.modelstr.split("\n"), other.modelstr.split("\n"),
-                    fromfile="removed in argument", tofile="added in argument",
+                    other.modelstr.split("\n"), self.modelstr.split("\n"),
+                    fromfile="only in argument", tofile="not in argument",
                     lineterm="", n=3))
                 cdiff.insert(4, "")
                 cdiff += ["", "**********************", ""]

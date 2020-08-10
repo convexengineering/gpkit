@@ -52,7 +52,6 @@ class KeyMap:
         self.keymap = defaultdict(set)
         self._unmapped_keys = set()
         self.owned = set()
-        self.logged_gets = set()
         self.update(*args, **kwargs)  # pylint: disable=no-member
 
     def parse_and_index(self, key):
@@ -175,8 +174,6 @@ class KeyDict(KeyMap, dict):
             raise KeyError(key)
         got = {}
         for k in keys:
-            if self.log_gets:
-                self.logged_gets.add(k)
             if not idx and k.shape:
                 self._copyonwrite(k)
             val = dict.__getitem__(self, k)
@@ -207,8 +204,11 @@ class KeyDict(KeyMap, dict):
                 super().__setitem__(key, np.array(old, "object"))
                 self.owned.add(key)
             self._copyonwrite(key)
+            if hasattr(value, "__call__"):  # a linked function
+                old = super().__getitem__(key)
+                super().__setitem__(key, np.array(old, dtype="object"))
             super().__getitem__(key)[idx] = value
-            return  # succefully set a single index!
+            return  # successfully set a single index!
         if key.shape: # now if we're setting an array...
             if getattr(value, "shape", None):   # is the value an array?
                 if value.dtype == INT_DTYPE:
