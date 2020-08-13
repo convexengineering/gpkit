@@ -118,4 +118,3 @@ Wburn : [ +102.1%   +101.6%   +101.1%   +100.5%  ] segment fuel burn
 Wfuel : [ +101.3%   +101.1%   +100.8%   +100.5%  ] fuel weight
     D : [   +1.1%       -         -         -    ] drag force
 
-Links exceed link limit (53 > 50); skipping constraints inside arrays.
