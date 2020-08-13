@@ -100,13 +100,10 @@ Insensitive Constraints |below +1e-05|
 
 Solution Diff (for selected variables)
 ======================================
-(positive means the argument is smaller)
+(argument is the baseline solution)
 
 Constraint Differences
 **********************
---- only in argument
-+++ not in argument
-
 @@ -41,3 +41,4 @@
         c = (S/A)^0.5
       "parametrization of wing weight":
@@ -120,8 +117,4 @@ Relative Differences |above 1%|
 Wburn : [ +102.1%   +101.6%   +101.1%   +100.5%  ] segment fuel burn
 Wfuel : [ +101.3%   +101.1%   +100.8%   +100.5%  ] fuel weight
     D : [   +1.1%       -         -         -    ] drag force
-
-Sensitivity Differences |above 0.1|
------------------------------------
-The largest is -0.00451643.
 
