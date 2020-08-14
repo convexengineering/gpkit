@@ -1,4 +1,0 @@
-Using solver 'cvxopt'
- for 2 free variables
-  in 3 posynomial inequalities.
-Solving took 0.00612 seconds.

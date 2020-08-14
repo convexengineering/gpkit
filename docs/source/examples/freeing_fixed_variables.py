@@ -10,6 +10,6 @@ assert abs(sol["cost"] - 4) <= 1e-4
 assert y in sol["constants"]
 
 del m.substitutions["y"]
-sol = m.solve()  # optimal cost is 2; y appears in Free Variables
+sol = m.solve(verbosity=0)  # optimal cost is 2; y appears in Free Variables
 assert abs(sol["cost"] - 2) <= 1e-4
 assert y in sol["freevariables"]
