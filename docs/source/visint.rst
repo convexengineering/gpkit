@@ -59,7 +59,7 @@ Free
 Free variables have an overall sensitivity of 0, so this visualization
 shows how the various pressures on that variable in all its constraints
 cancel each other out; this can get quite complex, as in this diagram of the
-pressures on wingspan:
+pressures on wingspan (right-click and open in a new tab to see it more clearly):
 
 .. code:: python
 

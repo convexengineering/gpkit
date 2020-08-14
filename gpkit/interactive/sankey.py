@@ -180,8 +180,9 @@ class Sankey:
                                                     "units"])
         if not os.path.isdir("sankey_autosaves"):
             os.makedirs("sankey_autosaves")
-        out.auto_save_png("sankey_autosaves" + os.path.sep
-                          + cleanfilename(filename) + ".png")
+        filename = "sankey_autosaves" + os.path.sep + cleanfilename(filename)
+        out.auto_save_png(filename + ".png")
+        out.auto_save_svg(filename + ".svg")
         out.on_node_clicked(self.onclick)
         out.on_link_clicked(self.onclick)
 
