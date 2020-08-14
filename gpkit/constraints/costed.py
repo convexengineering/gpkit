@@ -2,6 +2,7 @@
 import numpy as np
 from .set import ConstraintSet
 from ..small_scripts import maybe_flatten
+from ..repr_conventions import lineagestr
 
 
 class CostedConstraintSet(ConstraintSet):
@@ -33,12 +34,14 @@ class CostedConstraintSet(ConstraintSet):
 
     def _rootlines(self, excluded=()):
         "String showing cost, to be used when this is the top constraint"
-        description = ["", "Cost", "----",
-                       " %s" % self.cost.str_without(excluded),
-                       "", "Constraints", "-----------"]
+        if self.cost.varkeys:
+            description = ["", "Cost", "----",
+                           " %s" % self.cost.str_without(excluded),
+                           "", "Constraints", "-----------"]
+        else:
+            description = ["", "Constraints", "-----------"]
         if self.lineage:
-            name, num = self.lineage[-1]  # pylint: disable=unsubscriptable-object
-            fullname = "%s" % (name if not num else name + str(num))
+            fullname = lineagestr(self)
             description = [fullname, "="*len(fullname)] + description
         return description
 

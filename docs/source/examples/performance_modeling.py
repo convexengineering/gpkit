@@ -38,11 +38,7 @@ class AircraftP(Model):
         D = self.wing_aero.D
         CL = self.wing_aero.CL
 
-        return {
-            "lift":
-                W + Wfuel <= 0.5*rho*CL*S*V**2,
-            "fuel burn rate":
-                Wburn >= 0.1*D,
+        return Wburn >= 0.1*D, W + Wfuel <= 0.5*rho*CL*S*V**2, {
             "performance":
                 self.perf_models}
 
@@ -68,11 +64,8 @@ class Aircraft(Model):
         self.wing = Wing()
         self.components = [self.fuse, self.wing]
 
-        return {
-            "definition of W":
-                W >= sum(c.W for c in self.components),
-            "components":
-                self.components}
+        return [W >= sum(c.W for c in self.components),
+                self.components]
 
     dynamic = AircraftP
 
@@ -113,8 +106,8 @@ class FlightSegment(Model):
         self.Wburn = self.aircraftp.Wburn
         self.Wfuel = self.aircraftp.Wfuel
 
-        return {"flightstate": self.flightstate,
-                "aircraft performance": self.aircraftp}
+        return {"aircraft performance": self.aircraftp,
+                "flightstate": self.flightstate}
 
 
 class Mission(Model):
@@ -139,10 +132,9 @@ class Mission(Model):
         self.takeoff_fuel = Wfuel[0]
 
         return {
-            "definition of Wburn":
-                Wfuel[:-1] >= Wfuel[1:] + Wburn[:-1],
-            "require fuel for the last leg":
-                Wfuel[-1] >= Wburn[-1],
+            "fuel constraints":
+                [Wfuel[:-1] >= Wfuel[1:] + Wburn[:-1],
+                 Wfuel[-1] >= Wburn[-1]],
             "flight segment":
                 self.fs}
 
@@ -178,13 +170,9 @@ class WingAero(Model):
         V = state.V
         mu = state.mu
 
-        return {
-            "drag model":
-                CD >= 0.074/Re**0.2 + CL**2/np.pi/A/e,
-            "definition of Re":
+        return [D >= 0.5*rho*V**2*CD*S,
                 Re == rho*V*c/mu,
-            "definition of D":
-                D >= 0.5*rho*V**2*CD*S}
+                CD >= 0.074/Re**0.2 + CL**2/np.pi/A/e]
 
 
 class Wing(Model):
@@ -208,10 +196,8 @@ class Wing(Model):
     """
     @parse_variables(__doc__, globals())
     def setup(self):
-        return {"parametrization of wing weight":
-                    W >= S*rho,
-                "definition of mean chord":
-                    c == (S/A)**0.5}
+        return [c == (S/A)**0.5,
+                W >= S*rho]
 
     dynamic = WingAero
 
@@ -255,3 +241,10 @@ print(sol.table(tables=["loose constraints"]))
 M.append(MISSION.fs.aircraftp.Wburn >= 0.2*MISSION.fs.aircraftp.wing_aero.D)
 sol = M.solve(verbosity=0)
 print(sol.diff("solution.pkl", showvars=vars_of_interest, sortbymodel=False))
+
+# this will only make an image when run in jupyter notebook
+# from gpkit.interactive.sankey import Sankey
+from gpkit.interactive.sankey import Sankey
+variablesankey = Sankey(sol, M).diagram(AC.wing.A)
+sankey = Sankey(sol, M).diagram(width=1200, height=400, maxlinks=30)
+sankey  # pylint: disable=pointless-statement

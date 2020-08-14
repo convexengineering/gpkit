@@ -28,11 +28,11 @@ Most Sensitive Variables
 
 Most Sensitive Constraints
 --------------------------
-  +1.3 : W >= W_0 + W_w
-    +1 : C_D >= (CDA0)/S + k·C_f·(\frac{S}{S_{wet}}) + C_L²/(π·A·e)
-    +1 : D >= 0.5·\rho·S·C_D·V²
- +0.96 : W <= 0.5·\rho·S·C_L·V²
- +0.43 : C_f >= 0.074/Re^0.2
+  +1.3 : W ≥ W_0 + W_w
+    +1 : C_D ≥ (CDA0)/S + k·C_f·(\frac{S}{S_{wet}}) + C_L²/(π·A·e)
+    +1 : D ≥ 0.5·\rho·S·C_D·V²
+ +0.96 : W ≤ 0.5·\rho·S·C_L·V²
+ +0.43 : C_f ≥ 0.074/Re^0.2
 
 Solution Diff
 =============
@@ -78,11 +78,11 @@ Most Sensitive Variables
 
 Most Sensitive Constraints (in last sweep)
 ------------------------------------------
-    +1 : C_D >= (CDA0)/S + k·C_f·(\frac{S}{S_{wet}}) + C_L²/(π·A·e)
-    +1 : D >= 0.5·\rho·S·C_D·V²
-    +1 : W >= W_0 + W_w
- +0.57 : W <= 0.5·\rho·S·C_L·V²
- +0.54 : C_f >= 0.074/Re^0.2
+    +1 : C_D ≥ (CDA0)/S + k·C_f·(\frac{S}{S_{wet}}) + C_L²/(π·A·e)
+    +1 : D ≥ 0.5·\rho·S·C_D·V²
+    +1 : W ≥ W_0 + W_w
+ +0.57 : W ≤ 0.5·\rho·S·C_L·V²
+ +0.54 : C_f ≥ 0.074/Re^0.2
 
 Solution Diff
 =============

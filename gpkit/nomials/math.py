@@ -496,6 +496,10 @@ class PosynomialInequality(ScalarSingleEquationConstraint):
                     nu_[idx] += percentage * la*scale
             nu = nu_
         self.v_ss = HashVector()
+        if self.parent:
+            self.parent.v_ss = self.v_ss
+        if self.generated_by:
+            self.generated_by.v_ss = self.v_ss
         for nu_i, exp in zip(nu, presub.hmap):
             for vk, x in exp.items():
                 self.v_ss[vk] = nu_i*x + self.v_ss.get(vk, 0)
@@ -638,7 +642,7 @@ class SignomialInequality(ScalarSingleEquationConstraint):
             assert not key  # constant
             return value
 
-        var_senss = {}
+        self.v_ss = {}
         invnegy_val = 1/subval(self._negysig)
         for i, nu_i in enumerate(nu):
             mon = self._mons[i]
@@ -651,8 +655,8 @@ class SignomialInequality(ScalarSingleEquationConstraint):
                 var_val = result["variables"][var]
                 sens = (nu_i*inv_mon_val*d_mon_d_var*var_val)
                 assert isinstance(sens, float)
-                var_senss[var] = sens + var_senss.get(var, 0)
-        return var_senss, la
+                self.v_ss[var] = sens + self.v_ss.get(var, 0)
+        return self.v_ss, la
 
     def as_gpconstr(self, x0):
         "Returns GP-compatible approximation at x0"

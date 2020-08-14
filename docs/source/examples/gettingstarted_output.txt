@@ -1,0 +1,17 @@
+
+Optimal Cost
+------------
+ 0.005511
+
+Free Variables
+--------------
+x : 8.165
+y : 4.082
+z : 5.443
+
+Most Sensitive Constraints
+--------------------------
+  +1.5 : 2·x·y + 2·x·z + 2·y·z ≤ 200
+ +0.17 : x ≥ 2·y
+
+The optimal value is 0.005511353595523829.

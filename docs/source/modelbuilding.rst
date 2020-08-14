@@ -61,8 +61,12 @@ In the example below, the models ``Aircraft`` and ``Wing`` have a ``.dynamic()``
 
 This means that when an aircraft is being optimized for a mission, you can create the aircraft (``AC`` in this example) and then pass it to a ``Mission`` model which can create vectorized aircraft performance models for each flight segment and/or flight condition.
 
+The :ref:`sensitivity diagram <sankey>` which this code outputs shows how it is organized (right-click and open in a new tab to see it more clearly):
+
+.. figure:: figures/sankey_autosaves/Model.png
+
 .. literalinclude:: examples/performance_modeling.py
 
-Note that the output table can be filtered with a list of variables to show.
+Note that the output table has been filtered above to show only variables of interest.
 
 .. literalinclude:: examples/performance_modeling_output.txt
