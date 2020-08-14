@@ -1,8 +1,8 @@
 Using solver 'cvxopt'
  for 1 free variables
   in 2 posynomial inequalities.
-Solving took 0.00911 seconds.
+Solving took 0.00866 seconds.
 Using solver 'cvxopt'
  for 2 free variables
   in 3 posynomial inequalities.
-Solving took 0.0116 seconds.
+Solving took 0.0101 seconds.

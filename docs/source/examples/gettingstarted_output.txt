@@ -15,11 +15,3 @@ Most Sensitive Constraints
  +0.17 : x ≥ 2·y
 
 The optimal value is 0.005511353595523829.
-Using solver 'cvxopt'
- for 1 free variables
-  in 2 posynomial inequalities.
-Solving took 0.0088 seconds.
-Using solver 'cvxopt'
- for 1 free variables
-  in 2 posynomial inequalities.
-Solving took 0.0104 seconds.

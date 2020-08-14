@@ -15,7 +15,8 @@ constraints = [x + y <= 5, x >= 1, y >= 2]
 m = Model(objective, constraints)
 
 # solve the model
-sol = m.solve()
+# verbosity is 0 for testing's sake, no need to do that in your code!
+sol = m.solve(verbosity=0)
 
 # save the current state of the model
 sol.save("last_verified.sol")
