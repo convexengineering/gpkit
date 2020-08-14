@@ -120,12 +120,11 @@ without any tight constraints or sensitive fixed variables.
 
 .. code:: python
 
-    Sankey(sol, M, "SolarMission").diagram(maxlinks=30, showconstraints=False,
-                                           height=700, left=100)
+    Sankey(sol, M, "SolarMission").diagram(maxlinks=30, showconstraints=False, height=700)
 
 .. figure:: figures/sankey_autosaves/SolarMission.png
 
-Note that in addition to the ``left`` and ``showconstraints`` syntax introduced above,
+Note that in addition to the ``showconstraints`` syntax introduced above,
 this uses two additional arguments you may find useful when visualizing large models:
 ``height`` sets the height of the diagram in pixels (similarly for ``width``),
 while ``maxlinks`` increases the maximum number of links (default 20), making

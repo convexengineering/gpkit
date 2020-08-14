@@ -5,7 +5,7 @@ from collections import defaultdict
 from collections.abc import Iterable
 import numpy as np
 from ipywidgets import Layout
-from ipysankeywidget import SankeyWidget  # pylint: disable=import-error
+from ipysankeywidget import SankeyWidget
 from ..repr_conventions import lineagestr, unitstr
 from .. import Model, GPCOLORS
 from ..constraints.array import ArrayConstraint
