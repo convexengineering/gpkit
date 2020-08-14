@@ -119,8 +119,12 @@ class Sankey:
         else:
             if var is None and cset in self.csenss:
                 total_sens = -abs(self.csenss[cset]) or -EPS
-            elif var is not None and var.key in cset.v_ss:
-                total_sens = cset.v_ss[var.key] or EPS
+            elif var is not None:
+                if cset.v_ss is None:
+                    if var.key in cset.varkeys:
+                        total_sens = EPS
+                elif var.key in cset.v_ss:
+                    total_sens = cset.v_ss[var.key] or EPS
             if not labeled:
                 cstr = cset.str_without(["lineage", "units"])
                 label = cstr if len(cstr) <= 30 else "%s ..." % cstr[:30]
