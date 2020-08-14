@@ -63,8 +63,7 @@ This means that when an aircraft is being optimized for a mission, you can creat
 
 The :ref:`sensitivity diagram <sankey>` which this code outputs shows how it is organized:
 
-.. figure:: figures/sankey/performance_modeling.svg
-    :width: 700 px
+.. figure:: figures/sankey_autosaves/Model.png
 
 .. literalinclude:: examples/performance_modeling.py
 

@@ -38,11 +38,7 @@ class AircraftP(Model):
         D = self.wing_aero.D
         CL = self.wing_aero.CL
 
-        return {
-            "fuel burn rate":
-                Wburn >= 0.1*D,
-            "lift":
-                W + Wfuel <= 0.5*rho*CL*S*V**2,
+        return Wburn >= 0.1*D, W + Wfuel <= 0.5*rho*CL*S*V**2, {
             "performance":
                 self.perf_models}
 
@@ -68,11 +64,8 @@ class Aircraft(Model):
         self.wing = Wing()
         self.components = [self.fuse, self.wing]
 
-        return {
-            "definition of W":
-                W >= sum(c.W for c in self.components),
-            "components":
-                self.components}
+        return [W >= sum(c.W for c in self.components),
+                self.components]
 
     dynamic = AircraftP
 
@@ -139,10 +132,9 @@ class Mission(Model):
         self.takeoff_fuel = Wfuel[0]
 
         return {
-            "definition of Wburn":
-                Wfuel[:-1] >= Wfuel[1:] + Wburn[:-1],
-            "require fuel for the last leg":
-                Wfuel[-1] >= Wburn[-1],
+            "fuel constraints":
+                [Wfuel[:-1] >= Wfuel[1:] + Wburn[:-1],
+                 Wfuel[-1] >= Wburn[-1]],
             "flight segment":
                 self.fs}
 
@@ -178,13 +170,9 @@ class WingAero(Model):
         V = state.V
         mu = state.mu
 
-        return {
-            "definition of D":
-                D >= 0.5*rho*V**2*CD*S,
-            "definition of Re":
+        return [D >= 0.5*rho*V**2*CD*S,
                 Re == rho*V*c/mu,
-            "drag model":
-                CD >= 0.074/Re**0.2 + CL**2/np.pi/A/e}
+                CD >= 0.074/Re**0.2 + CL**2/np.pi/A/e]
 
 
 class Wing(Model):
@@ -208,10 +196,8 @@ class Wing(Model):
     """
     @parse_variables(__doc__, globals())
     def setup(self):
-        return {"definition of mean chord":
-                    c == (S/A)**0.5,
-                "parametrization of wing weight":
-                    W >= S*rho}
+        return [c == (S/A)**0.5,
+                W >= S*rho]
 
     dynamic = WingAero
 
@@ -257,8 +243,8 @@ sol = M.solve(verbosity=0)
 print(sol.diff("solution.pkl", showvars=vars_of_interest, sortbymodel=False))
 
 # this will only make an image when run in jupyter notebook
+# from gpkit.interactive.sankey import Sankey
 from gpkit.interactive.sankey import Sankey
 variablesankey = Sankey(sol, M).diagram(AC.wing.A)
-sankey = Sankey(sol, M).diagram(left=40, width=950, right=150)
-sankey.auto_save_svg("performance_modeling.svg")
+sankey = Sankey(sol, M).diagram(width=1200, height=400, maxlinks=30)
 sankey  # pylint: disable=pointless-statement

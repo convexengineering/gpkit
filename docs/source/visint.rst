@@ -1,24 +1,5 @@
 Visualization and Interaction
 *****************************
-
-Plotting a 1D Sweep
-==================
-
-Methods exist to facilitate creating, solving, and plotting the results of a single-variable sweep (see :ref:`Sweeps` for details). Example usage is as follows:
-
-.. literalinclude:: examples/plot_sweep1d.py
-
-Which results in:
-
-.. figure:: examples/plot_sweep1d.png
-    :align: center
-
-.. figure:: examples/plot_autosweep1d.png
-    :align: center
-
-
-
-
 .. _sankey:
 Sensitivity Diagrams
 ====================
@@ -31,7 +12,7 @@ Requirements
 Example
 -------
 
-Code in this section uses the `CE solar model <https://github.com/convexengineering/solar/tree/gpkitdocs>`__
+Code in this section uses the `CE solar model <https://github.com/convexengineering/solar/tree/gpkitdocs>`_
 
 .. code:: python
 
@@ -42,9 +23,8 @@ Code in this section uses the `CE solar model <https://github.com/convexengineer
     sol = M.localsolve("mosek_cli")
 
     from gpkit.interactive.sankey import Sankey
-    Sankey(sol, M, "SolarMission").diagram(M.aircraft.Wtotal, left=210, right=130)
 
-.. figure:: figures/solar/SolarMission_Wtotal.png
+.. figure:: figures/Mission.gif
 
 
 Explanation
@@ -69,8 +49,8 @@ Usage
 Variables
 ~~~~~~~~~
 
-In a Sankey diagram of a variable, the variable is on the left with its
-final sensitivity; to the right of it are all constraints that variable
+In a Sankey diagram of a variable, the variable is on the right with its
+final sensitivity; to the left of it are all constraints that variable
 is in.
 
 Free
@@ -83,9 +63,22 @@ pressures on wingspan:
 
 .. code:: python
 
-    Sankey(sol, M, "SolarMission").diagram(M.aircraft.b, right=180)
+    Sankey(sol, M, "SolarMission").diagram(M.aircraft.wing.planform.b, showconstraints=False)
 
-.. figure:: figures/solar/SolarMission_b.png
+.. figure:: figures/sankey_autosaves/SolarMission_Aircraft.Wing.Planform.b.png
+
+Gray lines in this diagram indicate constraints or constraint sets that the variable is in
+but which have no net sensitivity to it. Note that the ``showconstraints``
+argument can be used to hide constraints if you
+wish to see more of the model hierarchy with the same number of links.
+
+Variable in the cost function, have a "[cost function]" node on the diagram like so:
+
+.. code:: python
+
+    Sankey(sol, M, "SolarMission").diagram(M.aircraft.Wtotal)
+
+.. figure:: figures/sankey_autosaves/SolarMission_Wtotal.png
 
 Fixed
 ^^^^^
@@ -95,20 +88,24 @@ can how that sensitivity comes together:
 
 .. code:: python
 
-    Sankey(sol, M, "SolarMission").diagram(M.variables_byname("tmin")[0], right=160, left=10)
+    Sankey(sol, M, "SolarMission").diagram(M.variables_byname("tmin")[0], left=100)
 
-.. figure:: figures/solar/SolarMission_tmin.png
+.. figure:: figures/sankey_autosaves/SolarMission_CFRPFabric.tmin.png
 
 
-Note that the only difference between free and fixed variabels from this perspective
+Note that the ``left=`` syntax is used to reduce the left margin in this plot.
+Similar arguments exist for the ``right``, ``top``, and ``bottom`` margins:
+all arguments are in pixels.
+
+The only difference between free and fixed variables from this perspective
 is their final sensitivity; for example ``Nprop``, the number of propellers on the
 plane, has almost zero sensitivity, much like the wingspan ``b``, above.
 
 .. code:: python
 
-    Sankey(sol, M, "SolarMission").diagram(M.variables_byname("tmin")[0], right=160, left=10)
+    Sankey(sol, M, "SolarMission").diagram(M["Nprop"])
 
-.. figure:: figures/solar/SolarMission_Nprop.png
+.. figure:: figures/sankey_autosaves/SolarMission_Nprop.png
 
 
 Models
@@ -123,25 +120,42 @@ without any tight constraints or sensitive fixed variables.
 
 .. code:: python
 
-    Sankey(sol, M, "SolarMission").diagram(height=600)
+    Sankey(sol, M, "SolarMission").diagram(maxlinks=30, showconstraints=False,
+                                           height=700, left=100)
 
-.. figure:: figures/solar/SolarMission.png
+.. figure:: figures/sankey_autosaves/SolarMission.png
+
+Note that in addition to the ``left`` and ``showconstraints`` syntax introduced above,
+this uses two additional arguments you may find useful when visualizing large models:
+``height`` sets the height of the diagram in pixels (similarly for ``width``),
+while ``maxlinks`` increases the maximum number of links (default 20), making
+a more detailed plot. Plot construction time goes approximately as the square
+of the number of links, so be careful when increasing ``maxlinks``!
+
+With some different arguments, the model looks like this:
+
+.. code:: python
+
+    Sankey(sol, M).diagram(minsenss=1, maxlinks=30, left=130, showconstraints=False)
+
+.. figure:: figures/sankey_autosaves/Mission.png
+
+The only piece of unexplained syntax in this is ``minsenss``. Perhaps
+unsurprisingly, this just limits the links shown to only those whose sensitivity
+exceeds that minimum; it's quite useful for exploring a large model.
 
 
-Syntax
-------
+Plotting a 1D Sweep
+==================
 
-+-------------------------------+-------------------------------------------------------------------------------+
-| Code                          | Result                                                                        |
-+===============================+===============================================================================+
-| ``s = Sankey(M)``             | Creates Sankey object of a given model                                        |
-+-------------------------------+-------------------------------------------------------------------------------+
-| ``s.diagram(vars)``           | Creates the diagram in a way Jupyter knows how to present                     |
-+-------------------------------+-------------------------------------------------------------------------------+
-| ``d = s.diagram()``           | **Don't do this!** Captures output, preventing Jupyter from seeing it.        |
-+-------------------------------+-------------------------------------------------------------------------------+
-| ``s.diagram(width=...)``      | Sets width in pixels. Same for height.                                        |
-+-------------------------------+-------------------------------------------------------------------------------+
-| ``s.diagram(left=...)``       | Sets left (top, right, bottom) margin in pixels.                              |
-|                               | Use if text is being cut off.                                                 |
-+-------------------------------+-------------------------------------------------------------------------------+
+Methods exist to facilitate creating, solving, and plotting the results of a single-variable sweep (see :ref:`Sweeps` for details). Example usage is as follows:
+
+.. literalinclude:: examples/plot_sweep1d.py
+
+Which results in:
+
+.. figure:: examples/plot_sweep1d.png
+    :align: center
+
+.. figure:: examples/plot_autosweep1d.png
+    :align: center
