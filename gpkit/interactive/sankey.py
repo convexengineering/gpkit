@@ -89,6 +89,7 @@ class Sankey:
             total_sens += abs_var_sens
         return total_sens
 
+    # pylint: disable=too-many-branches
     def link(self, cset, target, var, *, labeled=False, subarray=False):
         "adds links of a given constraint set to self.links"
         total_sens = 0
