@@ -164,8 +164,6 @@ class ReprMixin:
                 stop = idx.stop if idx.stop and idx.stop < 1e6 else ""
                 step = ":%s" % idx.step if idx.step is not None else ""
                 idx = "%s:%s%s" % (start, stop, step)
-            elif isinstance(idx, Numbers):
-                idx = "%s" % idx
             aststr = "%s[%s]" % (left, idx)
         else:
             raise ValueError(oper)
