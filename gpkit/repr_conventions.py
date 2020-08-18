@@ -166,8 +166,6 @@ class ReprMixin:
                 idx = "%s:%s%s" % (start, stop, step)
             elif isinstance(idx, Numbers):
                 idx = "%s" % idx
-            else:
-                raise ValueError(repr(idx))
             aststr = "%s[%s]" % (left, idx)
         else:
             raise ValueError(oper)
