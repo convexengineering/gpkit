@@ -8,6 +8,11 @@ Requirements
 ------------
 -  Jupyter Notebook
 -  `ipysankeywidget <https://github.com/ricklupton/ipysankeywidget>`__
+    - Note that you'll need to activate these widgets on Jupyter by runnning
+    
+      - ``jupyter nbextension enable --py --sys-prefix widgetsnbextension``
+      
+      - ``jupyter nbextension enable --py --sys-prefix ipysankeywidget``
 
 Example
 -------
@@ -23,6 +28,8 @@ Code in this section uses the `CE solar model <https://github.com/convexengineer
     sol = M.localsolve("mosek_cli")
 
     from gpkit.interactive.sankey import Sankey
+    
+Once the code above has been run in a Jupyter notebook, the code below will create interactive hierarchies of your model's sensitivities, like so:
 
 .. figure:: figures/Mission.gif
 
