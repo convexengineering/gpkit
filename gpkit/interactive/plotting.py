@@ -1,7 +1,10 @@
 """Plotting methods"""
+from collections import Counter
+import plotly.graph_objects as go
 import matplotlib.pyplot as plt
 import numpy as np
 from .plot_sweep import assign_axes
+from ..repr_conventions import lineagestr
 from .. import GPCOLORS
 
 
@@ -63,3 +66,58 @@ def plot_convergence(model):
     ax.set_ylabel('Cost')
     ax.set_xticks(range(1, len(model.program.gps)+1))
     return fig, ax
+
+
+def treemap(model, sizebyconstraints=False):
+    """Plots model structure as Plotly TreeMap
+
+    Arguments
+    ---------
+    model: Model
+        GPkit model object
+
+    sizebyconstraints (optional): bool
+        Whether to size blocks by number of constraints or use default sizing
+
+    Returns
+    -------
+    plotly.graph_objects.Figure
+        Plot of model hierarchy
+
+    """
+    modelnames = []
+    parents = []
+    numconstraints = []
+
+    lineagestrs = []
+    for constraint in model.flat():
+        linstr = lineagestr(constraint.lineage)
+        lineagestrs.append(linstr)
+
+    modelcount = Counter(lineagestrs)
+    for modelname, count in modelcount.items():
+        modelnames.append(modelname)
+        parent = modelname.rsplit(".", 1)[0]
+        parents.append(parent)
+        numconstraints.append(count)
+
+    for parent in parents:
+        if parent not in modelnames:
+            modelnames.append(parent)
+            if "." in parent:
+                grandparent = parent.rsplit(".", 1)[0]
+            else:
+                grandparent = ""
+            parents.append(grandparent)
+            numconstraints.append(0)
+
+    values = numconstraints if sizebyconstraints else None
+
+    fig = go.Figure(go.Treemap(
+        ids=modelnames,
+        labels=[modelname.split(".")[-1] for modelname in modelnames],
+        parents=parents,
+        values=values,
+    ))
+    return fig
+
