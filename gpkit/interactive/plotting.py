@@ -4,7 +4,6 @@ import plotly.graph_objects as go
 import matplotlib.pyplot as plt
 import numpy as np
 from .plot_sweep import assign_axes
-from ..repr_conventions import lineagestr
 from .. import GPCOLORS
 
 
@@ -68,7 +67,7 @@ def plot_convergence(model):
     return fig, ax
 
 
-def treemap(model, sizebyconstraints=False):
+def treemap(model, itemize="variables", sizebycount=False):
     """Plots model structure as Plotly TreeMap
 
     Arguments
@@ -76,8 +75,12 @@ def treemap(model, sizebyconstraints=False):
     model: Model
         GPkit model object
 
-    sizebyconstraints (optional): bool
-        Whether to size blocks by number of constraints or use default sizing
+    itemize (optional): string, either "variables" or "constraints"
+        Specify whether to iterate over the model varkeys or constraints
+
+    sizebycount (optional): bool
+        Whether to size blocks by number of variables/constraints or use
+        default sizing
 
     Returns
     -------
@@ -87,19 +90,22 @@ def treemap(model, sizebyconstraints=False):
     """
     modelnames = []
     parents = []
-    numconstraints = []
+    sizes = []
 
+    if itemize == "variables":
+        items = model.varkeys
+    elif itemize == "constraints":
+        items = model.flat()
     lineagestrs = []
-    for constraint in model.flat():
-        linstr = lineagestr(constraint.lineage)
-        lineagestrs.append(linstr)
+    for item in items:
+        lineagestrs.append(item.lineagestr())
 
     modelcount = Counter(lineagestrs)
     for modelname, count in modelcount.items():
         modelnames.append(modelname)
         parent = modelname.rsplit(".", 1)[0]
         parents.append(parent)
-        numconstraints.append(count)
+        sizes.append(count)
 
     for parent in parents:
         if parent not in modelnames:
@@ -109,9 +115,9 @@ def treemap(model, sizebyconstraints=False):
             else:
                 grandparent = ""
             parents.append(grandparent)
-            numconstraints.append(0)
+            sizes.append(0)
 
-    values = numconstraints if sizebyconstraints else None
+    values = sizes if sizebycount else None
 
     fig = go.Figure(go.Treemap(
         ids=modelnames,
