@@ -289,7 +289,8 @@ class SolutionArray(DictOfLists):
     """
     modelstr = ""
     _name_collision_varkeys = None
-    table_titles = {"sweepvariables": "Swept Variables",
+    table_titles = {"choicevariables": "Choice Variables",
+                    "sweepvariables": "Swept Variables",
                     "freevariables": "Free Variables",
                     "constants": "Fixed Variables",  # TODO: change everywhere
                     "variables": "Variables"}
@@ -600,8 +601,9 @@ class SolutionArray(DictOfLists):
         return out
 
     def table(self, showvars=(),
-              tables=("cost", "warnings", "sweepvariables", "freevariables",
-                      "constants", "sensitivities", "tightest constraints"),
+              tables=("cost", "warnings", "sweepvariables", "choicevariables",
+                      "freevariables", "constants", "sensitivities",
+                      "tightest constraints"),
               **kwargs):
         """A table representation of this SolutionArray
 
@@ -634,8 +636,12 @@ class SolutionArray(DictOfLists):
             key.descr["necessarylineage"] = True
         showvars = self._parse_showvars(showvars)
         strs = []
+        skipped_tables = []
         for table in tables:
-            if table == "cost":
+            if "sensitivities" not in self and ("sensitivities" in table or
+                                                "constraints" in table):
+                skipped_tables.append(table)
+            elif table == "cost":
                 cost = self["cost"]  # pylint: disable=unsubscriptable-object
                 if kwargs.get("latex", None):  # cost is not printed for latex
                     continue
@@ -663,6 +669,14 @@ class SolutionArray(DictOfLists):
                                   "% \\usepackage{amsmath}",
                                   "% \\begin{document}\n"))
             strs = [preamble] + strs + ["% \\end{document}"]
+        elif skipped_tables:
+            strs += ["\nSome tables %s cannot be shown, as this problem has"
+                     " discretized (\"choice\") variables and hence no dual"
+                     " solution. You can fix those variables to their optimal"
+                     " value and solve for the resulting continuous problem"
+                     " by updating your model's substitions with"
+                     " `sol[\"choicevariables\"]`."
+                     % (tuple(skipped_tables),)]
         for key in self.name_collision_varkeys():
             del key.descr["necessarylineage"]
         return "\n".join(strs)
