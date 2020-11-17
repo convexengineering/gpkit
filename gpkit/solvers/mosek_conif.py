@@ -187,8 +187,8 @@ def optimize(*, c, A, k, p_idxs, **kwargs):
         print("---------------------\n")
         n_choicevars = 0
         for var, idx in choicevaridxs.items():
-            choices = var.choices
-            m_choices = len(choices)
+            choices = sorted(var.choices)
+            m_choices = len(choices) - 1
             choiceidxs = np.arange(msk_nvars + n_choicevars,
                                    msk_nvars + n_choicevars + m_choices)
             n_choicevars += m_choices
@@ -197,13 +197,19 @@ def optimize(*, c, A, k, p_idxs, **kwargs):
                                 [mosek.variabletype.type_int]*m_choices)
             task.putvarboundlist(choiceidxs, [mosek.boundkey.ra]*m_choices,
                                  np.zeros(m_choices), np.ones(m_choices))
-            task.appendcons(2)
-            task.putarow(cur_con_idx, choiceidxs, [1.0]*m_choices)
-            task.putconbound(cur_con_idx, mosek.boundkey.fx, 1.0, 1.0)
-            cur_con_idx += 1
+            task.appendcons(m_choices)
+            for i in range(m_choices - 1):
+                task.putarow(cur_con_idx + i, choiceidxs[i:i+2],
+                            [1.0, -1.0])
+                task.putconbound(cur_con_idx + i, mosek.boundkey.lo, 0.0, 0.0)
+                cur_con_idx += 1
+            baseline = np.log(choices[0])
+            choicediffs = np.diff(np.log(choices)).tolist()
+            print(choicediffs)
             task.putarow(cur_con_idx, choiceidxs.tolist() + [idx],
-                        np.log(choices).tolist() + [-1])
-            task.putconbound(cur_con_idx, mosek.boundkey.fx, 0.0, 0.0)
+                        choicediffs + [-1])
+            task.putconbound(cur_con_idx, mosek.boundkey.fx,
+                             -baseline, -baseline)
             cur_con_idx += 1
         print("\n---------------------")
     #
@@ -256,6 +262,9 @@ def optimize(*, c, A, k, p_idxs, **kwargs):
     # recover primal variables
     x = [0.] * m
     task.getxxslice(sol, 0, m, x)
+    # recovery binary variables
+    # xbin = [0.] * (n_choicevars)
+    # task.getxxslice(sol, msk_nvars, msk_nvars + n_choicevars, xbin)
     # wrap things up in a dictionary
     solution = {"status": "optimal", "primal": np.array(x),
                 "objective": np.exp(task.getprimalobj(sol))}
