@@ -190,9 +190,14 @@ class GeometricProgram:
             print("Using solver '%s'" % solvername)
             print(" for %i free variables" % len(self.varlocs))
             if self.choicevaridxs:
-                print("    (%i of which is discrete)" % len(self.choicevaridxs))
-                if solvername != "mosek_conif":
-                    print("    (but the solver does not support, ignoring)")
+                if solvername == "mosek_conif":
+                    print("    (%i of which is limited to discrete choices)"
+                          % len(self.choicevaridxs))
+                else:
+                    print("    (%i of which is limited to discrete choices, \n"
+                          "        but the solver doesn't support these \n"
+                          "        so we'll treat it as continuous)"
+                          % len(self.choicevaridxs))
             print("  in %i posynomial inequalities." % len(self.k))
 
         if self.choicevaridxs and solvername == "mosek_conif":

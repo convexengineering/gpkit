@@ -74,9 +74,11 @@ class SolverLog(list):
 
     def write(self, writ):
         "Append and potentially write the new line."
+        if writ[:2] == "b'":
+            writ = writ[2:-1]
         if writ != "\n":
             writ = writ.rstrip("\n")
-            self.append(str(writ))
+            self.append(writ)
         if self.verbosity > 0:  # pragma: no cover
             self.output.write(writ)
 

@@ -201,7 +201,8 @@ def optimize(*, c, A, k, p_idxs, **kwargs):
             task.putarow(cur_con_idx, choiceidxs, [1.0]*m_choices)
             task.putconbound(cur_con_idx, mosek.boundkey.fx, 1.0, 1.0)
             cur_con_idx += 1
-            task.putarow(cur_con_idx, choiceidxs.tolist() + [idx], list(np.log(choices)) + [-1])
+            task.putarow(cur_con_idx, choiceidxs.tolist() + [idx],
+                        np.log(choices).tolist() + [-1])
             task.putconbound(cur_con_idx, mosek.boundkey.fx, 0.0, 0.0)
             cur_con_idx += 1
         print("\n---------------------")
