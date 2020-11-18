@@ -77,8 +77,7 @@ class SolverLog(list):
         if writ[:2] == "b'":
             writ = writ[2:-1]
         if writ != "\n":
-            writ = writ.rstrip("\n")
-            self.append(writ)
+            self.append(writ.rstrip("\n"))
         if self.verbosity > 0:  # pragma: no cover
             self.output.write(writ)
 

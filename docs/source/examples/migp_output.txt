@@ -8,7 +8,7 @@ WARNINGS
 ~~~~~~~~
 Freed Choice Variables
 ----------------------
-This model has the discretized "choice" variables [x], but since the cvxopt solver does not support discretization they were treated as continuous variables.
+This model has the discretized choice variables [x], but since the 'cvxopt' solver doesn't support discretization they were treated as continuous variables.
 ~~~~~~~~
 
 Swept Variables

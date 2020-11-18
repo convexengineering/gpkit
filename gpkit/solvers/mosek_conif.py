@@ -180,15 +180,14 @@ def optimize(*, c, A, k, p_idxs, **kwargs):
         task.putconboundlist(con_indices, type_constraint, h, h)
         cur_con_idx += log_c_lin.size
     #
-    #   Add binary variables and "OR" constraints
+    #   Constrain choice variables to discrete choices
     #
     choicevaridxs = kwargs.get("choicevaridxs", {})
     if choicevaridxs:
-        print("---------------------\n")
         n_choicevars = 0
         for var, idx in choicevaridxs.items():
             choices = sorted(var.choices)
-            m_choices = len(choices) - 1
+            m_choices = len(choices) - 1  # the first option is the default
             choiceidxs = np.arange(msk_nvars + n_choicevars,
                                    msk_nvars + n_choicevars + m_choices)
             n_choicevars += m_choices
@@ -199,18 +198,16 @@ def optimize(*, c, A, k, p_idxs, **kwargs):
                                  np.zeros(m_choices), np.ones(m_choices))
             task.appendcons(m_choices)
             for i in range(m_choices - 1):
-                task.putarow(cur_con_idx + i, choiceidxs[i:i+2],
-                            [1.0, -1.0])
+                # each larger choice requires those before it
+                task.putarow(cur_con_idx + i, choiceidxs[i:i+2], [1.0, -1.0])
                 task.putconbound(cur_con_idx + i, mosek.boundkey.lo, 0.0, 0.0)
                 cur_con_idx += 1
-            baseline = np.log(choices[0])
-            choicediffs = np.diff(np.log(choices)).tolist()
+            base = np.log(choices[0])
+            logdiffs = np.diff(np.log(choices)).tolist()
             task.putarow(cur_con_idx, choiceidxs.tolist() + [idx],
-                        choicediffs + [-1])
-            task.putconbound(cur_con_idx, mosek.boundkey.fx,
-                             -baseline, -baseline)
+                         logdiffs + [-1])  # choices are summed
+            task.putconbound(cur_con_idx, mosek.boundkey.fx, -base, -base)
             cur_con_idx += 1
-        print("\n---------------------")
     #
     #   Set the objective function
     #
@@ -220,7 +217,7 @@ def optimize(*, c, A, k, p_idxs, **kwargs):
     #   Set solver parameters, and call .solve().
     #
     verbose = kwargs.get("verbose", True)
-    if False and verbose:
+    if verbose:
         def streamprinter(text):
             "Stream printer for output from mosek."
             print(text)
@@ -261,7 +258,7 @@ def optimize(*, c, A, k, p_idxs, **kwargs):
     # recover primal variables
     x = [0.] * m
     task.getxxslice(sol, 0, m, x)
-    # recovery binary variables
+    # recover binary variables
     # xbin = [0.] * (n_choicevars)
     # task.getxxslice(sol, msk_nvars, msk_nvars + n_choicevars, xbin)
     # wrap things up in a dictionary
@@ -278,7 +275,9 @@ def optimize(*, c, A, k, p_idxs, **kwargs):
         z_duals = np.array(z_duals)
         z_duals[z_duals < 0] = 0
         # recover dual variables for the remaining user-provided constraints
-        if log_c_lin is not None:
+        if log_c_lin is None:
+            solution["la"] = z_duals
+        else:
             aff_duals = [0.] * log_c_lin.size
             task.getsucslice(mosek.soltype.itr, n_lse + p_lse, cur_con_idx,
                              aff_duals)
@@ -289,8 +288,7 @@ def optimize(*, c, A, k, p_idxs, **kwargs):
             merged_duals[lse_posys[1:]] = z_duals  # skipping the cost
             merged_duals[lin_posys] = aff_duals
             solution["la"] = merged_duals[1:]
-        else:
-            solution["la"] = z_duals
+
     task.__exit__(None, None, None)
     env.__exit__(None, None, None)
     return solution

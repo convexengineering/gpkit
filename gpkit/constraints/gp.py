@@ -163,7 +163,7 @@ class GeometricProgram:
             data.extend(self.exps[i][var] for i in locs)
         self.A = CootMatrix(row, col, data)
 
-    # pylint: disable=too-many-statements, too-many-locals, too-many-branches
+    # pylint: disable=too-many-statements, too-many-locals
     def solve(self, solver=None, *, verbosity=1, gen_result=True, **kwargs):
         """Solves a GeometricProgram and returns the solution.
 
