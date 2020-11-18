@@ -3,6 +3,7 @@ from .set import ConstraintSet
 from ..nomials import Variable, VectorVariable, parse_subs, NomialArray
 from ..keydict import KeyDict
 from .. import NamedVariables, SignomialsEnabled
+from ..small_scripts import appendsolwarning, mag
 
 
 class ConstraintsRelaxedEqually(ConstraintSet):
@@ -42,6 +43,18 @@ class ConstraintsRelaxedEqually(ConstraintSet):
             "minimum relaxation": self.relaxvar >= 1,
             "relaxed constraints": relaxed_constraints}, original_substitutions)
 
+    def process_result(self, result):
+        "Warns if any constraints were relaxed"
+        ConstraintSet.process_result(self, result)
+        self.check_relaxed(result)
+
+    def check_relaxed(self, result):
+        "Adds relaxation warnings to the result"
+        for val, msg in get_relaxed([result["freevariables"][self.relaxvar]],
+                                    ["All constraints relaxed by %i%%"]):
+            appendsolwarning(msg % (0.9+(val-1)*100), self, result,
+                             "Relaxed Constraints")
+
 
 class ConstraintsRelaxed(ConstraintSet):
     """Relax constraints, as in Eqn. 11 of [Boyd2007].
@@ -80,6 +93,36 @@ class ConstraintsRelaxed(ConstraintSet):
         ConstraintSet.__init__(self, {
             "minimum relaxation": self.relaxvars >= 1,
             "relaxed constraints": relaxed_constraints}, original_substitutions)
+
+    def process_result(self, result):
+        "Warns if any constraints were relaxed"
+        ConstraintSet.process_result(self, result)
+        self.check_relaxed(result)
+
+    def check_relaxed(self, result):
+        "Adds relaxation warnings to the result"
+        relaxed = get_relaxed(result["freevariables"][self.relaxvars],
+                              range(len(self["relaxed constraints"])))
+        for relaxval, i in relaxed:
+            relax_percent = "%i%%" % (0.5+(relaxval-1)*100)
+            oldconstraint = self.original_constraints[i]
+            newconstraint = self["relaxed constraints"][i][0]
+            subs = {self.relaxvars[i]: relaxval}
+            relaxdleft = newconstraint.left.sub(subs)
+            relaxdright = newconstraint.right.sub(subs)
+            oldleftstr = str(oldconstraint.left)
+            relaxedleftstr = str(relaxdleft)
+            padding = len(relaxedleftstr) - len(oldleftstr)
+            if padding > 0:
+                oldleftstr = " " * padding + oldleftstr
+            elif padding < 0:
+                relaxedleftstr = " " * padding + relaxedleftstr
+            msg = (" %3i: %5s relaxed, from %s %s %s\n"
+                   "                       to %s %s %s"
+                   % (i, relax_percent, oldleftstr,
+                      oldconstraint.oper, oldconstraint.right,
+                      relaxedleftstr, newconstraint.oper, relaxdright))
+            appendsolwarning(msg, oldconstraint, result, "Relaxed Constraints")
 
 
 class ConstantsRelaxed(ConstraintSet):
@@ -168,9 +211,32 @@ class ConstantsRelaxed(ConstraintSet):
         self.constants = constants
 
     def process_result(self, result):
-        "Transfers the constant sensitivities back to the original constants"
+        "Transfers constant sensitivities back to the original constants"
         ConstraintSet.process_result(self, result)
         constant_senss = result["sensitivities"]["variables"]
         for new_constant, former_constant in self._derelax_map.items():
             constant_senss[former_constant] = constant_senss[new_constant]
             del constant_senss[new_constant]
+        self.check_relaxed(result)
+
+
+    def check_relaxed(self, result):
+        "Adds relaxation warnings to the result"
+        relaxed = get_relaxed([result["freevariables"][r]
+                               for r in self.relaxvars], self.freedvars)
+        for (_, freed) in relaxed:
+            msg = ("  %s: relaxed from %-.4g to %-.4g"
+                   % (freed,
+                      mag(self.constants[freed.key]),
+                      mag(result["freevariables"][freed])))
+            appendsolwarning(msg, freed, result, "Relaxed Constants")
+
+
+def get_relaxed(relaxvals, mapped_list):
+    "Returns 'relaxed' vals (those above an arbitrary threshold of 1.01)."
+    sortrelaxed = sorted(zip(relaxvals, mapped_list), key=lambda x: -x[0])
+    mostrelaxed = max(sortrelaxed[0][0], 1.01)
+    for i, (val, _) in enumerate(sortrelaxed):
+        if val <= 1.01 and (val-1) <= (mostrelaxed-1)/10:
+            return sortrelaxed[:i]
+    return sortrelaxed

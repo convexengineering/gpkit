@@ -164,7 +164,6 @@ class Model(CostedConstraintSet):
             sols.append(bst.sample_at(np.linspace(start, end, samplepoints)))
         return sols if len(sols) > 1 else sols[0]
 
-    # pylint: disable=too-many-locals,too-many-branches,too-many-statements
     def debug(self, solver=None, verbosity=1, **solveargs):
         "Attempts to diagnose infeasible models."
         from .relax import ConstantsRelaxed, ConstraintsRelaxed
@@ -174,10 +173,6 @@ class Model(CostedConstraintSet):
         solveargs["solver"] = solver
         solveargs["verbosity"] = verbosity - 1
         solveargs["process_result"] = False
-
-        if verbosity:
-            print("< DEBUGGING >")
-            print("> Trying with bounded variables and relaxed constants:")
 
         bounded = Bounded(self)
         if self.substitutions:
@@ -191,67 +186,31 @@ class Model(CostedConstraintSet):
                 sol = feas.solve(**solveargs)
             except InvalidGPConstraint:
                 sol = feas.sp(use_pccp=False).localsolve(**solveargs)
-            sol["boundedness"] = bounded.check_boundaries(sol,
-                                                          verbosity=verbosity)
-            if self.substitutions:
-                relaxed = get_relaxed([sol(r) for r in tants.relaxvars],
-                                      tants.freedvars,
-                                      min_return=0 if sol["boundedness"] else 1)
-                if verbosity and relaxed:
-                    if sol["boundedness"]:
-                        print("and these constants relaxed:")
-                    else:
-                        print("\nSolves with these constants relaxed:")
-                    for (_, freed) in relaxed:
-                        print("  %s: relaxed from %-.4g to %-.4g"
-                              % (freed, mag(tants.constants[freed.key]),
-                                 mag(sol(freed))))
-                    print("")
-            if verbosity > 0:
-                print(">> Success!")
+            # limited results processing
+            bounded.check_boundaries(sol)
+            tants.check_relaxed(sol)
         except Infeasible:
-            if verbosity > 0:
-                print(">> Failure.")
-                print("> Trying with relaxed constraints:")
-
+            if verbosity:
+                print("<DEBUG> Model is not feasible with relaxed constants"
+                      " and bounded variables.")
+            traints = ConstraintsRelaxed(self)
+            feas = Model(traints.relaxvars.prod()**30 * self.cost, traints)
             try:
-                traints = ConstraintsRelaxed(self)
-                feas = Model(traints.relaxvars.prod()**30 * self.cost, traints)
                 try:
                     sol = feas.solve(**solveargs)
                 except InvalidGPConstraint:
                     sol = feas.sp(use_pccp=False).localsolve(**solveargs)
-                relaxed_constraints = feas[0]["relaxed constraints"]
-                relaxed = get_relaxed(sol(traints.relaxvars),
-                                      range(len(relaxed_constraints)))
-                if verbosity > 0 and relaxed:
-                    print("\nSolves with these constraints relaxed:")
-                    for relaxval, i in relaxed:
-                        relax_percent = "%i%%" % (0.5+(relaxval-1)*100)
-                        oldconstraint = traints.original_constraints[i]
-                        newconstraint = relaxed_constraints[i][0]
-                        subs = {traints.relaxvars[i]: relaxval}
-                        relaxdleft = newconstraint.left.sub(subs)
-                        relaxdright = newconstraint.right.sub(subs)
-                        print(" %3i: %5s relaxed, from %s %s %s \n"
-                              "                     to %s %s %s "
-                              % (i, relax_percent, oldconstraint.left,
-                                 oldconstraint.oper, oldconstraint.right,
-                                 relaxdleft, newconstraint.oper, relaxdright))
-                if verbosity > 0:
-                    print("\n>> Success!\n")
-            except (ValueError, RuntimeWarning):
-                if verbosity > 0:
-                    print(">> Failure\n")
+                # limited results processing
+                traints.check_relaxed(sol)
+            except:
+                print("<DEBUG> Model is not feasible with bounded constraints.")
+        if sol and verbosity:
+            warnings = sol.table(tables=["warnings"]).split("\n")[3:-2]
+            if warnings:
+                print("<DEBUG> Model is feasible with these modifications:")
+                print("\n" + "\n".join(warnings) + "\n")
+            else:
+                print("<DEBUG> Model seems feasible without modification,"
+                      " or only needs relaxations of less than 1%."
+                      " Check the returned solution for details.")
         return sol
-
-
-def get_relaxed(relaxvals, mapped_list, min_return=1):
-    "Determines which relaxvars are considered 'relaxed'"
-    sortrelaxed = sorted(zip(relaxvals, mapped_list), key=lambda x: -x[0])
-    # arbitrarily, 1.01 is the threshold below which we don't show slack
-    mostrelaxed = max(sortrelaxed[0][0], 1.01)
-    for i, (val, _) in enumerate(sortrelaxed):
-        if i >= min_return and val <= 1.01 and (val-1) <= (mostrelaxed-1)/10:
-            return sortrelaxed[:i]
-    return sortrelaxed

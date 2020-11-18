@@ -188,8 +188,8 @@ def constraint_table(data, title, sortbymodel=True, showmodels=True, **_):
 
 def warnings_table(self, _, **kwargs):
     "Makes a table for all warnings in the solution."
-    title = "Warnings"
-    lines = [title, "="*len(title)]
+    title = "WARNINGS"
+    lines = ["~"*len(title), title, "~"*len(title)]
     if "warnings" not in self or not self["warnings"]:
         return []
     for wtype in self["warnings"]:
@@ -212,10 +212,9 @@ def warnings_table(self, _, **kwargs):
                 lines += constraint_table(data, title, **kwargs)
             else:
                 lines += [title] + ["-"*len(wtype)]
-                for msg, _ in data:
-                    lines += [msg, ""]
-                lines += [""]
-    return lines
+                lines += [msg for msg, _ in data] + [""]
+    lines[-1] = "~~~~~~~~"
+    return lines + [""]
 
 
 TABLEFNS = {"sensitivities": senss_table,

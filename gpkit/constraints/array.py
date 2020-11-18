@@ -5,9 +5,6 @@ from .single_equation import SingleEquationConstraint
 class ArrayConstraint(SingleEquationConstraint, list):
     """A ConstraintSet for prettier array-constraint printing.
 
-    ArrayConstraint gets its `sub` method from ConstrainSet,
-    and so `left` and `right` are only used for printing.
-
     When created by NomialArray `left` and `right` are likely to be
     be either NomialArrays or Varkeys of VectorVariables.
     """

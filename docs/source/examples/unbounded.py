@@ -12,5 +12,5 @@ m = Model(1/x, Bounded(constraints))
 sol = m.solve(verbosity=0)
 print(sol.summary())
 # but they can also be accessed from the solution:
-assert (sol["boundedness"]["value near upper bound"]
-        == sol["boundedness"]["sensitive to upper bound"])
+assert (sol["boundedness"]["value near upper bound of 1e+30"]
+        == sol["boundedness"]["sensitive to upper bound of 1e+30"])

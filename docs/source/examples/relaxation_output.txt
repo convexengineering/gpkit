@@ -29,6 +29,14 @@ Optimal Cost
 ------------
  1.414
 
+~~~~~~~~
+WARNINGS
+~~~~~~~~
+Relaxed Constraints
+-------------------
+All constraints relaxed by 42%
+~~~~~~~~
+
 Free Variables
 --------------
 x : 1.414
@@ -70,6 +78,15 @@ Constraints
 Optimal Cost
 ------------
  2
+
+~~~~~~~~
+WARNINGS
+~~~~~~~~
+Relaxed Constraints
+-------------------
+   1:  100% relaxed, from     x >= x_min
+                       to x_min <= 2·x
+~~~~~~~~
 
 Free Variables
 --------------
@@ -121,6 +138,14 @@ Constraints
 Optimal Cost
 ------------
  2
+
+~~~~~~~~
+WARNINGS
+~~~~~~~~
+Relaxed Constants
+-----------------
+  x_min: relaxed from 2 to 1
+~~~~~~~~
 
 Free Variables
 --------------

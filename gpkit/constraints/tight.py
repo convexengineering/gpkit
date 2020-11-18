@@ -20,22 +20,10 @@ class Tight(ConstraintSet):
         super().process_result(result)
         variables = result["variables"]
         for constraint in self.flat():
-            rel_diff = 0
-            if isinstance(constraint, PosynomialInequality):
+            with SignomialsEnabled():
                 leftsubbed = constraint.left.sub(variables).value
                 rightsubbed = constraint.right.sub(variables).value
-                rel_diff = abs(1 - leftsubbed/rightsubbed)
-            elif isinstance(constraint, SignomialInequality):
-                siglt0, = constraint.unsubbed
-                posy, negy = siglt0.posy_negy()
-                posy = posy.sub(variables).value
-                negy = negy.sub(variables).value
-                rel_diff = abs(1 - posy/negy)
-                if rel_diff >= self.reltol:
-                    # do another substitution for the sake of printing
-                    with SignomialsEnabled():
-                        leftsubbed = constraint.left.sub(variables).value
-                        rightsubbed = constraint.right.sub(variables).value
+            rel_diff = abs(1 - leftsubbed/rightsubbed)
             if rel_diff >= self.reltol:
                 msg = ("Constraint [%.100s... %s %.100s...] is not tight:"
                        " the left hand side evaluated to %s but"
