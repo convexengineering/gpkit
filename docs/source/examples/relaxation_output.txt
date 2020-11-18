@@ -1,8 +1,8 @@
 Original model
 ==============
 
-Cost
-----
+Cost Function
+-------------
  x
 
 Constraints
@@ -13,8 +13,8 @@ Constraints
 With constraints relaxed equally
 ================================
 
-Cost
-----
+Cost Function
+-------------
  C
 
 Constraints
@@ -63,8 +63,8 @@ Most Sensitive Constraints
 With constraints relaxed individually
 =====================================
 
-Cost
-----
+Cost Function
+-------------
  C[:].prod()·x^0.01
 
 Constraints
@@ -115,8 +115,8 @@ Most Sensitive Constraints
 With constants relaxed individually
 ===================================
 
-Cost
-----
+Cost Function
+-------------
  [Relax2.x_max, Relax2.x_min].prod()·x^0.01
 
 Constraints

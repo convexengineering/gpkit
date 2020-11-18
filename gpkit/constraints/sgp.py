@@ -208,7 +208,8 @@ solutions and can be solved with 'Model.solve()'.""")
     def results(self):
         "Creates and caches results from the raw solver_outs"
         if not self._results:
-            self._results = [o["generate_result"]() for o in self.solver_outs]
+            self._results = [gp.generate_result(s_o, dual_check=False)
+                             for gp, s_o in zip(self.gps, self.solver_outs)]
         return self._results
 
     def gp(self, x0=None, *, cleanx0=False):

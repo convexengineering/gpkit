@@ -69,7 +69,7 @@ class Bounded(ConstraintSet):
 
     def process_result(self, result):
         "Add boundedness to the model's solution"
-        ConstraintSet.process_result(self, result)
+        super().process_result(result)
         if "boundedness" not in result:
             result["boundedness"] = {}
         result["boundedness"].update(self.check_boundaries(result))

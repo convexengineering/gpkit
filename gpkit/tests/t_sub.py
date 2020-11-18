@@ -104,7 +104,7 @@ class TestModelSubs(unittest.TestCase):
         x = Variable("x")
         y = Variable("y")
         m = Model(x, [y >= 1], {y: x})
-        with self.assertRaises(ValueError):
+        with self.assertRaises(TypeError):
             m.solve()
 
     def test_quantity_sub(self):
