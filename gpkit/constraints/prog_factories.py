@@ -59,7 +59,7 @@ def progify(program, return_attr=None):
             if linked:
                 evaluate_linked(constants, linked)
         prog = program(self.cost, self, constants, **initargs)
-        prog.model = self
+        prog.model = self  # NOTE SIDE EFFECTS
         if return_attr:
             return prog, getattr(prog, return_attr)
         return prog

@@ -188,15 +188,16 @@ def constraint_table(data, title, sortbymodel=True, showmodels=True, **_):
 
 def warnings_table(self, _, **kwargs):
     "Makes a table for all warnings in the solution."
-    title = "Warnings"
-    lines = [title, "="*len(title)]
+    title = "WARNINGS"
+    lines = ["~"*len(title), title, "~"*len(title)]
     if "warnings" not in self or not self["warnings"]:
         return []
-    for wtype in self["warnings"]:
+    for wtype in sorted(self["warnings"]):
         data_vec = self["warnings"][wtype]
         if not hasattr(data_vec, "shape"):
             data_vec = [data_vec]
         for i, data in enumerate(data_vec):
+            data = sorted(data, key=lambda l: l[0])  # sort by msg
             title = wtype
             if len(data_vec) > 1:
                 title += " in sweep %i" % i
@@ -212,10 +213,9 @@ def warnings_table(self, _, **kwargs):
                 lines += constraint_table(data, title, **kwargs)
             else:
                 lines += [title] + ["-"*len(wtype)]
-                for msg, _ in data:
-                    lines += [msg, ""]
-                lines += [""]
-    return lines
+                lines += [msg for msg, _ in data] + [""]
+    lines[-1] = "~~~~~~~~"
+    return lines + [""]
 
 
 TABLEFNS = {"sensitivities": senss_table,

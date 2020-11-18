@@ -1,6 +1,6 @@
 
-Cost
-----
+Cost Function
+-------------
  Wfuel[0]
 
 Constraints

@@ -12,7 +12,7 @@ class CostedConstraintSet(ConstraintSet):
     ---------
     cost : gpkit.Posynomial
     constraints : Iterable
-    substitutions : dict (None)
+    substitutions : dict
     """
     lineage = None
 
@@ -35,10 +35,10 @@ class CostedConstraintSet(ConstraintSet):
     def _rootlines(self, excluded=()):
         "String showing cost, to be used when this is the top constraint"
         if self.cost.varkeys:
-            description = ["", "Cost", "----",
+            description = ["", "Cost Function", "-------------",
                            " %s" % self.cost.str_without(excluded),
                            "", "Constraints", "-----------"]
-        else:
+        else:   # don't print the cost if it's a constant
             description = ["", "Constraints", "-----------"]
         if self.lineage:
             fullname = lineagestr(self)

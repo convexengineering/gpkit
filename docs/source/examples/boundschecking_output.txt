@@ -1,8 +1,8 @@
 BoundsChecking
 ==============
 
-Cost
-----
+Cost Function
+-------------
  F
 
 Constraints
