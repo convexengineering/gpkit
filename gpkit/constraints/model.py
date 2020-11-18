@@ -5,7 +5,6 @@ from ..nomials import Monomial
 from .prog_factories import progify, solvify
 from .gp import GeometricProgram
 from .sgp import SequentialGeometricProgram
-from ..small_scripts import mag
 from ..tools.autosweep import autosweep_1d
 from ..exceptions import InvalidGPConstraint
 from .. import NamedVariables
@@ -202,7 +201,7 @@ class Model(CostedConstraintSet):
                     sol = feas.sp(use_pccp=False).localsolve(**solveargs)
                 # limited results processing
                 traints.check_relaxed(sol)
-            except:
+            except Infeasible:
                 print("<DEBUG> Model is not feasible with bounded constraints.")
         if sol and verbosity:
             warnings = sol.table(tables=["warnings"]).split("\n")[3:-2]

@@ -79,7 +79,7 @@ class Bounded(ConstraintSet):
             result["boundedness"] = {}
         result["boundedness"].update(self.check_boundaries(result))
 
-    def check_boundaries(self, result, *, verbosity=0):
+    def check_boundaries(self, result):
         "Creates (and potentially prints) a dictionary of unbounded variables."
         out = defaultdict(set)
         for i, varkey in enumerate(self.bound_varkeys):
@@ -98,8 +98,8 @@ class Bounded(ConstraintSet):
                     out["sensitive to " + bound].add(varkey)
                 if np.log(self.upperbound/value) <= self.logtol_threshold:
                     out["value near " + bound].add(varkey)
-        for kind, vars in out.items():
-            msg = "% 34s: %s" % (kind, ", ".join([str(v) for v in vars]))
+        for bound, vks in out.items():
+            msg = "% 34s: %s" % (bound, ", ".join([str(v) for v in vks]))
             appendsolwarning(msg, out, result,
                              "Arbitrarily Bounded Variables")
         return out

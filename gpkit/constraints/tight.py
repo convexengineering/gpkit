@@ -1,6 +1,5 @@
 "Implements Tight"
 from .set import ConstraintSet
-from ..nomials import PosynomialInequality, SignomialInequality
 from ..small_scripts import mag
 from ..small_scripts import appendsolwarning
 from .. import SignomialsEnabled
