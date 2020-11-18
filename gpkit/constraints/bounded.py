@@ -42,11 +42,6 @@ class Bounded(ConstraintSet):
     constraints : iterable
         constraints whose varkeys will be bounded
 
-    verbosity : int (default 1)
-        how detailed of a warning to print on solve
-            0: nothing
-            1: print warnings
-
     eps : float (default 1e-30)
         default lower bound is eps, upper bound is 1/eps
 
@@ -98,7 +93,7 @@ class Bounded(ConstraintSet):
                     out["sensitive to " + bound].add(varkey)
                 if np.log(self.upperbound/value) <= self.logtol_threshold:
                     out["value near " + bound].add(varkey)
-        for bound, vks in out.items():
+        for bound, vks in sorted(out.items()):
             msg = "% 34s: %s" % (bound, ", ".join([str(v) for v in vks]))
             appendsolwarning(msg, out, result,
                              "Arbitrarily Bounded Variables")

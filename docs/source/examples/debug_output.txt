@@ -6,8 +6,8 @@ Relaxed Constants
 
 Arbitrarily Bounded Variables
 -----------------------------
-   value near upper bound of 1e+30: y
  sensitive to upper bound of 1e+30: y
+   value near upper bound of 1e+30: y
 
 # Now let's try a model unsolvable with relaxed constants
 
@@ -25,7 +25,7 @@ Relaxed Constraints
 
 Arbitrarily Bounded Variables
 -----------------------------
-   value near upper bound of 1e+30: y
  sensitive to upper bound of 1e+30: y
+   value near upper bound of 1e+30: y
 
 <DEBUG> Model seems feasible without modification, or only needs relaxations of less than 1%. Check the returned solution for details.
