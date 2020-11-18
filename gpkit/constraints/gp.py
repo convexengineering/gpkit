@@ -59,11 +59,11 @@ class GeometricProgram:
 
     Examples
     --------
-    >>> gp = gpkit.geometric_program.GeometricProgram(
+    >>> gp = gpkit.constraints.gp.GeometricProgram(
                         # minimize
                         x,
                         [   # subject to
-                            1/x  # <= 1, implicitly
+                            x >= 1,
                         ], {})
     >>> gp.solve()
     """
@@ -79,8 +79,8 @@ class GeometricProgram:
                     sub = sub.to(key.units or "dimensionless").magnitude
                 self.substitutions[key] = sub
             if not isinstance(sub, (Numbers, np.ndarray)):
-                raise ValueError("substitution {%s: %s} has invalid value type"
-                                 " %s." % (key, sub, type(sub)))
+                raise TypeError("substitution {%s: %s} has invalid value type"
+                                " %s." % (key, sub, type(sub)))
         cost_hmap = cost.hmap.sub(self.substitutions, cost.varkeys)
         if any(c <= 0 for c in cost_hmap.values()):
             raise InvalidPosynomial("a GP's cost must be Posynomial")
@@ -118,18 +118,21 @@ class GeometricProgram:
         return missingbounds
 
     def gen(self):
-        "Generates nomial and solve data (A, p_idxs) from posynomials"
-        # k [posys]: number of monomials (rows of A) present in each constraint
+        """Generates nomial and solve data (A, p_idxs) from posynomials.
+
+        k [posys]: number of monomials (rows of A) present in each constraint
+        m_idxs [mons]: monomial indices of each posynomial
+        p_idxs [mons]: posynomial index of each monomial
+        cs, exps [mons]: coefficient and exponents of each monomial
+        varlocs: {vk: monomial indices of each variables' location}
+        meq_idxs: {all indices of equality mons} and {the first index of each}
+        varidxs: {vk: which column corresponds to it in A}
+        A [mons, vks]: sparse array of each monomials' variables' exponents
+
+        """
         self.k = [len(hmap) for hmap in self.hmaps]
-        # m_idxs [mons]: monomial indices of each posynomial
-        self.m_idxs = []
-        # p_idxs [mons]: posynomial index of each monomial
-        self.p_idxs = []
-        # cs, exps [mons]: coefficient and exponents of each monomial
-        self.cs, self.exps = [], []
-        # varlocs: {vk: monomial indices of each variables' location}
+        self.m_idxs, self.p_idxs, self.cs, self.exps = [], [], [], []
         self.varkeys = self.varlocs = defaultdict(list)
-        # meq_idxs: {all indices of equality mons} and {just the first halves}
         self.meq_idxs = MonoEqualityIndexes()
         m_idx = 0
         row, col, data = [], [], []
@@ -150,7 +153,7 @@ class GeometricProgram:
                 for var in exp:
                     self.varlocs[var].append(m_idx)
                 m_idx += 1
-        self.p_idxs = np.array(self.p_idxs, "int32")  # for later use as array
+        self.p_idxs = np.array(self.p_idxs, "int32")  # to use array equalities
         self.varidxs = {vk: i for i, vk in enumerate(self.varlocs)}
         self.choicevaridxs = {vk: i for i, vk in enumerate(self.varlocs)
                               if vk.choices}
@@ -158,7 +161,6 @@ class GeometricProgram:
             row.extend(locs)
             col.extend([j]*len(locs))
             data.extend(self.exps[i][var] for i in locs)
-        # A [mons, vks]: sparse array of each monomials' variables' exponents
         self.A = CootMatrix(row, col, data)
 
     # pylint: disable=too-many-statements, too-many-locals, too-many-branches
@@ -173,19 +175,17 @@ class GeometricProgram:
             If a function, passes that function cs, A, p_idxs, and k.
         verbosity : int (default 1)
             If greater than 0, prints solver name and solve time.
+        gen_result : bool (default True)
+            If True, makes a human-readable SolutionArray from solver output.
         **kwargs :
             Passed to solver constructor and solver function.
 
 
         Returns
         -------
-        result : SolutionArray
+        SolutionArray (or dict if gen_result is False)
         """
         solvername, solverfn = _get_solver(solver, kwargs)
-        solverargs = DEFAULT_SOLVER_KWARGS.get(solvername, {})
-        solverargs.update(kwargs)
-        solver_out = {}
-
         if verbosity > 0:
             print("Using solver '%s'" % solvername)
             print(" for %i free variables" % len(self.varlocs))
@@ -200,30 +200,33 @@ class GeometricProgram:
                           % len(self.choicevaridxs))
             print("  in %i posynomial inequalities." % len(self.k))
 
+        solverargs = DEFAULT_SOLVER_KWARGS.get(solvername, {})
+        solverargs.update(kwargs)
         if self.choicevaridxs and solvername == "mosek_conif":
             solverargs["choicevaridxs"] = self.choicevaridxs
             self.integersolve = True
         starttime = time()
-        infeasibility, original_stdout = None, sys.stdout
+        solver_out, infeasibility, original_stdout = {}, None, sys.stdout
         try:
             sys.stdout = SolverLog(original_stdout, verbosity=verbosity-2)
             solver_out = solverfn(c=self.cs, A=self.A, meq_idxs=self.meq_idxs,
                                   k=self.k, p_idxs=self.p_idxs, **solverargs)
         except Infeasible as e:
             infeasibility = e
+        except InvalidLicense as e:
+            raise InvalidLicense("license for solver \"%s\" is invalid."
+                                 % solvername) from e
         except Exception as e:
-            if isinstance(e, InvalidLicense):
-                raise InvalidLicense("license for solver \"%s\" is invalid."
-                                     % solvername) from e
             raise UnknownInfeasible("Something unexpected went wrong.") from e
         finally:
             self.solve_log = "\n".join(sys.stdout)
             sys.stdout = original_stdout
             self.solver_out = solver_out
-            solver_out["solver"] = solvername
-            solver_out["soltime"] = time() - starttime
-            if verbosity > 0:
-                print("Solving took %.3g seconds." % solver_out["soltime"])
+
+        solver_out["solver"] = solvername
+        solver_out["soltime"] = time() - starttime
+        if verbosity > 0:
+            print("Solving took %.3g seconds." % solver_out["soltime"])
 
         if infeasibility:
             if isinstance(infeasibility, PrimalInfeasible):
@@ -234,23 +237,21 @@ class GeometricProgram:
                        " bounding the right variables would prevent this.")
             elif isinstance(infeasibility, UnknownInfeasible):
                 msg = "The solver failed for an unknown reason."
-            if verbosity > 0 and solver_out["soltime"] < 1:
-                print(msg + "\nSince this model solved in less than a second,"
-                      " let's run `.debug()` automatically to check.\n`")
+            if (verbosity > 0 and solver_out["soltime"] < 1
+                    and hasattr(self, "model")):  # fast, top-level model
+                print(msg + "\nSince the model solved in less than a second,"
+                      " let's run `.debug()` to analyze what happened.\n`")
                 return self.model.debug(solver=solver)
+            # else, raise a clarifying error
             msg += (" Running `.debug()` may pinpoint the trouble. You can"
                     " also try another solver, or increase the verbosity.")
             raise infeasibility.__class__(msg) from infeasibility
 
-        if gen_result:  # NOTE: SIDE EFFECTS
-            self._result = self.generate_result(solver_out,
-                                                verbosity=verbosity-2)
-            return self.result
-        # TODO: remove this "generate_result" closure
-        solver_out["generate_result"] = \
-            lambda: self.generate_result(solver_out, dual_check=False)
-
-        return solver_out
+        if not gen_result:
+            return solver_out
+        # else, generate a human-readable SolutionArray
+        self._result = self.generate_result(solver_out, verbosity=verbosity-2)
+        return self.result
 
     @property
     def result(self):
@@ -277,12 +278,11 @@ class GeometricProgram:
                                 solver_out["nu"], solver_out["la"], tol)
         except Infeasible as chkerror:
             chkwarn = str(chkerror)
-            if dual_check or ("Dual" not in chkwarn and "nu" not in chkwarn):
+            if not ("Dual" in chkwarn and not dual_check):
                 print("Solution check warning: %s" % chkwarn)
         if verbosity > 0:
             print("Solution checking took %.2g%% of solve time." %
                   ((time() - tic) / soltime * 100))
-            tic = time()
         return result
 
     def _generate_nula(self, solver_out):
@@ -308,24 +308,6 @@ class GeometricProgram:
         return la, nu_by_posy
 
     def _compile_result(self, solver_out):
-        """Creates a result dict (as returned by solve() from solver output
-
-        This internal method is called from within the solve() method, unless
-        solver_out["status"] is not "optimal", in which case a RuntimeWarning
-        is raised prior to this method being called. In that case, users
-        may use this method to attempt to create a results dict from the
-        output of the failed solve.
-
-        Arguments
-        ---------
-        solver_out: dict
-            dict in format returned by solverfn within GeometricProgram.solve
-
-        Returns
-        -------
-        result: dict
-            dict in format returned by GeometricProgram.solve()
-        """
         result = {"cost": float(solver_out["objective"])}
         primal = solver_out["primal"]
         if len(self.varlocs) != len(primal):
@@ -423,7 +405,7 @@ class GeometricProgram:
                 raise Infeasible("Dual solution has negative entries as"
                                  " large as %s." % minnu)
         if any(np.abs(A.T.dot(nu)) > tol):
-            raise Infeasible("Sum of nu^T * A did not vanish.")
+            raise Infeasible("Dual: sum of nu^T * A did not vanish.")
         b = np.log(self.cs)
         dual_cost = sum(
             self.nu_by_posy[i].dot(
@@ -452,8 +434,8 @@ def gen_meq_bounds(missingbounds, exps, meq_idxs):  # pylint: disable=too-many-l
                     n_lower.add((key, "lower"))
         # (consider x*y/z == 1)
         # for a var (e.g. x) to be upper bounded by this monomial equality,
-        #   - vars of the same sign/side (y) must be lower bounded
-        #   - AND vars of the opposite sign/side (z) must be upper bounded
+        #   - vars of the same sign (y) must be lower bounded
+        #   - AND vars of the opposite sign (z) must be upper bounded
         p_ub = n_lb = frozenset(n_upper).union(p_lower)
         n_ub = p_lb = frozenset(p_upper).union(n_lower)
         for keys, ub in ((p_upper, p_ub), (n_upper, n_ub)):

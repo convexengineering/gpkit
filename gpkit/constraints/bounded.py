@@ -3,6 +3,7 @@ from collections import defaultdict
 import numpy as np
 from .. import Variable
 from .set import ConstraintSet
+from ..small_scripts import appendsolwarning
 
 
 def varkey_bounds(varkeys, lower, upper):
@@ -22,9 +23,8 @@ def varkey_bounds(varkeys, lower, upper):
     constraints = []
     for varkey in varkeys:
         variable = Variable(**varkey.descr)
-        if variable.units:
-            variable.hmap.units = None
-            variable.units = None
+        if variable.units:  # non-dimensionalize the variable monomial
+            variable.units = variable.hmap.units = None
         constraint = []
         if lower:
             constraint.append(lower <= variable)
@@ -35,17 +35,12 @@ def varkey_bounds(varkeys, lower, upper):
 
 
 class Bounded(ConstraintSet):
-    """Bounds contained variables so as to ensure dual feasibility.
+    """Bounds contained variables, generally ensuring dual feasibility.
 
     Arguments
     ---------
     constraints : iterable
         constraints whose varkeys will be bounded
-
-    verbosity : int (default 1)
-        how detailed of a warning to print
-            0: nothing
-            1: print warnings
 
     eps : float (default 1e-30)
         default lower bound is eps, upper bound is 1/eps
@@ -59,13 +54,11 @@ class Bounded(ConstraintSet):
     sens_threshold = 1e-7
     logtol_threshold = 3
 
-    def __init__(self, constraints, *, verbosity=1,
-                 eps=1e-30, lower=None, upper=None):
+    def __init__(self, constraints, *, eps=1e-30, lower=None, upper=None):
         if not isinstance(constraints, ConstraintSet):
             constraints = ConstraintSet(constraints)
-        self.verbosity = verbosity
-        self.lowerbound = lower if (lower or upper) else eps
-        self.upperbound = upper if (lower or upper) else 1/eps
+        self.lowerbound = lower or eps
+        self.upperbound = upper or 1/eps
         constrained_varkeys = constraints.constrained_varkeys()
         self.bound_varkeys = frozenset(vk for vk in constrained_varkeys
                                        if vk not in constraints.substitutions)
@@ -76,13 +69,12 @@ class Bounded(ConstraintSet):
 
     def process_result(self, result):
         "Add boundedness to the model's solution"
-        ConstraintSet.process_result(self, result)
+        super().process_result(result)
         if "boundedness" not in result:
             result["boundedness"] = {}
-        result["boundedness"].update(
-            self.check_boundaries(result, verbosity=self.verbosity))
+        result["boundedness"].update(self.check_boundaries(result))
 
-    def check_boundaries(self, result, *, verbosity=0):
+    def check_boundaries(self, result):
         "Creates (and potentially prints) a dictionary of unbounded variables."
         out = defaultdict(set)
         for i, varkey in enumerate(self.bound_varkeys):
@@ -90,19 +82,19 @@ class Bounded(ConstraintSet):
             c_senss = [result["sensitivities"]["constraints"].get(c, 0)
                        for c in self["variable bounds"][i]]
             if self.lowerbound:
+                bound = "lower bound of %.2g" % self.lowerbound
                 if c_senss[0] >= self.sens_threshold:
-                    out["sensitive to lower bound"].add(varkey)
+                    out["sensitive to " + bound].add(varkey)
                 if np.log(value/self.lowerbound) <= self.logtol_threshold:
-                    out["value near lower bound"].add(varkey)
+                    out["value near " + bound].add(varkey)
             if self.upperbound:
+                bound = "upper bound of %.2g" % self.upperbound
                 if c_senss[-1] >= self.sens_threshold:
-                    out["sensitive to upper bound"].add(varkey)
+                    out["sensitive to " + bound].add(varkey)
                 if np.log(self.upperbound/value) <= self.logtol_threshold:
-                    out["value near upper bound"].add(varkey)
-        if verbosity > 0 and out:
-            print("")
-            print("Solves with these variables bounded:")
-            for key, value in sorted(out.items()):
-                print("% 25s: %s" % (key, ", ".join([str(v) for v in value])))
-            print("")
+                    out["value near " + bound].add(varkey)
+        for bound, vks in out.items():
+            msg = "% 34s: %s" % (bound, ", ".join([str(v) for v in vks]))
+            appendsolwarning(msg, out, result,
+                             "Arbitrarily Bounded Variables")
         return out

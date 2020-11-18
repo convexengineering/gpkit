@@ -157,12 +157,12 @@ class NomialMap(HashVector):
         origexps = list(orig.keys())
         selfexps = list(self.keys())
         for orig_exp, self_exp in self.expmap.items():
-            total_c = self.get(self_exp, None)  # TODO: seems unnecessary?
-            if total_c:
-                fraction = self.csmap.get(orig_exp, orig[orig_exp])/total_c
-                m_from_ms[self_exp][orig_exp] = fraction
-                orig_idx = origexps.index(orig_exp)
-                pmap[selfexps.index(self_exp)][orig_idx] = fraction
+            if self_exp not in self:  # can occur in tautological constraints
+                continue              #     after substitution
+            fraction = self.csmap.get(orig_exp, orig[orig_exp])/self[self_exp]
+            m_from_ms[self_exp][orig_exp] = fraction
+            orig_idx = origexps.index(orig_exp)
+            pmap[selfexps.index(self_exp)][orig_idx] = fraction
         return pmap, m_from_ms
 
 
