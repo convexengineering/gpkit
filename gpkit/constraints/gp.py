@@ -308,8 +308,25 @@ class GeometricProgram:
         result["variables"] = KeyDict(result["freevariables"])
         result["variables"].update(result["constants"])
         result["soltime"] = solver_out["soltime"]
-        if self.integersolve:  # no dual solution
+        if self.integersolve:
+            result["choicevariables"] = KeyDict( \
+                {k: v for k, v in result["freevariables"].items()
+                 if k in self.choicevaridxs})
+            result["warnings"] = {"No Dual Solution": [(\
+                "This model has the discretized choice variables"
+                " %s and hence no dual solution. You can fix those variables"
+                " to their optimal value and get sensitivities to the resulting"
+                " continuous problem by updating your model's substitions with"
+                " `sol[\"choicevariables\"]`."
+                % sorted(self.choicevaridxs.keys()), self.choicevaridxs)]}
             return SolutionArray(result)
+        elif self.choicevaridxs:
+            result["warnings"] = {"Freed Choice Variables": [(\
+                "This model has the discretized choice variables"
+                " %s, but since the '%s' solver doesn't support discretization"
+                " they were treated as continuous variables."
+                % (sorted(self.choicevaridxs.keys()), solver_out["solver"]),
+                self.choicevaridxs)]}
 
         result["sensitivities"] = {"constraints": {}}
         la, self.nu_by_posy = self._generate_nula(solver_out)
@@ -344,25 +361,6 @@ class GeometricProgram:
         result["sensitivities"]["variables"] = KeyDict(self.v_ss)
         result["sensitivities"]["constants"] = \
             result["sensitivities"]["variables"]  # NOTE: backwards compat.
-        # choice variable sol
-        if self.integersolve:
-            result["choicevariables"] = KeyDict( \
-                {k: v for k, v in result["freevariables"].items()
-                 if k in self.choicevaridxs})
-            result["warnings"] = {"No Dual Solution": [(\
-                "This model has the discretized \"choice\" variables"
-                " %s and hence no dual solution. You can fix those variables"
-                " to their optimal value and get sensitivities to the resulting"
-                " continuous problem by updating your model's substitions with"
-                " `sol[\"choicevariables\"]`."
-                % sorted(self.choicevaridxs.keys()), self.choicevaridxs)]}
-        elif self.choicevaridxs:
-            result["warnings"] = {"Freed Choice Variables": [(\
-                "This model has the discretized \"choice\" variables"
-                " %s, but since the %s solver does not support discretization"
-                " they were treated as continuous variables."
-                % (sorted(self.choicevaridxs.keys()), solver_out["solver"]),
-                self.choicevaridxs)]}
         return SolutionArray(result)
 
     def check_solution(self, cost, primal, nu, la, tol, abstol=1e-20):
