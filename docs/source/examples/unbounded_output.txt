@@ -1,12 +1,16 @@
 
-Solves with these variables bounded:
- sensitive to upper bound: x
-   value near upper bound: x
-
-
 Optimal Cost
 ------------
  1e-30
+
+~~~~~~~~
+WARNINGS
+~~~~~~~~
+Arbitrarily Bounded Variables
+-----------------------------
+   value near upper bound of 1e+30: x
+ sensitive to upper bound of 1e+30: x
+~~~~~~~~
 
 Free Variables
 --------------

@@ -3,8 +3,9 @@ Optimal Cost
 ------------
  [ 4.63e+03  6.23e+03  7.36e+03  ]
 
-Warnings
-========
+~~~~~~~~
+WARNINGS
+~~~~~~~~
 Unexpectedly Loose Constraints in sweep 0
 -----------------------------------------
 0.9585 >= 0.9187 : V_{f_{avail}} ≥ V_f
@@ -16,6 +17,7 @@ Unexpectedly Loose Constraints in sweep 1
 Unexpectedly Loose Constraints in sweep 2
 -----------------------------------------
 0.9585 >= 0.9187 : V_{f_{avail}} ≥ V_f
+~~~~~~~~
 
 Swept Variables
 ---------------

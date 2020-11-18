@@ -330,14 +330,14 @@ class TestSP(unittest.TestCase):
                           solver=self.solver, verbosity=0)
 
         with SignomialsEnabled():
-            m = Model(x, Bounded([x + y >= 1], verbosity=0))
+            m = Model(x, Bounded([x + y >= 1]))
         sol = m.localsolve(verbosity=0, solver=self.solver)
         boundedness = sol["boundedness"]
         # depends on solver, platform, whims of the numerical deities
-        if "value near lower bound" in boundedness:  # pragma: no cover
-            self.assertIn(x.key, boundedness["value near lower bound"])
+        if "value near lower bound of 1e-30" in boundedness:  # pragma: no cover
+            self.assertIn(x.key, boundedness["value near lower bound of 1e-30"])
         else:  # pragma: no cover
-            self.assertIn(y.key, boundedness["value near upper bound"])
+            self.assertIn(y.key, boundedness["value near upper bound of 1e+30"])
 
     def test_values_vs_subs(self):
         # Substitutions update method
@@ -629,19 +629,21 @@ class TestSP(unittest.TestCase):
         with self.assertRaises((DualInfeasible, UnknownInfeasible)):
             m.solve(self.solver, verbosity=0)
         # test one-sided bound
-        m = Model(x*y, Bounded(m, verbosity=0, lower=0.001))
+        m = Model(x*y, Bounded(m, lower=0.001))
         sol = m.solve(self.solver, verbosity=0)
         bounds = sol["boundedness"]
-        self.assertEqual(bounds["sensitive to lower bound"], set([x.key]))
+        self.assertEqual(bounds["sensitive to lower bound of 0.001"],
+                         set([x.key]))
         # end test one-sided bound
-        m = Model(x*y, Bounded(m, verbosity=0))
+        m = Model(x*y, [x*y**1.01 >= 100])
+        m = Model(x*y, Bounded(m))
         sol = m.solve(self.solver, verbosity=0)
         bounds = sol["boundedness"]
         # depends on solver, platform, whims of the numerical deities
-        if "sensitive to upper bound" in bounds:  # pragma: no cover
-            self.assertIn(y.key, bounds["sensitive to upper bound"])
+        if "sensitive to upper bound of 1e+30" in bounds:  # pragma: no cover
+            self.assertIn(y.key, bounds["sensitive to upper bound of 1e+30"])
         else:  # pragma: no cover
-            self.assertIn(x.key, bounds["sensitive to lower bound"])
+            self.assertIn(x.key, bounds["sensitive to lower bound of 1e-30"])
 
 
 class TestModelSolverSpecific(unittest.TestCase):

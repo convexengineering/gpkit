@@ -66,7 +66,7 @@ sol = m.solve(verbosity=0)
 print(sol.table())
 
 ### Printing Results 2
-print("The optimal value is %s." % sol["cost"])
+print("The optimal value is %.4g." % sol["cost"])
 
 ### Example variable sensitivity usage
 x = Variable("x")
