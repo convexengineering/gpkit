@@ -205,7 +205,6 @@ def optimize(*, c, A, k, p_idxs, **kwargs):
                 cur_con_idx += 1
             baseline = np.log(choices[0])
             choicediffs = np.diff(np.log(choices)).tolist()
-            print(choicediffs)
             task.putarow(cur_con_idx, choiceidxs.tolist() + [idx],
                         choicediffs + [-1])
             task.putconbound(cur_con_idx, mosek.boundkey.fx,

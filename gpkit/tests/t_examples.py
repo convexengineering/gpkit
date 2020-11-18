@@ -92,6 +92,13 @@ class TestExamples(unittest.TestCase):
     def test_external_constraint(self, example):
         pass
 
+    def test_migp(self, example):
+        if settings["default_solver"] == "mosek_conif":
+            assert_logtol(example.sol(example.x), [1]*3 + [2]*6 + [3]*2)
+        else:
+            assert_logtol(example.sol(example.x),
+                          np.sqrt(example.sol(example.num)))
+
     def test_external_function(self, example):
         external_code = example.external_code
         self.assertEqual(external_code(0), 0)
