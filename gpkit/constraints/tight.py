@@ -20,22 +20,21 @@ class Tight(ConstraintSet):
         variables = result["variables"]
         for constraint in self.flat():
             with SignomialsEnabled():
-                leftsubbed = constraint.left.sub(variables).value
-                rightsubbed = constraint.right.sub(variables).value
-            rel_diff = abs(1 - leftsubbed/rightsubbed)
+                leftval = constraint.left.sub(variables).value
+                rightval = constraint.right.sub(variables).value
+            rel_diff = abs(1 - leftval/rightval)
             if rel_diff >= self.reltol:
                 msg = ("Constraint [%.100s... %s %.100s...] is not tight:"
                        " the left hand side evaluated to %s but"
                        " the right hand side evaluated to %s"
                        " (Allowable error: %s%%, Actual error: %.2g%%)" %
                        (constraint.left, constraint.oper, constraint.right,
-                        leftsubbed, rightsubbed,
+                        leftval, rightval,
                         self.reltol*100, mag(rel_diff)*100))
-                if hasattr(leftsubbed, "magnitude"):
-                    rightsubbed = rightsubbed.to(leftsubbed.units).magnitude
-                    leftsubbed = leftsubbed.magnitude
-                constraint.tightvalues = (leftsubbed, constraint.oper,
-                                          rightsubbed)
+                if hasattr(leftval, "magnitude"):
+                    rightval = rightval.to(leftval.units).magnitude
+                    leftval = leftval.magnitude
+                constraint.tightvalues = (leftval, constraint.oper, rightval)
                 constraint.rel_diff = rel_diff
                 appendsolwarning(msg, constraint, result,
                                  "Unexpectedly Loose Constraints")

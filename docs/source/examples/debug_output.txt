@@ -1,13 +1,13 @@
 <DEBUG> Model is feasible with these modifications:
 
+Arbitrarily Bounded Variables
+-----------------------------
+   value near upper bound of 1e+30: y
+ sensitive to upper bound of 1e+30: y
+
 Relaxed Constants
 -----------------
   x_min [ft]: relaxed from 2 to 1
-
-Arbitrarily Bounded Variables
------------------------------
- sensitive to upper bound of 1e+30: y
-   value near upper bound of 1e+30: y
 
 # Now let's try a model unsolvable with relaxed constants
 
@@ -25,7 +25,7 @@ Relaxed Constraints
 
 Arbitrarily Bounded Variables
 -----------------------------
- sensitive to upper bound of 1e+30: y
    value near upper bound of 1e+30: y
+ sensitive to upper bound of 1e+30: y
 
 <DEBUG> Model seems feasible without modification, or only needs relaxations of less than 1%. Check the returned solution for details.
