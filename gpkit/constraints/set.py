@@ -65,7 +65,7 @@ class ConstraintSet(list, ReprMixin):
     unique_varkeys, idxlookup = frozenset(), {}
     _name_collision_varkeys = None
 
-    def __init__(self, constraints, substitutions=None):  # pylint: disable=too-many-branches,too-many-statements
+    def __init__(self, constraints, substitutions=None, *, bonusvks=None):  # pylint: disable=too-many-branches,too-many-statements
         if isinstance(constraints, dict):
             keys, constraints = sort_constraints_dict(constraints)
             self.idxlookup = {k: i for i, k in enumerate(keys)}
@@ -90,6 +90,8 @@ class ConstraintSet(list, ReprMixin):
                 raise badelement(self, i, constraint,
                                  " It had not yet been initialized!")
         self.substitutions.vks = self.vks
+        if bonusvks:
+            self.vks.update(bonusvks)
         if substitutions:
             self.substitutions.update(substitutions)
         for key in self.vks:
@@ -117,13 +119,6 @@ class ConstraintSet(list, ReprMixin):
         self.bounded.update(constraint.bounded)
         for bound, solutionset in constraint.meq_bounded.items():
             self.meq_bounded[bound].update(solutionset)
-        # if not isinstance(constraint, ConstraintSet):
-        #     if hasattr(constraint, "substitutions"):
-        #         del constraint.substitutions
-        #     del constraint.bounded
-        #     del constraint.vks
-        #     if constraint.meq_bounded:
-        #         del constraint.meq_bounded
 
     def __getitem__(self, key):
         if key in self.idxlookup:

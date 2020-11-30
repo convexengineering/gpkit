@@ -23,8 +23,7 @@ class CostedConstraintSet(ConstraintSet):
         subs = {k: k.value for k in self.cost.vks if "value" in k.descr}
         if substitutions:
             subs.update(substitutions)
-        ConstraintSet.__init__(self, constraints, subs)
-        self.vks.update(self.cost.vks)
+        ConstraintSet.__init__(self, constraints, subs, bonusvks=self.cost.vks)
 
     def constrained_varkeys(self):
         "Return all varkeys in the cost and non-ConstraintSet constraints"

@@ -76,10 +76,6 @@ class Signomial(Nomial):
         -------
         Signomial (or Posynomial or Monomial)
         """
-        # varset = self.varkeys[var]
-        # if len(varset) > 1:
-        #     raise ValueError("multiple variables %s found for key %s"
-        #                      % (list(varset), var))
         var = var.key
         if var not in self.vks:
             diff = NomialMap({EMPTY_HV: 0.0})
