@@ -18,9 +18,6 @@ class NomialData(ReprMixin):
 
     def __init__(self, hmap):
         self.hmap = hmap
-        self.vks = set()
-        for exp in self.hmap:
-            self.vks.update(exp)
         self.units = self.hmap.units
         self.any_nonpositive_cs = any(c <= 0 for c in self.hmap.values())
 
@@ -46,6 +43,13 @@ class NomialData(ReprMixin):
 
     def __hash__(self):
         return hash(self.hmap)
+
+    @property
+    def vks(self):
+        vks = set()
+        for exp in self.hmap:
+            vks.update(exp)
+        return vks
 
     @property
     def varkeys(self):

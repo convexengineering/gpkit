@@ -80,7 +80,7 @@ class GeometricProgram:
             if not isinstance(sub, (Numbers, np.ndarray)):
                 raise TypeError("substitution {%s: %s} has invalid value type"
                                 " %s." % (key, sub, type(sub)))
-        cost_hmap = cost.hmap.sub(self.substitutions, cost.varkeys)
+        cost_hmap = cost.hmap.sub(self.substitutions, cost.vks)
         if any(c <= 0 for c in cost_hmap.values()):
             raise InvalidPosynomial("a GP's cost must be Posynomial")
         hmapgen = ConstraintSet.as_hmapslt1(constraints, self.substitutions)
@@ -326,7 +326,7 @@ class GeometricProgram:
                     before = self.v_ss.get(c, 0)
                     self.v_ss[c] = before + dlogcost_dlogv*dlogv_dlogc
                 if v in cost_senss:
-                    if c in self.cost.varkeys:
+                    if c in self.cost.vks:
                         dlogcost_dlogv = cost_senss.pop(v)
                         before = cost_senss.get(c, 0)
                         cost_senss[c] = before + dlogcost_dlogv*dlogv_dlogc

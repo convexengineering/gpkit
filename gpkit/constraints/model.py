@@ -11,6 +11,7 @@ from .. import NamedVariables
 from ..tools.docstring import expected_unbounded
 from .set import add_meq_bounds
 from ..exceptions import Infeasible
+from ..keydict import KeySet
 
 
 class Model(CostedConstraintSet):
@@ -38,6 +39,7 @@ class Model(CostedConstraintSet):
     """
     program = None
     solution = None
+    _varkeys = None
 
     def __init__(self, cost=None, constraints=None, *args, **kwargs):
         setup_vars = None
@@ -132,6 +134,13 @@ class Model(CostedConstraintSet):
 %s
 """ % (direction.title(), ", ".join(set(k.name for k in mb)))
             raise ValueError(err + boundstrs + "\n\n" + docstring)
+
+    @property
+    def varkeys(self):
+        "The NomialData's varkeys, created when necessary for a substitution."
+        if self._varkeys is None:
+            self._varkeys = KeySet(self.vks)
+        return self._varkeys
 
     def sweep(self, sweeps, **solveargs):
         "Sweeps {var: values} pairs in sweeps. Returns swept solutions."

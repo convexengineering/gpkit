@@ -76,15 +76,15 @@ class Signomial(Nomial):
         -------
         Signomial (or Posynomial or Monomial)
         """
-        varset = self.varkeys[var]
-        if len(varset) > 1:
-            raise ValueError("multiple variables %s found for key %s"
-                             % (list(varset), var))
-        if not varset:
+        # varset = self.varkeys[var]
+        # if len(varset) > 1:
+        #     raise ValueError("multiple variables %s found for key %s"
+        #                      % (list(varset), var))
+        var = var.key
+        if var not in self.vks:
             diff = NomialMap({EMPTY_HV: 0.0})
             diff.units = None
         else:
-            var, = varset
             diff = self.hmap.diff(var)
         return Signomial(diff, require_positive=False)
 
@@ -117,8 +117,8 @@ class Signomial(Nomial):
         -------
         Monomial (unless self(x0) < 0, in which case a Signomial is returned)
         """
-        x0, _, _ = parse_subs(self.varkeys, x0)  # use only varkey keys
-        psub = self.hmap.sub(x0, self.varkeys, parsedsubs=True)
+        x0, _, _ = parse_subs(self.vks, x0)  # use only varkey keys
+        psub = self.hmap.sub(x0, self.vks, parsedsubs=True)
         if EMPTY_HV not in psub or len(psub) > 1:
             raise ValueError("Variables %s remained after substituting x0=%s"
                              " into %s" % (psub, x0, self))
@@ -126,8 +126,7 @@ class Signomial(Nomial):
         c, exp = c0, HashVector()
         for vk in self.vks:
             val = float(x0[vk])
-            diff, = self.hmap.diff(vk).sub(x0, self.varkeys,
-                                           parsedsubs=True).values()
+            diff, = self.hmap.diff(vk).sub(x0, self.vks, parsedsubs=True).values()
             e = val*diff/c0
             if e:
                 exp[vk] = e
@@ -167,7 +166,7 @@ class Signomial(Nomial):
         -------
         Returns substituted nomial.
         """
-        return Signomial(self.hmap.sub(substitutions, self.varkeys),
+        return Signomial(self.hmap.sub(substitutions, self.vks),
                          require_positive=require_positive)
 
     def __le__(self, other):
@@ -373,10 +372,11 @@ class ScalarSingleEquationConstraint(SingleEquationConstraint):
 
     def __init__(self, left, oper, right):
         lr = [left, right]
-        self.varkeys = set()
+        self.vks = set()
         for i, sig in enumerate(lr):
             if isinstance(sig, Signomial):
-                self.varkeys.update(sig.vks)
+                for exp in sig.hmap:
+                    self.vks.update(exp)
             else:
                 lr[i] = Signomial(sig)
         from .. import NamedVariables
@@ -470,9 +470,9 @@ class PosynomialInequality(ScalarSingleEquationConstraint):
         "Returns the posys <= 1 representation of this constraint."
         out = []
         for posy in self.unsubbed:
-            fixed, _, _ = parse_subs(posy.varkeys, substitutions, clean=True)
-            hmap = posy.hmap.sub(fixed, posy.varkeys, parsedsubs=True)
-            self.pmap, self.mfm = hmap.mmap(posy.hmap)  # pylint: disable=attribute-defined-outside-init
+            fixed, _, _ = parse_subs(posy.vks, substitutions, clean=True)
+            hmap = posy.hmap.sub(fixed, posy.vks, parsedsubs=True)
+            self.pmap = hmap.mmap(posy.hmap)  # pylint: disable=attribute-defined-outside-init
             hmap = self._simplify_posy_ineq(hmap, self.pmap, fixed)
             if hmap is not None:
                 if any(c <= 0 for c in hmap.values()):
@@ -490,10 +490,12 @@ class PosynomialInequality(ScalarSingleEquationConstraint):
             for i, mmap in enumerate(self.pmap):
                 for idx, percentage in mmap.items():
                     nu_[idx] += percentage*nu[i]
+            del self.pmap
             if hasattr(self, "const_mmap"):
                 scale = (1-self.const_coeff)/self.const_coeff
                 for idx, percentage in self.const_mmap.items():
                     nu_[idx] += percentage * la*scale
+                del self.const_mmap
             nu = nu_
         self.v_ss = HashVector()
         if self.parent:
@@ -517,7 +519,7 @@ class MonomialEquality(PosynomialInequality):
         self.bounded = set()
         self.meq_bounded = {}
         self._las = []
-        if self.unsubbed and len(self.varkeys) > 1:
+        if self.unsubbed and len(self.vks) > 1:
             exp, = self.unsubbed[0].hmap
             for key, e in exp.items():
                 s_e = np.sign(e)
@@ -599,7 +601,7 @@ class SignomialInequality(ScalarSingleEquationConstraint):
         p_ineq = PosynomialInequality(posy, "<=", negy)
         p_ineq.parent = self
         siglt0_us, = self.unsubbed
-        siglt0_hmap = siglt0_us.hmap.sub(substitutions, siglt0_us.varkeys)
+        siglt0_hmap = siglt0_us.hmap.sub(substitutions, siglt0_us.vks)
         negy_hmap = NomialMap()
         posy_hmaps = defaultdict(NomialMap)
         for o_exp, exp in siglt0_hmap.expmap.items():
@@ -613,8 +615,8 @@ class SignomialInequality(ScalarSingleEquationConstraint):
         self._negysig = Signomial(negy_hmap, require_positive=False)
         self._coeffsigs = {exp: Signomial(hmap, require_positive=False)
                            for exp, hmap in posy_hmaps.items()}
-        self._sigvars = {exp: (list(self._negysig.varkeys)
-                               + list(sig.varkeys))
+        self._sigvars = {exp: (list(self._negysig.vks)
+                               + list(sig.vks))
                          for exp, sig in self._coeffsigs.items()}
         return p_ineq.as_hmapslt1(substitutions)
 

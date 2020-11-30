@@ -1,6 +1,9 @@
 """Defines the VarKey class"""
+from collections import defaultdict
 from .small_classes import Count, qty
 from .repr_conventions import ReprMixin
+
+GLOBAL_KEYMAP = defaultdict(set)
 
 
 class VarKey(ReprMixin):  # pylint:disable=too-many-instance-attributes
