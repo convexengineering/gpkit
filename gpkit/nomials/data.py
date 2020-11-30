@@ -51,12 +51,10 @@ class NomialData(ReprMixin):
             vks.update(exp)
         return vks
 
-    @property
+    @property  # TODO: remove this
     def varkeys(self):
         "The NomialData's varkeys, created when necessary for a substitution."
-        if self._varkeys is None:
-            self._varkeys = KeySet(self.vks)
-        return self._varkeys
+        return KeySet(self.vks)
 
     def __eq__(self, other):
         "Equality test"

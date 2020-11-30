@@ -490,12 +490,10 @@ class PosynomialInequality(ScalarSingleEquationConstraint):
             for i, mmap in enumerate(self.pmap):
                 for idx, percentage in mmap.items():
                     nu_[idx] += percentage*nu[i]
-            del self.pmap
             if hasattr(self, "const_mmap"):
                 scale = (1-self.const_coeff)/self.const_coeff
                 for idx, percentage in self.const_mmap.items():
                     nu_[idx] += percentage * la*scale
-                del self.const_mmap
             nu = nu_
         self.v_ss = HashVector()
         if self.parent:

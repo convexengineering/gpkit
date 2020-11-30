@@ -34,7 +34,9 @@ class SolSavingEnvironment:
         self.attrstore = {}
 
     def __enter__(self):
-        for constraint_attr in ["v_ss", "unsubbed"]:
+        for constraint_attr in ["pmap", "const_mmap",
+                                "bounded", "meq_bounded",
+                                "v_ss", "unsubbed", "varkeys"]:
             store = {}
             for constraint in self.solarray["sensitivities"]["constraints"]:
                 if getattr(constraint, constraint_attr, None):

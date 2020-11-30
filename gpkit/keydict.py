@@ -44,13 +44,14 @@ class KeyMap:
     attribute, that key can be set and accessed normally.
     """
     collapse_arrays = False
-    keymap = defaultdict(set)
+    keymap = []
     log_gets = False
     varkeys = None
     vks = None
 
     def __init__(self, *args, **kwargs):
         "Passes through to super().__init__ via the `update()` method"
+        self.keymap = defaultdict(set)
         self._unmapped_keys = set()
         self.owned = set()
         self.update(*args, **kwargs)  # pylint: disable=no-member
@@ -105,7 +106,7 @@ class KeyMap:
                                      " for value %s" %
                                      (key, idx, super().__getitem__(key)))  # pylint: disable=no-member
             return True
-        return any(super().__contains__(k) for k in self.keymap[key])
+        return key in self.keymap
 
     def update_keymap(self):
         "Updates the keymap with the keys in _unmapped_keys"
@@ -171,10 +172,7 @@ class KeyDict(KeyMap, dict):
     def __getitem__(self, key):
         "Overloads __getitem__ and [] access to work with all keys"
         key, idx = self.parse_and_index(key)
-        if super().__contains__(key):
-            keys = [key]
-        else:
-            keys = self.keymap[key]
+        keys = self.keymap[key]
         if not keys:
             del self.keymap[key]  # remove blank entry added by defaultdict
             raise KeyError(key)

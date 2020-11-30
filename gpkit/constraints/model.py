@@ -138,8 +138,11 @@ class Model(CostedConstraintSet):
     @property
     def varkeys(self):
         "The NomialData's varkeys, created when necessary for a substitution."
+        if self.substitutions.varkeys:
+            self._varkeys = self.substitutions.varkeys
         if self._varkeys is None:
             self._varkeys = KeySet(self.vks)
+            self.substitutions.varkeys = self._varkeys
         return self._varkeys
 
     def sweep(self, sweeps, **solveargs):
