@@ -28,12 +28,12 @@ class SolSavingEnvironment:
 
     This approximately halves the size of the pickled solution.
     """
-    constraintstore = None
 
     def __init__(self, solarray, saveconstraints):
         self.solarray = solarray
         self.attrstore = {}
         self.saveconstraints = saveconstraints
+        self.constraintstore = None
 
 
     def __enter__(self):
@@ -48,7 +48,8 @@ class SolSavingEnvironment:
                         delattr(constraint, constraint_attr)
                 self.attrstore[constraint_attr] = store
         else:
-            self.constraintstore = self.solarray["sensitivities"].pop("constraints")
+            self.constraintstore = \
+                self.solarray["sensitivities"].pop("constraints")
 
     def __exit__(self, type_, val, traceback):
         if self.saveconstraints:
