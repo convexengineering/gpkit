@@ -199,6 +199,8 @@ class KeyDict(KeyMap, dict):
                 raise e
             if not hasattr(value, "shape"):
                 value = np.full(key.shape, value)
+            elif key.shape != value.shape:
+                raise KeyError("Key and value have different shapes") from e
             for subkey, subval in zip(key.flat, value.flat):
                 self[subkey] = subval
             return
