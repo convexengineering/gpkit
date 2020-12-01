@@ -150,6 +150,16 @@ class ConstraintSet(list, ReprMixin):
         return sorted([Variable(k) for k in self.varkeys[key]],
                       key=_sort_by_name_and_idx)
 
+    @property
+    def varkeys(self):
+        "The NomialData's varkeys, created when necessary for a substitution."
+        if self.substitutions.varkeys:
+            self._varkeys = self.substitutions.varkeys
+        if self._varkeys is None:
+            self._varkeys = KeySet(self.vks)
+            self.substitutions.varkeys = self._varkeys
+        return self._varkeys
+
     def constrained_varkeys(self):
         "Return all varkeys in non-ConstraintSet constraints"
         return self.vks - self.unique_varkeys
