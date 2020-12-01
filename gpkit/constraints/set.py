@@ -64,6 +64,7 @@ class ConstraintSet(list, ReprMixin):
     "Recursive container for ConstraintSets and Inequalities"
     unique_varkeys, idxlookup = frozenset(), {}
     _name_collision_varkeys = None
+    _varkeys = None
 
     def __init__(self, constraints, substitutions=None, *, bonusvks=None):  # pylint: disable=too-many-branches,too-many-statements
         if isinstance(constraints, dict):
@@ -75,6 +76,7 @@ class ConstraintSet(list, ReprMixin):
         self.vks = set(self.unique_varkeys)
         self.substitutions = KeyDict({k: k.value for k in self.unique_varkeys
                                       if "value" in k.descr})
+        self.substitutions.cset = self
         self.bounded, self.meq_bounded = set(), defaultdict(set)
         for i, constraint in enumerate(self):
             if hasattr(constraint, "vks"):
@@ -89,14 +91,14 @@ class ConstraintSet(list, ReprMixin):
             elif isinstance(constraint, ConstraintSet):
                 raise badelement(self, i, constraint,
                                  " It had not yet been initialized!")
-        self.substitutions.vks = self.vks
         if bonusvks:
             self.vks.update(bonusvks)
         if substitutions:
             self.substitutions.update(substitutions)
+            self._varkeys = None
         for key in self.vks:
             if key not in self.substitutions:
-                if key.veckey not in self.substitutions:
+                if key.veckey is None or key.veckey not in self.substitutions:
                     continue
                 elif np.isnan(self.substitutions[key.veckey][key.idx]):
                     continue
@@ -153,11 +155,8 @@ class ConstraintSet(list, ReprMixin):
     @property
     def varkeys(self):
         "The NomialData's varkeys, created when necessary for a substitution."
-        if self.substitutions.varkeys:
-            self._varkeys = self.substitutions.varkeys
         if self._varkeys is None:
             self._varkeys = KeySet(self.vks)
-            self.substitutions.varkeys = self._varkeys
         return self._varkeys
 
     def constrained_varkeys(self):

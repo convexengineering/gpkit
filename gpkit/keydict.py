@@ -46,8 +46,8 @@ class KeyMap:
     collapse_arrays = False
     keymap = []
     log_gets = False
-    varkeys = None
-    vks = None
+    cset = None
+    vks = varkeys = None
 
     def __init__(self, *args, **kwargs):
         "Passes through to super().__init__ via the `update()` method"
@@ -64,14 +64,12 @@ class KeyMap:
                 return key.veckey, key.idx
             return key, None
         except AttributeError:
-            if not self.vks:
+            if self.cset is None:
                 return key, self.update_keymap()
         # looks like we're in a substitutions dictionary
-        if not self.varkeys:
-            self.varkeys = KeySet(self.vks)
-        if key not in self.varkeys:  # pylint:disable=unsupported-membership-test
+        if key not in self.cset.varkeys:
             raise KeyError(key)
-        newkey, *otherkeys = self.varkeys[key]  # pylint:disable=unsubscriptable-object
+        newkey, *otherkeys = self.cset.varkeys[key]
         if otherkeys:
             if all(k.veckey == newkey.veckey for k in otherkeys):
                 return newkey.veckey, None
@@ -287,16 +285,10 @@ class KeySet(KeyMap, set):
 
     def update(self, keys):
         "Iterates through the dictionary created by args and kwargs"
-        if isinstance(keys, KeySet):
-            set.update(self, keys)
-            for key, value in keys.keymap.items():
-                self.keymap[key].update(value)
-            self._unmapped_keys.update(keys._unmapped_keys)  # pylint: disable=protected-access
-        else:  # set-like interface
-            for key in keys:
-                self.keymap[key].add(key)
-            self._unmapped_keys.update(keys)
-            super().update(keys)
+        for key in keys:
+            self.keymap[key].add(key)
+        self._unmapped_keys.update(keys)
+        super().update(keys)
 
     def __getitem__(self, key):
         "Gets the keys corresponding to a particular key."

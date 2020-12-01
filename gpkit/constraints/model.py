@@ -39,7 +39,6 @@ class Model(CostedConstraintSet):
     """
     program = None
     solution = None
-    _varkeys = None
 
     def __init__(self, cost=None, constraints=None, *args, **kwargs):
         setup_vars = None
@@ -74,6 +73,7 @@ class Model(CostedConstraintSet):
         if self.lineage and docstr and "SKIP VERIFICATION" not in docstr:
             if "Unbounded" in docstr or "Bounded by" in docstr:
                 self.verify_docstring()
+        self._varkeys = None
 
     gp = progify(GeometricProgram)
     solve = solvify(progify(GeometricProgram, "solve"))
@@ -133,7 +133,7 @@ class Model(CostedConstraintSet):
 ---------------
 %s
 """ % (direction.title(), ", ".join(set(k.name for k in mb)))
-            raise ValueError(err + boundstrs + "\n\n" + docstring)    
+            raise ValueError(err + boundstrs + "\n\n" + docstring)
 
     def sweep(self, sweeps, **solveargs):
         "Sweeps {var: values} pairs in sweeps. Returns swept solutions."
