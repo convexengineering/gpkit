@@ -186,7 +186,7 @@ class KeyDict(KeyMap, dict):
 
     def __setitem__(self, key, value):
         "Overloads __setitem__ and []= to work with all keys"
-        # pylint: disable=too-many-boolean-expressions,too-many-branches
+        # pylint: disable=too-many-boolean-expressions,too-many-branches,too-many-statements
         try:
             key, idx = self.parse_and_index(key)
         except KeyError as e:  # may be indexed VectorVariable

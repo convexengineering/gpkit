@@ -1,5 +1,4 @@
 """Defines the VarKey class"""
-from collections import defaultdict
 from .small_classes import Count, qty
 from .repr_conventions import ReprMixin
 

@@ -122,7 +122,8 @@ class Signomial(Nomial):
         c, exp = c0, HashVector()
         for vk in self.vks:
             val = float(x0[vk])
-            diff, = self.hmap.diff(vk).sub(x0, self.vks, parsedsubs=True).values()
+            diff, = self.hmap.diff(vk).sub(x0, self.vks,
+                                           parsedsubs=True).values()
             e = val*diff/c0
             if e:
                 exp[vk] = e

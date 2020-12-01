@@ -46,6 +46,7 @@ class NomialData(ReprMixin):
 
     @property
     def vks(self):
+        "Set of a NomialData's varkeys, created as necessary."
         vks = set()
         for exp in self.hmap:
             vks.update(exp)
@@ -53,7 +54,7 @@ class NomialData(ReprMixin):
 
     @property  # TODO: remove this
     def varkeys(self):
-        "The NomialData's varkeys, created when necessary for a substitution."
+        "KeySet of a NomialData's varkeys, created as necessary."
         return KeySet(self.vks)
 
     def __eq__(self, other):

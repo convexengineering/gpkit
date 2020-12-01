@@ -100,7 +100,7 @@ class ConstraintSet(list, ReprMixin):
             if key not in self.substitutions:
                 if key.veckey is None or key.veckey not in self.substitutions:
                     continue
-                elif np.isnan(self.substitutions[key.veckey][key.idx]):
+                if np.isnan(self.substitutions[key.veckey][key.idx]):
                     continue
             self.bounded.add((key, "upper"))
             self.bounded.add((key, "lower"))
@@ -204,10 +204,9 @@ class ConstraintSet(list, ReprMixin):
     def name_collision_varkeys(self):
         "Returns the set of contained varkeys whose names are not unique"
         if self._name_collision_varkeys is None:
-            varkeys = KeySet(self.vks)
             self._name_collision_varkeys = {
-                key for key in varkeys
-                if len(varkeys[key.str_without(["lineage", "vec"])]) > 1}
+                key for key in self.varkeys
+                if len(self.varkeys[key.str_without(["lineage", "vec"])]) > 1}
         return self._name_collision_varkeys
 
     def lines_without(self, excluded):

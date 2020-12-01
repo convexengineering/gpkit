@@ -11,7 +11,6 @@ from .. import NamedVariables
 from ..tools.docstring import expected_unbounded
 from .set import add_meq_bounds
 from ..exceptions import Infeasible
-from ..keydict import KeySet
 
 
 class Model(CostedConstraintSet):
@@ -73,7 +72,6 @@ class Model(CostedConstraintSet):
         if self.lineage and docstr and "SKIP VERIFICATION" not in docstr:
             if "Unbounded" in docstr or "Bounded by" in docstr:
                 self.verify_docstring()
-        self._varkeys = None
 
     gp = progify(GeometricProgram)
     solve = solvify(progify(GeometricProgram, "solve"))
