@@ -4,7 +4,6 @@ from collections.abc import Hashable
 import numpy as np
 from .small_classes import Numbers, Quantity, FixedScalar
 from .small_scripts import is_sweepvar, isnan
-from .varkey import GLOBAL_KEYMAP
 
 DIMLESS_QUANTITY = Quantity(1, "dimensionless")
 INT_DTYPE = np.dtype(int)
@@ -47,7 +46,6 @@ class KeyMap:
     keymap = []
     log_gets = False
     cset = None
-    vks = varkeys = None
 
     def __init__(self, *args, **kwargs):
         "Passes through to super().__init__ via the `update()` method"
