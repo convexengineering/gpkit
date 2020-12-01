@@ -4,7 +4,6 @@ from collections.abc import Hashable
 import numpy as np
 from .small_classes import Numbers, Quantity, FixedScalar
 from .small_scripts import is_sweepvar, isnan
-from .varkey import GLOBAL_KEYMAP
 
 DIMLESS_QUANTITY = Quantity(1, "dimensionless")
 INT_DTYPE = np.dtype(int)
@@ -47,7 +46,6 @@ class KeyMap:
     keymap = []
     log_gets = False
     varkeys = None
-    vks = None
 
     def __init__(self, *args, **kwargs):
         "Passes through to super().__init__ via the `update()` method"
@@ -64,11 +62,9 @@ class KeyMap:
                 return key.veckey, key.idx
             return key, None
         except AttributeError:
-            if not self.vks:
+            if not self.varkeys:
                 return key, self.update_keymap()
         # looks like we're in a substitutions dictionary
-        if not self.varkeys:
-            self.varkeys = KeySet(self.vks)
         if key not in self.varkeys:  # pylint:disable=unsupported-membership-test
             raise KeyError(key)
         newkey, *otherkeys = self.varkeys[key]  # pylint:disable=unsubscriptable-object
