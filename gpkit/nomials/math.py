@@ -546,7 +546,7 @@ class MonomialEquality(PosynomialInequality):
     def sens_from_dual(self, la, nu, _):
         "Returns the variable/constraint sensitivities from lambda/nu"
         self._las.append(la)
-        if len(self._las) < 2:
+        if len(self._las) == 1:
             return {}, 0
         la = self._las[0] - self._las[1]
         self._las = []
