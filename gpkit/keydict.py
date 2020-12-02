@@ -196,6 +196,8 @@ class KeyDict(KeyMap, dict):
             self._unmapped_keys.add(key)
             if idx:
                 dty = {} if isinstance(value, Numbers) else {"dtype": "object"}
+                if getattr(value, "shape", None) and value.dtype != INT_DTYPE:
+                    dty["dtype"] = value.dtype
                 dict.__setitem__(self, key, np.full(key.shape, np.nan, **dty))
                 self.owned.add(key)
         if idx:
