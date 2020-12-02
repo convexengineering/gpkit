@@ -186,8 +186,20 @@ class KeyDict(KeyMap, dict):
 
     def __setitem__(self, key, value):
         "Overloads __setitem__ and []= to work with all keys"
-        # pylint: disable=too-many-boolean-expressions
-        key, idx = self.parse_and_index(key)
+        # pylint: disable=too-many-boolean-expressions,too-many-branches
+        try:
+            key, idx = self.parse_and_index(key)
+        except KeyError as e:  # may be indexed VectorVariable
+            # NOTE: this try/except takes ~4% of the time in this loop
+            if not hasattr(key, "shape"):
+                raise e
+            if not hasattr(value, "shape"):
+                value = np.full(key.shape, value)
+            elif key.shape != value.shape:
+                raise KeyError("Key and value have different shapes") from e
+            for subkey, subval in zip(key.flat, value.flat):
+                self[subkey] = subval
+            return
         value = clean_value(key, value)
         if key not in self.keymap:
             if not hasattr(self, "_unmapped_keys"):
