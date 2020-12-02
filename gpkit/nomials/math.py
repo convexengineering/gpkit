@@ -470,6 +470,7 @@ class PosynomialInequality(ScalarSingleEquationConstraint):
             fixed, _, _ = parse_subs(posy.vks, substitutions, clean=True)
             hmap = posy.hmap.sub(fixed, posy.vks, parsedsubs=True)
             self.pmap = hmap.mmap(posy.hmap)  # pylint: disable=attribute-defined-outside-init
+            del hmap.expmap, hmap.csmap  # needed only for the mmap call above
             hmap = self._simplify_posy_ineq(hmap, self.pmap, fixed)
             if hmap is not None:
                 if any(c <= 0 for c in hmap.values()):
@@ -487,10 +488,12 @@ class PosynomialInequality(ScalarSingleEquationConstraint):
             for i, mmap in enumerate(self.pmap):
                 for idx, percentage in mmap.items():
                     nu_[idx] += percentage*nu[i]
+            del self.pmap  # not needed after dual has been derived
             if hasattr(self, "const_mmap"):
                 scale = (1-self.const_coeff)/self.const_coeff
                 for idx, percentage in self.const_mmap.items():
                     nu_[idx] += percentage * la*scale
+                del self.const_mmap  # not needed after dual has been derived
             nu = nu_
         self.v_ss = HashVector()
         if self.parent:
