@@ -29,24 +29,34 @@ class SolSavingEnvironment:
     This approximately halves the size of the pickled solution.
     """
 
-    def __init__(self, solarray):
+    def __init__(self, solarray, saveconstraints):
         self.solarray = solarray
         self.attrstore = {}
+        self.saveconstraints = saveconstraints
+        self.constraintstore = None
+
 
     def __enter__(self):
-        for constraint_attr in ["mfm", "pmap", "bounded", "meq_bounded",
-                                "v_ss", "unsubbed", "varkeys"]:
-            store = {}
-            for constraint in self.solarray["sensitivities"]["constraints"]:
-                if getattr(constraint, constraint_attr, None):
-                    store[constraint] = getattr(constraint, constraint_attr)
-                    delattr(constraint, constraint_attr)
-            self.attrstore[constraint_attr] = store
+        if self.saveconstraints:
+            for constraint_attr in ["bounded", "meq_bounded", "vks",
+                                    "v_ss", "unsubbed", "varkeys"]:
+                store = {}
+                for constraint in self.solarray["sensitivities"]["constraints"]:
+                    if getattr(constraint, constraint_attr, None):
+                        store[constraint] = getattr(constraint, constraint_attr)
+                        delattr(constraint, constraint_attr)
+                self.attrstore[constraint_attr] = store
+        else:
+            self.constraintstore = \
+                self.solarray["sensitivities"].pop("constraints")
 
     def __exit__(self, type_, val, traceback):
-        for constraint_attr, store in self.attrstore.items():
-            for constraint, value in store.items():
-                setattr(constraint, constraint_attr, value)
+        if self.saveconstraints:
+            for constraint_attr, store in self.attrstore.items():
+                for constraint, value in store.items():
+                    setattr(constraint, constraint_attr, value)
+        else:
+            self.solarray["sensitivities"]["constraints"] = self.constraintstore
 
 
 def senss_table(data, showvars=(), title="Variable Sensitivities", **kwargs):
@@ -432,20 +442,22 @@ class SolutionArray(DictOfLists):
                                   % unrolled_absmax(senss_delta.values())))
         return "\n".join(lines)
 
-    def save(self, filename="solution.pkl", **pickleargs):
+    def save(self, filename="solution.pkl",
+             *, saveconstraints=True, **pickleargs):
         """Pickles the solution and saves it to a file.
 
         Solution can then be loaded with e.g.:
         >>> import pickle
         >>> pickle.load(open("solution.pkl"))
         """
-        with SolSavingEnvironment(self):
+        with SolSavingEnvironment(self, saveconstraints):
             pickle.dump(self, open(filename, "wb"), **pickleargs)
 
-    def save_compressed(self, filename="solution.pgz", **cpickleargs):
+    def save_compressed(self, filename="solution.pgz",
+                        *, saveconstraints=True, **cpickleargs):
         "Pickle a file and then compress it into a file with extension."
         with gzip.open(filename, "wb") as f:
-            with SolSavingEnvironment(self):
+            with SolSavingEnvironment(self, saveconstraints):
                 pickled = pickle.dumps(self, **cpickleargs)
             f.write(pickletools.optimize(pickled))
 
@@ -517,7 +529,7 @@ class SolutionArray(DictOfLists):
         "Saves solution table as a text file"
         with open(filename, "w") as f:
             if printmodel:
-                f.write(self.modelstr)
+                f.write(self.modelstr + "\n")
             f.write(self.table(**kwargs))
 
     def savecsv(self, showvars=None, filename="solution.csv", valcols=5):

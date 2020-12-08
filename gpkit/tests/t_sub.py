@@ -406,7 +406,7 @@ class TestNomialMapSubs(unittest.TestCase):
         w = Variable("w")
 
         with self.assertRaises(ValueError):
-            z.hmap.sub({z.key: w.key}, varkeys=z.varkeys)
+            z.hmap.sub({z.key: w.key}, varkeys=z.vks)
 
     def test_subinplace_zero(self):
         z = Variable("z")

@@ -80,7 +80,7 @@ class GeometricProgram:
             if not isinstance(sub, (Numbers, np.ndarray)):
                 raise TypeError("substitution {%s: %s} has invalid value type"
                                 " %s." % (key, sub, type(sub)))
-        cost_hmap = cost.hmap.sub(self.substitutions, cost.varkeys)
+        cost_hmap = cost.hmap.sub(self.substitutions, cost.vks)
         if any(c <= 0 for c in cost_hmap.values()):
             raise InvalidPosynomial("a GP's cost must be Posynomial")
         hmapgen = ConstraintSet.as_hmapslt1(constraints, self.substitutions)
@@ -305,33 +305,33 @@ class GeometricProgram:
         la, self.nu_by_posy = self._generate_nula(solver_out)
         cost_senss = sum(nu_i*exp for (nu_i, exp) in zip(self.nu_by_posy[0],
                                                          self.cost.hmap))
-        self.v_ss = cost_senss.copy()
+        gpv_ss = cost_senss.copy()
         for las, nus, c in zip(la[1:], self.nu_by_posy[1:], self.hmaps[1:]):
             while getattr(c, "parent", None) is not None:
                 c = c.parent
             v_ss, c_senss = c.sens_from_dual(las, nus, result)
             for vk, x in v_ss.items():
-                self.v_ss[vk] = x + self.v_ss.get(vk, 0)
-            while getattr(c, "generated_by", None) is not None:
+                gpv_ss[vk] = x + gpv_ss.get(vk, 0)
+            while getattr(c, "generated_by", None):
                 c = c.generated_by
             result["sensitivities"]["constraints"][c] = c_senss
         # carry linked sensitivities over to their constants
-        for v in list(v for v in self.v_ss if v.gradients):
-            dlogcost_dlogv = self.v_ss.pop(v)
+        for v in list(v for v in gpv_ss if v.gradients):
+            dlogcost_dlogv = gpv_ss.pop(v)
             val = np.array(result["constants"][v])
             for c, dv_dc in v.gradients.items():
                 with warnings.catch_warnings():  # skip pesky divide-by-zeros
                     warnings.simplefilter("ignore")
                     dlogv_dlogc = dv_dc * result["constants"][c]/val
-                    before = self.v_ss.get(c, 0)
-                    self.v_ss[c] = before + dlogcost_dlogv*dlogv_dlogc
+                    before = gpv_ss.get(c, 0)
+                    gpv_ss[c] = before + dlogcost_dlogv*dlogv_dlogc
                 if v in cost_senss:
-                    if c in self.cost.varkeys:
+                    if c in self.cost.vks:
                         dlogcost_dlogv = cost_senss.pop(v)
                         before = cost_senss.get(c, 0)
                         cost_senss[c] = before + dlogcost_dlogv*dlogv_dlogc
         result["sensitivities"]["cost"] = cost_senss
-        result["sensitivities"]["variables"] = KeyDict(self.v_ss)
+        result["sensitivities"]["variables"] = KeyDict(gpv_ss)
         result["sensitivities"]["constants"] = \
             result["sensitivities"]["variables"]  # NOTE: backwards compat.
         result["soltime"] = solver_out["soltime"]

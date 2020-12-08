@@ -160,7 +160,7 @@ class ConstantsRelaxed(ConstraintSet):
         if not isinstance(constraints, ConstraintSet):
             constraints = ConstraintSet(constraints)
         substitutions = KeyDict(constraints.substitutions)
-        constants, _, linked = parse_subs(constraints.varkeys, substitutions)
+        constants, _, linked = parse_subs(constraints.vks, substitutions)
         if linked:
             kdc = KeyDict(constants)
             constrained_varkeys = constraints.constrained_varkeys()

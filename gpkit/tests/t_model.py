@@ -288,7 +288,7 @@ class TestSP(unittest.TestCase):
         with SignomialsEnabled():
             m = Model(x, [x+y >= w, x+y <= z/2, y <= x, y >= 1], {z: 3, w: 3})
         r1 = ConstantsRelaxed(m)
-        self.assertEqual(len(r1.varkeys), 8)
+        self.assertEqual(len(r1.vks), 8)
         with self.assertRaises(ValueError):
             _ = Model(x*r1.relaxvars, r1)  # no "prod"
         sp = Model(x*r1.relaxvars.prod()**10, r1).sp(use_pccp=False)
@@ -299,7 +299,7 @@ class TestSP(unittest.TestCase):
             m = Model(x, [x+y >= z, x+y <= z/2, y <= x, y >= 1], {z: 3})
         m.debug(verbosity=0, solver=self.solver)
         r2 = ConstraintsRelaxed(m)
-        self.assertEqual(len(r2.varkeys), 7)
+        self.assertEqual(len(r2.vks), 7)
         sp = Model(x*r2.relaxvars.prod()**10, r2).sp(use_pccp=False)
         cost = sp.localsolve(verbosity=0, solver=self.solver)["cost"]
         self.assertAlmostEqual(cost/1024, 1, self.ndig)
@@ -307,7 +307,7 @@ class TestSP(unittest.TestCase):
             m = Model(x, [x+y >= z, x+y <= z/2, y <= x, y >= 1], {z: 3})
         m.debug(verbosity=0, solver=self.solver)
         r3 = ConstraintsRelaxedEqually(m)
-        self.assertEqual(len(r3.varkeys), 4)
+        self.assertEqual(len(r3.vks), 4)
         sp = Model(x*r3.relaxvar**10, r3).sp(use_pccp=False)
         cost = sp.localsolve(verbosity=0, solver=self.solver)["cost"]
         self.assertAlmostEqual(cost/(32*0.8786796585), 1, self.ndig)
@@ -733,7 +733,7 @@ class TestModelNoSolve(unittest.TestCase):
     "model tests that don't require a solver"
     def test_modelname_added(self):
         t = Thing(2)
-        for vk in t.varkeys:
+        for vk in t.vks:
             self.assertEqual(vk.lineage, (("Thing", 0),))
 
     def test_modelcontainmentprinting(self):

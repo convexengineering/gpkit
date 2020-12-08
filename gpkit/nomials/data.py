@@ -18,9 +18,6 @@ class NomialData(ReprMixin):
 
     def __init__(self, hmap):
         self.hmap = hmap
-        self.vks = set()
-        for exp in self.hmap:
-            self.vks.update(exp)
         self.units = self.hmap.units
         self.any_nonpositive_cs = any(c <= 0 for c in self.hmap.values())
 
@@ -48,11 +45,17 @@ class NomialData(ReprMixin):
         return hash(self.hmap)
 
     @property
+    def vks(self):
+        "Set of a NomialData's varkeys, created as necessary."
+        vks = set()
+        for exp in self.hmap:
+            vks.update(exp)
+        return vks
+
+    @property  # TODO: remove this
     def varkeys(self):
-        "The NomialData's varkeys, created when necessary for a substitution."
-        if self._varkeys is None:
-            self._varkeys = KeySet(self.vks)
-        return self._varkeys
+        "KeySet of a NomialData's varkeys, created as necessary."
+        return KeySet(self.vks)
 
     def __eq__(self, other):
         "Equality test"
