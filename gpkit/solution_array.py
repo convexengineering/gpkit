@@ -370,7 +370,8 @@ class SolutionArray(DictOfLists):
     # pylint: disable=too-many-locals, too-many-branches, too-many-statements
     def diff(self, other, showvars=None, *,
              constraintsdiff=True, senssdiff=False, sensstol=0.1,
-             absdiff=False, abstol=0, reldiff=True, reltol=1.0, **tableargs):
+             absdiff=False, abstol=0, reldiff=True, reltol=1.0,
+             sortmodelsbysenss= True, **tableargs):
         """Outputs differences between this solution and another
 
         Arguments
@@ -394,6 +395,10 @@ class SolutionArray(DictOfLists):
         -------
         str
         """
+        if sortmodelsbysenss:
+            tableargs["sortmodelsbysenss"] = self["sensitivities"]["models"]
+        else:
+            tableargs["sortmodelsbysenss"] = False
         tableargs.update({"hidebelowminval": True, "sortbyvals": True,
                           "skipifempty": False})
         if isinstance(other, Strings):
