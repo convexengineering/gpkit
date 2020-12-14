@@ -640,7 +640,7 @@ class SolutionArray(DictOfLists):
 
     def table(self, showvars=(),
               tables=("cost", "warnings", "sweepvariables",
-                       "model sensitivities", "freevariables",
+                      "model sensitivities", "freevariables",
                       "constants", "sensitivities", "tightest constraints"),
               sortmodelsbysenss=True, **kwargs):
         """A table representation of this SolutionArray
