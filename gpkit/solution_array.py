@@ -58,6 +58,30 @@ class SolSavingEnvironment:
         else:
             self.solarray["sensitivities"]["constraints"] = self.constraintstore
 
+def msenss_table(data, _, **kwargs):
+    "Returns model sensitivity table lines"
+    if "models" not in data.get("sensitivities", {}):
+        return ""
+    data = sorted(data["sensitivities"]["models"].items(),
+                  key=lambda i: -np.mean(i[1]))
+    lines = ["Model Sensitivities", "-------------------"]
+    if kwargs["sortmodelsbysenss"]:
+        lines[0] += " (sorts models in sections below)"
+    for model, msenss in data:
+        if not model:  # for now let's only do named models
+            continue
+        if not msenss.shape:
+            msenssstr = "%+5.2f" % msenss
+        else:
+            meansenss = np.mean(msenss)
+            deltas = msenss - meansenss
+            deltastrs = ["%+4.1f" % d if abs(d) >= 0.1 else "  - "
+                         for d in deltas]
+            msenssstr = "%+5.2f + [ %s ]" % (meansenss, "  ".join(deltastrs))
+
+        lines.append(" %s : %s" % (msenssstr, model))
+    return lines + [""] if len(lines) > 3 else []
+
 
 def senss_table(data, showvars=(), title="Variable Sensitivities", **kwargs):
     "Returns sensitivity table lines"
@@ -156,7 +180,7 @@ def constraint_table(data, title, sortbymodel=True, showmodels=True, **_):
             if lines:
                 lines.append(["", ""])
             if model or lines:
-                lines.append([("modelname",), model])
+                lines.append([("newmodelline",), model])
             previous_model = model
         constrstr = constrstr.replace(model, "")
         minlen, maxlen = 25, 80
@@ -183,12 +207,12 @@ def constraint_table(data, title, sortbymodel=True, showmodels=True, **_):
     if not lines:
         lines = [("", "(none)")]
     maxlens = np.max([list(map(len, line)) for line in lines
-                      if line[0] != ("modelname",)], axis=0)
+                      if line[0] != ("newmodelline",)], axis=0)
     dirs = [">", "<"]  # we'll check lengths before using zip
     assert len(list(dirs)) == len(list(maxlens))
     fmts = ["{0:%s%s}" % (direc, L) for direc, L in zip(dirs, maxlens)]
     for i, line in enumerate(lines):
-        if line[0] == ("modelname",):
+        if line[0] == ("newmodelline",):
             linelist = [fmts[0].format(" | "), line[1]]
         else:
             linelist = [fmt.format(s) for fmt, s in zip(fmts, line)]
@@ -231,6 +255,7 @@ def warnings_table(self, _, **kwargs):
 TABLEFNS = {"sensitivities": senss_table,
             "top sensitivities": topsenss_table,
             "insensitivities": insenss_table,
+            "model sensitivities": msenss_table,
             "tightest constraints": tight_table,
             "loose constraints": loose_table,
             "warnings": warnings_table,
@@ -552,12 +577,14 @@ class SolutionArray(DictOfLists):
             valcols = 1
         if maxspan < valcols:
             valcols = maxspan
-        lines = var_table(data, "", rawlines=True, maxcolumns=valcols)
+        lines = var_table(data, "", rawlines=True, maxcolumns=valcols,
+                          tables=("cost", "sweepvariables", "freevariables",
+                                  "constants", "sensitivities"))
         with open(filename, "w") as f:
             f.write("Model Name,Variable Name,Value(s)" + ","*valcols
                     + "Units,Description\n")
             for line in lines:
-                if line[0] == ("modelname",):
+                if line[0] == ("newmodelline",):
                     f.write(line[1])
                 elif not line[1]:  # spacer line
                     f.write("\n")
@@ -612,9 +639,10 @@ class SolutionArray(DictOfLists):
         return out
 
     def table(self, showvars=(),
-              tables=("cost", "warnings", "sweepvariables", "freevariables",
+              tables=("cost", "warnings", "sweepvariables",
+                       "model sensitivities", "freevariables",
                       "constants", "sensitivities", "tightest constraints"),
-              **kwargs):
+              sortmodelsbysenss=True, **kwargs):
         """A table representation of this SolutionArray
 
         Arguments
@@ -634,6 +662,10 @@ class SolutionArray(DictOfLists):
         -------
         str
         """
+        if sortmodelsbysenss:
+            kwargs["sortmodelsbysenss"] = self["sensitivities"]["models"]
+        else:
+            kwargs["sortmodelsbysenss"] = False
         varlist = list(self["variables"])
         has_only_one_model = True
         for var in varlist[1:]:
@@ -703,7 +735,7 @@ def var_table(data, title, *, printunits=True, latex=False, rawlines=False,
               varfmt="%s : ", valfmt="%-.4g ", vecfmt="%-8.3g",
               minval=0, sortbyvals=False, hidebelowminval=False,
               included_models=None, excluded_models=None, sortbymodel=True,
-              maxcolumns=5, skipifempty=True, **_):
+              maxcolumns=5, skipifempty=True, sortmodelsbysenss=None, **_):
     """
     Pretty string representation of a dict of VarKeys
     Iterable values are handled specially (partial printing)
@@ -740,15 +772,18 @@ def var_table(data, title, *, printunits=True, latex=False, rawlines=False,
         if minval and hidebelowminval and getattr(v, "shape", None):
             v[np.abs(v) <= minval] = np.nan
         model = lineagestr(k.lineage) if sortbymodel else ""
+        msenss = -sortmodelsbysenss.get(model, 0) if sortmodelsbysenss else 0
+        if hasattr(msenss, "shape"):
+            msenss = np.mean(msenss)
         models.add(model)
         b = bool(getattr(v, "shape", None))
         s = k.str_without(("lineage", "vec"))
         if not sortbyvals:
-            decorated.append((model, b, (varfmt % s), i, k, v))
+            decorated.append((msenss, model, b, (varfmt % s), i, k, v))
         else:  # for consistent sorting, add small offset to negative vals
             val = np.nanmean(np.abs(v)) - (1e-9 if np.nanmean(v) < 0 else 0)
             sort = (float("%.4g" % -val), k.name)
-            decorated.append((model, sort, b, (varfmt % s), i, k, v))
+            decorated.append((model, sort, msenss, b, (varfmt % s), i, k, v))
     if not decorated and skipifempty:
         return []
     if included_models:
@@ -760,10 +795,10 @@ def var_table(data, title, *, printunits=True, latex=False, rawlines=False,
     decorated.sort()
     previous_model, lines = None, []
     for varlist in decorated:
-        if not sortbyvals:
-            model, isvector, varstr, _, var, val = varlist
+        if sortbyvals:
+            model, _, msenss, isvector, varstr, _, var, val = varlist
         else:
-            model, _, isvector, varstr, _, var, val = varlist
+            msenss, model, isvector, varstr, _, var, val = varlist
         if model not in models:
             continue
         if model != previous_model:
@@ -771,7 +806,7 @@ def var_table(data, title, *, printunits=True, latex=False, rawlines=False,
                 lines.append(["", "", "", ""])
             if model:
                 if not latex:
-                    lines.append([("modelname",), model, "", ""])
+                    lines.append([("newmodelline",), model, "", ""])
                 else:
                     lines.append(
                         [r"\multicolumn{3}{l}{\textbf{" + model + r"}} \\"])
@@ -830,13 +865,13 @@ def var_table(data, title, *, printunits=True, latex=False, rawlines=False,
     if not latex:
         if lines:
             maxlens = np.max([list(map(len, line)) for line in lines
-                              if line[0] != ("modelname",)], axis=0)
+                              if line[0] != ("newmodelline",)], axis=0)
             dirs = [">", "<", "<", "<"]
             # check lengths before using zip
             assert len(list(dirs)) == len(list(maxlens))
             fmts = ["{0:%s%s}" % (direc, L) for direc, L in zip(dirs, maxlens)]
         for i, line in enumerate(lines):
-            if line[0] == ("modelname",):
+            if line[0] == ("newmodelline",):
                 line = [fmts[0].format(" | "), line[1]]
             else:
                 line = [fmt.format(s) for fmt, s in zip(fmts, line)]
