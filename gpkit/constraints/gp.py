@@ -4,6 +4,7 @@ import warnings
 from time import time
 from collections import defaultdict
 import numpy as np
+from ..repr_conventions import lineagestr
 from ..small_classes import CootMatrix, SolverLog, Numbers, FixedScalar
 from ..keydict import KeyDict
 from ..solution_array import SolutionArray
@@ -306,6 +307,7 @@ class GeometricProgram:
         cost_senss = sum(nu_i*exp for (nu_i, exp) in zip(self.nu_by_posy[0],
                                                          self.cost.hmap))
         gpv_ss = cost_senss.copy()
+        m_senss = defaultdict(float)
         for las, nus, c in zip(la[1:], self.nu_by_posy[1:], self.hmaps[1:]):
             while getattr(c, "parent", None) is not None:
                 c = c.parent
@@ -314,7 +316,12 @@ class GeometricProgram:
                 gpv_ss[vk] = x + gpv_ss.get(vk, 0)
             while getattr(c, "generated_by", None):
                 c = c.generated_by
-            result["sensitivities"]["constraints"][c] = c_senss
+            result["sensitivities"]["constraints"][c] = abs(c_senss)
+            m_senss[lineagestr(c)] += c_senss
+        # add fixed variables sensitivities to models
+        for vk, senss in gpv_ss.items():
+            m_senss[lineagestr(vk)] += abs(senss)
+        result["sensitivities"]["models"] = dict(m_senss)
         # carry linked sensitivities over to their constants
         for v in list(v for v in gpv_ss if v.gradients):
             dlogcost_dlogv = gpv_ss.pop(v)
