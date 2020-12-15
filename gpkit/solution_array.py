@@ -70,16 +70,22 @@ def msenss_table(data, _, **kwargs):
     for model, msenss in data:
         if not model:  # for now let's only do named models
             continue
-        if not msenss.shape:
-            msenssstr = "%+5.2f" % msenss
+        if (msenss < 0.1).all():
+            msenss = np.max(msenss)
+            if msenss:
+                msenssstr = "%6s" % ("<1E%i" % np.log10(msenss))
+            else:
+                msenssstr = "  =0  "
+        elif not msenss.shape:
+            msenssstr = "%+6.1f" % msenss
         else:
             meansenss = np.mean(msenss)
             deltas = msenss - meansenss
             deltastrs = ["%+4.1f" % d if abs(d) >= 0.1 else "  - "
                          for d in deltas]
-            msenssstr = "%+5.2f + [ %s ]" % (meansenss, "  ".join(deltastrs))
+            msenssstr = "%+6.1f + [ %s ]" % (meansenss, "  ".join(deltastrs))
 
-        lines.append(" %s : %s" % (msenssstr, model))
+        lines.append("%s : %s" % (msenssstr, model))
     return lines + [""] if len(lines) > 3 else []
 
 
