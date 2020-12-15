@@ -45,8 +45,8 @@ class SequentialGeometricProgram:
     >>> gp.solve()
     """
     gps = solver_outs = _results = result = model = None
-    with NamedVariables("SGP"):
-        slack = Variable("PCCPslack")
+    with NamedVariables("RelaxPCCP"):
+        slack = Variable("C")
 
     def __init__(self, cost, model, substitutions, *,
                  use_pccp=True, pccp_penalty=2e2, checkbounds=True):
