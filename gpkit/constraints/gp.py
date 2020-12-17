@@ -317,7 +317,7 @@ class GeometricProgram:
             while getattr(c, "generated_by", None):
                 c = c.generated_by
             result["sensitivities"]["constraints"][c] = abs(c_senss)
-            m_senss[lineagestr(c)] += c_senss
+            m_senss[lineagestr(c)] += abs(c_senss)
         # add fixed variables sensitivities to models
         for vk, senss in gpv_ss.items():
             m_senss[lineagestr(vk)] += abs(senss)
