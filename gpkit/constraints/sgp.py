@@ -45,8 +45,8 @@ class SequentialGeometricProgram:
     >>> gp.solve()
     """
     gps = solver_outs = _results = result = model = None
-    with NamedVariables("SGP"):
-        slack = Variable("PCCPslack")
+    with NamedVariables("RelaxPCCP"):
+        slack = Variable("C")
 
     def __init__(self, cost, model, substitutions, *,
                  use_pccp=True, pccp_penalty=2e2, checkbounds=True):
@@ -82,7 +82,7 @@ class SequentialGeometricProgram:
                     constraint = (Posynomial(hmaplt1) <= self.slack)
                     constraint.generated_by = cs
                     self.approxconstraints.append(constraint)
-                    self.sgpvks.update(constraint.varkeys)
+                    self.sgpvks.update(constraint.vks)
         if not self.sgpconstraints:
             raise UnnecessarySGP("""Model valid as a Geometric Program.
 

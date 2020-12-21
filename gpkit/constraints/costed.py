@@ -20,21 +20,20 @@ class CostedConstraintSet(ConstraintSet):
         self.cost = maybe_flatten(cost)
         if isinstance(self.cost, np.ndarray):  # if it's still a vector
             raise ValueError("Cost must be scalar, not the vector %s." % cost)
-        subs = {k: k.value for k in self.cost.varkeys if "value" in k.descr}
+        subs = {k: k.value for k in self.cost.vks if "value" in k.descr}
         if substitutions:
             subs.update(substitutions)
-        ConstraintSet.__init__(self, constraints, subs)
-        self.varkeys.update(self.cost.varkeys)
+        ConstraintSet.__init__(self, constraints, subs, bonusvks=self.cost.vks)
 
     def constrained_varkeys(self):
         "Return all varkeys in the cost and non-ConstraintSet constraints"
         constrained_varkeys = ConstraintSet.constrained_varkeys(self)
-        constrained_varkeys.update(self.cost.varkeys)
+        constrained_varkeys.update(self.cost.vks)
         return constrained_varkeys
 
     def _rootlines(self, excluded=()):
         "String showing cost, to be used when this is the top constraint"
-        if self.cost.varkeys:
+        if self.cost.vks:
             description = ["", "Cost Function", "-------------",
                            " %s" % self.cost.str_without(excluded),
                            "", "Constraints", "-----------"]

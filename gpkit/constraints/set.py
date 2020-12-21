@@ -64,58 +64,60 @@ class ConstraintSet(list, ReprMixin):
     "Recursive container for ConstraintSets and Inequalities"
     unique_varkeys, idxlookup = frozenset(), {}
     _name_collision_varkeys = None
+    _varkeys = None
 
-    def __init__(self, constraints, substitutions=None):  # pylint: disable=too-many-branches,too-many-statements
+    def __init__(self, constraints, substitutions=None, *, bonusvks=None):  # pylint: disable=too-many-branches,too-many-statements
         if isinstance(constraints, dict):
             keys, constraints = sort_constraints_dict(constraints)
             self.idxlookup = {k: i for i, k in enumerate(keys)}
         elif isinstance(constraints, ConstraintSet):
             constraints = [constraints]  # put it one level down
         list.__init__(self, constraints)
-        self.varkeys = KeySet(self.unique_varkeys)
+        self.vks = set(self.unique_varkeys)
         self.substitutions = KeyDict({k: k.value for k in self.unique_varkeys
                                       if "value" in k.descr})
-        self.substitutions.varkeys = self.varkeys
+        self.substitutions.cset = self
         self.bounded, self.meq_bounded = set(), defaultdict(set)
         for i, constraint in enumerate(self):
-            if hasattr(constraint, "varkeys"):
+            if hasattr(constraint, "vks"):
                 self._update(constraint)
             elif not (hasattr(constraint, "as_hmapslt1")
                       or hasattr(constraint, "as_gpconstr")):
                 try:
-                    for subconstraint in flatiter(constraint, "varkeys"):
+                    for subconstraint in flatiter(constraint, "vks"):
                         self._update(subconstraint)
                 except Exception as e:
                     raise badelement(self, i, constraint) from e
             elif isinstance(constraint, ConstraintSet):
                 raise badelement(self, i, constraint,
                                  " It had not yet been initialized!")
+        if bonusvks:
+            self.vks.update(bonusvks)
         if substitutions:
             self.substitutions.update(substitutions)
-        for subkey in self.substitutions:
-            if subkey.shape and not subkey.idx:  # vector sub found
-                for key in self.varkeys:
-                    if key.veckey:
-                        self.varkeys.keymap[key.veckey].add(key)
-                break   # vectorkeys need to be mapped only once
-        for subkey in self.substitutions:
-            for key in self.varkeys[subkey]:
-                self.bounded.add((key, "upper"))
-                self.bounded.add((key, "lower"))
-                if key.value is not None and not key.constant:
-                    del key.descr["value"]
-                    if key.veckey and key.veckey.value is not None:
-                        del key.veckey.descr["value"]
+            self._varkeys = None
+        for key in self.vks:
+            if key not in self.substitutions:
+                if key.veckey is None or key.veckey not in self.substitutions:
+                    continue
+                if np.isnan(self.substitutions[key.veckey][key.idx]):
+                    continue
+            self.bounded.add((key, "upper"))
+            self.bounded.add((key, "lower"))
+            if key.value is not None and not key.constant:
+                del key.descr["value"]
+                if key.veckey and key.veckey.value is not None:
+                    del key.veckey.descr["value"]
         add_meq_bounds(self.bounded, self.meq_bounded)
 
     def _update(self, constraint):
         "Update parameters with a given constraint"
-        self.varkeys.update(constraint.varkeys)
+        self.vks.update(constraint.vks)
         if hasattr(constraint, "substitutions"):
             self.substitutions.update(constraint.substitutions)
         else:
             self.substitutions.update({k: k.value \
-                for k in constraint.varkeys if "value" in k.descr})
+                for k in constraint.vks if "value" in k.descr})
         self.bounded.update(constraint.bounded)
         for bound, solutionset in constraint.meq_bounded.items():
             self.meq_bounded[bound].update(solutionset)
@@ -150,12 +152,16 @@ class ConstraintSet(list, ReprMixin):
         return sorted([Variable(k) for k in self.varkeys[key]],
                       key=_sort_by_name_and_idx)
 
+    @property
+    def varkeys(self):
+        "The NomialData's varkeys, created when necessary for a substitution."
+        if self._varkeys is None:
+            self._varkeys = KeySet(self.vks)
+        return self._varkeys
+
     def constrained_varkeys(self):
         "Return all varkeys in non-ConstraintSet constraints"
-        constrained_varkeys = set()
-        for constraint in self.flat(yield_if_hasattr="varkeys"):
-            constrained_varkeys.update(constraint.varkeys)
-        return constrained_varkeys
+        return self.vks - self.unique_varkeys
 
     flat = flatiter
 
