@@ -242,7 +242,13 @@ class KeyDict(KeyMap, dict):
                 if not hasattr(value, "__len__"):
                     value = np.full(key.shape, value, "f")
                 elif not isinstance(value[0], np.ndarray):
-                    value = np.array([clean_value(key, v) for v in value])
+                    clean_values = [clean_value(key, v) for v in value]
+                    dtype = None
+                    if any(is_sweepvar(cv) for cv in clean_values):
+                        dtype = "object"
+                    value = np.array(clean_values, dtype=dtype)
+                    # else:
+                    #     value = np.array(clean_values)  # can't use dtype=None
         super().__setitem__(key, value)
         self.owned.add(key)
 
