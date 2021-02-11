@@ -377,7 +377,7 @@ class SolutionArray(DictOfLists):
     def diff(self, other, showvars=None, *,
              constraintsdiff=True, senssdiff=False, sensstol=0.1,
              absdiff=False, abstol=0, reldiff=True, reltol=1.0,
-             sortmodelsbysenss= True, **tableargs):
+             sortmodelsbysenss=True, **tableargs):
         """Outputs differences between this solution and another
 
         Arguments
