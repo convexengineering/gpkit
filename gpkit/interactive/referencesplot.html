@@ -1,0 +1,139 @@
+<!DOCTYPE html>
+<meta charset="utf-8">
+<title>GPkit Variable Reference Map</title>
+<script src="https://d3js.org/d3.v6.min.js"></script>
+<script type="text/javascript" src="referencesplot.json"></script>
+<body style="font-family: Myriad Pro, sans-serif; color: #333;">
+  <div id="chart" style="width: 1000px; margin: 0 auto;">
+    <div id="controls" style="width: 500px; margin: 0 auto;">
+      <input type="radio" id="unweighted" name="linkwidth" checked class="control"
+          onchange="chooseStrokeWidth('unweighted')">
+        <label for="unweighted">Unweighted</label>
+      <input type="radio" id="global" name="linkwidth" class="control"
+          onchange="chooseStrokeWidth('global')">
+        <label for="global">Global Sensitivities</label>
+      <input type="radio" id="normalized" name="linkwidth" class="control"
+          onchange="chooseStrokeWidth('normalized')">
+        <label for="normalized">Normalized Sensitivities</label>
+    </div>
+  </div>
+</body>
+<script>
+colorin = "#59ade4"
+colorout = "#FA3333"
+colornone = "#eee"
+width = 954
+radius = width / 2
+
+function hierarchy(data, delimiter = ".") {
+  let root;
+  const map = new Map;
+  data.forEach(function find(data) {
+    const {name} = data;
+    if (map.has(name)) return map.get(name);
+    const i = name.lastIndexOf(delimiter);
+    map.set(name, data);
+    if (i >= 0) {
+      find({name: name.substring(0, i), children: []}).children.push(data);
+      data.name = name.substring(i + 1);
+    } else {
+      root = data;
+    }
+    return data;
+  });
+  return root;
+}
+
+function id(node) {
+  return `${node.parent ? id(node.parent) + "." : ""}${node.data.name}`;
+}
+
+function bilink(root) {
+  const map = new Map(root.leaves().map(d => [id(d), d]));
+  for (const d of root.leaves()) d.incoming = [], d.outgoing = d.data.imports.map(i => [d, map.get(i)]);
+  for (const d of root.leaves()) for (const o of d.outgoing) o[1].incoming.push(o);
+  return root;
+}
+
+line = d3.lineRadial()
+    .curve(d3.curveBundle.beta(0.85))
+    .radius(function(d) {if (d.data.fullname) return d.y + 15*((d.data.fullname.match(/\./g) || []).length - 1); return d.y})
+    .angle(d => d.x)
+
+tree = d3.cluster()
+    .size([2 * Math.PI, radius - 250])
+
+data = hierarchy(jsondata)
+
+root = tree(bilink(d3.hierarchy(data)
+    .sort((a, b) => d3.ascending(a.height, b.height) || d3.ascending(a.data.name, b.data.name))));
+
+svg = d3.select("#chart")
+            .append("svg").lower()
+    .attr("viewBox", [-width / 2, -width / 2, width, width]);
+
+function chooseStrokeWidth(type) {
+    switch(type) {
+      case "global":
+        d3.selectAll("path").attr("stroke-width",
+            ([i, o]) => 0.5*globalsenss[i.data.fullname][o.data.fullname]);
+        break;
+      case "normalized":
+        d3.selectAll("path").attr("stroke-width",
+            ([i, o]) => 36*normalizedsenss[i.data.fullname][o.data.fullname]);
+        break;
+      default:
+        d3.selectAll("path").attr("stroke-width", 12);
+    }
+}
+
+link = svg.append("g")
+    .attr("stroke", colornone)
+    .attr("fill", "none")
+  .selectAll("path")
+  .data(root.leaves().flatMap(leaf => leaf.outgoing))
+  .join("path")
+    .style("mix-blend-mode", "multiply")
+    .attr("d", ([i, o]) => line(i.path(o)))
+    .each(function(d) { d.path = this; });
+
+chooseStrokeWidth()
+
+node = svg.append("g")
+    .attr("fill", "#333")
+  .selectAll("g")
+  .data(root.leaves())
+  .join("g")
+    .attr("transform", d => `rotate(${d.x * 180 / Math.PI - 90}) translate(${d.y  - 1 + 15*((d.data.fullname.match(/\./g) || []).length - 1)},0)`)
+  .append("text")
+    .attr("font-size", d => 8*(1 + Math.pow(4, 1-(d.data.fullname.match(/\./g) || []).length)))
+    .attr("dy", "0.31em")
+    .attr("x", d => d.x < Math.PI ? 6 : -6)
+    .attr("text-anchor", d => d.x < Math.PI ? "start" : "end")
+    .attr("transform", d => d.x >= Math.PI ? "rotate(180)" : null)
+    .text(d => d.data.shortname)
+    .each(function(d) { d.text = this; })
+    .on("mouseover", overed)
+    .on("mouseout", outed)
+    .call(text => text.append("title").text(d => `${d.data.fullname}
+(red: the ${d.outgoing.length} models this imports variables from)
+(blue: the ${d.incoming.length} models that import these variables)`));
+
+function overed(event, d) {
+  link.style("mix-blend-mode", null);
+  d3.select(this).attr("font-weight", "bold");
+  d3.selectAll(d.incoming.map(d => d.path)).attr("stroke", colorin).raise();
+  d3.selectAll(d.incoming.map(([d]) => d.text)).attr("fill", colorin).attr("font-weight", "bold");
+  d3.selectAll(d.outgoing.map(d => d.path)).attr("stroke", colorout).raise();
+  d3.selectAll(d.outgoing.map(([, d]) => d.text)).attr("fill", colorout).attr("font-weight", "bold");
+}
+
+function outed(event, d) {
+  link.style("mix-blend-mode", "multiply");
+  d3.select(this).attr("font-weight", null);
+  d3.selectAll(d.incoming.map(d => d.path)).attr("stroke", null);
+  d3.selectAll(d.incoming.map(([d]) => d.text)).attr("fill", null).attr("font-weight", null);
+  d3.selectAll(d.outgoing.map(d => d.path)).attr("stroke", null);
+  d3.selectAll(d.outgoing.map(([, d]) => d.text)).attr("fill", null).attr("font-weight", null);
+}
+</script>
