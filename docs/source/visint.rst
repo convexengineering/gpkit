@@ -1,5 +1,44 @@
 Visualization and Interaction
 *****************************
+
+Variable Reference Plots
+========================
+
+Code in this section uses the `CE solar model <https://github.com/convexengineering/solar/tree/gpkitdocs>`_
+
+.. code:: python
+    from solar.solar import *
+    Vehicle = Aircraft(Npod=3, sp=True)
+    M = Mission(Vehicle, latitude=[20])
+    M.cost = M[M.aircraft.Wtotal]
+    sol = M.localsolve()
+
+    from gpkit.interactive.references import referencesplot
+    referencesplot(M, openimmediately=True)
+
+Running the code above will produce two files in your working directory:
+``referencesplot.html`` and ``referencesplot.json``, and (unless you specify
+``openimmediately=False``) open the former in your web browser,
+showing you something like this:
+
+.. figure:: figures/referencesplot.png
+
+`Click to see the interactive version of this plot. <https://web.mit.edu/eburn/www/referencesplot/referencesplot.html>`_
+
+When a model's name is hovered over its connections are highlighted, showing in
+red the other models it imports variables from to use in its constraints and in
+blue the models that import variables from it.
+
+By default connections are shown with equal width ("Unweighted").
+When "Global Sensitivities" is selected, connection width is proportional to
+the sensitivity of all variables in that connection to the importing model,
+corresponding exactly to how much the model's cost would decrease if those variables were relaxed
+in only that importing model. This can give a sense of which connections are vital to
+the overall model. When "Normalized Sensitivities"  is selected, that
+global weight is divided by the weight of all variables in the importing model,
+giving a sense of which connections are vital to each subsystem.
+
+
 .. _sankey:
 Sensitivity Diagrams
 ====================
@@ -9,9 +48,9 @@ Requirements
 -  Jupyter Notebook
 -  `ipysankeywidget <https://github.com/ricklupton/ipysankeywidget>`__
     - Note that you'll need to activate these widgets on Jupyter by runnning
-    
+
       - ``jupyter nbextension enable --py --sys-prefix widgetsnbextension``
-      
+
       - ``jupyter nbextension enable --py --sys-prefix ipysankeywidget``
 
 Example
@@ -25,10 +64,10 @@ Code in this section uses the `CE solar model <https://github.com/convexengineer
     Vehicle = Aircraft(Npod=3, sp=True)
     M = Mission(Vehicle, latitude=[20])
     M.cost = M[M.aircraft.Wtotal]
-    sol = M.localsolve("mosek_cli")
+    sol = M.localsolve()
 
     from gpkit.interactive.sankey import Sankey
-    
+
 Once the code above has been run in a Jupyter notebook, the code below will create interactive hierarchies of your model's sensitivities, like so:
 
 .. figure:: figures/Mission.gif
