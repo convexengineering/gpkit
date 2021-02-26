@@ -248,3 +248,6 @@ from gpkit.interactive.sankey import Sankey
 variablesankey = Sankey(sol, M).diagram(AC.wing.A)
 sankey = Sankey(sol, M).diagram(width=1200, height=400, maxlinks=30)
 sankey  # pylint: disable=pointless-statement
+
+from gpkit.interactive.references import referencesplot
+referencesplot(M, openimmediately=False)

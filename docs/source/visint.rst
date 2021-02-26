@@ -23,17 +23,17 @@ showing you something like this:
 
 .. figure:: figures/referencesplot.png
 
-`Click to see the interactive version of this plot. <https://web.mit.edu/eburn/www/referencesplot/referencesplot.html>`_.
+`Click to see the interactive version of this plot. <https://web.mit.edu/eburn/www/referencesplot/referencesplot.html>`_
 
-When a model's name is hovered over, its connections are highlighted, showing in
-red the other models it imports variables from, and in blue the models that import
-variables from it.
+When a model's name is hovered over its connections are highlighted, showing in
+red the other models it imports variables from to use in its constraints and in
+blue the models that import variables from it.
 
-By default reference plots shows connections between named models with equal thickness.
-When "Global Sensitivities" is selected, links are weighted by the sensitivity of
-the variables in that connection to the importing model, corresponding exactly
-to how much the model's cost would decrease if those variables were relaxed
-in only that importing model, giving a sense of which connections are vital to
+By default connections are shown with equal width ("Unweighted").
+When "Global Sensitivities" is selected, connection width is proportional to
+the sensitivity of all variables in that connection to the importing model,
+corresponding exactly to how much the model's cost would decrease if those variables were relaxed
+in only that importing model. This can give a sense of which connections are vital to
 the overall model. When "Normalized Sensitivities"  is selected, that
 global weight is divided by the weight of all variables in the importing model,
 giving a sense of which connections are vital to each subsystem.

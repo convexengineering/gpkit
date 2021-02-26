@@ -1,10 +1,20 @@
+"Code to make variable references plots"
+
 import os
 import shutil
 import webbrowser
 from collections import defaultdict
 
 
+# pylint:disable=too-many-locals
 def referencesplot(model, *, openimmediately=True):
+    """Makes a references plot.
+
+    1) Creates the JSON file for a d3 references plot
+    2) Places it and the corresponding HTML file in the working directory
+    3) (optionally) opens that HTML file up immediately in a web browser
+
+    """
     imports = {}
     totalv_ss = defaultdict(dict)
     for constraint in model.flat():
