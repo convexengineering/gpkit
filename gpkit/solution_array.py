@@ -234,6 +234,8 @@ def warnings_table(self, _, **kwargs):
         return []
     for wtype in sorted(self["warnings"]):
         data_vec = self["warnings"][wtype]
+        if len(data_vec) == 0:
+            continue
         if not hasattr(data_vec, "shape"):
             data_vec = [data_vec]
         for i, data in enumerate(data_vec):
@@ -650,8 +652,8 @@ class SolutionArray(DictOfLists):
         return out
 
     def table(self, showvars=(),
-              tables=("cost", "warnings", "sweepvariables",
-                      "model sensitivities", "freevariables",
+              tables=("cost", "warnings", "model sensitivities",
+                      "sweepvariables", "freevariables",
                       "constants", "sensitivities", "tightest constraints"),
               sortmodelsbysenss=True, **kwargs):
         """A table representation of this SolutionArray

@@ -3,7 +3,7 @@ from collections import defaultdict
 import numpy as np
 from .. import Variable
 from .set import ConstraintSet
-from ..small_scripts import appendsolwarning
+from ..small_scripts import appendsolwarning, initsolwarning
 
 
 def varkey_bounds(varkeys, lower, upper):
@@ -77,6 +77,7 @@ class Bounded(ConstraintSet):
     def check_boundaries(self, result):
         "Creates (and potentially prints) a dictionary of unbounded variables."
         out = defaultdict(set)
+        initsolwarning(result, "Arbitrarily Bounded Variables")
         for i, varkey in enumerate(self.bound_varkeys):
             value = result["variables"][varkey]
             c_senss = [result["sensitivities"]["constraints"].get(c, 0)
