@@ -222,15 +222,17 @@ class GeometricProgram:
                 msg = ("The model ran to an infinitely low cost;"
                        " bounding the right variables would prevent this.")
             elif isinstance(infeasibility, UnknownInfeasible):
-                msg = "The solver failed for an unknown reason."
+                msg = ("Solver failed for an unknown reason. Relaxing"
+                       " constraints/constants, bounding variables, or"
+                       " using a different solver might fix it.")
             if (verbosity > 0 and solver_out["soltime"] < 1
                     and hasattr(self, "model")):  # fast, top-level model
                 print(msg + "\nSince the model solved in less than a second,"
                       " let's run `.debug()` to analyze what happened.\n`")
                 return self.model.debug(solver=solver)
             # else, raise a clarifying error
-            msg += (" Running `.debug()` may pinpoint the trouble. You can"
-                    " also try another solver, or increase the verbosity.")
+            msg += (" Running `.debug()` or increasing verbosity may pinpoint"
+                    " the trouble.")
             raise infeasibility.__class__(msg) from infeasibility
 
         if not gen_result:
@@ -329,9 +331,10 @@ class GeometricProgram:
             for c, dv_dc in v.gradients.items():
                 with warnings.catch_warnings():  # skip pesky divide-by-zeros
                     warnings.simplefilter("ignore")
+                    if c not in result["constants"]:
+                        continue
                     dlogv_dlogc = dv_dc * result["constants"][c]/val
-                    before = gpv_ss.get(c, 0)
-                    gpv_ss[c] = before + dlogcost_dlogv*dlogv_dlogc
+                    gpv_ss[c] = gpv_ss.get(c, 0) + dlogcost_dlogv*dlogv_dlogc
                 if v in cost_senss:
                     if c in self.cost.vks:
                         dlogcost_dlogv = cost_senss.pop(v)
