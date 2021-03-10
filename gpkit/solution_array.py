@@ -77,10 +77,6 @@ def msenss_table(data, _, **kwargs):
                 msenssstr = "%6s" % ("<1e%i" % np.log10(msenss))
             else:
                 msenssstr = "  =0  "
-            if msenssstr == previousmsenssstr:
-                msenssstr = "      "
-            else:
-                previousmsenssstr = msenssstr
         elif not msenss.shape:
             msenssstr = "%+6.1f" % msenss
         else:
@@ -91,7 +87,10 @@ def msenss_table(data, _, **kwargs):
                 deltastrs = ["%+4.1f" % d if abs(d) >= 0.1 else "  - "
                              for d in deltas]
                 msenssstr += " + [ %s ]" % "  ".join(deltastrs)
-
+        if msenssstr == previousmsenssstr:
+            msenssstr = "      "
+        else:
+            previousmsenssstr = msenssstr
         lines.append("%s : %s" % (msenssstr, model))
     return lines + [""] if len(lines) > 3 else []
 

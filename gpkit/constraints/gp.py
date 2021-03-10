@@ -331,8 +331,6 @@ class GeometricProgram:
             for c, dv_dc in v.gradients.items():
                 with warnings.catch_warnings():  # skip pesky divide-by-zeros
                     warnings.simplefilter("ignore")
-                    if c not in result["constants"]:
-                        continue
                     dlogv_dlogc = dv_dc * result["constants"][c]/val
                     gpv_ss[c] = gpv_ss.get(c, 0) + dlogcost_dlogv*dlogv_dlogc
                 if v in cost_senss:

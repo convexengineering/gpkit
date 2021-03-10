@@ -15,6 +15,9 @@ def evaluate_linked(constants, linked):
                    for k, v in constants.items()})
     kdc_plain = None
     array_calulated = {}
+    for key in constants:  # remove gradients from constants
+        if key.gradients:
+            del key.descr["gradients"]
     for v, f in linked.items():
         try:
             if v.veckey and v.veckey.original_fn:
