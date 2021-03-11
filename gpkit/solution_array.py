@@ -67,24 +67,30 @@ def msenss_table(data, _, **kwargs):
     lines = ["Model Sensitivities", "-------------------"]
     if kwargs["sortmodelsbysenss"]:
         lines[0] += " (sorts models in sections below)"
+    previousmsenssstr = ""
     for model, msenss in data:
         if not model:  # for now let's only do named models
             continue
         if (msenss < 0.1).all():
             msenss = np.max(msenss)
             if msenss:
-                msenssstr = "%6s" % ("<1E%i" % np.log10(msenss))
+                msenssstr = "%6s" % ("<1e%i" % np.log10(msenss))
             else:
                 msenssstr = "  =0  "
         elif not msenss.shape:
             msenssstr = "%+6.1f" % msenss
         else:
             meansenss = np.mean(msenss)
+            msenssstr = "%+6.1f" % meansenss
             deltas = msenss - meansenss
-            deltastrs = ["%+4.1f" % d if abs(d) >= 0.1 else "  - "
-                         for d in deltas]
-            msenssstr = "%+6.1f + [ %s ]" % (meansenss, "  ".join(deltastrs))
-
+            if np.max(np.abs(deltas)) > 0.1:
+                deltastrs = ["%+4.1f" % d if abs(d) >= 0.1 else "  - "
+                             for d in deltas]
+                msenssstr += " + [ %s ]" % "  ".join(deltastrs)
+        if msenssstr == previousmsenssstr:
+            msenssstr = "      "
+        else:
+            previousmsenssstr = msenssstr
         lines.append("%s : %s" % (msenssstr, model))
     return lines + [""] if len(lines) > 3 else []
 
@@ -234,9 +240,13 @@ def warnings_table(self, _, **kwargs):
         return []
     for wtype in sorted(self["warnings"]):
         data_vec = self["warnings"][wtype]
+        if len(data_vec) == 0:
+            continue
         if not hasattr(data_vec, "shape"):
             data_vec = [data_vec]
         for i, data in enumerate(data_vec):
+            if len(data) == 0:
+                continue
             data = sorted(data, key=lambda l: l[0])  # sort by msg
             title = wtype
             if len(data_vec) > 1:
@@ -650,8 +660,8 @@ class SolutionArray(DictOfLists):
         return out
 
     def table(self, showvars=(),
-              tables=("cost", "warnings", "sweepvariables",
-                      "model sensitivities", "freevariables",
+              tables=("cost", "warnings", "model sensitivities",
+                      "sweepvariables", "freevariables",
                       "constants", "sensitivities", "tightest constraints"),
               sortmodelsbysenss=True, **kwargs):
         """A table representation of this SolutionArray

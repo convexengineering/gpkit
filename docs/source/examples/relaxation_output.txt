@@ -150,7 +150,7 @@ Relaxed Constants
 Model Sensitivities (sorts models in sections below)
 -------------------
   +2.0 : Relax2.OriginalValues
- <1E-8 : Relax2
+ <1e-8 : Relax2
 
 Free Variables
 --------------
