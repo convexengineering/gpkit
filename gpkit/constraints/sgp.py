@@ -66,7 +66,7 @@ class SequentialGeometricProgram:
         self.approxconstraints = []
         self.sgpvks = set()
         x0 = KeyDict(substitutions)
-        x0.varkeys = model.varkeys  # for string access and so forth
+        x0.vks = model.vks  # for string access and so forth
         for cs in model.flat():
             try:
                 if not hasattr(cs, "as_hmapslt1"):
@@ -199,8 +199,10 @@ solutions and can be solved with 'Model.solve()'.""")
                     " %.2g%%. Calling .localsolve with a higher"
                     " `pccp_penalty` (it was %.3g this time) will reduce"
                     " final slack if the model is solvable with less. If"
-                    " you think it might not be, check by solving with "
-                    "`use_pccp=False, x0=(this model's final solution)`.\n"
+                    " you think it might not be, check by generating an SP with"
+                    "`use_pccp=False`, then solving with x0=(this model's final"
+                    " solution); e.g. `m.sp(use_pccp=False).localsolve("
+                    "x0=m.solution[\"variables\"])`.\n"
                     % (100*excess_slack, self.pccp_penalty))
         return self.result
 
@@ -218,7 +220,7 @@ solutions and can be solved with 'Model.solve()'.""")
             return self._gp  # return last generated
         if not cleanx0:
             cleanedx0 = KeyDict()
-            cleanedx0.varkeys = self._gp.x0.varkeys
+            cleanedx0.vks = self._gp.x0.vks
             cleanedx0.update(x0)
             x0 = cleanedx0
         self._gp.x0.update({vk: x0[vk] for vk in self.sgpvks if vk in x0})
