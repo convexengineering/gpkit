@@ -149,7 +149,7 @@ solutions and can be solved with 'Model.solve()'.""")
                     "Unsolved after %s iterations. Check `m.program.results`;"
                     " if they're converging, try `.localsolve(...,"
                     " iteration_limit=NEWLIMIT)`." % len(self.gps))
-            gp = self.gp(x0, cleanx0=True)
+            gp = self.gp(x0, cleanx0=(len(self.gps) >= 1))  # clean the first x0
             self.gps.append(gp)  # NOTE: SIDE EFFECTS
             if verbosity > 1:
                 print("\nGP Solve %i" % len(self.gps))
@@ -217,7 +217,10 @@ solutions and can be solved with 'Model.solve()'.""")
         if not x0:
             return self._gp  # return last generated
         if not cleanx0:
-            x0 = KeyDict(x0)
+            cleanedx0 = KeyDict()
+            cleanedx0.varkeys = self._gp.x0.varkeys
+            cleanedx0.update(x0)
+            x0 = cleanedx0
         self._gp.x0.update({vk: x0[vk] for vk in self.sgpvks if vk in x0})
         p_idx = 0
         for sgpc in self.sgpconstraints:
