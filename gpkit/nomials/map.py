@@ -127,7 +127,7 @@ class NomialMap(HashVector):
         for vk in varlocs:
             exps, cval = varlocs[vk], fixed[vk]
             if hasattr(cval, "hmap"):
-                if any(cval.hmap.keys()):
+                if cval.hmap is None or any(cval.hmap.keys()):
                     raise ValueError("Monomial substitutions are not"
                                      " supported.")
                 cval, = cval.hmap.to(vk.units or DIMLESS_QUANTITY).values()
@@ -152,7 +152,6 @@ class NomialMap(HashVector):
             mapping the indices corresponding to the old exps to their
             fraction of the post-substitution coefficient
         """
-        m_from_ms = defaultdict(dict)
         pmap = [{} for _ in self]
         origexps = list(orig.keys())
         selfexps = list(self.keys())
@@ -160,10 +159,9 @@ class NomialMap(HashVector):
             if self_exp not in self:  # can occur in tautological constraints
                 continue              #     after substitution
             fraction = self.csmap.get(orig_exp, orig[orig_exp])/self[self_exp]
-            m_from_ms[self_exp][orig_exp] = fraction
             orig_idx = origexps.index(orig_exp)
             pmap[selfexps.index(self_exp)][orig_idx] = fraction
-        return pmap, m_from_ms
+        return pmap
 
 
 # pylint: disable=invalid-name

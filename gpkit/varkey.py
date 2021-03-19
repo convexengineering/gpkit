@@ -1,5 +1,5 @@
 """Defines the VarKey class"""
-from .small_classes import HashVector, Count, qty
+from .small_classes import Count, qty
 from .repr_conventions import ReprMixin
 
 
@@ -19,7 +19,6 @@ class VarKey(ReprMixin):  # pylint:disable=too-many-instance-attributes
     VarKey with the given name and descr.
     """
     unique_id = Count().next
-    vars_of_a_name = {}
     subscripts = ("lineage", "idx")
 
     def __init__(self, name=None, **descr):
@@ -39,8 +38,6 @@ class VarKey(ReprMixin):  # pylint:disable=too-many-instance-attributes
         self.eqstr = fullstr + str(self.lineage) + self.unitrepr
         self.hashvalue = hash(self.eqstr)
         self.keys = set((self.name, fullstr))
-        self.hmap = NomialMap({HashVector({self: 1}): 1.0})
-        self.hmap.units = self.units
 
         if "idx" in self.descr:
             if "veckey" not in self.descr:
@@ -106,5 +103,3 @@ class VarKey(ReprMixin):  # pylint:disable=too-many-instance-attributes
         if not hasattr(other, "descr"):
             return False
         return self.eqstr == other.eqstr
-
-from .nomials import NomialMap  # pylint: disable=wrong-import-position

@@ -45,7 +45,7 @@ class KeyMap:
     collapse_arrays = False
     keymap = []
     log_gets = False
-    varkeys = None
+    vks = varkeys = None
 
     def __init__(self, *args, **kwargs):
         "Passes through to super().__init__ via the `update()` method"
@@ -62,12 +62,14 @@ class KeyMap:
                 return key.veckey, key.idx
             return key, None
         except AttributeError:
-            if not self.varkeys:
+            if self.vks is None and self.varkeys is None:
                 return key, self.update_keymap()
         # looks like we're in a substitutions dictionary
-        if key not in self.varkeys:  # pylint:disable=unsupported-membership-test
+        if self.varkeys is None:
+            self.varkeys = KeySet(self.vks)
+        if key not in self.varkeys:
             raise KeyError(key)
-        newkey, *otherkeys = self.varkeys[key]  # pylint:disable=unsubscriptable-object
+        newkey, *otherkeys = self.varkeys[key]
         if otherkeys:
             if all(k.veckey == newkey.veckey for k in otherkeys):
                 return newkey.veckey, None
@@ -186,8 +188,20 @@ class KeyDict(KeyMap, dict):
 
     def __setitem__(self, key, value):
         "Overloads __setitem__ and []= to work with all keys"
-        # pylint: disable=too-many-boolean-expressions
-        key, idx = self.parse_and_index(key)
+        # pylint: disable=too-many-boolean-expressions,too-many-branches,too-many-statements
+        try:
+            key, idx = self.parse_and_index(key)
+        except KeyError as e:  # may be indexed VectorVariable
+            # NOTE: this try/except takes ~4% of the time in this loop
+            if not hasattr(key, "shape"):
+                raise e
+            if not hasattr(value, "shape"):
+                value = np.full(key.shape, value)
+            elif key.shape != value.shape:
+                raise KeyError("Key and value have different shapes") from e
+            for subkey, subval in zip(key.flat, value.flat):
+                self[subkey] = subval
+            return
         value = clean_value(key, value)
         if key not in self.keymap:
             if not hasattr(self, "_unmapped_keys"):
@@ -196,6 +210,8 @@ class KeyDict(KeyMap, dict):
             self._unmapped_keys.add(key)
             if idx:
                 dty = {} if isinstance(value, Numbers) else {"dtype": "object"}
+                if getattr(value, "shape", None) and value.dtype != INT_DTYPE:
+                    dty["dtype"] = value.dtype
                 dict.__setitem__(self, key, np.full(key.shape, np.nan, **dty))
                 self.owned.add(key)
         if idx:
@@ -228,7 +244,13 @@ class KeyDict(KeyMap, dict):
                 if not hasattr(value, "__len__"):
                     value = np.full(key.shape, value, "f")
                 elif not isinstance(value[0], np.ndarray):
-                    value = np.array([clean_value(key, v) for v in value])
+                    clean_values = [clean_value(key, v) for v in value]
+                    dtype = None
+                    if any(is_sweepvar(cv) for cv in clean_values):
+                        dtype = "object"
+                    value = np.array(clean_values, dtype=dtype)
+                    # else:
+                    #     value = np.array(clean_values)  # can't use dtype=None
         super().__setitem__(key, value)
         self.owned.add(key)
 
@@ -271,16 +293,10 @@ class KeySet(KeyMap, set):
 
     def update(self, keys):
         "Iterates through the dictionary created by args and kwargs"
-        if isinstance(keys, KeySet):
-            set.update(self, keys)
-            for key, value in keys.keymap.items():
-                self.keymap[key].update(value)
-            self._unmapped_keys.update(keys._unmapped_keys)  # pylint: disable=protected-access
-        else:  # set-like interface
-            for key in keys:
-                self.keymap[key].add(key)
-            self._unmapped_keys.update(keys)
-            super().update(keys)
+        for key in keys:
+            self.keymap[key].add(key)
+        self._unmapped_keys.update(keys)
+        super().update(keys)
 
     def __getitem__(self, key):
         "Gets the keys corresponding to a particular key."

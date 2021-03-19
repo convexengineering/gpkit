@@ -3,12 +3,16 @@ from collections.abc import Iterable
 import numpy as np
 
 
-def appendsolwarning(msg, data, result, category="uncategorized"):
-    "Append a particular category of warnings to a solution."
+def initsolwarning(result, category="uncategorized"):
+    "Creates a results dictionary for a particular category of warning."
     if "warnings" not in result:
         result["warnings"] = {}
     if category not in result["warnings"]:
         result["warnings"][category] = []
+
+
+def appendsolwarning(msg, data, result, category="uncategorized"):
+    "Append a particular category of warnings to a solution."
     result["warnings"][category].append((msg, data))
 
 

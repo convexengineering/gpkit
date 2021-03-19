@@ -3,7 +3,7 @@ from .set import ConstraintSet
 from ..nomials import Variable, VectorVariable, parse_subs, NomialArray
 from ..keydict import KeyDict
 from .. import NamedVariables, SignomialsEnabled
-from ..small_scripts import appendsolwarning, mag
+from ..small_scripts import appendsolwarning, initsolwarning, mag
 
 
 class ConstraintsRelaxedEqually(ConstraintSet):
@@ -50,6 +50,7 @@ class ConstraintsRelaxedEqually(ConstraintSet):
 
     def check_relaxed(self, result):
         "Adds relaxation warnings to the result"
+        initsolwarning(result, "Relaxed Constraints")
         for val, msg in get_relaxed([result["freevariables"][self.relaxvar]],
                                     ["All constraints relaxed by %i%%"]):
             appendsolwarning(msg % (0.9+(val-1)*100), self, result,
@@ -103,6 +104,7 @@ class ConstraintsRelaxed(ConstraintSet):
         "Adds relaxation warnings to the result"
         relaxed = get_relaxed(result["freevariables"][self.relaxvars],
                               range(len(self["relaxed constraints"])))
+        initsolwarning(result, "Relaxed Constraints")
         for relaxval, i in relaxed:
             relax_percent = "%i%%" % (0.5+(relaxval-1)*100)
             oldconstraint = self.original_constraints[i]
@@ -160,7 +162,7 @@ class ConstantsRelaxed(ConstraintSet):
         if not isinstance(constraints, ConstraintSet):
             constraints = ConstraintSet(constraints)
         substitutions = KeyDict(constraints.substitutions)
-        constants, _, linked = parse_subs(constraints.varkeys, substitutions)
+        constants, _, linked = parse_subs(constraints.vks, substitutions)
         if linked:
             kdc = KeyDict(constants)
             constrained_varkeys = constraints.constrained_varkeys()
@@ -224,6 +226,7 @@ class ConstantsRelaxed(ConstraintSet):
         "Adds relaxation warnings to the result"
         relaxed = get_relaxed([result["freevariables"][r]
                                for r in self.relaxvars], self.freedvars)
+        initsolwarning(result, "Relaxed Constants")
         for (_, freed) in relaxed:
             msg = ("  %s: relaxed from %-.4g to %-.4g"
                    % (freed,

@@ -242,9 +242,14 @@ M.append(MISSION.fs.aircraftp.Wburn >= 0.2*MISSION.fs.aircraftp.wing_aero.D)
 sol = M.solve(verbosity=0)
 print(sol.diff("solution.pkl", showvars=vars_of_interest, sortbymodel=False))
 
-# this will only make an image when run in jupyter notebook
-# from gpkit.interactive.sankey import Sankey
-from gpkit.interactive.sankey import Sankey
-variablesankey = Sankey(sol, M).diagram(AC.wing.A)
-sankey = Sankey(sol, M).diagram(width=1200, height=400, maxlinks=30)
-sankey  # pylint: disable=pointless-statement
+try:
+    from gpkit.interactive.sankey import Sankey
+    variablesankey = Sankey(sol, M).diagram(AC.wing.A)
+    sankey = Sankey(sol, M).diagram(width=1200, height=400, maxlinks=30)
+    # the line below shows an interactive graph if run in jupyter notebook
+    sankey  # pylint: disable=pointless-statement
+except (ImportError, ModuleNotFoundError):
+    print("Making Sankey diagrams requires the ipysankeywidget package")
+    
+from gpkit.interactive.references import referencesplot
+referencesplot(M, openimmediately=False)

@@ -29,24 +29,70 @@ class SolSavingEnvironment:
     This approximately halves the size of the pickled solution.
     """
 
-    def __init__(self, solarray):
+    def __init__(self, solarray, saveconstraints):
         self.solarray = solarray
         self.attrstore = {}
+        self.saveconstraints = saveconstraints
+        self.constraintstore = None
+
 
     def __enter__(self):
-        for constraint_attr in ["mfm", "pmap", "bounded", "meq_bounded",
-                                "v_ss", "unsubbed", "varkeys"]:
-            store = {}
-            for constraint in self.solarray["sensitivities"]["constraints"]:
-                if getattr(constraint, constraint_attr, None):
-                    store[constraint] = getattr(constraint, constraint_attr)
-                    delattr(constraint, constraint_attr)
-            self.attrstore[constraint_attr] = store
+        if self.saveconstraints:
+            for constraint_attr in ["bounded", "meq_bounded", "vks",
+                                    "v_ss", "unsubbed", "varkeys"]:
+                store = {}
+                for constraint in self.solarray["sensitivities"]["constraints"]:
+                    if getattr(constraint, constraint_attr, None):
+                        store[constraint] = getattr(constraint, constraint_attr)
+                        delattr(constraint, constraint_attr)
+                self.attrstore[constraint_attr] = store
+        else:
+            self.constraintstore = \
+                self.solarray["sensitivities"].pop("constraints")
 
     def __exit__(self, type_, val, traceback):
-        for constraint_attr, store in self.attrstore.items():
-            for constraint, value in store.items():
-                setattr(constraint, constraint_attr, value)
+        if self.saveconstraints:
+            for constraint_attr, store in self.attrstore.items():
+                for constraint, value in store.items():
+                    setattr(constraint, constraint_attr, value)
+        else:
+            self.solarray["sensitivities"]["constraints"] = self.constraintstore
+
+def msenss_table(data, _, **kwargs):
+    "Returns model sensitivity table lines"
+    if "models" not in data.get("sensitivities", {}):
+        return ""
+    data = sorted(data["sensitivities"]["models"].items(),
+                  key=lambda i: -np.mean(i[1]))
+    lines = ["Model Sensitivities", "-------------------"]
+    if kwargs["sortmodelsbysenss"]:
+        lines[0] += " (sorts models in sections below)"
+    previousmsenssstr = ""
+    for model, msenss in data:
+        if not model:  # for now let's only do named models
+            continue
+        if (msenss < 0.1).all():
+            msenss = np.max(msenss)
+            if msenss:
+                msenssstr = "%6s" % ("<1e%i" % np.log10(msenss))
+            else:
+                msenssstr = "  =0  "
+        elif not msenss.shape:
+            msenssstr = "%+6.1f" % msenss
+        else:
+            meansenss = np.mean(msenss)
+            msenssstr = "%+6.1f" % meansenss
+            deltas = msenss - meansenss
+            if np.max(np.abs(deltas)) > 0.1:
+                deltastrs = ["%+4.1f" % d if abs(d) >= 0.1 else "  - "
+                             for d in deltas]
+                msenssstr += " + [ %s ]" % "  ".join(deltastrs)
+        if msenssstr == previousmsenssstr:
+            msenssstr = "      "
+        else:
+            previousmsenssstr = msenssstr
+        lines.append("%s : %s" % (msenssstr, model))
+    return lines + [""] if len(lines) > 3 else []
 
 
 def senss_table(data, showvars=(), title="Variable Sensitivities", **kwargs):
@@ -146,7 +192,7 @@ def constraint_table(data, title, sortbymodel=True, showmodels=True, **_):
             if lines:
                 lines.append(["", ""])
             if model or lines:
-                lines.append([("modelname",), model])
+                lines.append([("newmodelline",), model])
             previous_model = model
         constrstr = constrstr.replace(model, "")
         minlen, maxlen = 25, 80
@@ -173,12 +219,12 @@ def constraint_table(data, title, sortbymodel=True, showmodels=True, **_):
     if not lines:
         lines = [("", "(none)")]
     maxlens = np.max([list(map(len, line)) for line in lines
-                      if line[0] != ("modelname",)], axis=0)
+                      if line[0] != ("newmodelline",)], axis=0)
     dirs = [">", "<"]  # we'll check lengths before using zip
     assert len(list(dirs)) == len(list(maxlens))
     fmts = ["{0:%s%s}" % (direc, L) for direc, L in zip(dirs, maxlens)]
     for i, line in enumerate(lines):
-        if line[0] == ("modelname",):
+        if line[0] == ("newmodelline",):
             linelist = [fmts[0].format(" | "), line[1]]
         else:
             linelist = [fmt.format(s) for fmt, s in zip(fmts, line)]
@@ -194,11 +240,15 @@ def warnings_table(self, _, **kwargs):
         return []
     for wtype in sorted(self["warnings"]):
         data_vec = self["warnings"][wtype]
+        if len(data_vec) == 0:
+            continue
         if not hasattr(data_vec, "shape"):
             data_vec = [data_vec]  # not a sweep
         if all((data == data_vec[0]).all() for data in data_vec[1:]):
             data_vec = [data_vec[0]]  # warnings identical across all sweeps
         for i, data in enumerate(data_vec):
+            if len(data) == 0:
+                continue
             data = sorted(data, key=lambda l: l[0])  # sort by msg
             title = wtype
             if len(data_vec) > 1:
@@ -223,6 +273,7 @@ def warnings_table(self, _, **kwargs):
 TABLEFNS = {"sensitivities": senss_table,
             "top sensitivities": topsenss_table,
             "insensitivities": insenss_table,
+            "model sensitivities": msenss_table,
             "tightest constraints": tight_table,
             "loose constraints": loose_table,
             "warnings": warnings_table,
@@ -338,7 +389,8 @@ class SolutionArray(DictOfLists):
     # pylint: disable=too-many-locals, too-many-branches, too-many-statements
     def diff(self, other, showvars=None, *,
              constraintsdiff=True, senssdiff=False, sensstol=0.1,
-             absdiff=False, abstol=0, reldiff=True, reltol=1.0, **tableargs):
+             absdiff=False, abstol=0, reldiff=True, reltol=1.0,
+             sortmodelsbysenss=True, **tableargs):
         """Outputs differences between this solution and another
 
         Arguments
@@ -362,6 +414,10 @@ class SolutionArray(DictOfLists):
         -------
         str
         """
+        if sortmodelsbysenss:
+            tableargs["sortmodelsbysenss"] = self["sensitivities"]["models"]
+        else:
+            tableargs["sortmodelsbysenss"] = False
         tableargs.update({"hidebelowminval": True, "sortbyvals": True,
                           "skipifempty": False})
         if isinstance(other, Strings):
@@ -435,20 +491,22 @@ class SolutionArray(DictOfLists):
                                   % unrolled_absmax(senss_delta.values())))
         return "\n".join(lines)
 
-    def save(self, filename="solution.pkl", **pickleargs):
+    def save(self, filename="solution.pkl",
+             *, saveconstraints=True, **pickleargs):
         """Pickles the solution and saves it to a file.
 
         Solution can then be loaded with e.g.:
         >>> import pickle
         >>> pickle.load(open("solution.pkl"))
         """
-        with SolSavingEnvironment(self):
+        with SolSavingEnvironment(self, saveconstraints):
             pickle.dump(self, open(filename, "wb"), **pickleargs)
 
-    def save_compressed(self, filename="solution.pgz", **cpickleargs):
+    def save_compressed(self, filename="solution.pgz",
+                        *, saveconstraints=True, **cpickleargs):
         "Pickle a file and then compress it into a file with extension."
         with gzip.open(filename, "wb") as f:
-            with SolSavingEnvironment(self):
+            with SolSavingEnvironment(self, saveconstraints):
                 pickled = pickle.dumps(self, **cpickleargs)
             f.write(pickletools.optimize(pickled))
 
@@ -520,7 +578,7 @@ class SolutionArray(DictOfLists):
         "Saves solution table as a text file"
         with open(filename, "w") as f:
             if printmodel:
-                f.write(self.modelstr)
+                f.write(self.modelstr + "\n")
             f.write(self.table(**kwargs))
 
     def savecsv(self, showvars=None, filename="solution.csv", valcols=5):
@@ -543,12 +601,14 @@ class SolutionArray(DictOfLists):
             valcols = 1
         if maxspan < valcols:
             valcols = maxspan
-        lines = var_table(data, "", rawlines=True, maxcolumns=valcols)
+        lines = var_table(data, "", rawlines=True, maxcolumns=valcols,
+                          tables=("cost", "sweepvariables", "freevariables",
+                                  "constants", "sensitivities"))
         with open(filename, "w") as f:
             f.write("Model Name,Variable Name,Value(s)" + ","*valcols
                     + "Units,Description\n")
             for line in lines:
-                if line[0] == ("modelname",):
+                if line[0] == ("newmodelline",):
                     f.write(line[1])
                 elif not line[1]:  # spacer line
                     f.write("\n")
@@ -603,10 +663,10 @@ class SolutionArray(DictOfLists):
         return out
 
     def table(self, showvars=(),
-              tables=("cost", "warnings", "sweepvariables",
-                      "freevariables", "constants", "sensitivities",
-                      "tightest constraints"),
-              **kwargs):
+              tables=("cost", "warnings", "model sensitivities",
+                      "sweepvariables", "freevariables",
+                      "constants", "sensitivities", "tightest constraints"),
+              sortmodelsbysenss=True, **kwargs):
         """A table representation of this SolutionArray
 
         Arguments
@@ -626,6 +686,10 @@ class SolutionArray(DictOfLists):
         -------
         str
         """
+        if sortmodelsbysenss and "sensitivities" in self:
+            kwargs["sortmodelsbysenss"] = self["sensitivities"]["models"]
+        else:
+            kwargs["sortmodelsbysenss"] = False
         varlist = list(self["variables"])
         has_only_one_model = True
         for var in varlist[1:]:
@@ -698,7 +762,7 @@ def var_table(data, title, *, printunits=True, latex=False, rawlines=False,
               varfmt="%s : ", valfmt="%-.4g ", vecfmt="%-8.3g",
               minval=0, sortbyvals=False, hidebelowminval=False,
               included_models=None, excluded_models=None, sortbymodel=True,
-              maxcolumns=5, skipifempty=True, **_):
+              maxcolumns=5, skipifempty=True, sortmodelsbysenss=None, **_):
     """
     Pretty string representation of a dict of VarKeys
     Iterable values are handled specially (partial printing)
@@ -735,15 +799,18 @@ def var_table(data, title, *, printunits=True, latex=False, rawlines=False,
         if minval and hidebelowminval and getattr(v, "shape", None):
             v[np.abs(v) <= minval] = np.nan
         model = lineagestr(k.lineage) if sortbymodel else ""
+        msenss = -sortmodelsbysenss.get(model, 0) if sortmodelsbysenss else 0
+        if hasattr(msenss, "shape"):
+            msenss = np.mean(msenss)
         models.add(model)
         b = bool(getattr(v, "shape", None))
         s = k.str_without(("lineage", "vec"))
         if not sortbyvals:
-            decorated.append((model, b, (varfmt % s), i, k, v))
+            decorated.append((msenss, model, b, (varfmt % s), i, k, v))
         else:  # for consistent sorting, add small offset to negative vals
             val = np.nanmean(np.abs(v)) - (1e-9 if np.nanmean(v) < 0 else 0)
             sort = (float("%.4g" % -val), k.name)
-            decorated.append((model, sort, b, (varfmt % s), i, k, v))
+            decorated.append((model, sort, msenss, b, (varfmt % s), i, k, v))
     if not decorated and skipifempty:
         return []
     if included_models:
@@ -755,10 +822,10 @@ def var_table(data, title, *, printunits=True, latex=False, rawlines=False,
     decorated.sort()
     previous_model, lines = None, []
     for varlist in decorated:
-        if not sortbyvals:
-            model, isvector, varstr, _, var, val = varlist
+        if sortbyvals:
+            model, _, msenss, isvector, varstr, _, var, val = varlist
         else:
-            model, _, isvector, varstr, _, var, val = varlist
+            msenss, model, isvector, varstr, _, var, val = varlist
         if model not in models:
             continue
         if model != previous_model:
@@ -766,7 +833,7 @@ def var_table(data, title, *, printunits=True, latex=False, rawlines=False,
                 lines.append(["", "", "", ""])
             if model:
                 if not latex:
-                    lines.append([("modelname",), model, "", ""])
+                    lines.append([("newmodelline",), model, "", ""])
                 else:
                     lines.append(
                         [r"\multicolumn{3}{l}{\textbf{" + model + r"}} \\"])
@@ -825,13 +892,13 @@ def var_table(data, title, *, printunits=True, latex=False, rawlines=False,
     if not latex:
         if lines:
             maxlens = np.max([list(map(len, line)) for line in lines
-                              if line[0] != ("modelname",)], axis=0)
+                              if line[0] != ("newmodelline",)], axis=0)
             dirs = [">", "<", "<", "<"]
             # check lengths before using zip
             assert len(list(dirs)) == len(list(maxlens))
             fmts = ["{0:%s%s}" % (direc, L) for direc, L in zip(dirs, maxlens)]
         for i, line in enumerate(lines):
-            if line[0] == ("modelname",):
+            if line[0] == ("newmodelline",):
                 line = [fmts[0].format(" | "), line[1]]
             else:
                 line = [fmt.format(s) for fmt, s in zip(fmts, line)]

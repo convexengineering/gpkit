@@ -375,7 +375,7 @@ class TestPosynomial(unittest.TestCase):
         self.assertEqual(x.diff(y), 0)
         self.assertEqual((y**2).diff(y), 2*y)
         self.assertEqual((x + y**2).diff(y), 2*y)
-        self.assertEqual((x + y**2).diff("x"), 1)
+        self.assertEqual((x + y**2).diff(x.key), 1)
         self.assertEqual((x + x*y**2).diff(y), 2*x*y)  # pylint: disable=no-member
         self.assertEqual((2*y).diff(y), 2)  # pylint: disable=no-member
         # test with units

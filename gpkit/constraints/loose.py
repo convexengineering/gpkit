@@ -1,6 +1,6 @@
 "Implements Loose"
 from .set import ConstraintSet
-from ..small_scripts import appendsolwarning
+from ..small_scripts import appendsolwarning, initsolwarning
 
 
 class Loose(ConstraintSet):
@@ -15,6 +15,7 @@ class Loose(ConstraintSet):
     def process_result(self, result):
         "Checks that all constraints are satisfied with equality"
         super().process_result(result)
+        initsolwarning(result, "Unexpectedly Tight Constraints")
         for constraint in self.flat():
             c_senss = result["sensitivities"]["constraints"].get(constraint, 0)
             if c_senss >= self.senstol:

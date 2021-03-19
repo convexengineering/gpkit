@@ -4,9 +4,10 @@ import numpy as np
 from .data import NomialData
 from .array import NomialArray
 from .math import Monomial
+from .map import NomialMap
 from ..globals import NamedVariables, Vectorize
 from ..varkey import VarKey
-from ..small_classes import Strings, Numbers
+from ..small_classes import Strings, Numbers, HashVector
 from ..small_scripts import is_sweepvar
 
 
@@ -58,7 +59,9 @@ class Variable(Monomial):
                     descr["label"] = arg
             addmodelstodescr(descr, addtonamedvars=self)
             self.key = VarKey(**descr)
-        Monomial.__init__(self, self.key.hmap)
+        hmap = NomialMap({HashVector({self.key: 1}): 1.0})
+        hmap.units = self.key.units
+        Monomial.__init__(self, hmap)
         # NOTE: needed because Signomial.__init__ will change the class
         self.__class__ = Variable
 
