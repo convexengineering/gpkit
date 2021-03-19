@@ -45,7 +45,7 @@ class KeyMap:
     collapse_arrays = False
     keymap = []
     log_gets = False
-    cset = None
+    vks = varkeys = None
 
     def __init__(self, *args, **kwargs):
         "Passes through to super().__init__ via the `update()` method"
@@ -62,12 +62,14 @@ class KeyMap:
                 return key.veckey, key.idx
             return key, None
         except AttributeError:
-            if self.cset is None:
+            if self.vks is None and self.varkeys is None:
                 return key, self.update_keymap()
         # looks like we're in a substitutions dictionary
-        if key not in self.cset.varkeys:
+        if self.varkeys is None:
+            self.varkeys = KeySet(self.vks)
+        if key not in self.varkeys:
             raise KeyError(key)
-        newkey, *otherkeys = self.cset.varkeys[key]
+        newkey, *otherkeys = self.varkeys[key]
         if otherkeys:
             if all(k.veckey == newkey.veckey for k in otherkeys):
                 return newkey.veckey, None

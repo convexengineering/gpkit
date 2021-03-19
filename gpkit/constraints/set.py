@@ -76,7 +76,7 @@ class ConstraintSet(list, ReprMixin):
         self.vks = set(self.unique_varkeys)
         self.substitutions = KeyDict({k: k.value for k in self.unique_varkeys
                                       if "value" in k.descr})
-        self.substitutions.cset = self
+        self.substitutions.vks = self.vks
         self.bounded, self.meq_bounded = set(), defaultdict(set)
         for i, constraint in enumerate(self):
             if hasattr(constraint, "vks"):
@@ -95,7 +95,6 @@ class ConstraintSet(list, ReprMixin):
             self.vks.update(bonusvks)
         if substitutions:
             self.substitutions.update(substitutions)
-            self._varkeys = None
         for key in self.vks:
             if key not in self.substitutions:
                 if key.veckey is None or key.veckey not in self.substitutions:
