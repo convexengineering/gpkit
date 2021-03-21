@@ -45,7 +45,7 @@ class KeyMap:
     collapse_arrays = False
     keymap = []
     log_gets = False
-    cset = None
+    vks = varkeys = None
 
     def __init__(self, *args, **kwargs):
         "Passes through to super().__init__ via the `update()` method"
@@ -62,12 +62,14 @@ class KeyMap:
                 return key.veckey, key.idx
             return key, None
         except AttributeError:
-            if self.cset is None:
+            if self.vks is None and self.varkeys is None:
                 return key, self.update_keymap()
         # looks like we're in a substitutions dictionary
-        if key not in self.cset.varkeys:
+        if self.varkeys is None:
+            self.varkeys = KeySet(self.vks)
+        if key not in self.varkeys:
             raise KeyError(key)
-        newkey, *otherkeys = self.cset.varkeys[key]
+        newkey, *otherkeys = self.varkeys[key]
         if otherkeys:
             if all(k.veckey == newkey.veckey for k in otherkeys):
                 return newkey.veckey, None
@@ -242,7 +244,13 @@ class KeyDict(KeyMap, dict):
                 if not hasattr(value, "__len__"):
                     value = np.full(key.shape, value, "f")
                 elif not isinstance(value[0], np.ndarray):
-                    value = np.array([clean_value(key, v) for v in value])
+                    clean_values = [clean_value(key, v) for v in value]
+                    dtype = None
+                    if any(is_sweepvar(cv) for cv in clean_values):
+                        dtype = "object"
+                    value = np.array(clean_values, dtype=dtype)
+                    # else:
+                    #     value = np.array(clean_values)  # can't use dtype=None
         super().__setitem__(key, value)
         self.owned.add(key)
 

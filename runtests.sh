@@ -5,3 +5,4 @@ python -c "import gpkit.tests; gpkit.tests.run()"  && mv settings gpkit/env
 rm *.pkl
 rm *.pgz
 rm solution.*
+rm referencesplot.*

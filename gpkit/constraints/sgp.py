@@ -66,7 +66,7 @@ class SequentialGeometricProgram:
         self.approxconstraints = []
         self.sgpvks = set()
         x0 = KeyDict(substitutions)
-        x0.varkeys = model.varkeys  # for string access and so forth
+        x0.vks = model.vks  # for string access and so forth
         for cs in model.flat():
             try:
                 if not hasattr(cs, "as_hmapslt1"):
@@ -149,7 +149,7 @@ solutions and can be solved with 'Model.solve()'.""")
                     "Unsolved after %s iterations. Check `m.program.results`;"
                     " if they're converging, try `.localsolve(...,"
                     " iteration_limit=NEWLIMIT)`." % len(self.gps))
-            gp = self.gp(x0, cleanx0=True)
+            gp = self.gp(x0, cleanx0=(len(self.gps) >= 1))  # clean the first x0
             self.gps.append(gp)  # NOTE: SIDE EFFECTS
             if verbosity > 1:
                 print("\nGP Solve %i" % len(self.gps))
@@ -199,8 +199,10 @@ solutions and can be solved with 'Model.solve()'.""")
                     " %.2g%%. Calling .localsolve with a higher"
                     " `pccp_penalty` (it was %.3g this time) will reduce"
                     " final slack if the model is solvable with less. If"
-                    " you think it might not be, check by solving with "
-                    "`use_pccp=False, x0=(this model's final solution)`.\n"
+                    " you think it might not be, check by generating an SP with"
+                    "`use_pccp=False`, then solving with x0=(this model's final"
+                    " solution); e.g. `m.sp(use_pccp=False).localsolve("
+                    "x0=m.solution[\"variables\"])`.\n"
                     % (100*excess_slack, self.pccp_penalty))
         return self.result
 
@@ -217,7 +219,10 @@ solutions and can be solved with 'Model.solve()'.""")
         if not x0:
             return self._gp  # return last generated
         if not cleanx0:
-            x0 = KeyDict(x0)
+            cleanedx0 = KeyDict()
+            cleanedx0.vks = self._gp.x0.vks
+            cleanedx0.update(x0)
+            x0 = cleanedx0
         self._gp.x0.update({vk: x0[vk] for vk in self.sgpvks if vk in x0})
         p_idx = 0
         for sgpc in self.sgpconstraints:

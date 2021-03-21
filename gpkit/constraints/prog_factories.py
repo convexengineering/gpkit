@@ -15,6 +15,9 @@ def evaluate_linked(constants, linked):
                    for k, v in constants.items()})
     kdc_plain = None
     array_calulated = {}
+    for key in constants:  # remove gradients from constants
+        if key.gradients:
+            del key.descr["gradients"]
     for v, f in linked.items():
         try:
             if v.veckey and v.veckey.original_fn:
@@ -130,7 +133,7 @@ def run_sweep(genfunction, self, solution, skipsweepfailures,
                    for (var, grid) in zip(sweepvars, sweep_grids)}
 
     if verbosity > 0:
-        print("Sweeping over %i solves." % N_passes)
+        print("Sweeping with %i solves:" % N_passes)
         tic = time()
 
     self.program = []
@@ -143,6 +146,8 @@ def run_sweep(genfunction, self, solution, skipsweepfailures,
         program, solvefn = genfunction(self, constants)
         self.program.append(program)  # NOTE: SIDE EFFECTS
         try:
+            if verbosity > 1:
+                print("\nSolve %i:" % i)
             result = solvefn(solver, verbosity=verbosity-1, **solveargs)
             if solveargs.get("process_result", True):
                 self.process_result(result)
@@ -151,10 +156,13 @@ def run_sweep(genfunction, self, solution, skipsweepfailures,
             last_error = e
             if not skipsweepfailures:
                 raise RuntimeWarning(
-                    "Sweep halted! Progress saved to m.program. To skip over"
-                    " such failures, solve with skipsweepfailures=True.") from e
+                    "Solve %i was infeasible; progress saved to m.program."
+                    " To continue sweeping after failures, solve with"
+                    " skipsweepfailures=True." % i) from e
+            if verbosity > 0:
+                print("Solve %i was %s." % (i, e.__class__.__name__))
     if not solution:
-        raise RuntimeWarning("No sweeps solved successfully.") from last_error
+        raise RuntimeWarning("All solves were infeasible.") from last_error
 
     solution["sweepvariables"] = KeyDict()
     ksweep = KeyDict(sweep)

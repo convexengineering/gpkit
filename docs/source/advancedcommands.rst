@@ -1,6 +1,65 @@
 Advanced Commands
 *****************
 
+.. _migp:
+
+Choice Variables
+================
+If MOSEK 9 is installed, GPkit supports discretized free variables with the ``mosek_conif`` solver.
+Choice variables are free in the sense of having multiple possible choices, but discretized in the
+sense of having a limited set of possible solutions.
+
+.. literalinclude:: examples/migp.py
+
+If solved with the mosek_conif solver, the script above will print::
+
+    Optimal Cost
+    ------------
+     [ 1.5       2.15      2.8       3.22     ... ]
+
+    ~~~~~~~~
+    WARNINGS
+    ~~~~~~~~
+    No Dual Solution
+    ----------------
+    This model has the discretized choice variables [x] and hence no dual
+    solution. You can fix those variables to their optimal value and get
+    sensitivities to the resulting continuous problem by updating your model's
+    substitions with `sol["choicevariables"]`.
+    ~~~~~~~~
+
+    Swept Variables
+    ---------------
+    numerator : [ 0.5
+                  1.15
+                  1.8
+                  2.45
+                  3.1
+                  3.75
+                  4.4
+                  5.05
+                  5.7
+                  6.35
+                  7         ]
+
+    Free Variables
+    --------------
+    x : [ 1
+          1
+          1
+          2
+          2
+          2
+          2
+          2
+          2
+          3
+          3         ]
+
+Note that the optimal values for ``x`` are discretized, clicking from 1
+to 2 to 3 during the sweep, and that the solution has no dual variables.
+
+
 Derived Variables
 =================
 

@@ -33,7 +33,7 @@ Example Usage
 
 When using the ``localsolve`` method, the ``reltol`` argument specifies the relative tolerance of the solver: that is, by what percent does the solution have to improve between iterations? If any iteration improves less than that amount, the solver stops and returns its value.
 
-If you wish to start the local optimization at a particular point :math:`x_k`, however, you may do so by putting that position (a dictionary formatted as you would a substitution) as the ``xk`` argument.
+If you wish to start the local optimization at a particular point :math:`x_0`, however, you may do so by putting that position (a dictionary formatted as you would a substitution) as the ``x0`` argument.
 
 .. _sgp:
 

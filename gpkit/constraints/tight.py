@@ -1,7 +1,7 @@
 "Implements Tight"
 from .set import ConstraintSet
 from ..small_scripts import mag
-from ..small_scripts import appendsolwarning
+from ..small_scripts import appendsolwarning, initsolwarning
 from .. import SignomialsEnabled
 
 
@@ -18,6 +18,7 @@ class Tight(ConstraintSet):
         "Checks that all constraints are satisfied with equality"
         super().process_result(result)
         variables = result["variables"]
+        initsolwarning(result, "Unexpectedly Loose Constraints")
         for constraint in self.flat():
             with SignomialsEnabled():
                 leftval = constraint.left.sub(variables).value

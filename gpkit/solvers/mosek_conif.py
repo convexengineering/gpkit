@@ -180,6 +180,35 @@ def optimize(*, c, A, k, p_idxs, **kwargs):
         task.putconboundlist(con_indices, type_constraint, h, h)
         cur_con_idx += log_c_lin.size
     #
+    #   Constrain choice variables to discrete choices
+    #
+    choicevaridxs = kwargs.get("choicevaridxs", {})
+    if choicevaridxs:
+        n_choicevars = 0
+        for var, idx in choicevaridxs.items():
+            choices = sorted(var.choices)
+            m_choices = len(choices) - 1  # the first option is the default
+            choiceidxs = np.arange(msk_nvars + n_choicevars,
+                                   msk_nvars + n_choicevars + m_choices)
+            n_choicevars += m_choices
+            task.appendvars(m_choices)
+            task.putvartypelist(choiceidxs,
+                                [mosek.variabletype.type_int]*m_choices)
+            task.putvarboundlist(choiceidxs, [mosek.boundkey.ra]*m_choices,
+                                 np.zeros(m_choices), np.ones(m_choices))
+            task.appendcons(m_choices)
+            for i in range(m_choices - 1):
+                # each larger choice requires those before it
+                task.putarow(cur_con_idx + i, choiceidxs[i:i+2], [1.0, -1.0])
+                task.putconbound(cur_con_idx + i, mosek.boundkey.lo, 0.0, 0.0)
+                cur_con_idx += 1
+            base = np.log(choices[0])
+            logdiffs = np.diff(np.log(choices)).tolist()
+            task.putarow(cur_con_idx, choiceidxs.tolist() + [idx],
+                         logdiffs + [-1])  # choices are summed
+            task.putconbound(cur_con_idx, mosek.boundkey.fx, -base, -base)
+            cur_con_idx += 1
+    #
     #   Set the objective function
     #
     task.putclist([int(m + 3*n_lse)], [1])
@@ -212,40 +241,54 @@ def optimize(*, c, A, k, p_idxs, **kwargs):
     #
     #   Recover the solution
     #
-    msk_solsta = task.getsolsta(mosek.soltype.itr)
+    if choicevaridxs:
+        sol = mosek.soltype.itg
+        optimal = mosek.solsta.integer_optimal
+    else:
+        sol = mosek.soltype.itr
+        optimal = mosek.solsta.optimal
+    msk_solsta = task.getsolsta(sol)
     if msk_solsta == mosek.solsta.prim_infeas_cer:
         raise PrimalInfeasible()
     if msk_solsta == mosek.solsta.dual_infeas_cer:
         raise DualInfeasible()
-    if msk_solsta != mosek.solsta.optimal:  # pragma: no cover
+    if msk_solsta != optimal:  # pragma: no cover
         raise UnknownInfeasible("solution status: ", msk_solsta)
 
     # recover primal variables
     x = [0.] * m
-    task.getxxslice(mosek.soltype.itr, 0, m, x)
+    task.getxxslice(sol, 0, m, x)
+    # recover binary variables
+    # xbin = [0.] * (n_choicevars)
+    # task.getxxslice(sol, msk_nvars, msk_nvars + n_choicevars, xbin)
+    # wrap things up in a dictionary
+    solution = {"status": "optimal", "primal": np.array(x),
+                "objective": np.exp(task.getprimalobj(sol))}
     # recover dual variables for log-sum-exp epigraph constraints
     # (skip epigraph of the objective function).
-    z_duals = [0.] * (p_lse - 1)
-    task.getsuxslice(mosek.soltype.itr, m + 3*n_lse + 1, msk_nvars, z_duals)
-    z_duals = np.array(z_duals)
-    z_duals[z_duals < 0] = 0
-    # recover dual variables for the remaining user-provided constraints
-    if log_c_lin is not None:
-        aff_duals = [0.] * log_c_lin.size
-        task.getsucslice(mosek.soltype.itr, n_lse + p_lse, cur_con_idx,
-                         aff_duals)
-        aff_duals = np.array(aff_duals)
-        aff_duals[aff_duals < 0] = 0
-        # merge z_duals with aff_duals
-        merged_duals = np.zeros(len(k))
-        merged_duals[lse_posys[1:]] = z_duals  # skipping the cost
-        merged_duals[lin_posys] = aff_duals
-        merged_duals = merged_duals[1:]
+    if choicevaridxs:  # no dual solution
+        solution["la"] = []
+        solution["nu"] = []
     else:
-        merged_duals = z_duals
-    # wrap things up in a dictionary
-    solution = {"status": "optimal", "primal": np.array(x), "la": merged_duals,
-                "objective": np.exp(task.getprimalobj(mosek.soltype.itr))}
+        z_duals = [0.] * (p_lse - 1)
+        task.getsuxslice(mosek.soltype.itr, m + 3*n_lse + 1, msk_nvars, z_duals)
+        z_duals = np.array(z_duals)
+        z_duals[z_duals < 0] = 0
+        # recover dual variables for the remaining user-provided constraints
+        if log_c_lin is None:
+            solution["la"] = z_duals
+        else:
+            aff_duals = [0.] * log_c_lin.size
+            task.getsucslice(mosek.soltype.itr, n_lse + p_lse, cur_con_idx,
+                             aff_duals)
+            aff_duals = np.array(aff_duals)
+            aff_duals[aff_duals < 0] = 0
+            # merge z_duals with aff_duals
+            merged_duals = np.zeros(len(k))
+            merged_duals[lse_posys[1:]] = z_duals  # skipping the cost
+            merged_duals[lin_posys] = aff_duals
+            solution["la"] = merged_duals[1:]
+
     task.__exit__(None, None, None)
     env.__exit__(None, None, None)
     return solution

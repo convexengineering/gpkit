@@ -4,42 +4,44 @@ Installation
 ************
 
 1. If you are on Mac or Windows, we recommend installing `Anaconda <http://www.continuum.io/downloads>`_. Alternatively, `install pip and create a virtual environment <https://packaging.python.org/guides/installing-using-pip-and-virtualenv/>`_.
-2. (optional) Install the MOSEK solver as directed below
-3. Run ``pip install gpkit`` in the appropriate terminal or command prompt.
-4. Open a Python prompt and run ``import gpkit`` to finish installation and run unit tests.
+2. (optional) Install the MOSEK 9 solver with ``pip install Mosek``, then a license as described below
+3. (optional) Install the MOSEK 8 solver as described below
+4. Run ``pip install gpkit`` in the appropriate terminal or command prompt.
+5. Open a Python prompt and run ``import gpkit`` to finish installation and run unit tests.
 
 If you encounter any bugs please email ``gpkit@mit.edu``
 or `raise a GitHub issue <http://github.com/convexengineering/gpkit/issues/new>`_.
 
 
-Installing MOSEK
-================
-GPkit interfaces with two off the shelf solvers: cvxopt, and MOSEK.
+Installing MOSEK 8
+==================
+GPkit interfaces with two off the shelf solvers: cvxopt, and MOSEK (versions 8 and 9).
 Cvxopt is open source and installed by default; MOSEK requires a commercial licence or (free)
-academic license.
+academic license. In MOSEK version 8 GPkit uses the command-line interface ``mskexpopt`` solver, while
+in MOSEK 9 it uses the more active exponential-cone interface (and hence supports :ref:`migp`).
 
 Mac OS X
   - If ``which gcc`` does not return anything, install the `Apple Command Line Tools <https://developer.apple.com/downloads/index.action?=command%20line%20tools>`_.
   - Download `MOSEK 8 <https://www.mosek.com/downloads/>`_, then:
       - Move the ``mosek`` folder to your home directory
       - Follow `these steps for Mac <http://docs.mosek.com/7.0/toolsinstall/Mac_OS_X_installation.html>`_.
-      - Request an `academic license file <http://license.mosek.com/academic>`_ and put it in ``~/mosek/``
+  - Request an `academic license file <http://license.mosek.com/academic>`_ and put it in ``~/mosek/``
 
 Linux
   - Download `MOSEK 8 <https://www.mosek.com/downloads/>`_, then:
       - Move the ``mosek`` folder to your home directory
       - Follow `these steps for Linux <http://docs.mosek.com/7.0/toolsinstall/Linux_UNIX_installation_instructions.html>`_.
-      - Request an `academic license file <http://license.mosek.com/academic>`_ and put it in ``~/mosek/``
+  - Request an `academic license file <http://license.mosek.com/academic>`_ and put it in ``~/mosek/``
 
 Windows
+    - Make sure ``gcc`` is on your system path.
+        - To do this, type ``gcc`` into a command prompt.
+        - If you get ``executable not found``, then install the 64-bit version (x86_64 installer architecture dropdown option) with GCC version 6.4.0 or older of `mingw <http://sourceforge.net/projects/mingw-w64/>`_.
+        - In an Anaconda command prompt (or equivalent), run ``cd C:\Program Files\mingw-w64\x86_64-6.4.0-posix-seh-rt_v5-rev0\`` (or whatever corresponds to the correct installation directory; note that if mingw is in ``Program Files (x86)`` instead of ``Program Files`` you've installed the 32-bit version by mistake)
+        - Run ``mingw-w64`` to add it to your executable path. For step 3 of the install process you'll need to run ``pip install gpkit`` from this prompt.
     - Download `MOSEK 8 <https://www.mosek.com/downloads/>`_, then:
         - Follow `these steps for Windows <http://docs.mosek.com/7.0/toolsinstall/Windows_installation.html>`_.
-        - Request an `academic license file <http://license.mosek.com/academic>`_ and put it in ``C:\Users\(your_username)\mosek\``
-        - Make sure ``gcc`` is on your system path.
-            - To do this, type ``gcc`` into a command prompt.
-            - If you get ``executable not found``, then install the 64-bit version (x86_64 installer architecture dropdown option) with GCC version 6.4.0 or older of `mingw <http://sourceforge.net/projects/mingw-w64/>`_.
-            - In an Anaconda command prompt (or equivalent), run ``cd C:\Program Files\mingw-w64\x86_64-6.4.0-posix-seh-rt_v5-rev0\`` (or whatever corresponds to the correct installation directory; note that if mingw is in ``Program Files (x86)`` instead of ``Program Files`` you've installed the 32-bit version by mistake)
-            - Run ``mingw-w64`` to add it to your executable path. For step 3 of the install process you'll need to run ``pip install gpkit`` from this prompt.
+    - Request an `academic license file <http://license.mosek.com/academic>`_ and put it in ``C:\Users\(your_username)\mosek\``
 
 Debugging your installation
 ===========================
