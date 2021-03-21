@@ -69,6 +69,7 @@ class GeometricProgram:
     >>> gp.solve()
     """
     _result = solve_log = solver_out = model = v_ss = nu_by_posy = None
+    choicevaridxs = integersolve = None
 
     def __init__(self, cost, constraints, substitutions, *, checkbounds=True):
         self.cost, self.substitutions = cost, substitutions
@@ -155,6 +156,8 @@ class GeometricProgram:
                 m_idx += 1
         self.p_idxs = np.array(self.p_idxs, "int32")  # to use array equalities
         self.varidxs = {vk: i for i, vk in enumerate(self.varlocs)}
+        self.choicevaridxs = {vk: i for i, vk in enumerate(self.varlocs)
+                              if vk.choices}
         for j, (var, locs) in enumerate(self.varlocs.items()):
             row.extend(locs)
             col.extend([j]*len(locs))
@@ -191,6 +194,9 @@ class GeometricProgram:
 
         solverargs = DEFAULT_SOLVER_KWARGS.get(solvername, {})
         solverargs.update(kwargs)
+        if self.choicevaridxs and solvername == "mosek_conif":
+            solverargs["choicevaridxs"] = self.choicevaridxs
+            self.integersolve = True
         starttime = time()
         solver_out, infeasibility, original_stdout = {}, None, sys.stdout
         try:
@@ -304,6 +310,27 @@ class GeometricProgram:
         result["constants"] = KeyDict(self.substitutions)
         result["variables"] = KeyDict(result["freevariables"])
         result["variables"].update(result["constants"])
+        result["soltime"] = solver_out["soltime"]
+        if self.integersolve:
+            result["choicevariables"] = KeyDict( \
+                {k: v for k, v in result["freevariables"].items()
+                 if k in self.choicevaridxs})
+            result["warnings"] = {"No Dual Solution": [(\
+                "This model has the discretized choice variables"
+                " %s and hence no dual solution. You can fix those variables"
+                " to their optimal value and get sensitivities to the resulting"
+                " continuous problem by updating your model's substitions with"
+                " `sol[\"choicevariables\"]`."
+                % sorted(self.choicevaridxs.keys()), self.choicevaridxs)]}
+            return SolutionArray(result)
+        elif self.choicevaridxs:
+            result["warnings"] = {"Freed Choice Variables": [(\
+                "This model has the discretized choice variables"
+                " %s, but since the '%s' solver doesn't support discretization"
+                " they were treated as continuous variables."
+                % (sorted(self.choicevaridxs.keys()), solver_out["solver"]),
+                self.choicevaridxs)]}
+
         result["sensitivities"] = {"constraints": {}}
         la, self.nu_by_posy = self._generate_nula(solver_out)
         cost_senss = sum(nu_i*exp for (nu_i, exp) in zip(self.nu_by_posy[0],
@@ -342,7 +369,6 @@ class GeometricProgram:
         result["sensitivities"]["variables"] = KeyDict(gpv_ss)
         result["sensitivities"]["constants"] = \
             result["sensitivities"]["variables"]  # NOTE: backwards compat.
-        result["soltime"] = solver_out["soltime"]
         return SolutionArray(result)
 
     def check_solution(self, cost, primal, nu, la, tol, abstol=1e-20):
@@ -379,6 +405,8 @@ class GeometricProgram:
                 raise Infeasible("Primal solution violates constraint: %s is "
                                  "greater than 1" % primal_exp_vals[mi].sum())
         # check dual sol #
+        if self.integersolve:
+            return
         # note: follows dual formulation in section 3.1 of
         # http://web.mit.edu/~whoburg/www/papers/hoburg_phd_thesis.pdf
         if not almost_equal(self.nu_by_posy[0].sum(), 1):

@@ -84,7 +84,10 @@ def logged_example_testcase(name, imported, path):
         filepath = ("".join([path, os.sep, "%s_output.txt" % name])
                     if name not in imported else None)
         with StdoutCaptured(logfilepath=filepath):
-            imported[name] = importlib.import_module(name)
+            if name in imported:
+                importlib.reload(imported[name])
+            else:
+                imported[name] = importlib.import_module(name)
         getattr(self, name)(imported[name])
     return test
 

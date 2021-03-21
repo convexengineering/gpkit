@@ -243,7 +243,9 @@ def warnings_table(self, _, **kwargs):
         if len(data_vec) == 0:
             continue
         if not hasattr(data_vec, "shape"):
-            data_vec = [data_vec]
+            data_vec = [data_vec]  # not a sweep
+        if all((data == data_vec[0]).all() for data in data_vec[1:]):
+            data_vec = [data_vec[0]]  # warnings identical across all sweeps
         for i, data in enumerate(data_vec):
             if len(data) == 0:
                 continue
@@ -340,7 +342,8 @@ class SolutionArray(DictOfLists):
     """
     modelstr = ""
     _name_collision_varkeys = None
-    table_titles = {"sweepvariables": "Swept Variables",
+    table_titles = {"choicevariables": "Choice Variables",
+                    "sweepvariables": "Swept Variables",
                     "freevariables": "Free Variables",
                     "constants": "Fixed Variables",  # TODO: change everywhere
                     "variables": "Variables"}
@@ -683,7 +686,7 @@ class SolutionArray(DictOfLists):
         -------
         str
         """
-        if sortmodelsbysenss:
+        if sortmodelsbysenss and "sensitivities" in self:
             kwargs["sortmodelsbysenss"] = self["sensitivities"]["models"]
         else:
             kwargs["sortmodelsbysenss"] = False
@@ -700,7 +703,10 @@ class SolutionArray(DictOfLists):
         showvars = self._parse_showvars(showvars)
         strs = []
         for table in tables:
-            if table == "cost":
+            if "sensitivities" not in self and ("sensitivities" in table or
+                                                "constraints" in table):
+                continue
+            elif table == "cost":
                 cost = self["cost"]  # pylint: disable=unsubscriptable-object
                 if kwargs.get("latex", None):  # cost is not printed for latex
                     continue
