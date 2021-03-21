@@ -1,4 +1,6 @@
 """Plotting methods"""
+from collections import Counter
+import plotly.graph_objects as go
 import matplotlib.pyplot as plt
 import numpy as np
 from .plot_sweep import assign_axes
@@ -63,3 +65,66 @@ def plot_convergence(model):
     ax.set_ylabel('Cost')
     ax.set_xticks(range(1, len(model.program.gps)+1))
     return fig, ax
+
+
+def treemap(model, itemize="variables", sizebycount=False):
+    """Plots model structure as Plotly TreeMap
+
+    Arguments
+    ---------
+    model: Model
+        GPkit model object
+
+    itemize (optional): string, either "variables" or "constraints"
+        Specify whether to iterate over the model varkeys or constraints
+
+    sizebycount (optional): bool
+        Whether to size blocks by number of variables/constraints or use
+        default sizing
+
+    Returns
+    -------
+    plotly.graph_objects.Figure
+        Plot of model hierarchy
+
+    """
+    modelnames = []
+    parents = []
+    sizes = []
+
+    if itemize == "variables":
+        lineagestrs = [l.lineagestr() or "Model" for l in model.varkeys]
+    elif itemize == "constraints":
+        lineagestrs = [l.lineagestr() or "Model" for l in model.flat()]
+
+    modelcount = Counter(lineagestrs)
+    for modelname, count in modelcount.items():
+        modelnames.append(modelname)
+        if "." in modelname:
+            parent = modelname.rsplit(".", 1)[0]
+        elif modelname != "Model":
+            parent = "Model"
+        else:
+            parent = ""
+        parents.append(parent)
+        sizes.append(count)
+
+    for parent in parents:
+        if parent not in modelnames:
+            modelnames.append(parent)
+            if "." in parent:
+                grandparent = parent.rsplit(".", 1)[0]
+            elif parent != "Model":
+                grandparent = "Model"
+            else:
+                grandparent = ""
+            parents.append(grandparent)
+            sizes.append(0)
+
+    fig = go.Figure(go.Treemap(
+        ids=modelnames,
+        labels=[modelname.split(".")[-1] for modelname in modelnames],
+        parents=parents,
+        values=sizes if sizebycount else None,
+    ))
+    return fig

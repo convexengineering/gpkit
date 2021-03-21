@@ -323,7 +323,7 @@ class GeometricProgram:
                 " `sol[\"choicevariables\"]`."
                 % sorted(self.choicevaridxs.keys()), self.choicevaridxs)]}
             return SolutionArray(result)
-        elif self.choicevaridxs:
+        if self.choicevaridxs:
             result["warnings"] = {"Freed Choice Variables": [(\
                 "This model has the discretized choice variables"
                 " %s, but since the '%s' solver doesn't support discretization"
