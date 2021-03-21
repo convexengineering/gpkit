@@ -93,17 +93,19 @@ def treemap(model, itemize="variables", sizebycount=False):
     sizes = []
 
     if itemize == "variables":
-        items = model.varkeys
+        lineagestrs = [l.lineagestr() or "Model" for l in model.varkeys]
     elif itemize == "constraints":
-        items = model.flat()
-    lineagestrs = []
-    for item in items:
-        lineagestrs.append(item.lineagestr())
+        lineagestrs = [l.lineagestr() or "Model" for l in model.flat()]
 
     modelcount = Counter(lineagestrs)
     for modelname, count in modelcount.items():
         modelnames.append(modelname)
-        parent = modelname.rsplit(".", 1)[0]
+        if "." in modelname:
+            parent = modelname.rsplit(".", 1)[0]
+        elif modelname != "Model":
+            parent = "Model"
+        else:
+            parent = ""
         parents.append(parent)
         sizes.append(count)
 
@@ -112,18 +114,17 @@ def treemap(model, itemize="variables", sizebycount=False):
             modelnames.append(parent)
             if "." in parent:
                 grandparent = parent.rsplit(".", 1)[0]
+            elif parent != "Model":
+                grandparent = "Model"
             else:
                 grandparent = ""
             parents.append(grandparent)
             sizes.append(0)
 
-    values = sizes if sizebycount else None
-
     fig = go.Figure(go.Treemap(
         ids=modelnames,
         labels=[modelname.split(".")[-1] for modelname in modelnames],
         parents=parents,
-        values=values,
+        values=sizes if sizebycount else None,
     ))
     return fig
-

@@ -1,10 +1,35 @@
 Visualization and Interaction
 *****************************
 
-Variable Reference Plots
+Code in this section uses the `CE solar model <https://github.com/convexengineering/solar/tree/gpkitdocs>`_ except where noted otherwise.
+
+Model Hierarchy Treemaps
 ========================
 
-Code in this section uses the `CE solar model <https://github.com/convexengineering/solar/tree/gpkitdocs>`_.
+.. code:: python
+
+    import plotly
+    from gpkit.interactive.plotting import treemap
+    from solar.solar import *
+    Vehicle = Aircraft(Npod=3, sp=True)
+    M = Mission(Vehicle, latitude=[20])
+    fig = treemap(M)
+    plotly.offline.plot(fig, filename="treemap.html")
+
+.. figure:: figures/treemap.png
+
+and, using sizing and counting by constraints instead of variables (the default):
+
+.. code:: python
+
+    fig = treemap(M, itemize="constraints", sizebycount=True)
+    plotly.offline.plot(fig, filename="sizedtreemap.html")
+
+.. figure:: figures/sizedconstrainttreemap.png
+
+
+Variable Reference Plots
+========================
 
 .. code:: python
 
@@ -56,8 +81,6 @@ Requirements
 
 Example
 -------
-
-Code in this section uses the `CE solar model <https://github.com/convexengineering/solar/tree/gpkitdocs>`_
 
 .. code:: python
 

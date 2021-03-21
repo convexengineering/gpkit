@@ -75,6 +75,9 @@ class TestExamples(unittest.TestCase):
         assert_logtol(sol_ac("A"), (A_ac/3)**2, tol2)
         assert_logtol(sol_ac["cost"], (A_ac/3)**4, tol2)
 
+    def test_treemap(self, example):
+        pass
+
     def test_checking_result_changes(self, example):
         sol = example.sol
         self.assertAlmostEqual(sol["cost"], 0.48, 2)

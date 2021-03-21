@@ -706,7 +706,7 @@ class SolutionArray(DictOfLists):
             if "sensitivities" not in self and ("sensitivities" in table or
                                                 "constraints" in table):
                 continue
-            elif table == "cost":
+            if table == "cost":
                 cost = self["cost"]  # pylint: disable=unsubscriptable-object
                 if kwargs.get("latex", None):  # cost is not printed for latex
                     continue

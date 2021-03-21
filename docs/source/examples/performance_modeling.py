@@ -250,6 +250,6 @@ try:
     sankey  # pylint: disable=pointless-statement
 except (ImportError, ModuleNotFoundError):
     print("Making Sankey diagrams requires the ipysankeywidget package")
-    
+
 from gpkit.interactive.references import referencesplot
 referencesplot(M, openimmediately=False)
