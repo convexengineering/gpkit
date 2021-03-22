@@ -530,7 +530,7 @@ class SolutionArray(DictOfLists):
             del key.descr["necessarylineage"]
         return names
 
-    def savemat(self, filename="solution.mat", showvars=None,
+    def savemat(self, filename="solution.mat", *, showvars=None,
                 excluded=("unnecessary lineage", "vec")):
         "Saves primal solution as matlab file"
         from scipy.io import savemat
@@ -574,14 +574,14 @@ class SolutionArray(DictOfLists):
                                            "lineage", "label"])])
         return pd.DataFrame(rows, columns=cols)
 
-    def savetxt(self, filename="solution.txt", printmodel=True, **kwargs):
+    def savetxt(self, filename="solution.txt", *, printmodel=True, **kwargs):
         "Saves solution table as a text file"
         with open(filename, "w") as f:
             if printmodel:
                 f.write(self.modelstr + "\n")
             f.write(self.table(**kwargs))
 
-    def savecsv(self, showvars=None, filename="solution.csv", valcols=5):
+    def savecsv(self, filename="solution.csv", *, valcols=5, showvars=None):
         "Saves primal solution as a CSV sorted by modelname, like the tables."
         data = self["variables"]
         if showvars:
