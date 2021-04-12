@@ -83,10 +83,12 @@ Some free variables may be evaluated from the values of other (non-evaluated) fr
 after the optimization is performed. For example, if the efficiency :math:`\nu` of a motor is not a GP-compatible
 variable, but :math:`(1-\nu)` is a valid GP variable, then :math:`\nu` can be calculated after solving.
 These evaluated free variables can be represented by a ``Variable`` with ``evalfn`` metadata.
-Note that this variable should not be used in constructing your model!
+When constructing an ``evalfn``, remember that square-bracket access to variables
+pulls out magnitudes: use round-bracket access (i.e. ``v(var)``) to ensure unit correctness.
 
 .. literalinclude:: examples/evaluated_free_variables.py
 
+Note that this variable should not be used in constructing your model!
 For evaluated variables that can be used during a solution, see :ref:`sgp`.
 
 
@@ -196,7 +198,3 @@ Freeing Fixed Variables
 After creating a Model, it may be useful to "free" a fixed variable and resolve.  This can be done using the command ``del m.substitutions["x"]``, where ``m`` is a Model.  An example of how to do this is shown below.
 
 .. literalinclude:: examples/freeing_fixed_variables.py
-
-Note that ``del m.substitutions["y"]`` affects ``m`` but not ``y.key``.
-``y.value`` will still be 3, and if ``y`` is used in a new model,
-it will still carry the value of 3.
