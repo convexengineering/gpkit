@@ -27,6 +27,9 @@ def evaluate_linked(constants, linked):
                 out = array_calulated[v.veckey][v.idx]
             else:
                 out = f(kdc)
+            if not hasattr(out, "x"):
+                constants[v] = out
+                continue  # a new fixed variable, not a calculated one
             constants[v] = out.x
             v.descr["gradients"] = {adn.tag: grad
                                     for adn, grad in out.d().items()
