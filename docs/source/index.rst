@@ -4,13 +4,13 @@
 GPkit is a Python package for defining and manipulating
 geometric programming (GP) models.
 
-Our hopes are to bring the mathematics of Geometric Programming
-into the engineering design process
+Our hopes are to bring geometric programming
+into engineering design processes
 in a disciplined and collaborative way, and to
-encourage research with and on GPs by providing an
-easily extensible object-oriented framework.
+encourage research with GPs by providing an
+extensible object-oriented framework.
 
-GPkit abstracts away the backend solver so that users
+GPkit abstracts away solvers so users
 can work directly with engineering equations and optimization concepts.
 Supported solvers are
 `MOSEK <http://mosek.com>`_

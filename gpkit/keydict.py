@@ -249,8 +249,6 @@ class KeyDict(KeyMap, dict):
                     if any(is_sweepvar(cv) for cv in clean_values):
                         dtype = "object"
                     value = np.array(clean_values, dtype=dtype)
-                    # else:
-                    #     value = np.array(clean_values)  # can't use dtype=None
         super().__setitem__(key, value)
         self.owned.add(key)
 
