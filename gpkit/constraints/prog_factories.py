@@ -26,11 +26,11 @@ def evaluate_linked(constants, linked):
                 if v.veckey not in array_calulated:
                     with SignomialsEnabled():  # to allow use of gpkit.units
                         vecout = v.veckey.vecfn(kdc)
-                    # TODO: is this necessary?
-                    # if not hasattr(vecout, "shape"):
-                    #     vecout = np.array(vecout)
+                    if not hasattr(vecout, "shape"):
+                        vecout = np.array(vecout)
                     array_calulated[v.veckey] = vecout
-                    if v.veckey.units and not hasattr(vecout, "units"):
+                    if (any(vecout != 0) and v.veckey.units
+                            and not hasattr(vecout, "units")):
                         print("Warning: linked function for %s did not return"
                               " a united value. Modifying it to do so (e.g. by"
                               " using `()` instead of `[]` to access variables)"
@@ -43,7 +43,7 @@ def evaluate_linked(constants, linked):
                 out = out.value
             if hasattr(out, "units"):
                 out = out.to(v.units or "dimensionless").magnitude
-            elif v.units and not v.veckey:
+            elif out != 0 and v.units and not v.veckey:
                 print("Warning: linked function for %s did not return"
                       " a united value. Modifying it to do so (e.g. by"
                       " using `()` instead of `[]` to access variables)"

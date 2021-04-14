@@ -133,29 +133,26 @@ class ArrayVariable(NomialArray):  # pylint: disable=too-many-locals
         if "name" not in descr:
             descr["name"] = "\\fbox{%s}" % VarKey.unique_id()
 
-        value_option = None
-        if "value" in descr:
-            value_option = "value"
-        if value_option:
-            values = descr.pop(value_option)
-        if value_option and not hasattr(values, "__call__"):
-            if Vectorize.vectorization:
-                if not hasattr(values, "shape"):
-                    values = np.full(shape, values, "f")
-                else:
-                    values = np.broadcast_to(values, reversed(shape)).T
-            elif not hasattr(values, "shape"):
-                values = np.array(values)
-            if values.shape != shape:
-                raise ValueError("the value's shape %s is different than"
-                                 " the vector's %s." % (values.shape, shape))
+        values = descr.pop("value", None)
+        if values is not None:
+            if not hasattr(values, "__call__"):
+                if Vectorize.vectorization:
+                    if not hasattr(values, "shape"):
+                        values = np.full(shape, values, "f")
+                    else:
+                        values = np.broadcast_to(values, reversed(shape)).T
+                elif not hasattr(values, "shape"):
+                    values = np.array(values)
+                if values.shape != shape:
+                    raise ValueError("value's shape %s is different from the"
+                                     " vector's %s." % (values.shape, shape))
 
         veckeydescr = descr.copy()
         addmodelstodescr(veckeydescr)
-        if value_option:
+        if values is not None:
             if hasattr(values, "__call__"):
                 veckeydescr["vecfn"] = values
-            veckeydescr[value_option] = values
+            veckeydescr["value"] = values
         veckey = VarKey(**veckeydescr)
 
         descr["veckey"] = veckey
@@ -165,11 +162,11 @@ class ArrayVariable(NomialArray):  # pylint: disable=too-many-locals
             i = it.multi_index
             it.iternext()
             descr["idx"] = i
-            if value_option:
-                if hasattr(values, "__call__"):
-                    descr[value_option] = veclinkedfn(values, i)
+            if values is not None:
+                if hasattr(values, "__call__"):  # a vector function
+                    descr["value"] = veclinkedfn(values, i)
                 else:
-                    descr[value_option] = values[i]
+                    descr["value"] = values[i]
             vl[i] = Variable(**descr)
 
         obj = np.asarray(vl).view(NomialArray)
