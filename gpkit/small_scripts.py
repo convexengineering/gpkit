@@ -3,6 +3,14 @@ from collections.abc import Iterable
 import numpy as np
 
 
+def veclinkedfn(linkedfn, i):
+    "Generate an indexed linking function."
+    def newlinkedfn(c):
+        "Linked function that pulls out a particular index"
+        return np.array(linkedfn(c))[i]
+    return newlinkedfn
+
+
 def initsolwarning(result, category="uncategorized"):
     "Creates a results dictionary for a particular category of warning."
     if "warnings" not in result:

@@ -570,7 +570,7 @@ class SolutionArray(DictOfLists):
                     ", ".join("%s=%s" % (k, v) for (k, v) in key.descr.items()
                               if k not in ["name", "units", "unitrepr",
                                            "idx", "shape", "veckey",
-                                           "value", "original_fn",
+                                           "value", "vecfn",
                                            "lineage", "label"])])
         return pd.DataFrame(rows, columns=cols)
 

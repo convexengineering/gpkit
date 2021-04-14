@@ -8,7 +8,7 @@ from .map import NomialMap
 from ..globals import NamedVariables, Vectorize
 from ..varkey import VarKey
 from ..small_classes import Strings, Numbers, HashVector
-from ..small_scripts import is_sweepvar
+from ..small_scripts import is_sweepvar, veclinkedfn
 
 
 def addmodelstodescr(descr, addtonamedvars=None):
@@ -154,7 +154,7 @@ class ArrayVariable(NomialArray):  # pylint: disable=too-many-locals
         addmodelstodescr(veckeydescr)
         if value_option:
             if hasattr(values, "__call__"):
-                veckeydescr["original_fn"] = values
+                veckeydescr["vecfn"] = values
             veckeydescr[value_option] = values
         veckey = VarKey(**veckeydescr)
 
@@ -176,14 +176,6 @@ class ArrayVariable(NomialArray):  # pylint: disable=too-many-locals
         obj.key = veckey
         obj.units = obj.key.units
         return obj
-
-
-def veclinkedfn(linkedfn, i):
-    "Generate an indexed linking function."
-    def newlinkedfn(c):
-        "Linked function that pulls out a particular index"
-        return np.array(linkedfn(c))[i]
-    return newlinkedfn
 
 
 class VectorizableVariable(Variable, ArrayVariable):  # pylint: disable=too-many-ancestors

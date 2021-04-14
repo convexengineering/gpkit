@@ -1,0 +1,19 @@
+
+Optimal Cost
+------------
+ 12
+
+Free Variables
+--------------
+x : 12  [hr]
+
+Fixed Variables
+---------------
+  t_{day} : 12  [hr]
+t_{night} : 12  [hr]
+
+Most Sensitive Constraints
+--------------------------
+  +0.5 : x ≥ t_{day}
+  +0.5 : x ≥ t_{night}
+

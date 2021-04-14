@@ -3,7 +3,7 @@ from collections import defaultdict
 from collections.abc import Hashable
 import numpy as np
 from .small_classes import Numbers, Quantity, FixedScalar
-from .small_scripts import is_sweepvar, isnan
+from .small_scripts import is_sweepvar, isnan, veclinkedfn
 
 DIMLESS_QUANTITY = Quantity(1, "dimensionless")
 INT_DTYPE = np.dtype(int)
@@ -226,6 +226,14 @@ class KeyDict(KeyMap, dict):
             super().__getitem__(key)[idx] = value
             return  # successfully set a single index!
         if key.shape: # now if we're setting an array...
+            if hasattr(value, "__call__"):  # a linked vector-function
+                key.vecfn = value
+                value = np.empty(key.shape, dtype="object")
+                it = np.nditer(value, flags=['multi_index', 'refs_ok'])
+                while not it.finished:
+                    i = it.multi_index
+                    it.iternext()
+                    value[i] = veclinkedfn(key.vecfn, i)
             if getattr(value, "shape", None):   # is the value an array?
                 if value.dtype == INT_DTYPE:
                     value = np.array(value, "f")  # convert to float
