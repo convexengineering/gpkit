@@ -634,7 +634,7 @@ class SolutionArray(DictOfLists):
             return NomialArray([self.atindex(i).subinto(posy)
                                 for i in range(len(self))])
 
-        return posy.sub(self["variables"])
+        return posy.sub(self["variables"], require_positive=False)
 
     def _parse_showvars(self, showvars):
         showvars_out = set()
