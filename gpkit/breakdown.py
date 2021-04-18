@@ -8,7 +8,7 @@ from gpkit.exceptions import DimensionalityError
 import numpy as np
 
 
-FixedTransform = namedtuple("FixedTransform", ["factor", "power", "origkey"])
+Transform = namedtuple("Transform", ["factor", "power", "origkey"])
 
 def free_vks(self, obj):
     return [vk for vk in obj.vks if vk not in self.substitutions]
@@ -66,9 +66,20 @@ def keystr(key):
     return "%s (%s, %s)" % (key.str_without("lineage"), type, valstr(key))
 
 
+# for key, value in bd.items():
+#     if len(value) > 1:
+#         sc = sorted(((m.solution["sensitivities"]["constraints"][constraint], constraint)
+#                       for _, _, constraint in value), reverse=True)
+#         print(key)
+#         for s, c in sc:
+#             print("%.4f" % s, c)
+#         print()
+
+
 def crawl(key, bd, basescale=1, indent=0, visited_bdkeys=None):
     if key in bd:
-        composition, keymon, constraint = list(bd[key])[0]
+        # sort by tightness; only do multiple if they're quite close!
+        composition, keymon, constraint = sorted(bd[key], key=lambda pmc: m.solution["sensitivities"]["constraints"][pmc[2]], reverse=True)[0]
     else:
         composition = key
         constraint = keymon = None
@@ -111,21 +122,21 @@ def crawl(key, bd, basescale=1, indent=0, visited_bdkeys=None):
         if factor != 1:
             out += "  "*indent + "(with a factor of " + monstr(factor) + ")\n"
             subsubtree = []
-            transform = FixedTransform(factor**power, 1, keymon)
+            transform = Transform(factor**power, 1, keymon)
             orig_subtree.append({(transform, basescale): subsubtree})
             scale = scale/m.solution(factor)
             orig_subtree = subsubtree
         if power != 1:
             out += "  "*indent + "(and a power of %.2g )\n" %power
             subsubtree = []
-            transform = FixedTransform(1, power, keymon)
+            transform = Transform(1, power, keymon)
             orig_subtree.append({(transform, basescale): subsubtree})
             orig_subtree = subsubtree
     if constraint is not None:
         out += "  "*indent + constraint.str_without(["units", "lineage"]) + "\n"
         indent += 1
     else:
-        print("  "*indent + "from input %s" % key.str_without(["units", "lineage"]))
+        out += "  "*indent + "from input %s" % key.str_without(["units", "lineage"])
         indent += 1
     out += "  "*indent + "by\n"
     indent += 1
@@ -140,17 +151,39 @@ def crawl(key, bd, basescale=1, indent=0, visited_bdkeys=None):
     for scaledmonval, _, mon in sorted(zip(monvals, range(len(monvals)), composition.chop()), reverse=True):
         subtree = orig_subtree
         free_monvks = set(free_vks(m, mon))
+        altered_vks = False
+        for vk in list(free_monvks):
+            # NOTE: very strong restriction - no unit conversion
+            # try:
+            #     float((vk.units or 1)/(mon.units or 1))
+            #     mon_units_same_as_vk = True
+            # except DimensionalityError:
+            #     mon_units_same_as_vk = False
+            # NOTE: permissive, allows free variables as factors
+            if vk not in bd or mon.exp[vk] < 0: # or not mon_units_same_as_vk:
+                free_monvks.remove(vk)
+                altered_vks = True
+            # NOTE: in-between, mostly restrictive; do this, but don't allow recursion
+        # NOTE: VERY permissive, always chooses an arbitrary breakdown to follow
+        # if len(free_monvks) > 1:
+        #     free_monvks = set([list(free_monvks)[0]])
         fixed_vks = set(mon.vks) - free_monvks
         subkey = None
         power = 1
-        if len(free_monvks) == 1:
+        # NOTE: more permissive, descends past a free factor if it's a big factor of the original key
+        if len(free_monvks) == 1 and (not altered_vks or scaledmonval > 0.4):
             subkey, = free_monvks
             power = mon.exp[subkey]
         elif not free_monvks:
-            for vk in list(fixed_vks):
-                if vk.units and not vk.units.dimensionless:
-                    free_monvks.add(vk)
-                    fixed_vks.remove(vk)
+            if len(fixed_vks) == 1:
+                free_monvks = fixed_vks
+                fixed_vks = set()
+            else:
+                for vk in list(fixed_vks):
+                    if vk.units and not vk.units.dimensionless:
+                        free_monvks.add(vk)
+                        fixed_vks.remove(vk)
+
         if (free_monvks and fixed_vks) or mag(mon.c) != 1:
             units = 1
             exp = HashVector()
@@ -165,23 +198,23 @@ def crawl(key, bd, basescale=1, indent=0, visited_bdkeys=None):
             factor.ast = None
             if factor.units is None and isinstance(factor, FixedScalar) and abs(factor.value - 1) <= 1e-4:
                 factor = 1  # minor fudge to clear up numerical inaccuracies
-            if power > 0:
-                if factor != 1:
-                    print(mon, factor)
+            if power > 0 and freemon != 1:
+                if factor != 1 :
                     out += "  "*indent + "(with a factor of " + monstr(factor) + ")\n"
                     subsubtree = []
-                    transform = FixedTransform(factor, 1, mon)
+                    transform = Transform(factor, 1, mon)
                     subtree.append({(transform, scaledmonval): subsubtree})
                     subtree = subsubtree
                 if power != 1:
                     out += "  "*indent + "(and a power of %.2g )\n" %power
                     subsubtree = []
-                    transform = FixedTransform(1, power, mon)
+                    transform = Transform(1, power, mon)
                     subtree.append({(transform, scaledmonval): subsubtree})
                     subtree = subsubtree
-                    mon = freemon**(1/power)
-                    mon.ast = None
-        if subkey is not None and subkey not in visited_bdkeys and subkey in bd and power > 0:  # to prevent inversion!!
+                mon = freemon**(1/power)
+                mon.ast = None
+        # TODO: make minscale an argument - currently an arbitrary 0.01
+        if subkey is not None and subkey not in visited_bdkeys and subkey in bd and power > 0 and scaledmonval > 0.01:  # to prevent inversion!!
             subout, subsubtree = crawl(subkey, bd, scaledmonval, indent, visited_bdkeys)
             subtree.append(subsubtree)
             out += subout
@@ -190,7 +223,7 @@ def crawl(key, bd, basescale=1, indent=0, visited_bdkeys=None):
             subtree.append({(mon, scaledmonval): []})
     ftidxs = defaultdict(list)
     for i, ((key, _),) in enumerate(orig_subtree):
-        if isinstance(key, FixedTransform):
+        if isinstance(key, Transform):
             ftidxs[(key.factor, key.power)].append(i)
     to_delete = []
     to_insert = []
@@ -205,7 +238,7 @@ def crawl(key, bd, basescale=1, indent=0, visited_bdkeys=None):
                 new_origkeys.append(key.origkey)
                 newbranches.extend(subbranches)
             to_delete.extend(idxs)
-            newkey = FixedTransform(key.factor, key.power, tuple(new_origkeys))
+            newkey = Transform(key.factor, key.power, tuple(new_origkeys))
             to_insert.append({(newkey, valsum): newbranches})
     for idx in sorted(to_delete, reverse=True): # high to low
         orig_subtree.pop(idx)
@@ -218,11 +251,13 @@ def crawl(key, bd, basescale=1, indent=0, visited_bdkeys=None):
     return out, tree
 
 SYMBOLS = string.ascii_uppercase + string.ascii_lowercase
-SYMBOLS = SYMBOLS.replace("l", "").replace("I", "").replace("L", "")
+SYMBOLS = SYMBOLS.replace("l", "").replace("I", "").replace("L", "").replace("T", "")
+SYMBOLS += "⒜⒝⒞⒟⒠⒡⒢⒣⒤⒥⒦⒧⒨⒩⒪⒫⒬⒭⒮⒯⒰⒱⒲⒳⒴⒵"
+SYMBOLS += "ⒶⒷⒸⒹⒺⒻⒼⒽⒾⒿⓀⓁⓂⓃⓄⓅⓆⓇⓈⓉⓊⓋⓌⓍⓎⓏⓐⓑⓒⓓⓔⓕⓖⓗⓘⓙⓚⓛⓜⓝⓞⓟⓠⓡⓢⓣⓤⓥⓦⓧⓨⓩ"
 
 def widthstr(legend, length, label, *, leftwards=True):
-    if isinstance(label, FixedTransform):
-        label = FixedTransform(label.factor, label.power, None)  # remove origkey so they collide
+    if isinstance(label, Transform):
+        label = Transform(label.factor, label.power, None)  # remove origkey so they collide
         # TODO: catch PI
         if label.power == 1 and len(str(label.factor)) == 1:
             legend[label] = str(label.factor)
@@ -233,8 +268,8 @@ def widthstr(legend, length, label, *, leftwards=True):
         shortname = legend[label]
     if length <= 1:
         return shortname
-    spacer, lend, rend = "│", "┬", "┴"
-    if isinstance(label, FixedTransform):
+    spacer, lend, rend = "│", "┯", "┷"
+    if isinstance(label, Transform):
         spacer, lend, rend = "╎", "╤", "╧"
     if leftwards:
         if length == 2:
@@ -245,7 +280,7 @@ def widthstr(legend, length, label, *, leftwards=True):
         if length == 2:
             return shortname + rend
         # return shortname + spacer*int(max(0, length - 2)) + rend
-        return "┏" + "┃"*int(max(0, length - 3)/2) + shortname + "┃"*int(max(0, length - 2)/2) + "┗"
+        return "┃" + "┃"*int(max(0, length - 3)/2) + shortname + "┃"*int(max(0, length - 2)/2) + "┃"
 
 def layer(map, tree, extent, depth=0, maxdepth=20):
     # TODO: hard-enforce maxdepth so that can be an input parameter
@@ -255,10 +290,10 @@ def layer(map, tree, extent, depth=0, maxdepth=20):
     if len(map) <= depth:
         map.append([])
     scale = extent/val
-    if extent == 1:
+    if extent == 1 and not isinstance(key, Transform):
         branches = []
-        if isinstance(key, FixedTransform):
-            key = key.origkey
+        # if isinstance(key, Transform):
+        #     key = key.origkey
     map[depth].append((key, extent))
     if not any(round(scale*v) for (_, v), in branches):
         branches = []
@@ -276,6 +311,7 @@ def layer(map, tree, extent, depth=0, maxdepth=20):
     if not all(extents):
         if not round(sum(scale*v for (_, v), in branches if not round(scale*v))):
             extents = [e for e in extents if e]
+            branches = branches[:len(extents)]
     surplus = extent - sum(extents)
     scaled = np.array([scale*v for (_, v), in branches]) % 1
     gain_targets = sorted([(s, i) for (i, s) in enumerate(scaled) if s > 0.5])
@@ -293,7 +329,7 @@ def layer(map, tree, extent, depth=0, maxdepth=20):
         for i, branch in enumerate(branches):
             if not extents[i]:
                 (k, _), = branch
-                if isinstance(k, FixedTransform):
+                if isinstance(k, Transform):
                     k = k.origkey
                 if not isinstance(k, tuple):  # TODO: if it is, may be out of sort-order
                     k = (k,)
@@ -306,7 +342,7 @@ def layer(map, tree, extent, depth=0, maxdepth=20):
         if subextent:
             # TODO: decide on this and the linked section above -- worth the hiding of leaves?
             ((k, v), bs), = branch.items()
-            if isinstance(k, FixedTransform):  # ft with no worthy heirs
+            if isinstance(k, Transform):  # ft with no worthy heirs
                 subscale = subextent/v
                 if not any(round(subscale*v) for (_, v), in bs):
                     branch = {(None, v): []}
@@ -344,24 +380,21 @@ def graph_printer(tree, extent):
             if element is None:
                 row += " "*length
                 continue
-            leftwards = depth > 0
-            if length == 2:
-                leftwards = not i
+            leftwards = depth > 0 and length > 2
             row += widthstr(legend, length, element, leftwards=leftwards)
         if row.strip():
             chararray[depth, :] = list(row)
 
     A_key, = [key for key, value in legend.items() if value == "A"]
-    A_str = A_key.str_without(["lineage", "units"])
+    A_str = A_key.legendlabel if hasattr(A_key, "legendlabel") and A_key.legendlabel else A_key.str_without(["lineage", "units"])
     valuestr = "(%s)" % valstr(A_key)
     fmt = "{0:>%s}" % (max(len(A_str), len(valuestr)) + 3)
     for j, entry in enumerate(chararray[0,:]):
         if entry == "A":
-            chararray[0,j] = fmt.format(A_str + "╺┫ ")
-            chararray[0,j+1] = fmt.format(valuestr + " ┃ ")
+            chararray[0,j] = fmt.format(A_str + "╺┫")
+            chararray[0,j+1] = fmt.format(valuestr + " ┃")
         elif valuestr not in entry:
-            spacer = "╸" if entry in ["┏", "┗"] else " "
-            chararray[0,j] = fmt.format(entry + spacer)
+            chararray[0,j] = fmt.format(entry)
     new_legend = {}
     for pos in range(extent):
         for depth in reversed(range(1,len(mt))):
@@ -370,12 +403,14 @@ def graph_printer(tree, extent):
                 chararray[depth, pos] = ""
             elif value and value in SYMBOLS:
                 key, = [k for k, val in legend.items() if val == value]
-                if isinstance(key, tuple) or (depth != len(mt) - 1 and chararray[depth+1, pos] != ""):
-                    if key not in new_legend:
-                        new_legend[key] = SYMBOLS[len(new_legend)]
-                        if isinstance(key, tuple) and not isinstance(key, FixedTransform):
-                            new_legend[key] = new_legend[key] + "*"
-                    chararray[depth, pos] = new_legend[key]
+                if getattr(key, "vks", None) and len(key.vks) == 1 and all(vk in new_legend for vk in key.vks):
+                    key, = key.vks
+                if key not in new_legend and (isinstance(key, tuple) or (depth != len(mt) - 1 and chararray[depth+1, pos] != "")):
+                    new_legend[key] = SYMBOLS[len(new_legend)]
+                if key in new_legend:
+                    chararray[depth, pos] = new_legend[key] #  + "=%s" % key.str_without(["lineage", "units"])
+                    if isinstance(key, tuple) and not isinstance(key, Transform):
+                        chararray[depth, pos] =  "*" + chararray[depth, pos]
                     continue
                 tryup, trydn = True, True
                 span = 0
@@ -387,9 +422,9 @@ def graph_printer(tree, extent):
                         else:
                             upchar = chararray[depth, pos-span]
                             if upchar == "│":
-                                chararray[depth, pos-span] = " ┃"
-                            elif upchar == "┬":
-                                chararray[depth, pos-span] = "╺┓"
+                                chararray[depth, pos-span] = "┃"
+                            elif upchar == "┯":
+                                chararray[depth, pos-span] = "┓"
                             else:
                                 tryup = False
                     if trydn:
@@ -398,23 +433,22 @@ def graph_printer(tree, extent):
                         else:
                             dnchar = chararray[depth, pos+span]
                             if dnchar == "│":
-                                chararray[depth, pos+span] = " ┃"
-                            elif dnchar == "┴":
-                                chararray[depth, pos+span] = "╺┛"
+                                chararray[depth, pos+span] = "┃"
+                            elif dnchar == "┷":
+                                chararray[depth, pos+span] = "┛"
                             else:
                                 trydn = False
                 keystr = key.str_without(["lineage", "units"])
                 valuestr = " (%s)" % valstr(key)
-                if span == 1:
-                    linkstr = "┣╸"
-                    keystr += valuestr
+                if key in bd or (key.vks and any(vk in bd for vk in key.vks)):
+                    linkstr = "┣┉"
                 else:
-                    linkstr = " ┣╸"
-                    if not isinstance(key, FixedScalar):
-                        if pos + 2 >= extent or chararray[depth, pos+1] == " ┃":
-                            chararray[depth, pos+1] += valuestr
-                        else:
-                            keystr += valuestr
+                    linkstr = "┣╸"
+                if not isinstance(key, FixedScalar):
+                    if span > 1 and (pos + 2 >= extent or chararray[depth, pos+1] == "┃"):
+                        chararray[depth, pos+1] += valuestr
+                    else:
+                        keystr += valuestr
                 chararray[depth, pos] = linkstr + keystr
     vertstr = "\n".join(["    " + "".join(row) for row in chararray.T.tolist()])
     print()
@@ -424,7 +458,7 @@ def graph_printer(tree, extent):
 
     legend_lines = []
     for key, shortname in sorted(legend.items(), key=lambda kv: kv[1]):
-        if isinstance(key, tuple) and not isinstance(key, FixedTransform):
+        if isinstance(key, tuple) and not isinstance(key, Transform):
             asterisk, *others = key
             legend_lines.append(legend_entry(asterisk, shortname))
             for k in others:
@@ -440,23 +474,25 @@ def graph_printer(tree, extent):
 def legend_entry(key, shortname):
     operator = note = ""
     keystr = valuestr = " "
-    operator = " = " if shortname else "  +"
-    if isinstance(key, FixedTransform):
-        operator = "×"
+    operator = "= " if shortname else "  + "
+    if isinstance(key, Transform):
+        operator = " ×"
         if key.power != 1:
-            valuestr = "  ^%.3g" % key.power
+            valuestr = "   ^%.3g" % key.power
             key = None
         else:
             key = key.factor
-    elif key.vks and free_vks(m, key):
+    if hasattr(key, "vks") and key.vks and free_vks(m, key):
         note = "  [free]"
     if key:
         if isinstance(key, FixedScalar):
              keystr = " "
+        elif hasattr(key, "legendlabel") and key.legendlabel:
+            keystr = key.legendlabel
         else:
             keystr = key.str_without(["lineage", "units"])
         valuestr = "  "+operator + valstr(key)
-    return ["%-3s" % shortname, keystr, valuestr, note]
+    return ["%-4s" % shortname, keystr, valuestr, note]
 
 from gpkit.repr_conventions import unitstr as get_unitstr
 
