@@ -5,65 +5,65 @@ from gpkit.nomials.map import NomialMap
 from gpkit.small_scripts import mag
 from gpkit.small_classes import FixedScalar, HashVector
 from gpkit.exceptions import DimensionalityError
+from gpkit.repr_conventions import unitstr as get_unitstr
 import numpy as np
 
 
 Transform = namedtuple("Transform", ["factor", "power", "origkey"])
 
-def free_vks(self, obj):
-    return [vk for vk in obj.vks if vk not in self.substitutions]
+def free_vks(mon, solution):
+    "Returns all free vks of a given monomial in a given solution"
+    return set(vk for vk in mon.vks if vk not in solution["constants"])
 
-def parse_breakdowns(self):
-    if self.solution is None:
+def parse_breakdowns(solution):
+    if solution is None:
         return
     breakdowns = defaultdict(set)
-    for constraint in self.flat():
+    for constraint, senss in solution["sensitivities"]["constraints"].items():
+        # TODO: should also check tightness by value, or?
+        if senss <= 1e-5:  # only tight-ish ones
+            continue
         if constraint.oper == ">=":
             gt, lt = constraint.left, constraint.right
         elif constraint.oper == "<=":
             lt, gt = constraint.left, constraint.right
         else:
             continue
-        freegt_vks = free_vks(self, gt)
+        if lt.any_nonpositive_cs:  # no signomials
+            continue
+        freegt_vks = free_vks(gt, solution)
         if len(freegt_vks) != 1:
             continue
         var, = freegt_vks
         if gt.exp[var] < 0:  # flip gt/lt in this case TODO: probably remove
-            freelt_vks = free_vks(self, lt)
+            freelt_vks = free_vks(lt, solution)
             if len(lt.hmap) != 1 or len(freelt_vks) != 1:
                 continue
             var, = freelt_vks
             if lt.exp[var] > 0:
                 continue
             gt, lt = 1/lt, 1/gt
-        if lt.any_nonpositive_cs:  # no signomials
-            continue
-        # if var.idx:  # spam filter
-        #     continue
-        # TODO: just iterate through the sol lol
-        if self.solution["sensitivities"]["constraints"].get(constraint, 0) <= 1e-5:  # only tight ones
-            continue  # if it's not in the dict assume it got optimized out
         breakdowns[var].add((lt, gt, constraint))
     return dict(breakdowns)
 # bd = parse_breakdowns(m)
 # key, = [k for k in bd if k.name == "podfrontalarea"]
-def monstr(mon):
-    freevks = free_vks(m, mon)
-    if freevks:
-        type = "%i free variables" % len(freevks)
-    elif mon.vks:
-        type = "fully fixed"
-    else:  # it's a number
-        return mon.str_without(["lineage", "units"]) + mon.unitstr()
-    return "%s (%s, %s)" % (mon.str_without(["lineage", "units"]), type, valstr(mon))
-def keystr(key):
-    if key in m.solution["constants"]:
-        value = m.solution["constants"][key]
-        type = "fixed"
-    elif key in m.solution["freevariables"]:
-        value = m.solution["freevariables"][key]
-        type = "free"
-    return "%s (%s, %s)" % (key.str_without("lineage"), type, valstr(key))
+# def monstr(mon, solution):
+#     freevks = free_vks(mon, solution)
+#     if freevks:
+#         type = "%i free variables" % len(freevks)
+#     elif mon.vks:
+#         type = "fully fixed"
+#     else:  # it's a number
+#         return mon.str_without(["lineage", "units"]) + mon.unitstr()
+#     return "%s (%s, %s)" % (mon.str_without(["lineage", "units"]), type, valstr(mon, solution))
+# def keystr(key, solution):
+#     if key in solution["constants"]:
+#         value = solution["constants"][key]
+#         type = "fixed"
+#     elif key in solution["freevariables"]:
+#         value = solution["freevariables"][key]
+#         type = "free"
+#     return "%s (%s, %s)" % (key.str_without("lineage"), type, valstr(key, solution))
 
 
 # for key, value in bd.items():
@@ -75,22 +75,21 @@ def keystr(key):
 #             print("%.4f" % s, c)
 #         print()
 
-
-def crawl(key, bd, basescale=1, indent=0, visited_bdkeys=None):
+def crawl(key, bd, solution, basescale=1, indent=0, visited_bdkeys=None):
     if key in bd:
-        # sort by tightness; only do multiple if they're quite close!
-        composition, keymon, constraint = sorted(bd[key], key=lambda pmc: m.solution["sensitivities"]["constraints"][pmc[2]], reverse=True)[0]
+        # sort by tightness; TODO: do multiple if they're quite close?
+        composition, keymon, constraint = sorted(bd[key], key=lambda pmc: solution["sensitivities"]["constraints"][pmc[2]], reverse=True)[0]
     else:
         composition = key
         constraint = keymon = None
 
     if visited_bdkeys is None:
         visited_bdkeys = set()
-    if keymon is None:
-        out = "  "*indent + monstr(key) + ", which breaks down further in:\n"
-    else:
-        out = "  "*indent + keystr(key) + ", which breaks down further in:\n"
-    indent += 1
+    # if keymon is None:
+    #     out = "  "*indent + monstr(key, solution) + ", which breaks down further in:\n"
+    # else:
+    #     out = "  "*indent + keystr(key, solution) + ", which breaks down further in:\n"
+    # indent += 1
     orig_subtree = subtree = []
     tree = {(key, basescale): subtree}
     visited_bdkeys.add(key)
@@ -100,12 +99,12 @@ def crawl(key, bd, basescale=1, indent=0, visited_bdkeys=None):
         power = 1
         factor = False
     else:
-        free_monvks = set(free_vks(m, keymon))
+        free_monvks = set(free_vks(keymon, solution))
         subkey, = free_monvks
         power = 1/keymon.exp[subkey]  # inverted bc it's on the gt side
         fixed_vks = set(keymon.vks) - free_monvks
         factor = (power != 1 or fixed_vks or mag(keymon.c) != 1)
-    scale = m.solution(key)**(1/power)/basescale
+    scale = solution(key)**(1/power)/basescale
 
     if factor:
         units = 1
@@ -120,37 +119,40 @@ def crawl(key, bd, basescale=1, indent=0, visited_bdkeys=None):
         factor = Monomial(freemon/keymon)  # inverted bc it's on the gt side
         factor.ast = None
         if factor != 1:
-            out += "  "*indent + "(with a factor of " + monstr(factor) + ")\n"
+            # out += "  "*indent + "(with a factor of " + monstr(factor, solution) + ")\n"
             subsubtree = []
             transform = Transform(factor**power, 1, keymon)
             orig_subtree.append({(transform, basescale): subsubtree})
-            scale = scale/m.solution(factor)
+            scale = scale/solution(factor)
             orig_subtree = subsubtree
         if power != 1:
-            out += "  "*indent + "(and a power of %.2g )\n" %power
+            # out += "  "*indent + "(and a power of %.2g )\n" %power
             subsubtree = []
             transform = Transform(1, power, keymon)
             orig_subtree.append({(transform, basescale): subsubtree})
             orig_subtree = subsubtree
-    if constraint is not None:
-        out += "  "*indent + constraint.str_without(["units", "lineage"]) + "\n"
-        indent += 1
-    else:
-        out += "  "*indent + "from input %s" % key.str_without(["units", "lineage"])
-        indent += 1
-    out += "  "*indent + "by\n"
-    indent += 1
-    # TODO: mag should be float but it fails in numerical edge-cases for fits...
-    try:
-        monvals = [float(getattr(m.solution(mon), "value", m.solution(mon))/scale)
-                   for mon in composition.chop()]
-    except DimensionalityError:
-        out += "UGHH NUMERICAL ERROR IN DIMENSIONS\n"
-        return out, tree
+    # if constraint is not None:
+    #     out += "  "*indent + constraint.str_without(["units", "lineage"]) + "\n"
+    #     indent += 1
+    # else:
+    #     out += "  "*indent + "from input %s" % key.str_without(["units", "lineage"])
+        # indent += 1
+    # out += "  "*indent + "by\n"
+    # indent += 1
+    mons = [solution(mon) for mon in (composition/scale).to("dimensionless").chop()]
+    monvs = [getattr(mon, "value", mon) for mon in mons]
+    monvals = [float(mon) for mon in monvs]
+    # # TODO: mag should be float but it fails in numerical edge-cases for fits...
+    # try:
+    #     monvals = [float(getattr(solution(mon), "value", solution(mon))/scale)
+    #                for mon in composition.chop()]
+    # except DimensionalityError:
+    #     # out += "UGHH NUMERICAL ERROR IN DIMENSIONS\n"
+    #     return out, tree
     # TODO: use ast_parsing instead of chop?
     for scaledmonval, _, mon in sorted(zip(monvals, range(len(monvals)), composition.chop()), reverse=True):
         subtree = orig_subtree
-        free_monvks = set(free_vks(m, mon))
+        free_monvks = free_vks(mon, solution)
         altered_vks = False
         for vk in list(free_monvks):
             # NOTE: very strong restriction - no unit conversion
@@ -192,7 +194,7 @@ def crawl(key, bd, basescale=1, indent=0, visited_bdkeys=None):
                 if vk.units:
                     units *= vk.units**mon.exp[vk]
             subhmap = NomialMap({exp: 1})
-            subhmap.units = None if units == 1 else units
+            subhmap.units = None if units is 1 else units
             freemon = Monomial(subhmap)
             factor = mon/freemon  # autoconvert...
             factor.ast = None
@@ -200,13 +202,13 @@ def crawl(key, bd, basescale=1, indent=0, visited_bdkeys=None):
                 factor = 1  # minor fudge to clear up numerical inaccuracies
             if power > 0 and freemon != 1:
                 if factor != 1 :
-                    out += "  "*indent + "(with a factor of " + monstr(factor) + ")\n"
+                    # out += "  "*indent + "(with a factor of " + monstr(factor, solution) + ")\n"
                     subsubtree = []
                     transform = Transform(factor, 1, mon)
                     subtree.append({(transform, scaledmonval): subsubtree})
                     subtree = subsubtree
                 if power != 1:
-                    out += "  "*indent + "(and a power of %.2g )\n" %power
+                    # out += "  "*indent + "(and a power of %.2g )\n" %power
                     subsubtree = []
                     transform = Transform(1, power, mon)
                     subtree.append({(transform, scaledmonval): subsubtree})
@@ -215,11 +217,11 @@ def crawl(key, bd, basescale=1, indent=0, visited_bdkeys=None):
                 mon.ast = None
         # TODO: make minscale an argument - currently an arbitrary 0.01
         if subkey is not None and subkey not in visited_bdkeys and subkey in bd and power > 0 and scaledmonval > 0.01:  # to prevent inversion!!
-            subout, subsubtree = crawl(subkey, bd, scaledmonval, indent, visited_bdkeys)
+            subsubtree = crawl(subkey, bd, solution, scaledmonval, indent, visited_bdkeys)
             subtree.append(subsubtree)
-            out += subout
+            # out += subout
         else:
-            out += "  "*indent + monstr(mon) + "\n"
+            # out += "  "*indent + monstr(mon, solution) + "\n"
             subtree.append({(mon, scaledmonval): []})
     ftidxs = defaultdict(list)
     for i, ((key, _),) in enumerate(orig_subtree):
@@ -248,7 +250,7 @@ def crawl(key, bd, basescale=1, indent=0, visited_bdkeys=None):
                           key=lambda branch: list(branch.keys())[0][1])
     indent -= 2
     # break  # for now skip other trees
-    return out, tree
+    return tree
 
 SYMBOLS = string.ascii_uppercase + string.ascii_lowercase
 SYMBOLS = SYMBOLS.replace("l", "").replace("I", "").replace("L", "").replace("T", "")
@@ -356,8 +358,8 @@ def plumb(tree, depth=0):
         subdepth = max(subdepth, plumb(branch, depth+1))
     return subdepth
 
-def graph(tree, extent=20):
-    graph_printer(tree, extent)  # breaks if there are multiple breakdowns; heatexchangersmass, peakmotorsystemforce
+def graph(tree, solution, extent=20):
+    graph_printer(tree, solution, extent)  # breaks if there are multiple breakdowns; heatexchangersmass, peakmotorsystemforce
     # ((key, val), branches), = tree.items()
     # for i, branch in enumerate(branches):
     #     if len(branches) > 1:
@@ -365,7 +367,7 @@ def graph(tree, extent=20):
     #     graph_printer({(key, val): [branch]}, extent)
     #     print("\n")
 
-def graph_printer(tree, extent):
+def graph_printer(tree, solution, extent):
     mt = layer([], tree, extent, maxdepth=plumb(tree)-1)
     max_width = max(len(at_depth) for at_depth in mt)
     if max_width*4 <= extent:
@@ -387,7 +389,7 @@ def graph_printer(tree, extent):
 
     A_key, = [key for key, value in legend.items() if value == "A"]
     A_str = A_key.legendlabel if hasattr(A_key, "legendlabel") and A_key.legendlabel else A_key.str_without(["lineage", "units"])
-    valuestr = "(%s)" % valstr(A_key)
+    valuestr = "(%s)" % valstr(A_key, solution)
     fmt = "{0:>%s}" % (max(len(A_str), len(valuestr)) + 3)
     for j, entry in enumerate(chararray[0,:]):
         if entry == "A":
@@ -439,12 +441,12 @@ def graph_printer(tree, extent):
                             else:
                                 trydn = False
                 keystr = key.str_without(["lineage", "units"])
-                valuestr = " (%s)" % valstr(key)
                 if key in bd or (key.vks and any(vk in bd for vk in key.vks)):
                     linkstr = "┣┉"
                 else:
                     linkstr = "┣╸"
                 if not isinstance(key, FixedScalar):
+                    valuestr = " (%s)" % valstr(key, solution)
                     if span > 1 and (pos + 2 >= extent or chararray[depth, pos+1] == "┃"):
                         chararray[depth, pos+1] += valuestr
                     else:
@@ -460,18 +462,18 @@ def graph_printer(tree, extent):
     for key, shortname in sorted(legend.items(), key=lambda kv: kv[1]):
         if isinstance(key, tuple) and not isinstance(key, Transform):
             asterisk, *others = key
-            legend_lines.append(legend_entry(asterisk, shortname))
+            legend_lines.append(legend_entry(asterisk, shortname, solution))
             for k in others:
-                legend_lines.append(legend_entry(k, ""))
+                legend_lines.append(legend_entry(k, "", solution))
         else:
-            legend_lines.append(legend_entry(key, shortname))
+            legend_lines.append(legend_entry(key, shortname, solution))
     dirs = ["<", "<", "<","<"]
     maxlens = [max(len(el) for el in col) for col in zip(*legend_lines)]
     fmts = ["{0:%s%s}" % (direc, L) for direc, L in zip(dirs, maxlens)]
     for line in legend_lines:
-        print("    " + "".join(fmt.format(cell) for fmt, cell in zip(fmts, line) if cell))
+        print("    " + "".join(fmt.format(cell) for fmt, cell in zip(fmts, line) if cell).rstrip())
 
-def legend_entry(key, shortname):
+def legend_entry(key, shortname, solution):
     operator = note = ""
     keystr = valuestr = " "
     operator = "= " if shortname else "  + "
@@ -482,7 +484,7 @@ def legend_entry(key, shortname):
             key = None
         else:
             key = key.factor
-    if hasattr(key, "vks") and key.vks and free_vks(m, key):
+    if hasattr(key, "vks") and key.vks and free_vks(key, solution):
         note = "  [free]"
     if key:
         if isinstance(key, FixedScalar):
@@ -491,25 +493,23 @@ def legend_entry(key, shortname):
             keystr = key.legendlabel
         else:
             keystr = key.str_without(["lineage", "units"])
-        valuestr = "  "+operator + valstr(key)
+        valuestr = "  "+operator + valstr(key, solution)
     return ["%-4s" % shortname, keystr, valuestr, note]
 
-from gpkit.repr_conventions import unitstr as get_unitstr
-
-def valstr(key):
-    value = m.solution(key)
+def valstr(key, solution):
+    value = solution(key)
     if isinstance(value, FixedScalar):
         value = value.value
     value = mag(value)
-    if isinstance(key, Monomial) and key.hmap.units:
-        try:
-            reduced = key.hmap.units.to_reduced_units()
-            value *= reduced.magnitude
-            unitstr = get_unitstr(reduced)
-        except DimensionalityError:
-            unitstr = key.unitstr()
-    else:
-        unitstr = key.unitstr()
+    # if isinstance(key, Monomial) and key.hmap.units:
+    #     try:
+    #         reduced = key.hmap.units.to_reduced_units()
+    #         value *= reduced.magnitude
+    #         unitstr = get_unitstr(reduced)
+    #     except DimensionalityError:
+    #         unitstr = key.unitstr()
+    # else:
+    unitstr = key.unitstr()
     if unitstr[:2] == "1/":
         unitstr = "/" + unitstr[2:]
     if 1e3 <= value < 1e6:
@@ -517,3 +517,46 @@ def valstr(key):
     else:
         valuestr = "%-.3g" % value
     return valuestr + unitstr
+
+
+import pickle
+from gpkit import ureg
+ureg.define("pax = 1")
+ureg.define("paxkm = km")
+ureg.define("trip = 1")
+
+sol = pickle.load(open("bd.p", "rb"))
+
+bd = parse_breakdowns(sol)
+
+from gpkit.tests.helpers import StdoutCaptured
+
+import difflib
+
+keys = sorted((key for key in bd.keys() if not key.idx or len(key.shape) == 1),
+              key=lambda k: str(k))
+
+# with StdoutCaptured("breakdowns.log"):
+#     for key in keys:
+#         tree = crawl(key, bd, sol)
+#         # print(out)
+#         graph(tree, sol)
+
+with StdoutCaptured("breakdowns.log.new"):
+    for key in keys[:100]:
+        tree = crawl(key, bd, sol)
+        # print(out)
+        graph(tree, sol)
+
+with open("breakdowns.log", "r") as original:
+    with open("breakdowns.log.new", "r") as new:
+        diff = difflib.unified_diff(
+            original.readlines()[:100],
+            new.readlines()[:100],
+            fromfile="original",
+            tofile="new",
+        )
+        for line in diff:
+            print(line[:-1])
+
+print("DONE")
