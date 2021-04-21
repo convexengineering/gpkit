@@ -308,7 +308,6 @@ def crawl(key, bd, solution, basescale=1, permissivity=0, verbosity=0,
                                      get_valstr(mon, solution))
             print("  "*indent + keyvalstr)
         subtree.append({(mon, scaledmonval): []})
-    # TODO: or, instead of AST parsing, remove common factors at the composition level?
     ftidxs = defaultdict(list)
     for i, ((key, _),) in enumerate(orig_subtree):
         if isinstance(key, Transform):
@@ -372,26 +371,25 @@ def get_spanstr(legend, length, label, leftwards, solution):
     else:
         if length == 2:
             return shortname + rend
-          # HACK: no corners on rightwards
+        # HACK: no corners on rightwards - only used for depth 0
         return "┃"*(longside+1) + shortname + "┃"*(shortside+1)
 
 def layer(map, tree, extent, depth=0, maxdepth=20):
     "Turns the tree into a 2D-array"
     ((key, val), branches), = tree.items()
-    if not val:
-        return map
     if len(map) <= depth:
         map.append([])
-    scale = extent/val
     map[depth].append((key, extent))
+    if depth > maxdepth or not val:
+        return map
+    scale = extent/val
 
     popidxs = []
     for i, branch in enumerate(branches):
         ((k, v), bs), = branch.items()
-        if (isinstance(k, Transform)  # transform with no worthy heirs
-                and not any(round(scale*subv)
-                            for (_, subv), in bs)):
-            popidxs.append(i)
+        if isinstance(k, Transform):  # transform with no worthy heirs
+            if not any(round(round(scale*v)/v*subv) for (_, subv), in bs):
+                popidxs.append(i)
     if popidxs:
         branches = branches.copy()
     for idx in reversed(popidxs):
@@ -404,81 +402,62 @@ def layer(map, tree, extent, depth=0, maxdepth=20):
         branches.sort(reverse=True,
                       key=lambda branch: list(branch.keys())[0][1])
 
-    if extent == 1 and not isinstance(key, Transform):
-        branches = []
-    else:
-        extents = [round(scale*v) for (_, v), in branches]
-        if not any(extents):
-            branches = []
-        elif not all(extents):
-            newbranches = []
-            misckeys = ()
-            miscval = 0
-            surplus = extent - sum(extents)
-            for branch, subextent in zip(branches, extents):
-                ((k, v), bs), = branch.items()
-                if subextent:
-                    newbranches.append(branch)
-                else:
-                    ((k, v), bs), = branch.items()
-                    if isinstance(k, Transform):
-                        k = k.origkey  # TODO: this is the only use of origkey - remove it
-                    if not isinstance(k, tuple):  # TODO: if it is, may be out of sort-order
-                        k = (k,)
-                    misckeys += k
-                    miscval += v
-            if round(scale*miscval):  # otherwise they're gone
-                surplus -= round(scale*miscval)
-                print(surplus)
-                while surplus:
-                    ((k, v), bs), = newbranches.pop().items()
-                    if isinstance(k, Transform):
-                        k = k.origkey  # TODO: this is the only use of origkey - remove it
-                    if not isinstance(k, tuple):  # TODO: if it is, may be out of sort-order
-                        k = (k,)
-                    misckeys = k + misckeys
-                    newmiscval = miscval + v
-                    surplus += round(scale*newmiscval) - round(scale*miscval) - round(scale*v)
-                    miscval = newmiscval
-                    print(surplus, miscval)
-                if newbranches:
-                    branches.append({(misckeys, miscval): []})
-                    extents.append(round(scale*miscval))
-            branches = newbranches
-    if depth > maxdepth:
-        return map
-    elif not branches:  # pad it out
+    if ((extent == 1 and not isinstance(key, Transform))
+            or not any(round(scale*v) for (_, v), in branches)):  # pad it out
         branches = [{(None, val): []}]
-    # extents = [round(scale*v) for (_, v), in branches]
-    surplus = extent - sum(extents)
-    scaled = np.array([scale*v for (_, v), in branches]) % 1
-    print("YO", surplus, extents)
-    loss_targets = sorted([(s, i) for (i, s) in enumerate(scaled) if s < 0.5])
-    while surplus > (1 - all(extents)):
-        extents[loss_targets.pop()[1]] += 1  # largest & closest to 0.5
-        surplus -= 1
-    print("OY", surplus, extents)
+
+    extents = [round(scale*v) for (_, v), in branches]
     if not all(extents):
-        grouped_keys = ()
-        for i, branch in enumerate(branches):
-            if not extents[i]:
-                (k, _), = branch
+        newbranches = []
+        misckeys = ()
+        miscval = 0
+        surplus = extent - sum(extents)
+        for branch, subextent in zip(branches, extents):
+            if subextent:
+                newbranches.append(branch)
+            else:
+                ((k, v), bs), = branch.items()
                 if isinstance(k, Transform):
                     k = k.origkey  # TODO: this is the only use of origkey - remove it
                 if not isinstance(k, tuple):  # TODO: if it is, may be out of sort-order
                     k = (k,)
-                grouped_keys = grouped_keys + k
-        if len(grouped_keys) == 1:
-            grouped_keys, = grouped_keys
-        branches = branches + [{(grouped_keys, 1/scale): []}]
-        extents.append(1)
+                misckeys += k
+                miscval += v
+        branches = newbranches
+        if round(scale*miscval):
+            surplus -= round(scale*miscval)
+            while surplus < 0:
+                ((k, v), bs), = newbranches.pop().items()
+                if isinstance(k, Transform):
+                    k = k.origkey  # TODO: this is the only use of origkey - remove it
+                    if isinstance(k, tuple):
+                        k = tuple(kv[0] for kv in k)  # TODO: may be out of sort-order
+                if not isinstance(k, tuple):
+                    k = (k,)
+                misckeys = k + misckeys
+                surplus -= (round(scale*(miscval + v))
+                            - round(scale*miscval) - round(scale*v))
+                miscval += v
+            branches.append({(misckeys, miscval): []})
+
+    extents = [round(scale*v) for (_, v), in branches]
+    surplus = extent - sum(extents)
+    if surplus:
+        err_frac = (round(scale*v)/(scale*v) for (_, v), in branches)
+        # err_frac < 1 means the round underestimates the true value
+        ranked_errors = sorted((err, i) for (i, err) in enumerate(err_frac))
+        while surplus > 0:
+            extents[ranked_errors.pop(0)[1]] += 1  # from the start
+            surplus -= 1
+        while surplus < 0:
+            extents[ranked_errors.pop()[1]] -= 1  # from the end
+            surplus += 1
+    if (extent <= 3 and len([ext for ext in extents if ext]) > 1
+            and not isinstance(key, Transform)):
+        branches = [{(None, val): []}]
+        extents = [extent]
     for branch, subextent in zip(branches, extents):
         if subextent:
-            # TODO: decide on this and the linked section above -- worth the hiding of leaves?
-            ((k, v), bs), = branch.items()
-            if (isinstance(k, Transform)  # transform with no worthy heirs
-                    and not any(round(subextent/v*subv) for (_, subv), in bs)):
-                branch = {(None, v): []}  # don't even show it
             layer(map, branch, subextent, depth+1, maxdepth)
     return map
 
@@ -679,9 +658,9 @@ from gpkit.tests.helpers import StdoutCaptured
 
 import difflib
 
-key, = [vk for vk in bd if "brakingtimedelta[0]" in str(vk)]
-tree = crawl(key, bd, sol, verbosity=1)
-graph(tree, sol)
+# key, = [vk for vk in bd if "brakingtimedelta[0]" in str(vk)]
+# tree = crawl(key, bd, sol, verbosity=1)
+# graph(tree, sol)
 
 keys = sorted((key for key in bd.keys() if not key.idx or len(key.shape) == 1),
               key=lambda k: str(k))
@@ -693,22 +672,22 @@ permissivity = 2
 #         tree = crawl(key, bd, sol, permissivity=permissivity)
 #         graph(tree, sol)
 
-# with StdoutCaptured("breakdowns.log.new"):
-#     for key in keys:
-#         tree = crawl(key, bd, sol, permissivity=permissivity)
-#         graph(tree, sol)
+with StdoutCaptured("breakdowns.log.new"):
+    for key in keys:
+        tree = crawl(key, bd, sol, permissivity=permissivity)
+        graph(tree, sol)
 
 # permissivity = 1
 
-# with open("breakdowns%s.log" % permissivity, "r") as original:
-#     with open("breakdowns.log.new", "r") as new:
-#         diff = difflib.unified_diff(
-#             original.readlines(),
-#             new.readlines(),
-#             fromfile="original",
-#             tofile="new",
-#         )
-#         for line in diff:
-#             print(line[:-1])
+with open("breakdowns%s.log" % permissivity, "r") as original:
+    with open("breakdowns.log.new", "r") as new:
+        diff = difflib.unified_diff(
+            original.readlines(),
+            new.readlines(),
+            fromfile="original",
+            tofile="new",
+        )
+        for line in diff:
+            print(line[:-1])
 
 print("DONE")
