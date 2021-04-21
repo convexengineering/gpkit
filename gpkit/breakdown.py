@@ -427,7 +427,7 @@ def layer(map, tree, extent, depth=0, maxdepth=20):
         if round(scale*miscval):
             surplus -= round(scale*miscval)
             while surplus < 0:
-                ((k, v), bs), = newbranches.pop().items()
+                ((k, v), bs), = branches.pop().items()
                 if isinstance(k, Transform):
                     k = k.origkey  # TODO: this is the only use of origkey - remove it
                     if isinstance(k, tuple):
@@ -452,7 +452,7 @@ def layer(map, tree, extent, depth=0, maxdepth=20):
         while surplus < 0:
             extents[ranked_errors.pop()[1]] -= 1  # from the end
             surplus += 1
-    if (extent <= 3 and len([ext for ext in extents if ext]) > 1
+    if (len([ext for ext in extents if ext]) >= max(extent-1, 2)
             and not isinstance(key, Transform)):
         branches = [{(None, val): []}]
         extents = [extent]
@@ -516,6 +516,7 @@ def graph_printer(tree, solution, extent):
             chararray[0,j] = fmt.format(entry)
 
     # Format depths 1+
+    labeled = set()
     new_legend = {}
     for pos in range(extent):
         for depth in reversed(range(1,len(mt))):
@@ -566,7 +567,8 @@ def graph_printer(tree, solution, extent):
                 linkstr = "┣┉"
             else:
                 linkstr = "┣╸"
-            if not isinstance(key, FixedScalar):
+            if not (isinstance(key, FixedScalar) or keystr in labeled):
+                labeled.add(keystr)
                 valuestr = " (%s)" % get_valstr(key, solution)
                 if span > 1 and (pos + 2 >= extent or chararray[depth, pos+1] == "┃"):
                     chararray[depth, pos+1] += valuestr
@@ -667,10 +669,10 @@ keys = sorted((key for key in bd.keys() if not key.idx or len(key.shape) == 1),
 
 permissivity = 2
 
-# with StdoutCaptured("breakdowns%s.log" % permissivity):
-#     for key in keys:
-#         tree = crawl(key, bd, sol, permissivity=permissivity)
-#         graph(tree, sol)
+with StdoutCaptured("breakdowns%s.log" % permissivity):
+    for key in keys:
+        tree = crawl(key, bd, sol, permissivity=permissivity)
+        graph(tree, sol)
 
 with StdoutCaptured("breakdowns.log.new"):
     for key in keys:
