@@ -27,38 +27,39 @@ def get_breakdowns(solution):
     breakdowns = defaultdict(list)
     for constraint, senss in solution["sensitivities"]["constraints"].items():
         # TODO: should also check tightness by value, or?
-        if senss <= 1e-5:  # only tight-ish ones
+        if abs(senss) <= 1e-5:  # only tight-ish ones
             continue
         if constraint.oper == ">=":
-            gt_lts = [(constraint.left, constraint.right)]
+            gt, lt = (constraint.left, constraint.right)
         elif constraint.oper == "<=":
-            gt_lts = [(constraint.right, constraint.left)]
+            lt, gt = (constraint.left, constraint.right)
         elif constraint.oper == "=":
-            gt_lts = [(constraint.right, constraint.left),
-                      (constraint.left, constraint.right)]
-        for gt, lt in gt_lts:
-            if lt.any_nonpositive_cs:
-                continue  # no signomials
-            freegt_vks = get_freevks(gt, solution)
-            if len(freegt_vks) != 1:
-                continue  # not a breakdown constraint
-            brokendownvk, = freegt_vks
-            if gt.exp[brokendownvk] < 0:
-                if constraint.oper == "=" or len(lt.hmap) != 1:
-                    continue
-                # We can try flipping gt/lt to make a breakdown.
-                freelt_vks = get_freevks(lt, solution)
-                if len(lt.hmap) != 1 or len(freelt_vks) != 1:
-                    continue
-                brokendownvk, = freelt_vks
-                if lt.exp[brokendownvk] > 0:
-                    continue  # not a breakdown constraint after transformation
-                gt, lt = 1/lt, 1/gt
-            breakdowns[brokendownvk].append((lt, gt, constraint))
+            if senss > 0:  # l_over_r is more sensitive - see nomials/math.py
+                lt, gt = [constraint.left, constraint.right]
+            else:  # r_over_l is more sensitive - see nomials/math.py
+                gt, lt = [constraint.left, constraint.right]
+        if lt.any_nonpositive_cs:
+            continue  # no signomials
+        freegt_vks = get_freevks(gt, solution)
+        if len(freegt_vks) != 1:
+            continue  # not a breakdown constraint
+        brokendownvk, = freegt_vks
+        if gt.exp[brokendownvk] < 0:
+            if constraint.oper == "=" or len(lt.hmap) != 1:
+                continue
+            # We can try flipping gt/lt to make a breakdown.
+            freelt_vks = get_freevks(lt, solution)
+            if len(lt.hmap) != 1 or len(freelt_vks) != 1:
+                continue
+            brokendownvk, = freelt_vks
+            if lt.exp[brokendownvk] > 0:
+                continue  # not a breakdown constraint after transformation
+            gt, lt = 1/lt, 1/gt
+        breakdowns[brokendownvk].append((lt, gt, constraint))
     for key, bds in breakdowns.items():
         # TODO: do multiple if sensitivities are quite close? right now we have to break ties!
         if len(bds) > 1:
-            bds.sort(key=lambda lgc: (solution["sensitivities"]["constraints"][lgc[2]], str(lgc[0])), reverse=True)
+            bds.sort(key=lambda lgc: (abs(solution["sensitivities"]["constraints"][lgc[2]]), str(lgc[0])), reverse=True)
     return dict(breakdowns)  # remove the defaultdict-ness
 
 def crawl(key, bd, solution, basescale=1, verbosity=0, visited_bdkeys=None):
@@ -88,10 +89,11 @@ def crawl(key, bd, solution, basescale=1, verbosity=0, visited_bdkeys=None):
     else:
         mon_freevks = set(get_freevks(keymon, solution))
         subkey, = mon_freevks
-        power = 1/keymon.exp[subkey]  # inverted bc it's on the gt side
+        power = keymon.exp[subkey]
         fixed_vks = set(keymon.vks) - mon_freevks
-        scale = solution(key)**(1/power)/basescale
-        if power != 1 or fixed_vks or mag(keymon.c) != 1:
+        scale = solution(key)**power/basescale
+        # TODO: make method that can handle both kinds of transforms
+        if power != 1 or fixed_vks or mag(keymon.c) != 1 or keymon.units != key.units:
             units = 1
             exp = HashVector()
             for vk in mon_freevks:
@@ -101,10 +103,10 @@ def crawl(key, bd, solution, basescale=1, verbosity=0, visited_bdkeys=None):
             subhmap = NomialMap({exp: 1})
             subhmap.units = None if units == 1 else units
             freemon = Monomial(subhmap)
-            factor = Monomial(freemon/keymon)  # inverted bc it's on the gt side
-            factor.ast = None
+            factor = Monomial(keymon/freemon)
+            scale = scale * solution(factor)
             if factor != 1:
-                factor = factor**power  # HACK: done here to prevent odd units issue
+                factor = factor**(-1/power)  # invert the transform
                 factor.ast = None
                 if verbosity:
                     keyvalstr = "%s (%s)" % (factor.str_without(["lineage", "units"]),
@@ -113,13 +115,12 @@ def crawl(key, bd, solution, basescale=1, verbosity=0, visited_bdkeys=None):
                 subsubtree = []
                 transform = Transform(factor, 1, keymon)
                 orig_subtree.append({(transform, basescale): subsubtree})
-                scale = scale/solution(factor)
                 orig_subtree = subsubtree
             if power != 1:
                 if verbosity:
                     print("  "*indent + "(with a power of %.2g )" % power)
                 subsubtree = []
-                transform = Transform(1, power, keymon)
+                transform = Transform(1, 1/power, keymon)  # inverted bc it's on the gt side
                 orig_subtree.append({(transform, basescale): subsubtree})
                 orig_subtree = subsubtree
     if verbosity:
@@ -129,29 +130,25 @@ def crawl(key, bd, solution, basescale=1, verbosity=0, visited_bdkeys=None):
         print("  "*indent + "by\n")
         indent += 1
 
-    try:
-        # TODO: use ast_parsing instead of chop?
-        monsols = [solution(mon) for mon in composition.chop()]
-        parsed_monsols = [getattr(mon, "value", mon) for mon in monsols]
-        monvals = [float(mon/scale) for mon in parsed_monsols]
-        # sort by value, preserving order in case of value tie
-        sortedmonvals = sorted(zip(monvals, range(len(monvals)),
-                                   composition.chop()), reverse=True)
-    except DimensionalityError:
-        # fails in numerical edge-cases for fits...
-        return tree  # TODO: a more graceful failure mode?
-
+    # TODO: use ast_parsing instead of chop?
+    monsols = [solution(mon) for mon in composition.chop()]
+    parsed_monsols = [getattr(mon, "value", mon) for mon in monsols]
+    monvals = [float(mon/scale) for mon in parsed_monsols]
+    # sort by value, preserving order in case of value tie
+    sortedmonvals = sorted(zip(monvals, range(len(monvals)),
+                               composition.chop()), reverse=True)
     for scaledmonval, _, mon in sortedmonvals:
         subtree = orig_subtree  # revert back to the original subtree
         mon_freevks = get_freevks(mon, solution)
         further_recursion_allowed = True
         for vk in list(mon_freevks):
             # free variables are allowed as factors...
-            if vk not in bd or mon.exp[vk] < 0: # or not mon_units_same_as_vk:
+            if vk not in bd or mon.exp[vk] < 0:
                 mon_freevks.remove(vk)
                 # but recursion ends here if it's not a relatively huge mon
                 further_recursion_allowed = (scaledmonval > 0.4)
         if len(mon_freevks) > 1 and scaledmonval > 0.4:
+            # okay we're gonna break this down, it's too big
             fixed_breakdown_vks = set()
             for vk in mon_freevks:
                 subcomposition, _, _ = bd[vk][0]
@@ -164,10 +161,15 @@ def crawl(key, bd, solution, basescale=1, verbosity=0, visited_bdkeys=None):
         if len(mon_freevks) == 1 and further_recursion_allowed:
             subkey, = mon_freevks
             power = mon.exp[subkey]
-            if power < 0: # != 1:
+            if power != 1:
                 if subkey in bd:
-                    posy, _, _ = bd[subkey][0]
+                    posy, _, constraint = bd[subkey][0]
                     further_recursion_allowed = (len(posy.hmap) == 1)
+                    if constraint.oper == "=":  # watch for flip-flop
+                        for vk in posy.vks:
+                            if vk in bd:   # there's a sub-breakdown...
+                                if np.sign(posy.exp[vk]) != np.sign(power):
+                                    further_recursion_allowed = False
                 if not further_recursion_allowed and subkey not in visited_bdkeys:
                     power = 1  # so that it's not made into a transform
         else:
@@ -247,20 +249,23 @@ def crawl(key, bd, solution, basescale=1, verbosity=0, visited_bdkeys=None):
                 mon = mon/factor
                 mon.ast = None
         # TODO: make minscale an argument - currently an arbitrary 0.01
-        # power > 0 prevents inversion during recursion
         if (subkey is not None and subkey not in visited_bdkeys
                 and subkey in bd and further_recursion_allowed and scaledmonval > 0.01):
             if verbosity:
-                verbosity = indent  # slight HACK
-            subsubtree = crawl(subkey, bd, solution, scaledmonval,
-                               verbosity, visited_bdkeys)
-            subtree.append(subsubtree)
-        else:
-            if verbosity:
-                keyvalstr = "%s (%s)" % (mon.str_without(["lineage", "units"]),
-                                         get_valstr(mon, solution))
-                print("  "*indent + keyvalstr)
-            subtree.append({(mon, scaledmonval): []})
+                verbosity = indent  # slight hack
+            try:
+                subsubtree = crawl(subkey, bd, solution, scaledmonval,
+                                   verbosity, visited_bdkeys)
+                subtree.append(subsubtree)
+                continue
+            except Exception as e:
+                print(repr(e))
+
+        if verbosity:
+            keyvalstr = "%s (%s)" % (mon.str_without(["lineage", "units"]),
+                                     get_valstr(mon, solution))
+            print("  "*indent + keyvalstr)
+        subtree.append({(mon, scaledmonval): []})
     # TODO: or, instead of AST parsing, remove common factors at the composition level?
     ftidxs = defaultdict(list)
     for i, ((key, _),) in enumerate(orig_subtree):
@@ -299,8 +304,8 @@ def get_spanstr(legend, length, label, leftwards, solution):
     spacer, lend, rend = "│", "┯", "┷"
     if isinstance(label, Transform):
         spacer, lend, rend = "╎", "╤", "╧"
-        # if label.power != 1:
-        #     spacer = "^"
+        if label.power != 1:
+            spacer, lend, rend = "^", "^", "^"
         # remove origkey so they collide in the legends dictionary
         label = Transform(label.factor, label.power, None)
         # TODO: catch PI (or again could that come from AST parsing?)
