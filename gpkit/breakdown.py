@@ -65,7 +65,6 @@ def get_breakdowns(solution):
     prevlen = None
     while len(BASICALLY_FIXED_VARIABLES) != prevlen:
         prevlen = len(BASICALLY_FIXED_VARIABLES)
-        # print(prevlen)
         for key in breakdowns:
             if key not in BASICALLY_FIXED_VARIABLES:
                 get_fixity(key, breakdowns, solution, BASICALLY_FIXED_VARIABLES)
@@ -106,7 +105,7 @@ def get_fixity(key, bd, solution, basically_fixed={}, visited=set()):
             return
     basically_fixed[key] = tuple(vk for vk in free_vks if vk in basically_fixed)
 
-def crawl(key, bd, solution, basescale=1, permissivity=0, verbosity=0,
+def crawl(key, bd, solution, basescale=1, permissivity=2, verbosity=0,
           visited_bdkeys=None):
     "Returns the tree of breakdowns of key in bd, sorting by solution's values"
     if key in bd:
@@ -384,78 +383,53 @@ def layer(map, tree, extent, depth=0, maxdepth=20):
         return map
     scale = extent/val
 
-    popidxs = []
+    extents = [round(scale*v) for (_, v), in branches]
     for i, branch in enumerate(branches):
         ((k, v), bs), = branch.items()
-        if isinstance(k, Transform):  # transform with no worthy heirs
-            if not any(round(round(scale*v)/v*subv) for (_, subv), in bs):
-                popidxs.append(i)
-    if popidxs:
+        if isinstance(k, Transform):
+            subscale = extents[i]/v
+            if not any(round(subscale*subv) for (_, subv), in bs):
+                extents[i] = 0  # transform with no worthy heirs: misc it
+
+    if not any(extents) or (extent == 1 and not isinstance(key, Transform)):
+        branches = [{(None, val): []}]  # pad it out
+        extents = [extent]
+    elif not all(extents):  # create a catch-all
         branches = branches.copy()
-    for idx in reversed(popidxs):
-        (k, v), = branches.pop(idx)
-        if not isinstance(k.origkey, tuple):
-            branches.append({(k, v): []})
-        else:
-            branches.extend({kv: []} for kv in k.origkey)
-    if popidxs:
-        branches.sort(reverse=True,
-                      key=lambda branch: list(branch.keys())[0][1])
-
-    if ((extent == 1 and not isinstance(key, Transform))
-            or not any(round(scale*v) for (_, v), in branches)):  # pad it out
-        branches = [{(None, val): []}]
-
-    extents = [round(scale*v) for (_, v), in branches]
-    if not all(extents):
-        newbranches = []
-        misckeys = ()
-        miscval = 0
         surplus = extent - sum(extents)
-        for branch, subextent in zip(branches, extents):
-            if subextent:
-                newbranches.append(branch)
-            else:
-                ((k, v), bs), = branch.items()
-                if isinstance(k, Transform):
-                    k = k.origkey  # TODO: this is the only use of origkey - remove it
-                if not isinstance(k, tuple):  # TODO: if it is, may be out of sort-order
-                    k = (k,)
-                misckeys += k
-                miscval += v
-        branches = newbranches
-        if round(scale*miscval):
-            surplus -= round(scale*miscval)
-            while surplus < 0:
+        miscvkeys, miscval = [], 0
+        for subextent in reversed(extents):
+            (_, v), = branches[-1]
+            if not subextent or (v < miscval and surplus < 0):
                 ((k, v), bs), = branches.pop().items()
                 if isinstance(k, Transform):
                     k = k.origkey  # TODO: this is the only use of origkey - remove it
                     if isinstance(k, tuple):
-                        k = tuple(kv[0] for kv in k)  # TODO: may be out of sort-order
+                        vkeys = [(-kv[1], str(kv[0]), kv[0]) for kv in k]
                 if not isinstance(k, tuple):
-                    k = (k,)
-                misckeys = k + misckeys
+                    vkeys = [(-v, str(k), k)]
+                miscvkeys += vkeys
                 surplus -= (round(scale*(miscval + v))
-                            - round(scale*miscval) - round(scale*v))
+                            - round(scale*miscval) - subextent)
                 miscval += v
-            branches.append({(misckeys, miscval): []})
+        misckeys = tuple(k for _, _, k in sorted(miscvkeys))
+        branches.append({(misckeys, miscval): []})
 
     extents = [round(scale*v) for (_, v), in branches]
     surplus = extent - sum(extents)
     if surplus:
-        err_frac = (round(scale*v)/(scale*v) for (_, v), in branches)
-        # err_frac < 1 means the round underestimates the true value
-        ranked_errors = sorted((err, i) for (i, err) in enumerate(err_frac))
-        while surplus > 0:
-            extents[ranked_errors.pop(0)[1]] += 1  # from the start
-            surplus -= 1
-        while surplus < 0:
-            extents[ranked_errors.pop()[1]] -= 1  # from the end
-            surplus += 1
-    if (len([ext for ext in extents if ext]) >= max(extent-1, 2)
-            and not isinstance(key, Transform)):
-        branches = [{(None, val): []}]
-        extents = [extent]
+        sign = int(np.sign(surplus))
+        bump_priority = sorted((extent, sign*v, i)
+                               for i, (((_, v),), extent)
+                               in enumerate(zip(branches, extents)))
+        while surplus:
+            extents[bump_priority.pop()[-1]] += sign
+            surplus -= sign
+    if not isinstance(key, Transform):
+        if len([ext for ext in extents if ext]) >= max(extent-1, 2):
+            # if we'd branch a lot (all ones but one, or at all if extent <= 3)
+            branches = [{(None, val): []}]
+            extents = [extent]
     for branch, subextent in zip(branches, extents):
         if subextent:
             layer(map, branch, subextent, depth+1, maxdepth)
@@ -469,9 +443,9 @@ def plumb(tree, depth=0):
         maxdepth = max(maxdepth, plumb(branch, depth+1))
     return maxdepth
 
-def graph(tree, solution, extent=20):
+def graph(tree, solution, extent=None):
     "Displays text plot of breakdown(s)"
-    graph_printer(tree, solution, extent)
+    graph_printer(tree, solution, extent=None)
     # ((key, val), branches), = tree.items()
     # for i, branch in enumerate(branches):
     #     if len(branches) > 1:
@@ -479,13 +453,15 @@ def graph(tree, solution, extent=20):
     #     graph_printer({(key, val): [branch]}, extent)
     #     print("\n")
 
-def graph_printer(tree, solution, extent):
+def graph_printer(tree, solution, extent=None):
     "Prints breakdown"
-    mt = layer([], tree, extent, maxdepth=plumb(tree)-1)
-    max_width = max(len(at_depth) for at_depth in mt)
-    if max_width*4 <= extent:
-        extent = 4*max_width
-    mt = layer([], tree, extent, maxdepth=plumb(tree)-1)
+    if extent is None:  # autoscale
+        prev_extent = None
+        extent = 20  # max_extent
+        while prev_extent != extent:
+            mt = layer([], tree, extent, maxdepth=plumb(tree)-1)
+            prev_extent = extent
+            extent = min(extent, 4*max(len(at_depth) for at_depth in mt))
     scale = 1/extent
     legend = {}
     chararray = np.full((len(mt), extent), "", "object")
@@ -502,8 +478,8 @@ def graph_printer(tree, solution, extent):
 
     # Format depth=0
     A_key, = [key for key, value in legend.items() if value == "A"]
-    if hasattr(A_key, "legendlabel") and A_key.legendlabel:
-        A_str = A_key.legendlabel
+    if A_key is solution.costposy:
+        A_str = "Cost"
     else:
         A_str = A_key.str_without(["lineage", "units"])
     A_valstr = "(%s)" % get_valstr(A_key, solution)
@@ -609,20 +585,16 @@ def legend_entry(key, shortname, solution):
         if key.power == 1:
             operator = " ×"
             key = key.factor
-            free = bool(get_free_vks(key, solution))
-            if free and len(key.vks) == 1:
-                vk, = key.vks
-                free = vk not in BASICALLY_FIXED_VARIABLES
-            if free:
-                note = "  [free factor]"
+            free, quasifixed = False, False
+            if any(vk not in BASICALLY_FIXED_VARIABLES
+                   for vk in get_free_vks(key, solution)):
+                note = "  [free]"
         else:
             valuestr = "   ^%.3g" % key.power
             key = None
     if key is not None:
         if isinstance(key, FixedScalar):
             keystr = " "
-        elif hasattr(key, "legendlabel") and key.legendlabel:
-            keystr = key.legendlabel
         else:
             keystr = key.str_without(["lineage", "units"])
         valuestr = "  "+operator + get_valstr(key, solution)
@@ -661,7 +633,20 @@ from gpkit.tests.helpers import StdoutCaptured
 import difflib
 
 # key, = [vk for vk in bd if "brakingtimedelta[0]" in str(vk)]
-# tree = crawl(key, bd, sol, verbosity=1)
+# print("\n\nPERMISSIVITY = 0")
+# tree = crawl(sol., bd, sol, permissivity=0)
+# graph(tree, sol)
+#
+# print("\n\nPERMISSIVITY = 0.6")
+# tree = crawl(sol.costposy, bd, sol, permissivity=0.6)
+# graph(tree, sol)
+#
+# print("\n\nPERMISSIVITY = 1")
+# tree = crawl(sol.costposy, bd, sol, permissivity=1)
+# graph(tree, sol)
+#
+# print("\n\nPERMISSIVITY = 2")
+# tree = crawl(sol.costposy, bd, sol, permissivity=2)
 # graph(tree, sol)
 
 keys = sorted((key for key in bd.keys() if not key.idx or len(key.shape) == 1),
@@ -669,19 +654,17 @@ keys = sorted((key for key in bd.keys() if not key.idx or len(key.shape) == 1),
 
 permissivity = 2
 
-with StdoutCaptured("breakdowns%s.log" % permissivity):
-    for key in keys:
-        tree = crawl(key, bd, sol, permissivity=permissivity)
-        graph(tree, sol)
+# with StdoutCaptured("breakdowns.log"):
+#     for key in keys:
+#         tree = crawl(key, bd, sol, permissivity=permissivity)
+#         graph(tree, sol)
 
 with StdoutCaptured("breakdowns.log.new"):
     for key in keys:
         tree = crawl(key, bd, sol, permissivity=permissivity)
         graph(tree, sol)
 
-# permissivity = 1
-
-with open("breakdowns%s.log" % permissivity, "r") as original:
+with open("breakdowns.log", "r") as original:
     with open("breakdowns.log.new", "r") as new:
         diff = difflib.unified_diff(
             original.readlines(),
