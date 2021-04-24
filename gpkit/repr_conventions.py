@@ -20,7 +20,6 @@ else:  # pragma: no cover
 
 def lineagestr(lineage, modelnums=True):
     "Returns properly formatted lineage string"
-    return ""
     if not isinstance(lineage, tuple):
         lineage = getattr(lineage, "lineage", None)
     return ".".join(["%s%i" % (name, num) if (num and modelnums) else name

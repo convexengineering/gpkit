@@ -329,13 +329,27 @@ class GeometricProgram:
                 " %s, but since the '%s' solver doesn't support discretization"
                 " they were treated as continuous variables."
                 % (sorted(self.choicevaridxs.keys()), solver_out["solver"]),
-                self.choicevaridxs)]}
+                self.choicevaridxs)]}  # TODO: choicevaridxs seems unnecessary
 
         result["sensitivities"] = {"constraints": {}}
         la, self.nu_by_posy = self._generate_nula(solver_out)
         cost_senss = sum(nu_i*exp for (nu_i, exp) in zip(self.nu_by_posy[0],
                                                          self.cost.hmap))
         gpv_ss = cost_senss.copy()
+        # carry linked sensitivities over to their constants
+        for v in list(v for v in gpv_ss if v.gradients):
+            dlogcost_dlogv = gpv_ss.pop(v)
+            val = np.array(result["constants"][v])
+            for c, dv_dc in v.gradients.items():
+                with warnings.catch_warnings():  # skip pesky divide-by-zeros
+                    warnings.simplefilter("ignore")
+                    dlogv_dlogc = dv_dc * result["constants"][c]/val
+                    gpv_ss[c] = gpv_ss.get(c, 0) + dlogcost_dlogv*dlogv_dlogc
+                if v in cost_senss:
+                    if c in self.cost.vks:  # TODO: seems unnecessary
+                        dlogcost_dlogv = cost_senss.pop(v)
+                        before = cost_senss.get(c, 0)
+                        cost_senss[c] = before + dlogcost_dlogv*dlogv_dlogc
         m_senss = defaultdict(float)
         for las, nus, c in zip(la[1:], self.nu_by_posy[1:], self.hmaps[1:]):
             while getattr(c, "parent", None) is not None:
@@ -351,20 +365,6 @@ class GeometricProgram:
         for vk, senss in gpv_ss.items():
             m_senss[lineagestr(vk)] += abs(senss)
         result["sensitivities"]["models"] = dict(m_senss)
-        # carry linked sensitivities over to their constants
-        for v in list(v for v in gpv_ss if v.gradients):
-            dlogcost_dlogv = gpv_ss.pop(v)
-            val = np.array(result["constants"][v])
-            for c, dv_dc in v.gradients.items():
-                with warnings.catch_warnings():  # skip pesky divide-by-zeros
-                    warnings.simplefilter("ignore")
-                    dlogv_dlogc = dv_dc * result["constants"][c]/val
-                    gpv_ss[c] = gpv_ss.get(c, 0) + dlogcost_dlogv*dlogv_dlogc
-                if v in cost_senss:
-                    if c in self.cost.vks:
-                        dlogcost_dlogv = cost_senss.pop(v)
-                        before = cost_senss.get(c, 0)
-                        cost_senss[c] = before + dlogcost_dlogv*dlogv_dlogc
         result["sensitivities"]["cost"] = cost_senss
         result["sensitivities"]["variables"] = KeyDict(gpv_ss)
         result["sensitivities"]["constants"] = \
