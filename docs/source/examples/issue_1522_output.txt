@@ -1,0 +1,77 @@
+Using solver 'cvxopt'
+ for 5 free variables
+  in 11 posynomial inequalities.
+Solving took 0.0145 seconds.
+
+Optimal Cost
+------------
+ 15
+
+Model Sensitivities (sorts models in sections below)
+-------------------
+  +1.0 : Yum1.Cake.Pie
+       : Yum1.Cake
+
+Free Variables
+--------------
+  | Yum1.Cake
+y : [ 3         3         3         3         3        ]
+
+Fixed Variables
+---------------
+  | Yum1.Cake.Pie
+x : [ 2         2         2         2         2
+      3         3         3         3         3         ]
+z : [ 1         1         1         1         1
+      1         1         1         1         1         ]
+
+Variable Sensitivities
+----------------------
+  | Yum1.Cake.Pie
+x : [ +7.1e-07  +7.1e-07  +7.1e-07  +7.1e-07  +7.1e-07
+      +0.2      +0.2      +0.2      +0.2      +0.2      ]
+
+Most Sensitive Constraints
+--------------------------
+       | Yum1.Cake
+  +0.2 : y[0] ≥ x[1,0]
+  +0.2 : y[1] ≥ x[1,1]
+  +0.2 : y[2] ≥ x[1,2]
+  +0.2 : y[3] ≥ x[1,3]
+  +0.2 : y[4] ≥ x[1,4]
+
+Using solver 'cvxopt'
+ for 1 free variables
+  in 3 posynomial inequalities.
+Solving took 0.0132 seconds.
+
+Optimal Cost
+------------
+ 3
+
+Model Sensitivities (sorts models in sections below)
+-------------------
+  +1.0 : Yum2.Cake
+       : Yum2.Cake.Pie
+
+Free Variables
+--------------
+  | Yum2.Cake
+y : [ 3        ]
+
+Fixed Variables
+---------------
+  | Yum2.Cake.Pie
+x : [ 2         3        ]
+z : [ 1         1        ]
+
+Variable Sensitivities
+----------------------
+  | Yum2.Cake.Pie
+x : [ +8.4e-08  +1       ]
+
+Most Sensitive Constraints
+--------------------------
+       | Yum2.Cake
+    +1 : y[0] ≥ x[1,0]
+

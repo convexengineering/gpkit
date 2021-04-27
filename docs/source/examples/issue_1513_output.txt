@@ -1,0 +1,118 @@
+Using solver 'cvxopt'
+ for 3 free variables
+  in 4 posynomial inequalities.
+Solving took 0.00804 seconds.
+
+Optimal Cost
+------------
+ 1
+
+Model Sensitivities (sorts models in sections below)
+-------------------
+  +3.0 : System.Fleet2
+  +1.0 : System.Fleet2.Vehicle
+
+Free Variables
+--------------
+  | System.Fleet2
+z : [ 1        ]
+
+  | System.Fleet2.Vehicle
+a : [ 1         1        ]
+
+Fixed Variables
+---------------
+  | System.Fleet2
+x : [ 4        ]
+y : [ 3         1        ]
+
+Variable Sensitivities
+----------------------
+  | System.Fleet2
+y : [   -       +0.25    ]
+
+Most Sensitive Constraints
+--------------------------
+       | System.Fleet2
+    +1 : z[0] ≥ a[0,0]·x[0]^-1·y[0,0] + y[1,0]/x[0]·a[1,0]
+
+       | System.Fleet2.Vehicle
+ +0.75 : a[0,0] ≥ 1
+ +0.25 : a[1,0] ≥ 1
+
+Using solver 'cvxopt'
+ for 9 free variables
+  in 10 posynomial inequalities.
+Solving took 0.0195 seconds.
+
+Optimal Cost
+------------
+ 3
+
+Model Sensitivities (sorts models in sections below)
+-------------------
+  +3.0 : System2.Fleet2
+  +1.0 : System2.Fleet2.Vehicle
+
+Free Variables
+--------------
+  | System2.Fleet2
+z : [ 1         1         1        ]
+
+  | System2.Fleet2.Vehicle
+a : [ 1         1         1
+      1         1         1         ]
+
+Fixed Variables
+---------------
+  | System2.Fleet2
+x : [ 4         4         4        ]
+y : [ 3         3         3
+      1         1         1         ]
+
+Variable Sensitivities
+----------------------
+  | System2.Fleet2
+y : [   -         -         -
+      +0.083    +0.083    +0.083    ]
+
+Most Sensitive Constraints
+--------------------------
+       | System2.Fleet2
+ +0.33 : z[0] ≥ a[0,0]·x[0]^-1·y[0,0] + y[1,0]/x[0]·a[1,0]
+ +0.33 : z[1] ≥ a[0,1]·x[1]^-1·y[0,1] + y[1,1]/x[1]·a[1,1]
+ +0.33 : z[2] ≥ a[0,2]·x[2]^-1·y[0,2] + y[1,2]/x[2]·a[1,2]
+
+       | System2.Fleet2.Vehicle
+ +0.25 : a[0,0] ≥ 1
+ +0.25 : a[0,1] ≥ 1
+
+Sweeping with 1 solves:
+Sweeping took 0.0224 seconds.
+
+Optimal Cost
+------------
+ 20
+
+Swept Variables
+---------------
+y : [ 1         2         3        ]
+
+Free Variables
+--------------
+x : [ 2         6         12       ]
+
+Fixed Variables
+---------------
+z : [ 1         4         9        ]
+
+Variable Sensitivities
+----------------------
+y : [ +0.15     +0.5      +1       ]
+
+Most Sensitive Constraints
+--------------------------
+  +0.6 : x[2] ≥ y[2] + z[2]
+  +0.3 : x[1] ≥ y[1] + z[1]
+  +0.1 : x[0] ≥ y[0] + z[0]
+
