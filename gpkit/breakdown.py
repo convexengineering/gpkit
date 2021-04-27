@@ -34,7 +34,9 @@ def get_model_breakdown(solution):
     print(breakdowns["HyperloopSystem"]["|sensitivity|"])
     breakdowns = {"|sensitivity|": 0}
     for constraint, senss in solution["sensitivities"]["constraints"].items():
-        senss = abs(senss)  # for those monomial equalities
+        senss = abs(senss)  # for those monomial
+        if senss <= 1e-5:
+            continue
         subbd = breakdowns
         subbd["|sensitivity|"] += senss
         for parent in constraint.lineagestr().split("."):
@@ -44,11 +46,14 @@ def get_model_breakdown(solution):
             if "|sensitivity|" not in subbd:
                 subbd["|sensitivity|"] = 0
             subbd["|sensitivity|"] += senss
+        # treat vectors as namespace
         subbd[constraint] = {"|sensitivity|": senss}
     for vk, senss in solution["sensitivities"]["variables"].items():
         senss = abs(senss)
         if hasattr(senss, "shape"):
             senss = np.nansum(senss)
+        if senss <= 1e-5:
+            continue
         subbd = breakdowns
         subbd["|sensitivity|"] += senss
         for parent in vk.lineagestr().split("."):
@@ -58,6 +63,7 @@ def get_model_breakdown(solution):
             if "|sensitivity|" not in subbd:
                 subbd["|sensitivity|"] = 0
             subbd["|sensitivity|"] += senss
+        # treat vectors as namespace (indexing vectors above)
         subbd[vk] = {"|sensitivity|": senss}
     print(breakdowns["|sensitivity|"])
     return breakdowns
@@ -80,7 +86,6 @@ def get_breakdowns(solution):
     """
     breakdowns = defaultdict(list)
     for constraint, senss in solution["sensitivities"]["constraints"].items():
-        # TODO: should also check tightness by value, or?
         if abs(senss) <= 1e-5:  # only tight-ish ones
             continue
         if constraint.oper == ">=":
@@ -122,28 +127,14 @@ def get_breakdowns(solution):
         for key in breakdowns:
             if key not in BASICALLY_FIXED_VARIABLES:
                 get_fixity(key, breakdowns, solution, BASICALLY_FIXED_VARIABLES)
-    for bfvk, froms in BASICALLY_FIXED_VARIABLES.items():
-        if not froms:
-            lt, gt, _ = breakdowns[bfvk][0]
-            free_vks = get_free_vks(lt, solution).union(get_free_vks(gt, solution))
-            assert all((vk in solution["constants"] or vk is bfvk) for vk in free_vks)
-        else:
-            for vk in froms:
-                assert vk not in solution["constants"]
-                assert vk in breakdowns
-                assert vk in BASICALLY_FIXED_VARIABLES
-
     return breakdowns
 
-BASICALLY_FIXED_VARIABLES = {}
+BASICALLY_FIXED_VARIABLES = set()
 
 
-def get_fixity(key, bd, solution, basically_fixed={}, visited=set()):
+def get_fixity(key, bd, solution, basically_fixed=set(), visited=set()):
     lt, gt, _ = bd[key][0]
     free_vks = get_free_vks(lt, solution).union(get_free_vks(gt, solution))
-    # for generator in [(vk for vk in lt.vks if vk in bd),
-    #                   (vk for vk in gt.vks if vk in bd)]:
-    #     for vk in generator:
     for vk in free_vks:
         if vk not in bd:
             return
@@ -157,7 +148,7 @@ def get_fixity(key, bd, solution, basically_fixed={}, visited=set()):
         get_fixity(vk, bd, solution, basically_fixed, visited)
         if vk not in BASICALLY_FIXED_VARIABLES:
             return
-    basically_fixed[key] = tuple(vk for vk in free_vks if vk in basically_fixed)
+    basically_fixed.add(key)
 
 def crawl(key, bd, solution, basescale=1, permissivity=2, verbosity=0,
           visited_bdkeys=None):
@@ -612,13 +603,7 @@ def graph(tree, solution, extent=None, maxdepth=None, collapse=True):
     if collapse:
         legend_lines = []
         for key, shortname in sorted(legend.items(), key=lambda kv: kv[1]):
-            if isinstance(key, tuple) and not isinstance(key, Transform):
-                asterisk, *others = key
-                legend_lines.append(legend_entry(asterisk, shortname, solution))
-                for k in others:
-                    legend_lines.append(legend_entry(k, "", solution))
-            else:
-                legend_lines.append(legend_entry(key, shortname, solution))
+            legend_lines.append(legend_entry(key, shortname, solution))
         maxlens = [max(len(el) for el in col) for col in zip(*legend_lines)]
         fmts = ["{0:<%s}" % L for L in maxlens]
         for line in legend_lines:
@@ -645,7 +630,7 @@ def legend_entry(key, shortname, solution):
     if key is not None:
         if not isinstance(key, FixedScalar):
             keystr = get_keystr(key, solution)
-        valuestr = "  "+operator + get_valstr(key, solution)
+        valuestr = get_valstr(key, solution, into="  "+operator+"%s")
     return ["%-4s" % shortname, keystr, valuestr, note]
 
 def get_keystr(key, solution):
@@ -669,13 +654,21 @@ def get_valstr(key, solution, into="%s"):
     try:
         value = solution(key)
     except (ValueError, TypeError):
-        return " "
+        try:
+            value = sum(solution(subkey) for subkey in key)
+        except (ValueError, TypeError):
+            return " "
     if isinstance(value, FixedScalar):
         value = value.value
-    value = mag(value)
-    unitstr = key.unitstr()
+    if hasattr(key, "unitstr"):
+        unitstr = key.unitstr()
+    else:
+        if hasattr(value, "units"):
+            value.ito_reduced_units()
+        unitstr = get_unitstr(value)
     if unitstr[:2] == "1/":
         unitstr = "/" + unitstr[2:]
+    value = mag(value)
     if 1e3 <= value < 1e6:
         valuestr = "{:,.0f}".format(value)
     else:
@@ -702,8 +695,7 @@ graph(tree, sol, maxdepth=2, extent=20, collapse=False)
 graph(tree.branches[0].branches[1],
       sol, maxdepth=2, extent=20, collapse=False)
 
-graph(tree.branches[0].branches[0],
-      sol, maxdepth=2, extent=20, collapse=False)
+graph(tree, sol, maxdepth=2, extent=20)
 
 from gpkit.tests.helpers import StdoutCaptured
 
@@ -734,25 +726,25 @@ keys = sorted((key for key in bd.keys() if not key.idx or len(key.shape) == 1),
 
 permissivity = 2
 
-with StdoutCaptured("breakdowns.log"):
-    for key in keys:
-        tree = crawl(key, bd, sol, permissivity=permissivity)
-        graph(tree, sol)
+# with StdoutCaptured("breakdowns.log"):
+#     for key in keys:
+#         tree = crawl(key, bd, sol, permissivity=permissivity)
+#         graph(tree, sol)
 
-with StdoutCaptured("breakdowns.log.new"):
-    for key in keys:
-        tree = crawl(key, bd, sol, permissivity=permissivity)
-        graph(tree, sol)
-
-with open("breakdowns.log", "r") as original:
-    with open("breakdowns.log.new", "r") as new:
-        diff = difflib.unified_diff(
-            original.readlines(),
-            new.readlines(),
-            fromfile="original",
-            tofile="new",
-        )
-        for line in diff:
-            print(line[:-1])
+# with StdoutCaptured("breakdowns.log.new"):
+#     for key in keys:
+#         tree = crawl(key, bd, sol, permissivity=permissivity)
+#         graph(tree, sol)
+#
+# with open("breakdowns.log", "r") as original:
+#     with open("breakdowns.log.new", "r") as new:
+#         diff = difflib.unified_diff(
+#             original.readlines(),
+#             new.readlines(),
+#             fromfile="original",
+#             tofile="new",
+#         )
+#         for line in diff:
+#             print(line[:-1])
 
 print("DONE")
