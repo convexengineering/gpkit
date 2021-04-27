@@ -1,5 +1,6 @@
 "Scripts for generating, solving and sweeping programs"
 from time import time
+import warnings as pywarnings
 import numpy as np
 from ad import adnumber
 from ..nomials import parse_subs
@@ -29,12 +30,6 @@ def evaluate_linked(constants, linked):
                     if not hasattr(vecout, "shape"):
                         vecout = np.array(vecout)
                     array_calulated[v.veckey] = vecout
-                    if (any(vecout != 0) and v.veckey.units
-                            and not hasattr(vecout, "units")):
-                        print("Warning: linked function for %s did not return"
-                              " a united value. Modifying it to do so (e.g. by"
-                              " using `()` instead of `[]` to access variables)"
-                              " would reduce the risk of errors." % v.veckey)
                 out = array_calulated[v.veckey][v.idx]
             else:
                 with SignomialsEnabled():  # to allow use of gpkit.units
@@ -43,11 +38,11 @@ def evaluate_linked(constants, linked):
                 out = out.value
             if hasattr(out, "units"):
                 out = out.to(v.units or "dimensionless").magnitude
-            elif out != 0 and v.units and not v.veckey:
-                print("Warning: linked function for %s did not return"
-                      " a united value. Modifying it to do so (e.g. by"
-                      " using `()` instead of `[]` to access variables)"
-                      " would reduce the risk of errors." % v)
+            elif out != 0 and v.units:
+                pywarnings.warn(
+                    "Linked function for %s did not return a united value."
+                    "Modifying it to do so (e.g. by using `()` instead of `[]`"
+                    " to access variables) will reduce errors." % v)
             if not hasattr(out, "x"):
                 constants[v] = out
                 continue  # a new fixed variable, not a calculated one
