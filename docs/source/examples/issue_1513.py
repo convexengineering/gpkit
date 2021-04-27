@@ -36,7 +36,7 @@ class Fleet2(Model):
         return constraints, substitutions
 
 m = System()
-sol = m.solve()
+sol = m.solve(verbosity=0)
 print(sol.table())
 
 # now with more fleets per system
@@ -50,7 +50,7 @@ class System2(Model):
         return constraints
 
 m = System2()
-sol = m.solve()
+sol = m.solve(verbosity=0)
 print(sol.table())
 
 
@@ -81,5 +81,5 @@ m.substitutions.update({
     "y": ("sweep", [1, 2, 3]),
     "z": lambda v: v("y")**2,
 })
-sol = m.solve()
+sol = m.solve(verbosity=0)
 print(sol.table())

@@ -36,7 +36,7 @@ class Yum1(Model):
         return constraints
 
 m = Yum1()
-sol = m.solve()
+sol = m.solve(verbosity=0)
 print(sol.table())
 
 class Yum2(Model):
@@ -50,5 +50,5 @@ class Yum2(Model):
         return constraints
 
 m = Yum2()
-sol = m.solve()
+sol = m.solve(verbosity=0)
 print(sol.table())

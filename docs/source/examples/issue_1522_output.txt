@@ -1,7 +1,3 @@
-Using solver 'cvxopt'
- for 5 free variables
-  in 11 posynomial inequalities.
-Solving took 0.0145 seconds.
 
 Optimal Cost
 ------------
@@ -9,8 +5,8 @@ Optimal Cost
 
 Model Sensitivities (sorts models in sections below)
 -------------------
-  +1.0 : Yum1.Cake.Pie
-       : Yum1.Cake
+  +1.0 : Yum1.Cake
+       : Yum1.Cake.Pie
 
 Free Variables
 --------------
@@ -40,10 +36,6 @@ Most Sensitive Constraints
   +0.2 : y[3] ≥ x[1,3]
   +0.2 : y[4] ≥ x[1,4]
 
-Using solver 'cvxopt'
- for 1 free variables
-  in 3 posynomial inequalities.
-Solving took 0.0132 seconds.
 
 Optimal Cost
 ------------

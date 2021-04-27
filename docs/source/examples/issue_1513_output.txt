@@ -1,7 +1,3 @@
-Using solver 'cvxopt'
- for 3 free variables
-  in 4 posynomial inequalities.
-Solving took 0.00804 seconds.
 
 Optimal Cost
 ------------
@@ -40,10 +36,6 @@ Most Sensitive Constraints
  +0.75 : a[0,0] ≥ 1
  +0.25 : a[1,0] ≥ 1
 
-Using solver 'cvxopt'
- for 9 free variables
-  in 10 posynomial inequalities.
-Solving took 0.0195 seconds.
 
 Optimal Cost
 ------------
@@ -87,8 +79,6 @@ Most Sensitive Constraints
  +0.25 : a[0,0] ≥ 1
  +0.25 : a[0,1] ≥ 1
 
-Sweeping with 1 solves:
-Sweeping took 0.0224 seconds.
 
 Optimal Cost
 ------------
