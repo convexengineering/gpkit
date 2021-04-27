@@ -52,8 +52,10 @@ def evaluate_linked(constants, linked):
                 constants[v] = out
                 continue  # a new fixed variable, not a calculated one
             constants[v] = out.x
-            v.descr["gradients"] = {adn.tag: grad
-                                    for adn, grad in out.d().items()}
+            gradients = {adn.tag:
+                         grad for adn, grad in out.d().items() if adn.tag}
+            if gradients:
+                v.descr["gradients"] = gradients
         except Exception as exception:  # pylint: disable=broad-except
             from .. import settings
             if settings.get("ad_errors_raise", None):
