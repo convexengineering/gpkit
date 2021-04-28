@@ -103,7 +103,7 @@ class KeyMap:
                     raise IndexError("key %s with idx %s is out of bounds"
                                      " for value %s" %
                                      (key, idx, super().__getitem__(key)))  # pylint: disable=no-member
-            return True
+            # return True  # sometimes not in keymap?
         return key in self.keymap
 
     def update_keymap(self):

@@ -342,7 +342,7 @@ def crawl(key, bd, solution, basescale=1, permissivity=2, verbosity=0,
                 verbosity = indent + 1  # slight hack
             try:
                 subsubtree = crawl(subkey, bd, solution, scaledmonval,
-                                   permissivity, verbosity, visited_bdkeys)
+                                   permissivity, verbosity, set(visited_bdkeys))
                 subtree.append(subsubtree)
                 continue
             except Exception as e:
@@ -354,36 +354,35 @@ def crawl(key, bd, solution, basescale=1, permissivity=2, verbosity=0,
             print("  "*indent + keyvalstr)
         subtree.append(Tree(mon, scaledmonval, []))
     # clean up node combination - use a dictionary at the subtree level?
-    ftidxs = defaultdict(list)
-    for i, node in enumerate(orig_subtree):
-        if isinstance(node.key, Transform):
-            ftidxs[(node.key.factor, node.key.power)].append(i)
-    to_delete = []
-    to_insert = []
-    for idxs in ftidxs.values():
-        if len(idxs) > 1:
-            valsum = 0
-            newbranches = []
-            new_origkeys = []
-            for idx in idxs:
-                key, val, subbranches = orig_subtree[idx]
-                valsum += val
-                new_origkeys.append((key.origkey, val))
-                newbranches.extend(subbranches)
-            to_delete.extend(idxs)
-            newkey = Transform(key.factor, key.power, tuple(new_origkeys))
-            to_insert.append(Tree(newkey, valsum, newbranches))
-    for idx in sorted(to_delete, reverse=True): # high to low
-        orig_subtree.pop(idx)
-    if to_insert:
-        orig_subtree.extend(to_insert)
-        orig_subtree.sort(reverse=True, key=lambda branch: branch.value)
+    # ftidxs = defaultdict(list)
+    # for i, node in enumerate(orig_subtree):
+    #     if isinstance(node.key, Transform):
+    #         ftidxs[(node.key.factor, node.key.power)].append(i)
+    # to_delete = []
+    # to_insert = []
+    # for idxs in ftidxs.values():
+    #     if len(idxs) > 1:
+    #         valsum = 0
+    #         newbranches = []
+    #         new_origkeys = []
+    #         for idx in idxs:
+    #             key, val, subbranches = orig_subtree[idx]
+    #             valsum += val
+    #             new_origkeys.append((key.origkey, val))
+    #             newbranches.extend(subbranches)
+    #         to_delete.extend(idxs)
+    #         newkey = Transform(key.factor, key.power, tuple(new_origkeys))
+    #         to_insert.append(Tree(newkey, valsum, newbranches))
+    # for idx in sorted(to_delete, reverse=True): # high to low
+    #     orig_subtree.pop(idx)
+    # if to_insert:
+    #     orig_subtree.extend(to_insert)
+    #     orig_subtree.sort(reverse=True, key=lambda branch: branch.value)
     return tree
 
 SYMBOLS = string.ascii_uppercase + string.ascii_lowercase
 for ambiguous_symbol in "lILT":
     SYMBOLS = SYMBOLS.replace(ambiguous_symbol, "")
-SYMBOLS += "⒜⒝⒞⒟⒠⒡⒢⒣⒤⒥⒦⒧⒨⒩⒪⒫⒬⒭⒮⒯⒰⒱⒲⒳⒴⒵"
 
 def get_spanstr(legend, length, label, leftwards, solution):
     "Returns span visualization, collapsing labels to symbols"
@@ -419,16 +418,15 @@ def get_spanstr(legend, length, label, leftwards, solution):
         # HACK: no corners on rightwards - only used for depth 0
         return "┃"*(longside+1) + shortname + "┃"*(shortside+1)
 
-def layer(map, tree, extent, maxdepth, depth=0, justsplit=True, scale=None):
+def layer(map, tree, extent, maxdepth, depth=0, compress=False, justsplit=True):
     "Turns the tree into a 2D-array"
     key, val, branches = tree
     if len(map) <= depth:
         map.append([])
-    if depth > maxdepth or not val:
+    if depth > maxdepth and not isinstance(key, tuple):
         map[depth].append((key, extent))
         return map
-    if scale is None:
-        scale = extent/val  # set at top of tree and keep
+    scale = extent/val
 
     extents = [round(scale*node.value) for node in branches]
     for i, branch in enumerate(branches):
@@ -477,46 +475,28 @@ def layer(map, tree, extent, maxdepth, depth=0, justsplit=True, scale=None):
             branches = [Tree(None, val, [])]
             extents = [extent]
 
-    if isinstance(key, Transform) and key.power != 1:
+    if not compress:
         map[depth].append((key, extent))
-    elif justsplit and not isinstance(key, Transform):
-        map[depth].append((key, extent))
-        justsplit = False
-    elif len([ext for ext in extents if ext]) != 1:  # splitting
-        map[depth].append((key, extent))
-        justsplit = True
     else:
-        if branches[0].key is None:
-            if key is not None and hasattr(key, "descr"):
-                map[depth].append((key, extent))
+        if isinstance(key, Transform) and key.power != 1:
+            map[depth].append((key, extent))
+        elif len([ext for ext in extents if ext]) != 1:  # splitting
+            if isinstance(key, Transform):
+                depth -= 1
             else:
-                map[depth].append((None, extent))
-        else:
-            # map[depth].append((0, extent))
+                map[depth].append((key, extent))
+            justsplit = True
+        elif justsplit and not isinstance(key, Transform):
+            map[depth].append((key, extent))
+            justsplit = False
+        elif branches[0].key is None:
+            map[depth].append((key, extent))
+        else:  # don't show at all
             depth -= 1
     for branch, subextent in zip(branches, extents):
         if subextent:
-            layer(map, branch, subextent, maxdepth, depth+1, justsplit, scale)
+            layer(map, branch, subextent, maxdepth, depth+1, compress, justsplit)
     return map
-
-def simplify(tree):
-    return tree
-    # branches = tree.branches
-    # # branches = [b for b in branches if b.value >= 0.025]
-    # while len(branches) == 1:
-    #     if not branches[0].branches:
-    #         break
-    #     branches = branches[0].branches
-    # branches = [simplify(branch) for branch in branches]
-    # notransforms = []
-    # for branch in branches:
-    #     if isinstance(branch.key, Transform):
-    #         notransforms.extend(branch.branches)
-    #     else:
-    #         notransforms.append(branch)
-    # branches = notransforms
-    # branches.sort(key=lambda b: b.value, reverse=True)
-    # return Tree(tree.key, tree.value, branches)
 
 def plumb(tree, depth=0):
     "Finds maximum depth of a tree"
@@ -525,7 +505,7 @@ def plumb(tree, depth=0):
         maxdepth = max(maxdepth, plumb(branch, depth+1))
     return maxdepth
 
-def graph(tree, solution, extent=None, maxdepth=None, collapse=True):
+def graph(tree, solution, extent=None, maxdepth=None, collapse=False):
     "Prints breakdown"
     if maxdepth is None:
         maxdepth = plumb(tree) - 1
@@ -533,14 +513,13 @@ def graph(tree, solution, extent=None, maxdepth=None, collapse=True):
         prev_extent = None
         extent = 20
         while prev_extent != extent:
-            mt = layer([], tree, extent, maxdepth)
+            mt = layer([], tree, extent, maxdepth, compress=(not collapse))
             prev_extent = extent
-            extent = min(extent, 4*max(len(at_depth) for at_depth in mt))
+            extent = min(extent, 4*len(mt[-1]))
     else:
-        mt = layer([], tree, extent, maxdepth)
-    scale = 1/extent
+        mt = layer([], tree, extent, maxdepth, compress=(not collapse))
     legend = {}
-    chararray = np.full((len(mt), extent), "", "object")
+    chararray = np.full((len(mt), extent), " ", "object")
     for depth, elements_at_depth in enumerate(mt):
         row = ""
         for i, (element, length) in enumerate(elements_at_depth):
@@ -570,14 +549,12 @@ def graph(tree, solution, extent=None, maxdepth=None, collapse=True):
     for pos in range(extent):
         for depth in reversed(range(1,len(mt))):
             value = chararray[depth, pos]
-            if value == " ":  # spacer character
-                continue
-            elif not value or value not in SYMBOLS:
+            if value not in SYMBOLS:
                 continue
             key, = [k for k, val in legend.items() if val == value]
             if getattr(key, "vks", None) and len(key.vks) == 1 and all(vk in new_legend for vk in key.vks):
                 key, = key.vks
-            if key not in new_legend and (isinstance(key, tuple) or (depth != len(mt) - 1 and chararray[depth+1, pos] != "")):
+            if key not in new_legend and (isinstance(key, tuple) or (depth != len(mt) - 1 and chararray[depth+1, pos] != " ")):
                 new_legend[key] = SYMBOLS[len(new_legend)]
             if key in new_legend:
                 chararray[depth, pos] = new_legend[key]
@@ -587,7 +564,7 @@ def graph(tree, solution, extent=None, maxdepth=None, collapse=True):
                     continue
             tryup, trydn = True, True
             span = 0
-            if isinstance(key, Transform):
+            if not collapse and isinstance(key, Transform):
                 chararray[depth, pos] = "^"
                 continue
             else:
@@ -683,7 +660,7 @@ def get_keystr(key, solution):
     elif hasattr(key, "str_without"):
         out = key.str_without(["lineage", "units"])
     elif isinstance(key, tuple):
-        return "(%i entries)" % len(key)
+        out = "[%i terms]" % len(key)
     else:
         out = str(key)
     # TODO: use fixedfactors to drop below 50
@@ -731,21 +708,15 @@ sol = pickle.load(open("bd.p", "rb"))
 bd = get_breakdowns(sol)
 
 mbd = get_model_breakdown(sol)
-tree = crawl_modelbd(mbd)
-# graph(tree, sol, maxdepth=2, extent=20, collapse=False)
-#
-# graph(tree.branches[0].branches[1],
-#       sol, maxdepth=2, extent=20, collapse=False)
-#
-# graph(tree, sol, maxdepth=2, extent=20)
+mtree = crawl_modelbd(mbd)
 
 from gpkit.tests.helpers import StdoutCaptured
 
 import difflib
 
-# key, = [vk for vk in bd if "cruisevelocity[0]" in str(vk)]
-# tree = crawl(key, bd, sol, permissivity=2, verbosity=1)
-# graph(tree, sol)
+key, = [vk for vk in bd if "portalbuildingmaintcost[0]" in str(vk)]
+tree = crawl(key, bd, sol, permissivity=2, verbosity=1)
+graph(tree, sol)
 #
 # print("\n\nPERMISSIVITY = 0")
 # tree = crawl(sol.costposy, bd, sol, permissivity=0)
@@ -759,9 +730,9 @@ import difflib
 # tree = crawl(sol.costposy, bd, sol, permissivity=1)
 # graph(tree, sol)
 #
-print("\n\nPERMISSIVITY = 1")
-tree = crawl(sol.costposy, bd, sol, permissivity=1)
-graph(simplify(tree), sol, collapse=False)
+print("\n\nPERMISSIVITY = 2")
+tree = crawl(sol.costposy, bd, sol, permissivity=2)
+graph(tree, sol, extent=12, collapse=False)
 
 keys = sorted((key for key in bd.keys() if not key.idx or len(key.shape) == 1),
               key=lambda k: str(k))
@@ -769,24 +740,30 @@ keys = sorted((key for key in bd.keys() if not key.idx or len(key.shape) == 1),
 permissivity = 2
 
 # with StdoutCaptured("breakdowns.log"):
+#     graph(mtree, sol, collapse=False)
+#     graph(mtree.branches[0].branches[1], sol, collapse=False)
+#     graph(mtree, sol, collapse=True)
 #     for key in keys:
 #         tree = crawl(key, bd, sol, permissivity=permissivity)
 #         graph(tree, sol)
 
-# with StdoutCaptured("breakdowns.log.new"):
-#     for key in keys:
-#         tree = crawl(key, bd, sol, permissivity=permissivity)
-#         graph(tree, sol)
-#
-# with open("breakdowns.log", "r") as original:
-#     with open("breakdowns.log.new", "r") as new:
-#         diff = difflib.unified_diff(
-#             original.readlines(),
-#             new.readlines(),
-#             fromfile="original",
-#             tofile="new",
-#         )
-#         for line in diff:
-#             print(line[:-1])
+with StdoutCaptured("breakdowns.log.new"):
+    graph(mtree, sol, collapse=False)
+    graph(mtree.branches[0].branches[1], sol, collapse=False)
+    graph(mtree, sol, collapse=True)
+    for key in keys:
+        tree = crawl(key, bd, sol, permissivity=permissivity)
+        graph(tree, sol)
+
+with open("breakdowns.log", "r") as original:
+    with open("breakdowns.log.new", "r") as new:
+        diff = difflib.unified_diff(
+            original.readlines(),
+            new.readlines(),
+            fromfile="original",
+            tofile="new",
+        )
+        for line in diff:
+            print(line[:-1])
 
 print("DONE")
