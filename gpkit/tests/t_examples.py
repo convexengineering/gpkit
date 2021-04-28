@@ -48,6 +48,12 @@ class TestExamples(unittest.TestCase):
     #     import matplotlib.pyplot as plt
     #     plt.close("all")
 
+    def test_issue_1513(self, example):
+        pass
+
+    def test_issue_1522(self, example):
+        pass
+
     def test_autosweep(self, example):
         from gpkit import ureg
         bst1, tol1 = example.bst1, example.tol1

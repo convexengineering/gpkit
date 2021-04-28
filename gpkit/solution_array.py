@@ -63,7 +63,7 @@ def msenss_table(data, _, **kwargs):
     if "models" not in data.get("sensitivities", {}):
         return ""
     data = sorted(data["sensitivities"]["models"].items(),
-                  key=lambda i: -np.mean(i[1]))
+                  key=lambda i: (-round(np.mean(i[1]), 1), i[0]))
     lines = ["Model Sensitivities", "-------------------"]
     if kwargs["sortmodelsbysenss"]:
         lines[0] += " (sorts models in sections below)"
@@ -389,7 +389,7 @@ class SolutionArray(DictOfLists):
     # pylint: disable=too-many-locals, too-many-branches, too-many-statements
     def diff(self, other, showvars=None, *,
              constraintsdiff=True, senssdiff=False, sensstol=0.1,
-             absdiff=False, abstol=0, reldiff=True, reltol=1.0,
+             absdiff=False, abstol=0.1, reldiff=True, reltol=1.0,
              sortmodelsbysenss=True, **tableargs):
         """Outputs differences between this solution and another
 
@@ -401,9 +401,9 @@ class SolutionArray(DictOfLists):
             if True, show sensitivity differences
         sensstol : float
             the smallest sensitivity difference worth showing
-        abssdiff : boolean
+        absdiff : boolean
             if True, show absolute differences
-        absstol : float
+        abstol : float
             the smallest absolute difference worth showing
         reldiff : boolean
             if True, show relative differences
@@ -465,7 +465,7 @@ class SolutionArray(DictOfLists):
                                "Relative Differences |above %g%%|" % reltol,
                                valfmt="%+.1f%%  ", vecfmt="%+6.1f%% ",
                                minval=reltol, printunits=False, **tableargs)
-            if lines[-2][:10] == "-"*10:  # nothing larger than sensstol
+            if lines[-2][:10] == "-"*10:  # nothing larger than reltol
                 lines.insert(-1, ("The largest is %+g%%."
                                   % unrolled_absmax(rel_diff.values())))
         if absdiff:
@@ -474,7 +474,7 @@ class SolutionArray(DictOfLists):
                                "Absolute Differences |above %g|" % abstol,
                                valfmt="%+.2g", vecfmt="%+8.2g",
                                minval=abstol, **tableargs)
-            if lines[-2][:10] == "-"*10:  # nothing larger than sensstol
+            if lines[-2][:10] == "-"*10:  # nothing larger than abstol
                 lines.insert(-1, ("The largest is %+g."
                                   % unrolled_absmax(abs_diff.values())))
         if senssdiff:
@@ -570,7 +570,7 @@ class SolutionArray(DictOfLists):
                     ", ".join("%s=%s" % (k, v) for (k, v) in key.descr.items()
                               if k not in ["name", "units", "unitrepr",
                                            "idx", "shape", "veckey",
-                                           "value", "original_fn",
+                                           "value", "vecfn",
                                            "lineage", "label"])])
         return pd.DataFrame(rows, columns=cols)
 

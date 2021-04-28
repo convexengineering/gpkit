@@ -3,6 +3,19 @@ from collections.abc import Iterable
 import numpy as np
 
 
+def broadcast_substitution(key, array):
+    "Broadcasts input into the shape of a given key"
+    return np.broadcast_to(array, reversed(key.key.shape)).T
+
+
+def veclinkedfn(linkedfn, i):
+    "Generate an indexed linking function."
+    def newlinkedfn(c):
+        "Linked function that pulls out a particular index"
+        return np.array(linkedfn(c))[i]
+    return newlinkedfn
+
+
 def initsolwarning(result, category="uncategorized"):
     "Creates a results dictionary for a particular category of warning."
     if "warnings" not in result:

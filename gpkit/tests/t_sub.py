@@ -227,7 +227,8 @@ class TestModelSubs(unittest.TestCase):
     def test_calcconst(self):
         x = Variable("x", "hours")
         t_day = Variable("t_{day}", 12, "hours")
-        t_night = Variable("t_{night}", lambda c: 24 - c[t_day], "hours")
+        t_night = Variable("t_{night}",
+                           lambda c: 1*gpkit.ureg.day - c(t_day), "hours")
         _ = pickle.dumps(t_night)
         m = Model(x, [x >= t_day, x >= t_night])
         sol = m.solve(verbosity=0)
