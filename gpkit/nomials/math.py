@@ -179,7 +179,7 @@ class Signomial(Nomial):
     def __add__(self, other, rev=False):
         other_hmap = getattr(other, "hmap", None)
         if isinstance(other, Numbers):
-            if not other:  # other is zero
+            if other == 0:
                 return Signomial(self.hmap)
             other_hmap = NomialMap({EMPTY_HV: mag(other)})
             other_hmap.units_of_product(other)

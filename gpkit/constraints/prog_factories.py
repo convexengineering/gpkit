@@ -1,12 +1,15 @@
 "Scripts for generating, solving and sweeping programs"
 from time import time
+import warnings as pywarnings
 import numpy as np
 from ad import adnumber
 from ..nomials import parse_subs
 from ..solution_array import SolutionArray
 from ..keydict import KeyDict
 from ..small_scripts import maybe_flatten
+from ..small_classes import FixedScalar
 from ..exceptions import Infeasible
+from ..globals import SignomialsEnabled
 
 
 def evaluate_linked(constants, linked):
@@ -20,20 +23,34 @@ def evaluate_linked(constants, linked):
             del key.descr["gradients"]
     for v, f in linked.items():
         try:
-            if v.veckey and v.veckey.original_fn:
+            if v.veckey and v.veckey.vecfn:
                 if v.veckey not in array_calulated:
-                    ofn = v.veckey.original_fn
-                    array_calulated[v.veckey] = np.array(ofn(kdc))
+                    with SignomialsEnabled():  # to allow use of gpkit.units
+                        vecout = v.veckey.vecfn(kdc)
+                    if not hasattr(vecout, "shape"):
+                        vecout = np.array(vecout)
+                    array_calulated[v.veckey] = vecout
                 out = array_calulated[v.veckey][v.idx]
             else:
-                out = f(kdc)
+                with SignomialsEnabled():  # to allow use of gpkit.units
+                    out = f(kdc)
+            if isinstance(out, FixedScalar):  # to allow use of gpkit.units
+                out = out.value
+            if hasattr(out, "units"):
+                out = out.to(v.units or "dimensionless").magnitude
+            elif out != 0 and v.units:
+                pywarnings.warn(
+                    "Linked function for %s did not return a united value."
+                    "Modifying it to do so (e.g. by using `()` instead of `[]`"
+                    " to access variables) will reduce errors." % v)
             if not hasattr(out, "x"):
                 constants[v] = out
                 continue  # a new fixed variable, not a calculated one
             constants[v] = out.x
-            v.descr["gradients"] = {adn.tag: grad
-                                    for adn, grad in out.d().items()
-                                    if adn.tag}  # else it's user-created
+            gradients = {adn.tag:
+                         grad for adn, grad in out.d().items() if adn.tag}
+            if gradients:
+                v.descr["gradients"] = gradients
         except Exception as exception:  # pylint: disable=broad-except
             from .. import settings
             if settings.get("ad_errors_raise", None):
