@@ -69,7 +69,7 @@ class Nomial(NomialData):
             if cstr == "-1":
                 cstr = "-"
             if numerator_strings and cstr == "1":
-                 mstr = MUL.join(pvarstrs)
+                mstr = MUL.join(pvarstrs)
             else:
                 mstr = MUL.join([cstr] + pvarstrs)
             if nvarstrs:

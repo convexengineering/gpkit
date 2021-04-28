@@ -336,6 +336,18 @@ class GeometricProgram:
         cost_senss = sum(nu_i*exp for (nu_i, exp) in zip(self.nu_by_posy[0],
                                                          self.cost.hmap))
         gpv_ss = cost_senss.copy()
+        m_senss = defaultdict(float)
+        for las, nus, c in zip(la[1:], self.nu_by_posy[1:], self.hmaps[1:]):
+            while getattr(c, "parent", None) is not None:
+                c = c.parent
+            v_ss, c_senss = c.sens_from_dual(las, nus, result)
+            for vk, x in v_ss.items():
+                gpv_ss[vk] = x + gpv_ss.get(vk, 0)
+            while getattr(c, "generated_by", None):
+                c = c.generated_by
+            result["sensitivities"]["constraints"][c] = c_senss
+            m_senss[lineagestr(c)] += abs(c_senss)
+        result["sensitivities"]["models"] = dict(m_senss)
         # carry linked sensitivities over to their constants
         for v in list(v for v in gpv_ss if v.gradients):
             dlogcost_dlogv = gpv_ss.pop(v)
@@ -350,21 +362,9 @@ class GeometricProgram:
                         dlogcost_dlogv = cost_senss.pop(v)
                         before = cost_senss.get(c, 0)
                         cost_senss[c] = before + dlogcost_dlogv*dlogv_dlogc
-        m_senss = defaultdict(float)
-        for las, nus, c in zip(la[1:], self.nu_by_posy[1:], self.hmaps[1:]):
-            while getattr(c, "parent", None) is not None:
-                c = c.parent
-            v_ss, c_senss = c.sens_from_dual(las, nus, result)
-            for vk, x in v_ss.items():
-                gpv_ss[vk] = x + gpv_ss.get(vk, 0)
-            while getattr(c, "generated_by", None):
-                c = c.generated_by
-            result["sensitivities"]["constraints"][c] = c_senss
-            m_senss[lineagestr(c)] += abs(c_senss)
         # add fixed variables sensitivities to models
         for vk, senss in gpv_ss.items():
             m_senss[lineagestr(vk)] += abs(senss)
-        result["sensitivities"]["models"] = dict(m_senss)
         result["sensitivities"]["cost"] = cost_senss
         result["sensitivities"]["variables"] = KeyDict(gpv_ss)
         result["sensitivities"]["constants"] = \

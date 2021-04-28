@@ -1,3 +1,4 @@
+# pylint: skip-file
 import string
 from collections import defaultdict, namedtuple
 from gpkit.nomials import Monomial, Posynomial
