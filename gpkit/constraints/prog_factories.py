@@ -41,8 +41,8 @@ def evaluate_linked(constants, linked):
             elif out != 0 and v.units:
                 pywarnings.warn(
                     "Linked function for %s did not return a united value."
-                    "Modifying it to do so (e.g. by using `()` instead of `[]`"
-                    " to access variables) will reduce errors." % v)
+                    " Modifying it to do so (e.g. by using `()` instead of"
+                    " `[]` to access variables) will reduce errors." % v)
             if not hasattr(out, "x"):
                 constants[v] = out
                 continue  # a new fixed variable, not a calculated one
