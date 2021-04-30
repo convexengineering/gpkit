@@ -1,7 +1,7 @@
 # pylint: skip-file
 import string
 from collections import defaultdict, namedtuple
-from gpkit.nomials import Monomial, Posynomial
+from gpkit.nomials import Monomial, Posynomial, Variable
 from gpkit.nomials.map import NomialMap
 from gpkit.small_scripts import mag
 from gpkit.small_classes import FixedScalar, HashVector
@@ -32,7 +32,7 @@ def get_model_breakdown(solution):
                 subbd["|sensitivity|"] = 0
             subbd["|sensitivity|"] += senss
         subbd[name] = {"|sensitivity|": senss}
-    print(breakdowns["HyperloopSystem"]["|sensitivity|"])
+    # print(breakdowns["HyperloopSystem"]["|sensitivity|"])
     breakdowns = {"|sensitivity|": 0}
     for constraint, senss in solution["sensitivities"]["constraints"].items():
         senss = abs(senss)  # for those monomial
@@ -66,7 +66,7 @@ def get_model_breakdown(solution):
             subbd["|sensitivity|"] += senss
         # treat vectors as namespace (indexing vectors above)
         subbd[vk] = {"|sensitivity|": senss}
-    print(breakdowns["|sensitivity|"])
+    # print(breakdowns["|sensitivity|"])
     return breakdowns
 
 def crawl_modelbd(bd, tree=None, name="Model"):
@@ -86,7 +86,8 @@ def get_breakdowns(solution):
     (At present, monomial constraints check both sides as "gt")
     """
     breakdowns = defaultdict(list)
-    for constraint, senss in solution["sensitivities"]["constraints"].items():
+    beatout = defaultdict(set)
+    for constraint, senss in sorted(solution["sensitivities"]["constraints"].items(), key=lambda kv: (round(kv[1], 3), str(kv[0])), reverse=True):
         if abs(senss) <= 1e-5:  # only tight-ish ones
             continue
         if constraint.oper == ">=":
@@ -101,26 +102,49 @@ def get_breakdowns(solution):
         if lt.any_nonpositive_cs:
             continue  # no signomials
         freegt_vks = get_free_vks(gt, solution)
-        if len(freegt_vks) != 1:
-            continue  # not a breakdown constraint
-        brokendownvk, = freegt_vks
-        if gt.exp[brokendownvk] < 0:
-            if constraint.oper == "=" or len(lt.hmap) != 1:
+        if len(freegt_vks) < 1:
+            freegt_vks = gt.vks
+        if len(freegt_vks) > 1:
+            consistent_lt_pows = defaultdict(set)
+            for exp in lt.hmap:
+                for vk, pow in exp.items():
+                    consistent_lt_pows[vk].add(pow)
+            for vk, pows in consistent_lt_pows.items():
+                if len(pows) == 1:
+                    pow, = pows
+                    hmap = NomialMap({HashVector({vk: 1}): 1.0})
+                    hmap.units = vk.units
+                    var = Monomial(hmap)**pow
+                    lt, gt = lt/var, gt/var
+                    lt.ast = gt.ast = None
+            sortedgtvks = sorted(gt.vks, key=lambda vk: (-round(solution["sensitivities"]["variablerisk"].get(vk, 0), 2), str(vk)))
+            skip = set(breakdowns)
+            freegt_vks = []
+            for vk in sortedgtvks:
+                if vk in skip:
+                    skip.update(beatout[vk])
+                freegt_vks.append(vk)
+                break
+            if not freegt_vks:
                 continue
-            # We can try flipping gt/lt to make a breakdown.
-            freelt_vks = get_free_vks(lt, solution)
-            if len(lt.hmap) != 1 or len(freelt_vks) != 1:
-                continue
-            brokendownvk, = freelt_vks
-            if lt.exp[brokendownvk] > 0:
-                continue  # not a breakdown constraint after transformation
-            gt, lt = 1/lt, 1/gt
-        breakdowns[brokendownvk].append((lt, gt, constraint))
+            else:
+                beatout[freegt_vks[0]].update(gt.vks)
+                freegt_vks = {freegt_vks[0]}
+            for vk in gt.vks:
+                if vk not in freegt_vks:
+                    hmap = NomialMap({HashVector({vk: 1}): 1.0})
+                    hmap.units = vk.units
+                    var = Monomial(hmap)**gt.exp[vk]
+                    lt, gt = lt/var, gt/var
+                    lt.ast = gt.ast = None
+        if len(freegt_vks) == 1:
+            brokendownvk, = freegt_vks
+            breakdowns[brokendownvk].append((lt, gt, constraint))
     breakdowns = dict(breakdowns)  # remove the defaultdict-ness
-    for key, bds in breakdowns.items():
-        # TODO: do multiple if sensitivities are quite close? right now we have to break ties!
-        if len(bds) > 1:
-            bds.sort(key=lambda lgc: (abs(solution["sensitivities"]["constraints"][lgc[2]]), str(lgc[0])), reverse=True)
+    # for key, bds in breakdowns.items():
+    #     # TODO: do multiple if sensitivities are quite close? right now we have to break ties!
+    #     if len(bds) > 1:
+    #         bds.sort(key=lambda lgc: (abs(solution["sensitivities"]["constraints"][lgc[2]]), str(lgc[0])), reverse=True)
 
     prevlen = None
     while len(BASICALLY_FIXED_VARIABLES) != prevlen:
@@ -177,7 +201,12 @@ def crawl(key, bd, solution, basescale=1, permissivity=2, verbosity=0,
     if keymon is None:
         scale = solution(key)/basescale
     else:
-        free_vks = get_free_vks(keymon, solution)
+        if len(keymon.vks) == 1:  # constant
+            free_vks = keymon.vks
+        else:
+            free_vks = get_free_vks(keymon, solution)
+        # if len(free_vks) != 1:
+        #     free_vks = {sorted(keymon.vks, key=lambda vk: (-round(solution["sensitivities"]["variablerisk"].get(vk, 0), 2), str(vk)))[0]}
         subkey, = free_vks
         power = keymon.exp[subkey]
         fixed_vks = set(keymon.vks) - free_vks
@@ -191,7 +220,13 @@ def crawl(key, bd, solution, basescale=1, permissivity=2, verbosity=0,
                 if vk.units:
                     units *= vk.units**keymon.exp[vk]
             subhmap = NomialMap({exp: 1})
-            subhmap.units = None if units == 1 else units
+            try:
+                subhmap.units = None if units == 1 else units
+            except DimensionalityError:
+                # pints was unable to divide a unit by itself bc
+                #   it has terrible floating-point errors.
+                #   so let's assume it isn't dimensionless
+                subhmap.units = units
             freemon = Monomial(subhmap)
             factor = Monomial(keymon/freemon)
             scale = scale * solution(factor)
@@ -233,25 +268,39 @@ def crawl(key, bd, solution, basescale=1, permissivity=2, verbosity=0,
         subtree = orig_subtree  # revert back to the original subtree
 
         # time for some filtering
-        free_vks = get_free_vks(mon, solution)
-        basically_fixed_vks = {vk for vk in free_vks
-                               if vk in BASICALLY_FIXED_VARIABLES}
-        if free_vks - basically_fixed_vks:  # don't remove the last one
-            free_vks = free_vks - basically_fixed_vks
+        free_vks = mon.vks
 
         if scaledmonval > 1 - permissivity:
             unbreakdownable_vks = {vk for vk in free_vks if vk not in bd}
             if free_vks - unbreakdownable_vks:  # don't remove the last one
                 free_vks = free_vks - unbreakdownable_vks
 
+        fixed_vks = mon.vks - get_free_vks(mon, solution)
+        if free_vks - fixed_vks:  # don't remove the last one
+            free_vks = free_vks - fixed_vks
+
+        basically_fixed_vks = {vk for vk in free_vks
+                               if vk in BASICALLY_FIXED_VARIABLES}
+        if free_vks - basically_fixed_vks:  # don't remove the last one
+            free_vks = free_vks - basically_fixed_vks
+
+        # if scaledmonval > 1 - permissivity:
+        #     unbreakdownable_vks = {vk for vk in free_vks if vk not in bd}
+        #     if free_vks - unbreakdownable_vks:  # don't remove the last one
+        #         free_vks = free_vks - unbreakdownable_vks
+
         if len(free_vks) > 1 and permissivity > 1:
             best_vks = sorted((vk for vk in free_vks if vk in bd),
                 key=lambda vk:
-                    # TODO: should really use nus...
+                    # TODO: without exp: "most strongly broken-down component"
+                    #       but it could use nus (or v_ss) to say
+                    #       "breakdown which the solution is most sensitive to"
+                    #  ...right now it's in-between
                     (abs(mon.exp[vk]*solution["sensitivities"]["constraints"][bd[vk][0][2]]),
                      str(bd[vk][0][0])), reverse=True)
             if best_vks:
                 free_vks = set([best_vks[0]])
+
         fixed_vks = mon.vks - free_vks
 
         if len(free_vks) == 1:
@@ -262,6 +311,9 @@ def crawl(key, bd, solution, basescale=1, permissivity=2, verbosity=0,
         else:
             subkey = None
             power = 1
+            if scaledmonval > 1 - permissivity and not fixed_vks:
+                fixed_vks = free_vks
+                free_vks = set()
             if not free_vks:
                 # prioritize showing some fixed_vks as if they were "free"
                 if len(fixed_vks) == 1:
@@ -347,38 +399,13 @@ def crawl(key, bd, solution, basescale=1, permissivity=2, verbosity=0,
                 subtree.append(subsubtree)
                 continue
             except Exception as e:
-                print(repr(e))
+                print(subkey, e)
 
         if verbosity:
             keyvalstr = "%s (%s)" % (mon.str_without(["lineage", "units"]),
                                      get_valstr(mon, solution))
             print("  "*indent + keyvalstr)
         subtree.append(Tree(mon, scaledmonval, []))
-    # clean up node combination - use a dictionary at the subtree level?
-    # ftidxs = defaultdict(list)
-    # for i, node in enumerate(orig_subtree):
-    #     if isinstance(node.key, Transform):
-    #         ftidxs[(node.key.factor, node.key.power)].append(i)
-    # to_delete = []
-    # to_insert = []
-    # for idxs in ftidxs.values():
-    #     if len(idxs) > 1:
-    #         valsum = 0
-    #         newbranches = []
-    #         new_origkeys = []
-    #         for idx in idxs:
-    #             key, val, subbranches = orig_subtree[idx]
-    #             valsum += val
-    #             new_origkeys.append((key.origkey, val))
-    #             newbranches.extend(subbranches)
-    #         to_delete.extend(idxs)
-    #         newkey = Transform(key.factor, key.power, tuple(new_origkeys))
-    #         to_insert.append(Tree(newkey, valsum, newbranches))
-    # for idx in sorted(to_delete, reverse=True): # high to low
-    #     orig_subtree.pop(idx)
-    # if to_insert:
-    #     orig_subtree.extend(to_insert)
-    #     orig_subtree.sort(reverse=True, key=lambda branch: branch.value)
     return tree
 
 SYMBOLS = string.ascii_uppercase + string.ascii_lowercase
@@ -419,7 +446,7 @@ def get_spanstr(legend, length, label, leftwards, solution):
         # HACK: no corners on rightwards - only used for depth 0
         return "┃"*(longside+1) + shortname + "┃"*(shortside+1)
 
-def layer(map, tree, extent, maxdepth, solution, depth=0, compress=False, justsplit=True):
+def layer(map, tree, extent, maxdepth, solution, depth=0, compress=False, justsplit=True, prevpower=True):
     "Turns the tree into a 2D-array"
     key, val, branches = tree
     if len(map) <= depth:
@@ -480,27 +507,34 @@ def layer(map, tree, extent, maxdepth, solution, depth=0, compress=False, justsp
         map[depth].append((key, extent))
     else:
         if isinstance(key, Transform) and key.power != 1:
-            map[depth].append((key, extent))
+            if prevpower == extent:
+                depth -= 1
+            else:
+                map[depth].append((key, extent))
+                prevpower = extent
         elif len([ext for ext in extents if ext]) != 1:  # splitting
             if isinstance(key, Transform):
                 depth -= 1
             else:
                 map[depth].append((key, extent))
+                prevpower = False
             justsplit = True
         elif branches[0].key is None:
             map[depth].append((key, extent))
+            prevpower = False
             justsplit = False
         elif justsplit and not isinstance(key, Transform):
             if depth and get_valstr(branches[0].key, solution) == get_valstr(key, solution):
                 depth -= 1
             else:
                 map[depth].append((key, extent))
+                prevpower = False
                 justsplit = False
         else:  # don't show at all
             depth -= 1
     for branch, subextent in zip(branches, extents):
         if subextent:
-            layer(map, branch, subextent, maxdepth, solution, depth+1, compress, justsplit)
+            layer(map, branch, subextent, maxdepth, solution, depth+1, compress, justsplit, prevpower)
     return map
 
 def plumb(tree, depth=0):
@@ -619,19 +653,22 @@ def graph(tree, solution, extent=None, maxdepth=None, collapse=False, maxwidth=1
     # Rotate and print
     toowiderows = []
     rows = chararray.T.tolist()
-    for i, orig_row in enumerate(rows):
-        depth_occluded = -1
-        width = None
-        row = orig_row.copy()
-        row.append("")
-        while width is None or width > maxwidth:
-            row = row[:-1]
-            rowstr = "    " + "".join(row).rstrip()
-            width = len(rowstr)
-            depth_occluded += 1
-        if depth_occluded:
-            strdepth = len("    " + "".join(orig_row[:-depth_occluded]))
-            toowiderows.append((strdepth, i))
+    if not collapse:
+        for i, orig_row in enumerate(rows):
+            depth_occluded = -1
+            width = None
+            row = orig_row.copy()
+            row.append("")
+            while width is None or width > maxwidth:
+                row = row[:-1]
+                rowstr = "    " + "".join(row).rstrip()
+                width = len(rowstr)
+                depth_occluded += 1
+            if depth_occluded:
+                previous_is_pow = orig_row[-depth_occluded-1] == "^"
+                if abs(depth_occluded) + 1 + previous_is_pow < len(orig_row):
+                    strdepth = len("    " + "".join(orig_row[:-depth_occluded]))
+                    toowiderows.append((strdepth, i))
     rowstrs = ["    " + "".join(row).rstrip() for row in rows]
     for depth_occluded, i in sorted(toowiderows, reverse=True):
         if len(rowstrs[i]) <= depth_occluded:
@@ -703,9 +740,8 @@ def get_keystr(key, solution):
         out = "[%i terms]" % len(key)
     else:
         out = str(key)
-    # TODO: use fixedfactors to drop below 50
-    if len(out) > 120:
-        out = out[:120]+"…"
+    if len(out) > 67:
+        out = out[:66]+"…"
     return out
 
 def get_valstr(key, solution, into="%s"):
@@ -743,7 +779,7 @@ ureg.define("trip = 1")
 
 print("STARTING...")
 
-sol = pickle.load(open("bd.p", "rb"))
+sol = pickle.load(open("solar.p", "rb"))
 
 bd = get_breakdowns(sol)
 
@@ -754,12 +790,35 @@ from gpkit.tests.helpers import StdoutCaptured
 
 import difflib
 
-# key, = [vk for vk in bd if "numberofpodsinnetwork[0]" in str(vk)]
+tree = crawl(sol.costposy, bd, sol, permissivity=2, verbosity=0)
+graph(tree, sol)
+# BELOW WOULD BE THE THIRD
+# key, = [vk for vk in bd if "totalcapex[0]" in str(vk)]
 # tree = crawl(key, bd, sol, permissivity=2, verbosity=0)
-# graph(tree, sol, maxwidth=170)
-# print(" "*169 + "|")
 # graph(tree, sol)
-#
+# BELOW WOULD BE THE SIXTH
+# key, = [vk for vk in bd if "costofmaintenance[0]" in str(vk)]
+# tree = crawl(key, bd, sol, permissivity=2, verbosity=0)
+# graph(tree, sol)
+
+# key, = [vk for vk in bd if "nominalguidancesystempower" == vk.name]
+# tree = crawl(key, bd, sol, permissivity=2, verbosity=1)
+# graph(tree, sol)
+
+# key, = [vk for vk in bd if "cruisevelocity" == vk.name]
+# tree = crawl(key, bd, sol, permissivity=2, verbosity=1)
+# graph(tree, sol)
+# BELOW WOULD BE THE FOURTH
+# key, = [vk for vk in bd if "hvbatterystringmass" in str(vk)]
+# tree = crawl(key, bd, sol, permissivity=2, verbosity=0)
+# graph(tree, sol)
+# BELOW WOULD BE THE FIFTH
+# key, = [vk for vk in bd if "fuselagemass" in str(vk)]
+# tree = crawl(key, bd, sol, permissivity=2, verbosity=0)
+# graph(tree, sol)
+
+
+
 # print("\n\nPERMISSIVITY = 0")
 # tree = crawl(sol.costposy, bd, sol, permissivity=0)
 # graph(tree, sol, maxwidth=170)
@@ -776,10 +835,23 @@ import difflib
 # tree = crawl(sol.costposy, bd, sol, permissivity=2)
 # graph(tree, sol, maxwidth=170)
 
-keys = sorted((key for key in bd.keys() if not key.idx or len(key.shape) == 1),
+keys = sorted((key for key in bd.keys()),
               key=lambda k: str(k))
 
 permissivity = 2
+
+with StdoutCaptured("solarbreakdowns.log"):
+    graph(mtree, sol, collapse=False)
+    graph(mtree, sol, collapse=True)
+    tree = crawl(sol.costposy, bd, sol, permissivity=permissivity)
+    graph(tree, sol)
+    for key in keys:
+        tree = crawl(key, bd, sol, permissivity=permissivity)
+        graph(tree, sol)
+
+
+keys = sorted((key for key in bd.keys() if not key.idx or len(key.shape) == 1),
+              key=lambda k: str(k))
 
 # with StdoutCaptured("breakdowns.log"):
 #     graph(mtree, sol, collapse=False)
@@ -791,25 +863,25 @@ permissivity = 2
 #         tree = crawl(key, bd, sol, permissivity=permissivity)
 #         graph(tree, sol)
 
-with StdoutCaptured("breakdowns.log.new"):
-    graph(mtree, sol, collapse=False)
-    graph(mtree.branches[0].branches[1], sol, collapse=False)
-    graph(mtree, sol, collapse=True)
-    tree = crawl(sol.costposy, bd, sol, permissivity=permissivity)
-    graph(tree, sol)
-    for key in keys:
-        tree = crawl(key, bd, sol, permissivity=permissivity)
-        graph(tree, sol)
-
-with open("breakdowns.log", "r") as original:
-    with open("breakdowns.log.new", "r") as new:
-        diff = difflib.unified_diff(
-            original.readlines(),
-            new.readlines(),
-            fromfile="original",
-            tofile="new",
-        )
-        for line in diff:
-            print(line[:-1])
+# with StdoutCaptured("breakdowns.log.new"):
+#     graph(mtree, sol, collapse=False)
+#     graph(mtree.branches[0].branches[1], sol, collapse=False)
+#     graph(mtree, sol, collapse=True)
+#     tree = crawl(sol.costposy, bd, sol, permissivity=permissivity)
+#     graph(tree, sol)
+#     for key in keys:
+#         tree = crawl(key, bd, sol, permissivity=permissivity)
+#         graph(tree, sol)
+#
+# with open("breakdowns.log", "r") as original:
+#     with open("breakdowns.log.new", "r") as new:
+#         diff = difflib.unified_diff(
+#             original.readlines(),
+#             new.readlines(),
+#             fromfile="original",
+#             tofile="new",
+#         )
+#         for line in diff:
+#             print(line[:-1])
 
 print("DONE")

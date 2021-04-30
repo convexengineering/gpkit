@@ -337,12 +337,14 @@ class GeometricProgram:
                                                          self.cost.hmap))
         gpv_ss = cost_senss.copy()
         m_senss = defaultdict(float)
+        absv_ss = {vk: abs(x) for vk, x in cost_senss.items()}
         for las, nus, c in zip(la[1:], self.nu_by_posy[1:], self.hmaps[1:]):
             while getattr(c, "parent", None) is not None:
                 c = c.parent
             v_ss, c_senss = c.sens_from_dual(las, nus, result)
             for vk, x in v_ss.items():
                 gpv_ss[vk] = x + gpv_ss.get(vk, 0)
+                absv_ss[vk] = abs(x) + absv_ss.get(vk, 0)
             while getattr(c, "generated_by", None):
                 c = c.generated_by
             result["sensitivities"]["constraints"][c] = c_senss
@@ -351,12 +353,14 @@ class GeometricProgram:
         # carry linked sensitivities over to their constants
         for v in list(v for v in gpv_ss if v.gradients):
             dlogcost_dlogv = gpv_ss.pop(v)
+            dlogcost_dlogvtw = absv_ss.pop(v)
             val = np.array(result["constants"][v])
             for c, dv_dc in v.gradients.items():
                 with warnings.catch_warnings():  # skip pesky divide-by-zeros
                     warnings.simplefilter("ignore")
                     dlogv_dlogc = dv_dc * result["constants"][c]/val
                     gpv_ss[c] = gpv_ss.get(c, 0) + dlogcost_dlogv*dlogv_dlogc
+                    absv_ss[c] = absv_ss.get(c, 0) + abs(dlogcost_dlogvtw*dlogv_dlogc)
                 if v in cost_senss:
                     if c in self.cost.vks:  # TODO: seems unnecessary
                         dlogcost_dlogv = cost_senss.pop(v)
@@ -367,6 +371,7 @@ class GeometricProgram:
             m_senss[lineagestr(vk)] += abs(senss)
         result["sensitivities"]["cost"] = cost_senss
         result["sensitivities"]["variables"] = KeyDict(gpv_ss)
+        result["sensitivities"]["variablerisk"] = KeyDict(absv_ss)
         result["sensitivities"]["constants"] = \
             result["sensitivities"]["variables"]  # NOTE: backwards compat.
         return SolutionArray(result)
