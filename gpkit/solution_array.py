@@ -63,7 +63,7 @@ def msenss_table(data, _, **kwargs):
     if "models" not in data.get("sensitivities", {}):
         return ""
     data = sorted(data["sensitivities"]["models"].items(),
-                  key=lambda i: (-round(np.mean(i[1]), 1), i[0]))
+                  key=lambda i: (-round(np.mean(i[1]), 4), i[0]))
     lines = ["Model Sensitivities", "-------------------"]
     if kwargs["sortmodelsbysenss"]:
         lines[0] += " (sorts models in sections below)"
@@ -74,7 +74,7 @@ def msenss_table(data, _, **kwargs):
         if (msenss < 0.1).all():
             msenss = np.max(msenss)
             if msenss:
-                msenssstr = "%6s" % ("<1e%i" % np.log10(msenss))
+                msenssstr = "%6s" % ("<1e%i" % max(-3, np.log10(msenss)))
             else:
                 msenssstr = "  =0  "
         elif not msenss.shape:
@@ -803,7 +803,7 @@ def var_table(data, title, *, printunits=True, latex=False, rawlines=False,
         if not sortmodelsbysenss:
             msenss = 0
         else:  # sort should match that in msenss_table above
-            msenss = -round(np.mean(sortmodelsbysenss.get(model, 0)), 1)
+            msenss = -round(np.mean(sortmodelsbysenss.get(model, 0)), 4)
         models.add(model)
         b = bool(getattr(v, "shape", None))
         s = k.str_without(("lineage", "vec"))
