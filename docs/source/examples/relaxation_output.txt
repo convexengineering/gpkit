@@ -128,12 +128,12 @@ Constraints
   "relaxation constraints":
     "x_max":
       Relax2.x_max ≥ 1
-      x_max ≥ Relax2.OriginalValues.x_max/Relax2.x_max
-      x_max ≤ Relax2.OriginalValues.x_max·Relax2.x_max
+      x_max ≥ OriginalValues.x_max/Relax2.x_max
+      x_max ≤ OriginalValues.x_max·Relax2.x_max
     "x_min":
       Relax2.x_min ≥ 1
-      x_min ≥ Relax2.OriginalValues.x_min/Relax2.x_min
-      x_min ≤ Relax2.OriginalValues.x_min·Relax2.x_min
+      x_min ≥ OriginalValues.x_min/Relax2.x_min
+      x_min ≤ OriginalValues.x_min·Relax2.x_min
 
 Optimal Cost
 ------------
@@ -171,8 +171,8 @@ x_max : -0.99
 Most Sensitive Constraints
 --------------------------
     +1 : x ≥ x_min
-    +1 : x_min ≥ Relax2.OriginalValues.x_min/Relax2.x_min
+    +1 : x_min ≥ OriginalValues.x_min/Relax2.x_min
  +0.99 : x ≤ x_max
- +0.99 : x_max ≤ Relax2.OriginalValues.x_max·Relax2.x_max
+ +0.99 : x_max ≤ OriginalValues.x_max·Relax2.x_max
 
 

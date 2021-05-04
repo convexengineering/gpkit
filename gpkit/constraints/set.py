@@ -200,13 +200,39 @@ class ConstraintSet(list, ReprMixin):
                 " and %i variable(s)>" % (self.__class__.__name__,
                                           len(self), len(self.varkeys)))
 
-    def name_collision_varkeys(self):
+    def set_necessarylineage(self, clear=False):
         "Returns the set of contained varkeys whose names are not unique"
         if self._name_collision_varkeys is None:
-            self._name_collision_varkeys = {
-                key for key in self.varkeys
-                if len(self.varkeys[key.str_without(["lineage", "vec"])]) > 1}
-        return self._name_collision_varkeys
+            self._name_collision_varkeys = {}
+            name_collisions = defaultdict(set)
+            for key in self.varkeys:
+                shortname = key.str_without(["lineage", "vec"])
+                if len(self.varkeys[shortname]) > 1:
+                    name_collisions[shortname].add(key)
+            for vks in name_collisions.values():
+                min_namespaced = defaultdict(set)
+                for vk in vks:
+                    *_, mineage = vk.lineagestr().split(".")
+                    min_namespaced[(mineage, 1)].add(vk)
+                while any(len(vks) > 1 for vks in min_namespaced.values()):
+                    for key, vks in list(min_namespaced.items()):
+                        if len(vks) > 1:
+                            del min_namespaced[key]
+                            mineage, idx = key
+                            idx += 1
+                            for vk in vks:
+                                lineages = vk.lineagestr().split(".")
+                                submineage = lineages[-idx] + "." + mineage
+                                min_namespaced[(submineage, idx)].add(vk)
+                for (_, idx), vks in min_namespaced.items():
+                    vk, = vks
+                    self._name_collision_varkeys[vk] = idx
+        if clear:
+            for vk in self._name_collision_varkeys:
+                del vk.descr["necessarylineage"]
+        else:
+            for vk, idx in self._name_collision_varkeys.items():
+                vk.descr["necessarylineage"] = idx
 
     def lines_without(self, excluded):
         "Lines representation of a ConstraintSet."
@@ -215,16 +241,14 @@ class ConstraintSet(list, ReprMixin):
         if root:
             excluded = excluded.union(["root"])
             if "unnecessary lineage" in excluded:
-                for key in self.name_collision_varkeys():
-                    key.descr["necessarylineage"] = True
+                self.set_necessarylineage()
             if hasattr(self, "_rootlines"):
                 rootlines = self._rootlines(excluded)  # pylint: disable=no-member
         lines = recursively_line(self, excluded)
         indent = " " if getattr(self, "lineage", None) else ""
         if root and "unnecessary lineage" in excluded:
             indent += " "
-            for key in self.name_collision_varkeys():
-                del key.descr["necessarylineage"]
+            self.set_necessarylineage(clear=True)
         return rootlines + [(indent+line).rstrip() for line in lines]
 
     def str_without(self, excluded=("unnecessary lineage", "units")):

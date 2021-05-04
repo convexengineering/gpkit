@@ -153,8 +153,7 @@ class Sankey:
         self.maxlinks = maxlinks
         self.showconstraints = showconstraints
 
-        for key in self.solution.name_collision_varkeys():
-            key.descr["necessarylineage"] = True
+        self.solution.set_necessarylineage()
 
         if variable:
             if not varlabel:
@@ -191,8 +190,7 @@ class Sankey:
         out.on_node_clicked(self.onclick)
         out.on_link_clicked(self.onclick)
 
-        for key in self.solution.name_collision_varkeys():
-            del key.descr["necessarylineage"]
+        self.solution.set_necessarylineage(clear=True)
         return out
 
     def _links_and_nodes(self, top_node=None):

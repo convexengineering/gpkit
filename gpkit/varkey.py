@@ -63,10 +63,28 @@ class VarKey(ReprMixin):  # pylint:disable=too-many-instance-attributes
     def str_without(self, excluded=()):
         "Returns string without certain fields (such as 'lineage')."
         name = self.name
-        if ("lineage" not in excluded and self.lineage
-                and ("unnecessary lineage" not in excluded
-                     or self.necessarylineage)):
-            name = self.lineagestr("modelnums" not in excluded) + "." + name
+        if "lineage" not in excluded and self.lineage:
+            namespace = self.lineagestr("modelnums" not in excluded).split(".")
+            backscan = 0
+            for ex in excluded:
+                if ex[0:7] == ":MAGIC:":
+                    to_replace = ex[7:].split(".")
+                    replaced = 0
+                    for modelname in to_replace:
+                        if not namespace or namespace[0] != modelname:
+                            break
+                        replaced += 1
+                        namespace = namespace[1:]
+                    if len(to_replace) > replaced:
+                        namespace.insert(0, "."*(len(to_replace)-replaced))
+                        backscan = replaced - 1
+            if "unnecessary lineage" in excluded:
+                if self.necessarylineage:
+                    namespace = namespace[-self.necessarylineage:]
+                else:
+                    namespace = None
+            if namespace:
+                name = ".".join(namespace) + "." + name
         if "idx" not in excluded:
             if self.idx:
                 name += "[%s]" % ",".join(map(str, self.idx))

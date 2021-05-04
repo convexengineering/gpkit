@@ -7,6 +7,7 @@ import pickle
 import gzip
 import pickletools
 import numpy as np
+from collections import defaultdict
 from .nomials import NomialArray
 from .small_classes import DictOfLists, Strings
 from .small_scripts import mag, try_str_without
@@ -181,7 +182,7 @@ def constraint_table(data, title, sortbymodel=True, showmodels=True, **_):
         model = lineagestr(constraint) if sortbymodel else ""
         if model not in models:
             models[model] = len(models)
-        constrstr = try_str_without(constraint, excluded)
+        constrstr = try_str_without(constraint, excluded + (":MAGIC:"+constraint.lineagestr(),))
         if " at 0x" in constrstr:  # don't print memory addresses
             constrstr = constrstr[:constrstr.find(" at 0x")] + ">"
         decorated.append((models[model], model, sortby, constrstr, openingstr))
@@ -195,7 +196,7 @@ def constraint_table(data, title, sortbymodel=True, showmodels=True, **_):
             if model or lines:
                 lines.append([("newmodelline",), model])
             previous_model = model
-        constrstr = constrstr.replace(model, "")
+        # constrstr = constrstr.replace(model, "")
         minlen, maxlen = 25, 80
         segments = [s for s in CONSTRSPLITPATTERN.split(constrstr) if s]
         constraintlines = []
@@ -349,17 +350,42 @@ class SolutionArray(DictOfLists):
                     "constants": "Fixed Variables",  # TODO: change everywhere
                     "variables": "Variables"}
 
-    def name_collision_varkeys(self):
+    def set_necessarylineage(self, clear=False):
         "Returns the set of contained varkeys whose names are not unique"
         if self._name_collision_varkeys is None:
+            self._name_collision_varkeys = {}
             self["variables"].update_keymap()
             keymap = self["variables"].keymap
-            self._name_collision_varkeys = set()
+            name_collisions = defaultdict(set)
             for key in list(keymap):
                 if hasattr(key, "key"):
-                    if len(keymap[key.str_without(["lineage", "vec"])]) > 1:
-                        self._name_collision_varkeys.add(key)
-        return self._name_collision_varkeys
+                    shortname = key.str_without(["lineage", "vec"])
+                    if len(keymap[shortname]) > 1:
+                        name_collisions[shortname].add(key)
+            for vks in name_collisions.values():
+                min_namespaced = defaultdict(set)
+                for vk in vks:
+                    *_, mineage = vk.lineagestr().split(".")
+                    min_namespaced[(mineage, 1)].add(vk)
+                while any(len(vks) > 1 for vks in min_namespaced.values()):
+                    for key, vks in list(min_namespaced.items()):
+                        if len(vks) > 1:
+                            del min_namespaced[key]
+                            mineage, idx = key
+                            idx += 1
+                            for vk in vks:
+                                lineages = vk.lineagestr().split(".")
+                                submineage = lineages[-idx] + "." + mineage
+                                min_namespaced[(submineage, idx)].add(vk)
+                for (_, idx), vks in min_namespaced.items():
+                    vk, = vks
+                    self._name_collision_varkeys[vk] = idx
+        if clear:
+            for vk in self._name_collision_varkeys:
+                del vk.descr["necessarylineage"]
+        else:
+            for vk, idx in self._name_collision_varkeys.items():
+                vk.descr["necessarylineage"] = idx
 
     def __len__(self):
         try:
@@ -521,14 +547,12 @@ class SolutionArray(DictOfLists):
         "Returns list of variables, optionally with minimal unique names"
         if showvars:
             showvars = self._parse_showvars(showvars)
-        for key in self.name_collision_varkeys():
-            key.descr["necessarylineage"] = True
+        self.set_necessarylineage()
         names = {}
         for key in showvars or self["variables"]:
             for k in self["variables"].keymap[key]:
                 names[k.str_without(exclude)] = k
-        for key in self.name_collision_varkeys():
-            del key.descr["necessarylineage"]
+        self.set_necessarylineage(clear=True)
         return names
 
     def savemat(self, filename="solution.mat", *, showvars=None,
@@ -699,8 +723,7 @@ class SolutionArray(DictOfLists):
                 break
         if has_only_one_model:
             kwargs["sortbymodel"] = False
-        for key in self.name_collision_varkeys():
-            key.descr["necessarylineage"] = True
+        self.set_necessarylineage()
         showvars = self._parse_showvars(showvars)
         strs = []
         for table in tables:
@@ -735,8 +758,7 @@ class SolutionArray(DictOfLists):
                                   "% \\usepackage{amsmath}",
                                   "% \\begin{document}\n"))
             strs = [preamble] + strs + ["% \\end{document}"]
-        for key in self.name_collision_varkeys():
-            del key.descr["necessarylineage"]
+        self.set_necessarylineage(clear=True)
         return "\n".join(strs)
 
     def plot(self, posys=None, axes=None):

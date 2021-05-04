@@ -24,13 +24,13 @@ Constraints
     (no constraints)
 
  Aircraft
-  Aircraft.W ≥ Aircraft.Fuselage.W + Aircraft.Wing.W
+  Aircraft.W ≥ Fuselage.W + Wing.W
   Fuselage
    (no constraints)
 
   Wing
    c = (S/A)^0.5
-   Aircraft.Wing.W ≥ S·Aircraft.Wing.rho
+   Wing.W ≥ S·Wing.rho
 
 Optimal Cost
 ------------
@@ -74,7 +74,7 @@ rho : [ -0.12     -0.11     -0.11     -0.11    ] air density
 Most Sensitive Constraints
 --------------------------
        | Aircraft
-  +1.4 : .W ≥ .Fuselage.W + .Wing.W
+  +1.4 : W ≥ Fuselage.W + Wing.W
 
        | Mission
     +1 : Wfuel[0] ≥ Wfuel[1] + Wburn[0]
@@ -82,7 +82,7 @@ Most Sensitive Constraints
   +0.5 : Wfuel[2] ≥ Wfuel[3] + Wburn[2]
 
        | Aircraft.Wing
- +0.43 : .W ≥ S·.rho
+ +0.43 : W ≥ S·rho
 
 Insensitive Constraints |below +1e-05|
 --------------------------------------
@@ -97,7 +97,7 @@ Constraint Differences
 @@ -31,3 +31,4 @@
    Wing
     c = (S/A)^0.5
-    Aircraft.Wing.W ≥ S·Aircraft.Wing.rho
+    Wing.W ≥ S·Wing.rho
 + Wburn[:] ≥ 0.2·D[:]
 
 **********************
