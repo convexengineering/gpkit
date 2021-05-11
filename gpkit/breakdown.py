@@ -1,3 +1,7 @@
+# TODO: ...some sort of vertical simplification implemented at the tree level
+# put the relevant constraint at the top of each section of the receipt..
+# track the collapsed breakdown, one section per variable
+
 # pylint: skip-file
 import string
 from collections import defaultdict, namedtuple
@@ -11,8 +15,12 @@ from gpkit.varkey import VarKey
 import numpy as np
 
 
-Transform = namedtuple("Transform", ["factor", "power", "origkey"])
 Tree = namedtuple("Tree", ["key", "value", "branches"])
+Transform = namedtuple("Transform", ["factor", "power", "origkey"])
+def is_factor(key):
+    return (isinstance(key, Transform) and key.power == 1)
+def is_power(key):
+    return (isinstance(key, Transform) and key.power != 1)
 
 def get_free_vks(posy, solution):
     "Returns all free vks of a given posynomial for a given solution"
@@ -185,7 +193,7 @@ def get_fixity(key, bd, solution, basically_fixed=set(), visited=set()):
             return
     basically_fixed.add(key)
 
-# @profile
+# @profile  # ~84% of total last check # TODO: remove
 def crawl(key, bd, solution, basescale=1, permissivity=2, verbosity=0,
           visited_bdkeys=None):
     "Returns the tree of breakdowns of key in bd, sorting by solution's values"
@@ -239,6 +247,7 @@ def crawl(key, bd, solution, basescale=1, permissivity=2, verbosity=0,
                 # pints was unable to divide a unit by itself bc
                 #   it has terrible floating-point errors.
                 #   so let's assume it isn't dimensionless
+                #   even though it probably is
                 subhmap.units = units
             freemon = Monomial(subhmap)
             factor = Monomial(keymon/freemon)
@@ -268,9 +277,9 @@ def crawl(key, bd, solution, basescale=1, permissivity=2, verbosity=0,
         indent += 1
 
     # TODO: use ast_parsing instead of chop?
-    monsols = [solution(mon) for mon in composition.chop()]
+    monsols = [solution(mon) for mon in composition.chop()]  # ~20% of total last check # TODO: remove
     parsed_monsols = [getattr(mon, "value", mon) for mon in monsols]
-    monvals = [float(mon/scale) for mon in parsed_monsols]
+    monvals = [float(mon/scale) for mon in parsed_monsols]   # ~10% of total last check # TODO: remove
     # sort by value, preserving order in case of value tie
     sortedmonvals = sorted(zip(monvals, range(len(monvals)),
                                composition.chop()), reverse=True)
@@ -310,7 +319,7 @@ def crawl(key, bd, solution, basescale=1, permissivity=2, verbosity=0,
                     #       "breakdown which the solution is most sensitive to"
                     #  ...right now it's in-between
                     (abs(mon.exp[vk]*solution["sensitivities"]["constraints"][bd[vk][0][2]]),
-                     str(bd[vk][0][0])), reverse=True)
+                     str(bd[vk][0][0])), reverse=True)   # ~5% of total last check # TODO: remove
             if best_vks:
                 free_vks = set([best_vks[0]])
 
@@ -380,7 +389,14 @@ def crawl(key, bd, solution, basescale=1, permissivity=2, verbosity=0,
                     if vk.units:
                         units *= vk.units**mon.exp[vk]
                 subhmap = NomialMap({exp: 1})
-                subhmap.units = None if units == 1 else units
+                try:
+                    subhmap.units = None if units == 1 else units
+                except DimensionalityError:
+                    # pints was unable to divide a unit by itself bc
+                    #   it has terrible floating-point errors.
+                    #   so let's assume it isn't dimensionless
+                    #   even though it probably is
+                    subhmap.units = units
                 factor = Monomial(subhmap)
                 if factor != 1:
                     factor.ast = None
@@ -408,13 +424,13 @@ def crawl(key, bd, solution, basescale=1, permissivity=2, verbosity=0,
                 and subkey in bd and scaledmonval > 0.01):
             if verbosity:
                 verbosity = indent + 1  # slight hack
-            # try:
-            subsubtree = crawl(subkey, bd, solution, scaledmonval,
-                               permissivity, verbosity, set(visited_bdkeys))
-            subtree.append(subsubtree)
-            continue
-            # except Exception as e:
-            #     print(subkey, e)
+            try:
+                subsubtree = crawl(subkey, bd, solution, scaledmonval,
+                                   permissivity, verbosity, set(visited_bdkeys))
+                subtree.append(subsubtree)
+                continue
+            except Exception as e:
+                print(subkey, e)
         if verbosity:
             keyvalstr = "%s (%s)" % (mon.str_without(["unnecessary lineage", "units"]),
                                      get_valstr(mon, solution))
@@ -430,16 +446,19 @@ for ambiguous_symbol in "lILT":
 
 def get_spanstr(legend, length, label, leftwards, solution):
     "Returns span visualization, collapsing labels to symbols"
+    if label is None:
+        return " "*length
     spacer, lend, rend = "│", "┯", "┷"
     if isinstance(label, Transform):
         spacer, lend, rend = "╎", "╤", "╧"
         if label.power != 1:
-            spacer, lend, rend = " ", "^", "^"
-        # remove origkey so they collide in the legends dictionary
+            spacer = " "
+            lend = rend  = "^" if label.power > 0 else "/"
+        # remove origkeys so they collide in the legends dictionary
         label = Transform(label.factor, label.power, None)
         # TODO: catch PI (or again could that come from AST parsing?)
-        if label.power == 1 and len(str(label.factor)) == 1:
-            legend[label] = str(label.factor)
+        # if label.power == 1 and len(str(label.factor)) == 1:
+        #     legend[label] = str(label.factor)
 
     if label not in legend:
         shortname = SYMBOLS[len(legend)]
@@ -459,20 +478,23 @@ def get_spanstr(legend, length, label, leftwards, solution):
     else:
         if length == 2:
             return shortname + rend
-        # HACK: no corners on rightwards - only used for depth 0
+        # HACK: no corners on long rightwards - only used for depth 0
         return "┃"*(longside+1) + shortname + "┃"*(shortside+1)
 
-def layer(map, tree, extent, maxdepth, solution, depth=0, compress=False, justsplit=True, prevpower=True):
-    "Turns the tree into a 2D-array"
+def simplify(tree, extent, collapse, depth=0, justsplit=True):
     key, val, branches = tree
-    if len(map) <= depth:
-        map.append([])
-    if depth > maxdepth and not isinstance(key, tuple):
-        map[depth].append((key, extent))
-        return map
-    scale = extent/val
+    if collapse:  # collapse Transforms with power 1
+        while any(is_factor(branch.key) for branch in branches):
+            newbranches = []
+            for branch in branches:
+                if is_factor(branch.key):
+                    newbranches.extend(branch.branches)
+                else:
+                    newbranches.append(branch)
+            branches = newbranches
 
-    extents = [round(scale*node.value) for node in branches]
+    scale = extent/val
+    extents = [round(scale*b.value) for b in branches]
     for i, branch in enumerate(branches):
         k, v, bs = branch
         if isinstance(k, Transform):
@@ -480,9 +502,8 @@ def layer(map, tree, extent, maxdepth, solution, depth=0, compress=False, justsp
             if not any(round(subscale*subv) for _, subv, _ in bs):
                 extents[i] = 0  # transform with no worthy heirs: misc it
 
-    if not any(extents) or (extent == 1 and not isinstance(key, Transform)):
-        branches = [Tree(None, val, [])]  # pad it out
-        extents = [extent]
+    if not any(extents):
+        return Tree(key, extent, [])
     elif not all(extents):  # create a catch-all
         branches = branches.copy()
         surplus = extent - sum(extents)
@@ -503,51 +524,66 @@ def layer(map, tree, extent, maxdepth, solution, depth=0, compress=False, justsp
         misckeys = tuple(k for _, _, k in sorted(miscvkeys))
         branches.append(Tree(misckeys, miscval, []))
 
-    extents = [int(round(scale*node.value)) for node in branches]
+    extents = [int(round(scale*b.value)) for b in branches]
     surplus = extent - sum(extents)
     if surplus:
         sign = int(np.sign(surplus))
-        bump_priority = sorted((extent, sign*node.value, i)
-                               for i, (node, extent)
+        bump_priority = sorted((ext, sign*b.value, i) for i, (b, ext)
                                in enumerate(zip(branches, extents)))
         while surplus:
             extents[bump_priority.pop()[-1]] += sign
             surplus -= sign
-    if not isinstance(key, Transform):
-        if len([ext for ext in extents if ext]) >= max(extent-1, 2) and depth:
-            # if we'd branch a lot (all ones but one, or at all if extent <= 3)
-            branches = [Tree(None, val, [])]
-            extents = [extent]
 
-    if not compress:
-        map[depth].append((key, extent))
-    else:
-        if isinstance(key, Transform):
-            if key.power != 1 and prevpower != extent:
-                map[depth].append((key, extent))
-                prevpower = extent
-            else:
-                depth -= 1
-                if len([ext for ext in extents if ext]) != 1:
-                    justsplit = True
-        elif len([ext for ext in extents if ext]) != 1:  # splitting
-            map[depth].append((key, extent))
-            prevpower = False
-            justsplit = True
-        elif branches[0].key is None:
-            map[depth].append((key, extent))
-            prevpower = False
-            justsplit = False
-        elif justsplit and not (depth and (get_valstr(branches[0].key, solution)
-                                           == get_valstr(key, solution))):
-            map[depth].append((key, extent))
-            prevpower = False
-            justsplit = False
-        else:  # don't show at all
-            depth -= 1
+    branchfactor = len([ext for ext in extents if ext]) - 1
+
+    if depth and not isinstance(key, Transform):
+        if extent == 1 or branchfactor >= max(extent-2, 1):
+            # if we'd branch too much, stop
+            return Tree(key, extent, [])
+        if collapse and not branchfactor and not justsplit:
+            # if we didn't just split, collapse the unbranched
+            return simplify(branches[0], extent, collapse,
+                            depth=depth+1, justsplit=False)
+
+    if branchfactor:
+        justsplit = True
+    elif not isinstance(key, Transform):  # pass through transforms
+        justsplit = False
+
+    tree = Tree(key, extent, [])
     for branch, subextent in zip(branches, extents):
         if subextent:
-            layer(map, branch, subextent, maxdepth, solution, depth+1, compress, justsplit, prevpower)
+            branch = simplify(branch, subextent, collapse,
+                              depth=depth+1, justsplit=justsplit)
+            if (collapse and is_power(branch.key)
+                    and all(is_power(b.key) for b in branch.branches)):
+                # collapse stacked powers
+                power = branch.key.power
+                for b in branch.branches:
+                    key = Transform(1, power*b.key.power, None)
+                    if key.power == 1:
+                        tree.branches.extend(b.branches)
+                    else:
+                        tree.branches.append(Tree(key, b.value, b.branches))
+            else:
+                tree.branches.append(branch)
+
+    return tree
+
+def layer(map, tree, maxdepth, depth=0):
+    "Turns the tree into a 2D-array"
+    key, extent, branches = tree
+    if not branches:
+        branches = [Tree(None, extent, [])]  # pad it out
+
+    if depth > maxdepth:
+        return map
+    if len(map) <= depth:
+        map.append([])
+    map[depth].append((key, extent))
+
+    for branch in branches:
+        layer(map, branch, maxdepth, depth+1)
     return map
 
 def plumb(tree, depth=0):
@@ -557,32 +593,31 @@ def plumb(tree, depth=0):
         maxdepth = max(maxdepth, plumb(branch, depth+1))
     return maxdepth
 
-# @profile
-def graph(tree, solution, extent=None, maxdepth=None, collapse=False, maxwidth=110):
+# @profile  # ~16% of total last check # TODO: remove
+def graph(tree, solution, extent=None, maxdepth=None, showlegend=False, maxwidth=110):
     "Prints breakdown"
     if maxdepth is None:
-        maxdepth = plumb(tree) - 1
-    if extent is None:  # autozoom in from 20
+        maxdepth = plumb(tree)
+    if extent is None:  # auto-zoom-in from 20
         prev_extent = None
         extent = 20
         while prev_extent != extent:
-            mt = layer([], tree, extent, maxdepth, solution, compress=(not collapse))
+            subtree = simplify(tree, extent, collapse=not showlegend)
+            # print(collapse, subtree)
+            mt = layer([], subtree, maxdepth)
             prev_extent = extent
-            extent = min(extent, 4*len(mt[-1]))
+            extent = min(extent, max(*(4*len(at_depth) for at_depth in mt)))
     else:
-        mt = layer([], tree, extent, maxdepth, solution, compress=(not collapse))
+        subtree = simplify(tree, extent, collapse=not showlegend)
+        mt = layer([], subtree, maxdepth)
     legend = {}
-    chararray = np.full((len(mt), extent), " ", "object")
+    chararray = np.full((len(mt), extent), "", "object")
     for depth, elements_at_depth in enumerate(mt):
         row = ""
         for i, (element, length) in enumerate(elements_at_depth):
-            if element is None:
-                row += " "*length
-                continue
             leftwards = depth > 0 and length > 2
             row += get_spanstr(legend, length, element, leftwards, solution)
-        if row.strip():
-            chararray[depth, :] = list(row)
+        chararray[depth, :] = list(row)
 
     solution.set_necessarylineage()
 
@@ -618,17 +653,19 @@ def graph(tree, solution, extent=None, maxdepth=None, collapse=False, maxwidth=1
                 chararray[depth, pos] = new_legend[key]
                 if isinstance(key, tuple) and not isinstance(key, Transform):
                     chararray[depth, pos] =  "*" + chararray[depth, pos]
-                if collapse:
+                if showlegend:
                     continue
             tryup, trydn = True, True
             span = 0
-            if not collapse and isinstance(key, Transform):
-                chararray[depth, pos] = "^"
+            if not showlegend and is_power(key):
+                chararray[depth, pos] = "^" if key.power > 0 else "/"
                 continue
 
             keystr = get_keystr(key, solution, prefix)
             valuestr = get_valstr(key, solution, into=" (%s)")
-            if not collapse:
+            if keystr in labeled:
+                valuestr = ""
+            if not showlegend:
                 fmt = "{0:<%s}" % max(len(keystr) + 3, len(valuestr) + 2)
             else:
                 fmt = "{0:<1}"
@@ -657,22 +694,22 @@ def graph(tree, solution, extent=None, maxdepth=None, collapse=False, maxwidth=1
                         else:
                             trydn = False
             #TODO: make submodels show up with this; bd should be an argument
-            if collapse and (key in bd or (hasattr(key, "vks") and key.vks and any(vk in bd for vk in key.vks))):
+            if showlegend and (key in bd or (hasattr(key, "vks") and key.vks and any(vk in bd for vk in key.vks))):
                 linkstr = "┣┉"
             else:
                 linkstr = "┣╸"
-            if not (isinstance(key, FixedScalar) or keystr in labeled):
+            if not isinstance(key, FixedScalar):
                 labeled.add(keystr)
-                if span > 1 and (not collapse or pos + 2 >= extent or chararray[depth, pos+1] == "┃"):
+                if span > 1 and (not showlegend or pos + 2 >= extent or chararray[depth, pos+1] == "┃"):
                     chararray[depth, pos+1] = fmt.format(chararray[depth, pos+1].rstrip() + valuestr)
-                elif collapse:
+                elif showlegend:
                     keystr += valuestr
             chararray[depth, pos] = fmt.format(linkstr + keystr)
 
     # Rotate and print
     toowiderows = []
     rows = chararray.T.tolist()
-    if not collapse:
+    if not showlegend:  # remove according to maxwidth
         for i, orig_row in enumerate(rows):
             depth_occluded = -1
             width = None
@@ -684,7 +721,7 @@ def graph(tree, solution, extent=None, maxdepth=None, collapse=False, maxwidth=1
                 width = len(rowstr)
                 depth_occluded += 1
             if depth_occluded:
-                previous_is_pow = orig_row[-depth_occluded-1] == "^"
+                previous_is_pow = orig_row[-depth_occluded-1] in "^/"
                 if abs(depth_occluded) + 1 + previous_is_pow < len(orig_row):
                     strdepth = len("    " + "".join(orig_row[:-depth_occluded]))
                     toowiderows.append((strdepth, i))
@@ -694,7 +731,7 @@ def graph(tree, solution, extent=None, maxdepth=None, collapse=False, maxwidth=1
             continue  # already occluded
         if "┣" == rowstrs[i][depth_occluded]:
             pow = 0
-            while rowstrs[i][depth_occluded-pow-1] == "^":
+            while rowstrs[i][depth_occluded-pow-1] in "^/":
                 pow += 1
             rowstrs[i] = rowstrs[i][:depth_occluded-pow]
             connected = "^┃┓┛┣╸"
@@ -704,7 +741,7 @@ def graph(tree, solution, extent=None, maxdepth=None, collapse=False, maxwidth=1
                        and len(rowstrs[idx]) > depth_occluded
                        and rowstrs[idx][depth_occluded]
                        and rowstrs[idx][depth_occluded] in connected):
-                    while rowstrs[idx][depth_occluded-pow-1] == "^":
+                    while rowstrs[idx][depth_occluded-pow-1] in "^/":
                         pow += 1
                     rowstrs[idx] = rowstrs[idx][:depth_occluded-pow]
                     idx += dir
@@ -714,8 +751,7 @@ def graph(tree, solution, extent=None, maxdepth=None, collapse=False, maxwidth=1
     print()
     legend = new_legend
 
-    # Create and print legend
-    if collapse:
+    if showlegend:  # create and print legend
         legend_lines = []
         for key, shortname in sorted(legend.items(), key=lambda kv: kv[1]):
             legend_lines.append(legend_entry(key, shortname, solution))
@@ -733,21 +769,19 @@ def legend_entry(key, shortname, solution):
     operator = note = ""
     keystr = valuestr = " "
     operator = "= " if shortname else "  + "
-    if isinstance(key, Transform):
-        if key.power == 1:
-            operator = " ×"
-            key = key.factor
-            free, quasifixed = False, False
-            if any(vk not in BASICALLY_FIXED_VARIABLES
-                   for vk in get_free_vks(key, solution)):
-                note = "  [free factor]"
-        else:
-            valuestr = "   ^%.3g" % key.power
-            key = None
-    if key is not None:
+    if is_factor(key):
+        operator = " ×"
+        key = key.factor
+        free, quasifixed = False, False
+        if any(vk not in BASICALLY_FIXED_VARIABLES
+               for vk in get_free_vks(key, solution)):
+            note = "  [free factor]"
+    if is_power(key):
+        valuestr = "   ^%.3g" % key.power
+    else:
+        valuestr = get_valstr(key, solution, into="  "+operator+"%s")
         if not isinstance(key, FixedScalar):
             keystr = get_keystr(key, solution)
-        valuestr = get_valstr(key, solution, into="  "+operator+"%s")
     return ["%-4s" % shortname, keystr, valuestr, note]
 
 def get_keystr(key, solution, prefix=""):
@@ -761,12 +795,12 @@ def get_keystr(key, solution, prefix=""):
         out = "[%i terms]" % len(key)
     else:
         out = str(key)
-    if len(out) > 67:
-        out = out[:66]+"…"
-    return out
+
+    return out if len(out) <= 67 else out[:66]+"…"
 
 def get_valstr(key, solution, into="%s"):
     "Returns formatted string of the value of key in solution."
+    # get valuestr
     try:
         value = solution(key)
     except (ValueError, TypeError):
@@ -776,6 +810,11 @@ def get_valstr(key, solution, into="%s"):
             return " "
     if isinstance(value, FixedScalar):
         value = value.value
+    if 1e3 <= mag(value) < 1e6:
+        valuestr = "{:,.0f}".format(mag(value))
+    else:
+        valuestr = "%-.3g" % mag(value)
+    # get unitstr
     if hasattr(key, "unitstr"):
         unitstr = key.unitstr()
     else:
@@ -787,12 +826,8 @@ def get_valstr(key, solution, into="%s"):
         unitstr = get_unitstr(value)
     if unitstr[:2] == "1/":
         unitstr = "/" + unitstr[2:]
-    value = mag(value)
-    if 1e3 <= value < 1e6:
-        valuestr = "{:,.0f}".format(value)
-    else:
-        valuestr = "%-.3g" % value
-    # unitstr += ", fixed" if key in solution["constants"] else ""
+    if key in solution["constants"] or (hasattr(key, "vks") and key.vks and all(vk in solution["constants"] for vk in key.vks)):
+        unitstr += ", fixed"
     return into % (valuestr + unitstr)
 
 
@@ -803,6 +838,11 @@ ureg.define("paxkm = km")
 ureg.define("trip = 1")
 
 print("STARTING...")
+from gpkit.tests.helpers import StdoutCaptured
+
+import difflib
+
+permissivity = 2
 
 sol = pickle.load(open("solar.p", "rb"))
 
@@ -812,27 +852,30 @@ sol.set_necessarylineage()
 mbd = get_model_breakdown(sol)
 sol.set_necessarylineage(clear=True)
 mtree = crawl_modelbd(mbd)
-# graph(mtree, sol, collapse=False, extent=20)
-# graph(mtree.branches[0].branches[0].branches[0], sol, collapse=False, extent=20)
+graph(mtree, sol, showlegend=True, extent=20)
+graph(mtree.branches[0].branches[0].branches[0], sol, showlegend=False, extent=20)
 
-from gpkit.tests.helpers import StdoutCaptured
 
-import difflib
-
-tree = crawl(sol.costposy, bd, sol, permissivity=2, verbosity=0)
+# tree = crawl(sol.costposy, bd, sol, permissivity=2, verbosity=0)
+# graph(tree, sol)
+#
+#
+# key, = [vk for vk in bd if "Aircraft.Empennage.HorizontalTail.BoxSpar.W" in str(vk)]
+# tree = crawl(key, bd, sol, permissivity=2, verbosity=1)
+# graph(tree, sol)
+# key, = [vk for vk in bd if "Aircraft.Fuselage.R[0,0]" in str(vk)]
+# tree = crawl(key, bd, sol, permissivity=2, verbosity=1)
+# graph(tree, sol)
+# key, = [vk for vk in bd if "Mission.Climb.AircraftDrag.CD[0]" in str(vk)]
+# tree = crawl(key, bd, sol, permissivity=2, verbosity=1)
 # graph(tree, sol)
 
-key, = [vk for vk in bd if "SparLoading2.kappa" in str(vk)]
-tree = crawl(key, bd, sol, permissivity=2, verbosity=1)
-graph(tree, sol)
 
-keys = sorted((key for key in bd.keys()), key=lambda k: str(k))
-
-permissivity = 2
+keys = sorted(bd.keys(), key=lambda k: str(k))
 
 # with StdoutCaptured("solarbreakdowns.log"):
-#     graph(mtree, sol, collapse=False)
-#     graph(mtree, sol, collapse=True)
+#     graph(mtree, sol, showlegend=False)
+#     graph(mtree, sol, showlegend=True)
 #     tree = crawl(sol.costposy, bd, sol, permissivity=permissivity)
 #     graph(tree, sol)
 #     for key in keys:
@@ -840,8 +883,8 @@ permissivity = 2
 #         graph(tree, sol)
 
 with StdoutCaptured("solarbreakdowns.log.new"):
-    graph(mtree, sol, collapse=False)
-    graph(mtree, sol, collapse=True)
+    graph(mtree, sol, showlegend=False)
+    graph(mtree, sol, showlegend=True)
     tree = crawl(sol.costposy, bd, sol, permissivity=permissivity)
     graph(tree, sol)
     for key in keys:
@@ -849,7 +892,7 @@ with StdoutCaptured("solarbreakdowns.log.new"):
         try:
             graph(tree, sol)
         except:
-            print("EEEEYYYYY", key)
+            raise ValueError(key)
 
 with open("solarbreakdowns.log", "r") as original:
     with open("solarbreakdowns.log.new", "r") as new:
@@ -870,23 +913,29 @@ bd = get_breakdowns(sol)
 mbd = get_model_breakdown(sol)
 mtree = crawl_modelbd(mbd)
 
+key, = [vk for vk in bd if "ccorechannelheight[0]" in str(vk)]
+tree = crawl(key, bd, sol, permissivity=2, verbosity=0)
+# sol.set_necessarylineage()
+graph(tree, sol)
+# sol.set_necessarylineage(clear=True)
+
 keys = sorted((key for key in bd.keys() if not key.idx or len(key.shape) == 1),
-              key=lambda k: str(k))
+              key=lambda k: k.str_without(excluded={}))
 
 # with StdoutCaptured("breakdowns.log"):
-#     graph(mtree, sol, collapse=False)
-#     graph(mtree.branches[0].branches[1], sol, collapse=False)
-#     graph(mtree, sol, collapse=True)
+#     graph(mtree, sol, showlegend=False)
+#     graph(mtree.branches[0].branches[1], sol, showlegend=False)
+#     graph(mtree, sol, showlegend=True)
 #     tree = crawl(sol.costposy, bd, sol, permissivity=permissivity)
 #     graph(tree, sol)
 #     for key in keys:
 #         tree = crawl(key, bd, sol, permissivity=permissivity)
 #         graph(tree, sol)
-#
+
 with StdoutCaptured("breakdowns.log.new"):
-    graph(mtree, sol, collapse=False)
-    graph(mtree.branches[0].branches[1], sol, collapse=False)
-    graph(mtree, sol, collapse=True)
+    graph(mtree, sol, showlegend=False)
+    graph(mtree.branches[0].branches[1], sol, showlegend=False)
+    graph(mtree, sol, showlegend=True)
     tree = crawl(sol.costposy, bd, sol, permissivity=permissivity)
     graph(tree, sol)
     for key in keys:
@@ -894,7 +943,7 @@ with StdoutCaptured("breakdowns.log.new"):
         try:
             graph(tree, sol)
         except:
-            print("EEEEYYYYY", key)
+            raise ValueError(key)
 
 with open("breakdowns.log", "r") as original:
     with open("breakdowns.log.new", "r") as new:
