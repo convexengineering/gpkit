@@ -1,7 +1,3 @@
-# TODO: ...some sort of vertical simplification implemented at the tree level
-# put the relevant constraint at the top of each section of the receipt..
-# track the collapsed breakdown, one section per variable
-
 # pylint: skip-file
 import string
 from collections import defaultdict, namedtuple
@@ -105,7 +101,7 @@ def get_breakdowns(solution):
     """
     breakdowns = defaultdict(list)
     beatout = defaultdict(set)
-    for constraint, senss in sorted(solution["sensitivities"]["constraints"].items(), key=lambda kv: (round(kv[1], 3), str(kv[0])), reverse=True):
+    for constraint, senss in sorted(solution["sensitivities"]["constraints"].items(), key=lambda kv: (-abs(kv[1]), str(kv[0]))):
         if abs(senss) <= 1e-5:  # only tight-ish ones
             continue
         if constraint.oper == ">=":
@@ -122,7 +118,7 @@ def get_breakdowns(solution):
         freegt_vks = get_free_vks(gt, solution)
         if len(freegt_vks) < 1:
             freegt_vks = gt.vks
-        if len(freegt_vks) > 1:
+        if len(freegt_vks) > 1:  # TODO: "strict_breakdowns" flag prevents this, maybe negative exps too
             consistent_lt_pows = defaultdict(set)
             for exp in lt.hmap:
                 for vk, pow in exp.items():
@@ -159,10 +155,6 @@ def get_breakdowns(solution):
             brokendownvk, = freegt_vks
             breakdowns[brokendownvk].append((lt, gt, constraint))
     breakdowns = dict(breakdowns)  # remove the defaultdict-ness
-    # for key, bds in breakdowns.items():
-    #     # TODO: do multiple if sensitivities are quite close? right now we have to break ties!
-    #     if len(bds) > 1:
-    #         bds.sort(key=lambda lgc: (abs(solution["sensitivities"]["constraints"][lgc[2]]), str(lgc[0])), reverse=True)
 
     prevlen = None
     while len(BASICALLY_FIXED_VARIABLES) != prevlen:
@@ -481,7 +473,8 @@ def get_spanstr(legend, length, label, leftwards, solution):
         # HACK: no corners on long rightwards - only used for depth 0
         return "┃"*(longside+1) + shortname + "┃"*(shortside+1)
 
-def simplify(tree, extent, collapse, depth=0, justsplit=True):
+def simplify(tree, extent, collapse, depth=0, justsplit=False):
+    # TODO: add vertical simplification?
     key, val, branches = tree
     if collapse:  # collapse Transforms with power 1
         while any(is_factor(branch.key) for branch in branches):
@@ -495,16 +488,14 @@ def simplify(tree, extent, collapse, depth=0, justsplit=True):
 
     scale = extent/val
     extents = [round(scale*b.value) for b in branches]
-    for i, branch in enumerate(branches):
-        k, v, bs = branch
-        if isinstance(k, Transform):
-            subscale = extents[i]/v
-            if not any(round(subscale*subv) for _, subv, _ in bs):
+    for i, b in enumerate(branches):
+        if isinstance(b.key, Transform):
+            subscale = extents[i]/b.value
+            if not any(round(subscale*subv) for _, subv, _ in b.branches):
                 extents[i] = 0  # transform with no worthy heirs: misc it
-
     if not any(extents):
         return Tree(key, extent, [])
-    elif not all(extents):  # create a catch-all
+    if not all(extents):  # create a catch-all
         branches = branches.copy()
         surplus = extent - sum(extents)
         miscvkeys, miscval = [], 0
@@ -541,7 +532,7 @@ def simplify(tree, extent, collapse, depth=0, justsplit=True):
             # if we'd branch too much, stop
             return Tree(key, extent, [])
         if collapse and not branchfactor and not justsplit:
-            # if we didn't just split, collapse the unbranched
+            # if we didn't just split and aren't about to, collapse
             return simplify(branches[0], extent, collapse,
                             depth=depth+1, justsplit=False)
 
@@ -567,21 +558,18 @@ def simplify(tree, extent, collapse, depth=0, justsplit=True):
                         tree.branches.append(Tree(key, b.value, b.branches))
             else:
                 tree.branches.append(branch)
-
     return tree
 
 def layer(map, tree, maxdepth, depth=0):
     "Turns the tree into a 2D-array"
-    key, extent, branches = tree
-    if not branches:
-        branches = [Tree(None, extent, [])]  # pad it out
-
     if depth > maxdepth:
         return map
     if len(map) <= depth:
         map.append([])
+    key, extent, branches = tree
     map[depth].append((key, extent))
-
+    if not branches:
+        branches = [Tree(None, extent, [])]  # pad it out
     for branch in branches:
         layer(map, branch, maxdepth, depth+1)
     return map
@@ -603,7 +591,6 @@ def graph(tree, solution, extent=None, maxdepth=None, showlegend=False, maxwidth
         extent = 20
         while prev_extent != extent:
             subtree = simplify(tree, extent, collapse=not showlegend)
-            # print(collapse, subtree)
             mt = layer([], subtree, maxdepth)
             prev_extent = extent
             extent = min(extent, max(*(4*len(at_depth) for at_depth in mt)))
