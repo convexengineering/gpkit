@@ -182,7 +182,7 @@ def constraint_table(data, title, sortbymodel=True, showmodels=True, **_):
         model = lineagestr(constraint) if sortbymodel else ""
         if model not in models:
             models[model] = len(models)
-        constrstr = try_str_without(constraint, excluded + (":MAGIC:"+constraint.lineagestr(),))
+        constrstr = try_str_without(constraint, excluded + (":MAGIC:"+lineagestr(constraint),))
         if " at 0x" in constrstr:  # don't print memory addresses
             constrstr = constrstr[:constrstr.find(" at 0x")] + ">"
         decorated.append((models[model], model, sortby, constrstr, openingstr))

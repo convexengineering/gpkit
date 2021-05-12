@@ -38,7 +38,7 @@ class NomialData(ReprMixin):
         if self._cs is None:
             self._cs = np.array(list(self.hmap.values()))
             if self.hmap.units:
-                self._cs = self._cs*self.hmap.units
+                self._cs = self._cs*self.hmap.units  # TODO: this...isn't right
         return self._cs
 
     def __hash__(self):

@@ -1,3 +1,6 @@
+#TODO: clean up non-singular breakdown choice
+#      add depth-culling to simplify
+
 # pylint: skip-file
 import string
 from collections import defaultdict, namedtuple
@@ -77,19 +80,26 @@ def get_model_breakdown(solution):
                 subbd["|sensitivity|"] = 0
             subbd["|sensitivity|"] += senss
         # treat vectors as namespace (indexing vectors above)
-        vk = vk.str_without({"lineage"}) + get_valstr(vk, solution, " = %s")
+        vk = vk.str_without({"lineage"}) + get_valstr(vk, solution, " = %s").replace(", fixed", "")
         subbd[vk] = {"|sensitivity|": senss}
-    # print(breakdowns["|sensitivity|"])
+    # TODO: track down in a live-solve environment why this isn't the same
+    # print(breakdowns["HyperloopSystem"]["|sensitivity|"])
     return breakdowns
 
-def crawl_modelbd(bd, tree=None, name="Model"):
-    if tree is None:
-        tree = []
-    subtree = []
-    tree.append(Tree(name, bd.pop("|sensitivity|"), subtree))
-    for key, _ in sorted(bd.items(), key=lambda kv: kv[1]["|sensitivity|"], reverse=True):
-        crawl_modelbd(bd[key], subtree, key)
-    return tree[0]
+def crawl_modelbd(bd, name="Model"):
+    tree = Tree(name, bd.pop("|sensitivity|"), [])
+    for subname, subtree in sorted(bd.items(),
+                                   key=lambda kv: -kv[1]["|sensitivity|"]):
+        tree.branches.append(crawl_modelbd(subtree, subname))
+    return tree
+
+def divide_out_vk(vk, pow, lt, gt):
+    hmap = NomialMap({HashVector({vk: 1}): 1.0})
+    hmap.units = vk.units
+    var = Monomial(hmap)**pow
+    lt, gt = lt/var, gt/var
+    lt.ast = gt.ast = None
+    return lt, gt
 
 # @profile
 def get_breakdowns(solution):
@@ -110,50 +120,39 @@ def get_breakdowns(solution):
             lt, gt = (constraint.left, constraint.right)
         elif constraint.oper == "=":
             if senss > 0:  # l_over_r is more sensitive - see nomials/math.py
-                lt, gt = [constraint.left, constraint.right]
+                lt, gt = (constraint.left, constraint.right)
             else:  # r_over_l is more sensitive - see nomials/math.py
-                gt, lt = [constraint.left, constraint.right]
+                gt, lt = (constraint.left, constraint.right)
         if lt.any_nonpositive_cs or len(gt.hmap) > 1:
-            continue  # no signomials
-        freegt_vks = get_free_vks(gt, solution)
-        if len(freegt_vks) < 1:
-            freegt_vks = gt.vks
-        if len(freegt_vks) > 1:  # TODO: "strict_breakdowns" flag prevents this, maybe negative exps too
-            consistent_lt_pows = defaultdict(set)
+            continue  # no signomials  # TODO: approximate signomials at sol
+        pos_gtvks = {vk for vk, pow in gt.exp.items() if pow > 0}
+        if len(pos_gtvks) > 1:
+            pos_gtvks &= get_free_vks(gt, solution)  # remove constants
+        if len(pos_gtvks) == 1:
+            chosenvk, = pos_gtvks
+            breakdowns[chosenvk].append((lt, gt, constraint))
+        else:  # we'll choose our favorite vk
+            for vk, pow in gt.exp.items():
+                if pow < 0:  # remove all non-positive
+                    lt, gt = divide_out_vk(vk, pow, lt, gt)
+            # bring over common factors from lt
+            lt_pows = defaultdict(set)
             for exp in lt.hmap:
                 for vk, pow in exp.items():
-                    consistent_lt_pows[vk].add(pow)
-            for vk, pows in consistent_lt_pows.items():
+                    lt_pows[vk].add(pow)
+            for vk, pows in lt_pows.items():
                 if len(pows) == 1:
                     pow, = pows
-                    hmap = NomialMap({HashVector({vk: 1}): 1.0})
-                    hmap.units = vk.units
-                    var = Monomial(hmap)**pow
-                    lt, gt = lt/var, gt/var
-                    lt.ast = gt.ast = None
-            sortedgtvks = sorted(gt.vks, key=lambda vk: (-np.sign(gt.exp[vk]), -round(solution["sensitivities"]["variablerisk"].get(vk, 0), 2), str(vk)))
-            skip = set(breakdowns)
-            freegt_vks = []
-            for vk in sortedgtvks:
-                if vk in skip:
-                    skip.update(beatout[vk])
-                freegt_vks.append(vk)
-                break
-            if not freegt_vks:
-                continue
-            else:
-                beatout[freegt_vks[0]].update(gt.vks)
-                freegt_vks = {freegt_vks[0]}
-            for vk in gt.vks:
-                if vk not in freegt_vks:
-                    hmap = NomialMap({HashVector({vk: 1}): 1.0})
-                    hmap.units = vk.units
-                    var = Monomial(hmap)**gt.exp[vk]
-                    lt, gt = lt/var, gt/var
-                    lt.ast = gt.ast = None
-        if len(freegt_vks) == 1:
-            brokendownvk, = freegt_vks
-            breakdowns[brokendownvk].append((lt, gt, constraint))
+                    if pow < 0:  # ...but only if they're positive
+                        lt, gt = divide_out_vk(vk, pow, lt, gt)
+            # don't choose something that's already been broken down
+            candidatevks = {vk for vk in gt.vks if vk not in breakdowns}
+            if candidatevks:
+                chosenvk, *_ = sorted(candidatevks, key=lambda vk: (-gt.exp[vk]*solution["sensitivities"]["variablerisk"].get(vk, 0), str(vk)))
+                for vk in gt.vks:
+                    if vk is not chosenvk:
+                        lt, gt = divide_out_vk(vk, pow, lt, gt)
+                breakdowns[chosenvk].append((lt, gt, constraint))
     breakdowns = dict(breakdowns)  # remove the defaultdict-ness
 
     prevlen = None
@@ -171,23 +170,28 @@ def get_fixity(key, bd, solution, basically_fixed=set(), visited=set()):
     lt, gt, _ = bd[key][0]
     free_vks = get_free_vks(lt, solution).union(get_free_vks(gt, solution))
     for vk in free_vks:
+        if vk is key or vk in BASICALLY_FIXED_VARIABLES:
+            continue  # currently checking or already checked
         if vk not in bd:
-            return
-        if vk in BASICALLY_FIXED_VARIABLES:
-            continue
-        if vk is key:
-            continue
-        if vk in visited:  # been here before and it's not me
-            return
+            return  # a very free variable, can't even be broken down
+        if vk in visited:
+            return  # tried it before, implicitly it didn't work out
+        # maybe it's basically fixed?
         visited.add(key)
         get_fixity(vk, bd, solution, basically_fixed, visited)
         if vk not in BASICALLY_FIXED_VARIABLES:
-            return
+            return  # ...well, we tried
     basically_fixed.add(key)
+
+SOLCACHE = {}
+def solcache(solution, key):  # replaces solution(key)
+    if key not in SOLCACHE:
+        SOLCACHE[key] = solution(key)
+    return SOLCACHE[key]
 
 # @profile  # ~84% of total last check # TODO: remove
 def crawl(key, bd, solution, basescale=1, permissivity=2, verbosity=0,
-          visited_bdkeys=None):
+          visited_bdkeys=None, gone_negative=False):
     "Returns the tree of breakdowns of key in bd, sorting by solution's values"
     if key in bd:
         # TODO: do multiple if sensitivities are quite close?
@@ -214,21 +218,16 @@ def crawl(key, bd, solution, basescale=1, permissivity=2, verbosity=0,
     if keymon is None:
         scale = solution(key)/basescale
     else:
-        if len(keymon.vks) == 1:  # constant
-            free_vks = keymon.vks
-        else:
-            free_vks = get_free_vks(keymon, solution)
-        # if len(free_vks) != 1:
-        #     free_vks = {sorted(keymon.vks, key=lambda vk: (-round(solution["sensitivities"]["variablerisk"].get(vk, 0), 2), str(vk)))[0]}
-        subkey, = free_vks
+        interesting_vks = {key}
+        subkey, = interesting_vks
         power = keymon.exp[subkey]
-        fixed_vks = set(keymon.vks) - free_vks
+        boring_vks = set(keymon.vks) - interesting_vks
         scale = solution(key)**power/basescale
         # TODO: make method that can handle both kinds of transforms
-        if power != 1 or fixed_vks or mag(keymon.c) != 1 or keymon.units != key.units:
+        if power != 1 or boring_vks or mag(keymon.c) != 1 or keymon.units != key.units:
             units = 1
             exp = HashVector()
-            for vk in free_vks:
+            for vk in interesting_vks:
                 exp[vk] = keymon.exp[vk]
                 if vk.units:
                     units *= vk.units**keymon.exp[vk]
@@ -259,7 +258,7 @@ def crawl(key, bd, solution, basescale=1, permissivity=2, verbosity=0,
                 if verbosity:
                     print("  "*indent + "(with a power of %.2g )" % power)
                 subsubtree = []
-                transform = Transform(1, 1/power, keymon)  # inverted bc it's on the gt side
+                transform = Transform(1, 1/power, None)  # inverted bc it's on the gt side
                 orig_subtree.append(Tree(transform, basescale, subsubtree))
                 orig_subtree = subsubtree
     if verbosity:
@@ -269,7 +268,7 @@ def crawl(key, bd, solution, basescale=1, permissivity=2, verbosity=0,
         indent += 1
 
     # TODO: use ast_parsing instead of chop?
-    monsols = [solution(mon) for mon in composition.chop()]  # ~20% of total last check # TODO: remove
+    monsols = [solcache(solution, mon) for mon in composition.chop()]  # ~20% of total last check # TODO: remove
     parsed_monsols = [getattr(mon, "value", mon) for mon in monsols]
     monvals = [float(mon/scale) for mon in parsed_monsols]   # ~10% of total last check # TODO: remove
     # sort by value, preserving order in case of value tie
@@ -278,80 +277,67 @@ def crawl(key, bd, solution, basescale=1, permissivity=2, verbosity=0,
     for scaledmonval, _, mon in sortedmonvals:
         if not scaledmonval:
             continue
-        scaledmonval = min(1, scaledmonval)  # clip it
-        subtree = orig_subtree  # revert back to the original subtree
+        subtree = orig_subtree  # return to the original subtree
 
         # time for some filtering
-        free_vks = mon.vks
-
-        if scaledmonval > 1 - permissivity:
-            unbreakdownable_vks = {vk for vk in free_vks if vk not in bd}
-            if free_vks - unbreakdownable_vks:  # don't remove the last one
-                free_vks = free_vks - unbreakdownable_vks
-
-        fixed_vks = mon.vks - get_free_vks(mon, solution)
-        if free_vks - fixed_vks:  # don't remove the last one
-            free_vks = free_vks - fixed_vks
-
-        basically_fixed_vks = {vk for vk in free_vks
-                               if vk in BASICALLY_FIXED_VARIABLES}
-        if free_vks - basically_fixed_vks:  # don't remove the last one
-            free_vks = free_vks - basically_fixed_vks
-
-        # if scaledmonval > 1 - permissivity:
-        #     unbreakdownable_vks = {vk for vk in free_vks if vk not in bd}
-        #     if free_vks - unbreakdownable_vks:  # don't remove the last one
-        #         free_vks = free_vks - unbreakdownable_vks
-
-        if len(free_vks) > 1 and permissivity > 1:
-            best_vks = sorted((vk for vk in free_vks if vk in bd),
+        interesting_vks = mon.vks
+        potential_filters = [
+            {vk for vk in interesting_vks if vk not in bd},
+            mon.vks - get_free_vks(mon, solution),
+            {vk for vk in interesting_vks if vk in BASICALLY_FIXED_VARIABLES}
+        ]
+        if scaledmonval < 1 - permissivity:  # skip breakdown filter
+            potential_filters = potential_filters[1:]
+        for filter in potential_filters:
+            if interesting_vks - filter:  # don't remove the last one
+                interesting_vks = interesting_vks - filter
+        # if filters weren't enough and permissivity is high enough, sort!
+        if len(interesting_vks) > 1 and permissivity > 1:
+            best_vks = sorted((vk for vk in interesting_vks if vk in bd),
                 key=lambda vk:
                     # TODO: without exp: "most strongly broken-down component"
                     #       but it could use nus (or v_ss) to say
                     #       "breakdown which the solution is most sensitive to"
                     #  ...right now it's in-between
-                    (abs(mon.exp[vk]*solution["sensitivities"]["constraints"][bd[vk][0][2]]),
-                     str(bd[vk][0][0])), reverse=True)   # ~5% of total last check # TODO: remove
+                    (-mon.exp[vk]*abs(solution["sensitivities"]["constraints"][bd[vk][0][2]]),
+                     str(bd[vk][0][0])))   # ~5% of total last check # TODO: remove
+                     # changing to str(vk) above does some odd stuff
             if best_vks:
-                free_vks = set([best_vks[0]])
+                interesting_vks = set([best_vks[0]])
+        boring_vks = mon.vks - interesting_vks
 
-        fixed_vks = mon.vks - free_vks
-
-        if len(free_vks) == 1:
-            subkey, = free_vks
+        subkey = None
+        if len(interesting_vks) == 1:
+            subkey, = interesting_vks
             if subkey in visited_bdkeys and len(sortedmonvals) == 1:
-                continue  # don't continue
-            power = mon.exp[subkey]
-            if power != 1 and subkey not in bd:
+                continue  # don't even go there
+            if subkey not in bd:
                 power = 1  # no need for a transform
-        else:
-            subkey = None
-            power = 1
-            if scaledmonval > 1 - permissivity and not fixed_vks:
-                fixed_vks = free_vks
-                free_vks = set()
-            if not free_vks:
-                # prioritize showing some fixed_vks as if they were "free"
-                if len(fixed_vks) == 1:
-                    free_vks = fixed_vks
-                    fixed_vks = set()
-                else:
-                    for vk in list(fixed_vks):
-                        if vk.units and not vk.units.dimensionless:
-                            free_vks.add(vk)
-                            fixed_vks.remove(vk)
+            else:
+                power = mon.exp[subkey]
+                if power < 0 and gone_negative:
+                    subkey = None  # don't breakdown another negative
 
-        if free_vks and (fixed_vks or mag(mon.c) != 1):
-            if subkey:
-                kindafree_vks = set(vk for vk in fixed_vks
-                                    if vk not in solution["constants"])
-                if kindafree_vks == fixed_vks:
-                    kindafree_vks = set()  # don't remove ALL of them
+        if subkey is None:
+            power = 1
+            if scaledmonval > 1 - permissivity and not boring_vks:
+                boring_vks = interesting_vks
+                interesting_vks = set()
+            if not interesting_vks:
+                # prioritize showing some boring_vks as if they were "free"
+                if len(boring_vks) == 1:
+                    interesting_vks = boring_vks
+                    boring_vks = set()
                 else:
-                    free_vks.update(kindafree_vks)
+                    for vk in list(boring_vks):
+                        if vk.units and not vk.units.dimensionless:
+                            interesting_vks.add(vk)
+                            boring_vks.remove(vk)
+
+        if interesting_vks and (boring_vks or mag(mon.c) != 1):
             units = 1
             exp = HashVector()
-            for vk in free_vks:
+            for vk in interesting_vks:
                 exp[vk] = mon.exp[vk]
                 if vk.units:
                     units *= vk.units**mon.exp[vk]
@@ -373,61 +359,30 @@ def crawl(key, bd, solution, basescale=1, permissivity=2, verbosity=0,
                 subtree.append(Tree(transform, scaledmonval, subsubtree))
                 subtree = subsubtree
             mon = freemon  # simplifies units
-            if subkey and fixed_vks and kindafree_vks:
-                units = 1
-                exp = HashVector()
-                for vk in kindafree_vks:
-                    exp[vk] = mon.exp[vk]
-                    if vk.units:
-                        units *= vk.units**mon.exp[vk]
-                subhmap = NomialMap({exp: 1})
-                try:
-                    subhmap.units = None if units == 1 else units
-                except DimensionalityError:
-                    # pints was unable to divide a unit by itself bc
-                    #   it has terrible floating-point errors.
-                    #   so let's assume it isn't dimensionless
-                    #   even though it probably is
-                    subhmap.units = units
-                factor = Monomial(subhmap)
-                if factor != 1:
-                    factor.ast = None
-                    if verbosity:
-                        keyvalstr = "%s (%s)" % (factor.str_without(["unnecessary lineage", "units"]),
-                                                 get_valstr(factor, solution))
-                        print("  "*indent + "(with a factor of " + keyvalstr + " )")
-                    subsubtree = []
-                    transform = Transform(factor, 1, mon)
-                    subtree.append(Tree(transform, scaledmonval, subsubtree))
-                    subtree = subsubtree
-                    mon = mon/factor
-                    mon.ast = None
             if power != 1:
                 if verbosity:
                     print("  "*indent + "(with a power of %.2g )" % power)
                 subsubtree = []
-                transform = Transform(1, power, mon)
+                transform = Transform(1, power, None)
                 subtree.append(Tree(transform, scaledmonval, subsubtree))
                 subtree = subsubtree
                 mon = mon**(1/power)
                 mon.ast = None
         # TODO: make minscale an argument - currently an arbitrary 0.01
         if (subkey is not None and subkey not in visited_bdkeys
-                and subkey in bd and scaledmonval > 0.01):
+                and subkey in bd and scaledmonval > 0.05):
             if verbosity:
                 verbosity = indent + 1  # slight hack
-            try:
-                subsubtree = crawl(subkey, bd, solution, scaledmonval,
-                                   permissivity, verbosity, set(visited_bdkeys))
-                subtree.append(subsubtree)
-                continue
-            except Exception as e:
-                print(subkey, e)
-        if verbosity:
-            keyvalstr = "%s (%s)" % (mon.str_without(["unnecessary lineage", "units"]),
-                                     get_valstr(mon, solution))
-            print("  "*indent + keyvalstr)
-        subtree.append(Tree(mon, scaledmonval, []))
+            subsubtree = crawl(subkey, bd, solution, scaledmonval,
+                               permissivity, verbosity, set(visited_bdkeys),
+                               gone_negative)
+            subtree.append(subsubtree)
+        else:
+            if verbosity:
+                keyvalstr = "%s (%s)" % (mon.str_without(["unnecessary lineage", "units"]),
+                                         get_valstr(mon, solution))
+                print("  "*indent + keyvalstr)
+            subtree.append(Tree(mon, scaledmonval, []))
     if verbosity == 1:
         solution.set_necessarylineage(clear=True)
     return tree
@@ -448,19 +403,15 @@ def get_spanstr(legend, length, label, leftwards, solution):
             lend = rend  = "^" if label.power > 0 else "/"
         # remove origkeys so they collide in the legends dictionary
         label = Transform(label.factor, label.power, None)
-        # TODO: catch PI (or again could that come from AST parsing?)
-        # if label.power == 1 and len(str(label.factor)) == 1:
-        #     legend[label] = str(label.factor)
+        if label.power == 1 and len(str(label.factor)) == 1:
+            legend[label] = str(label.factor)
 
     if label not in legend:
-        shortname = SYMBOLS[len(legend)]
-        legend[label] = shortname
-    else:
-        shortname = legend[label]
+        legend[label] = SYMBOLS[len(legend)]
+    shortname = legend[label]
 
     if length <= 1:
         return shortname
-
     shortside = int(max(0, length - 2)/2)
     longside  = int(max(0, length - 3)/2)
     if leftwards:
@@ -525,8 +476,8 @@ def simplify(tree, extent, collapse, depth=0, justsplit=False):
             extents[bump_priority.pop()[-1]] += sign
             surplus -= sign
 
+    # simplify based on how we're branching
     branchfactor = len([ext for ext in extents if ext]) - 1
-
     if depth and not isinstance(key, Transform):
         if extent == 1 or branchfactor >= max(extent-2, 1):
             # if we'd branch too much, stop
@@ -535,10 +486,9 @@ def simplify(tree, extent, collapse, depth=0, justsplit=False):
             # if we didn't just split and aren't about to, collapse
             return simplify(branches[0], extent, collapse,
                             depth=depth+1, justsplit=False)
-
     if branchfactor:
         justsplit = True
-    elif not isinstance(key, Transform):  # pass through transforms
+    elif not isinstance(key, Transform):  # justsplit passes through transforms
         justsplit = False
 
     tree = Tree(key, extent, [])
@@ -552,9 +502,9 @@ def simplify(tree, extent, collapse, depth=0, justsplit=False):
                 power = branch.key.power
                 for b in branch.branches:
                     key = Transform(1, power*b.key.power, None)
-                    if key.power == 1:
+                    if key.power == 1:  # powers canceled, collapse both
                         tree.branches.extend(b.branches)
-                    else:
+                    else:  # bring next level up into this one
                         tree.branches.append(Tree(key, b.value, b.branches))
             else:
                 tree.branches.append(branch)
@@ -562,16 +512,15 @@ def simplify(tree, extent, collapse, depth=0, justsplit=False):
 
 def layer(map, tree, maxdepth, depth=0):
     "Turns the tree into a 2D-array"
-    if depth > maxdepth:
-        return map
-    if len(map) <= depth:
-        map.append([])
-    key, extent, branches = tree
-    map[depth].append((key, extent))
-    if not branches:
-        branches = [Tree(None, extent, [])]  # pad it out
-    for branch in branches:
-        layer(map, branch, maxdepth, depth+1)
+    if depth <= maxdepth:
+        if len(map) <= depth:
+            map.append([])
+        key, extent, branches = tree
+        map[depth].append((key, extent))
+        if not branches:
+            branches = [Tree(None, extent, [])]  # pad it out
+        for branch in branches:
+            layer(map, branch, maxdepth, depth+1)
     return map
 
 def plumb(tree, depth=0):
@@ -607,7 +556,6 @@ def graph(tree, solution, extent=None, maxdepth=None, showlegend=False, maxwidth
         chararray[depth, :] = list(row)
 
     solution.set_necessarylineage()
-
     # Format depth=0
     A_key, = [key for key, value in legend.items() if value == "A"]
     A_str = get_keystr(A_key, solution)
@@ -622,7 +570,6 @@ def graph(tree, solution, extent=None, maxdepth=None, showlegend=False, maxwidth
             chararray[0,j+1] = fmt.format(A_valstr + " ┃")
         else:
             chararray[0,j] = fmt.format(entry)
-
     # Format depths 1+
     labeled = set()
     new_legend = {}
@@ -692,7 +639,6 @@ def graph(tree, solution, extent=None, maxdepth=None, showlegend=False, maxwidth
                 elif showlegend:
                     keystr += valuestr
             chararray[depth, pos] = fmt.format(linkstr + keystr)
-
     # Rotate and print
     toowiderows = []
     rows = chararray.T.tolist()
@@ -772,9 +718,7 @@ def legend_entry(key, shortname, solution):
     return ["%-4s" % shortname, keystr, valuestr, note]
 
 def get_keystr(key, solution, prefix=""):
-    if key is None:
-        out = " "
-    elif key is solution.costposy:
+    if key is solution.costposy:
         out = "Cost"
     elif hasattr(key, "str_without"):
         out = key.str_without({"unnecessary lineage", "units", ":MAGIC:"+prefix})
@@ -782,7 +726,6 @@ def get_keystr(key, solution, prefix=""):
         out = "[%i terms]" % len(key)
     else:
         out = str(key)
-
     return out if len(out) <= 67 else out[:66]+"…"
 
 def get_valstr(key, solution, into="%s"):
@@ -831,68 +774,63 @@ import difflib
 
 permissivity = 2
 
-sol = pickle.load(open("solar.p", "rb"))
-
-bd = get_breakdowns(sol)
-
-sol.set_necessarylineage()
-mbd = get_model_breakdown(sol)
-sol.set_necessarylineage(clear=True)
-mtree = crawl_modelbd(mbd)
-graph(mtree, sol, showlegend=True, extent=20)
-graph(mtree.branches[0].branches[0].branches[0], sol, showlegend=False, extent=20)
-
-
+# sol = pickle.load(open("solar.p", "rb"))
+# bd = get_breakdowns(sol)
+# mbd = get_model_breakdown(sol)
+# mtree = crawl_modelbd(mbd)
+# graph(mtree, sol, showlegend=True, extent=20)
+# graph(mtree.branches[0].branches[0].branches[0], sol, showlegend=False, extent=20)
+#
 # tree = crawl(sol.costposy, bd, sol, permissivity=2, verbosity=0)
 # graph(tree, sol)
 #
 #
-# key, = [vk for vk in bd if "Aircraft.Empennage.HorizontalTail.BoxSpar.W" in str(vk)]
-# tree = crawl(key, bd, sol, permissivity=2, verbosity=1)
-# graph(tree, sol)
-# key, = [vk for vk in bd if "Aircraft.Fuselage.R[0,0]" in str(vk)]
-# tree = crawl(key, bd, sol, permissivity=2, verbosity=1)
-# graph(tree, sol)
-# key, = [vk for vk in bd if "Mission.Climb.AircraftDrag.CD[0]" in str(vk)]
-# tree = crawl(key, bd, sol, permissivity=2, verbosity=1)
-# graph(tree, sol)
-
-
-keys = sorted(bd.keys(), key=lambda k: str(k))
-
-# with StdoutCaptured("solarbreakdowns.log"):
+# # key, = [vk for vk in bd if "Wing.Planform.b" in str(vk)]
+# # tree = crawl(key, bd, sol, permissivity=2, verbosity=1)
+# # graph(tree, sol)
+# # key, = [vk for vk in bd if "Aircraft.Fuselage.R[0,0]" in str(vk)]
+# # tree = crawl(key, bd, sol, permissivity=2, verbosity=1)
+# # graph(tree, sol)
+# # key, = [vk for vk in bd if "Mission.Climb.AircraftDrag.CD[0]" in str(vk)]
+# # tree = crawl(key, bd, sol, permissivity=2, verbosity=1)
+# # graph(tree, sol)
+#
+#
+# keys = sorted(bd.keys(), key=str)
+#
+# # with StdoutCaptured("solarbreakdowns.log"):
+# #     graph(mtree, sol, showlegend=False)
+# #     graph(mtree, sol, showlegend=True)
+# #     tree = crawl(sol.costposy, bd, sol, permissivity=permissivity)
+# #     graph(tree, sol)
+# #     for key in keys:
+# #         tree = crawl(key, bd, sol, permissivity=permissivity)
+# #         graph(tree, sol)
+#
+# with StdoutCaptured("solarbreakdowns.log.new"):
 #     graph(mtree, sol, showlegend=False)
 #     graph(mtree, sol, showlegend=True)
 #     tree = crawl(sol.costposy, bd, sol, permissivity=permissivity)
 #     graph(tree, sol)
 #     for key in keys:
 #         tree = crawl(key, bd, sol, permissivity=permissivity)
-#         graph(tree, sol)
-
-with StdoutCaptured("solarbreakdowns.log.new"):
-    graph(mtree, sol, showlegend=False)
-    graph(mtree, sol, showlegend=True)
-    tree = crawl(sol.costposy, bd, sol, permissivity=permissivity)
-    graph(tree, sol)
-    for key in keys:
-        tree = crawl(key, bd, sol, permissivity=permissivity)
-        try:
-            graph(tree, sol)
-        except:
-            raise ValueError(key)
-
-with open("solarbreakdowns.log", "r") as original:
-    with open("solarbreakdowns.log.new", "r") as new:
-        diff = difflib.unified_diff(
-            original.readlines(),
-            new.readlines(),
-            fromfile="original",
-            tofile="new",
-        )
-        for line in diff:
-            print(line[:-1])
-
-print("SOLAR DONE")
+#         try:
+#             graph(tree, sol)
+#         except:
+#             raise ValueError(key)
+#
+# with open("solarbreakdowns.log", "r") as original:
+#     with open("solarbreakdowns.log.new", "r") as new:
+#         diff = difflib.unified_diff(
+#             original.readlines(),
+#             new.readlines(),
+#             fromfile="original",
+#             tofile="new",
+#         )
+#         for line in diff:
+#             print(line[:-1])
+#
+# print("SOLAR DONE")
 
 
 sol = pickle.load(open("bd.p", "rb"))
@@ -900,11 +838,16 @@ bd = get_breakdowns(sol)
 mbd = get_model_breakdown(sol)
 mtree = crawl_modelbd(mbd)
 
-key, = [vk for vk in bd if "ccorechannelheight[0]" in str(vk)]
-tree = crawl(key, bd, sol, permissivity=2, verbosity=0)
-# sol.set_necessarylineage()
-graph(tree, sol)
-# sol.set_necessarylineage(clear=True)
+# has a hanging corner, not properly depth-culled
+# key, = [vk for vk in bd if "numberofarmdrivesusedincruise" in str(vk)]
+# tree = crawl(key, bd, sol, permissivity=2, verbosity=1)
+# graph(tree, sol)
+# key, = [vk for vk in bd if "statorlaminationmassperpolepair" in str(vk)]
+# tree = crawl(key, bd, sol, permissivity=2, verbosity=1)
+# graph(tree, sol)
+# key, = [vk for vk in bd if "numberofcellsperstring" in str(vk)]
+# tree = crawl(key, bd, sol, permissivity=2, verbosity=1)
+# graph(tree, sol)
 
 keys = sorted((key for key in bd.keys() if not key.idx or len(key.shape) == 1),
               key=lambda k: k.str_without(excluded={}))
