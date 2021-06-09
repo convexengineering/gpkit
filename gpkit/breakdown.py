@@ -1,9 +1,9 @@
-#TODO: clean up non-singular breakdown choice
-#      add depth-culling to simplify
+#TODO: add depth-culling to simplify
+#      clean up factor generation
 
 # pylint: skip-file
 import string
-from collections import defaultdict, namedtuple
+from collections import defaultdict, namedtuple, Counter
 from gpkit.nomials import Monomial, Posynomial, Variable
 from gpkit.nomials.map import NomialMap
 from gpkit.small_scripts import mag
@@ -128,10 +128,30 @@ def get_breakdowns(solution):
         pos_gtvks = {vk for vk, pow in gt.exp.items() if pow > 0}
         if len(pos_gtvks) > 1:
             pos_gtvks &= get_free_vks(gt, solution)  # remove constants
+        for vk in gt.vks:
+            if vk.name == "podturnaroundtime":
+                print(constraint, senss, len(pos_gtvks))
         if len(pos_gtvks) == 1:
             chosenvk, = pos_gtvks
             breakdowns[chosenvk].append((lt, gt, constraint))
-        else:  # we'll choose our favorite vk
+    for constraint, senss in sorted(solution["sensitivities"]["constraints"].items(), key=lambda kv: (-abs(kv[1]), str(kv[0]))):
+        if abs(senss) <= 1e-5:  # only tight-ish ones
+            continue
+        if constraint.oper == ">=":
+            gt, lt = (constraint.left, constraint.right)
+        elif constraint.oper == "<=":
+            lt, gt = (constraint.left, constraint.right)
+        elif constraint.oper == "=":
+            if senss > 0:  # l_over_r is more sensitive - see nomials/math.py
+                lt, gt = (constraint.left, constraint.right)
+            else:  # r_over_l is more sensitive - see nomials/math.py
+                gt, lt = (constraint.left, constraint.right)
+        if lt.any_nonpositive_cs or len(gt.hmap) > 1:
+            continue  # no signomials  # TODO: approximate signomials at sol
+        pos_gtvks = {vk for vk, pow in gt.exp.items() if pow > 0}
+        if len(pos_gtvks) > 1:
+            pos_gtvks &= get_free_vks(gt, solution)  # remove constants
+        if len(pos_gtvks) != 1:  # we'll choose our favorite vk
             for vk, pow in gt.exp.items():
                 if pow < 0:  # remove all non-positive
                     lt, gt = divide_out_vk(vk, pow, lt, gt)
@@ -258,7 +278,7 @@ def crawl(key, bd, solution, basescale=1, permissivity=2, verbosity=0,
                 if verbosity:
                     print("  "*indent + "(with a power of %.2g )" % power)
                 subsubtree = []
-                transform = Transform(1, 1/power, None)  # inverted bc it's on the gt side
+                transform = Transform(1, 1/power, keymon)  # inverted bc it's on the gt side
                 orig_subtree.append(Tree(transform, basescale, subsubtree))
                 orig_subtree = subsubtree
     if verbosity:
@@ -363,7 +383,7 @@ def crawl(key, bd, solution, basescale=1, permissivity=2, verbosity=0,
                 if verbosity:
                     print("  "*indent + "(with a power of %.2g )" % power)
                 subsubtree = []
-                transform = Transform(1, power, None)
+                transform = Transform(1, power, mon)
                 subtree.append(Tree(transform, scaledmonval, subsubtree))
                 subtree = subsubtree
                 mon = mon**(1/power)
@@ -424,21 +444,39 @@ def get_spanstr(legend, length, label, leftwards, solution):
         # HACK: no corners on long rightwards - only used for depth 0
         return "┃"*(longside+1) + shortname + "┃"*(shortside+1)
 
-def simplify(tree, extent, collapse, depth=0, justsplit=False):
+def simplify(tree, extent, solution, collapse, depth=0, justsplit=False):
     # TODO: add vertical simplification?
     key, val, branches = tree
     if collapse:  # collapse Transforms with power 1
-        while any(is_factor(branch.key) for branch in branches):
+        while any(isinstance(branch.key, Transform) and branch.key.power > 0 for branch in branches):
             newbranches = []
             for branch in branches:
-                if is_factor(branch.key):
+                # isinstance(branch.key, Transform) and branch.key.power > 0
+                if isinstance(branch.key, Transform) and branch.key.power > 0:
                     newbranches.extend(branch.branches)
                 else:
                     newbranches.append(branch)
             branches = newbranches
 
     scale = extent/val
-    extents = [round(scale*b.value) for b in branches]
+    values = [b.value for b in branches]
+    bkey_indexs = {}
+    for i, b in enumerate(branches):
+        k = get_keystr(b.key, solution)
+        if isinstance(b.key, Transform):
+            if len(b.branches) == 1:
+                k = get_keystr(b.branches[0].key, solution)
+        if k in bkey_indexs:
+            values[bkey_indexs[k]] += values[i]
+            values[i] = None
+        else:
+            bkey_indexs[k] = i
+    if any(v is None for v in values):
+        branches, values = zip(*((b, v) for b, v in zip(branches, values) if v is not None))
+        branches = list(branches)
+        values = list(values)
+    extents = [int(round(scale*v)) for v in values]
+    surplus = extent - sum(extents)
     for i, b in enumerate(branches):
         if isinstance(b.key, Transform):
             subscale = extents[i]/b.value
@@ -448,10 +486,10 @@ def simplify(tree, extent, collapse, depth=0, justsplit=False):
         return Tree(key, extent, [])
     if not all(extents):  # create a catch-all
         branches = branches.copy()
-        surplus = extent - sum(extents)
         miscvkeys, miscval = [], 0
         for subextent in reversed(extents):
             if not subextent or (branches[-1].value < miscval and surplus < 0):
+                extents.pop()
                 k, v, _ = branches.pop()
                 if isinstance(k, Transform):
                     k = k.origkey  # TODO: this is the only use of origkey - remove it
@@ -465,9 +503,7 @@ def simplify(tree, extent, collapse, depth=0, justsplit=False):
                 miscval += v
         misckeys = tuple(k for _, _, k in sorted(miscvkeys))
         branches.append(Tree(misckeys, miscval, []))
-
-    extents = [int(round(scale*b.value)) for b in branches]
-    surplus = extent - sum(extents)
+        extents.append(int(round(scale*miscval)))
     if surplus:
         sign = int(np.sign(surplus))
         bump_priority = sorted((ext, sign*b.value, i) for i, (b, ext)
@@ -484,7 +520,7 @@ def simplify(tree, extent, collapse, depth=0, justsplit=False):
             return Tree(key, extent, [])
         if collapse and not branchfactor and not justsplit:
             # if we didn't just split and aren't about to, collapse
-            return simplify(branches[0], extent, collapse,
+            return simplify(branches[0], extent, solution, collapse,
                             depth=depth+1, justsplit=False)
     if branchfactor:
         justsplit = True
@@ -494,7 +530,7 @@ def simplify(tree, extent, collapse, depth=0, justsplit=False):
     tree = Tree(key, extent, [])
     for branch, subextent in zip(branches, extents):
         if subextent:
-            branch = simplify(branch, subextent, collapse,
+            branch = simplify(branch, subextent, solution, collapse,
                               depth=depth+1, justsplit=justsplit)
             if (collapse and is_power(branch.key)
                     and all(is_power(b.key) for b in branch.branches)):
@@ -504,7 +540,7 @@ def simplify(tree, extent, collapse, depth=0, justsplit=False):
                     key = Transform(1, power*b.key.power, None)
                     if key.power == 1:  # powers canceled, collapse both
                         tree.branches.extend(b.branches)
-                    else:  # bring next level up into this one
+                    else:  # collapse this level
                         tree.branches.append(Tree(key, b.value, b.branches))
             else:
                 tree.branches.append(branch)
@@ -539,12 +575,12 @@ def graph(tree, solution, extent=None, maxdepth=None, showlegend=False, maxwidth
         prev_extent = None
         extent = 20
         while prev_extent != extent:
-            subtree = simplify(tree, extent, collapse=not showlegend)
+            subtree = simplify(tree, extent, solution, collapse=not showlegend)
             mt = layer([], subtree, maxdepth)
             prev_extent = extent
             extent = min(extent, max(*(4*len(at_depth) for at_depth in mt)))
     else:
-        subtree = simplify(tree, extent, collapse=not showlegend)
+        subtree = simplify(tree, extent, solution, collapse=not showlegend)
         mt = layer([], subtree, maxdepth)
     legend = {}
     chararray = np.full((len(mt), extent), "", "object")
@@ -838,10 +874,13 @@ bd = get_breakdowns(sol)
 mbd = get_model_breakdown(sol)
 mtree = crawl_modelbd(mbd)
 
-# has a hanging corner, not properly depth-culled
-# key, = [vk for vk in bd if "numberofarmdrivesusedincruise" in str(vk)]
-# tree = crawl(key, bd, sol, permissivity=2, verbosity=1)
-# graph(tree, sol)
+# graph(mtree, sol, showlegend=False)
+
+key, = [vk for vk in bd if "podtripenergy[1,0]" in str(vk)]
+tree = crawl(key, bd, sol, permissivity=2, verbosity=1)
+graph(tree, sol, extent=40)
+tree = crawl(sol.costposy, bd, sol, permissivity=2, verbosity=1)
+graph(tree, sol)
 # key, = [vk for vk in bd if "statorlaminationmassperpolepair" in str(vk)]
 # tree = crawl(key, bd, sol, permissivity=2, verbosity=1)
 # graph(tree, sol)
