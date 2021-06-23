@@ -63,7 +63,9 @@ def msenss_table(data, _, **kwargs):
     if "models" not in data.get("sensitivities", {}):
         return ""
     data = sorted(data["sensitivities"]["models"].items(),
-                  key=lambda i: (-round(np.mean(i[1]), 1), i[0]))
+                  key=lambda i: ((i[1] < 0.1).all(),
+                                 -np.max(i[1]) if (i[1] < 0.1).all()
+                                 else -np.mean(i[1]), i[0]))
     lines = ["Model Sensitivities", "-------------------"]
     if kwargs["sortmodelsbysenss"]:
         lines[0] += " (sorts models in sections below)"
@@ -77,8 +79,6 @@ def msenss_table(data, _, **kwargs):
                 msenssstr = "%6s" % ("<1e%i" % np.log10(msenss))
             else:
                 msenssstr = "  =0  "
-        elif not msenss.shape:
-            msenssstr = "%+6.1f" % msenss
         else:
             meansenss = np.mean(msenss)
             msenssstr = "%+6.1f" % meansenss
@@ -88,7 +88,7 @@ def msenss_table(data, _, **kwargs):
                              for d in deltas]
                 msenssstr += " + [ %s ]" % "  ".join(deltastrs)
         if msenssstr == previousmsenssstr:
-            msenssstr = "      "
+            msenssstr = " "*len(msenssstr)
         else:
             previousmsenssstr = msenssstr
         lines.append("%s : %s" % (msenssstr, model))
@@ -244,8 +244,17 @@ def warnings_table(self, _, **kwargs):
             continue
         if not hasattr(data_vec, "shape"):
             data_vec = [data_vec]  # not a sweep
-        if all((data == data_vec[0]).all() for data in data_vec[1:]):
-            data_vec = [data_vec[0]]  # warnings identical across all sweeps
+        else:
+            all_equal = True
+            for data in data_vec[1:]:
+                eq_i = (data == data_vec[0])
+                if hasattr(eq_i, "all"):
+                    eq_i = eq_i.all()
+                if not eq_i:
+                    all_equal = False
+                    break
+            if all_equal:
+                data_vec = [data_vec[0]]  # warnings identical across sweeps
         for i, data in enumerate(data_vec):
             if len(data) == 0:
                 continue
