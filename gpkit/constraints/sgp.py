@@ -49,8 +49,8 @@ class SequentialGeometricProgram:
     with NamedVariables("RelaxPCCP"):
         slack = Variable("C")
 
-    def __init__(self, cost, model, substitutions, *,
-                 use_pccp=True, pccp_penalty=2e2, checkbounds=True):
+    def __init__(self, cost, model, substitutions,
+                  *, use_pccp=True, pccp_penalty=2e2, checkbounds=True, **_):
         self.pccp_penalty = pccp_penalty
         if cost.any_nonpositive_cs:
             raise InvalidPosynomial("""an SGP's cost must be Posynomial
@@ -196,12 +196,12 @@ solutions and can be solved with 'Model.solve()'.""")
                                  "Slack Non-GP Constraints")
                 if verbosity > -1:
                     print(msg +
-                        " Calling .sp(pccp_penalty=...).localsolve(...) with a"
+                        " Calling .localsolve(pccp_penalty=...) with a"
                         " higher `pccp_penalty` (it was %.3g this time) will"
                         " reduce slack if the model is solvable with less. To"
                         " verify that the slack is needed, generate an SGP with"
                         " `use_pccp=False` and start it from this model's"
-                        "  solution: e.g. `m.sp(use_pccp=False).localsolve(x0="
+                        "  solution: e.g. `m.localsolve(use_pccp=False, x0="
                         "m.solution[\"variables\"])`." % self.pccp_penalty)
             del self.result["freevariables"][self.slack.key]  # pylint: disable=no-member
             del self.result["variables"][self.slack.key]  # pylint: disable=no-member

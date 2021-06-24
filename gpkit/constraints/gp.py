@@ -72,7 +72,8 @@ class GeometricProgram:
     _result = solve_log = solver_out = model = v_ss = nu_by_posy = None
     choicevaridxs = integersolve = None
 
-    def __init__(self, cost, constraints, substitutions, *, checkbounds=True):
+    def __init__(self, cost, constraints, substitutions,
+                 *, checkbounds=True, **_):
         self.cost, self.substitutions = cost, substitutions
         for key, sub in self.substitutions.items():
             if isinstance(sub, FixedScalar):
