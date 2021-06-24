@@ -196,12 +196,12 @@ solutions and can be solved with 'Model.solve()'.""")
             elif verbosity > -1:
                 pywarnings.warn(
                     "Final solution let signomial constraints slacken by"
-                    " %.2g%%. Calling .localsolve with a higher"
-                    " `pccp_penalty` (it was %.3g this time) will reduce"
-                    " final slack if the model is solvable with less. If"
+                    " %.2g%%. Calling .sp(pccp_penalty=...).localsolve(...) "
+                    " with a higher `pccp_penalty` (it was %.3g this time) will"
+                    " reduce final slack if the model is solvable with less. If"
                     " you think it might not be, check by generating an SP with"
-                    "`use_pccp=False`, then solving with x0=(this model's final"
-                    " solution); e.g. `m.sp(use_pccp=False).localsolve("
+                    "`use_pccp=False`, then solving with `x0=(this model's"
+                    " solution)`; e.g. `m.sp(use_pccp=False).localsolve("
                     "x0=m.solution[\"variables\"])`.\n"
                     % (100*excess_slack, self.pccp_penalty))
         return self.result

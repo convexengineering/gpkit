@@ -65,7 +65,7 @@ def msenss_table(data, _, **kwargs):
     data = sorted(data["sensitivities"]["models"].items(),
                   key=lambda i: ((i[1] < 0.1).all(),
                                  -np.max(i[1]) if (i[1] < 0.1).all()
-                                 else -np.mean(i[1]), i[0]))
+                                 else -round(np.mean(i[1]), 1), i[0]))
     lines = ["Model Sensitivities", "-------------------"]
     if kwargs["sortmodelsbysenss"]:
         lines[0] += " (sorts models in sections below)"
@@ -80,7 +80,7 @@ def msenss_table(data, _, **kwargs):
             else:
                 msenssstr = "  =0  "
         else:
-            meansenss = np.mean(msenss)
+            meansenss = round(np.mean(msenss), 1)
             msenssstr = "%+6.1f" % meansenss
             deltas = msenss - meansenss
             if np.max(np.abs(deltas)) > 0.1:

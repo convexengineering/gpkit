@@ -118,7 +118,7 @@ def _append_dict(d_in, d_out):
     for k, v in d_in.items():
         if isinstance(v, dict):
             d_out[k] = _append_dict(v, d_out[k])
-        else:
+        elif k in d_out:
             d_out[k].append(v)
     return d_out
 

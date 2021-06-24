@@ -43,6 +43,8 @@ def evaluate_linked(constants, linked):
                     "Linked function for %s did not return a united value."
                     "Modifying it to do so (e.g. by using `()` instead of `[]`"
                     " to access variables) will reduce errors." % v)
+            if hasattr(out, "__len__"):
+                out = out.item()  # break out of 0-dimensional arrays
             if not hasattr(out, "x"):
                 constants[v] = out
                 continue  # a new fixed variable, not a calculated one
