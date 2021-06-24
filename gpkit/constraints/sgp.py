@@ -170,13 +170,13 @@ solutions and can be solved with 'Model.solve()'.""")
             if prevcost is None:
                 continue
             rel_improvement = (prevcost - cost)/(prevcost + cost)
-            if cost*(1 - EPS) > prevcost + EPS and verbosity > -1:
+            if cost/prevcost >= 1 + 10*EPS:
                 pywarnings.warn(
-                    "SGP not convergent: Cost rose by %.2g%% on GP solve %i."
-                    " Details can be found in `m.program.results` or by"
-                    " solving at a higher verbosity. Note that convergence"
+                    "SGP not convergent: Cost rose by %.2g%% (%.6g to %.6g) on"
+                    " GP solve %i. Details can be found in `m.program.results`"
+                    " or by solving at a higher verbosity. Note convergence"
                     " is not guaranteed for models with SignomialEqualities."
-                    % (100*(cost - prevcost)/prevcost, len(self.gps)))
+                    % (100*(cost - prevcost)/prevcost, prevcost, cost, len(self.gps)))
                 rel_improvement = cost = None
         # solved successfully!
         self.result = gp.generate_result(solver_out, verbosity=verbosity-3)
