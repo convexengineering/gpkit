@@ -1,11 +1,12 @@
 """Implement the GeometricProgram class"""
 import sys
-import warnings
+import warnings as pywarnings
 from time import time
 from collections import defaultdict
 import numpy as np
 from ..repr_conventions import lineagestr
 from ..small_classes import CootMatrix, SolverLog, Numbers, FixedScalar
+from ..small_scripts import appendsolwarning, initsolwarning
 from ..keydict import KeyDict
 from ..solution_array import SolutionArray
 from .set import ConstraintSet
@@ -266,14 +267,17 @@ class GeometricProgram:
                   ((time() - tic) / soltime * 100))
             tic = time()
         # solution checking #
+        initsolwarning(result, "Solution Inconsistency")
         try:
             tol = SOLUTION_TOL.get(solver_out["solver"], 1e-5)
             self.check_solution(result["cost"], solver_out['primal'],
                                 solver_out["nu"], solver_out["la"], tol)
         except Infeasible as chkerror:
-            chkwarn = str(chkerror)
-            if not ("Dual" in chkwarn and not dual_check):
-                print("Solution check warning: %s" % chkwarn)
+            msg = str(chkerror)
+            if not ("Dual" in msg and not dual_check):
+                appendsolwarning(msg, None, result, "Solution Inconsistency")
+                if verbosity > -4:
+                    print("Solution check warning: %s" % msg)
         if verbosity > 0:
             print("Solution checking took %.2g%% of solve time." %
                   ((time() - tic) / soltime * 100))
@@ -356,8 +360,8 @@ class GeometricProgram:
             dlogcost_dlogv = gpv_ss.pop(v)
             val = np.array(result["constants"][v])
             for c, dv_dc in v.gradients.items():
-                with warnings.catch_warnings():  # skip pesky divide-by-zeros
-                    warnings.simplefilter("ignore")
+                with pywarnings.catch_warnings():  # skip pesky divide-by-zeros
+                    pywarnings.simplefilter("ignore")
                     dlogv_dlogc = dv_dc * result["constants"][c]/val
                     gpv_ss[c] = gpv_ss.get(c, 0) + dlogcost_dlogv*dlogv_dlogc
                 if v in cost_senss:

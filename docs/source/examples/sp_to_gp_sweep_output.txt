@@ -8,11 +8,11 @@ WARNINGS
 ~~~~~~~~
 Unexpectedly Loose Constraints in sweep 0
 -----------------------------------------
-0.9585 >= 0.9187 : V_{f_{avail}} ≥ V_f
+0.5886 >= 0.5775 : V_{f_{avail}} ≥ V_f
 
 Unexpectedly Loose Constraints in sweep 1
 -----------------------------------------
-0.9585 >= 0.9187 : V_{f_{avail}} ≥ V_f
+0.7884 >= 0.7769 : V_{f_{avail}} ≥ V_f
 
 Unexpectedly Loose Constraints in sweep 2
 -----------------------------------------

@@ -263,18 +263,20 @@ def warnings_table(self, _, **kwargs):
             if len(data_vec) > 1:
                 title += " in sweep %i" % i
             if wtype == "Unexpectedly Tight Constraints" and data[0][1]:
-                data = [(-int(1e5*c.relax_sensitivity),
-                         "%+6.2g" % c.relax_sensitivity, id(c), c)
-                        for _, c in data]
+                data = [(-int(1e5*relax_sensitivity),
+                         "%+6.2g" % relax_sensitivity, id(c), c)
+                        for _, (relax_sensitivity, c) in data]
                 lines += constraint_table(data, title, **kwargs)
             elif wtype == "Unexpectedly Loose Constraints" and data[0][1]:
-                data = [(-int(1e5*c.rel_diff),
-                         "%.4g %s %.4g" % c.tightvalues, id(c), c)
-                        for _, c in data]
+                data = [(-int(1e5*rel_diff),
+                         "%.4g %s %.4g" % tightvalues, id(c), c)
+                        for _, (rel_diff, tightvalues, c) in data]
                 lines += constraint_table(data, title, **kwargs)
             else:
                 lines += [title] + ["-"*len(wtype)]
                 lines += [msg for msg, _ in data] + [""]
+    if len(lines) == 3:  # just the header
+        return []
     lines[-1] = "~~~~~~~~"
     return lines + [""]
 
