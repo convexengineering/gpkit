@@ -119,7 +119,11 @@ def _append_dict(d_in, d_out):
         if isinstance(v, dict):
             d_out[k] = _append_dict(v, d_out[k])
         else:
-            d_out[k].append(v)
+            try:
+                d_out[k].append(v)
+            except KeyError as e:
+                raise RuntimeWarning("Key `%s` was added after the first sweep."
+                                     % k) from e
     return d_out
 
 
