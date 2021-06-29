@@ -43,8 +43,7 @@ def evaluate_linked(constants, linked):
                     "Linked function for %s did not return a united value."
                     "Modifying it to do so (e.g. by using `()` instead of `[]`"
                     " to access variables) will reduce errors." % v)
-            if hasattr(out, "__len__"):
-                out = out.item()  # break out of 0-dimensional arrays
+            out = maybe_flatten(out)
             if not hasattr(out, "x"):
                 constants[v] = out
                 continue  # a new fixed variable, not a calculated one
@@ -57,14 +56,19 @@ def evaluate_linked(constants, linked):
             from .. import settings
             if settings.get("ad_errors_raise", None):
                 raise
-            print("Warning: skipped auto-differentiation of linked variable"
-                  " %s because %s was raised. Set `gpkit.settings"
-                  "[\"ad_errors_raise\"] = True` to raise such Exceptions"
-                  " directly.\n" % (v, repr(exception)))
             if kdc_plain is None:
                 kdc_plain = KeyDict(constants)
             constants[v] = f(kdc_plain)
             v.descr.pop("gradients", None)
+            print("Warning: skipped auto-differentiation of linked variable"
+                  " %s because %s was raised. Set `gpkit.settings"
+                  "[\"ad_errors_raise\"] = True` to raise such Exceptions"
+                  " directly.\n" % (v, repr(exception)))
+            if ("Automatic differentiation not yet supported for <class "
+                    "'gpkit.nomials.math.Monomial'> objects") in str(exception):
+                print("This particular warning may have come from using"
+                      " gpkit.units.* in the function for %s; try using"
+                      " gpkit.ureg.* or gpkit.units.*.units instead." % v)
 
 
 def progify(program, return_attr=None):

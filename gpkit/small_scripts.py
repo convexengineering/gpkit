@@ -40,8 +40,8 @@ def isnan(element):
 
 def maybe_flatten(value):
     "Extract values from 0-d numpy arrays, if necessary"
-    if hasattr(value, "shape") and not value.shape:
-        return value.flatten()[0]  # 0-d numpy arrays
+    if hasattr(value, "size") and value.size == 1:
+        return value.item()
     return value
 
 
