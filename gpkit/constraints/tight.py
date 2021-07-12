@@ -23,7 +23,7 @@ class Tight(ConstraintSet):
             with SignomialsEnabled():
                 leftval = constraint.left.sub(variables).value
                 rightval = constraint.right.sub(variables).value
-            rel_diff = abs(1 - leftval/rightval)
+            rel_diff = mag(abs(1 - leftval/rightval))
             if rel_diff >= self.reltol:
                 msg = ("Constraint [%.100s... %s %.100s...] is not tight:"
                        " the left hand side evaluated to %s but"
@@ -35,7 +35,6 @@ class Tight(ConstraintSet):
                 if hasattr(leftval, "magnitude"):
                     rightval = rightval.to(leftval.units).magnitude
                     leftval = leftval.magnitude
-                constraint.tightvalues = (leftval, constraint.oper, rightval)
-                constraint.rel_diff = rel_diff
-                appendsolwarning(msg, constraint, result,
-                                 "Unexpectedly Loose Constraints")
+                tightvalues = (leftval, constraint.oper, rightval)
+                appendsolwarning(msg, (rel_diff, tightvalues, constraint),
+                                 result, "Unexpectedly Loose Constraints")

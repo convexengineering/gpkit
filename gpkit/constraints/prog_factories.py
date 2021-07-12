@@ -41,8 +41,9 @@ def evaluate_linked(constants, linked):
             elif out != 0 and v.units:
                 pywarnings.warn(
                     "Linked function for %s did not return a united value."
-                    " Modifying it to do so (e.g. by using `()` instead of"
-                    " `[]` to access variables) will reduce errors." % v)
+                    " Modifying it to do so (e.g. by using `()` instead of `[]`"
+                    " to access variables) will reduce errors." % v)
+            out = maybe_flatten(out)
             if not hasattr(out, "x"):
                 constants[v] = out
                 continue  # a new fixed variable, not a calculated one
@@ -55,14 +56,19 @@ def evaluate_linked(constants, linked):
             from .. import settings
             if settings.get("ad_errors_raise", None):
                 raise
-            print("Warning: skipped auto-differentiation of linked variable"
-                  " %s because %s was raised. Set `gpkit.settings"
-                  "[\"ad_errors_raise\"] = True` to raise such Exceptions"
-                  " directly.\n" % (v, repr(exception)))
             if kdc_plain is None:
                 kdc_plain = KeyDict(constants)
             constants[v] = f(kdc_plain)
             v.descr.pop("gradients", None)
+            print("Warning: skipped auto-differentiation of linked variable"
+                  " %s because %s was raised. Set `gpkit.settings"
+                  "[\"ad_errors_raise\"] = True` to raise such Exceptions"
+                  " directly.\n" % (v, repr(exception)))
+            if ("Automatic differentiation not yet supported for <class "
+                    "'gpkit.nomials.math.Monomial'> objects") in str(exception):
+                print("This particular warning may have come from using"
+                      " gpkit.units.* in the function for %s; try using"
+                      " gpkit.ureg.* or gpkit.units.*.units instead." % v)
 
 
 def progify(program, return_attr=None):
@@ -92,7 +98,7 @@ def progify(program, return_attr=None):
 def solvify(genfunction):
     "Returns function for making/solving/sweeping a program."
     def solvefn(self, solver=None, *, verbosity=1, skipsweepfailures=False,
-                **solveargs):
+                **kwargs):
         """Forms a mathematical program and attempts to solve it.
 
          Arguments
@@ -104,7 +110,7 @@ def solvify(genfunction):
              Is decremented by one and then passed to programs.
          skipsweepfailures : bool (default False)
              If True, when a solve errors during a sweep, skip it.
-         **solveargs : Passed to solve() call
+         **kwargs : Passed to solve and program init calls
 
          Returns
          -------
@@ -123,11 +129,11 @@ def solvify(genfunction):
         # NOTE SIDE EFFECTS: self.program and self.solution set below
         if sweep:
             run_sweep(genfunction, self, solution, skipsweepfailures,
-                      constants, sweep, linked, solver, verbosity, **solveargs)
+                      constants, sweep, linked, solver, verbosity, **kwargs)
         else:
-            self.program, progsolve = genfunction(self)
-            result = progsolve(solver, verbosity=verbosity, **solveargs)
-            if solveargs.get("process_result", True):
+            self.program, progsolve = genfunction(self, **kwargs)
+            result = progsolve(solver, verbosity=verbosity, **kwargs)
+            if kwargs.get("process_result", True):
                 self.process_result(result)
             solution.append(result)
         solution.to_arrays()
@@ -140,7 +146,7 @@ def solvify(genfunction):
 
 # pylint: disable=too-many-locals,too-many-arguments,too-many-branches
 def run_sweep(genfunction, self, solution, skipsweepfailures,
-              constants, sweep, linked, solver, verbosity, **solveargs):
+              constants, sweep, linked, solver, verbosity, **kwargs):
     "Runs through a sweep."
     # sort sweeps by the eqstr of their varkey
     sweepvars, sweepvals = zip(*sorted(list(sweep.items()),
@@ -165,13 +171,13 @@ def run_sweep(genfunction, self, solution, skipsweepfailures,
                           for (var, sweep_vect) in sweep_vects.items()})
         if linked:
             evaluate_linked(constants, linked)
-        program, solvefn = genfunction(self, constants)
+        program, solvefn = genfunction(self, constants, **kwargs)
         self.program.append(program)  # NOTE: SIDE EFFECTS
         try:
             if verbosity > 1:
                 print("\nSolve %i:" % i)
-            result = solvefn(solver, verbosity=verbosity-1, **solveargs)
-            if solveargs.get("process_result", True):
+            result = solvefn(solver, verbosity=verbosity-1, **kwargs)
+            if kwargs.get("process_result", True):
                 self.process_result(result)
             solution.append(result)
         except Infeasible as e:

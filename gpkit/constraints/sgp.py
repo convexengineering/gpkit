@@ -10,6 +10,7 @@ from ..nomials import Variable
 from .gp import GeometricProgram
 from ..nomials import PosynomialInequality, Posynomial
 from .. import NamedVariables
+from ..small_scripts import appendsolwarning, initsolwarning
 
 
 EPS = 1e-6  # 1 +/- this is used in a few relative differences
@@ -48,8 +49,8 @@ class SequentialGeometricProgram:
     with NamedVariables("RelaxPCCP"):
         slack = Variable("C")
 
-    def __init__(self, cost, model, substitutions, *,
-                 use_pccp=True, pccp_penalty=2e2, checkbounds=True):
+    def __init__(self, cost, model, substitutions,
+                  *, use_pccp=True, pccp_penalty=2e2, checkbounds=True, **_):
         self.pccp_penalty = pccp_penalty
         if cost.any_nonpositive_cs:
             raise InvalidPosynomial("""an SGP's cost must be Posynomial
@@ -169,13 +170,13 @@ solutions and can be solved with 'Model.solve()'.""")
             if prevcost is None:
                 continue
             rel_improvement = (prevcost - cost)/(prevcost + cost)
-            if cost*(1 - EPS) > prevcost + EPS and verbosity > -1:
+            if cost/prevcost >= 1 + 10*EPS:
                 pywarnings.warn(
-                    "SGP not convergent: Cost rose by %.2g%% on GP solve %i."
-                    " Details can be found in `m.program.results` or by"
-                    " solving at a higher verbosity. Note that convergence"
+                    "SGP not convergent: Cost rose by %.2g%% (%.6g to %.6g) on"
+                    " GP solve %i. Details can be found in `m.program.results`"
+                    " or by solving at a higher verbosity. Note convergence"
                     " is not guaranteed for models with SignomialEqualities."
-                    % (100*(cost - prevcost)/prevcost, len(self.gps)))
+                    % (100*(cost - prevcost)/prevcost, prevcost, cost, len(self.gps)))
                 rel_improvement = cost = None
         # solved successfully!
         self.result = gp.generate_result(solver_out, verbosity=verbosity-3)
@@ -186,29 +187,32 @@ solutions and can be solved with 'Model.solve()'.""")
             print("Solving took %.3g seconds and %i GP solves."
                   % (self.result["soltime"], len(self.gps)))
         if hasattr(self.slack, "key"):
+            initsolwarning(self.result, "Slack Non-GP Constraints")
             excess_slack = self.result["variables"][self.slack.key] - 1  # pylint: disable=no-member
-            if excess_slack <= EPS:
-                del self.result["freevariables"][self.slack.key]  # pylint: disable=no-member
-                del self.result["variables"][self.slack.key]  # pylint: disable=no-member
-                del self.result["sensitivities"]["variables"][self.slack.key]  # pylint: disable=no-member
-                slcon = self.gpconstraints[0]
-                slconsenss = self.result["sensitivities"]["constraints"][slcon]
-                del self.result["sensitivities"]["constraints"][slcon]
-                # TODO: create constraint in RelaxPCCP namespace
-                self.result["sensitivities"]["models"][""] -= slconsenss
-                if not self.result["sensitivities"]["models"][""]:
-                    del self.result["sensitivities"]["models"][""]
-            elif verbosity > -1:
-                pywarnings.warn(
-                    "Final solution let signomial constraints slacken by"
-                    " %.2g%%. Calling .localsolve with a higher"
-                    " `pccp_penalty` (it was %.3g this time) will reduce"
-                    " final slack if the model is solvable with less. If"
-                    " you think it might not be, check by generating an SP with"
-                    "`use_pccp=False`, then solving with x0=(this model's final"
-                    " solution); e.g. `m.sp(use_pccp=False).localsolve("
-                    "x0=m.solution[\"variables\"])`.\n"
-                    % (100*excess_slack, self.pccp_penalty))
+            if excess_slack > EPS:
+                msg = ("Final PCCP solution let non-GP constraints slacken by"
+                       " %.2g%%." % (100*excess_slack))
+                appendsolwarning(msg, (1 + excess_slack), self.result,
+                                 "Slack Non-GP Constraints")
+                if verbosity > -1:
+                    print(msg +
+                        " Calling .localsolve(pccp_penalty=...) with a"
+                        " higher `pccp_penalty` (it was %.3g this time) will"
+                        " reduce slack if the model is solvable with less. To"
+                        " verify that the slack is needed, generate an SGP with"
+                        " `use_pccp=False` and start it from this model's"
+                        "  solution: e.g. `m.localsolve(use_pccp=False, x0="
+                        "m.solution[\"variables\"])`." % self.pccp_penalty)
+            del self.result["freevariables"][self.slack.key]  # pylint: disable=no-member
+            del self.result["variables"][self.slack.key]  # pylint: disable=no-member
+            del self.result["sensitivities"]["variables"][self.slack.key]  # pylint: disable=no-member
+            slcon = self.gpconstraints[0]
+            slconsenss = self.result["sensitivities"]["constraints"][slcon]
+            del self.result["sensitivities"]["constraints"][slcon]
+            # TODO: create constraint in RelaxPCCP namespace
+            self.result["sensitivities"]["models"][""] -= slconsenss
+            if not self.result["sensitivities"]["models"][""]:
+                del self.result["sensitivities"]["models"][""]
         return self.result
 
     @property

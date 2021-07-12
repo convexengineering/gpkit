@@ -24,8 +24,7 @@ class Loose(ConstraintSet):
                 msg = ("%s is not loose: it has a sensitivity of %+.4g."
                        " (Allowable sensitivity: %.4g)" %
                        (cstr, c_senss, self.senstol))
-                constraint.relax_sensitivity = c_senss
-                appendsolwarning(msg, constraint, result,
+                appendsolwarning(msg, (c_senss, constraint), result,
                                  "Unexpectedly Tight Constraints")
                 if self.raiseerror:
                     raise RuntimeWarning(msg)
