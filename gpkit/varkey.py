@@ -65,7 +65,6 @@ class VarKey(ReprMixin):  # pylint:disable=too-many-instance-attributes
         name = self.name
         if "lineage" not in excluded and self.lineage:
             namespace = self.lineagestr("modelnums" not in excluded).split(".")
-            backscan = 0
             for ex in excluded:
                 if ex[0:7] == ":MAGIC:":
                     to_replace = ex[7:].split(".")
@@ -77,7 +76,6 @@ class VarKey(ReprMixin):  # pylint:disable=too-many-instance-attributes
                         namespace = namespace[1:]
                     if len(to_replace) > replaced:
                         namespace.insert(0, "."*(len(to_replace)-replaced))
-                        backscan = replaced - 1
             if "unnecessary lineage" in excluded:
                 if self.necessarylineage:
                     namespace = namespace[-self.necessarylineage:]

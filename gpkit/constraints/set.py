@@ -209,21 +209,22 @@ class ConstraintSet(list, ReprMixin):
                 shortname = key.str_without(["lineage", "vec"])
                 if len(self.varkeys[shortname]) > 1:
                     name_collisions[shortname].add(key)
-            for vks in name_collisions.values():
+            for varkeys in name_collisions.values():
                 min_namespaced = defaultdict(set)
-                for vk in vks:
+                for vk in varkeys:
                     *_, mineage = vk.lineagestr().split(".")
                     min_namespaced[(mineage, 1)].add(vk)
                 while any(len(vks) > 1 for vks in min_namespaced.values()):
                     for key, vks in list(min_namespaced.items()):
-                        if len(vks) > 1:
-                            del min_namespaced[key]
-                            mineage, idx = key
-                            idx += 1
-                            for vk in vks:
-                                lineages = vk.lineagestr().split(".")
-                                submineage = lineages[-idx] + "." + mineage
-                                min_namespaced[(submineage, idx)].add(vk)
+                        if len(vks) <= 1:
+                            continue
+                        del min_namespaced[key]
+                        mineage, idx = key
+                        idx += 1
+                        for vk in vks:
+                            lineages = vk.lineagestr().split(".")
+                            submineage = lineages[-idx] + "." + mineage
+                            min_namespaced[(submineage, idx)].add(vk)
                 for (_, idx), vks in min_namespaced.items():
                     vk, = vks
                     self._name_collision_varkeys[vk] = idx

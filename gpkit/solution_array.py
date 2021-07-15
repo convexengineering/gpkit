@@ -6,8 +6,8 @@ import warnings as pywarnings
 import pickle
 import gzip
 import pickletools
-import numpy as np
 from collections import defaultdict
+import numpy as np
 from .nomials import NomialArray
 from .small_classes import DictOfLists, Strings
 from .small_scripts import mag, try_str_without
@@ -182,7 +182,8 @@ def constraint_table(data, title, sortbymodel=True, showmodels=True, **_):
         model = lineagestr(constraint) if sortbymodel else ""
         if model not in models:
             models[model] = len(models)
-        constrstr = try_str_without(constraint, excluded + (":MAGIC:"+lineagestr(constraint),))
+        constrstr = try_str_without(
+            constraint, excluded + (":MAGIC:"+lineagestr(constraint),))
         if " at 0x" in constrstr:  # don't print memory addresses
             constrstr = constrstr[:constrstr.find(" at 0x")] + ">"
         decorated.append((models[model], model, sortby, constrstr, openingstr))
@@ -196,7 +197,6 @@ def constraint_table(data, title, sortbymodel=True, showmodels=True, **_):
             if model or lines:
                 lines.append([("newmodelline",), model])
             previous_model = model
-        # constrstr = constrstr.replace(model, "")
         minlen, maxlen = 25, 80
         segments = [s for s in CONSTRSPLITPATTERN.split(constrstr) if s]
         constraintlines = []
@@ -368,26 +368,27 @@ class SolutionArray(DictOfLists):
             self["variables"].update_keymap()
             keymap = self["variables"].keymap
             name_collisions = defaultdict(set)
-            for key in list(keymap):
+            for key in keymap:
                 if hasattr(key, "key"):
                     shortname = key.str_without(["lineage", "vec"])
                     if len(keymap[shortname]) > 1:
                         name_collisions[shortname].add(key)
-            for vks in name_collisions.values():
+            for varkeys in name_collisions.values():
                 min_namespaced = defaultdict(set)
-                for vk in vks:
+                for vk in varkeys:
                     *_, mineage = vk.lineagestr().split(".")
                     min_namespaced[(mineage, 1)].add(vk)
                 while any(len(vks) > 1 for vks in min_namespaced.values()):
                     for key, vks in list(min_namespaced.items()):
-                        if len(vks) > 1:
-                            del min_namespaced[key]
-                            mineage, idx = key
-                            idx += 1
-                            for vk in vks:
-                                lineages = vk.lineagestr().split(".")
-                                submineage = lineages[-idx] + "." + mineage
-                                min_namespaced[(submineage, idx)].add(vk)
+                        if len(vks) <= 1:
+                            continue
+                        del min_namespaced[key]
+                        mineage, idx = key
+                        idx += 1
+                        for vk in vks:
+                            lineages = vk.lineagestr().split(".")
+                            submineage = lineages[-idx] + "." + mineage
+                            min_namespaced[(submineage, idx)].add(vk)
                 for (_, idx), vks in min_namespaced.items():
                     vk, = vks
                     self._name_collision_varkeys[vk] = idx

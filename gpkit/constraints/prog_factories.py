@@ -19,8 +19,7 @@ def evaluate_linked(constants, linked):
     kdc_plain = None
     array_calulated = {}
     for key in constants:  # remove gradients from constants
-        if key.gradients:
-            del key.descr["gradients"]
+        key.descr.pop("gradients", None)
     for v, f in linked.items():
         try:
             if v.veckey and v.veckey.vecfn:
@@ -48,10 +47,9 @@ def evaluate_linked(constants, linked):
                 constants[v] = out
                 continue  # a new fixed variable, not a calculated one
             constants[v] = out.x
-            gradients = {adn.tag:
-                         grad for adn, grad in out.d().items() if adn.tag}
-            if gradients:
-                v.descr["gradients"] = gradients
+            v.descr["gradients"] = {adn.tag: grad
+                                    for adn, grad in out.d().items()
+                                    if adn.tag}
         except Exception as exception:  # pylint: disable=broad-except
             from .. import settings
             if settings.get("ad_errors_raise", None):
