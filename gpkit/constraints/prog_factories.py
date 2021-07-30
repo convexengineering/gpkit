@@ -137,7 +137,6 @@ def solvify(genfunction):
         solution.to_arrays()
         self.solution = solution
         solution.costposy = self.cost
-        solution.vks = self.vks
         return solution
     return solvefn
 
