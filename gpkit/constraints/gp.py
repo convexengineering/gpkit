@@ -88,7 +88,12 @@ class GeometricProgram:
         if any(c <= 0 for c in cost_hmap.values()):
             raise InvalidPosynomial("a GP's cost must be Posynomial")
         hmapgen = ConstraintSet.as_hmapslt1(constraints, self.substitutions)
-        self.hmaps = [cost_hmap] + list(hmapgen)
+        self.hmaps = [cost_hmap]
+        hmapset = set()
+        for i, hmap in enumerate(hmapgen):
+            if hmap not in hmapset:  # de-duplicate hmaps
+                hmapset.add(hmap)
+                self.hmaps.append(hmap)
         self.gen()  # Generate various maps into the posy- and monomials
         if checkbounds:
             self.check_bounds(err_on_missing_bounds=True)
