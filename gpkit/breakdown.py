@@ -60,7 +60,7 @@ def get_model_breakdown(solution):
         # treat vectors as namespace
         constraint = constraint.str_without({"unnecessary lineage", "units", ":MAGIC:"+constraint.lineagestr()})
         subbd[constraint] = {"|sensitivity|": senss}
-    for vk in solution.vks:
+    for vk in solution.vks:  # could this be done away with for backwards compatibility?
         if vk not in solution["sensitivities"]["variables"]:
             continue
         senss = abs(solution["sensitivities"]["variables"][vk])
@@ -595,7 +595,7 @@ def graph(tree, solution, height=None, maxdepth=None, maxwidth=110,
           showlegend=False):
     "Prints breakdown"
     solution.set_necessarylineage()
-    collapse = True #(not showlegend)
+    collapse = (not showlegend)  # TODO: set to True whil showlegend is True for first approx of receipts
     maxwidth = None
     if maxdepth is None:
         maxdepth = plumb(tree)
@@ -651,7 +651,7 @@ def graph(tree, solution, height=None, maxdepth=None, maxwidth=110,
             if key in legend:
                 chararray[depth, pos] = legend[key]
                 if isinstance(key, tuple) and not isinstance(key, Transform):
-                    chararray[depth, pos] =  "*" # + chararray[depth, pos]
+                    chararray[depth, pos] =  "*" + chararray[depth, pos]
                     del legend[key]
                 if showlegend:
                     continue
@@ -786,132 +786,215 @@ def get_valstr(key, solution, into="%s"):
     return into % (valuestr + unitstr)
 
 
-import pickle
-from gpkit import ureg
-ureg.define("pax = 1")
-ureg.define("paxkm = km")
-ureg.define("trip = 1")
+import plotly.graph_objects as go
+def plotlyify(tree, solution, minval=None):
+    """Plots model structure as Plotly TreeMap
 
-print("STARTING...")
-from gpkit.tests.helpers import StdoutCaptured
+    Arguments
+    ---------
+    model: Model
+        GPkit model object
 
-import difflib
+    itemize (optional): string, either "variables" or "constraints"
+        Specify whether to iterate over the model varkeys or constraints
 
-permissivity = 2
+    sizebycount (optional): bool
+        Whether to size blocks by number of variables/constraints or use
+        default sizing
 
-# sol = pickle.load(open("solar.p", "rb"))
-# bd = get_breakdowns(sol)
-# mbd = get_model_breakdown(sol)
-# mtree = crawl_modelbd(mbd)
-# # graph(mtree, sol, showlegend=True, height=20)
-# # graph(mtree.branches[0].branches[0].branches[0], sol, showlegend=False, height=20)
-#
-# tree = crawl(sol.costposy, bd, sol, permissivity=2, verbosity=0)
-# graph(tree, sol)
-#
-#
-# # key, = [vk for vk in bd if "Wing.Planform.b" in str(vk)]
-# # tree = crawl(key, bd, sol, permissivity=2, verbosity=1)
-# # graph(tree, sol)
-# # key, = [vk for vk in bd if "Aircraft.Fuselage.R[0,0]" in str(vk)]
-# # tree = crawl(key, bd, sol, permissivity=2, verbosity=1)
-# # graph(tree, sol)
-# # key, = [vk for vk in bd if "Mission.Climb.AircraftDrag.CD[0]" in str(vk)]
-# # tree = crawl(key, bd, sol, permissivity=2, verbosity=1)
-# # graph(tree, sol)
-#
-#
-# keys = sorted(bd.keys(), key=str)
-#
-# # with StdoutCaptured("solarbreakdowns.log"):
-# #     graph(mtree, sol, showlegend=False)
-# #     graph(mtree, sol, showlegend=True)
-# #     tree = crawl(sol.costposy, bd, sol, permissivity=permissivity)
-# #     graph(tree, sol)
-# #     for key in keys:
-# #         tree = crawl(key, bd, sol, permissivity=permissivity)
-# #         graph(tree, sol)
-#
-# with StdoutCaptured("solarbreakdowns.log.new"):
-#     graph(mtree, sol, showlegend=False)
-#     graph(mtree, sol, showlegend=True)
-#     tree = crawl(sol.costposy, bd, sol, permissivity=permissivity)
-#     graph(tree, sol)
-#     for key in keys:
-#         tree = crawl(key, bd, sol, permissivity=permissivity)
-#         try:
-#             graph(tree, sol)
-#         except:
-#             raise ValueError(key)
-#
-# with open("solarbreakdowns.log", "r") as original:
-#     with open("solarbreakdowns.log.new", "r") as new:
-#         diff = difflib.unified_diff(
-#             original.readlines(),
-#             new.readlines(),
-#             fromfile="original",
-#             tofile="new",
-#         )
-#         for line in diff:
-#             print(line[:-1])
-#
-# print("SOLAR DONE")
+    Returns
+    -------
+    plotly.graph_objects.Figure
+        Plot of model hierarchy
+
+    """
+    ids = []
+    labels = []
+    parents = []
+    values = []
+
+    key, value, branches = tree
+    if isinstance(key, VarKey) and key.necessarylineage:
+        prefix = key.lineagestr()
+    else:
+        prefix = ""
+
+    if minval is None:
+        minval = value/1000
+
+    def crawl(tree, parent_id=None):
+        key, value, branches = tree
+        if value > minval:
+            if isinstance(key, Transform):
+                id = parent_id
+            else:
+                id = len(ids)+1
+                ids.append(id)
+                labels.append(get_keystr(key, solution, prefix))
+                if not isinstance(key, str):
+                    labels[-1] = labels[-1] + "<br>" + get_valstr(key, sol)
+                parents.append(parent_id)
+                values.append(value)
+            for branch in branches:
+                crawl(branch, id)
+
+    crawl(tree)
+    return ids, labels, parents, values
+
+def treemap(ids, labels, parents, values):
+    return go.Figure(go.Treemap(
+        ids=ids,
+        labels=labels,
+        parents=parents,
+        values=values,
+        branchvalues="total"
+    ))
+
+def icicle(ids, labels, parents, values):
+    return go.Figure(go.Icicle(
+        ids=ids,
+        labels=labels,
+        parents=parents,
+        values=values,
+        branchvalues="total"
+    ))
 
 
-sol = pickle.load(open("bd.p", "rb"))
-bd = get_breakdowns(sol)
-mbd = get_model_breakdown(sol)
-mtree = crawl_modelbd(mbd)
+if __name__ == "__main__":
+    import pickle
+    from gpkit import ureg
+    ureg.define("pax = 1")
+    ureg.define("paxkm = km")
+    ureg.define("trip = 1")
 
-# graph(mtree, sol, showlegend=False)
-#
-# key, = [vk for vk in bd if "podtripenergy[1,0]" in str(vk)]
-# tree = crawl(key, bd, sol, permissivity=2, verbosity=1)
-# graph(tree, sol, height=40)
-tree = crawl(sol.costposy, bd, sol, permissivity=2, verbosity=1)
-graph(tree, sol, showlegend=True)
-# key, = [vk for vk in bd if "statorlaminationmassperpolepair" in str(vk)]
-# tree = crawl(key, bd, sol, permissivity=2, verbosity=1)
-# graph(tree, sol)
-# key, = [vk for vk in bd if "numberofcellsperstring" in str(vk)]
-# tree = crawl(key, bd, sol, permissivity=2, verbosity=1)
-# graph(tree, sol)
-#
-# keys = sorted((key for key in bd.keys() if not key.idx or len(key.shape) == 1),
-#               key=lambda k: k.str_without(excluded={}))
+    print("STARTING...")
+    from gpkit.tests.helpers import StdoutCaptured
 
-# with StdoutCaptured("breakdowns.log"):
-#     graph(mtree, sol, showlegend=False)
-#     graph(mtree.branches[0].branches[1], sol, showlegend=False)
-#     graph(mtree, sol, showlegend=True)
-#     tree = crawl(sol.costposy, bd, sol, permissivity=permissivity)
-#     graph(tree, sol)
-#     for key in keys:
-#         tree = crawl(key, bd, sol, permissivity=permissivity)
-#         graph(tree, sol)
+    import difflib
 
-# with StdoutCaptured("breakdowns.log.new"):
-#     graph(mtree, sol, showlegend=False)
-#     graph(mtree.branches[0].branches[1], sol, showlegend=False)
-#     graph(mtree, sol, showlegend=True)
-#     tree = crawl(sol.costposy, bd, sol, permissivity=permissivity)
-#     graph(tree, sol)
-#     for key in keys:
-#         tree = crawl(key, bd, sol, permissivity=permissivity)
-#         try:
-#             graph(tree, sol)
-#         except:
-#             raise ValueError(key)
-#
-# with open("breakdowns.log", "r") as original:
-#     with open("breakdowns.log.new", "r") as new:
-#         diff = difflib.unified_diff(
-#             original.readlines(),
-#             new.readlines(),
-#             fromfile="original",
-#             tofile="new",
-#         )
-#         for line in diff:
-#             print(line[:-1])
+    permissivity = 2
 
-print("DONE")
+    # sol = pickle.load(open("solar.p", "rb"))
+    # bd = get_breakdowns(sol)
+    # mbd = get_model_breakdown(sol)
+    # mtree = crawl_modelbd(mbd)
+    # # graph(mtree, sol, showlegend=True, height=20)
+    # # graph(mtree.branches[0].branches[0].branches[0], sol, showlegend=False, height=20)
+    #
+    # tree = crawl(sol.costposy, bd, sol, permissivity=2, verbosity=0)
+    # graph(tree, sol)
+    #
+    #
+    # # key, = [vk for vk in bd if "Wing.Planform.b" in str(vk)]
+    # # tree = crawl(key, bd, sol, permissivity=2, verbosity=1)
+    # # graph(tree, sol)
+    # # key, = [vk for vk in bd if "Aircraft.Fuselage.R[0,0]" in str(vk)]
+    # # tree = crawl(key, bd, sol, permissivity=2, verbosity=1)
+    # # graph(tree, sol)
+    # # key, = [vk for vk in bd if "Mission.Climb.AircraftDrag.CD[0]" in str(vk)]
+    # # tree = crawl(key, bd, sol, permissivity=2, verbosity=1)
+    # # graph(tree, sol)
+    #
+    #
+    # keys = sorted(bd.keys(), key=str)
+    #
+    # # with StdoutCaptured("solarbreakdowns.log"):
+    # #     graph(mtree, sol, showlegend=False)
+    # #     graph(mtree, sol, showlegend=True)
+    # #     tree = crawl(sol.costposy, bd, sol, permissivity=permissivity)
+    # #     graph(tree, sol)
+    # #     for key in keys:
+    # #         tree = crawl(key, bd, sol, permissivity=permissivity)
+    # #         graph(tree, sol)
+    #
+    # with StdoutCaptured("solarbreakdowns.log.new"):
+    #     graph(mtree, sol, showlegend=False)
+    #     graph(mtree, sol, showlegend=True)
+    #     tree = crawl(sol.costposy, bd, sol, permissivity=permissivity)
+    #     graph(tree, sol)
+    #     for key in keys:
+    #         tree = crawl(key, bd, sol, permissivity=permissivity)
+    #         try:
+    #             graph(tree, sol)
+    #         except:
+    #             raise ValueError(key)
+    #
+    # with open("solarbreakdowns.log", "r") as original:
+    #     with open("solarbreakdowns.log.new", "r") as new:
+    #         diff = difflib.unified_diff(
+    #             original.readlines(),
+    #             new.readlines(),
+    #             fromfile="original",
+    #             tofile="new",
+    #         )
+    #         for line in diff:
+    #             print(line[:-1])
+    #
+    # print("SOLAR DONE")
+
+    sol = pickle.load(open("solutions/stella.p", "rb"))
+    bd = get_breakdowns(sol)
+    mbd = get_model_breakdown(sol)
+    mtree = crawl_modelbd(mbd)
+    import plotly  # pylint: disable=unused-import
+    fig = treemap(*plotlyify(mtree, sol))
+    plotly.offline.plot(fig, filename="mtreemap.html")
+    fig = icicle(*plotlyify(mtree, sol))
+    plotly.offline.plot(fig, filename="micicle.html")
+
+    # graph(mtree, sol, showlegend=False)
+    #
+    # key, = [vk for vk in bd if "podtripenergy[1,0]" in str(vk)]
+    # tree = crawl(key, bd, sol, permissivity=2, verbosity=1)
+    # graph(tree, sol, height=40)
+    tree = crawl(sol.costposy, bd, sol, permissivity=2, verbosity=1)
+    graph(tree, sol, showlegend=True)
+    fig = treemap(*plotlyify(tree, sol))
+    plotly.offline.plot(fig, filename="treemap.html")
+    fig = icicle(*plotlyify(tree, sol))
+    plotly.offline.plot(fig, filename="icicle.html")
+    # key, = [vk for vk in bd if "statorlaminationmassperpolepair" in str(vk)]
+    # tree = crawl(key, bd, sol, permissivity=2, verbosity=1)
+    # graph(tree, sol)
+    # key, = [vk for vk in bd if "numberofcellsperstring" in str(vk)]
+    # tree = crawl(key, bd, sol, permissivity=2, verbosity=1)
+    # graph(tree, sol)
+    #
+    # keys = sorted((key for key in bd.keys() if not key.idx or len(key.shape) == 1),
+    #               key=lambda k: k.str_without(excluded={}))
+
+    # with StdoutCaptured("breakdowns.log"):
+    #     graph(mtree, sol, showlegend=False)
+    #     graph(mtree.branches[0].branches[1], sol, showlegend=False)
+    #     graph(mtree, sol, showlegend=True)
+    #     tree = crawl(sol.costposy, bd, sol, permissivity=permissivity)
+    #     graph(tree, sol)
+    #     for key in keys:
+    #         tree = crawl(key, bd, sol, permissivity=permissivity)
+    #         graph(tree, sol)
+
+    # with StdoutCaptured("breakdowns.log.new"):
+    #     graph(mtree, sol, showlegend=False)
+    #     graph(mtree.branches[0].branches[1], sol, showlegend=False)
+    #     graph(mtree, sol, showlegend=True)
+    #     tree = crawl(sol.costposy, bd, sol, permissivity=permissivity)
+    #     graph(tree, sol)
+    #     for key in keys:
+    #         tree = crawl(key, bd, sol, permissivity=permissivity)
+    #         try:
+    #             graph(tree, sol)
+    #         except:
+    #             raise ValueError(key)
+    #
+    # with open("breakdowns.log", "r") as original:
+    #     with open("breakdowns.log.new", "r") as new:
+    #         diff = difflib.unified_diff(
+    #             original.readlines(),
+    #             new.readlines(),
+    #             fromfile="original",
+    #             tofile="new",
+    #         )
+    #         for line in diff:
+    #             print(line[:-1])
+
+    print("DONE")
