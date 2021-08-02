@@ -19,8 +19,7 @@ def evaluate_linked(constants, linked):
     kdc_plain = None
     array_calulated = {}
     for key in constants:  # remove gradients from constants
-        if key.gradients:
-            del key.descr["gradients"]
+        key.descr.pop("gradients", None)
     for v, f in linked.items():
         try:
             if v.veckey and v.veckey.vecfn:
@@ -41,17 +40,16 @@ def evaluate_linked(constants, linked):
             elif out != 0 and v.units:
                 pywarnings.warn(
                     "Linked function for %s did not return a united value."
-                    "Modifying it to do so (e.g. by using `()` instead of `[]`"
+                    " Modifying it to do so (e.g. by using `()` instead of `[]`"
                     " to access variables) will reduce errors." % v)
             out = maybe_flatten(out)
             if not hasattr(out, "x"):
                 constants[v] = out
                 continue  # a new fixed variable, not a calculated one
             constants[v] = out.x
-            gradients = {adn.tag:
-                         grad for adn, grad in out.d().items() if adn.tag}
-            if gradients:
-                v.descr["gradients"] = gradients
+            v.descr["gradients"] = {adn.tag: grad
+                                    for adn, grad in out.d().items()
+                                    if adn.tag}
         except Exception as exception:  # pylint: disable=broad-except
             from .. import settings
             if settings.get("ad_errors_raise", None):
