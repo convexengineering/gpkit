@@ -593,22 +593,22 @@ class SolutionArray(DictOfLists):
                 f.write(self.modelstr + "\n")
             f.write(self.table(**kwargs))
 
-    def savejson(self, filename="solution.json", *, showvars=None):
+    def savejson(self, filename="solution.json"):
         "Saves solution table as a json file"
         sol_dict = {}
-        # get list of variables 
+        # get list of variables
         data = self["variables"]
         # add appropriate data for each variable to the dictionary
         for i, (k, v) in enumerate(data.items()):
             key = str(k.name)
             # check if ndarray, jsonify using tolist()
-            if isinstance(v,np.ndarray):
+            if isinstance(v, np.ndarray):
                 val = {'v': v.tolist(), 'u': str(k.descr["units"])}
-            else: 
-                val = {'v': v, 'u': str(k.descr["units"])} 
+            else:
+                val = {'v': v, 'u': str(k.descr["units"])}
             sol_dict[key] = val
         with open(filename, "w") as f:
-            json.dump(sol_dict, f) 
+            json.dump(sol_dict, f)
 
     def savecsv(self, filename="solution.csv", *, valcols=5, showvars=None):
         "Saves primal solution as a CSV sorted by modelname, like the tables."
