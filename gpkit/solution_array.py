@@ -601,7 +601,7 @@ class SolutionArray(DictOfLists):
             key.descr["necessarylineage"] = True
         data = self["variables"]
         for i, (k, v) in enumerate(data.items()):
-            key = str(k.name)
+            key = str(k)
             if isinstance(v, np.ndarray):
                 val = {'v': v.tolist(), 'u': str(k.descr["units"])}
             else:
