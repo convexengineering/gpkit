@@ -201,11 +201,11 @@ class TestGP(unittest.TestCase):
 
     def test_additive_constants(self):
         x = Variable("x")
-        m = Model(1/x, [1 >= 5*x + 0.5, 1 >= 10*x])
+        m = Model(1/x, [1 >= 5*x + 0.5, 1 >= 5*x])
         m.solve(verbosity=0)
         # pylint: disable=no-member
         gp = m.program  # created by solve()
-        self.assertEqual(gp.cs[1], gp.cs[2])
+        self.assertEqual(gp.cs[1], 2*gp.cs[2])
         self.assertEqual(gp.A.data[1], gp.A.data[2])
 
     def test_zeroing(self):

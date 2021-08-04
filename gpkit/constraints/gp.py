@@ -88,7 +88,12 @@ class GeometricProgram:
         if any(c <= 0 for c in cost_hmap.values()):
             raise InvalidPosynomial("a GP's cost must be Posynomial")
         hmapgen = ConstraintSet.as_hmapslt1(constraints, self.substitutions)
-        self.hmaps = [cost_hmap] + list(hmapgen)
+        self.hmaps = [cost_hmap]
+        hmapset = set()
+        for i, hmap in enumerate(hmapgen):
+            if hmap not in hmapset:  # de-duplicate hmaps
+                hmapset.add(hmap)
+                self.hmaps.append(hmap)
         self.gen()  # Generate various maps into the posy- and monomials
         if checkbounds:
             self.check_bounds(err_on_missing_bounds=True)
@@ -224,11 +229,12 @@ class GeometricProgram:
 
         if infeasibility:
             if isinstance(infeasibility, PrimalInfeasible):
-                msg = ("The model had no feasible points; "
-                       "you may wish to relax some constraints or constants.")
+                msg = ("The model had no feasible points; relaxing some"
+                       " constraints or constants will probably fix this.")
             elif isinstance(infeasibility, DualInfeasible):
-                msg = ("The model ran to an infinitely low cost;"
-                       " bounding the right variables would prevent this.")
+                msg = ("The model ran to an infinitely low cost"
+                       " (or was otherwise dual infeasible); bounding"
+                       " the right variables will probably fix this.")
             elif isinstance(infeasibility, UnknownInfeasible):
                 msg = ("Solver failed for an unknown reason. Relaxing"
                        " constraints/constants, bounding variables, or"
