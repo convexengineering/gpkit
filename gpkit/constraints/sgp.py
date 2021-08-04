@@ -50,7 +50,7 @@ class SequentialGeometricProgram:
         slack = Variable("C")
 
     def __init__(self, cost, model, substitutions,
-                  *, use_pccp=True, pccp_penalty=2e2, checkbounds=True, **_):
+                 *, use_pccp=True, pccp_penalty=2e2, **kwargs):
         self.pccp_penalty = pccp_penalty
         if cost.any_nonpositive_cs:
             raise InvalidPosynomial("""an SGP's cost must be Posynomial
@@ -92,13 +92,13 @@ Signomial Constraints, since Models without Signomials have global
 solutions and can be solved with 'Model.solve()'.""")
         self._gp = GeometricProgram(
             cost, self.approxconstraints + self.gpconstraints,
-            substitutions, checkbounds=checkbounds)
+            substitutions, **kwargs)
         self._gp.x0 = x0
         self.a_idxs = defaultdict(list)
-        cost_mons = self._gp.k[0]
-        sp_mons = sum(self._gp.k[:1+len(self.approxconstraints)])
+        last_cost_mon = self._gp.k[0]
+        first_gp_mon = sum(self._gp.k[:1+len(self.approxconstraints)])
         for row_idx, m_idx in enumerate(self._gp.A.row):
-            if cost_mons <= m_idx <= sp_mons:
+            if last_cost_mon <= m_idx <= first_gp_mon:
                 self.a_idxs[self._gp.p_idxs[m_idx]].append(row_idx)
 
     # pylint: disable=too-many-locals,too-many-branches,too-many-statements
@@ -176,7 +176,8 @@ solutions and can be solved with 'Model.solve()'.""")
                     " GP solve %i. Details can be found in `m.program.results`"
                     " or by solving at a higher verbosity. Note convergence"
                     " is not guaranteed for models with SignomialEqualities."
-                    % (100*(cost - prevcost)/prevcost, prevcost, cost, len(self.gps)))
+                    % (100*(cost - prevcost)/prevcost,
+                       prevcost, cost, len(self.gps)))
                 rel_improvement = cost = None
         # solved successfully!
         self.result = gp.generate_result(solver_out, verbosity=verbosity-3)
@@ -196,13 +197,13 @@ solutions and can be solved with 'Model.solve()'.""")
                                  "Slack Non-GP Constraints")
                 if verbosity > -1:
                     print(msg +
-                        " Calling .localsolve(pccp_penalty=...) with a"
-                        " higher `pccp_penalty` (it was %.3g this time) will"
-                        " reduce slack if the model is solvable with less. To"
-                        " verify that the slack is needed, generate an SGP with"
-                        " `use_pccp=False` and start it from this model's"
-                        "  solution: e.g. `m.localsolve(use_pccp=False, x0="
-                        "m.solution[\"variables\"])`." % self.pccp_penalty)
+                          " Calling .localsolve(pccp_penalty=...) with a higher"
+                          " `pccp_penalty` (it was %.3g this time) will reduce"
+                          " slack if the model is solvable with less. To verify"
+                          " that the slack is needed, generate an SGP with"
+                          " `use_pccp=False` and start it from this model's"
+                          "  solution: e.g. `m.localsolve(use_pccp=False, x0="
+                          "m.solution[\"variables\"])`." % self.pccp_penalty)
             del self.result["freevariables"][self.slack.key]  # pylint: disable=no-member
             del self.result["variables"][self.slack.key]  # pylint: disable=no-member
             del self.result["sensitivities"]["variables"][self.slack.key]  # pylint: disable=no-member
