@@ -596,17 +596,19 @@ class SolutionArray(DictOfLists):
     def savejson(self, filename="solution.json"):
         "Saves solution table as a json file"
         sol_dict = {}
-        # get list of variables
-        data = self["variables"]
         # add appropriate data for each variable to the dictionary
+        for key in self.name_collision_varkeys():
+            key.descr["necessarylineage"] = True
+        data = self["variables"]
         for i, (k, v) in enumerate(data.items()):
             key = str(k.name)
-            # check if ndarray, jsonify using tolist()
             if isinstance(v, np.ndarray):
                 val = {'v': v.tolist(), 'u': str(k.descr["units"])}
             else:
                 val = {'v': v, 'u': str(k.descr["units"])}
             sol_dict[key] = val
+        for key in self.name_collision_varkeys():
+            del key.descr["necessarylineage"]
         with open(filename, "w") as f:
             json.dump(sol_dict, f)
 
