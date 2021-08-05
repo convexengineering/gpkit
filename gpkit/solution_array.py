@@ -603,9 +603,9 @@ class SolutionArray(DictOfLists):
         for i, (k, v) in enumerate(data.items()):
             key = str(k)
             if isinstance(v, np.ndarray):
-                val = {'v': v.tolist(), 'u': str(k.descr["units"])}
+                val = {'v': v.tolist(), 'u': str(k.unitstr())}
             else:
-                val = {'v': v, 'u': str(k.descr["units"])}
+                val = {'v': v, 'u': str(k.unitstr())}
             sol_dict[key] = val
         for key in self.name_collision_varkeys():
             del key.descr["necessarylineage"]
