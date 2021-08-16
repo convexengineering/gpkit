@@ -5,7 +5,7 @@ from cvxopt.solvers import gp
 from gpkit.exceptions import UnknownInfeasible, DualInfeasible
 
 
-# pylint: disable=too-many-locals
+# pylint: disable=too-many-locals,too-many-statements
 def optimize(*, c, A, k, meq_idxs, use_leqs=True, **kwargs):
     """Interface to the CVXOPT solver
 
@@ -47,11 +47,11 @@ def optimize(*, c, A, k, meq_idxs, use_leqs=True, **kwargs):
     for i, n_monomials in enumerate(k):
         start = sum(k[:i])
         mons = range(start, start+k[i])
-        A_m = A[mons,:].tocoo()
+        A_m = A[mons, :].tocoo()
         chash = hash((c[i], tuple(A_m.data), tuple(A_m.row), tuple(A_m.col)))
         if chash in constraint_hashes:
             continue  # already got it
-        elif i:  # skip cost posy
+        if i:  # skip cost posy
             constraint_hashes.add(chash)
         if use_leqs and start in meq_idxs.all:
             if start in meq_idxs.first_half:

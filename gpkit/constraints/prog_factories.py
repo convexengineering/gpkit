@@ -140,7 +140,7 @@ def solvify(genfunction):
     return solvefn
 
 
-# pylint: disable=too-many-locals,too-many-arguments,too-many-branches
+# pylint: disable=too-many-locals,too-many-arguments,too-many-branches,too-many-statements
 def run_sweep(genfunction, self, solution, skipsweepfailures,
               constants, sweep, linked, solver, verbosity, **kwargs):
     "Runs through a sweep."
