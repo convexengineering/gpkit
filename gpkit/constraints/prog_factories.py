@@ -168,6 +168,7 @@ def run_sweep(genfunction, self, solution, skipsweepfailures,
         if linked:
             evaluate_linked(constants, linked)
         program, solvefn = genfunction(self, constants, **kwargs)
+        program.model = None  # so it doesn't try to debug
         self.program.append(program)  # NOTE: SIDE EFFECTS
         try:
             if verbosity > 1:

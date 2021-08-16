@@ -39,11 +39,20 @@ def optimize(*, c, A, k, meq_idxs, use_leqs=True, **kwargs):
                     Optimal value of the dual variables, in logspace.
     """
     log_c = np.log(np.array(c))
+    A = A.tocsr()
+    maxcol = A.shape[1]-1
     lse_mons, lin_mons, leq_mons = [], [], []
     lse_posys, lin_posys, leq_posys = [], [], []
+    constraint_hashes = set()
     for i, n_monomials in enumerate(k):
         start = sum(k[:i])
         mons = range(start, start+k[i])
+        A_m = A[mons,:].tocoo()
+        chash = hash((c[i], tuple(A_m.data), tuple(A_m.row), tuple(A_m.col)))
+        if chash in constraint_hashes:
+            continue  # already got it
+        elif i:  # skip cost posy
+            constraint_hashes.add(chash)
         if use_leqs and start in meq_idxs.all:
             if start in meq_idxs.first_half:
                 leq_posys.append(i)
@@ -54,8 +63,6 @@ def optimize(*, c, A, k, meq_idxs, use_leqs=True, **kwargs):
         else:
             lse_mons.extend(mons)
             lse_posys.append(i)
-    A = A.tocsr()
-    maxcol = A.shape[1]-1
     if leq_mons:
         A_leq = A[leq_mons, :].tocoo()
         log_c_leq = log_c[leq_mons]
