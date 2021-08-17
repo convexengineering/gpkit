@@ -3,7 +3,7 @@ import unittest
 import os
 import pickle
 import numpy as np
-import json 
+import json
 
 from gpkit import settings, Model, Variable, NamedVariables
 from gpkit.tests.helpers import generate_example_tests
@@ -178,7 +178,6 @@ class TestExamples(unittest.TestCase):
 
     def test_performance_modeling(self, example):
         m = Model(example.M.cost, Loose(example.M), example.M.substitutions)
-        NamedVariables.reset_modelnumbers()
         sol = m.solve(verbosity=0)
         sol.table()
         sol.save("solution.pkl")
@@ -201,8 +200,6 @@ class TestExamples(unittest.TestCase):
             self.assertTrue(np.all(json_dict[str(var.key)]['v']
                                    == sol["variables"][var.key]))
             self.assertEqual(json_dict[str(var.key)]['u'], var.unitstr())
-
-
 
     def test_sp_to_gp_sweep(self, example):
         sol = example.sol
