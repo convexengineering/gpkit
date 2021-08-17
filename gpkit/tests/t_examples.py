@@ -192,6 +192,7 @@ class TestExamples(unittest.TestCase):
         sol_loaded = pickle.load(open("sweepsolution.pkl", "rb"))
         sol_loaded.table()
 
+        # testing savejson
         sol.savejson("solution.json")
         json_dict = {}
         with open("solution.json", "r") as rf:
