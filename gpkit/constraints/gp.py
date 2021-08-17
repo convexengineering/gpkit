@@ -88,12 +88,7 @@ class GeometricProgram:
         if any(c <= 0 for c in cost_hmap.values()):
             raise InvalidPosynomial("a GP's cost must be Posynomial")
         hmapgen = ConstraintSet.as_hmapslt1(constraints, self.substitutions)
-        self.hmaps = [cost_hmap]
-        hmapset = set()
-        for i, hmap in enumerate(hmapgen):
-            if hmap not in hmapset:  # de-duplicate hmaps
-                hmapset.add(hmap)
-                self.hmaps.append(hmap)
+        self.hmaps = [cost_hmap] + list(hmapgen)
         self.gen()  # Generate various maps into the posy- and monomials
         if checkbounds:
             self.check_bounds(err_on_missing_bounds=True)
@@ -239,10 +234,9 @@ class GeometricProgram:
                 msg = ("Solver failed for an unknown reason. Relaxing"
                        " constraints/constants, bounding variables, or"
                        " using a different solver might fix it.")
-            if (verbosity > 0 and solver_out["soltime"] < 1
-                    and hasattr(self, "model")):  # fast, top-level model
+            if verbosity > 0 and solver_out["soltime"] < 1 and self.model:
                 print(msg + "\nSince the model solved in less than a second,"
-                      " let's run `.debug()` to analyze what happened.\n`")
+                      " let's run `.debug()` to analyze what happened.\n")
                 return self.model.debug(solver=solver)
             # else, raise a clarifying error
             msg += (" Running `.debug()` or increasing verbosity may pinpoint"
