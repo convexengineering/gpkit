@@ -593,13 +593,16 @@ class SolutionArray(DictOfLists):
                 f.write(self.modelstr + "\n")
             f.write(self.table(**kwargs))
 
-    def savejson(self, filename="solution.json", printjson=False):
+    def savejson(self, filename="solution.json", printjson=False, showvars=None):
         "Saves solution table as a json file"
         sol_dict = {}
-        # add appropriate data for each variable to the dictionary
         for key in self.name_collision_varkeys():
             key.descr["necessarylineage"] = True
         data = self["variables"]
+        if showvars:
+            showvars = self._parse_showvars(showvars)
+            data = {k: data[k] for k in showvars if k in data}
+        # add appropriate data for each variable to the dictionary
         for i, (k, v) in enumerate(data.items()):
             key = str(k)
             if isinstance(v, np.ndarray):
