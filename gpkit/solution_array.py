@@ -321,7 +321,7 @@ def cast(function, val1, val2):
         return function(val1, val2)
 
 
-def diff_retreval(self, other, sharedvks, showvars=None, *, jsondiff=False,
+def diff_retrieval(self, other, sharedvks, showvars=None, *, jsondiff=False,
         senssdiff=False, absdiff=False, reldiff=False):
     """A helper function for generalized diff method
        - retreives svars and ovars,
@@ -453,7 +453,7 @@ class SolutionArray(DictOfLists):
     def diff(self, other, showvars=None, *, jsondiff=False, filename="solution.json"
              ,constraintsdiff=True, senssdiff=False, sensstol=0.1,
              absdiff=False, abstol=0.1, reldiff=True, reltol=1.0,
-             sortmodelsbysenss=True, display=False, **tableargs):
+             sortmodelsbysenss=True, **tableargs):
         """Outputs differences between this solution and another
 
         Arguments
