@@ -613,7 +613,7 @@ class SolutionArray(DictOfLists):
         for key in self.name_collision_varkeys():
             del key.descr["necessarylineage"]
         if printjson:
-            return str(sol_dict)
+            return json.dumps(sol_dict)
         else:
             with open(filename, "w") as f:
                 json.dump(sol_dict, f)
