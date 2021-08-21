@@ -523,7 +523,7 @@ class SolutionArray(DictOfLists):
         sharedvks = svks.intersection(ovks)
 
         # retrieve diff data
-        diff_dict = diff_retreval(self, other, sharedvks, showvars=showvars,
+        diff_dict = diff_retrieval(self, other, sharedvks, showvars=showvars,
                                   jsondiff=jsondiff, senssdiff=senssdiff,
                                   absdiff=absdiff, reldiff=reldiff)
         if jsondiff:
