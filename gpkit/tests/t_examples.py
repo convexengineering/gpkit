@@ -2,10 +2,10 @@
 import unittest
 import os
 import pickle
-import numpy as np
 import json
+import numpy as np
 
-from gpkit import settings, Model, Variable, NamedVariables
+from gpkit import settings, Model, Variable
 from gpkit.tests.helpers import generate_example_tests
 from gpkit.small_scripts import mag
 from gpkit.small_classes import Quantity

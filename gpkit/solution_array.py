@@ -593,7 +593,7 @@ class SolutionArray(DictOfLists):
                 f.write(self.modelstr + "\n")
             f.write(self.table(**kwargs))
 
-    def savejson(self, filename="solution.json", printjson=False, showvars=None):
+    def savejson(self, filename="solution.json", showvars=None):
         "Saves solution table as a json file"
         sol_dict = {}
         for key in self.name_collision_varkeys():
@@ -603,7 +603,7 @@ class SolutionArray(DictOfLists):
             showvars = self._parse_showvars(showvars)
             data = {k: data[k] for k in showvars if k in data}
         # add appropriate data for each variable to the dictionary
-        for i, (k, v) in enumerate(data.items()):
+        for k, v in data.items():
             key = str(k)
             if isinstance(v, np.ndarray):
                 val = {"v": v.tolist(), "u": k.unitstr()}
@@ -612,11 +612,8 @@ class SolutionArray(DictOfLists):
             sol_dict[key] = val
         for key in self.name_collision_varkeys():
             del key.descr["necessarylineage"]
-        if printjson:
-            return json.dumps(sol_dict)
-        else:
-            with open(filename, "w") as f:
-                json.dump(sol_dict, f)
+        with open(filename, "w") as f:
+            json.dump(sol_dict, f)
 
     def savecsv(self, filename="solution.csv", *, valcols=5, showvars=None):
         "Saves primal solution as a CSV sorted by modelname, like the tables."
