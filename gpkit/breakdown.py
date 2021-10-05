@@ -13,6 +13,8 @@ from gpkit.repr_conventions import unitstr as get_unitstr
 from gpkit.varkey import VarKey
 import numpy as np
 
+def ordinaltg(n):  # from Thad Guidry, https://groups.google.com/forum/m/#!topic/openrefine/G7_PSdUeno0
+    return str(n) + {1: 'st', 2: 'nd', 3: 'rd'}.get(4 if 10 <= n % 100 < 20 else n % 10, "th")
 
 Tree = namedtuple("Tree", ["key", "value", "branches"])
 Transform = namedtuple("Transform", ["factor", "power", "origkey"])
@@ -86,11 +88,12 @@ def get_model_breakdown(solution):
     # print(breakdowns["HyperloopSystem"]["|sensitivity|"])
     return breakdowns
 
-def crawl_modelbd(bd, name="Model"):
+def crawl_modelbd(bd, lookup, name="Model"):
     tree = Tree(name, bd.pop("|sensitivity|"), [])
+    lookup[name] = tree
     for subname, subtree in sorted(bd.items(),
                                    key=lambda kv: -kv[1]["|sensitivity|"]):
-        tree.branches.append(crawl_modelbd(subtree, subname))
+        tree.branches.append(crawl_modelbd(subtree, lookup, subname))
     return tree
 
 def divide_out_vk(vk, pow, lt, gt):
@@ -212,7 +215,7 @@ def solcache(solution, key):  # replaces solution(key)
 
 # @profile  # ~84% of total last check # TODO: remove
 def crawl(key, bd, solution, basescale=1, permissivity=2, verbosity=0,
-          visited_bdkeys=None, gone_negative=False):
+          visited_bdkeys=None, gone_negative=False, all_visited_bdkeys=None):
     "Returns the tree of breakdowns of key in bd, sorting by solution's values"
     if key in bd:
         # TODO: do multiple if sensitivities are quite close?
@@ -225,20 +228,30 @@ def crawl(key, bd, solution, basescale=1, permissivity=2, verbosity=0,
 
     if visited_bdkeys is None:
         visited_bdkeys = set()
+        all_visited_bdkeys = set()
     if verbosity == 1:
         solution.set_necessarylineage()
     if verbosity:
         indent = verbosity-1  # HACK: a bit of overloading, here
         kvstr = "%s (%s)" % (key.str_without(["unnecessary lineage", "units"]),
                              get_valstr(key, solution))
-        print("  "*indent + kvstr + ", which breaks down further")
-        indent += 1
+        if key in all_visited_bdkeys:
+            print("  "*indent + kvstr + " [as broken down above]")
+            verbosity = 0
+        else:
+            print("  "*indent + kvstr)
+            indent += 1
     orig_subtree = subtree = []
     tree = Tree(key, basescale, subtree)
     visited_bdkeys.add(key)
+    all_visited_bdkeys.add(key)
     if keymon is None:
         scale = solution(key)/basescale
     else:
+        if verbosity:
+            print("  "*indent + "which in: "
+                  + constraint.str_without(["units", "lineage"])
+                  + " (sensitivity %+.2g)" % sol["sensitivities"]["constraints"][constraint])
         interesting_vks = {key}
         subkey, = interesting_vks
         power = keymon.exp[subkey]
@@ -269,7 +282,7 @@ def crawl(key, bd, solution, basescale=1, permissivity=2, verbosity=0,
                 factor = factor**(-1/power)  # invert the transform
                 factor.ast = None
                 if verbosity:
-                    print("  "*indent + "(with a factor of %s (%s))" %
+                    print("  "*indent + "{ through a factor of %s (%s) }" %
                           (factor.str_without(["unnecessary lineage", "units"]),
                            get_valstr(factor, solution)))
                 subsubtree = []
@@ -278,18 +291,11 @@ def crawl(key, bd, solution, basescale=1, permissivity=2, verbosity=0,
                 orig_subtree = subsubtree
             if power != 1:
                 if verbosity:
-                    print("  "*indent + "(with a power of %.2g )" % power)
+                    print("  "*indent + "{ through a power of %.2g }" % power)
                 subsubtree = []
                 transform = Transform(1, 1/power, keymon)  # inverted bc it's on the gt side
                 orig_subtree.append(Tree(transform, basescale, subsubtree))
                 orig_subtree = subsubtree
-    if verbosity:
-        if keymon is not None:
-            print("  "*indent + "in: "
-                  + constraint.str_without(["units", "lineage"]))
-        print("  "*indent + "by:")
-        indent += 1
-
     # TODO: use ast_parsing instead of chop?
     monsols = [solcache(solution, mon) for mon in composition.chop()]  # ~20% of total last check # TODO: remove
     parsed_monsols = [getattr(mon, "value", mon) for mon in monsols]
@@ -297,11 +303,17 @@ def crawl(key, bd, solution, basescale=1, permissivity=2, verbosity=0,
     # sort by value, preserving order in case of value tie
     sortedmonvals = sorted(zip(monvals, range(len(monvals)),
                                composition.chop()), reverse=True)
-    for scaledmonval, _, mon in sortedmonvals:
+    if verbosity:
+        if len(monsols) == 1:
+            print("  "*indent + "breaks down into:")
+        else:
+            print("  "*indent + "breaks down into %i monomials:" % len(monsols))
+            indent += 1
+        indent += 1
+    for i, (scaledmonval, _, mon) in enumerate(sortedmonvals):
         if not scaledmonval:
             continue
         subtree = orig_subtree  # return to the original subtree
-
         # time for some filtering
         interesting_vks = mon.vks
         potential_filters = [
@@ -312,7 +324,7 @@ def crawl(key, bd, solution, basescale=1, permissivity=2, verbosity=0,
         if scaledmonval < 1 - permissivity:  # skip breakdown filter
             potential_filters = potential_filters[1:]
         for filter in potential_filters:
-            if interesting_vks - filter:  # don't remove the last one
+            if interesting_vks - filter:  # don't remvisited_bdkeysove the last one
                 interesting_vks = interesting_vks - filter
         # if filters weren't enough and permissivity is high enough, sort!
         if len(interesting_vks) > 1 and permissivity > 1:
@@ -336,6 +348,11 @@ def crawl(key, bd, solution, basescale=1, permissivity=2, verbosity=0,
                 power = mon.exp[subkey]
                 if power < 0 and gone_negative:
                     subkey = None  # don't breakdown another negative
+
+        if len(monsols) > 1 and verbosity:
+            indent -= 1
+            print("  "*indent + "%s) forming %i%% of the RHS and %i%% of the total:" % (i+1, scaledmonval/basescale*100, scaledmonval*100))
+            indent += 1
 
         if subkey is None:
             power = 1
@@ -372,7 +389,7 @@ def crawl(key, bd, solution, basescale=1, permissivity=2, verbosity=0,
                 if verbosity:
                     keyvalstr = "%s (%s)" % (factor.str_without(["unnecessary lineage", "units"]),
                                              get_valstr(factor, solution))
-                    print("  "*indent + "(with a factor of %s )" % keyvalstr)
+                    print("  "*indent + "{ through a factor of %s }" % keyvalstr)
                 subsubtree = []
                 transform = Transform(factor, 1, mon)
                 subtree.append(Tree(transform, scaledmonval, subsubtree))
@@ -380,7 +397,7 @@ def crawl(key, bd, solution, basescale=1, permissivity=2, verbosity=0,
             mon = freemon  # simplifies units
             if power != 1:
                 if verbosity:
-                    print("  "*indent + "(with a power of %.2g )" % power)
+                    print("  "*indent + "{ through a power of %.2g }" % power)
                 subsubtree = []
                 transform = Transform(1, power, mon)
                 subtree.append(Tree(transform, scaledmonval, subsubtree))
@@ -394,7 +411,7 @@ def crawl(key, bd, solution, basescale=1, permissivity=2, verbosity=0,
                 verbosity = indent + 1  # slight hack
             subsubtree = crawl(subkey, bd, solution, scaledmonval,
                                permissivity, verbosity, set(visited_bdkeys),
-                               gone_negative)
+                               gone_negative, all_visited_bdkeys)
             subtree.append(subsubtree)
         else:
             if verbosity:
@@ -595,8 +612,7 @@ def graph(tree, solution, height=None, maxdepth=None, maxwidth=110,
           showlegend=False):
     "Prints breakdown"
     solution.set_necessarylineage()
-    collapse = (not showlegend)  # TODO: set to True whil showlegend is True for first approx of receipts
-    maxwidth = None
+    collapse = (not showlegend)  # TODO: set to True while showlegend is True for first approx of receipts
     if maxdepth is None:
         maxdepth = plumb(tree)
     if height is not None:
@@ -860,6 +876,73 @@ def icicle(ids, labels, parents, values):
     ))
 
 
+import functools
+
+class Breakdowns(object):
+    def __init__(self, sol):
+        self.sol = sol
+        self.mlookup = {}
+        self.mtree = crawl_modelbd(get_model_breakdown(sol), self.mlookup)
+        self.bd = get_breakdowns(self.sol)
+
+    def trace(self, key, *, permissivity=2):
+        return self.get_tree(key, permissivity=permissivity, verbosity=1)
+
+    def get_tree(self, key, *, permissivity=2, verbosity=0):
+        tree = None
+        if isinstance(key, str):
+            if key == "model sensitivities":
+                tree = self.mtree
+            elif key in self.mlookup:
+                tree = self.mlookup[key]
+            elif key == "cost":
+                key = self.sol.costposy
+            else:
+                # TODO: support submodels
+                keys = [vk for vk in self.bd if key in str(vk)]
+                if not keys:
+                    raise KeyError(key)
+                elif len(keys) > 1:
+                    raise KeyError("There are %i keys containing '%s'." % (len(keys), key))
+                key, = keys
+        if tree is None:
+            tree = crawl(key, self.bd, self.sol,
+                         permissivity=permissivity, verbosity=verbosity)
+        return tree
+
+    def plot(self, key, *, height=None, permissivity=2, showlegend=False):
+        tree = self.get_tree(key, permissivity=permissivity)
+        graph(tree, self.sol, height=height, showlegend=showlegend)
+
+    def treemap(self, key, *, permissivity=2, returnfig=False, filename=None):
+        tree = self.get_tree(key)
+        fig = treemap(*plotlyify(tree, sol))
+        if returnfig:
+            return fig
+        if filename is None:
+            filename = str(key)+"_treemap.html"
+            keepcharacters = (".","_")
+            filename = "".join(c for c in filename if c.isalnum()
+                               or c in keepcharacters).rstrip()
+        import plotly
+        plotly.offline.plot(fig, filename=filename)
+
+
+    def icicle(self, key, *, permissivity=2, returnfig=False, filename=None):
+        tree = self.get_tree(key, permissivity=permissivity)
+        fig = icicle(*plotlyify(tree, sol))
+        if returnfig:
+            return fig
+        if filename is None:
+            filename = str(key)+"_icicle.html"
+            keepcharacters = (".","_")
+            filename = "".join(c for c in filename if c.isalnum()
+                               or c in keepcharacters).rstrip()
+        import plotly
+        plotly.offline.plot(fig, filename=filename)
+
+
+
 if __name__ == "__main__":
     import pickle
     from gpkit import ureg
@@ -933,68 +1016,63 @@ if __name__ == "__main__":
     # print("SOLAR DONE")
 
     sol = pickle.load(open("solutions/stella.p", "rb"))
-    bd = get_breakdowns(sol)
+    bd = Breakdowns(sol)
+    bdorig = get_breakdowns(sol)
     mbd = get_model_breakdown(sol)
-    mtree = crawl_modelbd(mbd)
-    import plotly  # pylint: disable=unused-import
-    fig = treemap(*plotlyify(mtree, sol))
-    plotly.offline.plot(fig, filename="mtreemap.html")
-    fig = icicle(*plotlyify(mtree, sol))
-    plotly.offline.plot(fig, filename="micicle.html")
+    mtree = crawl_modelbd(mbd, {})
 
-    # graph(mtree, sol, showlegend=False)
+    # # import plotly
+    # # fig = bd.treemap("model sensitivities", returnfig=True)
+    # # plotly.offline.plot(fig, filename="mtreemap.html")
+    # # bd.treemap("model sensitivities")
+    # # bd.icicle("model sensitivities")
     #
-    # key, = [vk for vk in bd if "podtripenergy[1,0]" in str(vk)]
-    # tree = crawl(key, bd, sol, permissivity=2, verbosity=1)
-    # graph(tree, sol, height=40)
-    tree = crawl(sol.costposy, bd, sol, permissivity=2, verbosity=1)
-    graph(tree, sol, showlegend=True)
-    fig = treemap(*plotlyify(tree, sol))
-    plotly.offline.plot(fig, filename="treemap.html")
-    fig = icicle(*plotlyify(tree, sol))
-    plotly.offline.plot(fig, filename="icicle.html")
-    # key, = [vk for vk in bd if "statorlaminationmassperpolepair" in str(vk)]
-    # tree = crawl(key, bd, sol, permissivity=2, verbosity=1)
-    # graph(tree, sol)
-    # key, = [vk for vk in bd if "numberofcellsperstring" in str(vk)]
-    # tree = crawl(key, bd, sol, permissivity=2, verbosity=1)
-    # graph(tree, sol)
+    # bd.plot("model sensitivities")
     #
-    # keys = sorted((key for key in bd.keys() if not key.idx or len(key.shape) == 1),
-    #               key=lambda k: k.str_without(excluded={}))
+    # bd.plot("podtripenergy[1,0]", height=40)
+    # bd.trace("cost", permissivity=0)
+    # bd.plot("cost", showlegend=True)
+    # bd.plot("cost")
+    # # bd.treemap("cost")
+    # # bd.icicle("cost")
+    # key, = [vk for vk in bd.bd if "statorlaminationmassperpolepair" in str(vk)]
+    # bd.plot(key)
+    # bd.trace(key)
+    # bd.trace("cost")
+
+    bd.plot("numberofcellsperstring")
+    keys = [k for k in bdorig if not k.idx or len(k.shape) == 1]
 
     # with StdoutCaptured("breakdowns.log"):
     #     graph(mtree, sol, showlegend=False)
     #     graph(mtree.branches[0].branches[1], sol, showlegend=False)
     #     graph(mtree, sol, showlegend=True)
-    #     tree = crawl(sol.costposy, bd, sol, permissivity=permissivity)
+    #     tree = crawl(sol.costposy, bdorig, sol, permissivity=permissivity)
     #     graph(tree, sol)
     #     for key in keys:
-    #         tree = crawl(key, bd, sol, permissivity=permissivity)
+    #         tree = crawl(key, bdorig, sol, permissivity=permissivity)
     #         graph(tree, sol)
 
-    # with StdoutCaptured("breakdowns.log.new"):
-    #     graph(mtree, sol, showlegend=False)
-    #     graph(mtree.branches[0].branches[1], sol, showlegend=False)
-    #     graph(mtree, sol, showlegend=True)
-    #     tree = crawl(sol.costposy, bd, sol, permissivity=permissivity)
-    #     graph(tree, sol)
-    #     for key in keys:
-    #         tree = crawl(key, bd, sol, permissivity=permissivity)
-    #         try:
-    #             graph(tree, sol)
-    #         except:
-    #             raise ValueError(key)
-    #
-    # with open("breakdowns.log", "r") as original:
-    #     with open("breakdowns.log.new", "r") as new:
-    #         diff = difflib.unified_diff(
-    #             original.readlines(),
-    #             new.readlines(),
-    #             fromfile="original",
-    #             tofile="new",
-    #         )
-    #         for line in diff:
-    #             print(line[:-1])
+    with StdoutCaptured("breakdowns.log.new"):
+        bd.plot("model sensitivities")
+        bd.plot("PodFleet")
+        bd.plot("model sensitivities", showlegend=True)
+        bd.plot("cost", permissivity=permissivity)
+        for key in keys:
+            try:
+                bd.plot(key, permissivity=permissivity)
+            except:
+                raise ValueError(key)
+
+    with open("breakdowns.log", "r") as original:
+        with open("breakdowns.log.new", "r") as new:
+            diff = difflib.unified_diff(
+                original.readlines(),
+                new.readlines(),
+                fromfile="original",
+                tofile="new",
+            )
+            for line in diff:
+                print(line[:-1])
 
     print("DONE")
