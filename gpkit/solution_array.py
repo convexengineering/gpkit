@@ -290,7 +290,6 @@ def costbd(self, _, **kwargs):
     try:
         sys.stdout = SolverLog(original_stdout, verbosity=0)
         bds.plot("cost")
-        # bds.trace("cost")
     except:
         raise
     finally:
@@ -718,14 +717,13 @@ class SolutionArray(DictOfLists):
     def summary(self, showvars=(), **kwargs):
         "Print summary table, showing no sensitivities or constants"
         return self.table(showvars,
-                         ["cost breakdown", "warnings",
-                          "model sensitivities breakdown",
-                          "sweepvariables", "freevariables"], **kwargs)
+                         ["cost breakdown", "model sensitivities breakdown",
+                          "warnings", "sweepvariables", "freevariables"],
+                         **kwargs)
 
     def table(self, showvars=(),
-              tables=("cost breakdown", "warnings",
-                      "model sensitivities breakdown",
-                      "sweepvariables", "freevariables",
+              tables=("cost breakdown", "model sensitivities breakdown",
+                      "warnings", "sweepvariables", "freevariables",
                       "constants", "sensitivities", "tightest constraints"),
               sortmodelsbysenss=False, **kwargs):
         """A table representation of this SolutionArray

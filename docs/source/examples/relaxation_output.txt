@@ -24,3 +24,216 @@ Constraints
  "relaxed constraints":
    x ≤ C·x_max
    x_min ≤ C·x
+
+            ┃┓
+       Cost╺┫┃
+     (1.41) ┃┣╸x
+            ┃┛ (1.41)
+
+
+           ┃┓
+           ┃┃
+           ┃┣╸x ≤ C·x_max
+           ┃┛
+           ┃┓
+           ┃┃
+           ┃┣╸x_max = 1
+     Model╺┫┛
+           ┃┓
+           ┃┃
+           ┃┣╸x_min = 2
+           ┃┛
+           ┃┓
+           ┃┃
+           ┃┣╸x_min ≤ C·x
+           ┃┛
+
+~~~~~~~~
+WARNINGS
+~~~~~~~~
+Relaxed Constraints
+-------------------
+All constraints relaxed by 42%
+~~~~~~~~
+
+Free Variables
+--------------
+x : 1.414
+
+  | Relax
+C : 1.414
+
+Fixed Variables
+---------------
+x_max : 1
+x_min : 2
+
+Variable Sensitivities
+----------------------
+x_max : -0.5
+x_min : +0.5
+
+Most Sensitive Constraints
+--------------------------
+  +0.5 : x ≤ C·x_max
+  +0.5 : x_min ≤ C·x
+
+
+With constraints relaxed individually
+=====================================
+
+Cost Function
+-------------
+ C[:].prod()·x^0.01
+
+Constraints
+-----------
+ "minimum relaxation":
+   C[:] ≥ 1
+ "relaxed constraints":
+   x ≤ C[0]·x_max
+   x_min ≤ C[1]·x
+
+          ┃┓
+     Cost╺┫┃
+      (2) ┃┣╸1/x
+          ┃┛ (1)
+
+
+           ┃┓
+           ┃┃
+           ┃┣╸x_min = 2
+           ┃┛
+           ┃┓
+           ┃┃
+           ┃┣╸x_min ≤ C[1]·x
+     Model╺┫┛
+           ┃┓
+           ┃┃
+           ┃┣╸x ≤ C[0]·x_max
+           ┃┛
+           ┃┓
+           ┃┃
+           ┃┣╸x_max = 1
+           ┃┛
+
+~~~~~~~~
+WARNINGS
+~~~~~~~~
+Relaxed Constraints
+-------------------
+   1:  100% relaxed, from     x >= x_min
+                       to x_min <= 2·x
+~~~~~~~~
+
+Free Variables
+--------------
+x : 1
+
+  | Relax1
+C : [ 1         2        ]
+
+Fixed Variables
+---------------
+x_max : 1
+x_min : 2
+
+Variable Sensitivities
+----------------------
+x_min : +1
+x_max : -0.99
+
+Most Sensitive Constraints
+--------------------------
+    +1 : x_min ≤ C[1]·x
+ +0.99 : x ≤ C[0]·x_max
+ +0.01 : C[0] ≥ 1
+
+
+With constants relaxed individually
+===================================
+
+Cost Function
+-------------
+ [Relax2.x_max, Relax2.x_min].prod()·x^0.01
+
+Constraints
+-----------
+ Relax2
+  "original constraints":
+    x ≤ x_max
+    x ≥ x_min
+  "relaxation constraints":
+    "x_max":
+      Relax2.x_max ≥ 1
+      x_max ≥ OriginalValues.x_max/Relax2.x_max
+      x_max ≤ OriginalValues.x_max·Relax2.x_max
+    "x_min":
+      Relax2.x_min ≥ 1
+      x_min ≥ OriginalValues.x_min/Relax2.x_min
+      x_min ≤ OriginalValues.x_min·Relax2.x_min
+
+          ┃┓
+     Cost╺┫┃
+      (2) ┃┣╸1/Relax2.x_min
+          ┃┛ (0.5)
+
+
+           ┃┓
+           ┃┃
+           ┃┣╸x ≥ x_min
+           ┃┛
+           ┃┓
+           ┃┣╸x_min = 1
+           ┃┛
+           ┃┓
+           ┃┃
+     Model╺┫┣╸x_min ≥ OriginalValues.x_min/Relax2.x_min
+           ┃┛
+           ┃┓
+           ┃┣╸x ≤ x_max
+           ┃┛
+           ┃┓
+           ┃┣╸x_max = 1
+           ┃┛
+           ┃┓
+           ┃┣╸x_max ≤ OriginalValues.x_max·Relax2.x_max
+           ┃┛
+
+~~~~~~~~
+WARNINGS
+~~~~~~~~
+Relaxed Constants
+-----------------
+  x_min: relaxed from 2 to 1
+~~~~~~~~
+
+Free Variables
+--------------
+    x : 1
+x_max : 1
+x_min : 1
+
+      | Relax2
+x_max : 1
+x_min : 2
+
+Fixed Variables
+---------------
+      | Relax2.OriginalValues
+x_max : 1
+x_min : 2
+
+Variable Sensitivities
+----------------------
+x_min : +1
+x_max : -0.99
+
+Most Sensitive Constraints
+--------------------------
+    +1 : x ≥ x_min
+    +1 : x_min ≥ OriginalValues.x_min/Relax2.x_min
+ +0.99 : x ≤ x_max
+ +0.99 : x_max ≤ OriginalValues.x_max·Relax2.x_max
+
+

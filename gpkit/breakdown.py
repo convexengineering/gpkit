@@ -6,10 +6,11 @@ import string
 from collections import defaultdict, namedtuple, Counter
 from gpkit.nomials import Monomial, Posynomial, Variable
 from gpkit.nomials.map import NomialMap
-from gpkit.small_scripts import mag
+from gpkit.small_scripts import mag, try_str_without
 from gpkit.small_classes import FixedScalar, HashVector
 from gpkit.exceptions import DimensionalityError
 from gpkit.repr_conventions import unitstr as get_unitstr
+from gpkit.repr_conventions import lineagestr
 from gpkit.varkey import VarKey
 import numpy as np
 
@@ -47,7 +48,7 @@ def get_model_breakdown(solution):
             continue
         subbd = breakdowns
         subbd["|sensitivity|"] += senss
-        for parent in constraint.lineagestr().split("."):
+        for parent in lineagestr(constraint).split("."):
             if parent == "":
                 continue
             if parent not in subbd:
@@ -57,10 +58,12 @@ def get_model_breakdown(solution):
                 subbd["|sensitivity|"] = 0
             subbd["|sensitivity|"] += senss
         # treat vectors as namespace
-        constraint = constraint.str_without({"unnecessary lineage", "units", ":MAGIC:"+constraint.lineagestr()})
-        subbd[constraint] = {"|sensitivity|": senss}
-    for vk in solution.vks:  # could this be done away with for backwards compatibility?
-        if vk not in solution["sensitivities"]["variables"]:
+        constrstr = try_str_without(constraint, {"unnecessary lineage", "units", ":MAGIC:"+lineagestr(constraint)})
+        if " at 0x" in constrstr:  # don't print memory addresses
+            constrstr = constrstr[:constrstr.find(" at 0x")] + ">"
+        subbd[constrstr] = {"|sensitivity|": senss}
+    for vk in solution["sensitivities"]["variables"].keymap:  # could this be done away with for backwards compatibility?
+        if not isinstance(vk, VarKey) or (vk.shape and not vk.index):
             continue
         senss = abs(solution["sensitivities"]["variables"][vk])
         if hasattr(senss, "shape"):
@@ -89,7 +92,7 @@ def crawl_modelbd(bd, lookup, name="Model"):
     tree = Tree(name, bd.pop("|sensitivity|"), [])
     lookup[name] = tree
     for subname, subtree in sorted(bd.items(),
-                                   key=lambda kv: -kv[1]["|sensitivity|"]):
+                                   key=lambda kv: (-float("%.2g" % kv[1]["|sensitivity|"]), kv[0])):
         tree.branches.append(crawl_modelbd(subtree, lookup, subname))
     return tree
 
@@ -111,7 +114,11 @@ def get_breakdowns(basically_fixed_variables, solution):
     """
     breakdowns = defaultdict(list)
     beatout = defaultdict(set)
-    for constraint, senss in sorted(solution["sensitivities"]["constraints"].items(), key=lambda kv: (-abs(kv[1]), str(kv[0]))):
+    for constraint, senss in sorted(solution["sensitivities"]["constraints"].items(), key=lambda kv: (-abs(float("%.2g" % kv[1])), str(kv[0]))):
+        while getattr(constraint, "child", None):
+            constraint = constraint.child
+        while getattr(constraint, "generated", None):
+            constraint = constraint.generated
         if abs(senss) <= 1e-5:  # only tight-ish ones
             continue
         if constraint.oper == ">=":
@@ -123,17 +130,27 @@ def get_breakdowns(basically_fixed_variables, solution):
                 lt, gt = (constraint.left, constraint.right)
             else:  # r_over_l is more sensitive - see nomials/math.py
                 gt, lt = (constraint.left, constraint.right)
-        if lt.any_nonpositive_cs or len(gt.hmap) > 1:
-            continue  # no signomials  # TODO: approximate signomials at sol
+        for gtvk in gt.exp:  # remove RelaxPCCP.C
+            if (gtvk.name == "C" and gtvk.lineage[0][0] == "RelaxPCCP"
+                    and gtvk not in solution["freevariables"]):
+                lt, gt = lt.sub({gtvk: 1}), gt.sub({gtvk: 1})
         pos_gtvks = {vk for vk, pow in gt.exp.items() if pow > 0}
         if len(pos_gtvks) > 1:
             pos_gtvks &= get_free_vks(gt, solution)  # remove constants
         if len(pos_gtvks) == 1:
             chosenvk, = pos_gtvks
+            while getattr(constraint, "parent", None):
+                constraint = constraint.parent
+            while getattr(constraint, "generated_by", None):
+                constraint = constraint.generated_by
             breakdowns[chosenvk].append((lt, gt, constraint))
-    for constraint, senss in sorted(solution["sensitivities"]["constraints"].items(), key=lambda kv: (-abs(kv[1]), str(kv[0]))):
+    for constraint, senss in sorted(solution["sensitivities"]["constraints"].items(), key=lambda kv: (-abs(float("%.2g" % kv[1])), str(kv[0]))):
         if abs(senss) <= 1e-5:  # only tight-ish ones
             continue
+        while getattr(constraint, "child", None):
+            constraint = constraint.child
+        while getattr(constraint, "generated", None):
+            constraint = constraint.generated
         if constraint.oper == ">=":
             gt, lt = (constraint.left, constraint.right)
         elif constraint.oper == "<=":
@@ -143,8 +160,10 @@ def get_breakdowns(basically_fixed_variables, solution):
                 lt, gt = (constraint.left, constraint.right)
             else:  # r_over_l is more sensitive - see nomials/math.py
                 gt, lt = (constraint.left, constraint.right)
-        if lt.any_nonpositive_cs or len(gt.hmap) > 1:
-            continue  # no signomials  # TODO: approximate signomials at sol
+        for gtvk in gt.exp:
+            if (gtvk.name == "C" and gtvk.lineage[0][0] == "RelaxPCCP"
+                    and gtvk not in solution["freevariables"]):
+                lt, gt = lt.sub({gtvk: 1}), gt.sub({gtvk: 1})
         pos_gtvks = {vk for vk, pow in gt.exp.items() if pow > 0}
         if len(pos_gtvks) > 1:
             pos_gtvks &= get_free_vks(gt, solution)  # remove constants
@@ -168,11 +187,15 @@ def get_breakdowns(basically_fixed_variables, solution):
                 vrisk = solution["sensitivities"]["variablerisk"]
                 chosenvk, *_ = sorted(
                     candidatevks,
-                    key=lambda vk: (-gt.exp[vk]*vrisk.get(vk, 0), str(vk))
+                    key=lambda vk: (-float("%.2g" % (gt.exp[vk]*vrisk.get(vk, 0))), str(vk))
                 )
-                for vk in gt.vks:
+                for vk, pow in gt.exp.items():
                     if vk is not chosenvk:
                         lt, gt = divide_out_vk(vk, pow, lt, gt)
+                while getattr(constraint, "parent", None):
+                    constraint = constraint.parent
+                while getattr(constraint, "generated_by", None):
+                    constraint = constraint.generated_by
                 breakdowns[chosenvk].append((lt, gt, constraint))
     breakdowns = dict(breakdowns)  # remove the defaultdict-ness
 
@@ -201,12 +224,6 @@ def get_fixity(basically_fixed_variables, key, bd, solution, basically_fixed=set
         if vk not in basically_fixed_variables:
             return  # ...well, we tried
     basically_fixed.add(key)
-
-SOLCACHE = {}
-def solcache(solution, key):  # replaces solution(key)
-    if key not in SOLCACHE:
-        SOLCACHE[key] = solution(key)
-    return SOLCACHE[key]
 
 # @profile  # ~84% of total last check # TODO: remove
 def crawl(basically_fixed_variables, key, bd, solution, basescale=1, permissivity=2, verbosity=0,
@@ -293,13 +310,14 @@ def crawl(basically_fixed_variables, key, bd, solution, basescale=1, permissivit
                 transform = Transform(1, 1/power, keymon)  # inverted bc it's on the gt side
                 orig_subtree.append(Tree(transform, basescale, subsubtree))
                 orig_subtree = subsubtree
+
     # TODO: use ast_parsing instead of chop?
-    monsols = [solcache(solution, mon) for mon in composition.chop()]  # ~20% of total last check # TODO: remove
+    mons = composition.chop()
+    monsols = [solution(mon) for mon in mons]  # ~20% of total last check # TODO: remove
     parsed_monsols = [getattr(mon, "value", mon) for mon in monsols]
     monvals = [float(mon/scale) for mon in parsed_monsols]   # ~10% of total last check # TODO: remove
     # sort by value, preserving order in case of value tie
-    sortedmonvals = sorted(zip(monvals, range(len(monvals)),
-                               composition.chop()), reverse=True)
+    sortedmonvals = sorted(zip([-float("%.2g" % mv) for mv in monvals], range(len(mons)), monvals, mons))
     if verbosity:
         if len(monsols) == 1:
             print("  "*indent + "breaks down into:")
@@ -307,7 +325,7 @@ def crawl(basically_fixed_variables, key, bd, solution, basescale=1, permissivit
             print("  "*indent + "breaks down into %i monomials:" % len(monsols))
             indent += 1
         indent += 1
-    for i, (scaledmonval, _, mon) in enumerate(sortedmonvals):
+    for i, (_, _, scaledmonval, mon) in enumerate(sortedmonvals):
         if not scaledmonval:
             continue
         subtree = orig_subtree  # return to the original subtree
@@ -528,7 +546,7 @@ def discretize(tree, extent, solution, collapse, depth=0, justsplit=False):
                 extents[bump_priority.pop()[-1]] += sign
                 surplus -= sign
             except IndexError:
-                raise ValueError(extents, surplus, val, [b.value for b in branches])
+                raise ValueError(val, [b.value for b in branches])
 
     tree = Tree(key, extent, [])
     # simplify based on how we're branching
@@ -761,7 +779,7 @@ def legend_entry(key, shortname, solution, basically_fixed_variables):
 
 def get_keystr(key, solution, prefix="", firstcol=False):
     "Returns formatted string of the key in solution."
-    if key is solution.costposy and firstcol:
+    if key is solution["cost function"] and firstcol:
         out = "Cost"
     elif hasattr(key, "str_without"):
         out = key.str_without({"unnecessary lineage",
@@ -903,7 +921,7 @@ class Breakdowns(object):
             elif key in self.mlookup:
                 tree = self.mlookup[key]
             elif key == "cost":
-                key = self.sol.costposy
+                key = self.sol["cost function"]
             else:
                 # TODO: support submodels
                 keys = [vk for vk in self.bd if key in str(vk)]
@@ -972,7 +990,7 @@ if __name__ == "__main__":
     # graph(mtree, sol, showlegend=True, height=20)
     # graph(mtree.branches[0].branches[0].branches[0], sol, showlegend=False, height=20)
 
-    # tree = crawl(sol.costposy, bd, sol, permissivity=2, verbosity=0)
+    # tree = crawl(sol["cost function"], bd, sol, permissivity=2, verbosity=0)
     # graph(tree, sol)
     bds.plot("cost")
 
@@ -993,7 +1011,7 @@ if __name__ == "__main__":
     # with StdoutCaptured("solarbreakdowns.log"):
     #     graph(mtree, sol, showlegend=False)
     #     graph(mtree, sol, showlegend=True)
-    #     tree = crawl(sol.costposy, bd, sol, permissivity=permissivity)
+    #     tree = crawl(sol["cost function"], bd, sol, permissivity=permissivity)
     #     graph(tree, sol)
     #     for key in keys:
     #         tree = crawl(key, bd, sol, permissivity=permissivity)
@@ -1054,7 +1072,7 @@ if __name__ == "__main__":
     #     graph(mtree, sol, showlegend=False)
     #     graph(mtree.branches[0].branches[1], sol, showlegend=False)
     #     graph(mtree, sol, showlegend=True)
-    #     tree = crawl(sol.costposy, bdorig, sol, permissivity=permissivity)
+    #     tree = crawl(sol["cost function"], bdorig, sol, permissivity=permissivity)
     #     graph(tree, sol)
     #     for key in keys:
     #         tree = crawl(key, bdorig, sol, permissivity=permissivity)

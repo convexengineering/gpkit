@@ -29,24 +29,14 @@ h = self.h = Variable('h', 1, 'm', 'minimum height')  # from 'h     1 [m]    min
 #     way that makes the most sense to someone else reading your model.
 #     
 
-              ┃┓          ┓      ┓
+              ┃┓          ┓          /┓
+              ┃┃          ┃           ┃
+              ┃┃          ┣╸s[0]     /┣╸h
+         Cost╺┫┃          ┃ (0.316m)  ┃ (1m, fixed)
+     (1.46m²) ┃┣╸A        ┛          /┛
+              ┃┃ (1.46m²) ┓      ┓
               ┃┃          ┣╸s[2] ┣╸h
-              ┃┃          ┛ (1m) ┛ (1m, fixed)
-         Cost╺┫┃          ┓          /┓
-     (1.46m²) ┃┣╸A        ┃           ┃
-              ┃┃ (1.46m²) ┣╸s[0]     /┣╸h
-              ┃┃          ┃ (0.316m)  ┃
-              ┃┛          ┛          /┛
-
-
-              ┃┓          ┓      ┓
-              ┃┃          ┣╸s[2] ┣╸h
-              ┃┃          ┛ (1m) ┛ (1m, fixed)
-         Cost╺┫┃          ┓          /┓
-     (1.46m²) ┃┣╸A        ┃           ┃
-              ┃┃ (1.46m²) ┣╸s[0]     /┣╸h
-              ┃┃          ┃ (0.316m)  ┃
-              ┃┛          ┛          /┛
+              ┃┛          ┛ (1m) ┛
 
 
            ┃┓      ┓

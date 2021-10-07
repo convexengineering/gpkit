@@ -50,7 +50,7 @@ class SequentialGeometricProgram:
         slack = Variable("C")
 
     def __init__(self, cost, model, substitutions,
-                 *, use_pccp=True, pccp_penalty=2e2, **kwargs):
+                 *, use_pccp=True, pccp_penalty=200, **kwargs):
         self.pccp_penalty = pccp_penalty
         if cost.any_nonpositive_cs:
             raise InvalidPosynomial("""an SGP's cost must be Posynomial
@@ -205,7 +205,7 @@ solutions and can be solved with 'Model.solve()'.""")
                           "'s solution: e.g. `m.localsolve(use_pccp=False, x0="
                           "m.solution[\"variables\"])`." % self.pccp_penalty)
             del self.result["freevariables"][self.slack.key]  # pylint: disable=no-member
-            del self.result["variables"][self.slack.key]  # pylint: disable=no-member
+            # del self.result["variables"][self.slack.key]  # pylint: disable=no-member
             del self.result["sensitivities"]["variables"][self.slack.key]  # pylint: disable=no-member
             slcon = self.gpconstraints[0]
             slconsenss = self.result["sensitivities"]["constraints"][slcon]
@@ -238,6 +238,8 @@ solutions and can be solved with 'Model.solve()'.""")
         for sgpc in self.sgpconstraints:
             for hmaplt1 in sgpc.as_gpconstr(self._gp.x0).as_hmapslt1({}):
                 approxc = self.approxconstraints[p_idx]
+                approxc.left = self.slack
+                approxc.right.hmap = hmaplt1
                 approxc.unsubbed = [Posynomial(hmaplt1)/self.slack]
                 p_idx += 1  # p_idx=0 is the cost; sp constraints are after it
                 hmap, = approxc.as_hmapslt1(self._gp.substitutions)

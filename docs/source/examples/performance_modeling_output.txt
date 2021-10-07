@@ -1,37 +1,4 @@
 
-Cost Function
--------------
- Wfuel[0]
-
-Constraints
------------
- Mission
-  "fuel constraints":
-    Wfuel[:-1] ≥ Wfuel[1:] + Wburn[:-1]
-    Wfuel[3] ≥ Wburn[3]
-
-  FlightSegment
-   AircraftP
-    Wburn[:] ≥ 0.1·D[:]
-    Aircraft.W + Wfuel[:] ≤ 0.5·rho[:]·CL[:]·S·V[:]²
-    "performance":
-      WingAero
-       D[:] ≥ 0.5·rho[:]·V[:]²·CD[:]·S
-       Re[:] = rho[:]·V[:]·c/mu[:]
-       CD[:] ≥ 0.074/Re[:]^0.2 + CL[:]²/π/A/e[:]
-
-   FlightState
-    (no constraints)
-
- Aircraft
-  Aircraft.W ≥ Fuselage.W + Wing.W
-  Fuselage
-   (no constraints)
-
-  Wing
-   c = (S/A)^0.5
-   Wing.W ≥ S·Wing.rho
-
                ┃┓           ┓            ┓            ┓            ┓
                ┃┃           ┃            ┃            ┃            ┃
                ┃┃           ┃            ┃            ┣╸Wburn[2]   ┣╸CD[2]

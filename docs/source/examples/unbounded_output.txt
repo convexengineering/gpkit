@@ -5,10 +5,10 @@
              ┃┛ (1e-30)
 
 
-             ┃┓
-        Cost╺┫┃
-     (1e-30) ┃┣╸1/x
-             ┃┛ (1e-30)
+           ┃┓
+     Model╺┫┃
+           ┃┣╸x ≤ 1e+30
+           ┃┛
 
 ~~~~~~~~
 WARNINGS
@@ -18,12 +18,6 @@ Arbitrarily Bounded Variables
    value near upper bound of 1e+30: x
  sensitive to upper bound of 1e+30: x
 ~~~~~~~~
-
-
-           ┃┓
-     Model╺┫┃
-           ┃┣╸x ≤ 1e+30
-           ┃┛
 
 Free Variables
 --------------

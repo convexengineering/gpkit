@@ -4,6 +4,7 @@ import warnings as pywarnings
 from time import time
 from collections import defaultdict
 import numpy as np
+from ..nomials.map import NomialMap
 from ..repr_conventions import lineagestr
 from ..small_classes import CootMatrix, SolverLog, Numbers, FixedScalar
 from ..small_scripts import appendsolwarning, initsolwarning
@@ -307,7 +308,8 @@ class GeometricProgram:
         return la, nu_by_posy
 
     def _compile_result(self, solver_out):
-        result = {"cost": float(solver_out["objective"])}
+        result = {"cost": float(solver_out["objective"]),
+                  "cost function": self.cost}
         primal = solver_out["primal"]
         if len(self.varlocs) != len(primal):
             raise RuntimeWarning("The primal solution was not returned.")
@@ -345,13 +347,16 @@ class GeometricProgram:
         absv_ss = {vk: abs(x) for vk, x in cost_senss.items()}
         for las, nus, c in zip(la[1:], self.nu_by_posy[1:], self.hmaps[1:]):
             while getattr(c, "parent", None) is not None:
-                c = c.parent
+                if not isinstance(c, NomialMap):
+                    c.parent.child = c
+                c = c.parent  # parents get their sens_from_dual used...
             v_ss, c_senss = c.sens_from_dual(las, nus, result)
             for vk, x in v_ss.items():
                 gpv_ss[vk] = x + gpv_ss.get(vk, 0)
                 absv_ss[vk] = abs(x) + absv_ss.get(vk, 0)
             while getattr(c, "generated_by", None):
-                c = c.generated_by
+                c.generated_by.generated = c
+                c = c.generated_by  # ...while generated_bys are just labels
             result["sensitivities"]["constraints"][c] = c_senss
             m_senss[lineagestr(c)] += abs(c_senss)
         result["sensitivities"]["models"] = dict(m_senss)

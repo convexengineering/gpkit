@@ -10,31 +10,21 @@ Infeasible monomial equality: Cannot convert from 'V [m³]' to 'M [kg]'
               ┃┛          ┛ (0.215m²)
 
 
-              ┃┓          ┓          ┓
-              ┃┃          ┃          ┃
-              ┃┃          ┣╸d[0]     ┣╸M
-         Cost╺┫┃          ┃ (0.464m) ┃ (100kg, fixed)
-     (1.29m²) ┃┣╸A        ┛          ┛
-              ┃┃ (1.29m²) ┓
-              ┃┃          ┣╸d[1]·d[2]
-              ┃┛          ┛ (0.215m²)
-
-
            ┃┓
            ┃┃
            ┃┣╸A ≥ 2·(d[0]·d[1] + d[0]·d[2] + d[1]·d[2])
            ┃┛
            ┃┓
            ┃┃
-           ┃┣╸M = V·\rho
+           ┃┣╸M = 100kg
            ┃┛
            ┃┓
      Model╺┫┃
-           ┃┣╸V = d[0]·d[1]·d[2]
+           ┃┣╸M = V·\rho
            ┃┛
            ┃┓
            ┃┃
-           ┃┣╸M = 100kg
+           ┃┣╸V = d[0]·d[1]·d[2]
            ┃┛
            ┃┓
            ┃┃

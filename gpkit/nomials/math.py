@@ -262,7 +262,7 @@ class Signomial(Nomial):
         monmaps = [NomialMap({exp: c}) for exp, c in self.hmap.items()]
         for monmap in monmaps:
             monmap.units = self.hmap.units
-        return [Monomial(monmap) for monmap in monmaps]
+        return [Monomial(monmap) for monmap in sorted(monmaps, key=str)]
 
 class Posynomial(Signomial):
     "A Signomial with strictly positive cs"
