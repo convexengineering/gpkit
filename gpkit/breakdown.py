@@ -345,8 +345,8 @@ def crawl(basically_fixed_variables, key, bd, solution, basescale=1, permissivit
         if len(interesting_vks) > 1 and permissivity > 1:
             csenss = solution["sensitivities"]["constraints"]
             best_vks = sorted((vk for vk in interesting_vks if vk in bd),
-                key=lambda vk: (-round(abs(mon.exp[vk]*csenss[bd[vk][0][2]]), 5),
-                                -solution["variables"][vk],
+                key=lambda vk: (-abs(float("%.2g" % (mon.exp[vk]*csenss[bd[vk][0][2]]))),
+                                -float("%.2g" % solution["variables"][vk]),
                                 str(bd[vk][0][0])))   # ~5% of total last check # TODO: remove
                      # TODO: changing to str(vk) above does some odd stuff, why?
             if best_vks:
@@ -505,7 +505,8 @@ def discretize(tree, extent, solution, collapse, depth=0, justsplit=False):
         else:
             bkey_indexs[k] = i
     if any(v is None for v in values):
-        branches, values = zip(*((b, v) for b, v in zip(branches, values) if v is not None))
+        bvs = zip(*sorted(((-float("%.2g" % v), i, b, v) for i, (b, v) in enumerate(zip(branches, values)) if v is not None)))
+        _, _, branches, values = bvs
         branches = list(branches)
         values = list(values)
     extents = [int(round(scale*v)) for v in values]
@@ -529,7 +530,7 @@ def discretize(tree, extent, solution, collapse, depth=0, justsplit=False):
                     if isinstance(k, tuple):
                         vkeys = [(-kv[1], str(kv[0]), kv[0]) for kv in k]
                 if not isinstance(k, tuple):
-                    vkeys = [(-v, str(k), k)]
+                    vkeys = [(-float("%.2g" % v), str(k), k)]
                 miscvkeys += vkeys
                 surplus -= (round(scale*(miscval + v))
                             - round(scale*miscval) - subextent)
