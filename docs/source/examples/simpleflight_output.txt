@@ -1,9 +1,54 @@
 SINGLE
 ======
 
-Optimal Cost
-------------
- 303.1
+            ┃┓          ┓
+            ┃┃          ┃
+            ┃┃          ┃
+            ┃┃          ┃
+            ┃┃          ┣╸W_0
+       Cost╺┫┃          ┃ (4,940N, fixed)
+     (303N) ┃┣╸W        ┃
+            ┃┃ (7,341N) ┛
+            ┃┃          ┓          ┓
+            ┃┃          ┃          ┣╸W
+            ┃┃          ┣╸W_w      ┛
+            ┃┛          ┛ (2,401N) ┣╸S
+
+
+            ┃┓          ┓
+            ┃┃          ┃
+            ┃┃          ┃
+            ┃┃          ┃
+            ┃┃          ┣╸W_0
+       Cost╺┫┃          ┃ (4,940N, fixed)
+     (303N) ┃┣╸W        ┃
+            ┃┃ (7,341N) ┛
+            ┃┃          ┓          ┓
+            ┃┃          ┃          ┣╸W
+            ┃┃          ┣╸W_w      ┛
+            ┃┛          ┛ (2,401N) ┣╸S
+
+
+           ┃┓
+           ┃┣╸W ≥ W_0 + W_w
+           ┃┛
+           ┃┣╸W_0 = 4,940N
+           ┃┛
+           ┃┣╸C_D ≥ (CDA0)/S + k·C_f·(\frac{S}{S_{wet}}) + C_L²/(π·A·e)
+           ┃┛
+           ┃┣╸D ≥ 0.5·\rho·S·C_D·V²
+           ┃┛
+     Model╺┫┣╸W ≤ 0.5·\rho·S·C_L·V²
+           ┃┛
+           ┃┣╸e = 0.95
+           ┃┣╸C_f ≥ 0.074/Re^0.2
+           ┃┣╸k = 1.2
+           ┃┣╸(\frac{S}{S_{wet}}) = 2.05
+           ┃┓
+           ┃┃
+           ┃┣╸[12 terms]
+           ┃┃
+           ┃┛
 
 Free Variables
 --------------
@@ -17,22 +62,6 @@ C_f : 0.003599         skin friction coefficient
   V : 38.15      [m/s] cruising speed
   W : 7341       [N]   total aircraft weight
 W_w : 2401       [N]   wing weight
-
-Most Sensitive Variables
-------------------------
-                W_0 : +1     aircraft weight excluding wing
-                  e : -0.48  Oswald efficiency factor
-(\frac{S}{S_{wet}}) : +0.43  wetted area ratio
-                  k : +0.43  form factor
-            V_{min} : -0.37  takeoff speed
-
-Most Sensitive Constraints
---------------------------
-  +1.3 : W ≥ W_0 + W_w
-    +1 : C_D ≥ (CDA0)/S + k·C_f·(\frac{S}{S_{wet}}) + C_L²/(π·A·e)
-    +1 : D ≥ 0.5·\rho·S·C_D·V²
- +0.96 : W ≤ 0.5·\rho·S·C_L·V²
- +0.43 : C_f ≥ 0.074/Re^0.2
 
 Solution Diff
 =============
@@ -67,22 +96,6 @@ C_f : [ 0.00333   0.00314   0.00361   0.00342  ]       skin friction coefficient
   S : [ 18.6      17.3      12.1      11.2     ]  [m²] total wing area
   W : [ 6.85e+03  6.4e+03   6.97e+03  6.44e+03 ]  [N]  total aircraft weight
 W_w : [ 1.91e+03  1.46e+03  2.03e+03  1.5e+03  ]  [N]  wing weight
-
-Most Sensitive Variables
-------------------------
-                W_0 : [ +0.92     +0.85     +0.95     +0.85    ] aircraft weight excluding wing
-            V_{min} : [ -0.82     -1        -0.41     -0.71    ] takeoff speed
-                  V : [ +0.59     +0.97     +0.25     +0.75    ] cruising speed
-(\frac{S}{S_{wet}}) : [ +0.56     +0.63     +0.45     +0.54    ] wetted area ratio
-                  k : [ +0.56     +0.63     +0.45     +0.54    ] form factor
-
-Most Sensitive Constraints (in last sweep)
-------------------------------------------
-    +1 : C_D ≥ (CDA0)/S + k·C_f·(\frac{S}{S_{wet}}) + C_L²/(π·A·e)
-    +1 : D ≥ 0.5·\rho·S·C_D·V²
-    +1 : W ≥ W_0 + W_w
- +0.57 : W ≤ 0.5·\rho·S·C_L·V²
- +0.54 : C_f ≥ 0.074/Re^0.2
 
 Solution Diff
 =============

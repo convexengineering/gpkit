@@ -1,4 +1,5 @@
 """Defines SolutionArray class"""
+import sys
 import re
 import difflib
 from operator import sub
@@ -9,9 +10,10 @@ import pickletools
 from collections import defaultdict
 import numpy as np
 from .nomials import NomialArray
-from .small_classes import DictOfLists, Strings
+from .small_classes import DictOfLists, Strings, SolverLog
 from .small_scripts import mag, try_str_without
 from .repr_conventions import unitstr, lineagestr
+from .breakdown import Breakdowns
 
 
 CONSTRSPLITPATTERN = re.compile(r"([^*]\*[^*])|( \+ )|( >= )|( <= )|( = )")
@@ -282,6 +284,33 @@ def warnings_table(self, _, **kwargs):
     lines[-1] = "~~~~~~~~"
     return lines + [""]
 
+def costbd(self, _, **kwargs):
+    bds = Breakdowns(self)
+    original_stdout = sys.stdout
+    try:
+        sys.stdout = SolverLog(original_stdout, verbosity=0)
+        bds.plot("cost")
+        # bds.trace("cost")
+    except:
+        raise
+    finally:
+        lines = sys.stdout
+        sys.stdout = original_stdout
+    return lines + [""]
+
+
+def msenssbd(self, _, **kwargs):
+    bds = Breakdowns(self)
+    original_stdout = sys.stdout
+    try:
+        sys.stdout = SolverLog(original_stdout, verbosity=0)
+        bds.plot("model sensitivities")
+    except:
+        raise
+    finally:
+        lines = sys.stdout
+        sys.stdout = original_stdout
+    return lines + [""]
 
 TABLEFNS = {"sensitivities": senss_table,
             "top sensitivities": topsenss_table,
@@ -290,6 +319,8 @@ TABLEFNS = {"sensitivities": senss_table,
             "tightest constraints": tight_table,
             "loose constraints": loose_table,
             "warnings": warnings_table,
+            "model sensitivities breakdown": msenssbd,
+            "cost breakdown": costbd
            }
 
 def unrolled_absmax(values):
@@ -355,6 +386,7 @@ class SolutionArray(DictOfLists):
     """
     modelstr = ""
     _name_collision_varkeys = None
+    _lineageset = False
     table_titles = {"choicevariables": "Choice Variables",
                     "sweepvariables": "Swept Variables",
                     "freevariables": "Free Variables",
@@ -393,9 +425,11 @@ class SolutionArray(DictOfLists):
                     vk, = vks
                     self._name_collision_varkeys[vk] = idx
         if clear:
+            self._lineageset = False
             for vk in self._name_collision_varkeys:
                 del vk.descr["necessarylineage"]
         else:
+            self._lineageset = True
             for vk, idx in self._name_collision_varkeys.items():
                 vk.descr["necessarylineage"] = idx
 
@@ -681,29 +715,19 @@ class SolutionArray(DictOfLists):
             showvars_out.update(keys)
         return showvars_out
 
-    def summary(self, showvars=(), ntopsenss=5, **kwargs):
-        "Print summary table, showing top sensitivities and no constants"
-        showvars = self._parse_showvars(showvars)
-        out = self.table(showvars, ["cost", "warnings", "sweepvariables",
-                                    "freevariables"], **kwargs)
-        constants_in_showvars = showvars.intersection(self["constants"])
-        senss_tables = []
-        if len(self["constants"]) < ntopsenss+2 or constants_in_showvars:
-            senss_tables.append("sensitivities")
-        if len(self["constants"]) >= ntopsenss+2:
-            senss_tables.append("top sensitivities")
-        senss_tables.append("tightest constraints")
-        senss_str = self.table(showvars, senss_tables, nvars=ntopsenss,
-                               **kwargs)
-        if senss_str:
-            out += "\n" + senss_str
-        return out
+    def summary(self, showvars=(), **kwargs):
+        "Print summary table, showing no sensitivities or constants"
+        return self.table(showvars,
+                         ["cost breakdown", "warnings",
+                          "model sensitivities breakdown",
+                          "sweepvariables", "freevariables"], **kwargs)
 
     def table(self, showvars=(),
-              tables=("cost", "warnings", "model sensitivities",
+              tables=("cost breakdown", "warnings",
+                      "model sensitivities breakdown",
                       "sweepvariables", "freevariables",
                       "constants", "sensitivities", "tightest constraints"),
-              sortmodelsbysenss=True, **kwargs):
+              sortmodelsbysenss=False, **kwargs):
         """A table representation of this SolutionArray
 
         Arguments
@@ -739,6 +763,9 @@ class SolutionArray(DictOfLists):
         showvars = self._parse_showvars(showvars)
         strs = []
         for table in tables:
+            if len(self) > 1 and "breakdown" in table:
+                # no breakdowns for sweeps
+                table = table.replace(" breakdown", "")
             if "sensitivities" not in self and ("sensitivities" in table or
                                                 "constraints" in table):
                 continue

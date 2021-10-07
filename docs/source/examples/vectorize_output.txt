@@ -1,32 +1,56 @@
 SCALAR
 
-Optimal Cost
-------------
- 1
+          ┃┓
+     Cost╺┫┃
+      (1) ┃┣╸1
+          ┃┛
+
+
+          ┃┓
+     Cost╺┫┃
+      (1) ┃┣╸1
+          ┃┛
+
+
+           ┃┓
+     Model╺┫┃
+           ┃┣╸x ≥ 1
+           ┃┛
 
 Free Variables
 --------------
 x : 1
 
-Most Sensitive Constraints
---------------------------
-    +1 : x ≥ 1
-
 __________
 
 VECTORIZED
 
-Optimal Cost
-------------
- 2
+          ┃┓
+     Cost╺┫┃
+      (2) ┃┣╸2
+          ┃┛
+
+
+          ┃┓
+     Cost╺┫┃
+      (2) ┃┣╸2
+          ┃┛
+
+
+           ┃┓       ┓
+           ┃┃       ┃
+           ┃┃       ┣╸x[2] ≥ 1
+           ┃┃       ┛
+           ┃┣╸Test1 ┓
+     Model╺┫┃       ┃
+           ┃┃       ┣╸x[0] ≥ 1
+           ┃┛       ┛
+           ┃┓
+           ┃┃
+           ┃┣╸x[1] ≥ 2
+           ┃┛
 
 Free Variables
 --------------
 x : [ 1         2         1        ]
-
-Most Sensitive Constraints
---------------------------
-    +1 : x[0] ≥ 1
-    +1 : x[1] ≥ 2
-    +1 : x[2] ≥ 1
 

@@ -1,7 +1,14 @@
 
-Optimal Cost
-------------
- 1e-30
+             ┃┓
+        Cost╺┫┃
+     (1e-30) ┃┣╸1/x
+             ┃┛ (1e-30)
+
+
+             ┃┓
+        Cost╺┫┃
+     (1e-30) ┃┣╸1/x
+             ┃┛ (1e-30)
 
 ~~~~~~~~
 WARNINGS
@@ -12,11 +19,13 @@ Arbitrarily Bounded Variables
  sensitive to upper bound of 1e+30: x
 ~~~~~~~~
 
+
+           ┃┓
+     Model╺┫┃
+           ┃┣╸x ≤ 1e+30
+           ┃┛
+
 Free Variables
 --------------
 x : 1e+30
-
-Most Sensitive Constraints
---------------------------
-    +1 : x ≤ 1e+30
 

@@ -29,9 +29,46 @@ h = self.h = Variable('h', 1, 'm', 'minimum height')  # from 'h     1 [m]    min
 #     way that makes the most sense to someone else reading your model.
 #     
 
-Optimal Cost
-------------
- 1.465
+              ┃┓          ┓      ┓
+              ┃┃          ┣╸s[2] ┣╸h
+              ┃┃          ┛ (1m) ┛ (1m, fixed)
+         Cost╺┫┃          ┓          /┓
+     (1.46m²) ┃┣╸A        ┃           ┃
+              ┃┃ (1.46m²) ┣╸s[0]     /┣╸h
+              ┃┃          ┃ (0.316m)  ┃
+              ┃┛          ┛          /┛
+
+
+              ┃┓          ┓      ┓
+              ┃┃          ┣╸s[2] ┣╸h
+              ┃┃          ┛ (1m) ┛ (1m, fixed)
+         Cost╺┫┃          ┓          /┓
+     (1.46m²) ┃┣╸A        ┃           ┃
+              ┃┃ (1.46m²) ┣╸s[0]     /┣╸h
+              ┃┃          ┃ (0.316m)  ┃
+              ┃┛          ┛          /┛
+
+
+           ┃┓      ┓
+           ┃┃      ┃
+           ┃┃      ┃
+           ┃┃      ┃
+           ┃┃      ┣╸A ≥ 2·(s[0]·s[1] + s[1]·s[2] + s[2]·s[0])
+           ┃┃      ┃
+           ┃┃      ┃
+           ┃┃      ┛
+           ┃┃      ┓
+     Model╺┫┃      ┃
+           ┃┣╸Cube ┣╸V = 100l
+           ┃┃      ┛
+           ┃┃      ┓
+           ┃┃      ┃
+           ┃┃      ┣╸V ≤ s[:].prod()
+           ┃┃      ┛
+           ┃┃      ┣╸h = 1m
+           ┃┃      ┛
+           ┃┃      ┣╸s[2] ≥ h
+           ┃┛      ┛
 
 Free Variables
 --------------

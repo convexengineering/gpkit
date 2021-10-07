@@ -221,25 +221,29 @@ MISSION = Mission(AC)
 M = Model(MISSION.takeoff_fuel, [MISSION, AC])
 print(M)
 sol = M.solve(verbosity=0)
+sol.table()
 # save solution to some files
-sol.savemat()
-sol.savecsv()
-sol.savetxt()
-sol.save("solution.pkl")
+# sol.savemat()
+# sol.savecsv()
+# sol.savetxt()
+# sol.save("solution.pkl")
 # retrieve solution from a file
-sol_loaded = pickle.load(open("solution.pkl", "rb"))
+# sol_loaded = pickle.load(open("solution.pkl", "rb"))
 
 vars_of_interest = set(AC.varkeys)
 # note that there's two ways to access submodels
-assert (MISSION["flight segment"]["aircraft performance"]
-        is MISSION.fs.aircraftp)
-vars_of_interest.update(MISSION.fs.aircraftp.unique_varkeys)
-vars_of_interest.add(M["D"])
-print(sol.summary(vars_of_interest))
-print(sol.table(tables=["loose constraints"]))
+# assert (MISSION["flight segment"]["aircraft performance"]
+#         is MISSION.fs.aircraftp)
+# vars_of_interest.update(MISSION.fs.aircraftp.unique_varkeys)
+# vars_of_interest.add(M["D"])
+# print(sol.summary(vars_of_interest))
+# print(sol.table(tables=["loose constraints"]))
 
 M.append(MISSION.fs.aircraftp.Wburn >= 0.2*MISSION.fs.aircraftp.wing_aero.D)
 sol = M.solve(verbosity=0)
+# sol.table()
+from gpkit.breakdown import Breakdowns
+Breakdowns(sol).plot(MISSION.fs.aircraftp.Wburn[3])
 print(sol.diff("solution.pkl", showvars=vars_of_interest, sortbymodel=False))
 
 try:

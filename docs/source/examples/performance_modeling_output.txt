@@ -32,79 +32,24 @@ Constraints
    c = (S/A)^0.5
    Wing.W ≥ S·Wing.rho
 
-Optimal Cost
-------------
- 1.091
-
-Free Variables
---------------
-      | Mission.FlightSegment.AircraftP
-Wburn : [ 0.274     0.273     0.272     0.272    ]  [lbf] segment fuel burn
-Wfuel : [ 1.09      0.817     0.544     0.272    ]  [lbf] fuel weight
-
-      | Mission.FlightSegment.AircraftP.WingAero
-    D : [ 2.74      2.73      2.72      2.72     ]  [lbf] drag force
-
-      | Aircraft
-    W : 144.1                                       [lbf] weight
-
-      | Aircraft.Wing
-    S : 44.14                                       [ft²] surface area
-    W : 44.14                                       [lbf] weight
-    c : 1.279                                       [ft]  mean chord
-
-Variable Sensitivities
-----------------------
-    | Aircraft.Fuselage
-  W : +0.97  weight
-
-    | Aircraft.Wing
-  A : -0.67  aspect ratio
-rho : +0.43  areal density
-
-Next Most Sensitive Variables
------------------------------
-    | Mission.FlightSegment.AircraftP.WingAero
-  e : [ -0.18     -0.18     -0.18     -0.18    ] Oswald efficiency
-
-    | Mission.FlightSegment.FlightState
-  V : [ -0.22     -0.21     -0.21     -0.21    ] true airspeed
-rho : [ -0.12     -0.11     -0.11     -0.11    ] air density
-
-Most Sensitive Constraints
---------------------------
-       | Aircraft
-  +1.4 : W ≥ Fuselage.W + Wing.W
-
-       | Mission
-    +1 : Wfuel[0] ≥ Wfuel[1] + Wburn[0]
- +0.75 : Wfuel[1] ≥ Wfuel[2] + Wburn[1]
-  +0.5 : Wfuel[2] ≥ Wfuel[3] + Wburn[2]
-
-       | Aircraft.Wing
- +0.43 : W ≥ S·rho
-
-Insensitive Constraints |below +1e-05|
---------------------------------------
-(none)
-
-Solution Diff (for selected variables)
-======================================
-(argument is the baseline solution)
-
-Constraint Differences
-**********************
-@@ -31,3 +31,4 @@
-   Wing
-    c = (S/A)^0.5
-    Wing.W ≥ S·Wing.rho
-+ Wburn[:] ≥ 0.2·D[:]
-
-**********************
-
-Relative Differences |above 1%|
--------------------------------
-Wburn : [ +102.1%   +101.6%   +101.1%   +100.5%  ] segment fuel burn
-Wfuel : [ +101.3%   +101.1%   +100.8%   +100.5%  ] fuel weight
-    D : [   +1.1%       -         -         -    ] drag force
+               ┃┓           ┓            ┓            ┓            ┓
+               ┃┃           ┃            ┃            ┃            ┃
+               ┃┃           ┃            ┃            ┣╸Wburn[2]   ┣╸CD[2]
+               ┃┃           ┃            ┃            ┃ (0.272lbf) ┃ (0.0189)
+               ┃┃           ┃            ┃            ┛            ┛
+               ┃┃           ┃            ┣╸Wfuel[2]   ┓            ┓
+               ┃┃           ┃            ┃ (0.544lbf) ┃            ┃
+               ┃┃           ┣╸Wfuel[1]   ┃            ┣╸Wfuel[3]   ┣╸CD[3]
+               ┃┃           ┃ (0.817lbf) ┃            ┃ (0.272lbf) ┃ (0.0188)
+          Cost╺┫┃           ┃            ┛            ┛            ┛
+     (1.09lbf) ┃┣╸Wfuel[0]  ┃            ┓            ┓          ┓
+               ┃┃ (1.09lbf) ┃            ┃            ┃          ┣╸CL[1]²
+               ┃┃           ┃            ┣╸Wburn[1]   ┣╸CD[1]    ┛ (1.01)
+               ┃┃           ┃            ┃ (0.273lbf) ┃ (0.0189) ┣╸1/Re[1]^0.2
+               ┃┃           ┛            ┛            ┛          ┛ (0.0772)
+               ┃┃           ┓            ┓         ┓
+               ┃┃           ┃            ┃         ┣╸CL[0]²
+               ┃┃           ┣╸Wburn[0]   ┣╸CD[0]   ┛ (1.01)
+               ┃┃           ┃ (0.274lbf) ┃ (0.019) ┣╸1/Re[0]^0.2
+               ┃┛           ┛            ┛         ┛ (0.0772)
 

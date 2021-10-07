@@ -3,6 +3,15 @@ Visualization and Interaction
 
 Code in this section uses the `CE solar model <https://github.com/convexengineering/solar/tree/gpkitdocs>`_ except where noted otherwise.
 
+Model and Variable Breakdowns
+=============================
+
+.. literalinclude:: examples/breakdowns.py
+
+.. literalinclude:: examples/breakdowns_output.txt
+
+If permissivity is greater than 1, the breakdown will always proceed if a breakdown variable is available in the monomial, and will choose the most sensitive one if multiple are available. If permissivity is 1, breakdowns will stop when there are multiple breakdown variables multiplying each other. If permissivity is 0, breakdowns will stop when any free variables multiply each other. If permissivity is between 0 and 1, it will follow the behavior for 1 if the monomial represents a fraction of the total greater than ``1 - permissivity``, and follow the behaviour for 0 otherwise.
+
 Model Hierarchy Treemaps
 ========================
 

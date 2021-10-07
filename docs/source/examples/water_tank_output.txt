@@ -1,23 +1,49 @@
 Infeasible monomial equality: Cannot convert from 'V [m³]' to 'M [kg]'
 
-Optimal Cost
-------------
- 1.293
+              ┃┓          ┓          ┓
+              ┃┃          ┃          ┃
+              ┃┃          ┣╸d[0]     ┣╸M
+         Cost╺┫┃          ┃ (0.464m) ┃ (100kg, fixed)
+     (1.29m²) ┃┣╸A        ┛          ┛
+              ┃┃ (1.29m²) ┓
+              ┃┃          ┣╸d[1]·d[2]
+              ┃┛          ┛ (0.215m²)
+
+
+              ┃┓          ┓          ┓
+              ┃┃          ┃          ┃
+              ┃┃          ┣╸d[0]     ┣╸M
+         Cost╺┫┃          ┃ (0.464m) ┃ (100kg, fixed)
+     (1.29m²) ┃┣╸A        ┛          ┛
+              ┃┃ (1.29m²) ┓
+              ┃┃          ┣╸d[1]·d[2]
+              ┃┛          ┛ (0.215m²)
+
+
+           ┃┓
+           ┃┃
+           ┃┣╸A ≥ 2·(d[0]·d[1] + d[0]·d[2] + d[1]·d[2])
+           ┃┛
+           ┃┓
+           ┃┃
+           ┃┣╸M = V·\rho
+           ┃┛
+           ┃┓
+     Model╺┫┃
+           ┃┣╸V = d[0]·d[1]·d[2]
+           ┃┛
+           ┃┓
+           ┃┃
+           ┃┣╸M = 100kg
+           ┃┛
+           ┃┓
+           ┃┃
+           ┃┣╸\rho = 1,000kg/m³
+           ┃┛
 
 Free Variables
 --------------
 A : 1.293                             [m²] Surface Area of the Tank
 V : 0.1                               [m³] Volume of the Tank
 d : [ 0.464     0.464     0.464    ]  [m]  Dimension Vector
-
-Variable Sensitivities
-----------------------
-   M : +0.67  Mass of Water in the Tank
-\rho : -0.67  Density of Water in the Tank
-
-Most Sensitive Constraints
---------------------------
-    +1 : A ≥ 2·(d[0]·d[1] + d[0]·d[2] + d[1]·d[2])
- +0.67 : M = V·\rho
- +0.67 : V = d[0]·d[1]·d[2]
 
