@@ -45,7 +45,4 @@ class Cube(Model):
 print(parse_varstring(Cube.__doc__))
 c = Cube()
 c.cost = c.A
-sol = c.solve(verbosity=0)
-from gpkit.breakdowns import Breakdowns
-bds = Breakdowns(sol)
-bds.plot("cost", showlegend=True)
+print(c.solve(verbosity=0).table())

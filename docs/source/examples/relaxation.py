@@ -21,6 +21,8 @@ allrelaxed = ConstraintsRelaxedEqually(m)
 mr1 = Model(allrelaxed.relaxvar, allrelaxed)
 print(mr1)
 print(mr1.solve(verbosity=0).table())  # solves with an x of 1.414
+from gpkit.breakdowns import Breakdowns
+Breakdowns(mr1.solution).trace("cost")
 print("")
 
 print("With constraints relaxed individually")
@@ -34,10 +36,6 @@ mr2 = Model(constraintsrelaxed.relaxvars.prod() * m.cost**0.01,
             constraintsrelaxed)
 print(mr2)
 print(mr2.solve(verbosity=0).table())  # solves with an x of 1.0
-from gpkit.breakdowns import Breakdowns
-bds = Breakdowns(mr2.solution)
-bds.plot("cost")
-bds.trace("cost")
 print("")
 
 print("With constants relaxed individually")

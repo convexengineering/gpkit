@@ -89,16 +89,15 @@ class ReprMixin:
     cached_strs = None
     ast = None
     # pylint: disable=too-many-branches, too-many-statements
-    def parse_ast(self, excluded=("units")):
+    def parse_ast(self, excluded=()):
         "Turns the AST of this object's construction into a faithful string"
+        excluded = frozenset({"units"}.union(excluded))
         if self.cached_strs is None:
             self.cached_strs = {}
-        elif frozenset(excluded) in self.cached_strs:
-            return self.cached_strs[frozenset(excluded)]
-        aststr = None
+        elif excluded in self.cached_strs:
+            return self.cached_strs[excluded]
         oper, values = self.ast  # pylint: disable=unpacking-non-sequence
-        excluded = set(excluded)
-        excluded.add("units")
+
         if oper == "add":
             left = strify(values[0], excluded)
             right = strify(values[1], excluded)
@@ -167,7 +166,7 @@ class ReprMixin:
             aststr = "%s[%s]" % (left, idx)
         else:
             raise ValueError(oper)
-        self.cached_strs[frozenset(excluded)] = aststr
+        self.cached_strs[excluded] = aststr
         return aststr
 
     def __repr__(self):

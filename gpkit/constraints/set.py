@@ -206,9 +206,17 @@ class ConstraintSet(list, ReprMixin):
             self._name_collision_varkeys = {}
             name_collisions = defaultdict(set)
             for key in self.varkeys:
-                shortname = key.str_without(["lineage", "vec"])
-                if len(self.varkeys[shortname]) > 1:
-                    name_collisions[shortname].add(key)
+                if hasattr(key, "key"):
+                    if key.veckey and all(k.veckey == key.veckey
+                                          for k in self.varkeys[key.name]):
+                        self._name_collision_varkeys[key] = 0
+                        self._name_collision_varkeys[key.veckey] = 0
+                    elif len(self.varkeys[key.name]) == 1:
+                        self._name_collision_varkeys[key] = 0
+                    else:
+                        shortname = key.str_without(["lineage", "vec"])
+                        if len(self.varkeys[shortname]) > 1:
+                            name_collisions[shortname].add(key)
             for varkeys in name_collisions.values():
                 min_namespaced = defaultdict(set)
                 for vk in varkeys:
@@ -229,9 +237,11 @@ class ConstraintSet(list, ReprMixin):
                     vk, = vks
                     self._name_collision_varkeys[vk] = idx
         if clear:
+            self._lineageset = False
             for vk in self._name_collision_varkeys:
                 del vk.descr["necessarylineage"]
         else:
+            self._lineageset = True
             for vk, idx in self._name_collision_varkeys.items():
                 vk.descr["necessarylineage"] = idx
 
@@ -240,19 +250,17 @@ class ConstraintSet(list, ReprMixin):
         excluded = frozenset(excluded)
         root, rootlines = "root" not in excluded, []
         if root:
-            excluded = excluded.union(["root"])
-            if "unnecessary lineage" in excluded:
-                self.set_necessarylineage()
+            excluded = {"root"}.union(excluded)
+            self.set_necessarylineage()
             if hasattr(self, "_rootlines"):
                 rootlines = self._rootlines(excluded)  # pylint: disable=no-member
         lines = recursively_line(self, excluded)
-        indent = " " if getattr(self, "lineage", None) else ""
-        if root and "unnecessary lineage" in excluded:
-            indent += " "
+        indent = " " if root or getattr(self, "lineage", None) else ""
+        if root:
             self.set_necessarylineage(clear=True)
         return rootlines + [(indent+line).rstrip() for line in lines]
 
-    def str_without(self, excluded=("unnecessary lineage", "units")):
+    def str_without(self, excluded=("units",)):
         "String representation of a ConstraintSet."
         return "\n".join(self.lines_without(excluded))
 

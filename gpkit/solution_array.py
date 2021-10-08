@@ -176,16 +176,14 @@ def loose_table(self, _, min_senss=1e-5, **kwargs):
 def constraint_table(data, title, sortbymodel=True, showmodels=True, **_):
     "Creates lines for tables where the right side is a constraint."
     # TODO: this should support 1D array inputs from sweeps
-    excluded = ("units", "unnecessary lineage")
-    if not showmodels:
-        excluded = ("units", "lineage")  # hide all of it
+    excluded = {"units"} if showmodels else {"units", "lineage"}
     models, decorated = {}, []
     for sortby, openingstr, _, constraint in sorted(data):
         model = lineagestr(constraint) if sortbymodel else ""
         if model not in models:
             models[model] = len(models)
         constrstr = try_str_without(
-            constraint, excluded + (":MAGIC:"+lineagestr(constraint),))
+            constraint, {":MAGIC:"+lineagestr(constraint)}.union(excluded))
         if " at 0x" in constrstr:  # don't print memory addresses
             constrstr = constrstr[:constrstr.find(" at 0x")] + ">"
         decorated.append((models[model], model, sortby, constrstr, openingstr))
@@ -393,9 +391,12 @@ class SolutionArray(DictOfLists):
             name_collisions = defaultdict(set)
             for key in keymap:
                 if hasattr(key, "key"):
-                    shortname = key.str_without(["lineage", "vec"])
-                    if len(keymap[shortname]) > 1:
-                        name_collisions[shortname].add(key)
+                    if len(keymap[key.name]) == 1:  # very unique
+                        self._name_collision_varkeys[key] = 0
+                    else:
+                        shortname = key.str_without(["lineage", "vec"])
+                        if len(keymap[shortname]) > 1:
+                            name_collisions[shortname].add(key)
             for varkeys in name_collisions.values():
                 min_namespaced = defaultdict(set)
                 for vk in varkeys:
@@ -593,15 +594,14 @@ class SolutionArray(DictOfLists):
         return names
 
     def savemat(self, filename="solution.mat", *, showvars=None,
-                excluded=("unnecessary lineage", "vec")):
+                excluded=("vec")):
         "Saves primal solution as matlab file"
         from scipy.io import savemat
         savemat(filename,
                 {name.replace(".", "_"): np.array(self["variables"][key], "f")
                  for name, key in self.varnames(showvars, excluded).items()})
 
-    def todataframe(self, showvars=None,
-                    excluded=("unnecessary lineage", "vec")):
+    def todataframe(self, showvars=None, excluded=("vec")):
         "Returns primal solution as pandas dataframe"
         import pandas as pd  # pylint:disable=import-error
         rows = []

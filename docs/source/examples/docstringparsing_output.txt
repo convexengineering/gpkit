@@ -29,19 +29,57 @@ h = self.h = Variable('h', 1, 'm', 'minimum height')  # from 'h     1 [m]    min
 #     way that makes the most sense to someone else reading your model.
 #     
 
-          ┃┯╤┯╤/┯┓
-          ┃│╎│╎ │┃
-          ┃│EDCBA┣╸h
-     Cost╺┫│╎│╎ │┃ (1m, fixed)
- (1.46m²) ┃F╧┷╧/┷┛
-          ┃│╤┯┓
-          ┃│GA┣╸h
-          ┃┷╧┷┛
+          ┃┓          ┓          /┓
+          ┃┃          ┃           ┃
+          ┃┃          ┣╸s[0]     /┣╸h
+     Cost╺┫┃          ┃ (0.316m)  ┃ (1m, fixed)
+ (1.46m²) ┃┣╸A        ┛          /┛
+          ┃┃ (1.46m²) ┓      ┓
+          ┃┃          ┣╸s[2] ┣╸h
+          ┃┛          ┛ (1m) ┛
 
- A   s[2]    = 1m
- B            ^-1
- C   V/s[1]   ×316l/m  [free factor]
- D   s[0]    = 0.316m
- E   2·s[2]   ×2m
- F   A       = 1.46m²
- G   2·s[1]   ×0.632m  [free factor]
+
+
+       ┃┓      ┓
+       ┃┃      ┃
+       ┃┃      ┃
+       ┃┃      ┃
+       ┃┃      ┣╸A ≥ 2·(s[0]·s[1] + s[1]·s[2] + s[2]·s[0])
+       ┃┃      ┃
+       ┃┃      ┃
+       ┃┃      ┛
+       ┃┃      ┓
+ Model╺┫┃      ┃
+       ┃┣╸Cube ┣╸V = 100l
+       ┃┃      ┛
+       ┃┃      ┓
+       ┃┃      ┃
+       ┃┃      ┣╸V ≤ s[:].prod()
+       ┃┃      ┛
+       ┃┃      ┣╸h = 1m
+       ┃┃      ┛
+       ┃┃      ┣╸s[2] ≥ h
+       ┃┛      ┛
+
+
+Free Variables
+--------------
+A : 1.465                             [m²] surface area
+s : [ 0.316     0.316     1        ]  [m]  side length
+
+Fixed Variables
+---------------
+V : 100  [l] minimum volume
+h : 1    [m] minimum height
+
+Variable Sensitivities
+----------------------
+V : +0.57  minimum volume
+h : +0.3   minimum height
+
+Most Sensitive Constraints
+--------------------------
+    +1 : A ≥ 2·(s[0]·s[1] + s[1]·s[2] + s[2]·s[0])
+ +0.57 : V ≤ s[:].prod()
+  +0.3 : s[2] ≥ h
+

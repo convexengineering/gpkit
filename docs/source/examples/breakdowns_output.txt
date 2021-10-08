@@ -70,7 +70,6 @@ Combining the two above by increasing maxwidth
 
 Model sensitivity breakdowns (note the two methods of access)
 ============================
-Model -1.0 [(0, -3.1, 3), (1, -8.4, 2), (6, -77.0, 1), (14, -190.0, 0)]
 
        ┃┓         ┓               ┓              ┓              ┓
        ┃┃         ┃               ┃              ┃              ┃
@@ -83,7 +82,7 @@ Model -1.0 [(0, -3.1, 3), (1, -8.4, 2), (6, -77.0, 1), (14, -190.0, 0)]
        ┃┃         ┃               ┣╸FlightState╶⎨
  Model╺┫┃         ┃               ┣╸GustL╶⎨
        ┃┃         ┃               ┣╸SteadyLevelFlight╶⎨
-       ┃┃         ┛               ┣╸[48 terms]
+       ┃┃         ┛               ┣╸[49 terms]
        ┃┛         ┣╸Climb╶⎨
        ┃┓
        ┃┃
@@ -93,8 +92,6 @@ Model -1.0 [(0, -3.1, 3), (1, -8.4, 2), (6, -77.0, 1), (14, -190.0, 0)]
        ┃┛
        ┃┣╸g = 9.81m/s²
 
-Battery 2.0 [(0, 0.42, 6), (1, 5.0, 1), (1, 5.0, 2), (1, 5.0, 3), (1, 5.0, 4), (1, 5.0, 5), (1, 5.2, 0)]
-Wing -1.0 [(0, -1.2, 4), (1, -1.9, 2), (1, -1.9, 3), (2, -6.4, 0), (2, -6.3, 1)]
 
           ┃┓         ┣╸etadischarge = 0.98
           ┃┃         ┛
@@ -109,7 +106,7 @@ Wing -1.0 [(0, -1.2, 4), (1, -1.9, 2), (1, -1.9, 3), (2, -6.4, 0), (2, -6.3, 1)]
           ┃┣╸Wing╶⎨
           ┃┃
           ┃┛
-          ┃┣╸Wtotal/mfac ≥ W[0,0] + W[1,0] + W[2,0] + Wpay + Wavn + Wland + W +…
+          ┃┣╸Wtotal/mfac ≥ Fuselage.W[0,0] + Fuselage.W[1,0] + Fuselage.W[2,0] …
           ┃┛
           ┃┣╸mfac = 1.05
           ┃┛
@@ -151,63 +148,63 @@ Exhaustive variable breakdown traces (and configuration arguments)
                                  ┃╎┣╸Pavn (200W, fixed)
                                  ┃╧┣╸Ppay (100W, fixed)
 
- A   4.53e-05·FlightState.rho·AircraftPerf.AircraftDrag.ActuatorProp.om…   ×1,653N·m     [free factor]
- B   AircraftPerf.AircraftDrag.ActuatorProp.Q                             = 4.8N·m
- C   AircraftPerf.AircraftDrag.MotorPerf.Q                                = 4.8N·m
- D   Kv                                                                    ×64.2rpm/V    [free factor]
- E   AircraftPerf.AircraftDrag.MotorPerf.i                                = 36.8A
- F   AircraftPerf.AircraftDrag.MotorPerf.v                                 ×18.6V        [free factor]
- G   AircraftPerf.AircraftDrag.MotorPerf.Pelec                            = 0.685kW
- H   Nprop                                                                 ×4, fixed
- J   AircraftPerf.AircraftDrag.mpower                                      ×1.05, fixed
+ A   4.53e-05·FlightState.rho·ActuatorProp.omega²·Propeller.R⁵   ×1,653N·m     [free factor]
+ B   ActuatorProp.Q                                             = 4.8N·m
+ C   MotorPerf.Q                                                = 4.8N·m
+ D   Kv                                                          ×64.2rpm/V    [free factor]
+ E   MotorPerf.i                                                = 36.8A
+ F   MotorPerf.v                                                 ×18.6V        [free factor]
+ G   MotorPerf.Pelec                                            = 0.685kW
+ H   Nprop                                                       ×4, fixed
+ J   mpower                                                      ×1.05, fixed
 
 Permissivity = 2 (the default)
 ----------------
 
-Poper (3,194W)
+AircraftPerf.AircraftDrag.Poper (3,194W)
   which in: Poper/mpower ≥ Pavn + Ppay + Pelec·Nprop (sensitivity +5.6)
-  { through a factor of mpower (1.05, fixed) }
+  { through a factor of AircraftPerf.AircraftDrag.mpower (1.05, fixed) }
   breaks down into 3 monomials:
     1) forming 90% of the RHS and 90% of the total:
       { through a factor of Nprop (4, fixed) }
-      Pelec (0.685kW)
+      AircraftPerf.AircraftDrag.MotorPerf.Pelec (0.685kW)
         which in: Pelec = v·i (sensitivity -5.1)
         breaks down into:
-          { through a factor of v (18.6V) }
-          i (36.8A)
+          { through a factor of AircraftPerf.AircraftDrag.MotorPerf.v (18.6V) }
+          AircraftPerf.AircraftDrag.MotorPerf.i (36.8A)
             which in: i ≥ Q·Kv + i0 (sensitivity +5.4)
             breaks down into 2 monomials:
               1) forming 87% of the RHS and 79% of the total:
                 { through a factor of Kv (64.2rpm/V) }
-                Q (4.8N·m)
+                AircraftPerf.AircraftDrag.MotorPerf.Q (4.8N·m)
                   which in: Q = Q (sensitivity -4.7)
                   breaks down into:
-                    Q (4.8N·m)
+                    AircraftPerf.AircraftDrag.ActuatorProp.Q (4.8N·m)
                       which in: CP ≤ Q·omega/(0.5·rho·(omega·R)³·π·R²) (sensitivity +4.7)
-                      { through a factor of 4.53e-05·rho·omega²·R⁵ (1,653N·m) }
+                      { through a factor of 4.53e-05·FlightState.rho·AircraftPerf.AircraftDrag.ActuatorProp.omega²·Propeller.R⁵ (1,653N·m) }
                       breaks down into:
-                        CP (0.00291)
+                        AircraftPerf.AircraftDrag.ActuatorProp.CP (0.00291)
               2) forming 12% of the RHS and 11% of the total:
                 i0 (4.5A, fixed)
     2) forming 6% of the RHS and 6% of the total:
-      Pavn (200W, fixed)
+      AircraftPerf.AircraftDrag.Pavn (200W, fixed)
     3) forming 3% of the RHS and 3% of the total:
-      Ppay (100W, fixed)
+      AircraftPerf.AircraftDrag.Ppay (100W, fixed)
 
 Permissivity = 1 (stops at Pelec = v·i)
 ----------------
 
-Poper (3,194W)
+AircraftPerf.AircraftDrag.Poper (3,194W)
   which in: Poper/mpower ≥ Pavn + Ppay + Pelec·Nprop (sensitivity +5.6)
-  { through a factor of mpower (1.05, fixed) }
+  { through a factor of AircraftPerf.AircraftDrag.mpower (1.05, fixed) }
   breaks down into 3 monomials:
     1) forming 90% of the RHS and 90% of the total:
       { through a factor of Nprop (4, fixed) }
-      Pelec (0.685kW)
+      AircraftPerf.AircraftDrag.MotorPerf.Pelec (0.685kW)
         which in: Pelec = v·i (sensitivity -5.1)
         breaks down into:
-          i·v (685A·V)
+          AircraftPerf.AircraftDrag.MotorPerf.i·AircraftPerf.AircraftDrag.MotorPerf.v (685A·V)
     2) forming 6% of the RHS and 6% of the total:
-      Pavn (200W, fixed)
+      AircraftPerf.AircraftDrag.Pavn (200W, fixed)
     3) forming 3% of the RHS and 3% of the total:
-      Ppay (100W, fixed)
+      AircraftPerf.AircraftDrag.Ppay (100W, fixed)

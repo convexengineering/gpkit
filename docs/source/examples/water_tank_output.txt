@@ -10,7 +10,6 @@ Infeasible monomial equality: Cannot convert from 'V [m³]' to 'M [kg]'
           ┃┛          ┛ (0.215m²)
 
 
-Model -1 [(4, -0.67, 1), (4, -0.67, 2), (4, -0.67, 3), (4, -0.67, 4), (5, -1.0, 0)]
 
        ┃┓
        ┃┃

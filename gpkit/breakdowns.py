@@ -58,7 +58,7 @@ def get_model_breakdown(solution):
                 subbd["|sensitivity|"] = 0
             subbd["|sensitivity|"] += senss
         # treat vectors as namespace
-        constrstr = try_str_without(constraint, {"unnecessary lineage", "units", ":MAGIC:"+lineagestr(constraint)})
+        constrstr = try_str_without(constraint, {"units", ":MAGIC:"+lineagestr(constraint)})
         if " at 0x" in constrstr:  # don't print memory addresses
             constrstr = constrstr[:constrstr.find(" at 0x")] + ">"
         subbd[constrstr] = {"|sensitivity|": senss}
@@ -209,15 +209,15 @@ def get_breakdowns(basically_fixed_variables, solution):
         prevlen = len(basically_fixed_variables)
         for key in breakdowns:
             if key not in basically_fixed_variables:
-                get_fixity(basically_fixed_variables, key, breakdowns, solution, basically_fixed_variables)
+                get_fixity(basically_fixed_variables, key, breakdowns, solution)
     return breakdowns
 
 
-def get_fixity(basically_fixed_variables, key, bd, solution, basically_fixed=set(), visited=set()):
+def get_fixity(basically_fixed, key, bd, solution, visited=set()):
     lt, gt, _ = bd[key][0]
     free_vks = get_free_vks(lt, solution).union(get_free_vks(gt, solution))
     for vk in free_vks:
-        if vk is key or vk in basically_fixed_variables:
+        if vk is key or vk in basically_fixed:
             continue  # currently checking or already checked
         if vk not in bd:
             return  # a very free variable, can't even be broken down
@@ -225,8 +225,8 @@ def get_fixity(basically_fixed_variables, key, bd, solution, basically_fixed=set
             return  # tried it before, implicitly it didn't work out
         # maybe it's basically fixed?
         visited.add(key)
-        get_fixity(basically_fixed_variables, vk, bd, solution, basically_fixed, visited)
-        if vk not in basically_fixed_variables:
+        get_fixity(basically_fixed, vk, bd, solution, visited)
+        if vk not in basically_fixed:
             return  # ...well, we tried
     basically_fixed.add(key)
 
@@ -249,13 +249,12 @@ def crawl(basically_fixed_variables, key, bd, solution, basescale=1, permissivit
         visited_bdkeys = set()
         all_visited_bdkeys = set()
     if verbosity == 1:
-        already_set = not solution._lineageset
+        already_set = False #not solution._lineageset TODO
         if not already_set:
             solution.set_necessarylineage()
     if verbosity:
         indent = verbosity-1  # HACK: a bit of overloading, here
-        kvstr = "%s (%s)" % (key.str_without(["unnecessary lineage", "units"]),
-                             get_valstr(key, solution))
+        kvstr = "%s (%s)" % (key, get_valstr(key, solution))
         if key in all_visited_bdkeys:
             print("  "*indent + kvstr + " [as broken down above]")
             verbosity = 0
@@ -304,7 +303,7 @@ def crawl(basically_fixed_variables, key, bd, solution, basescale=1, permissivit
                 factor.ast = None
                 if verbosity:
                     print("  "*indent + "{ through a factor of %s (%s) }" %
-                          (factor.str_without(["unnecessary lineage", "units"]),
+                          (factor.str_without(["units"]),
                            get_valstr(factor, solution)))
                 subsubtree = []
                 transform = Transform(factor, 1, keymon)
@@ -412,7 +411,7 @@ def crawl(basically_fixed_variables, key, bd, solution, basescale=1, permissivit
             if factor != 1 :
                 factor.ast = None
                 if verbosity:
-                    keyvalstr = "%s (%s)" % (factor.str_without(["unnecessary lineage", "units"]),
+                    keyvalstr = "%s (%s)" % (factor.str_without(["units"]),
                                              get_valstr(factor, solution))
                     print("  "*indent + "{ through a factor of %s }" % keyvalstr)
                 subsubtree = []
@@ -432,15 +431,14 @@ def crawl(basically_fixed_variables, key, bd, solution, basescale=1, permissivit
         # TODO: make minscale an argument - currently an arbitrary 0.01
         if (subkey is not None and subkey not in visited_bdkeys
                 and subkey in bd and scaledmonval > 0.05):
-            if verbosity:
-                verbosity = indent + 1  # slight hack
+            subverbosity = indent + 1 if verbosity else 0  # slight hack
             subsubtree = crawl(basically_fixed_variables, subkey, bd, solution, scaledmonval,
-                               permissivity, verbosity, set(visited_bdkeys),
+                               permissivity, subverbosity, set(visited_bdkeys),
                                gone_negative, all_visited_bdkeys)
             subtree.append(subsubtree)
         else:
             if verbosity:
-                keyvalstr = "%s (%s)" % (mon.str_without(["unnecessary lineage", "units"]),
+                keyvalstr = "%s (%s)" % (mon.str_without(["units"]),
                                          get_valstr(mon, solution))
                 print("  "*indent + keyvalstr)
             subtree.append(Tree(mon, scaledmonval, []))
@@ -551,7 +549,7 @@ def discretize(tree, extent, solution, collapse, depth=0, justsplit=False):
         sign = int(np.sign(surplus))
         bump_priority = sorted((ext, sign*float("%.2g" % b.value), i) for i, (b, ext)
                                in enumerate(zip(branches, extents)))
-        print(key, surplus, bump_priority)
+        # print(key, surplus, bump_priority)
         while surplus:
             try:
                 extents[bump_priority.pop()[-1]] += sign
@@ -668,10 +666,13 @@ def graph(tree, breakdowns, solution, basically_fixed_variables, *,
 
     # Format depth=0
     A_key, = [key for key, value in legend.items() if value == "A"]
-    A_str = get_keystr(A_key, solution, firstcol=True)
     prefix = ""
-    if isinstance(A_key, VarKey) and A_key.necessarylineage:
-        prefix = A_key.lineagestr()
+    if A_key is solution["cost function"]:
+        A_str = "Cost"
+    else:
+        A_str = get_keystr(A_key, solution)
+        if isinstance(A_key, VarKey) and A_key.necessarylineage:
+            prefix = A_key.lineagestr()
     A_valstr = get_valstr(A_key, solution, into="(%s)")
     fmt = "{0:>%s}" % (max(len(A_str), len(A_valstr)) + 3)
     for j, entry in enumerate(chararray[0,:]):
@@ -758,7 +759,8 @@ def graph(tree, breakdowns, solution, basically_fixed_variables, *,
     if showlegend:  # create and print legend
         legend_lines = []
         for key, shortname in sorted(legend.items(), key=lambda kv: kv[1]):
-            legend_lines.append(legend_entry(key, shortname, solution, basically_fixed_variables))
+            legend_lines.append(legend_entry(key, shortname, solution, prefix,
+                                             basically_fixed_variables))
         maxlens = [max(len(el) for el in col) for col in zip(*legend_lines)]
         fmts = ["{0:<%s}" % L for L in maxlens]
         for line in legend_lines:
@@ -769,7 +771,7 @@ def graph(tree, breakdowns, solution, basically_fixed_variables, *,
     if not already_set:
         solution.set_necessarylineage(clear=True)
 
-def legend_entry(key, shortname, solution, basically_fixed_variables):
+def legend_entry(key, shortname, solution, prefix, basically_fixed_variables):
     "Returns list of legend elements"
     operator = note = ""
     keystr = valuestr = " "
@@ -786,16 +788,13 @@ def legend_entry(key, shortname, solution, basically_fixed_variables):
     else:
         valuestr = get_valstr(key, solution, into="  "+operator+"%s")
         if not isinstance(key, FixedScalar):
-            keystr = get_keystr(key, solution)
+            keystr = get_keystr(key, solution, prefix)
     return ["%-4s" % shortname, keystr, valuestr, note]
 
-def get_keystr(key, solution, prefix="", firstcol=False):
+def get_keystr(key, solution, prefix=""):
     "Returns formatted string of the key in solution."
-    if key is solution["cost function"] and firstcol:
-        out = "Cost"
-    elif hasattr(key, "str_without"):
-        out = key.str_without({"unnecessary lineage",
-                               "units", ":MAGIC:"+prefix})
+    if hasattr(key, "str_without"):
+        out = key.str_without({"units", ":MAGIC:"+prefix})
     elif isinstance(key, tuple):
         out = "[%i terms]" % len(key)
     else:
