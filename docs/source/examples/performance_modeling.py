@@ -219,38 +219,38 @@ class Fuselage(Model):
 AC = Aircraft()
 MISSION = Mission(AC)
 M = Model(MISSION.takeoff_fuel, [MISSION, AC])
-# print(M)
+print(M)
 sol = M.solve(verbosity=0)
 # save solution to some files
-# sol.savemat()
-# sol.savecsv()
-# sol.savetxt()
-# sol.save("solution.pkl")
-# # retrieve solution from a file
-# sol_loaded = pickle.load(open("solution.pkl", "rb"))
-#
-# vars_of_interest = set(AC.varkeys)
-# # note that there's two ways to access submodels
-# assert (MISSION["flight segment"]["aircraft performance"]
-#         is MISSION.fs.aircraftp)
-# vars_of_interest.update(MISSION.fs.aircraftp.unique_varkeys)
-# vars_of_interest.add(M["D"])
-# print(sol.summary(vars_of_interest))
+sol.savemat()
+sol.savecsv()
+sol.savetxt()
+sol.save("solution.pkl")
+# retrieve solution from a file
+sol_loaded = pickle.load(open("solution.pkl", "rb"))
+
+vars_of_interest = set(AC.varkeys)
+# note that there's two ways to access submodels
+assert (MISSION["flight segment"]["aircraft performance"]
+        is MISSION.fs.aircraftp)
+vars_of_interest.update(MISSION.fs.aircraftp.unique_varkeys)
+vars_of_interest.add(M["D"])
+print(sol.summary(vars_of_interest))
 print(sol.table(tables=["cost breakdown"]))
-# print(sol.table(tables=["loose constraints"]))
-#
-# M.append(MISSION.fs.aircraftp.Wburn >= 0.2*MISSION.fs.aircraftp.wing_aero.D)
-# sol = M.solve(verbosity=0)
-# print(sol.diff("solution.pkl", showvars=vars_of_interest, sortbymodel=False))
-#
-# try:
-#     from gpkit.interactive.sankey import Sankey
-#     variablesankey = Sankey(sol, M).diagram(AC.wing.A)
-#     sankey = Sankey(sol, M).diagram(width=1200, height=400, maxlinks=30)
-#     # the line below shows an interactive graph if run in jupyter notebook
-#     sankey  # pylint: disable=pointless-statement
-# except (ImportError, ModuleNotFoundError):
-#     print("Making Sankey diagrams requires the ipysankeywidget package")
-#
-# from gpkit.interactive.references import referencesplot
-# referencesplot(M, openimmediately=False)
+print(sol.table(tables=["loose constraints"]))
+
+M.append(MISSION.fs.aircraftp.Wburn >= 0.2*MISSION.fs.aircraftp.wing_aero.D)
+sol = M.solve(verbosity=0)
+print(sol.diff("solution.pkl", showvars=vars_of_interest, sortbymodel=False))
+
+try:
+    from gpkit.interactive.sankey import Sankey
+    variablesankey = Sankey(sol, M).diagram(AC.wing.A)
+    sankey = Sankey(sol, M).diagram(width=1200, height=400, maxlinks=30)
+    # the line below shows an interactive graph if run in jupyter notebook
+    sankey  # pylint: disable=pointless-statement
+except (ImportError, ModuleNotFoundError):
+    print("Making Sankey diagrams requires the ipysankeywidget package")
+
+from gpkit.interactive.references import referencesplot
+referencesplot(M, openimmediately=False)

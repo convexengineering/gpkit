@@ -13,7 +13,7 @@ from .nomials import NomialArray
 from .small_classes import DictOfLists, Strings, SolverLog
 from .small_scripts import mag, try_str_without
 from .repr_conventions import unitstr, lineagestr
-from .breakdown import Breakdowns
+from .breakdowns import Breakdowns
 
 
 CONSTRSPLITPATTERN = re.compile(r"([^*]\*[^*])|( \+ )|( >= )|( <= )|( = )")
@@ -284,32 +284,24 @@ def warnings_table(self, _, **kwargs):
     lines[-1] = "~~~~~~~~"
     return lines + [""]
 
-def costbd(self, _, **kwargs):
-    bds = Breakdowns(self)
-    original_stdout = sys.stdout
-    try:
-        sys.stdout = SolverLog(original_stdout, verbosity=0)
-        bds.plot("cost")
-    except:
-        raise
-    finally:
-        lines = sys.stdout.lines()
-        sys.stdout = original_stdout
-    return lines
+# TODO: deduplicate these two functions
+def bdtable_gen(key):
+    "Generator for breakdown tablefns"
 
+    def bdtable(self, _showvars, **_):
+        "Cost breakdown plot"
+        bds = Breakdowns(self)
+        original_stdout = sys.stdout
+        try:
+            sys.stdout = SolverLog(original_stdout, verbosity=0)
+            bds.plot(key)
+        finally:
+            lines = sys.stdout.lines()
+            sys.stdout = original_stdout
+        return lines
 
-def msenssbd(self, _, **kwargs):
-    bds = Breakdowns(self)
-    original_stdout = sys.stdout
-    try:
-        sys.stdout = SolverLog(original_stdout, verbosity=0)
-        bds.plot("model sensitivities")
-    except:
-        raise
-    finally:
-        lines = sys.stdout.lines()
-        sys.stdout = original_stdout
-    return lines
+    return bdtable
+
 
 TABLEFNS = {"sensitivities": senss_table,
             "top sensitivities": topsenss_table,
@@ -318,8 +310,8 @@ TABLEFNS = {"sensitivities": senss_table,
             "tightest constraints": tight_table,
             "loose constraints": loose_table,
             "warnings": warnings_table,
-            "model sensitivities breakdown": msenssbd,
-            "cost breakdown": costbd
+            "model sensitivities breakdown": bdtable_gen("model sensitivities"),
+            "cost breakdown": bdtable_gen("cost")
            }
 
 def unrolled_absmax(values):
@@ -717,9 +709,9 @@ class SolutionArray(DictOfLists):
     def summary(self, showvars=(), **kwargs):
         "Print summary table, showing no sensitivities or constants"
         return self.table(showvars,
-                         ["cost breakdown", "model sensitivities breakdown",
-                          "warnings", "sweepvariables", "freevariables"],
-                         **kwargs)
+                          ["cost breakdown", "model sensitivities breakdown",
+                           "warnings", "sweepvariables", "freevariables"],
+                          **kwargs)
 
     def table(self, showvars=(),
               tables=("cost breakdown", "model sensitivities breakdown",

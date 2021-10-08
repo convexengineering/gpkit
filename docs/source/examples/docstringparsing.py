@@ -46,6 +46,6 @@ print(parse_varstring(Cube.__doc__))
 c = Cube()
 c.cost = c.A
 sol = c.solve(verbosity=0)
-from gpkit.breakdown import Breakdowns
+from gpkit.breakdowns import Breakdowns
 bds = Breakdowns(sol)
 bds.plot("cost", showlegend=True)

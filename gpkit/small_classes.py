@@ -65,7 +65,7 @@ class CootMatrix:
         return self.tocsr().dot(arg)
 
 
-class SolverLog(object):
+class SolverLog:
     "Adds a `write` method to list so it's file-like and can replace stdout."
     def __init__(self, output=None, *, verbosity=0):
         self.written = ""
@@ -81,10 +81,11 @@ class SolverLog(object):
             self.output.write(writ)
 
     def lines(self):
+        "Returns the lines presently written."
         return self.written.split("\n")
 
     def flush(self):
-        pass
+        "Dummy function for I/O api compatibility"
 
 
 class DictOfLists(dict):
