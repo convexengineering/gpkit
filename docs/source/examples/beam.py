@@ -68,14 +68,14 @@ class Beam(Model):
 
 b = Beam(N=6, substitutions={"L": 6, "EI": 1.1e4, "q": 110*np.ones(6)})
 sol = b.solve(verbosity=0)
-print(sol.summary(maxcolumns=6))
-w_gp = sol("w")  # deflection along beam
-
-L, EI, q = sol("L"), sol("EI"), sol("q")
-x = np.linspace(0, mag(L), len(q))*ureg.m  # position along beam
-q = q[0]  # assume uniform loading for the check below
-w_exact = q/(24*EI) * x**2 * (x**2 - 4*L*x + 6*L**2)  # analytic soln
-assert max(abs(w_gp - w_exact)) <= 1.1*ureg.cm
+print(sol.table(tables=["cost breakdown"], maxcolumns=6))
+# w_gp = sol("w")  # deflection along beam
+#
+# L, EI, q = sol("L"), sol("EI"), sol("q")
+# x = np.linspace(0, mag(L), len(q))*ureg.m  # position along beam
+# q = q[0]  # assume uniform loading for the check below
+# w_exact = q/(24*EI) * x**2 * (x**2 - 4*L*x + 6*L**2)  # analytic soln
+# assert max(abs(w_gp - w_exact)) <= 1.1*ureg.cm
 
 PLOT = False
 if PLOT:  # pragma: no cover

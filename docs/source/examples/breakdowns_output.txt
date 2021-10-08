@@ -1,0 +1,213 @@
+Cost breakdown (you may be familiar with this from solution tables)
+==============
+
+          ┃┓          ┓           ┓             ┓
+          ┃┃          ┃           ┃             ┃
+          ┃┃          ┃           ┃             ┃
+          ┃┃          ┃           ┃             ┃
+          ┃┃          ┃           ┃             ┃
+          ┃┃          ┣╸Battery.W ┣╸Battery.E   ┣╸AircraftPerf.AircraftDrag.Poper╶⎨
+          ┃┃          ┃ (370lbf)  ┃ (165,913kJ) ┃ (3,194W)
+          ┃┃          ┃           ┃             ┃
+          ┃┃          ┃           ┃             ┃
+     Cost╺┫┃          ┃           ┃             ┛
+ (699lbf) ┃┣╸Wtotal   ┛           ┛             ┣╸SolarCells.S
+          ┃┃ (699lbf) ┓          ┓
+          ┃┃          ┃          ┣╸Wing.BoxSpar.W╶⎨
+          ┃┃          ┣╸Wing.W   ┛ (96.1lbf)
+          ┃┃          ┛ (139lbf) ┣╸Wing.WingSecondStruct.W╶⎨
+          ┃┃          ┣╸Motor.W╶⎨
+          ┃┃          ┣╸SolarCells.W╶⎨
+          ┃┃          ┣╸Empennage.W
+          ┃┃          ┣╸Wavn
+          ┃┛          ┣╸[6 terms]
+
+Variable breakdowns (note the two methods of access)
+===================
+
+                                 ┃┓                 ┓             ┓
+                                 ┃┃                 ┃             ┃
+                                 ┃┃                 ┃             ┃
+                                 ┃┃                 ┃             ┃
+                                 ┃┃                 ┃             ┃
+                                 ┃┃                 ┃             ┃
+                                 ┃┃                 ┃             ┣╸MotorPerf.Q╶⎨
+ AircraftPerf.AircraftDrag.Poper╺┫┣╸MotorPerf.Pelec ┣╸MotorPerf.i ┃ (4.8N·m)
+                        (3,194W) ┃┃ (0.685kW)       ┃ (36.8A)     ┃
+                                 ┃┃                 ┃             ┃
+                                 ┃┃                 ┃             ┃
+                                 ┃┃                 ┃             ┛
+                                 ┃┃                 ┃             ┣╸i0
+                                 ┃┛                 ┛             ┛ (4.5A, fixed)
+                                 ┃┣╸Pavn
+                                 ┃┣╸Ppay
+
+
+                                       ┃┓
+ AircraftPerf.AircraftDrag.MotorPerf.Q╺┫┃
+                              (4.8N·m) ┃┣╸..ActuatorProp.CP
+                                       ┃┛ (0.00291)
+
+Combining the two above by increasing maxwidth
+----------------------------------------------
+
+                                 ┃┓                 ┓             ┓             ┓
+                                 ┃┃                 ┃             ┃             ┃
+                                 ┃┃                 ┃             ┃             ┃
+                                 ┃┃                 ┃             ┃             ┃
+                                 ┃┃                 ┃             ┃             ┃
+                                 ┃┃                 ┃             ┃             ┃
+                                 ┃┃                 ┃             ┣╸MotorPerf.Q ┣╸ActuatorProp.CP
+ AircraftPerf.AircraftDrag.Poper╺┫┣╸MotorPerf.Pelec ┣╸MotorPerf.i ┃ (4.8N·m)    ┃ (0.00291)
+                        (3,194W) ┃┃ (0.685kW)       ┃ (36.8A)     ┃             ┃
+                                 ┃┃                 ┃             ┃             ┃
+                                 ┃┃                 ┃             ┃             ┃
+                                 ┃┃                 ┃             ┛             ┛
+                                 ┃┃                 ┃             ┣╸i0
+                                 ┃┛                 ┛             ┛ (4.5A, fixed)
+                                 ┃┣╸Pavn
+                                 ┃┣╸Ppay
+
+Model sensitivity breakdowns (note the two methods of access)
+============================
+Model -1.0 [(0, -3.1, 3), (1, -8.4, 2), (6, -77.0, 1), (14, -190.0, 0)]
+
+       ┃┓         ┓               ┓              ┓              ┓
+       ┃┃         ┃               ┃              ┃              ┃
+       ┃┃         ┃               ┃              ┃              ┣╸ActuatorProp╶⎨
+       ┃┃         ┃               ┃              ┃              ┛
+       ┃┃         ┃               ┣╸AircraftPerf ┣╸AircraftDrag ┣╸MotorPerf╶⎨
+       ┃┃         ┃               ┃              ┃              ┓
+       ┃┣╸Mission ┣╸FlightSegment ┃              ┃              ┣╸[17 terms]
+       ┃┃         ┃               ┛              ┛              ┛
+       ┃┃         ┃               ┣╸FlightState╶⎨
+ Model╺┫┃         ┃               ┣╸GustL╶⎨
+       ┃┃         ┃               ┣╸SteadyLevelFlight╶⎨
+       ┃┃         ┛               ┣╸[48 terms]
+       ┃┛         ┣╸Climb╶⎨
+       ┃┓
+       ┃┃
+       ┃┃
+       ┃┣╸Aircraft╶⎨
+       ┃┃
+       ┃┛
+       ┃┣╸g = 9.81m/s²
+
+Battery 2.0 [(0, 0.42, 6), (1, 5.0, 1), (1, 5.0, 2), (1, 5.0, 3), (1, 5.0, 4), (1, 5.0, 5), (1, 5.2, 0)]
+Wing -1.0 [(0, -1.2, 4), (1, -1.9, 2), (1, -1.9, 3), (2, -6.4, 0), (2, -6.3, 1)]
+
+          ┃┓         ┣╸etadischarge = 0.98
+          ┃┃         ┛
+          ┃┃         ┣╸W ≥ E·minSOC/hbatt/etaRTE/etapack·g
+          ┃┃         ┣╸etaRTE = 0.95
+          ┃┣╸Battery ┣╸etapack = 0.85
+          ┃┃         ┣╸hbatt = 350W·hr/kg
+          ┃┃         ┣╸minSOC = 1.03
+          ┃┛         ┛
+          ┃┓
+ Aircraft╺┫┃
+          ┃┣╸Wing╶⎨
+          ┃┃
+          ┃┛
+          ┃┣╸Wtotal/mfac ≥ W[0,0] + W[1,0] + W[2,0] + Wpay + Wavn + Wland + W +…
+          ┃┛
+          ┃┣╸mfac = 1.05
+          ┃┛
+          ┃┣╸Empennage╶⎨
+          ┃┣╸[23 terms]
+          ┃┛
+
+Exhaustive variable breakdown traces (and configuration arguments)
+====================================
+
+                                 ┃┓                 ┓             ┓
+                                 ┃┃                 ┃             ┃
+                                 ┃┃                 ┃             ┃
+                                 ┃┃                 ┃             ┃
+                                 ┃┃                 ┃             ┃
+ AircraftPerf.AircraftDrag.Poper╺┫┣╸MotorPerf.Pelec ┣╸MotorPerf.i ┣╸MotorPerf.Q╶⎨
+                        (3,194W) ┃┃ (0.685kW)       ┃ (36.8A)     ┃ (4.8N·m)
+                                 ┃┃                 ┃             ┃
+                                 ┃┃                 ┃             ┃
+                                 ┃┃                 ┃             ┛
+                                 ┃┛                 ┛             ┣╸i0
+                                 ┃┣╸Pavn
+
+
+                                 ┃╤╤┯╤┯╤┯┯╤┓
+                                 ┃╎╎│╎│╎││╎┃
+                                 ┃╎╎│╎│╎││╎┃
+                                 ┃╎╎│╎│╎││╎┃
+                                 ┃╎╎│╎│╎││╎┃
+                                 ┃╎╎│╎│╎││╎┃
+                                 ┃╎╎│╎│DCBA┣╸ActuatorProp.CP
+ AircraftPerf.AircraftDrag.Poper╺┫╎HGFE╎││╎┃ (0.00291)
+                        (3,194W) ┃J╎│╎│╎││╎┃
+                                 ┃╎╎│╎│╎││╎┃
+                                 ┃╎╎│╎│╎││╎┃
+                                 ┃╎╎│╎│╧┷┷╧┛
+                                 ┃╎╎│╎│┣╸i0 (4.5A, fixed)
+                                 ┃╎╧┷╧┷┛
+                                 ┃╎┣╸Pavn (200W, fixed)
+                                 ┃╧┣╸Ppay (100W, fixed)
+
+ A   4.53e-05·FlightState.rho·AircraftPerf.AircraftDrag.ActuatorProp.om…   ×1,653N·m     [free factor]
+ B   AircraftPerf.AircraftDrag.ActuatorProp.Q                             = 4.8N·m
+ C   AircraftPerf.AircraftDrag.MotorPerf.Q                                = 4.8N·m
+ D   Kv                                                                    ×64.2rpm/V    [free factor]
+ E   AircraftPerf.AircraftDrag.MotorPerf.i                                = 36.8A
+ F   AircraftPerf.AircraftDrag.MotorPerf.v                                 ×18.6V        [free factor]
+ G   AircraftPerf.AircraftDrag.MotorPerf.Pelec                            = 0.685kW
+ H   Nprop                                                                 ×4, fixed
+ J   AircraftPerf.AircraftDrag.mpower                                      ×1.05, fixed
+
+Permissivity = 2 (the default)
+----------------
+
+Poper (3,194W)
+  which in: Poper/mpower ≥ Pavn + Ppay + Pelec·Nprop (sensitivity +5.6)
+  { through a factor of mpower (1.05, fixed) }
+  breaks down into 3 monomials:
+    1) forming 90% of the RHS and 90% of the total:
+      { through a factor of Nprop (4, fixed) }
+      Pelec (0.685kW)
+        which in: Pelec = v·i (sensitivity -5.1)
+        breaks down into:
+          { through a factor of v (18.6V) }
+          i (36.8A)
+            which in: i ≥ Q·Kv + i0 (sensitivity +5.4)
+            breaks down into 2 monomials:
+              1) forming 87% of the RHS and 79% of the total:
+                { through a factor of Kv (64.2rpm/V) }
+                Q (4.8N·m)
+                  which in: Q = Q (sensitivity -4.7)
+                  breaks down into:
+                    Q (4.8N·m)
+                      which in: CP ≤ Q·omega/(0.5·rho·(omega·R)³·π·R²) (sensitivity +4.7)
+                      { through a factor of 4.53e-05·rho·omega²·R⁵ (1,653N·m) }
+                      breaks down into:
+                        CP (0.00291)
+              2) forming 12% of the RHS and 11% of the total:
+                i0 (4.5A, fixed)
+    2) forming 6% of the RHS and 6% of the total:
+      Pavn (200W, fixed)
+    3) forming 3% of the RHS and 3% of the total:
+      Ppay (100W, fixed)
+
+Permissivity = 1 (stops at Pelec = v·i)
+----------------
+
+Poper (3,194W)
+  which in: Poper/mpower ≥ Pavn + Ppay + Pelec·Nprop (sensitivity +5.6)
+  { through a factor of mpower (1.05, fixed) }
+  breaks down into 3 monomials:
+    1) forming 90% of the RHS and 90% of the total:
+      { through a factor of Nprop (4, fixed) }
+      Pelec (0.685kW)
+        which in: Pelec = v·i (sensitivity -5.1)
+        breaks down into:
+          i·v (685A·V)
+    2) forming 6% of the RHS and 6% of the total:
+      Pavn (200W, fixed)
+    3) forming 3% of the RHS and 3% of the total:
+      Ppay (100W, fixed)

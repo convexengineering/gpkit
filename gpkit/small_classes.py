@@ -65,10 +65,10 @@ class CootMatrix:
         return self.tocsr().dot(arg)
 
 
-class SolverLog(list):
+class SolverLog(object):
     "Adds a `write` method to list so it's file-like and can replace stdout."
     def __init__(self, output=None, *, verbosity=0):
-        list.__init__(self)
+        self.written = ""
         self.verbosity = verbosity
         self.output = output
 
@@ -76,10 +76,15 @@ class SolverLog(list):
         "Append and potentially write the new line."
         if writ[:2] == "b'":
             writ = writ[2:-1]
-        if writ != "\n":
-            self.append(writ.rstrip("\n"))
+        self.written += writ
         if self.verbosity > 0:  # pragma: no cover
             self.output.write(writ)
+
+    def lines(self):
+        return self.written.split("\n")
+
+    def flush(self):
+        pass
 
 
 class DictOfLists(dict):

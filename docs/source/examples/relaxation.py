@@ -34,6 +34,10 @@ mr2 = Model(constraintsrelaxed.relaxvars.prod() * m.cost**0.01,
             constraintsrelaxed)
 print(mr2)
 print(mr2.solve(verbosity=0).table())  # solves with an x of 1.0
+from gpkit.breakdown import Breakdowns
+bds = Breakdowns(mr2.solution)
+bds.plot("cost")
+bds.trace("cost")
 print("")
 
 print("With constants relaxed individually")

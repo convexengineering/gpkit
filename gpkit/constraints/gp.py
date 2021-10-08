@@ -214,7 +214,7 @@ class GeometricProgram:
         except Exception as e:
             raise UnknownInfeasible("Something unexpected went wrong.") from e
         finally:
-            self.solve_log = "\n".join(sys.stdout)
+            self.solve_log = sys.stdout
             sys.stdout = original_stdout
             self.solver_out = solver_out
 

@@ -293,9 +293,9 @@ def costbd(self, _, **kwargs):
     except:
         raise
     finally:
-        lines = sys.stdout
+        lines = sys.stdout.lines()
         sys.stdout = original_stdout
-    return lines + [""]
+    return lines
 
 
 def msenssbd(self, _, **kwargs):
@@ -307,9 +307,9 @@ def msenssbd(self, _, **kwargs):
     except:
         raise
     finally:
-        lines = sys.stdout
+        lines = sys.stdout.lines()
         sys.stdout = original_stdout
-    return lines + [""]
+    return lines
 
 TABLEFNS = {"sensitivities": senss_table,
             "top sensitivities": topsenss_table,

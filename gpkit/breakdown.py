@@ -90,7 +90,8 @@ def get_model_breakdown(solution):
 
 def crawl_modelbd(bd, lookup, name="Model"):
     tree = Tree(name, bd.pop("|sensitivity|"), [])
-    lookup[name] = tree
+    if bd:
+        lookup[name] = tree
     for subname, subtree in sorted(bd.items(),
                                    key=lambda kv: (-float("%.2g" % kv[1]["|sensitivity|"]), kv[0])):
         tree.branches.append(crawl_modelbd(subtree, lookup, subname))
@@ -130,10 +131,12 @@ def get_breakdowns(basically_fixed_variables, solution):
                 lt, gt = (constraint.left, constraint.right)
             else:  # r_over_l is more sensitive - see nomials/math.py
                 gt, lt = (constraint.left, constraint.right)
-        for gtvk in gt.exp:  # remove RelaxPCCP.C
+        for gtvk in gt.vks:  # remove RelaxPCCP.C
             if (gtvk.name == "C" and gtvk.lineage[0][0] == "RelaxPCCP"
                     and gtvk not in solution["freevariables"]):
                 lt, gt = lt.sub({gtvk: 1}), gt.sub({gtvk: 1})
+        if len(gt.hmap) > 1:
+            continue
         pos_gtvks = {vk for vk, pow in gt.exp.items() if pow > 0}
         if len(pos_gtvks) > 1:
             pos_gtvks &= get_free_vks(gt, solution)  # remove constants
@@ -160,10 +163,12 @@ def get_breakdowns(basically_fixed_variables, solution):
                 lt, gt = (constraint.left, constraint.right)
             else:  # r_over_l is more sensitive - see nomials/math.py
                 gt, lt = (constraint.left, constraint.right)
-        for gtvk in gt.exp:
+        for gtvk in gt.vks:
             if (gtvk.name == "C" and gtvk.lineage[0][0] == "RelaxPCCP"
                     and gtvk not in solution["freevariables"]):
                 lt, gt = lt.sub({gtvk: 1}), gt.sub({gtvk: 1})
+        if len(gt.hmap) > 1:
+            continue
         pos_gtvks = {vk for vk, pow in gt.exp.items() if pow > 0}
         if len(pos_gtvks) > 1:
             pos_gtvks &= get_free_vks(gt, solution)  # remove constants
@@ -229,6 +234,8 @@ def get_fixity(basically_fixed_variables, key, bd, solution, basically_fixed=set
 def crawl(basically_fixed_variables, key, bd, solution, basescale=1, permissivity=2, verbosity=0,
           visited_bdkeys=None, gone_negative=False, all_visited_bdkeys=None):
     "Returns the tree of breakdowns of key in bd, sorting by solution's values"
+    if key != solution["cost function"] and hasattr(key, "key"):
+        key = key.key  # clear up Variables
     if key in bd:
         # TODO: do multiple if sensitivities are quite close?
         composition, keymon, constraint = bd[key][0]
@@ -318,6 +325,7 @@ def crawl(basically_fixed_variables, key, bd, solution, basescale=1, permissivit
     monvals = [float(mon/scale) for mon in parsed_monsols]   # ~10% of total last check # TODO: remove
     # sort by value, preserving order in case of value tie
     sortedmonvals = sorted(zip([-float("%.2g" % mv) for mv in monvals], range(len(mons)), monvals, mons))
+    # print([m.str_without({"units", "lineage"}) for m in mons])
     if verbosity:
         if len(monsols) == 1:
             print("  "*indent + "breaks down into:")
@@ -338,6 +346,7 @@ def crawl(basically_fixed_variables, key, bd, solution, basescale=1, permissivit
         ]
         if scaledmonval < 1 - permissivity:  # skip breakdown filter
             potential_filters = potential_filters[1:]
+        potential_filters.insert(0, visited_bdkeys)
         for filter in potential_filters:
             if interesting_vks - filter:  # don't remove the last one
                 interesting_vks = interesting_vks - filter
@@ -540,8 +549,9 @@ def discretize(tree, extent, solution, collapse, depth=0, justsplit=False):
         extents.append(int(round(scale*miscval)))
     if surplus:
         sign = int(np.sign(surplus))
-        bump_priority = sorted((ext, sign*b.value, i) for i, (b, ext)
+        bump_priority = sorted((ext, sign*float("%.2g" % b.value), i) for i, (b, ext)
                                in enumerate(zip(branches, extents)))
+        print(key, surplus, bump_priority)
         while surplus:
             try:
                 extents[bump_priority.pop()[-1]] += sign
@@ -603,19 +613,18 @@ def plumb(tree, depth=0):
         maxdepth = max(maxdepth, plumb(branch, depth+1))
     return maxdepth
 
-def prune(tree, solution, maxlength, length=4, prefix=""):
+def prune(tree, solution, maxlength, length=-1, prefix=""):
     "Prune branches that are longer than a certain number of characters"
     key, extent, branches = tree
-    if length == 4 and isinstance(key, VarKey) and key.necessarylineage:
-        prefix = key.lineagestr()
     keylength = max(len(get_valstr(key, solution, into="(%s)")),
                     len(get_keystr(key, solution, prefix)))
+    if length == -1 and isinstance(key, VarKey) and key.necessarylineage:
+        prefix = key.lineagestr()
     length += keylength + 3
-    stop_here = False
     for branch in branches:
         keylength = max(len(get_valstr(branch.key, solution, into="(%s)")),
                         len(get_keystr(branch.key, solution, prefix)))
-        branchlength = length + keylength
+        branchlength = length + keylength + 3
         if branchlength > maxlength:
             return Tree(key, extent, [])
     return Tree(key, extent, [prune(b, solution, maxlength, length, prefix)
@@ -629,8 +638,8 @@ def simplify(tree, solution, extent, maxdepth, maxlength, collapse):
     return layer([], subtree, maxdepth)
 
 # @profile  # ~16% of total last check # TODO: remove
-def graph(tree, solution, basically_fixed_variables, height=None, maxdepth=None, maxwidth=80,
-          showlegend=False):
+def graph(tree, breakdowns, solution, basically_fixed_variables, *,
+          height=None, maxdepth=None, maxwidth=81, showlegend=False):
     "Prints breakdown"
     already_set = solution._lineageset
     if not already_set:
@@ -739,9 +748,11 @@ def graph(tree, solution, basically_fixed_variables, height=None, maxdepth=None,
                     chararray[depth, pos+1] = fmt.format(vallabel)
                 elif showlegend:
                     keystr += valuestr
+            if key in breakdowns and not chararray[depth+1, pos].strip():
+                keystr = keystr + "╶⎨"
             chararray[depth, pos] = fmt.format(linkstr + keystr)
     # Rotate and print
-    rowstrs = ["    " + "".join(row).rstrip() for row in chararray.T.tolist()]
+    rowstrs = ["".join(row).rstrip() for row in chararray.T.tolist()]
     print("\n" + "\n".join(rowstrs) + "\n")
 
     if showlegend:  # create and print legend
@@ -753,7 +764,7 @@ def graph(tree, solution, basically_fixed_variables, height=None, maxdepth=None,
         for line in legend_lines:
             line = "".join(fmt.format(cell)
                            for fmt, cell in zip(fmts, line) if cell).rstrip()
-            print("    " + line)
+            print(" " + line)
 
     if not already_set:
         solution.set_necessarylineage(clear=True)
@@ -916,11 +927,14 @@ class Breakdowns(object):
 
     def get_tree(self, key, *, permissivity=2, verbosity=0):
         tree = None
+        kind = "variable"
         if isinstance(key, str):
             if key == "model sensitivities":
                 tree = self.mtree
+                kind = "constraint"
             elif key in self.mlookup:
                 tree = self.mlookup[key]
+                kind = "constraint"
             elif key == "cost":
                 key = self.sol["cost function"]
             else:
@@ -934,11 +948,14 @@ class Breakdowns(object):
         if tree is None:
             tree = crawl(self.basically_fixed_variables, key, self.bd, self.sol,
                          permissivity=permissivity, verbosity=verbosity)
-        return tree
+        return tree, kind
 
-    def plot(self, key, *, height=None, permissivity=2, showlegend=False):
-        tree = self.get_tree(key, permissivity=permissivity)
-        graph(tree, self.sol, self.basically_fixed_variables, height=height, showlegend=showlegend)
+    def plot(self, key, *, height=None, permissivity=2, showlegend=False,
+             maxwidth=85):
+        tree, kind = self.get_tree(key, permissivity=permissivity)
+        lookup = self.bd if kind == "variable" else self.mlookup
+        graph(tree, lookup, self.sol, self.basically_fixed_variables,
+              height=height, showlegend=showlegend, maxwidth=maxwidth)
 
     def treemap(self, key, *, permissivity=2, returnfig=False, filename=None):
         tree = self.get_tree(key)

@@ -48,6 +48,9 @@ class TestExamples(unittest.TestCase):
     #     import matplotlib.pyplot as plt
     #     plt.close("all")
 
+    def test_breakdowns(self, example):
+        pass
+
     def test_issue_1513(self, example):
         pass
 

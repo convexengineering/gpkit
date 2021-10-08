@@ -29,19 +29,19 @@ h = self.h = Variable('h', 1, 'm', 'minimum height')  # from 'h     1 [m]    min
 #     way that makes the most sense to someone else reading your model.
 #     
 
-              ┃┯╤┯╤/┯┓
-              ┃│╎│╎ │┃
-              ┃│EDCBA┣╸h
-         Cost╺┫│╎│╎ │┃ (1m, fixed)
-     (1.46m²) ┃F╧┷╧/┷┛
-              ┃│╤┯┓
-              ┃│GA┣╸h
-              ┃┷╧┷┛
+          ┃┯╤┯╤/┯┓
+          ┃│╎│╎ │┃
+          ┃│EDCBA┣╸h
+     Cost╺┫│╎│╎ │┃ (1m, fixed)
+ (1.46m²) ┃F╧┷╧/┷┛
+          ┃│╤┯┓
+          ┃│GA┣╸h
+          ┃┷╧┷┛
 
-    A   s[2]    = 1m
-    B            ^-1
-    C   V/s[1]   ×316l/m  [free factor]
-    D   s[0]    = 0.316m
-    E   2·s[2]   ×2m
-    F   A       = 1.46m²
-    G   2·s[1]   ×0.632m  [free factor]
+ A   s[2]    = 1m
+ B            ^-1
+ C   V/s[1]   ×316l/m  [free factor]
+ D   s[0]    = 0.316m
+ E   2·s[2]   ×2m
+ F   A       = 1.46m²
+ G   2·s[1]   ×0.632m  [free factor]
