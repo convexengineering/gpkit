@@ -1,7 +1,7 @@
 """Tests for Monomial, Posynomial, and Signomial classes"""
 import sys
-import math
 import unittest
+import numpy as np
 from gpkit import Variable, Monomial, Posynomial, Signomial, SignomialsEnabled
 from gpkit import VectorVariable, NomialArray
 from gpkit.nomials import NomialMap
@@ -192,8 +192,8 @@ class TestMonomial(unittest.TestCase):
         c1, c2 = 1/700, 123e8
         m1 = Monomial({"x": 2, "y": 1}, c1)
         m2 = Monomial({"y": -1, "z": 3/2}, c2)
-        self.assertEqual(math.log((m1**4 * m2**3).c),  # pylint: disable=no-member
-                         4*math.log(c1) + 3*math.log(c2))
+        self.assertEqual(np.log((m1**4 * m2**3).c),  # pylint: disable=no-member
+                         4*np.log(c1) + 3*np.log(c2))
 
     def test_units(self):
         "make sure multiplication with units works (issue 492)"

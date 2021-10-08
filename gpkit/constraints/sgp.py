@@ -95,10 +95,10 @@ solutions and can be solved with 'Model.solve()'.""")
             substitutions, **kwargs)
         self._gp.x0 = x0
         self.a_idxs = defaultdict(list)
-        cost_mons = self._gp.k[0]
-        sp_mons = sum(self._gp.k[:1+len(self.approxconstraints)])
+        last_cost_mon = self._gp.k[0]
+        first_gp_mon = sum(self._gp.k[:1+len(self.approxconstraints)])
         for row_idx, m_idx in enumerate(self._gp.A.row):
-            if cost_mons <= m_idx <= sp_mons:
+            if last_cost_mon <= m_idx <= first_gp_mon:
                 self.a_idxs[self._gp.p_idxs[m_idx]].append(row_idx)
 
     # pylint: disable=too-many-locals,too-many-branches,too-many-statements
@@ -197,12 +197,12 @@ solutions and can be solved with 'Model.solve()'.""")
                                  "Slack Non-GP Constraints")
                 if verbosity > -1:
                     print(msg +
-                          " Calling .localsolve(pccp_penalty=...) with a"
-                          " higher `pccp_penalty` (it was %.3g this time) will"
-                          " reduce slack if the model is solvable with less. To"
-                          " verify that the slack is needed, generate an SGP"
-                          " with `use_pccp=False` and start it from this model"
-                          "'s solution: e.g. `m.localsolve(use_pccp=False, x0="
+                          " Calling .localsolve(pccp_penalty=...) with a higher"
+                          " `pccp_penalty` (it was %.3g this time) will reduce"
+                          " slack if the model is solvable with less. To verify"
+                          " that the slack is needed, generate an SGP with"
+                          " `use_pccp=False` and start it from this model's"
+                          "  solution: e.g. `m.localsolve(use_pccp=False, x0="
                           "m.solution[\"variables\"])`." % self.pccp_penalty)
             del self.result["freevariables"][self.slack.key]  # pylint: disable=no-member
             # del self.result["variables"][self.slack.key]  # pylint: disable=no-member
