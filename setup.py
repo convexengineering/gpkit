@@ -46,7 +46,7 @@ setup(
     author_email="gpkit@mit.edu",
     url="https://www.github.com/convexengineering/gpkit",
     python_requires=">=3.5.2",
-    install_requires=["numpy >= 1.16.4", "pint >= 0.8.1",
+    install_requires=["numpy >= 1.16.4", "pint >= 0.8.1", "plotly",
                       "scipy", "ad >= 1.3.2", "cvxopt >= 1.1.8"],
     version="1.0.0",
     packages=["gpkit", "gpkit.tools", "gpkit.interactive", "gpkit.constraints",
