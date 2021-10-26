@@ -34,12 +34,8 @@ except IOError:
     pass
 
 # read the README file
-try:
-    with open(os.path.join(THIS_DIR, "README.md"), encoding="utf-8") as f:
-        LONG_DESCRIPTION = f.read()
-except:
-    pass
-
+with open(os.path.join(THIS_DIR, "README.md"), encoding="utf-8") as f:
+    LONG_DESCRIPTION = f.read()
 
 setup(
     name="gpkit",
@@ -52,7 +48,7 @@ setup(
     install_requires=["numpy >= 1.16.4", "pint >= 0.8.1", "plotly",
                       "scipy", "adce", "cvxopt >= 1.1.8",
                       "matplotlib"],
-    version="1.0.0.2",
+    version="1.0.0.3",
     packages=["gpkit", "gpkit.tools", "gpkit.interactive", "gpkit.constraints",
               "gpkit.nomials", "gpkit.tests", "gpkit.solvers"],
     package_data={"gpkit": ["env/settings"]},
