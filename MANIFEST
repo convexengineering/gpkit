@@ -15,6 +15,8 @@ gpkit/constraints/tight.py
 gpkit/interactive/__init__.py
 gpkit/interactive/plot_sweep.py
 gpkit/interactive/plotting.py
+gpkit/interactive/references.py
+gpkit/interactive/referencesplot.html
 gpkit/interactive/sankey.py
 gpkit/interactive/widgets.py
 gpkit/nomials/__init__.py
@@ -51,7 +53,6 @@ gpkit/tools/docstring.py
 gpkit/tools/tools.py
 gpkit/units.py
 gpkit/__init__.py
-gpkit/_cvxopt.py
 gpkit/build.py
 gpkit/exceptions.py
 gpkit/globals.py
@@ -62,3 +63,4 @@ gpkit/small_scripts.py
 gpkit/solution_array.py
 gpkit/varkey.py
 setup.py
+README.md
