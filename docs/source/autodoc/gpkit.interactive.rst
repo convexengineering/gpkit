@@ -20,6 +20,14 @@ gpkit.interactive.plotting module
    :undoc-members:
    :show-inheritance:
 
+gpkit.interactive.references module
+-----------------------------------
+
+.. automodule:: gpkit.interactive.references
+   :members:
+   :undoc-members:
+   :show-inheritance:
+
 gpkit.interactive.sankey module
 -------------------------------
 

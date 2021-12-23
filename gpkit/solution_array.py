@@ -700,7 +700,7 @@ class SolutionArray(DictOfLists):
               tables=("cost", "warnings", "model sensitivities",
                       "sweepvariables", "freevariables",
                       "constants", "sensitivities", "tightest constraints"),
-              sortmodelsbysenss=True, **kwargs):
+              sortmodelsbysenss=False, **kwargs):
         """A table representation of this SolutionArray
 
         Arguments
