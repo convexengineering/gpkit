@@ -112,18 +112,9 @@ Constraint Differences
 
 **********************
 
-Variable(s) of this solution which are not in the argument:
-  Fuselage.W
-  D[:]
-  Wburn[:]
-  Wing.rho
-  A
-  Wfuel[:]
-  S
-  Wing.W
-  c
-
 Relative Differences |above 1%|
 -------------------------------
-The largest is +0.217736%.
+Wburn : [ +102.1%   +101.6%   +101.1%   +100.5%  ] segment fuel burn
+Wfuel : [ +101.3%   +101.1%   +100.8%   +100.5%  ] fuel weight
+    D : [   +1.1%       -         -         -    ] drag force
 
