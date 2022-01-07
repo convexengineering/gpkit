@@ -38,3 +38,12 @@ bds.trace("AircraftPerf.AircraftDrag.Poper")
 print("\nPermissivity = 1 (stops at Pelec = v·i)")
 print("----------------")
 bds.trace("AircraftPerf.AircraftDrag.Poper", permissivity=1)
+
+# you can also produce Plotly treemaps/icicle plots of your breakdowns
+import plotly
+fig = bd.treemap("model sensitivities", returnfig=True)
+fig = bd.icicle("cost", returnfig=True)
+# uncommenting any of the below makes and shows the plot directly
+# plotly.offline.plot(fig, filename="mtreemap.html")
+# bd.icicle("model sensitivities")
+# bd.treemap("cost")
