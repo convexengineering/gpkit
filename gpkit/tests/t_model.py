@@ -59,6 +59,38 @@ class TestGP(unittest.TestCase):
                                self.ndig)
         self.assertAlmostEqual(sol["cost"], 2*np.sqrt(2), self.ndig)
 
+    def test_dup_eq_constraint(self):
+        # from https://github.com/convexengineering/gpkit/issues/1551
+        a = Variable("a", 1)
+        b = Variable("b")
+        c = Variable("c", 2)
+        d = Variable("d")
+        z = Variable("z", 0.5)
+
+        # create a simple GP with equality constraints
+        const = [
+            z == b/a,
+            z == d/c,
+        ]
+
+        # simple cost
+        cost = a + b + c + d
+
+        # create a model
+        m = Model(cost, const)
+
+        # solve the first version of the model (solves successfully)
+        m.solve(verbosity=0, solver=self.solver)
+
+        # add a redundant equality constraint
+        m.extend([
+            z == b/a
+        ])
+
+        # solver will fail and attempt to debug
+        m.solve(verbosity=0, solver=self.solver)
+
+
     def test_sigeq(self):
         x = Variable("x")
         y = VectorVariable(1, "y")
@@ -201,11 +233,11 @@ class TestGP(unittest.TestCase):
 
     def test_additive_constants(self):
         x = Variable("x")
-        m = Model(1/x, [1 >= 5*x + 0.5, 1 >= 10*x])
+        m = Model(1/x, [1 >= 5*x + 0.5, 1 >= 5*x])
         m.solve(verbosity=0)
         # pylint: disable=no-member
         gp = m.program  # created by solve()
-        self.assertEqual(gp.cs[1], gp.cs[2])
+        self.assertEqual(gp.cs[1], 2*gp.cs[2])
         self.assertEqual(gp.A.data[1], gp.A.data[2])
 
     def test_zeroing(self):

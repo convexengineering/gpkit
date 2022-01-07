@@ -3,7 +3,7 @@ import pickle
 import unittest
 import numpy as np
 import numpy.testing as npt
-from ad import adnumber, ADV
+from adce import adnumber, ADV
 import gpkit
 from gpkit import SignomialsEnabled, NamedVariables
 from gpkit import Variable, VectorVariable, Model, Signomial

@@ -37,7 +37,6 @@ except IOError:
 with open(os.path.join(THIS_DIR, "README.md"), encoding="utf-8") as f:
     LONG_DESCRIPTION = f.read()
 
-
 setup(
     name="gpkit",
     description="Package for defining and manipulating geometric "
@@ -46,9 +45,10 @@ setup(
     author_email="gpkit@mit.edu",
     url="https://www.github.com/convexengineering/gpkit",
     python_requires=">=3.5.2",
-    install_requires=["numpy >= 1.16.4", "pint >= 0.8.1",
-                      "scipy", "ad", "cvxopt >= 1.1.8"],
-    version="1.0.0",
+    install_requires=["numpy >= 1.16.4", "pint >= 0.8.1", "plotly",
+                      "scipy", "adce", "cvxopt >= 1.1.8",
+                      "matplotlib"],
+    version="1.0.0.3",
     packages=["gpkit", "gpkit.tools", "gpkit.interactive", "gpkit.constraints",
               "gpkit.nomials", "gpkit.tests", "gpkit.solvers"],
     package_data={"gpkit": ["env/settings"]},

@@ -2,7 +2,7 @@
 from time import time
 import warnings as pywarnings
 import numpy as np
-from ad import adnumber
+from adce import adnumber
 from ..nomials import parse_subs
 from ..solution_array import SolutionArray
 from ..keydict import KeyDict
@@ -140,7 +140,7 @@ def solvify(genfunction):
     return solvefn
 
 
-# pylint: disable=too-many-locals,too-many-arguments,too-many-branches
+# pylint: disable=too-many-locals,too-many-arguments,too-many-branches,too-many-statements
 def run_sweep(genfunction, self, solution, skipsweepfailures,
               constants, sweep, linked, solver, verbosity, **kwargs):
     "Runs through a sweep."
@@ -168,6 +168,7 @@ def run_sweep(genfunction, self, solution, skipsweepfailures,
         if linked:
             evaluate_linked(constants, linked)
         program, solvefn = genfunction(self, constants, **kwargs)
+        program.model = None  # so it doesn't try to debug
         self.program.append(program)  # NOTE: SIDE EFFECTS
         try:
             if verbosity > 1:

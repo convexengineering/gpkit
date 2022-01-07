@@ -225,19 +225,19 @@ class GeometricProgram:
 
         if infeasibility:
             if isinstance(infeasibility, PrimalInfeasible):
-                msg = ("The model had no feasible points; "
-                       "you may wish to relax some constraints or constants.")
+                msg = ("The model had no feasible points; relaxing some"
+                       " constraints or constants will probably fix this.")
             elif isinstance(infeasibility, DualInfeasible):
-                msg = ("The model ran to an infinitely low cost;"
-                       " bounding the right variables would prevent this.")
+                msg = ("The model ran to an infinitely low cost"
+                       " (or was otherwise dual infeasible); bounding"
+                       " the right variables will probably fix this.")
             elif isinstance(infeasibility, UnknownInfeasible):
                 msg = ("Solver failed for an unknown reason. Relaxing"
                        " constraints/constants, bounding variables, or"
                        " using a different solver might fix it.")
-            if (verbosity > 0 and solver_out["soltime"] < 1
-                    and hasattr(self, "model")):  # fast, top-level model
+            if verbosity > 0 and solver_out["soltime"] < 1 and self.model:
                 print(msg + "\nSince the model solved in less than a second,"
-                      " let's run `.debug()` to analyze what happened.\n`")
+                      " let's run `.debug()` to analyze what happened.\n")
                 return self.model.debug(solver=solver)
             # else, raise a clarifying error
             msg += (" Running `.debug()` or increasing verbosity may pinpoint"

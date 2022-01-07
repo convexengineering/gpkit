@@ -174,8 +174,8 @@ class Model(CostedConstraintSet):
         solveargs["process_result"] = False
 
         bounded = Bounded(self)
-        if self.substitutions:
-            tants = ConstantsRelaxed(bounded)
+        tants = ConstantsRelaxed(bounded)
+        if tants.relaxvars.size:
             feas = Model(tants.relaxvars.prod()**30 * self.cost, tants)
         else:
             feas = Model(self.cost, bounded)

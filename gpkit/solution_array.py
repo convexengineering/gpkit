@@ -1,6 +1,7 @@
 """Defines SolutionArray class"""
 import sys
 import re
+import json
 import difflib
 from operator import sub
 import warnings as pywarnings
@@ -642,6 +643,28 @@ class SolutionArray(DictOfLists):
             if printmodel:
                 f.write(self.modelstr + "\n")
             f.write(self.table(**kwargs))
+
+    def savejson(self, filename="solution.json", showvars=None):
+        "Saves solution table as a json file"
+        sol_dict = {}
+        for key in self.name_collision_varkeys():
+            key.descr["necessarylineage"] = True
+        data = self["variables"]
+        if showvars:
+            showvars = self._parse_showvars(showvars)
+            data = {k: data[k] for k in showvars if k in data}
+        # add appropriate data for each variable to the dictionary
+        for k, v in data.items():
+            key = str(k)
+            if isinstance(v, np.ndarray):
+                val = {"v": v.tolist(), "u": k.unitstr()}
+            else:
+                val = {"v": v, "u": k.unitstr()}
+            sol_dict[key] = val
+        for key in self.name_collision_varkeys():
+            del key.descr["necessarylineage"]
+        with open(filename, "w") as f:
+            json.dump(sol_dict, f)
 
     def savecsv(self, filename="solution.csv", *, valcols=5, showvars=None):
         "Saves primal solution as a CSV sorted by modelname, like the tables."
