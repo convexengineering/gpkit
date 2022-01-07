@@ -872,6 +872,8 @@ def plotlyify(tree, solution, minval=None):
     if minval is None:
         minval = value/1000
 
+    parent_budgets = {}
+
     def crawl(tree, parent_id=None):
         key, value, branches = tree
         if value > minval:
@@ -884,6 +886,11 @@ def plotlyify(tree, solution, minval=None):
                 if not isinstance(key, str):
                     labels[-1] = labels[-1] + "<br>" + get_valstr(key, sol)
                 parents.append(parent_id)
+                parent_budgets[id] = value
+                if parent_id is not None:  # make sure there's no overflow
+                    if parent_budgets[parent_id] < value:
+                        value = parent_budgets[parent_id]  # take remained
+                    parent_budgets[parent_id] -= value
                 values.append(value)
             for branch in branches:
                 crawl(branch, id)
@@ -931,11 +938,11 @@ class Breakdowns(object):
             if key == "model sensitivities":
                 tree = self.mtree
                 kind = "constraint"
+            elif key == "cost":
+                key = self.sol["cost function"]
             elif key in self.mlookup:
                 tree = self.mlookup[key]
                 kind = "constraint"
-            elif key == "cost":
-                key = self.sol["cost function"]
             else:
                 # TODO: support submodels
                 keys = [vk for vk in self.bd if key in str(vk)]
@@ -957,7 +964,7 @@ class Breakdowns(object):
               height=height, showlegend=showlegend, maxwidth=maxwidth)
 
     def treemap(self, key, *, permissivity=2, returnfig=False, filename=None):
-        tree = self.get_tree(key)
+        tree, _ = self.get_tree(key)
         fig = treemap(*plotlyify(tree, sol))
         if returnfig:
             return fig
@@ -971,7 +978,7 @@ class Breakdowns(object):
 
 
     def icicle(self, key, *, permissivity=2, returnfig=False, filename=None):
-        tree = self.get_tree(key, permissivity=permissivity)
+        tree, _ = self.get_tree(key, permissivity=permissivity)
         fig = icicle(*plotlyify(tree, sol))
         if returnfig:
             return fig
@@ -1000,17 +1007,17 @@ if __name__ == "__main__":
     permissivity = 2
 
     sol = pickle.load(open("solar.p", "rb"))
-    bds = Breakdowns(sol)
-    basically_fixed = set()
-    bd = get_breakdowns(basically_fixed, sol)
-    mbd = get_model_breakdown(sol)
-    mtree = crawl_modelbd(mbd, {})
+    bd = Breakdowns(sol)
+    # basically_fixed = set()
+    # bd = get_breakdowns(basically_fixed, sol)
+    # mbd = get_model_breakdown(sol)
+    # mtree = crawl_modelbd(mbd, {})
     # graph(mtree, sol, showlegend=True, height=20)
     # graph(mtree.branches[0].branches[0].branches[0], sol, showlegend=False, height=20)
 
     # tree = crawl(sol["cost function"], bd, sol, permissivity=2, verbosity=0)
     # graph(tree, sol)
-    bds.plot("cost")
+    bd.plot("cost")
 
 
     # key, = [vk for vk in bd if "Wing.Planform.b" in str(vk)]
@@ -1064,11 +1071,13 @@ if __name__ == "__main__":
     # mbd = get_model_breakdown(sol)
     # mtree = crawl_modelbd(mbd, {})
 
-    # # import plotly
-    # # fig = bd.treemap("model sensitivities", returnfig=True)
-    # # plotly.offline.plot(fig, filename="mtreemap.html")
-    # # bd.treemap("model sensitivities")
-    # # bd.icicle("model sensitivities")
+    # import plotly
+    # fig = bd.treemap("model sensitivities", returnfig=True)
+    # plotly.offline.plot(fig, filename="mtreemap.html")
+    # bd.treemap("model sensitivities")
+    # bd.icicle("model sensitivities")
+    bd.treemap("cost")
+    bd.icicle("cost")
     #
     # bd.plot("model sensitivities")
     #
