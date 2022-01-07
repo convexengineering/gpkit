@@ -647,8 +647,8 @@ class SolutionArray(DictOfLists):
     def savejson(self, filename="solution.json", showvars=None):
         "Saves solution table as a json file"
         sol_dict = {}
-        for key in self.name_collision_varkeys():
-            key.descr["necessarylineage"] = True
+        if self._lineageset:
+            self.set_necessarylineage(clear=True)
         data = self["variables"]
         if showvars:
             showvars = self._parse_showvars(showvars)
@@ -661,8 +661,6 @@ class SolutionArray(DictOfLists):
             else:
                 val = {"v": v, "u": k.unitstr()}
             sol_dict[key] = val
-        for key in self.name_collision_varkeys():
-            del key.descr["necessarylineage"]
         with open(filename, "w") as f:
             json.dump(sol_dict, f)
 
