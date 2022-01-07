@@ -1001,7 +1001,8 @@ if __name__ == "__main__":
 
     sol = pickle.load(open("solar.p", "rb"))
     bds = Breakdowns(sol)
-    bd = get_breakdowns(sol)
+    basically_fixed = set()
+    bd = get_breakdowns(basically_fixed, sol)
     mbd = get_model_breakdown(sol)
     mtree = crawl_modelbd(mbd, {})
     # graph(mtree, sol, showlegend=True, height=20)
