@@ -4,7 +4,7 @@ import pickle
 import pint
 from gpkit.breakdowns import Breakdowns
 
-if pint.__version__.split(".") > ["0", "9"]:
+if pint.__version__.split(".") >= ["0", "9"]:
     # the code to create solar.p is in ./breakdowns/solartest.py
     filepath = os.path.dirname(os.path.realpath(__file__)) + os.sep + "solar.p"
     sol = pickle.load(open(filepath, "rb"))
