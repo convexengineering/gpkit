@@ -1,9 +1,11 @@
 "An example to show off Breakdowns"
+import os
 import pickle
 from gpkit.breakdowns import Breakdowns
 
 # the code to create solar.p is in ./breakdowns/solartest.py
-sol = pickle.load(open("solar.p", "rb"))
+path = os.path.dirname(os.path.realpath(__file__))
+sol = pickle.load(open(path + os.sep + "solar.p", "rb"))
 bds = Breakdowns(sol)
 
 print("Cost breakdown (you may be familiar with this from solution tables)")
@@ -40,10 +42,8 @@ print("----------------")
 bds.trace("AircraftPerf.AircraftDrag.Poper", permissivity=1)
 
 # you can also produce Plotly treemaps/icicle plots of your breakdowns
-import plotly
-fig = bd.treemap("model sensitivities", returnfig=True)
-fig = bd.icicle("cost", returnfig=True)
+fig = bds.treemap("model sensitivities", returnfig=True)
+fig = bds.icicle("cost", returnfig=True)
 # uncommenting any of the below makes and shows the plot directly
-# plotly.offline.plot(fig, filename="mtreemap.html")
-# bd.icicle("model sensitivities")
-# bd.treemap("cost")
+# bds.icicle("model sensitivities")
+# bds.treemap("cost")

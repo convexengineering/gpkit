@@ -884,7 +884,7 @@ def plotlyify(tree, solution, minval=None):
                 ids.append(id)
                 labels.append(get_keystr(key, solution, prefix))
                 if not isinstance(key, str):
-                    labels[-1] = labels[-1] + "<br>" + get_valstr(key, sol)
+                    labels[-1] = labels[-1] + "<br>" + get_valstr(key, solution)
                 parents.append(parent_id)
                 parent_budgets[id] = value
                 if parent_id is not None:  # make sure there's no overflow
@@ -965,7 +965,7 @@ class Breakdowns(object):
 
     def treemap(self, key, *, permissivity=2, returnfig=False, filename=None):
         tree, _ = self.get_tree(key)
-        fig = treemap(*plotlyify(tree, sol))
+        fig = treemap(*plotlyify(tree, self.sol))
         if returnfig:
             return fig
         if filename is None:
@@ -979,7 +979,7 @@ class Breakdowns(object):
 
     def icicle(self, key, *, permissivity=2, returnfig=False, filename=None):
         tree, _ = self.get_tree(key, permissivity=permissivity)
-        fig = icicle(*plotlyify(tree, sol))
+        fig = icicle(*plotlyify(tree, self.sol))
         if returnfig:
             return fig
         if filename is None:

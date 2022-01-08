@@ -1,17 +1,17 @@
 Cost breakdown (you may be familiar with this from solution tables)
 ==============
 
-          ┃┓          ┓           ┓             ┓
-          ┃┃          ┃           ┃             ┃
-          ┃┃          ┃           ┃             ┃
-          ┃┃          ┃           ┃             ┃
-          ┃┃          ┃           ┃             ┃
-          ┃┃          ┣╸Battery.W ┣╸Battery.E   ┣╸AircraftPerf.AircraftDrag.Poper╶⎨
-          ┃┃          ┃ (370lbf)  ┃ (165,913kJ) ┃ (3,194W)
-          ┃┃          ┃           ┃             ┃
-          ┃┃          ┃           ┃             ┃
-     Cost╺┫┃          ┃           ┃             ┛
- (699lbf) ┃┣╸Wtotal   ┛           ┛             ┣╸SolarCells.S
+          ┃┓          ┓           ┓
+          ┃┃          ┃           ┃
+          ┃┃          ┃           ┃
+          ┃┃          ┃           ┃
+          ┃┃          ┃           ┃
+          ┃┃          ┣╸Battery.W ┣╸Battery.E╶⎨
+          ┃┃          ┃ (370lbf)  ┃ (165,913kJ)
+          ┃┃          ┃           ┃
+          ┃┃          ┃           ┃
+     Cost╺┫┃          ┃           ┃
+ (699lbf) ┃┣╸Wtotal   ┛           ┛
           ┃┃ (699lbf) ┓          ┓
           ┃┃          ┃          ┣╸Wing.BoxSpar.W╶⎨
           ┃┃          ┣╸Wing.W   ┛ (96.1lbf)
@@ -101,11 +101,11 @@ Model sensitivity breakdowns (note the two methods of access)
           ┃┃         ┣╸hbatt = 350W·hr/kg
           ┃┃         ┣╸minSOC = 1.03
           ┃┛         ┛
-          ┃┓
- Aircraft╺┫┃
-          ┃┣╸Wing╶⎨
-          ┃┃
-          ┃┛
+          ┃┓      ┣╸Planform╶⎨
+ Aircraft╺┫┃      ┛
+          ┃┣╸Wing ┣╸BoxSpar╶⎨
+          ┃┃      ┛
+          ┃┛      ┣╸[4 terms]
           ┃┣╸Wtotal/mfac ≥ Fuselage.W[0,0] + Fuselage.W[1,0] + Fuselage.W[2,0] …
           ┃┛
           ┃┣╸mfac = 1.05
