@@ -17,6 +17,7 @@ minimize :math:`x` subject to the constraint :math:`x \ge 1`.
 Of course, the optimal value is 1. Output:
 
 .. literalinclude:: examples/x_greaterthan_1_output.txt
+    :language: breakdowns
 
 Maximizing the Volume of a Box
 ==============================
@@ -27,6 +28,7 @@ This example comes from Section 2.4 of the `GP tutorial <http://stanford.edu/~bo
 The output is
 
 .. literalinclude:: examples/simple_box_output.txt
+    :language: breakdowns
 
 Water Tank
 ==========
@@ -37,6 +39,7 @@ Say we had a fixed mass of water we wanted to contain within a tank, but also wa
 The output is:
 
 .. literalinclude:: examples/water_tank_output.txt
+    :language: breakdowns
 
 Simple Wing
 ===========
@@ -47,6 +50,7 @@ This example comes from Section 3 of `Geometric Programming for Aircraft Design 
 The output is:
 
 .. literalinclude:: examples/simpleflight_output.txt
+    :language: breakdowns
 
 Simple Beam
 ===========
@@ -57,6 +61,7 @@ In this example we consider a beam subjected to a uniformly distributed transver
 The output is:
 
 .. literalinclude:: examples/beam_output.txt
+    :language: breakdowns
 
 By plotting the deflection, we can see that the agreement between the analytical solution and the GP solution is good.
 

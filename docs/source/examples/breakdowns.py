@@ -1,5 +1,6 @@
 "An example to show off Breakdowns"
 import os
+import sys
 import pickle
 from gpkit.breakdowns import Breakdowns
 
@@ -11,7 +12,10 @@ bds = Breakdowns(sol)
 
 print("Cost breakdown (you may be familiar with this from solution tables)")
 print("==============")
-bds.plot("cost")
+try:
+    bds.plot("cost")
+except AttributeError:  # if the pint version differs from the pickled solution
+    sys.exit(0)
 
 print("Variable breakdowns (note the two methods of access)")
 print("===================")

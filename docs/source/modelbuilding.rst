@@ -36,6 +36,7 @@ These methods are illustrated in the following example.
 .. literalinclude:: examples/model_var_access.py
 
 .. literalinclude:: examples/model_var_access_output.txt
+    :language: breakdowns
 
 Vectorization
 =============
@@ -49,6 +50,7 @@ This allows models written with scalar constraints to be created with vector con
 .. literalinclude:: examples/vectorize.py
 
 .. literalinclude:: examples/vectorize_output.txt
+    :language: breakdowns
 
 
 
@@ -70,3 +72,4 @@ The :ref:`sensitivity diagram <sankey>` which this code outputs shows how it is 
 Note that the output table has been filtered above to show only variables of interest.
 
 .. literalinclude:: examples/performance_modeling_output.txt
+    :language: breakdowns
