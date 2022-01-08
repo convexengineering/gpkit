@@ -6,7 +6,6 @@ from gpkit.breakdowns import Breakdowns
 
 # the code to create solar.p is in ./breakdowns/solartest.py
 filepath = os.path.dirname(os.path.realpath(__file__)) + os.sep + "solar.p"
-print(filepath)
 sol = pickle.load(open(filepath, "rb"))
 bds = Breakdowns(sol)
 
