@@ -102,11 +102,11 @@ Model sensitivity breakdowns (note the two methods of access)
           ┃┃         ┣╸hbatt = 350W·hr/kg
           ┃┃         ┣╸minSOC = 1.03
           ┃┛         ┛
-          ┃┓      ┣╸Planform╶⎨
- Aircraft╺┫┃      ┛
-          ┃┣╸Wing ┣╸BoxSpar╶⎨
-          ┃┃      ┛
-          ┃┛      ┣╸[4 terms]
+          ┃┓
+ Aircraft╺┫┃
+          ┃┣╸Wing╶⎨
+          ┃┃
+          ┃┛
           ┃┣╸Wtotal/mfac ≥ Fuselage.W[0,0] + Fuselage.W[1,0] + Fuselage.W[2,0] …
           ┃┛
           ┃┣╸mfac = 1.05
