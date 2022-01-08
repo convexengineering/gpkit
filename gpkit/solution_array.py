@@ -13,7 +13,7 @@ import numpy as np
 from .nomials import NomialArray
 from .small_classes import DictOfLists, Strings, SolverLog
 from .small_scripts import mag, try_str_without
-from .repr_conventions import unitstr, lineagestr
+from .repr_conventions import unitstr, lineagestr, UNICODE_EXPONENTS
 from .breakdowns import Breakdowns
 
 
@@ -773,9 +773,10 @@ class SolutionArray(DictOfLists):
         showvars = self._parse_showvars(showvars)
         strs = []
         for table in tables:
-            if len(self) > 1 and "breakdown" in table:
-                # no breakdowns for sweeps
-                table = table.replace(" breakdown", "")
+            if "breakdown" in table:
+                if len(self) > 1 or not UNICODE_EXPONENTS:
+                    # no breakdowns for sweeps or no-unicode environments
+                    table = table.replace(" breakdown", "")
             if "sensitivities" not in self and ("sensitivities" in table or
                                                 "constraints" in table):
                 continue
