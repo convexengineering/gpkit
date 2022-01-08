@@ -196,22 +196,22 @@ Constraints
 
 
 
-       ┃┓        ┓                ┓
-       ┃┃        ┃                ┃
-       ┃┃        ┃                ┣╸x_min = 2
-       ┃┃        ┃                ┛
-       ┃┣╸Relax2 ┣╸OriginalValues ┓
-       ┃┃        ┃                ┃
-       ┃┃        ┃                ┣╸x_max = 1
-       ┃┛        ┛                ┛
        ┃┓
- Model╺┫┣╸x ≥ x_min
+       ┃┣╸x ≥ x_min
        ┃┛
        ┃┓
-       ┃┣╸x_min ≥ OriginalValues.x_min/Relax2.x_min
+       ┃┃
+       ┃┣╸x_min = 1
+       ┃┛
+       ┃┓
+       ┃┃
+ Model╺┫┣╸x_min ≥ OriginalValues.x_min/Relax2.x_min
        ┃┛
        ┃┓
        ┃┣╸x ≤ x_max
+       ┃┛
+       ┃┓
+       ┃┣╸x_max = 1
        ┃┛
        ┃┓
        ┃┣╸x_max ≤ OriginalValues.x_max·Relax2.x_max
@@ -244,7 +244,6 @@ x_min : 2
 
 Variable Sensitivities
 ----------------------
-      | Relax2.OriginalValues
 x_min : +1
 x_max : -0.99
 

@@ -1,3 +1,4 @@
+/home/tao/projects/ce/gpkit/docs/source/examples/solar.p
 Cost breakdown (you may be familiar with this from solution tables)
 ==============
 

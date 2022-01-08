@@ -205,7 +205,7 @@ solutions and can be solved with 'Model.solve()'.""")
                           "  solution: e.g. `m.localsolve(use_pccp=False, x0="
                           "m.solution[\"variables\"])`." % self.pccp_penalty)
             del self.result["freevariables"][self.slack.key]  # pylint: disable=no-member
-            # del self.result["variables"][self.slack.key]  # pylint: disable=no-member
+            del self.result["variables"][self.slack.key]  # pylint: disable=no-member
             del self.result["sensitivities"]["variables"][self.slack.key]  # pylint: disable=no-member
             slcon = self.gpconstraints[0]
             slconsenss = self.result["sensitivities"]["constraints"][slcon]

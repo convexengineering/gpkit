@@ -283,7 +283,6 @@ def warnings_table(self, _, **kwargs):
     lines[-1] = "~~~~~~~~"
     return lines + [""]
 
-# TODO: deduplicate these two functions
 def bdtable_gen(key):
     "Generator for breakdown tablefns"
 
