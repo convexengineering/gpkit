@@ -1,4 +1,4 @@
-Cost breakdown (you may be familiar with this from solution tables)
+Cost breakdown (as seen in solution tables)
 ==============
 
           ┃┓          ┓           ┓
