@@ -60,11 +60,12 @@ def flatiter(iterable, yield_if_hasattr=None):
                 yield from flatiter(constraint, yield_if_hasattr)
 
 
-class ConstraintSet(list, ReprMixin):
+class ConstraintSet(list, ReprMixin):  # pylint: disable=too-many-instance-attributes
     "Recursive container for ConstraintSets and Inequalities"
     unique_varkeys, idxlookup = frozenset(), {}
     _name_collision_varkeys = None
     _varkeys = None
+    _lineageset = False
 
     def __init__(self, constraints, substitutions=None, *, bonusvks=None):  # pylint: disable=too-many-branches,too-many-statements
         if isinstance(constraints, dict):
@@ -200,7 +201,7 @@ class ConstraintSet(list, ReprMixin):
                 " and %i variable(s)>" % (self.__class__.__name__,
                                           len(self), len(self.varkeys)))
 
-    def set_necessarylineage(self, clear=False):
+    def set_necessarylineage(self, clear=False):  # pylint: disable=too-many-branches
         "Returns the set of contained varkeys whose names are not unique"
         if self._name_collision_varkeys is None:
             self._name_collision_varkeys = {}

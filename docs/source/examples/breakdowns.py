@@ -4,8 +4,9 @@ import pickle
 from gpkit.breakdowns import Breakdowns
 
 # the code to create solar.p is in ./breakdowns/solartest.py
-path = os.path.dirname(os.path.realpath(__file__))
-sol = pickle.load(open(path + os.sep + "solar.p", "rb"))
+filepath = os.path.dirname(os.path.realpath(__file__)) + os.sep + "solar.p"
+print(filepath)
+sol = pickle.load(open(filepath, "rb"))
 bds = Breakdowns(sol)
 
 print("Cost breakdown (you may be familiar with this from solution tables)")

@@ -383,7 +383,7 @@ class SolutionArray(DictOfLists):
                     "constants": "Fixed Variables",  # TODO: change everywhere
                     "variables": "Variables"}
 
-    def set_necessarylineage(self, clear=False):
+    def set_necessarylineage(self, clear=False):  # pylint: disable=too-many-branches
         "Returns the set of contained varkeys whose names are not unique"
         if self._name_collision_varkeys is None:
             self._name_collision_varkeys = {}

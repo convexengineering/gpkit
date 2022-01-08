@@ -68,16 +68,17 @@ class VarKey(ReprMixin):  # pylint:disable=too-many-instance-attributes
             for ex in excluded:
                 if ex[0:7] == ":MAGIC:":
                     to_replace = ex[7:]
-                    if to_replace:
-                        to_replace = to_replace.split(".")
-                        replaced = 0
-                        for modelname in to_replace:
-                            if not namespace or namespace[0] != modelname:
-                                break
-                            replaced += 1
-                            namespace = namespace[1:]
-                        if len(to_replace) > replaced:
-                            namespace.insert(0, "."*(len(to_replace)-replaced))
+                    if not to_replace:
+                        continue
+                    to_replace = to_replace.split(".")
+                    replaced = 0
+                    for modelname in to_replace:
+                        if not namespace or namespace[0] != modelname:
+                            break
+                        replaced += 1
+                        namespace = namespace[1:]
+                    if len(to_replace) > replaced:
+                        namespace.insert(0, "."*(len(to_replace)-replaced))
             necessarylineage = self.necessarylineage
             if necessarylineage is None and self.veckey:
                 necessarylineage = self.veckey.necessarylineage
