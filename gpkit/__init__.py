@@ -1,6 +1,6 @@
 "GP and SP modeling package"
 #pylint:disable=wrong-import-position
-__version__ = "1.0.0"
+__version__ = "1.1"
 GPCOLORS = ["#59ade4", "#FA3333"]
 GPBLU, GPRED = GPCOLORS
 
