@@ -90,7 +90,7 @@ class Sankey:
         return total_sens
 
     # pylint: disable=too-many-branches
-    def link(self, cset, target, var, *, labeled=False, subarray=False):
+    def link(self, cset, target, vk, *, labeled=False, subarray=False):
         "adds links of a given constraint set to self.links"
         total_sens = 0
         switchedtarget = False
@@ -98,7 +98,7 @@ class Sankey:
             if cset is not self.cset:  # top-level, no need to switch targets
                 switchedtarget = target
                 target = self.add_node(target, cset.lineage[-1][0])
-            if var is None:
+            if vk is None:
                 total_sens += self.linkfixed(cset, target)
         elif isinstance(cset, ArrayConstraint) and cset.constraints.size > 1:
             switchedtarget = target
@@ -111,21 +111,21 @@ class Sankey:
         if isinstance(cset, dict):
             for label, c in cset.items():
                 source = self.add_node(target, label)
-                subtotal_sens = self.link(c, source, var, labeled=True)
+                subtotal_sens = self.link(c, source, vk, labeled=True)
                 self.links[source, target] += subtotal_sens
                 total_sens += subtotal_sens
         elif isinstance(cset, Iterable):
             for c in cset:
-                total_sens += self.link(c, target, var, subarray=subarray)
+                total_sens += self.link(c, target, vk, subarray=subarray)
         else:
-            if var is None and cset in self.csenss:
+            if vk is None and cset in self.csenss:
                 total_sens = -abs(self.csenss[cset]) or -EPS
-            elif var is not None:
+            elif vk is not None:
                 if cset.v_ss is None:
-                    if var.key in cset.varkeys:
+                    if vk in cset.varkeys:
                         total_sens = EPS
-                elif var.key in cset.v_ss:
-                    total_sens = cset.v_ss[var.key] or EPS
+                elif vk in cset.v_ss:
+                    total_sens = cset.v_ss[vk] or EPS
             if not labeled:
                 cstr = cset.str_without(["lineage", "units"])
                 label = cstr if len(cstr) <= 30 else "%s ..." % cstr[:30]
@@ -153,20 +153,20 @@ class Sankey:
         self.maxlinks = maxlinks
         self.showconstraints = showconstraints
 
-        for key in self.solution.name_collision_varkeys():
-            key.descr["necessarylineage"] = True
+        self.solution.set_necessarylineage()
 
         if variable:
+            variable = variable.key
             if not varlabel:
-                varlabel = variable.str_without(["unnecessary lineage"])
+                varlabel = str(variable)
                 if len(varlabel) > 20:
                     varlabel = variable.str_without(["lineage"])
             self.nodes[varlabel] = {"id": varlabel, "title": varlabel}
             csetnode = self.add_node(varlabel, self.csetlabel)
-            if variable.key in self.solution["sensitivities"]["cost"]:
+            if variable in self.solution["sensitivities"]["cost"]:
                 costnode = self.add_node(varlabel, "[cost function]")
                 self.links[costnode, varlabel] = \
-                    self.solution["sensitivities"]["cost"][variable.key]
+                    self.solution["sensitivities"]["cost"][variable]
         else:
             csetnode = self.csetlabel
             self.nodes[self.csetlabel] = {"id": self.csetlabel,
@@ -181,8 +181,7 @@ class Sankey:
 
         filename = self.csetlabel
         if variable:
-            filename += "_" + variable.str_without(["unnecessary lineage",
-                                                    "units"])
+            filename += "_%s" % variable
         if not os.path.isdir("sankey_autosaves"):
             os.makedirs("sankey_autosaves")
         filename = "sankey_autosaves" + os.path.sep + cleanfilename(filename)
@@ -191,8 +190,7 @@ class Sankey:
         out.on_node_clicked(self.onclick)
         out.on_link_clicked(self.onclick)
 
-        for key in self.solution.name_collision_varkeys():
-            del key.descr["necessarylineage"]
+        self.solution.set_necessarylineage(clear=True)
         return out
 
     def _links_and_nodes(self, top_node=None):

@@ -207,8 +207,13 @@ solutions and can be solved with 'Model.solve()'.""")
             del self.result["freevariables"][self.slack.key]  # pylint: disable=no-member
             del self.result["variables"][self.slack.key]  # pylint: disable=no-member
             del self.result["sensitivities"]["variables"][self.slack.key]  # pylint: disable=no-member
-            slackconstraint = self.gpconstraints[0]
-            del self.result["sensitivities"]["constraints"][slackconstraint]
+            slcon = self.gpconstraints[0]
+            slconsenss = self.result["sensitivities"]["constraints"][slcon]
+            del self.result["sensitivities"]["constraints"][slcon]
+            # TODO: create constraint in RelaxPCCP namespace
+            self.result["sensitivities"]["models"][""] -= slconsenss
+            if not self.result["sensitivities"]["models"][""]:
+                del self.result["sensitivities"]["models"][""]
         return self.result
 
     @property
@@ -233,6 +238,8 @@ solutions and can be solved with 'Model.solve()'.""")
         for sgpc in self.sgpconstraints:
             for hmaplt1 in sgpc.as_gpconstr(self._gp.x0).as_hmapslt1({}):
                 approxc = self.approxconstraints[p_idx]
+                approxc.left = self.slack
+                approxc.right.hmap = hmaplt1
                 approxc.unsubbed = [Posynomial(hmaplt1)/self.slack]
                 p_idx += 1  # p_idx=0 is the cost; sp constraints are after it
                 hmap, = approxc.as_hmapslt1(self._gp.substitutions)

@@ -25,9 +25,30 @@ Constraints
    x ≤ C·x_max
    x_min ≤ C·x
 
-Optimal Cost
-------------
- 1.414
+        ┃┓
+   Cost╺┫┃
+ (1.41) ┃┣╸x_min
+        ┃┛ (2, fixed)
+
+
+
+       ┃┓
+       ┃┃
+       ┃┣╸x ≤ C·x_max
+       ┃┛
+       ┃┓
+       ┃┃
+       ┃┣╸x_max = 1
+ Model╺┫┛
+       ┃┓
+       ┃┃
+       ┃┣╸x_min = 2
+       ┃┛
+       ┃┓
+       ┃┃
+       ┃┣╸x_min ≤ C·x
+       ┃┛
+
 
 ~~~~~~~~
 WARNINGS
@@ -60,6 +81,18 @@ Most Sensitive Constraints
   +0.5 : x_min ≤ C·x
 
 
+C (1.41)
+  breaks down into:
+    C (1.41)
+      which in: x ≤ C·x_max (sensitivity +0.5)
+      { through a factor of 1/x_max (1, fixed) }
+      breaks down into:
+        x (1.41)
+          which in: x_min ≤ C·x (sensitivity +0.5)
+          breaks down into:
+            { through a factor of 1/C (0.707) }
+            x_min (2, fixed)
+
 With constraints relaxed individually
 =====================================
 
@@ -75,9 +108,30 @@ Constraints
    x ≤ C[0]·x_max
    x_min ≤ C[1]·x
 
-Optimal Cost
-------------
- 2
+      ┃┓
+ Cost╺┫┃
+  (2) ┃┣╸1/x
+      ┃┛ (1)
+
+
+
+       ┃┓
+       ┃┃
+       ┃┣╸x_min = 2
+       ┃┛
+       ┃┓
+       ┃┃
+       ┃┣╸x_min ≤ C[1]·x
+ Model╺┫┛
+       ┃┓
+       ┃┃
+       ┃┣╸x ≤ C[0]·x_max
+       ┃┛
+       ┃┓
+       ┃┃
+       ┃┣╸x_max = 1
+       ┃┛
+
 
 ~~~~~~~~
 WARNINGS
@@ -128,16 +182,41 @@ Constraints
   "relaxation constraints":
     "x_max":
       Relax2.x_max ≥ 1
-      x_max ≥ Relax2.OriginalValues.x_max/Relax2.x_max
-      x_max ≤ Relax2.OriginalValues.x_max·Relax2.x_max
+      x_max ≥ OriginalValues.x_max/Relax2.x_max
+      x_max ≤ OriginalValues.x_max·Relax2.x_max
     "x_min":
       Relax2.x_min ≥ 1
-      x_min ≥ Relax2.OriginalValues.x_min/Relax2.x_min
-      x_min ≤ Relax2.OriginalValues.x_min·Relax2.x_min
+      x_min ≥ OriginalValues.x_min/Relax2.x_min
+      x_min ≤ OriginalValues.x_min·Relax2.x_min
 
-Optimal Cost
-------------
- 2
+      ┃┓
+ Cost╺┫┃
+  (2) ┃┣╸1/Relax2.x_min
+      ┃┛ (0.5)
+
+
+
+       ┃┓
+       ┃┣╸x ≥ x_min
+       ┃┛
+       ┃┓
+       ┃┃
+       ┃┣╸x_min = 1
+       ┃┛
+       ┃┓
+       ┃┃
+ Model╺┫┣╸x_min ≥ OriginalValues.x_min/Relax2.x_min
+       ┃┛
+       ┃┓
+       ┃┣╸x ≤ x_max
+       ┃┛
+       ┃┓
+       ┃┣╸x_max = 1
+       ┃┛
+       ┃┓
+       ┃┣╸x_max ≤ OriginalValues.x_max·Relax2.x_max
+       ┃┛
+
 
 ~~~~~~~~
 WARNINGS
@@ -146,11 +225,6 @@ Relaxed Constants
 -----------------
   x_min: relaxed from 2 to 1
 ~~~~~~~~
-
-Model Sensitivities (sorts models in sections below)
--------------------
-  +2.0 : Relax2.OriginalValues
- <1e-8 : Relax2
 
 Free Variables
 --------------
@@ -176,8 +250,8 @@ x_max : -0.99
 Most Sensitive Constraints
 --------------------------
     +1 : x ≥ x_min
-    +1 : x_min ≥ Relax2.OriginalValues.x_min/Relax2.x_min
+    +1 : x_min ≥ OriginalValues.x_min/Relax2.x_min
  +0.99 : x ≤ x_max
- +0.99 : x_max ≤ Relax2.OriginalValues.x_max·Relax2.x_max
+ +0.99 : x_max ≤ OriginalValues.x_max·Relax2.x_max
 
 

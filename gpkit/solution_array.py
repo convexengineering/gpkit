@@ -1,4 +1,5 @@
 """Defines SolutionArray class"""
+import sys
 import re
 import json
 import difflib
@@ -7,11 +8,13 @@ import warnings as pywarnings
 import pickle
 import gzip
 import pickletools
+from collections import defaultdict
 import numpy as np
 from .nomials import NomialArray
-from .small_classes import DictOfLists, Strings
+from .small_classes import DictOfLists, Strings, SolverLog
 from .small_scripts import mag, try_str_without
-from .repr_conventions import unitstr, lineagestr
+from .repr_conventions import unitstr, lineagestr, UNICODE_EXPONENTS
+from .breakdowns import Breakdowns
 
 
 CONSTRSPLITPATTERN = re.compile(r"([^*]\*[^*])|( \+ )|( >= )|( <= )|( = )")
@@ -77,7 +80,7 @@ def msenss_table(data, _, **kwargs):
         if (msenss < 0.1).all():
             msenss = np.max(msenss)
             if msenss:
-                msenssstr = "%6s" % ("<1e%i" % np.log10(msenss))
+                msenssstr = "%6s" % ("<1e%i" % max(-3, np.log10(msenss)))
             else:
                 msenssstr = "  =0  "
         else:
@@ -144,12 +147,13 @@ def tight_table(self, _, ntightconstrs=5, tight_senss=1e-2, **kwargs):
     title = "Most Sensitive Constraints"
     if len(self) > 1:
         title += " (in last sweep)"
-        data = sorted(((-float("%+6.2g" % s[-1]), str(c)),
-                       "%+6.2g" % s[-1], id(c), c)
+        data = sorted(((-float("%+6.2g" % abs(s[-1])), str(c)),
+                       "%+6.2g" % abs(s[-1]), id(c), c)
                       for c, s in self["sensitivities"]["constraints"].items()
                       if s[-1] >= tight_senss)[:ntightconstrs]
     else:
-        data = sorted(((-float("%+6.2g" % s), str(c)), "%+6.2g" % s, id(c), c)
+        data = sorted(((-float("%+6.2g" % abs(s)), str(c)),
+                       "%+6.2g" % abs(s), id(c), c)
                       for c, s in self["sensitivities"]["constraints"].items()
                       if s >= tight_senss)[:ntightconstrs]
     return constraint_table(data, title, **kwargs)
@@ -173,15 +177,14 @@ def loose_table(self, _, min_senss=1e-5, **kwargs):
 def constraint_table(data, title, sortbymodel=True, showmodels=True, **_):
     "Creates lines for tables where the right side is a constraint."
     # TODO: this should support 1D array inputs from sweeps
-    excluded = ("units", "unnecessary lineage")
-    if not showmodels:
-        excluded = ("units", "lineage")  # hide all of it
+    excluded = {"units"} if showmodels else {"units", "lineage"}
     models, decorated = {}, []
     for sortby, openingstr, _, constraint in sorted(data):
         model = lineagestr(constraint) if sortbymodel else ""
         if model not in models:
             models[model] = len(models)
-        constrstr = try_str_without(constraint, excluded)
+        constrstr = try_str_without(
+            constraint, {":MAGIC:"+lineagestr(constraint)}.union(excluded))
         if " at 0x" in constrstr:  # don't print memory addresses
             constrstr = constrstr[:constrstr.find(" at 0x")] + ">"
         decorated.append((models[model], model, sortby, constrstr, openingstr))
@@ -195,7 +198,6 @@ def constraint_table(data, title, sortbymodel=True, showmodels=True, **_):
             if model or lines:
                 lines.append([("newmodelline",), model])
             previous_model = model
-        constrstr = constrstr.replace(model, "")
         minlen, maxlen = 25, 80
         segments = [s for s in CONSTRSPLITPATTERN.split(constrstr) if s]
         constraintlines = []
@@ -281,6 +283,23 @@ def warnings_table(self, _, **kwargs):
     lines[-1] = "~~~~~~~~"
     return lines + [""]
 
+def bdtable_gen(key):
+    "Generator for breakdown tablefns"
+
+    def bdtable(self, _showvars, **_):
+        "Cost breakdown plot"
+        bds = Breakdowns(self)
+        original_stdout = sys.stdout
+        try:
+            sys.stdout = SolverLog(original_stdout, verbosity=0)
+            bds.plot(key)
+        finally:
+            lines = sys.stdout.lines()
+            sys.stdout = original_stdout
+        return lines
+
+    return bdtable
+
 
 TABLEFNS = {"sensitivities": senss_table,
             "top sensitivities": topsenss_table,
@@ -289,6 +308,8 @@ TABLEFNS = {"sensitivities": senss_table,
             "tightest constraints": tight_table,
             "loose constraints": loose_table,
             "warnings": warnings_table,
+            "model sensitivities breakdown": bdtable_gen("model sensitivities"),
+            "cost breakdown": bdtable_gen("cost")
            }
 
 def unrolled_absmax(values):
@@ -354,23 +375,55 @@ class SolutionArray(DictOfLists):
     """
     modelstr = ""
     _name_collision_varkeys = None
+    _lineageset = False
     table_titles = {"choicevariables": "Choice Variables",
                     "sweepvariables": "Swept Variables",
                     "freevariables": "Free Variables",
                     "constants": "Fixed Variables",  # TODO: change everywhere
                     "variables": "Variables"}
 
-    def name_collision_varkeys(self):
+    def set_necessarylineage(self, clear=False):  # pylint: disable=too-many-branches
         "Returns the set of contained varkeys whose names are not unique"
         if self._name_collision_varkeys is None:
+            self._name_collision_varkeys = {}
             self["variables"].update_keymap()
             keymap = self["variables"].keymap
-            self._name_collision_varkeys = set()
-            for key in list(keymap):
+            name_collisions = defaultdict(set)
+            for key in keymap:
                 if hasattr(key, "key"):
-                    if len(keymap[key.str_without(["lineage", "vec"])]) > 1:
-                        self._name_collision_varkeys.add(key)
-        return self._name_collision_varkeys
+                    if len(keymap[key.name]) == 1:  # very unique
+                        self._name_collision_varkeys[key] = 0
+                    else:
+                        shortname = key.str_without(["lineage", "vec"])
+                        if len(keymap[shortname]) > 1:
+                            name_collisions[shortname].add(key)
+            for varkeys in name_collisions.values():
+                min_namespaced = defaultdict(set)
+                for vk in varkeys:
+                    *_, mineage = vk.lineagestr().split(".")
+                    min_namespaced[(mineage, 1)].add(vk)
+                while any(len(vks) > 1 for vks in min_namespaced.values()):
+                    for key, vks in list(min_namespaced.items()):
+                        if len(vks) <= 1:
+                            continue
+                        del min_namespaced[key]
+                        mineage, idx = key
+                        idx += 1
+                        for vk in vks:
+                            lineages = vk.lineagestr().split(".")
+                            submineage = lineages[-idx] + "." + mineage
+                            min_namespaced[(submineage, idx)].add(vk)
+                for (_, idx), vks in min_namespaced.items():
+                    vk, = vks
+                    self._name_collision_varkeys[vk] = idx
+        if clear:
+            self._lineageset = False
+            for vk in self._name_collision_varkeys:
+                del vk.descr["necessarylineage"]
+        else:
+            self._lineageset = True
+            for vk, idx in self._name_collision_varkeys.items():
+                vk.descr["necessarylineage"] = idx
 
     def __len__(self):
         try:
@@ -532,26 +585,23 @@ class SolutionArray(DictOfLists):
         "Returns list of variables, optionally with minimal unique names"
         if showvars:
             showvars = self._parse_showvars(showvars)
-        for key in self.name_collision_varkeys():
-            key.descr["necessarylineage"] = True
+        self.set_necessarylineage()
         names = {}
         for key in showvars or self["variables"]:
             for k in self["variables"].keymap[key]:
                 names[k.str_without(exclude)] = k
-        for key in self.name_collision_varkeys():
-            del key.descr["necessarylineage"]
+        self.set_necessarylineage(clear=True)
         return names
 
     def savemat(self, filename="solution.mat", *, showvars=None,
-                excluded=("unnecessary lineage", "vec")):
+                excluded=("vec")):
         "Saves primal solution as matlab file"
         from scipy.io import savemat
         savemat(filename,
                 {name.replace(".", "_"): np.array(self["variables"][key], "f")
                  for name, key in self.varnames(showvars, excluded).items()})
 
-    def todataframe(self, showvars=None,
-                    excluded=("unnecessary lineage", "vec")):
+    def todataframe(self, showvars=None, excluded=("vec")):
         "Returns primal solution as pandas dataframe"
         import pandas as pd  # pylint:disable=import-error
         rows = []
@@ -596,8 +646,8 @@ class SolutionArray(DictOfLists):
     def savejson(self, filename="solution.json", showvars=None):
         "Saves solution table as a json file"
         sol_dict = {}
-        for key in self.name_collision_varkeys():
-            key.descr["necessarylineage"] = True
+        if self._lineageset:
+            self.set_necessarylineage(clear=True)
         data = self["variables"]
         if showvars:
             showvars = self._parse_showvars(showvars)
@@ -610,8 +660,6 @@ class SolutionArray(DictOfLists):
             else:
                 val = {"v": v, "u": k.unitstr()}
             sol_dict[key] = val
-        for key in self.name_collision_varkeys():
-            del key.descr["necessarylineage"]
         with open(filename, "w") as f:
             json.dump(sol_dict, f)
 
@@ -668,7 +716,7 @@ class SolutionArray(DictOfLists):
             return NomialArray([self.atindex(i).subinto(posy)
                                 for i in range(len(self))])
 
-        return posy.sub(self["variables"])
+        return posy.sub(self["variables"], require_positive=False)
 
     def _parse_showvars(self, showvars):
         showvars_out = set()
@@ -678,27 +726,16 @@ class SolutionArray(DictOfLists):
             showvars_out.update(keys)
         return showvars_out
 
-    def summary(self, showvars=(), ntopsenss=5, **kwargs):
-        "Print summary table, showing top sensitivities and no constants"
-        showvars = self._parse_showvars(showvars)
-        out = self.table(showvars, ["cost", "warnings", "sweepvariables",
-                                    "freevariables"], **kwargs)
-        constants_in_showvars = showvars.intersection(self["constants"])
-        senss_tables = []
-        if len(self["constants"]) < ntopsenss+2 or constants_in_showvars:
-            senss_tables.append("sensitivities")
-        if len(self["constants"]) >= ntopsenss+2:
-            senss_tables.append("top sensitivities")
-        senss_tables.append("tightest constraints")
-        senss_str = self.table(showvars, senss_tables, nvars=ntopsenss,
-                               **kwargs)
-        if senss_str:
-            out += "\n" + senss_str
-        return out
+    def summary(self, showvars=(), **kwargs):
+        "Print summary table, showing no sensitivities or constants"
+        return self.table(showvars,
+                          ["cost breakdown", "model sensitivities breakdown",
+                           "warnings", "sweepvariables", "freevariables"],
+                          **kwargs)
 
     def table(self, showvars=(),
-              tables=("cost", "warnings", "model sensitivities",
-                      "sweepvariables", "freevariables",
+              tables=("cost breakdown", "model sensitivities breakdown",
+                      "warnings", "sweepvariables", "freevariables",
                       "constants", "sensitivities", "tightest constraints"),
               sortmodelsbysenss=False, **kwargs):
         """A table representation of this SolutionArray
@@ -732,11 +769,14 @@ class SolutionArray(DictOfLists):
                 break
         if has_only_one_model:
             kwargs["sortbymodel"] = False
-        for key in self.name_collision_varkeys():
-            key.descr["necessarylineage"] = True
+        self.set_necessarylineage()
         showvars = self._parse_showvars(showvars)
         strs = []
         for table in tables:
+            if "breakdown" in table:
+                if len(self) > 1 or not UNICODE_EXPONENTS:
+                    # no breakdowns for sweeps or no-unicode environments
+                    table = table.replace(" breakdown", "")
             if "sensitivities" not in self and ("sensitivities" in table or
                                                 "constraints" in table):
                 continue
@@ -768,8 +808,7 @@ class SolutionArray(DictOfLists):
                                   "% \\usepackage{amsmath}",
                                   "% \\begin{document}\n"))
             strs = [preamble] + strs + ["% \\end{document}"]
-        for key in self.name_collision_varkeys():
-            del key.descr["necessarylineage"]
+        self.set_necessarylineage(clear=True)
         return "\n".join(strs)
 
     def plot(self, posys=None, axes=None):
@@ -833,9 +872,10 @@ def var_table(data, title, *, printunits=True, latex=False, rawlines=False,
         if minval and hidebelowminval and getattr(v, "shape", None):
             v[np.abs(v) <= minval] = np.nan
         model = lineagestr(k.lineage) if sortbymodel else ""
-        msenss = -sortmodelsbysenss.get(model, 0) if sortmodelsbysenss else 0
-        if hasattr(msenss, "shape"):
-            msenss = np.mean(msenss)
+        if not sortmodelsbysenss:
+            msenss = 0
+        else:  # sort should match that in msenss_table above
+            msenss = -round(np.mean(sortmodelsbysenss.get(model, 0)), 4)
         models.add(model)
         b = bool(getattr(v, "shape", None))
         s = k.str_without(("lineage", "vec"))

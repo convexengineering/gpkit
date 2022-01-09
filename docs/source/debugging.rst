@@ -1,7 +1,7 @@
 Debugging Models
 ****************
 
-A number of errors and warnings may be raised when attempting to solve a model. 
+A number of errors and warnings may be raised when attempting to solve a model.
 A model may be primal infeasible: there is no possible solution that satisfies all constraints. A model may be dual infeasible: the optimal value of one or more variables is 0 or infinity (negative and positive infinity in logspace).
 
 For a GP model that does not solve, solvers may be able to prove its primal or dual infeasibility, or may return an unknown status.
@@ -11,6 +11,7 @@ GPkit contains several tools for diagnosing which constraints and variables migh
 .. literalinclude:: examples/debug.py
 
 .. literalinclude:: examples/debug_output.txt
+    :language: breakdowns
 
 Note that certain modeling errors (such as omitting or forgetting a constraint) may be difficult to diagnose from this output.
 
@@ -33,7 +34,7 @@ Potential errors and warnings
 - ``RuntimeWarning: Dual cost nan does not match primal cost 1.00122315152``
     - Similarly to the above, this warning may be seen in dual infeasible models, see *Dual Infeasibility* below.
 
-.. 
+..
     note: remove the above when we match solver tolerance in GPkit (issue #753)
 
 
@@ -54,6 +55,7 @@ For example, Mosek returns ``DUAL_INFEAS_CER`` when attempting to solve the foll
 Upon viewing the printed output,
 
 .. literalinclude:: examples/unbounded_output.txt
+    :language: breakdowns
 
 The problem, unsurprisingly, is that the cost ``1/x`` has no lower bound because ``x`` has no upper bound.
 
@@ -84,3 +86,4 @@ If you suspect your model is primal infeasible, you can find the nearest primal 
 .. literalinclude:: examples/relaxation.py
 
 .. literalinclude:: examples/relaxation_output.txt
+    :language: breakdowns

@@ -63,10 +63,32 @@ class VarKey(ReprMixin):  # pylint:disable=too-many-instance-attributes
     def str_without(self, excluded=()):
         "Returns string without certain fields (such as 'lineage')."
         name = self.name
-        if ("lineage" not in excluded and self.lineage
-                and ("unnecessary lineage" not in excluded
-                     or self.necessarylineage)):
-            name = self.lineagestr("modelnums" not in excluded) + "." + name
+        if "lineage" not in excluded and self.lineage:
+            namespace = self.lineagestr("modelnums" not in excluded).split(".")
+            for ex in excluded:
+                if ex[0:7] == ":MAGIC:":
+                    to_replace = ex[7:]
+                    if not to_replace:
+                        continue
+                    to_replace = to_replace.split(".")
+                    replaced = 0
+                    for modelname in to_replace:
+                        if not namespace or namespace[0] != modelname:
+                            break
+                        replaced += 1
+                        namespace = namespace[1:]
+                    if len(to_replace) > replaced:
+                        namespace.insert(0, "."*(len(to_replace)-replaced))
+            necessarylineage = self.necessarylineage
+            if necessarylineage is None and self.veckey:
+                necessarylineage = self.veckey.necessarylineage
+            if necessarylineage is not None:
+                if necessarylineage > 0:
+                    namespace = namespace[-necessarylineage:]
+                else:
+                    namespace = None
+            if namespace:
+                name = ".".join(namespace) + "." + name
         if "idx" not in excluded:
             if self.idx:
                 name += "[%s]" % ",".join(map(str, self.idx))
@@ -92,9 +114,7 @@ class VarKey(ReprMixin):  # pylint:disable=too-many-instance-attributes
             name = "\\vec{%s}" % name
         if "idx" not in excluded and self.idx:
             name = "{%s}_{%s}" % (name, ",".join(map(str, self.idx)))
-        if ("lineage" not in excluded and self.lineage
-                and ("unnecessary lineage" not in excluded
-                     or self.necessarylineage)):
+        if "lineage" not in excluded and self.lineage:
             name = "{%s}_{%s}" % (name,
                                   self.lineagestr("modelnums" not in excluded))
         return name

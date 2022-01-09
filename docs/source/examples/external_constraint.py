@@ -20,6 +20,5 @@ class ExternalConstraint:
         # Otherwise calls external code at the current position...
         x_star = x0[self.x]
         res = external_code(x_star)
-        # ...and returns a linearized posy <= 1
+        # ...and returns a posynomial approximation around that position
         return (self.y >= res * self.x/x_star)
-        

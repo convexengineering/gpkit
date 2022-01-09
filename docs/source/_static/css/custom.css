@@ -1,0 +1,5 @@
+@import 'theme.css';
+
+div[class^='highlight-breakdowns'] pre {
+  line-height: 1.15 !important;
+}

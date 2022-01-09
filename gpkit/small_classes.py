@@ -11,7 +11,7 @@ Numbers = (int, float, np.number, Quantity)
 class FixedScalarMeta(type):
     "Metaclass to implement instance checking for fixed scalars"
     def __instancecheck__(cls, obj):
-        return hasattr(obj, "hmap") and len(obj.hmap) == 1 and not obj.vks
+        return getattr(obj, "hmap", None) and len(obj.hmap) == 1 and not obj.vks
 
 
 class FixedScalar(metaclass=FixedScalarMeta):  # pylint: disable=no-init
@@ -65,10 +65,10 @@ class CootMatrix:
         return self.tocsr().dot(arg)
 
 
-class SolverLog(list):
+class SolverLog:
     "Adds a `write` method to list so it's file-like and can replace stdout."
     def __init__(self, output=None, *, verbosity=0):
-        list.__init__(self)
+        self.written = ""
         self.verbosity = verbosity
         self.output = output
 
@@ -76,10 +76,16 @@ class SolverLog(list):
         "Append and potentially write the new line."
         if writ[:2] == "b'":
             writ = writ[2:-1]
-        if writ != "\n":
-            self.append(writ.rstrip("\n"))
+        self.written += writ
         if self.verbosity > 0:  # pragma: no cover
             self.output.write(writ)
+
+    def lines(self):
+        "Returns the lines presently written."
+        return self.written.split("\n")
+
+    def flush(self):
+        "Dummy function for I/O api compatibility"
 
 
 class DictOfLists(dict):

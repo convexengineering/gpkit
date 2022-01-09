@@ -3,6 +3,21 @@ Visualization and Interaction
 
 Code in this section uses the `CE solar model <https://github.com/convexengineering/solar/tree/gpkitdocs>`_ except where noted otherwise.
 
+Model and Variable Breakdowns
+=============================
+
+Model breakdowns (similar to the sankey diagrams below) show the hierarchy of a model scaled by the sensitivity of its constraints and fixed variables.
+
+Variable breakdowns show how a variable "breaks down" into smaller expressions.
+For example if the constraint ``x_total >= x1 + x2`` is tight (that is, has a sensitivity greater than zero, indicating that the right hand side is "pushing" against the left), then ``x_total`` can be said to "break down" into ``x1`` and ``x2``, each of which may have their own breakdowns. If multiple constraints break down a variable, the most sensitive one is chosen; if none do, than constraints such as ``1 >= x1/x_total + x2/x_total`` will be rearranged in an attempt to create a valid breakdown constraint like that above.
+
+.. literalinclude:: examples/breakdowns.py
+
+.. literalinclude:: examples/breakdowns_output.txt
+    :language: breakdowns
+
+If permissivity is greater than 1, the breakdown will always proceed if a breakdown variable is available in the monomial, and will choose the most sensitive one if multiple are available. If permissivity is 1, breakdowns will stop when there are multiple breakdown variables multiplying each other. If permissivity is 0, breakdowns will stop when any free variables multiply each other. If permissivity is between 0 and 1, it will follow the behavior for 1 if the monomial represents a fraction of the total greater than ``1 - permissivity``, and the behavior for 0 otherwise.
+
 Model Hierarchy Treemaps
 ========================
 

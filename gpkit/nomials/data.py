@@ -38,6 +38,7 @@ class NomialData(ReprMixin):
         if self._cs is None:
             self._cs = np.array(list(self.hmap.values()))
             if self.hmap.units:
+                # TODO: treat vars as dimensionless, it's a hack
                 self._cs = self._cs*self.hmap.units
         return self._cs
 

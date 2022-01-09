@@ -55,6 +55,7 @@ This problem is not GP compatible due to the :math:`sin(x)` constraint.  One app
 .. literalinclude:: examples/sin_approx_example.py
 
 .. literalinclude:: examples/sin_approx_example_output.txt
+    :language: breakdowns
 
 Assume we have some external code which is capable of evaluating our incompatible function:
 
@@ -69,6 +70,7 @@ and replace the incompatible constraint in our GP:
 .. literalinclude:: examples/external_sp.py
 
 .. literalinclude:: examples/external_sp_output.txt
+    :language: breakdowns
 
 which is the expected result.  This method has been generalized to larger problems, such as calling XFOIL and AVL.
 

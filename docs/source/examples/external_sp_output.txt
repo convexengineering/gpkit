@@ -1,15 +1,23 @@
 
-Optimal Cost
-------------
- 0.7071
+         ┃┓
+    Cost╺┫┃
+ (0.707) ┃┣╸0.785
+         ┃┛
+
+
+
+       ┃┓
+       ┃┃
+       ┃┣╸<external_constraint.ExternalConstraint object>
+ Model╺┫┛
+       ┃┓
+       ┃┃
+       ┃┣╸x ≥ 0.785
+       ┃┛
+
 
 Free Variables
 --------------
 x : 0.7854
 y : 0.7071
-
-Most Sensitive Constraints
---------------------------
-    +1 : <external_constraint.ExternalConstraint object>
-    +1 : x ≥ 0.785
 

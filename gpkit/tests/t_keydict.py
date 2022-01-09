@@ -52,7 +52,7 @@ class TestKeyDict(unittest.TestCase):
         v = VectorVariable(3, "v")
         kd = KeyDict()
         kd[v] = np.array([2, 3, 4])
-        self.assertTrue(all(kd[v] == kd[v.key]))
+        self.assertTrue(all(kd[v] == kd[v.key]))  # pylint:disable=no-member
         self.assertTrue(all(kd["v"] == np.array([2, 3, 4])))
         self.assertEqual(v[0].key.idx, (0,))
         self.assertEqual(kd[v][0], kd[v[0]])

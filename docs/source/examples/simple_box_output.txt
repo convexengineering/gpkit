@@ -1,7 +1,28 @@
 
-Optimal Cost
-------------
- 0.003674
+              ┃/┓
+         Cost╺┫ ┃
+ (0.00367/m³) ┃/┣╸alpha
+              ┃/┛ (2, fixed)
+
+
+
+       ┃┓
+       ┃┃
+       ┃┃
+       ┃┣╸A_{wall} = 200m²
+       ┃┃
+       ┃┛
+       ┃┓
+ Model╺┫┃
+       ┃┃
+       ┃┣╸A_{wall} ≥ 2·h·w + 2·h·d
+       ┃┃
+       ┃┛
+       ┃┣╸alpha = 2
+       ┃┛
+       ┃┣╸alpha ≤ h/w
+       ┃┛
+
 
 Free Variables
 --------------
