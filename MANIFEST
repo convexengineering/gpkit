@@ -54,6 +54,7 @@ gpkit/tools/tools.py
 gpkit/units.py
 gpkit/__init__.py
 gpkit/build.py
+gpkit/breakdowns.py
 gpkit/exceptions.py
 gpkit/globals.py
 gpkit/keydict.py

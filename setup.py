@@ -48,7 +48,7 @@ setup(
     install_requires=["numpy >= 1.16.4", "pint >= 0.8.1", "plotly",
                       "scipy", "adce", "cvxopt >= 1.1.8",
                       "matplotlib"],
-    version="1.1.0",
+    version="1.1.1",
     packages=["gpkit", "gpkit.tools", "gpkit.interactive", "gpkit.constraints",
               "gpkit.nomials", "gpkit.tests", "gpkit.solvers"],
     package_data={"gpkit": ["env/settings"]},
