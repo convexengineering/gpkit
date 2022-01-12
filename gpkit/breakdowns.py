@@ -749,7 +749,9 @@ def graph(tree, breakdowns, solution, basically_fixed_variables, *,
                     chararray[depth, pos+1] = fmt.format(vallabel)
                 elif showlegend:
                     keystr += valuestr
-            if key in breakdowns and not chararray[depth+1, pos].strip():
+            if (key in breakdowns and not chararray[depth+1, pos].strip()
+                    and (depth >= len(mt)-2
+                         or not chararray[depth+2, pos].strip())):
                 keystr = keystr + "╶⎨"
             chararray[depth, pos] = fmt.format(linkstr + keystr)
     # Rotate and print
@@ -886,12 +888,12 @@ def plotlyify(tree, solution, minval=None):
                 if not isinstance(key, str):
                     labels[-1] = labels[-1] + "<br>" + get_valstr(key, solution)
                 parents.append(parent_id)
-                parent_budgets[id] = value
                 if parent_id is not None:  # make sure there's no overflow
                     if parent_budgets[parent_id] < value:
-                        value = parent_budgets[parent_id]  # take remained
+                        value = parent_budgets[parent_id]  # take remainder
                     parent_budgets[parent_id] -= value
                 values.append(value)
+                parent_budgets[id] = value
             for branch in branches:
                 crawl(branch, id)
 
@@ -945,7 +947,8 @@ class Breakdowns(object):
                 kind = "constraint"
             else:
                 # TODO: support submodels
-                keys = [vk for vk in self.bd if key in str(vk)]
+                keys = [vk for vk in self.bd
+                        if key in str(vk) and key[-1] == str(vk)[-1]]
                 if not keys:
                     raise KeyError(key)
                 elif len(keys) > 1:
