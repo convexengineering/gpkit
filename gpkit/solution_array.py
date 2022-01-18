@@ -437,17 +437,14 @@ class SolutionArray(DictOfLists):
         posy_subbed = self.subinto(posy)
         return getattr(posy_subbed, "c", posy_subbed)
 
-    def almost_equal(self, other, reltol=1e-3, sens_abstol=0.01):
+    def almost_equal(self, other, reltol=1e-3):
         "Checks for almost-equality between two solutions"
         svars, ovars = self["variables"], other["variables"]
         svks, ovks = set(svars), set(ovars)
         if svks != ovks:
             return False
         for key in svks:
-            if abs(cast(np.divide, svars[key], ovars[key]) - 1) >= reltol:
-                return False
-            if abs(self["sensitivities"]["variables"][key]
-                   - other["sensitivities"]["variables"][key]) >= sens_abstol:
+            if np.max(abs(cast(np.divide, svars[key], ovars[key]) - 1)) >= reltol:
                 return False
         return True
 
