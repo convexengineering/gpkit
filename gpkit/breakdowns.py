@@ -27,21 +27,6 @@ def get_free_vks(posy, solution):
 
 def get_model_breakdown(solution):
     breakdowns = {"|sensitivity|": 0}
-    for modelname, senss in solution["sensitivities"]["models"].items():
-        senss = abs(senss)  # for those monomial equalities
-        *namespace, name = modelname.split(".")
-        subbd = breakdowns
-        subbd["|sensitivity|"] += senss
-        for parent in namespace:
-            if parent not in subbd:
-                subbd[parent] = {parent: {}}
-            subbd = subbd[parent]
-            if "|sensitivity|" not in subbd:
-                subbd["|sensitivity|"] = 0
-            subbd["|sensitivity|"] += senss
-        subbd[name] = {"|sensitivity|": senss}
-    # print(breakdowns["HyperloopSystem"]["|sensitivity|"])
-    breakdowns = {"|sensitivity|": 0}
     for constraint, senss in solution["sensitivities"]["constraints"].items():
         senss = abs(senss)  # for those monomial
         if senss <= 1e-5:

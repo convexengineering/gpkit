@@ -51,6 +51,7 @@ class SequentialGeometricProgram:
 
     def __init__(self, cost, model, substitutions,
                  *, use_pccp=True, pccp_penalty=2e2, **kwargs):
+        self.cost = cost
         self.pccp_penalty = pccp_penalty
         if cost.any_nonpositive_cs:
             raise InvalidPosynomial("""an SGP's cost must be Posynomial
@@ -164,7 +165,9 @@ solutions and can be solved with 'Model.solve()'.""")
             if verbosity > 2:
                 result = gp.generate_result(solver_out, verbosity=verbosity-3)
                 self._results.append(result)
-                print(result.table(self.sgpvks))
+                vartable = result.table(self.sgpvks, tables=["freevariables"])
+                vartable = "\n" + vartable.replace("Free", "SGP", 1)
+                print(vartable)
             elif verbosity > 1:
                 print("Solved cost was %.4g." % cost)
             if prevcost is None:
@@ -204,6 +207,7 @@ solutions and can be solved with 'Model.solve()'.""")
                           " `use_pccp=False` and start it from this model's"
                           "  solution: e.g. `m.localsolve(use_pccp=False, x0="
                           "m.solution[\"variables\"])`." % self.pccp_penalty)
+            self.result["cost function"] = self.cost
             del self.result["freevariables"][self.slack.key]  # pylint: disable=no-member
             del self.result["variables"][self.slack.key]  # pylint: disable=no-member
             del self.result["sensitivities"]["variables"][self.slack.key]  # pylint: disable=no-member

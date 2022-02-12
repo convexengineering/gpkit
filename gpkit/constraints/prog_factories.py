@@ -157,7 +157,6 @@ def run_sweep(genfunction, self, solution, skipsweepfailures,
                    for (var, grid) in zip(sweepvars, sweep_grids)}
 
     if verbosity > 0:
-        print("Sweeping with %i solves:" % N_passes)
         tic = time()
 
     self.program = []
@@ -170,6 +169,10 @@ def run_sweep(genfunction, self, solution, skipsweepfailures,
         program, solvefn = genfunction(self, constants, **kwargs)
         program.model = None  # so it doesn't try to debug
         self.program.append(program)  # NOTE: SIDE EFFECTS
+        if i == 0 and verbosity > 0:  # wait for successful program gen
+            # TODO: use full string when minimum lineage is set automatically
+            sweepvarsstr = ", ".join([sv.name for sv in sweepvars])
+            print("Sweeping %s with %i solves:" % (sweepvarsstr, N_passes))
         try:
             if verbosity > 1:
                 print("\nSolve %i:" % i)
@@ -177,6 +180,8 @@ def run_sweep(genfunction, self, solution, skipsweepfailures,
             if kwargs.get("process_result", True):
                 self.process_result(result)
             solution.append(result)
+            if verbosity == 1:
+                print(".", end="", flush=True)
         except Infeasible as e:
             last_error = e
             if not skipsweepfailures:
@@ -184,10 +189,14 @@ def run_sweep(genfunction, self, solution, skipsweepfailures,
                     "Solve %i was infeasible; progress saved to m.program."
                     " To continue sweeping after failures, solve with"
                     " skipsweepfailures=True." % i) from e
-            if verbosity > 0:
+            if verbosity > 1:
                 print("Solve %i was %s." % (i, e.__class__.__name__))
+            if verbosity == 1:
+                print("!", end="", flush=True)
     if not solution:
         raise RuntimeWarning("All solves were infeasible.") from last_error
+    if verbosity == 1:
+        print()
 
     solution["sweepvariables"] = KeyDict()
     ksweep = KeyDict(sweep)
