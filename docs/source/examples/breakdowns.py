@@ -1,5 +1,6 @@
 "An example to show off Breakdowns"
 import os
+import sys
 import pickle
 import pint
 from packaging import version
@@ -17,7 +18,8 @@ elif version.parse(pint.__version__) == version.parse("0.9"):
 else:
     sol = None
 
-if sol is not None:
+# our Miniconda windows test platform can't print unicode
+if sys.platform[:3] != "win" and sol is not None:
     # the code to create solar.p is in ./breakdowns/solartest.py
     bds = Breakdowns(sol)
 
