@@ -60,7 +60,7 @@ class VarKey(ReprMixin):  # pylint:disable=too-many-instance-attributes
         "Restores varkey from its metadata dictionary"
         self.__init__(**state)
 
-    def str_without(self, excluded=()):
+    def str_without(self, excluded=()):  # pylint:disable=too-many-branches
         "Returns string without certain fields (such as 'lineage')."
         name = self.name
         if "lineage" not in excluded and self.lineage:

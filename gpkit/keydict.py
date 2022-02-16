@@ -178,8 +178,8 @@ class KeyDict(KeyMap, dict):
             if not idx and k.shape:
                 self._copyonwrite(k)
             val = dict.__getitem__(self, k)
-            if idx:
-                val = val[idx]
+            if idx:  # applied from the right in case of sweep
+                val = val[(...,) + idx]
             if len(keys) == 1:
                 return val
             got[k] = val

@@ -171,7 +171,9 @@ def run_sweep(genfunction, self, solution, skipsweepfailures,
         self.program.append(program)  # NOTE: SIDE EFFECTS
         if i == 0 and verbosity > 0:  # wait for successful program gen
             # TODO: use full string when minimum lineage is set automatically
-            sweepvarsstr = ", ".join([sv.name for sv in sweepvars])
+            sweepvarsstr = ", ".join([str(var)
+                                      for var, val in zip(sweepvars, sweepvals)
+                                      if not np.isnan(val).all()])
             print("Sweeping %s with %i solves:" % (sweepvarsstr, N_passes))
         try:
             if verbosity > 1:
