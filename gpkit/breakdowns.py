@@ -118,7 +118,7 @@ def get_breakdowns(basically_fixed_variables, solution):
                 gt, lt = (constraint.left, constraint.right)
         for gtvk in gt.vks:  # remove RelaxPCCP.C
             if (gtvk.name == "C" and gtvk.lineage[0][0] == "RelaxPCCP"
-                    and gtvk not in solution["freevariables"]):
+                    and gtvk not in solution["variables"]):
                 lt, gt = lt.sub({gtvk: 1}), gt.sub({gtvk: 1})
         if len(gt.hmap) > 1:
             continue
@@ -150,7 +150,7 @@ def get_breakdowns(basically_fixed_variables, solution):
                 gt, lt = (constraint.left, constraint.right)
         for gtvk in gt.vks:
             if (gtvk.name == "C" and gtvk.lineage[0][0] == "RelaxPCCP"
-                    and gtvk not in solution["freevariables"]):
+                    and gtvk not in solution["variables"]):
                 lt, gt = lt.sub({gtvk: 1}), gt.sub({gtvk: 1})
         if len(gt.hmap) > 1:
             continue
