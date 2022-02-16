@@ -1,6 +1,5 @@
 "An example to show off Breakdowns"
 import os
-import sys
 import pickle
 import pint
 from packaging import version
