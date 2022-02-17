@@ -93,8 +93,8 @@ class KeyMap:
         if super().__contains__(key):  # pylint: disable=no-member
             if idx:
                 try:
-                    value = super().__getitem__(key)[idx]  # pylint: disable=no-member
-                    return True if is_sweepvar(value) else not isnan(value)
+                    val = super().__getitem__(key)[idx]  # pylint: disable=no-member
+                    return True if is_sweepvar(val) else not isnan(val).any()
                 except TypeError:
                     raise TypeError("%s has an idx, but its value in this"
                                     " KeyDict is the scalar %s."
