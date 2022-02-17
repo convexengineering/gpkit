@@ -93,8 +93,8 @@ class KeyMap:
         if super().__contains__(key):  # pylint: disable=no-member
             if idx:
                 try:
-                    val = super().__getitem__(key)[idx]  # pylint: disable=no-member
-                    return True if is_sweepvar(val) else not isnan(val).any()
+                    value = super().__getitem__(key)[idx]  # pylint: disable=no-member
+                    return True if is_sweepvar(value) else not isnan(value)
                 except TypeError:
                     raise TypeError("%s has an idx, but its value in this"
                                     " KeyDict is the scalar %s."
@@ -178,8 +178,10 @@ class KeyDict(KeyMap, dict):
             if not idx and k.shape:
                 self._copyonwrite(k)
             val = dict.__getitem__(self, k)
-            if idx:  # applied from the right in case of sweep
-                val = val[(...,) + idx]
+            if idx:
+                if len(idx) < len(val.shape):
+                    idx = (...,) + idx  # idx from the right, in case of sweep
+                val = val[idx]
             if len(keys) == 1:
                 return val
             got[k] = val
