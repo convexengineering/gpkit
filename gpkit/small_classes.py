@@ -155,7 +155,10 @@ def _enray(d_in, d_out):
             if len(v) == 1:
                 v, = v
             else:
-                v = np.array(v)
+                if isinstance(v[0], list):
+                    v = np.array(v, dtype="object")
+                else:
+                    v = np.array(v)
             d_out[k] = v
     return d_out
 
