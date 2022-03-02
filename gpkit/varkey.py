@@ -34,7 +34,7 @@ class VarKey(ReprMixin):  # pylint:disable=too-many-instance-attributes
             self.descr["unitrepr"] = unitrepr
 
         self.key = self
-        fullstr = self.str_without(["modelnums", "vec"])
+        fullstr = self.str_without({"hiddenlineage", "modelnums", "vec"})
         self.eqstr = fullstr + str(self.lineage) + self.unitrepr
         self.hashvalue = hash(self.eqstr)
         self.keys = set((self.name, fullstr))
@@ -46,7 +46,7 @@ class VarKey(ReprMixin):  # pylint:disable=too-many-instance-attributes
                 self.veckey = VarKey(**vecdescr)
             else:
                 self.keys.add(self.veckey)
-                self.keys.add(self.str_without(["idx", "modelnums"]))
+                self.keys.add(self.str_without({"idx", "modelnums"}))
 
     def __getstate__(self):
         "Stores varkey as its metadata dictionary, removing functions"
@@ -60,7 +60,7 @@ class VarKey(ReprMixin):  # pylint:disable=too-many-instance-attributes
         "Restores varkey from its metadata dictionary"
         self.__init__(**state)
 
-    def str_without(self, excluded=()):
+    def str_without(self, excluded=()):  # pylint:disable=too-many-branches
         "Returns string without certain fields (such as 'lineage')."
         name = self.name
         if "lineage" not in excluded and self.lineage:
@@ -79,14 +79,15 @@ class VarKey(ReprMixin):  # pylint:disable=too-many-instance-attributes
                         namespace = namespace[1:]
                     if len(to_replace) > replaced:
                         namespace.insert(0, "."*(len(to_replace)-replaced))
-            necessarylineage = self.necessarylineage
-            if necessarylineage is None and self.veckey:
-                necessarylineage = self.veckey.necessarylineage
-            if necessarylineage is not None:
-                if necessarylineage > 0:
-                    namespace = namespace[-necessarylineage:]
-                else:
-                    namespace = None
+            if "hiddenlineage" not in excluded:
+                necessarylineage = self.necessarylineage
+                if necessarylineage is None and self.veckey:
+                    necessarylineage = self.veckey.necessarylineage
+                if necessarylineage is not None:
+                    if necessarylineage > 0:
+                        namespace = namespace[-necessarylineage:]
+                    else:
+                        namespace = None
             if namespace:
                 name = ".".join(namespace) + "." + name
         if "idx" not in excluded:

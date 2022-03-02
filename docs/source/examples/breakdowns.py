@@ -1,14 +1,26 @@
 "An example to show off Breakdowns"
 import os
+import sys
 import pickle
 import pint
 from packaging import version
 from gpkit.breakdowns import Breakdowns
 
-if version.parse(pint.__version__) >= version.parse("0.9"):
+dirpath = os.path.dirname(os.path.realpath(__file__)) + os.sep
+if version.parse(pint.__version__) >= version.parse("0.13"):
+    sol = pickle.load(open(dirpath+"solar_13.p", "rb"))
+elif version.parse(pint.__version__) >= version.parse("0.12"):
+    sol = pickle.load(open(dirpath+"solar_12.p", "rb"))
+elif version.parse(pint.__version__) >= version.parse("0.10"):
+    sol = pickle.load(open(dirpath+"solar_10.p", "rb"))
+elif version.parse(pint.__version__) == version.parse("0.9"):
+    sol = pickle.load(open(dirpath+"solar.p", "rb"))
+else:
+    sol = None
+
+# our Miniconda windows test platform can't print unicode
+if sys.platform[:3] != "win" and sol is not None:
     # the code to create solar.p is in ./breakdowns/solartest.py
-    filepath = os.path.dirname(os.path.realpath(__file__)) + os.sep + "solar.p"
-    sol = pickle.load(open(filepath, "rb"))
     bds = Breakdowns(sol)
 
     print("Cost breakdown (as seen in solution tables)")

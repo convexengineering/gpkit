@@ -27,21 +27,6 @@ def get_free_vks(posy, solution):
 
 def get_model_breakdown(solution):
     breakdowns = {"|sensitivity|": 0}
-    for modelname, senss in solution["sensitivities"]["models"].items():
-        senss = abs(senss)  # for those monomial equalities
-        *namespace, name = modelname.split(".")
-        subbd = breakdowns
-        subbd["|sensitivity|"] += senss
-        for parent in namespace:
-            if parent not in subbd:
-                subbd[parent] = {parent: {}}
-            subbd = subbd[parent]
-            if "|sensitivity|" not in subbd:
-                subbd["|sensitivity|"] = 0
-            subbd["|sensitivity|"] += senss
-        subbd[name] = {"|sensitivity|": senss}
-    # print(breakdowns["HyperloopSystem"]["|sensitivity|"])
-    breakdowns = {"|sensitivity|": 0}
     for constraint, senss in solution["sensitivities"]["constraints"].items():
         senss = abs(senss)  # for those monomial
         if senss <= 1e-5:
@@ -133,7 +118,7 @@ def get_breakdowns(basically_fixed_variables, solution):
                 gt, lt = (constraint.left, constraint.right)
         for gtvk in gt.vks:  # remove RelaxPCCP.C
             if (gtvk.name == "C" and gtvk.lineage[0][0] == "RelaxPCCP"
-                    and gtvk not in solution["freevariables"]):
+                    and gtvk not in solution["variables"]):
                 lt, gt = lt.sub({gtvk: 1}), gt.sub({gtvk: 1})
         if len(gt.hmap) > 1:
             continue
@@ -165,7 +150,7 @@ def get_breakdowns(basically_fixed_variables, solution):
                 gt, lt = (constraint.left, constraint.right)
         for gtvk in gt.vks:
             if (gtvk.name == "C" and gtvk.lineage[0][0] == "RelaxPCCP"
-                    and gtvk not in solution["freevariables"]):
+                    and gtvk not in solution["variables"]):
                 lt, gt = lt.sub({gtvk: 1}), gt.sub({gtvk: 1})
         if len(gt.hmap) > 1:
             continue

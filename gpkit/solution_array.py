@@ -444,7 +444,8 @@ class SolutionArray(DictOfLists):
         if svks != ovks:
             return False
         for key in svks:
-            if np.max(abs(cast(np.divide, svars[key], ovars[key]) - 1)) >= reltol:
+            reldiff = np.max(abs(cast(np.divide, svars[key], ovars[key]) - 1))
+            if reldiff >= reltol:
                 return False
         return True
 
