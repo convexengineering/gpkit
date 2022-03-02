@@ -104,7 +104,7 @@ solutions and can be solved with 'Model.solve()'.""")
 
     # pylint: disable=too-many-locals,too-many-branches,too-many-statements
     def localsolve(self, solver=None, *, verbosity=1, x0=None, reltol=1e-4,
-                   iteration_limit=50, **solveargs):
+                   iteration_limit=50, err_on_relax=True, **solveargs):
         """Locally solves a SequentialGeometricProgram and returns the solution.
 
         Arguments
@@ -196,17 +196,21 @@ solutions and can be solved with 'Model.solve()'.""")
             if excess_slack > EPS:
                 msg = ("Final PCCP solution let non-GP constraints slacken by"
                        " %.2g%%." % (100*excess_slack))
-                appendsolwarning(msg, (1 + excess_slack), self.result,
-                                 "Slack Non-GP Constraints")
-                if verbosity > -1:
-                    print(msg +
-                          " Calling .localsolve(pccp_penalty=...) with a higher"
-                          " `pccp_penalty` (it was %.3g this time) will reduce"
-                          " slack if the model is solvable with less. To verify"
-                          " that the slack is needed, generate an SGP with"
-                          " `use_pccp=False` and start it from this model's"
-                          "  solution: e.g. `m.localsolve(use_pccp=False, x0="
-                          "m.solution[\"variables\"])`." % self.pccp_penalty)
+                expl = (msg +
+                        " Calling .localsolve(pccp_penalty=...) with a higher"
+                        " `pccp_penalty` (it was %.3g this time) will reduce"
+                        " slack if the model is solvable with less. To verify"
+                        " that the slack is needed, generate an SGP with"
+                        " `use_pccp=False` and start it from this model's"
+                        "  solution: e.g. `m.localsolve(use_pccp=False, x0="
+                        "m.solution[\"variables\"])`." % self.pccp_penalty)
+                if err_on_relax:
+                    raise Infeasible(expl)
+                else:
+                    appendsolwarning(msg, (1 + excess_slack), self.result,
+                                     "Slack Non-GP Constraints")
+                    if verbosity > -1:
+                        print(expl)
             self.result["cost function"] = self.cost
             del self.result["freevariables"][self.slack.key]  # pylint: disable=no-member
             del self.result["variables"][self.slack.key]  # pylint: disable=no-member
