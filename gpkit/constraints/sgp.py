@@ -206,11 +206,10 @@ solutions and can be solved with 'Model.solve()'.""")
                         "m.solution[\"variables\"])`." % self.pccp_penalty)
                 if err_on_relax:
                     raise Infeasible(expl)
-                else:
-                    appendsolwarning(msg, (1 + excess_slack), self.result,
-                                     "Slack Non-GP Constraints")
-                    if verbosity > -1:
-                        print(expl)
+                appendsolwarning(msg, (1 + excess_slack), self.result,
+                                 "Slack Non-GP Constraints")
+                if verbosity > -1:
+                    print(expl)
             self.result["cost function"] = self.cost
             del self.result["freevariables"][self.slack.key]  # pylint: disable=no-member
             del self.result["variables"][self.slack.key]  # pylint: disable=no-member
