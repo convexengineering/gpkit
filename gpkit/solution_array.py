@@ -57,13 +57,11 @@ class SolSavingEnvironment:
                 self.solarray["sensitivities"].pop("constraints")
 
     def __exit__(self, type_, val, traceback):
-        if not self.constraintstore:
-            pass
-        elif self.saveconstraints:
+        if self.saveconstraints:
             for constraint_attr, store in self.attrstore.items():
                 for constraint, value in store.items():
                     setattr(constraint, constraint_attr, value)
-        else:
+        elif self.constraintstore:
             self.solarray["sensitivities"]["constraints"] = self.constraintstore
 
 def msenss_table(data, _, **kwargs):
