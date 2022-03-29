@@ -41,7 +41,9 @@ class SolSavingEnvironment:
 
 
     def __enter__(self):
-        if self.saveconstraints:
+        if "sensitivities" not in self.solarray:
+            pass
+        elif self.saveconstraints:
             for constraint_attr in ["bounded", "meq_bounded", "vks",
                                     "v_ss", "unsubbed", "varkeys"]:
                 store = {}
@@ -55,7 +57,9 @@ class SolSavingEnvironment:
                 self.solarray["sensitivities"].pop("constraints")
 
     def __exit__(self, type_, val, traceback):
-        if self.saveconstraints:
+        if not self.constraintstore:
+            pass
+        elif self.saveconstraints:
             for constraint_attr, store in self.attrstore.items():
                 for constraint, value in store.items():
                     setattr(constraint, constraint_attr, value)
@@ -772,7 +776,8 @@ class SolutionArray(DictOfLists):
         strs = []
         for table in tables:
             if "breakdown" in table:
-                if len(self) > 1 or not UNICODE_EXPONENTS:
+                if (len(self) > 1 or not UNICODE_EXPONENTS
+                        or "sensitivities" not in self):
                     # no breakdowns for sweeps or no-unicode environments
                     table = table.replace(" breakdown", "")
             if "sensitivities" not in self and ("sensitivities" in table or
