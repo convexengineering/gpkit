@@ -213,15 +213,16 @@ solutions and can be solved with 'Model.solve()'.""")
             self.result["cost function"] = self.cost
             del self.result["freevariables"][self.slack.key]  # pylint: disable=no-member
             del self.result["variables"][self.slack.key]  # pylint: disable=no-member
-            del self.result["sensitivities"]["variables"][self.slack.key]  # pylint: disable=no-member
-            del self.result["sensitivities"]["variablerisk"][self.slack.key]  # pylint: disable=no-member
-            slcon = self.gpconstraints[0]
-            slconsenss = self.result["sensitivities"]["constraints"][slcon]
-            del self.result["sensitivities"]["constraints"][slcon]
-            # TODO: create constraint in RelaxPCCP namespace
-            self.result["sensitivities"]["models"][""] -= slconsenss
-            if not self.result["sensitivities"]["models"][""]:
-                del self.result["sensitivities"]["models"][""]
+            if "sensitivities" in self.result:  # not true for MIGP
+                del self.result["sensitivities"]["variables"][self.slack.key]  # pylint: disable=no-member
+                del self.result["sensitivities"]["variablerisk"][self.slack.key]  # pylint: disable=no-member
+                slcon = self.gpconstraints[0]
+                slconsenss = self.result["sensitivities"]["constraints"][slcon]
+                del self.result["sensitivities"]["constraints"][slcon]
+                # TODO: create constraint in RelaxPCCP namespace
+                self.result["sensitivities"]["models"][""] -= slconsenss
+                if not self.result["sensitivities"]["models"][""]:
+                    del self.result["sensitivities"]["models"][""]
         return self.result
 
     @property
