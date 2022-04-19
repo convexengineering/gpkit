@@ -92,9 +92,9 @@ class NomialArray(ReprMixin, np.ndarray):
 
     def str_without(self, excluded=()):
         "Returns string without certain fields (such as 'lineage')."
-        if self.ast:
+        if "ast" not in excluded and self.ast:
             return self.parse_ast(excluded)
-        if hasattr(self, "key"):
+        if "key" not in excluded and hasattr(self, "key"):
             return self.key.str_without(excluded)  # pylint: disable=no-member
         if not self.shape:
             return try_str_without(self.flatten()[0], excluded)
@@ -133,6 +133,10 @@ class NomialArray(ReprMixin, np.ndarray):
     __eq__ = array_constraint("=", eq)
     __le__ = array_constraint("<=", le)
     __ge__ = array_constraint(">=", ge)
+
+    def inner(self, other):
+        "Returns the array and argument's inner product."
+        return NomialArray(np.inner(self, other))
 
     def outer(self, other):
         "Returns the array and argument's outer product."
