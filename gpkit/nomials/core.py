@@ -40,7 +40,7 @@ class Nomial(NomialData):
         units = "" if "units" in excluded else self.unitstr(" [%s]")
         if hasattr(self, "key"):
             return self.key.str_without(excluded) + units  # pylint: disable=no-member
-        if self.ast:
+        if "ast" not in excluded and self.ast:
             return self.parse_ast(excluded) + units
         mstrs = []
         for exp, c in self.hmap.items():
