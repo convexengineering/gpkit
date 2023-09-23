@@ -3,7 +3,7 @@
 Installation
 ************
 
-1. If you are on Mac or Windows, we recommend installing `Anaconda <http://www.continuum.io/downloads>`_. Alternatively, `install pip and create a virtual environment <https://packaging.python.org/guides/installing-using-pip-and-virtualenv/>`_.
+1. If you are on Mac or Windows, we recommend installing `Anaconda <http://www.continuum.io/downloads>`_. Alternatively, `install pip and create a virtual environment <https://packaging.python.org/en/latest/guides/installing-using-pip-and-virtual-environments/>`_.
 2. (optional) Install the MOSEK 9 solver with ``pip install Mosek``, then a license as described below
 3. (optional) Install the MOSEK 8 solver as described below
 4. Run ``pip install gpkit`` in the appropriate terminal or command prompt.
