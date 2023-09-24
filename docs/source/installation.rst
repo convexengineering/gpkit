@@ -25,13 +25,13 @@ Mac OS X
   - Download `MOSEK 8 <https://www.mosek.com/downloads/>`_, then:
       - Move the ``mosek`` folder to your home directory
       - Follow `these steps for Mac <http://docs.mosek.com/7.0/toolsinstall/Mac_OS_X_installation.html>`_.
-  - Request an `academic license file <http://license.mosek.com/academic>`_ and put it in ``~/mosek/``
+  - If applicable, request an `academic license file <https://www.mosek.com/products/academic-licenses/>`_ and put it in ``~/mosek/``
 
 Linux
   - Download `MOSEK 8 <https://www.mosek.com/downloads/>`_, then:
       - Move the ``mosek`` folder to your home directory
       - Follow `these steps for Linux <http://docs.mosek.com/7.0/toolsinstall/Linux_UNIX_installation_instructions.html>`_.
-  - Request an `academic license file <http://license.mosek.com/academic>`_ and put it in ``~/mosek/``
+  - If applicable, request an `academic license file <https://www.mosek.com/products/academic-licenses/>`_ and put it in ``~/mosek/``
 
 Windows
     - Make sure ``gcc`` is on your system path.
@@ -41,7 +41,7 @@ Windows
         - Run ``mingw-w64`` to add it to your executable path. For step 3 of the install process you'll need to run ``pip install gpkit`` from this prompt.
     - Download `MOSEK 8 <https://www.mosek.com/downloads/>`_, then:
         - Follow `these steps for Windows <http://docs.mosek.com/7.0/toolsinstall/Windows_installation.html>`_.
-    - Request an `academic license file <http://license.mosek.com/academic>`_ and put it in ``C:\Users\(your_username)\mosek\``
+    - If applicable, request an `academic license file <https://www.mosek.com/products/academic-licenses/>`_ and put it in ``C:\Users\(your_username)\mosek\``
 
 Debugging your installation
 ===========================
