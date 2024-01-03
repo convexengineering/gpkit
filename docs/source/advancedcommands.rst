@@ -73,7 +73,7 @@ accepting ``model.substitutions`` (for details, see `Substitutions`_ below).
 
 .. literalinclude:: examples/evaluated_fixed_variables.py
 
-These functions are automatically differentiated with the `ad <https://pypi.org/project/ad/>`_ package to provide more accurate sensitivities. In some cases may require using functions from the ``ad.admath`` instead of their python or numpy equivalents; the `ad documentation <https://pypi.org/project/ad/>`_ contains details on how to do this.
+These functions are automatically differentiated with the `ad <https://pypi.org/project/ad/>`_ package to provide more accurate sensitivities. In some cases this requires functions from ``ad.admath`` instead of their python or numpy equivalents; the `ad documentation <https://pypi.org/project/ad/>`_ details how to do this.
 
 
 Evaluated Free Variables
