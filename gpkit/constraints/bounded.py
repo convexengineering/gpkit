@@ -83,19 +83,19 @@ class Bounded(ConstraintSet):
             c_senss = [result["sensitivities"]["constraints"].get(c, 0)
                        for c in self["variable bounds"][i]]
             if self.lowerbound:
-                bound = "lower bound of %.2g" % self.lowerbound
+                bound = f"lower bound of {self.lowerbound:.2g}"
                 if c_senss[0] >= self.sens_threshold:
                     out["sensitive to " + bound].add(varkey)
                 if np.log(value/self.lowerbound) <= self.logtol_threshold:
                     out["value near " + bound].add(varkey)
             if self.upperbound:
-                bound = "upper bound of %.2g" % self.upperbound
+                bound = f"upper bound of {self.upperbound:.2g}"
                 if c_senss[-1] >= self.sens_threshold:
                     out["sensitive to " + bound].add(varkey)
                 if np.log(self.upperbound/value) <= self.logtol_threshold:
                     out["value near " + bound].add(varkey)
         for bound, vks in out.items():
-            msg = "% 34s: %s" % (bound, ", ".join([str(v) for v in vks]))
-            appendsolwarning(msg, out, result,
+            msg = ", ".join([str(v) for v in vks])
+            appendsolwarning(f"{bound:34}: {msg}", out, result,
                              "Arbitrarily Bounded Variables")
         return out
