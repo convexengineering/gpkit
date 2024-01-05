@@ -51,8 +51,8 @@ def call(cmd):
 
 def diff(filename, diff_dict):
     "Applies a simple diff to a file. Logs."
-    with open(filename, "r") as a:
-        with open(filename+".new", "w") as b:
+    with open(filename, "r", encoding="UTF-8") as a:
+        with open(filename+".new", "w", encoding="UTF-8") as b:
             for line_number, line in enumerate(a):
                 if line[:-1].strip() in diff_dict:
                     newline = diff_dict[line[:-1].strip()]+"\n"
@@ -193,10 +193,10 @@ def build():
     # Write settings
     envpath = "env"
     replacedir(envpath)
-    with open(pathjoin(envpath, "settings"), "w") as f:
+    with open(pathjoin(envpath, "settings"), "w", encoding="UTF-8") as f:
         for setting, value in sorted(settings.items()):
             f.write(f"{setting} : {value}\n")
-    with open(pathjoin(envpath, "build.log"), "w") as f:
+    with open(pathjoin(envpath, "build.log"), "w", encoding="UTF-8") as f:
         f.write(LOGSTR)
 
     os.chdir(start_dir)
