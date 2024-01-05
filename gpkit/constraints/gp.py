@@ -21,6 +21,7 @@ SOLUTION_TOL = {"cvxopt": 1e-3, "mosek_cli": 1e-4, "mosek_conif": 1e-3}
 
 
 class MonoEqualityIndexes:
+    # pylint: disable=too-few-public-methods
     "Class to hold MonoEqualityIndexes"
 
     def __init__(self):
@@ -29,14 +30,15 @@ class MonoEqualityIndexes:
 
 
 def _get_solver(solver, kwargs):
+    # pylint: disable=import-outside-toplevel
     """Get the solverfn and solvername associated with solver"""
     if solver is None:
         from .. import settings
         try:
             solver = settings["default_solver"]
-        except KeyError:
+        except KeyError as err:
             raise ValueError("No default solver was set during build, so"
-                             " solvers must be manually specified.")
+                             " solvers must be manually specified.") from err
     if solver == "cvxopt":
         from ..solvers.cvxopt import optimize
     elif solver == "mosek_cli":
@@ -47,7 +49,7 @@ def _get_solver(solver, kwargs):
     elif hasattr(solver, "__call__"):
         solver, optimize = solver.__name__, solver
     else:
-        raise ValueError("Unknown solver '%s'." % solver)
+        raise ValueError(f"Unknown solver '{solver}'.")
     return solver, optimize
 
 
@@ -117,7 +119,7 @@ class GeometricProgram:
         fulfill_meq_bounds(missingbounds, meq_bounds)
         if missingbounds and err_on_missing_bounds:
             raise UnboundedGP(
-                "\n\n".join("%s has no %s bound%s" % (v, b, x)
+                "\n\n".join(f"{v} has no {b} bound{x}"
                             for (v, b), x in missingbounds.items()))
         return missingbounds
 
@@ -140,9 +142,9 @@ class GeometricProgram:
         self.meq_idxs = MonoEqualityIndexes()
         m_idx = 0
         row, col, data = [], [], []
-        for p_idx, (N_mons, hmap) in enumerate(zip(self.k, self.hmaps)):
-            self.p_idxs.extend([p_idx]*N_mons)
-            self.m_idxs.append(slice(m_idx, m_idx+N_mons))
+        for p_idx, (n_mons, hmap) in enumerate(zip(self.k, self.hmaps)):
+            self.p_idxs.extend([p_idx]*n_mons)
+            self.m_idxs.append(slice(m_idx, m_idx+n_mons))
             if getattr(self.hmaps[p_idx], "from_meq", False):
                 self.meq_idxs.all.add(m_idx)
                 if len(self.meq_idxs.all) > 2*len(self.meq_idxs.first_half):
@@ -167,7 +169,7 @@ class GeometricProgram:
             data.extend(self.exps[i][var] for i in locs)
         self.A = CootMatrix(row, col, data)
 
-    # pylint: disable=too-many-statements, too-many-locals
+    # pylint: disable=too-many-statements, too-many-locals, too-many-branches
     def solve(self, solver=None, *, verbosity=1, gen_result=True, **kwargs):
         """Solves a GeometricProgram and returns the solution.
 
@@ -191,9 +193,9 @@ class GeometricProgram:
         """
         solvername, solverfn = _get_solver(solver, kwargs)
         if verbosity > 0:
-            print("Using solver '%s'" % solvername)
-            print(" for %i free variables" % len(self.varlocs))
-            print("  in %i posynomial inequalities." % len(self.k))
+            print(f"Using solver '{solvername}'")
+            print(f" for {len(self.varlocs)} free variables")
+            print(f"  in {len(self.k)} posynomial inequalities.")
 
         solverargs = DEFAULT_SOLVER_KWARGS.get(solvername, {})
         solverargs.update(kwargs)
@@ -209,8 +211,8 @@ class GeometricProgram:
         except Infeasible as e:
             infeasibility = e
         except InvalidLicense as e:
-            raise InvalidLicense("license for solver \"%s\" is invalid."
-                                 % solvername) from e
+            raise InvalidLicense(
+                f"license for solver \"{solvername}\" is invalid.") from e
         except Exception as e:
             raise UnknownInfeasible("Something unexpected went wrong.") from e
         finally:
@@ -221,7 +223,7 @@ class GeometricProgram:
         solver_out["solver"] = solvername
         solver_out["soltime"] = time() - starttime
         if verbosity > 0:
-            print("Solving took %.3g seconds." % solver_out["soltime"])
+            print(f"Solving took {solver_out['soltime']:.3g} seconds.")
 
         if infeasibility:
             if isinstance(infeasibility, PrimalInfeasible):
@@ -265,8 +267,8 @@ class GeometricProgram:
         # result packing #
         result = self._compile_result(solver_out)  # NOTE: SIDE EFFECTS
         if verbosity > 0:
-            print("Result packing took %.2g%% of solve time." %
-                  ((time() - tic) / soltime * 100))
+            respackpct = (time() - tic) / soltime * 100
+            print(f"Result packing took {respackpct:.2g}% of solve time.")
             tic = time()
         # solution checking #
         initsolwarning(result, "Solution Inconsistency")
@@ -279,10 +281,10 @@ class GeometricProgram:
             if not ("Dual" in msg and not dual_check):
                 appendsolwarning(msg, None, result, "Solution Inconsistency")
                 if verbosity > -4:
-                    print("Solution check warning: %s" % msg)
+                    print(f"Solution check warning: {msg}")
         if verbosity > 0:
-            print("Solution checking took %.2g%% of solve time." %
-                  ((time() - tic) / soltime * 100))
+            solchkpct = (time() - tic) / soltime * 100
+            print(f"Solution checking took {solchkpct:.2g}% of solve time.")
         return result
 
     def _generate_nula(self, solver_out):
@@ -324,18 +326,18 @@ class GeometricProgram:
                  if k in self.choicevaridxs})
             result["warnings"] = {"No Dual Solution": [(\
                 "This model has the discretized choice variables"
-                " %s and hence no dual solution. You can fix those variables"
-                " to their optimal value and get sensitivities to the resulting"
-                " continuous problem by updating your model's substitions with"
-                " `sol[\"choicevariables\"]`."
-                % sorted(self.choicevaridxs.keys()), self.choicevaridxs)]}
+                " {sorted(self.choicevaridxs.keys())} and hence no dual "
+                "solution. You can fix those variables to their optimal value "
+                "and get sensitivities to the resulting continuous problem by "
+                "updating your model's substitions with "
+                "`sol[\"choicevariables\"]`.", self.choicevaridxs)]}
             return SolutionArray(result)
         if self.choicevaridxs:
             result["warnings"] = {"Freed Choice Variables": [(\
                 "This model has the discretized choice variables"
-                " %s, but since the '%s' solver doesn't support discretization"
-                " they were treated as continuous variables."
-                % (sorted(self.choicevaridxs.keys()), solver_out["solver"]),
+                f" {sorted(self.choicevaridxs.keys())}, but since the "
+                f"'{solver_out['solver']}' solver doesn't support "
+                "discretization they were treated as continuous variables.",
                 self.choicevaridxs)]}  # TODO: choicevaridxs seems unnecessary
 
         result["sensitivities"] = {"constraints": {}}
@@ -388,6 +390,7 @@ class GeometricProgram:
         return SolutionArray(result)
 
     def check_solution(self, cost, primal, nu, la, tol, abstol=1e-20):
+        # pylint: disable=too-many-arguments
         """Run checks to mathematically confirm solution solves this GP
 
         Arguments
@@ -413,26 +416,27 @@ class GeometricProgram:
         # check primal sol #
         primal_exp_vals = self.cs * np.exp(A.dot(primal))   # c*e^Ax
         if not almost_equal(primal_exp_vals[self.m_idxs[0]].sum(), cost):
-            raise Infeasible("Primal solution computed cost did not match"
-                             " solver-returned cost: %s vs %s." %
-                             (primal_exp_vals[self.m_idxs[0]].sum(), cost))
+            raise Infeasible(
+                "Primal solution computed cost did not match solver-returned "
+                f"cost: {primal_exp_vals[self.m_idxs[0]].sum()} vs {cost}.")
         for mi in self.m_idxs[1:]:
             if primal_exp_vals[mi].sum() > 1 + tol:
-                raise Infeasible("Primal solution violates constraint: %s is "
-                                 "greater than 1" % primal_exp_vals[mi].sum())
+                raise Infeasible("Primal solution violates constraint: "
+                                 f"{primal_exp_vals[mi].sum()} is more than 1")
         # check dual sol #
         if self.integersolve:
             return
         # note: follows dual formulation in section 3.1 of
         # http://web.mit.edu/~whoburg/www/papers/hoburg_phd_thesis.pdf
-        if not almost_equal(self.nu_by_posy[0].sum(), 1):
+        objnusum = self.nu_by_posy[0].sum()
+        if not almost_equal(objnusum, 1):
             raise Infeasible("Dual variables associated with objective sum"
-                             " to %s, not 1" % self.nu_by_posy[0].sum())
+                             " to {objnusum}, not 1")
         if any(nu < 0):
             minnu = min(nu)
             if minnu < -tol/1000:
                 raise Infeasible("Dual solution has negative entries as"
-                                 " large as %s." % minnu)
+                                 f" large as {minnu}.")
         if any(np.abs(A.T.dot(nu)) > tol):
             raise Infeasible("Dual: sum of nu^T * A did not vanish.")
         b = np.log(self.cs)
@@ -441,8 +445,8 @@ class GeometricProgram:
                 b[mi] - np.log(self.nu_by_posy[i]/la[i]))
             for i, mi in enumerate(self.m_idxs) if la[i])
         if not almost_equal(np.exp(dual_cost), cost):
-            raise Infeasible("Dual cost %s does not match primal cost %s"
-                             % (np.exp(dual_cost), cost))
+            raise Infeasible(f"Dual cost {np.exp(dual_cost)} does not match "
+                             f"primal cost {cost}")
 
 
 def gen_meq_bounds(missingbounds, exps, meq_idxs):  # pylint: disable=too-many-locals,too-many-branches
@@ -500,7 +504,7 @@ def fulfill_meq_bounds(missingbounds, meq_bounds):
                     still_alive = True
                     break
     for (var, bound) in meq_bounds:
-        boundstr = (", but would gain it from any of these sets: ")
+        boundstr = ", but would gain it from any of these sets: "
         for condition in list(meq_bounds[(var, bound)]):
             meq_bounds[(var, bound)].remove(condition)
             newcond = condition.intersection(missingbounds)
