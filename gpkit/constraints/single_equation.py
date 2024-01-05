@@ -13,7 +13,7 @@ class SingleEquationConstraint(ReprMixin):
     def __init__(self, left, oper, right):
         self.left, self.oper, self.right = left, oper, right
 
-    def str_without(self, excluded=("units")):
+    def str_without(self, excluded="units"):
         "String representation without attributes in excluded list"
         leftstr = try_str_without(self.left, excluded)
         rightstr = try_str_without(self.right, excluded)
@@ -25,11 +25,11 @@ class SingleEquationConstraint(ReprMixin):
             oper = self.unicode_opers[self.oper]
         else:
             oper = self.oper
-        return "%s %s %s" % (leftstr, oper, rightstr)
+        return " ".join((leftstr, oper, rightstr))
 
-    def latex(self, excluded=("units")):
+    def latex(self, excluded="units"):
         "Latex representation without attributes in excluded list"
-        return ("%s %s %s" % (
+        return " ".join((
             try_str_without(self.left, excluded, latex=True),
             self.latex_opers[self.oper],
             try_str_without(self.right, excluded, latex=True)))
