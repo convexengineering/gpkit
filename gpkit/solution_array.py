@@ -25,7 +25,7 @@ VALSTR_REPLACES = [
     ("nan%", "nan "),
     ("nan", " - "),
 ]
-
+# pylint: disable=consider-using-f-string  # some would be less readable
 
 class SolSavingEnvironment:
     """Temporarily removes construction/solve attributes from constraints.
@@ -454,6 +454,7 @@ class SolutionArray(DictOfLists):
         return True
 
     # pylint: disable=too-many-locals, too-many-branches, too-many-statements
+    # pylint: disable=too-many-arguments
     def diff(self, other, showvars=None, *,
              constraintsdiff=True, senssdiff=False, sensstol=0.1,
              absdiff=False, abstol=0.1, reldiff=True, reltol=1.0,
@@ -598,13 +599,14 @@ class SolutionArray(DictOfLists):
     def savemat(self, filename="solution.mat", *, showvars=None,
                 excluded="vec"):
         "Saves primal solution as matlab file"
-        from scipy.io import savemat
+        from scipy.io import savemat  # pylint: disable=import-outside-toplevel
         savemat(filename,
                 {name.replace(".", "_"): np.array(self["variables"][key], "f")
                  for name, key in self.varnames(showvars, excluded).items()})
 
     def todataframe(self, showvars=None, excluded="vec"):
         "Returns primal solution as pandas dataframe"
+        # pylint: disable=import-outside-toplevel
         import pandas as pd  # pylint:disable=import-error
         rows = []
         cols = ["Name", "Index", "Value", "Units", "Label",
@@ -787,7 +789,7 @@ class SolutionArray(DictOfLists):
                 cost = self["cost"]  # pylint: disable=unsubscriptable-object
                 if kwargs.get("latex", None):  # cost is not printed for latex
                     continue
-                strs += [f"\nOptimal Cost\n------------"]
+                strs += ["\nOptimal Cost\n------------"]
                 if len(self) > 1:
                     costs = [f"{c:-8.3g}" for c in mag(cost[:4])]
                     strs += [" [ %s %s ]" % ("  ".join(costs),
@@ -820,6 +822,7 @@ class SolutionArray(DictOfLists):
             print("SolutionArray.plot only supports 1-dimensional sweeps")
         if not hasattr(posys, "__len__"):
             posys = [posys]
+        # pylint: disable=import-outside-toplevel
         import matplotlib.pyplot as plt
         from .interactive.plot_sweep import assign_axes
         from . import GPBLU
@@ -834,6 +837,7 @@ class SolutionArray(DictOfLists):
 
 
 # pylint: disable=too-many-branches,too-many-locals,too-many-statements
+# pylint: disable=too-many-arguments
 def var_table(data, title, *, printunits=True, latex=False, rawlines=False,
               varfmt="%s : ", valfmt="%-.4g ", vecfmt="%-8.3g",
               minval=0, sortbyvals=False, hidebelowminval=False,
