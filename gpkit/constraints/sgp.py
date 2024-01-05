@@ -49,6 +49,7 @@ class SequentialGeometricProgram:
     with NamedVariables("RelaxPCCP"):
         slack = Variable("C")
 
+    #pylint: disable=too-many-arguments, too-many-locals
     def __init__(self, cost, model, substitutions,
                  *, use_pccp=True, pccp_penalty=2e2, **kwargs):
         self.cost = cost
@@ -76,12 +77,12 @@ class SequentialGeometricProgram:
                 if not isinstance(cs, PosynomialInequality):
                     cs.as_hmapslt1(substitutions)  # gp-compatible?
                 self.gpconstraints.append(cs)
-            except InvalidGPConstraint:
+            except InvalidGPConstraint as err:
                 if not hasattr(cs, "as_gpconstr"):
-                    raise InvalidSGPConstraint(cs)
+                    raise InvalidSGPConstraint(cs) from err
                 self.sgpconstraints.append(cs)
                 for hmaplt1 in cs.as_gpconstr(x0).as_hmapslt1({}):
-                    constraint = (Posynomial(hmaplt1) <= self.slack)
+                    constraint = Posynomial(hmaplt1) <= self.slack
                     constraint.generated_by = cs
                     self.approxconstraints.append(constraint)
                     self.sgpvks.update(constraint.vks)
@@ -103,6 +104,7 @@ solutions and can be solved with 'Model.solve()'.""")
                 self.a_idxs[self._gp.p_idxs[m_idx]].append(row_idx)
 
     # pylint: disable=too-many-locals,too-many-branches,too-many-statements
+    # pylint: disable=too-many-arguments
     def localsolve(self, solver=None, *, verbosity=1, x0=None, reltol=1e-4,
                    iteration_limit=50, err_on_relax=True, **solveargs):
         """Locally solves a SequentialGeometricProgram and returns the solution.
@@ -139,22 +141,22 @@ solutions and can be solved with 'Model.solve()'.""")
         starttime = time()
         if verbosity > 0:
             print("Starting a sequence of GP solves")
-            print(" for %i free variables" % len(self.sgpvks))
-            print("  in %i locally-GP constraints" % len(self.sgpconstraints))
-            print("  and for %i free variables" % len(self._gp.varlocs))
-            print("       in %i posynomial inequalities." % len(self._gp.k))
+            print(f" for {len(self.sgpvks)} free variables")
+            print(f"  in {len(self.sgpconstraints)} locally-GP constraints")
+            print(f"  and for {len(self._gp.varlocs)} free variables")
+            print(f"       in {len(self._gp.k)} posynomial inequalities.")
         prevcost, cost, rel_improvement = None, None, None
         while rel_improvement is None or rel_improvement > reltol:
             prevcost = cost
             if len(self.gps) > iteration_limit:
                 raise Infeasible(
-                    "Unsolved after %s iterations. Check `m.program.results`;"
-                    " if they're converging, try `.localsolve(...,"
-                    " iteration_limit=NEWLIMIT)`." % len(self.gps))
-            gp = self.gp(x0, cleanx0=(len(self.gps) >= 1))  # clean the first x0
+                    f"Unsolved after {len(self.gps)} iterations. Check "
+                    "`m.program.results`; if they're converging, try "
+                    "`.localsolve(..., iteration_limit=NEWLIMIT)`.")
+            gp = self.gp(x0, cleanx0=len(self.gps) >= 1)  # clean the first x0
             self.gps.append(gp)  # NOTE: SIDE EFFECTS
             if verbosity > 1:
-                print("\nGP Solve %i" % len(self.gps))
+                print(f"\nGP Solve {len(self.gps)}")
             if verbosity > 2:
                 print("===============")
             solver_out = gp.solve(solver, verbosity=verbosity-1,
@@ -169,18 +171,19 @@ solutions and can be solved with 'Model.solve()'.""")
                 vartable = "\n" + vartable.replace("Free", "SGP", 1)
                 print(vartable)
             elif verbosity > 1:
-                print("Solved cost was %.4g." % cost)
+                print(f"Solved cost was {cost:.4g}.")
             if prevcost is None:
                 continue
             rel_improvement = (prevcost - cost)/(prevcost + cost)
             if cost/prevcost >= 1 + 10*EPS:
                 pywarnings.warn(
-                    "SGP not convergent: Cost rose by %.2g%% (%.6g to %.6g) on"
-                    " GP solve %i. Details can be found in `m.program.results`"
-                    " or by solving at a higher verbosity. Note convergence"
-                    " is not guaranteed for models with SignomialEqualities."
-                    % (100*(cost - prevcost)/prevcost,
-                       prevcost, cost, len(self.gps)))
+                        "SGP not convergent: Cost rose by "
+                        f"{100*(cost - prevcost)/prevcost:.2g}% "
+                        f"({prevcost:.6g} to {cost:.6g}) on GP solve "
+                        f"{len(self.gps)}. Details can be found in "
+                        "`m.program.results` or by solving at a higher "
+                        "verbosity. Note convergence is not guaranteed for "
+                        "models with SignomialEqualities.")
                 rel_improvement = cost = None
         # solved successfully!
         self.result = gp.generate_result(solver_out, verbosity=verbosity-3)
@@ -188,22 +191,22 @@ solutions and can be solved with 'Model.solve()'.""")
         if verbosity > 1:
             print()
         if verbosity > 0:
-            print("Solving took %.3g seconds and %i GP solves."
-                  % (self.result["soltime"], len(self.gps)))
+            print(f"Solving took {self.result['soltime']:.3g} seconds and "
+                  f"{len(self.gps)} GP solves.")
         if hasattr(self.slack, "key"):
             initsolwarning(self.result, "Slack Non-GP Constraints")
             excess_slack = self.result["variables"][self.slack.key] - 1  # pylint: disable=no-member
             if excess_slack > EPS:
                 msg = ("Final PCCP solution let non-GP constraints slacken by"
-                       " %.2g%%." % (100*excess_slack))
+                       f" {100*excess_slack:.2g}%.")
                 expl = (msg +
                         " Calling .localsolve(pccp_penalty=...) with a higher"
-                        " `pccp_penalty` (it was %.3g this time) will reduce"
-                        " slack if the model is solvable with less. To verify"
-                        " that the slack is needed, generate an SGP with"
-                        " `use_pccp=False` and start it from this model's"
-                        "  solution: e.g. `m.localsolve(use_pccp=False, x0="
-                        "m.solution[\"variables\"])`." % self.pccp_penalty)
+                        f" `pccp_penalty` (it was {self.pccp_penalty:.3g} this"
+                        " time) will reduce slack if the model is solvable"
+                        "with less. To verify that the slack is needed, "
+                        "generate an SGP with `use_pccp=False` and start it "
+                        "from this model's solution: e.g. `m.localsolve("
+                        "use_pccp=False, x0=m.solution[\"variables\"])`.")
                 if err_on_relax:
                     raise Infeasible(expl)
                 appendsolwarning(msg, (1 + excess_slack), self.result,
