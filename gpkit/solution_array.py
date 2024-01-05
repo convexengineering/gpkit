@@ -176,7 +176,7 @@ def loose_table(self, _, min_senss=1e-5, **kwargs):
     return constraint_table(data, title, **kwargs)
 
 
-# pylint: disable=too-many-branches,too-many-locals,too-many-statements, fixme
+# pylint: disable=too-many-branches,too-many-locals,too-many-statements
 def constraint_table(data, title, sortbymodel=True, showmodels=True, **_):
     "Creates lines for tables where the right side is a constraint."
     # TODO: this should support 1D array inputs from sweeps
@@ -382,7 +382,6 @@ class SolutionArray(DictOfLists):
     table_titles = {"choicevariables": "Choice Variables",
                     "sweepvariables": "Swept Variables",
                     "freevariables": "Free Variables",
-                    # pylint: disable=fixme
                     "constants": "Fixed Variables",  # TODO: change everywhere
                     "variables": "Variables"}
 

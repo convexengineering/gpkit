@@ -138,7 +138,6 @@ class ReprMixin:
                     aststr = f"{left}{chr(8304 + x)}"
             else:
                 aststr = f"{left}^{x}"
-        # pylint: disable=fixme
         elif oper == "prod":  # TODO: only do if it makes a shorter string
             val = parenthesize(strify(values[0], excluded))
             aststr = f"{val}.prod()"

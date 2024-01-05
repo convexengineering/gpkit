@@ -77,7 +77,6 @@ class Nomial(NomialData):
             mstrs.append(mstr)
         return " + ".join(sorted(mstrs)) + units
 
-    # pylint: disable=fixme
     def latex(self, excluded=()):  # TODO: add ast parsing here
         "Latex representation, parsing `excluded` just as .str_without does"
         mstrs = []
