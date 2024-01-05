@@ -82,22 +82,23 @@ def msenss_table(data, _, **kwargs):
         if (msenss < 0.1).all():
             msenss = np.max(msenss)
             if msenss:
+                #pylint: disable=consider-using-f-string
                 msenssstr = "%6s" % ("<1e%i" % max(-3, np.log10(msenss)))
             else:
                 msenssstr = "  =0  "
         else:
             meansenss = round(np.mean(msenss), 1)
-            msenssstr = "%+6.1f" % meansenss
+            msenssstr = f"{meansenss:+6.1f}"
             deltas = msenss - meansenss
             if np.max(np.abs(deltas)) > 0.1:
-                deltastrs = ["%+4.1f" % d if abs(d) >= 0.1 else "  - "
+                deltastrs = [f"{d:+4.1f}" if abs(d) >= 0.1 else "  - "
                              for d in deltas]
-                msenssstr += " + [ %s ]" % "  ".join(deltastrs)
+                msenssstr += f" + [ {'  '.join(deltastrs)} ]"
         if msenssstr == previousmsenssstr:
             msenssstr = " "*len(msenssstr)
         else:
             previousmsenssstr = msenssstr
-        lines.append("%s : %s" % (msenssstr, model))
+        lines.append(f"{msenssstr} : {model}")
     return lines + [""] if len(lines) > 3 else []
 
 
@@ -149,20 +150,20 @@ def tight_table(self, _, ntightconstrs=5, tight_senss=1e-2, **kwargs):
     title = "Most Sensitive Constraints"
     if len(self) > 1:
         title += " (in last sweep)"
-        data = sorted(((-float("%+6.2g" % abs(s[-1])), str(c)),
-                       "%+6.2g" % abs(s[-1]), id(c), c)
+        data = sorted(((-float(f"{abs(s[-1]):+6.2g}"), str(c)),
+                       f"{abs(s[-1]):+6.2g}", id(c), c)
                       for c, s in self["sensitivities"]["constraints"].items()
                       if s[-1] >= tight_senss)[:ntightconstrs]
     else:
-        data = sorted(((-float("%+6.2g" % abs(s)), str(c)),
-                       "%+6.2g" % abs(s), id(c), c)
+        data = sorted(((-float(f"{abs(s):+6.2g}"), str(c)),
+                       f"{abs(s):+6.2g}", id(c), c)
                       for c, s in self["sensitivities"]["constraints"].items()
                       if s >= tight_senss)[:ntightconstrs]
     return constraint_table(data, title, **kwargs)
 
 def loose_table(self, _, min_senss=1e-5, **kwargs):
     "Return constraint tightness lines"
-    title = "Insensitive Constraints |below %+g|" % min_senss
+    title = f"Insensitive Constraints |below {min_senss:+g}|"
     if len(self) > 1:
         title += " (in last sweep)"
         data = [(0, "", id(c), c)
@@ -175,7 +176,7 @@ def loose_table(self, _, min_senss=1e-5, **kwargs):
     return constraint_table(data, title, **kwargs)
 
 
-# pylint: disable=too-many-branches,too-many-locals,too-many-statements
+# pylint: disable=too-many-branches,too-many-locals,too-many-statements, fixme
 def constraint_table(data, title, sortbymodel=True, showmodels=True, **_):
     "Creates lines for tables where the right side is a constraint."
     # TODO: this should support 1D array inputs from sweeps
@@ -252,7 +253,7 @@ def warnings_table(self, _, **kwargs):
         else:
             all_equal = True
             for data in data_vec[1:]:
-                eq_i = (data == data_vec[0])
+                eq_i = data == data_vec[0]
                 if hasattr(eq_i, "all"):
                     eq_i = eq_i.all()
                 if not eq_i:
@@ -266,10 +267,10 @@ def warnings_table(self, _, **kwargs):
             data = sorted(data, key=lambda l: l[0])  # sort by msg
             title = wtype
             if len(data_vec) > 1:
-                title += " in sweep %i" % i
+                title += f" in sweep {i}"
             if wtype == "Unexpectedly Tight Constraints" and data[0][1]:
                 data = [(-int(1e5*relax_sensitivity),
-                         "%+6.2g" % relax_sensitivity, id(c), c)
+                         f"{relax_sensitivity:+6.2g}", id(c), c)
                         for _, (relax_sensitivity, c) in data]
                 lines += constraint_table(data, title, **kwargs)
             elif wtype == "Unexpectedly Loose Constraints" and data[0][1]:
@@ -381,6 +382,7 @@ class SolutionArray(DictOfLists):
     table_titles = {"choicevariables": "Choice Variables",
                     "sweepvariables": "Swept Variables",
                     "freevariables": "Free Variables",
+                    # pylint: disable=fixme
                     "constants": "Fixed Variables",  # TODO: change everywhere
                     "variables": "Variables"}
 
@@ -515,19 +517,19 @@ class SolutionArray(DictOfLists):
         if svks - ovks:
             lines.append("Variable(s) of this solution"
                          " which are not in the argument:")
-            lines.append("\n".join("  %s" % key for key in svks - ovks))
+            lines.append("\n".join(f"  {key}" for key in svks - ovks))
             lines.append("")
         if ovks - svks:
             lines.append("Variable(s) of the argument"
                          " which are not in this solution:")
-            lines.append("\n".join("  %s" % key for key in ovks - svks))
+            lines.append("\n".join(f"  {key}" for key in ovks - svks))
             lines.append("")
         sharedvks = svks.intersection(ovks)
         if reldiff:
             rel_diff = {vk: 100*(cast(np.divide, svars[vk], ovars[vk]) - 1)
                         for vk in sharedvks}
             lines += var_table(rel_diff,
-                               "Relative Differences |above %g%%|" % reltol,
+                               f"Relative Differences |above {reltol:g}%|",
                                valfmt="%+.1f%%  ", vecfmt="%+6.1f%% ",
                                minval=reltol, printunits=False, **tableargs)
             if lines[-2][:10] == "-"*10:  # nothing larger than reltol
@@ -536,7 +538,7 @@ class SolutionArray(DictOfLists):
         if absdiff:
             abs_diff = {vk: cast(sub, svars[vk], ovars[vk]) for vk in sharedvks}
             lines += var_table(abs_diff,
-                               "Absolute Differences |above %g|" % abstol,
+                               f"Absolute Differences |above {abstol:g}|",
                                valfmt="%+.2g", vecfmt="%+8.2g",
                                minval=abstol, **tableargs)
             if lines[-2][:10] == "-"*10:  # nothing larger than abstol
@@ -548,7 +550,7 @@ class SolutionArray(DictOfLists):
             senss_delta = {vk: cast(sub, ssenss[vk], osenss[vk])
                            for vk in svks.intersection(ovks)}
             lines += var_table(senss_delta,
-                               "Sensitivity Differences |above %g|" % sensstol,
+                               f"Sensitivity Differences |above {sensstol:g}|",
                                valfmt="%+-.2f  ", vecfmt="%+-6.2f",
                                minval=sensstol, printunits=False, **tableargs)
             if lines[-2][:10] == "-"*10:  # nothing larger than sensstol
@@ -594,14 +596,14 @@ class SolutionArray(DictOfLists):
         return names
 
     def savemat(self, filename="solution.mat", *, showvars=None,
-                excluded=("vec")):
+                excluded="vec"):
         "Saves primal solution as matlab file"
         from scipy.io import savemat
         savemat(filename,
                 {name.replace(".", "_"): np.array(self["variables"][key], "f")
                  for name, key in self.varnames(showvars, excluded).items()})
 
-    def todataframe(self, showvars=None, excluded=("vec")):
+    def todataframe(self, showvars=None, excluded="vec"):
         "Returns primal solution as pandas dataframe"
         import pandas as pd  # pylint:disable=import-error
         rows = []
@@ -629,7 +631,7 @@ class SolutionArray(DictOfLists):
                     key.unitstr(),
                     key.label or "",
                     key.lineage or "",
-                    ", ".join("%s=%s" % (k, v) for (k, v) in key.descr.items()
+                    ", ".join(f"{k}={v}" for (k, v) in key.descr.items()
                               if k not in ["name", "units", "unitrepr",
                                            "idx", "shape", "veckey",
                                            "value", "vecfn",
@@ -710,7 +712,7 @@ class SolutionArray(DictOfLists):
             return self["variables"](posy)
 
         if not hasattr(posy, "sub"):
-            raise ValueError("no variable '%s' found in the solution" % posy)
+            raise ValueError(f"no variable '{posy}' found in the solution")
 
         if len(self) > 1:
             return NomialArray([self.atindex(i).subinto(posy)
@@ -785,13 +787,13 @@ class SolutionArray(DictOfLists):
                 cost = self["cost"]  # pylint: disable=unsubscriptable-object
                 if kwargs.get("latex", None):  # cost is not printed for latex
                     continue
-                strs += ["\n%s\n------------" % "Optimal Cost"]
+                strs += [f"\nOptimal Cost\n------------"]
                 if len(self) > 1:
-                    costs = ["%-8.3g" % c for c in mag(cost[:4])]
+                    costs = [f"{c:-8.3g}" for c in mag(cost[:4])]
                     strs += [" [ %s %s ]" % ("  ".join(costs),
                                              "..." if len(self) > 4 else "")]
                 else:
-                    strs += [" %-.4g" % mag(cost)]
+                    strs += [f" {mag(cost):-.4g}"]
                 strs[-1] += unitstr(cost, into=" [%s]", dimless="")
                 strs += [""]
             elif table in TABLEFNS:
@@ -884,7 +886,7 @@ def var_table(data, title, *, printunits=True, latex=False, rawlines=False,
             decorated.append((msenss, model, b, (varfmt % s), i, k, v))
         else:  # for consistent sorting, add small offset to negative vals
             val = np.nanmean(np.abs(v)) - (1e-9 if np.nanmean(v) < 0 else 0)
-            sort = (float("%.4g" % -val), k.name)
+            sort = (float(f"{-val:.4g}"), k.name)
             decorated.append((model, sort, msenss, b, (varfmt % s), i, k, v))
     if not decorated and skipifempty:
         return []
@@ -951,17 +953,17 @@ def var_table(data, title, *, printunits=True, latex=False, rawlines=False,
         else:
             varstr = "$%s$" % varstr.replace(" : ", "")
             if latex == 1:  # normal results table
-                lines.append([varstr, valstr, "$%s$" % var.latex_unitstr(),
+                lines.append([varstr, valstr, f"${var.latex_unitstr()}$",
                               label])
                 coltitles = [title, "Value", "Units", "Description"]
             elif latex == 2:  # no values
-                lines.append([varstr, "$%s$" % var.latex_unitstr(), label])
+                lines.append([varstr, f"${var.latex_unitstr()}$", label])
                 coltitles = [title, "Units", "Description"]
             elif latex == 3:  # no description
-                lines.append([varstr, valstr, "$%s$" % var.latex_unitstr()])
+                lines.append([varstr, valstr, f"${var.latex_unitstr()}$"])
                 coltitles = [title, "Value", "Units"]
             else:
-                raise ValueError("Unexpected latex option, %s." % latex)
+                raise ValueError(f"Unexpected latex option, {latex}.")
     if rawlines:
         return lines
     if not latex:
