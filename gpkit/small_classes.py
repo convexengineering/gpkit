@@ -3,7 +3,7 @@ from operator import xor
 from functools import reduce
 import numpy as np
 from scipy.sparse import csr_matrix
-from .units import Quantity, qty  # pylint: disable=unused-import
+from .units import Quantity
 
 Strings = (str,)
 Numbers = (int, float, np.number, Quantity)
