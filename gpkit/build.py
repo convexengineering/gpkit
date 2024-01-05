@@ -4,6 +4,9 @@ import sys
 import shutil
 import subprocess
 
+# pylint: disable=import-outside-toplevel  # imports in try/catch statements
+# pylint: disable=too-few-public-methods
+
 LOGSTR = ""
 settings = {}
 
