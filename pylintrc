@@ -10,4 +10,4 @@ good-names=A
 
 # Regular expression which should only match function or class names that do
 # not require a docstring.
-no-docstring-rgx=^_|^test_
+no-docstring-rgx=^_|^test_|^setup$
