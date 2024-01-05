@@ -23,6 +23,7 @@ class Loose(ConstraintSet):
         for constraint in self.flat():
             c_senss = result["sensitivities"]["constraints"].get(constraint, 0)
             if c_senss >= self.senstol:
+                # pylint: disable=consider-using-f-string
                 cstr = ("Constraint [ %.100s... %s %.100s... )"
                         % (constraint.left, constraint.oper, constraint.right))
                 msg = ("%s is not loose: it has a sensitivity of %+.4g."
