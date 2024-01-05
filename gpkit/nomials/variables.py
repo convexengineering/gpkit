@@ -144,8 +144,8 @@ class ArrayVariable(NomialArray):  # pylint: disable=too-many-locals
                 elif not hasattr(values, "shape"):
                     values = np.array(values)
                 if values.shape != shape:
-                    raise ValueError("value's shape %s is different from the"
-                                     " vector's %s." % (values.shape, shape))
+                    raise ValueError(f"value's shape {values.shape} is "
+                                     f"different from the vector's {shape}.")
 
         veckeydescr = descr.copy()
         addmodelstodescr(veckeydescr)
