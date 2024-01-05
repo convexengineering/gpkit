@@ -39,8 +39,9 @@ class TestSolutionArray(unittest.TestCase):
             self.assertAlmostEqual(solx[i], 2.5, places=4)
 
     def test_subinto(self):
-        Nsweep = 20
-        Pvals = np.linspace(13, 24, Nsweep)
+        # pylint: disable=invalid-name
+        nsweep = 20
+        Pvals = np.linspace(13, 24, nsweep)
         H_max = Variable("H_max", 10, "m", "Length")
         A_min = Variable("A_min", 10, "m^2", "Area")
         P_max = Variable("P", Pvals, "m", "Perimeter")
@@ -52,7 +53,7 @@ class TestSolutionArray(unittest.TestCase):
                    P_max >= 2*H + 2*W])
         sol = m.solve(verbosity=0)
         Psol = sol.subinto(P_max)
-        self.assertEqual(len(Psol), Nsweep)
+        self.assertEqual(len(Psol), nsweep)
         self.assertAlmostEqual(0*gpkit.ureg.m,
                                np.max(np.abs(Pvals*gpkit.ureg.m - Psol)))
         self.assertAlmostEqual(0*gpkit.ureg.m,
@@ -67,13 +68,13 @@ class TestSolutionArray(unittest.TestCase):
 
     def test_units_sub(self):
         # issue 809
-        T = Variable("T", "N", "thrust")
-        Tmin = Variable("T_{min}", "N", "minimum thrust")
-        m = Model(T, [T >= Tmin])
+        t = Variable("T", "N", "thrust")
+        t_min = Variable("T_{min}", "N", "minimum thrust")
+        m = Model(t, [t >= t_min])
         tminsub = 1000 * gpkit.ureg.lbf
-        m.substitutions.update({Tmin: tminsub})
+        m.substitutions.update({t_min: tminsub})
         sol = m.solve(verbosity=0)
-        self.assertAlmostEqual(sol(Tmin), tminsub)
+        self.assertAlmostEqual(sol(t_min), tminsub)
         self.assertFalse(
             "1000N" in
             sol.table().replace(" ", "").replace("[", "").replace("]", ""))
@@ -110,11 +111,11 @@ class TestResultsTable(unittest.TestCase):
         x = Variable("x")
         y = Variable("y")
         with SignomialsEnabled():
-            sig = (y + 6*x >= 13 + x**2)
+            sig = y + 6*x >= 13 + x**2
         m = Model(y, [sig])
         sol = m.localsolve(verbosity=0)
-        self.assertTrue(all([isinstance(gp.result.table(), Strings)
-                             for gp in m.program.gps]))
+        self.assertTrue(all((isinstance(gp.result.table(), Strings)
+                             for gp in m.program.gps)))
         self.assertAlmostEqual(sol["cost"]/4.0, 1.0, 5)
         self.assertAlmostEqual(sol("x")/3.0, 1.0, 3)
 
