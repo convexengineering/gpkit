@@ -9,6 +9,8 @@ from ..tools.autosweep import autosweep_1d
 from ..exceptions import InvalidGPConstraint
 from .. import NamedVariables
 from ..tools.docstring import expected_unbounded
+from .relax import ConstantsRelaxed, ConstraintsRelaxed
+from .bounded import Bounded
 from .set import add_meq_bounds
 from ..exceptions import Infeasible
 
@@ -40,6 +42,7 @@ class Model(CostedConstraintSet):
     solution = None
 
     def __init__(self, cost=None, constraints=None, *args, **kwargs):
+        #pylint: disable=keyword-arg-before-vararg
         setup_vars = None
         substitutions = kwargs.pop("substitutions", None)  # reserved keyword
         if hasattr(self, "setup"):
@@ -81,7 +84,7 @@ class Model(CostedConstraintSet):
 
     def verify_docstring(self):  # pylint:disable=too-many-locals,too-many-branches,too-many-statements
         "Verifies docstring bounds are sufficient but not excessive."
-        err = "while verifying %s:\n" % self.__class__.__name__
+        err = f"while verifying {self.__class__.__name__}:\n"
         bounded, meq_bounded = self.bounded.copy(), self.meq_bounded.copy()
         doc = self.__class__.__doc__
         exp_unbounds = expected_unbounded(self, doc)
@@ -93,8 +96,8 @@ class Model(CostedConstraintSet):
                     continue
                 badvks = ", ".join(str(v) for v in badvks)
                 badvks += (" were" if len(badvks) > 1 else " was")
-                err += ("    %s %s-bounded; expected %s-unbounded"
-                        "\n" % (badvks, direction, direction))
+                err += (f"    {badvks} {direction}-bounded; expected "
+                        f"{direction}-unbounded\n")
             raise ValueError(err)
         bounded.update(exp_unbounds)  # if not, treat expected as bounded
         add_meq_bounds(bounded, meq_bounded)  # and add more meqs
@@ -117,15 +120,16 @@ class Model(CostedConstraintSet):
                         if (key, bound) not in self.missingbounds:
                             self.missingbounds[(key, bound)] = ""
         if self.missingbounds:  # anything unbounded? err!
-            boundstrs = "\n".join("  %s has no %s bound%s" % (v, b, x)
+            boundstrs = "\n".join(f"  {v} has no {b} bound{x}"
                                   for (v, b), x
                                   in self.missingbounds.items())
-            docstring = ("To fix this add the following to %s's"
-                         " docstring (you may not need it all):"
-                         " \n" % self.__class__.__name__)
+            docstring = ("To fix this add the following to "
+                         f"{self.__class__.__name__}'s docstring "
+                         "(you may not need it all):\n")
             for direction in ["upper", "lower"]:
                 mb = [k for (k, b) in self.missingbounds if b == direction]
                 if mb:
+                    #pylint: disable=consider-using-f-string
                     docstring += """
 %s Unbounded
 ---------------
@@ -165,8 +169,6 @@ class Model(CostedConstraintSet):
 
     def debug(self, solver=None, verbosity=1, **solveargs):
         "Attempts to diagnose infeasible models."
-        from .relax import ConstantsRelaxed, ConstraintsRelaxed
-        from .bounded import Bounded
 
         sol = None
         solveargs["solver"] = solver
