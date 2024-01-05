@@ -1,5 +1,6 @@
 """Non-application-specific convenience methods for GPkit"""
 import numpy as np
+# pylint: disable=invalid-name
 
 
 def te_exp_minus1(posy, nterm):
