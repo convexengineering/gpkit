@@ -154,7 +154,7 @@ class CVXopt(SolverBackend):
             import cvxopt  # pylint: disable=unused-import
             return "in the default PYTHONPATH"
         except ImportError:
-            pass
+            return ""
 
 
 class MosekConif(SolverBackend):
@@ -168,9 +168,9 @@ class MosekConif(SolverBackend):
             import mosek
             if hasattr(mosek.conetype, "pexp"):
                 return "in the default PYTHONPATH"
-            return None
+            return ""
         except ImportError:
-            pass
+            return ""
 
 def build():
     "Builds GPkit"
