@@ -642,7 +642,7 @@ class SolutionArray(DictOfLists):
 
     def savetxt(self, filename="solution.txt", *, printmodel=True, **kwargs):
         "Saves solution table as a text file"
-        with open(filename, "w") as f:
+        with open(filename, "w", encoding="UTF-8") as f:
             if printmodel:
                 f.write(self.modelstr + "\n")
             f.write(self.table(**kwargs))
@@ -664,7 +664,7 @@ class SolutionArray(DictOfLists):
             else:
                 val = {"v": v, "u": k.unitstr()}
             sol_dict[key] = val
-        with open(filename, "w") as f:
+        with open(filename, "w", encoding="UTF-8") as f:
             json.dump(sol_dict, f)
 
     def savecsv(self, filename="solution.csv", *, valcols=5, showvars=None):
@@ -690,7 +690,7 @@ class SolutionArray(DictOfLists):
         lines = var_table(data, "", rawlines=True, maxcolumns=valcols,
                           tables=("cost", "sweepvariables", "freevariables",
                                   "constants", "sensitivities"))
-        with open(filename, "w") as f:
+        with open(filename, "w", encoding="UTF-8") as f:
             f.write("Model Name,Variable Name,Value(s)" + ","*valcols
                     + "Units,Description\n")
             for line in lines:
