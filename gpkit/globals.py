@@ -9,7 +9,7 @@ def load_settings(path=None, trybuild=True):
     if path is None:
         path = os.sep.join([os.path.dirname(__file__), "env", "settings"])
     try:  # if the settings file already exists, read it
-        with open(path) as settingsfile:
+        with open(path, encoding="UTF-8") as settingsfile:
             lines = [line[:-1].split(" : ") for line in settingsfile
                      if len(line.split(" : ")) == 2]
             settings_ = {name: value.split(", ") for name, value in lines}
@@ -50,9 +50,10 @@ settings = load_settings()
 
 class SignomialsEnabledMeta(type):
     "Metaclass to implement falsiness for SignomialsEnabled"
-    def __bool__(cls): return cls._true  # pylint: disable=multiple-statements
+    def __bool__(cls):
+        return cls._true
 
-class SignomialsEnabled(metaclass=SignomialsEnabledMeta):  # pylint: disable=no-init
+class SignomialsEnabled(metaclass=SignomialsEnabledMeta):
     """Class to put up and tear down signomial support in an instance of GPkit.
 
     Example
@@ -65,9 +66,10 @@ class SignomialsEnabled(metaclass=SignomialsEnabledMeta):  # pylint: disable=no-
         >>> gpkit.Model(x, constraints).localsolve()
     """
     _true = False  # default signomial permissions
-    # pylint: disable=multiple-statements
-    def __enter__(self): SignomialsEnabled._true = True
-    def __exit__(self, type_, val, traceback): SignomialsEnabled._true = False
+    def __enter__(self):
+        SignomialsEnabled._true = True
+    def __exit__(self, type_, val, traceback):
+        SignomialsEnabled._true = False
 
 
 class Vectorize:
