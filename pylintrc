@@ -7,3 +7,7 @@ disable=fixme
 
 # Good variable names which should always be accepted, separated by a comma
 good-names=A
+
+# Regular expression which should only match function or class names that do
+# not require a docstring.
+no-docstring-rgx=^_|^test_
