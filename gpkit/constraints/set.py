@@ -4,9 +4,11 @@ from collections import defaultdict, OrderedDict
 from itertools import chain
 import numpy as np
 from ..keydict import KeySet, KeyDict
+from ..nomials import NomialArray
 from ..small_scripts import try_str_without
 from ..repr_conventions import ReprMixin
 from .single_equation import SingleEquationConstraint
+from ..nomials import Variable
 
 
 def add_meq_bounds(bounded, meq_bounded):  #TODO: collapse with GP version?
@@ -137,9 +139,8 @@ class ConstraintSet(list, ReprMixin):  # pylint: disable=too-many-instance-attri
         if veckey is None or any(v.key.veckey != veckey for v in othervars):
             if not othervars:
                 return firstvar
-            raise ValueError("multiple variables are called '%s'; show them"
-                             " with `.variables_byname('%s')`" % (key, key))
-        from ..nomials import NomialArray  # all one vector!
+            raise ValueError(f"multiple variables are called '{key}'; show them"
+                             f" with `.variables_byname('{key}')`")
         arr = NomialArray(np.full(veckey.shape, np.nan, dtype="object"))
         for v in variables:
             arr[v.key.idx] = v
@@ -148,7 +149,6 @@ class ConstraintSet(list, ReprMixin):  # pylint: disable=too-many-instance-attri
 
     def variables_byname(self, key):
         "Get all variables with a given name"
-        from ..nomials import Variable
         return sorted([Variable(k) for k in self.varkeys[key]],
                       key=_sort_by_name_and_idx)
 
