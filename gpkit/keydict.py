@@ -73,15 +73,16 @@ class KeyMap:
         if otherkeys:
             if all(k.veckey == newkey.veckey for k in otherkeys):
                 return newkey.veckey, None
-            raise ValueError("%s refers to multiple keys in this substitutions"
-                             " KeyDict. Use `.variables_byname(%s)` to see all"
-                             " of them." % (key, key))
+            raise ValueError(f"{key} refers to multiple keys in this "
+                             "substitutions KeyDict. Use "
+                             f"`.variables_byname({key})` to see all of them.")
         if self.collapse_arrays and newkey.idx:
             return newkey.veckey, newkey.idx
         return newkey, None
 
-    def __contains__(self, key):  # pylint:disable=too-many-return-statements
+    def __contains__(self, key):
         "In a winding way, figures out if a key is in the KeyDict"
+        # pylint: disable=no-member
         try:
             key, idx = self.parse_and_index(key)
         except KeyError:
@@ -90,19 +91,19 @@ class KeyMap:
             return True
         if not isinstance(key, Hashable):
             return False
-        if super().__contains__(key):  # pylint: disable=no-member
+        if super().__contains__(key):
             if idx:
                 try:
-                    val = super().__getitem__(key)[idx]  # pylint: disable=no-member
+                    val = super().__getitem__(key)[idx]
                     return True if is_sweepvar(val) else not isnan(val).any()
-                except TypeError:
-                    raise TypeError("%s has an idx, but its value in this"
-                                    " KeyDict is the scalar %s."
-                                    % (key, super().__getitem__(key)))  # pylint: disable=no-member
-                except IndexError:
-                    raise IndexError("key %s with idx %s is out of bounds"
-                                     " for value %s" %
-                                     (key, idx, super().__getitem__(key)))  # pylint: disable=no-member
+                except TypeError as err:
+                    val = super().__getitem__(key)
+                    raise TypeError(f"{key} has an idx, but its value in this"
+                                    " KeyDict is the scalar {val}.") from err
+                except IndexError as err:
+                    val = super().__getitem__(key)
+                    raise IndexError(f"key {key} with idx {idx} is out of "
+                                     " bounds for value {val}") from err
         return key in self.keymap
 
     def update_keymap(self):
