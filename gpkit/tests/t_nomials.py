@@ -49,10 +49,10 @@ class TestMonomial(unittest.TestCase):
         # can create nameless Variables
         x1 = Variable()
         x2 = Variable()
-        V = Variable("V")
+        v = Variable("V")
         vel = Variable("V")
         self.assertNotEqual(x1, x2)
-        self.assertEqual(V, vel)
+        self.assertEqual(v, vel)
 
         # test label kwarg
         x = Variable("x", label="dummy variable")
@@ -66,7 +66,7 @@ class TestMonomial(unittest.TestCase):
         x = Variable("x")
         y = Variable("y")
         m = 5*x**2/y
-        r = m.__repr__()
+        r = repr(m)
         self.assertEqual(type(r), str)
         if sys.platform[:3] != "win":
             self.assertEqual(repr(m), "gpkit.Monomial(5·x²/y)")
@@ -80,9 +80,9 @@ class TestMonomial(unittest.TestCase):
 
     def test_str_with_units(self):
         "Make sure __str__() works when units are involved"
-        S = Variable("S", units="m^2")
+        s = Variable("S", units="m^2")
         rho = Variable("rho", units="kg/m^3")
-        x = rho*S
+        x = rho*s
         xstr = x.str_without()
         self.assertEqual(type(xstr), str)
         self.assertTrue("S" in xstr and "rho" in xstr)
@@ -403,7 +403,7 @@ class TestPosynomial(unittest.TestCase):
         # test with units
         d = Variable("d", units="ft")
         h = Variable("h", units="ft")
-        p = (d*h**2 + h*d**2)
+        p = d*h**2 + h*d**2
         m = p.mono_lower_bound({d: 1, h: 1})
         self.assertEqual(m, 2*(d*h)**1.5)
 
