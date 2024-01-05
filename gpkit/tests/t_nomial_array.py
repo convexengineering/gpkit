@@ -57,6 +57,7 @@ class TestNomialArray(unittest.TestCase):
         # division with monomials
         p2 = NomialArray([x_0/m, x_1/m, x_2/m]).T
         self.assertEqual(x/m, p2)
+        # pylint: disable=no-member
         self.assertIsInstance(v.str_without(), str)
         self.assertIsInstance(v.latex(), str)
         self.assertIsInstance(p.str_without(), str)
@@ -84,7 +85,7 @@ class TestNomialArray(unittest.TestCase):
     def test_units(self):
         # inspired by gpkit issue #106
         c = VectorVariable(5, "c", "m", "Local Chord")
-        constraints = (c == 1*gpkit.units.m)
+        constraints = c == 1*gpkit.units.m
         self.assertEqual(len(constraints), 5)
         # test an array with inconsistent units
         with pywarnings.catch_warnings():  # skip the UnitStrippedWarning
