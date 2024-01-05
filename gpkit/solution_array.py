@@ -492,7 +492,8 @@ class SolutionArray(DictOfLists):
             if other[-4:] == ".pgz":
                 other = SolutionArray.decompress_file(other)
             else:
-                other = pickle.load(open(other, "rb"))
+                with open(other, "rb") as f:
+                    other = pickle.load(f)
         svars, ovars = self["variables"], other["variables"]
         lines = ["Solution Diff",
                  "=============",
@@ -567,8 +568,9 @@ class SolutionArray(DictOfLists):
         >>> import pickle
         >>> pickle.load(open("solution.pkl"))
         """
-        with SolSavingEnvironment(self, saveconstraints):
-            pickle.dump(self, open(filename, "wb"), **pickleargs)
+        with open(filename, "wb") as f:
+            with SolSavingEnvironment(self, saveconstraints):
+                pickle.dump(self, f, **pickleargs)
 
     def save_compressed(self, filename="solution.pgz",
                         *, saveconstraints=True, **cpickleargs):
