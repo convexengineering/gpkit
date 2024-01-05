@@ -583,11 +583,11 @@ class SignomialInequality(ScalarSingleEquationConstraint):
         siglt0, = self.unsubbed
         siglt0 = siglt0.sub(substitutions, require_positive=False)
         posy, negy = siglt0.posy_negy()
-        if posy is 0:  # pylint: disable=literal-comparison
+        if not posy:  # posy is 0
             print(f"Warning: SignomialConstraint {self} became the tautological"
                   f" constraint 0 <= {negy} after substitution.")
             return []
-        if negy is 0:  # pylint: disable=literal-comparison
+        if not negy:  # negy is 0
             raise ValueError(f"{self} became the infeasible constraint {posy} "
                              "<= 0 after substitution.")
         if hasattr(negy, "cs") and len(negy.cs) > 1:
