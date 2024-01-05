@@ -196,10 +196,10 @@ class ConstraintSet(list, ReprMixin):  # pylint: disable=too-many-instance-attri
     def __repr__(self):
         "Returns namespaced string."
         if not self:
-            return "<gpkit.%s object>" % self.__class__.__name__
-        return ("<gpkit.%s object containing %i top-level constraint(s)"
-                " and %i variable(s)>" % (self.__class__.__name__,
-                                          len(self), len(self.varkeys)))
+            return f"<gpkit.{self.__class__.__name__} object>"
+        return (f"<gpkit.{self.__class__.__name__} object containing "
+                f"{len(self)} top-level constraint(s) and "
+                f"{len(self.varkeys)} variable(s)>")
 
     def set_necessarylineage(self, clear=False):  # pylint: disable=too-many-branches
         "Returns the set of contained varkeys whose names are not unique"
@@ -314,7 +314,7 @@ def recursively_line(iterable, excluded):
                 lines.append("")
             lines.append(name if not num else name + str(num))
         elif "constraint names" not in excluded and i in named_constraints:
-            lines.append("\"%s\":" % named_constraints[i])
+            lines.append(f"\"{named_constraints[i]}\":")
             clines = ["  " + line for line in clines]  # named constraint indent
         lines.extend(clines)
     return lines
@@ -345,15 +345,15 @@ class ConstraintSetView:
         otherwise, raise an error.
         """
         if not hasattr(self.constraintset, attr):
-            raise AttributeError("the underlying object lacks `.%s`." % attr)
+            raise AttributeError(f"the underlying object lacks `.{attr}`.")
 
         value = getattr(self.constraintset, attr)
         if isinstance(value, ConstraintSet):
             return ConstraintSetView(value, self.index)
         if not hasattr(value, "shape"):
-            raise ValueError("attribute %s with value %s did not have"
-                             " a shape, so ConstraintSetView cannot"
-                             " return an indexed view." % (attr, value))
+            raise ValueError(
+                f"attribute {attr} with value {value} did not have a shape, "
+                "so ConstraintSetView cannot return an indexed view.")
         index = self.index
         newdims = len(value.shape) - len(self.index)
         if newdims > 0:  # indexes are put last to match Vectorize
@@ -369,10 +369,10 @@ def badelement(cns, i, constraint, cause=""):
     if len(cns) == 1:
         loc = "the only constraint"
     elif i == 0:
-        loc = "at the start, before %s" % cns[i+1]
+        loc = f"at the start, before {cns[i+1]}"
     elif i == len(cns) - 1:
-        loc = "at the end, after %s" % cns[i-1]
+        loc = f"at the end, after {cns[i-1]}"
     else:
-        loc = "between %s and %s" % (cns[i-1], cns[i+1])
-    return ValueError("Invalid ConstraintSet element '%s' %s was %s.%s"
-                      % (repr(constraint), type(constraint), loc, cause))
+        loc = f"between {cns[i-1]} and {cns[i+1]}"
+    return ValueError(f"Invalid ConstraintSet element '{constraint!r}' "
+                      f"{type(constraint)} was {loc}.{cause}")
