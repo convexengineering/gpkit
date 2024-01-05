@@ -140,12 +140,12 @@ class TestConstraint(unittest.TestCase):
         "Test Constraint initialization by operator overloading"
         x = Variable('x')
         y = Variable('y')
-        c = (y >= 1 + x**2)
+        c = y >= 1 + x**2
         self.assertEqual(c.as_hmapslt1({}), [(1/y + x**2/y).hmap])
         self.assertEqual(c.left, y)
         self.assertEqual(c.right, 1 + x**2)
         # same constraint, switched operator direction
-        c2 = (1 + x**2 <= y)  # same as c
+        c2 = 1 + x**2 <= y  # same as c
         self.assertEqual(c2.as_hmapslt1({}), c.as_hmapslt1({}))
 
     def test_sub_tol(self):
@@ -176,7 +176,7 @@ class TestMonomialEquality(unittest.TestCase):
         y = Variable('y')
         mono = y**2/x
         # operator overloading
-        mec = (x == y**2)
+        mec = x == y**2
         # __init__
         mec2 = MonomialEquality(x, y**2)
         self.assertTrue(mono.hmap in mec.as_hmapslt1({}))
@@ -195,10 +195,10 @@ class TestMonomialEquality(unittest.TestCase):
 
     def test_inheritance(self):
         "Make sure MonomialEquality inherits from the right things"
-        F = Variable('F')
+        force = Variable('F')
         m = Variable('m')
         a = Variable('a')
-        mec = (F == m*a)
+        mec = force == m*a
         self.assertTrue(isinstance(mec, MonomialEquality))
 
     def test_non_monomial(self):
@@ -215,7 +215,7 @@ class TestMonomialEquality(unittest.TestCase):
         "Test that MonomialEquality.__str__ returns a string"
         x = Variable('x')
         y = Variable('y')
-        mec = (x == y)
+        mec = x == y
         self.assertEqual(type(mec.str_without()), str)
 
     def test_united_dimensionless(self):
@@ -277,12 +277,12 @@ class TestSignomialInequality(unittest.TestCase):
 
     def test_init(self):
         "Test initialization and types"
-        D = Variable('D', units="N")
-        x1, x2, x3 = (Variable("x_%s" % i, units="N") for i in range(3))
+        drag = Variable('D', units="N")
+        x1, x2, x3 = (Variable(f"x_{i}", units="N") for i in range(3))
         with self.assertRaises(TypeError):
-            sc = (D >= x1 + x2 - x3)
+            sc = drag >= x1 + x2 - x3
         with SignomialsEnabled():
-            sc = (D >= x1 + x2 - x3)
+            sc = drag >= x1 + x2 - x3
         self.assertTrue(isinstance(sc, SignomialInequality))
         self.assertFalse(isinstance(sc, Posynomial))
 
@@ -290,7 +290,7 @@ class TestSignomialInequality(unittest.TestCase):
         x = Variable("x")
         y = Variable("y")
         with SignomialsEnabled():
-            sc = (x + y >= x*y)
+            sc = x + y >= x*y
         # make sure that the error type doesn't change on our users
         with self.assertRaises(InvalidGPConstraint):
             _ = sc.as_hmapslt1({})
@@ -327,7 +327,7 @@ class TestLoose(unittest.TestCase):
         x_min = Variable('x_min', 1)
         y_min = Variable('y_min', 2)
         with SignomialsEnabled():
-            sig_constraint = (x + y >= 3.5)
+            sig_constraint = x + y >= 3.5
         m = Model(x*y, [Loose([x >= y]),
                         x >= x_min, y >= y_min, sig_constraint])
         sol = m.localsolve(verbosity=0)
@@ -359,7 +359,7 @@ class TestTight(unittest.TestCase):
         x = Variable('x')
         y = Variable('y')
         with SignomialsEnabled():
-            sig_constraint = (x + y >= 0.1)
+            sig_constraint = x + y >= 0.1
         m = Model(x*y, [Tight([x >= y]),
                         x >= 2, y >= 1, sig_constraint])
         sol = m.localsolve(verbosity=0)
