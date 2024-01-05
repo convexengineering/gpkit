@@ -84,14 +84,14 @@ class TestTools(unittest.TestCase):
                       [1, 2.144, 4, 5.799, 8], 1e-3)
 
     def test_dual_objective(self):
-        L = Variable("L")
-        W = Variable("W")
-        eqns = [L >= 1, W >= 1,
-                L*W == 10]
-        N = 4
-        ws = Variable("w_{CO}", ("sweep", np.linspace(1/N, 1-1/N, N)), "-")
+        l = Variable("l")
+        w = Variable("w")
+        eqns = [l >= 1, w >= 1,
+                l*w == 10]
+        n = 4
+        ws = Variable("w_{CO}", ("sweep", np.linspace(1/n, 1-1/n, n)), "-")
         w_s = Variable("v_{CO}", lambda c: 1-c[ws], "-")
-        obj = ws*(L+W) + w_s*(W**-1 * L**-3)
+        obj = ws*(l+w) + w_s*(w**-1 * l**-3)
         m = Model(obj, eqns)
         sol = m.solve(verbosity=0)
         a = sol["cost"]
@@ -120,8 +120,8 @@ class TestTools(unittest.TestCase):
         self.assertEqual(te_secant(x, 1), 1 + x**2/2)
         a = te_secant(x, 2)
         b = 1 + x**2/2 + 5*x**4/24
-        self.assertTrue(all([abs(val) <= 1e-10
-                             for val in (a.hmap - b.hmap).values()]))  # pylint:disable=no-member
+        self.assertTrue(all((abs(val) <= 1e-10
+                             for val in (a.hmap - b.hmap).values())))  # pylint:disable=no-member
         self.assertEqual(te_secant(x, 0), 1)
         # make sure x was not modified
         self.assertEqual(x, Variable('x'))
