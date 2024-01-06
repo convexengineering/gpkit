@@ -109,7 +109,7 @@ def treemap(model, itemize="variables", sizebycount=False):
         parents.append(parent)
         sizes.append(count)
 
-    for parent in parents:
+    for parent in parents:  # pylint: disable=modified-iterating-list
         if parent not in modelnames:
             modelnames.append(parent)
             if "." in parent:
@@ -118,7 +118,7 @@ def treemap(model, itemize="variables", sizebycount=False):
                 grandparent = "Model"
             else:
                 grandparent = ""
-            parents.append(grandparent)
+            parents.append(grandparent)  # TODO: this seems dangeroud
             sizes.append(0)
 
     fig = go.Figure(go.Treemap(
