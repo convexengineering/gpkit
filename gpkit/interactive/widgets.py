@@ -1,4 +1,5 @@
 "Interactive GPkit widgets for iPython notebook"
+#pylint: disable=import-error
 import ipywidgets as widgets
 from traitlets import link
 from .plot_sweep import plot_1dsweepgrid
@@ -7,7 +8,7 @@ from ..small_classes import Numbers
 from ..exceptions import InvalidGPConstraint
 
 
-# pylint: disable=too-many-locals, import-error
+# pylint: disable=too-many-locals
 def modelinteract(model, fns_of_sol, ranges=None, **solvekwargs):
     """Easy model interaction in IPython / Jupyter
 

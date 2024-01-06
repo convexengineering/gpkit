@@ -70,7 +70,7 @@ def plot_1dsweepgrid(model, sweeps, posys, origsol=None, tol=0.01, **solveargs):
 
     nposy, nsweep = len(posys), len(sweeps)
     f, axes = plt.subplots(nposy, nsweep, sharex='col', sharey='row',
-                           figsize=(4+2*S, 4+2*nposy))
+                           figsize=(4+2*nsweep, 4+2*nposy))
     plt.subplots_adjust(hspace=0.15)
 
     for i, (swept, swept_over) in enumerate(sweeps.items()):

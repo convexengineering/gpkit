@@ -1,5 +1,6 @@
 "implements Sankey"
-# pylint: disable=import-error, consider-using-f-string
+# pylint: disable=import-error,consider-using-f-string
+# pylint: disable=duplicate-code,cyclic-import
 import os
 import re
 from collections import defaultdict
