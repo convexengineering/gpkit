@@ -1,4 +1,5 @@
 "implements Sankey"
+# pylint: disable=import-error, consider-using-f-string
 import os
 import re
 from collections import defaultdict
@@ -89,7 +90,7 @@ class Sankey:
             total_sens += abs_var_sens
         return total_sens
 
-    # pylint: disable=too-many-branches
+    # pylint: disable=too-many-branches, too-many-arguments
     def link(self, cset, target, vk, *, labeled=False, subarray=False):
         "adds links of a given constraint set to self.links"
         total_sens = 0
@@ -143,12 +144,12 @@ class Sankey:
                 if not function(s, t, v):
                     del links[(s, t)]
 
-    # pylint: disable=too-many-locals
+    # pylint: disable=too-many-locals, too-many-arguments
     def diagram(self, variable=None, varlabel=None, *, minsenss=0, maxlinks=20,
                 top=0, bottom=0, left=230, right=140, width=1000, height=400,
                 showconstraints=True):
         "creates links and an ipython widget to show them"
-        margins = dict(top=top, bottom=bottom, left=left, right=right)
+        margins = {"top": top, "bottom": bottom, "left": left, "right": right}
         self.minsenss = minsenss
         self.maxlinks = maxlinks
         self.showconstraints = showconstraints
