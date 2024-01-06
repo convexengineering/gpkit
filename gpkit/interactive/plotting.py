@@ -109,7 +109,8 @@ def treemap(model, itemize="variables", sizebycount=False):
         parents.append(parent)
         sizes.append(count)
 
-    for parent in parents:  # pylint: disable=modified-iterating-list
+    for parent in parents:
+        # pylint: disable=modified-iterating-list
         if parent not in modelnames:
             modelnames.append(parent)
             if "." in parent:
