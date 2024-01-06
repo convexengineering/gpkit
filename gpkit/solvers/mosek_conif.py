@@ -1,12 +1,13 @@
 """Implements the GPkit interface to MOSEK (version >= 9)
    through python-based Optimizer API"""
 import numpy as np
-import mosek
+import mosek  # pylint: disable=import-error
 from ..exceptions import (UnknownInfeasible, InvalidLicense,
                           PrimalInfeasible, DualInfeasible)
 
 def optimize(*, c, A, k, p_idxs, **kwargs):
     # pylint: disable=too-many-locals,too-many-statements,too-many-branches
+    # pylint: disable=invalid-name
     """
     Definitions
     -----------
