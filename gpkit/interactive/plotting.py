@@ -54,9 +54,9 @@ def plot_convergence(model):
 
     it = np.array([])
     cost = np.array([])
-    for n in range(len(model.program.gps)):
+    for n, gp in enumerate(model.program.gps):
         try:
-            cost = np.append(cost, model.program.gps[n].result['cost'])
+            cost = np.append(cost, gp.result['cost'])
             it = np.append(it, n+1)
         except TypeError:
             pass
