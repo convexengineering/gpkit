@@ -1,12 +1,13 @@
 "Interactive GPkit widgets for iPython notebook"
 import ipywidgets as widgets
 from traitlets import link
+from .plot_sweep import plot_1dsweepgrid
 from ..small_scripts import is_sweepvar
 from ..small_classes import Numbers
 from ..exceptions import InvalidGPConstraint
 
 
-# pylint: disable=too-many-locals
+# pylint: disable=too-many-locals, import-error
 def modelinteract(model, fns_of_sol, ranges=None, **solvekwargs):
     """Easy model interaction in IPython / Jupyter
 
@@ -53,6 +54,7 @@ def modelinteract(model, fns_of_sol, ranges=None, **solvekwargs):
                 model.substitutions.update({k: v})
             vmin, vmax = v/2.0, v*2.0
             if is_sweepvar(v):
+                # pylint: disable=nested-min-max
                 vmin = min(vmin, min(sweep))
                 vmax = max(vmax, min(sweep))
             if ranges and ranges[k]:
@@ -86,7 +88,7 @@ def modelinteract(model, fns_of_sol, ranges=None, **solvekwargs):
             for fn in fns_of_sol:
                 fn(sol)
         except RuntimeWarning as e:
-            print("RuntimeWarning:", str(e).split("\n")[0])
+            print("RuntimeWarning:", str(e).split("\n", maxsplit=1))
             print("\n> Running model.debug()")
             model.debug()
 
@@ -148,13 +150,12 @@ def modelcontrolpanel(model, showvars=(), fns_of_sol=None, **solvekwargs):
     for sliderbox in sliderboxes:
         settings.append(create_settings(sliderbox))
     sweep = widgets.Checkbox(value=False, width="3ex")
-    label = ("Plot top sliders against: (separate with two spaces)")
+    label = "Plot top sliders against: (separate with two spaces)"
     boxlabel = widgets.Label(value=label, width="200ex")
     y_axes = widgets.Text(value="none", width="20ex")
 
     def append_plotfn():
         "Creates and adds plotfn to fn_of_sols"
-        from .plot_sweep import plot_1dsweepgrid
         yvars = [model.cost]
         for varname in y_axes.value.split("  "):  # pylint: disable=no-member
             varname = varname.strip()
