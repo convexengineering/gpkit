@@ -7,13 +7,13 @@ def assign_axes(var, posys, axes):
     "Assigns axes to posys, creating and formatting if necessary"
     if not hasattr(posys, "__iter__"):
         posys = [posys]
-    N = len(posys)
+    n = len(posys)
     if axes is None:
-        _, axes = plt.subplots(N, 1, sharex="col", figsize=(4.5, 3+1.5*N))
-        if N == 1:
+        _, axes = plt.subplots(n, 1, sharex="col", figsize=(4.5, 3+1.5*n))
+        if n == 1:
             axes = [axes]
         format_and_label_axes(var, posys, axes)
-    elif N == 1 and not hasattr(axes, "__len__"):
+    elif n == 1 and not hasattr(axes, "__len__"):
         axes = [axes]
     return posys, axes
 
@@ -23,8 +23,9 @@ def format_and_label_axes(var, posys, axes, ylabel=True):
     for posy, ax in zip(posys, axes):
         if ylabel:
             if hasattr(posy, "key"):
+                ustr = posy.key.unitstr(dimless="-")
                 ylabel = (posy.key.descr.get("label", posy.key.name)
-                          + " [%s]" % posy.key.unitstr(dimless="-"))
+                          + f" [{ustr}]")
             else:
                 ylabel = str(posy)
             ax.set_ylabel(ylabel)
@@ -41,8 +42,9 @@ def format_and_label_axes(var, posys, axes, ylabel=True):
             i.set_linewidth(0.6)
             i.set_color("0.6")
             i.set_linestyle("dotted")
+    ustr = var.key.unitstr(dimless="-")
     xlabel = (var.key.descr.get("label", var.key.name)
-              + " [%s]" % var.key.unitstr(dimless="-"))
+              + f" [{ustr}]")
     ax.set_xlabel(xlabel)  # pylint: disable=undefined-loop-variable
     plt.locator_params(nbins=4)
     plt.subplots_adjust(wspace=0.15)
@@ -66,9 +68,9 @@ def plot_1dsweepgrid(model, sweeps, posys, origsol=None, tol=0.01, **solveargs):
     if not hasattr(posys, "__iter__"):
         posys = [posys]
 
-    N, S = len(posys), len(sweeps)
-    f, axes = plt.subplots(N, S, sharex='col', sharey='row',
-                           figsize=(4+2*S, 4+2*N))
+    nposy, nsweep = len(posys), len(sweeps)
+    f, axes = plt.subplots(nposy, nsweep, sharex='col', sharey='row',
+                           figsize=(4+2*nsweep, 4+2*nposy))
     plt.subplots_adjust(hspace=0.15)
 
     for i, (swept, swept_over) in enumerate(sweeps.items()):
@@ -77,12 +79,12 @@ def plot_1dsweepgrid(model, sweeps, posys, origsol=None, tol=0.01, **solveargs):
         else:
             sol = model.sweep({swept: swept_over}, **solveargs)
 
-        if len(sweeps) == 1:
-            if len(posys) == 1:
+        if nsweep == 1:
+            if nposy == 1:
                 subaxes = [axes]
             else:
                 subaxes = axes
-        elif len(posys) == 1:
+        elif nposy == 1:
             subaxes = [axes[i]]
         else:
             subaxes = axes[:, i]
@@ -91,7 +93,7 @@ def plot_1dsweepgrid(model, sweeps, posys, origsol=None, tol=0.01, **solveargs):
         if origsubs:
             for posy, ax in zip(posys, subaxes):
                 ax.plot(origsubs[swept], origsol(posy), "ko", markersize=4)
-        format_and_label_axes(swept, posys, subaxes, ylabel=(i == 0))
+        format_and_label_axes(swept, posys, subaxes, ylabel=bool(i == 0))
         model.substitutions.update(origsubs)
 
     return f, axes

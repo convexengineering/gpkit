@@ -54,9 +54,9 @@ def plot_convergence(model):
 
     it = np.array([])
     cost = np.array([])
-    for n in range(len(model.program.gps)):
+    for n, gp in enumerate(model.program.gps):
         try:
-            cost = np.append(cost, model.program.gps[n].result['cost'])
+            cost = np.append(cost, gp.result['cost'])
             it = np.append(it, n+1)
         except TypeError:
             pass
@@ -110,6 +110,7 @@ def treemap(model, itemize="variables", sizebycount=False):
         sizes.append(count)
 
     for parent in parents:
+        # pylint: disable=modified-iterating-list
         if parent not in modelnames:
             modelnames.append(parent)
             if "." in parent:
@@ -118,7 +119,7 @@ def treemap(model, itemize="variables", sizebycount=False):
                 grandparent = "Model"
             else:
                 grandparent = ""
-            parents.append(grandparent)
+            parents.append(grandparent)  # TODO: this seems dangeroud
             sizes.append(0)
 
     fig = go.Figure(go.Treemap(

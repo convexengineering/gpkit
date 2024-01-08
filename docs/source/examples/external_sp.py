@@ -1,7 +1,7 @@
 "Can be found in gpkit/docs/source/examples/external_sp.py"
 import numpy as np
-from gpkit import Variable, Model
 from external_constraint import ExternalConstraint
+from gpkit import Variable, Model
 
 x = Variable("x")
 y = Variable("y")

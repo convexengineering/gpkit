@@ -4,6 +4,7 @@ from ..nomials import Variable, VectorVariable, parse_subs, NomialArray
 from ..keydict import KeyDict
 from .. import NamedVariables, SignomialsEnabled
 from ..small_scripts import appendsolwarning, initsolwarning, mag
+# pylint: disable=consider-using-f-string
 
 
 class ConstraintsRelaxedEqually(ConstraintSet):

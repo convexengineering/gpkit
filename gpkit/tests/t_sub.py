@@ -87,7 +87,7 @@ class TestNomialSubs(unittest.TestCase):
         y = Variable('y', units="N")
         a = Variable('a')
         with SignomialsEnabled():
-            sc = (a*x + (1 - a)*y - D)
+            sc = a*x + (1 - a)*y - D
             subbed = sc.sub({a: 0.1})
             self.assertEqual(subbed, 0.1*x + 0.9*y - D)
             self.assertTrue(isinstance(subbed, Signomial))
@@ -111,6 +111,7 @@ class TestModelSubs(unittest.TestCase):
         if gpkit.units:
             x = Variable("x", 1, "cm")
             y = Variable("y", 1)
+            # pylint: disable=no-member  # for .c below
             self.assertEqual(x.sub({x: 1*gpkit.units.m}).c.magnitude, 100)
             # NOTE: uncomment the below if requiring Quantity substitutions
             # self.assertRaises(ValueError, x.sub, x, 1)

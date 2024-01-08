@@ -7,35 +7,35 @@ from ..repr_conventions import MUL, UNICODE_EXPONENTS
 def nomial_latex_helper(c, pos_vars, neg_vars):
     """Combines (varlatex, exponent) tuples,
     separated by positive vs negative exponent, into a single latex string."""
-    pvarstrs = ['%s^{%.2g}' % (varl, x) if "%.2g" % x != "1" else varl
+    pvarstrs = [f'{varl}^{{{x:.2g}}}' if f"{x:.2g}" != "1" else varl
                 for (varl, x) in pos_vars]
-    nvarstrs = ['%s^{%.2g}' % (varl, -x) if "%.2g" % -x != "1" else varl
+    nvarstrs = [f'{varl}^{{{-x:.2g}}}' if f"{-x:.2g}" != "1" else varl
                 for (varl, x) in neg_vars]
     pvarstr = " ".join(sorted(pvarstrs))
     nvarstr = " ".join(sorted(nvarstrs))
-    cstr = "%.2g" % c
+    cstr = f"{c:.2g}"
     if pos_vars and cstr in ["1", "-1"]:
         cstr = cstr[:-1]
     else:
-        cstr = "%.4g" % c
+        cstr = f"{c:.4g}"
         if "e" in cstr:  # use exponential notation
             idx = cstr.index("e")
-            cstr = "%s \\times 10^{%i}" % (cstr[:idx], int(cstr[idx+1:]))
+            cstr = f"{cstr[:idx]} \\times 10^{int(cstr[idx+1:])}"
 
     if pos_vars and neg_vars:
-        return "%s\\frac{%s}{%s}" % (cstr, pvarstr, nvarstr)
+        return f"{cstr}\\frac{{{pvarstr}}}{{{nvarstr}}}"
     if neg_vars and not pos_vars:
-        return "\\frac{%s}{%s}" % (cstr, nvarstr)
+        return f"\\frac{{{cstr}}}{{{nvarstr}}}"
     if pos_vars:
-        return "%s%s" % (cstr, pvarstr)
-    return "%s" % cstr
+        return f"{cstr}{pvarstr}"
+    return f"{cstr}"
 
 
 class Nomial(NomialData):
     "Shared non-mathematical properties of all nomials"
     sub = None
 
-    def str_without(self, excluded=()):
+    def str_without(self, excluded=()):  # pylint: disable=too-many-branches
         "String representation, excluding fields ('units', varkey attributes)"
         units = "" if "units" in excluded else self.unitstr(" [%s]")
         if hasattr(self, "key"):
@@ -62,10 +62,10 @@ class Nomial(NomialData):
                     elif x in (4, 5, 6, 7, 8, 9):
                         varstr += chr(8304+x)
                 elif x != 1:
-                    varstr += "^%.2g" % x
+                    varstr += f"^{x:.2g}"
                 varstrlist.append(varstr)
             numerator_strings = pvarstrs
-            cstr = "%.3g" % c
+            cstr = f"{c:.3g}"
             if cstr == "-1":
                 cstr = "-"
             if numerator_strings and cstr == "1":

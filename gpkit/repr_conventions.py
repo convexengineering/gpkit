@@ -22,7 +22,7 @@ def lineagestr(lineage, modelnums=True):
     "Returns properly formatted lineage string"
     if not isinstance(lineage, tuple):
         lineage = getattr(lineage, "lineage", None)
-    return ".".join(["%s%i" % (name, num) if (num and modelnums) else name
+    return ".".join([f"{name}{num}" if (num and modelnums) else name
                      for name, num in lineage]) if lineage else ""
 
 
@@ -56,13 +56,13 @@ def strify(val, excluded):
         if np.pi/12 < val < 100*np.pi and abs(12*val/np.pi % 1) <= 1e-2:
             # val is in bounds and a clean multiple of PI!
             if val > 3.1:                            # product of PI
-                val = "%.3g%s" % (val/np.pi, PI_STR)
-                if val == "1%s" % PI_STR:
+                val = f"{val/np.pi:.3g}{PI_STR}"
+                if val == f"1{PI_STR}":
                     val = PI_STR
             else:                                   # division of PI
-                val = "(%s/%.3g)" % (PI_STR, np.pi/val)
+                val = f"({PI_STR}/{np.pi/val:.3g})"
         else:
-            val = "%.3g" % val
+            val = f"{val:.3g}"
         if isqty:
             val += unitstr(units, " [%s]")
     else:
@@ -76,7 +76,7 @@ def parenthesize(string, addi=True, mult=True):
     bare_addi = (" + " in parensless or " - " in parensless)
     bare_mult = ("·" in parensless or "/" in parensless)
     if parensless and (addi and bare_addi) or (mult and bare_mult):
-        return "(%s)" % string
+        return f"({string})"
     return string
 
 
@@ -102,9 +102,9 @@ class ReprMixin:
             left = strify(values[0], excluded)
             right = strify(values[1], excluded)
             if right[0] == "-":
-                aststr = "%s - %s" % (left, right[1:])
+                aststr = f"{left} - {right[1:]}"
             else:
-                aststr = "%s + %s" % (left, right)
+                aststr = f"{left} + {right}"
         elif oper == "mul":
             left = parenthesize(strify(values[0], excluded), mult=False)
             right = parenthesize(strify(values[1], excluded), mult=False)
@@ -113,16 +113,17 @@ class ReprMixin:
             elif right == "1":
                 aststr = left
             else:
-                aststr = "%s%s%s" % (left, MUL, right)
+                aststr = f"{left}{MUL}{right}"
         elif oper == "div":
             left = parenthesize(strify(values[0], excluded), mult=False)
             right = parenthesize(strify(values[1], excluded))
             if right == "1":
                 aststr = left
             else:
-                aststr = "%s/%s" % (left, right)
+                aststr = f"{left}/{right}"
         elif oper == "neg":
-            aststr = "-%s" % parenthesize(strify(values, excluded), mult=False)
+            val = parenthesize(strify(values, excluded), mult=False)
+            aststr = f"-{val}"
         elif oper == "pow":
             left = parenthesize(strify(values[0], excluded))
             x = values[1]
@@ -132,15 +133,17 @@ class ReprMixin:
                   and int(x) == x and 2 <= x <= 9):
                 x = int(x)
                 if x in (2, 3):
-                    aststr = "%s%s" % (left, chr(176+x))
+                    aststr = f"{left}{chr(176 + x)}"
                 elif x in (4, 5, 6, 7, 8, 9):
-                    aststr = "%s%s" % (left, chr(8304+x))
+                    aststr = f"{left}{chr(8304 + x)}"
             else:
-                aststr = "%s^%s" % (left, x)
+                aststr = f"{left}^{x}"
         elif oper == "prod":  # TODO: only do if it makes a shorter string
-            aststr = "%s.prod()" % parenthesize(strify(values[0], excluded))
+            val = parenthesize(strify(values[0], excluded))
+            aststr = f"{val}.prod()"
         elif oper == "sum":  # TODO: only do if it makes a shorter string
-            aststr = "%s.sum()" % parenthesize(strify(values[0], excluded))
+            val = parenthesize(strify(values[0], excluded))
+            aststr = f"{val}.sum()"
         elif oper == "index":  # TODO: label vectorization idxs
             left = parenthesize(strify(values[0], excluded))
             idx = values[1]
@@ -153,17 +156,17 @@ class ReprMixin:
                         start = el.start or ""
                         stop = (el.stop if el.stop and el.stop < sys.maxsize
                                 else "")
-                        step = ":%s" % el.step if el.step is not None else ""
-                        elstrs.append("%s:%s%s" % (start, stop, step))
+                        step = f":{el.step}" if el.step is not None else ""
+                        elstrs.append(f"{start}:{stop}{step}")
                     elif isinstance(el, Numbers):
-                        elstrs.append("%s" % el)
+                        elstrs.append(str(el))
                 idx = ",".join(elstrs)
             elif isinstance(idx, slice):
                 start = idx.start or ""
                 stop = idx.stop if idx.stop and idx.stop < 1e6 else ""
-                step = ":%s" % idx.step if idx.step is not None else ""
-                idx = "%s:%s%s" % (start, stop, step)
-            aststr = "%s[%s]" % (left, idx)
+                step = f":{idx.step}" if idx.step is not None else ""
+                idx = f"{start}:{stop}{step}"
+            aststr = f"{left}[{idx}]"
         else:
             raise ValueError(oper)
         self.cached_strs[excluded] = aststr
@@ -171,7 +174,7 @@ class ReprMixin:
 
     def __repr__(self):
         "Returns namespaced string."
-        return "gpkit.%s(%s)" % (self.__class__.__name__, self)
+        return f"gpkit.{self.__class__.__name__}({self})"
 
     def __str__(self):
         "Returns default string."

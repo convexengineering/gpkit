@@ -1,6 +1,7 @@
 """Tests for GP and SP classes"""
 import unittest
 import sys
+from io import StringIO
 import numpy as np
 from gpkit import (Model, settings, VectorVariable, Variable,
                    SignomialsEnabled, ArrayVariable, SignomialEquality)
@@ -413,7 +414,6 @@ class TestSP(unittest.TestCase):
         y = Variable("y", 1)
         z = Variable("z", 4)
 
-        from io import StringIO
         old_stdout = sys.stdout
         sys.stdout = stringout = StringIO()
 
@@ -433,18 +433,16 @@ class TestSP(unittest.TestCase):
 
         sys.stdout = old_stdout
         self.assertEqual(stringout.getvalue(), (
-            "Warning: SignomialConstraint %s became the tautological"
+            f"Warning: SignomialConstraint {m1[0]} became the tautological"
             " constraint 0 <= 3 + x after substitution.\n"
-            "Warning: SignomialConstraint %s became the tautological"
-            " constraint 0 <= 3 + x after substitution.\n"
-            % (str(m1[0]), str(m1[0]))))
+            f"Warning: SignomialConstraint {m1[0]} became the tautological"
+            " constraint 0 <= 3 + x after substitution.\n"))
 
     def test_tautological(self):
         x = Variable("x")
         y = Variable("y")
         z = Variable("z")
 
-        from io import StringIO
         old_stdout = sys.stdout
         sys.stdout = stringout = StringIO()
 
@@ -458,11 +456,10 @@ class TestSP(unittest.TestCase):
 
         sys.stdout = old_stdout
         self.assertEqual(stringout.getvalue(), (
-            "Warning: SignomialConstraint %s became the tautological"
+            f"Warning: SignomialConstraint {m1[0]} became the tautological"
             " constraint 0 <= 1 + x after substitution.\n"
-            "Warning: SignomialConstraint %s became the tautological"
-            " constraint 0 <= 1 + x after substitution.\n"
-            % (str(m1[0]), str(m2[0]))))
+            f"Warning: SignomialConstraint {m2[0]} became the tautological"
+            " constraint 0 <= 1 + x after substitution.\n"))
 
     def test_impossible(self):
         x = Variable("x")

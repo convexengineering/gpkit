@@ -3,7 +3,7 @@ from collections import defaultdict
 import numpy as np
 from .core import Nomial
 from .array import NomialArray
-from .. import units
+from .. import units, NamedVariables
 from ..constraints import SingleEquationConstraint
 from ..globals import SignomialsEnabled
 from ..small_classes import Numbers
@@ -116,8 +116,8 @@ class Signomial(Nomial):
         x0, _, _ = parse_subs(self.vks, x0)  # use only varkey keys
         psub = self.hmap.sub(x0, self.vks, parsedsubs=True)
         if EMPTY_HV not in psub or len(psub) > 1:
-            raise ValueError("Variables %s remained after substituting x0=%s"
-                             " into %s" % (psub, x0, self))
+            raise ValueError(f"Variables {psub} remained after substituting "
+                             f"x0={x0} into {self}")
         c0, = psub.values()
         c, exp = c0, HashVector()
         for vk in self.vks:
@@ -129,14 +129,14 @@ class Signomial(Nomial):
                 exp[vk] = e
             try:
                 c /= val**e
-            except OverflowError:
+            except OverflowError as exc:
                 raise OverflowError(
-                    "While approximating the variable %s with a local value of"
-                    " %s, %s/(%s**%s) overflowed. Try reducing the variable's"
-                    " value by changing its unit prefix, or specify x0 values"
-                    " for any free variables it's multiplied or divided by in"
-                    " the posynomial %s whose expected value is far from 1."
-                    % (vk, val, c, val, e, self))
+                    f"While approximating the variable {vk} with a local value"
+                    f" of {val}, {c}/({val}**{e}) overflowed. Try reducing the"
+                    " variable's value by changing its unit prefix, or specify "
+                    "x0 values for any free variables it's multiplied or "
+                    f"divided by in the posynomial {self} whose expected value"
+                    " is far from 1.") from exc
         hmap = NomialMap({exp: c})
         hmap.units = self.units
         return Monomial(hmap)
@@ -337,7 +337,7 @@ class Monomial(Posynomial):
             try:  # if both are monomials, return a constraint
                 return MonomialEquality(self, other)
             except (DimensionalityError, ValueError) as e:
-                print("Infeasible monomial equality: %s" % e)
+                print(f"Infeasible monomial equality: {e}")
                 return False
         return super().__eq__(other)
 
@@ -376,7 +376,6 @@ class ScalarSingleEquationConstraint(SingleEquationConstraint):
                     self.vks.update(exp)
             else:
                 lr[i] = Signomial(sig)
-        from .. import NamedVariables
         self.lineage = tuple(NamedVariables.lineage)
         super().__init__(lr[0], oper, lr[1])
 
@@ -390,7 +389,7 @@ class ScalarSingleEquationConstraint(SingleEquationConstraint):
             return [self.left <= relaxvar*self.right,
                     relaxvar*self.left >= self.right]
         raise ValueError(
-            "Constraint %s had unknown operator %s." % self.oper, self)
+            f"Constraint {self.oper} had unknown operator {self}.")
 
 
 # pylint: disable=too-many-instance-attributes, invalid-unary-operand-type
@@ -409,7 +408,7 @@ class PosynomialInequality(ScalarSingleEquationConstraint):
         elif self.oper == ">=":
             m_gt, p_lt = self.left, self.right
         else:
-            raise ValueError("operator %s is not supported." % self.oper)
+            raise ValueError(f"operator {self.oper} is not supported.")
 
         self.unsubbed = self._gen_unsubbed(p_lt, m_gt)
         self.bounded = set()
@@ -430,9 +429,9 @@ class PosynomialInequality(ScalarSingleEquationConstraint):
         if coeff >= -self.feastol and len(hmap) == 1:
             return None   # a tautological monomial!
         if coeff < -self.feastol:
-            msg = "'%s' is infeasible by %.2g%%" % (self, -coeff*100)
+            msg = f"'{self}' is infeasible by {-coeff*100:.2g}%"
             if fixed:
-                msg += " after substituting %s." % fixed
+                msg += f" after substituting {fixed}."
             raise PrimalInfeasible(msg)
         scaled = hmap/coeff
         scaled.units = hmap.units
@@ -454,8 +453,9 @@ class PosynomialInequality(ScalarSingleEquationConstraint):
         try:
             m_exp, = m_gt.hmap.keys()
             m_c, = m_gt.hmap.values()
-        except ValueError:
-            raise TypeError("greater-than side '%s' is not monomial." % m_gt)
+        except ValueError as valerr:
+            raise TypeError(
+                f"greater-than side '{m_gt}' is not monomial.") from valerr
         m_c *= units.of_division(m_gt, p_lt)
         hmap = p_lt.hmap.copy()
         for exp in list(hmap):
@@ -474,8 +474,8 @@ class PosynomialInequality(ScalarSingleEquationConstraint):
             hmap = self._simplify_posy_ineq(hmap, self.pmap, fixed)
             if hmap is not None:
                 if any(c <= 0 for c in hmap.values()):
-                    raise InvalidGPConstraint("'%s' became Signomial after sub"
-                                              "stituting %s" % (self, fixed))
+                    raise InvalidGPConstraint(f"'{self}' became Signomial "
+                                              f"after substituting {fixed}")
                 hmap.parent = self
                 out.append(hmap)
         return out
@@ -528,7 +528,7 @@ class MonomialEquality(PosynomialInequality):
                 self.meq_bounded[(key, "upper")] = frozenset([ubs])
                 self.meq_bounded[(key, "lower")] = frozenset([lbs])
 
-    def _gen_unsubbed(self, left, right):  # pylint: disable=arguments-differ
+    def _gen_unsubbed(self, left, right):  # pylint: disable=arguments-renamed
         "Returns the unsubstituted posys <= 1."
         unsubbed = PosynomialInequality._gen_unsubbed
         l_over_r = unsubbed(self, left, right)
@@ -574,7 +574,7 @@ class SignomialInequality(ScalarSingleEquationConstraint):
         elif self.oper == ">=":
             pgt, plt = self.left, self.right
         else:
-            raise ValueError("operator %s is not supported." % self.oper)
+            raise ValueError(f"operator {self.oper} is not supported.")
         self.unsubbed = [plt - pgt]
         self.bounded = self.as_gpconstr({}).bounded
 
@@ -583,18 +583,18 @@ class SignomialInequality(ScalarSingleEquationConstraint):
         siglt0, = self.unsubbed
         siglt0 = siglt0.sub(substitutions, require_positive=False)
         posy, negy = siglt0.posy_negy()
-        if posy is 0:  # pylint: disable=literal-comparison
-            print("Warning: SignomialConstraint %s became the tautological"
-                  " constraint 0 <= %s after substitution." % (self, negy))
+        if not posy:  # posy is 0
+            print(f"Warning: SignomialConstraint {self} became the tautological"
+                  f" constraint 0 <= {negy} after substitution.")
             return []
-        if negy is 0:  # pylint: disable=literal-comparison
-            raise ValueError("%s became the infeasible constraint %s <= 0"
-                             " after substitution." % (self, posy))
+        if not negy:  # negy is 0
+            raise ValueError(f"{self} became the infeasible constraint {posy} "
+                             "<= 0 after substitution.")
         if hasattr(negy, "cs") and len(negy.cs) > 1:
             raise InvalidGPConstraint(
-                "%s did not simplify to a PosynomialInequality; try calling"
-                " `.localsolve` instead of `.solve` to form your Model as a"
-                " SequentialGeometricProgram." % self)
+                f"{self} did not simplify to a PosynomialInequality; try "
+                "calling `.localsolve` instead of `.solve` to form your Model "
+                "as a SequentialGeometricProgram.")
         # all but one of the negy terms becomes compatible with the posy
         p_ineq = PosynomialInequality(posy, "<=", negy)
         p_ineq.parent = self
@@ -653,7 +653,7 @@ class SignomialInequality(ScalarSingleEquationConstraint):
                                - (subval(self._negysig.diff(var))
                                   * subval(coeff) * invnegy_val**2))
                 var_val = result["variables"][var]
-                sens = (nu_i*inv_mon_val*d_mon_d_var*var_val)
+                sens = nu_i*inv_mon_val*d_mon_d_var*var_val
                 assert isinstance(sens, float)
                 self.v_ss[var] = sens + self.v_ss.get(var, 0)
         return self.v_ss, la

@@ -13,6 +13,7 @@ from ..globals import SignomialsEnabled
 
 
 def evaluate_linked(constants, linked):
+    # pylint: disable=too-many-branches
     "Evaluates the values and gradients of linked variables."
     kdc = KeyDict({k: adnumber(maybe_flatten(v), k)
                    for k, v in constants.items()})
@@ -39,9 +40,9 @@ def evaluate_linked(constants, linked):
                 out = out.to(v.units or "dimensionless").magnitude
             elif out != 0 and v.units:
                 pywarnings.warn(
-                    "Linked function for %s did not return a united value."
+                    f"Linked function for {v} did not return a united value."
                     " Modifying it to do so (e.g. by using `()` instead of `[]`"
-                    " to access variables) will reduce errors." % v)
+                    " to access variables) will reduce errors.")
             out = maybe_flatten(out)
             if not hasattr(out, "x"):
                 constants[v] = out
@@ -51,7 +52,7 @@ def evaluate_linked(constants, linked):
                                     for adn, grad in out.d().items()
                                     if adn.tag}
         except Exception as exception:  # pylint: disable=broad-except
-            from .. import settings
+            from .. import settings  # pylint: disable=import-outside-toplevel
             if settings.get("ad_errors_raise", None):
                 raise
             if kdc_plain is None:
@@ -59,14 +60,14 @@ def evaluate_linked(constants, linked):
             constants[v] = f(kdc_plain)
             v.descr.pop("gradients", None)
             print("Warning: skipped auto-differentiation of linked variable"
-                  " %s because %s was raised. Set `gpkit.settings"
+                  f" {v} because {exception!r} was raised. Set `gpkit.settings"
                   "[\"ad_errors_raise\"] = True` to raise such Exceptions"
-                  " directly.\n" % (v, repr(exception)))
+                  " directly.\n")
             if ("Automatic differentiation not yet supported for <class "
                     "'gpkit.nomials.math.Monomial'> objects") in str(exception):
                 print("This particular warning may have come from using"
-                      " gpkit.units.* in the function for %s; try using"
-                      " gpkit.ureg.* or gpkit.units.*.units instead." % v)
+                      f" gpkit.units.* in the function for {v}; try using"
+                      " gpkit.ureg.* or gpkit.units.*.units instead.")
 
 
 def progify(program, return_attr=None):
@@ -152,8 +153,8 @@ def run_sweep(genfunction, self, solution, skipsweepfailures,
     else:
         sweep_grids = np.meshgrid(*list(sweepvals))
 
-    N_passes = sweep_grids[0].size
-    sweep_vects = {var: grid.reshape(N_passes)
+    n_passes = sweep_grids[0].size
+    sweep_vects = {var: grid.reshape(n_passes)
                    for (var, grid) in zip(sweepvars, sweep_grids)}
 
     if verbosity > 0:
@@ -161,7 +162,7 @@ def run_sweep(genfunction, self, solution, skipsweepfailures,
 
     self.program = []
     last_error = None
-    for i in range(N_passes):
+    for i in range(n_passes):
         constants.update({var: sweep_vect[i]
                           for (var, sweep_vect) in sweep_vects.items()})
         if linked:
@@ -174,10 +175,10 @@ def run_sweep(genfunction, self, solution, skipsweepfailures,
             sweepvarsstr = ", ".join([str(var)
                                       for var, val in zip(sweepvars, sweepvals)
                                       if not np.isnan(val).all()])
-            print("Sweeping %s with %i solves:" % (sweepvarsstr, N_passes))
+            print(f"Sweeping {sweepvarsstr} with {n_passes} solves:")
         try:
             if verbosity > 1:
-                print("\nSolve %i:" % i)
+                print(f"\nSolve {i}:")
             result = solvefn(solver, verbosity=verbosity-1, **kwargs)
             if kwargs.get("process_result", True):
                 self.process_result(result)
@@ -188,11 +189,11 @@ def run_sweep(genfunction, self, solution, skipsweepfailures,
             last_error = e
             if not skipsweepfailures:
                 raise RuntimeWarning(
-                    "Solve %i was infeasible; progress saved to m.program."
+                    f"Solve {i} was infeasible; progress saved to m.program."
                     " To continue sweeping after failures, solve with"
-                    " skipsweepfailures=True." % i) from e
+                    " skipsweepfailures=True.") from e
             if verbosity > 1:
-                print("Solve %i was %s." % (i, e.__class__.__name__))
+                print(f"Solve {i} was {e.__class__.__name__}.")
             if verbosity == 1:
                 print("!", end="", flush=True)
     if not solution:
@@ -218,4 +219,4 @@ def run_sweep(genfunction, self, solution, skipsweepfailures,
 
     if verbosity > 0:
         soltime = time() - tic
-        print("Sweeping took %.3g seconds." % (soltime,))
+        print(f"Sweeping took {soltime:.3g} seconds.")

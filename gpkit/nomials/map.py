@@ -3,7 +3,8 @@ from collections import defaultdict
 import numpy as np
 from .. import units
 from ..exceptions import DimensionalityError
-from ..small_classes import HashVector, Strings, qty, EMPTY_HV
+from ..small_classes import HashVector, Strings, EMPTY_HV
+from ..units import qty
 from .substitution import parse_subs
 
 DIMLESS_QUANTITY = qty("dimensionless")
@@ -57,8 +58,8 @@ class NomialMap(HashVector):
         if self.units != other.units:
             try:
                 other *= float(other.units/self.units)
-            except (TypeError, AttributeError):  # if one of those is None
-                raise DimensionalityError(self.units, other.units)
+            except (TypeError, AttributeError) as exc:  # one of those is None
+                raise DimensionalityError(self.units, other.units) from exc
         hmap = HashVector.__add__(self, other)
         hmap.units = self.units
         return hmap
@@ -164,7 +165,7 @@ class NomialMap(HashVector):
         return pmap
 
 
-# pylint: disable=invalid-name
+# pylint: disable=invalid-name, too-many-arguments
 def subinplace(cp, exp, o_exp, vk, cval, squished):
     "Modifies cp by substituing cval/expval for vk in exp"
     x = exp[vk]

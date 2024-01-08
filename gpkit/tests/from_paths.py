@@ -33,7 +33,7 @@ def add_filetest(testclass, path):
                 os.chdir(os.path.dirname(path))
             mod = __import__(os.path.basename(path)[:-3])
             if not hasattr(mod, "test"):
-                self.fail("file '%s' had no `test` function." % path)
+                self.fail(f"file '{path}' had no `test` function.")
             mod.test()
         finally:
             os.chdir(top_level)
@@ -49,8 +49,9 @@ def newtest_fn(name, solver, import_dict, path):
 
 
 def run(filename="TESTS", xmloutput=False, skipsolvers="look around"):
+    # pylint: disable=import-outside-toplevel
     "Parse and run paths from a given file for each solver"
-    with open(filename, "r") as f:
+    with open(filename, "r", encoding="UTF-8") as f:
         for path in f:
             add_filetest(TestFiles, path)
     if skipsolvers == "look around":

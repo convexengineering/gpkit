@@ -1,6 +1,7 @@
 """Defines the VarKey class"""
-from .small_classes import Count, qty
+from .small_classes import Count
 from .repr_conventions import ReprMixin
+from .units import qty
 
 
 class VarKey(ReprMixin):  # pylint:disable=too-many-instance-attributes
@@ -53,7 +54,7 @@ class VarKey(ReprMixin):  # pylint:disable=too-many-instance-attributes
         state = self.descr.copy()
         for key, value in state.items():
             if getattr(value, "__call__", None):
-                state[key] = "unpickleable function %s" % value
+                state[key] = f"unpickleable function {value}"
         return state
 
     def __setstate__(self, state):
@@ -92,6 +93,7 @@ class VarKey(ReprMixin):  # pylint:disable=too-many-instance-attributes
                 name = ".".join(namespace) + "." + name
         if "idx" not in excluded:
             if self.idx:
+                # pylint: disable=consider-using-f-string  # considered it
                 name += "[%s]" % ",".join(map(str, self.idx))
             elif "vec" not in excluded and self.shape:
                 name += "[:]"

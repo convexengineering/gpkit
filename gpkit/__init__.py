@@ -23,8 +23,8 @@ from .tests.run_tests import run as run_unit_tests
 
 if "just built!" in settings:  # pragma: no cover
     run_unit_tests(verbosity=1)
-    print("""
-GPkit is now installed with solver(s) %s
+    print(f"""
+GPkit is now installed with solver(s) {settings["installed_solvers"]}
 To incorporate new solvers at a later date, run `gpkit.build()`.
 
 If any tests didn't pass, please post the output above
@@ -41,4 +41,4 @@ and engineering-design models (https://github.com/convexengineering/gplibrary/)
 to be useful resources for your own applications.
 
 Enjoy!
-""" % settings["installed_solvers"])
+""")

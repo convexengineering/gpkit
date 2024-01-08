@@ -6,7 +6,7 @@ import webbrowser
 from collections import defaultdict
 
 
-# pylint:disable=too-many-locals
+# pylint:disable=too-many-locals,too-many-branches,consider-using-f-string
 def referencesplot(model, *, openimmediately=True):
     """Makes a references plot.
 
@@ -22,7 +22,7 @@ def referencesplot(model, *, openimmediately=True):
             vlineage = varkey.lineagestr()
             clineage = constraint.lineagestr()
             if not vlineage:
-                vlineage = "%s [%s]" % (varkey, varkey.unitstr())
+                vlineage = f"{varkey} [{varkey.unitstr()}]"
             for lin in (clineage, vlineage):
                 if lin not in imports:
                     imports[lin] = set()
@@ -74,7 +74,7 @@ def referencesplot(model, *, openimmediately=True):
         lines[-1] = lines[-1][:-1]
         lines.append("}")
 
-    with open("referencesplot.json", "w") as f:
+    with open("referencesplot.json", "w", encoding="UTF-8") as f:
         f.write("\n".join(lines))
 
     htmlfile = "referencesplot.html"

@@ -25,6 +25,7 @@ class Tight(ConstraintSet):
                 rightval = constraint.right.sub(variables).value
             rel_diff = mag(abs(1 - leftval/rightval))
             if rel_diff >= self.reltol:
+                # pylint: disable=consider-using-f-string
                 msg = ("Constraint [%.100s... %s %.100s...] is not tight:"
                        " the left hand side evaluated to %s but"
                        " the right hand side evaluated to %s"

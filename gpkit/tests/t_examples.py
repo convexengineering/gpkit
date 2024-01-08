@@ -5,7 +5,7 @@ import pickle
 import json
 import numpy as np
 
-from gpkit import settings, Model, Variable
+from gpkit import settings, Model, Variable, ureg
 from gpkit.tests.helpers import generate_example_tests
 from gpkit.small_scripts import mag
 from gpkit.small_classes import Quantity
@@ -59,7 +59,6 @@ class TestExamples(unittest.TestCase):
         pass
 
     def test_autosweep(self, example):
-        from gpkit import ureg
         bst1, tol1 = example.bst1, example.tol1
         bst2, tol2 = example.bst2, example.tol2
 
@@ -75,15 +74,15 @@ class TestExamples(unittest.TestCase):
         ndig = -int(np.log10(tol2))
         self.assertAlmostEqual(bst2.cost_at("cost", 3), 1.0, ndig)
         # before corner
-        A_bc = np.linspace(1, 3, 50)
-        sol_bc = bst2.sample_at(A_bc)
-        assert_logtol(sol_bc("A"), (A_bc/3)**0.5, tol2)
-        assert_logtol(sol_bc["cost"], A_bc/3, tol2)
+        a_bc = np.linspace(1, 3, 50)
+        sol_bc = bst2.sample_at(a_bc)
+        assert_logtol(sol_bc("A"), (a_bc/3)**0.5, tol2)
+        assert_logtol(sol_bc["cost"], a_bc/3, tol2)
         # after corner
-        A_ac = np.linspace(3, 10, 50)
-        sol_ac = bst2.sample_at(A_ac)
-        assert_logtol(sol_ac("A"), (A_ac/3)**2, tol2)
-        assert_logtol(sol_ac["cost"], (A_ac/3)**4, tol2)
+        a_ac = np.linspace(3, 10, 50)
+        sol_ac = bst2.sample_at(a_ac)
+        assert_logtol(sol_ac("A"), (a_ac/3)**2, tol2)
+        assert_logtol(sol_ac["cost"], (a_ac/3)**4, tol2)
 
     def test_treemap(self, example):
         pass
@@ -185,20 +184,22 @@ class TestExamples(unittest.TestCase):
         sol.table()
         sol.save("solution.pkl")
         sol.table()
-        sol_loaded = pickle.load(open("solution.pkl", "rb"))
+        with open("solution.pkl", "rb") as f:
+            sol_loaded = pickle.load(f)
         sol_loaded.table()
 
         sweepsol = m.sweep({example.AC.fuse.W: (50, 100, 150)}, verbosity=0)
         sweepsol.table()
         sweepsol.save("sweepsolution.pkl")
         sweepsol.table()
-        sol_loaded = pickle.load(open("sweepsolution.pkl", "rb"))
+        with open("sweepsolution.pkl", "rb") as f:
+            sol_loaded = pickle.load(f)
         sol_loaded.table()
 
         # testing savejson
         sol.savejson("solution.json")
         json_dict = {}
-        with open("solution.json", "r") as rf:
+        with open("solution.json", "r", encoding="UTF-8") as rf:
             json_dict = json.load(rf)
         for var in sol["variables"]:
             self.assertTrue(np.all(json_dict[str(var.key)]['v']
@@ -307,11 +308,11 @@ class TestExamples(unittest.TestCase):
                 "W_0": 1.0107,
                 r"\rho": -0.2275
             }
-            for key in freevarcheck:
-                sol_rat = mag(sol["variables"][key])/freevarcheck[key]
+            for key, val in freevarcheck.items():
+                sol_rat = mag(sol["variables"][key])/val
                 self.assertTrue(abs(1-sol_rat) < 1e-2)
-            for key in senscheck:
-                sol_rat = sol["sensitivities"]["variables"][key]/senscheck[key]
+            for key, val in senscheck.items():
+                sol_rat = sol["sensitivities"]["variables"][key]/val
                 self.assertTrue(abs(1-sol_rat) < 1e-2)
 
     def test_relaxation(self, example):

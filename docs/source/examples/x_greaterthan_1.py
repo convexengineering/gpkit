@@ -17,5 +17,5 @@ m = Model(objective, constraints)
 sol = m.solve(verbosity=0)
 
 # print selected results
-print("Optimal cost:  %.4g" % sol["cost"])
-print("Optimal x val: %.4g" % sol["variables"][x])
+print(f"Optimal cost:  {sol['cost']:.4g}")
+print(f"Optimal x val: {sol['variables'][x]:.4g}")

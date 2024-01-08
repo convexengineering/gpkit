@@ -12,9 +12,10 @@ with SignomialsEnabled():
 # create and solve the SP
 m = Model(x, constraints)
 print(m.localsolve(verbosity=0).summary())
-assert abs(m.solution(x) - 0.9) < 1e-6
+assert abs(m.solution(x) - 0.9) < 1e-6  # pylint:disable=not-callable
 
 # full interim solutions are available
+# pylint: disable=consider-using-f-string
 print("x values of each GP solve (note convergence)")
 print(", ".join("%.5f" % sol["freevariables"][x] for sol in m.program.results))
 

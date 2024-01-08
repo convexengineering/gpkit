@@ -4,6 +4,9 @@ import sys
 import shutil
 import subprocess
 
+# pylint: disable=import-outside-toplevel  # imports in try/catch statements
+# pylint: disable=too-few-public-methods
+
 LOGSTR = ""
 settings = {}
 
@@ -23,9 +26,9 @@ def pathjoin(*args):
 def isfile(path):
     "Returns true if there's a file at $path. Logs."
     if os.path.isfile(path):
-        log("#     Found %s" % path)
+        log(f"#     Found {path}")
         return True
-    log("#     Could not find %s" % path)
+    log(f"#     Could not find {path}")
     return False
 
 
@@ -40,7 +43,7 @@ def replacedir(path):
 
 def call(cmd):
     "Calls subprocess. Logs."
-    log("#     Calling '%s'" % cmd)
+    log(f"#     Calling '{cmd}'")
     log("##")
     log("### CALL BEGINS")
     retcode = subprocess.call(cmd, shell=True)
@@ -51,13 +54,13 @@ def call(cmd):
 
 def diff(filename, diff_dict):
     "Applies a simple diff to a file. Logs."
-    with open(filename, "r") as a:
-        with open(filename+".new", "w") as b:
+    with open(filename, "r", encoding="UTF-8") as a:
+        with open(filename+".new", "w", encoding="UTF-8") as b:
             for line_number, line in enumerate(a):
                 if line[:-1].strip() in diff_dict:
                     newline = diff_dict[line[:-1].strip()]+"\n"
-                    log("#\n#     Change in %s"
-                        "on line %i" % (filename, line_number + 1))
+                    log(f"#\n#     Change in {filename}"
+                        f" on line {line_number + 1}")
                     log("#     --", line[:-1][:70])
                     log("#     ++", newline[:70])
                     b.write(newline)
@@ -71,10 +74,10 @@ class SolverBackend:
     name = look = None
 
     def __init__(self):
-        log("\n# Looking for `%s`" % self.name)
+        log(f"\n# Looking for `{self.name}`")
         found_in = self.look()  # pylint: disable=not-callable
         if found_in:
-            log("\nFound %s %s" % (self.name, found_in))
+            log(f"\nFound {self.name} {found_in}")
             self.installed = True
         else:
             log("# Did not find\n#", self.name)
@@ -106,27 +109,27 @@ class MosekCLI(SolverBackend):
             rootdir = pathjoin(os.path.expanduser("~"), "mosek")
             mosek_platform = "linux64x86"
         else:
-            return log("# Platform unsupported: %s" % sys.platform)
+            return log(f"# Platform unsupported: {sys.platform}")
 
         if "MSKHOME" in os.environ:  # allow specification of root dir
             rootdir = os.environ["MSKHOME"]
-            log("# Using MSKHOME environment variable (value %s) instead of"
-                " OS-default MOSEK home directory" % rootdir)
+            log(f"# Using MSKHOME environment variable (value {rootdir})"
+                " instead of OS-default MOSEK home directory")
         if not os.path.isdir(rootdir):
-            return log("# expected MOSEK directory not found: %s" % rootdir)
+            return log("# expected MOSEK directory not found: {rootdir}")
 
         possible_versions = [f for f in os.listdir(rootdir)
                              if len(f) == 1 and f < "9"]
         if not possible_versions:
             return log("# no version folders (e.g. '7', '8') found"
-                       " in mosek directory \"%s\"" % rootdir)
+                       f" in mosek directory \"{rootdir}\"")
         version = sorted(possible_versions)[-1]
         tools_dir = pathjoin(rootdir, version, "tools")
         lib_dir = pathjoin(tools_dir, "platform", mosek_platform)
         bin_dir = pathjoin(lib_dir, "bin")
         settings["mosek_bin_dir"] = bin_dir
         os.environ['PATH'] = os.environ['PATH'] + os.pathsep + bin_dir
-        log("#   Adding %s to the PATH" % bin_dir)
+        log(f"#   Adding {bin_dir} to the PATH")
 
         return self.run("in " + bin_dir)
 
@@ -151,7 +154,7 @@ class CVXopt(SolverBackend):
             import cvxopt  # pylint: disable=unused-import
             return "in the default PYTHONPATH"
         except ImportError:
-            pass
+            return ""
 
 
 class MosekConif(SolverBackend):
@@ -165,14 +168,14 @@ class MosekConif(SolverBackend):
             import mosek
             if hasattr(mosek.conetype, "pexp"):
                 return "in the default PYTHONPATH"
-            return None
+            return ""
         except ImportError:
-            pass
+            return ""
 
 def build():
     "Builds GPkit"
     import gpkit
-    log("# Building GPkit version %s" % gpkit.__version__)
+    log(f"# Building GPkit version {gpkit.__version__}")
     log("# Moving to the directory from which GPkit was imported.")
     start_dir = os.getcwd()
     os.chdir(gpkit.__path__[0])
@@ -183,8 +186,8 @@ def build():
     if not installed_solvers:
         log("Can't find any solvers!\n")
     if "GPKITSOLVERS" in os.environ:
-        log("Replaced found solvers (%s) with environment var GPKITSOLVERS"
-            " (%s)" % (installed_solvers, os.environ["GPKITSOLVERS"]))
+        log(f"Replaced found solvers ({installed_solvers}) with environment "
+            f"var GPKITSOLVERS ({os.environ['GPKITSOLVERS']})")
         settings["installed_solvers"] = os.environ["GPKITSOLVERS"]
     else:
         settings["installed_solvers"] = ", ".join(installed_solvers)
@@ -193,10 +196,10 @@ def build():
     # Write settings
     envpath = "env"
     replacedir(envpath)
-    with open(pathjoin(envpath, "settings"), "w") as f:
+    with open(pathjoin(envpath, "settings"), "w", encoding="UTF-8") as f:
         for setting, value in sorted(settings.items()):
-            f.write("%s : %s\n" % (setting, value))
-    with open(pathjoin(envpath, "build.log"), "w") as f:
+            f.write(f"{setting} : {value}\n")
+    with open(pathjoin(envpath, "build.log"), "w", encoding="UTF-8") as f:
         f.write(LOGSTR)
 
     os.chdir(start_dir)

@@ -2,7 +2,8 @@
 from operator import xor
 from functools import reduce
 import numpy as np
-from .units import Quantity, qty  # pylint: disable=unused-import
+from scipy.sparse import csr_matrix
+from .units import Quantity
 
 Strings = (str,)
 Numbers = (int, float, np.number, Quantity)
@@ -14,11 +15,12 @@ class FixedScalarMeta(type):
         return getattr(obj, "hmap", None) and len(obj.hmap) == 1 and not obj.vks
 
 
-class FixedScalar(metaclass=FixedScalarMeta):  # pylint: disable=no-init
+class FixedScalar(metaclass=FixedScalarMeta):
+    # pylint: disable=too-few-public-methods
     "Instances of this class are scalar Nomials with no variables"
 
 
-class Count:
+class Count:  # pylint: disable=too-few-public-methods
     "Like python 2's itertools.count, for Python 3 compatibility."
     def __init__(self):
         self.count = -1
@@ -33,7 +35,6 @@ def matrix_converter(name):
     "Generates conversion function."
     def to_(self):  # used in tocoo, tocsc, etc below
         "Converts to another type of matrix."
-        # pylint: disable=unused-variable
         return getattr(self.tocsr(), "to"+name)()
     return to_
 
@@ -57,7 +58,6 @@ class CootMatrix:
 
     def tocsr(self):
         "Converts to a Scipy sparse csr_matrix"
-        from scipy.sparse import csr_matrix
         return csr_matrix((self.data, (self.row, self.col)))
 
     def dot(self, arg):
@@ -128,8 +128,8 @@ def _append_dict(d_in, d_out):
             try:
                 d_out[k].append(v)
             except KeyError as e:
-                raise RuntimeWarning("Key `%s` was added after the first sweep."
-                                     % k) from e
+                msg = f"Key `{k}` was added after the first sweep."
+                raise RuntimeWarning(msg) from e
     return d_out
 
 

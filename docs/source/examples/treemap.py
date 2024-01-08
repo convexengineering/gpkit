@@ -1,5 +1,6 @@
 "Treemap example"
-import plotly  # pylint: disable=unused-import
+# pylint: disable=unused-import, wrong-import-order
+import plotly
 from gpkit.interactive.plotting import treemap
 from performance_modeling import M
 

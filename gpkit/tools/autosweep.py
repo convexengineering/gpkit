@@ -1,5 +1,6 @@
 "Tools for optimal fits to GP sweeps"
 from time import time
+import pickle
 import numpy as np
 from ..small_classes import Count
 from ..small_scripts import mag
@@ -154,8 +155,8 @@ class BinarySweepTree:  # pylint: disable=too-many-instance-attributes
             >>> import cPickle as pickle
             >>> pickle.load(open("autosweep.p"))
         """
-        import pickle
-        pickle.dump(self, open(filename, "wb"))
+        with open(filename, "wb") as f:
+            pickle.dump(self, f)
 
 
 class SolutionOracle:
@@ -201,6 +202,7 @@ class SolutionOracle:
 
     def plot(self, posys=None, axes=None):
         "Plots the sweep for each posy"
+        #pylint: disable=import-outside-toplevel
         import matplotlib.pyplot as plt
         from ..interactive.plot_sweep import assign_axes
         from .. import GPBLU
@@ -236,15 +238,15 @@ def autosweep_1d(model, logtol, sweepvar, bounds, **solvekwargs):
         try:
             model.solve(**solvekwargs)
             firstsols.append(model.program.result)
-        except InvalidGPConstraint:
-            raise InvalidGPConstraint("only GPs can be autoswept.")
+        except InvalidGPConstraint as exc:
+            raise InvalidGPConstraint("only GPs can be autoswept.") from exc
         sols()
     bst = BinarySweepTree(bounds, firstsols, sweepvar, model.cost)
     tol = recurse_splits(model, bst, sweepvar, logtol, solvekwargs, sols)
     bst.nsols = sols()  # pylint: disable=attribute-defined-outside-init
     if solvekwargs["verbosity"] > -1:
-        print("Solved in %2i passes, cost logtol +/-%.3g" % (bst.nsols, tol))
-        print("Autosweeping took %.3g seconds." % (time() - start_time))
+        print(f"Solved in {bst.nsols:2} passes, cost logtol +/-{tol:.3g}")
+        print(f"Autosweeping took {time() - start_time:.3g} seconds.")
     if original_val:
         model.substitutions[sweepvar] = original_val
     else:
@@ -253,6 +255,7 @@ def autosweep_1d(model, logtol, sweepvar, bounds, **solvekwargs):
 
 
 def recurse_splits(model, bst, variable, logtol, solvekwargs, sols):
+    # pylint: disable=too-many-arguments
     "Recursively splits a BST until logtol is reached"
     x, lb, ub = get_tol(bst.costs, bst.bounds, bst.sols, variable)
     tol = (ub-lb)/2.0

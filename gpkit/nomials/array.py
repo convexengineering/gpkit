@@ -59,13 +59,13 @@ class NomialArray(ReprMixin, np.ndarray):
         return out
 
     def __rtruediv__(self, other):
-        out = (np.ndarray.__mul__(self**-1, other))
+        out = np.ndarray.__mul__(self**-1, other)
         out.ast = ("div", (other, self))
         return out
 
     def __add__(self, other, *, reverse_order=False):
         astorder = (self, other) if not reverse_order else (other, self)
-        out = (np.ndarray.__add__(self, other))
+        out = np.ndarray.__add__(self, other)
         out.ast = ("add", astorder)
         return out
 
@@ -74,12 +74,12 @@ class NomialArray(ReprMixin, np.ndarray):
     def __radd__(self, other): return self.__add__(other, reverse_order=True)
 
     def __pow__(self, expo):  # pylint: disable=arguments-differ
-        out = (np.ndarray.__pow__(self, expo))  # pylint: disable=too-many-function-args
+        out = np.ndarray.__pow__(self, expo)  # pylint: disable=too-many-function-args
         out.ast = ("pow", (self, expo))
         return out
 
     def __neg__(self):
-        out = (np.ndarray.__neg__(self))
+        out = np.ndarray.__neg__(self)
         out.ast = ("neg", self)
         return out
 
@@ -99,7 +99,7 @@ class NomialArray(ReprMixin, np.ndarray):
         if not self.shape:
             return try_str_without(self.flatten()[0], excluded)
 
-        return "[%s]" % ", ".join(
+        return "[%s]" % ", ".join(  # pylint: disable=consider-using-f-string
             [try_str_without(np.ndarray.__getitem__(self, i), excluded)
              for i in range(self.shape[0])])  # pylint: disable=unsubscriptable-object
 
@@ -121,7 +121,7 @@ class NomialArray(ReprMixin, np.ndarray):
     def __array_finalize__(self, obj):
         "Finalizer. Required for objects inheriting from np.ndarray."
 
-    def __array_wrap__(self, out_arr, context=None):  # pylint: disable=arguments-differ
+    def __array_wrap__(self, out_arr, context=None):  # pylint: disable=arguments-renamed
         """Called by numpy ufuncs.
         Special case to avoid creation of 0-dimensional arrays
         See http://docs.scipy.org/doc/numpy/user/basics.subclassing.html"""

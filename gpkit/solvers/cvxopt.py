@@ -5,7 +5,8 @@ from cvxopt.solvers import gp
 from gpkit.exceptions import UnknownInfeasible, DualInfeasible
 
 
-# pylint: disable=too-many-locals,too-many-statements
+# pylint: disable=too-many-locals,too-many-statements,too-many-branches
+# pylint: disable=invalid-name
 def optimize(*, c, A, k, meq_idxs, use_leqs=True, **kwargs):
     """Interface to the CVXOPT solver
 
@@ -98,7 +99,7 @@ def optimize(*, c, A, k, meq_idxs, use_leqs=True, **kwargs):
             la[leq_posy] = yi
         else:  # flip it around to the other "inequality"
             la[leq_posy+1] = -yi
-    return dict(status=solution["status"],
-                objective=np.exp(solution["primal objective"]),
-                primal=np.ravel(solution["x"]),
-                la=la)
+    return {"status": solution["status"],
+            "objective": np.exp(solution["primal objective"]),
+            "primal": np.ravel(solution["x"]),
+            "la": la}

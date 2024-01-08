@@ -12,7 +12,7 @@ def varsort(diff):
 
 def vardescr(var):
     "Returns a string fully describing a variable"
-    return "%s (%s)" % (var.label, var)
+    return f"{var.label} ({var})"
 
 class OpenedSolutionEnsemble:
     "Helper class for use with `with` to handle opening/closing an ensemble"
@@ -41,8 +41,9 @@ class SolutionEnsemble:
     """
 
     def __str__(self):
-        out = ("Solution ensemble with a baseline and %s modified solutions:"
-               % (len(self.solutions) - 1))
+        nmods = len(self.solutions) - 1
+        out = ("Solution ensemble with a baseline and"
+               f"{nmods} modified solutions:")
         for differences in self.solutions:
             if differences:
                 out += "\n    " + self.labels[differences]
@@ -55,7 +56,8 @@ class SolutionEnsemble:
 
     def save(self, filename="solensemble.pkl", **pickleargs):
         "Pickle a file and then compress it into a file with extension."
-        pickle.dump(self, open(filename, "wb"), **pickleargs)
+        with open(filename, "wb") as f:
+            pickle.dump(self, f, **pickleargs)
 
     @staticmethod
     def load(filename):
@@ -174,7 +176,7 @@ class SolutionEnsemble:
         basecoststr = self.baseline["cost function"].str_without({"units"})
         if basecoststr != solcoststr:
             differences.append(("cost", solcoststr))
-            labels.append("Cost function set to %s" % solcoststr)
+            labels.append(f"Cost function set to {solcoststr}")
 
         freedvars = set()
         setvars = set()
@@ -211,8 +213,8 @@ class SolutionEnsemble:
             labels.append(vardescr(freedvar) + " freed")
         for setvar, setval in sorted(setvars, key=varsort):
             differences.append((setvar, setval))
-            labels.append(vardescr(setvar) + " set to %.5g%s"
-                          % (setval, setvar.unitstr(into=' %s')))
+            ustr = setvar.unitstr(into=' %s')
+            labels.append(vardescr(setvar) + f" set to {setval:.5g}" + ustr)
         if "sweepvariables" in solution:
             for var, vals in sorted(solution["sweepvariables"].items(),
                                     key=varsort):
@@ -226,15 +228,15 @@ class SolutionEnsemble:
                             differences.append((idxvar, "sweep",
                                                 (min(valsi), max(valsi))))
                             labels.append(vardescr(idxvar) + " swept from"
-                                          + " %.5g to" % min(valsi)
-                                          + " %.5g" % max(valsi)
+                                          + f" {min(valsi):.5g} to"
+                                          + f" {max(valsi):.5g}"
                                           + idxvar.unitstr(into=' %s'))
                         it.iternext()
                 else:
                     differences.append((var, "sweep", (min(vals), max(vals))))
                     labels.append(vardescr(var) + " swept from"
-                                  + " %.5g to" % min(vals)
-                                  + " %.5g" % max(vals)
+                                  + f" {min(vals):.5g} to"
+                                  + f" {max(vals):.5g}"
                                   + var.unitstr(into=' %s'))
         difference = tuple(differences)
         label = ", ".join(labels)

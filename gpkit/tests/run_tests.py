@@ -1,5 +1,6 @@
 """Script for running all gpkit unit tests"""
 from gpkit.tests.helpers import run_tests
+#pylint: disable=import-outside-toplevel
 
 
 def import_tests():

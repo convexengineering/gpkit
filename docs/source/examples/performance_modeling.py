@@ -227,7 +227,8 @@ sol.savecsv()
 sol.savetxt()
 sol.save("solution.pkl")
 # retrieve solution from a file
-sol_loaded = pickle.load(open("solution.pkl", "rb"))
+with open("solution.pkl", "rb") as solfile:
+    sol_loaded = pickle.load(solfile)
 
 vars_of_interest = set(AC.varkeys)
 # note that there's two ways to access submodels
