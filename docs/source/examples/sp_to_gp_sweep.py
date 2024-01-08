@@ -4,7 +4,7 @@ from gpkit import Model, Variable, SignomialsEnabled, units
 from gpkit.constraints.tight import Tight
 
 
-def SimPleAC():
+def SimPleAC():  # pylint: disable=too-many-locals
     "Creates SimpleAC model"
     # Env. constants
     g = Variable("g", 9.81, "m/s^2", "gravitational acceleration")
