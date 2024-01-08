@@ -71,6 +71,7 @@ sweeps = {V_min: ("sweep", np.linspace(20, 25, N)),
 m.substitutions.update(sweeps)
 sweepsol = m.solve(verbosity=0)
 print(sweepsol.summary())
-sol_loaded = pickle.load(open("solution.pkl", "rb"))
+with open("solution.pkl", "rb") as solfile:
+    sol_loaded = pickle.load(solfile)
 assert sol_loaded.almost_equal(SolutionArray.decompress_file("solution.pgz"))
 print(sweepsol.diff(sol_loaded, absdiff=True, senssdiff=True))
