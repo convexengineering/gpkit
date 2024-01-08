@@ -46,7 +46,7 @@ x = Variable("x", "m")
 y = Variable("y", "m")
 z = Variable("z", "m")
 S = Variable("S", 1.0, "m^2")
-c = (2*x*y + 2*x*z + 2*y*z <= S)
+c = 2*x*y + 2*x*z + 2*y*z <= S
 assert isinstance(c, PosynomialInequality)
 
 ### Example Formulating a Model
@@ -66,7 +66,7 @@ sol = m.solve(verbosity=0)
 print(sol.table())
 
 ### Printing Results 2
-print("The optimal value is %.4g." % sol["cost"])
+print("The optimal value is {sol[cost]:.4g}.")
 
 ### Example variable sensitivity usage
 x = Variable("x")
