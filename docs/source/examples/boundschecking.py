@@ -45,6 +45,7 @@ class BoundsChecking(Model):
 
 m = BoundsChecking()
 print(m.str_without(["lineage"]))
+missingbounds = {}
 try:
     m.solve()
 except UnboundedGP:
@@ -57,9 +58,9 @@ except UnknownInfeasible:  # pragma: no cover
     pass
 
 bpl = ", but would gain it from any of these sets: "
-assert missingbounds[(m.D.key, 'lower')] == bpl + "[(%s, 'lower')]" % m.Ap
-assert missingbounds[(m.nu.key, 'lower')] == bpl + "[(%s, 'lower')]" % m.Ap
+assert missingbounds[(m.D.key, 'lower')] == bpl + f"[({m.Ap}, 'lower')]"
+assert missingbounds[(m.nu.key, 'lower')] == bpl + f"[({m.Ap}, 'lower')]"
 # ordering is arbitrary:
 assert missingbounds[(m.Ap.key, 'lower')] in (
-    bpl + ("[(%s, 'lower')] or [(%s, 'lower')]" % (m.D, m.nu)),
-    bpl + ("[(%s, 'lower')] or [(%s, 'lower')]" % (m.nu, m.D)))
+    bpl + (f"[({m.D}, 'lower')] or [({m.nu}, 'lower')]"),
+    bpl + (f"[({m.nu}, 'lower')] or [({m.D}, 'lower')]"))
