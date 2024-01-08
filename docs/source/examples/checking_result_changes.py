@@ -22,7 +22,8 @@ sol = m.solve(verbosity=0)
 sol.save("last_verified.sol")
 
 # uncomment the line below to verify a new model
-last_verified_sol = pickle.load(open("last_verified.sol", mode="rb"))
+with open("last_verified.sol", mode="rb") as f:
+    last_verified_sol = pickle.load(f)
 if not sol.almost_equal(last_verified_sol, reltol=1e-3):
     print(last_verified_sol.diff(sol))
 
