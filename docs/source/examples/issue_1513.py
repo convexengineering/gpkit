@@ -1,6 +1,7 @@
 "Tests non-array linked functions & subs in a vectorization environment"
 import numpy as np
 from gpkit import Variable, Model, ConstraintSet, Vectorize
+# pylint: disable=unnecessary-lambda-assignment
 
 class Vehicle(Model):
     "Vehicle model"
